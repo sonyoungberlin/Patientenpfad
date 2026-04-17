@@ -31,7 +31,7 @@ Ist die Versorgungssituation im Alltag ausreichend nachvollziehbar?
 |--------------------------------------|--------------------------------------------------------------------------------------------------|
 | **ausreichend** (DONE)               | Versorgungssituation ist nachvollziehbar; vorhandener Unterstützungsbedarf ist abgedeckt oder nicht vorhanden |
 | **eingeschränkt ausreichend** (DONE) | Teilweise Unterstützung vorhanden oder kleinere Lücken                                           |
-| **nicht ausreichend** (OPEN)         | Unterstützungsbedarf besteht, aber keine oder unzureichende Unterstützung vorhanden              |
+| **nicht ausreichend** (OPEN)         | Unterstützungsbedarf besteht oder wird vermutet, aber keine oder unzureichende Unterstützung vorhanden |
 | **unklar** (UNCLEAR)                 | Angaben fehlen oder sind widersprüchlich                                                         |
 
 > UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu ausreichend (DONE), eingeschränkt ausreichend (DONE) oder nicht ausreichend (OPEN).
@@ -46,7 +46,7 @@ Ist die Versorgungssituation im Alltag ausreichend nachvollziehbar?
 Die Versorgungssituation ist ausreichend nachvollziehbar. Unterstützungsbedarf ist entweder nicht vorhanden oder ausreichend abgedeckt.
 
 ### OPEN
-Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder Unterstützungsbedarf ist nicht abgedeckt.
+Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder bestehender Unterstützungsbedarf ist nicht abgedeckt.
 
 ### UNCLEAR
 Angaben zur Versorgungssituation fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt beim Arzt. Klärung soll im weiteren Verlauf erfolgen.
