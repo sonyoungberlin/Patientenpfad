@@ -11,7 +11,7 @@
 
 ## Entscheidungsfrage
 
-Sind die relevanten Erkrankungen ausreichend nachvollziehbar, um den Fall medizinisch einzuordnen?
+Ist die Erkrankungssituation ausreichend nachvollziehbar?
 
 ---
 
@@ -32,7 +32,7 @@ Sind die relevanten Erkrankungen ausreichend nachvollziehbar, um den Fall medizi
 |------------------------------------|---------------------------------------------------------------------------------------------|
 | **ausreichend** (DONE)             | Krankheits- bzw. Diagnosenkontext ist nachvollziehbar                                       |
 | **eingeschränkt ausreichend** (DONE) | Teilweise nachvollziehbar, kleinere Lücken vorhanden; Weiterarbeit ist möglich            |
-| **nicht ausreichend** (OPEN)       | Kein verlässlicher Krankheits- oder Diagnosenkontext erkennbar                              |
+| **nicht ausreichend** (OPEN)       | Die Erkrankungssituation ist aktuell nicht ausreichend nachvollziehbar.             |
 | **unklar** (UNCLEAR)               | Angaben fehlen oder sind widersprüchlich                                                    |
 
 > UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (DONE), **eingeschränkt ausreichend** (DONE) oder **nicht ausreichend** (OPEN).
