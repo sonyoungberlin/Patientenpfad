@@ -1,4 +1,4 @@
-import { ActiveCheckpoint, BlockStatus } from "@/lib/types";
+import { BlockStatus, type ActiveCheckpoint } from "@/lib/types";
 
 export function deriveBlockStatus(
   activeCheckpoints: ActiveCheckpoint[],
