@@ -54,6 +54,16 @@ Angaben zur externen Mitbehandlung fehlen oder widersprechen sich. Eine sichere 
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                                                  |
+|---------|---------------------------------------------------------------------------------------|
+| DONE    | „Externe Mitbehandlungssituation ist ausreichend nachvollziehbar"                     |
+| OPEN    | „Externe Mitbehandlungssituation ist aktuell nicht ausreichend nachvollziehbar"       |
+| UNCLEAR | „Externe Mitbehandlungssituation ist unklar"                                          |
+
+---
+
 ## To-dos
 
 | Status  | To-do                            |

@@ -54,6 +54,16 @@ Angaben zur Diagnosenlage fehlen oder widersprechen sich. Eine sichere Einschät
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                              |
+|---------|-------------------------------------------------------------------|
+| DONE    | „Diagnosenlage ist ausreichend nachvollziehbar"                   |
+| OPEN    | „Diagnosenlage ist aktuell nicht ausreichend nachvollziehbar"     |
+| UNCLEAR | „Diagnosenlage ist unklar"                                        |
+
+---
+
 ## To-dos
 
 | Status  | To-do                            |

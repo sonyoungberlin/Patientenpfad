@@ -53,6 +53,16 @@ Angaben zur Versorgungssituation fehlen oder widersprechen sich. Eine sichere Ei
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                              |
+|---------|-------------------------------------------------------------------|
+| DONE    | „Versorgungsumfeld ist ausreichend nachvollziehbar"               |
+| OPEN    | „Versorgungsumfeld ist aktuell nicht ausreichend nachvollziehbar" |
+| UNCLEAR | „Versorgungsumfeld ist unklar"                                    |
+
+---
+
 ## To-dos
 
 | Status  | To-do                         |

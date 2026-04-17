@@ -53,6 +53,16 @@ Angaben zu den Versorgungskanälen fehlen oder widersprechen sich. Eine sichere 
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                          |
+|---------|---------------------------------------------------------------|
+| DONE    | „Versorgungskanäle sind ausreichend nutzbar"                  |
+| OPEN    | „Versorgungskanäle sind aktuell nicht ausreichend nutzbar"    |
+| UNCLEAR | „Versorgungskanäle sind unklar"                               |
+
+---
+
 ## To-dos
 
 | Status  | To-do                                |

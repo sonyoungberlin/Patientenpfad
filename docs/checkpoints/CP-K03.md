@@ -54,6 +54,16 @@ Angaben zur Informationslage fehlen oder widersprechen sich. Eine sichere Einsch
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                              |
+|---------|---------------------------------------------------|
+| DONE    | „Informationsbasis ist ausreichend"               |
+| OPEN    | „Informationsbasis ist aktuell nicht ausreichend" |
+| UNCLEAR | „Informationsbasis ist unklar"                    |
+
+---
+
 ## To-dos
 
 | Status  | To-do                          |

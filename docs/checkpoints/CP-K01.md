@@ -52,6 +52,16 @@ Angaben zur Erreichbarkeit fehlen oder widersprechen sich. Eine sichere Einschä
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                          |
+|---------|---------------------------------------------------------------|
+| DONE    | „Kommunikation ist ausreichend möglich"                       |
+| OPEN    | „Kommunikation ist aktuell nicht ausreichend möglich"         |
+| UNCLEAR | „Kommunikation ist unklar"                                    |
+
+---
+
 ## To-dos
 
 | Status  | To-do                                                                                                           |

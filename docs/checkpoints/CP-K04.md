@@ -55,6 +55,16 @@ Angaben zur Medikation fehlen oder widersprechen sich. Eine sichere Einschätzun
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                          |
+|---------|---------------------------------------------------------------|
+| DONE    | „Medikation ist ausreichend nachvollziehbar"                  |
+| OPEN    | „Medikation ist aktuell nicht ausreichend nachvollziehbar"    |
+| UNCLEAR | „Medikation ist unklar"                                       |
+
+---
+
 ## To-dos
 
 | Status  | To-do                         |

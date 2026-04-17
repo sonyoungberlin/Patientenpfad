@@ -52,6 +52,16 @@ Angaben zum Zugang fehlen oder widersprechen sich. Eine sichere Einschätzung is
 
 ---
 
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                                  |
+|---------|-----------------------------------------------------------------------|
+| DONE    | „Zugang zur Versorgung ist möglich"                                   |
+| OPEN    | „Zugang zur Versorgung ist aktuell nicht ausreichend möglich"         |
+| UNCLEAR | „Zugang zur Versorgung ist unklar"                                    |
+
+---
+
 ## To-dos
 
 | Status  | To-do                             |
