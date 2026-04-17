@@ -3,7 +3,7 @@
 - **checkpoint_id:** `CP-K01`
 - **block_id:** `kommunikation`
 - **block_title:** Kommunikation & Erreichbarkeit
-- **typ:** VERIFIKATION
+- **typ:** STATUS_KLAERUNG
 - **category:** `O` (organisatorisch)
 - **relevance:** `P` (Pflicht)
 
