@@ -42,7 +42,7 @@ Ist der Zugang zur Versorgung grundsätzlich möglich?
 ## Status-Definitionen
 
 ### DONE
-Der Zugang zur Versorgung ist grundsätzlich möglich. Auch bei bestehenden Schwierigkeiten ist eine Versorgung möglich.
+Der Zugang zur Versorgung ist grundsätzlich möglich. Auch bei bestehenden, nicht relevanten Einschränkungen ist eine Versorgung möglich.
 
 ### OPEN
 Der Zugang zur Versorgung ist aktuell nicht ausreichend möglich.

@@ -43,7 +43,7 @@ Sind geeignete Versorgungskanäle nutzbar?
 ## Status-Definitionen
 
 ### DONE
-Mindestens ein geeigneter Versorgungskanal ist nutzbar – unabhängig davon, ob dies selbstständig oder mit Unterstützung erfolgt.
+Mindestens ein geeigneter Versorgungskanal ist verlässlich nutzbar – unabhängig davon, ob dies selbstständig oder mit Unterstützung erfolgt.
 
 ### OPEN
 Es ist aktuell kein geeigneter Versorgungskanal nutzbar.
