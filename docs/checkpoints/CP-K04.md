@@ -11,7 +11,7 @@
 
 ## Entscheidungsfrage
 
-Ist der aktuelle Medikamentenstatus ausreichend bekannt und wird die Einnahme zuverlässig umgesetzt?
+Ist die Medikation ausreichend nachvollziehbar und wird die Einnahme zuverlässig umgesetzt?
 
 ---
 
@@ -33,7 +33,7 @@ Ist der aktuelle Medikamentenstatus ausreichend bekannt und wird die Einnahme zu
 |------------------------------------|---------------------------------------------------------------------------------------------|
 | **ausreichend** (DONE)             | Medikation ist nachvollziehbar und Einnahme erfolgt zuverlässig                             |
 | **eingeschränkt ausreichend** (DONE) | Kleinere Unsicherheiten oder Unregelmäßigkeiten vorhanden; Weiterarbeit ist möglich       |
-| **nicht ausreichend** (OPEN)       | Kein verlässlicher Überblick über Medikation oder Einnahme vorhanden                       |
+| **nicht ausreichend** (OPEN)       | Kein verlässlicher Überblick über Medikation und Einnahme vorhanden                        |
 | **unklar** (UNCLEAR)               | Angaben fehlen oder sind widersprüchlich                                                    |
 
 > UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (DONE), **eingeschränkt ausreichend** (DONE) oder **nicht ausreichend** (OPEN).
