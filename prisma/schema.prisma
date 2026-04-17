@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StageStatus {
+  INTAKE
+  PREFILL
+  REVIEW
+  READY
+  CLOSED
+}
+
+model CaseSession {
+  id                   String      @id @default(cuid())
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  /// Roheingabe / Anlass der Session (neutraler Freitext)
+  query_raw            String?
+
+  /// Grober Workflow-Status
+  stage_status         StageStatus @default(INTAKE)
+
+  /// Übersicht der Block-Zustände (JSON-Anker)
+  block_status_anchor  Json?
+
+  /// Aktive Checkpoints im aktuellen Workflow-Schritt (JSON-Anker)
+  active_checkpoints   Json?
+
+  /// Prefill- / Kontextdaten für Blöcke (JSON-Anker)
+  ctx_prefill          Json?
+
+  /// Bestätigte finale Daten der Session (JSON-Anker)
+  ctx_final            Json?
+
+  /// Optionale Zusammenfassung / Summary (JSON-Anker)
+  summary_anchor       Json?
+}
