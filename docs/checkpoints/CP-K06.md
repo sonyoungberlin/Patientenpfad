@@ -22,7 +22,7 @@ Ist die externe Mitbehandlungssituation ausreichend nachvollziehbar?
 | M2-01  | Waren Sie in den letzten 4 Wochen bei einem Facharzt, im Krankenhaus oder bei einem anderen Behandler? |
 | M2-02  | Sind Sie dauerhaft bei Fachärzten oder anderen Behandlern in Betreuung?                            |
 | M2-03  | Haben Sie aktuell Termine bei anderen Behandlern geplant?                                          |
-| M2-04  | Erhalten Sie Unterstützung durch einen Pflegedienst oder ähnliche Hilfe?                           |
+| M2-04  | Sind Sie durch einen Pflegedienst oder andere externe Stellen in Betreuung?                        |
 
 ---
 
