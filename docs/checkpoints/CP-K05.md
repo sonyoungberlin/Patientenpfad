@@ -58,8 +58,8 @@ Angaben zur Diagnosenlage fehlen oder widersprechen sich. Eine sichere Einschät
 
 | Status  | Satz                                                              |
 |---------|-------------------------------------------------------------------|
-| DONE    | „Diagnosenlage ist ausreichend nachvollziehbar"                   |
-| OPEN    | „Diagnosenlage ist aktuell nicht ausreichend nachvollziehbar"     |
+| DONE    | „Diagnosenlage ist ausreichend geklärt"                   |
+| OPEN    | „Diagnosenlage ist aktuell nicht ausreichend geklärt"     |
 | UNCLEAR | „Diagnosenlage ist unklar"                                        |
 
 ---

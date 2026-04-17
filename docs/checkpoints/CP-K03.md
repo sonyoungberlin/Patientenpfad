@@ -58,8 +58,8 @@ Angaben zur Informationslage fehlen oder widersprechen sich. Eine sichere Einsch
 
 | Status  | Satz                                              |
 |---------|---------------------------------------------------|
-| DONE    | „Informationsbasis ist ausreichend"               |
-| OPEN    | „Informationsbasis ist aktuell nicht ausreichend" |
+| DONE    | „Informationsbasis ist ausreichend geklärt"               |
+| OPEN    | „Informationsbasis ist aktuell nicht ausreichend geklärt" |
 | UNCLEAR | „Informationsbasis ist unklar"                    |
 
 ---

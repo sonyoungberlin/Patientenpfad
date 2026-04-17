@@ -58,8 +58,8 @@ Angaben zur externen Mitbehandlung fehlen oder widersprechen sich. Eine sichere 
 
 | Status  | Satz                                                                                  |
 |---------|---------------------------------------------------------------------------------------|
-| DONE    | „Externe Mitbehandlungssituation ist ausreichend nachvollziehbar"                     |
-| OPEN    | „Externe Mitbehandlungssituation ist aktuell nicht ausreichend nachvollziehbar"       |
+| DONE    | „Externe Mitbehandlungssituation ist ausreichend geklärt"                     |
+| OPEN    | „Externe Mitbehandlungssituation ist aktuell nicht ausreichend geklärt"       |
 | UNCLEAR | „Externe Mitbehandlungssituation ist unklar"                                          |
 
 ---

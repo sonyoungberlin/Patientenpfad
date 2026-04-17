@@ -59,8 +59,8 @@ Angaben zur Medikation fehlen oder widersprechen sich. Eine sichere Einschätzun
 
 | Status  | Satz                                                          |
 |---------|---------------------------------------------------------------|
-| DONE    | „Medikation ist ausreichend nachvollziehbar"                  |
-| OPEN    | „Medikation ist aktuell nicht ausreichend nachvollziehbar"    |
+| DONE    | „Medikation ist ausreichend geklärt"                  |
+| OPEN    | „Medikation ist aktuell nicht ausreichend geklärt"    |
 | UNCLEAR | „Medikation ist unklar"                                       |
 
 ---

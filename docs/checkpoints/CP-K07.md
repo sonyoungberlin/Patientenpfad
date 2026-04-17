@@ -57,8 +57,8 @@ Angaben zur Versorgungssituation fehlen oder widersprechen sich. Eine sichere Ei
 
 | Status  | Satz                                                              |
 |---------|-------------------------------------------------------------------|
-| DONE    | „Versorgungsumfeld ist ausreichend nachvollziehbar"               |
-| OPEN    | „Versorgungsumfeld ist aktuell nicht ausreichend nachvollziehbar" |
+| DONE    | „Versorgungsumfeld ist ausreichend geklärt"               |
+| OPEN    | „Versorgungsumfeld ist aktuell nicht ausreichend geklärt" |
 | UNCLEAR | „Versorgungsumfeld ist unklar"                                    |
 
 ---
