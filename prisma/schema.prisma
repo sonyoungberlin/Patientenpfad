@@ -6,3 +6,37 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum StageStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING
+  DONE
+}
+
+model CaseSession {
+  id                   String      @id @default(cuid())
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  /// Roheingabe / Anlass der Session (neutraler Freitext)
+  query_raw            String?
+
+  /// Grober Workflow-Status
+  stage_status         StageStatus @default(OPEN)
+
+  /// Übersicht der Block-Zustände (JSON-Anker)
+  block_status_anchor  Json?
+
+  /// Aktive Checkpoints im aktuellen Workflow-Schritt (JSON-Anker)
+  active_checkpoints   Json?
+
+  /// Prefill- / Kontextdaten für Blöcke (JSON-Anker)
+  ctx_prefill          Json?
+
+  /// Bestätigte finale Daten der Session (JSON-Anker)
+  ctx_final            Json?
+
+  /// Optionale Zusammenfassung / Summary (JSON-Anker)
+  summary_anchor       Json?
+}
