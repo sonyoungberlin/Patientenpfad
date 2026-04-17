@@ -8,10 +8,11 @@ datasource db {
 }
 
 enum StageStatus {
-  OPEN
-  IN_PROGRESS
-  PENDING
-  DONE
+  INTAKE
+  PREFILL
+  REVIEW
+  READY
+  CLOSED
 }
 
 model CaseSession {
@@ -23,7 +24,7 @@ model CaseSession {
   query_raw            String?
 
   /// Grober Workflow-Status
-  stage_status         StageStatus @default(OPEN)
+  stage_status         StageStatus @default(INTAKE)
 
   /// Übersicht der Block-Zustände (JSON-Anker)
   block_status_anchor  Json?
