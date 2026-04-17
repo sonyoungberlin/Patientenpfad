@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[cases/create]", err);
     return NextResponse.json(
-      { ok: false, error: "Internal server error" },
+      { ok: false, error: "Failed to create case session" },
       { status: 500 }
     );
   }
