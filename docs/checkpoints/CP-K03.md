@@ -3,7 +3,7 @@
 - **checkpoint_id:** `CP-K03`
 - **block_id:** `kommunikation`
 - **block_title:** Kommunikation & Erreichbarkeit
-- **typ:** VERIFIKATION
+- **typ:** STATUS_KLAERUNG
 - **category:** `M` (medizinisch)
 - **relevance:** `P` (Pflicht)
 
@@ -47,7 +47,7 @@ Reicht die vorhandene oder zugängliche Informationsbasis aus, um die weitere Be
 Die Informationsbasis ist vorhanden oder zuverlässig zugänglich. Eingeschränkt ausreichende Informationen (z. B. nur teilweise verfügbar oder mit Verzögerung zugänglich) gelten ebenfalls als DONE: eine sinnvolle Weiterplanung ist möglich, auch wenn nicht alle Informationen sofort vorliegen.
 
 ### OPEN
-Es ist aktuell keine ausreichende Informationsbasis erkennbar – weder direkt vorliegend noch verlässlich zugänglich.
+Die Informationsbasis ist aktuell nicht ausreichend.
 
 ### UNCLEAR
 Angaben zur Informationslage fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt beim Arzt. Klärung soll im weiteren Verlauf erfolgen.
