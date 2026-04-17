@@ -29,7 +29,7 @@ Sind geeignete Versorgungskanäle nutzbar?
 
 | Ergebnis                             | Bedingung                                                                             |
 |--------------------------------------|---------------------------------------------------------------------------------------|
-| **ausreichend** (DONE)               | Mindestens ein Versorgungskanal ist nutzbar (z. B. Video oder digitale Kommunikation) |
+| **ausreichend** (DONE)               | Mindestens ein verlässlicher Versorgungskanal ist nutzbar (z. B. Video oder digitale Kommunikation) |
 | **eingeschränkt ausreichend** (DONE) | Nutzung ist möglich, aber nur eingeschränkt oder nicht für alle Kanäle                |
 | **nicht ausreichend** (OPEN)         | Keine Versorgungskanäle sind nutzbar                                                  |
 | **unklar** (UNCLEAR)                 | Angaben fehlen oder sind widersprüchlich                                              |

@@ -11,7 +11,7 @@
 
 ## Entscheidungsfrage
 
-Ist der Zugang zur Versorgung ausreichend möglich?
+Ist der Zugang zur Versorgung grundsätzlich möglich?
 
 ---
 
@@ -28,7 +28,7 @@ Ist der Zugang zur Versorgung ausreichend möglich?
 
 | Ergebnis                             | Bedingung                                                                        |
 |--------------------------------------|----------------------------------------------------------------------------------|
-| **ausreichend** (DONE)               | Termine können grundsätzlich wahrgenommen werden                                 |
+| **ausreichend** (DONE)               | Termine können grundsätzlich ohne relevante Einschränkungen wahrgenommen werden   |
 | **eingeschränkt ausreichend** (DONE) | Termine sind grundsätzlich möglich, aber mit Einschränkungen oder Schwierigkeiten |
 | **nicht ausreichend** (OPEN)         | Termine können grundsätzlich nicht wahrgenommen werden                           |
 | **unklar** (UNCLEAR)                 | Angaben fehlen oder sind widersprüchlich                                         |
