@@ -9,7 +9,7 @@
 
 ## Entscheidungsfrage
 
-Ist der Kommunikationsweg zum Patienten für den nächsten Schritt ausreichend geklärt?
+Ist ein verlässlicher Kommunikationsweg zum Patienten vorhanden?
 
 ---
 
@@ -33,20 +33,20 @@ Ist der Kommunikationsweg zum Patienten für den nächsten Schritt ausreichend g
 | **nicht erreichbar** (OPEN)  | Kein verlässlicher direkter oder indirekter Kommunikationsweg vorhanden                                              |
 | **unklar** (UNCLEAR)         | Angaben fehlen oder sind widersprüchlich                                                                              |
 
-> UNCLEAR ist ein temporärer Klärzustand. Nach Klärung führt er immer zu einem der drei definierten Ergebnisse: **erreichbar** (DONE), **eingeschränkt erreichbar** (DONE) oder **nicht erreichbar** (OPEN).
+> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Informationen fehlen oder sind widersprüchlich, eine sichere Bewertung ist aktuell nicht möglich. Klärung ist sinnvoll und soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **erreichbar** (DONE), **eingeschränkt erreichbar** (DONE) oder **nicht erreichbar** (OPEN).
 
 ---
 
 ## Status-Definitionen
 
 ### DONE
-Mindestens ein verlässlicher Kommunikationsweg ist bekannt – direkt oder über eine stellvertretende Person.
+Mindestens ein verlässlicher Kommunikationsweg ist bekannt – direkt oder über eine stellvertretende Person. Eingeschränkte Erreichbarkeit (z. B. nur über Dritte oder mit Sprachbarriere) gilt ebenfalls als DONE: Kommunikation ist ausreichend möglich, auch wenn nicht optimal.
 
 ### OPEN
 Kein verlässlicher Kommunikationsweg vorhanden. Es fehlt sowohl ein direkter Weg zum Patienten als auch ein indirekter über Dritte.
 
 ### UNCLEAR
-Angaben zur Erreichbarkeit fehlen oder widersprechen sich. Der Status muss vor dem nächsten Schritt aufgelöst werden.
+Angaben zur Erreichbarkeit fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt bei Arzt oder Praxis. Klärung soll im weiteren Verlauf erfolgen.
 
 ---
 
