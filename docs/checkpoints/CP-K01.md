@@ -3,7 +3,9 @@
 - **checkpoint_id:** `CP-K01`
 - **block_id:** `kommunikation`
 - **block_title:** Kommunikation & Erreichbarkeit
-- **typ:** PRESENCE_CHECK
+- **typ:** VERIFIKATION
+- **category:** `O` (organisatorisch)
+- **relevance:** `P` (Pflicht)
 
 ---
 
@@ -19,7 +21,7 @@ Ist ein verlässlicher Kommunikationsweg zum Patienten vorhanden?
 |--------|-----------------------------------------------------------------------|
 | M2-01  | Ist der Patient direkt erreichbar (Telefon, E-Mail oder persönlich)?  |
 | M2-02  | Gibt es eine Person, die stellvertretend erreichbar ist?              |
-| M2-03  | Welcher Kommunikationsweg ist bevorzugt oder realistisch nutzbar?     |
+| M2-03  | Welcher Kommunikationsweg ist aktuell nutzbar?                        |
 | M2-04  | Bestehen Sprachbarrieren oder Verständigungseinschränkungen?          |
 
 ---
@@ -43,7 +45,7 @@ Ist ein verlässlicher Kommunikationsweg zum Patienten vorhanden?
 Mindestens ein verlässlicher Kommunikationsweg ist bekannt – direkt oder über eine stellvertretende Person. Eingeschränkte Erreichbarkeit (z. B. nur über Dritte oder mit Sprachbarriere) gilt ebenfalls als DONE: Kommunikation ist ausreichend möglich, auch wenn nicht optimal.
 
 ### OPEN
-Kein verlässlicher Kommunikationsweg vorhanden. Es fehlt sowohl ein direkter Weg zum Patienten als auch ein indirekter über Dritte.
+Es ist aktuell kein verlässlicher Kommunikationsweg erkennbar – weder direkt zum Patienten noch indirekt über Dritte.
 
 ### UNCLEAR
 Angaben zur Erreichbarkeit fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt bei Arzt oder Praxis. Klärung soll im weiteren Verlauf erfolgen.

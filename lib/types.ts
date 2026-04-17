@@ -22,10 +22,26 @@ export enum CheckpointType {
   ZIEL = "ZIEL",
 }
 
+export enum CheckpointCategory {
+  /** Medizinisch: fachliche Bewertung notwendig, keine automatische Entscheidung */
+  M = "M",
+  /** Organisatorisch: deterministisch aus Fakten ableitbar, automatisierbar */
+  O = "O",
+}
+
+export enum CheckpointRelevance {
+  /** Pflicht: immer sichtbar und zu bewerten */
+  P = "P",
+  /** Additiv: nur in passenden Kontexten aktiv */
+  A = "A",
+}
+
 export type ActiveCheckpoint = {
   id: string;
   block_id: string;
   type: CheckpointType;
+  category: CheckpointCategory;
+  relevance: CheckpointRelevance;
   title: string;
   description?: string;
   status: "OPEN" | "DONE" | "UNCLEAR";

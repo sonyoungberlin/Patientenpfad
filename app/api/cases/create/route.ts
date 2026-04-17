@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   BlockStatus,
+  CheckpointCategory,
+  CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
   type BlockSummary,
@@ -45,6 +47,8 @@ const DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
     id: "dokumentenlage_arztbrief_vorhanden",
     block_id: "dokumentenlage",
     type: CheckpointType.PRESENCE_CHECK,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.P,
     title: "Arztbrief vorhanden",
     description:
       "Prüfen, ob ein aktueller Arztbrief oder vergleichbares Dokument vorliegt.",
