@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 
+type Block = {
+  block_title?: string;
+  block_status?: string;
+  active_checkpoint_count?: number;
+};
+
+type CaseResult = {
+  case_id: string;
+  stage_status: string;
+  blocks: Block[];
+};
+
 export default function HomePage() {
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState<{
-    case_id: string;
-    stage_status: string;
-  } | null>(null);
+  const [result, setResult] = useState<CaseResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -24,9 +33,22 @@ export default function HomePage() {
       const data = await res.json();
       if (!res.ok || !data.ok) {
         setError(data.error ?? "Unbekannter Fehler");
-      } else {
-        setResult({ case_id: data.case_id, stage_status: data.stage_status });
+        return;
       }
+
+      const caseId: string = data.case_id;
+
+      const getRes = await fetch(`/api/cases/${caseId}`);
+      const getData = await getRes.json();
+
+      const anchor = getData?.case?.block_status_anchor;
+      const blocks: Block[] = Array.isArray(anchor) ? anchor : [];
+
+      setResult({
+        case_id: caseId,
+        stage_status: data.stage_status,
+        blocks,
+      });
     } catch {
       setError("Netzwerkfehler");
     } finally {
@@ -50,11 +72,23 @@ export default function HomePage() {
         </button>
       </div>
       {result && (
-        <p style={{ marginTop: "1rem" }}>
-          <strong>case_id:</strong> {result.case_id}
-          <br />
-          <strong>stage_status:</strong> {result.stage_status}
-        </p>
+        <div style={{ marginTop: "1rem" }}>
+          <p style={{ margin: 0 }}>
+            <strong>case_id:</strong> {result.case_id}
+            <br />
+            <strong>stage_status:</strong> {result.stage_status}
+          </p>
+          {result.blocks.length > 0 && (
+            <ul style={{ marginTop: "0.5rem", paddingLeft: "1.2rem" }}>
+              {result.blocks.map((b, i) => (
+                <li key={i}>
+                  {b.block_title ?? "–"} · {b.block_status ?? "–"} ·{" "}
+                  {b.active_checkpoint_count ?? 0} Checkpoints
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       {error && (
         <p style={{ marginTop: "1rem", color: "red" }}>Fehler: {error}</p>
