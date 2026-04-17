@@ -1,8 +1,8 @@
 # CP-K03 – Informationsbasis ausreichend
 
 - **checkpoint_id:** `CP-K03`
-- **block_id:** `kommunikation`
-- **block_title:** Kommunikation & Erreichbarkeit
+- **block_id:** `dokumentenlage`
+- **block_title:** Dokumentenlage / Informationsbasis
 - **typ:** STATUS_KLAERUNG
 - **category:** `M` (medizinisch)
 - **relevance:** `P` (Pflicht)
@@ -32,7 +32,7 @@ Reicht die vorhandene oder zugängliche Informationsbasis aus, um die weitere Be
 |------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | **ausreichend** (DONE)             | Informationen sind vorhanden oder zuverlässig zugänglich – auch ohne aktuelle Unterlagen möglich                   |
 | **eingeschränkt ausreichend** (DONE) | Informationen nur teilweise verfügbar oder verzögert zugänglich; Weiterarbeit ist möglich                        |
-| **nicht ausreichend** (OPEN)       | Es ist aktuell keine ausreichende Informationsbasis erkennbar, um die weitere Behandlung sinnvoll zu planen        |
+| **nicht ausreichend** (OPEN)       | Die Informationsbasis ist aktuell nicht ausreichend.                                                               |
 | **unklar** (UNCLEAR)               | Angaben fehlen oder sind widersprüchlich                                                                           |
 
 > UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Informationen fehlen oder sind widersprüchlich, eine sichere Bewertung ist aktuell nicht möglich. Klärung ist sinnvoll und soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (DONE), **eingeschränkt ausreichend** (DONE) oder **nicht ausreichend** (OPEN).
