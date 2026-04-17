@@ -23,12 +23,16 @@ export enum CheckpointType {
 }
 
 export enum CheckpointCategory {
+  /** Medizinisch: fachliche Bewertung notwendig, keine automatische Entscheidung */
   M = "M",
+  /** Organisatorisch: deterministisch aus Fakten ableitbar, automatisierbar */
   O = "O",
 }
 
 export enum CheckpointRelevance {
+  /** Pflicht: immer sichtbar und zu bewerten */
   P = "P",
+  /** Additiv: nur in passenden Kontexten aktiv */
   A = "A",
 }
 
