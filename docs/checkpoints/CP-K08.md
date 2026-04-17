@@ -57,8 +57,8 @@ Angaben zu den Versorgungskanälen fehlen oder widersprechen sich. Eine sichere 
 
 | Status  | Satz                                                          |
 |---------|---------------------------------------------------------------|
-| DONE    | „Versorgungskanäle sind ausreichend geklärt"                  |
-| OPEN    | „Versorgungskanäle sind aktuell nicht ausreichend geklärt"    |
+| DONE    | „Versorgungskanäle sind ausreichend nutzbar"                  |
+| OPEN    | „Versorgungskanäle sind aktuell nicht ausreichend nutzbar"    |
 | UNCLEAR | „Versorgungskanäle sind unklar"                               |
 
 ---
