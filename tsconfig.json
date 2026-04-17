@@ -21,6 +21,10 @@
       "node",
       "jest"
     ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
     "plugins": [
       {
         "name": "next"

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
-import { BlockStatus, type BlockSummary } from "../../../../lib/types";
+import { prisma } from "@/lib/prisma";
+import { BlockStatus, type BlockSummary } from "@/lib/types";
 
 const DEFAULT_BLOCKS: BlockSummary[] = [
   {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const session = await prisma.caseSession.create({
       data: {
         query_raw: query ?? null,
-        stage_status: "INTAKE",
+        stage_status: "INTAKE" as const,
         block_status_anchor: DEFAULT_BLOCKS,
         active_checkpoints: [],
         ctx_prefill: [],
