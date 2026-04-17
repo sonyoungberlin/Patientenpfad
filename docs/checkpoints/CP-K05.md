@@ -30,12 +30,12 @@ Ist die Erkrankungssituation ausreichend nachvollziehbar?
 
 | Ergebnis                           | Bedingung                                                                                   |
 |------------------------------------|---------------------------------------------------------------------------------------------|
-| **ausreichend** (DONE)             | Krankheits- bzw. Diagnosenkontext ist nachvollziehbar                                       |
-| **eingeschränkt ausreichend** (DONE) | Teilweise nachvollziehbar, kleinere Lücken vorhanden; Weiterarbeit ist möglich            |
-| **nicht ausreichend** (OPEN)       | Die Erkrankungssituation ist aktuell nicht ausreichend nachvollziehbar.             |
-| **unklar** (UNCLEAR)               | Angaben fehlen oder sind widersprüchlich                                                    |
+| **ausreichend** (OK)               | Krankheits- bzw. Diagnosenkontext ist nachvollziehbar                                       |
+| **eingeschränkt ausreichend** (OK) | Teilweise nachvollziehbar, kleinere Lücken vorhanden; Weiterarbeit ist möglich            |
+| **nicht ausreichend** (TO_DO)      | Die Erkrankungssituation ist aktuell nicht ausreichend nachvollziehbar.             |
+| **unklar** (ZURÜCKSTELLEN)         | Angaben fehlen oder sind widersprüchlich                                                    |
 
-> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (DONE), **eingeschränkt ausreichend** (DONE) oder **nicht ausreichend** (OPEN).
+> ZURÜCKSTELLEN kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (OK), **eingeschränkt ausreichend** (OK) oder **nicht ausreichend** (TO_DO).
 
 > M2 liefert nur Kontext. Die Entscheidung, ob die Diagnosenlage ausreichend geklärt ist, erfolgt ausschließlich auf M3-Ebene durch den Arzt.
 
@@ -43,13 +43,13 @@ Ist die Erkrankungssituation ausreichend nachvollziehbar?
 
 ## Status-Definitionen
 
-### DONE
+### OK
 Die Diagnosenlage ist ausreichend nachvollziehbar, um den Fall medizinisch einzuordnen. Auch bei kleineren Lücken ist eine Weiterarbeit möglich.
 
-### OPEN
+### TO_DO
 Die Diagnosenlage ist aktuell nicht ausreichend nachvollziehbar.
 
-### UNCLEAR
+### ZURÜCKSTELLEN
 Angaben zur Diagnosenlage fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt beim Arzt. Klärung soll im weiteren Verlauf erfolgen.
 
 ---
@@ -68,8 +68,8 @@ Angaben zur Diagnosenlage fehlen oder widersprechen sich. Eine sichere Einschät
 
 | Status  | To-do                            |
 |---------|----------------------------------|
-| OPEN    | Diagnosenlage klären             |
-| UNCLEAR | Angaben zur Diagnosenlage klären |
+| TO_DO         | Diagnosenlage klären             |
+| ZURÜCKSTELLEN | Angaben zur Diagnosenlage klären |
 
 ---
 

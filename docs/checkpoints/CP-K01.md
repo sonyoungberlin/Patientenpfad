@@ -30,25 +30,21 @@ Ist ein verlässlicher Kommunikationsweg zum Patienten vorhanden?
 
 | Ergebnis                    | Bedingung                                                                                                             |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| **erreichbar** (DONE)        | Direkter Kommunikationsweg vorhanden ODER stabiler indirekter Kommunikationsweg vorhanden                            |
-| **eingeschränkt erreichbar** (DONE) | Kommunikation möglich, aber mit Einschränkungen (z. B. nur über Dritte oder mit Sprachbarriere)              |
-| **nicht erreichbar** (OPEN)  | Kein verlässlicher direkter oder indirekter Kommunikationsweg vorhanden                                              |
-| **unklar** (UNCLEAR)         | Angaben fehlen oder sind widersprüchlich                                                                              |
+| **erreichbar** (OK)                 | Direkter Kommunikationsweg vorhanden ODER stabiler indirekter Kommunikationsweg vorhanden                            |
+| **eingeschränkt erreichbar** (OK)   | Kommunikation möglich, aber mit Einschränkungen (z. B. nur über Dritte oder mit Sprachbarriere)              |
+| **nicht erreichbar** (TO_DO)        | Kein verlässlicher direkter oder indirekter Kommunikationsweg vorhanden                                              |
 
-> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Informationen fehlen oder sind widersprüchlich, eine sichere Bewertung ist aktuell nicht möglich. Klärung ist sinnvoll und soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **erreichbar** (DONE), **eingeschränkt erreichbar** (DONE) oder **nicht erreichbar** (OPEN).
+> M2 liefert nur Kontext. Die Entscheidung, ob ein verlässlicher Kommunikationsweg vorhanden ist, erfolgt ausschließlich auf M3-Ebene.
 
 ---
 
 ## Status-Definitionen
 
-### DONE
-Mindestens ein verlässlicher Kommunikationsweg ist bekannt – direkt oder über eine stellvertretende Person. Eingeschränkte Erreichbarkeit (z. B. nur über Dritte oder mit Sprachbarriere) gilt ebenfalls als DONE: Kommunikation ist ausreichend möglich, auch wenn nicht optimal.
+### OK
+Mindestens ein verlässlicher Kommunikationsweg ist bekannt – direkt oder über eine stellvertretende Person. Eingeschränkte Erreichbarkeit (z. B. nur über Dritte oder mit Sprachbarriere) gilt ebenfalls als OK: Kommunikation ist ausreichend möglich, auch wenn nicht optimal.
 
-### OPEN
+### TO_DO
 Es ist aktuell kein verlässlicher Kommunikationsweg erkennbar – weder direkt zum Patienten noch indirekt über Dritte.
-
-### UNCLEAR
-Angaben zur Erreichbarkeit fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt bei Arzt oder Praxis. Klärung soll im weiteren Verlauf erfolgen.
 
 ---
 
@@ -66,8 +62,7 @@ Angaben zur Erreichbarkeit fehlen oder widersprechen sich. Eine sichere Einschä
 
 | Status  | To-do                                                                                                           |
 |---------|-----------------------------------------------------------------------------------------------------------------|
-| OPEN    | Telefonnummer oder erreichbare Kontaktperson klären                                                             |
-| UNCLEAR | Fehlende oder widersprüchliche Angaben zur Erreichbarkeit klären (Patient / Angehörige / Zuweiser)              |
+| TO_DO   | Telefonnummer oder erreichbare Kontaktperson klären                                                             |
 
 ---
 
