@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { BlockStatus, type BlockSummary } from "@/lib/types";
+import {
+  BlockStatus,
+  CheckpointType,
+  type ActiveCheckpoint,
+  type BlockSummary,
+} from "@/lib/types";
 
 const DEFAULT_BLOCKS: BlockSummary[] = [
   {
@@ -35,6 +40,18 @@ const DEFAULT_BLOCKS: BlockSummary[] = [
   },
 ];
 
+const DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
+  {
+    id: "dokumentenlage_arztbrief_vorhanden",
+    block_id: "dokumentenlage",
+    type: CheckpointType.PRESENCE_CHECK,
+    title: "Arztbrief vorhanden",
+    description:
+      "Prüfen, ob ein aktueller Arztbrief oder vergleichbares Dokument vorliegt.",
+    status: "OPEN",
+  },
+];
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -46,7 +63,7 @@ export async function POST(req: NextRequest) {
         query_raw: query ?? null,
         stage_status: "INTAKE" as const,
         block_status_anchor: DEFAULT_BLOCKS,
-        active_checkpoints: [],
+        active_checkpoints: DEFAULT_CHECKPOINTS,
         ctx_prefill: [],
         ctx_final: [],
         summary_anchor: [],

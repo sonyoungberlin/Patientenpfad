@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { BlockStatus, type BlockSummary } from "@/lib/types";
+import { type ActiveCheckpoint, type BlockSummary } from "@/lib/types";
+import { deriveBlockStatus } from "@/lib/logic/deriveBlockStatus";
 
 export async function POST(
   req: NextRequest,
@@ -12,14 +13,8 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const block_id: string | undefined =
       typeof body?.block_id === "string" ? body.block_id : undefined;
-    const block_status: string | undefined =
-      typeof body?.block_status === "string" ? body.block_status : undefined;
 
-    if (
-      !block_id ||
-      !block_status ||
-      !Object.values(BlockStatus).includes(block_status as BlockStatus)
-    ) {
+    if (!block_id) {
       return NextResponse.json(
         { ok: false, error: "Invalid input" },
         { status: 400 }
@@ -53,9 +48,17 @@ export async function POST(
       );
     }
 
+    const allCheckpoints = Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as ActiveCheckpoint[])
+      : [];
+    const filteredCheckpoints = allCheckpoints.filter(
+      (checkpoint) => checkpoint.block_id === block_id
+    );
+    const derivedStatus = deriveBlockStatus(filteredCheckpoints);
+
     blocks[blockIndex] = {
       ...blocks[blockIndex],
-      block_status: block_status as BlockStatus,
+      block_status: derivedStatus,
     };
 
     await prisma.caseSession.update({

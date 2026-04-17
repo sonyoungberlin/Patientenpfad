@@ -30,6 +30,28 @@ export default function HomePage() {
     );
   }
 
+  async function handleRecalcDokumentenlage() {
+    if (!result) return;
+    setError(null);
+    try {
+      const res = await fetch(`/api/cases/${result.case_id}/block/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          block_id: "dokumentenlage",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Unbekannter Fehler");
+        return;
+      }
+      await reloadBlocks(result.case_id);
+    } catch {
+      setError("Netzwerkfehler");
+    }
+  }
+
   async function handleSetGeklaert() {
     if (!result) return;
     setError(null);
@@ -117,6 +139,12 @@ export default function HomePage() {
             style={{ marginTop: "0.75rem" }}
           >
             Kommunikation auf GEKLAERT setzen
+          </button>
+          <button
+            onClick={handleRecalcDokumentenlage}
+            style={{ marginTop: "0.75rem", marginLeft: "0.5rem" }}
+          >
+            Dokumentenlage neu berechnen
           </button>
         </div>
       )}
