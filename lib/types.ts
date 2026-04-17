@@ -22,10 +22,22 @@ export enum CheckpointType {
   ZIEL = "ZIEL",
 }
 
+export enum CheckpointCategory {
+  M = "M",
+  O = "O",
+}
+
+export enum CheckpointRelevance {
+  P = "P",
+  A = "A",
+}
+
 export type ActiveCheckpoint = {
   id: string;
   block_id: string;
   type: CheckpointType;
+  category: CheckpointCategory;
+  relevance: CheckpointRelevance;
   title: string;
   description?: string;
   status: "OPEN" | "DONE" | "UNCLEAR";

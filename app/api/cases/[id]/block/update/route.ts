@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { type ActiveCheckpoint, type BlockSummary } from "@/lib/types";
+import { BlockStatus, type ActiveCheckpoint, type BlockSummary } from "@/lib/types";
 import { deriveBlockStatus } from "@/lib/logic/deriveBlockStatus";
 
 export async function POST(
@@ -54,7 +54,8 @@ export async function POST(
     const filteredCheckpoints = allCheckpoints.filter(
       (checkpoint) => checkpoint.block_id === block_id
     );
-    const derivedStatus = deriveBlockStatus(filteredCheckpoints);
+    const currentStatus = blocks[blockIndex]?.block_status ?? BlockStatus.OFFEN;
+    const derivedStatus = deriveBlockStatus(filteredCheckpoints, currentStatus);
 
     blocks[blockIndex] = {
       ...blocks[blockIndex],

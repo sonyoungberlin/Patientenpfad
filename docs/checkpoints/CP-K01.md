@@ -4,6 +4,8 @@
 - **block_id:** `kommunikation`
 - **block_title:** Kommunikation & Erreichbarkeit
 - **typ:** PRESENCE_CHECK
+- **category:** `O` (organisatorisch)
+- **relevance:** `P` (Pflicht)
 
 ---
 
