@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Projektgrundgeruest",
-  description: "Neutrales technisches Startgeruest",
+  title: "Projektgrundgerüst",
+  description: "Neutrales technisches Startgerüst",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
