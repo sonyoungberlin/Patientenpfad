@@ -20,6 +20,39 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  async function reloadBlocks(caseId: string) {
+    const getRes = await fetch(`/api/cases/${caseId}`);
+    const getData = await getRes.json();
+    const anchor = getData?.case?.block_status_anchor;
+    const blocks: Block[] = Array.isArray(anchor) ? anchor : [];
+    setResult((prev) =>
+      prev ? { ...prev, blocks } : null
+    );
+  }
+
+  async function handleSetGeklaert() {
+    if (!result) return;
+    setError(null);
+    try {
+      const res = await fetch(`/api/cases/${result.case_id}/block/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          block_id: "communication",
+          block_status: "GEKLAERT",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Unbekannter Fehler");
+        return;
+      }
+      await reloadBlocks(result.case_id);
+    } catch {
+      setError("Netzwerkfehler");
+    }
+  }
+
   async function handleCreate() {
     setLoading(true);
     setResult(null);
@@ -38,17 +71,8 @@ export default function HomePage() {
 
       const caseId: string = data.case_id;
 
-      const getRes = await fetch(`/api/cases/${caseId}`);
-      const getData = await getRes.json();
-
-      const anchor = getData?.case?.block_status_anchor;
-      const blocks: Block[] = Array.isArray(anchor) ? anchor : [];
-
-      setResult({
-        case_id: caseId,
-        stage_status: data.stage_status,
-        blocks,
-      });
+      setResult({ case_id: caseId, stage_status: data.stage_status, blocks: [] });
+      await reloadBlocks(caseId);
     } catch {
       setError("Netzwerkfehler");
     } finally {
@@ -88,6 +112,12 @@ export default function HomePage() {
               ))}
             </ul>
           )}
+          <button
+            onClick={handleSetGeklaert}
+            style={{ marginTop: "0.75rem" }}
+          >
+            Kommunikation auf GEKLAERT setzen
+          </button>
         </div>
       )}
       {error && (
