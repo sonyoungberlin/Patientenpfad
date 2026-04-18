@@ -29,12 +29,9 @@ Ist die Versorgungssituation im Alltag ausreichend nachvollziehbar?
 
 | Ergebnis                             | Bedingung                                                                                        |
 |--------------------------------------|--------------------------------------------------------------------------------------------------|
-| **ausreichend** (DONE)               | Versorgungssituation ist nachvollziehbar; vorhandener Unterstützungsbedarf ist abgedeckt oder nicht vorhanden |
-| **eingeschränkt ausreichend** (DONE) | Teilweise Unterstützung vorhanden oder kleinere Lücken                                           |
-| **nicht ausreichend** (OPEN)         | Unterstützungsbedarf besteht oder wird vermutet, aber keine oder unzureichende Unterstützung vorhanden |
-| **unklar** (UNCLEAR)                 | Angaben fehlen oder sind widersprüchlich                                                         |
-
-> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu ausreichend (DONE), eingeschränkt ausreichend (DONE) oder nicht ausreichend (OPEN).
+| **ausreichend** (OK)                 | Versorgungssituation ist nachvollziehbar; vorhandener Unterstützungsbedarf ist abgedeckt oder nicht vorhanden |
+| **eingeschränkt ausreichend** (OK)   | Teilweise Unterstützung vorhanden oder kleinere Lücken                                           |
+| **nicht ausreichend** (TO_DO)        | Unterstützungsbedarf besteht oder wird vermutet, aber keine oder unzureichende Unterstützung vorhanden |
 
 > M2 liefert nur Kontext. Die Entscheidung, ob die Versorgungssituation ausreichend geklärt ist, erfolgt ausschließlich auf M3-Ebene.
 
@@ -42,14 +39,21 @@ Ist die Versorgungssituation im Alltag ausreichend nachvollziehbar?
 
 ## Status-Definitionen
 
-### DONE
+### OK
 Die Versorgungssituation ist ausreichend nachvollziehbar. Unterstützungsbedarf ist entweder nicht vorhanden oder ausreichend abgedeckt.
 
-### OPEN
+### TO_DO
 Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder bestehender Unterstützungsbedarf ist nicht abgedeckt.
 
-### UNCLEAR
-Angaben zur Versorgungssituation fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt beim Arzt. Klärung soll im weiteren Verlauf erfolgen.
+---
+
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                              |
+|---------|-------------------------------------------------------------------|
+| DONE    | „Versorgungsumfeld ist ausreichend geklärt"               |
+| OPEN    | „Versorgungsumfeld ist aktuell nicht ausreichend geklärt" |
+| UNCLEAR | „Versorgungsumfeld ist unklar"                                    |
 
 ---
 
@@ -57,8 +61,7 @@ Angaben zur Versorgungssituation fehlen oder widersprechen sich. Eine sichere Ei
 
 | Status  | To-do                         |
 |---------|-------------------------------|
-| OPEN    | Versorgungssituation klären   |
-| UNCLEAR | Angaben zur Versorgung klären |
+| TO_DO   | Versorgungssituation klären   |
 
 ---
 

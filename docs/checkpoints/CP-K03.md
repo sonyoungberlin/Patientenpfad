@@ -30,12 +30,12 @@ Reicht die vorhandene oder zugängliche Informationsbasis aus, um die weitere Be
 
 | Ergebnis                           | Bedingung                                                                                                          |
 |------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| **ausreichend** (DONE)             | Informationen sind vorhanden oder zuverlässig zugänglich – auch ohne aktuelle Unterlagen möglich                   |
-| **eingeschränkt ausreichend** (DONE) | Informationen nur teilweise verfügbar oder verzögert zugänglich; Weiterarbeit ist möglich                        |
-| **nicht ausreichend** (OPEN)       | Die Informationsbasis ist aktuell nicht ausreichend.                                                               |
-| **unklar** (UNCLEAR)               | Angaben fehlen oder sind widersprüchlich                                                                           |
+| **ausreichend** (OK)               | Informationen sind vorhanden oder zuverlässig zugänglich – auch ohne aktuelle Unterlagen möglich                   |
+| **eingeschränkt ausreichend** (OK) | Informationen nur teilweise verfügbar oder verzögert zugänglich; Weiterarbeit ist möglich                        |
+| **nicht ausreichend** (TO_DO)      | Die Informationsbasis ist aktuell nicht ausreichend.                                                               |
+| **unklar** (ZURÜCKSTELLEN)         | Angaben fehlen oder sind widersprüchlich                                                                           |
 
-> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Informationen fehlen oder sind widersprüchlich, eine sichere Bewertung ist aktuell nicht möglich. Klärung ist sinnvoll und soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (DONE), **eingeschränkt ausreichend** (DONE) oder **nicht ausreichend** (OPEN).
+> ZURÜCKSTELLEN kennzeichnet einen sichtbaren Klärbedarf: Informationen fehlen oder sind widersprüchlich, eine sichere Bewertung ist aktuell nicht möglich. Klärung ist sinnvoll und soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (OK), **eingeschränkt ausreichend** (OK) oder **nicht ausreichend** (TO_DO).
 
 > M2 liefert nur Kontext. Die Entscheidung, ob die Informationsbasis ausreicht, erfolgt ausschließlich auf M3-Ebene durch den Arzt.
 
@@ -43,14 +43,24 @@ Reicht die vorhandene oder zugängliche Informationsbasis aus, um die weitere Be
 
 ## Status-Definitionen
 
-### DONE
-Die Informationsbasis ist vorhanden oder zuverlässig zugänglich. Eingeschränkt ausreichende Informationen (z. B. nur teilweise verfügbar oder mit Verzögerung zugänglich) gelten ebenfalls als DONE: eine sinnvolle Weiterplanung ist möglich, auch wenn nicht alle Informationen sofort vorliegen.
+### OK
+Die Informationsbasis ist vorhanden oder zuverlässig zugänglich. Eingeschränkt ausreichende Informationen (z. B. nur teilweise verfügbar oder mit Verzögerung zugänglich) gelten ebenfalls als OK: eine sinnvolle Weiterplanung ist möglich, auch wenn nicht alle Informationen sofort vorliegen.
 
-### OPEN
+### TO_DO
 Die Informationsbasis ist aktuell nicht ausreichend.
 
-### UNCLEAR
+### ZURÜCKSTELLEN
 Angaben zur Informationslage fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt beim Arzt. Klärung soll im weiteren Verlauf erfolgen.
+
+---
+
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                              |
+|---------|---------------------------------------------------|
+| DONE    | „Informationsbasis ist ausreichend geklärt"               |
+| OPEN    | „Informationsbasis ist aktuell nicht ausreichend geklärt" |
+| UNCLEAR | „Informationsbasis ist unklar"                    |
 
 ---
 
@@ -58,8 +68,8 @@ Angaben zur Informationslage fehlen oder widersprechen sich. Eine sichere Einsch
 
 | Status  | To-do                          |
 |---------|--------------------------------|
-| OPEN    | Informationsbasis vervollständigen |
-| UNCLEAR | Informationslage klären        |
+| TO_DO         | Informationsbasis vervollständigen |
+| ZURÜCKSTELLEN | Informationslage klären        |
 
 ---
 

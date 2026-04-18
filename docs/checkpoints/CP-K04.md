@@ -31,12 +31,12 @@ Ist die Medikation ausreichend nachvollziehbar und wird die Einnahme zuverlässi
 
 | Ergebnis                           | Bedingung                                                                                   |
 |------------------------------------|---------------------------------------------------------------------------------------------|
-| **ausreichend** (DONE)             | Medikation ist nachvollziehbar und Einnahme erfolgt zuverlässig                             |
-| **eingeschränkt ausreichend** (DONE) | Kleinere Unsicherheiten oder Unregelmäßigkeiten vorhanden; Weiterarbeit ist möglich       |
-| **nicht ausreichend** (OPEN)       | Kein verlässlicher Überblick über Medikation und Einnahme vorhanden                        |
-| **unklar** (UNCLEAR)               | Angaben fehlen oder sind widersprüchlich                                                    |
+| **ausreichend** (OK)               | Medikation ist nachvollziehbar und Einnahme erfolgt zuverlässig                             |
+| **eingeschränkt ausreichend** (OK) | Kleinere Unsicherheiten oder Unregelmäßigkeiten vorhanden; Weiterarbeit ist möglich       |
+| **nicht ausreichend** (TO_DO)      | Kein verlässlicher Überblick über Medikation und Einnahme vorhanden                        |
+| **unklar** (ZURÜCKSTELLEN)         | Angaben fehlen oder sind widersprüchlich                                                    |
 
-> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (DONE), **eingeschränkt ausreichend** (DONE) oder **nicht ausreichend** (OPEN).
+> ZURÜCKSTELLEN kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu einem der drei definierten Ergebnisse: **ausreichend** (OK), **eingeschränkt ausreichend** (OK) oder **nicht ausreichend** (TO_DO).
 
 > M2 liefert nur Kontext. Die Entscheidung, ob die Medikation ausreichend geklärt ist, erfolgt ausschließlich auf M3-Ebene durch den Arzt.
 
@@ -44,14 +44,24 @@ Ist die Medikation ausreichend nachvollziehbar und wird die Einnahme zuverlässi
 
 ## Status-Definitionen
 
-### DONE
+### OK
 Die Medikation ist ausreichend nachvollziehbar und wird zuverlässig umgesetzt. Auch bei kleineren Unsicherheiten oder Einschränkungen ist eine Weiterarbeit möglich.
 
-### OPEN
+### TO_DO
 Die Medikation ist aktuell nicht ausreichend nachvollziehbar oder wird nicht zuverlässig umgesetzt.
 
-### UNCLEAR
+### ZURÜCKSTELLEN
 Angaben zur Medikation fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt beim Arzt. Klärung soll im weiteren Verlauf erfolgen.
+
+---
+
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                          |
+|---------|---------------------------------------------------------------|
+| DONE    | „Medikation ist ausreichend geklärt"                  |
+| OPEN    | „Medikation ist aktuell nicht ausreichend geklärt"    |
+| UNCLEAR | „Medikation ist unklar"                                       |
 
 ---
 
@@ -59,8 +69,8 @@ Angaben zur Medikation fehlen oder widersprechen sich. Eine sichere Einschätzun
 
 | Status  | To-do                         |
 |---------|-------------------------------|
-| OPEN    | Medikamentenstatus klären     |
-| UNCLEAR | Angaben zur Medikation klären |
+| TO_DO         | Medikamentenstatus klären     |
+| ZURÜCKSTELLEN | Angaben zur Medikation klären |
 
 ---
 

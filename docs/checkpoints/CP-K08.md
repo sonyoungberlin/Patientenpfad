@@ -29,12 +29,9 @@ Sind geeignete Versorgungskanäle nutzbar?
 
 | Ergebnis                             | Bedingung                                                                             |
 |--------------------------------------|---------------------------------------------------------------------------------------|
-| **ausreichend** (DONE)               | Mindestens ein Versorgungskanal ist nutzbar (z. B. Video oder digitale Kommunikation) |
-| **eingeschränkt ausreichend** (DONE) | Nutzung ist möglich, aber nur eingeschränkt oder nicht für alle Kanäle                |
-| **nicht ausreichend** (OPEN)         | Keine Versorgungskanäle sind nutzbar                                                  |
-| **unklar** (UNCLEAR)                 | Angaben fehlen oder sind widersprüchlich                                              |
-
-> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu ausreichend (DONE), eingeschränkt ausreichend (DONE) oder nicht ausreichend (OPEN).
+| **ausreichend** (OK)                 | Mindestens ein verlässlicher Versorgungskanal ist nutzbar (z. B. Video oder digitale Kommunikation) |
+| **eingeschränkt ausreichend** (OK)   | Nutzung ist möglich, aber nur eingeschränkt oder nicht für alle Kanäle                |
+| **nicht ausreichend** (TO_DO)        | Keine Versorgungskanäle sind nutzbar                                                  |
 
 > M2 liefert nur Kontext. Die Entscheidung, ob geeignete Versorgungskanäle nutzbar sind, erfolgt ausschließlich auf M3-Ebene.
 
@@ -42,14 +39,21 @@ Sind geeignete Versorgungskanäle nutzbar?
 
 ## Status-Definitionen
 
-### DONE
-Mindestens ein geeigneter Versorgungskanal ist nutzbar – unabhängig davon, ob dies selbstständig oder mit Unterstützung erfolgt.
+### OK
+Mindestens ein geeigneter Versorgungskanal ist verlässlich nutzbar – unabhängig davon, ob dies selbstständig oder mit Unterstützung erfolgt.
 
-### OPEN
+### TO_DO
 Es ist aktuell kein geeigneter Versorgungskanal nutzbar.
 
-### UNCLEAR
-Angaben zu den Versorgungskanälen fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich.
+---
+
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                          |
+|---------|---------------------------------------------------------------|
+| DONE    | „Versorgungskanäle sind ausreichend nutzbar"                  |
+| OPEN    | „Versorgungskanäle sind aktuell nicht ausreichend nutzbar"    |
+| UNCLEAR | „Versorgungskanäle sind unklar"                               |
 
 ---
 
@@ -57,8 +61,7 @@ Angaben zu den Versorgungskanälen fehlen oder widersprechen sich. Eine sichere 
 
 | Status  | To-do                                |
 |---------|--------------------------------------|
-| OPEN    | Versorgungskanäle klären             |
-| UNCLEAR | Angaben zu Versorgungskanälen klären |
+| TO_DO   | Versorgungskanäle klären             |
 
 ---
 

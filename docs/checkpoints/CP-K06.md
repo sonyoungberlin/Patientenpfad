@@ -22,7 +22,7 @@ Ist die externe Mitbehandlungssituation ausreichend nachvollziehbar?
 | M2-01  | Waren Sie in den letzten 4 Wochen bei einem Facharzt, im Krankenhaus oder bei einem anderen Behandler? |
 | M2-02  | Sind Sie dauerhaft bei Fachärzten oder anderen Behandlern in Betreuung?                            |
 | M2-03  | Haben Sie aktuell Termine bei anderen Behandlern geplant?                                          |
-| M2-04  | Erhalten Sie Unterstützung durch einen Pflegedienst oder ähnliche Hilfe?                           |
+| M2-04  | Sind Sie durch einen Pflegedienst oder andere externe Stellen in Betreuung?                        |
 
 ---
 
@@ -30,12 +30,9 @@ Ist die externe Mitbehandlungssituation ausreichend nachvollziehbar?
 
 | Ergebnis                             | Bedingung                                                                           |
 |--------------------------------------|-------------------------------------------------------------------------------------|
-| **ausreichend** (DONE)               | Externe Mitbehandlung ist nachvollziehbar                                           |
-| **eingeschränkt ausreichend** (DONE) | Teilweise nachvollziehbar, kleinere Lücken vorhanden                                |
-| **nicht ausreichend** (OPEN)         | Keine verlässliche Übersicht über externe Mitbehandlung                             |
-| **unklar** (UNCLEAR)                 | Angaben fehlen oder sind widersprüchlich                                            |
-
-> UNCLEAR kennzeichnet einen sichtbaren Klärbedarf: Angaben fehlen oder widersprechen sich. Eine sichere Bewertung ist aktuell nicht möglich. Klärung soll im weiteren Verlauf erfolgen. Nach Klärung führt der Status zu ausreichend (DONE), eingeschränkt ausreichend (DONE) oder nicht ausreichend (OPEN).
+| **ausreichend** (OK)                 | Externe Mitbehandlung ist nachvollziehbar                                           |
+| **eingeschränkt ausreichend** (OK)   | Teilweise nachvollziehbar, kleinere Lücken vorhanden                                |
+| **nicht ausreichend** (TO_DO)        | Keine verlässliche Übersicht über externe Mitbehandlung                             |
 
 > M2 liefert nur Kontext. Die Entscheidung, ob die externe Mitbehandlungssituation ausreichend geklärt ist, erfolgt ausschließlich auf M3-Ebene.
 
@@ -43,14 +40,21 @@ Ist die externe Mitbehandlungssituation ausreichend nachvollziehbar?
 
 ## Status-Definitionen
 
-### DONE
-Die externe Mitbehandlungssituation ist ausreichend nachvollziehbar. Auch wenn keine externe Mitbehandlung vorliegt, kann der Checkpoint DONE sein.
+### OK
+Die externe Mitbehandlungssituation ist ausreichend nachvollziehbar. Auch wenn keine externe Mitbehandlung vorliegt, kann der Checkpoint OK sein.
 
-### OPEN
+### TO_DO
 Die externe Mitbehandlungssituation ist aktuell nicht ausreichend nachvollziehbar.
 
-### UNCLEAR
-Angaben zur externen Mitbehandlung fehlen oder widersprechen sich. Eine sichere Einschätzung ist aktuell nicht möglich. Der Checkpoint macht diesen Klärbedarf sichtbar – die Entscheidung über das weitere Vorgehen liegt beim Arzt. Klärung soll im weiteren Verlauf erfolgen.
+---
+
+## Dokumentationsausgaben (M5)
+
+| Status  | Satz                                                                                  |
+|---------|---------------------------------------------------------------------------------------|
+| DONE    | „Externe Mitbehandlungssituation ist ausreichend geklärt"                     |
+| OPEN    | „Externe Mitbehandlungssituation ist aktuell nicht ausreichend geklärt"       |
+| UNCLEAR | „Externe Mitbehandlungssituation ist unklar"                                          |
 
 ---
 
@@ -58,8 +62,7 @@ Angaben zur externen Mitbehandlung fehlen oder widersprechen sich. Eine sichere 
 
 | Status  | To-do                            |
 |---------|----------------------------------|
-| OPEN    | Mitbehandlungssituation klären   |
-| UNCLEAR | Angaben zur Mitbehandlung klären |
+| TO_DO   | Mitbehandlungssituation klären   |
 
 ---
 
