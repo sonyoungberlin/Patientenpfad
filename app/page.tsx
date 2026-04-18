@@ -1,100 +1,65 @@
 "use client";
 
 import { useState } from "react";
+import type { M1BlockStatus, M1Selection } from "@/lib/types";
 
-type Block = {
-  block_title?: string;
-  block_status?: string;
-  active_checkpoint_count?: number;
+const INITIAL_SELECTION: M1Selection = {
+  kommunikation: "unklar",
+  medizinische_lage: "unklar",
+  versorgung_im_alltag: "unklar",
+};
+
+const BLOCK_LABELS: Record<keyof M1Selection, string> = {
+  kommunikation: "Kommunikation",
+  medizinische_lage: "Medizinische Lage",
+  versorgung_im_alltag: "Versorgung im Alltag",
 };
 
 type CaseResult = {
   case_id: string;
   stage_status: string;
-  blocks: Block[];
+  m1_snapshot_initial?: {
+    blocks: M1Selection;
+    activated_checkpoint_ids: string[];
+  };
 };
 
 export default function HomePage() {
-  const [query, setQuery] = useState("");
+  const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
   const [result, setResult] = useState<CaseResult | null>(null);
+  const [gatekeeper, setGatekeeper] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function reloadBlocks(caseId: string) {
-    const getRes = await fetch(`/api/cases/${caseId}`);
-    const getData = await getRes.json();
-    const anchor = getData?.case?.block_status_anchor;
-    const blocks: Block[] = Array.isArray(anchor) ? anchor : [];
-    setResult((prev) =>
-      prev ? { ...prev, blocks } : null
-    );
-  }
-
-  async function handleRecalcDokumentenlage() {
-    if (!result) return;
-    setError(null);
-    try {
-      const res = await fetch(`/api/cases/${result.case_id}/block/update`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          block_id: "dokumentenlage",
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setError(data.error ?? "Unbekannter Fehler");
-        return;
-      }
-      await reloadBlocks(result.case_id);
-    } catch {
-      setError("Netzwerkfehler");
-    }
-  }
-
-  async function handleSetGeklaert() {
-    if (!result) return;
-    setError(null);
-    try {
-      const res = await fetch(`/api/cases/${result.case_id}/block/update`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          block_id: "communication",
-          block_status: "GEKLAERT",
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setError(data.error ?? "Unbekannter Fehler");
-        return;
-      }
-      await reloadBlocks(result.case_id);
-    } catch {
-      setError("Netzwerkfehler");
-    }
+  function handleBlockChange(blockId: keyof M1Selection, value: M1BlockStatus) {
+    setSelection((prev) => ({ ...prev, [blockId]: value }));
   }
 
   async function handleCreate() {
     setLoading(true);
     setResult(null);
+    setGatekeeper(false);
     setError(null);
     try {
       const res = await fetch("/api/cases/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ m1Selection: selection }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
         setError(data.error ?? "Unbekannter Fehler");
         return;
       }
-
-      const caseId: string = data.case_id;
-
-      setResult({ case_id: caseId, stage_status: data.stage_status, blocks: [] });
-      await reloadBlocks(caseId);
+      if (data.gatekeeper) {
+        setGatekeeper(true);
+        return;
+      }
+      setResult({
+        case_id: data.case_id,
+        stage_status: data.stage_status,
+        m1_snapshot_initial: data.m1_snapshot_initial,
+      });
     } catch {
       setError("Netzwerkfehler");
     } finally {
@@ -104,50 +69,68 @@ export default function HomePage() {
 
   return (
     <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Neuen Fall anlegen</h1>
+      <h1>Was ist aktuell unklar oder klärungsbedürftig?</h1>
+      <p style={{ color: "#555", marginBottom: "1.5rem" }}>
+        Nur bei <strong>unklar</strong> wird ein Strukturfall mit Checkpoints gestartet.
+      </p>
       <div>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Query (optional)"
-          style={{ marginRight: "0.5rem", padding: "0.4rem", width: "300px" }}
-        />
-        <button onClick={handleCreate} disabled={loading}>
-          {loading ? "Lädt…" : "Fall anlegen"}
-        </button>
+        {(Object.keys(BLOCK_LABELS) as (keyof M1Selection)[]).map((blockId) => (
+          <div key={blockId} style={{ marginBottom: "1rem" }}>
+            <strong>{BLOCK_LABELS[blockId]}</strong>
+            <div style={{ marginTop: "0.3rem" }}>
+              {(["klar", "unklar"] as M1BlockStatus[]).map((val) => (
+                <label
+                  key={val}
+                  style={{ marginRight: "1.5rem", cursor: "pointer" }}
+                >
+                  <input
+                    type="radio"
+                    name={blockId}
+                    value={val}
+                    checked={selection[blockId] === val}
+                    onChange={() => handleBlockChange(blockId, val)}
+                    style={{ marginRight: "0.3rem" }}
+                  />
+                  {val}
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
+      <button
+        onClick={handleCreate}
+        disabled={loading}
+        style={{ marginTop: "1rem" }}
+      >
+        {loading ? "Lädt…" : "Fall anlegen"}
+      </button>
+
+      {gatekeeper && (
+        <div style={{ marginTop: "1.5rem", color: "#666" }}>
+          <strong>Kein Strukturfall erforderlich.</strong> Alle Bereiche sind
+          geklärt – es werden keine Checkpoints gestartet.
+        </div>
+      )}
+
       {result && (
-        <div style={{ marginTop: "1rem" }}>
+        <div style={{ marginTop: "1.5rem" }}>
           <p style={{ margin: 0 }}>
             <strong>case_id:</strong> {result.case_id}
             <br />
             <strong>stage_status:</strong> {result.stage_status}
           </p>
-          {result.blocks.length > 0 && (
-            <ul style={{ marginTop: "0.5rem", paddingLeft: "1.2rem" }}>
-              {result.blocks.map((b, i) => (
-                <li key={i}>
-                  {b.block_title ?? "–"} · {b.block_status ?? "–"} ·{" "}
-                  {b.active_checkpoint_count ?? 0} Checkpoints
-                </li>
-              ))}
-            </ul>
+          {result.m1_snapshot_initial && (
+            <div style={{ marginTop: "0.75rem" }}>
+              <strong>Aktivierte Checkpoints:</strong>{" "}
+              {result.m1_snapshot_initial.activated_checkpoint_ids.length > 0
+                ? result.m1_snapshot_initial.activated_checkpoint_ids.join(", ")
+                : "–"}
+            </div>
           )}
-          <button
-            onClick={handleSetGeklaert}
-            style={{ marginTop: "0.75rem" }}
-          >
-            Kommunikation auf GEKLAERT setzen
-          </button>
-          <button
-            onClick={handleRecalcDokumentenlage}
-            style={{ marginTop: "0.75rem", marginLeft: "0.5rem" }}
-          >
-            Dokumentenlage neu berechnen
-          </button>
         </div>
       )}
+
       {error && (
         <p style={{ marginTop: "1rem", color: "red" }}>Fehler: {error}</p>
       )}

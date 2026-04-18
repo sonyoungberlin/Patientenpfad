@@ -9,7 +9,7 @@ import {
   type BlockSummary,
   type M1Selection,
 } from "@/lib/types";
-import { buildM1SnapshotInitial } from "@/lib/logic/m1Activation";
+import { buildM1SnapshotInitial, isGatekeeperCase } from "@/lib/logic/m1Activation";
 import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
 
 const DEFAULT_BLOCKS: BlockSummary[] = [
@@ -81,6 +81,11 @@ export async function POST(req: NextRequest) {
     let m1SnapshotInitial: any = null;
 
     if (m1Selection) {
+      // Gatekeeper-Fall: alle Blöcke klar → kein Strukturfall, keine CaseSession.
+      if (isGatekeeperCase(m1Selection)) {
+        return NextResponse.json({ ok: true, gatekeeper: true });
+      }
+
       // M1-Pfad: Snapshot einfrieren → Checkpoints daraus hydratisieren.
       // Der Snapshot ist die einzige erlaubte Quelle für active_checkpoints.
       const snapshot = buildM1SnapshotInitial(m1Selection);
