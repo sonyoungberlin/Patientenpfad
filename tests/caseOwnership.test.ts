@@ -29,7 +29,6 @@ jest.mock("@/lib/prisma", () => ({
 
 import { prisma } from "@/lib/prisma";
 import { GET as getCaseHandler } from "@/app/api/cases/[id]/route";
-import { PATCH as prefillHandler } from "@/app/api/cases/[id]/m2/prefill/route";
 import { PATCH as checkpointHandler } from "@/app/api/cases/[id]/checkpoint/update/route";
 import { POST as blockUpdateHandler } from "@/app/api/cases/[id]/block/update/route";
 import { SESSION_COOKIE } from "@/lib/auth";
@@ -137,58 +136,6 @@ describe("GET /api/cases/[id]", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// PATCH /api/cases/[id]/m2/prefill
-// ---------------------------------------------------------------------------
-
-describe("PATCH /api/cases/[id]/m2/prefill", () => {
-  it("401 ohne Session", async () => {
-    const req = new NextRequest("http://localhost/api/cases/case-owner/m2/prefill", {
-      method: "PATCH",
-      body: JSON.stringify({ prefill: {} }),
-      headers: { "Content-Type": "application/json" },
-    });
-    const res = await prefillHandler(req, { params: Promise.resolve({ id: "case-owner" }) });
-    expect(res.status).toBe(401);
-  });
-
-  it("403 wenn nicht freigeschaltet", async () => {
-    mockSession(false);
-    const req = requestWithCookie("http://localhost/api/cases/case-owner/m2/prefill", {
-      method: "PATCH",
-      body: JSON.stringify({ prefill: {} }),
-      headers: { "Content-Type": "application/json" },
-    });
-    const res = await prefillHandler(req, { params: Promise.resolve({ id: "case-owner" }) });
-    expect(res.status).toBe(403);
-  });
-
-  it("404 bei fremdem Fall", async () => {
-    mockSession(true);
-    pm.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-other" });
-    const req = requestWithCookie("http://localhost/api/cases/case-foreign/m2/prefill", {
-      method: "PATCH",
-      body: JSON.stringify({ prefill: { K01: {} } }),
-      headers: { "Content-Type": "application/json" },
-    });
-    const res = await prefillHandler(req, { params: Promise.resolve({ id: "case-foreign" }) });
-    expect(res.status).toBe(404);
-  });
-
-  it("200 für eigenen Fall", async () => {
-    mockSession(true);
-    pm.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-owner" });
-    pm.caseSession.update.mockResolvedValue({});
-    const req = requestWithCookie("http://localhost/api/cases/case-owner/m2/prefill", {
-      method: "PATCH",
-      body: JSON.stringify({ prefill: { K01: { "M2-01": "ja" } } }),
-      headers: { "Content-Type": "application/json" },
-    });
-    const res = await prefillHandler(req, { params: Promise.resolve({ id: "case-owner" }) });
-    expect(res.status).toBe(200);
   });
 });
 

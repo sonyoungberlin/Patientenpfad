@@ -70,7 +70,6 @@ describe("POST /api/cases/[id]/m2-link", () => {
     expect(typeof updateCall.data.m2_token).toBe("string");
     expect(updateCall.data.m2_token.length).toBeGreaterThan(0);
     expect(updateCall.data.m2_token_expires_at).toBeInstanceOf(Date);
-    expect(updateCall.data.m2_status).toBe("waiting_for_patient");
 
     const expiresIn = updateCall.data.m2_token_expires_at.getTime() - Date.now();
     expect(expiresIn).toBeGreaterThan(13 * 24 * 60 * 60 * 1000);

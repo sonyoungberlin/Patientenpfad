@@ -14,7 +14,6 @@ type CaseListSession = {
   stage_status: "INTAKE" | "PREFILL" | "REVIEW" | "READY" | "CLOSED";
   active_checkpoints: unknown;
   ctx_prefill: unknown;
-  m2_status: string | null;
 };
 
 function isCheckpointStatus(value: unknown): value is CheckpointStatus {
@@ -43,10 +42,6 @@ function hasPrefillData(value: unknown): boolean {
 function deriveCaseStatus(session: CaseListSession): string {
   if (session.stage_status === "CLOSED") {
     return "Abgeschlossen";
-  }
-
-  if (session.m2_status === "waiting_for_patient") {
-    return "Wartet auf Patientenantworten";
   }
 
   const checkpointStatuses = getCheckpointStatuses(session.active_checkpoints);
@@ -95,7 +90,6 @@ export default async function CasesPage() {
       stage_status: true,
       active_checkpoints: true,
       ctx_prefill: true,
-      m2_status: true,
     },
   });
 

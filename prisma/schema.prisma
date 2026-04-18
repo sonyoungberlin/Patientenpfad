@@ -80,7 +80,4 @@ model CaseSession {
 
   /// Ablaufdatum des M2-Tokens (14 Tage ab Erstellung)
   m2_token_expires_at  DateTime?
-
-  /// Status des Patientenfragebogens: none | waiting_for_patient | skipped | completed
-  m2_status            String    @default("none")
 }
