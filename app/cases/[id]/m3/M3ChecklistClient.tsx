@@ -40,6 +40,13 @@ function getStatusLabel(status: CheckpointStatus): string {
   return "zurückgestellt";
 }
 
+function getAnswerSymbol(answer: string): string {
+  if (answer === "ja") return "✓";
+  if (answer === "nein") return "✗";
+  if (answer === "unklar") return "?";
+  return "";
+}
+
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
@@ -110,26 +117,58 @@ export function M3ChecklistClient({
   const m5Lines = checkpoints.map((cp) => resolveM5Text(cp));
   const m5TextBlock = m5Lines.join("\n");
 
-  async function copyM4Text() {
-    if (!m4TextBlock) {
-      return;
-    }
+  const [copiedM4, setCopiedM4] = useState(false);
+  const [copiedM5, setCopiedM5] = useState(false);
 
+  function fallbackCopyText(text: string): boolean {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.select();
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(m4TextBlock);
+      ok = document.execCommand("copy");
     } catch {
+      ok = false;
+    }
+    document.body.removeChild(textarea);
+    return ok;
+  }
+
+  async function copyToClipboard(text: string): Promise<boolean> {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // fall through to fallback
+      }
+    }
+    return fallbackCopyText(text);
+  }
+
+  async function copyM4Text() {
+    if (!m4TextBlock) return;
+    const ok = await copyToClipboard(m4TextBlock);
+    if (ok) {
+      setCopiedM4(true);
+      setTimeout(() => setCopiedM4(false), 2000);
+    } else {
       setError("Text konnte nicht kopiert werden.");
     }
   }
 
   async function copyM5Text() {
-    if (!m5TextBlock) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(m5TextBlock);
-    } catch {
+    if (!m5TextBlock) return;
+    const ok = await copyToClipboard(m5TextBlock);
+    if (ok) {
+      setCopiedM5(true);
+      setTimeout(() => setCopiedM5(false), 2000);
+    } else {
       setError("Dokumentation konnte nicht kopiert werden.");
     }
   }
@@ -213,12 +252,7 @@ export function M3ChecklistClient({
         <div
           data-m2-waiting-banner
           role="status"
-          style={{
-            background: "#fff8e1",
-            border: "1px solid #f9c74f",
-            padding: "0.75rem 1rem",
-            marginBottom: "1.25rem",
-          }}
+          className="banner-warning"
         >
           <strong>Patientenfragebogen-Link wurde versendet. Es wird auf Antworten gewartet.</strong>
           <div style={{ marginTop: "0.5rem" }}>
@@ -236,7 +270,8 @@ export function M3ChecklistClient({
       {m2Status === "skipped" ? (
         <p
           data-m2-skipped-notice
-          style={{ color: "#555", marginBottom: "1rem", fontStyle: "italic" }}
+          className="text-muted"
+          style={{ marginBottom: "1rem", fontStyle: "italic" }}
         >
           Patientenfragebogen wurde übersprungen.
         </p>
@@ -251,45 +286,43 @@ export function M3ChecklistClient({
             <li
               key={checkpoint.id}
               data-checkpoint-item={checkpoint.id}
+              className="card"
               style={{
-                border: "1px solid #ddd",
-                padding: "0.75rem",
                 marginBottom: "0.75rem",
                 opacity: isLocked ? 0.5 : 1,
               }}
             >
-              <div style={{ marginBottom: "0.5rem" }}>{checkpoint.title}</div>
+              <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{checkpoint.title}</div>
               {hasAnswers ? (
                 <details
                   data-m2-prefill={checkpoint.id}
-                  style={{ fontSize: "0.85em", color: "#555", marginBottom: "0.5rem" }}
+                  style={{ marginBottom: "0.5rem" }}
                 >
                   <summary>Aus M2:</summary>
-                  <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem" }}>
+                  <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
                     {Object.entries(cpAnswers).map(([qId, answer]) => {
                       const question = questions.find((q) => q.id === qId);
+                      const symbol = getAnswerSymbol(answer);
                       return (
-                        <li key={qId}>
-                          {question ? question.text : qId}: {answer}
+                        <li key={qId} style={{ marginBottom: "0.25rem" }}>
+                          <span>{question ? question.text : qId}</span>
+                          {" — "}
+                          <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
                         </li>
                       );
                     })}
                   </ul>
                 </details>
               ) : null}
-              <div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {getStatusOptions(checkpoint.category).map((statusOption) => (
                   <button
                     key={statusOption}
                     type="button"
+                    className={`answer-btn${checkpoint.status === statusOption ? " active" : ""}`}
                     data-status-button={`${checkpoint.id}:${statusOption}`}
                     onClick={() => void updateStatus(checkpoint.id, statusOption)}
                     disabled={savingCheckpointId === checkpoint.id || isLocked}
-                    style={{
-                      marginRight: "0.5rem",
-                      fontWeight:
-                        checkpoint.status === statusOption ? "bold" : "normal",
-                    }}
                   >
                     {getStatusLabel(statusOption)}
                   </button>
@@ -300,7 +333,7 @@ export function M3ChecklistClient({
         })}
       </ul>
       {error ? (
-        <p role="alert" aria-live="polite">
+        <p className="text-error" role="alert" aria-live="polite">
           {error}
         </p>
       ) : null}
@@ -308,44 +341,33 @@ export function M3ChecklistClient({
         <h2>Patientenhinweise / To-dos</h2>
         {m4Lines.length > 0 ? (
           <>
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                margin: "0 0 0.75rem 0",
-                fontFamily: "inherit",
-              }}
-            >
+            <pre style={{ marginBottom: "0.75rem", userSelect: "text", cursor: "text" }}>
               {m4TextBlock}
             </pre>
             <button
               type="button"
-              onClick={copyM4Text}
+              onClick={() => void copyM4Text()}
             >
-              Text kopieren
+              {copiedM4 ? "Kopiert ✓" : "Text kopieren"}
             </button>
           </>
         ) : (
-          <p>Keine weiteren Schritte erforderlich.</p>
+          <p className="text-muted">Keine weiteren Schritte erforderlich.</p>
         )}
       </section>
       <section style={{ marginTop: "1.5rem" }}>
         <h2>Dokumentation für das Krankenblatt</h2>
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            margin: "0 0 0.75rem 0",
-            fontFamily: "inherit",
-          }}
-        >
+        <pre style={{ marginBottom: "0.75rem", userSelect: "text", cursor: "text" }}>
           {m5TextBlock}
         </pre>
-        <button type="button" onClick={copyM5Text}>
-          Dokumentation kopieren
+        <button type="button" onClick={() => void copyM5Text()}>
+          {copiedM5 ? "Kopiert ✓" : "Dokumentation kopieren"}
         </button>
       </section>
-      <section style={{ marginTop: "2rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
+      <section className="section-divider">
         <button
           type="button"
+          className="btn-primary"
           data-close-case
           onClick={closeCase}
           disabled={closing || savingCheckpointId !== null}

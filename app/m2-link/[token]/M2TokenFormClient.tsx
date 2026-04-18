@@ -72,7 +72,7 @@ export function M2TokenFormClient({
 
   if (submitted) {
     return (
-      <p data-m2-submitted style={{ marginTop: "1.5rem", color: "#333" }}>
+      <p data-m2-submitted style={{ marginTop: "1.5rem" }}>
         Vielen Dank, Ihre Angaben wurden übermittelt.
       </p>
     );
@@ -92,13 +92,10 @@ export function M2TokenFormClient({
               <li
                 key={cp.id}
                 data-m2-checkpoint={cp.id}
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "0.75rem",
-                  marginBottom: "0.75rem",
-                }}
+                className="card"
+                style={{ marginBottom: "0.75rem" }}
               >
-                <div style={{ marginBottom: "0.75rem", fontWeight: "bold" }}>
+                <div style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
                   {cp.title}
                 </div>
                 <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -106,29 +103,21 @@ export function M2TokenFormClient({
                     <li
                       key={q.id}
                       data-m2-question={`${cp.id}:${q.id}`}
-                      style={{ marginBottom: "0.5rem" }}
+                      style={{ marginBottom: "0.75rem" }}
                     >
-                      <div
-                        style={{ marginBottom: "0.25rem", fontSize: "0.9em" }}
-                      >
+                      <div style={{ marginBottom: "0.4rem" }}>
                         {q.text}
                       </div>
-                      <div>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
                         {ANSWER_OPTIONS.map((opt) => (
                           <button
                             key={opt.value}
                             type="button"
+                            className={`answer-btn${cpAnswers[q.id] === opt.value ? " active" : ""}`}
                             data-m2-answer={`${cp.id}:${q.id}:${opt.value}`}
                             onClick={() =>
                               handleAnswer(cp.id, q.id, opt.value)
                             }
-                            style={{
-                              marginRight: "0.5rem",
-                              fontWeight:
-                                cpAnswers[q.id] === opt.value
-                                  ? "bold"
-                                  : "normal",
-                            }}
                           >
                             {opt.label}
                           </button>
@@ -143,12 +132,13 @@ export function M2TokenFormClient({
         </ul>
       )}
       {error ? (
-        <p role="alert" aria-live="polite">
+        <p className="text-error" role="alert" aria-live="polite">
           {error}
         </p>
       ) : null}
       <button
         type="button"
+        className="btn-primary"
         data-m2-submit
         onClick={() => void handleSubmit()}
         disabled={saving}

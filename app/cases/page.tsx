@@ -100,21 +100,19 @@ export default async function CasesPage() {
   });
 
   return (
-    <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "820px" }}>
+    <main>
       <h1>Fälle</h1>
       <div style={{ marginTop: "1rem", display: "grid", gap: "0.75rem" }}>
         {sessions.length === 0 ? (
-          <p style={{ color: "#777" }}>Keine Fälle vorhanden.</p>
+          <p className="text-muted">Keine Fälle vorhanden.</p>
         ) : (
           sessions.map((session) => {
             const title = deriveCaseTitle(session);
             return (
               <article
                 key={session.id}
+                className="card"
                 style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  padding: "0.9rem 1rem",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -122,13 +120,13 @@ export default async function CasesPage() {
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 700 }}>{title}</div>
+                  <div style={{ fontWeight: 500 }}>{title}</div>
                   {session.patient_reference ? (
-                    <div style={{ marginTop: "0.25rem", color: "#666", fontSize: "0.9rem" }}>
+                    <div className="text-muted text-small" style={{ marginTop: "0.25rem" }}>
                       Patienten-Referenz: {session.patient_reference}
                     </div>
                   ) : null}
-                  <div style={{ marginTop: "0.3rem", color: "#111" }}>
+                  <div style={{ marginTop: "0.3rem" }}>
                     Status: {deriveCaseStatus(session)}
                   </div>
                 </div>
@@ -137,12 +135,14 @@ export default async function CasesPage() {
                   aria-label={`Weiterbearbeiten: ${title}`}
                   style={{
                     whiteSpace: "nowrap",
-                    border: "1px solid #bbb",
-                    borderRadius: "6px",
-                    padding: "0.45rem 0.75rem",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius)",
+                    padding: "0.5rem 1rem",
                     textDecoration: "none",
-                    color: "#111",
-                    background: "#fff",
+                    color: "var(--foreground)",
+                    background: "var(--background)",
+                    fontWeight: 500,
+                    fontSize: "1rem",
                   }}
                 >
                   Weiterbearbeiten

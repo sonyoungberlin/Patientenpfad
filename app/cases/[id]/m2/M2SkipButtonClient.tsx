@@ -39,7 +39,7 @@ export function M2SkipButtonClient({ caseId }: { caseId: string }) {
         {loading ? "Wird übersprungen…" : "Patientenfragebogen überspringen und ärztlich fortfahren"}
       </button>
       {error ? (
-        <p role="alert" aria-live="polite" style={{ color: "red", marginTop: "0.25rem" }}>
+        <p className="text-error" role="alert" aria-live="polite" style={{ marginTop: "0.5rem" }}>
           {error}
         </p>
       ) : null}

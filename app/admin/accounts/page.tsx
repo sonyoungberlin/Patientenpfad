@@ -14,29 +14,29 @@ export default async function AdminAccountsPage() {
   });
 
   return (
-    <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+    <main>
       <h1>Admin – Accounts</h1>
-      <p style={{ color: "#666" }}>
+      <p className="text-muted">
         {accounts.length} Account{accounts.length !== 1 ? "s" : ""} gesamt
       </p>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      <table>
         <thead>
           <tr>
-            <th style={thStyle}>E-Mail</th>
-            <th style={thStyle}>Status</th>
-            <th style={thStyle}>Admin</th>
-            <th style={thStyle}>Angelegt</th>
-            <th style={thStyle}>Aktion</th>
+            <th>E-Mail</th>
+            <th>Status</th>
+            <th>Admin</th>
+            <th>Angelegt</th>
+            <th>Aktion</th>
           </tr>
         </thead>
         <tbody>
           {accounts.map((acc) => (
             <tr key={acc.id}>
-              <td style={tdStyle}>{acc.email}</td>
-              <td style={tdStyle}>{acc.is_approved ? "✓ freigeschaltet" : "✗ gesperrt"}</td>
-              <td style={tdStyle}>{acc.is_admin ? "Admin" : "–"}</td>
-              <td style={tdStyle}>{acc.createdAt.toISOString().slice(0, 10)}</td>
-              <td style={tdStyle}>
+              <td>{acc.email}</td>
+              <td>{acc.is_approved ? "✓ freigeschaltet" : "✗ gesperrt"}</td>
+              <td>{acc.is_admin ? "Admin" : "–"}</td>
+              <td>{acc.createdAt.toISOString().slice(0, 10)}</td>
+              <td>
                 <form method="POST" action="/api/admin/accounts">
                   <input type="hidden" name="email" value={acc.email} />
                   <input
@@ -53,7 +53,7 @@ export default async function AdminAccountsPage() {
           ))}
           {accounts.length === 0 && (
             <tr>
-              <td colSpan={5} style={{ ...tdStyle, color: "#999" }}>
+              <td colSpan={5} className="text-muted">
                 Keine Accounts vorhanden.
               </td>
             </tr>
@@ -63,14 +63,3 @@ export default async function AdminAccountsPage() {
     </main>
   );
 }
-
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  borderBottom: "2px solid #ccc",
-  padding: "0.5rem 1rem",
-};
-
-const tdStyle: React.CSSProperties = {
-  borderBottom: "1px solid #eee",
-  padding: "0.5rem 1rem",
-};

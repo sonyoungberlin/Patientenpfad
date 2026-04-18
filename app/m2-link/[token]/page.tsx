@@ -26,9 +26,7 @@ export default async function M2TokenPage({
 
   if (!isValid) {
     return (
-      <main
-        style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "600px" }}
-      >
+      <main>
         <p data-m2-expired>{EXPIRED_MESSAGE}</p>
       </main>
     );
@@ -39,11 +37,9 @@ export default async function M2TokenPage({
     : [];
 
   return (
-    <main
-      style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "700px" }}
-    >
+    <main>
       <h1>Patientenbefragung</h1>
-      <p style={{ color: "#555", marginBottom: "1.5rem" }}>
+      <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         Bitte beantworten Sie die folgenden Fragen und senden Sie das Formular
         ab. Ihre Angaben werden vertraulich behandelt.
       </p>
