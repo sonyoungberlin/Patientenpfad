@@ -1,9 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSessionAccount } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const account = await getSessionAccount(req);
+
+    if (!account) {
+      return NextResponse.json(
+        { ok: false, error: "Nicht angemeldet." },
+        { status: 401 },
+      );
+    }
+
     const sessions = await prisma.caseSession.findMany({
+      where: { owner_account_id: account.id },
       orderBy: { createdAt: "desc" },
       take: 20,
       select: {

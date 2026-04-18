@@ -12,6 +12,7 @@ import {
 } from "@/lib/types";
 import { buildM1SnapshotInitial, isGatekeeperCase } from "@/lib/logic/m1Activation";
 import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
+import { getSessionAccount } from "@/lib/auth";
 
 const DEFAULT_BLOCKS: BlockSummary[] = [
   {
@@ -70,6 +71,22 @@ const LEGACY_DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
 
 export async function POST(req: NextRequest) {
   try {
+    const account = await getSessionAccount(req);
+
+    if (!account) {
+      return NextResponse.json(
+        { ok: false, error: "Nicht angemeldet." },
+        { status: 401 },
+      );
+    }
+
+    if (!account.is_approved) {
+      return NextResponse.json(
+        { ok: false, error: "Account nicht freigeschaltet. Bitte warten Sie auf die Freischaltung." },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const query: string | undefined =
       typeof body?.query === "string" ? body.query : undefined;
@@ -118,6 +135,7 @@ export async function POST(req: NextRequest) {
         m1_snapshot_initial: m1SnapshotInitial ?? undefined,
         mode,
         patient_reference: patientReference,
+        owner_account_id: account.id,
       },
     });
 

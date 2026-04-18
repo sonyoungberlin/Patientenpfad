@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
@@ -28,6 +28,12 @@ type CaseListItem = {
   checkpoint_count: number;
 };
 
+type AccountInfo = {
+  id: string;
+  email: string;
+  is_approved: boolean;
+};
+
 export default function HomePage() {
   const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
@@ -38,6 +44,52 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [caseList, setCaseList] = useState<CaseListItem[] | null>(null);
   const [listLoading, setListLoading] = useState(false);
+
+  // Auth state
+  const [account, setAccount] = useState<AccountInfo | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok) setAccount(d.account as AccountInfo);
+      })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
+
+  async function handleLogin() {
+    setLoginLoading(true);
+    setLoginError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setLoginError((data.error as string | undefined) ?? "Login fehlgeschlagen.");
+        return;
+      }
+      setAccount(data.account as AccountInfo);
+      setLoginEmail("");
+    } catch {
+      setLoginError("Netzwerkfehler");
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    setAccount(null);
+    setCaseList(null);
+  }
 
   function handleBlockChange(blockId: keyof M1Selection, value: M1BlockStatus) {
     setSelection((prev) => ({ ...prev, [blockId]: value }));
@@ -59,7 +111,7 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setError(data.error ?? "Unbekannter Fehler");
+        setError((data.error as string | undefined) ?? "Unbekannter Fehler");
         return;
       }
       if (isGatekeeperResponse(data)) {
@@ -84,7 +136,7 @@ export default function HomePage() {
     try {
       const res = await fetch("/api/cases");
       const data = await res.json();
-      if (data.ok) setCaseList(data.cases);
+      if (data.ok) setCaseList(data.cases as CaseListItem[]);
     } catch {
       // ignore
     } finally {
@@ -92,8 +144,67 @@ export default function HomePage() {
     }
   }
 
+  if (!authChecked) {
+    return <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>Lädt…</main>;
+  }
+
+  if (!account) {
+    return (
+      <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "400px" }}>
+        <h1>Anmelden</h1>
+        <p style={{ color: "#555" }}>
+          Bitte melden Sie sich mit Ihrer E-Mail-Adresse an.
+        </p>
+        <div style={{ marginTop: "1rem" }}>
+          <label htmlFor="login_email">E-Mail-Adresse</label>
+          <br />
+          <input
+            id="login_email"
+            type="email"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+            placeholder="name@beispiel.de"
+            style={{ marginTop: "0.3rem", padding: "0.3rem 0.5rem", width: "280px" }}
+          />
+        </div>
+        <button
+          onClick={handleLogin}
+          disabled={loginLoading}
+          style={{ marginTop: "1rem" }}
+        >
+          {loginLoading ? "Lädt…" : "Anmelden"}
+        </button>
+        {loginError && (
+          <p style={{ color: "red", marginTop: "0.5rem" }}>{loginError}</p>
+        )}
+      </main>
+    );
+  }
+
+  if (!account.is_approved) {
+    return (
+      <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "500px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ color: "#555", fontSize: "0.9em" }}>{account.email}</span>
+          <button onClick={handleLogout}>Abmelden</button>
+        </div>
+        <h1 style={{ marginTop: "1.5rem" }}>Freischaltung ausstehend</h1>
+        <p style={{ color: "#555" }}>
+          Ihr Account ist noch nicht freigeschaltet. Bitte warten Sie auf die
+          Freischaltung durch den Administrator.
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "600px" }}>
+      {/* Account-Bar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", borderBottom: "1px solid #eee", paddingBottom: "0.75rem" }}>
+        <span style={{ color: "#555", fontSize: "0.9em" }}>{account.email}</span>
+        <button onClick={handleLogout}>Abmelden</button>
+      </div>
+
       <h1>Was ist aktuell unklar oder klärungsbedürftig?</h1>
       <p style={{ color: "#555", marginBottom: "1.5rem" }}>
         Nur bei <strong>unklar</strong> wird ein Strukturfall mit Checkpoints gestartet.

@@ -15,6 +15,26 @@ enum StageStatus {
   CLOSED
 }
 
+model Account {
+  id          String        @id @default(cuid())
+  email       String        @unique
+  is_approved Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  cases       CaseSession[]
+  sessions    Session[]
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  account_id String
+  account    Account  @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+}
+
 model CaseSession {
   id                   String      @id @default(cuid())
   createdAt            DateTime    @default(now())
@@ -49,4 +69,8 @@ model CaseSession {
 
   /// Optionale Patientennummer / Referenz (nur bei mode = "practice")
   patient_reference    String?
+
+  /// Verknüpfung zum eingeloggten Account (optional, bestehende Fälle bleiben erhalten)
+  owner_account_id     String?
+  owner_account        Account?  @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
 }
