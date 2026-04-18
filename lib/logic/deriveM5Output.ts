@@ -40,7 +40,6 @@ export const M5_TEXTS: Record<
   K06: {
     OK: "Unterstützung im Alltag ist ausreichend organisiert.",
     TO_DO: "Unterstützung im Alltag ist aktuell nicht ausreichend organisiert.",
-    ZURÜCKSTELLEN: "Unterstützung im Alltag ist unklar.",
   },
   K07: {
     OK: "Vorübergehender Unterstützungsbedarf ist ausreichend geklärt.",
@@ -51,7 +50,6 @@ export const M5_TEXTS: Record<
   K08: {
     OK: "Digitale Kommunikation ist ausreichend möglich.",
     TO_DO: "Digitale Kommunikation ist nicht ausreichend möglich.",
-    ZURÜCKSTELLEN: "Digitale Kommunikation ist unklar.",
   },
 };
 

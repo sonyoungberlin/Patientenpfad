@@ -40,7 +40,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     description: "Prüfen, ob eine ausreichende Versorgung im Alltag besteht.",
     m4: {
       type: "NOTICE",
-      text: "Die Alltagsversorgung des Patienten soll im Gespräch bewertet werden.",
+      text: "Bitte beachten Sie, dass persönliche Termine für Untersuchungen erforderlich sind, da andernfalls keine angemessene medizinische Betreuung gewährleistet werden kann.",
     },
   },
   K03: {
@@ -86,7 +86,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     id: "K06",
     block_id: "versorgung_im_alltag",
     type: CheckpointType.BEDARF,
-    category: CheckpointCategory.M,
+    category: CheckpointCategory.O,
     relevance: CheckpointRelevance.P,
     title: "Unterstützung im Alltag",
     description: "Pflegebedarf ist dokumentiert und bewertet.",
@@ -112,7 +112,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     id: "K08",
     block_id: "kommunikation",
     type: CheckpointType.VERIFIKATION,
-    category: CheckpointCategory.M,
+    category: CheckpointCategory.O,
     relevance: CheckpointRelevance.P,
     title: "Digitale Kommunikation",
     description: "Der bevorzugte Kommunikationsweg des Patienten ist bekannt.",
