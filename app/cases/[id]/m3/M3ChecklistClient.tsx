@@ -120,7 +120,7 @@ export function M3ChecklistClient({
         ))}
       </ul>
       {error ? (
-        <p role="alert" aria-live="polite">
+        <p role="alert" aria-live="assertive">
           {error}
         </p>
       ) : null}

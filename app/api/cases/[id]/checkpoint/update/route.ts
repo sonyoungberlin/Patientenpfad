@@ -102,9 +102,11 @@ export async function PATCH(
       );
     }
 
-    const updatedCheckpoints = checkpoints.map((checkpoint) =>
-      checkpoint.id === checkpointId ? { ...checkpoint, status } : checkpoint,
-    );
+    const updatedCheckpoints = [...checkpoints];
+    updatedCheckpoints[targetCheckpointIndex] = {
+      ...updatedCheckpoints[targetCheckpointIndex],
+      status,
+    } as ActiveCheckpoint;
 
     await prisma.caseSession.update({
       where: { id },
@@ -115,8 +117,8 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error("[cases/[id]/checkpoint/update]", errorMessage);
+    const errorName = err instanceof Error ? err.name : "UnknownError";
+    console.error("[cases/[id]/checkpoint/update]", errorName);
     return NextResponse.json(
       { ok: false, error: "Failed to update checkpoint status" },
       { status: 500 },
