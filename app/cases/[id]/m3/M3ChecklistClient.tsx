@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
 import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
+
+const UNSAVED_WARNING =
+  "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
@@ -54,6 +57,41 @@ export function M3ChecklistClient({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    savingRef.current = savingCheckpointId;
+  }, [savingCheckpointId]);
+
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (savingRef.current !== null) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (savingRef.current === null) return;
+      const anchor = (e.target as HTMLElement).closest("a");
+      if (!anchor || !anchor.href) return;
+      try {
+        const url = new URL(anchor.href);
+        if (url.origin !== window.location.origin) return;
+      } catch {
+        return;
+      }
+      if (!window.confirm(UNSAVED_WARNING)) {
+        e.preventDefault();
+      }
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
   const m4Lines = checkpoints
     .filter((cp) => cp.status === "TO_DO")
     .map((cp) => cp.m4?.text ?? "")

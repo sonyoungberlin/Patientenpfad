@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+
+const UNSAVED_WARNING =
+  "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
 import type { ActiveCheckpoint } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
@@ -35,8 +38,45 @@ export function M2PrefillClient({
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const isDirtyRef = useRef(false);
+
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+  }, [isDirty]);
+
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (isDirtyRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (!isDirtyRef.current) return;
+      const anchor = (e.target as HTMLElement).closest("a");
+      if (!anchor || !anchor.href) return;
+      try {
+        const url = new URL(anchor.href);
+        if (url.origin !== window.location.origin) return;
+      } catch {
+        return;
+      }
+      if (!window.confirm(UNSAVED_WARNING)) {
+        e.preventDefault();
+      }
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
 
   function handleAnswer(checkpointId: string, questionId: string, answer: M2Answer) {
+    setIsDirty(true);
     setValues((prev) => ({
       ...prev,
       [checkpointId]: {
@@ -62,6 +102,7 @@ export function M2PrefillClient({
         return;
       }
 
+      setIsDirty(false);
       router.push(buildCaseM3Path(caseId));
     } catch {
       setError("Angaben konnten nicht gespeichert werden.");
