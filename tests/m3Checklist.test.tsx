@@ -67,7 +67,7 @@ describe("M3 Checkliste", () => {
     prismaMock.caseSession.findUnique.mockReset();
   });
 
-  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown }) {
+  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string }) {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
   }
 
@@ -78,7 +78,7 @@ describe("M3 Checkliste", () => {
 
     expect(prismaMock.caseSession.findUnique).toHaveBeenCalledWith({
       where: { id: "case-123" },
-      select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true },
+      select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, m2_status: true },
     });
   });
 
@@ -289,5 +289,54 @@ describe("M3 Checkliste", () => {
     );
 
     expect(markup).not.toContain("Aus M2:");
+  });
+
+  it("zeigt Wartebanner wenn m2_status = waiting_for_patient", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint], m2_status: "waiting_for_patient" });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-m2-waiting-banner");
+    expect(markup).toContain("Es wird auf Antworten gewartet.");
+    expect(markup).toContain("data-skip-m2-waiting");
+    expect(markup).toContain("Patientenfragen überspringen und ärztlich fortfahren");
+  });
+
+  it("Status-Buttons sind bei waiting_for_patient deaktiviert", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint], m2_status: "waiting_for_patient" });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    // Alle Status-Buttons müssen disabled sein
+    expect(markup).toContain('disabled=""');
+    // Checkpoint-Item soll mit reduzierter Opacity dargestellt sein
+    expect(markup).toContain("opacity");
+  });
+
+  it("zeigt Übersprungen-Hinweis wenn m2_status = skipped", async () => {
+    setupCase({ active_checkpoints: [], m2_status: "skipped" });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-m2-skipped-notice");
+    expect(markup).toContain("Patientenfragebogen wurde übersprungen.");
+    expect(markup).not.toContain("data-m2-waiting-banner");
+  });
+
+  it("zeigt keinen Banner wenn m2_status = none", async () => {
+    setupCase({ active_checkpoints: [] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("data-m2-waiting-banner");
+    expect(markup).not.toContain("data-m2-skipped-notice");
   });
 });

@@ -43,12 +43,15 @@ export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
   prefill = {},
+  m2Status = "none",
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
   prefill?: M2PrefillData;
+  m2Status?: string;
 }) {
   const router = useRouter();
+  const isLocked = m2Status === "waiting_for_patient";
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     initialCheckpoints.map((checkpoint) => ({
       ...checkpoint,
@@ -60,6 +63,7 @@ export function M3ChecklistClient({
   );
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [skipping, setSkipping] = useState(false);
   const savingRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -175,6 +179,25 @@ export function M3ChecklistClient({
     }
   }
 
+  async function skipM2Waiting() {
+    setSkipping(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/cases/${caseId}/m2-skip`, {
+        method: "PATCH",
+      });
+      if (!response.ok) {
+        setError("Freischalten fehlgeschlagen.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError("Freischalten fehlgeschlagen.");
+    } finally {
+      setSkipping(false);
+    }
+  }
+
   async function closeCase() {
     setClosing(true);
     setError(null);
@@ -196,6 +219,38 @@ export function M3ChecklistClient({
 
   return (
     <section>
+      {m2Status === "waiting_for_patient" ? (
+        <div
+          data-m2-waiting-banner
+          role="status"
+          style={{
+            background: "#fff8e1",
+            border: "1px solid #f9c74f",
+            padding: "0.75rem 1rem",
+            marginBottom: "1.25rem",
+          }}
+        >
+          <strong>Patientenfragebogen-Link wurde versendet. Es wird auf Antworten gewartet.</strong>
+          <div style={{ marginTop: "0.5rem" }}>
+            <button
+              type="button"
+              data-skip-m2-waiting
+              onClick={() => void skipM2Waiting()}
+              disabled={skipping}
+            >
+              {skipping ? "Wird freigeschaltet…" : "Patientenfragen überspringen und ärztlich fortfahren"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {m2Status === "skipped" ? (
+        <p
+          data-m2-skipped-notice
+          style={{ color: "#555", marginBottom: "1rem", fontStyle: "italic" }}
+        >
+          Patientenfragebogen wurde übersprungen.
+        </p>
+      ) : null}
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {checkpoints.map((checkpoint) => {
           const cpAnswers = prefill[checkpoint.id];
@@ -210,6 +265,7 @@ export function M3ChecklistClient({
                 border: "1px solid #ddd",
                 padding: "0.75rem",
                 marginBottom: "0.75rem",
+                opacity: isLocked ? 0.5 : 1,
               }}
             >
               <div style={{ marginBottom: "0.5rem" }}>{checkpoint.title}</div>
@@ -241,7 +297,7 @@ export function M3ChecklistClient({
                     type="button"
                     data-status-button={`${checkpoint.id}:${statusOption}`}
                     onClick={() => void updateStatus(checkpoint.id, statusOption)}
-                    disabled={savingCheckpointId === checkpoint.id}
+                    disabled={savingCheckpointId === checkpoint.id || isLocked}
                     style={{
                       marginRight: "0.5rem",
                       fontWeight:

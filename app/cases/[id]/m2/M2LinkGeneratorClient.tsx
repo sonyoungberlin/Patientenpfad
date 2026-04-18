@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 
 export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
+  const router = useRouter();
   const [link, setLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,15 +20,19 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       const response = await fetch(`/api/cases/${caseId}/m2-link`, {
         method: "POST",
       });
-      const data = await response.json();
+      const data = (await response.json()) as { link?: string };
 
-      if (!response.ok || !data.ok) {
+      const link = typeof data.link === "string" ? data.link : "";
+
+      if (!response.ok || !link) {
+        setLink(null);
         setError("Link konnte nicht erzeugt werden.");
         return;
       }
 
-      setLink(data.link as string);
+      setLink(link);
     } catch {
+      setLink(null);
       setError("Link konnte nicht erzeugt werden.");
     } finally {
       setLoading(false);
@@ -46,13 +53,13 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
     <section
       data-m2-link-generator
       style={{
-        marginTop: "2rem",
-        borderTop: "1px solid #ddd",
-        paddingTop: "1.5rem",
+        marginBottom: "2rem",
+        borderBottom: "1px solid #ddd",
+        paddingBottom: "1.5rem",
       }}
     >
       <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>
-        M2-Link für Patient
+        Patient einbinden
       </h2>
       <button
         type="button"
@@ -60,7 +67,7 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
         onClick={() => void generateLink()}
         disabled={loading}
       >
-        {loading ? "Wird erzeugt…" : "M2-Link erzeugen"}
+        {loading ? "Wird erzeugt…" : "M2-Link für Patient erzeugen"}
       </button>
       {error ? (
         <p role="alert" aria-live="polite" style={{ color: "red", marginTop: "0.5rem" }}>
@@ -83,6 +90,14 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
           </code>
           <button type="button" data-copy-m2-link onClick={() => void copyLink()}>
             {copied ? "Kopiert ✓" : "Link kopieren"}
+          </button>
+          <button
+            type="button"
+            data-goto-m3
+            onClick={() => router.push(buildCaseM3Path(caseId))}
+            style={{ marginLeft: "0.5rem" }}
+          >
+            Weiter zur ärztlichen Checkliste →
           </button>
         </div>
       ) : null}

@@ -138,7 +138,7 @@ describe("M2 Seite", () => {
     expect(markup).toContain('data-m2-answer="K04:M2-02:nein"');
   });
 
-  it("enthält den Skip-Link zur M3-Seite", async () => {
+  it("enthält den Skip-Button für Patientenfragebogen überspringen", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
       active_checkpoints: [],
@@ -149,7 +149,7 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-42" }) }),
     );
 
-    expect(markup).toContain("/cases/case-42/m3");
-    expect(markup).toContain("Ohne M2 direkt zur ärztlichen Checkliste");
+    expect(markup).toContain("data-m2-skip");
+    expect(markup).toContain("Patientenfragebogen überspringen und ärztlich fortfahren");
   });
 });

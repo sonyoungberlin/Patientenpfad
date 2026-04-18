@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import M3Page from "@/app/cases/[id]/m3/page";
+import M2Page from "@/app/cases/[id]/m2/page";
 
 jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
@@ -30,7 +30,7 @@ type PrismaMock = {
 };
 const prismaMock = prisma as unknown as PrismaMock;
 
-describe("M3-Seite – M2-Link-Generator", () => {
+describe("M2-Seite – M2-Link-Generator", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.findUnique.mockResolvedValue({
@@ -42,19 +42,19 @@ describe("M3-Seite – M2-Link-Generator", () => {
 
   it("zeigt den M2-Link-erzeugen-Button", async () => {
     const markup = renderToStaticMarkup(
-      await M3Page({ params: Promise.resolve({ id: "case-1" }) }),
+      await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
     expect(markup).toContain("data-generate-m2-link");
-    expect(markup).toContain("M2-Link erzeugen");
+    expect(markup).toContain("M2-Link für Patient erzeugen");
   });
 
   it("zeigt die M2-Link-Generator-Sektion", async () => {
     const markup = renderToStaticMarkup(
-      await M3Page({ params: Promise.resolve({ id: "case-1" }) }),
+      await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
     expect(markup).toContain("data-m2-link-generator");
-    expect(markup).toContain("M2-Link für Patient");
+    expect(markup).toContain("Patient einbinden");
   });
 });
