@@ -137,6 +137,12 @@ export async function POST(req: NextRequest) {
         patient_reference: patientReference,
         owner_account_id: account.id,
       },
+      select: {
+        id: true,
+        stage_status: true,
+        mode: true,
+        patient_reference: true,
+      },
     });
 
     return NextResponse.json({
@@ -150,7 +156,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[cases/create]", err);
     return NextResponse.json(
-      { ok: false, error: "Failed to create case session" },
+      {
+        ok: false,
+        error: "Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.",
+      },
       { status: 500 }
     );
   }
