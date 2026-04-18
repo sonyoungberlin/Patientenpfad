@@ -64,6 +64,28 @@ export type ActiveCheckpointO = ActiveCheckpointBase & {
 
 export type ActiveCheckpoint = ActiveCheckpointM | ActiveCheckpointO;
 
+// ---------------------------------------------------------------------------
+// M1 – Aktivierungsblöcke
+// ---------------------------------------------------------------------------
+
+/** The three activation blocks M1 works with. No M1A / M1B. */
+export type M1BlockId =
+  | "kommunikation"
+  | "medizinische_lage"
+  | "versorgung_im_alltag";
+
+/** Binary state per block: klar → no activation, unklar → activate checkpoints */
+export type M1BlockStatus = "klar" | "unklar";
+
+/**
+ * The user's M1 selection: one status per block.
+ * Passed into `deriveActiveCheckpointIdsFromM1` to obtain the list of
+ * checkpoint IDs that should be activated for this case.
+ */
+export type M1Selection = Record<M1BlockId, M1BlockStatus>;
+
+// ---------------------------------------------------------------------------
+
 export type PrefillEntry = {
   block_id: string;
   key: string;

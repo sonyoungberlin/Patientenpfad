@@ -1,0 +1,37 @@
+import type { M1BlockId, M1Selection } from "@/lib/types";
+
+/**
+ * Verbindliches, statisches Mapping: M1-Aktivierungsblock → Checkpoint-IDs.
+ *
+ * Regeln:
+ * - Hart kodiert, keine dynamische Berechnung
+ * - Erweiterungen erfolgen innerhalb dieser Blöcke
+ * - Aktivierungsblöcke sind keine Checkpoints
+ */
+export const M1_CHECKPOINT_MAP: Record<M1BlockId, readonly string[]> = {
+  kommunikation: ["K01", "K08"],
+  medizinische_lage: ["K03", "K04", "K05"],
+  versorgung_im_alltag: ["K02", "K06", "K07"],
+};
+
+/**
+ * Leitet aus einer M1-Auswahl die zu aktivierenden Checkpoint-IDs ab.
+ *
+ * - Nur Blöcke mit Status `unklar` aktivieren ihre Checkpoints.
+ * - Blöcke mit Status `klar` liefern keine Checkpoints.
+ * - Ergebnis: flache, deduplizierte Liste von Checkpoint-IDs.
+ */
+export function deriveActiveCheckpointIdsFromM1(
+  blocks: M1Selection,
+): string[] {
+  const ids: string[] = [];
+  for (const [blockId, status] of Object.entries(blocks) as [
+    M1BlockId,
+    M1Selection[M1BlockId],
+  ][]) {
+    if (status === "unklar") {
+      ids.push(...M1_CHECKPOINT_MAP[blockId]);
+    }
+  }
+  return ids;
+}
