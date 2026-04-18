@@ -62,7 +62,7 @@ Der Intro-Partner steuert den weiteren Verlauf:
 Der Intro-Partner:
 
 * trifft **keine medizinische Bewertung**
-* entscheidet **nicht über DONE / OPEN / UNCLEAR**
+* entscheidet **nicht über OK / TO_DO / ZURÜCKSTELLEN**
 * ersetzt **nicht den Checkpoint**
 
 ---

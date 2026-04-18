@@ -52,7 +52,7 @@ const DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
     title: "Arztbrief vorhanden",
     description:
       "Prüfen, ob ein aktueller Arztbrief oder vergleichbares Dokument vorliegt.",
-    status: "OPEN",
+    status: "TO_DO",
   },
 ];
 

@@ -4,7 +4,7 @@
 - **block_id:** `versorgungsumfeld`
 - **block_title:** Versorgungsumfeld
 - **typ:** STATUS_KLAERUNG
-- **category:** `A` (administrativ)
+- **category:** `O` (organisatorisch)
 - **relevance:** `A` (optional)
 
 ---
@@ -49,11 +49,11 @@ Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder best
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                                              |
-|---------|-------------------------------------------------------------------|
-| DONE    | „Versorgungsumfeld ist ausreichend geklärt"               |
-| OPEN    | „Versorgungsumfeld ist aktuell nicht ausreichend geklärt" |
-| UNCLEAR | „Versorgungsumfeld ist unklar"                                    |
+| Status          | Satz                                                              |
+|-----------------|-------------------------------------------------------------------|
+| OK              | „Versorgungsumfeld ist ausreichend geklärt"               |
+| TO_DO           | „Versorgungsumfeld ist aktuell nicht ausreichend geklärt" |
+| ZURÜCKSTELLEN   | „Versorgungsumfeld ist unklar"                                    |
 
 ---
 
@@ -62,6 +62,19 @@ Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder best
 | Status  | To-do                         |
 |---------|-------------------------------|
 | TO_DO   | Versorgungssituation klären   |
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "NOTICE",
+    "text": "Für Ihre Behandlung ist es erforderlich, dass Ihre Versorgung im Alltag sichergestellt ist."
+  }
+}
+```
 
 ---
 

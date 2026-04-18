@@ -4,7 +4,7 @@
 - **block_id:** `zugang_versorgung`
 - **block_title:** Zugang zur Versorgung
 - **typ:** STATUS_KLAERUNG
-- **category:** `A` (administrativ)
+- **category:** `O` (organisatorisch)
 - **relevance:** `P` (pflichtrelevant)
 
 ---
@@ -48,11 +48,11 @@ Der Zugang zur Versorgung ist aktuell nicht ausreichend möglich.
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                                                  |
-|---------|-----------------------------------------------------------------------|
-| DONE    | „Zugang zur Versorgung ist möglich"                                   |
-| OPEN    | „Zugang zur Versorgung ist aktuell nicht ausreichend möglich"         |
-| UNCLEAR | „Zugang zur Versorgung ist unklar"                                    |
+| Status          | Satz                                                                  |
+|-----------------|-----------------------------------------------------------------------|
+| OK              | „Zugang zur Versorgung ist möglich"                                   |
+| TO_DO           | „Zugang zur Versorgung ist aktuell nicht ausreichend möglich"         |
+| ZURÜCKSTELLEN   | „Zugang zur Versorgung ist unklar"                                    |
 
 ---
 
@@ -61,6 +61,19 @@ Der Zugang zur Versorgung ist aktuell nicht ausreichend möglich.
 | Status  | To-do                             |
 |---------|-----------------------------------|
 | TO_DO   | Zugang zur Versorgung klären      |
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "NOTICE",
+    "text": "Für eine verlässliche Betreuung ist es notwendig, dass Termine in unserer Praxis wahrgenommen werden können."
+  }
+}
+```
 
 ---
 

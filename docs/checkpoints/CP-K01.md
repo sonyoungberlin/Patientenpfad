@@ -50,11 +50,11 @@ Es ist aktuell kein verlässlicher Kommunikationsweg erkennbar – weder direkt 
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                                          |
-|---------|---------------------------------------------------------------|
-| DONE    | „Kommunikation ist ausreichend möglich"                       |
-| OPEN    | „Kommunikation ist aktuell nicht ausreichend möglich"         |
-| UNCLEAR | „Kommunikation ist unklar"                                    |
+| Status          | Satz                                                          |
+|-----------------|---------------------------------------------------------------|
+| OK              | „Kommunikation ist ausreichend möglich"                       |
+| TO_DO           | „Kommunikation ist aktuell nicht ausreichend möglich"         |
+| ZURÜCKSTELLEN   | „Kommunikation ist unklar"                                    |
 
 ---
 
@@ -63,6 +63,19 @@ Es ist aktuell kein verlässlicher Kommunikationsweg erkennbar – weder direkt 
 | Status  | To-do                                                                                                           |
 |---------|-----------------------------------------------------------------------------------------------------------------|
 | TO_DO   | Telefonnummer oder erreichbare Kontaktperson klären                                                             |
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "ACTION",
+    "text": "Bitte vervollständigen Sie Ihre Kontaktdaten, damit wir Sie erreichen können."
+  }
+}
+```
 
 ---
 

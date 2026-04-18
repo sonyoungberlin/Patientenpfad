@@ -56,11 +56,11 @@ Angaben zur Diagnosenlage fehlen oder widersprechen sich. Eine sichere Einschät
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                                              |
-|---------|-------------------------------------------------------------------|
-| DONE    | „Diagnosenlage ist ausreichend geklärt"                   |
-| OPEN    | „Diagnosenlage ist aktuell nicht ausreichend geklärt"     |
-| UNCLEAR | „Diagnosenlage ist unklar"                                        |
+| Status          | Satz                                                              |
+|-----------------|-------------------------------------------------------------------|
+| OK              | „Diagnosenlage ist ausreichend geklärt"                   |
+| TO_DO           | „Diagnosenlage ist aktuell nicht ausreichend geklärt"     |
+| ZURÜCKSTELLEN   | „Diagnosenlage ist unklar"                                        |
 
 ---
 
@@ -70,6 +70,19 @@ Angaben zur Diagnosenlage fehlen oder widersprechen sich. Eine sichere Einschät
 |---------|----------------------------------|
 | TO_DO         | Diagnosenlage klären             |
 | ZURÜCKSTELLEN | Angaben zur Diagnosenlage klären |
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "ACTION",
+    "text": "Bitte vereinbaren Sie einen Termin beim Facharzt und bringen Sie den Befund zum nächsten Termin mit."
+  }
+}
+```
 
 ---
 

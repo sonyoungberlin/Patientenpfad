@@ -44,7 +44,7 @@ export type ActiveCheckpoint = {
   relevance: CheckpointRelevance;
   title: string;
   description?: string;
-  status: "OPEN" | "DONE" | "UNCLEAR";
+  status: "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 };
 
 export type PrefillEntry = {

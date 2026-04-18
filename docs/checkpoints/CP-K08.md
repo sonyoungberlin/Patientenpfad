@@ -4,7 +4,7 @@
 - **block_id:** `versorgungskanaele`
 - **block_title:** Versorgungskanäle
 - **typ:** STATUS_KLAERUNG
-- **category:** `A` (administrativ)
+- **category:** `O` (organisatorisch)
 - **relevance:** `A` (optional)
 
 ---
@@ -49,11 +49,11 @@ Es ist aktuell kein geeigneter Versorgungskanal nutzbar.
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                                          |
-|---------|---------------------------------------------------------------|
-| DONE    | „Versorgungskanäle sind ausreichend nutzbar"                  |
-| OPEN    | „Versorgungskanäle sind aktuell nicht ausreichend nutzbar"    |
-| UNCLEAR | „Versorgungskanäle sind unklar"                               |
+| Status          | Satz                                                          |
+|-----------------|---------------------------------------------------------------|
+| OK              | „Versorgungskanäle sind ausreichend nutzbar"                  |
+| TO_DO           | „Versorgungskanäle sind aktuell nicht ausreichend nutzbar"    |
+| ZURÜCKSTELLEN   | „Versorgungskanäle sind unklar"                               |
 
 ---
 
@@ -62,6 +62,19 @@ Es ist aktuell kein geeigneter Versorgungskanal nutzbar.
 | Status  | To-do                                |
 |---------|--------------------------------------|
 | TO_DO   | Versorgungskanäle klären             |
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "NOTICE",
+    "text": "Bitte beachten Sie, dass einige Leistungen nur über digitale Kommunikationswege möglich sind."
+  }
+}
+```
 
 ---
 
