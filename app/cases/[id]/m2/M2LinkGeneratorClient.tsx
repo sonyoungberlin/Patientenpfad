@@ -50,13 +50,13 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
     <section
       data-m2-link-generator
       style={{
-        marginTop: "2rem",
-        borderTop: "1px solid #ddd",
-        paddingTop: "1.5rem",
+        marginBottom: "2rem",
+        borderBottom: "1px solid #ddd",
+        paddingBottom: "1.5rem",
       }}
     >
       <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>
-        M2-Link für Patient
+        Patient einbinden
       </h2>
       <button
         type="button"
@@ -64,7 +64,7 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
         onClick={() => void generateLink()}
         disabled={loading}
       >
-        {loading ? "Wird erzeugt…" : "M2-Link erzeugen"}
+        {loading ? "Wird erzeugt…" : "M2-Link für Patient erzeugen"}
       </button>
       {error ? (
         <p role="alert" aria-live="polite" style={{ color: "red", marginTop: "0.5rem" }}>

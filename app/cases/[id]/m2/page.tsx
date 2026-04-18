@@ -5,6 +5,7 @@ import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { M2PrefillClient } from "./M2PrefillClient";
+import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 
 export default async function M2Page({
   params,
@@ -42,6 +43,7 @@ export default async function M2Page({
   return (
     <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "700px" }}>
       <h1>M2 – Patienteninformationen</h1>
+      <M2LinkGeneratorClient caseId={id} />
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}
