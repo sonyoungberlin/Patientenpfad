@@ -61,6 +61,26 @@ async function run() {
       });
 
       console.log(`✓ Account "${email}" wurde gesperrt.`);
+    } else if (command === "set-admin") {
+      if (!email) {
+        console.error("Fehler: Bitte E-Mail angeben.");
+        console.error("  node scripts/approve-account.mjs set-admin <email>");
+        process.exit(1);
+      }
+
+      const account = await prisma.account.findUnique({ where: { email } });
+      if (!account) {
+        console.error(`Fehler: Kein Account mit E-Mail "${email}" gefunden.`);
+        console.error("Tipp: Tester muss sich zuerst einmal über die App einloggen.");
+        process.exit(1);
+      }
+
+      await prisma.account.update({
+        where: { email },
+        data: { is_admin: true, is_approved: true },
+      });
+
+      console.log(`✓ Account "${email}" ist jetzt Admin (und freigeschaltet).`);
     } else if (command === "list") {
       const accounts = await prisma.account.findMany({
         select: { email: true, is_approved: true, createdAt: true },
@@ -79,8 +99,9 @@ async function run() {
       }
     } else {
       console.log("Verwendung:");
-      console.log("  node scripts/approve-account.mjs approve <email>");
-      console.log("  node scripts/approve-account.mjs revoke  <email>");
+      console.log("  node scripts/approve-account.mjs approve   <email>");
+      console.log("  node scripts/approve-account.mjs revoke    <email>");
+      console.log("  node scripts/approve-account.mjs set-admin <email>");
       console.log("  node scripts/approve-account.mjs list");
       process.exit(1);
     }

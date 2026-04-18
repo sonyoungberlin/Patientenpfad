@@ -49,3 +49,24 @@ node scripts/approve-account.mjs list
 
 > Voraussetzung: `DATABASE_URL` muss in der Umgebung gesetzt sein (z. B. via `.env`).
 
+## Admin-Seite `/admin/accounts`
+
+Für eine browserbasierte Verwaltung gibt es eine interne Admin-Seite.
+
+### Admin-Account einrichten
+
+1. Tester loggt sich einmal über die App ein
+2. Betreiber setzt Admin-Recht per CLI:
+   ```sh
+   npm run set-admin -- betreiber@example.com
+   ```
+   Das setzt sowohl `is_admin = true` als auch `is_approved = true`.
+3. Betreiber öffnet `/admin/accounts` im Browser und kann alle Accounts freischalten oder sperren.
+
+### Sicherheit
+
+- Die Seite und die API (`/api/admin/accounts`) sind doppelt gesichert:
+  - Eingeloggter Account erforderlich
+  - `is_admin = true` erforderlich
+- Normale Nutzer sehen nur einen Redirect auf `/`, kein Fehlermeldung
+

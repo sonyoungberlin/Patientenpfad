@@ -9,6 +9,7 @@ export type SessionAccount = {
   id: string;
   email: string;
   is_approved: boolean;
+  is_admin: boolean;
 };
 
 async function resolveAccount(token: string | undefined): Promise<SessionAccount | null> {
@@ -18,7 +19,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
     where: { token },
     include: {
       account: {
-        select: { id: true, email: true, is_approved: true },
+        select: { id: true, email: true, is_approved: true, is_admin: true },
       },
     },
   });
