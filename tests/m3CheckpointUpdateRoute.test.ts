@@ -16,6 +16,14 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+jest.mock("@/lib/auth", () => ({
+  getSessionAccount: jest.fn().mockResolvedValue({
+    id: "acc-test",
+    email: "test@example.com",
+    is_approved: true,
+  }),
+}));
+
 import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
@@ -47,6 +55,7 @@ describe("PATCH /api/cases/[id]/checkpoint/update", () => {
   it("ändert den Status eines Checkpoints und persistiert active_checkpoints", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       id: "case-123",
+      owner_account_id: "acc-test",
       active_checkpoints: [mCheckpoint],
     });
     prismaMock.caseSession.update.mockResolvedValue({});

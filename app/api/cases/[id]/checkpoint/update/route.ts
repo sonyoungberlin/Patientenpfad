@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
+import { getSessionAccount } from "@/lib/auth";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
@@ -40,6 +41,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const account = await getSessionAccount(req);
+    if (!account) {
+      return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
+    }
+    if (!account.is_approved) {
+      return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
+    }
+
     const { id } = await params;
     let body: Record<string, unknown>;
     try {
@@ -69,7 +78,7 @@ export async function PATCH(
 
     const session = await prisma.caseSession.findUnique({ where: { id } });
 
-    if (!session) {
+    if (!session || session.owner_account_id !== account.id) {
       return NextResponse.json(
         { ok: false, error: "Not found" },
         { status: 404 },

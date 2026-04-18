@@ -10,7 +10,11 @@
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "prisma:generate": "prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "approve-email": "node scripts/approve-account.mjs approve",
+    "revoke-email": "node scripts/approve-account.mjs revoke",
+    "set-admin": "node scripts/approve-account.mjs set-admin",
+    "list-accounts": "node scripts/approve-account.mjs list"
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",

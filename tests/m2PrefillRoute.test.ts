@@ -10,6 +10,14 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+jest.mock("@/lib/auth", () => ({
+  getSessionAccount: jest.fn().mockResolvedValue({
+    id: "acc-test",
+    email: "test@example.com",
+    is_approved: true,
+  }),
+}));
+
 import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
@@ -28,7 +36,7 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
   });
 
   it("speichert strukturierte Prefill-Daten in ctx_prefill", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({ id: "case-1" });
+    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test" });
     prismaMock.caseSession.update.mockResolvedValue({});
 
     const structuredPrefill = {

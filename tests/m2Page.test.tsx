@@ -9,6 +9,15 @@ import {
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
+  redirect: jest.fn(),
+}));
+
+jest.mock("@/lib/auth", () => ({
+  getSessionAccountFromCookies: jest.fn().mockResolvedValue({
+    id: "acc-test",
+    email: "test@example.com",
+    is_approved: true,
+  }),
 }));
 
 jest.mock("@/lib/prisma", () => ({
@@ -60,6 +69,7 @@ describe("M2 Seite", () => {
 
   it("rendert pro aktivem Checkpoint die M2-Fragen aus dem Katalog", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
       active_checkpoints: [k01Checkpoint, k04Checkpoint],
       ctx_prefill: null,
     });
@@ -83,6 +93,7 @@ describe("M2 Seite", () => {
 
   it("rendert pro Frage Ja-, Nein- und Unklar-Buttons", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
       active_checkpoints: [k01Checkpoint],
       ctx_prefill: null,
     });
@@ -99,6 +110,7 @@ describe("M2 Seite", () => {
 
   it("zeigt Hinweis wenn keine Checkpoints aktiv sind", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
       active_checkpoints: [],
       ctx_prefill: null,
     });
@@ -112,6 +124,7 @@ describe("M2 Seite", () => {
 
   it("vorgespeicherte Antworten werden per data-Attribut auf Buttons reflektiert", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
       active_checkpoints: [k04Checkpoint],
       ctx_prefill: { K04: { "M2-01": "ja", "M2-02": "nein" } },
     });
@@ -127,6 +140,7 @@ describe("M2 Seite", () => {
 
   it("enthält den Skip-Link zur M3-Seite", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
       active_checkpoints: [],
       ctx_prefill: null,
     });
