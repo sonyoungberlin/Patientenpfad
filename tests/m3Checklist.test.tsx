@@ -7,7 +7,10 @@ import {
   type ActiveCheckpoint,
 } from "@/lib/types";
 
-jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
+jest.mock("next/navigation", () => ({
+  redirect: jest.fn(),
+  useRouter: jest.fn().mockReturnValue({ push: jest.fn() }),
+}));
 
 jest.mock("@/lib/auth", () => ({
   getSessionAccountFromCookies: jest.fn().mockResolvedValue({

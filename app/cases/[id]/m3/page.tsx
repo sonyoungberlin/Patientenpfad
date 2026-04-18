@@ -4,6 +4,7 @@ import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { M3ChecklistClient } from "./M3ChecklistClient";
+import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 
 export default async function M3Page({
   params,
@@ -43,6 +44,7 @@ export default async function M3Page({
   return (
     <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "700px" }}>
       <h1>Ärztliche Checkliste</h1>
+      <M2LinkGeneratorClient caseId={id} />
       <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} />
     </main>
   );

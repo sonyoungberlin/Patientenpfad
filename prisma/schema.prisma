@@ -74,4 +74,10 @@ model CaseSession {
   /// Verknüpfung zum eingeloggten Account (optional, bestehende Fälle bleiben erhalten)
   owner_account_id     String?
   owner_account        Account?  @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
+
+  /// Einmaliges Token für den patientenseitigen M2-Link (ohne Login)
+  m2_token             String?   @unique
+
+  /// Ablaufdatum des M2-Tokens (14 Tage ab Erstellung)
+  m2_token_expires_at  DateTime?
 }
