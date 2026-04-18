@@ -15,6 +15,26 @@ function isValidStatus(
   return status === "OK" || status === "TO_DO";
 }
 
+function isActiveCheckpointArray(value: unknown): value is ActiveCheckpoint[] {
+  if (!Array.isArray(value)) {
+    return false;
+  }
+
+  return value.every((item) => {
+    if (!item || typeof item !== "object") {
+      return false;
+    }
+
+    const checkpoint = item as Record<string, unknown>;
+    return (
+      typeof checkpoint.id === "string" &&
+      (checkpoint.category === CheckpointCategory.M ||
+        checkpoint.category === CheckpointCategory.O) &&
+      typeof checkpoint.status === "string"
+    );
+  });
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -56,14 +76,14 @@ export async function PATCH(
       );
     }
 
-    if (!Array.isArray(session.active_checkpoints)) {
+    if (!isActiveCheckpointArray(session.active_checkpoints)) {
       return NextResponse.json(
         { ok: false, error: "Invalid checkpoint state" },
         { status: 500 },
       );
     }
 
-    const checkpoints = session.active_checkpoints as ActiveCheckpoint[];
+    const checkpoints = session.active_checkpoints;
     const targetCheckpointIndex = checkpoints.findIndex(
       (cp) => cp.id === checkpointId,
     );
