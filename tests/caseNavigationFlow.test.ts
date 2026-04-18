@@ -7,6 +7,23 @@ import {
 } from "@/lib/flow/caseNavigation";
 import M2Page from "@/app/cases/[id]/m2/page";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
+jest.mock("@/lib/prisma", () => ({
+  prisma: {
+    caseSession: {
+      findUnique: jest.fn(),
+    },
+  },
+}));
+
+import { prisma } from "@/lib/prisma";
+
+type PrismaMock = { caseSession: { findUnique: jest.Mock } };
+const prismaMock = prisma as unknown as PrismaMock;
+
 describe("M1 Startflow Navigation", () => {
   it("erfolgreicher M1-Fall navigiert direkt nach M2", () => {
     expect(getCreateSuccessRedirectPath({ case_id: "case-123" })).toBe(
@@ -25,6 +42,14 @@ describe("M1 Startflow Navigation", () => {
 });
 
 describe("M2 Skip-Option", () => {
+  beforeEach(() => {
+    prismaMock.caseSession.findUnique.mockReset();
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      active_checkpoints: [],
+      ctx_prefill: null,
+    });
+  });
+
   it("M2-Seite enthält die Skip-Option zur ärztlichen Checkliste", async () => {
     const markup = renderToStaticMarkup(
       await M2Page({ params: Promise.resolve({ id: "case-123" }) }),

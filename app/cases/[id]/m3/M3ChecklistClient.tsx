@@ -31,9 +31,11 @@ function getStatusOptions(category: CheckpointCategory): CheckpointStatus[] {
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
+  prefill = {},
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
+  prefill?: Record<string, string>;
 }) {
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     initialCheckpoints.map((checkpoint) => ({
@@ -45,6 +47,49 @@ export function M3ChecklistClient({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const m4Lines = checkpoints
+    .filter((cp) => cp.status === "TO_DO")
+    .map((cp) => cp.m4?.text ?? "")
+    .filter((text) => text.length > 0);
+  const m4TextBlock = m4Lines.join("\n");
+
+  const m5Lines = checkpoints.map((cp) => {
+    if (cp.category === CheckpointCategory.M) {
+      if (cp.status === "OK") return `${cp.title} ist ausreichend geklärt.`;
+      if (cp.status === "TO_DO")
+        return `${cp.title} ist aktuell nicht ausreichend geklärt.`;
+      return `${cp.title} ist unklar.`;
+    }
+    // category O – only OK | TO_DO
+    return cp.status === "OK"
+      ? `${cp.title} ist geklärt.`
+      : `${cp.title} ist aktuell nicht ausreichend geklärt.`;
+  });
+  const m5TextBlock = m5Lines.join("\n");
+
+  async function copyM4Text() {
+    if (!m4TextBlock) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(m4TextBlock);
+    } catch {
+      setError("Text konnte nicht kopiert werden.");
+    }
+  }
+
+  async function copyM5Text() {
+    if (!m5TextBlock) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(m5TextBlock);
+    } catch {
+      setError("Dokumentation konnte nicht kopiert werden.");
+    }
+  }
 
   async function updateStatus(checkpointId: string, status: CheckpointStatus) {
     const previous = checkpoints;
@@ -95,6 +140,14 @@ export function M3ChecklistClient({
             }}
           >
             <div style={{ marginBottom: "0.5rem" }}>{checkpoint.title}</div>
+            {prefill[checkpoint.id] ? (
+              <div
+                data-m2-prefill={checkpoint.id}
+                style={{ fontSize: "0.85em", color: "#555", marginBottom: "0.5rem" }}
+              >
+                Aus M2: {prefill[checkpoint.id]}
+              </div>
+            ) : null}
             <div style={{ marginBottom: "0.5rem" }}>
               Status: {checkpoint.status}
             </div>
@@ -124,6 +177,45 @@ export function M3ChecklistClient({
           {error}
         </p>
       ) : null}
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2>Patientenhinweise / To-dos</h2>
+        {m4Lines.length > 0 ? (
+          <>
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                margin: "0 0 0.75rem 0",
+                fontFamily: "inherit",
+              }}
+            >
+              {m4TextBlock}
+            </pre>
+            <button
+              type="button"
+              onClick={copyM4Text}
+            >
+              Text kopieren
+            </button>
+          </>
+        ) : (
+          <p>Keine weiteren Schritte erforderlich.</p>
+        )}
+      </section>
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2>Dokumentation für das Krankenblatt</h2>
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            margin: "0 0 0.75rem 0",
+            fontFamily: "inherit",
+          }}
+        >
+          {m5TextBlock}
+        </pre>
+        <button type="button" onClick={copyM5Text}>
+          Dokumentation kopieren
+        </button>
+      </section>
     </section>
   );
 }
