@@ -190,7 +190,7 @@ export default function HomePage() {
         <strong>Modus</strong>
         <div style={{ marginTop: "0.4rem" }}>
           {(["guest", "practice"] as CaseMode[]).map((m) => (
-            <label key={m} style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: "var(--font-weight-normal)" }}>
+            <label key={m} style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: 400 }}>
               <input
                 type="radio"
                 name="mode"
@@ -231,7 +231,7 @@ export default function HomePage() {
               {(["klar", "unklar"] as M1BlockStatus[]).map((val) => (
                 <label
                   key={val}
-                  style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: "var(--font-weight-normal)" }}
+                  style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: 400 }}
                 >
                   <input
                     type="radio"
