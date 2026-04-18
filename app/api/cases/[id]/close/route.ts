@@ -23,7 +23,7 @@ export async function PATCH(
     });
 
     if (!session || session.owner_account_id !== account.id) {
-      return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
+      return NextResponse.json({ ok: false, error: "Fall nicht gefunden." }, { status: 404 });
     }
 
     await prisma.caseSession.update({
