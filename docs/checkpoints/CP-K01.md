@@ -54,7 +54,6 @@ Es ist aktuell kein verlässlicher Kommunikationsweg erkennbar – weder direkt 
 |-----------------|---------------------------------------------------------------|
 | OK              | „Kommunikation ist ausreichend möglich"                       |
 | TO_DO           | „Kommunikation ist aktuell nicht ausreichend möglich"         |
-| ZURÜCKSTELLEN   | „Kommunikation ist unklar"                                    |
 
 ---
 

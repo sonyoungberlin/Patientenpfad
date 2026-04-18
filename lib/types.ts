@@ -36,16 +36,28 @@ export enum CheckpointRelevance {
   A = "A",
 }
 
-export type ActiveCheckpoint = {
+type ActiveCheckpointBase = {
   id: string;
   block_id: string;
   type: CheckpointType;
-  category: CheckpointCategory;
   relevance: CheckpointRelevance;
   title: string;
   description?: string;
+};
+
+export type ActiveCheckpointM = ActiveCheckpointBase & {
+  category: CheckpointCategory.M;
+  /** Medizinisch: OK | TO_DO | ZURÜCKSTELLEN */
   status: "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 };
+
+export type ActiveCheckpointO = ActiveCheckpointBase & {
+  category: CheckpointCategory.O;
+  /** Organisatorisch: OK | TO_DO – ZURÜCKSTELLEN ist nicht erlaubt */
+  status: "OK" | "TO_DO";
+};
+
+export type ActiveCheckpoint = ActiveCheckpointM | ActiveCheckpointO;
 
 export type PrefillEntry = {
   block_id: string;

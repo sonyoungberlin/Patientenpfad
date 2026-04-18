@@ -53,7 +53,6 @@ Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder best
 |-----------------|-------------------------------------------------------------------|
 | OK              | „Versorgungsumfeld ist ausreichend geklärt"               |
 | TO_DO           | „Versorgungsumfeld ist aktuell nicht ausreichend geklärt" |
-| ZURÜCKSTELLEN   | „Versorgungsumfeld ist unklar"                                    |
 
 ---
 

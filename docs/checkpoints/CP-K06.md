@@ -54,7 +54,6 @@ Die externe Mitbehandlungssituation ist aktuell nicht ausreichend nachvollziehba
 |-----------------|---------------------------------------------------------------------------------------|
 | OK              | „Externe Mitbehandlungssituation ist ausreichend geklärt"                     |
 | TO_DO           | „Externe Mitbehandlungssituation ist aktuell nicht ausreichend geklärt"       |
-| ZURÜCKSTELLEN   | „Externe Mitbehandlungssituation ist unklar"                                          |
 
 ---
 

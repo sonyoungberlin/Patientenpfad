@@ -53,7 +53,6 @@ Es ist aktuell kein geeigneter Versorgungskanal nutzbar.
 |-----------------|---------------------------------------------------------------|
 | OK              | „Versorgungskanäle sind ausreichend nutzbar"                  |
 | TO_DO           | „Versorgungskanäle sind aktuell nicht ausreichend nutzbar"    |
-| ZURÜCKSTELLEN   | „Versorgungskanäle sind unklar"                               |
 
 ---
 

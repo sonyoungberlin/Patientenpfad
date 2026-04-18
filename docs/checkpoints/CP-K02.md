@@ -52,7 +52,6 @@ Der Zugang zur Versorgung ist aktuell nicht ausreichend möglich.
 |-----------------|-----------------------------------------------------------------------|
 | OK              | „Zugang zur Versorgung ist möglich"                                   |
 | TO_DO           | „Zugang zur Versorgung ist aktuell nicht ausreichend möglich"         |
-| ZURÜCKSTELLEN   | „Zugang zur Versorgung ist unklar"                                    |
 
 ---
 
