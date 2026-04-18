@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
+import { getCreateSuccessRedirectPath } from "@/lib/flow/caseNavigation";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
@@ -15,17 +17,6 @@ const BLOCK_LABELS: Record<keyof M1Selection, string> = {
   versorgung_im_alltag: "Versorgung im Alltag",
 };
 
-type CaseResult = {
-  case_id: string;
-  stage_status: string;
-  mode: CaseMode;
-  patient_reference: string | null;
-  m1_snapshot_initial?: {
-    blocks: M1Selection;
-    activated_checkpoint_ids: string[];
-  };
-};
-
 type CaseListItem = {
   id: string;
   createdAt: string;
@@ -35,10 +26,10 @@ type CaseListItem = {
 };
 
 export default function HomePage() {
+  const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
   const [mode, setMode] = useState<CaseMode>("guest");
   const [patientReference, setPatientReference] = useState("");
-  const [result, setResult] = useState<CaseResult | null>(null);
   const [gatekeeper, setGatekeeper] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,7 +42,6 @@ export default function HomePage() {
 
   async function handleCreate() {
     setLoading(true);
-    setResult(null);
     setGatekeeper(false);
     setError(null);
     try {
@@ -73,13 +63,12 @@ export default function HomePage() {
         setGatekeeper(true);
         return;
       }
-      setResult({
-        case_id: data.case_id,
-        stage_status: data.stage_status,
-        mode: data.mode ?? "guest",
-        patient_reference: data.patient_reference ?? null,
-        m1_snapshot_initial: data.m1_snapshot_initial,
-      });
+      const redirectPath = getCreateSuccessRedirectPath(data);
+      if (redirectPath) {
+        router.push(redirectPath);
+      } else {
+        setError("Fehlende Fall-ID");
+      }
     } catch {
       setError("Netzwerkfehler");
     } finally {
@@ -183,32 +172,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {result && (
-        <div style={{ marginTop: "1.5rem" }}>
-          <p style={{ margin: 0 }}>
-            <strong>case_id:</strong> {result.case_id}
-            <br />
-            <strong>stage_status:</strong> {result.stage_status}
-            <br />
-            <strong>Modus:</strong> {result.mode === "practice" ? "Praxiszuordnung" : "Gast"}
-            {result.patient_reference && (
-              <>
-                <br />
-                <strong>Patientennummer:</strong> {result.patient_reference}
-              </>
-            )}
-          </p>
-          {result.m1_snapshot_initial && (
-            <div style={{ marginTop: "0.75rem" }}>
-              <strong>Aktivierte Checkpoints:</strong>{" "}
-              {result.m1_snapshot_initial.activated_checkpoint_ids.length > 0
-                ? result.m1_snapshot_initial.activated_checkpoint_ids.join(", ")
-                : "–"}
-            </div>
-          )}
-        </div>
-      )}
-
       {error && (
         <p style={{ marginTop: "1rem", color: "red" }}>Fehler: {error}</p>
       )}
@@ -256,4 +219,3 @@ export default function HomePage() {
     </main>
   );
 }
-
