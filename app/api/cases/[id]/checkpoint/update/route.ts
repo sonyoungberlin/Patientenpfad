@@ -50,8 +50,8 @@ export async function PATCH(
 
     if (!Array.isArray(session.active_checkpoints)) {
       return NextResponse.json(
-        { ok: false, error: "Checkpoint not found" },
-        { status: 400 },
+        { ok: false, error: "Invalid checkpoint state" },
+        { status: 500 },
       );
     }
 
