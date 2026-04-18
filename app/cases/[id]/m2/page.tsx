@@ -1,7 +1,12 @@
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 
-export default function M2Page({ params }: { params: { id: string } }) {
-  const m3Path = buildCaseM3Path(params.id);
+export default async function M2Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const m3Path = buildCaseM3Path(id);
 
   return (
     <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "700px" }}>

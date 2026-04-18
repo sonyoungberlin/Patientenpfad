@@ -67,7 +67,7 @@ export default function HomePage() {
       if (redirectPath) {
         router.push(redirectPath);
       } else {
-        setError("Fehlende Fall-ID");
+        setError("Navigation fehlgeschlagen");
       }
     } catch {
       setError("Netzwerkfehler");
