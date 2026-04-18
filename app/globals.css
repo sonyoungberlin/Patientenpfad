@@ -158,7 +158,7 @@ button:disabled {
 }
 
 .answer-btn.active {
-  background: var(--accent);
+  background: var(--secondary);
   color: var(--foreground);
   border-color: var(--switch-background);
   font-weight: var(--font-weight-medium);
