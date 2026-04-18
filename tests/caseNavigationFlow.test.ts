@@ -30,6 +30,7 @@ describe("M2 Skip-Option", () => {
       await M2Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
     expect(markup).toContain("Ohne M2 direkt zur ärztlichen Checkliste");
+    expect(markup).toContain("<a");
   });
 
   it("Skip führt direkt zu M3", async () => {

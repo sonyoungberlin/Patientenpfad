@@ -67,7 +67,7 @@ export default function HomePage() {
       if (redirectPath) {
         router.push(redirectPath);
       } else {
-        setError("Weiterleitung konnte nicht durchgeführt werden. Bitte versuchen Sie es erneut.");
+        setError("Fall-ID fehlt in der Antwort. Bitte erneut versuchen.");
       }
     } catch {
       setError("Netzwerkfehler");
