@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { buildCaseM2Path } from "@/lib/flow/caseNavigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
@@ -128,7 +127,7 @@ export default async function CasesPage() {
                   </div>
                 </div>
                 <Link
-                  href={buildCaseM2Path(session.id)}
+                  href={`/cases/${session.id}`}
                   aria-label={`Weiterbearbeiten: ${title}`}
                   style={{
                     whiteSpace: "nowrap",
