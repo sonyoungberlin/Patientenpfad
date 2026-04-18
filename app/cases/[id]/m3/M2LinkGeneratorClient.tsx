@@ -17,15 +17,17 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       const response = await fetch(`/api/cases/${caseId}/m2-link`, {
         method: "POST",
       });
-      const data = await response.json();
+      const data = (await response.json()) as { link?: string };
 
-      if (!response.ok || !data.ok) {
+      if (!response.ok || typeof data.link !== "string" || data.link.length === 0) {
+        setLink(null);
         setError("Link konnte nicht erzeugt werden.");
         return;
       }
 
-      setLink(data.link as string);
+      setLink(data.link);
     } catch {
+      setLink(null);
       setError("Link konnte nicht erzeugt werden.");
     } finally {
       setLoading(false);
