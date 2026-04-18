@@ -19,7 +19,7 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       });
       const data = (await response.json()) as { link?: string };
 
-      if (!response.ok || typeof data.link !== "string" || data.link.length === 0) {
+      if (!response.ok || typeof data.link !== "string" || !data.link) {
         setLink(null);
         setError("Link konnte nicht erzeugt werden.");
         return;
