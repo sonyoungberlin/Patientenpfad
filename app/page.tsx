@@ -20,14 +20,6 @@ const BLOCK_LABELS: Record<keyof M1Selection, string> = {
   versorgung_im_alltag: "Versorgung im Alltag",
 };
 
-type CaseListItem = {
-  id: string;
-  createdAt: string;
-  mode: CaseMode;
-  patient_reference: string | null;
-  checkpoint_count: number;
-};
-
 type AccountInfo = {
   id: string;
   email: string;
@@ -42,9 +34,6 @@ export default function HomePage() {
   const [gatekeeper, setGatekeeper] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [caseList, setCaseList] = useState<CaseListItem[] | null>(null);
-  const [listLoading, setListLoading] = useState(false);
-
   // Auth state
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -88,7 +77,6 @@ export default function HomePage() {
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     setAccount(null);
-    setCaseList(null);
   }
 
   function handleBlockChange(blockId: keyof M1Selection, value: M1BlockStatus) {
@@ -128,19 +116,6 @@ export default function HomePage() {
       setError("Netzwerkfehler");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleLoadList() {
-    setListLoading(true);
-    try {
-      const res = await fetch("/api/cases");
-      const data = await res.json();
-      if (data.ok) setCaseList(data.cases as CaseListItem[]);
-    } catch {
-      // ignore
-    } finally {
-      setListLoading(false);
     }
   }
 
@@ -244,6 +219,10 @@ export default function HomePage() {
         )}
       </div>
 
+      <p style={{ color: "#999", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+        Hinweis: Der Fall erscheint in Ihrer Fallübersicht. Eine Patienten-Referenz hilft beim späteren Wiederfinden.
+      </p>
+
       {/* M1-Blöcke */}
       <div>
         {(Object.keys(BLOCK_LABELS) as (keyof M1Selection)[]).map((blockId) => (
@@ -290,46 +269,7 @@ export default function HomePage() {
         <p style={{ marginTop: "1rem", color: "red" }}>Fehler: {error}</p>
       )}
 
-      {/* Fallübersicht */}
-      <div style={{ marginTop: "3rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Letzte Fälle</h2>
-        <button onClick={handleLoadList} disabled={listLoading}>
-          {listLoading ? "Lädt…" : "Fälle laden"}
-        </button>
-        {caseList !== null && (
-          <table style={{ marginTop: "1rem", borderCollapse: "collapse", width: "100%" }}>
-            <thead>
-              <tr style={{ textAlign: "left", borderBottom: "1px solid #ccc" }}>
-                <th style={{ paddingRight: "1rem" }}>Datum</th>
-                <th style={{ paddingRight: "1rem" }}>Modus</th>
-                <th style={{ paddingRight: "1rem" }}>Patientennr.</th>
-                <th>Checkpoints</th>
-              </tr>
-            </thead>
-            <tbody>
-              {caseList.length === 0 && (
-                <tr>
-                  <td colSpan={4} style={{ color: "#888", paddingTop: "0.5rem" }}>
-                    Keine Fälle vorhanden.
-                  </td>
-                </tr>
-              )}
-              {caseList.map((c) => (
-                <tr key={c.id} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={{ padding: "0.4rem 1rem 0.4rem 0" }}>
-                    {new Date(c.createdAt).toLocaleString("de-DE")}
-                  </td>
-                  <td style={{ paddingRight: "1rem" }}>
-                    {c.mode === "practice" ? "Praxis" : "Gast"}
-                  </td>
-                  <td style={{ paddingRight: "1rem" }}>{c.patient_reference ?? "–"}</td>
-                  <td>{c.checkpoint_count}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+
     </main>
   );
 }
