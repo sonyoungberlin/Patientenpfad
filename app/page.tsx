@@ -111,7 +111,7 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setError((data.error as string | undefined) ?? "Unbekannter Fehler");
+        setError("Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.");
         return;
       }
       if (isGatekeeperResponse(data)) {
