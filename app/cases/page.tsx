@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { buildCaseM2Path } from "@/lib/flow/caseNavigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
+const MAX_CASES_PER_PAGE = 50;
 
 type CaseListSession = {
   id: string;
@@ -31,7 +33,11 @@ function getCheckpointStatuses(value: unknown): CheckpointStatus[] {
 }
 
 function hasPrefillData(value: unknown): boolean {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0);
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  for (const key in value) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) return true;
+  }
+  return false;
 }
 
 function deriveCaseStatus(session: CaseListSession): string {
@@ -76,7 +82,7 @@ export default async function CasesPage() {
   const sessions = await prisma.caseSession.findMany({
     where: { owner_account_id: account.id },
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: MAX_CASES_PER_PAGE,
     select: {
       id: true,
       createdAt: true,
@@ -95,46 +101,50 @@ export default async function CasesPage() {
         {sessions.length === 0 ? (
           <p style={{ color: "#777" }}>Keine Fälle vorhanden.</p>
         ) : (
-          sessions.map((session) => (
-            <article
-              key={session.id}
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                padding: "0.9rem 1rem",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "1rem",
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 700 }}>{deriveCaseTitle(session)}</div>
-                {session.patient_reference ? (
-                  <div style={{ marginTop: "0.25rem", color: "#666", fontSize: "0.9rem" }}>
-                    Patienten-Referenz: {session.patient_reference}
-                  </div>
-                ) : null}
-                <div style={{ marginTop: "0.3rem", color: "#111" }}>
-                  Status: {deriveCaseStatus(session)}
-                </div>
-              </div>
-              <a
-                href={buildCaseM2Path(session.id)}
+          sessions.map((session) => {
+            const title = deriveCaseTitle(session);
+            return (
+              <article
+                key={session.id}
                 style={{
-                  whiteSpace: "nowrap",
-                  border: "1px solid #bbb",
-                  borderRadius: "6px",
-                  padding: "0.45rem 0.75rem",
-                  textDecoration: "none",
-                  color: "#111",
-                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "0.9rem 1rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "1rem",
                 }}
               >
-                Weiterbearbeiten
-              </a>
-            </article>
-          ))
+                <div>
+                  <div style={{ fontWeight: 700 }}>{title}</div>
+                  {session.patient_reference ? (
+                    <div style={{ marginTop: "0.25rem", color: "#666", fontSize: "0.9rem" }}>
+                      Patienten-Referenz: {session.patient_reference}
+                    </div>
+                  ) : null}
+                  <div style={{ marginTop: "0.3rem", color: "#111" }}>
+                    Status: {deriveCaseStatus(session)}
+                  </div>
+                </div>
+                <Link
+                  href={buildCaseM2Path(session.id)}
+                  aria-label={`Weiterbearbeiten: ${title}`}
+                  style={{
+                    whiteSpace: "nowrap",
+                    border: "1px solid #bbb",
+                    borderRadius: "6px",
+                    padding: "0.45rem 0.75rem",
+                    textDecoration: "none",
+                    color: "#111",
+                    background: "#fff",
+                  }}
+                >
+                  Weiterbearbeiten
+                </Link>
+              </article>
+            );
+          })
         )}
       </div>
     </main>
