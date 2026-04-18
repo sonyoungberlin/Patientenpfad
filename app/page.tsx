@@ -67,7 +67,7 @@ export default function HomePage() {
       if (redirectPath) {
         router.push(redirectPath);
       } else {
-        setError("Navigation fehlgeschlagen");
+        setError("Weiterleitung konnte nicht durchgeführt werden. Bitte versuchen Sie es erneut.");
       }
     } catch {
       setError("Netzwerkfehler");
