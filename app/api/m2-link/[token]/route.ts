@@ -52,6 +52,8 @@ export async function POST(
       where: { id: session.id },
       data: {
         ctx_prefill: body.prefill as Record<string, Record<string, string>>,
+        m2_token: null,
+        m2_token_expires_at: null,
       },
     });
 

@@ -39,7 +39,7 @@ describe("POST /api/m2-link/[token]", () => {
     prismaMock.caseSession.update.mockReset();
   });
 
-  it("schreibt ctx_prefill bei gültigem Token", async () => {
+  it("schreibt ctx_prefill und löscht Token bei erfolgreichem Submit", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       id: "case-1",
       m2_token_expires_at: futureDate(14),
@@ -55,10 +55,41 @@ describe("POST /api/m2-link/[token]", () => {
 
     expect(response.status).toBe(200);
     expect(json.ok).toBe(true);
-    expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
-      where: { id: "case-1" },
-      data: { ctx_prefill: prefill },
+    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
+    expect(updateData.ctx_prefill).toEqual(prefill);
+    expect(updateData.m2_token).toBeNull();
+    expect(updateData.m2_token_expires_at).toBeNull();
+  });
+
+  it("nach erfolgreichem Submit ist der Token nicht mehr auffindbar (404)", async () => {
+    // Simulate the state after nullification: findUnique returns null for the old token
+    prismaMock.caseSession.findUnique.mockResolvedValue(null);
+
+    const req = makeRequest("consumed-token", { prefill: { K01: { "M2-01": "ja" } } });
+    const response = await POST(req, {
+      params: Promise.resolve({ token: "consumed-token" }),
     });
+
+    expect(response.status).toBe(404);
+    const json = await response.json();
+    expect(json.ok).toBe(false);
+  });
+
+  it("neuer Token kann nach Verbrauch erneut erzeugt und genutzt werden", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      m2_token_expires_at: futureDate(14),
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    const req = makeRequest("new-token", { prefill: { K02: { "M2-01": "nein" } } });
+    const response = await POST(req, {
+      params: Promise.resolve({ token: "new-token" }),
+    });
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.ok).toBe(true);
   });
 
   it("gibt 410 zurück bei abgelaufenem Token", async () => {
@@ -104,20 +135,4 @@ describe("POST /api/m2-link/[token]", () => {
     expect(response.status).toBe(400);
   });
 
-  it("löscht den Token nach dem Submit nicht", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
-      id: "case-1",
-      m2_token_expires_at: futureDate(14),
-    });
-    prismaMock.caseSession.update.mockResolvedValue({});
-
-    const req = makeRequest("valid-token", {
-      prefill: { K01: { "M2-01": "ja" } },
-    });
-    await POST(req, { params: Promise.resolve({ token: "valid-token" }) });
-
-    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
-    expect(updateData).not.toHaveProperty("m2_token");
-    expect(updateData).not.toHaveProperty("m2_token_expires_at");
-  });
 });
