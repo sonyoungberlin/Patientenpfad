@@ -29,26 +29,28 @@ type PrismaMock = {
 
 const prismaMock = prisma as unknown as PrismaMock;
 
-const mCheckpoint: ActiveCheckpoint = {
-  id: "K-M",
-  block_id: "diagnosis_status",
-  type: CheckpointType.VERIFIKATION,
+/** K01 – Kommunikation (O, 4 M2-Fragen) */
+const k01Checkpoint: ActiveCheckpoint = {
+  id: "K01",
+  block_id: "kommunikation",
+  type: CheckpointType.PRESENCE_CHECK,
   relevance: CheckpointRelevance.P,
-  title: "Medizinischer Checkpoint",
-  category: CheckpointCategory.M,
+  title: "Erreichbarkeit Patient sichergestellt",
+  category: CheckpointCategory.O,
   status: "TO_DO",
   m4: { type: "ACTION", text: "M4" },
 };
 
-const oCheckpoint: ActiveCheckpoint = {
-  id: "K-O",
-  block_id: "communication",
-  type: CheckpointType.PRESENCE_CHECK,
+/** K04 – Medikation (M, 5 M2-Fragen) */
+const k04Checkpoint: ActiveCheckpoint = {
+  id: "K04",
+  block_id: "medizinische_lage",
+  type: CheckpointType.VERIFIKATION,
   relevance: CheckpointRelevance.P,
-  title: "Organisatorischer Checkpoint",
-  category: CheckpointCategory.O,
+  title: "Medikation geprüft",
+  category: CheckpointCategory.M,
   status: "TO_DO",
-  m4: { type: "NOTICE", text: "M4" },
+  m4: { type: "ACTION", text: "M4" },
 };
 
 describe("M2 Seite", () => {
@@ -56,9 +58,9 @@ describe("M2 Seite", () => {
     prismaMock.caseSession.findUnique.mockReset();
   });
 
-  it("zeigt nur aktive Checkpoints an", async () => {
+  it("rendert pro aktivem Checkpoint die M2-Fragen aus dem Katalog", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
-      active_checkpoints: [mCheckpoint, oCheckpoint],
+      active_checkpoints: [k01Checkpoint, k04Checkpoint],
       ctx_prefill: null,
     });
 
@@ -66,9 +68,33 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
-    expect(markup).toContain("Medizinischer Checkpoint");
-    expect(markup).toContain("Organisatorischer Checkpoint");
+    // beide Checkpoints werden gerendert
     expect((markup.match(/data-m2-checkpoint=/g) ?? []).length).toBe(2);
+
+    // K01: erste M2-Frage
+    expect(markup).toContain(
+      "Ist der Patient direkt erreichbar (Telefon, E-Mail oder persönlich)?",
+    );
+    // K04: erste M2-Frage
+    expect(markup).toContain(
+      "Haben Sie einen aktuellen Medikamentenplan oder eine Übersicht?",
+    );
+  });
+
+  it("rendert pro Frage Ja-, Nein- und Unklar-Buttons", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      active_checkpoints: [k01Checkpoint],
+      ctx_prefill: null,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
+    );
+
+    // K01 hat 4 Fragen (M2-01–M2-04), jede mit 3 Buttons → 12 Buttons
+    expect(
+      (markup.match(/data-m2-answer="K01:M2-0[1-4]:(ja|nein|unklar)"/g) ?? []).length,
+    ).toBe(12);
   });
 
   it("zeigt Hinweis wenn keine Checkpoints aktiv sind", async () => {
@@ -84,17 +110,19 @@ describe("M2 Seite", () => {
     expect(markup).toContain("Keine aktiven Checkpoints vorhanden.");
   });
 
-  it("füllt Textfelder mit gespeichertem Prefill vor", async () => {
+  it("vorgespeicherte Antworten werden per data-Attribut auf Buttons reflektiert", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
-      active_checkpoints: [mCheckpoint],
-      ctx_prefill: { "K-M": "Patient berichtet Schmerzen" },
+      active_checkpoints: [k04Checkpoint],
+      ctx_prefill: { K04: { "M2-01": "ja", "M2-02": "nein" } },
     });
 
     const markup = renderToStaticMarkup(
       await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
-    expect(markup).toContain("Patient berichtet Schmerzen");
+    // Der gespeicherte Prefill-Wert "ja" für M2-01 führt zu einem fett dargestellten Button
+    expect(markup).toContain('data-m2-answer="K04:M2-01:ja"');
+    expect(markup).toContain('data-m2-answer="K04:M2-02:nein"');
   });
 
   it("enthält den Skip-Link zur M3-Seite", async () => {

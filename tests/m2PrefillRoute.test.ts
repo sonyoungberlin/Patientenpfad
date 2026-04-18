@@ -27,13 +27,17 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     prismaMock.caseSession.update.mockReset();
   });
 
-  it("speichert Prefill-Daten in ctx_prefill", async () => {
+  it("speichert strukturierte Prefill-Daten in ctx_prefill", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({ id: "case-1" });
     prismaMock.caseSession.update.mockResolvedValue({});
 
+    const structuredPrefill = {
+      K04: { "M2-01": "ja", "M2-02": "nein", "M2-03": "unklar" },
+    };
+
     const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
       method: "PATCH",
-      body: JSON.stringify({ prefill: { "K-M": "Patient hat Beschwerden", "K-O": "" } }),
+      body: JSON.stringify({ prefill: structuredPrefill }),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -46,7 +50,7 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(json.ok).toBe(true);
     expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
-      data: { ctx_prefill: { "K-M": "Patient hat Beschwerden", "K-O": "" } },
+      data: { ctx_prefill: structuredPrefill },
     });
   });
 
