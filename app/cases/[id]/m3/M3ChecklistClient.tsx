@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
 import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
+import { resolveM5Text } from "@/lib/logic/deriveM5Output";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
@@ -106,18 +107,7 @@ export function M3ChecklistClient({
     .filter((text) => text.length > 0);
   const m4TextBlock = m4Lines.join("\n");
 
-  const m5Lines = checkpoints.map((cp) => {
-    if (cp.category === CheckpointCategory.M) {
-      if (cp.status === "OK") return `${cp.title} ist ausreichend geklärt.`;
-      if (cp.status === "TO_DO")
-        return `${cp.title} ist aktuell nicht ausreichend geklärt.`;
-      return `${cp.title} ist unklar.`;
-    }
-    // category O – only OK | TO_DO
-    return cp.status === "OK"
-      ? `${cp.title} ist geklärt.`
-      : `${cp.title} ist aktuell nicht ausreichend geklärt.`;
-  });
+  const m5Lines = checkpoints.map((cp) => resolveM5Text(cp));
   const m5TextBlock = m5Lines.join("\n");
 
   async function copyM4Text() {

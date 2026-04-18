@@ -44,7 +44,7 @@ const k01Checkpoint: ActiveCheckpoint = {
   block_id: "kommunikation",
   type: CheckpointType.PRESENCE_CHECK,
   relevance: CheckpointRelevance.P,
-  title: "Erreichbarkeit Patient sichergestellt",
+  title: "Erreichbarkeit des Patienten",
   category: CheckpointCategory.O,
   status: "TO_DO",
   m4: { type: "ACTION", text: "M4" },
@@ -56,7 +56,7 @@ const k04Checkpoint: ActiveCheckpoint = {
   block_id: "medizinische_lage",
   type: CheckpointType.VERIFIKATION,
   relevance: CheckpointRelevance.P,
-  title: "Medikation geprüft",
+  title: "Medikation",
   category: CheckpointCategory.M,
   status: "TO_DO",
   m4: { type: "ACTION", text: "M4" },
@@ -83,7 +83,7 @@ describe("M2 Seite", () => {
 
     // K01: erste M2-Frage
     expect(markup).toContain(
-      "Ist der Patient direkt erreichbar (Telefon, E-Mail oder persönlich)?",
+      "Sind Sie telefonisch und per SMS erreichbar?",
     );
     // K04: erste M2-Frage
     expect(markup).toContain(
