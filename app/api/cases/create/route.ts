@@ -7,6 +7,7 @@ import {
   CheckpointType,
   type ActiveCheckpoint,
   type BlockSummary,
+  type CaseMode,
   type M1Selection,
 } from "@/lib/types";
 import { buildM1SnapshotInitial, isGatekeeperCase } from "@/lib/logic/m1Activation";
@@ -76,6 +77,14 @@ export async function POST(req: NextRequest) {
     const m1Selection: M1Selection | undefined =
       body?.m1Selection ?? undefined;
 
+    const mode: CaseMode =
+      body?.mode === "practice" ? "practice" : "guest";
+
+    const patientReference: string | null =
+      mode === "practice" && typeof body?.patient_reference === "string" && body.patient_reference.trim() !== ""
+        ? body.patient_reference.trim()
+        : null;
+
     let activeCheckpoints: ActiveCheckpoint[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let m1SnapshotInitial: any = null;
@@ -107,6 +116,8 @@ export async function POST(req: NextRequest) {
         ctx_final: [],
         summary_anchor: [],
         m1_snapshot_initial: m1SnapshotInitial ?? undefined,
+        mode,
+        patient_reference: patientReference,
       },
     });
 
@@ -114,6 +125,8 @@ export async function POST(req: NextRequest) {
       ok: true,
       case_id: session.id,
       stage_status: session.stage_status,
+      mode: session.mode,
+      patient_reference: session.patient_reference,
       m1_snapshot_initial: m1SnapshotInitial,
     });
   } catch (err) {

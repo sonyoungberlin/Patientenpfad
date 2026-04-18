@@ -108,3 +108,10 @@ export type PrefillEntry = {
   value: string | number | boolean | null;
   source: "patient" | "praxis" | "extern" | "dokument";
 };
+
+// ---------------------------------------------------------------------------
+// Case Mode
+// ---------------------------------------------------------------------------
+
+/** Startmodus eines Falls. "guest" = kein Patientenbezug, "practice" = Praxiszuordnung */
+export type CaseMode = "guest" | "practice";

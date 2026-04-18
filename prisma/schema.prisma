@@ -43,4 +43,10 @@ model CaseSession {
 
   /// Eingefrorener M1-Aktivierungsstand bei Fallanlage (unveränderlich nach Erstellung)
   m1_snapshot_initial  Json?
+
+  /// Startmodus: "guest" (kein Patientenbezug) oder "practice" (Praxiszuordnung)
+  mode                 String?   @default("guest")
+
+  /// Optionale Patientennummer / Referenz (nur bei mode = "practice")
+  patient_reference    String?
 }
