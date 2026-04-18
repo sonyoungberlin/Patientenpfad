@@ -24,6 +24,7 @@
   --radius: 0.625rem;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
+  --main-max-width: 44rem;
 }
 
 /* ----- Reset / Base ----- */
@@ -241,7 +242,7 @@ code {
 
 /* ----- Layout helpers ----- */
 main {
-  max-width: 44rem;
+  max-width: var(--main-max-width);
   margin-left: auto;
   margin-right: auto;
   padding: 2rem 1.5rem;
