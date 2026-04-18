@@ -117,8 +117,14 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const errorName = err instanceof Error ? err.name : "UnknownError";
-    console.error("[cases/[id]/checkpoint/update]", errorName);
+    if (err instanceof Error) {
+      console.error("[cases/[id]/checkpoint/update]", {
+        name: err.name,
+        message: err.message,
+      });
+    } else {
+      console.error("[cases/[id]/checkpoint/update]", "UnknownError");
+    }
     return NextResponse.json(
       { ok: false, error: "Failed to update checkpoint status" },
       { status: 500 },
