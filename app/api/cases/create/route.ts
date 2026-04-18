@@ -53,6 +53,10 @@ const DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
     description:
       "Prüfen, ob ein aktueller Arztbrief oder vergleichbares Dokument vorliegt.",
     status: "TO_DO",
+    m4: {
+      type: "ACTION",
+      text: "Bitte bringen Sie die für Ihre Behandlung relevanten Befunde zum nächsten Termin mit.",
+    },
   },
 ];
 

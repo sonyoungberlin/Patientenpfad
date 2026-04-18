@@ -43,6 +43,11 @@ type ActiveCheckpointBase = {
   relevance: CheckpointRelevance;
   title: string;
   description?: string;
+  m4: {
+    /** Static per checkpoint – not computed from status */
+    type: "ACTION" | "NOTICE";
+    text: string;
+  };
 };
 
 export type ActiveCheckpointM = ActiveCheckpointBase & {
