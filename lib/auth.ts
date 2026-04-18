@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 
 export const SESSION_COOKIE = "pp_session";
@@ -10,15 +11,7 @@ export type SessionAccount = {
   is_approved: boolean;
 };
 
-/**
- * Liest das Session-Cookie aus dem eingehenden Request und gibt den zugehörigen
- * Account zurück. Gibt null zurück wenn kein gültiges Token vorhanden oder die
- * Session abgelaufen ist.
- */
-export async function getSessionAccount(
-  req: NextRequest,
-): Promise<SessionAccount | null> {
-  const token = req.cookies.get(SESSION_COOKIE)?.value;
+async function resolveAccount(token: string | undefined): Promise<SessionAccount | null> {
   if (!token) return null;
 
   const session = await prisma.session.findUnique({
@@ -38,4 +31,26 @@ export async function getSessionAccount(
   }
 
   return session.account;
+}
+
+/**
+ * Liest das Session-Cookie aus dem eingehenden Request und gibt den zugehörigen
+ * Account zurück. Gibt null zurück wenn kein gültiges Token vorhanden oder die
+ * Session abgelaufen ist.
+ */
+export async function getSessionAccount(
+  req: NextRequest,
+): Promise<SessionAccount | null> {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  return resolveAccount(token);
+}
+
+/**
+ * Liest das Session-Cookie aus den Next.js-Headers (für Server-Components / page.tsx).
+ * Gibt null zurück wenn kein gültiges Token vorhanden oder die Session abgelaufen ist.
+ */
+export async function getSessionAccountFromCookies(): Promise<SessionAccount | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  return resolveAccount(token);
 }

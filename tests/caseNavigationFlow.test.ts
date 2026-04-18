@@ -9,6 +9,15 @@ import M2Page from "@/app/cases/[id]/m2/page";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
+  redirect: jest.fn(),
+}));
+
+jest.mock("@/lib/auth", () => ({
+  getSessionAccountFromCookies: jest.fn().mockResolvedValue({
+    id: "acc-test",
+    email: "test@example.com",
+    is_approved: true,
+  }),
 }));
 
 jest.mock("@/lib/prisma", () => ({
@@ -45,6 +54,7 @@ describe("M2 Skip-Option", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
       active_checkpoints: [],
       ctx_prefill: null,
     });

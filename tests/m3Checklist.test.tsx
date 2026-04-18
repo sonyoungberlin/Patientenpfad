@@ -7,6 +7,16 @@ import {
   type ActiveCheckpoint,
 } from "@/lib/types";
 
+jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
+
+jest.mock("@/lib/auth", () => ({
+  getSessionAccountFromCookies: jest.fn().mockResolvedValue({
+    id: "acc-test",
+    email: "test@example.com",
+    is_approved: true,
+  }),
+}));
+
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     caseSession: {
@@ -54,23 +64,23 @@ describe("M3 Checkliste", () => {
     prismaMock.caseSession.findUnique.mockReset();
   });
 
+  function setupCase(data: object) {
+    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
+  }
+
   it("lädt active_checkpoints per Case-ID", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
-      active_checkpoints: [mCheckpoint, oCheckpoint],
-    });
+    setupCase({ active_checkpoints: [mCheckpoint, oCheckpoint] });
 
     await M3Page({ params: Promise.resolve({ id: "case-123" }) });
 
     expect(prismaMock.caseSession.findUnique).toHaveBeenCalledWith({
       where: { id: "case-123" },
-      select: { active_checkpoints: true, ctx_prefill: true },
+      select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true },
     });
   });
 
   it("rendert die richtige Anzahl an Checkpoints", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
-      active_checkpoints: [mCheckpoint, oCheckpoint],
-    });
+    setupCase({ active_checkpoints: [mCheckpoint, oCheckpoint] });
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
@@ -82,9 +92,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("rendert für M drei Buttons und für O zwei (kein ZURÜCKSTELLEN bei O)", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
-      active_checkpoints: [mCheckpoint, oCheckpoint],
-    });
+    setupCase({ active_checkpoints: [mCheckpoint, oCheckpoint] });
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
@@ -95,7 +103,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("zeigt bei TO_DO nur die abgeleiteten M4-Texte (OK/ZURÜCKSTELLEN ohne Output)", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         {
           ...mCheckpoint,
@@ -129,7 +137,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("zeigt mehrere TO_DOs als mehrere Zeilen", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         {
           ...mCheckpoint,
@@ -154,7 +162,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("zeigt leeren Zustand ohne TO_DO", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         {
           ...mCheckpoint,
@@ -178,7 +186,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("M5: M-OK → ausreichend geklärt, M-TODO → nicht ausreichend, M-ZURÜCKSTELLEN → unklar", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         { ...mCheckpoint, id: "K-M-OK", title: "Diagnose", status: "OK" },
         {
@@ -207,7 +215,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("M5: O-OK → geklärt, O-TODO → nicht ausreichend", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         { ...oCheckpoint, id: "K-O-OK", title: "Terminkoordination", status: "OK" },
         {
@@ -228,7 +236,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("M5: mehrere Checkpoints → mehrere Zeilen", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         { ...mCheckpoint, id: "K-M-1", title: "Alpha", status: "OK" },
         { ...oCheckpoint, id: "K-O-1", title: "Beta", status: "TO_DO" },
@@ -245,7 +253,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("M3 zeigt M2-Antworten lesend als aufklappbaren Prefill an", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         { ...mCheckpoint, id: "K01", title: "Kommunikation" },
       ],
@@ -266,7 +274,7 @@ describe("M3 Checkliste", () => {
   });
 
   it("M3 zeigt keinen Prefill-Bereich wenn kein Prefill gespeichert", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({
+    setupCase({
       active_checkpoints: [
         { ...mCheckpoint, id: "K-M-NP", title: "Diagnose" },
       ],
