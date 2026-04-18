@@ -21,7 +21,15 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const body = await req.json().catch(() => ({}));
+    let body: Record<string, unknown>;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Malformed JSON body" },
+        { status: 400 },
+      );
+    }
 
     const checkpointId =
       typeof body?.checkpoint_id === "string" ? body.checkpoint_id : undefined;
