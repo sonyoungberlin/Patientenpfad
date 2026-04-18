@@ -45,6 +45,10 @@ export function M3ChecklistClient({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const m4Lines = checkpoints
+    .filter((cp) => cp.status === "TO_DO")
+    .map((cp) => cp.m4.text);
+  const m4TextBlock = m4Lines.join("\n");
 
   async function updateStatus(checkpointId: string, status: CheckpointStatus) {
     const previous = checkpoints;
@@ -124,6 +128,30 @@ export function M3ChecklistClient({
           {error}
         </p>
       ) : null}
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2>Patientenhinweise / To-dos</h2>
+        {m4Lines.length > 0 ? (
+          <>
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                margin: "0 0 0.75rem 0",
+                fontFamily: "inherit",
+              }}
+            >
+              {m4TextBlock}
+            </pre>
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard.writeText(m4TextBlock)}
+            >
+              Text kopieren
+            </button>
+          </>
+        ) : (
+          <p>Keine weiteren Schritte erforderlich.</p>
+        )}
+      </section>
     </section>
   );
 }
