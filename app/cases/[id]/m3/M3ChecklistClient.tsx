@@ -40,6 +40,13 @@ function getStatusLabel(status: CheckpointStatus): string {
   return "zurückgestellt";
 }
 
+function getAnswerSymbol(answer: string): string {
+  if (answer === "ja") return "✓";
+  if (answer === "nein") return "✗";
+  if (answer === "unklar") return "?";
+  return "";
+}
+
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
@@ -110,26 +117,57 @@ export function M3ChecklistClient({
   const m5Lines = checkpoints.map((cp) => resolveM5Text(cp));
   const m5TextBlock = m5Lines.join("\n");
 
-  async function copyM4Text() {
-    if (!m4TextBlock) {
-      return;
-    }
+  const [copiedM4, setCopiedM4] = useState(false);
+  const [copiedM5, setCopiedM5] = useState(false);
 
+  function fallbackCopyText(text: string): boolean {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(m4TextBlock);
+      ok = document.execCommand("copy");
     } catch {
+      ok = false;
+    }
+    document.body.removeChild(textarea);
+    return ok;
+  }
+
+  async function copyToClipboard(text: string): Promise<boolean> {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // fall through to fallback
+      }
+    }
+    return fallbackCopyText(text);
+  }
+
+  async function copyM4Text() {
+    if (!m4TextBlock) return;
+    const ok = await copyToClipboard(m4TextBlock);
+    if (ok) {
+      setCopiedM4(true);
+      setTimeout(() => setCopiedM4(false), 2000);
+    } else {
       setError("Text konnte nicht kopiert werden.");
     }
   }
 
   async function copyM5Text() {
-    if (!m5TextBlock) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(m5TextBlock);
-    } catch {
+    if (!m5TextBlock) return;
+    const ok = await copyToClipboard(m5TextBlock);
+    if (ok) {
+      setCopiedM5(true);
+      setTimeout(() => setCopiedM5(false), 2000);
+    } else {
       setError("Dokumentation konnte nicht kopiert werden.");
     }
   }
@@ -260,12 +298,15 @@ export function M3ChecklistClient({
                   style={{ marginBottom: "0.5rem" }}
                 >
                   <summary>Aus M2:</summary>
-                  <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem" }}>
+                  <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
                     {Object.entries(cpAnswers).map(([qId, answer]) => {
                       const question = questions.find((q) => q.id === qId);
+                      const symbol = getAnswerSymbol(answer);
                       return (
-                        <li key={qId}>
-                          {question ? question.text : qId}: {answer}
+                        <li key={qId} style={{ marginBottom: "0.25rem" }}>
+                          <span>{question ? question.text : qId}</span>
+                          {" — "}
+                          <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
                         </li>
                       );
                     })}
@@ -299,14 +340,14 @@ export function M3ChecklistClient({
         <h2>Patientenhinweise / To-dos</h2>
         {m4Lines.length > 0 ? (
           <>
-            <pre style={{ marginBottom: "0.75rem" }}>
+            <pre style={{ marginBottom: "0.75rem", userSelect: "text", cursor: "text" }}>
               {m4TextBlock}
             </pre>
             <button
               type="button"
-              onClick={copyM4Text}
+              onClick={() => void copyM4Text()}
             >
-              Text kopieren
+              {copiedM4 ? "Kopiert ✓" : "Text kopieren"}
             </button>
           </>
         ) : (
@@ -315,11 +356,11 @@ export function M3ChecklistClient({
       </section>
       <section style={{ marginTop: "1.5rem" }}>
         <h2>Dokumentation für das Krankenblatt</h2>
-        <pre style={{ marginBottom: "0.75rem" }}>
+        <pre style={{ marginBottom: "0.75rem", userSelect: "text", cursor: "text" }}>
           {m5TextBlock}
         </pre>
-        <button type="button" onClick={copyM5Text}>
-          Dokumentation kopieren
+        <button type="button" onClick={() => void copyM5Text()}>
+          {copiedM5 ? "Kopiert ✓" : "Dokumentation kopieren"}
         </button>
       </section>
       <section className="section-divider">

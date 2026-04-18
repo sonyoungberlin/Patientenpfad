@@ -139,7 +139,7 @@ export function M2PrefillClient({
                       data-m2-question={`${cp.id}:${q.id}`}
                       style={{ marginBottom: "0.75rem" }}
                     >
-                      <div className="text-small" style={{ marginBottom: "0.4rem" }}>
+                      <div style={{ marginBottom: "0.4rem" }}>
                         {q.text}
                       </div>
                       <div style={{ display: "flex", gap: "0.5rem" }}>

@@ -10,12 +10,12 @@
 :root {
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
-  --primary: #030213;
+  --primary: #3b3f4a;
   --secondary: oklch(0.95 0.0058 264.53);
   --muted: #ececf0;
   --muted-foreground: #717182;
   --accent: #e9ebef;
-  --accent-foreground: #030213;
+  --accent-foreground: #3b3f4a;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.1);
@@ -35,7 +35,7 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 17px;
 }
 
 body {
@@ -108,7 +108,7 @@ button {
   background: var(--muted);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.5rem 1rem;
+  padding: 0.3rem 0.75rem;
   cursor: pointer;
   transition: none;
   white-space: nowrap;
@@ -143,8 +143,8 @@ button:disabled {
 
 /* ----- Answer Buttons (Ja / Nein / Unklar, M3 status) ----- */
 .answer-btn {
-  min-width: 5.5rem;
-  padding: 0.5rem 1rem;
+  min-width: 5rem;
+  padding: 0.3rem 0.75rem;
   font-size: 1rem;
   font-weight: var(--font-weight-medium);
   background: var(--muted);
@@ -325,8 +325,8 @@ main {
 
 /* ----- Details / summary ----- */
 details {
-  font-size: 0.85rem;
-  color: var(--muted-foreground);
+  font-size: 0.95rem;
+  color: var(--foreground);
 }
 
 summary {
