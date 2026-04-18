@@ -35,6 +35,7 @@ describe("/cases/[id] Weiterleitung", () => {
       id: "acc-test",
       email: "test@example.com",
       is_approved: true,
+      is_admin: false,
     });
   });
 
