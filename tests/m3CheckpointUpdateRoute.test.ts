@@ -75,4 +75,3 @@ describe("PATCH /api/cases/[id]/checkpoint/update", () => {
     });
   });
 });
-

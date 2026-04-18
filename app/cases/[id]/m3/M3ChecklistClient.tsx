@@ -118,4 +118,3 @@ export function M3ChecklistClient({
     </section>
   );
 }
-
