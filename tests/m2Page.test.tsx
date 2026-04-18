@@ -91,9 +91,9 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
-    // K01 hat 4 Fragen, jede mit 3 Buttons → 12 Buttons
+    // K01 hat 4 Fragen (M2-01–M2-04), jede mit 3 Buttons → 12 Buttons
     expect(
-      (markup.match(/data-m2-answer="K01:M2-0\d:(ja|nein|unklar)"/g) ?? []).length,
+      (markup.match(/data-m2-answer="K01:M2-0[1-4]:(ja|nein|unklar)"/g) ?? []).length,
     ).toBe(12);
   });
 
