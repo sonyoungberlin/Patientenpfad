@@ -176,4 +176,71 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("Keine weiteren Schritte erforderlich.");
     expect(markup).not.toContain("Text kopieren");
   });
+
+  it("M5: M-OK → ausreichend geklärt, M-TODO → nicht ausreichend, M-ZURÜCKSTELLEN → unklar", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-OK", title: "Diagnose", status: "OK" },
+        {
+          ...mCheckpoint,
+          id: "K-M-TODO",
+          title: "Behandlungsplan",
+          status: "TO_DO",
+        },
+        {
+          ...mCheckpoint,
+          id: "K-M-Z",
+          title: "Prognose",
+          status: "ZURÜCKSTELLEN",
+        },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("Dokumentation für das Krankenblatt");
+    expect(markup).toContain("Diagnose ist ausreichend geklärt.");
+    expect(markup).toContain("Behandlungsplan ist aktuell nicht ausreichend geklärt.");
+    expect(markup).toContain("Prognose ist unklar.");
+  });
+
+  it("M5: O-OK → geklärt, O-TODO → nicht ausreichend", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      active_checkpoints: [
+        { ...oCheckpoint, id: "K-O-OK", title: "Terminkoordination", status: "OK" },
+        {
+          ...oCheckpoint,
+          id: "K-O-TODO",
+          title: "Überweisung",
+          status: "TO_DO",
+        },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("Terminkoordination ist geklärt.");
+    expect(markup).toContain("Überweisung ist aktuell nicht ausreichend geklärt.");
+  });
+
+  it("M5: mehrere Checkpoints → mehrere Zeilen", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-1", title: "Alpha", status: "OK" },
+        { ...oCheckpoint, id: "K-O-1", title: "Beta", status: "TO_DO" },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain(
+      "Alpha ist ausreichend geklärt.\nBeta ist aktuell nicht ausreichend geklärt.",
+    );
+  });
 });

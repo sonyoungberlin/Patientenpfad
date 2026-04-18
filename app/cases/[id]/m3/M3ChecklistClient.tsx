@@ -51,6 +51,20 @@ export function M3ChecklistClient({
     .filter((text) => text.length > 0);
   const m4TextBlock = m4Lines.join("\n");
 
+  const m5Lines = checkpoints.map((cp) => {
+    if (cp.category === CheckpointCategory.M) {
+      if (cp.status === "OK") return `${cp.title} ist ausreichend geklärt.`;
+      if (cp.status === "TO_DO")
+        return `${cp.title} ist aktuell nicht ausreichend geklärt.`;
+      return `${cp.title} ist unklar.`;
+    }
+    // category O – only OK | TO_DO
+    return cp.status === "OK"
+      ? `${cp.title} ist geklärt.`
+      : `${cp.title} ist aktuell nicht ausreichend geklärt.`;
+  });
+  const m5TextBlock = m5Lines.join("\n");
+
   async function copyM4Text() {
     if (!m4TextBlock) {
       return;
@@ -60,6 +74,18 @@ export function M3ChecklistClient({
       await navigator.clipboard.writeText(m4TextBlock);
     } catch {
       setError("Text konnte nicht kopiert werden.");
+    }
+  }
+
+  async function copyM5Text() {
+    if (!m5TextBlock) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(m5TextBlock);
+    } catch {
+      setError("Dokumentation konnte nicht kopiert werden.");
     }
   }
 
@@ -164,6 +190,21 @@ export function M3ChecklistClient({
         ) : (
           <p>Keine weiteren Schritte erforderlich.</p>
         )}
+      </section>
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2>Dokumentation für das Krankenblatt</h2>
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            margin: "0 0 0.75rem 0",
+            fontFamily: "inherit",
+          }}
+        >
+          {m5TextBlock}
+        </pre>
+        <button type="button" onClick={copyM5Text}>
+          Dokumentation kopieren
+        </button>
       </section>
     </section>
   );
