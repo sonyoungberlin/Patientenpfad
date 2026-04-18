@@ -29,6 +29,12 @@ function getStatusOptions(category: CheckpointCategory): CheckpointStatus[] {
   return ["OK", "TO_DO"];
 }
 
+function getStatusLabel(status: CheckpointStatus): string {
+  if (status === "OK") return "ausreichend";
+  if (status === "TO_DO") return "nicht ausreichend";
+  return "zurückgestellt";
+}
+
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
@@ -165,7 +171,7 @@ export function M3ChecklistClient({
                 </details>
               ) : null}
               <div style={{ marginBottom: "0.5rem" }}>
-                Status: {checkpoint.status}
+                Status: {getStatusLabel(checkpoint.status)}
               </div>
               <div>
                 {getStatusOptions(checkpoint.category).map((statusOption) => (
@@ -181,7 +187,7 @@ export function M3ChecklistClient({
                         checkpoint.status === statusOption ? "bold" : "normal",
                     }}
                   >
-                    {statusOption}
+                    {getStatusLabel(statusOption)}
                   </button>
                 ))}
               </div>
