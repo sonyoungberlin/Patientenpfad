@@ -287,9 +287,6 @@ export function M3ChecklistClient({
                   </ul>
                 </details>
               ) : null}
-              <div style={{ marginBottom: "0.5rem" }}>
-                Status: {getStatusLabel(checkpoint.status)}
-              </div>
               <div>
                 {getStatusOptions(checkpoint.category).map((statusOption) => (
                   <button
