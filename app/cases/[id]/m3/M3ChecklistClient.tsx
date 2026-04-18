@@ -31,9 +31,11 @@ function getStatusOptions(category: CheckpointCategory): CheckpointStatus[] {
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
+  prefill = {},
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
+  prefill?: Record<string, string>;
 }) {
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     initialCheckpoints.map((checkpoint) => ({
@@ -138,6 +140,14 @@ export function M3ChecklistClient({
             }}
           >
             <div style={{ marginBottom: "0.5rem" }}>{checkpoint.title}</div>
+            {prefill[checkpoint.id] ? (
+              <div
+                data-m2-prefill={checkpoint.id}
+                style={{ fontSize: "0.85em", color: "#555", marginBottom: "0.5rem" }}
+              >
+                Aus M2: {prefill[checkpoint.id]}
+              </div>
+            ) : null}
             <div style={{ marginBottom: "0.5rem" }}>
               Status: {checkpoint.status}
             </div>

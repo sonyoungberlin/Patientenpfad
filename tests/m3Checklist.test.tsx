@@ -63,7 +63,7 @@ describe("M3 Checkliste", () => {
 
     expect(prismaMock.caseSession.findUnique).toHaveBeenCalledWith({
       where: { id: "case-123" },
-      select: { active_checkpoints: true },
+      select: { active_checkpoints: true, ctx_prefill: true },
     });
   });
 
@@ -242,5 +242,35 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain(
       "Alpha ist ausreichend geklärt.\nBeta ist aktuell nicht ausreichend geklärt.",
     );
+  });
+
+  it("M3 zeigt M2-Prefill lesend als 'Aus M2: …' an", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-P", title: "Diagnose" },
+      ],
+      ctx_prefill: { "K-M-P": "Patient klagt über Schwindel" },
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("Aus M2: Patient klagt über Schwindel");
+  });
+
+  it("M3 zeigt keinen Prefill-Bereich wenn kein Prefill gespeichert", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-NP", title: "Diagnose" },
+      ],
+      ctx_prefill: null,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("Aus M2:");
   });
 });
