@@ -270,7 +270,7 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("Aus M2:");
     // Fragetext aus Katalog wird angezeigt
     expect(markup).toContain(
-      "Ist der Patient direkt erreichbar (Telefon, E-Mail oder persönlich)?",
+      "Sind Sie telefonisch und per SMS erreichbar?",
     );
     expect(markup).toContain("ja");
     expect(markup).toContain("nein");

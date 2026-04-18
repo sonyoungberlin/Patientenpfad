@@ -92,7 +92,7 @@ describe("/m2-link/[token] Seite", () => {
         {
           id: "K04",
           block_id: "medizinische_lage",
-          title: "Medikation geprüft",
+          title: "Medikation",
           category: "M",
           status: "TO_DO",
           type: "VERIFIKATION",
