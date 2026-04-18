@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
+import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { M3ChecklistClient } from "./M3ChecklistClient";
 
 export default async function M3Page({
@@ -24,7 +25,7 @@ export default async function M3Page({
     session?.ctx_prefill &&
     typeof session.ctx_prefill === "object" &&
     !Array.isArray(session.ctx_prefill)
-      ? (session.ctx_prefill as Record<string, string>)
+      ? (session.ctx_prefill as M2PrefillData)
       : {};
 
   return (

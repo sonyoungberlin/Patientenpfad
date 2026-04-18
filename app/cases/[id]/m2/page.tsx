@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
+import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import { M2PrefillClient } from "./M2PrefillClient";
 
@@ -24,7 +25,7 @@ export default async function M2Page({
     session?.ctx_prefill &&
     typeof session.ctx_prefill === "object" &&
     !Array.isArray(session.ctx_prefill)
-      ? (session.ctx_prefill as Record<string, string>)
+      ? (session.ctx_prefill as M2PrefillData)
       : {};
 
   return (

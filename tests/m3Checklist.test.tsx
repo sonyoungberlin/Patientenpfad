@@ -244,19 +244,25 @@ describe("M3 Checkliste", () => {
     );
   });
 
-  it("M3 zeigt M2-Prefill lesend als 'Aus M2: …' an", async () => {
+  it("M3 zeigt M2-Antworten lesend als aufklappbaren Prefill an", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-P", title: "Diagnose" },
+        { ...mCheckpoint, id: "K01", title: "Kommunikation" },
       ],
-      ctx_prefill: { "K-M-P": "Patient klagt über Schwindel" },
+      ctx_prefill: { K01: { "M2-01": "ja", "M2-02": "nein" } },
     });
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Aus M2: Patient klagt über Schwindel");
+    expect(markup).toContain("Aus M2:");
+    // Fragetext aus Katalog wird angezeigt
+    expect(markup).toContain(
+      "Ist der Patient direkt erreichbar (Telefon, E-Mail oder persönlich)?",
+    );
+    expect(markup).toContain("ja");
+    expect(markup).toContain("nein");
   });
 
   it("M3 zeigt keinen Prefill-Bereich wenn kein Prefill gespeichert", async () => {

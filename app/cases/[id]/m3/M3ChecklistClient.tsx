@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
+import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
@@ -35,7 +36,7 @@ export function M3ChecklistClient({
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
-  prefill?: Record<string, string>;
+  prefill?: M2PrefillData;
 }) {
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     initialCheckpoints.map((checkpoint) => ({
@@ -129,48 +130,64 @@ export function M3ChecklistClient({
   return (
     <section>
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {checkpoints.map((checkpoint) => (
-          <li
-            key={checkpoint.id}
-            data-checkpoint-item={checkpoint.id}
-            style={{
-              border: "1px solid #ddd",
-              padding: "0.75rem",
-              marginBottom: "0.75rem",
-            }}
-          >
-            <div style={{ marginBottom: "0.5rem" }}>{checkpoint.title}</div>
-            {prefill[checkpoint.id] ? (
-              <div
-                data-m2-prefill={checkpoint.id}
-                style={{ fontSize: "0.85em", color: "#555", marginBottom: "0.5rem" }}
-              >
-                Aus M2: {prefill[checkpoint.id]}
-              </div>
-            ) : null}
-            <div style={{ marginBottom: "0.5rem" }}>
-              Status: {checkpoint.status}
-            </div>
-            <div>
-              {getStatusOptions(checkpoint.category).map((statusOption) => (
-                <button
-                  key={statusOption}
-                  type="button"
-                  data-status-button={`${checkpoint.id}:${statusOption}`}
-                  onClick={() => void updateStatus(checkpoint.id, statusOption)}
-                  disabled={savingCheckpointId === checkpoint.id}
-                  style={{
-                    marginRight: "0.5rem",
-                    fontWeight:
-                      checkpoint.status === statusOption ? "bold" : "normal",
-                  }}
+        {checkpoints.map((checkpoint) => {
+          const cpAnswers = prefill[checkpoint.id];
+          const hasAnswers =
+            cpAnswers !== undefined && Object.keys(cpAnswers).length > 0;
+          const questions = M2_QUESTIONS[checkpoint.id] ?? [];
+          return (
+            <li
+              key={checkpoint.id}
+              data-checkpoint-item={checkpoint.id}
+              style={{
+                border: "1px solid #ddd",
+                padding: "0.75rem",
+                marginBottom: "0.75rem",
+              }}
+            >
+              <div style={{ marginBottom: "0.5rem" }}>{checkpoint.title}</div>
+              {hasAnswers ? (
+                <details
+                  data-m2-prefill={checkpoint.id}
+                  style={{ fontSize: "0.85em", color: "#555", marginBottom: "0.5rem" }}
                 >
-                  {statusOption}
-                </button>
-              ))}
-            </div>
-          </li>
-        ))}
+                  <summary>Aus M2:</summary>
+                  <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem" }}>
+                    {Object.entries(cpAnswers).map(([qId, answer]) => {
+                      const question = questions.find((q) => q.id === qId);
+                      return (
+                        <li key={qId}>
+                          {question ? question.text : qId}: {answer}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </details>
+              ) : null}
+              <div style={{ marginBottom: "0.5rem" }}>
+                Status: {checkpoint.status}
+              </div>
+              <div>
+                {getStatusOptions(checkpoint.category).map((statusOption) => (
+                  <button
+                    key={statusOption}
+                    type="button"
+                    data-status-button={`${checkpoint.id}:${statusOption}`}
+                    onClick={() => void updateStatus(checkpoint.id, statusOption)}
+                    disabled={savingCheckpointId === checkpoint.id}
+                    style={{
+                      marginRight: "0.5rem",
+                      fontWeight:
+                        checkpoint.status === statusOption ? "bold" : "normal",
+                    }}
+                  >
+                    {statusOption}
+                  </button>
+                ))}
+              </div>
+            </li>
+          );
+        })}
       </ul>
       {error ? (
         <p role="alert" aria-live="polite">

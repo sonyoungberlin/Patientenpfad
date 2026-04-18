@@ -4,6 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ActiveCheckpoint } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
+import {
+  M2_QUESTIONS,
+  type M2Answer,
+  type M2PrefillData,
+} from "@/lib/logic/m2Questions";
+
+const ANSWER_OPTIONS: { value: M2Answer; label: string }[] = [
+  { value: "ja", label: "Ja" },
+  { value: "nein", label: "Nein" },
+  { value: "unklar", label: "Unklar" },
+];
 
 export function M2PrefillClient({
   caseId,
@@ -12,21 +23,27 @@ export function M2PrefillClient({
 }: {
   caseId: string;
   checkpoints: ActiveCheckpoint[];
-  initialPrefill: Record<string, string>;
+  initialPrefill: M2PrefillData;
 }) {
   const router = useRouter();
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {};
+  const [values, setValues] = useState<M2PrefillData>(() => {
+    const init: M2PrefillData = {};
     for (const cp of checkpoints) {
-      init[cp.id] = initialPrefill[cp.id] ?? "";
+      init[cp.id] = initialPrefill[cp.id] ?? {};
     }
     return init;
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleChange(checkpointId: string, value: string) {
-    setValues((prev) => ({ ...prev, [checkpointId]: value }));
+  function handleAnswer(checkpointId: string, questionId: string, answer: M2Answer) {
+    setValues((prev) => ({
+      ...prev,
+      [checkpointId]: {
+        ...(prev[checkpointId] ?? {}),
+        [questionId]: answer,
+      },
+    }));
   }
 
   async function handleSave() {
@@ -59,35 +76,56 @@ export function M2PrefillClient({
         <p>Keine aktiven Checkpoints vorhanden.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {checkpoints.map((cp) => (
-            <li
-              key={cp.id}
-              data-m2-checkpoint={cp.id}
-              style={{
-                border: "1px solid #ddd",
-                padding: "0.75rem",
-                marginBottom: "0.75rem",
-              }}
-            >
-              <div style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>
-                {cp.title}
-              </div>
-              <label
-                htmlFor={`prefill-${cp.id}`}
-                style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9em" }}
+          {checkpoints.map((cp) => {
+            const questions = M2_QUESTIONS[cp.id] ?? [];
+            if (questions.length === 0) return null;
+            const cpAnswers = values[cp.id] ?? {};
+            return (
+              <li
+                key={cp.id}
+                data-m2-checkpoint={cp.id}
+                style={{
+                  border: "1px solid #ddd",
+                  padding: "0.75rem",
+                  marginBottom: "0.75rem",
+                }}
               >
-                Was ist dazu bereits bekannt?
-              </label>
-              <textarea
-                id={`prefill-${cp.id}`}
-                data-m2-input={cp.id}
-                value={values[cp.id] ?? ""}
-                onChange={(e) => handleChange(cp.id, e.target.value)}
-                rows={3}
-                style={{ width: "100%", boxSizing: "border-box" }}
-              />
-            </li>
-          ))}
+                <div style={{ marginBottom: "0.75rem", fontWeight: "bold" }}>
+                  {cp.title}
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {questions.map((q) => (
+                    <li
+                      key={q.id}
+                      data-m2-question={`${cp.id}:${q.id}`}
+                      style={{ marginBottom: "0.5rem" }}
+                    >
+                      <div style={{ marginBottom: "0.25rem", fontSize: "0.9em" }}>
+                        {q.text}
+                      </div>
+                      <div>
+                        {ANSWER_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            data-m2-answer={`${cp.id}:${q.id}:${opt.value}`}
+                            onClick={() => handleAnswer(cp.id, q.id, opt.value)}
+                            style={{
+                              marginRight: "0.5rem",
+                              fontWeight:
+                                cpAnswers[q.id] === opt.value ? "bold" : "normal",
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
         </ul>
       )}
       {error ? (
