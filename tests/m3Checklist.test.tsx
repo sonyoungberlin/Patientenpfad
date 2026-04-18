@@ -90,7 +90,7 @@ describe("M3 Checkliste", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect((markup.match(/ZURÜCKSTELLEN/g) ?? []).length).toBe(1);
+    expect(markup).toContain('data-status-button="K-M:ZURÜCKSTELLEN"');
+    expect(markup).not.toContain('data-status-button="K-O:ZURÜCKSTELLEN"');
   });
 });
-
