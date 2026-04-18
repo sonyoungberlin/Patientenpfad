@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             ← Zur Übersicht
           </Link>
           <Link href="/" style={{ textDecoration: "none", color: "#111", fontFamily: "sans-serif", fontSize: "0.9rem" }}>
-            + Neuer Fall
+            Neuer Fall
           </Link>
         </nav>
         {children}

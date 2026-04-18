@@ -90,10 +90,11 @@ export function M3ChecklistClient({
       }
       if (!window.confirm(UNSAVED_WARNING)) {
         e.preventDefault();
+        e.stopImmediatePropagation();
       }
     }
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
   }, []);
   const m4Lines = checkpoints
     .filter((cp) => cp.status === "TO_DO")

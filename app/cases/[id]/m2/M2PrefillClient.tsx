@@ -69,10 +69,11 @@ export function M2PrefillClient({
       }
       if (!window.confirm(UNSAVED_WARNING)) {
         e.preventDefault();
+        e.stopImmediatePropagation();
       }
     }
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
   }, []);
 
   function handleAnswer(checkpointId: string, questionId: string, answer: M2Answer) {
