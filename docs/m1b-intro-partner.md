@@ -1,4 +1,20 @@
-# M1b – Intro-Partner (organisatorische Vorprüfung)
+# ~~M1b – Intro-Partner (organisatorische Vorprüfung)~~
+
+> ⚠️ **VERALTET – nicht mehr verwenden.**
+>
+> Das Konzept M1b (Intro-Partner) ist aufgelöst.
+> Es gibt kein M1A und kein M1B mehr.
+>
+> Das aktuelle Modell ist **M1** (ein einziges Modul).
+> → Siehe [`docs/m1.md`](./m1.md)
+
+---
+
+*Historische Dokumentation – wird nicht weiter gepflegt.*
+
+---
+
+# M1b – Intro-Partner (organisatorische Vorprüfung) [VERALTET]
 
 ## Ziel
 
