@@ -85,7 +85,8 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[cases/[id]/checkpoint/update]", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error("[cases/[id]/checkpoint/update]", errorMessage);
     return NextResponse.json(
       { ok: false, error: "Failed to update checkpoint status" },
       { status: 500 },

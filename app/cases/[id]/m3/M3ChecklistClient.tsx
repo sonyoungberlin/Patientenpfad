@@ -114,7 +114,11 @@ export function M3ChecklistClient({
           </li>
         ))}
       </ul>
-      {error ? <p>{error}</p> : null}
+      {error ? (
+        <p role="alert" aria-live="polite">
+          {error}
+        </p>
+      ) : null}
     </section>
   );
 }
