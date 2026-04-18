@@ -47,8 +47,21 @@ export function M3ChecklistClient({
   const [error, setError] = useState<string | null>(null);
   const m4Lines = checkpoints
     .filter((cp) => cp.status === "TO_DO")
-    .map((cp) => cp.m4.text);
+    .map((cp) => cp.m4?.text ?? "")
+    .filter((text) => text.length > 0);
   const m4TextBlock = m4Lines.join("\n");
+
+  async function copyM4Text() {
+    if (!m4TextBlock) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(m4TextBlock);
+    } catch {
+      setError("Text konnte nicht kopiert werden.");
+    }
+  }
 
   async function updateStatus(checkpointId: string, status: CheckpointStatus) {
     const previous = checkpoints;
@@ -143,7 +156,7 @@ export function M3ChecklistClient({
             </pre>
             <button
               type="button"
-              onClick={() => void navigator.clipboard.writeText(m4TextBlock)}
+              onClick={copyM4Text}
             >
               Text kopieren
             </button>
