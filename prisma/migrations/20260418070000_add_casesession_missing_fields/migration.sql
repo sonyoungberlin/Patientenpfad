@@ -1,0 +1,4 @@
+ALTER TABLE "CaseSession"
+ADD COLUMN IF NOT EXISTS "m1_snapshot_initial" JSONB,
+ADD COLUMN IF NOT EXISTS "mode" TEXT DEFAULT 'guest',
+ADD COLUMN IF NOT EXISTS "patient_reference" TEXT;
