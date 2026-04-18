@@ -4,7 +4,7 @@
 - **block_id:** `externe_mitbehandler`
 - **block_title:** Externe Mitbehandler
 - **typ:** STATUS_KLAERUNG
-- **category:** `A` (administrativ)
+- **category:** `O` (organisatorisch)
 - **relevance:** `A` (optional)
 
 ---
@@ -50,11 +50,10 @@ Die externe Mitbehandlungssituation ist aktuell nicht ausreichend nachvollziehba
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                                                                  |
-|---------|---------------------------------------------------------------------------------------|
-| DONE    | „Externe Mitbehandlungssituation ist ausreichend geklärt"                     |
-| OPEN    | „Externe Mitbehandlungssituation ist aktuell nicht ausreichend geklärt"       |
-| UNCLEAR | „Externe Mitbehandlungssituation ist unklar"                                          |
+| Status          | Satz                                                                                  |
+|-----------------|---------------------------------------------------------------------------------------|
+| OK              | „Externe Mitbehandlungssituation ist ausreichend geklärt"                     |
+| TO_DO           | „Externe Mitbehandlungssituation ist aktuell nicht ausreichend geklärt"       |
 
 ---
 
@@ -73,6 +72,19 @@ Wenn keine externe Mitbehandlung vorliegt, kann optional folgender Hinweis angez
 „Keine externe Mitbehandlung – ggf. prüfen"
 
 > Nur Hinweis – kein Statuswechsel, kein To-do.
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "ACTION",
+    "text": "Bitte teilen Sie uns die Kontaktdaten Ihrer behandelnden Ärzte mit."
+  }
+}
+```
 
 ---
 

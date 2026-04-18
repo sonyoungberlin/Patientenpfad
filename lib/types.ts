@@ -36,16 +36,71 @@ export enum CheckpointRelevance {
   A = "A",
 }
 
-export type ActiveCheckpoint = {
+type ActiveCheckpointBase = {
   id: string;
   block_id: string;
   type: CheckpointType;
-  category: CheckpointCategory;
   relevance: CheckpointRelevance;
   title: string;
   description?: string;
-  status: "OPEN" | "DONE" | "UNCLEAR";
+  m4: {
+    /** Static per checkpoint – not computed from status */
+    type: "ACTION" | "NOTICE";
+    text: string;
+  };
 };
+
+export type ActiveCheckpointM = ActiveCheckpointBase & {
+  category: CheckpointCategory.M;
+  /** Medizinisch: OK | TO_DO | ZURÜCKSTELLEN */
+  status: "OK" | "TO_DO" | "ZURÜCKSTELLEN";
+};
+
+export type ActiveCheckpointO = ActiveCheckpointBase & {
+  category: CheckpointCategory.O;
+  /** Organisatorisch: OK | TO_DO – ZURÜCKSTELLEN ist nicht erlaubt */
+  status: "OK" | "TO_DO";
+};
+
+export type ActiveCheckpoint = ActiveCheckpointM | ActiveCheckpointO;
+
+// ---------------------------------------------------------------------------
+// M1 – Aktivierungsblöcke
+// ---------------------------------------------------------------------------
+
+/** The three activation blocks M1 works with. No M1A / M1B. */
+export type M1BlockId =
+  | "kommunikation"
+  | "medizinische_lage"
+  | "versorgung_im_alltag";
+
+/** Binary state per block: klar → no activation, unklar → activate checkpoints */
+export type M1BlockStatus = "klar" | "unklar";
+
+/**
+ * The user's M1 selection: one status per block.
+ * Passed into `deriveActiveCheckpointIdsFromM1` to obtain the list of
+ * checkpoint IDs that should be activated for this case.
+ */
+export type M1Selection = Record<M1BlockId, M1BlockStatus>;
+
+/**
+ * Eingefrorener M1-Aktivierungsstand zum Zeitpunkt der Fallanlage.
+ *
+ * Invariante: Dieser Snapshot darf nach der Fallanlage nie mehr verändert werden.
+ * Spätere Änderungen am Block-Mapping dürfen bestehende Fälle nicht berühren.
+ */
+export type M1SnapshotInitial = {
+  /** Die M1-Blockauswahl zum Zeitpunkt der Fallanlage. */
+  blocks: M1Selection;
+  /**
+   * Die daraus abgeleitete, eingefrorene Liste aktivierter Checkpoint-IDs.
+   * Einzige erlaubte Quelle für `active_checkpoints` dieses Falls.
+   */
+  activated_checkpoint_ids: string[];
+};
+
+// ---------------------------------------------------------------------------
 
 export type PrefillEntry = {
   block_id: string;
@@ -53,3 +108,10 @@ export type PrefillEntry = {
   value: string | number | boolean | null;
   source: "patient" | "praxis" | "extern" | "dokument";
 };
+
+// ---------------------------------------------------------------------------
+// Case Mode
+// ---------------------------------------------------------------------------
+
+/** Startmodus eines Falls. "guest" = kein Patientenbezug, "practice" = Praxiszuordnung */
+export type CaseMode = "guest" | "practice";

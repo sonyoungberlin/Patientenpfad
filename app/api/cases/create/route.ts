@@ -7,7 +7,11 @@ import {
   CheckpointType,
   type ActiveCheckpoint,
   type BlockSummary,
+  type CaseMode,
+  type M1Selection,
 } from "@/lib/types";
+import { buildM1SnapshotInitial, isGatekeeperCase } from "@/lib/logic/m1Activation";
+import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
 
 const DEFAULT_BLOCKS: BlockSummary[] = [
   {
@@ -42,7 +46,11 @@ const DEFAULT_BLOCKS: BlockSummary[] = [
   },
 ];
 
-const DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
+/**
+ * Fallback-Checkpoint, der nur greift wenn KEINE M1-Auswahl übergeben wird.
+ * TODO: Entfernen, sobald die UI die M1-Auswahl immer mitliefert.
+ */
+const LEGACY_DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
   {
     id: "dokumentenlage_arztbrief_vorhanden",
     block_id: "dokumentenlage",
@@ -52,7 +60,11 @@ const DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
     title: "Arztbrief vorhanden",
     description:
       "Prüfen, ob ein aktueller Arztbrief oder vergleichbares Dokument vorliegt.",
-    status: "OPEN",
+    status: "TO_DO",
+    m4: {
+      type: "ACTION",
+      text: "Bitte bringen Sie die für Ihre Behandlung relevanten Befunde zum nächsten Termin mit.",
+    },
   },
 ];
 
@@ -62,15 +74,50 @@ export async function POST(req: NextRequest) {
     const query: string | undefined =
       typeof body?.query === "string" ? body.query : undefined;
 
+    const m1Selection: M1Selection | undefined =
+      body?.m1Selection ?? undefined;
+
+    const mode: CaseMode =
+      body?.mode === "practice" ? "practice" : "guest";
+
+    const patientReference: string | null =
+      mode === "practice" && typeof body?.patient_reference === "string" && body.patient_reference.trim() !== ""
+        ? body.patient_reference.trim()
+        : null;
+
+    let activeCheckpoints: ActiveCheckpoint[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let m1SnapshotInitial: any = null;
+
+    if (m1Selection) {
+      // Gatekeeper-Fall: alle Blöcke klar → kein Strukturfall, keine CaseSession.
+      if (isGatekeeperCase(m1Selection)) {
+        return NextResponse.json({ ok: true, gatekeeper: true });
+      }
+
+      // M1-Pfad: Snapshot einfrieren → Checkpoints daraus hydratisieren.
+      // Der Snapshot ist die einzige erlaubte Quelle für active_checkpoints.
+      const snapshot = buildM1SnapshotInitial(m1Selection);
+      m1SnapshotInitial = snapshot;
+      activeCheckpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
+    } else {
+      // Übergangsmodus: kein m1Selection übergeben → Legacy-Fallback.
+      // TODO: Entfernen, sobald die UI die M1-Auswahl immer mitliefert.
+      activeCheckpoints = LEGACY_DEFAULT_CHECKPOINTS;
+    }
+
     const session = await prisma.caseSession.create({
       data: {
         query_raw: query ?? null,
         stage_status: "INTAKE" as const,
         block_status_anchor: DEFAULT_BLOCKS,
-        active_checkpoints: DEFAULT_CHECKPOINTS,
+        active_checkpoints: activeCheckpoints,
         ctx_prefill: [],
         ctx_final: [],
         summary_anchor: [],
+        m1_snapshot_initial: m1SnapshotInitial ?? undefined,
+        mode,
+        patient_reference: patientReference,
       },
     });
 
@@ -78,6 +125,9 @@ export async function POST(req: NextRequest) {
       ok: true,
       case_id: session.id,
       stage_status: session.stage_status,
+      mode: session.mode,
+      patient_reference: session.patient_reference,
+      m1_snapshot_initial: m1SnapshotInitial,
     });
   } catch (err) {
     console.error("[cases/create]", err);

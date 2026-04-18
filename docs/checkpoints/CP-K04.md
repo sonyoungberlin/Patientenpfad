@@ -57,11 +57,11 @@ Angaben zur Medikation fehlen oder widersprechen sich. Eine sichere Einschätzun
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                                          |
-|---------|---------------------------------------------------------------|
-| DONE    | „Medikation ist ausreichend geklärt"                  |
-| OPEN    | „Medikation ist aktuell nicht ausreichend geklärt"    |
-| UNCLEAR | „Medikation ist unklar"                                       |
+| Status          | Satz                                                          |
+|-----------------|---------------------------------------------------------------|
+| OK              | „Medikation ist ausreichend geklärt"                  |
+| TO_DO           | „Medikation ist aktuell nicht ausreichend geklärt"    |
+| ZURÜCKSTELLEN   | „Medikation ist unklar"                                       |
 
 ---
 
@@ -71,6 +71,19 @@ Angaben zur Medikation fehlen oder widersprechen sich. Eine sichere Einschätzun
 |---------|-------------------------------|
 | TO_DO         | Medikamentenstatus klären     |
 | ZURÜCKSTELLEN | Angaben zur Medikation klären |
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "ACTION",
+    "text": "Bitte bringen Sie eine aktuelle Liste Ihrer Medikamente zum nächsten Termin mit."
+  }
+}
+```
 
 ---
 

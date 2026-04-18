@@ -56,11 +56,11 @@ Angaben zur Informationslage fehlen oder widersprechen sich. Eine sichere Einsch
 
 ## Dokumentationsausgaben (M5)
 
-| Status  | Satz                                              |
-|---------|---------------------------------------------------|
-| DONE    | „Informationsbasis ist ausreichend geklärt"               |
-| OPEN    | „Informationsbasis ist aktuell nicht ausreichend geklärt" |
-| UNCLEAR | „Informationsbasis ist unklar"                    |
+| Status          | Satz                                              |
+|-----------------|---------------------------------------------------|
+| OK              | „Informationsbasis ist ausreichend geklärt"               |
+| TO_DO           | „Informationsbasis ist aktuell nicht ausreichend geklärt" |
+| ZURÜCKSTELLEN   | „Informationsbasis ist unklar"                    |
 
 ---
 
@@ -70,6 +70,19 @@ Angaben zur Informationslage fehlen oder widersprechen sich. Eine sichere Einsch
 |---------|--------------------------------|
 | TO_DO         | Informationsbasis vervollständigen |
 | ZURÜCKSTELLEN | Informationslage klären        |
+
+---
+
+## M4-Output
+
+```json
+{
+  "m4": {
+    "type": "ACTION",
+    "text": "Bitte bringen Sie die für Ihre Behandlung relevanten Befunde zum nächsten Termin mit."
+  }
+}
+```
 
 ---
 

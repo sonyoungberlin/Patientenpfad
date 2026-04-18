@@ -1,0 +1,131 @@
+import { isGatekeeperCase, buildM1SnapshotInitial } from "@/lib/logic/m1Activation";
+import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
+import type { M1Selection } from "@/lib/types";
+
+describe("isGatekeeperCase", () => {
+  it("gibt true zurück wenn alle drei Blöcke klar sind", () => {
+    const sel: M1Selection = {
+      kommunikation: "klar",
+      medizinische_lage: "klar",
+      versorgung_im_alltag: "klar",
+    };
+    expect(isGatekeeperCase(sel)).toBe(true);
+  });
+
+  it("gibt false zurück wenn mindestens ein Block unklar ist", () => {
+    const sel: M1Selection = {
+      kommunikation: "unklar",
+      medizinische_lage: "klar",
+      versorgung_im_alltag: "klar",
+    };
+    expect(isGatekeeperCase(sel)).toBe(false);
+  });
+
+  it("gibt false zurück wenn alle Blöcke unklar sind", () => {
+    const sel: M1Selection = {
+      kommunikation: "unklar",
+      medizinische_lage: "unklar",
+      versorgung_im_alltag: "unklar",
+    };
+    expect(isGatekeeperCase(sel)).toBe(false);
+  });
+
+  it("gibt false zurück wenn nur medizinische_lage unklar ist", () => {
+    const sel: M1Selection = {
+      kommunikation: "klar",
+      medizinische_lage: "unklar",
+      versorgung_im_alltag: "klar",
+    };
+    expect(isGatekeeperCase(sel)).toBe(false);
+  });
+});
+
+describe("M1-Flow: medizinische_lage unklar → Snapshot + aktive Checkpoints", () => {
+  const sel: M1Selection = {
+    kommunikation: "klar",
+    medizinische_lage: "unklar",
+    versorgung_im_alltag: "klar",
+  };
+
+  it("erstellt einen Snapshot mit K03, K04, K05", () => {
+    const snapshot = buildM1SnapshotInitial(sel);
+    expect(snapshot.activated_checkpoint_ids).toEqual(["K03", "K04", "K05"]);
+  });
+
+  it("hydratisiert 3 vollständige ActiveCheckpoints aus dem Snapshot", () => {
+    const snapshot = buildM1SnapshotInitial(sel);
+    const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
+    expect(checkpoints).toHaveLength(3);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K03", "K04", "K05"]);
+  });
+
+  it("alle Checkpoints haben status TO_DO", () => {
+    const snapshot = buildM1SnapshotInitial(sel);
+    const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
+    for (const cp of checkpoints) {
+      expect(cp.status).toBe("TO_DO");
+    }
+  });
+
+  it("kein Legacy-Checkpoint im Ergebnis", () => {
+    const snapshot = buildM1SnapshotInitial(sel);
+    const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
+    const hasLegacy = checkpoints.some(
+      (c) => c.id === "dokumentenlage_arztbrief_vorhanden",
+    );
+    expect(hasLegacy).toBe(false);
+  });
+});
+
+describe("Gatekeeper-Fall: klar/klar/klar → kein Snapshot, keine Checkpoints", () => {
+  const sel: M1Selection = {
+    kommunikation: "klar",
+    medizinische_lage: "klar",
+    versorgung_im_alltag: "klar",
+  };
+
+  it("isGatekeeperCase erkennt den Fall", () => {
+    expect(isGatekeeperCase(sel)).toBe(true);
+  });
+
+  it("Snapshot hätte keine activated_checkpoint_ids", () => {
+    // Defensiv: falls doch ein Snapshot gebaut würde (was die Route verhindert),
+    // wäre die Liste leer – kein stilles Durchrutschen.
+    const snapshot = buildM1SnapshotInitial(sel);
+    expect(snapshot.activated_checkpoint_ids).toEqual([]);
+  });
+
+  it("Hydration eines leeren Snapshots ergibt keine Checkpoints", () => {
+    const snapshot = buildM1SnapshotInitial(sel);
+    expect(hydrateActiveCheckpointsFromSnapshot(snapshot)).toEqual([]);
+  });
+});
+
+describe("UI-Payload: m1Selection wird korrekt übermittelt", () => {
+  it("Initialauswahl ist explizit (alle unklar)", () => {
+    // Spiegelt den INITIAL_SELECTION in page.tsx
+    const initial: M1Selection = {
+      kommunikation: "unklar",
+      medizinische_lage: "unklar",
+      versorgung_im_alltag: "unklar",
+    };
+    expect(isGatekeeperCase(initial)).toBe(false);
+    const snapshot = buildM1SnapshotInitial(initial);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(8);
+  });
+
+  it("Payload mit m1Selection hat keinen Legacy-Pfad", () => {
+    // Prüft, dass der Snapshot bei vorhandenem m1Selection niemals
+    // den Legacy-Checkpoint enthält.
+    const anySelection: M1Selection = {
+      kommunikation: "unklar",
+      medizinische_lage: "klar",
+      versorgung_im_alltag: "klar",
+    };
+    const snapshot = buildM1SnapshotInitial(anySelection);
+    const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
+    expect(
+      checkpoints.some((c) => c.id === "dokumentenlage_arztbrief_vorhanden"),
+    ).toBe(false);
+  });
+});

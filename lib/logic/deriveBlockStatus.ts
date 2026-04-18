@@ -16,17 +16,11 @@ export function deriveBlockStatus(
     return currentStatus;
   }
 
-  const doneCount = organizationalCheckpoints.filter(
-    (checkpoint) => checkpoint.status === "DONE",
-  ).length;
-  if (doneCount === organizationalCheckpoints.length) {
+  if (organizationalCheckpoints.every((checkpoint) => checkpoint.status === "OK")) {
     return BlockStatus.GEKLAERT;
   }
 
-  const openCount = organizationalCheckpoints.filter(
-    (checkpoint) => checkpoint.status === "OPEN",
-  ).length;
-  if (openCount === organizationalCheckpoints.length) {
+  if (organizationalCheckpoints.every((checkpoint) => checkpoint.status === "TO_DO")) {
     return BlockStatus.OFFEN;
   }
 
