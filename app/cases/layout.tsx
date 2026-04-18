@@ -23,7 +23,7 @@ export default function CasesLayout({ children }: { children: ReactNode }) {
             fontSize: "0.9rem",
           }}
         >
-          ← Zur Übersicht
+          ← Zur Fallübersicht
         </Link>
         <Link
           href="/"
