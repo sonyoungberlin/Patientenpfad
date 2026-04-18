@@ -160,8 +160,10 @@ button:disabled {
 .answer-btn.active {
   background: var(--secondary);
   color: var(--foreground);
-  border-color: var(--switch-background);
+  border-color: var(--primary);
   font-weight: var(--font-weight-medium);
+  outline: 2px solid rgba(59, 63, 74, 0.18);
+  outline-offset: 1px;
 }
 
 /* ----- Inputs ----- */
