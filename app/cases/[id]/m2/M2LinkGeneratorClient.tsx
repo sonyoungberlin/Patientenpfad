@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 
 export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
+  const router = useRouter();
   const [link, setLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +90,14 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
           </code>
           <button type="button" data-copy-m2-link onClick={() => void copyLink()}>
             {copied ? "Kopiert ✓" : "Link kopieren"}
+          </button>
+          <button
+            type="button"
+            data-goto-m3
+            onClick={() => router.push(buildCaseM3Path(caseId))}
+            style={{ marginLeft: "0.5rem" }}
+          >
+            Weiter zur ärztlichen Checkliste →
           </button>
         </div>
       ) : null}

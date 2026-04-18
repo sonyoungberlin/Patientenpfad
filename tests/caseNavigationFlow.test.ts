@@ -64,14 +64,15 @@ describe("M2 Skip-Option", () => {
     const markup = renderToStaticMarkup(
       await M2Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
-    expect(markup).toContain("Ohne M2 direkt zur ärztlichen Checkliste");
+    expect(markup).toContain("data-m2-skip");
+    expect(markup).toContain("Patientenfragebogen überspringen und ärztlich fortfahren");
   });
 
-  it("Skip führt direkt zu M3", async () => {
+  it("Skip-Button ist vorhanden; M3-Pfad stimmt", async () => {
     const markup = renderToStaticMarkup(
       await M2Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
-    expect(markup).toContain('href="/cases/case-123/m3"');
+    expect(markup).toContain("data-m2-skip");
     expect(buildCaseM3Path("case-123")).toBe("/cases/case-123/m3");
   });
 

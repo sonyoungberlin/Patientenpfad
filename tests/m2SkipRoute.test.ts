@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { POST } from "@/app/api/cases/[id]/m2-link/route";
+import { PATCH } from "@/app/api/cases/[id]/m2-skip/route";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -35,19 +35,19 @@ const APPROVED_ACCOUNT = {
 };
 
 function makeRequest(id: string) {
-  return new NextRequest(`http://localhost/api/cases/${id}/m2-link`, {
-    method: "POST",
+  return new NextRequest(`http://localhost/api/cases/${id}/m2-skip`, {
+    method: "PATCH",
   });
 }
 
-describe("POST /api/cases/[id]/m2-link", () => {
+describe("PATCH /api/cases/[id]/m2-skip", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.update.mockReset();
     getSessionAccountMock.mockReset();
   });
 
-  it("erzeugt Token und gibt vollständigen Link zurück", async () => {
+  it("setzt m2_status auf skipped und gibt 200 zurück", async () => {
     getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
@@ -55,33 +55,24 @@ describe("POST /api/cases/[id]/m2-link", () => {
     prismaMock.caseSession.update.mockResolvedValue({});
 
     const req = makeRequest("case-1");
-    const response = await POST(req, {
+    const response = await PATCH(req, {
       params: Promise.resolve({ id: "case-1" }),
     });
     const json = await response.json();
 
     expect(response.status).toBe(200);
     expect(json.ok).toBe(true);
-    expect(typeof json.link).toBe("string");
-    expect(json.link).toMatch(/\/m2-link\/[0-9a-f-]{36}$/);
 
     const updateCall = prismaMock.caseSession.update.mock.calls[0][0];
     expect(updateCall.where).toEqual({ id: "case-1" });
-    expect(typeof updateCall.data.m2_token).toBe("string");
-    expect(updateCall.data.m2_token.length).toBeGreaterThan(0);
-    expect(updateCall.data.m2_token_expires_at).toBeInstanceOf(Date);
-    expect(updateCall.data.m2_status).toBe("waiting_for_patient");
-
-    const expiresIn = updateCall.data.m2_token_expires_at.getTime() - Date.now();
-    expect(expiresIn).toBeGreaterThan(13 * 24 * 60 * 60 * 1000);
-    expect(expiresIn).toBeLessThanOrEqual(14 * 24 * 60 * 60 * 1000 + 1000);
+    expect(updateCall.data.m2_status).toBe("skipped");
   });
 
   it("gibt 401 zurück wenn nicht eingeloggt", async () => {
     getSessionAccountMock.mockResolvedValue(null);
 
     const req = makeRequest("case-1");
-    const response = await POST(req, {
+    const response = await PATCH(req, {
       params: Promise.resolve({ id: "case-1" }),
     });
 
@@ -91,13 +82,10 @@ describe("POST /api/cases/[id]/m2-link", () => {
   });
 
   it("gibt 403 zurück wenn Account nicht freigeschaltet", async () => {
-    getSessionAccountMock.mockResolvedValue({
-      ...APPROVED_ACCOUNT,
-      is_approved: false,
-    });
+    getSessionAccountMock.mockResolvedValue({ ...APPROVED_ACCOUNT, is_approved: false });
 
     const req = makeRequest("case-1");
-    const response = await POST(req, {
+    const response = await PATCH(req, {
       params: Promise.resolve({ id: "case-1" }),
     });
 
@@ -111,7 +99,7 @@ describe("POST /api/cases/[id]/m2-link", () => {
     prismaMock.caseSession.findUnique.mockResolvedValue(null);
 
     const req = makeRequest("nonexistent");
-    const response = await POST(req, {
+    const response = await PATCH(req, {
       params: Promise.resolve({ id: "nonexistent" }),
     });
 
@@ -127,7 +115,7 @@ describe("POST /api/cases/[id]/m2-link", () => {
     });
 
     const req = makeRequest("case-other");
-    const response = await POST(req, {
+    const response = await PATCH(req, {
       params: Promise.resolve({ id: "case-other" }),
     });
 

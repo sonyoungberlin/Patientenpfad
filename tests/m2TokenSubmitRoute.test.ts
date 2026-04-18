@@ -59,6 +59,7 @@ describe("POST /api/m2-link/[token]", () => {
     expect(updateData.ctx_prefill).toEqual(prefill);
     expect(updateData.m2_token).toBeNull();
     expect(updateData.m2_token_expires_at).toBeNull();
+    expect(updateData.m2_status).toBe("completed");
   });
 
   it("nach erfolgreichem Submit ist der Token nicht mehr auffindbar (404)", async () => {

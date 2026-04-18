@@ -22,6 +22,7 @@ export default async function M3Page({
       active_checkpoints: true,
       ctx_prefill: true,
       owner_account_id: true,
+      m2_status: true,
     },
   });
 
@@ -40,10 +41,12 @@ export default async function M3Page({
       ? (session.ctx_prefill as M2PrefillData)
       : {};
 
+  const m2Status = typeof session.m2_status === "string" ? session.m2_status : "none";
+
   return (
     <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "700px" }}>
       <h1>Ärztliche Checkliste</h1>
-      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} />
+      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} />
     </main>
   );
 }

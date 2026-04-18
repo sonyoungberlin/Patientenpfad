@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
-import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
+import { M2SkipButtonClient } from "./M2SkipButtonClient";
 
 export default async function M2Page({
   params,
@@ -18,7 +18,6 @@ export default async function M2Page({
   }
 
   const { id } = await params;
-  const m3Path = buildCaseM3Path(id);
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
@@ -49,9 +48,7 @@ export default async function M2Page({
         checkpoints={checkpoints}
         initialPrefill={prefill}
       />
-      <a href={m3Path} style={{ display: "inline-block", marginTop: "1rem" }}>
-        Ohne M2 direkt zur ärztlichen Checkliste
-      </a>
+      <M2SkipButtonClient caseId={id} />
     </main>
   );
 }

@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 
-const TOKEN_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
-
-export async function POST(
+export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -37,26 +35,16 @@ export async function POST(
       );
     }
 
-    const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
-
     await prisma.caseSession.update({
       where: { id },
-      data: {
-        m2_token: token,
-        m2_token_expires_at: expiresAt,
-        m2_status: "waiting_for_patient",
-      },
+      data: { m2_status: "skipped" },
     });
 
-    const origin = req.nextUrl.origin;
-    const link = `${origin}/m2-link/${token}`;
-
-    return NextResponse.json({ ok: true, link });
+    return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[cases/[id]/m2-link]", err);
+    console.error("[cases/[id]/m2-skip]", err);
     return NextResponse.json(
-      { ok: false, error: "Token konnte nicht erstellt werden." },
+      { ok: false, error: "Status konnte nicht gesetzt werden." },
       { status: 500 },
     );
   }
