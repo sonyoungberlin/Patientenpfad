@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
 import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
 
@@ -47,6 +48,7 @@ export function M3ChecklistClient({
   initialCheckpoints: ActiveCheckpoint[];
   prefill?: M2PrefillData;
 }) {
+  const router = useRouter();
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     initialCheckpoints.map((checkpoint) => ({
       ...checkpoint,
@@ -56,6 +58,7 @@ export function M3ChecklistClient({
   const [savingCheckpointId, setSavingCheckpointId] = useState<string | null>(
     null,
   );
+  const [closing, setClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const savingRef = useRef<string | null>(null);
 
@@ -171,6 +174,25 @@ export function M3ChecklistClient({
     }
   }
 
+  async function closeCase() {
+    setClosing(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/cases/${caseId}/close`, {
+        method: "PATCH",
+      });
+      if (!response.ok) {
+        setError("Fall konnte nicht abgeschlossen werden.");
+        return;
+      }
+      router.push("/cases");
+    } catch {
+      setError("Fall konnte nicht abgeschlossen werden.");
+    } finally {
+      setClosing(false);
+    }
+  }
+
   return (
     <section>
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -275,6 +297,16 @@ export function M3ChecklistClient({
         </pre>
         <button type="button" onClick={copyM5Text}>
           Dokumentation kopieren
+        </button>
+      </section>
+      <section style={{ marginTop: "2rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
+        <button
+          type="button"
+          data-close-case
+          onClick={closeCase}
+          disabled={closing || savingCheckpointId !== null}
+        >
+          {closing ? "Wird abgeschlossen…" : "Fall abschließen"}
         </button>
       </section>
     </section>
