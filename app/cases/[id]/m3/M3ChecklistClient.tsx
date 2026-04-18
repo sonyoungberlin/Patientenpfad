@@ -57,23 +57,28 @@ export function M3ChecklistClient({
       ),
     );
 
-    const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        checkpoint_id: checkpointId,
-        status,
-      }),
-    });
+    try {
+      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          checkpoint_id: checkpointId,
+          status,
+        }),
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setCheckpoints(previous);
+        setError("Status konnte nicht gespeichert werden.");
+      }
+    } catch {
       setCheckpoints(previous);
       setError("Status konnte nicht gespeichert werden.");
+    } finally {
+      setSavingCheckpointId(null);
     }
-
-    setSavingCheckpointId(null);
   }
 
   return (

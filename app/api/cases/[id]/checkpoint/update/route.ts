@@ -64,16 +64,18 @@ export async function PATCH(
     }
 
     const checkpoints = session.active_checkpoints as ActiveCheckpoint[];
-    const checkpointIndex = checkpoints.findIndex((cp) => cp.id === checkpointId);
+    const targetCheckpointIndex = checkpoints.findIndex(
+      (cp) => cp.id === checkpointId,
+    );
 
-    if (checkpointIndex === -1) {
+    if (targetCheckpointIndex === -1) {
       return NextResponse.json(
         { ok: false, error: "Checkpoint not found" },
         { status: 404 },
       );
     }
 
-    if (!isValidStatus(checkpoints[checkpointIndex], status)) {
+    if (!isValidStatus(checkpoints[targetCheckpointIndex], status)) {
       return NextResponse.json(
         { ok: false, error: "Invalid status for checkpoint category" },
         { status: 400 },
