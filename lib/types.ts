@@ -84,6 +84,22 @@ export type M1BlockStatus = "klar" | "unklar";
  */
 export type M1Selection = Record<M1BlockId, M1BlockStatus>;
 
+/**
+ * Eingefrorener M1-Aktivierungsstand zum Zeitpunkt der Fallanlage.
+ *
+ * Invariante: Dieser Snapshot darf nach der Fallanlage nie mehr verändert werden.
+ * Spätere Änderungen am Block-Mapping dürfen bestehende Fälle nicht berühren.
+ */
+export type M1SnapshotInitial = {
+  /** Die M1-Blockauswahl zum Zeitpunkt der Fallanlage. */
+  blocks: M1Selection;
+  /**
+   * Die daraus abgeleitete, eingefrorene Liste aktivierter Checkpoint-IDs.
+   * Einzige erlaubte Quelle für `active_checkpoints` dieses Falls.
+   */
+  activated_checkpoint_ids: string[];
+};
+
 // ---------------------------------------------------------------------------
 
 export type PrefillEntry = {

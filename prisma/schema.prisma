@@ -40,4 +40,7 @@ model CaseSession {
 
   /// Optionale Zusammenfassung / Summary (JSON-Anker)
   summary_anchor       Json?
+
+  /// Eingefrorener M1-Aktivierungsstand bei Fallanlage (unveränderlich nach Erstellung)
+  m1_snapshot_initial  Json?
 }

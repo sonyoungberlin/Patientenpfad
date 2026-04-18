@@ -1,4 +1,4 @@
-import type { M1BlockId, M1Selection } from "@/lib/types";
+import type { M1BlockId, M1Selection, M1SnapshotInitial } from "@/lib/types";
 
 /**
  * Verbindliches, statisches Mapping: M1-Aktivierungsblock → Checkpoint-IDs.
@@ -34,4 +34,18 @@ export function deriveActiveCheckpointIdsFromM1(
     }
   }
   return ids;
+}
+
+/**
+ * Erstellt einen eingefrorenen M1-Snapshot für die Fallanlage.
+ *
+ * Der Snapshot enthält die Blockauswahl sowie die daraus deterministisch
+ * abgeleiteten Checkpoint-IDs. Nach der Fallanlage darf dieser Snapshot
+ * nie neu berechnet oder überschrieben werden.
+ */
+export function buildM1SnapshotInitial(blocks: M1Selection): M1SnapshotInitial {
+  return {
+    blocks,
+    activated_checkpoint_ids: deriveActiveCheckpointIdsFromM1(blocks),
+  };
 }
