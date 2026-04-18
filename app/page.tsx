@@ -120,29 +120,29 @@ export default function HomePage() {
   }
 
   if (!authChecked) {
-    return <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>Lädt…</main>;
+    return <main>Lädt…</main>;
   }
 
   if (!account) {
     return (
-      <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "400px" }}>
+      <main style={{ maxWidth: "400px" }}>
         <h1>Anmelden</h1>
-        <p style={{ color: "#555" }}>
+        <p className="text-muted">
           Bitte melden Sie sich mit Ihrer E-Mail-Adresse an.
         </p>
         <div style={{ marginTop: "1rem" }}>
           <label htmlFor="login_email">E-Mail-Adresse</label>
-          <br />
           <input
             id="login_email"
             type="email"
             value={loginEmail}
             onChange={(e) => setLoginEmail(e.target.value)}
             placeholder="name@beispiel.de"
-            style={{ marginTop: "0.3rem", padding: "0.3rem 0.5rem", width: "280px" }}
+            style={{ marginTop: "0.5rem" }}
           />
         </div>
         <button
+          className="btn-primary"
           onClick={handleLogin}
           disabled={loginLoading}
           style={{ marginTop: "1rem" }}
@@ -150,7 +150,7 @@ export default function HomePage() {
           {loginLoading ? "Lädt…" : "Anmelden"}
         </button>
         {loginError && (
-          <p style={{ color: "red", marginTop: "0.5rem" }}>{loginError}</p>
+          <p className="text-error" style={{ marginTop: "0.5rem" }}>{loginError}</p>
         )}
       </main>
     );
@@ -158,13 +158,13 @@ export default function HomePage() {
 
   if (!account.is_approved) {
     return (
-      <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "500px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: "#555", fontSize: "0.9em" }}>{account.email}</span>
+      <main style={{ maxWidth: "500px" }}>
+        <div className="account-bar">
+          <span className="account-email">{account.email}</span>
           <button onClick={handleLogout}>Abmelden</button>
         </div>
-        <h1 style={{ marginTop: "1.5rem" }}>Freischaltung ausstehend</h1>
-        <p style={{ color: "#555" }}>
+        <h1>Freischaltung ausstehend</h1>
+        <p className="text-muted">
           Ihr Account ist noch nicht freigeschaltet. Bitte warten Sie auf die
           Freischaltung durch den Administrator.
         </p>
@@ -173,15 +173,15 @@ export default function HomePage() {
   }
 
   return (
-    <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "600px" }}>
+    <main>
       {/* Account-Bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", borderBottom: "1px solid #eee", paddingBottom: "0.75rem" }}>
-        <span style={{ color: "#555", fontSize: "0.9em" }}>{account.email}</span>
+      <div className="account-bar">
+        <span className="account-email">{account.email}</span>
         <button onClick={handleLogout}>Abmelden</button>
       </div>
 
       <h1>Was ist aktuell unklar oder klärungsbedürftig?</h1>
-      <p style={{ color: "#555", marginBottom: "1.5rem" }}>
+      <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         Nur bei <strong>unklar</strong> wird ein Strukturfall mit Checkpoints gestartet.
       </p>
 
@@ -190,7 +190,7 @@ export default function HomePage() {
         <strong>Modus</strong>
         <div style={{ marginTop: "0.4rem" }}>
           {(["guest", "practice"] as CaseMode[]).map((m) => (
-            <label key={m} style={{ marginRight: "1.5rem", cursor: "pointer" }}>
+            <label key={m} style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: "var(--font-weight-normal)" }}>
               <input
                 type="radio"
                 name="mode"
@@ -204,22 +204,21 @@ export default function HomePage() {
           ))}
         </div>
         {mode === "practice" && (
-          <div style={{ marginTop: "0.6rem" }}>
+          <div style={{ marginTop: "0.75rem" }}>
             <label htmlFor="patient_reference">Patientennummer (optional)</label>
-            <br />
             <input
               id="patient_reference"
               type="text"
               value={patientReference}
               onChange={(e) => setPatientReference(e.target.value)}
               placeholder="z. B. P-2024-001"
-              style={{ marginTop: "0.3rem", padding: "0.3rem 0.5rem", width: "280px" }}
+              style={{ marginTop: "0.5rem" }}
             />
           </div>
         )}
       </div>
 
-      <p style={{ color: "#999", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+      <p className="text-muted text-small" style={{ marginBottom: "1.5rem" }}>
         Hinweis: Der Fall erscheint in Ihrer Fallübersicht. Eine Patienten-Referenz hilft beim späteren Wiederfinden.
       </p>
 
@@ -232,7 +231,7 @@ export default function HomePage() {
               {(["klar", "unklar"] as M1BlockStatus[]).map((val) => (
                 <label
                   key={val}
-                  style={{ marginRight: "1.5rem", cursor: "pointer" }}
+                  style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: "var(--font-weight-normal)" }}
                 >
                   <input
                     type="radio"
@@ -251,6 +250,7 @@ export default function HomePage() {
       </div>
 
       <button
+        className="btn-primary"
         onClick={handleCreate}
         disabled={loading}
         style={{ marginTop: "1rem" }}
@@ -259,14 +259,14 @@ export default function HomePage() {
       </button>
 
       {gatekeeper && (
-        <div style={{ marginTop: "1.5rem", color: "#666" }}>
+        <div className="banner-warning" style={{ marginTop: "1.5rem" }}>
           <strong>Kein Strukturfall erforderlich.</strong> Alle Bereiche sind
           geklärt – es werden keine Checkpoints gestartet.
         </div>
       )}
 
       {error && (
-        <p style={{ marginTop: "1rem", color: "red" }}>Fehler: {error}</p>
+        <p className="text-error" style={{ marginTop: "1rem" }}>Fehler: {error}</p>
       )}
 
 

@@ -44,7 +44,7 @@ export default async function M3Page({
   const m2Status = typeof session.m2_status === "string" ? session.m2_status : "none";
 
   return (
-    <main style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "700px" }}>
+    <main>
       <h1>Ärztliche Checkliste</h1>
       <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} />
     </main>

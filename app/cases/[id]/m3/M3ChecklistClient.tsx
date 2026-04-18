@@ -213,12 +213,7 @@ export function M3ChecklistClient({
         <div
           data-m2-waiting-banner
           role="status"
-          style={{
-            background: "#fff8e1",
-            border: "1px solid #f9c74f",
-            padding: "0.75rem 1rem",
-            marginBottom: "1.25rem",
-          }}
+          className="banner-warning"
         >
           <strong>Patientenfragebogen-Link wurde versendet. Es wird auf Antworten gewartet.</strong>
           <div style={{ marginTop: "0.5rem" }}>
@@ -236,7 +231,8 @@ export function M3ChecklistClient({
       {m2Status === "skipped" ? (
         <p
           data-m2-skipped-notice
-          style={{ color: "#555", marginBottom: "1rem", fontStyle: "italic" }}
+          className="text-muted"
+          style={{ marginBottom: "1rem", fontStyle: "italic" }}
         >
           Patientenfragebogen wurde übersprungen.
         </p>
@@ -251,18 +247,17 @@ export function M3ChecklistClient({
             <li
               key={checkpoint.id}
               data-checkpoint-item={checkpoint.id}
+              className="card"
               style={{
-                border: "1px solid #ddd",
-                padding: "0.75rem",
                 marginBottom: "0.75rem",
                 opacity: isLocked ? 0.5 : 1,
               }}
             >
-              <div style={{ marginBottom: "0.5rem" }}>{checkpoint.title}</div>
+              <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{checkpoint.title}</div>
               {hasAnswers ? (
                 <details
                   data-m2-prefill={checkpoint.id}
-                  style={{ fontSize: "0.85em", color: "#555", marginBottom: "0.5rem" }}
+                  style={{ marginBottom: "0.5rem" }}
                 >
                   <summary>Aus M2:</summary>
                   <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem" }}>
@@ -277,19 +272,15 @@ export function M3ChecklistClient({
                   </ul>
                 </details>
               ) : null}
-              <div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {getStatusOptions(checkpoint.category).map((statusOption) => (
                   <button
                     key={statusOption}
                     type="button"
+                    className={`answer-btn${checkpoint.status === statusOption ? " active" : ""}`}
                     data-status-button={`${checkpoint.id}:${statusOption}`}
                     onClick={() => void updateStatus(checkpoint.id, statusOption)}
                     disabled={savingCheckpointId === checkpoint.id || isLocked}
-                    style={{
-                      marginRight: "0.5rem",
-                      fontWeight:
-                        checkpoint.status === statusOption ? "bold" : "normal",
-                    }}
                   >
                     {getStatusLabel(statusOption)}
                   </button>
@@ -300,7 +291,7 @@ export function M3ChecklistClient({
         })}
       </ul>
       {error ? (
-        <p role="alert" aria-live="polite">
+        <p className="text-error" role="alert" aria-live="polite">
           {error}
         </p>
       ) : null}
@@ -308,13 +299,7 @@ export function M3ChecklistClient({
         <h2>Patientenhinweise / To-dos</h2>
         {m4Lines.length > 0 ? (
           <>
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                margin: "0 0 0.75rem 0",
-                fontFamily: "inherit",
-              }}
-            >
+            <pre style={{ marginBottom: "0.75rem" }}>
               {m4TextBlock}
             </pre>
             <button
@@ -325,27 +310,22 @@ export function M3ChecklistClient({
             </button>
           </>
         ) : (
-          <p>Keine weiteren Schritte erforderlich.</p>
+          <p className="text-muted">Keine weiteren Schritte erforderlich.</p>
         )}
       </section>
       <section style={{ marginTop: "1.5rem" }}>
         <h2>Dokumentation für das Krankenblatt</h2>
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            margin: "0 0 0.75rem 0",
-            fontFamily: "inherit",
-          }}
-        >
+        <pre style={{ marginBottom: "0.75rem" }}>
           {m5TextBlock}
         </pre>
         <button type="button" onClick={copyM5Text}>
           Dokumentation kopieren
         </button>
       </section>
-      <section style={{ marginTop: "2rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
+      <section className="section-divider">
         <button
           type="button"
+          className="btn-primary"
           data-close-case
           onClick={closeCase}
           disabled={closing || savingCheckpointId !== null}

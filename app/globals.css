@@ -1,0 +1,334 @@
+/* ============================================================
+   GLOBAL THEME – CSS Custom Properties & Base Styles
+   ============================================================
+   Source of truth for all visual values used in the app.
+   No new colours – only the existing design tokens applied
+   consistently.
+   ============================================================ */
+
+/* ----- Custom Properties ----- */
+:root {
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --secondary: oklch(0.95 0.0058 264.53);
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --radius: 0.625rem;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+}
+
+/* ----- Reset / Base ----- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ----- Typography ----- */
+h1,
+h2,
+h3,
+h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+h2 {
+  font-size: 1.25rem;
+}
+h3 {
+  font-size: 1.125rem;
+}
+h4 {
+  font-size: 1rem;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+label {
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ----- Links ----- */
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ----- Buttons (global base) ----- */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: none;
+  white-space: nowrap;
+}
+
+button:hover {
+  background: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Primary action button */
+.btn-primary {
+  background: var(--primary);
+  color: var(--background);
+  border-color: var(--primary);
+}
+.btn-primary:hover {
+  opacity: 0.9;
+  background: var(--primary);
+}
+
+/* Destructive button */
+.btn-destructive {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+  border-color: var(--destructive);
+}
+
+/* ----- Answer Buttons (Ja / Nein / Unklar, M3 status) ----- */
+.answer-btn {
+  min-width: 5.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
+  background: var(--muted);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.answer-btn:hover {
+  background: var(--accent);
+}
+
+.answer-btn.active {
+  background: var(--primary);
+  color: var(--background);
+  border-color: var(--primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ----- Inputs ----- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+textarea {
+  display: block;
+  width: 100%;
+  max-width: 22rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+input[type="radio"] {
+  accent-color: var(--primary);
+}
+
+/* ----- Tables ----- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  text-align: left;
+  font-weight: var(--font-weight-medium);
+  border-bottom: 2px solid var(--border);
+  padding: 0.5rem 1rem;
+  color: var(--foreground);
+}
+
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  color: var(--foreground);
+}
+
+/* ----- Code / Pre ----- */
+pre {
+  font-family: inherit;
+  white-space: pre-wrap;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  line-height: 1.5;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  background: var(--input-background);
+  padding: 0.15rem 0.4rem;
+  border-radius: calc(var(--radius) * 0.5);
+}
+
+/* ----- Layout helpers ----- */
+main {
+  max-width: 44rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ----- Navigation ----- */
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-nav a {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+  text-decoration: none;
+}
+
+.app-nav a:hover {
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+/* ----- Cards / list items ----- */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  background: var(--background);
+}
+
+/* ----- Account bar ----- */
+.account-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+}
+
+.account-bar .account-email {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+/* ----- Status banner ----- */
+.banner-warning {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+}
+
+/* ----- Muted text ----- */
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.text-small {
+  font-size: 0.875rem;
+}
+
+/* ----- Error text ----- */
+.text-error {
+  color: var(--destructive);
+}
+
+/* ----- Section divider ----- */
+.section-divider {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* ----- Details / summary ----- */
+details {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+}

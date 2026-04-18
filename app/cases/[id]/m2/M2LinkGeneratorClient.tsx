@@ -54,13 +54,11 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       data-m2-link-generator
       style={{
         marginBottom: "2rem",
-        borderBottom: "1px solid #ddd",
+        borderBottom: "1px solid var(--border)",
         paddingBottom: "1.5rem",
       }}
     >
-      <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>
-        Patient einbinden
-      </h2>
+      <h2>Patient einbinden</h2>
       <button
         type="button"
         data-generate-m2-link
@@ -70,7 +68,7 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
         {loading ? "Wird erzeugt…" : "M2-Link für Patient erzeugen"}
       </button>
       {error ? (
-        <p role="alert" aria-live="polite" style={{ color: "red", marginTop: "0.5rem" }}>
+        <p className="text-error" role="alert" aria-live="polite" style={{ marginTop: "0.5rem" }}>
           {error}
         </p>
       ) : null}
@@ -81,24 +79,28 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
             style={{
               display: "block",
               wordBreak: "break-all",
-              background: "#f5f5f5",
-              padding: "0.5rem",
+              background: "var(--input-background)",
+              padding: "0.5rem 0.75rem",
               marginBottom: "0.5rem",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
             }}
           >
             {link}
           </code>
-          <button type="button" data-copy-m2-link onClick={() => void copyLink()}>
-            {copied ? "Kopiert ✓" : "Link kopieren"}
-          </button>
-          <button
-            type="button"
-            data-goto-m3
-            onClick={() => router.push(buildCaseM3Path(caseId))}
-            style={{ marginLeft: "0.5rem" }}
-          >
-            Weiter zur ärztlichen Checkliste →
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button type="button" data-copy-m2-link onClick={() => void copyLink()}>
+              {copied ? "Kopiert ✓" : "Link kopieren"}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              data-goto-m3
+              onClick={() => router.push(buildCaseM3Path(caseId))}
+            >
+              Weiter zur ärztlichen Checkliste →
+            </button>
+          </div>
         </div>
       ) : null}
     </section>
