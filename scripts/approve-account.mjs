@@ -98,12 +98,30 @@ async function run() {
         }
       }
     } else {
-      console.log("Verwendung:");
-      console.log("  node scripts/approve-account.mjs approve   <email>");
-      console.log("  node scripts/approve-account.mjs revoke    <email>");
-      console.log("  node scripts/approve-account.mjs set-admin <email>");
-      console.log("  node scripts/approve-account.mjs list");
-      process.exit(1);
+      // Fallback: treat process.argv[2] directly as the email for set-admin
+      // (used when invoked as: node scripts/approve-account.mjs <email>)
+      const directEmail = command;
+      if (!directEmail) {
+        console.log("Usage: npm run set-admin -- <email>");
+        process.exit(1);
+      }
+
+      const account = await prisma.account.findUnique({ where: { email: directEmail } });
+      if (!account) {
+        console.error(`Fehler: Kein Account mit E-Mail "${directEmail}" gefunden.`);
+        console.error("Tipp: Tester muss sich zuerst einmal über die App einloggen.");
+        process.exit(1);
+      }
+
+      await prisma.account.update({
+        where: { email: directEmail },
+        data: {
+          is_admin: true,
+          is_approved: true,
+        },
+      });
+
+      console.log(`✅ ${directEmail} ist jetzt Admin und freigeschaltet`);
     }
   } finally {
     await prisma.$disconnect();
