@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
-import { getCreateSuccessRedirectPath } from "@/lib/flow/caseNavigation";
+import {
+  getCreateSuccessRedirectPath,
+  isGatekeeperResponse,
+} from "@/lib/flow/caseNavigation";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
@@ -59,7 +62,7 @@ export default function HomePage() {
         setError(data.error ?? "Unbekannter Fehler");
         return;
       }
-      if (data.gatekeeper) {
+      if (isGatekeeperResponse(data)) {
         setGatekeeper(true);
         return;
       }

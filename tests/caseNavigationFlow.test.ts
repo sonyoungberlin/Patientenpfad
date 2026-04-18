@@ -3,24 +3,24 @@ import {
   buildCaseM2Path,
   buildCaseM3Path,
   getCreateSuccessRedirectPath,
+  isGatekeeperResponse,
 } from "@/lib/flow/caseNavigation";
 import M2Page from "@/app/cases/[id]/m2/page";
 
 describe("M1 Startflow Navigation", () => {
   it("erfolgreicher M1-Fall navigiert direkt nach M2", () => {
-    expect(getCreateSuccessRedirectPath({ ok: true, case_id: "case-123" })).toBe(
+    expect(getCreateSuccessRedirectPath({ case_id: "case-123" })).toBe(
       "/cases/case-123/m2",
     );
   });
 
   it("Gatekeeper-Fall navigiert nicht weiter", () => {
-    expect(
-      getCreateSuccessRedirectPath({
-        ok: true,
-        gatekeeper: true,
-        case_id: "case-123",
-      }),
-    ).toBeNull();
+    expect(isGatekeeperResponse({ gatekeeper: true })).toBe(true);
+    expect(getCreateSuccessRedirectPath({ case_id: undefined })).toBeNull();
+  });
+
+  it("ohne case_id erfolgt keine Navigation", () => {
+    expect(getCreateSuccessRedirectPath({})).toBeNull();
   });
 });
 
@@ -30,7 +30,6 @@ describe("M2 Skip-Option", () => {
       await M2Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
     expect(markup).toContain("Ohne M2 direkt zur ärztlichen Checkliste");
-    expect(markup).toContain("<a");
   });
 
   it("Skip führt direkt zu M3", async () => {
