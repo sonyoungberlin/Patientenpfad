@@ -64,7 +64,7 @@ describe("M3 Checkliste", () => {
     prismaMock.caseSession.findUnique.mockReset();
   });
 
-  function setupCase(data: object) {
+  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown }) {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
   }
 
