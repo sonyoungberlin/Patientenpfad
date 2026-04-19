@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import SignatureSection from "./SignatureSection";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 const MAX_CASES_PER_PAGE = 50;
@@ -152,6 +153,7 @@ export default async function CasesPage() {
           })
         )}
       </div>
+      <SignatureSection />
     </main>
   );
 }
