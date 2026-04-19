@@ -169,8 +169,10 @@ export function M3ChecklistClient({
 
   async function copyMessageText() {
     if (!m4TextBlock || !hasSignature) return;
-    // Platzhalter: Nachrichtentext = M4-Text + Signatur
-    const messageText = m4TextBlock + "\n\n" + messageSignature.trim();
+    const intro =
+      "Liebe Patientin, lieber Patient,\n" +
+      "für Ihre weitere Versorgung bitten wir Sie, folgende Punkte zu beachten:";
+    const messageText = intro + "\n\n" + m4TextBlock + "\n\n" + messageSignature.trim();
     const ok = await copyToClipboard(messageText);
     if (ok) {
       setCopiedMessage(true);
