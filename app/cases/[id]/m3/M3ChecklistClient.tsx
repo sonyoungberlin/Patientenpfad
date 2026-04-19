@@ -177,8 +177,7 @@ export function M3ChecklistClient({
 
   async function copyMessageText() {
     if (!m4TextBlock || !hasSignature) return;
-    const messageText = `${MESSAGE_INTRO}\n\n${m4TextBlock}\n\n${messageSignature.trim()}`;
-    const ok = await copyToClipboard(messageText);
+    const ok = await copyToClipboard(messagePreview);
     if (ok) {
       setCopiedMessage(true);
       setTimeout(() => setCopiedMessage(false), 2000);
