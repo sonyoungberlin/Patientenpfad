@@ -52,11 +52,13 @@ export function M3ChecklistClient({
   initialCheckpoints,
   prefill = {},
   m2Status = "none",
+  messageSignature = "",
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
   prefill?: M2PrefillData;
   m2Status?: string;
+  messageSignature?: string;
 }) {
   const router = useRouter();
   const isLocked = m2Status === "waiting_for_patient";
@@ -119,6 +121,9 @@ export function M3ChecklistClient({
 
   const [copiedM4, setCopiedM4] = useState(false);
   const [copiedM5, setCopiedM5] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState(false);
+
+  const hasSignature = messageSignature.trim().length > 0;
 
   function fallbackCopyText(text: string): boolean {
     const textarea = document.createElement("textarea");
@@ -159,6 +164,19 @@ export function M3ChecklistClient({
       setTimeout(() => setCopiedM4(false), 2000);
     } else {
       setError("Text konnte nicht kopiert werden.");
+    }
+  }
+
+  async function copyMessageText() {
+    if (!m4TextBlock || !hasSignature) return;
+    // Platzhalter: Nachrichtentext = M4-Text + Signatur
+    const messageText = m4TextBlock + "\n\n" + messageSignature.trim();
+    const ok = await copyToClipboard(messageText);
+    if (ok) {
+      setCopiedMessage(true);
+      setTimeout(() => setCopiedMessage(false), 2000);
+    } else {
+      setError("Nachricht konnte nicht kopiert werden.");
     }
   }
 
@@ -350,6 +368,25 @@ export function M3ChecklistClient({
             >
               {copiedM4 ? "Kopiert ✓" : "Text kopieren"}
             </button>
+            <div style={{ marginTop: "0.5rem" }}>
+              <button
+                type="button"
+                data-copy-message
+                onClick={() => void copyMessageText()}
+                disabled={!hasSignature}
+              >
+                {copiedMessage ? "Kopiert ✓" : "Nachricht kopieren"}
+              </button>
+              {!hasSignature && (
+                <p
+                  data-signature-hint
+                  className="text-muted text-small"
+                  style={{ marginTop: "0.25rem", marginBottom: 0 }}
+                >
+                  Bitte hinterlegen Sie zuerst eine Signatur in der Fallübersicht.
+                </p>
+              )}
+            </div>
           </>
         ) : (
           <p className="text-muted">Keine weiteren Schritte erforderlich.</p>

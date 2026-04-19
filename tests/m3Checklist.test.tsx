@@ -26,6 +26,9 @@ jest.mock("@/lib/prisma", () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    account: {
+      findUnique: jest.fn(),
+    },
   },
 }));
 
@@ -35,6 +38,9 @@ type PrismaMock = {
   caseSession: {
     findUnique: jest.Mock;
     update: jest.Mock;
+  };
+  account: {
+    findUnique: jest.Mock;
   };
 };
 
@@ -65,10 +71,16 @@ const oCheckpoint: ActiveCheckpoint = {
 describe("M3 Checkliste", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
+    prismaMock.account.findUnique.mockReset();
+    // Default: keine Signatur hinterlegt
+    prismaMock.account.findUnique.mockResolvedValue({ message_signature: null });
   });
 
-  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string }) {
+  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string }, opts?: { signature?: string }) {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
+    if (opts?.signature !== undefined) {
+      prismaMock.account.findUnique.mockResolvedValue({ message_signature: opts.signature });
+    }
   }
 
   it("lädt active_checkpoints per Case-ID", async () => {
@@ -338,5 +350,79 @@ describe("M3 Checkliste", () => {
 
     expect(markup).not.toContain("data-m2-waiting-banner");
     expect(markup).not.toContain("data-m2-skipped-notice");
+  });
+
+  // ------------------------------------------------------------------
+  // Nachricht kopieren – Button
+  // ------------------------------------------------------------------
+
+  it("zeigt 'Nachricht kopieren'-Button disabled + Hinweis wenn keine Signatur", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-T", status: "TO_DO", m4: { type: "ACTION", text: "Termin buchen." } },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("Nachricht kopieren");
+    expect(markup).toContain("data-copy-message");
+    // Button muss disabled sein
+    expect(markup).toContain('disabled=""');
+    expect(markup).toContain("data-signature-hint");
+    expect(markup).toContain("Bitte hinterlegen Sie zuerst eine Signatur in der Fallübersicht.");
+  });
+
+  it("zeigt 'Nachricht kopieren'-Button aktiv wenn Signatur vorhanden", async () => {
+    setupCase(
+      {
+        active_checkpoints: [
+          { ...mCheckpoint, id: "K-M-T", status: "TO_DO", m4: { type: "ACTION", text: "Termin buchen." } },
+        ],
+      },
+      { signature: "Mit freundlichen Grüßen\nDr. Muster" },
+    );
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("Nachricht kopieren");
+    // Kein Signatur-Hinweis
+    expect(markup).not.toContain("data-signature-hint");
+    expect(markup).not.toContain("Bitte hinterlegen Sie zuerst eine Signatur");
+  });
+
+  it("zeigt keinen 'Nachricht kopieren'-Button wenn keine TO_DOs", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-OK-ONLY", status: "OK" },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    // Kein TO_DO → kein M4-Block → kein Nachricht-kopieren-Button
+    expect(markup).not.toContain("Nachricht kopieren");
+    expect(markup).toContain("Keine weiteren Schritte erforderlich.");
+  });
+
+  it("bestehende 'Text kopieren'-Funktion bleibt bei TO_DO erhalten", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-T2", status: "TO_DO", m4: { type: "ACTION", text: "Bitte Termin buchen." } },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("Text kopieren");
+    expect(markup).toContain("Bitte Termin buchen.");
   });
 });
