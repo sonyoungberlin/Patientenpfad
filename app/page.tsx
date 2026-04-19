@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
@@ -34,7 +34,8 @@ export default function HomePage() {
   const [gatekeeper, setGatekeeper] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // Auth state
+  // Auth state & refs
+  const loginSectionRef = React.useRef<HTMLDivElement>(null);
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
@@ -141,8 +142,7 @@ export default function HomePage() {
         <button
           className="btn-primary"
           onClick={() => {
-            const loginSection = document.getElementById("login-section");
-            if (loginSection) loginSection.scrollIntoView({ behavior: "smooth" });
+            loginSectionRef.current?.scrollIntoView({ behavior: "smooth" });
           }}
           style={{ marginTop: "0.5rem" }}
         >
@@ -153,7 +153,7 @@ export default function HomePage() {
         </p>
 
         {/* Sekundärer Login-Bereich */}
-        <div id="login-section" className="section-divider">
+        <div ref={loginSectionRef} className="section-divider">
           <p className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
             Bereits freigeschaltet?
           </p>
@@ -173,7 +173,7 @@ export default function HomePage() {
             disabled={loginLoading}
             style={{ marginTop: "0.75rem" }}
           >
-            {loginLoading ? "Lädt…" : "Login"}
+            {loginLoading ? "Lädt…" : "Anmelden"}
           </button>
           {loginError && (
             <p className="text-error" style={{ marginTop: "0.5rem" }}>{loginError}</p>
