@@ -20,8 +20,9 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, signature: data?.message_signature ?? "" });
-  } catch {
+  } catch (err) {
     // Fallback: column may not exist yet if migration has not been applied
+    console.error("[GET /api/account/signature] DB error:", err);
     return NextResponse.json({ ok: true, signature: "" });
   }
 }
@@ -52,8 +53,9 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, signature });
-  } catch {
+  } catch (err) {
     // Fallback: column may not exist yet if migration has not been applied
+    console.error("[PUT /api/account/signature] DB error:", err);
     return NextResponse.json(
       { ok: false, error: "Signatur konnte nicht gespeichert werden. Bitte Migration anwenden." },
       { status: 503 },
