@@ -51,6 +51,10 @@ export const M5_TEXTS: Record<
     OK: "Digitale Kommunikation ist ausreichend möglich.",
     TO_DO: "Digitale Kommunikation ist nicht ausreichend möglich.",
   },
+  K09: {
+    OK: "Mitwirkung ist ausreichend gegeben.",
+    TO_DO: "Mitwirkung ist nicht ausreichend gegeben.",
+  },
 };
 
 /**

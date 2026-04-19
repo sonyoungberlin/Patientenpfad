@@ -111,7 +111,7 @@ describe("UI-Payload: m1Selection wird korrekt übermittelt", () => {
     };
     expect(isGatekeeperCase(initial)).toBe(false);
     const snapshot = buildM1SnapshotInitial(initial);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(8);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
   });
 
   it("Payload mit m1Selection hat keinen Legacy-Pfad", () => {

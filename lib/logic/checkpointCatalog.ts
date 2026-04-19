@@ -121,6 +121,19 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
       text: "Bitte beachten Sie, dass einige Leistungen nur über digitale Kommunikationswege angeboten werden können.",
     },
   },
+  K09: {
+    id: "K09",
+    block_id: "kommunikation",
+    type: CheckpointType.VERIFIKATION,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.A,
+    title: "Mitwirkung",
+    description: "Prüfen, ob die Mitwirkung des Patienten ausreichend gegeben ist.",
+    m4: {
+      type: "ACTION",
+      text: "Bitte vereinbaren Sie Termine, damit wir uns ausreichend Zeit für Sie nehmen können. Falls Sie verhindert sind, sagen Sie Termine bitte rechtzeitig ab und beachten Sie getroffene Absprachen. Nur so können wir eine gute Versorgung gewährleisten.",
+    },
+  },
 };
 
 /**
