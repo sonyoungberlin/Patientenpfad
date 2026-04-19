@@ -43,12 +43,12 @@ export default async function M2Page({
     <main>
       <h1>M2 – Patienteninformationen</h1>
       <M2LinkGeneratorClient caseId={id} />
+      <M2SkipButtonClient caseId={id} />
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}
         initialPrefill={prefill}
       />
-      <M2SkipButtonClient caseId={id} />
     </main>
   );
 }
