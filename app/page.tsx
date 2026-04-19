@@ -42,7 +42,6 @@ export default function HomePage() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   // Registration state
-  const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
@@ -88,12 +87,12 @@ export default function HomePage() {
     setRegLoading(true);
     setRegError(null);
     setRegSuccess(false);
-    console.log("[handleRegister] start", { regName, regEmail });
+    console.log("[handleRegister] start", { regEmail });
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: regName, email: regEmail }),
+        body: JSON.stringify({ email: regEmail }),
       });
       const data = await res.json();
       console.log("[handleRegister] response", { status: res.status, data });
@@ -102,7 +101,6 @@ export default function HomePage() {
         return;
       }
       setRegSuccess(true);
-      setRegName("");
       setRegEmail("");
     } catch (err) {
       console.error("[handleRegister] Netzwerkfehler", err);
@@ -185,17 +183,6 @@ export default function HomePage() {
           </div>
         ) : (
           <>
-            <div style={{ marginBottom: "0.75rem" }}>
-              <label htmlFor="reg_name">Name</label>
-              <input
-                id="reg_name"
-                type="text"
-                value={regName}
-                onChange={(e) => setRegName(e.target.value)}
-                placeholder="Vor- und Nachname"
-                style={{ marginTop: "0.5rem" }}
-              />
-            </div>
             <div style={{ marginBottom: "0.75rem" }}>
               <label htmlFor="reg_email">E-Mail-Adresse</label>
               <input

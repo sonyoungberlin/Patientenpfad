@@ -18,7 +18,6 @@ enum StageStatus {
 model Account {
   id          String        @id @default(cuid())
   email       String        @unique
-  name        String?
   is_approved Boolean       @default(false)
   is_admin    Boolean       @default(false)
   createdAt   DateTime      @default(now())

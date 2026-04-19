@@ -202,26 +202,13 @@ describe("POST /api/auth/register", () => {
   it("gibt 400 bei fehlender E-Mail zurück", async () => {
     const req = new NextRequest("http://localhost/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name: "Test User" }),
+      body: JSON.stringify({}),
       headers: { "Content-Type": "application/json" },
     });
     const res = await registerHandler(req);
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.ok).toBe(false);
-  });
-
-  it("gibt 400 bei fehlendem Namen zurück", async () => {
-    const req = new NextRequest("http://localhost/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ email: "test@example.com" }),
-      headers: { "Content-Type": "application/json" },
-    });
-    const res = await registerHandler(req);
-    expect(res.status).toBe(400);
-    const json = await res.json();
-    expect(json.ok).toBe(false);
-    expect(json.error).toContain("Namen");
   });
 
   it("gibt 409 zurück wenn E-Mail bereits existiert", async () => {
@@ -232,7 +219,7 @@ describe("POST /api/auth/register", () => {
 
     const req = new NextRequest("http://localhost/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name: "Test User", email: "test@example.com" }),
+      body: JSON.stringify({ email: "test@example.com" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await registerHandler(req);
@@ -242,18 +229,17 @@ describe("POST /api/auth/register", () => {
     expect(json.error).toContain("bereits registriert");
   });
 
-  it("legt Account mit Name und E-Mail an", async () => {
+  it("legt Account mit E-Mail an", async () => {
     pm.account.findUnique.mockResolvedValue(null);
     pm.account.create.mockResolvedValue({
       id: "acc-new",
       email: "new@example.com",
-      name: "Neue Person",
       is_approved: false,
     });
 
     const req = new NextRequest("http://localhost/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name: "Neue Person", email: "new@example.com" }),
+      body: JSON.stringify({ email: "new@example.com" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await registerHandler(req);
@@ -263,7 +249,7 @@ describe("POST /api/auth/register", () => {
     expect(json.ok).toBe(true);
     expect(json.message).toContain("freigeschaltet");
     expect(pm.account.create).toHaveBeenCalledWith({
-      data: { email: "new@example.com", name: "Neue Person", is_approved: false },
+      data: { email: "new@example.com", is_approved: false },
     });
   });
 
@@ -272,13 +258,12 @@ describe("POST /api/auth/register", () => {
     pm.account.create.mockResolvedValue({
       id: "acc-new",
       email: "new@example.com",
-      name: "Neue Person",
       is_approved: false,
     });
 
     const req = new NextRequest("http://localhost/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name: "Neue Person", email: "new@example.com" }),
+      body: JSON.stringify({ email: "new@example.com" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await registerHandler(req);

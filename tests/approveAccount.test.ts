@@ -126,19 +126,18 @@ describe("listAccounts", () => {
   it("gibt alle Accounts zurück", async () => {
     const now = new Date();
     pm.account.findMany.mockResolvedValue([
-      { id: "acc-1", email: "a@example.com", name: "Alice", is_approved: true, is_admin: false, createdAt: now },
-      { id: "acc-2", email: "b@example.com", name: null, is_approved: false, is_admin: false, createdAt: now },
+      { id: "acc-1", email: "a@example.com", is_approved: true, is_admin: false, createdAt: now },
+      { id: "acc-2", email: "b@example.com", is_approved: false, is_admin: false, createdAt: now },
     ]);
 
     const accounts = await listAccounts();
 
     expect(accounts).toHaveLength(2);
     expect(accounts[0].email).toBe("a@example.com");
-    expect(accounts[0].name).toBe("Alice");
     expect(accounts[1].is_approved).toBe(false);
     expect(pm.account.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        select: { id: true, email: true, name: true, is_approved: true, is_admin: true, createdAt: true },
+        select: { id: true, email: true, is_approved: true, is_admin: true, createdAt: true },
         orderBy: { createdAt: "desc" },
       }),
     );
