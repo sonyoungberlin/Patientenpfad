@@ -125,33 +125,60 @@ export default function HomePage() {
 
   if (!account) {
     return (
-      <main style={{ maxWidth: "400px" }}>
-        <h1>Anmelden</h1>
-        <p className="text-muted">
-          Bitte melden Sie sich mit Ihrer E-Mail-Adresse an.
+      <main style={{ maxWidth: "500px" }}>
+        <h1>Struktur im Praxisalltag</h1>
+        <p style={{ fontSize: "1.125rem", marginBottom: "0.5rem" }}>
+          Offene Fragen sichtbar machen – klare Zuordnung ermöglichen.
         </p>
-        <div style={{ marginTop: "1rem" }}>
-          <label htmlFor="login_email">E-Mail-Adresse</label>
-          <input
-            id="login_email"
-            type="email"
-            value={loginEmail}
-            onChange={(e) => setLoginEmail(e.target.value)}
-            placeholder="name@beispiel.de"
-            style={{ marginTop: "0.5rem" }}
-          />
-        </div>
+        <p className="text-muted text-small" style={{ marginBottom: "1.5rem" }}>
+          Die medizinische Entscheidung bleibt beim Arzt.
+        </p>
+        <p style={{ marginBottom: "1.5rem" }}>
+          Im Praxisalltag gibt es immer wieder Situationen, in denen unklar ist, was noch fehlt oder wie es weitergeht.
+          Die Anwendung macht diese offenen Fragen sichtbar und unterstützt dabei, die nächsten Schritte klar zuzuordnen.
+          Aktuell testen wir dies im Rahmen einer Pilotphase.
+        </p>
         <button
           className="btn-primary"
-          onClick={handleLogin}
-          disabled={loginLoading}
-          style={{ marginTop: "1rem" }}
+          onClick={() => {
+            const loginSection = document.getElementById("login-section");
+            if (loginSection) loginSection.scrollIntoView({ behavior: "smooth" });
+          }}
+          style={{ marginTop: "0.5rem" }}
         >
-          {loginLoading ? "Lädt…" : "Anmelden"}
+          Für Pilotphase registrieren
         </button>
-        {loginError && (
-          <p className="text-error" style={{ marginTop: "0.5rem" }}>{loginError}</p>
-        )}
+        <p className="text-muted text-small" style={{ marginTop: "0.75rem" }}>
+          Zugänge werden aktuell manuell freigeschaltet.
+        </p>
+
+        {/* Sekundärer Login-Bereich */}
+        <div id="login-section" className="section-divider">
+          <p className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
+            Bereits freigeschaltet?
+          </p>
+          <div>
+            <label htmlFor="login_email">E-Mail-Adresse</label>
+            <input
+              id="login_email"
+              type="email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              placeholder="name@beispiel.de"
+              style={{ marginTop: "0.5rem" }}
+            />
+          </div>
+          <button
+            onClick={handleLogin}
+            disabled={loginLoading}
+            style={{ marginTop: "0.75rem" }}
+          >
+            {loginLoading ? "Lädt…" : "Login"}
+          </button>
+          {loginError && (
+            <p className="text-error" style={{ marginTop: "0.5rem" }}>{loginError}</p>
+          )}
+        </div>
       </main>
     );
   }
