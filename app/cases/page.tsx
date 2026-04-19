@@ -103,6 +103,7 @@ export default async function CasesPage() {
   return (
     <main>
       <h1>Fälle</h1>
+      <SignatureSection />
       <div style={{ marginTop: "1rem", display: "grid", gap: "0.75rem" }}>
         {sessions.length === 0 ? (
           <p className="text-muted">Keine Fälle vorhanden.</p>
@@ -153,7 +154,6 @@ export default async function CasesPage() {
           })
         )}
       </div>
-      <SignatureSection />
     </main>
   );
 }
