@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import SignatureSection from "./SignatureSection";
+import CaseListClient, { type CaseListItem } from "./CaseListClient";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 const MAX_CASES_PER_PAGE = 50;
@@ -100,59 +100,19 @@ export default async function CasesPage() {
     },
   });
 
+  const cases: CaseListItem[] = sessions.map((session) => ({
+    id: session.id,
+    title: deriveCaseTitle(session),
+    patient_reference: session.patient_reference,
+    statusLabel: deriveCaseStatus(session),
+  }));
+
   return (
     <main>
       <h1>Fälle</h1>
       <SignatureSection />
       <div style={{ marginTop: "1rem", display: "grid", gap: "0.75rem" }}>
-        {sessions.length === 0 ? (
-          <p className="text-muted">Keine Fälle vorhanden.</p>
-        ) : (
-          sessions.map((session) => {
-            const title = deriveCaseTitle(session);
-            return (
-              <article
-                key={session.id}
-                className="card"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "1rem",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 500 }}>{title}</div>
-                  {session.patient_reference ? (
-                    <div className="text-muted text-small" style={{ marginTop: "0.25rem" }}>
-                      Patienten-Referenz: {session.patient_reference}
-                    </div>
-                  ) : null}
-                  <div style={{ marginTop: "0.3rem" }}>
-                    Status: {deriveCaseStatus(session)}
-                  </div>
-                </div>
-                <Link
-                  href={`/cases/${session.id}`}
-                  aria-label={`Weiterbearbeiten: ${title}`}
-                  style={{
-                    whiteSpace: "nowrap",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--radius)",
-                    padding: "0.5rem 1rem",
-                    textDecoration: "none",
-                    color: "var(--foreground)",
-                    background: "var(--background)",
-                    fontWeight: 500,
-                    fontSize: "1rem",
-                  }}
-                >
-                  Weiterbearbeiten
-                </Link>
-              </article>
-            );
-          })
-        )}
+        <CaseListClient cases={cases} />
       </div>
     </main>
   );
