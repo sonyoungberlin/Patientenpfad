@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
@@ -34,12 +34,19 @@ export default function HomePage() {
   const [gatekeeper, setGatekeeper] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // Auth state
+  // Auth state & refs
+  const loginSectionRef = React.useRef<HTMLDivElement>(null);
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  // Registration state
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState<string | null>(null);
+  const [regSuccess, setRegSuccess] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -54,6 +61,7 @@ export default function HomePage() {
   async function handleLogin() {
     setLoginLoading(true);
     setLoginError(null);
+    console.log("[handleLogin] start", { loginEmail });
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -61,16 +69,46 @@ export default function HomePage() {
         body: JSON.stringify({ email: loginEmail }),
       });
       const data = await res.json();
+      console.log("[handleLogin] response", { status: res.status, data });
       if (!res.ok || !data.ok) {
         setLoginError((data.error as string | undefined) ?? "Login fehlgeschlagen.");
         return;
       }
       setAccount(data.account as AccountInfo);
       setLoginEmail("");
-    } catch {
+    } catch (err) {
+      console.error("[handleLogin] Netzwerkfehler", err);
       setLoginError("Netzwerkfehler");
     } finally {
       setLoginLoading(false);
+    }
+  }
+
+  async function handleRegister() {
+    setRegLoading(true);
+    setRegError(null);
+    setRegSuccess(false);
+    console.log("[handleRegister] start", { regName, regEmail });
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: regName, email: regEmail }),
+      });
+      const data = await res.json();
+      console.log("[handleRegister] response", { status: res.status, data });
+      if (!res.ok || !data.ok) {
+        setRegError((data.error as string | undefined) ?? "Registrierung fehlgeschlagen.");
+        return;
+      }
+      setRegSuccess(true);
+      setRegName("");
+      setRegEmail("");
+    } catch (err) {
+      console.error("[handleRegister] Netzwerkfehler", err);
+      setRegError("Netzwerkfehler");
+    } finally {
+      setRegLoading(false);
     }
   }
 
@@ -125,33 +163,94 @@ export default function HomePage() {
 
   if (!account) {
     return (
-      <main style={{ maxWidth: "400px" }}>
-        <h1>Anmelden</h1>
-        <p className="text-muted">
-          Bitte melden Sie sich mit Ihrer E-Mail-Adresse an.
+      <main style={{ maxWidth: "500px" }}>
+        <h1>Struktur im Praxisalltag</h1>
+        <p style={{ fontSize: "1.125rem", marginBottom: "0.5rem" }}>
+          Offene Fragen sichtbar machen – klare Zuordnung ermöglichen.
         </p>
-        <div style={{ marginTop: "1rem" }}>
-          <label htmlFor="login_email">E-Mail-Adresse</label>
-          <input
-            id="login_email"
-            type="email"
-            value={loginEmail}
-            onChange={(e) => setLoginEmail(e.target.value)}
-            placeholder="name@beispiel.de"
-            style={{ marginTop: "0.5rem" }}
-          />
-        </div>
-        <button
-          className="btn-primary"
-          onClick={handleLogin}
-          disabled={loginLoading}
-          style={{ marginTop: "1rem" }}
-        >
-          {loginLoading ? "Lädt…" : "Anmelden"}
-        </button>
-        {loginError && (
-          <p className="text-error" style={{ marginTop: "0.5rem" }}>{loginError}</p>
+        <p className="text-muted text-small" style={{ marginBottom: "1.5rem" }}>
+          Die medizinische Entscheidung bleibt beim Arzt.
+        </p>
+        <p style={{ marginBottom: "1.5rem" }}>
+          Im Praxisalltag gibt es immer wieder Situationen, in denen unklar ist, was noch fehlt oder wie es weitergeht.
+          Die Anwendung macht diese offenen Fragen sichtbar und unterstützt dabei, die nächsten Schritte klar zuzuordnen.
+          Aktuell testen wir dies im Rahmen einer Pilotphase.
+        </p>
+
+        {/* Registrierungsformular */}
+        <h2>Für Pilotphase registrieren</h2>
+        {regSuccess ? (
+          <div className="banner-warning" style={{ marginBottom: "1rem" }}>
+            <strong>Registrierung erfolgreich.</strong> Ihr Zugang wird manuell freigeschaltet.
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label htmlFor="reg_name">Name</label>
+              <input
+                id="reg_name"
+                type="text"
+                value={regName}
+                onChange={(e) => setRegName(e.target.value)}
+                placeholder="Vor- und Nachname"
+                style={{ marginTop: "0.5rem" }}
+              />
+            </div>
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label htmlFor="reg_email">E-Mail-Adresse</label>
+              <input
+                id="reg_email"
+                type="email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                placeholder="name@beispiel.de"
+                style={{ marginTop: "0.5rem" }}
+              />
+            </div>
+            <button
+              className="btn-primary"
+              onClick={handleRegister}
+              disabled={regLoading}
+              style={{ marginTop: "0.5rem" }}
+            >
+              {regLoading ? "Lädt…" : "Registrieren"}
+            </button>
+            {regError && (
+              <p className="text-error" style={{ marginTop: "0.5rem" }}>{regError}</p>
+            )}
+          </>
         )}
+        <p className="text-muted text-small" style={{ marginTop: "0.75rem" }}>
+          Zugänge werden aktuell manuell freigeschaltet.
+        </p>
+
+        {/* Sekundärer Login-Bereich */}
+        <div ref={loginSectionRef} className="section-divider">
+          <p className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
+            Bereits freigeschaltet?
+          </p>
+          <div>
+            <label htmlFor="login_email">E-Mail-Adresse</label>
+            <input
+              id="login_email"
+              type="email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              placeholder="name@beispiel.de"
+              style={{ marginTop: "0.5rem" }}
+            />
+          </div>
+          <button
+            onClick={handleLogin}
+            disabled={loginLoading}
+            style={{ marginTop: "0.75rem" }}
+          >
+            {loginLoading ? "Lädt…" : "Anmelden"}
+          </button>
+          {loginError && (
+            <p className="text-error" style={{ marginTop: "0.5rem" }}>{loginError}</p>
+          )}
+        </div>
       </main>
     );
   }

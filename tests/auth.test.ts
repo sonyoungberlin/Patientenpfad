@@ -16,6 +16,8 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     account: {
       upsert: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
     },
     session: {
       create: jest.fn(),
@@ -42,6 +44,7 @@ jest.mock("crypto", () => ({
 
 import { prisma } from "@/lib/prisma";
 import { POST as loginHandler } from "@/app/api/auth/login/route";
+import { POST as registerHandler } from "@/app/api/auth/register/route";
 import { POST as logoutHandler } from "@/app/api/auth/logout/route";
 import { GET as meHandler } from "@/app/api/auth/me/route";
 import { GET as casesHandler } from "@/app/api/cases/route";
@@ -49,7 +52,7 @@ import { POST as createCaseHandler } from "@/app/api/cases/create/route";
 import { SESSION_COOKIE } from "@/lib/auth";
 
 type PrismaMock = {
-  account: { upsert: jest.Mock };
+  account: { upsert: jest.Mock; findUnique: jest.Mock; create: jest.Mock };
   session: {
     create: jest.Mock;
     findUnique: jest.Mock;
@@ -109,11 +112,45 @@ describe("POST /api/auth/login", () => {
     expect(res.status).toBe(400);
   });
 
-  it("legt Account an (upsert) und erstellt Session", async () => {
-    pm.account.upsert.mockResolvedValue({
+  it("gibt 404 zurück wenn Account nicht existiert", async () => {
+    pm.account.findUnique.mockResolvedValue(null);
+
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "unknown@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+    expect(json.error).toContain("registrieren");
+  });
+
+  it("gibt 403 zurück wenn Account nicht freigeschaltet", async () => {
+    pm.account.findUnique.mockResolvedValue({
       id: "acc-1",
       email: "test@example.com",
       is_approved: false,
+    });
+
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "test@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+    expect(json.error).toContain("nicht freigeschaltet");
+  });
+
+  it("erstellt Session bei freigeschaltetem Account", async () => {
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "test@example.com",
+      is_approved: true,
     });
     pm.session.create.mockResolvedValue({});
 
@@ -128,10 +165,8 @@ describe("POST /api/auth/login", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
     expect(json.account.email).toBe("test@example.com");
-    expect(pm.account.upsert).toHaveBeenCalledWith({
+    expect(pm.account.findUnique).toHaveBeenCalledWith({
       where: { email: "test@example.com" },
-      create: { email: "test@example.com", is_approved: false },
-      update: {},
     });
     expect(pm.session.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ token: "test-token-hex-value", account_id: "acc-1" }) }),
@@ -139,10 +174,10 @@ describe("POST /api/auth/login", () => {
   });
 
   it("setzt httpOnly-Cookie im Response", async () => {
-    pm.account.upsert.mockResolvedValue({
+    pm.account.findUnique.mockResolvedValue({
       id: "acc-1",
       email: "test@example.com",
-      is_approved: false,
+      is_approved: true,
     });
     pm.session.create.mockResolvedValue({});
 
@@ -156,6 +191,102 @@ describe("POST /api/auth/login", () => {
     const setCookie = res.headers.get("set-cookie");
     expect(setCookie).toContain(SESSION_COOKIE);
     expect(setCookie).toContain("HttpOnly");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Register
+// ---------------------------------------------------------------------------
+
+describe("POST /api/auth/register", () => {
+  it("gibt 400 bei fehlender E-Mail zurück", async () => {
+    const req = new NextRequest("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ name: "Test User" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await registerHandler(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+  });
+
+  it("gibt 400 bei fehlendem Namen zurück", async () => {
+    const req = new NextRequest("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email: "test@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await registerHandler(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+    expect(json.error).toContain("Namen");
+  });
+
+  it("gibt 409 zurück wenn E-Mail bereits existiert", async () => {
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "test@example.com",
+    });
+
+    const req = new NextRequest("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ name: "Test User", email: "test@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await registerHandler(req);
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+    expect(json.error).toContain("bereits registriert");
+  });
+
+  it("legt Account mit Name und E-Mail an", async () => {
+    pm.account.findUnique.mockResolvedValue(null);
+    pm.account.create.mockResolvedValue({
+      id: "acc-new",
+      email: "new@example.com",
+      name: "Neue Person",
+      is_approved: false,
+    });
+
+    const req = new NextRequest("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ name: "Neue Person", email: "new@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await registerHandler(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.message).toContain("freigeschaltet");
+    expect(pm.account.create).toHaveBeenCalledWith({
+      data: { email: "new@example.com", name: "Neue Person", is_approved: false },
+    });
+  });
+
+  it("erstellt keine Session bei Registrierung", async () => {
+    pm.account.findUnique.mockResolvedValue(null);
+    pm.account.create.mockResolvedValue({
+      id: "acc-new",
+      email: "new@example.com",
+      name: "Neue Person",
+      is_approved: false,
+    });
+
+    const req = new NextRequest("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ name: "Neue Person", email: "new@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await registerHandler(req);
+
+    expect(res.status).toBe(200);
+    expect(pm.session.create).not.toHaveBeenCalled();
+    const setCookie = res.headers.get("set-cookie");
+    expect(setCookie).toBeNull();
   });
 });
 
