@@ -1,4 +1,4 @@
-import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
+import { CheckpointCategory, isMultiSelectCheckpoint, type ActiveCheckpoint } from "@/lib/types";
 
 export type M5Entry = {
   checkpoint_id: string;
@@ -90,10 +90,22 @@ export function resolveM5Text(cp: {
 
 /**
  * M3 → M5: Returns exactly one documentation sentence per checkpoint.
+ * MULTI_SELECT checkpoints generate text from their selections.
  */
 export function deriveM5Output(checkpoints: ActiveCheckpoint[]): M5Entry[] {
-  return checkpoints.map((cp) => ({
-    checkpoint_id: cp.id,
-    text: resolveM5Text(cp),
-  }));
+  return checkpoints.map((cp) => {
+    if (isMultiSelectCheckpoint(cp)) {
+      return {
+        checkpoint_id: cp.id,
+        text:
+          cp.selections.length > 0
+            ? cp.selections.join("; ") + "."
+            : "",
+      };
+    }
+    return {
+      checkpoint_id: cp.id,
+      text: resolveM5Text(cp),
+    };
+  });
 }

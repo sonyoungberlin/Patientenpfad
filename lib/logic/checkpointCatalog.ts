@@ -3,6 +3,7 @@ import {
   CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
+  type StandardCheckpoint,
   type M1SnapshotInitial,
 } from "@/lib/types";
 
@@ -14,7 +15,7 @@ import {
  *
  * block_id entspricht dem M1-Aktivierungsblock-Schlüssel.
  */
-type CheckpointTemplate = Omit<ActiveCheckpoint, "status">;
+type CheckpointTemplate = Omit<StandardCheckpoint, "status">;
 
 export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
   K01: {

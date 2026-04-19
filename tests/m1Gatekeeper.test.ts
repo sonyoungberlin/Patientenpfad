@@ -1,5 +1,6 @@
 import { isGatekeeperCase, buildM1SnapshotInitial } from "@/lib/logic/m1Activation";
 import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
+import { isStandardCheckpoint } from "@/lib/types";
 import type { M1Selection } from "@/lib/types";
 
 describe("isGatekeeperCase", () => {
@@ -63,7 +64,9 @@ describe("M1-Flow: medizinische_lage unklar → Snapshot + aktive Checkpoints", 
     const snapshot = buildM1SnapshotInitial(sel);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     for (const cp of checkpoints) {
-      expect(cp.status).toBe("TO_DO");
+      if (isStandardCheckpoint(cp)) {
+        expect(cp.status).toBe("TO_DO");
+      }
     }
   });
 

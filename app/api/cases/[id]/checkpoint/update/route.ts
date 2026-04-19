@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
+import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint } from "@/lib/types";
 import { getSessionAccount } from "@/lib/auth";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
@@ -27,12 +27,20 @@ function isActiveCheckpointArray(value: unknown): value is ActiveCheckpoint[] {
     }
 
     const checkpoint = item as Record<string, unknown>;
-    return (
-      typeof checkpoint.id === "string" &&
-      (checkpoint.category === CheckpointCategory.M ||
-        checkpoint.category === CheckpointCategory.O) &&
-      typeof checkpoint.status === "string"
-    );
+    if (typeof checkpoint.id !== "string") return false;
+    if (
+      checkpoint.category !== CheckpointCategory.M &&
+      checkpoint.category !== CheckpointCategory.O
+    ) {
+      return false;
+    }
+
+    // MULTI_SELECT checkpoints have selections instead of status
+    if (checkpoint.mode === CheckpointMode.MULTI_SELECT) {
+      return Array.isArray(checkpoint.selections);
+    }
+
+    return typeof checkpoint.status === "string";
   });
 }
 

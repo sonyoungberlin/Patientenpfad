@@ -6,6 +6,7 @@ import {
   CHECKPOINT_CATALOGUE,
   hydrateActiveCheckpointsFromSnapshot,
 } from "@/lib/logic/checkpointCatalog";
+import { isStandardCheckpoint } from "@/lib/types";
 import type { M1Selection, M1SnapshotInitial } from "@/lib/types";
 
 const ALL_UNKLAR: M1Selection = {
@@ -101,7 +102,9 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     for (const cp of checkpoints) {
-      expect(cp.status).toBe("TO_DO");
+      if (isStandardCheckpoint(cp)) {
+        expect(cp.status).toBe("TO_DO");
+      }
     }
   });
 

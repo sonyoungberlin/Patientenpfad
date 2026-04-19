@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
+import { CheckpointCategory, type ActiveCheckpoint, type StandardCheckpoint, isStandardCheckpoint } from "@/lib/types";
 import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { resolveM5Text } from "@/lib/logic/deriveM5Output";
 
@@ -15,11 +15,11 @@ const MESSAGE_INTRO =
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
-type M3Checkpoint = Omit<ActiveCheckpoint, "status"> & {
+type M3Checkpoint = Omit<StandardCheckpoint, "status"> & {
   status: CheckpointStatus;
 };
 
-function normalizeStatus(checkpoint: ActiveCheckpoint): CheckpointStatus {
+function normalizeStatus(checkpoint: StandardCheckpoint): CheckpointStatus {
   if (checkpoint.category === CheckpointCategory.M) {
     return checkpoint.status === "OK" ||
       checkpoint.status === "TO_DO" ||
@@ -66,8 +66,10 @@ export function M3ChecklistClient({
 }) {
   const router = useRouter();
   const isLocked = m2Status === "waiting_for_patient";
+  // MULTI_SELECT checkpoints are not yet rendered in M3 – filter to standard only.
+  const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
-    initialCheckpoints.map((checkpoint) => ({
+    standardInitial.map((checkpoint) => ({
       ...checkpoint,
       status: normalizeStatus(checkpoint),
     })),
