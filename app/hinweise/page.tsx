@@ -59,14 +59,12 @@ export default function HinweisePage() {
 
       <h2>4. Pilot- und Testbetrieb</h2>
       <p>
-        Diese Anwendung befindet sich in einer Pilot- und Testphase.
+        Diese Anwendung befindet sich in einer frühen Einsatzphase und wird
+        fortlaufend weiterentwickelt.
       </p>
-      <p>Sie ist:</p>
-      <ul>
-        <li>nicht für den regulären produktiven Einsatz bestimmt</li>
-        <li>nicht als final validiertes System zu verstehen</li>
-      </ul>
-      <p>Funktionen, Inhalte und Verhalten können sich jederzeit ändern.</p>
+      <p>
+        Funktionen, Inhalte und Verhalten können sich jederzeit ändern.
+      </p>
 
       <h2>5. Datenverarbeitung und Personenbezug</h2>
       <p>
