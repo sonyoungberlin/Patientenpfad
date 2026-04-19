@@ -13,8 +13,8 @@ describe("M1_CHECKPOINT_MAP", () => {
     expect(M1_CHECKPOINT_MAP.kommunikation).toEqual(["K01", "K08", "K09"]);
   });
 
-  it("medizinische_lage aktiviert K03, K04, K05", () => {
-    expect(M1_CHECKPOINT_MAP.medizinische_lage).toEqual(["K03", "K04", "K05"]);
+  it("medizinische_lage aktiviert K03, K04, K05, K10", () => {
+    expect(M1_CHECKPOINT_MAP.medizinische_lage).toEqual(["K03", "K04", "K05", "K10"]);
   });
 
   it("versorgung_im_alltag aktiviert K02, K06, K07", () => {
@@ -58,6 +58,7 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K03",
       "K04",
       "K05",
+      "K10",
       "K02",
       "K06",
       "K07",
@@ -74,6 +75,7 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K03",
       "K04",
       "K05",
+      "K10",
       "K02",
       "K06",
       "K07",

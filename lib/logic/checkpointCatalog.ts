@@ -1,8 +1,10 @@
 import {
   CheckpointCategory,
+  CheckpointMode,
   CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
+  type ActiveCheckpointMultiSelect,
   type StandardCheckpoint,
   type M1SnapshotInitial,
 } from "@/lib/types";
@@ -138,10 +140,38 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
 };
 
 /**
+ * Katalog für MULTI_SELECT-Checkpoints.
+ * Jeder Eintrag ist ein Template ohne `selections` und `enabled` (werden bei Hydration gesetzt).
+ */
+type MultiSelectTemplate = Omit<ActiveCheckpointMultiSelect, "selections" | "enabled">;
+
+export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
+  K10: {
+    id: "K10",
+    block_id: "medizinische_lage",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.A,
+    mode: CheckpointMode.MULTI_SELECT,
+    title: "Besonderer Versorgungsaufwand",
+    description:
+      "Warum benötigt dieser Fall organisatorisch besondere Aufmerksamkeit?",
+    options: [
+      "Neupatient / unbekannt",
+      "Multimedikation",
+      "postoperative / akute Nachsorge",
+      "erhöhter Betreuungsbedarf",
+      "eingeschränkte Kommunikation",
+    ],
+  },
+};
+
+/**
  * Hydratisiert vollständige `ActiveCheckpoint`-Objekte aus einem M1-Snapshot.
  *
  * Einzige erlaubte Quelle für `active_checkpoints` eines Falls.
- * Der initiale Status aller aktivierten Checkpoints ist `TO_DO`.
+ * Der initiale Status aller aktivierten Standard-Checkpoints ist `TO_DO`.
+ * MULTI_SELECT-Checkpoints werden mit `enabled: false` und leeren `selections` hydratisiert.
  *
  * Checkpoints, deren ID nicht im Katalog vorhanden ist, werden übersprungen
  * (defensiv gegen zukünftige Katalogerweiterungen).
@@ -151,8 +181,13 @@ export function hydrateActiveCheckpointsFromSnapshot(
 ): ActiveCheckpoint[] {
   return snapshot.activated_checkpoint_ids.flatMap((id) => {
     const template = CHECKPOINT_CATALOGUE[id];
-    if (!template) return [];
-    // Assign TO_DO as initial status, respecting the category union
-    return [{ ...template, status: "TO_DO" } as ActiveCheckpoint];
+    if (template) {
+      return [{ ...template, status: "TO_DO" } as ActiveCheckpoint];
+    }
+    const msTemplate = MULTI_SELECT_CATALOGUE[id];
+    if (msTemplate) {
+      return [{ ...msTemplate, selections: [], enabled: false } as ActiveCheckpoint];
+    }
+    return [];
   });
 }

@@ -90,7 +90,7 @@ export function resolveM5Text(cp: {
 
 /**
  * M3 → M5: Returns exactly one documentation sentence per checkpoint.
- * MULTI_SELECT checkpoints generate text from their selections.
+ * MULTI_SELECT checkpoints generate text from their selections (only if enabled).
  */
 export function deriveM5Output(checkpoints: ActiveCheckpoint[]): M5Entry[] {
   return checkpoints.map((cp) => {
@@ -98,8 +98,8 @@ export function deriveM5Output(checkpoints: ActiveCheckpoint[]): M5Entry[] {
       return {
         checkpoint_id: cp.id,
         text:
-          cp.selections.length > 0
-            ? cp.selections.join("; ") + "."
+          cp.enabled && cp.selections.length > 0
+            ? `${cp.title}: ${cp.selections.join(", ")}`
             : "",
       };
     }

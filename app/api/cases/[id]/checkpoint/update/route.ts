@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint } from "@/lib/types";
+import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
 import { getSessionAccount } from "@/lib/auth";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
@@ -70,6 +70,17 @@ export async function PATCH(
 
     const checkpointId =
       typeof body?.checkpoint_id === "string" ? body.checkpoint_id : undefined;
+
+    if (!checkpointId) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid input" },
+        { status: 400 },
+      );
+    }
+
+    // Determine if this is a MULTI_SELECT update (has `enabled` field) or standard status update
+    const isMultiSelectUpdate = "enabled" in body;
+
     const status =
       body?.status === "OK" ||
       body?.status === "TO_DO" ||
@@ -77,7 +88,7 @@ export async function PATCH(
         ? (body.status as CheckpointStatus)
         : undefined;
 
-    if (!checkpointId || !status) {
+    if (!isMultiSelectUpdate && !status) {
       return NextResponse.json(
         { ok: false, error: "Invalid input" },
         { status: 400 },
@@ -112,18 +123,39 @@ export async function PATCH(
       );
     }
 
-    if (!isValidStatus(checkpoints[targetCheckpointIndex], status)) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid status for checkpoint category" },
-        { status: 400 },
-      );
-    }
-
+    const target = checkpoints[targetCheckpointIndex];
     const updatedCheckpoints = [...checkpoints];
-    updatedCheckpoints[targetCheckpointIndex] = {
-      ...updatedCheckpoints[targetCheckpointIndex],
-      status,
-    } as ActiveCheckpoint;
+
+    if (isMultiSelectUpdate) {
+      // MULTI_SELECT checkpoint update: validate and apply enabled + selections
+      if (!isMultiSelectCheckpoint(target)) {
+        return NextResponse.json(
+          { ok: false, error: "Checkpoint is not a multi-select type" },
+          { status: 400 },
+        );
+      }
+      const enabled = typeof body.enabled === "boolean" ? body.enabled : false;
+      const selections = Array.isArray(body.selections)
+        ? (body.selections as unknown[]).filter((s): s is string => typeof s === "string")
+        : [];
+      updatedCheckpoints[targetCheckpointIndex] = {
+        ...target,
+        enabled,
+        selections: enabled ? selections : [],
+      } as ActiveCheckpoint;
+    } else {
+      // Standard checkpoint update
+      if (!isValidStatus(target, status!)) {
+        return NextResponse.json(
+          { ok: false, error: "Invalid status for checkpoint category" },
+          { status: 400 },
+        );
+      }
+      updatedCheckpoints[targetCheckpointIndex] = {
+        ...target,
+        status,
+      } as ActiveCheckpoint;
+    }
 
     await prisma.caseSession.update({
       where: { id },

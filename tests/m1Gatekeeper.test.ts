@@ -48,16 +48,16 @@ describe("M1-Flow: medizinische_lage unklar → Snapshot + aktive Checkpoints", 
     versorgung_im_alltag: "klar",
   };
 
-  it("erstellt einen Snapshot mit K03, K04, K05", () => {
+  it("erstellt einen Snapshot mit K03, K04, K05, K10", () => {
     const snapshot = buildM1SnapshotInitial(sel);
-    expect(snapshot.activated_checkpoint_ids).toEqual(["K03", "K04", "K05"]);
+    expect(snapshot.activated_checkpoint_ids).toEqual(["K03", "K04", "K05", "K10"]);
   });
 
-  it("hydratisiert 3 vollständige ActiveCheckpoints aus dem Snapshot", () => {
+  it("hydratisiert 4 vollständige ActiveCheckpoints aus dem Snapshot", () => {
     const snapshot = buildM1SnapshotInitial(sel);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(3);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K03", "K04", "K05"]);
+    expect(checkpoints).toHaveLength(4);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K03", "K04", "K05", "K10"]);
   });
 
   it("alle Checkpoints haben status TO_DO", () => {
@@ -114,7 +114,7 @@ describe("UI-Payload: m1Selection wird korrekt übermittelt", () => {
     };
     expect(isGatekeeperCase(initial)).toBe(false);
     const snapshot = buildM1SnapshotInitial(initial);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(10);
   });
 
   it("Payload mit m1Selection hat keinen Legacy-Pfad", () => {

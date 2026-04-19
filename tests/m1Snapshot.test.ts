@@ -39,15 +39,16 @@ describe("buildM1SnapshotInitial", () => {
     expect(snapshot.activated_checkpoint_ids).toEqual([]);
   });
 
-  it("enthält alle 9 IDs wenn alle Blöcke unklar sind", () => {
+  it("enthält alle 10 IDs wenn alle Blöcke unklar sind", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(10);
     expect(snapshot.activated_checkpoint_ids).toContain("K01");
     expect(snapshot.activated_checkpoint_ids).toContain("K08");
     expect(snapshot.activated_checkpoint_ids).toContain("K09");
     expect(snapshot.activated_checkpoint_ids).toContain("K03");
     expect(snapshot.activated_checkpoint_ids).toContain("K04");
     expect(snapshot.activated_checkpoint_ids).toContain("K05");
+    expect(snapshot.activated_checkpoint_ids).toContain("K10");
     expect(snapshot.activated_checkpoint_ids).toContain("K02");
     expect(snapshot.activated_checkpoint_ids).toContain("K06");
     expect(snapshot.activated_checkpoint_ids).toContain("K07");
@@ -108,10 +109,10 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
     }
   });
 
-  it("hydratisiert alle 9 Checkpoints wenn alle Blöcke unklar", () => {
+  it("hydratisiert alle 10 Checkpoints wenn alle Blöcke unklar", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(9);
+    expect(checkpoints).toHaveLength(10);
   });
 
   it("überspringt unbekannte IDs defensiv", () => {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CheckpointCategory, type ActiveCheckpoint, type StandardCheckpoint, isStandardCheckpoint } from "@/lib/types";
+import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
 import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { resolveM5Text } from "@/lib/logic/deriveM5Output";
 
@@ -66,13 +66,17 @@ export function M3ChecklistClient({
 }) {
   const router = useRouter();
   const isLocked = m2Status === "waiting_for_patient";
-  // MULTI_SELECT checkpoints are not yet rendered in M3 – filter to standard only.
+  // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
+  const multiSelectInitial = initialCheckpoints.filter(isMultiSelectCheckpoint);
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     standardInitial.map((checkpoint) => ({
       ...checkpoint,
       status: normalizeStatus(checkpoint),
     })),
+  );
+  const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
+    multiSelectInitial,
   );
   const [savingCheckpointId, setSavingCheckpointId] = useState<string | null>(
     null,
@@ -123,7 +127,10 @@ export function M3ChecklistClient({
   const m4TextBlock = m4Lines.join("\n");
 
   const m5Lines = checkpoints.map((cp) => resolveM5Text(cp));
-  const m5TextBlock = m5Lines.join("\n");
+  const multiSelectM5Lines = multiSelectCheckpoints
+    .filter((cp) => cp.enabled && cp.selections.length > 0)
+    .map((cp) => `${cp.title}: ${cp.selections.join(", ")}`);
+  const m5TextBlock = [...m5Lines, ...multiSelectM5Lines].join("\n");
 
   const [copiedM4, setCopiedM4] = useState(false);
   const [copiedM5, setCopiedM5] = useState(false);
@@ -253,6 +260,73 @@ export function M3ChecklistClient({
     }
   }
 
+  async function toggleMultiSelectEnabled(checkpointId: string) {
+    const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
+    if (!cp) return;
+    const newEnabled = !cp.enabled;
+    const newSelections = newEnabled ? cp.selections : [];
+    const previous = multiSelectCheckpoints;
+
+    setError(null);
+    setSavingCheckpointId(checkpointId);
+    setMultiSelectCheckpoints((current) =>
+      current.map((c) =>
+        c.id === checkpointId ? { ...c, enabled: newEnabled, selections: newSelections } : c,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkpoint_id: checkpointId, enabled: newEnabled, selections: newSelections }),
+      });
+      if (!response.ok) {
+        setMultiSelectCheckpoints(previous);
+        setError("Status konnte nicht gespeichert werden.");
+      }
+    } catch {
+      setMultiSelectCheckpoints(previous);
+      setError("Status konnte nicht gespeichert werden.");
+    } finally {
+      setSavingCheckpointId(null);
+    }
+  }
+
+  async function toggleMultiSelectOption(checkpointId: string, option: string) {
+    const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
+    if (!cp || !cp.enabled) return;
+    const newSelections = cp.selections.includes(option)
+      ? cp.selections.filter((s) => s !== option)
+      : [...cp.selections, option];
+    const previous = multiSelectCheckpoints;
+
+    setError(null);
+    setSavingCheckpointId(checkpointId);
+    setMultiSelectCheckpoints((current) =>
+      current.map((c) =>
+        c.id === checkpointId ? { ...c, selections: newSelections } : c,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkpoint_id: checkpointId, enabled: cp.enabled, selections: newSelections }),
+      });
+      if (!response.ok) {
+        setMultiSelectCheckpoints(previous);
+        setError("Status konnte nicht gespeichert werden.");
+      }
+    } catch {
+      setMultiSelectCheckpoints(previous);
+      setError("Status konnte nicht gespeichert werden.");
+    } finally {
+      setSavingCheckpointId(null);
+    }
+  }
+
   async function closeCase() {
     setClosing(true);
     setError(null);
@@ -358,6 +432,43 @@ export function M3ChecklistClient({
           );
         })}
       </ul>
+      {multiSelectCheckpoints.map((mscp) => (
+        <div
+          key={mscp.id}
+          data-checkpoint-multi={mscp.id}
+          className="card"
+          style={{ marginBottom: "0.75rem", opacity: isLocked ? 0.5 : 1 }}
+        >
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 500, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              data-multi-toggle={mscp.id}
+              checked={mscp.enabled}
+              onChange={() => void toggleMultiSelectEnabled(mscp.id)}
+              disabled={savingCheckpointId === mscp.id || isLocked}
+            />
+            {mscp.title}
+          </label>
+          {mscp.enabled ? (
+            <ul style={{ margin: "0.5rem 0 0 0", padding: 0, listStyle: "none" }}>
+              {mscp.options.map((option) => (
+                <li key={option} style={{ marginBottom: "0.25rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      data-multi-option={`${mscp.id}:${option}`}
+                      checked={mscp.selections.includes(option)}
+                      onChange={() => void toggleMultiSelectOption(mscp.id, option)}
+                      disabled={savingCheckpointId === mscp.id || isLocked}
+                    />
+                    {option}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ))}
       {error ? (
         <p className="text-error" role="alert" aria-live="polite">
           {error}

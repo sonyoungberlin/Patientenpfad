@@ -95,6 +95,8 @@ export type ActiveCheckpointMultiSelect = {
   options: string[];
   /** Aktuell ausgewählte Optionen (initial leer). */
   selections: string[];
+  /** Ob der Checkpoint vom Arzt aktiviert wurde (default: false). */
+  enabled: boolean;
 };
 
 export type ActiveCheckpoint = StandardCheckpoint | ActiveCheckpointMultiSelect;
