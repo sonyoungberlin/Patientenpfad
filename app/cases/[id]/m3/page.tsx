@@ -30,6 +30,19 @@ export default async function M3Page({
     redirect("/");
   }
 
+  // Signatur accountbezogen laden (für „Nachricht kopieren"-Button)
+  let messageSignature = "";
+  try {
+    const acct = await prisma.account.findUnique({
+      where: { id: account.id },
+      select: { message_signature: true },
+    });
+    messageSignature = acct?.message_signature ?? "";
+  } catch {
+    // column may not exist yet if migration has not been applied
+    messageSignature = "";
+  }
+
   const checkpoints = Array.isArray(session.active_checkpoints)
     ? (session.active_checkpoints as ActiveCheckpoint[])
     : [];
@@ -46,7 +59,7 @@ export default async function M3Page({
   return (
     <main>
       <h1>Ärztliche Checkliste</h1>
-      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} />
+      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} messageSignature={messageSignature} />
     </main>
   );
 }

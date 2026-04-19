@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
   getCreateSuccessRedirectPath,
@@ -264,7 +265,11 @@ export default function HomePage() {
   }
 
   return (
-    <main>
+    <>
+      <nav className="app-nav">
+        <Link href="/cases">← Zur Fallübersicht</Link>
+      </nav>
+      <main>
       {/* Account-Bar */}
       <div className="account-bar">
         <span className="account-email">{account.email}</span>
@@ -356,5 +361,6 @@ export default function HomePage() {
 
 
     </main>
+    </>
   );
 }

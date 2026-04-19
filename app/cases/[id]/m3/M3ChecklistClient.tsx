@@ -2,20 +2,24 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CheckpointCategory, type ActiveCheckpoint } from "@/lib/types";
+import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
 import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { resolveM5Text } from "@/lib/logic/deriveM5Output";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
 
+const MESSAGE_INTRO =
+  "Liebe Patientin, lieber Patient,\n" +
+  "für Ihre weitere Versorgung bitten wir Sie, folgende Punkte zu beachten:";
+
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
-type M3Checkpoint = Omit<ActiveCheckpoint, "status"> & {
+type M3Checkpoint = Omit<StandardCheckpoint, "status"> & {
   status: CheckpointStatus;
 };
 
-function normalizeStatus(checkpoint: ActiveCheckpoint): CheckpointStatus {
+function normalizeStatus(checkpoint: StandardCheckpoint): CheckpointStatus {
   if (checkpoint.category === CheckpointCategory.M) {
     return checkpoint.status === "OK" ||
       checkpoint.status === "TO_DO" ||
@@ -52,19 +56,27 @@ export function M3ChecklistClient({
   initialCheckpoints,
   prefill = {},
   m2Status = "none",
+  messageSignature = "",
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
   prefill?: M2PrefillData;
   m2Status?: string;
+  messageSignature?: string;
 }) {
   const router = useRouter();
   const isLocked = m2Status === "waiting_for_patient";
+  // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
+  const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
+  const multiSelectInitial = initialCheckpoints.filter(isMultiSelectCheckpoint);
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
-    initialCheckpoints.map((checkpoint) => ({
+    standardInitial.map((checkpoint) => ({
       ...checkpoint,
       status: normalizeStatus(checkpoint),
     })),
+  );
+  const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
+    multiSelectInitial,
   );
   const [savingCheckpointId, setSavingCheckpointId] = useState<string | null>(
     null,
@@ -115,10 +127,20 @@ export function M3ChecklistClient({
   const m4TextBlock = m4Lines.join("\n");
 
   const m5Lines = checkpoints.map((cp) => resolveM5Text(cp));
-  const m5TextBlock = m5Lines.join("\n");
+  const multiSelectM5Lines = multiSelectCheckpoints
+    .filter((cp) => cp.enabled && cp.selections.length > 0)
+    .map((cp) => `${cp.title}: ${cp.selections.join(", ")}`);
+  const m5TextBlock = [...m5Lines, ...multiSelectM5Lines].join("\n");
 
   const [copiedM4, setCopiedM4] = useState(false);
   const [copiedM5, setCopiedM5] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState(false);
+
+  const hasSignature = messageSignature.trim().length > 0;
+
+  const messagePreview = hasSignature
+    ? `${MESSAGE_INTRO}\n\n${m4TextBlock}\n\n${messageSignature.trim()}`
+    : `${MESSAGE_INTRO}\n\n${m4TextBlock}`;
 
   function fallbackCopyText(text: string): boolean {
     const textarea = document.createElement("textarea");
@@ -159,6 +181,17 @@ export function M3ChecklistClient({
       setTimeout(() => setCopiedM4(false), 2000);
     } else {
       setError("Text konnte nicht kopiert werden.");
+    }
+  }
+
+  async function copyMessageText() {
+    if (!m4TextBlock || !hasSignature) return;
+    const ok = await copyToClipboard(messagePreview);
+    if (ok) {
+      setCopiedMessage(true);
+      setTimeout(() => setCopiedMessage(false), 2000);
+    } else {
+      setError("Nachricht konnte nicht kopiert werden.");
     }
   }
 
@@ -224,6 +257,73 @@ export function M3ChecklistClient({
       setError("Freischalten fehlgeschlagen.");
     } finally {
       setSkipping(false);
+    }
+  }
+
+  async function toggleMultiSelectEnabled(checkpointId: string) {
+    const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
+    if (!cp) return;
+    const newEnabled = !cp.enabled;
+    const newSelections = newEnabled ? cp.selections : [];
+    const previous = multiSelectCheckpoints;
+
+    setError(null);
+    setSavingCheckpointId(checkpointId);
+    setMultiSelectCheckpoints((current) =>
+      current.map((c) =>
+        c.id === checkpointId ? { ...c, enabled: newEnabled, selections: newSelections } : c,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkpoint_id: checkpointId, enabled: newEnabled, selections: newSelections }),
+      });
+      if (!response.ok) {
+        setMultiSelectCheckpoints(previous);
+        setError("Status konnte nicht gespeichert werden.");
+      }
+    } catch {
+      setMultiSelectCheckpoints(previous);
+      setError("Status konnte nicht gespeichert werden.");
+    } finally {
+      setSavingCheckpointId(null);
+    }
+  }
+
+  async function toggleMultiSelectOption(checkpointId: string, option: string) {
+    const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
+    if (!cp || !cp.enabled) return;
+    const newSelections = cp.selections.includes(option)
+      ? cp.selections.filter((s) => s !== option)
+      : [...cp.selections, option];
+    const previous = multiSelectCheckpoints;
+
+    setError(null);
+    setSavingCheckpointId(checkpointId);
+    setMultiSelectCheckpoints((current) =>
+      current.map((c) =>
+        c.id === checkpointId ? { ...c, selections: newSelections } : c,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkpoint_id: checkpointId, enabled: cp.enabled, selections: newSelections }),
+      });
+      if (!response.ok) {
+        setMultiSelectCheckpoints(previous);
+        setError("Status konnte nicht gespeichert werden.");
+      }
+    } catch {
+      setMultiSelectCheckpoints(previous);
+      setError("Status konnte nicht gespeichert werden.");
+    } finally {
+      setSavingCheckpointId(null);
     }
   }
 
@@ -332,6 +432,43 @@ export function M3ChecklistClient({
           );
         })}
       </ul>
+      {multiSelectCheckpoints.map((mscp) => (
+        <div
+          key={mscp.id}
+          data-checkpoint-multi={mscp.id}
+          className="card"
+          style={{ marginBottom: "0.75rem", opacity: isLocked ? 0.5 : 1 }}
+        >
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 500, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              data-multi-toggle={mscp.id}
+              checked={mscp.enabled}
+              onChange={() => void toggleMultiSelectEnabled(mscp.id)}
+              disabled={savingCheckpointId === mscp.id || isLocked}
+            />
+            {mscp.title}
+          </label>
+          {mscp.enabled ? (
+            <ul style={{ margin: "0.5rem 0 0 0", padding: 0, listStyle: "none" }}>
+              {mscp.options.map((option) => (
+                <li key={option} style={{ marginBottom: "0.25rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      data-multi-option={`${mscp.id}:${option}`}
+                      checked={mscp.selections.includes(option)}
+                      onChange={() => void toggleMultiSelectOption(mscp.id, option)}
+                      disabled={savingCheckpointId === mscp.id || isLocked}
+                    />
+                    {option}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ))}
       {error ? (
         <p className="text-error" role="alert" aria-live="polite">
           {error}
@@ -341,15 +478,55 @@ export function M3ChecklistClient({
         <h2>Patientenhinweise / To-dos</h2>
         {m4Lines.length > 0 ? (
           <>
-            <pre style={{ marginBottom: "0.75rem", userSelect: "text", cursor: "text" }}>
-              {m4TextBlock}
-            </pre>
+            <div
+              data-message-preview
+              style={{
+                marginBottom: "0.75rem",
+                padding: "1rem",
+                border: "1px solid #e0e0e0",
+                borderRadius: "0.5rem",
+                backgroundColor: "#fafafa",
+                userSelect: "text",
+                cursor: "text",
+                whiteSpace: "pre-wrap",
+                fontFamily: "inherit",
+              }}
+            >
+              <span className="text-muted">{MESSAGE_INTRO}</span>
+              {"\n\n"}
+              <span>{m4TextBlock}</span>
+              {hasSignature && (
+                <>
+                  {"\n\n"}
+                  <span className="text-muted">{messageSignature.trim()}</span>
+                </>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => void copyM4Text()}
             >
               {copiedM4 ? "Kopiert ✓" : "Text kopieren"}
             </button>
+            <div style={{ marginTop: "0.5rem" }}>
+              <button
+                type="button"
+                data-copy-message
+                onClick={() => void copyMessageText()}
+                disabled={!hasSignature}
+              >
+                {copiedMessage ? "Kopiert ✓" : "Nachricht kopieren"}
+              </button>
+              {!hasSignature && (
+                <p
+                  data-signature-hint
+                  className="text-muted text-small"
+                  style={{ marginTop: "0.25rem", marginBottom: 0 }}
+                >
+                  Bitte hinterlegen Sie zuerst eine Signatur in der Fallübersicht.
+                </p>
+              )}
+            </div>
           </>
         ) : (
           <p className="text-muted">Keine weiteren Schritte erforderlich.</p>

@@ -3,14 +3,17 @@ import {
   CheckpointCategory,
   type ActiveCheckpoint,
 } from "@/lib/types";
+import { isStandardCheckpoint } from "@/lib/types";
 
 export function deriveBlockStatus(
   activeCheckpoints: ActiveCheckpoint[],
   currentStatus: BlockStatus,
 ): BlockStatus {
-  const organizationalCheckpoints = activeCheckpoints.filter(
-    (checkpoint) => checkpoint.category === CheckpointCategory.O,
-  );
+  const organizationalCheckpoints = activeCheckpoints
+    .filter(isStandardCheckpoint)
+    .filter(
+      (checkpoint) => checkpoint.category === CheckpointCategory.O,
+    );
 
   if (organizationalCheckpoints.length === 0) {
     return currentStatus;

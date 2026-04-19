@@ -35,3 +35,43 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const account = await getSessionAccount(req);
+    if (!account) {
+      return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
+    }
+    if (!account.is_approved) {
+      return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
+    }
+
+    const { id } = await params;
+
+    const session = await prisma.caseSession.findUnique({
+      where: { id },
+      select: { owner_account_id: true },
+    });
+
+    if (!session || session.owner_account_id !== account.id) {
+      return NextResponse.json({ ok: false, error: "Fall nicht gefunden." }, { status: 404 });
+    }
+
+    await prisma.caseSession.delete({ where: { id } });
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("[DELETE cases/[id]]", { name: err.name, message: err.message });
+    } else {
+      console.error("[DELETE cases/[id]]", "UnknownError");
+    }
+    return NextResponse.json(
+      { ok: false, error: "Fall konnte nicht gelöscht werden." },
+      { status: 500 },
+    );
+  }
+}

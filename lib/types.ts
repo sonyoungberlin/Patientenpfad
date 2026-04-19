@@ -36,6 +36,17 @@ export enum CheckpointRelevance {
   A = "A",
 }
 
+/**
+ * Interaktionsmodus eines Checkpoints.
+ *
+ * STANDARD: Bewertungsbasiert (OK / TO_DO / ggf. ZURÜCKSTELLEN).
+ * MULTI_SELECT: Dokumentationsbasiert – Mehrfachauswahl ohne Bewertung, nur M5.
+ */
+export enum CheckpointMode {
+  STANDARD = "STANDARD",
+  MULTI_SELECT = "MULTI_SELECT",
+}
+
 type ActiveCheckpointBase = {
   id: string;
   block_id: string;
@@ -62,7 +73,47 @@ export type ActiveCheckpointO = ActiveCheckpointBase & {
   status: "OK" | "TO_DO";
 };
 
-export type ActiveCheckpoint = ActiveCheckpointM | ActiveCheckpointO;
+/** Standard-Checkpoints mit Bewertungsstatus (M oder O). */
+export type StandardCheckpoint = ActiveCheckpointM | ActiveCheckpointO;
+
+/**
+ * Dokumentations-Checkpoint mit Mehrfachauswahl – ohne Bewertung, ohne M4.
+ *
+ * Wird z. B. für optionale Versorgungsaspekte verwendet, die nur in M5
+ * dokumentiert werden sollen. Keine Patienten-To-dos (kein M4).
+ */
+export type ActiveCheckpointMultiSelect = {
+  id: string;
+  block_id: string;
+  type: CheckpointType;
+  category: CheckpointCategory;
+  relevance: CheckpointRelevance;
+  mode: CheckpointMode.MULTI_SELECT;
+  title: string;
+  description?: string;
+  /** Definierte Auswahlmöglichkeiten für diesen Checkpoint. */
+  options: string[];
+  /** Aktuell ausgewählte Optionen (initial leer). */
+  selections: string[];
+  /** Ob der Checkpoint vom Arzt aktiviert wurde (default: false). */
+  enabled: boolean;
+};
+
+export type ActiveCheckpoint = StandardCheckpoint | ActiveCheckpointMultiSelect;
+
+/** Type guard: prüft ob ein Checkpoint vom Typ MULTI_SELECT ist. */
+export function isMultiSelectCheckpoint(
+  cp: ActiveCheckpoint,
+): cp is ActiveCheckpointMultiSelect {
+  return "mode" in cp && cp.mode === CheckpointMode.MULTI_SELECT;
+}
+
+/** Type guard: prüft ob ein Checkpoint ein Standard-Bewertungscheckpoint ist. */
+export function isStandardCheckpoint(
+  cp: ActiveCheckpoint,
+): cp is StandardCheckpoint {
+  return !isMultiSelectCheckpoint(cp);
+}
 
 // ---------------------------------------------------------------------------
 // M1 – Aktivierungsblöcke
