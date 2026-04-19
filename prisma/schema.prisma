@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 enum StageStatus {
@@ -16,15 +17,18 @@ enum StageStatus {
 }
 
 model Account {
-  id          String        @id @default(cuid())
-  email       String        @unique
-  is_approved Boolean       @default(false)
-  is_admin    Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  email             String        @unique
+  is_approved       Boolean       @default(false)
+  is_admin          Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  cases       CaseSession[]
-  sessions    Session[]
+  /// Freitext-Signatur für Nachrichten (max. 300 Zeichen, accountbezogen)
+  message_signature String?
+
+  cases             CaseSession[]
+  sessions          Session[]
 }
 
 model Session {

@@ -16,7 +16,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existing = await prisma.account.findUnique({ where: { email } });
+    const existing = await prisma.account.findUnique({
+      where: { email },
+      select: { id: true },
+    });
     if (existing) {
       return NextResponse.json(
         { ok: false, error: "Diese E-Mail-Adresse ist bereits registriert." },
