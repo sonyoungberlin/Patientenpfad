@@ -172,7 +172,7 @@ export function M3ChecklistClient({
     const intro =
       "Liebe Patientin, lieber Patient,\n" +
       "für Ihre weitere Versorgung bitten wir Sie, folgende Punkte zu beachten:";
-    const messageText = intro + "\n\n" + m4TextBlock + "\n\n" + messageSignature.trim();
+    const messageText = `${intro}\n\n${m4TextBlock}\n\n${messageSignature.trim()}`;
     const ok = await copyToClipboard(messageText);
     if (ok) {
       setCopiedMessage(true);
