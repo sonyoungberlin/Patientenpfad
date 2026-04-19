@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   if (error) return error;
 
   const accounts = await prisma.account.findMany({
-    select: { id: true, email: true, is_approved: true, is_admin: true, createdAt: true },
+    select: { id: true, email: true, name: true, is_approved: true, is_admin: true, createdAt: true },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
   });
 

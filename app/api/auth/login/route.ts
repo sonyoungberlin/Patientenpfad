@@ -17,11 +17,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const account = await prisma.account.upsert({
-      where: { email },
-      create: { email, is_approved: false },
-      update: {},
-    });
+    const account = await prisma.account.findUnique({ where: { email } });
+
+    if (!account) {
+      return NextResponse.json(
+        { ok: false, error: "Kein Account mit dieser E-Mail-Adresse gefunden. Bitte registrieren Sie sich zuerst." },
+        { status: 404 },
+      );
+    }
+
+    if (!account.is_approved) {
+      return NextResponse.json(
+        { ok: false, error: "Ihr Account ist noch nicht freigeschaltet." },
+        { status: 403 },
+      );
+    }
 
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);

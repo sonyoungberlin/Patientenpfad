@@ -41,6 +41,12 @@ export default function HomePage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  // Registration state
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState<string | null>(null);
+  const [regSuccess, setRegSuccess] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -72,6 +78,31 @@ export default function HomePage() {
       setLoginError("Netzwerkfehler");
     } finally {
       setLoginLoading(false);
+    }
+  }
+
+  async function handleRegister() {
+    setRegLoading(true);
+    setRegError(null);
+    setRegSuccess(false);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: regName, email: regEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setRegError((data.error as string | undefined) ?? "Registrierung fehlgeschlagen.");
+        return;
+      }
+      setRegSuccess(true);
+      setRegName("");
+      setRegEmail("");
+    } catch {
+      setRegError("Netzwerkfehler");
+    } finally {
+      setRegLoading(false);
     }
   }
 
@@ -139,15 +170,50 @@ export default function HomePage() {
           Die Anwendung macht diese offenen Fragen sichtbar und unterstützt dabei, die nächsten Schritte klar zuzuordnen.
           Aktuell testen wir dies im Rahmen einer Pilotphase.
         </p>
-        <button
-          className="btn-primary"
-          onClick={() => {
-            loginSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-          }}
-          style={{ marginTop: "0.5rem" }}
-        >
-          Für Pilotphase registrieren
-        </button>
+
+        {/* Registrierungsformular */}
+        <h2>Für Pilotphase registrieren</h2>
+        {regSuccess ? (
+          <div className="banner-warning" style={{ marginBottom: "1rem" }}>
+            <strong>Registrierung erfolgreich.</strong> Ihr Zugang wird manuell freigeschaltet.
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label htmlFor="reg_name">Name</label>
+              <input
+                id="reg_name"
+                type="text"
+                value={regName}
+                onChange={(e) => setRegName(e.target.value)}
+                placeholder="Vor- und Nachname"
+                style={{ marginTop: "0.5rem" }}
+              />
+            </div>
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label htmlFor="reg_email">E-Mail-Adresse</label>
+              <input
+                id="reg_email"
+                type="email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                placeholder="name@beispiel.de"
+                style={{ marginTop: "0.5rem" }}
+              />
+            </div>
+            <button
+              className="btn-primary"
+              onClick={handleRegister}
+              disabled={regLoading}
+              style={{ marginTop: "0.5rem" }}
+            >
+              {regLoading ? "Lädt…" : "Registrieren"}
+            </button>
+            {regError && (
+              <p className="text-error" style={{ marginTop: "0.5rem" }}>{regError}</p>
+            )}
+          </>
+        )}
         <p className="text-muted text-small" style={{ marginTop: "0.75rem" }}>
           Zugänge werden aktuell manuell freigeschaltet.
         </p>
