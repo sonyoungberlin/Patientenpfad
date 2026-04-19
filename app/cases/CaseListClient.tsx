@@ -16,7 +16,7 @@ export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function handleDelete(caseId: string) {
-    if (!window.confirm("Diesen Fall aus der Liste entfernen?")) return;
+    if (!window.confirm("Diesen Fall endgültig aus der Liste entfernen? Diese Aktion kann nicht rückgängig gemacht werden.")) return;
 
     setDeletingId(caseId);
     try {

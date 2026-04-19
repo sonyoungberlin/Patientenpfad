@@ -70,7 +70,7 @@ export async function DELETE(
       console.error("[DELETE cases/[id]]", "UnknownError");
     }
     return NextResponse.json(
-      { ok: false, error: "Failed to delete case" },
+      { ok: false, error: "Fall konnte nicht gelöscht werden." },
       { status: 500 },
     );
   }
