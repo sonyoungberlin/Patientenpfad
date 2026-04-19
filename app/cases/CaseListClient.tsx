@@ -14,11 +14,11 @@ export type CaseListItem = {
 export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  async function handleDelete(caseId: string) {
-    if (!window.confirm("Diesen Fall endgültig aus der Liste entfernen? Diese Aktion kann nicht rückgängig gemacht werden.")) return;
-
+  async function executeDelete(caseId: string) {
     setDeletingId(caseId);
+    setPendingDeleteId(null);
     try {
       const res = await fetch(`/api/cases/${caseId}`, { method: "DELETE" });
       if (!res.ok) {
@@ -83,7 +83,7 @@ export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
               type="button"
               aria-label={`Aus Liste entfernen: ${c.title}`}
               disabled={deletingId === c.id}
-              onClick={() => void handleDelete(c.id)}
+              onClick={() => setPendingDeleteId(c.id)}
               style={{
                 whiteSpace: "nowrap",
                 border: "1px solid var(--border)",
@@ -102,6 +102,31 @@ export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
           </div>
         </article>
       ))}
+
+      {pendingDeleteId && (
+        <div className="modal-overlay" onClick={() => setPendingDeleteId(null)}>
+          <div className="modal-box card" onClick={(e) => e.stopPropagation()}>
+            <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>
+              Diesen Fall aus der Liste entfernen?
+            </p>
+            <p className="text-muted text-small" style={{ marginBottom: "1.5rem" }}>
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setPendingDeleteId(null)}>
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                className="btn-destructive"
+                onClick={() => void executeDelete(pendingDeleteId)}
+              >
+                Entfernen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
