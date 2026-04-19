@@ -20,6 +20,11 @@ const BLOCK_LABELS: Record<keyof M1Selection, string> = {
   versorgung_im_alltag: "Versorgung im Alltag",
 };
 
+const STATUS_LABELS: Record<M1BlockStatus, string> = {
+  klar: "bereits geklärt",
+  unklar: "unklar",
+};
+
 type AccountInfo = {
   id: string;
   email: string;
@@ -266,9 +271,9 @@ export default function HomePage() {
         <button onClick={handleLogout}>Abmelden</button>
       </div>
 
-      <h1>Was ist aktuell unklar oder klärungsbedürftig?</h1>
+      <h1>Unklarheiten klären und strukturiert dokumentieren</h1>
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
-        Nur bei <strong>unklar</strong> wird ein Strukturfall mit Checkpoints gestartet.
+        Markieren Sie bereits geklärte Bereiche, um unnötige Fragen auszublenden.
       </p>
 
       {/* Modus-Auswahl */}
@@ -327,7 +332,7 @@ export default function HomePage() {
                     onChange={() => handleBlockChange(blockId, val)}
                     style={{ marginRight: "0.3rem" }}
                   />
-                  {val}
+                  {STATUS_LABELS[val]}
                 </label>
               ))}
             </div>
