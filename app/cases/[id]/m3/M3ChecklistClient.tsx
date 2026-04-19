@@ -365,7 +365,7 @@ export function M3ChecklistClient({
         <h2>Patientenhinweise / To-dos</h2>
         {m4Lines.length > 0 ? (
           <>
-            <pre
+            <div
               data-message-preview
               style={{
                 marginBottom: "0.75rem",
@@ -376,10 +376,19 @@ export function M3ChecklistClient({
                 userSelect: "text",
                 cursor: "text",
                 whiteSpace: "pre-wrap",
+                fontFamily: "inherit",
               }}
             >
-              {messagePreview}
-            </pre>
+              <span className="text-muted">{MESSAGE_INTRO}</span>
+              {"\n\n"}
+              <span>{m4TextBlock}</span>
+              {hasSignature && (
+                <>
+                  {"\n\n"}
+                  <span className="text-muted" style={{ marginTop: "0.5rem", display: "inline" }}>{messageSignature.trim()}</span>
+                </>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => void copyM4Text()}
