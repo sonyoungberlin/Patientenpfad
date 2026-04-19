@@ -15,6 +15,15 @@ export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  const filteredCases =
+    normalizedSearchTerm === ""
+      ? cases
+      : cases.filter((c) =>
+          (c.patient_reference ?? "").toLowerCase().includes(normalizedSearchTerm),
+        );
 
   async function executeDelete(caseId: string) {
     setDeletingId(caseId);
@@ -41,67 +50,82 @@ export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
 
   return (
     <>
-      {cases.map((c) => (
-        <article
-          key={c.id}
-          className="card"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "1rem",
-          }}
-        >
-          <div>
-            <div style={{ fontWeight: 500 }}>{c.title}</div>
-            {c.patient_reference ? (
-              <div className="text-muted text-small" style={{ marginTop: "0.25rem" }}>
-                Patienten-Referenz: {c.patient_reference}
-              </div>
-            ) : null}
-            <div style={{ marginTop: "0.3rem" }}>Status: {c.statusLabel}</div>
-          </div>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <Link
-              href={`/cases/${c.id}`}
-              aria-label={`Weiterbearbeiten: ${c.title}`}
-              style={{
-                whiteSpace: "nowrap",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "0.5rem 1rem",
-                textDecoration: "none",
-                color: "var(--foreground)",
-                background: "var(--background)",
-                fontWeight: 500,
-                fontSize: "1rem",
-              }}
-            >
-              Weiterbearbeiten
-            </Link>
-            <button
-              type="button"
-              aria-label={`Aus Liste entfernen: ${c.title}`}
-              disabled={deletingId === c.id}
-              onClick={() => setPendingDeleteId(c.id)}
-              style={{
-                whiteSpace: "nowrap",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "0.5rem 1rem",
-                background: "var(--background)",
-                color: "var(--destructive)",
-                fontWeight: 500,
-                fontSize: "0.875rem",
-                cursor: deletingId === c.id ? "not-allowed" : "pointer",
-                opacity: deletingId === c.id ? 0.5 : 1,
-              }}
-            >
-              {deletingId === c.id ? "Entfernen…" : "Aus Liste entfernen"}
-            </button>
-          </div>
-        </article>
-      ))}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <input
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Nach Patienten-Referenz suchen…"
+          aria-label="Nach Patienten-Referenz suchen"
+          style={{ width: "min(100%, 20rem)" }}
+        />
+      </div>
+
+      {filteredCases.length === 0 ? (
+        <p className="text-muted">Keine passenden Fälle gefunden</p>
+      ) : (
+        filteredCases.map((c) => (
+          <article
+            key={c.id}
+            className="card"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 500 }}>{c.title}</div>
+              {c.patient_reference ? (
+                <div className="text-muted text-small" style={{ marginTop: "0.25rem" }}>
+                  Patienten-Referenz: {c.patient_reference}
+                </div>
+              ) : null}
+              <div style={{ marginTop: "0.3rem" }}>Status: {c.statusLabel}</div>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <Link
+                href={`/cases/${c.id}`}
+                aria-label={`Weiterbearbeiten: ${c.title}`}
+                style={{
+                  whiteSpace: "nowrap",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)",
+                  padding: "0.5rem 1rem",
+                  textDecoration: "none",
+                  color: "var(--foreground)",
+                  background: "var(--background)",
+                  fontWeight: 500,
+                  fontSize: "1rem",
+                }}
+              >
+                Weiterbearbeiten
+              </Link>
+              <button
+                type="button"
+                aria-label={`Aus Liste entfernen: ${c.title}`}
+                disabled={deletingId === c.id}
+                onClick={() => setPendingDeleteId(c.id)}
+                style={{
+                  whiteSpace: "nowrap",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)",
+                  padding: "0.5rem 1rem",
+                  background: "var(--background)",
+                  color: "var(--destructive)",
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                  cursor: deletingId === c.id ? "not-allowed" : "pointer",
+                  opacity: deletingId === c.id ? 0.5 : 1,
+                }}
+              >
+                {deletingId === c.id ? "Entfernen…" : "Aus Liste entfernen"}
+              </button>
+            </div>
+          </article>
+        ))
+      )}
 
       {pendingDeleteId && (
         <div className="modal-overlay" onClick={() => setPendingDeleteId(null)}>
