@@ -385,7 +385,7 @@ export function M3ChecklistClient({
               {hasSignature && (
                 <>
                   {"\n\n"}
-                  <span className="text-muted" style={{ marginTop: "0.5rem", display: "inline" }}>{messageSignature.trim()}</span>
+                  <span className="text-muted">{messageSignature.trim()}</span>
                 </>
               )}
             </div>
