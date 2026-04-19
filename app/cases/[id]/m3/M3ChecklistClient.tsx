@@ -9,6 +9,10 @@ import { resolveM5Text } from "@/lib/logic/deriveM5Output";
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
 
+const MESSAGE_INTRO =
+  "Liebe Patientin, lieber Patient,\n" +
+  "für Ihre weitere Versorgung bitten wir Sie, folgende Punkte zu beachten:";
+
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
 type M3Checkpoint = Omit<ActiveCheckpoint, "status"> & {
@@ -125,6 +129,10 @@ export function M3ChecklistClient({
 
   const hasSignature = messageSignature.trim().length > 0;
 
+  const messagePreview = hasSignature
+    ? `${MESSAGE_INTRO}\n\n${m4TextBlock}\n\n${messageSignature.trim()}`
+    : `${MESSAGE_INTRO}\n\n${m4TextBlock}`;
+
   function fallbackCopyText(text: string): boolean {
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -169,10 +177,7 @@ export function M3ChecklistClient({
 
   async function copyMessageText() {
     if (!m4TextBlock || !hasSignature) return;
-    const intro =
-      "Liebe Patientin, lieber Patient,\n" +
-      "für Ihre weitere Versorgung bitten wir Sie, folgende Punkte zu beachten:";
-    const messageText = `${intro}\n\n${m4TextBlock}\n\n${messageSignature.trim()}`;
+    const messageText = `${MESSAGE_INTRO}\n\n${m4TextBlock}\n\n${messageSignature.trim()}`;
     const ok = await copyToClipboard(messageText);
     if (ok) {
       setCopiedMessage(true);
@@ -361,8 +366,20 @@ export function M3ChecklistClient({
         <h2>Patientenhinweise / To-dos</h2>
         {m4Lines.length > 0 ? (
           <>
-            <pre style={{ marginBottom: "0.75rem", userSelect: "text", cursor: "text" }}>
-              {m4TextBlock}
+            <pre
+              data-message-preview
+              style={{
+                marginBottom: "0.75rem",
+                padding: "1rem",
+                border: "1px solid #e0e0e0",
+                borderRadius: "0.5rem",
+                backgroundColor: "#fafafa",
+                userSelect: "text",
+                cursor: "text",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {messagePreview}
             </pre>
             <button
               type="button"

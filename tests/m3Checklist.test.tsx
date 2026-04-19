@@ -425,4 +425,61 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("Text kopieren");
     expect(markup).toContain("Bitte Termin buchen.");
   });
+
+  // ------------------------------------------------------------------
+  // Nachrichtenvorschau
+  // ------------------------------------------------------------------
+
+  it("zeigt Nachrichtenvorschau mit Intro + To-do-Text ohne Signatur", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-P1", status: "TO_DO", m4: { type: "ACTION", text: "Bitte Termin buchen." } },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-message-preview");
+    expect(markup).toContain("Liebe Patientin, lieber Patient,");
+    expect(markup).toContain("für Ihre weitere Versorgung bitten wir Sie, folgende Punkte zu beachten:");
+    expect(markup).toContain("Bitte Termin buchen.");
+  });
+
+  it("zeigt Nachrichtenvorschau mit Signatur wenn vorhanden", async () => {
+    setupCase(
+      {
+        active_checkpoints: [
+          { ...mCheckpoint, id: "K-M-P2", status: "TO_DO", m4: { type: "ACTION", text: "Befund mitbringen." } },
+        ],
+      },
+      { signature: "Mit freundlichen Grüßen\nDr. Muster" },
+    );
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-message-preview");
+    expect(markup).toContain("Liebe Patientin, lieber Patient,");
+    expect(markup).toContain("Befund mitbringen.");
+    expect(markup).toContain("Mit freundlichen Grüßen");
+    expect(markup).toContain("Dr. Muster");
+  });
+
+  it("zeigt keine Nachrichtenvorschau wenn keine TO_DOs", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K-M-OK-NP", status: "OK" },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("data-message-preview");
+    expect(markup).not.toContain("Liebe Patientin, lieber Patient,");
+  });
 });
