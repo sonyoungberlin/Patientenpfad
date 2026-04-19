@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import './globals.css';
 
 export const metadata = {
@@ -13,11 +14,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         <footer className="app-footer">
           <nav>
-            <a href="/hinweise">Hinweise zur Nutzung</a>
+            <Link href="/hinweise">Hinweise zur Nutzung</Link>
             <span aria-hidden="true">·</span>
-            <a href="/datenschutz">Datenschutz</a>
+            <Link href="/datenschutz">Datenschutz</Link>
             <span aria-hidden="true">·</span>
-            <a href="/impressum">Impressum</a>
+            <Link href="/impressum">Impressum</Link>
           </nav>
         </footer>
       </body>
