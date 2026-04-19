@@ -61,6 +61,7 @@ export default function HomePage() {
   async function handleLogin() {
     setLoginLoading(true);
     setLoginError(null);
+    console.log("[handleLogin] start", { loginEmail });
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -68,13 +69,15 @@ export default function HomePage() {
         body: JSON.stringify({ email: loginEmail }),
       });
       const data = await res.json();
+      console.log("[handleLogin] response", { status: res.status, data });
       if (!res.ok || !data.ok) {
         setLoginError((data.error as string | undefined) ?? "Login fehlgeschlagen.");
         return;
       }
       setAccount(data.account as AccountInfo);
       setLoginEmail("");
-    } catch {
+    } catch (err) {
+      console.error("[handleLogin] Netzwerkfehler", err);
       setLoginError("Netzwerkfehler");
     } finally {
       setLoginLoading(false);
@@ -85,6 +88,7 @@ export default function HomePage() {
     setRegLoading(true);
     setRegError(null);
     setRegSuccess(false);
+    console.log("[handleRegister] start", { regName, regEmail });
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -92,6 +96,7 @@ export default function HomePage() {
         body: JSON.stringify({ name: regName, email: regEmail }),
       });
       const data = await res.json();
+      console.log("[handleRegister] response", { status: res.status, data });
       if (!res.ok || !data.ok) {
         setRegError((data.error as string | undefined) ?? "Registrierung fehlgeschlagen.");
         return;
@@ -99,7 +104,8 @@ export default function HomePage() {
       setRegSuccess(true);
       setRegName("");
       setRegEmail("");
-    } catch {
+    } catch (err) {
+      console.error("[handleRegister] Netzwerkfehler", err);
       setRegError("Netzwerkfehler");
     } finally {
       setRegLoading(false);

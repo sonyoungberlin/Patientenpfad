@@ -34,18 +34,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log("[auth/register] creating account", { email, name });
     await prisma.account.create({
       data: { email, name, is_approved: false },
     });
+    console.log("[auth/register] account created successfully", { email });
 
     return NextResponse.json({
       ok: true,
       message: "Registrierung erfolgreich. Ihr Zugang wird manuell freigeschaltet.",
     });
   } catch (err) {
-    console.error("[auth/register]", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[auth/register] FEHLER bei Registrierung:", detail, err);
     return NextResponse.json(
-      { ok: false, error: "Registrierung fehlgeschlagen." },
+      { ok: false, error: `Registrierung fehlgeschlagen: ${detail}` },
       { status: 500 },
     );
   }

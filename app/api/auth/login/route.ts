@@ -17,9 +17,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log("[auth/login] looking up account", { email });
     const account = await prisma.account.findUnique({ where: { email } });
 
     if (!account) {
+      console.log("[auth/login] account not found", { email });
       return NextResponse.json(
         { ok: false, error: "Kein Account mit dieser E-Mail-Adresse gefunden. Bitte registrieren Sie sich zuerst." },
         { status: 404 },
@@ -27,11 +29,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (!account.is_approved) {
+      console.log("[auth/login] account not approved", { email, id: account.id });
       return NextResponse.json(
         { ok: false, error: "Ihr Account ist noch nicht freigeschaltet." },
         { status: 403 },
       );
     }
+
+    console.log("[auth/login] account approved, creating session", { email, id: account.id });
 
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
@@ -58,9 +63,10 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error("[auth/login]", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[auth/login] FEHLER:", detail, err);
     return NextResponse.json(
-      { ok: false, error: "Login fehlgeschlagen." },
+      { ok: false, error: `Login fehlgeschlagen: ${detail}` },
       { status: 500 },
     );
   }
