@@ -314,31 +314,25 @@ export default function HomePage() {
       </p>
 
       {/* M1-Blöcke */}
-      <div>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {(Object.keys(BLOCK_LABELS) as (keyof M1Selection)[]).map((blockId) => (
-          <div key={blockId} style={{ marginBottom: "1rem" }}>
-            <strong>{BLOCK_LABELS[blockId]}</strong>
-            <div style={{ marginTop: "0.3rem" }}>
+          <li key={blockId} className="card" style={{ marginBottom: "0.75rem" }}>
+            <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{BLOCK_LABELS[blockId]}</div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               {(["klar", "unklar"] as M1BlockStatus[]).map((val) => (
-                <label
+                <button
                   key={val}
-                  style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: 400 }}
+                  type="button"
+                  className={`answer-btn${selection[blockId] === val ? " active" : ""}`}
+                  onClick={() => handleBlockChange(blockId, val)}
                 >
-                  <input
-                    type="radio"
-                    name={blockId}
-                    value={val}
-                    checked={selection[blockId] === val}
-                    onChange={() => handleBlockChange(blockId, val)}
-                    style={{ marginRight: "0.3rem" }}
-                  />
                   {STATUS_LABELS[val]}
-                </label>
+                </button>
               ))}
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <button
         className="btn-primary"
