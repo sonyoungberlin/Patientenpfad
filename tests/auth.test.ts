@@ -167,6 +167,7 @@ describe("POST /api/auth/login", () => {
     expect(json.account.email).toBe("test@example.com");
     expect(pm.account.findUnique).toHaveBeenCalledWith({
       where: { email: "test@example.com" },
+      select: { id: true, email: true, is_approved: true },
     });
     expect(pm.session.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ token: "test-token-hex-value", account_id: "acc-1" }) }),

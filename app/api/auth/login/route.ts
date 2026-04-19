@@ -18,7 +18,10 @@ export async function POST(req: NextRequest) {
     }
 
     console.log("[auth/login] looking up account", { email });
-    const account = await prisma.account.findUnique({ where: { email } });
+    const account = await prisma.account.findUnique({
+      where: { email },
+      select: { id: true, email: true, is_approved: true },
+    });
 
     if (!account) {
       console.log("[auth/login] account not found", { email });

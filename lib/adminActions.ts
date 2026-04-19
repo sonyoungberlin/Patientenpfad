@@ -14,7 +14,10 @@ export type AdminActionResult = { ok: boolean; message: string };
 export async function approveAccount(
   email: string,
 ): Promise<AdminActionResult> {
-  const account = await prisma.account.findUnique({ where: { email } });
+  const account = await prisma.account.findUnique({
+    where: { email },
+    select: { id: true },
+  });
   if (!account) {
     return {
       ok: false,
@@ -37,7 +40,10 @@ export async function approveAccount(
 export async function revokeAccount(
   email: string,
 ): Promise<AdminActionResult> {
-  const account = await prisma.account.findUnique({ where: { email } });
+  const account = await prisma.account.findUnique({
+    where: { email },
+    select: { id: true },
+  });
   if (!account) {
     return {
       ok: false,

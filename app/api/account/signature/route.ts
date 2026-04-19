@@ -13,12 +13,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
   }
 
-  const data = await prisma.account.findUnique({
-    where: { id: account.id },
-    select: { message_signature: true },
-  });
+  try {
+    const data = await prisma.account.findUnique({
+      where: { id: account.id },
+      select: { message_signature: true },
+    });
 
-  return NextResponse.json({ ok: true, signature: data?.message_signature ?? "" });
+    return NextResponse.json({ ok: true, signature: data?.message_signature ?? "" });
+  } catch {
+    // Fallback: column may not exist yet if migration has not been applied
+    return NextResponse.json({ ok: true, signature: "" });
+  }
 }
 
 /**
@@ -40,10 +45,18 @@ export async function PUT(req: NextRequest) {
 
   const signature = body.signature.slice(0, MAX_SIGNATURE_LENGTH);
 
-  await prisma.account.update({
-    where: { id: account.id },
-    data: { message_signature: signature || null },
-  });
+  try {
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { message_signature: signature || null },
+    });
 
-  return NextResponse.json({ ok: true, signature });
+    return NextResponse.json({ ok: true, signature });
+  } catch {
+    // Fallback: column may not exist yet if migration has not been applied
+    return NextResponse.json(
+      { ok: false, error: "Signatur konnte nicht gespeichert werden. Bitte Migration anwenden." },
+      { status: 503 },
+    );
+  }
 }

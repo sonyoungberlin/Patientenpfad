@@ -29,7 +29,7 @@ async function run() {
         process.exit(1);
       }
 
-      const account = await prisma.account.findUnique({ where: { email } });
+      const account = await prisma.account.findUnique({ where: { email }, select: { id: true } });
       if (!account) {
         console.error(`Fehler: Kein Account mit E-Mail "${email}" gefunden.`);
         console.error("Tipp: Tester muss sich zuerst einmal über die App einloggen.");
@@ -49,7 +49,7 @@ async function run() {
         process.exit(1);
       }
 
-      const account = await prisma.account.findUnique({ where: { email } });
+      const account = await prisma.account.findUnique({ where: { email }, select: { id: true } });
       if (!account) {
         console.error(`Fehler: Kein Account mit E-Mail "${email}" gefunden.`);
         process.exit(1);
@@ -68,7 +68,7 @@ async function run() {
         process.exit(1);
       }
 
-      const account = await prisma.account.findUnique({ where: { email } });
+      const account = await prisma.account.findUnique({ where: { email }, select: { id: true } });
       if (!account) {
         console.error(`Fehler: Kein Account mit E-Mail "${email}" gefunden.`);
         console.error("Tipp: Tester muss sich zuerst einmal über die App einloggen.");
@@ -106,7 +106,7 @@ async function run() {
         process.exit(1);
       }
 
-      const account = await prisma.account.findUnique({ where: { email: directEmail } });
+      const account = await prisma.account.findUnique({ where: { email: directEmail }, select: { id: true } });
       if (!account) {
         console.error(`Fehler: Kein Account mit E-Mail "${directEmail}" gefunden.`);
         console.error("Tipp: Tester muss sich zuerst einmal über die App einloggen.");
