@@ -335,3 +335,53 @@ summary {
   cursor: pointer;
   font-weight: var(--font-weight-medium);
 }
+
+/* ----- Static pages (Hinweise, Datenschutz, Impressum) ----- */
+.static-page {
+  max-width: 700px;
+}
+
+.static-page h2 {
+  margin-top: 2rem;
+}
+
+.static-page ul {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.static-page li {
+  margin-bottom: 0.25rem;
+}
+
+.static-page hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* ----- Footer ----- */
+.app-footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.app-footer nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.app-footer a {
+  color: var(--muted-foreground);
+}
+
+.app-footer a:hover {
+  color: var(--foreground);
+}

@@ -20,6 +20,11 @@ const BLOCK_LABELS: Record<keyof M1Selection, string> = {
   versorgung_im_alltag: "Versorgung im Alltag",
 };
 
+const STATUS_LABELS: Record<M1BlockStatus, string> = {
+  klar: "bereits geklärt",
+  unklar: "unklar",
+};
+
 type AccountInfo = {
   id: string;
   email: string;
@@ -266,9 +271,9 @@ export default function HomePage() {
         <button onClick={handleLogout}>Abmelden</button>
       </div>
 
-      <h1>Was ist aktuell unklar oder klärungsbedürftig?</h1>
+      <h1>Unklarheiten klären und strukturiert dokumentieren</h1>
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
-        Nur bei <strong>unklar</strong> wird ein Strukturfall mit Checkpoints gestartet.
+        Markieren Sie bereits geklärte Bereiche, um unnötige Fragen auszublenden.
       </p>
 
       {/* Modus-Auswahl */}
@@ -309,31 +314,25 @@ export default function HomePage() {
       </p>
 
       {/* M1-Blöcke */}
-      <div>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {(Object.keys(BLOCK_LABELS) as (keyof M1Selection)[]).map((blockId) => (
-          <div key={blockId} style={{ marginBottom: "1rem" }}>
-            <strong>{BLOCK_LABELS[blockId]}</strong>
-            <div style={{ marginTop: "0.3rem" }}>
+          <li key={blockId} className="card" style={{ marginBottom: "0.75rem" }}>
+            <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{BLOCK_LABELS[blockId]}</div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               {(["klar", "unklar"] as M1BlockStatus[]).map((val) => (
-                <label
+                <button
                   key={val}
-                  style={{ marginRight: "1.5rem", cursor: "pointer", fontWeight: 400 }}
+                  type="button"
+                  className={`answer-btn${selection[blockId] === val ? " active" : ""}`}
+                  onClick={() => handleBlockChange(blockId, val)}
                 >
-                  <input
-                    type="radio"
-                    name={blockId}
-                    value={val}
-                    checked={selection[blockId] === val}
-                    onChange={() => handleBlockChange(blockId, val)}
-                    style={{ marginRight: "0.3rem" }}
-                  />
-                  {val}
-                </label>
+                  {STATUS_LABELS[val]}
+                </button>
               ))}
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <button
         className="btn-primary"
