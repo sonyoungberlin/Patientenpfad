@@ -56,7 +56,6 @@ export async function revokeAccount(
 export type AccountSummary = {
   id: string;
   email: string;
-  name: string | null;
   is_approved: boolean;
   is_admin: boolean;
   createdAt: Date;
@@ -67,7 +66,7 @@ export type AccountSummary = {
  */
 export async function listAccounts(): Promise<AccountSummary[]> {
   return prisma.account.findMany({
-    select: { id: true, email: true, name: true, is_approved: true, is_admin: true, createdAt: true },
+    select: { id: true, email: true, is_approved: true, is_admin: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
 }

@@ -9,7 +9,7 @@ export default async function AdminAccountsPage() {
   }
 
   const accounts = await prisma.account.findMany({
-    select: { id: true, email: true, name: true, is_approved: true, is_admin: true, createdAt: true },
+    select: { id: true, email: true, is_approved: true, is_admin: true, createdAt: true },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
   });
 
@@ -22,7 +22,6 @@ export default async function AdminAccountsPage() {
       <table>
         <thead>
           <tr>
-            <th>Name</th>
             <th>E-Mail</th>
             <th>Status</th>
             <th>Admin</th>
@@ -33,7 +32,6 @@ export default async function AdminAccountsPage() {
         <tbody>
           {accounts.map((acc) => (
             <tr key={acc.id}>
-              <td>{acc.name ?? "–"}</td>
               <td>{acc.email}</td>
               <td>{acc.is_approved ? "✓ freigeschaltet" : "✗ gesperrt"}</td>
               <td>{acc.is_admin ? "Admin" : "–"}</td>
@@ -55,7 +53,7 @@ export default async function AdminAccountsPage() {
           ))}
           {accounts.length === 0 && (
             <tr>
-              <td colSpan={6} className="text-muted">
+              <td colSpan={5} className="text-muted">
                 Keine Accounts vorhanden.
               </td>
             </tr>
