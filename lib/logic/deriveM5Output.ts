@@ -1,8 +1,18 @@
-import { CheckpointCategory, isMultiSelectCheckpoint, type ActiveCheckpoint } from "@/lib/types";
+import { CheckpointCategory, isMultiSelectCheckpoint, isStandardCheckpoint, type ActiveCheckpoint, type StandardCheckpoint } from "@/lib/types";
 
 export type M5Entry = {
   checkpoint_id: string;
   text: string;
+};
+
+/**
+ * Summary sentences used when all active standard checkpoints in a block
+ * have status TO_DO and there are at least 2 such checkpoints.
+ */
+export const M5_BLOCK_SUMMARY_TEXTS: Record<string, string> = {
+  kommunikation: "Die Kommunikation ist insgesamt nicht ausreichend geklärt.",
+  medizinische_lage: "Die medizinische Lage ist insgesamt nicht ausreichend geklärt.",
+  versorgung_im_alltag: "Die Versorgung im Alltag ist insgesamt nicht ausreichend geklärt.",
 };
 
 /**
@@ -108,4 +118,89 @@ export function deriveM5Output(checkpoints: ActiveCheckpoint[]): M5Entry[] {
       text: resolveM5Text(cp),
     };
   });
+}
+
+/**
+ * Determines which block_ids should be condensed into a single summary sentence.
+ *
+ * A block qualifies for condensation when:
+ * 1. It has at least 2 active standard checkpoints (multi-select excluded)
+ * 2. ALL of those standard checkpoints have status "TO_DO"
+ * 3. A summary text exists for the block_id in M5_BLOCK_SUMMARY_TEXTS
+ */
+export function getCondensedBlockIds(checkpoints: ActiveCheckpoint[]): Set<string> {
+  const standardCps = checkpoints.filter(isStandardCheckpoint);
+
+  // Group standard checkpoints by block_id
+  const byBlock = new Map<string, StandardCheckpoint[]>();
+  for (const cp of standardCps) {
+    const list = byBlock.get(cp.block_id) ?? [];
+    list.push(cp);
+    byBlock.set(cp.block_id, list);
+  }
+
+  const condensed = new Set<string>();
+  for (const [blockId, cps] of byBlock) {
+    if (
+      cps.length >= 2 &&
+      cps.every((cp) => cp.status === "TO_DO") &&
+      blockId in M5_BLOCK_SUMMARY_TEXTS
+    ) {
+      condensed.add(blockId);
+    }
+  }
+  return condensed;
+}
+
+/**
+ * M3 → M5 with block-level condensation.
+ *
+ * When all active standard checkpoints of a block have status "TO_DO" and
+ * there are at least 2 of them, emits a single summary sentence for that
+ * block instead of individual per-checkpoint lines.
+ *
+ * MULTI_SELECT checkpoints are always rendered individually and never
+ * participate in condensation.
+ *
+ * M4 / patient-facing output is not affected by this function.
+ */
+export function deriveM5OutputCondensed(checkpoints: ActiveCheckpoint[]): M5Entry[] {
+  const condensedBlocks = getCondensedBlockIds(checkpoints);
+  const emittedBlocks = new Set<string>();
+  const result: M5Entry[] = [];
+
+  for (const cp of checkpoints) {
+    if (isMultiSelectCheckpoint(cp)) {
+      // Multi-select: always individual, never condensed
+      result.push({
+        checkpoint_id: cp.id,
+        text:
+          cp.enabled && cp.selections.length > 0
+            ? `${cp.title}: ${cp.selections.join(", ")}`
+            : "",
+      });
+      continue;
+    }
+
+    if (condensedBlocks.has(cp.block_id)) {
+      // Emit the block summary exactly once
+      if (!emittedBlocks.has(cp.block_id)) {
+        emittedBlocks.add(cp.block_id);
+        result.push({
+          checkpoint_id: `block:${cp.block_id}`,
+          text: M5_BLOCK_SUMMARY_TEXTS[cp.block_id],
+        });
+      }
+      // Skip individual lines for condensed blocks
+      continue;
+    }
+
+    // Non-condensed standard checkpoint: individual line
+    result.push({
+      checkpoint_id: cp.id,
+      text: resolveM5Text(cp),
+    });
+  }
+
+  return result;
 }

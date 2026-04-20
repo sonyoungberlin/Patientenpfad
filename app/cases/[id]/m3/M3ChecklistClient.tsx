@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
 import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
-import { resolveM5Text } from "@/lib/logic/deriveM5Output";
+import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
@@ -126,11 +126,14 @@ export function M3ChecklistClient({
     .filter((text) => text.length > 0);
   const m4TextBlock = m4Lines.join("\n");
 
-  const m5Lines = checkpoints.map((cp) => resolveM5Text(cp));
-  const multiSelectM5Lines = multiSelectCheckpoints
-    .filter((cp) => cp.enabled && cp.selections.length > 0)
-    .map((cp) => `${cp.title}: ${cp.selections.join(", ")}`);
-  const m5TextBlock = [...m5Lines, ...multiSelectM5Lines].join("\n");
+  const m5Entries = deriveM5OutputCondensed([
+    ...(checkpoints as unknown as ActiveCheckpoint[]),
+    ...multiSelectCheckpoints,
+  ]);
+  const m5TextBlock = m5Entries
+    .map((e) => e.text)
+    .filter((t) => t.length > 0)
+    .join("\n");
 
   const [copiedM4, setCopiedM4] = useState(false);
   const [copiedM5, setCopiedM5] = useState(false);
