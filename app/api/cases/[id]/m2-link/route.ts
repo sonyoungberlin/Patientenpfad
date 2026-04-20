@@ -46,6 +46,7 @@ export async function POST(
         m2_token: token,
         m2_token_expires_at: expiresAt,
         m2_status: "waiting_for_patient",
+        preparation_mode: "patient",
       },
     });
 
