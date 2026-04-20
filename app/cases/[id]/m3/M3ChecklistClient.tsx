@@ -120,11 +120,20 @@ export function M3ChecklistClient({
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
   }, []);
-  const m4Lines = checkpoints
+  const m4Entries = checkpoints
     .filter((cp) => cp.status === "TO_DO")
-    .map((cp) => cp.m4?.text ?? "")
-    .filter((text) => text.length > 0);
-  const m4TextBlock = m4Lines.join("\n");
+    .filter((cp) => (cp.m4?.text ?? "").length > 0);
+  // Insert blank line between different blocks for visual grouping
+  const m4TextParts: string[] = [];
+  let prevBlockId: string | null = null;
+  for (const cp of m4Entries) {
+    if (prevBlockId !== null && cp.block_id !== prevBlockId) {
+      m4TextParts.push("");
+    }
+    m4TextParts.push(cp.m4?.text ?? "");
+    prevBlockId = cp.block_id;
+  }
+  const m4TextBlock = m4TextParts.join("\n");
 
   // M3Checkpoint widens StandardCheckpoint's discriminated-union status via Omit,
   // which makes TS unable to confirm structural compatibility. The cast is safe
@@ -483,7 +492,7 @@ export function M3ChecklistClient({
       ) : null}
       <section style={{ marginTop: "1.5rem" }}>
         <h2>Patientenhinweise / To-dos</h2>
-        {m4Lines.length > 0 ? (
+        {m4Entries.length > 0 ? (
           <>
             <div
               data-message-preview

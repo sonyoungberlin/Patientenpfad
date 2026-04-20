@@ -173,7 +173,7 @@ describe("M3 Checkliste", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Zeile A\nZeile B");
+    expect(markup).toContain("Zeile A\n\nZeile B");
   });
 
   it("zeigt leeren Zustand ohne TO_DO", async () => {

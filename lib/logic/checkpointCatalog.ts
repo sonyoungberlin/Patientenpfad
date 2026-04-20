@@ -162,9 +162,38 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
       "postoperative / akute Nachsorge",
       "erhöhter Betreuungsbedarf",
       "eingeschränkte Kommunikation",
+      "Betäubungsmittel",
+      "psychischer oder psychosozialer Betreuungsbedarf",
     ],
   },
 };
+
+/**
+ * IDs of MULTI_SELECT checkpoints that are always present in M3,
+ * regardless of M1 block activation. These represent documentation
+ * checkpoints rather than gap-closing checkpoints.
+ */
+const ALWAYS_PRESENT_MULTI_SELECT_IDS: readonly string[] = ["K10"];
+
+/**
+ * Ensures always-present MULTI_SELECT checkpoints are in the list.
+ * If missing, appends them with default values (enabled=false, empty selections).
+ */
+export function ensureAlwaysPresentCheckpoints(
+  checkpoints: ActiveCheckpoint[],
+): ActiveCheckpoint[] {
+  const ids = new Set(checkpoints.map((cp) => cp.id));
+  const missing: ActiveCheckpoint[] = [];
+  for (const id of ALWAYS_PRESENT_MULTI_SELECT_IDS) {
+    if (!ids.has(id)) {
+      const template = MULTI_SELECT_CATALOGUE[id];
+      if (template) {
+        missing.push({ ...template, selections: [], enabled: false } as ActiveCheckpoint);
+      }
+    }
+  }
+  return missing.length > 0 ? [...checkpoints, ...missing] : checkpoints;
+}
 
 /**
  * Hydratisiert vollständige `ActiveCheckpoint`-Objekte aus einem M1-Snapshot.
@@ -175,11 +204,14 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
  *
  * Checkpoints, deren ID nicht im Katalog vorhanden ist, werden übersprungen
  * (defensiv gegen zukünftige Katalogerweiterungen).
+ *
+ * Always-present MULTI_SELECT checkpoints (e.g. K10) are appended regardless
+ * of M1 block activation.
  */
 export function hydrateActiveCheckpointsFromSnapshot(
   snapshot: M1SnapshotInitial,
 ): ActiveCheckpoint[] {
-  return snapshot.activated_checkpoint_ids.flatMap((id) => {
+  const checkpoints = snapshot.activated_checkpoint_ids.flatMap((id) => {
     const template = CHECKPOINT_CATALOGUE[id];
     if (template) {
       return [{ ...template, status: "TO_DO" } as ActiveCheckpoint];
@@ -190,4 +222,5 @@ export function hydrateActiveCheckpointsFromSnapshot(
     }
     return [];
   });
+  return ensureAlwaysPresentCheckpoints(checkpoints);
 }

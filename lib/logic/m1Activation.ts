@@ -10,7 +10,7 @@ import type { M1BlockId, M1Selection, M1SnapshotInitial } from "@/lib/types";
  */
 export const M1_CHECKPOINT_MAP: Record<M1BlockId, readonly string[]> = {
   kommunikation: ["K01", "K08", "K09"],
-  medizinische_lage: ["K03", "K04", "K05", "K10"],
+  medizinische_lage: ["K03", "K04", "K05"],
   versorgung_im_alltag: ["K02", "K06", "K07"],
 };
 

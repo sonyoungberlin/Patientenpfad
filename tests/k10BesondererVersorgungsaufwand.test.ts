@@ -44,14 +44,16 @@ describe("K10 – MULTI_SELECT_CATALOGUE", () => {
     expect(k10.title).toBe("Besonderer Versorgungsaufwand");
   });
 
-  it("enthält genau 5 Auswahloptionen", () => {
-    expect(k10.options).toHaveLength(5);
+  it("enthält genau 7 Auswahloptionen", () => {
+    expect(k10.options).toHaveLength(7);
     expect(k10.options).toEqual([
       "Neupatient / unbekannt",
       "Multimedikation",
       "postoperative / akute Nachsorge",
       "erhöhter Betreuungsbedarf",
       "eingeschränkte Kommunikation",
+      "Betäubungsmittel",
+      "psychischer oder psychosozialer Betreuungsbedarf",
     ]);
   });
 });
@@ -85,7 +87,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
     expect(k10.selections).toEqual([]);
   });
 
-  it("wird NICHT hydratisiert wenn medizinische_lage klar", () => {
+  it("wird IMMER hydratisiert, auch wenn medizinische_lage klar", () => {
     const snapshot = buildM1SnapshotInitial({
       kommunikation: "unklar",
       medizinische_lage: "klar",
@@ -93,7 +95,8 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10");
-    expect(k10).toBeUndefined();
+    expect(k10).toBeDefined();
+    expect(isMultiSelectCheckpoint(k10!)).toBe(true);
   });
 });
 
@@ -156,6 +159,8 @@ describe("K10 – M5 (Dokumentation)", () => {
         "postoperative / akute Nachsorge",
         "erhöhter Betreuungsbedarf",
         "eingeschränkte Kommunikation",
+        "Betäubungsmittel",
+        "psychischer oder psychosozialer Betreuungsbedarf",
       ],
       selections,
       enabled,
