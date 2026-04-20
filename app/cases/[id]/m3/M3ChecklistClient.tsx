@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
-import { M2_QUESTIONS, type M2PrefillData } from "@/lib/logic/m2Questions";
+import { M2_QUESTIONS, M2_QUESTIONS_MFA, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
 
 const UNSAVED_WARNING =
@@ -404,7 +404,13 @@ export function M3ChecklistClient({
           const cpAnswers = prefill[checkpoint.id];
           const hasAnswers =
             cpAnswers !== undefined && Object.keys(cpAnswers).length > 0;
-          const questions = M2_QUESTIONS[checkpoint.id] ?? [];
+          // Fragenquelle abhängig vom Vorbereitungsweg:
+          // - "mfa"   → MFA-Katalog (M2_QUESTIONS_MFA)
+          // - sonst   → bestehender Patientenkatalog (M2_QUESTIONS), inkl.
+          //   "patient", "skipped" und rückwärtskompatibel "none".
+          const questionCatalog =
+            preparationMode === "mfa" ? M2_QUESTIONS_MFA : M2_QUESTIONS;
+          const questions = questionCatalog[checkpoint.id] ?? [];
           return (
             <li
               key={checkpoint.id}
