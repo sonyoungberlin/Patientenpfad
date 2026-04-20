@@ -42,11 +42,21 @@ export default async function M2Page({
 
   return (
     <main>
-      <h1>M2 – Vorbereitung durch MFA / Praxis</h1>
-      {/* Alternative Wege oben: Patientengespräch, Patientenlink, Skip */}
-      <M2PatientConversationClient />
-      <M2LinkGeneratorClient caseId={id} />
+      <h1>Vorbereitung durch MFA / Praxis</h1>
+      {/* Erste Zeile: Skip-Aktion */}
       <M2SkipButtonClient caseId={id} />
+      {/* Zweite Zeile: Fragebogen-Link und Patientengespräch nebeneinander */}
+      <div
+        style={{
+          display: "flex",
+          gap: "1rem",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+        }}
+      >
+        <M2LinkGeneratorClient caseId={id} />
+        <M2PatientConversationClient />
+      </div>
       {/* MFA-Standardweg in der Mitte mit Fragen; der schwarze Abschluss-Button bleibt unten */}
       <M2PrefillClient
         caseId={id}

@@ -150,7 +150,7 @@ describe("M2 Seite", () => {
     );
 
     expect(markup).toContain("data-m2-skip");
-    expect(markup).toContain("Patientenfragebogen überspringen und ärztlich fortfahren");
+    expect(markup).toContain("Vorbereitung überspringen und ärztlich fortfahren");
   });
 
   it("zeigt Patientengespräch-Button und alternative Wege oberhalb des MFA-Formulars", async () => {
@@ -168,17 +168,17 @@ describe("M2 Seite", () => {
     expect(markup).toContain("data-m2-patient-conversation-button");
     expect(markup).toContain(">Patientengespräch<");
 
-    // Reihenfolge: Patientengespräch → M2-Link → Skip → MFA-Formular → schwarzer Save-Button
+    // Reihenfolge: Skip → M2-Link → Patientengespräch → MFA-Formular → schwarzer Save-Button
     const idxConversation = markup.indexOf("data-m2-patient-conversation");
     const idxLink = markup.indexOf("data-m2-link-generator");
     const idxSkip = markup.indexOf("data-m2-skip");
     const idxMfaForm = markup.indexOf("data-m2-mfa-form");
     const idxSave = markup.indexOf("data-m2-save");
 
-    expect(idxConversation).toBeGreaterThan(-1);
-    expect(idxLink).toBeGreaterThan(idxConversation);
-    expect(idxSkip).toBeGreaterThan(idxLink);
-    expect(idxMfaForm).toBeGreaterThan(idxSkip);
+    expect(idxSkip).toBeGreaterThan(-1);
+    expect(idxLink).toBeGreaterThan(idxSkip);
+    expect(idxConversation).toBeGreaterThan(idxLink);
+    expect(idxMfaForm).toBeGreaterThan(idxConversation);
     expect(idxSave).toBeGreaterThan(idxMfaForm);
   });
 });

@@ -131,6 +131,9 @@ export function M2PrefillClient({
 
   return (
     <div id="m2-mfa-form" data-m2-mfa-form>
+      <h2 data-m2-form-heading>
+        {mode === "patient" ? "Patientengespräch" : "MFA-Vorbereitung"}
+      </h2>
       {checkpoints.length === 0 ? (
         <p>Keine aktiven Checkpoints vorhanden.</p>
       ) : (

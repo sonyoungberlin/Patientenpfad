@@ -65,7 +65,7 @@ describe("M2 Skip-Option", () => {
       await M2Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
     expect(markup).toContain("data-m2-skip");
-    expect(markup).toContain("Patientenfragebogen überspringen und ärztlich fortfahren");
+    expect(markup).toContain("Vorbereitung überspringen und ärztlich fortfahren");
   });
 
   it("Skip-Button ist vorhanden; M3-Pfad stimmt", async () => {

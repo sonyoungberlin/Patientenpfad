@@ -46,7 +46,7 @@ describe("M2-Seite – M2-Link-Generator", () => {
     );
 
     expect(markup).toContain("data-generate-m2-link");
-    expect(markup).toContain("M2-Link für Patient erzeugen");
+    expect(markup).toContain("Fragebogen-Link für Patient erzeugen");
   });
 
   it("zeigt die M2-Link-Generator-Sektion", async () => {
@@ -55,6 +55,5 @@ describe("M2-Seite – M2-Link-Generator", () => {
     );
 
     expect(markup).toContain("data-m2-link-generator");
-    expect(markup).toContain("Patient einbinden");
   });
 });
