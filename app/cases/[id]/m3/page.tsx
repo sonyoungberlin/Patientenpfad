@@ -24,6 +24,7 @@ export default async function M3Page({
       ctx_prefill: true,
       owner_account_id: true,
       m2_status: true,
+      preparation_mode: true,
     },
   });
 
@@ -58,11 +59,13 @@ export default async function M3Page({
       : {};
 
   const m2Status = typeof session.m2_status === "string" ? session.m2_status : "none";
+  const preparationMode =
+    typeof session.preparation_mode === "string" ? session.preparation_mode : "none";
 
   return (
     <main>
       <h1>Ärztliche Checkliste</h1>
-      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} messageSignature={messageSignature} />
+      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} />
     </main>
   );
 }

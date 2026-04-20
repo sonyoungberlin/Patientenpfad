@@ -56,16 +56,23 @@ export function M3ChecklistClient({
   initialCheckpoints,
   prefill = {},
   m2Status = "none",
+  preparationMode = "none",
   messageSignature = "",
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
   prefill?: M2PrefillData;
   m2Status?: string;
+  preparationMode?: string;
   messageSignature?: string;
 }) {
   const router = useRouter();
-  const isLocked = m2Status === "waiting_for_patient";
+  // M3 wird nur gesperrt, wenn der Patientenweg gewählt wurde und der
+  // Patientenfragebogen noch aussteht. Für Bestandsfälle ohne gesetzten
+  // preparation_mode ("none") bleibt das bisherige Verhalten erhalten.
+  const isLocked =
+    (preparationMode === "patient" || preparationMode === "none") &&
+    m2Status === "waiting_for_patient";
   // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
   const multiSelectInitial = initialCheckpoints.filter(isMultiSelectCheckpoint);
