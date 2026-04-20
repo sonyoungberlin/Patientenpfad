@@ -162,6 +162,8 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
       "postoperative / akute Nachsorge",
       "erhöhter Betreuungsbedarf",
       "eingeschränkte Kommunikation",
+      "Betäubungsmittel",
+      "psychischer oder psychosozialer Betreuungsbedarf",
     ],
   },
 };

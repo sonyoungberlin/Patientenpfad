@@ -44,14 +44,16 @@ describe("K10 – MULTI_SELECT_CATALOGUE", () => {
     expect(k10.title).toBe("Besonderer Versorgungsaufwand");
   });
 
-  it("enthält genau 5 Auswahloptionen", () => {
-    expect(k10.options).toHaveLength(5);
+  it("enthält genau 7 Auswahloptionen", () => {
+    expect(k10.options).toHaveLength(7);
     expect(k10.options).toEqual([
       "Neupatient / unbekannt",
       "Multimedikation",
       "postoperative / akute Nachsorge",
       "erhöhter Betreuungsbedarf",
       "eingeschränkte Kommunikation",
+      "Betäubungsmittel",
+      "psychischer oder psychosozialer Betreuungsbedarf",
     ]);
   });
 });
@@ -156,6 +158,8 @@ describe("K10 – M5 (Dokumentation)", () => {
         "postoperative / akute Nachsorge",
         "erhöhter Betreuungsbedarf",
         "eingeschränkte Kommunikation",
+        "Betäubungsmittel",
+        "psychischer oder psychosozialer Betreuungsbedarf",
       ],
       selections,
       enabled,
