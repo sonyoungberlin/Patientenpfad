@@ -38,7 +38,7 @@ type PrismaMock = {
 
 const prismaMock = prisma as unknown as PrismaMock;
 
-/** K01 – Kommunikation (O, 4 M2-Fragen) */
+/** K01 – Kommunikation (O, 2 MFA-Fragen) */
 const k01Checkpoint: ActiveCheckpoint = {
   id: "K01",
   block_id: "kommunikation",
@@ -50,7 +50,7 @@ const k01Checkpoint: ActiveCheckpoint = {
   m4: { type: "ACTION", text: "M4" },
 };
 
-/** K04 – Medikation (M, 5 M2-Fragen) */
+/** K04 – Medikation (M, 1 MFA-Frage) */
 const k04Checkpoint: ActiveCheckpoint = {
   id: "K04",
   block_id: "medizinische_lage",
@@ -81,13 +81,13 @@ describe("M2 Seite", () => {
     // beide Checkpoints werden gerendert
     expect((markup.match(/data-m2-checkpoint=/g) ?? []).length).toBe(2);
 
-    // K01: erste M2-Frage
+    // K01: erste MFA-Frage
     expect(markup).toContain(
-      "Sind Sie telefonisch und per SMS erreichbar?",
+      "Ist der Patient für uns zuverlässig erreichbar?",
     );
-    // K04: erste M2-Frage
+    // K04: erste MFA-Frage
     expect(markup).toContain(
-      "Haben Sie einen aktuellen Medikamentenplan oder eine Übersicht?",
+      "Ist die Begründung der Medikation durch Diagnosen nachvollziehbar dokumentiert?",
     );
   });
 
@@ -102,10 +102,10 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
-    // K01 hat 4 Fragen (M2-01–M2-04), jede mit 3 Buttons → 12 Buttons
+    // K01 hat 2 MFA-Fragen (MFA-K01-01–MFA-K01-02), jede mit 3 Buttons → 6 Buttons
     expect(
-      (markup.match(/data-m2-answer="K01:M2-0[1-4]:(ja|nein|unklar)"/g) ?? []).length,
-    ).toBe(12);
+      (markup.match(/data-m2-answer="K01:MFA-K01-0[1-2]:(ja|nein|unklar)"/g) ?? []).length,
+    ).toBe(6);
   });
 
   it("zeigt Hinweis wenn keine Checkpoints aktiv sind", async () => {
@@ -126,16 +126,16 @@ describe("M2 Seite", () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
       active_checkpoints: [k04Checkpoint],
-      ctx_prefill: { K04: { "M2-01": "ja", "M2-02": "nein" } },
+      ctx_prefill: { K04: { "MFA-K04-01": "ja" } },
     });
 
     const markup = renderToStaticMarkup(
       await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
-    // Der gespeicherte Prefill-Wert "ja" für M2-01 führt zu einem fett dargestellten Button
-    expect(markup).toContain('data-m2-answer="K04:M2-01:ja"');
-    expect(markup).toContain('data-m2-answer="K04:M2-02:nein"');
+    // Der gespeicherte Prefill-Wert "ja" für MFA-K04-01 wird per data-Attribut auf den Buttons reflektiert
+    expect(markup).toContain('data-m2-answer="K04:MFA-K04-01:ja"');
+    expect(markup).toContain('data-m2-answer="K04:MFA-K04-01:nein"');
   });
 
   it("enthält den Skip-Button für Patientenfragebogen überspringen", async () => {

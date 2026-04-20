@@ -8,7 +8,7 @@ const UNSAVED_WARNING =
 import type { ActiveCheckpoint } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
-  M2_QUESTIONS,
+  M2_QUESTIONS_MFA,
   type M2Answer,
   type M2PrefillData,
 } from "@/lib/logic/m2Questions";
@@ -119,7 +119,7 @@ export function M2PrefillClient({
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {checkpoints.map((cp) => {
-            const questions = M2_QUESTIONS[cp.id] ?? [];
+            const questions = M2_QUESTIONS_MFA[cp.id] ?? [];
             if (questions.length === 0) return null;
             const cpAnswers = values[cp.id] ?? {};
             return (
