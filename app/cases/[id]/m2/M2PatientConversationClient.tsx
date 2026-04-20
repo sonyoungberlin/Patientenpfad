@@ -10,6 +10,13 @@
  */
 export function M2PatientConversationClient() {
   function handleClick() {
+    if (typeof window !== "undefined") {
+      // Schaltet das bestehende M2-Formular auf den Patientenfragen-Katalog
+      // um (gleiche UI, gleiche Persistenz – nur andere Fragenquelle).
+      window.dispatchEvent(
+        new CustomEvent("m2-set-mode", { detail: "patient" }),
+      );
+    }
     if (typeof document === "undefined") return;
     const target = document.getElementById("m2-mfa-form");
     if (target && typeof target.scrollIntoView === "function") {

@@ -8,6 +8,7 @@ const UNSAVED_WARNING =
 import type { ActiveCheckpoint } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
+  M2_QUESTIONS,
   M2_QUESTIONS_MFA,
   type M2Answer,
   type M2PrefillData,
@@ -40,6 +41,22 @@ export function M2PrefillClient({
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const isDirtyRef = useRef(false);
+  // Lokaler Modus, der nur die Fragenquelle bestimmt:
+  // - "mfa"     → MFA-Standardweg (M2_QUESTIONS_MFA)
+  // - "patient" → Patientengespräch in der Praxis (M2_QUESTIONS)
+  // Persistenz/API/DB bleiben unverändert (immer derselbe Prefill-Endpunkt).
+  const [mode, setMode] = useState<"mfa" | "patient">("mfa");
+
+  useEffect(() => {
+    function handleSetMode(e: Event) {
+      const detail = (e as CustomEvent<"mfa" | "patient">).detail;
+      if (detail === "mfa" || detail === "patient") {
+        setMode(detail);
+      }
+    }
+    window.addEventListener("m2-set-mode", handleSetMode);
+    return () => window.removeEventListener("m2-set-mode", handleSetMode);
+  }, []);
 
   useEffect(() => {
     isDirtyRef.current = isDirty;
@@ -119,7 +136,9 @@ export function M2PrefillClient({
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {checkpoints.map((cp) => {
-            const questions = M2_QUESTIONS_MFA[cp.id] ?? [];
+            const questionCatalog =
+              mode === "patient" ? M2_QUESTIONS : M2_QUESTIONS_MFA;
+            const questions = questionCatalog[cp.id] ?? [];
             if (questions.length === 0) return null;
             const cpAnswers = values[cp.id] ?? {};
             return (
