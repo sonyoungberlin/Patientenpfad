@@ -42,22 +42,38 @@ export default async function M2Page({
 
   return (
     <main>
-      <h1>Vorbereitung durch MFA / Praxis</h1>
-      {/* Erste Zeile: Skip-Aktion */}
-      <M2SkipButtonClient caseId={id} />
-      {/* Zweite Zeile: Fragebogen-Link und Patientengespräch nebeneinander */}
-      <div
+      <h1 style={{ marginBottom: "1.5rem" }}>Vorbereitung durch MFA / Praxis</h1>
+
+      {/* Aktionsbereich oben: ruhige vertikale Rhythmik, klare Gruppen */}
+      <section
+        data-m2-actions
         style={{
           display: "flex",
+          flexDirection: "column",
           gap: "1rem",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
+          marginBottom: "2.5rem",
+          paddingBottom: "1.5rem",
+          borderBottom: "1px solid var(--border)",
         }}
       >
-        <M2LinkGeneratorClient caseId={id} />
-        <M2PatientConversationClient />
-      </div>
-      {/* MFA-Standardweg in der Mitte mit Fragen; der schwarze Abschluss-Button bleibt unten */}
+        {/* Erste Zeile: Skip-Aktion als dezente Textaktion */}
+        <M2SkipButtonClient caseId={id} />
+
+        {/* Zweite Zeile: Fragebogen-Link und Patientengespräch als stabile Gruppe */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            alignItems: "flex-start",
+          }}
+        >
+          <M2LinkGeneratorClient caseId={id} />
+          <M2PatientConversationClient />
+        </div>
+      </section>
+
+      {/* Formularbereich – beginnt klar als neuer Abschnitt */}
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}

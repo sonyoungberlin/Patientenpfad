@@ -53,9 +53,11 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
     <section
       data-m2-link-generator
       style={{
-        marginBottom: "2rem",
-        borderBottom: "1px solid var(--border)",
-        paddingBottom: "1.5rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.75rem",
+        flex: "1 1 320px",
+        minWidth: 0,
       }}
     >
       <button
@@ -63,16 +65,17 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
         data-generate-m2-link
         onClick={() => void generateLink()}
         disabled={loading}
+        style={{ alignSelf: "flex-start" }}
       >
         {loading ? "Wird erzeugt…" : "Fragebogen-Link für Patient erzeugen"}
       </button>
       {error ? (
-        <p className="text-error" role="alert" aria-live="polite" style={{ marginTop: "0.5rem" }}>
+        <p className="text-error" role="alert" aria-live="polite" style={{ margin: 0 }}>
           {error}
         </p>
       ) : null}
       {link ? (
-        <div style={{ marginTop: "0.75rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <code
             data-m2-generated-link
             style={{
@@ -80,14 +83,13 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
               wordBreak: "break-all",
               background: "var(--input-background)",
               padding: "0.5rem 0.75rem",
-              marginBottom: "0.5rem",
               border: "1px solid var(--border)",
               borderRadius: "var(--radius)",
             }}
           >
             {link}
           </code>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <button type="button" data-copy-m2-link onClick={() => void copyLink()}>
               {copied ? "Kopiert ✓" : "Link kopieren"}
             </button>

@@ -25,7 +25,7 @@ export function M2PatientConversationClient() {
   }
 
   return (
-    <div data-m2-patient-conversation style={{ marginTop: "1rem" }}>
+    <div data-m2-patient-conversation style={{ flex: "0 0 auto" }}>
       <button
         type="button"
         data-m2-patient-conversation-button
