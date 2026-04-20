@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
+import { ensureAlwaysPresentCheckpoints } from "@/lib/logic/checkpointCatalog";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { M3ChecklistClient } from "./M3ChecklistClient";
 
@@ -43,9 +44,11 @@ export default async function M3Page({
     messageSignature = "";
   }
 
-  const checkpoints = Array.isArray(session.active_checkpoints)
-    ? (session.active_checkpoints as ActiveCheckpoint[])
-    : [];
+  const checkpoints = ensureAlwaysPresentCheckpoints(
+    Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as ActiveCheckpoint[])
+      : [],
+  );
 
   const prefill =
     session.ctx_prefill &&

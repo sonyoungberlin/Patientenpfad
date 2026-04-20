@@ -48,12 +48,12 @@ describe("M1-Flow: medizinische_lage unklar → Snapshot + aktive Checkpoints", 
     versorgung_im_alltag: "klar",
   };
 
-  it("erstellt einen Snapshot mit K03, K04, K05, K10", () => {
+  it("erstellt einen Snapshot mit K03, K04, K05 (K10 ist blockunabhängig)", () => {
     const snapshot = buildM1SnapshotInitial(sel);
-    expect(snapshot.activated_checkpoint_ids).toEqual(["K03", "K04", "K05", "K10"]);
+    expect(snapshot.activated_checkpoint_ids).toEqual(["K03", "K04", "K05"]);
   });
 
-  it("hydratisiert 4 vollständige ActiveCheckpoints aus dem Snapshot", () => {
+  it("hydratisiert 4 vollständige ActiveCheckpoints aus dem Snapshot (K10 always-present)", () => {
     const snapshot = buildM1SnapshotInitial(sel);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     expect(checkpoints).toHaveLength(4);
@@ -98,9 +98,11 @@ describe("Gatekeeper-Fall: klar/klar/klar → kein Snapshot, keine Checkpoints",
     expect(snapshot.activated_checkpoint_ids).toEqual([]);
   });
 
-  it("Hydration eines leeren Snapshots ergibt keine Checkpoints", () => {
+  it("Hydration eines leeren Snapshots ergibt nur always-present Checkpoints (K10)", () => {
     const snapshot = buildM1SnapshotInitial(sel);
-    expect(hydrateActiveCheckpointsFromSnapshot(snapshot)).toEqual([]);
+    const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
+    expect(checkpoints).toHaveLength(1);
+    expect(checkpoints[0].id).toBe("K10");
   });
 });
 
@@ -114,7 +116,7 @@ describe("UI-Payload: m1Selection wird korrekt übermittelt", () => {
     };
     expect(isGatekeeperCase(initial)).toBe(false);
     const snapshot = buildM1SnapshotInitial(initial);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(10);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
   });
 
   it("Payload mit m1Selection hat keinen Legacy-Pfad", () => {

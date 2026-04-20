@@ -87,7 +87,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
     expect(k10.selections).toEqual([]);
   });
 
-  it("wird NICHT hydratisiert wenn medizinische_lage klar", () => {
+  it("wird IMMER hydratisiert, auch wenn medizinische_lage klar", () => {
     const snapshot = buildM1SnapshotInitial({
       kommunikation: "unklar",
       medizinische_lage: "klar",
@@ -95,7 +95,8 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10");
-    expect(k10).toBeUndefined();
+    expect(k10).toBeDefined();
+    expect(isMultiSelectCheckpoint(k10!)).toBe(true);
   });
 });
 
