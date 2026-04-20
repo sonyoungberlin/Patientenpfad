@@ -276,9 +276,10 @@ export default function HomePage() {
         <button onClick={handleLogout}>Abmelden</button>
       </div>
 
-      <h1>Unklarheiten klären und strukturiert dokumentieren</h1>
+      <h1>Liegt genug Information vor, damit der Arzt direkt entscheiden kann?</h1>
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
-        Markieren Sie bereits geklärte Bereiche, um unnötige Fragen auszublenden.
+        „Wissen wir genug über die Situation – nicht, ob sie gut oder schlecht ist?"
+        Wenn etwas bekannt ist, auch als Problem, muss es nicht erneut abgefragt werden.
       </p>
 
       {/* Modus-Auswahl */}
