@@ -123,7 +123,6 @@ export function M3ChecklistClient({
   const m4Entries = checkpoints
     .filter((cp) => cp.status === "TO_DO")
     .filter((cp) => (cp.m4?.text ?? "").length > 0);
-  const m4Lines = m4Entries.map((cp) => cp.m4?.text ?? "");
   // Insert blank line between different blocks for visual grouping
   const m4TextParts: string[] = [];
   let prevBlockId: string | null = null;
@@ -493,7 +492,7 @@ export function M3ChecklistClient({
       ) : null}
       <section style={{ marginTop: "1.5rem" }}>
         <h2>Patientenhinweise / To-dos</h2>
-        {m4Lines.length > 0 ? (
+        {m4Entries.length > 0 ? (
           <>
             <div
               data-message-preview
