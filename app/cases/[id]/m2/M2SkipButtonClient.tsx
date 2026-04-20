@@ -29,7 +29,14 @@ export function M2SkipButtonClient({ caseId }: { caseId: string }) {
   }
 
   return (
-    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: "0.5rem",
+      }}
+    >
       <button
         type="button"
         data-m2-skip
@@ -48,7 +55,7 @@ export function M2SkipButtonClient({ caseId }: { caseId: string }) {
         {loading ? "Wird übersprungen…" : "Vorbereitung überspringen und ärztlich fortfahren"}
       </button>
       {error ? (
-        <p className="text-error" role="alert" aria-live="polite" style={{ marginLeft: "0.75rem" }}>
+        <p className="text-error" role="alert" aria-live="polite" style={{ margin: 0 }}>
           {error}
         </p>
       ) : null}
