@@ -41,14 +41,14 @@ export default async function M2Page({
 
   return (
     <main>
-      <h1>M2 – Patienteninformationen</h1>
-      <M2LinkGeneratorClient caseId={id} />
-      <M2SkipButtonClient caseId={id} />
+      <h1>M2 – Vorbereitung durch MFA / Praxis</h1>
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}
         initialPrefill={prefill}
       />
+      <M2LinkGeneratorClient caseId={id} />
+      <M2SkipButtonClient caseId={id} />
     </main>
   );
 }
