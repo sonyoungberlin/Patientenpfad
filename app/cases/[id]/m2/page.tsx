@@ -6,6 +6,7 @@ import { getSessionAccountFromCookies } from "@/lib/auth";
 import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 import { M2SkipButtonClient } from "./M2SkipButtonClient";
+import { M2PatientConversationClient } from "./M2PatientConversationClient";
 
 export default async function M2Page({
   params,
@@ -42,13 +43,16 @@ export default async function M2Page({
   return (
     <main>
       <h1>M2 – Vorbereitung durch MFA / Praxis</h1>
+      {/* Alternative Wege oben: Patientengespräch, Patientenlink, Skip */}
+      <M2PatientConversationClient />
+      <M2LinkGeneratorClient caseId={id} />
+      <M2SkipButtonClient caseId={id} />
+      {/* MFA-Standardweg in der Mitte mit Fragen; der schwarze Abschluss-Button bleibt unten */}
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}
         initialPrefill={prefill}
       />
-      <M2LinkGeneratorClient caseId={id} />
-      <M2SkipButtonClient caseId={id} />
     </main>
   );
 }

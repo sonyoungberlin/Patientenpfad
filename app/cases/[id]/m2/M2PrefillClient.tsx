@@ -113,7 +113,7 @@ export function M2PrefillClient({
   }
 
   return (
-    <div>
+    <div id="m2-mfa-form" data-m2-mfa-form>
       {checkpoints.length === 0 ? (
         <p>Keine aktiven Checkpoints vorhanden.</p>
       ) : (

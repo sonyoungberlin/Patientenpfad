@@ -152,4 +152,33 @@ describe("M2 Seite", () => {
     expect(markup).toContain("data-m2-skip");
     expect(markup).toContain("Patientenfragebogen überspringen und ärztlich fortfahren");
   });
+
+  it("zeigt Patientengespräch-Button und alternative Wege oberhalb des MFA-Formulars", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k01Checkpoint],
+      ctx_prefill: null,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-77" }) }),
+    );
+
+    // Patientengespräch ist erreichbar
+    expect(markup).toContain("data-m2-patient-conversation-button");
+    expect(markup).toContain(">Patientengespräch<");
+
+    // Reihenfolge: Patientengespräch → M2-Link → Skip → MFA-Formular → schwarzer Save-Button
+    const idxConversation = markup.indexOf("data-m2-patient-conversation");
+    const idxLink = markup.indexOf("data-m2-link-generator");
+    const idxSkip = markup.indexOf("data-m2-skip");
+    const idxMfaForm = markup.indexOf("data-m2-mfa-form");
+    const idxSave = markup.indexOf("data-m2-save");
+
+    expect(idxConversation).toBeGreaterThan(-1);
+    expect(idxLink).toBeGreaterThan(idxConversation);
+    expect(idxSkip).toBeGreaterThan(idxLink);
+    expect(idxMfaForm).toBeGreaterThan(idxSkip);
+    expect(idxSave).toBeGreaterThan(idxMfaForm);
+  });
 });
