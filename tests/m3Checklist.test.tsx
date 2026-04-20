@@ -76,7 +76,7 @@ describe("M3 Checkliste", () => {
     prismaMock.account.findUnique.mockResolvedValue({ message_signature: null });
   });
 
-  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string }, opts?: { signature?: string }) {
+  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string; preparation_mode?: string }, opts?: { signature?: string }) {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
     if (opts?.signature !== undefined) {
       prismaMock.account.findUnique.mockResolvedValue({ message_signature: opts.signature });
@@ -90,7 +90,7 @@ describe("M3 Checkliste", () => {
 
     expect(prismaMock.caseSession.findUnique).toHaveBeenCalledWith({
       where: { id: "case-123" },
-      select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, m2_status: true },
+      select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, m2_status: true, preparation_mode: true },
     });
   });
 
@@ -327,6 +327,48 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain('disabled=""');
     // Checkpoint-Item soll mit reduzierter Opacity dargestellt sein
     expect(markup).toContain("opacity");
+  });
+
+  it("Status-Buttons sind bei preparation_mode=mfa NICHT deaktiviert (auch wenn m2_status=waiting_for_patient)", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      m2_status: "waiting_for_patient",
+      preparation_mode: "mfa",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("opacity:0.5");
+  });
+
+  it("Status-Buttons sind bei preparation_mode=skipped NICHT deaktiviert", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      m2_status: "waiting_for_patient",
+      preparation_mode: "skipped",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("opacity:0.5");
+  });
+
+  it("Status-Buttons sind bei preparation_mode=patient + waiting_for_patient deaktiviert", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      m2_status: "waiting_for_patient",
+      preparation_mode: "patient",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("opacity:0.5");
   });
 
   it("zeigt Übersprungen-Hinweis wenn m2_status = skipped", async () => {

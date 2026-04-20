@@ -6,6 +6,7 @@ import { getSessionAccountFromCookies } from "@/lib/auth";
 import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 import { M2SkipButtonClient } from "./M2SkipButtonClient";
+import { M2PatientConversationClient } from "./M2PatientConversationClient";
 
 export default async function M2Page({
   params,
@@ -41,9 +42,38 @@ export default async function M2Page({
 
   return (
     <main>
-      <h1>M2 – Patienteninformationen</h1>
-      <M2LinkGeneratorClient caseId={id} />
-      <M2SkipButtonClient caseId={id} />
+      <h1 style={{ marginBottom: "1.5rem" }}>Vorbereitung durch MFA / Praxis</h1>
+
+      {/* Aktionsbereich oben: ruhige vertikale Rhythmik, klare Gruppen */}
+      <section
+        data-m2-actions
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+          marginBottom: "2.5rem",
+          paddingBottom: "1.5rem",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        {/* Erste Zeile: Skip-Aktion als dezente Textaktion */}
+        <M2SkipButtonClient caseId={id} />
+
+        {/* Zweite Zeile: Fragebogen-Link und Patientengespräch als stabile Gruppe */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            alignItems: "flex-start",
+          }}
+        >
+          <M2LinkGeneratorClient caseId={id} />
+          <M2PatientConversationClient />
+        </div>
+      </section>
+
+      {/* Formularbereich – beginnt klar als neuer Abschnitt */}
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}

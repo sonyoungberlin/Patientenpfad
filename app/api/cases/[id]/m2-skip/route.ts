@@ -37,7 +37,7 @@ export async function PATCH(
 
     await prisma.caseSession.update({
       where: { id },
-      data: { m2_status: "skipped" },
+      data: { m2_status: "skipped", preparation_mode: "skipped" },
     });
 
     return NextResponse.json({ ok: true });

@@ -29,17 +29,33 @@ export function M2SkipButtonClient({ caseId }: { caseId: string }) {
   }
 
   return (
-    <div style={{ marginTop: "1rem" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: "0.5rem",
+      }}
+    >
       <button
         type="button"
         data-m2-skip
         onClick={() => void handleSkip()}
         disabled={loading}
+        style={{
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          color: "var(--muted-foreground)",
+          textDecoration: "underline",
+          font: "inherit",
+          cursor: loading ? "not-allowed" : "pointer",
+        }}
       >
-        {loading ? "Wird übersprungen…" : "Patientenfragebogen überspringen und ärztlich fortfahren"}
+        {loading ? "Wird übersprungen…" : "Vorbereitung überspringen und ärztlich fortfahren"}
       </button>
       {error ? (
-        <p className="text-error" role="alert" aria-live="polite" style={{ marginTop: "0.5rem" }}>
+        <p className="text-error" role="alert" aria-live="polite" style={{ margin: 0 }}>
           {error}
         </p>
       ) : null}

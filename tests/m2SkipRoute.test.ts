@@ -66,6 +66,7 @@ describe("PATCH /api/cases/[id]/m2-skip", () => {
     const updateCall = prismaMock.caseSession.update.mock.calls[0][0];
     expect(updateCall.where).toEqual({ id: "case-1" });
     expect(updateCall.data.m2_status).toBe("skipped");
+    expect(updateCall.data.preparation_mode).toBe("skipped");
   });
 
   it("gibt 401 zurück wenn nicht eingeloggt", async () => {
