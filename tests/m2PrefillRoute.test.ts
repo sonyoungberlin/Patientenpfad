@@ -58,7 +58,7 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(json.ok).toBe(true);
     expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
-      data: { ctx_prefill: structuredPrefill },
+      data: { ctx_prefill: structuredPrefill, preparation_mode: "mfa" },
     });
   });
 

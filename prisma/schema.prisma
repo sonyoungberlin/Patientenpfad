@@ -87,4 +87,7 @@ model CaseSession {
 
   /// Status des Patientenfragebogens: none | waiting_for_patient | skipped | completed
   m2_status            String    @default("none")
+
+  /// Vorbereitungsweg: none | mfa | patient | skipped
+  preparation_mode     String    @default("none")
 }

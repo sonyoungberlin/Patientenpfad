@@ -53,6 +53,7 @@ export async function PATCH(
       where: { id },
       data: {
         ctx_prefill: body.prefill as Record<string, string>,
+        preparation_mode: "mfa",
       },
     });
 
