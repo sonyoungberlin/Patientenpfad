@@ -167,3 +167,98 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
     },
   ],
 };
+
+/**
+ * Paralleler Fragenkatalog für die MFA-Vorbereitung.
+ *
+ * Strukturell identisch zu `M2_QUESTIONS` (`Record<checkpointId, M2Question[]>`),
+ * jedoch mit eigenen, praxisorientierten Formulierungen und disjunkten Frage-IDs
+ * im Format `MFA-K{nn}-{nn}`, sodass MFA- und Patientenantworten konfliktfrei
+ * im selben `ctx_prefill[checkpointId]`-Container koexistieren können.
+ *
+ * Antwortschema bleibt unverändert (`M2Answer` = "ja" | "nein" | "unklar").
+ */
+export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
+  K01: [
+    {
+      id: "MFA-K01-01",
+      text: "Ist der Patient für uns zuverlässig erreichbar?",
+    },
+    {
+      id: "MFA-K01-02",
+      text: "Funktioniert die Kommunikation mit dem Patienten in beide Richtungen?",
+    },
+  ],
+  K02: [
+    {
+      id: "MFA-K02-01",
+      text: "Kann der Patient seine Termine selbst organisieren?",
+    },
+  ],
+  K03: [
+    {
+      id: "MFA-K03-01",
+      text: "Liegen aktuelle medizinische Unterlagen (Befunde, Arztbriefe) vor?",
+    },
+    {
+      id: "MFA-K03-02",
+      text: "Ist die medizinische Situation im Krankenblatt nachvollziehbar dokumentiert?",
+    },
+  ],
+  K04: [
+    {
+      id: "MFA-K04-01",
+      text: "Ist die Begründung der Medikation durch Diagnosen nachvollziehbar dokumentiert?",
+    },
+  ],
+  K05: [
+    {
+      id: "MFA-K05-01",
+      text: "Ist die fachärztliche Mitbehandlung aktuell bekannt?",
+    },
+  ],
+  K06: [
+    {
+      id: "MFA-K06-01",
+      text: "Ist bekannt, ob der Patient im Alltag dauerhaft Unterstützung benötigt?",
+    },
+    {
+      id: "MFA-K06-02",
+      text: "Ist bekannt, ob der Patient im Alltag zuverlässig Unterstützung erhält?",
+    },
+    {
+      id: "MFA-K06-03",
+      text: "Sind Kontaktpersonen oder unterstützende Stellen (z. B. Familie, Pflegedienst) bekannt?",
+    },
+    {
+      id: "MFA-K06-04",
+      text: "Funktioniert die Kommunikation mit den unterstützenden Personen oder Stellen zuverlässig?",
+    },
+  ],
+  K07: [
+    {
+      id: "MFA-K07-01",
+      text: "Ist bekannt, ob aktuell ein vorübergehender Unterstützungsbedarf besteht?",
+    },
+    {
+      id: "MFA-K07-02",
+      text: "Ist bekannt, ob für den aktuellen Bedarf Unterstützung vorhanden ist?",
+    },
+    {
+      id: "MFA-K07-03",
+      text: "Ist bekannt, wer die notwendige Unterstützung aktuell organisiert oder übernimmt?",
+    },
+  ],
+  K08: [
+    {
+      id: "MFA-K08-01",
+      text: "Ist eine mitarbeiterunabhängige Verständigung mit dem Patienten möglich?",
+    },
+  ],
+  K09: [
+    {
+      id: "MFA-K09-01",
+      text: "Ist ein reibungsloser Ablauf im Kontakt mit dem Patienten möglich?",
+    },
+  ],
+};
