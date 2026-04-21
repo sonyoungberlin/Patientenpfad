@@ -250,15 +250,15 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K07: [
     {
       id: "MFA-K07-01",
-      text: "Ist bekannt, ob aktuell ein vorübergehender Unterstützungsbedarf besteht?",
+      text: "Ist ein vorübergehender Unterstützungsbedarf bekannt?",
     },
     {
       id: "MFA-K07-02",
-      text: "Ist bekannt, ob für den aktuellen Bedarf Unterstützung vorhanden ist?",
+      text: "Ist die notwendige Unterstützung für diese Phase organisiert?",
     },
     {
       id: "MFA-K07-03",
-      text: "Ist bekannt, wer die notwendige Unterstützung aktuell organisiert oder übernimmt?",
+      text: "Ist nachvollziehbar, wer die Unterstützung übernimmt?",
     },
   ],
   K08: [

@@ -101,11 +101,12 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
   K07: {
     id: "K07",
     block_id: "versorgung_im_alltag",
-    type: CheckpointType.ZIEL,
+    type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
     relevance: CheckpointRelevance.A,
     title: "Vorübergehender Unterstützungsbedarf",
-    description: "Ein klares Rehabilitationsziel ist gemeinsam vereinbart.",
+    description:
+      "Es besteht ein vorübergehender Unterstützungsbedarf (z. B. nach Operation oder akuter Erkrankung), und die notwendige Unterstützung ist organisiert.",
     m4: {
       type: "NOTICE",
       text: "Bitte teilen Sie uns mit, ob Ihre Versorgung für die nächste Zeit sichergestellt ist.",
