@@ -22,11 +22,17 @@ export default async function M2Page({
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
-    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true },
+    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, doctor_confirmed: true },
   });
 
   if (!session || session.owner_account_id !== account.id) {
     redirect("/");
+  }
+
+  // Bei bereits ärztlich bestätigtem (eingefrorenem) Fall niemals zurück
+  // in M2 routen – immer direkt auf M3 umleiten.
+  if (session.doctor_confirmed) {
+    redirect(`/cases/${id}/m3`);
   }
 
   const checkpoints = Array.isArray(session.active_checkpoints)

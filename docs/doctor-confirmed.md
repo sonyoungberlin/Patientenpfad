@@ -86,3 +86,21 @@ erhalten.
 Bestehende Fälle bekommen `doctor_confirmed = false` per DB-Default. Sie
 verhalten sich unverändert. Erst der nächste Klick auf „Ärztlich bestätigt"
 aktiviert den Lock.
+
+---
+
+## Routing-Priorität
+
+Sobald `doctor_confirmed === true`, hat diese Flag **Vorrang vor der
+bisherigen Schrittlogik** (Prefill-/M2-Status-basiert).
+
+- `app/cases/[id]/page.tsx` — der Einstieg aus der Fallliste leitet
+  bestätigte Fälle **immer direkt nach M3** um, auch wenn keine
+  Prefill-Daten vorhanden sind oder M2/MFA-Vorbereitung nie durchlaufen
+  wurde.
+- `app/cases/[id]/m2/page.tsx` — defensive Weiterleitung nach M3, falls
+  ein bestätigter Fall direkt über die M2-URL geöffnet wird (z. B.
+  Bookmark).
+
+Damit landen bestätigte/eingefrorene Fälle aus der Liste immer auf der
+M3-Seite mit gesperrtem M3 und nutzbaren M4/M5-Bereichen inkl. Copy-Buttons.

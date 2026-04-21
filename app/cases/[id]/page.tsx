@@ -29,11 +29,19 @@ export default async function CaseContinuePage({
       ctx_prefill: true,
       stage_status: true,
       active_checkpoints: true,
+      doctor_confirmed: true,
     },
   });
 
   if (!session || session.owner_account_id !== account.id) {
     return redirect("/");
+  }
+
+  // Bestätigte/eingefrorene Fälle führen immer direkt nach M3 – unabhängig
+  // davon, ob frühere Schritte (M2/MFA-Vorbereitung) jemals durchlaufen wurden.
+  // Diese Regel hat Vorrang vor der bisherigen prefill-basierten Schrittlogik.
+  if (session.doctor_confirmed) {
+    return redirect(m3Path);
   }
 
   if (!hasPrefillData(session.ctx_prefill)) {

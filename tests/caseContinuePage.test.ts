@@ -53,6 +53,7 @@ describe("/cases/[id] Weiterleitung", () => {
       ctx_prefill: null,
       stage_status: "INTAKE",
       active_checkpoints: [],
+      doctor_confirmed: false,
     });
 
     await CaseContinuePage({ params: Promise.resolve({ id: "case-1" }) });
@@ -66,6 +67,7 @@ describe("/cases/[id] Weiterleitung", () => {
       ctx_prefill: {},
       stage_status: "INTAKE",
       active_checkpoints: [],
+      doctor_confirmed: false,
     });
 
     await CaseContinuePage({ params: Promise.resolve({ id: "case-1" }) });
@@ -79,10 +81,26 @@ describe("/cases/[id] Weiterleitung", () => {
       ctx_prefill: { K01: { "M2-01": "ja" } },
       stage_status: "PREFILL",
       active_checkpoints: [],
+      doctor_confirmed: false,
     });
 
     await CaseContinuePage({ params: Promise.resolve({ id: "case-1" }) });
 
     expect(redirectMock).toHaveBeenCalledWith("/cases/case-1/m3");
+  });
+
+  it("leitet bestätigte Fälle direkt zu M3 – auch ohne Prefill-Daten", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      ctx_prefill: {},
+      stage_status: "CLOSED",
+      active_checkpoints: [],
+      doctor_confirmed: true,
+    });
+
+    await CaseContinuePage({ params: Promise.resolve({ id: "case-1" }) });
+
+    expect(redirectMock).toHaveBeenCalledWith("/cases/case-1/m3");
+    expect(redirectMock).not.toHaveBeenCalledWith("/cases/case-1/m2");
   });
 });
