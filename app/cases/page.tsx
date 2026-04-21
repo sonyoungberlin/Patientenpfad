@@ -4,7 +4,6 @@ import { getSessionAccountFromCookies } from "@/lib/auth";
 import SignatureSection from "./SignatureSection";
 import CaseListClient, { type CaseListItem } from "./CaseListClient";
 
-type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 const MAX_CASES_PER_PAGE = 50;
 
 type CaseListSession = {
@@ -12,63 +11,44 @@ type CaseListSession = {
   createdAt: Date;
   query_raw: string | null;
   patient_reference: string | null;
-  stage_status: "INTAKE" | "PREFILL" | "REVIEW" | "READY" | "CLOSED";
-  active_checkpoints: unknown;
-  ctx_prefill: unknown;
   m2_status: string | null;
+  preparation_mode: string | null;
+  doctor_confirmed: boolean;
 };
 
-function isCheckpointStatus(value: unknown): value is CheckpointStatus {
-  return value === "OK" || value === "TO_DO" || value === "ZURÜCKSTELLEN";
-}
-
-function getCheckpointStatuses(value: unknown): CheckpointStatus[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const status = (item as { status?: unknown }).status;
-      return isCheckpointStatus(status) ? status : null;
-    })
-    .filter((status): status is CheckpointStatus => status !== null);
-}
-
-function hasPrefillData(value: unknown): boolean {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  for (const key in value) {
-    if (Object.prototype.hasOwnProperty.call(value, key)) return true;
-  }
-  return false;
-}
-
+/**
+ * Statusberechnung der Fallübersicht.
+ *
+ * Der Status spiegelt den fachlichen Workflow wider (MFA / Patient / Arzt)
+ * und basiert ausschließlich auf den fachlichen Feldern `doctor_confirmed`,
+ * `m2_status` und `preparation_mode` – nicht auf Routing-/Checkpoint-Logik.
+ *
+ * Mapping (in Auswertungsreihenfolge):
+ *   1. doctor_confirmed = true                                   → "Ärztlich bestätigt"
+ *   2. m2_status = "waiting_for_patient"                         → "Wartet auf Patientenantwort"
+ *   3. m2_status in ("completed", "skipped")                     → "Vorbereitung abgeschlossen"
+ *      ODER preparation_mode in ("mfa", "skipped")
+ *   4. sonst (M2 noch nicht abgeschlossen, MFA ist dran)         → "In Vorbereitung"
+ */
 function deriveCaseStatus(session: CaseListSession): string {
-  if (session.stage_status === "CLOSED") {
-    return "Abgeschlossen";
+  if (session.doctor_confirmed) {
+    return "Ärztlich bestätigt";
   }
 
   if (session.m2_status === "waiting_for_patient") {
-    return "Wartet auf Patientenantworten";
+    return "Wartet auf Patientenantwort";
   }
 
-  const checkpointStatuses = getCheckpointStatuses(session.active_checkpoints);
-  const hasOpenTodos = checkpointStatuses.some((status) => status === "TO_DO");
-  const hasM3Started = checkpointStatuses.some(
-    (status) => status === "OK" || status === "ZURÜCKSTELLEN",
-  );
+  const m2Completed =
+    session.m2_status === "completed" || session.m2_status === "skipped";
+  const preparationDone =
+    session.preparation_mode === "mfa" || session.preparation_mode === "skipped";
 
-  if (hasM3Started && !hasOpenTodos) {
-    return "Abgeschlossen";
+  if (m2Completed || preparationDone) {
+    return "Vorbereitung abgeschlossen";
   }
 
-  if (hasM3Started) {
-    return "In Bearbeitung";
-  }
-
-  if (hasPrefillData(session.ctx_prefill) || session.stage_status === "PREFILL") {
-    return "M3 offen";
-  }
-
-  return "M2 offen";
+  return "In Vorbereitung";
 }
 
 function deriveCaseTitle(session: CaseListSession): string {
@@ -93,10 +73,9 @@ export default async function CasesPage() {
       createdAt: true,
       query_raw: true,
       patient_reference: true,
-      stage_status: true,
-      active_checkpoints: true,
-      ctx_prefill: true,
       m2_status: true,
+      preparation_mode: true,
+      doctor_confirmed: true,
     },
   });
 
