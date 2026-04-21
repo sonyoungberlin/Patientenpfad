@@ -119,10 +119,10 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     relevance: CheckpointRelevance.P,
     title: "Nutzung digitaler Praxisleistungen",
     description:
-      "Der Patient nutzt digitale Praxisangebote aktiv (z. B. Videosprechstunde, digitale Anfragen, digitaler Dokumentenversand).",
+      "Der Patient nutzt digitale Praxisangebote aktiv (z. B. Videosprechstunde, digitale Anfragen oder digitale Übermittlung von Dokumenten).",
     m4: {
       type: "ACTION",
-      text: "Bitte beachten Sie, dass einige Leistungen nur über digitale Praxisangebote bereitgestellt werden können.",
+      text: "Bitte beachten Sie, dass einige Leistungen nur über digitale Praxisangebote angeboten werden können.",
     },
   },
   K09: {

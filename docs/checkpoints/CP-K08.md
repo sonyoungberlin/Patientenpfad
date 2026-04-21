@@ -78,7 +78,7 @@ Digitale Praxisangebote werden aktuell nicht ausreichend genutzt.
 {
   "m4": {
     "type": "ACTION",
-    "text": "Bitte beachten Sie, dass einige Leistungen nur über digitale Praxisangebote bereitgestellt werden können."
+    "text": "Bitte beachten Sie, dass einige Leistungen nur über digitale Praxisangebote angeboten werden können."
   }
 }
 ```
