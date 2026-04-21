@@ -39,7 +39,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
     relevance: CheckpointRelevance.P,
-    title: "Wahrnehmung von Terminen",
+    title: "Praktische Möglichkeit der Terminwahrnehmung",
     description: "Prüfen, ob eine ausreichende Versorgung im Alltag besteht.",
     m4: {
       type: "NOTICE",

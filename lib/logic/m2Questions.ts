@@ -196,7 +196,11 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K02: [
     {
       id: "MFA-K02-01",
-      text: "Kann der Patient seine Termine selbst organisieren?",
+      text: "Ist es dem Patienten praktisch möglich, persönliche Termine wahrzunehmen?",
+    },
+    {
+      id: "MFA-K02-02",
+      text: "Gibt es erkennbare Einschränkungen bei der Terminwahrnehmung (z. B. Mobilität, Entfernung, Organisation)?",
     },
   ],
   K03: [

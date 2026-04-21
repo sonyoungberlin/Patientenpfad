@@ -1,4 +1,4 @@
-# CP-K02 – Zugang zur Versorgung geklärt
+# CP-K02 – Praktische Möglichkeit der Terminwahrnehmung
 
 - **checkpoint_id:** `CP-K02`
 - **block_id:** `zugang_versorgung`
@@ -21,6 +21,17 @@ Ist der Zugang zur Versorgung grundsätzlich möglich?
 |--------|--------------------------------------------------------------------|
 | M2-01  | Können Sie Termine in der Praxis grundsätzlich wahrnehmen?         |
 | M2-02  | Ist es für Sie schwierig, Termine in der Praxis wahrzunehmen?      |
+
+---
+
+## MFA-Fragen
+
+| ID            | Frage                                                                                                       |
+|---------------|-------------------------------------------------------------------------------------------------------------|
+| MFA-K02-01    | Ist es dem Patienten praktisch möglich, persönliche Termine wahrzunehmen?                                   |
+| MFA-K02-02    | Gibt es erkennbare Einschränkungen bei der Terminwahrnehmung (z. B. Mobilität, Entfernung, Organisation)?   |
+
+> **Abgrenzung zu K09:** K02 beschreibt die *praktische Möglichkeit* (Fähigkeit/Voraussetzungen) zur Terminwahrnehmung. K09 beschreibt das *tatsächliche Verhalten* (Termin- und Absprachetreue, Einhaltung von Praxisabläufen).
 
 ---
 

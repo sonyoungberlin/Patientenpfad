@@ -28,9 +28,9 @@ export const M5_TEXTS: Record<
     TO_DO: "Erreichbarkeit des Patienten ist nicht ausreichend gegeben.",
   },
   K02: {
-    OK: "Wahrnehmung von Terminen ist ausreichend möglich.",
-    TO_DO: "Wahrnehmung von Terminen ist nicht ausreichend möglich.",
-    ZURÜCKSTELLEN: "Wahrnehmung von Terminen ist unklar.",
+    OK: "Praktische Möglichkeit der Terminwahrnehmung ist ausreichend gegeben.",
+    TO_DO: "Praktische Möglichkeit der Terminwahrnehmung ist nicht ausreichend gegeben.",
+    ZURÜCKSTELLEN: "Praktische Möglichkeit der Terminwahrnehmung ist unklar.",
   },
   K03: {
     OK: "Diagnosenlage ist ausreichend geklärt.",
