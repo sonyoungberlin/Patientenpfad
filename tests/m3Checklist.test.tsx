@@ -288,6 +288,27 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("nein");
   });
 
+  it("löst Patientengespräch-IDs im Format Kxx-yy gegen den Patientenkatalog auf", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K02", title: "Terminwahrnehmung" },
+      ],
+      ctx_prefill: { K02: { "K02-02": "ja" } },
+      preparation_mode: "patient",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("Aus M2:");
+    expect(markup).toContain(
+      "Haben Sie aktuell Schwierigkeiten, Termine in unserer Praxis wahrzunehmen (z. B. aufgrund eingeschränkter Mobilität oder organisatorischer Gründe)?",
+    );
+    expect(markup).not.toContain("K02-02");
+    expect(markup).toContain("ja");
+  });
+
   it("M3 zeigt keinen Prefill-Bereich wenn kein Prefill gespeichert", async () => {
     setupCase({
       active_checkpoints: [

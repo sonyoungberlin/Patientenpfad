@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
-import { M2_QUESTIONS, M2_QUESTIONS_MFA, type M2PrefillData } from "@/lib/logic/m2Questions";
+import { M2_QUESTIONS, M2_QUESTIONS_MFA, type M2PrefillData, type M2Question } from "@/lib/logic/m2Questions";
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
 
 const UNSAVED_WARNING =
@@ -49,6 +49,27 @@ function getAnswerSymbol(answer: string): string {
   if (answer === "nein") return "✗";
   if (answer === "unklar") return "?";
   return "";
+}
+
+function resolveQuestionText(
+  questions: M2Question[],
+  checkpointId: string,
+  questionId: string,
+  usePatientCatalog: boolean,
+): string {
+  const exactMatch = questions.find((q) => q.id === questionId);
+  if (exactMatch) return exactMatch.text;
+
+  if (usePatientCatalog) {
+    const prefixedPatientIdMatch = questionId.match(/^(K\d{2})-(\d{2})$/);
+    if (prefixedPatientIdMatch && prefixedPatientIdMatch[1] === checkpointId) {
+      const normalizedId = `M2-${prefixedPatientIdMatch[2]}`;
+      const normalizedMatch = questions.find((q) => q.id === normalizedId);
+      if (normalizedMatch) return normalizedMatch.text;
+    }
+  }
+
+  return questionId;
 }
 
 export function M3ChecklistClient({
@@ -419,6 +440,7 @@ export function M3ChecklistClient({
           //   "patient", "skipped" und rückwärtskompatibel "none".
           const questionCatalog =
             preparationMode === "mfa" ? M2_QUESTIONS_MFA : M2_QUESTIONS;
+          const usePatientCatalog = preparationMode !== "mfa";
           const questions = questionCatalog[checkpoint.id] ?? [];
           return (
             <li
@@ -437,16 +459,21 @@ export function M3ChecklistClient({
                   style={{ marginBottom: "0.5rem" }}
                 >
                   <summary>Aus M2:</summary>
-                  <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
-                    {Object.entries(cpAnswers).map(([qId, answer]) => {
-                      const question = questions.find((q) => q.id === qId);
-                      const symbol = getAnswerSymbol(answer);
-                      return (
-                        <li key={qId} style={{ marginBottom: "0.25rem" }}>
-                          <span>{question ? question.text : qId}</span>
-                          {" — "}
-                          <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
-                        </li>
+                    <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
+                      {Object.entries(cpAnswers).map(([qId, answer]) => {
+                        const questionText = resolveQuestionText(
+                          questions,
+                          checkpoint.id,
+                          qId,
+                          usePatientCatalog,
+                        );
+                        const symbol = getAnswerSymbol(answer);
+                        return (
+                          <li key={qId} style={{ marginBottom: "0.25rem" }}>
+                            <span>{questionText}</span>
+                            {" — "}
+                            <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
+                          </li>
                       );
                     })}
                   </ul>
