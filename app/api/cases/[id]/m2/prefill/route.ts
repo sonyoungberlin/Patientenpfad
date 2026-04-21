@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 
@@ -37,9 +38,16 @@ export async function PATCH(
       );
     }
 
+    // Optionaler Modus für nicht-asynchrone M2-Wege:
+    // - "mfa"          → MFA-Vorbereitung (Default, rückwärtskompatibel)
+    // - "conversation" → Patientengespräch in der Praxis (Patientenfragen-Katalog)
+    // Andere Werte werden ignoriert und auf "mfa" zurückgesetzt.
+    const preparationMode: "mfa" | "conversation" =
+      body?.mode === "conversation" ? "conversation" : "mfa";
+
     const session = await prisma.caseSession.findUnique({
       where: { id },
-      select: { owner_account_id: true },
+      select: { owner_account_id: true, m2_status: true },
     });
 
     if (!session || session.owner_account_id !== account.id) {
@@ -49,12 +57,23 @@ export async function PATCH(
       );
     }
 
+    // Konsistenz: Wird über einen nicht-asynchronen Weg (MFA / Gespräch)
+    // gespeichert, darf der Fall nicht weiter auf einen Patientenrücklauf
+    // warten. Ein eventuell ausstehender Token wird invalidiert.
+    const data: Prisma.CaseSessionUpdateInput = {
+      ctx_prefill: body.prefill as Prisma.InputJsonValue,
+      preparation_mode: preparationMode,
+    };
+
+    if (session.m2_status === "waiting_for_patient") {
+      data.m2_status = "none";
+      data.m2_token = null;
+      data.m2_token_expires_at = null;
+    }
+
     await prisma.caseSession.update({
       where: { id },
-      data: {
-        ctx_prefill: body.prefill as Record<string, string>,
-        preparation_mode: "mfa",
-      },
+      data,
     });
 
     return NextResponse.json({ ok: true });
