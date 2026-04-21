@@ -1,8 +1,8 @@
-# CP-K08 – Versorgungskanäle geklärt
+# CP-K08 – Nutzung digitaler Praxisleistungen
 
 - **checkpoint_id:** `CP-K08`
 - **block_id:** `versorgungskanaele`
-- **block_title:** Versorgungskanäle
+- **block_title:** Nutzung digitaler Praxisleistungen
 - **typ:** STATUS_KLAERUNG
 - **category:** `O` (organisatorisch)
 - **relevance:** `A` (optional)
@@ -11,7 +11,7 @@
 
 ## Entscheidungsfrage
 
-Sind geeignete Versorgungskanäle nutzbar?
+Werden digitale Praxisangebote vom Patienten aktiv genutzt?
 
 ---
 
@@ -25,42 +25,50 @@ Sind geeignete Versorgungskanäle nutzbar?
 
 ---
 
+## MFA-Fragen
+
+| ID            | Frage                                                  |
+|---------------|--------------------------------------------------------|
+| MFA-K08-01    | Nutzt der Patient digitale Praxisangebote aktiv?       |
+
+---
+
 ## Aggregationslogik
 
 | Ergebnis                             | Bedingung                                                                             |
 |--------------------------------------|---------------------------------------------------------------------------------------|
-| **ausreichend** (OK)                 | Mindestens ein verlässlicher Versorgungskanal ist nutzbar (z. B. Video oder digitale Kommunikation) |
-| **eingeschränkt ausreichend** (OK)   | Nutzung ist möglich, aber nur eingeschränkt oder nicht für alle Kanäle                |
-| **nicht ausreichend** (TO_DO)        | Keine Versorgungskanäle sind nutzbar                                                  |
+| **ausreichend** (OK)                 | Digitale Praxisangebote werden aktiv und verlässlich genutzt                          |
+| **eingeschränkt ausreichend** (OK)   | Nutzung ist möglich, aber nur eingeschränkt oder nicht für alle Angebote              |
+| **nicht ausreichend** (TO_DO)        | Digitale Praxisangebote werden nicht genutzt                                          |
 
-> M2 liefert nur Kontext. Die Entscheidung, ob geeignete Versorgungskanäle nutzbar sind, erfolgt ausschließlich auf M3-Ebene.
+> M2 liefert nur Kontext. Die Entscheidung, ob digitale Praxisleistungen ausreichend genutzt werden, erfolgt ausschließlich auf M3-Ebene.
 
 ---
 
 ## Status-Definitionen
 
 ### OK
-Mindestens ein geeigneter Versorgungskanal ist verlässlich nutzbar – unabhängig davon, ob dies selbstständig oder mit Unterstützung erfolgt.
+Digitale Praxisangebote werden vom Patienten aktiv genutzt – unabhängig davon, ob dies selbstständig oder mit Unterstützung erfolgt.
 
 ### TO_DO
-Es ist aktuell kein geeigneter Versorgungskanal nutzbar.
+Digitale Praxisangebote werden aktuell nicht ausreichend genutzt.
 
 ---
 
 ## Dokumentationsausgaben (M5)
 
-| Status          | Satz                                                          |
-|-----------------|---------------------------------------------------------------|
-| OK              | „Versorgungskanäle sind ausreichend nutzbar"                  |
-| TO_DO           | „Versorgungskanäle sind aktuell nicht ausreichend nutzbar"    |
+| Status          | Satz                                                                |
+|-----------------|---------------------------------------------------------------------|
+| OK              | „Nutzung digitaler Praxisleistungen ist ausreichend gegeben."       |
+| TO_DO           | „Nutzung digitaler Praxisleistungen ist nicht ausreichend gegeben." |
 
 ---
 
 ## To-dos
 
-| Status  | To-do                                |
-|---------|--------------------------------------|
-| TO_DO   | Versorgungskanäle klären             |
+| Status  | To-do                                            |
+|---------|--------------------------------------------------|
+| TO_DO   | Nutzung digitaler Praxisleistungen klären        |
 
 ---
 
@@ -69,8 +77,8 @@ Es ist aktuell kein geeigneter Versorgungskanal nutzbar.
 ```json
 {
   "m4": {
-    "type": "NOTICE",
-    "text": "Bitte beachten Sie, dass einige Leistungen nur über digitale Kommunikationswege möglich sind."
+    "type": "ACTION",
+    "text": "Bitte beachten Sie, dass einige Leistungen nur über digitale Praxisangebote angeboten werden können."
   }
 }
 ```

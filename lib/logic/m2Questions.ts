@@ -182,27 +182,35 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K01: [
     {
       id: "MFA-K01-01",
-      text: "Ist der Patient für uns zuverlässig erreichbar?",
+      text: "Ist der Patient für uns grundsätzlich erreichbar?",
     },
     {
       id: "MFA-K01-02",
-      text: "Funktioniert die Kommunikation mit dem Patienten in beide Richtungen?",
+      text: "Sind die hinterlegten Kontaktdaten aktuell?",
+    },
+    {
+      id: "MFA-K01-03",
+      text: "Ist bei Bedarf eine Kontaktperson/Vertrauensperson erreichbar?",
     },
   ],
   K02: [
     {
       id: "MFA-K02-01",
-      text: "Kann der Patient seine Termine selbst organisieren?",
+      text: "Ist es dem Patienten praktisch möglich, persönliche Termine wahrzunehmen?",
+    },
+    {
+      id: "MFA-K02-02",
+      text: "Gibt es erkennbare Einschränkungen bei der Terminwahrnehmung (z. B. Mobilität, Entfernung, Organisation)?",
     },
   ],
   K03: [
     {
       id: "MFA-K03-01",
-      text: "Liegen aktuelle medizinische Unterlagen (Befunde, Arztbriefe) vor?",
+      text: "Liegen aktuelle Befunde/Unterlagen vor?",
     },
     {
       id: "MFA-K03-02",
-      text: "Ist die medizinische Situation im Krankenblatt nachvollziehbar dokumentiert?",
+      text: "Sind die Diagnosen im Krankenblatt nachvollziehbar dokumentiert?",
     },
   ],
   K04: [
@@ -214,7 +222,11 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K05: [
     {
       id: "MFA-K05-01",
-      text: "Ist die fachärztliche Mitbehandlung aktuell bekannt?",
+      text: "Ist bekannt, bei welchen Fachärzten der Patient aktuell in Behandlung ist?",
+    },
+    {
+      id: "MFA-K05-02",
+      text: "Ist die fachärztliche Mitbehandlung strukturiert und nachvollziehbar?",
     },
   ],
   K06: [
@@ -238,27 +250,31 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K07: [
     {
       id: "MFA-K07-01",
-      text: "Ist bekannt, ob aktuell ein vorübergehender Unterstützungsbedarf besteht?",
+      text: "Ist ein vorübergehender Unterstützungsbedarf bekannt?",
     },
     {
       id: "MFA-K07-02",
-      text: "Ist bekannt, ob für den aktuellen Bedarf Unterstützung vorhanden ist?",
+      text: "Ist die notwendige Unterstützung für diese Phase organisiert?",
     },
     {
       id: "MFA-K07-03",
-      text: "Ist bekannt, wer die notwendige Unterstützung aktuell organisiert oder übernimmt?",
+      text: "Ist nachvollziehbar, wer die Unterstützung übernimmt?",
     },
   ],
   K08: [
     {
       id: "MFA-K08-01",
-      text: "Ist eine mitarbeiterunabhängige Verständigung mit dem Patienten möglich?",
+      text: "Nutzt der Patient digitale Praxisangebote aktiv?",
     },
   ],
   K09: [
     {
       id: "MFA-K09-01",
-      text: "Ist ein reibungsloser Ablauf im Kontakt mit dem Patienten möglich?",
+      text: "Hält der Patient Termine und Absprachen zuverlässig ein?",
+    },
+    {
+      id: "MFA-K09-02",
+      text: "Hält sich der Patient an Praxisabläufe (z. B. Terminvereinbarung statt spontanes Erscheinen)?",
     },
   ],
 };

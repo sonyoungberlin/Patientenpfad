@@ -19,16 +19,25 @@ export async function PATCH(
 
     const session = await prisma.caseSession.findUnique({
       where: { id },
-      select: { owner_account_id: true },
+      select: { owner_account_id: true, doctor_confirmed: true },
     });
 
     if (!session || session.owner_account_id !== account.id) {
       return NextResponse.json({ ok: false, error: "Fall nicht gefunden." }, { status: 404 });
     }
 
+    if (session.doctor_confirmed) {
+      // Already confirmed – idempotent OK, do not overwrite the timestamp.
+      return NextResponse.json({ ok: true, already_confirmed: true });
+    }
+
     await prisma.caseSession.update({
       where: { id },
-      data: { stage_status: "CLOSED" },
+      data: {
+        stage_status: "CLOSED",
+        doctor_confirmed: true,
+        doctor_confirmed_at: new Date(),
+      },
     });
 
     return NextResponse.json({ ok: true });

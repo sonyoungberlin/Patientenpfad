@@ -26,6 +26,16 @@ Ist ein verlässlicher Kommunikationsweg zum Patienten vorhanden?
 
 ---
 
+## MFA-Fragen
+
+| ID            | Frage                                                                |
+|---------------|----------------------------------------------------------------------|
+| MFA-K01-01    | Ist der Patient für uns grundsätzlich erreichbar?                    |
+| MFA-K01-02    | Sind die hinterlegten Kontaktdaten aktuell?                          |
+| MFA-K01-03    | Ist bei Bedarf eine Kontaktperson/Vertrauensperson erreichbar?       |
+
+---
+
 ## Aggregationslogik
 
 | Ergebnis                    | Bedingung                                                                                                             |

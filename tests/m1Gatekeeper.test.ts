@@ -53,11 +53,11 @@ describe("M1-Flow: medizinische_lage unklar → Snapshot + aktive Checkpoints", 
     expect(snapshot.activated_checkpoint_ids).toEqual(["K03", "K04", "K05"]);
   });
 
-  it("hydratisiert 4 vollständige ActiveCheckpoints aus dem Snapshot (K10 always-present)", () => {
+  it("hydratisiert 5 vollständige ActiveCheckpoints aus dem Snapshot (K10, K11 always-present)", () => {
     const snapshot = buildM1SnapshotInitial(sel);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(4);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K03", "K04", "K05", "K10"]);
+    expect(checkpoints).toHaveLength(5);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K03", "K04", "K05", "K10", "K11"]);
   });
 
   it("alle Checkpoints haben status TO_DO", () => {
@@ -98,11 +98,12 @@ describe("Gatekeeper-Fall: klar/klar/klar → kein Snapshot, keine Checkpoints",
     expect(snapshot.activated_checkpoint_ids).toEqual([]);
   });
 
-  it("Hydration eines leeren Snapshots ergibt nur always-present Checkpoints (K10)", () => {
+  it("Hydration eines leeren Snapshots ergibt nur always-present Checkpoints (K10, K11)", () => {
     const snapshot = buildM1SnapshotInitial(sel);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(1);
+    expect(checkpoints).toHaveLength(2);
     expect(checkpoints[0].id).toBe("K10");
+    expect(checkpoints[1].id).toBe("K11");
   });
 });
 

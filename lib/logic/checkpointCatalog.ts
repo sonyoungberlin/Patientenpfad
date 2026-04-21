@@ -39,7 +39,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
     relevance: CheckpointRelevance.P,
-    title: "Wahrnehmung von Terminen",
+    title: "Praktische Möglichkeit der Terminwahrnehmung",
     description: "Prüfen, ob eine ausreichende Versorgung im Alltag besteht.",
     m4: {
       type: "NOTICE",
@@ -82,7 +82,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     description: "Relevante externe Fachärzte sind bekannt und einbezogen.",
     m4: {
       type: "NOTICE",
-      text: "Bitte geben Sie relevante Befunde in der Praxis ab (Kopie) oder reichen Sie die Dokumente digital ein.",
+      text: "Bitte informieren Sie uns über Ihre aktuellen Fachärzte und halten Sie diese Angaben aktuell.",
     },
   },
   K06: {
@@ -101,11 +101,12 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
   K07: {
     id: "K07",
     block_id: "versorgung_im_alltag",
-    type: CheckpointType.ZIEL,
+    type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
     relevance: CheckpointRelevance.A,
     title: "Vorübergehender Unterstützungsbedarf",
-    description: "Ein klares Rehabilitationsziel ist gemeinsam vereinbart.",
+    description:
+      "Es besteht ein vorübergehender Unterstützungsbedarf (z. B. nach Operation oder akuter Erkrankung), und die notwendige Unterstützung ist organisiert.",
     m4: {
       type: "NOTICE",
       text: "Bitte teilen Sie uns mit, ob Ihre Versorgung für die nächste Zeit sichergestellt ist.",
@@ -117,11 +118,12 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.O,
     relevance: CheckpointRelevance.P,
-    title: "Digitale Kommunikation",
-    description: "Der bevorzugte Kommunikationsweg des Patienten ist bekannt.",
+    title: "Nutzung digitaler Praxisleistungen",
+    description:
+      "Der Patient nutzt digitale Praxisangebote aktiv (z. B. Videosprechstunde, digitale Anfragen oder digitale Übermittlung von Dokumenten).",
     m4: {
       type: "ACTION",
-      text: "Bitte beachten Sie, dass einige Leistungen nur über digitale Kommunikationswege angeboten werden können.",
+      text: "Bitte beachten Sie, dass einige Leistungen nur über digitale Praxisangebote angeboten werden können.",
     },
   },
   K09: {
@@ -166,6 +168,25 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
       "psychischer oder psychosozialer Betreuungsbedarf",
     ],
   },
+  K11: {
+    id: "K11",
+    block_id: "medizinische_lage",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.A,
+    mode: CheckpointMode.MULTI_SELECT,
+    title: "Formularanliegen",
+    description:
+      "Aus welchem administrativen Anlass erfolgt die strukturierte Prüfung? (nur ärztliche Dokumentation, keine Patientenfragen)",
+    options: [
+      "Pflegegrad / Höherstufung",
+      "Reha-Antrag",
+      "Jobcenter / Sozialleistungen",
+      "Attest / Bescheinigung",
+      "Versicherung / Gutachten",
+      "Sonstiger Antrag / Formular",
+    ],
+  },
 };
 
 /**
@@ -173,7 +194,7 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
  * regardless of M1 block activation. These represent documentation
  * checkpoints rather than gap-closing checkpoints.
  */
-const ALWAYS_PRESENT_MULTI_SELECT_IDS: readonly string[] = ["K10"];
+const ALWAYS_PRESENT_MULTI_SELECT_IDS: readonly string[] = ["K10", "K11"];
 
 /**
  * Ensures always-present MULTI_SELECT checkpoints are in the list.

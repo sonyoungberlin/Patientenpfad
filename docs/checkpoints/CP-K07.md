@@ -1,66 +1,86 @@
-# CP-K07 – Versorgungsumfeld geklärt
+# CP-K07 – Vorübergehender Unterstützungsbedarf
 
 - **checkpoint_id:** `CP-K07`
-- **block_id:** `versorgungsumfeld`
-- **block_title:** Versorgungsumfeld
-- **typ:** STATUS_KLAERUNG
-- **category:** `O` (organisatorisch)
+- **block_id:** `versorgung_im_alltag`
+- **block_title:** Versorgung im Alltag
+- **typ:** BEDARF
+- **category:** `M` (medizinisch/versorgungsbezogen)
 - **relevance:** `A` (optional)
+
+---
+
+## Beschreibung
+
+Es besteht ein vorübergehender Unterstützungsbedarf (z. B. nach Operation oder akuter Erkrankung), und die notwendige Unterstützung ist organisiert.
 
 ---
 
 ## Entscheidungsfrage
 
-Ist die Versorgungssituation im Alltag ausreichend nachvollziehbar?
+Besteht ein vorübergehender Unterstützungsbedarf, und ist die notwendige Unterstützung für diese Phase organisiert?
 
 ---
 
 ## M2-Fragen
 
-| ID     | Frage                                                                       |
-|--------|-----------------------------------------------------------------------------|
-| M2-01  | Gibt es aktuell Situationen, in denen Sie Unterstützung benötigen?          |
-| M2-02  | Erhalten Sie Unterstützung durch Familie oder Freunde?                      |
-| M2-03  | Erhalten Sie Unterstützung durch einen Pflegedienst oder ähnliche Hilfe?   |
+| ID     | Frage                                                                                              |
+|--------|----------------------------------------------------------------------------------------------------|
+| M2-01  | Hatten Sie in letzter Zeit einen Krankenhausaufenthalt, eine Operation oder einen Unfall?          |
+| M2-02  | Benötigen Sie vorübergehend Hilfe im Alltag (z. B. nach einem Eingriff oder einer Erkrankung)?     |
+| M2-03  | Haben Sie für diese Zeit Unterstützung organisiert (z. B. durch Angehörige oder andere Personen)?  |
+
+---
+
+## MFA-Fragen
+
+| ID            | Frage                                                            |
+|---------------|------------------------------------------------------------------|
+| MFA-K07-01    | Ist ein vorübergehender Unterstützungsbedarf bekannt?            |
+| MFA-K07-02    | Ist die notwendige Unterstützung für diese Phase organisiert?    |
+| MFA-K07-03    | Ist nachvollziehbar, wer die Unterstützung übernimmt?            |
 
 ---
 
 ## Aggregationslogik
 
-| Ergebnis                             | Bedingung                                                                                        |
-|--------------------------------------|--------------------------------------------------------------------------------------------------|
-| **ausreichend** (OK)                 | Versorgungssituation ist nachvollziehbar; vorhandener Unterstützungsbedarf ist abgedeckt oder nicht vorhanden |
-| **eingeschränkt ausreichend** (OK)   | Teilweise Unterstützung vorhanden oder kleinere Lücken                                           |
-| **nicht ausreichend** (TO_DO)        | Unterstützungsbedarf besteht oder wird vermutet, aber keine oder unzureichende Unterstützung vorhanden |
+| Ergebnis                       | Bedingung                                                                                       |
+|--------------------------------|-------------------------------------------------------------------------------------------------|
+| **ausreichend** (OK)           | Kein vorübergehender Bedarf vorhanden, oder Bedarf besteht und die Unterstützung ist organisiert |
+| **nicht ausreichend** (TO_DO)  | Vorübergehender Bedarf besteht, aber die Unterstützung ist nicht oder nur unklar organisiert     |
+| **unklar** (ZURÜCKSTELLEN)     | Es ist nicht erkennbar, ob ein vorübergehender Bedarf besteht oder wie er gedeckt wird           |
 
-> M2 liefert nur Kontext. Die Entscheidung, ob die Versorgungssituation ausreichend geklärt ist, erfolgt ausschließlich auf M3-Ebene.
+> M2 liefert nur Kontext. Die Entscheidung, ob der vorübergehende Unterstützungsbedarf ausreichend gedeckt ist, erfolgt ausschließlich auf M3-Ebene.
 
 ---
 
 ## Status-Definitionen
 
 ### OK
-Die Versorgungssituation ist ausreichend nachvollziehbar. Unterstützungsbedarf ist entweder nicht vorhanden oder ausreichend abgedeckt.
+Es besteht entweder kein vorübergehender Unterstützungsbedarf, oder ein bestehender Bedarf ist organisatorisch abgedeckt.
 
 ### TO_DO
-Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder bestehender Unterstützungsbedarf ist nicht abgedeckt.
+Ein vorübergehender Unterstützungsbedarf besteht, ist aber nicht ausreichend organisiert.
+
+### ZURÜCKSTELLEN
+Es ist aktuell nicht beurteilbar, ob ein vorübergehender Unterstützungsbedarf besteht oder wie er gedeckt wird.
 
 ---
 
 ## Dokumentationsausgaben (M5)
 
-| Status          | Satz                                                              |
-|-----------------|-------------------------------------------------------------------|
-| OK              | „Versorgungsumfeld ist ausreichend geklärt"               |
-| TO_DO           | „Versorgungsumfeld ist aktuell nicht ausreichend geklärt" |
+| Status          | Satz                                                                              |
+|-----------------|-----------------------------------------------------------------------------------|
+| OK              | „Vorübergehender Unterstützungsbedarf ist ausreichend geklärt."                   |
+| TO_DO           | „Vorübergehender Unterstützungsbedarf ist aktuell nicht ausreichend geklärt."     |
+| ZURÜCKSTELLEN   | „Vorübergehender Unterstützungsbedarf ist unklar."                                |
 
 ---
 
 ## To-dos
 
-| Status  | To-do                         |
-|---------|-------------------------------|
-| TO_DO   | Versorgungssituation klären   |
+| Status  | To-do                                                |
+|---------|------------------------------------------------------|
+| TO_DO   | Organisation der vorübergehenden Unterstützung klären |
 
 ---
 
@@ -70,7 +90,7 @@ Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder best
 {
   "m4": {
     "type": "NOTICE",
-    "text": "Für Ihre Behandlung ist es erforderlich, dass Ihre Versorgung im Alltag sichergestellt ist."
+    "text": "Bitte teilen Sie uns mit, ob Ihre Versorgung für die nächste Zeit sichergestellt ist."
   }
 }
 ```
@@ -81,4 +101,4 @@ Die Versorgungssituation ist aktuell nicht ausreichend nachvollziehbar oder best
 
 - `patient`
 - `praxis`
-- `extern` (z. B. Pflege)
+- `extern` (z. B. Angehörige, Pflege)

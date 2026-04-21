@@ -26,6 +26,15 @@ Ist die Erkrankungssituation ausreichend nachvollziehbar?
 
 ---
 
+## MFA-Fragen
+
+| ID            | Frage                                                                                  |
+|---------------|----------------------------------------------------------------------------------------|
+| MFA-K05-01    | Ist bekannt, bei welchen Fachärzten der Patient aktuell in Behandlung ist?             |
+| MFA-K05-02    | Ist die fachärztliche Mitbehandlung strukturiert und nachvollziehbar?                  |
+
+---
+
 ## Aggregationslogik
 
 | Ergebnis                           | Bedingung                                                                                   |
@@ -79,7 +88,7 @@ Angaben zur Diagnosenlage fehlen oder widersprechen sich. Eine sichere Einschät
 {
   "m4": {
     "type": "ACTION",
-    "text": "Bitte vereinbaren Sie einen Termin beim Facharzt und bringen Sie den Befund zum nächsten Termin mit."
+    "text": "Bitte informieren Sie uns über Ihre aktuellen Fachärzte und halten Sie diese Angaben aktuell."
   }
 }
 ```

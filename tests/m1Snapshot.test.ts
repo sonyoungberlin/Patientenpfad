@@ -79,25 +79,25 @@ describe("CHECKPOINT_CATALOGUE", () => {
 });
 
 describe("hydrateActiveCheckpointsFromSnapshot", () => {
-  it("gibt bei leerem Snapshot nur always-present Checkpoints zurück (K10)", () => {
+  it("gibt bei leerem Snapshot nur always-present Checkpoints zurück (K10, K11)", () => {
     const snapshot: M1SnapshotInitial = {
       blocks: ALL_KLAR,
       activated_checkpoint_ids: [],
     };
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(1);
-    expect(checkpoints[0].id).toBe("K10");
+    expect(checkpoints).toHaveLength(2);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K10", "K11"]);
   });
 
-  it("gibt vollständige ActiveCheckpoint-Objekte zurück (inkl. always-present K10)", () => {
+  it("gibt vollständige ActiveCheckpoint-Objekte zurück (inkl. always-present K10, K11)", () => {
     const snapshot = buildM1SnapshotInitial({
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(4);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K09", "K10"]);
+    expect(checkpoints).toHaveLength(5);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K09", "K10", "K11"]);
   });
 
   it("setzt initial status TO_DO für alle Checkpoints", () => {
@@ -110,21 +110,22 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
     }
   });
 
-  it("hydratisiert alle 10 Checkpoints wenn alle Blöcke unklar", () => {
+  it("hydratisiert alle 11 Checkpoints wenn alle Blöcke unklar", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(10);
+    expect(checkpoints).toHaveLength(11);
   });
 
-  it("überspringt unbekannte IDs defensiv (K10 still always-present)", () => {
+  it("überspringt unbekannte IDs defensiv (K10, K11 still always-present)", () => {
     const snapshot: M1SnapshotInitial = {
       blocks: ALL_KLAR,
       activated_checkpoint_ids: ["K01", "UNKNOWN_99"],
     };
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(2);
+    expect(checkpoints).toHaveLength(3);
     expect(checkpoints[0].id).toBe("K01");
     expect(checkpoints[1].id).toBe("K10");
+    expect(checkpoints[2].id).toBe("K11");
   });
 
   it("Hydration aus Snapshot ist deterministisch – unabhängig vom aktuellen Mapping", () => {
@@ -139,6 +140,6 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
       activated_checkpoint_ids: ["K01", "K08"], // eingefrorene IDs
     };
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(frozenSnapshot);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K10"]);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K10", "K11"]);
   });
 });

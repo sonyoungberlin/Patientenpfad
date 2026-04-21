@@ -67,18 +67,38 @@ describe("PATCH /api/cases/[id]/close", () => {
     expect(res.status).toBe(404);
   });
 
-  it("200 und setzt stage_status auf CLOSED", async () => {
+  it("200 setzt stage_status=CLOSED + doctor_confirmed + doctor_confirmed_at", async () => {
     mockSession(true);
-    pm.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-owner" });
+    pm.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      doctor_confirmed: false,
+    });
     pm.caseSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/cases/case-1/close");
     const res = await closeHandler(req, { params: Promise.resolve({ id: "case-1" }) });
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(pm.caseSession.update).toHaveBeenCalledWith({
-      where: { id: "case-1" },
-      data: { stage_status: "CLOSED" },
+    expect(pm.caseSession.update).toHaveBeenCalledTimes(1);
+    const updateCall = pm.caseSession.update.mock.calls[0][0];
+    expect(updateCall.where).toEqual({ id: "case-1" });
+    expect(updateCall.data.stage_status).toBe("CLOSED");
+    expect(updateCall.data.doctor_confirmed).toBe(true);
+    expect(updateCall.data.doctor_confirmed_at).toBeInstanceOf(Date);
+  });
+
+  it("200 idempotent wenn bereits ärztlich bestätigt – kein DB-Update", async () => {
+    mockSession(true);
+    pm.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      doctor_confirmed: true,
     });
+    const req = requestWithCookie("http://localhost/api/cases/case-1/close");
+    const res = await closeHandler(req, { params: Promise.resolve({ id: "case-1" }) });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(json.already_confirmed).toBe(true);
+    expect(pm.caseSession.update).not.toHaveBeenCalled();
   });
 });
