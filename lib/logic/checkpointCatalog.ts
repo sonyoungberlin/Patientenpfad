@@ -168,6 +168,25 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
       "psychischer oder psychosozialer Betreuungsbedarf",
     ],
   },
+  K11: {
+    id: "K11",
+    block_id: "medizinische_lage",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.A,
+    mode: CheckpointMode.MULTI_SELECT,
+    title: "Formularanliegen",
+    description:
+      "Aus welchem administrativen Anlass erfolgt die strukturierte Prüfung? (nur ärztliche Dokumentation, keine Patientenfragen)",
+    options: [
+      "Pflegegrad / Höherstufung",
+      "Reha-Antrag",
+      "Jobcenter / Sozialleistungen",
+      "Attest / Bescheinigung",
+      "Versicherung / Gutachten",
+      "Sonstiger Antrag / Formular",
+    ],
+  },
 };
 
 /**
@@ -175,7 +194,7 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
  * regardless of M1 block activation. These represent documentation
  * checkpoints rather than gap-closing checkpoints.
  */
-const ALWAYS_PRESENT_MULTI_SELECT_IDS: readonly string[] = ["K10"];
+const ALWAYS_PRESENT_MULTI_SELECT_IDS: readonly string[] = ["K10", "K11"];
 
 /**
  * Ensures always-present MULTI_SELECT checkpoints are in the list.
