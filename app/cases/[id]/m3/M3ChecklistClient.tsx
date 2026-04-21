@@ -435,9 +435,10 @@ export function M3ChecklistClient({
           const hasAnswers =
             cpAnswers !== undefined && Object.keys(cpAnswers).length > 0;
           // Fragenquelle abhängig vom Vorbereitungsweg:
-          // - "mfa"   → MFA-Katalog (M2_QUESTIONS_MFA)
-          // - sonst   → bestehender Patientenkatalog (M2_QUESTIONS), inkl.
-          //   "patient", "skipped" und rückwärtskompatibel "none".
+          // - "mfa"          → MFA-Katalog (M2_QUESTIONS_MFA)
+          // - "patient"      → Patientenkatalog (externer Linkweg)
+          // - "conversation" → Patientenkatalog (Patientengespräch in der Praxis)
+          // - "skipped"/"none" → rückwärtskompatibel Patientenkatalog
           const questionCatalog =
             preparationMode === "mfa" ? M2_QUESTIONS_MFA : M2_QUESTIONS;
           const usePatientCatalog = preparationMode !== "mfa";

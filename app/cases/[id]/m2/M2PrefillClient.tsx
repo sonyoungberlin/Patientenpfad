@@ -112,7 +112,13 @@ export function M2PrefillClient({
       const response = await fetch(`/api/cases/${caseId}/m2/prefill`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prefill: values }),
+        body: JSON.stringify({
+          prefill: values,
+          // Lokaler Modus → persistierter preparation_mode:
+          // - "mfa"     → "mfa"
+          // - "patient" (Patientengespräch in der Praxis) → "conversation"
+          mode: mode === "patient" ? "conversation" : "mfa",
+        }),
       });
 
       if (!response.ok) {

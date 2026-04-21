@@ -36,7 +36,7 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
   });
 
   it("speichert strukturierte Prefill-Daten in ctx_prefill", async () => {
-    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test" });
+    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", m2_status: "none" });
     prismaMock.caseSession.update.mockResolvedValue({});
 
     const structuredPrefill = {
@@ -59,6 +59,82 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
       data: { ctx_prefill: structuredPrefill, preparation_mode: "mfa" },
+    });
+  });
+
+  it("setzt preparation_mode='conversation' wenn mode='conversation' übermittelt wird", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", m2_status: "none" });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    const structuredPrefill = { K01: { "M2-01": "ja" } };
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({ prefill: structuredPrefill, mode: "conversation" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
+      where: { id: "case-1" },
+      data: { ctx_prefill: structuredPrefill, preparation_mode: "conversation" },
+    });
+  });
+
+  it("bereinigt m2_status='waiting_for_patient' und invalidiert m2_token beim Speichern", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      m2_status: "waiting_for_patient",
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    const structuredPrefill = { K01: { "M2-01": "ja" } };
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({ prefill: structuredPrefill, mode: "conversation" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
+      where: { id: "case-1" },
+      data: {
+        ctx_prefill: structuredPrefill,
+        preparation_mode: "conversation",
+        m2_status: "none",
+        m2_token: null,
+        m2_token_expires_at: null,
+      },
+    });
+  });
+
+  it("ignoriert ungültige mode-Werte und fällt auf 'mfa' zurück", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", m2_status: "none" });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({ prefill: { K01: {} }, mode: "bogus" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
+      where: { id: "case-1" },
+      data: { ctx_prefill: { K01: {} }, preparation_mode: "mfa" },
     });
   });
 
