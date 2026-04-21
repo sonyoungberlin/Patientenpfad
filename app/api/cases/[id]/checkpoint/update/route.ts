@@ -104,6 +104,13 @@ export async function PATCH(
       );
     }
 
+    if (session.doctor_confirmed) {
+      return NextResponse.json(
+        { ok: false, error: "Fall ist ärztlich bestätigt und eingefroren." },
+        { status: 409 },
+      );
+    }
+
     if (!isActiveCheckpointArray(session.active_checkpoints)) {
       return NextResponse.json(
         { ok: false, error: "Invalid checkpoint state" },

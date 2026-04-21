@@ -58,6 +58,7 @@ export function M3ChecklistClient({
   m2Status = "none",
   preparationMode = "none",
   messageSignature = "",
+  doctorConfirmed = false,
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
@@ -65,14 +66,19 @@ export function M3ChecklistClient({
   m2Status?: string;
   preparationMode?: string;
   messageSignature?: string;
+  doctorConfirmed?: boolean;
 }) {
   const router = useRouter();
   // M3 wird nur gesperrt, wenn der Patientenweg gewählt wurde und der
   // Patientenfragebogen noch aussteht. Für Bestandsfälle ohne gesetzten
   // preparation_mode ("none") bleibt das bisherige Verhalten erhalten.
-  const isLocked =
+  const waitingForPatient =
     (preparationMode === "patient" || preparationMode === "none") &&
     m2Status === "waiting_for_patient";
+  // Nach „Ärztlich bestätigt" wird M3 zusätzlich dauerhaft eingefroren
+  // (read-only). M4/M5 und Copy-Buttons bleiben nutzbar.
+  const [confirmed, setConfirmed] = useState<boolean>(doctorConfirmed);
+  const isLocked = waitingForPatient || confirmed;
   // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
   const multiSelectInitial = initialCheckpoints.filter(isMultiSelectCheckpoint);
@@ -351,6 +357,7 @@ export function M3ChecklistClient({
   }
 
   async function closeCase() {
+    if (confirmed) return;
     setClosing(true);
     setError(null);
     try {
@@ -358,12 +365,14 @@ export function M3ChecklistClient({
         method: "PATCH",
       });
       if (!response.ok) {
-        setError("Fall konnte nicht abgeschlossen werden.");
+        setError("Fall konnte nicht ärztlich bestätigt werden.");
         return;
       }
-      router.push("/cases");
+      // Fall bleibt geöffnet: M3 wird eingefroren, M4/M5 bleiben nutzbar.
+      setConfirmed(true);
+      router.refresh();
     } catch {
-      setError("Fall konnte nicht abgeschlossen werden.");
+      setError("Fall konnte nicht ärztlich bestätigt werden.");
     } finally {
       setClosing(false);
     }
@@ -571,14 +580,30 @@ export function M3ChecklistClient({
         </button>
       </section>
       <section className="section-divider">
+        {confirmed ? (
+          <p
+            data-doctor-confirmed-notice
+            role="status"
+            className="banner-success"
+            style={{ margin: 0 }}
+          >
+            <strong>Ärztlich bestätigt.</strong> M3 ist eingefroren. Patientenhinweise
+            und Krankenblatt-Dokumentation bleiben lesbar und kopierbar.
+          </p>
+        ) : null}
         <button
           type="button"
           className="btn-primary"
           data-close-case
+          data-doctor-confirm
           onClick={closeCase}
-          disabled={closing || savingCheckpointId !== null}
+          disabled={closing || savingCheckpointId !== null || confirmed}
         >
-          {closing ? "Wird abgeschlossen…" : "Fall abschließen"}
+          {confirmed
+            ? "Ärztlich bestätigt ✓"
+            : closing
+              ? "Wird bestätigt…"
+              : "Ärztlich bestätigt"}
         </button>
       </section>
     </section>

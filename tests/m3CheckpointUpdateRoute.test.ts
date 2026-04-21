@@ -83,4 +83,26 @@ describe("PATCH /api/cases/[id]/checkpoint/update", () => {
       },
     });
   });
+
+  it("409 wenn der Fall ärztlich bestätigt ist (M3 eingefroren)", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      id: "case-123",
+      owner_account_id: "acc-test",
+      active_checkpoints: [mCheckpoint],
+      doctor_confirmed: true,
+    });
+
+    const req = new NextRequest("http://localhost/api/cases/case-123/checkpoint/update", {
+      method: "PATCH",
+      body: JSON.stringify({ checkpoint_id: "K-M", status: "OK" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-123" }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(prismaMock.caseSession.update).not.toHaveBeenCalled();
+  });
 });

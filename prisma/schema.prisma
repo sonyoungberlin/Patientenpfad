@@ -90,4 +90,10 @@ model CaseSession {
 
   /// Vorbereitungsweg: none | mfa | patient | skipped
   preparation_mode     String    @default("none")
+
+  /// Ärztliche Bestätigung: nach Klick auf „Ärztlich bestätigt" wird M3 eingefroren.
+  doctor_confirmed     Boolean   @default(false)
+
+  /// Zeitpunkt der ärztlichen Bestätigung (gesetzt zusammen mit doctor_confirmed=true).
+  doctor_confirmed_at  DateTime?
 }
