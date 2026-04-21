@@ -15,9 +15,20 @@ Ist die Mitwirkung des Patienten ausreichend gegeben?
 
 ---
 
-## M2-Fragen
+## M2-Fragen (Patientenfragebogen)
 
-Keine. Dieser Checkpoint ist ausschließlich auf M3-Ebene relevant.
+**Patientenfragebogen ist hier bewusst leer.**
+
+K09 ist ein reiner Beobachtungs-Checkpoint und wird ausschließlich durch MFA/Praxis bewertet. K09 bleibt technisch im bestehenden Flow (kein Architekturwechsel) – der Checkpoint wird auf M2-Ebene auf Patientenseite nicht abgefragt.
+
+---
+
+## MFA-Fragen
+
+| ID            | Frage                                                                                                       |
+|---------------|-------------------------------------------------------------------------------------------------------------|
+| MFA-K09-01    | Hält der Patient Termine und Absprachen zuverlässig ein?                                                    |
+| MFA-K09-02    | Hält sich der Patient an Praxisabläufe (z. B. Terminvereinbarung statt spontanes Erscheinen)?               |
 
 ---
 

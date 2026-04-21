@@ -58,8 +58,8 @@ export const M5_TEXTS: Record<
     ZURÜCKSTELLEN: "Vorübergehender Unterstützungsbedarf ist unklar.",
   },
   K08: {
-    OK: "Digitale Kommunikation ist ausreichend möglich.",
-    TO_DO: "Digitale Kommunikation ist nicht ausreichend möglich.",
+    OK: "Nutzung digitaler Praxisleistungen ist ausreichend gegeben.",
+    TO_DO: "Nutzung digitaler Praxisleistungen ist nicht ausreichend gegeben.",
   },
   K09: {
     OK: "Mitwirkung ist ausreichend gegeben.",

@@ -38,7 +38,7 @@ type PrismaMock = {
 
 const prismaMock = prisma as unknown as PrismaMock;
 
-/** K01 – Kommunikation (O, 2 MFA-Fragen) */
+/** K01 – Kommunikation (O, 3 MFA-Fragen) */
 const k01Checkpoint: ActiveCheckpoint = {
   id: "K01",
   block_id: "kommunikation",
@@ -83,7 +83,7 @@ describe("M2 Seite", () => {
 
     // K01: erste MFA-Frage
     expect(markup).toContain(
-      "Ist der Patient für uns zuverlässig erreichbar?",
+      "Ist der Patient für uns grundsätzlich erreichbar?",
     );
     // K04: erste MFA-Frage
     expect(markup).toContain(
@@ -102,10 +102,10 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
-    // K01 hat 2 MFA-Fragen (MFA-K01-01–MFA-K01-02), jede mit 3 Buttons → 6 Buttons
+    // K01 hat 3 MFA-Fragen (MFA-K01-01–MFA-K01-03), jede mit 3 Buttons → 9 Buttons
     expect(
-      (markup.match(/data-m2-answer="K01:MFA-K01-0[1-2]:(ja|nein|unklar)"/g) ?? []).length,
-    ).toBe(6);
+      (markup.match(/data-m2-answer="K01:MFA-K01-0[1-3]:(ja|nein|unklar)"/g) ?? []).length,
+    ).toBe(9);
   });
 
   it("zeigt Hinweis wenn keine Checkpoints aktiv sind", async () => {

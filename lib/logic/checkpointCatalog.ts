@@ -82,7 +82,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     description: "Relevante externe Fachärzte sind bekannt und einbezogen.",
     m4: {
       type: "NOTICE",
-      text: "Bitte geben Sie relevante Befunde in der Praxis ab (Kopie) oder reichen Sie die Dokumente digital ein.",
+      text: "Bitte informieren Sie uns über Ihre aktuellen Fachärzte und halten Sie diese Angaben aktuell.",
     },
   },
   K06: {
@@ -117,11 +117,12 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.O,
     relevance: CheckpointRelevance.P,
-    title: "Digitale Kommunikation",
-    description: "Der bevorzugte Kommunikationsweg des Patienten ist bekannt.",
+    title: "Nutzung digitaler Praxisleistungen",
+    description:
+      "Der Patient nutzt digitale Praxisangebote aktiv (z. B. Videosprechstunde, digitale Anfragen, digitaler Dokumentenversand).",
     m4: {
       type: "ACTION",
-      text: "Bitte beachten Sie, dass einige Leistungen nur über digitale Kommunikationswege angeboten werden können.",
+      text: "Bitte beachten Sie, dass einige Leistungen nur über digitale Praxisangebote bereitgestellt werden können.",
     },
   },
   K09: {

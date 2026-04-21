@@ -182,11 +182,15 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K01: [
     {
       id: "MFA-K01-01",
-      text: "Ist der Patient für uns zuverlässig erreichbar?",
+      text: "Ist der Patient für uns grundsätzlich erreichbar?",
     },
     {
       id: "MFA-K01-02",
-      text: "Funktioniert die Kommunikation mit dem Patienten in beide Richtungen?",
+      text: "Sind die hinterlegten Kontaktdaten aktuell?",
+    },
+    {
+      id: "MFA-K01-03",
+      text: "Ist bei Bedarf eine Kontaktperson/Vertrauensperson erreichbar?",
     },
   ],
   K02: [
@@ -198,11 +202,11 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K03: [
     {
       id: "MFA-K03-01",
-      text: "Liegen aktuelle medizinische Unterlagen (Befunde, Arztbriefe) vor?",
+      text: "Liegen aktuelle Befunde/Unterlagen vor?",
     },
     {
       id: "MFA-K03-02",
-      text: "Ist die medizinische Situation im Krankenblatt nachvollziehbar dokumentiert?",
+      text: "Sind die Diagnosen im Krankenblatt nachvollziehbar dokumentiert?",
     },
   ],
   K04: [
@@ -214,7 +218,11 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K05: [
     {
       id: "MFA-K05-01",
-      text: "Ist die fachärztliche Mitbehandlung aktuell bekannt?",
+      text: "Ist bekannt, bei welchen Fachärzten der Patient aktuell in Behandlung ist?",
+    },
+    {
+      id: "MFA-K05-02",
+      text: "Ist die fachärztliche Mitbehandlung strukturiert und nachvollziehbar?",
     },
   ],
   K06: [
@@ -252,13 +260,17 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K08: [
     {
       id: "MFA-K08-01",
-      text: "Ist eine mitarbeiterunabhängige Verständigung mit dem Patienten möglich?",
+      text: "Nutzt der Patient digitale Praxisangebote aktiv?",
     },
   ],
   K09: [
     {
       id: "MFA-K09-01",
-      text: "Ist ein reibungsloser Ablauf im Kontakt mit dem Patienten möglich?",
+      text: "Hält der Patient Termine und Absprachen zuverlässig ein?",
+    },
+    {
+      id: "MFA-K09-02",
+      text: "Hält sich der Patient an Praxisabläufe (z. B. Terminvereinbarung statt spontanes Erscheinen)?",
     },
   ],
 };

@@ -26,6 +26,15 @@ Reicht die vorhandene oder zugängliche Informationsbasis aus, um die weitere Be
 
 ---
 
+## MFA-Fragen
+
+| ID            | Frage                                                                       |
+|---------------|-----------------------------------------------------------------------------|
+| MFA-K03-01    | Liegen aktuelle Befunde/Unterlagen vor?                                     |
+| MFA-K03-02    | Sind die Diagnosen im Krankenblatt nachvollziehbar dokumentiert?            |
+
+---
+
 ## Aggregationslogik
 
 | Ergebnis                           | Bedingung                                                                                                          |
