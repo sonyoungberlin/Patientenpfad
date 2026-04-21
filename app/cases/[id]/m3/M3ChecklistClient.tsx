@@ -587,8 +587,8 @@ export function M3ChecklistClient({
             className="banner-success"
             style={{ margin: 0 }}
           >
-            <strong>Ärztlich bestätigt.</strong> M3 ist eingefroren. Patientenhinweise
-            und Krankenblatt-Dokumentation bleiben lesbar und kopierbar.
+            <strong>Ärztlich bestätigt.</strong> Die Entscheidungen bleiben unverändert.
+            Patientenhinweise und Krankenblatt-Dokumentation bleiben lesbar und kopierbar.
           </p>
         ) : null}
         <button
