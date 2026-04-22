@@ -165,6 +165,40 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     });
   });
 
+  it("ergänzt fehlende Fragen aktiver Checkpoints defensiv mit 'offen'", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      m2_status: "none",
+      // K01 hat im MFA-Katalog drei Fragen (MFA-K01-01..03).
+      active_checkpoints: [{ id: "K01" }],
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    // Client schickt nur eine Antwort.
+    const partialPrefill = { K01: { "MFA-K01-01": "ja" } };
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({ prefill: partialPrefill }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
+    // Alle drei Fragen sind im Prefill, fehlende auf "offen".
+    expect(updateData.ctx_prefill).toEqual({
+      K01: {
+        "MFA-K01-01": "ja",
+        "MFA-K01-02": "offen",
+        "MFA-K01-03": "offen",
+      },
+    });
+  });
+
   it("gibt 404 zurück wenn Session nicht gefunden", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue(null);
 

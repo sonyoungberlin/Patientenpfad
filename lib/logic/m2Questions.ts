@@ -1,4 +1,4 @@
-export type M2Answer = "ja" | "nein" | "unklar";
+export type M2Answer = "ja" | "nein" | "unklar" | "offen";
 
 export type M2Question = {
   id: string;
@@ -215,6 +215,7 @@ const ALLOWED_ANSWERS: ReadonlySet<string> = new Set([
   "ja",
   "nein",
   "unklar",
+  "offen",
 ]);
 
 /**
@@ -271,6 +272,43 @@ export function sanitizePrefillForMode(
       result[checkpointId] = cleanedAnswers;
     }
   }
+  return result;
+}
+
+/**
+ * Ergänzt für die übergebenen aktiven Checkpoint-IDs alle laut Katalog
+ * vorhandenen Fragen, die in `prefill` noch keinen Wert haben, mit `"offen"`.
+ *
+ * Damit ist die verbindliche Regel umgesetzt: Beim Speichern müssen alle
+ * Fragen aller aktiven Checkpoints im Prefill enthalten sein. Bestehende
+ * Antworten werden nicht überschrieben; Checkpoints, die nicht zum aktiven
+ * Modus-Katalog gehören, werden ignoriert.
+ */
+export function withDefaultOffenForCheckpoints(
+  prefill: M2PrefillData,
+  checkpointIds: readonly string[],
+  mode: PreparationMode | string | null | undefined,
+): M2PrefillData {
+  const catalog = getCatalogForMode(mode);
+  if (!catalog) return prefill;
+
+  const result: M2PrefillData = {};
+  for (const [cpId, answers] of Object.entries(prefill)) {
+    result[cpId] = { ...answers };
+  }
+
+  for (const cpId of checkpointIds) {
+    const questions = catalog[cpId];
+    if (!questions || questions.length === 0) continue;
+    const merged: M2CheckpointAnswers = { ...(result[cpId] ?? {}) };
+    for (const q of questions) {
+      if (merged[q.id] === undefined) {
+        merged[q.id] = "offen";
+      }
+    }
+    result[cpId] = merged;
+  }
+
   return result;
 }
 

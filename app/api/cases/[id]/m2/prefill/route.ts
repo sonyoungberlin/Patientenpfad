@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
-import { sanitizePrefillForMode } from "@/lib/logic/m2Questions";
+import {
+  sanitizePrefillForMode,
+  withDefaultOffenForCheckpoints,
+} from "@/lib/logic/m2Questions";
 
 export async function PATCH(
   req: NextRequest,
@@ -57,7 +60,11 @@ export async function PATCH(
 
     const session = await prisma.caseSession.findUnique({
       where: { id },
-      select: { owner_account_id: true, m2_status: true },
+      select: {
+        owner_account_id: true,
+        m2_status: true,
+        active_checkpoints: true,
+      },
     });
 
     if (!session || session.owner_account_id !== account.id) {
@@ -67,11 +74,25 @@ export async function PATCH(
       );
     }
 
+    // Defensive Server-Absicherung: Auch wenn der Client weniger schickt,
+    // werden alle Fragen aller aktiven Checkpoints gemäß Katalog ergänzt –
+    // fehlende Antworten landen als "offen" im Prefill.
+    const activeCheckpointIds: string[] = Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as Array<{ id?: unknown }>)
+          .map((cp) => (typeof cp?.id === "string" ? cp.id : null))
+          .filter((id): id is string => id !== null)
+      : [];
+    const filledPrefill = withDefaultOffenForCheckpoints(
+      sanitizedPrefill,
+      activeCheckpointIds,
+      preparationMode,
+    );
+
     // Konsistenz: Wird über einen nicht-asynchronen Weg (MFA / Gespräch)
     // gespeichert, darf der Fall nicht weiter auf einen Patientenrücklauf
     // warten. Ein eventuell ausstehender Token wird invalidiert.
     const data: Prisma.CaseSessionUpdateInput = {
-      ctx_prefill: sanitizedPrefill as unknown as Prisma.InputJsonValue,
+      ctx_prefill: filledPrefill as unknown as Prisma.InputJsonValue,
       preparation_mode: preparationMode,
     };
 

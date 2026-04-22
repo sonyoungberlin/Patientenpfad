@@ -11,6 +11,7 @@ import {
   M2_QUESTIONS,
   M2_QUESTIONS_MFA,
   sanitizePrefillForMode,
+  withDefaultOffenForCheckpoints,
   type M2Answer,
   type M2PrefillData,
 } from "@/lib/logic/m2Questions";
@@ -124,12 +125,21 @@ export function M2PrefillClient({
       // werden. Die Server-Route sanitisiert zusätzlich erneut.
       const persistedMode = mode === "patient" ? "conversation" : "mfa";
       const cleanValues = sanitizePrefillForMode(values, persistedMode);
+      // Verbindliche Regel: Nach dem Speichern müssen alle Fragen aller
+      // aktiven Checkpoints im Prefill enthalten sein. Fehlende Antworten
+      // werden hier explizit auf "offen" gesetzt, bevor der Request raus geht.
+      const checkpointIds = checkpoints.map((cp) => cp.id);
+      const filledValues = withDefaultOffenForCheckpoints(
+        cleanValues,
+        checkpointIds,
+        persistedMode,
+      );
 
       const response = await fetch(`/api/cases/${caseId}/m2/prefill`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prefill: cleanValues,
+          prefill: filledValues,
           // Lokaler Modus → persistierter preparation_mode:
           // - "mfa"     → "mfa"
           // - "patient" (Patientengespräch in der Praxis) → "conversation"
