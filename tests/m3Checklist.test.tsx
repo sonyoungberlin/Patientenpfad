@@ -309,6 +309,46 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("ja");
   });
 
+  it("blendet Cross-Mode-IDs aus, statt sie roh anzuzeigen (preparation_mode=patient + MFA-IDs)", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K01", title: "Kommunikation" },
+      ],
+      // Mischdaten aus Altzeit: gültige Patienten-Antwort + ungültige MFA-ID.
+      ctx_prefill: {
+        K01: { "M2-01": "ja", "MFA-K01-01": "nein" },
+      },
+      preparation_mode: "patient",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    // Patientenfrage wird mit Klartext gerendert.
+    expect(markup).toContain("Sind Sie telefonisch und per SMS erreichbar?");
+    // MFA-Roh-ID wird NIE im Markup auftauchen.
+    expect(markup).not.toContain("MFA-K01-01");
+  });
+
+  it("blendet alle Antworten aus, wenn keine ID zum aktiven Modus passt (kein Aus-M2-Block)", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K01", title: "Kommunikation" },
+      ],
+      // preparation_mode=mfa, aber nur Patienten-IDs vorhanden → komplett ausblenden.
+      ctx_prefill: { K01: { "M2-01": "ja" } },
+      preparation_mode: "mfa",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("Aus M2:");
+    expect(markup).not.toContain("M2-01");
+  });
+
   it("M3 zeigt keinen Prefill-Bereich wenn kein Prefill gespeichert", async () => {
     setupCase({
       active_checkpoints: [

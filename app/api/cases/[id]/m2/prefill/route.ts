@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { sanitizePrefillForMode } from "@/lib/logic/m2Questions";
 
 export async function PATCH(
   req: NextRequest,
@@ -45,6 +46,15 @@ export async function PATCH(
     const preparationMode: "mfa" | "conversation" =
       body?.mode === "conversation" ? "conversation" : "mfa";
 
+    // Strikte Mode-Sanitisierung: Es werden ausschließlich Antworten
+    // akzeptiert, deren IDs zum Katalog des aktiven Vorbereitungswegs gehören.
+    // Damit kann `ctx_prefill` strukturell nie mehr eine Mischung aus
+    // MFA- und Patientenantworten enthalten.
+    const sanitizedPrefill = sanitizePrefillForMode(
+      body.prefill,
+      preparationMode,
+    );
+
     const session = await prisma.caseSession.findUnique({
       where: { id },
       select: { owner_account_id: true, m2_status: true },
@@ -61,7 +71,7 @@ export async function PATCH(
     // gespeichert, darf der Fall nicht weiter auf einen Patientenrücklauf
     // warten. Ein eventuell ausstehender Token wird invalidiert.
     const data: Prisma.CaseSessionUpdateInput = {
-      ctx_prefill: body.prefill as Prisma.InputJsonValue,
+      ctx_prefill: sanitizedPrefill as unknown as Prisma.InputJsonValue,
       preparation_mode: preparationMode,
     };
 

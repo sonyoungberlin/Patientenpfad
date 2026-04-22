@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
-import { M2_QUESTIONS, M2_QUESTIONS_MFA, type M2PrefillData, type M2Question } from "@/lib/logic/m2Questions";
+import { resolveQuestionTextForMode, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
 
 const UNSAVED_WARNING =
@@ -51,25 +51,34 @@ function getAnswerSymbol(answer: string): string {
   return "";
 }
 
-function resolveQuestionText(
-  questions: M2Question[],
+/**
+ * Versucht den Fragetext einer gespeicherten `questionId` aufzulösen.
+ *
+ * Hauptweg ist der per `preparationMode` ausgewählte Katalog (genau eine
+ * Quelle pro Eintrag, keine Mischanzeige). Für Altdaten ohne expliziten
+ * Modus ("none" / "skipped") wird defensiv erst der Patientenkatalog und
+ * dann der MFA-Katalog versucht. Bleibt alles erfolglos, wird `null`
+ * zurückgegeben – der Aufrufer blendet den Eintrag dann aus, statt eine
+ * Roh-ID anzuzeigen.
+ */
+function resolveQuestionTextForDisplay(
+  preparationMode: string,
   checkpointId: string,
   questionId: string,
-  usePatientCatalog: boolean,
-): string {
-  const exactMatch = questions.find((q) => q.id === questionId);
-  if (exactMatch) return exactMatch.text;
-
-  if (usePatientCatalog) {
-    const prefixedPatientIdMatch = questionId.match(/^(K\d{2})-(\d{2})$/);
-    if (prefixedPatientIdMatch && prefixedPatientIdMatch[1] === checkpointId) {
-      const normalizedId = `M2-${prefixedPatientIdMatch[2]}`;
-      const normalizedMatch = questions.find((q) => q.id === normalizedId);
-      if (normalizedMatch) return normalizedMatch.text;
-    }
+): string | null {
+  if (
+    preparationMode === "mfa" ||
+    preparationMode === "conversation" ||
+    preparationMode === "patient"
+  ) {
+    return resolveQuestionTextForMode(preparationMode, checkpointId, questionId);
   }
-
-  return questionId;
+  // Legacy/unbekannt: Patientenkatalog hat in der bisherigen Implementierung
+  // priorität, danach MFA als zweiter Versuch.
+  return (
+    resolveQuestionTextForMode("conversation", checkpointId, questionId) ??
+    resolveQuestionTextForMode("mfa", checkpointId, questionId)
+  );
 }
 
 export function M3ChecklistClient({
@@ -474,17 +483,24 @@ export function M3ChecklistClient({
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {checkpoints.map((checkpoint) => {
           const cpAnswers = prefill[checkpoint.id];
-          const hasAnswers =
-            cpAnswers !== undefined && Object.keys(cpAnswers).length > 0;
-          // Fragenquelle abhängig vom Vorbereitungsweg:
-          // - "mfa"          → MFA-Katalog (M2_QUESTIONS_MFA)
-          // - "patient"      → Patientenkatalog (externer Linkweg)
-          // - "conversation" → Patientenkatalog (Patientengespräch in der Praxis)
-          // - "skipped"/"none" → rückwärtskompatibel Patientenkatalog
-          const questionCatalog =
-            preparationMode === "mfa" ? M2_QUESTIONS_MFA : M2_QUESTIONS;
-          const usePatientCatalog = preparationMode !== "mfa";
-          const questions = questionCatalog[checkpoint.id] ?? [];
+          // Pro Antwort wird der Fragetext anhand des persistierten
+          // Vorbereitungswegs aufgelöst. Einträge ohne auflösbaren Text
+          // (z. B. Reste eines anderen Wegs aus Alt-Daten) werden komplett
+          // ausgeblendet – nie wird eine Roh-ID dargestellt.
+          const resolvedAnswers: { qId: string; text: string; answer: string }[] =
+            cpAnswers
+              ? Object.entries(cpAnswers).flatMap(([qId, answer]) => {
+                  const text = resolveQuestionTextForDisplay(
+                    preparationMode,
+                    checkpoint.id,
+                    qId,
+                  );
+                  return text === null
+                    ? []
+                    : [{ qId, text, answer: answer as string }];
+                })
+              : [];
+          const hasAnswers = resolvedAnswers.length > 0;
           return (
             <li
               key={checkpoint.id}
@@ -503,17 +519,11 @@ export function M3ChecklistClient({
                 >
                   <summary>Aus M2:</summary>
                     <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
-                      {Object.entries(cpAnswers).map(([qId, answer]) => {
-                        const questionText = resolveQuestionText(
-                          questions,
-                          checkpoint.id,
-                          qId,
-                          usePatientCatalog,
-                        );
+                      {resolvedAnswers.map(({ qId, text, answer }) => {
                         const symbol = getAnswerSymbol(answer);
                         return (
                           <li key={qId} style={{ marginBottom: "0.25rem" }}>
-                            <span>{questionText}</span>
+                            <span>{text}</span>
                             {" — "}
                             <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
                           </li>

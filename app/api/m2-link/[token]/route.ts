@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { sanitizePrefillForMode } from "@/lib/logic/m2Questions";
 
 export async function POST(
   req: NextRequest,
@@ -48,10 +50,17 @@ export async function POST(
       );
     }
 
+    // Patientenlink-Rücklauf gehört eindeutig zum Patienten-Weg.
+    // - `preparation_mode` wird hier explizit auf "patient" gesetzt
+    //   (vorher unverändert gelassen → konnte zu Mischzuständen führen).
+    // - Antworten werden strikt gegen den Patientenkatalog sanitisiert.
+    const sanitizedPrefill = sanitizePrefillForMode(body.prefill, "patient");
+
     await prisma.caseSession.update({
       where: { id: session.id },
       data: {
-        ctx_prefill: body.prefill as Record<string, Record<string, string>>,
+        ctx_prefill: sanitizedPrefill as unknown as Prisma.InputJsonValue,
+        preparation_mode: "patient",
         m2_token: null,
         m2_token_expires_at: null,
         m2_status: "completed",

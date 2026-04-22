@@ -178,6 +178,135 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
  *
  * Antwortschema bleibt unverändert (`M2Answer` = "ja" | "nein" | "unklar").
  */
+/**
+ * Persistierter Vorbereitungsweg eines Falls.
+ *
+ * - "mfa"           → Vorbereitung durch MFA mit MFA-Fragenkatalog
+ * - "conversation"  → Vorbereitung im Patientengespräch in der Praxis
+ *                     (nutzt den Patientenfragen-Katalog, gespeichert vom Arzt-Account)
+ * - "patient"       → Patient hat den Fragebogen über den externen Link beantwortet
+ * - "skipped"       → Vorbereitung wurde bewusst übersprungen
+ * - "none"          → noch keine Vorbereitung
+ *
+ * Nur "mfa" / "conversation" / "patient" haben gespeicherte Antworten in `ctx_prefill`.
+ * "skipped" / "none" implizieren `ctx_prefill` ohne gespeicherte Antworten.
+ */
+export type PreparationMode =
+  | "mfa"
+  | "conversation"
+  | "patient"
+  | "skipped"
+  | "none";
+
+/**
+ * Gibt den passenden Fragenkatalog für einen Vorbereitungsweg zurück.
+ * Für Wege ohne Antworten ("skipped" / "none") wird `null` zurückgegeben –
+ * Aufrufer dürfen dann nichts rendern und nichts speichern.
+ */
+export function getCatalogForMode(
+  mode: PreparationMode | string | null | undefined,
+): Record<string, M2Question[]> | null {
+  if (mode === "mfa") return M2_QUESTIONS_MFA;
+  if (mode === "conversation" || mode === "patient") return M2_QUESTIONS;
+  return null;
+}
+
+const ALLOWED_ANSWERS: ReadonlySet<string> = new Set([
+  "ja",
+  "nein",
+  "unklar",
+]);
+
+/**
+ * Filtert ein Prefill-Objekt strikt auf die IDs des für `mode` zuständigen
+ * Katalogs. Antworten mit unbekannten oder fremdmodischen IDs werden verworfen,
+ * Checkpoints ohne verbleibende Antworten werden entfernt. Ungültige Antwort-
+ * werte werden ebenfalls verworfen.
+ *
+ * Damit ist garantiert, dass `ctx_prefill` nie eine Mischung aus MFA- und
+ * Patienten-IDs enthält und dass M3 für jede gespeicherte ID einen passenden
+ * Fragetext im aktiven Katalog findet.
+ */
+export function sanitizePrefillForMode(
+  prefill: unknown,
+  mode: PreparationMode | string | null | undefined,
+): M2PrefillData {
+  const catalog = getCatalogForMode(mode);
+  if (
+    !catalog ||
+    !prefill ||
+    typeof prefill !== "object" ||
+    Array.isArray(prefill)
+  ) {
+    return {};
+  }
+
+  const result: M2PrefillData = {};
+  for (const [checkpointId, rawAnswers] of Object.entries(
+    prefill as Record<string, unknown>,
+  )) {
+    const allowedQuestions = catalog[checkpointId];
+    if (
+      !allowedQuestions ||
+      !rawAnswers ||
+      typeof rawAnswers !== "object" ||
+      Array.isArray(rawAnswers)
+    ) {
+      continue;
+    }
+    const allowedIds = new Set(allowedQuestions.map((q) => q.id));
+    const cleanedAnswers: M2CheckpointAnswers = {};
+    for (const [qId, answer] of Object.entries(
+      rawAnswers as Record<string, unknown>,
+    )) {
+      if (
+        allowedIds.has(qId) &&
+        typeof answer === "string" &&
+        ALLOWED_ANSWERS.has(answer)
+      ) {
+        cleanedAnswers[qId] = answer as M2Answer;
+      }
+    }
+    if (Object.keys(cleanedAnswers).length > 0) {
+      result[checkpointId] = cleanedAnswers;
+    }
+  }
+  return result;
+}
+
+/**
+ * Löst den Fragetext einer gespeicherten `questionId` im für `mode` aktiven
+ * Katalog auf. Gibt `null` zurück, wenn keine Auflösung möglich ist – Aufrufer
+ * sollten den Eintrag dann ausblenden, nicht die Roh-ID darstellen.
+ *
+ * Zusätzlich wird der historische Patientengesprächs-Sonderfall berücksichtigt,
+ * bei dem ältere Daten IDs der Form `K\d{2}-\d{2}` enthalten können
+ * (rückwärtskompatibel zur vorigen Implementierung).
+ */
+export function resolveQuestionTextForMode(
+  mode: PreparationMode | string | null | undefined,
+  checkpointId: string,
+  questionId: string,
+): string | null {
+  const catalog = getCatalogForMode(mode);
+  if (!catalog) return null;
+  const questions = catalog[checkpointId] ?? [];
+  const exactMatch = questions.find((q) => q.id === questionId);
+  if (exactMatch) return exactMatch.text;
+
+  // Rückwärtskompatibel: Patientenkatalog akzeptiert Legacy-Format Kxx-yy
+  if (mode === "conversation" || mode === "patient") {
+    const legacyMatch = questionId.match(/^(K\d{2})-(\d{2})$/);
+    if (legacyMatch && legacyMatch[1] === checkpointId) {
+      const normalizedId = `M2-${legacyMatch[2]}`;
+      const normalizedMatch = questions.find((q) => q.id === normalizedId);
+      if (normalizedMatch) return normalizedMatch.text;
+    }
+  }
+
+  return null;
+}
+
 export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
   K01: [
     {

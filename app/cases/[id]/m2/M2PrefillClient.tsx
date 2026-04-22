@@ -10,6 +10,7 @@ import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
   M2_QUESTIONS,
   M2_QUESTIONS_MFA,
+  sanitizePrefillForMode,
   type M2Answer,
   type M2PrefillData,
 } from "@/lib/logic/m2Questions";
@@ -24,10 +25,12 @@ export function M2PrefillClient({
   caseId,
   checkpoints,
   initialPrefill,
+  initialPreparationMode = "none",
 }: {
   caseId: string;
   checkpoints: ActiveCheckpoint[];
   initialPrefill: M2PrefillData;
+  initialPreparationMode?: string;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<M2PrefillData>(() => {
@@ -45,7 +48,14 @@ export function M2PrefillClient({
   // - "mfa"     → MFA-Standardweg (M2_QUESTIONS_MFA)
   // - "patient" → Patientengespräch in der Praxis (M2_QUESTIONS)
   // Persistenz/API/DB bleiben unverändert (immer derselbe Prefill-Endpunkt).
-  const [mode, setMode] = useState<"mfa" | "patient">("mfa");
+  // Initial wird der zuletzt gespeicherte Vorbereitungsweg übernommen,
+  // damit ein bereits abgeschlossener Fall nicht beim erneuten Öffnen
+  // unbemerkt vom MFA-Default überschrieben werden kann.
+  const [mode, setMode] = useState<"mfa" | "patient">(() =>
+    initialPreparationMode === "conversation" || initialPreparationMode === "patient"
+      ? "patient"
+      : "mfa",
+  );
 
   useEffect(() => {
     function handleSetMode(e: Event) {
@@ -109,15 +119,21 @@ export function M2PrefillClient({
     setError(null);
 
     try {
+      // Vor dem Senden lokal nach aktivem Modus filtern, damit nie versehentlich
+      // Antworten des jeweils anderen Wegs (z. B. nach Modus-Toggle) mitgeschickt
+      // werden. Die Server-Route sanitisiert zusätzlich erneut.
+      const persistedMode = mode === "patient" ? "conversation" : "mfa";
+      const cleanValues = sanitizePrefillForMode(values, persistedMode);
+
       const response = await fetch(`/api/cases/${caseId}/m2/prefill`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prefill: values,
+          prefill: cleanValues,
           // Lokaler Modus → persistierter preparation_mode:
           // - "mfa"     → "mfa"
           // - "patient" (Patientengespräch in der Praxis) → "conversation"
-          mode: mode === "patient" ? "conversation" : "mfa",
+          mode: persistedMode,
         }),
       });
 

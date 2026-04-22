@@ -35,12 +35,13 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     prismaMock.caseSession.update.mockReset();
   });
 
-  it("speichert strukturierte Prefill-Daten in ctx_prefill", async () => {
+  it("speichert strukturierte Prefill-Daten in ctx_prefill (mode-konsistente MFA-IDs)", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", m2_status: "none" });
     prismaMock.caseSession.update.mockResolvedValue({});
 
+    // MFA-Default: nur Antworten mit MFA-IDs werden akzeptiert.
     const structuredPrefill = {
-      K04: { "M2-01": "ja", "M2-02": "nein", "M2-03": "unklar" },
+      K04: { "MFA-K04-01": "ja" },
     };
 
     const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
@@ -59,6 +60,32 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
       data: { ctx_prefill: structuredPrefill, preparation_mode: "mfa" },
+    });
+  });
+
+  it("verwirft Cross-Mode-IDs: MFA-Speicherung lässt Patienten-IDs (M2-…) nicht durch", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", m2_status: "none" });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    // Mischdaten: Patienten-IDs werden im MFA-Speicherweg verworfen.
+    const mixedPrefill = {
+      K04: { "M2-01": "ja", "M2-02": "nein", "M2-03": "unklar" },
+    };
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({ prefill: mixedPrefill }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
+      where: { id: "case-1" },
+      data: { ctx_prefill: {}, preparation_mode: "mfa" },
     });
   });
 
@@ -134,7 +161,7 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(response.status).toBe(200);
     expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
-      data: { ctx_prefill: { K01: {} }, preparation_mode: "mfa" },
+      data: { ctx_prefill: {}, preparation_mode: "mfa" },
     });
   });
 

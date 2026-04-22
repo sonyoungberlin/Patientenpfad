@@ -22,7 +22,7 @@ export default async function M2Page({
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
-    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, doctor_confirmed: true },
+    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, doctor_confirmed: true, preparation_mode: true },
   });
 
   if (!session || session.owner_account_id !== account.id) {
@@ -84,6 +84,11 @@ export default async function M2Page({
         caseId={id}
         checkpoints={checkpoints}
         initialPrefill={prefill}
+        initialPreparationMode={
+          typeof session.preparation_mode === "string"
+            ? session.preparation_mode
+            : "none"
+        }
       />
     </main>
   );
