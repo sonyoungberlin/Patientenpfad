@@ -80,6 +80,7 @@ export function M3ChecklistClient({
   preparationMode = "none",
   messageSignature = "",
   doctorConfirmed = false,
+  clinicalStatus = "none",
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
@@ -88,6 +89,7 @@ export function M3ChecklistClient({
   preparationMode?: string;
   messageSignature?: string;
   doctorConfirmed?: boolean;
+  clinicalStatus?: string;
 }) {
   const router = useRouter();
   // M3 wird nur gesperrt, wenn der Patientenweg gewählt wurde und der
@@ -99,6 +101,12 @@ export function M3ChecklistClient({
   // Nach „Ärztlich bestätigt" wird M3 zusätzlich dauerhaft eingefroren
   // (read-only). M4/M5 und Copy-Buttons bleiben nutzbar.
   const [confirmed, setConfirmed] = useState<boolean>(doctorConfirmed);
+  // Zusätzlicher ärztlicher Workflow-Status (additiv, ändert keine bestehende Logik):
+  // - "none"      : kein ärztlicher Zwischenstatus gesetzt
+  // - "prepared"  : Arzt hat in M3 vorbereitet / Lücken markiert (MFA übernimmt weiter)
+  // - "confirmed" : Arzt hat M3 final geprüft (fachlicher Abschluss)
+  const [clinical, setClinical] = useState<string>(clinicalStatus);
+  const [savingClinical, setSavingClinical] = useState<"prepared" | "confirmed" | null>(null);
   const isLocked = waitingForPatient || confirmed;
   // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
@@ -399,6 +407,40 @@ export function M3ChecklistClient({
     }
   }
 
+  async function setClinicalStatus(next: "prepared" | "confirmed") {
+    if (clinical === next) return;
+    setSavingClinical(next);
+    setError(null);
+    const previous = clinical;
+    setClinical(next);
+    try {
+      const response = await fetch(`/api/cases/${caseId}/clinical-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      if (!response.ok) {
+        setClinical(previous);
+        setError(
+          next === "prepared"
+            ? "Status „ärztlich vorbereitet“ konnte nicht gespeichert werden."
+            : "Status „ärztlich bestätigt“ konnte nicht gespeichert werden.",
+        );
+        return;
+      }
+      router.refresh();
+    } catch {
+      setClinical(previous);
+      setError(
+        next === "prepared"
+          ? "Status „ärztlich vorbereitet“ konnte nicht gespeichert werden."
+          : "Status „ärztlich bestätigt“ konnte nicht gespeichert werden.",
+      );
+    } finally {
+      setSavingClinical(null);
+    }
+  }
+
   return (
     <section>
       {m2Status === "waiting_for_patient" ? (
@@ -619,6 +661,39 @@ export function M3ChecklistClient({
             Patientenhinweise und Krankenblatt-Dokumentation bleiben lesbar und kopierbar.
           </p>
         ) : null}
+        <div
+          data-clinical-status-actions
+          style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}
+        >
+          <button
+            type="button"
+            data-clinical-status-prepared
+            onClick={() => void setClinicalStatus("prepared")}
+            disabled={savingClinical !== null || clinical === "prepared"}
+            aria-pressed={clinical === "prepared"}
+            className={clinical === "prepared" ? "answer-btn active" : "answer-btn"}
+          >
+            {savingClinical === "prepared"
+              ? "Wird gespeichert…"
+              : clinical === "prepared"
+                ? "Ärztlich vorbereitet ✓"
+                : "Ärztlich vorbereitet"}
+          </button>
+          <button
+            type="button"
+            data-clinical-status-confirmed
+            onClick={() => void setClinicalStatus("confirmed")}
+            disabled={savingClinical !== null || clinical === "confirmed"}
+            aria-pressed={clinical === "confirmed"}
+            className={clinical === "confirmed" ? "answer-btn active" : "answer-btn"}
+          >
+            {savingClinical === "confirmed"
+              ? "Wird gespeichert…"
+              : clinical === "confirmed"
+                ? "Ärztlich bestätigt ✓"
+                : "Ärztlich bestätigt"}
+          </button>
+        </div>
         <button
           type="button"
           className="btn-primary"
