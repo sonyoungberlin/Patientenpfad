@@ -250,6 +250,14 @@ main {
   padding: 2rem 1.5rem;
 }
 
+/* M3 (ärztlicher Bereich): leicht hellblauer Seitenhintergrund,
+   damit der Arbeitsbereich des Arztes sofort erkennbar ist.
+   Gilt ausschließlich für die M3-Seite (Klasse `.m3-page` auf <main>).
+   Inhalte, Karten und Buttons bleiben unverändert. */
+body:has(main.m3-page) {
+  background: #f4f8ff;
+}
+
 /* ----- Navigation ----- */
 .app-nav {
   display: flex;

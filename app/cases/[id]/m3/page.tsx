@@ -67,7 +67,7 @@ export default async function M3Page({
     typeof session.clinical_status === "string" ? session.clinical_status : "none";
 
   return (
-    <main>
+    <main className="m3-page">
       <h1>Ärztliche Checkliste</h1>
       <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} doctorConfirmed={session.doctor_confirmed === true} clinicalStatus={clinicalStatus} />
     </main>
