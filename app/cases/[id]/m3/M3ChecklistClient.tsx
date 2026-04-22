@@ -679,20 +679,6 @@ export function M3ChecklistClient({
                 ? "Ärztlich vorbereitet ✓"
                 : "Ärztlich vorbereitet"}
           </button>
-          <button
-            type="button"
-            data-clinical-status-confirmed
-            onClick={() => void setClinicalStatus("confirmed")}
-            disabled={savingClinical !== null || clinical === "confirmed"}
-            aria-pressed={clinical === "confirmed"}
-            className={clinical === "confirmed" ? "answer-btn active" : "answer-btn"}
-          >
-            {savingClinical === "confirmed"
-              ? "Wird gespeichert…"
-              : clinical === "confirmed"
-                ? "Ärztlich bestätigt ✓"
-                : "Ärztlich bestätigt"}
-          </button>
         </div>
         <button
           type="button"
