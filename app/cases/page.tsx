@@ -14,6 +14,7 @@ type CaseListSession = {
   m2_status: string | null;
   preparation_mode: string | null;
   doctor_confirmed: boolean;
+  clinical_status: string | null;
 };
 
 /**
@@ -21,18 +22,29 @@ type CaseListSession = {
  *
  * Der Status spiegelt den fachlichen Workflow wider (MFA / Patient / Arzt)
  * und basiert ausschließlich auf den fachlichen Feldern `doctor_confirmed`,
- * `m2_status` und `preparation_mode` – nicht auf Routing-/Checkpoint-Logik.
+ * `m2_status`, `preparation_mode` und `clinical_status` – nicht auf
+ * Routing-/Checkpoint-Logik.
  *
  * Mapping (in Auswertungsreihenfolge):
  *   1. doctor_confirmed = true                                   → "Ärztlich bestätigt"
- *   2. m2_status = "waiting_for_patient"                         → "Wartet auf Patientenantwort"
- *   3. m2_status in ("completed", "skipped")                     → "Vorbereitung abgeschlossen"
+ *   2. clinical_status = "confirmed"                             → "Ärztlich bestätigt"
+ *   3. clinical_status = "prepared"                              → "Ärztlich vorbereitet"
+ *   4. m2_status = "waiting_for_patient"                         → "Wartet auf Patientenantwort"
+ *   5. m2_status in ("completed", "skipped")                     → "Vorbereitung abgeschlossen"
  *      ODER preparation_mode in ("mfa", "skipped")
- *   4. sonst (M2 noch nicht abgeschlossen, MFA ist dran)         → "In Vorbereitung"
+ *   6. sonst (M2 noch nicht abgeschlossen, MFA ist dran)         → "In Vorbereitung"
  */
 function deriveCaseStatus(session: CaseListSession): string {
   if (session.doctor_confirmed) {
     return "Ärztlich bestätigt";
+  }
+
+  if (session.clinical_status === "confirmed") {
+    return "Ärztlich bestätigt";
+  }
+
+  if (session.clinical_status === "prepared") {
+    return "Ärztlich vorbereitet";
   }
 
   if (session.m2_status === "waiting_for_patient") {
@@ -76,6 +88,7 @@ export default async function CasesPage() {
       m2_status: true,
       preparation_mode: true,
       doctor_confirmed: true,
+      clinical_status: true,
     },
   });
 

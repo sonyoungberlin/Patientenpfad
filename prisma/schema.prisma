@@ -96,4 +96,9 @@ model CaseSession {
 
   /// Zeitpunkt der ärztlichen Bestätigung (gesetzt zusammen mit doctor_confirmed=true).
   doctor_confirmed_at  DateTime?
+
+  /// Ärztlicher Workflow-Zwischenstatus: none | prepared | confirmed
+  /// - "prepared" : Arzt hat in M3 vorbereitet / Lücken markiert (MFA übernimmt weiter)
+  /// - "confirmed": Arzt hat M3 final geprüft (fachlicher Abschluss)
+  clinical_status      String    @default("none")
 }
