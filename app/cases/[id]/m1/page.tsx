@@ -86,7 +86,7 @@ export default async function CaseM1Page({
       <h1 style={{ marginBottom: "1.5rem" }}>
         Liegt genug Information vor, damit der Arzt direkt entscheiden kann?
       </h1>
-      <M1ErgaenzungClient lockedBlocks={Array.from(activeBlockIds)} />
+      <M1ErgaenzungClient caseId={id} lockedBlocks={Array.from(activeBlockIds)} />
     </main>
   );
 }
