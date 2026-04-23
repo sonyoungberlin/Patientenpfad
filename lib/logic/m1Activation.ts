@@ -12,7 +12,7 @@ export const M1_CHECKPOINT_MAP: Record<M1BlockId, readonly string[]> = {
   kommunikation: ["K01", "K08", "K09"],
   medizinische_lage: ["K03", "K04", "K05"],
   versorgung_im_alltag: ["K02", "K06", "K07"],
-  pflegebeobachtung: ["K12", "K13", "K14", "K15"],
+  pflegebeobachtung: ["K12", "K13", "K14", "K15", "K16", "K17", "K18"],
 };
 
 /**

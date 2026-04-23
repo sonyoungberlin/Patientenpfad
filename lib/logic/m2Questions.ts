@@ -169,57 +169,71 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
   K12: [
     {
       id: "M2-01",
-      text: "Können Sie sich in Ihrer Wohnung bzw. Ihrem Alltag sicher fortbewegen?",
+      text: "Wirkt die Fortbewegung im Alltag sicher?",
     },
     {
       id: "M2-02",
-      text: "Benötigen Sie Hilfsmittel oder Unterstützung, um Wege und Termine zu bewältigen?",
-    },
-    {
-      id: "M2-03",
-      text: "Gab es in letzter Zeit Stürze oder Situationen mit erhöhter Unsicherheit bei der Mobilität?",
+      text: "Gibt es Hinweise auf Unsicherheit oder Sturzgefährdung?",
     },
   ],
   K13: [
     {
       id: "M2-01",
-      text: "Können Sie alltägliche Aufgaben wie Körperpflege, Anziehen oder Essen selbstständig bewältigen?",
+      text: "Wirkt die Selbstversorgung im Alltag selbstständig möglich?",
     },
     {
       id: "M2-02",
-      text: "Brauchen Sie bei einzelnen Tätigkeiten regelmäßig Hilfe durch andere Personen?",
-    },
-    {
-      id: "M2-03",
-      text: "Hat sich Ihr Unterstützungsbedarf in der Selbstversorgung zuletzt verändert?",
+      text: "Gibt es Hinweise, dass Unterstützung notwendig ist?",
     },
   ],
   K14: [
     {
       id: "M2-01",
-      text: "Fällt es Ihnen im Alltag schwer, sich zeitlich oder örtlich zu orientieren?",
+      text: "Wirkt der Patient im Alltag orientiert und strukturiert?",
     },
     {
       id: "M2-02",
-      text: "Kommt es vor, dass wichtige Termine, Absprachen oder Medikamente vergessen werden?",
-    },
-    {
-      id: "M2-03",
-      text: "Benötigen Sie Unterstützung, um Alltagsabläufe zu strukturieren oder Entscheidungen zu treffen?",
+      text: "Gibt es Hinweise auf Vergessen oder Überforderung im Alltag?",
     },
   ],
   K15: [
     {
       id: "M2-01",
-      text: "Wer unterstützt Sie aktuell zuverlässig im Alltag (z. B. Angehörige, Freunde, Dienste)?",
+      text: "Wirkt die Nahrungsaufnahme im Alltag ausreichend und regelmäßig?",
     },
     {
       id: "M2-02",
-      text: "Ist diese Unterstützung aktuell ausreichend, um Ihren Alltag zu bewältigen?",
+      text: "Gibt es Hinweise auf Probleme beim Essen?",
+    },
+  ],
+  K16: [
+    {
+      id: "M2-01",
+      text: "Wirkt die Flüssigkeitsaufnahme ausreichend?",
     },
     {
-      id: "M2-03",
-      text: "Gibt es Zeiten, in denen die notwendige Unterstützung nicht verfügbar ist?",
+      id: "M2-02",
+      text: "Gibt es Hinweise, dass zu wenig getrunken wird?",
+    },
+  ],
+  K17: [
+    {
+      id: "M2-01",
+      text: "Wirkt der Umgang mit Hilfsmitteln (z. B. Rollator, Rollstuhl) im Alltag sicher?",
+    },
+    {
+      id: "M2-02",
+      text: "Gibt es Hinweise auf Unsicherheiten im Umgang mit Hilfsmitteln?",
+    },
+  ],
+  K18: [
+    {
+      id: "M2-01",
+      text: "Besteht aktuell ein Pflegegrad?",
+    },
+    {
+      id: "M2-02",
+      text: "Wirkt die aktuelle Einstufung passend zur Situation?",
     },
   ],
 };

@@ -25,12 +25,15 @@ describe("M1_CHECKPOINT_MAP", () => {
     ]);
   });
 
-  it("pflegebeobachtung aktiviert K12, K13, K14, K15", () => {
+  it("pflegebeobachtung aktiviert K12, K13, K14, K15, K16, K17, K18", () => {
     expect(M1_CHECKPOINT_MAP.pflegebeobachtung).toEqual([
       "K12",
       "K13",
       "K14",
       "K15",
+      "K16",
+      "K17",
+      "K18",
     ]);
   });
 });
@@ -77,6 +80,9 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K13",
       "K14",
       "K15",
+      "K16",
+      "K17",
+      "K18",
     ]);
   });
 
@@ -109,6 +115,9 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K13",
       "K14",
       "K15",
+      "K16",
+      "K17",
+      "K18",
     ]);
   });
 });

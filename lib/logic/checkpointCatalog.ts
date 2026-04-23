@@ -147,10 +147,10 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     relevance: CheckpointRelevance.P,
     title: "Mobilität",
     description:
-      "Prüfen, ob die aktuelle Mobilität im Alltag zuverlässig eingeschätzt und dokumentiert ist.",
+      "Beobachten, ob die Fortbewegung im Alltag sicher wirkt und ob Hinweise auf Sturzgefährdung bestehen.",
     m4: {
       type: "NOTICE",
-      text: "Bitte teilen Sie uns mit, wie gut Sie sich im Alltag selbstständig fortbewegen können und wo Unterstützung nötig ist.",
+      text: "Es liegen Beobachtungshinweise zur Mobilität vor, die ärztlich eingeschätzt werden sollten.",
     },
   },
   K13: {
@@ -161,10 +161,10 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     relevance: CheckpointRelevance.P,
     title: "Selbstversorgung",
     description:
-      "Prüfen, ob die Selbstversorgung im Alltag ausreichend möglich ist.",
+      "Beobachten, ob die Selbstversorgung im Alltag selbstständig möglich wirkt.",
     m4: {
       type: "NOTICE",
-      text: "Bitte geben Sie an, bei welchen alltäglichen Tätigkeiten Sie Unterstützung benötigen.",
+      text: "Es liegen Beobachtungshinweise zur Selbstversorgung vor, die ärztlich eingeschätzt werden sollten.",
     },
   },
   K14: {
@@ -175,10 +175,10 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     relevance: CheckpointRelevance.A,
     title: "Kognition / Orientierung",
     description:
-      "Prüfen, ob Hinweise auf Einschränkungen von Orientierung oder kognitiver Alltagsbewältigung vorliegen.",
+      "Beobachten, ob der Patient im Alltag orientiert und strukturiert wirkt und ob Hinweise auf Vergessen oder Überforderung vorliegen.",
     m4: {
       type: "NOTICE",
-      text: "Bitte teilen Sie uns mit, ob es im Alltag Schwierigkeiten bei Orientierung, Erinnerung oder Organisation gibt.",
+      text: "Es liegen Beobachtungshinweise zur Orientierung und Kognition vor, die ärztlich eingeschätzt werden sollten.",
     },
   },
   K15: {
@@ -187,12 +187,54 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
     relevance: CheckpointRelevance.P,
-    title: "Unterstützung im Alltag",
+    title: "Ernährung",
     description:
-      "Prüfen, welche Unterstützung im Alltag verfügbar ist und ob diese verlässlich greift.",
+      "Beobachten, ob die Nahrungsaufnahme im Alltag ausreichend und regelmäßig wirkt.",
     m4: {
-      type: "ACTION",
-      text: "Bitte benennen Sie die Personen oder Dienste, die Sie im Alltag unterstützen, damit wir die Versorgung sicher einplanen können.",
+      type: "NOTICE",
+      text: "Es liegen Beobachtungshinweise zur Ernährungssituation vor, die ärztlich eingeschätzt werden sollten.",
+    },
+  },
+  K16: {
+    id: "K16",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.P,
+    title: "Flüssigkeitsaufnahme",
+    description:
+      "Beobachten, ob die Flüssigkeitsaufnahme ausreichend wirkt und ob Hinweise auf zu geringes Trinken bestehen.",
+    m4: {
+      type: "NOTICE",
+      text: "Es liegen Beobachtungshinweise zur Flüssigkeitsaufnahme vor, die ärztlich eingeschätzt werden sollten.",
+    },
+  },
+  K17: {
+    id: "K17",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.P,
+    title: "Umgang mit Hilfsmitteln",
+    description:
+      "Beobachten, ob der Umgang mit Hilfsmitteln (z. B. Rollator, Rollstuhl) im Alltag sicher wirkt.",
+    m4: {
+      type: "NOTICE",
+      text: "Es liegen Beobachtungshinweise zum Umgang mit Hilfsmitteln vor, die ärztlich eingeschätzt werden sollten.",
+    },
+  },
+  K18: {
+    id: "K18",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.P,
+    title: "Pflegegrad / Versorgungsniveau",
+    description:
+      "Prüfen, ob ein Pflegegrad besteht und ob die aktuelle Einstufung zur beobachteten Situation passt.",
+    m4: {
+      type: "NOTICE",
+      text: "Es liegen Hinweise zur Versorgungseinstufung vor, die ärztlich eingeschätzt werden sollten.",
     },
   },
 };

@@ -41,9 +41,9 @@ describe("buildM1SnapshotInitial", () => {
     expect(snapshot.activated_checkpoint_ids).toEqual([]);
   });
 
-  it("enthält alle 13 blockabhängigen IDs wenn alle Blöcke unklar sind (K10/K11 sind blockunabhängig)", () => {
+  it("enthält alle 16 blockabhängigen IDs wenn alle Blöcke unklar sind (K10/K11 sind blockunabhängig)", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(13);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(16);
     expect(snapshot.activated_checkpoint_ids).toContain("K01");
     expect(snapshot.activated_checkpoint_ids).toContain("K08");
     expect(snapshot.activated_checkpoint_ids).toContain("K09");
@@ -57,6 +57,9 @@ describe("buildM1SnapshotInitial", () => {
     expect(snapshot.activated_checkpoint_ids).toContain("K13");
     expect(snapshot.activated_checkpoint_ids).toContain("K14");
     expect(snapshot.activated_checkpoint_ids).toContain("K15");
+    expect(snapshot.activated_checkpoint_ids).toContain("K16");
+    expect(snapshot.activated_checkpoint_ids).toContain("K17");
+    expect(snapshot.activated_checkpoint_ids).toContain("K18");
   });
 
   it("enthält nur kommunikation-Checkpoints wenn nur kommunikation unklar", () => {
@@ -72,8 +75,8 @@ describe("buildM1SnapshotInitial", () => {
 });
 
 describe("CHECKPOINT_CATALOGUE", () => {
-  it("enthält genau 13 Einträge (K01–K09, K12–K15)", () => {
-    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(13);
+  it("enthält genau 16 Einträge (K01–K09, K12–K18)", () => {
+    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(16);
   });
 
   it("jeder Eintrag hat eine id, block_id und m4", () => {
@@ -118,10 +121,10 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
     }
   });
 
-  it("hydratisiert alle 11 Checkpoints wenn alle Blöcke unklar", () => {
+  it("hydratisiert alle 18 Checkpoints wenn alle Blöcke unklar", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(15);
+    expect(checkpoints).toHaveLength(18);
   });
 
   it("überspringt unbekannte IDs defensiv (K10, K11 still always-present)", () => {

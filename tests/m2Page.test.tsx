@@ -178,7 +178,7 @@ describe("M2 Seite", () => {
 
     expect(markup).toContain('data-m2-checkpoint="K12"');
     expect(markup).toContain(
-      "Können Sie sich in Ihrer Wohnung bzw. Ihrem Alltag sicher fortbewegen?",
+      "Wirkt die Fortbewegung im Alltag sicher?",
     );
   });
 
