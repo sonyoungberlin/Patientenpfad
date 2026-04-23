@@ -3,7 +3,6 @@ import M3Page from "@/app/cases/[id]/m3/page";
 import {
   CheckpointCategory,
   CheckpointPerspective,
-  CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
 } from "@/lib/types";
@@ -65,7 +64,6 @@ const mCheckpoint: ActiveCheckpoint = {
   block_id: "medizinische_lage",
   type: CheckpointType.VERIFIKATION,
   perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-  relevance: CheckpointRelevance.P,
   title: "Medizinischer Checkpoint",
   category: CheckpointCategory.M,
   status: "TO_DO",
@@ -77,7 +75,6 @@ const oCheckpoint: ActiveCheckpoint = {
   block_id: "kommunikation",
   type: CheckpointType.PRESENCE_CHECK,
   perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-  relevance: CheckpointRelevance.P,
   title: "Organisatorischer Checkpoint",
   category: CheckpointCategory.O,
   status: "TO_DO",

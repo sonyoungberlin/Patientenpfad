@@ -3,7 +3,6 @@ import { PATCH } from "@/app/api/cases/[id]/checkpoint/update/route";
 import {
   CheckpointCategory,
   CheckpointPerspective,
-  CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
 } from "@/lib/types";
@@ -41,7 +40,6 @@ const mCheckpoint: ActiveCheckpoint = {
   block_id: "diagnosis_status",
   type: CheckpointType.VERIFIKATION,
   perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-  relevance: CheckpointRelevance.P,
   title: "Medizinischer Checkpoint",
   category: CheckpointCategory.M,
   status: "TO_DO",

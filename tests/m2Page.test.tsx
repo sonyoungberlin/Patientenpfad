@@ -3,7 +3,6 @@ import M2Page from "@/app/cases/[id]/m2/page";
 import {
   CheckpointCategory,
   CheckpointPerspective,
-  CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
 } from "@/lib/types";
@@ -53,7 +52,6 @@ const k01Checkpoint: ActiveCheckpoint = {
   block_id: "kommunikation",
   type: CheckpointType.PRESENCE_CHECK,
   perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-  relevance: CheckpointRelevance.P,
   title: "Erreichbarkeit des Patienten",
   category: CheckpointCategory.O,
   status: "TO_DO",
@@ -66,7 +64,6 @@ const k04Checkpoint: ActiveCheckpoint = {
   block_id: "medizinische_lage",
   type: CheckpointType.VERIFIKATION,
   perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-  relevance: CheckpointRelevance.P,
   title: "Medikation",
   category: CheckpointCategory.M,
   status: "TO_DO",
@@ -79,7 +76,6 @@ const k12Checkpoint: ActiveCheckpoint = {
   block_id: "pflegebeobachtung",
   type: CheckpointType.BEDARF,
   perspectives: [CheckpointPerspective.PATIENT],
-  relevance: CheckpointRelevance.P,
   title: "Mobilität",
   category: CheckpointCategory.O,
   status: "TO_DO",

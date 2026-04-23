@@ -2,7 +2,6 @@ import {
   CheckpointCategory,
   CheckpointMode,
   CheckpointPerspective,
-  CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
   type ActiveCheckpointMultiSelect,
@@ -27,7 +26,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.PRESENCE_CHECK,
     category: CheckpointCategory.O,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.P,
     title: "Erreichbarkeit des Patienten",
     description: "Prüfen, ob der Patient zuverlässig erreichbar ist.",
     m4: {
@@ -41,7 +39,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.P,
     title: "Praktische Möglichkeit der Terminwahrnehmung",
     description: "Prüfen, ob eine ausreichende Versorgung im Alltag besteht.",
     m4: {
@@ -55,7 +52,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.NACHWEIS,
     category: CheckpointCategory.M,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.P,
     title: "Diagnosenlage",
     description: "Prüfen, ob alle relevanten Diagnosen dokumentiert sind.",
     m4: {
@@ -69,7 +65,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.M,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.P,
     title: "Medikation",
     description: "Aktuelle Medikation ist bekannt und geprüft.",
     m4: {
@@ -83,7 +78,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.PROZESS_VORLAUF,
     category: CheckpointCategory.M,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.A,
     title: "Medizinische Mitbehandlung",
     description: "Relevante externe Fachärzte sind bekannt und einbezogen.",
     m4: {
@@ -97,7 +91,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.P,
     title: "Unterstützung im Alltag",
     description: "Pflegebedarf ist dokumentiert und bewertet.",
     m4: {
@@ -111,7 +104,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.A,
     title: "Vorübergehender Unterstützungsbedarf",
     description:
       "Es besteht ein vorübergehender Unterstützungsbedarf (z. B. nach Operation oder akuter Erkrankung), und die notwendige Unterstützung ist organisiert.",
@@ -126,7 +118,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.O,
     perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.P,
     title: "Nutzung digitaler Praxisleistungen",
     description:
       "Der Patient nutzt digitale Praxisangebote aktiv (z. B. Videosprechstunde, digitale Anfragen oder digitale Übermittlung von Dokumenten).",
@@ -141,7 +132,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.O,
     perspectives: [CheckpointPerspective.MFA],
-    relevance: CheckpointRelevance.A,
     title: "Mitwirkung",
     description: "Prüfen, ob die Mitwirkung des Patienten ausreichend gegeben ist.",
     m4: {
@@ -159,7 +149,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     // nicht bereinigt – TODO: K12-Fragesprache in separatem Schritt klären).
     // perspectives = [PATIENT] bedeutet: erscheint im Patientenfragen-Katalog (M2_QUESTIONS).
     perspectives: [CheckpointPerspective.PATIENT],
-    relevance: CheckpointRelevance.P,
     title: "Alltagssituation / Pflegeeinschätzung",
     description:
       "Beobachten, wie die Alltagsrealität des Patienten von außen wirkt – Mobilität, Selbstversorgung, Kognition, Ernährung, Flüssigkeit, Hilfsmittelumgang und Pflegegrad.",
@@ -187,7 +176,6 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
     perspectives: [],
-    relevance: CheckpointRelevance.A,
     mode: CheckpointMode.MULTI_SELECT,
     title: "Besonderer Versorgungsaufwand",
     description:
@@ -208,7 +196,6 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
     perspectives: [],
-    relevance: CheckpointRelevance.A,
     mode: CheckpointMode.MULTI_SELECT,
     title: "Formularanliegen",
     description:

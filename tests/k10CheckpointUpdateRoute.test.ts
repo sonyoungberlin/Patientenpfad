@@ -4,7 +4,6 @@ import {
   CheckpointCategory,
   CheckpointMode,
   CheckpointPerspective,
-  CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
   type ActiveCheckpointMultiSelect,
@@ -44,7 +43,6 @@ const k10: ActiveCheckpointMultiSelect = {
   type: CheckpointType.BEDARF,
   category: CheckpointCategory.O,
   perspectives: [],
-  relevance: CheckpointRelevance.A,
   mode: CheckpointMode.MULTI_SELECT,
   title: "Besonderer Versorgungsaufwand",
   options: [
@@ -64,7 +62,6 @@ const stdCheckpoint: ActiveCheckpoint = {
   type: CheckpointType.NACHWEIS,
   category: CheckpointCategory.M,
   perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-  relevance: CheckpointRelevance.P,
   status: "TO_DO",
   title: "Diagnosenlage",
   m4: { type: "ACTION", text: "Bitte Befunde mitbringen." },

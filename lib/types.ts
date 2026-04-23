@@ -34,18 +34,6 @@ export enum CheckpointCategory {
 }
 
 /**
- * @deprecated Wird durch `perspectives: CheckpointPerspective[]` abgelöst.
- * P/A unterscheidet nicht zwischen MFA- und Patientenperspektive und ist damit
- * nicht ausdrucksstark genug. Entfernung nach DB-Migration geplant.
- */
-export enum CheckpointRelevance {
-  /** Hat Vorbereitungsperspektive(n): Checkpoint erscheint in M2 (MFA und/oder Patient). */
-  P = "P",
-  /** Keine Vorbereitung: Checkpoint erscheint ausschließlich in M3. */
-  A = "A",
-}
-
-/**
  * Vorbereitungsperspektive eines Checkpoints.
  *
  * MFA     – Checkpoint hat Vorbereitungsanteil für die MFA (erscheint im MFA-Fragenkatalog).
@@ -80,12 +68,6 @@ type ActiveCheckpointBase = {
    * Leeres Array = kein Vorbereitungsanteil (nur M3).
    */
   perspectives: CheckpointPerspective[];
-  /**
-   * @deprecated Durch `perspectives[]` abgelöst. Wird nach DB-Migration entfernt.
-   * Altfälle (aus der Datenbank geladen) haben dieses Feld noch gesetzt;
-   * neue Fälle sollten ausschließlich `perspectives` auswerten.
-   */
-  relevance: CheckpointRelevance;
   title: string;
   description?: string;
   m4: {
@@ -130,10 +112,6 @@ export type ActiveCheckpointMultiSelect = {
    * Leeres Array = kein Vorbereitungsanteil (nur M3/M5).
    */
   perspectives: CheckpointPerspective[];
-  /**
-   * @deprecated Durch `perspectives[]` abgelöst. Wird nach DB-Migration entfernt.
-   */
-  relevance: CheckpointRelevance;
   mode: CheckpointMode.MULTI_SELECT;
   title: string;
   description?: string;
