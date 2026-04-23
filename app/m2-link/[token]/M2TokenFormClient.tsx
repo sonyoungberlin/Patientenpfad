@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ActiveCheckpoint } from "@/lib/types";
+import { CheckpointPerspective, type ActiveCheckpoint } from "@/lib/types";
 import {
   M2_QUESTIONS,
   type M2Answer,
@@ -85,6 +85,9 @@ export function M2TokenFormClient({
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {checkpoints.map((cp) => {
+            // Primäre Sichtbarkeitsregel: Patientenformular zeigt nur Checkpoints
+            // mit PATIENT-Perspektive (z. B. K10/K11 werden ausgeblendet).
+            if (!cp.perspectives.includes(CheckpointPerspective.PATIENT)) return null;
             const questions = M2_QUESTIONS[cp.id] ?? [];
             if (questions.length === 0) return null;
             const cpAnswers = values[cp.id] ?? {};

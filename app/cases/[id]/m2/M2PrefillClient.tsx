@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
-import type { ActiveCheckpoint } from "@/lib/types";
+import { CheckpointPerspective, type ActiveCheckpoint } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
   M2_QUESTIONS,
@@ -187,8 +187,16 @@ export function M2PrefillClient({
         const answeredSet = new Set(
           answeredCheckpointIdsBySource[sourceForMode] ?? [],
         );
+        // Primäre Sichtbarkeitsregel: nur Checkpoints rendern, deren perspectives
+        // die aktive Vorbereitungsperspektive enthält.
+        const perspectiveForMode =
+          mode === "patient"
+            ? CheckpointPerspective.PATIENT
+            : CheckpointPerspective.MFA;
         const visibleCheckpoints = checkpoints.filter(
-          (cp) => !answeredSet.has(cp.id),
+          (cp) =>
+            !answeredSet.has(cp.id) &&
+            cp.perspectives.includes(perspectiveForMode),
         );
 
         if (visibleCheckpoints.length === 0) {
