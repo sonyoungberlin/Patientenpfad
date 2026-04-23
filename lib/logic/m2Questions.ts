@@ -167,6 +167,7 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
     },
   ],
   K12: [
+    // Mobilität
     {
       id: "M2-01",
       text: "Wirkt die Fortbewegung im Alltag sicher?",
@@ -175,64 +176,58 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       id: "M2-02",
       text: "Gibt es Hinweise auf Unsicherheit oder Sturzgefährdung?",
     },
-  ],
-  K13: [
+    // Selbstversorgung
     {
-      id: "M2-01",
+      id: "M2-03",
       text: "Wirkt die Selbstversorgung im Alltag selbstständig möglich?",
     },
     {
-      id: "M2-02",
+      id: "M2-04",
       text: "Gibt es Hinweise, dass Unterstützung notwendig ist?",
     },
-  ],
-  K14: [
+    // Kognition / Orientierung
     {
-      id: "M2-01",
+      id: "M2-05",
       text: "Wirkt der Patient im Alltag orientiert und strukturiert?",
     },
     {
-      id: "M2-02",
+      id: "M2-06",
       text: "Gibt es Hinweise auf Vergessen oder Überforderung im Alltag?",
     },
-  ],
-  K15: [
+    // Ernährung
     {
-      id: "M2-01",
+      id: "M2-07",
       text: "Wirkt die Nahrungsaufnahme im Alltag ausreichend und regelmäßig?",
     },
     {
-      id: "M2-02",
+      id: "M2-08",
       text: "Gibt es Hinweise auf Probleme beim Essen?",
     },
-  ],
-  K16: [
+    // Flüssigkeitsaufnahme
     {
-      id: "M2-01",
+      id: "M2-09",
       text: "Wirkt die Flüssigkeitsaufnahme ausreichend?",
     },
     {
-      id: "M2-02",
+      id: "M2-10",
       text: "Gibt es Hinweise, dass zu wenig getrunken wird?",
     },
-  ],
-  K17: [
+    // Umgang mit Hilfsmitteln
     {
-      id: "M2-01",
+      id: "M2-11",
       text: "Wirkt der Umgang mit Hilfsmitteln (z. B. Rollator, Rollstuhl) im Alltag sicher?",
     },
     {
-      id: "M2-02",
+      id: "M2-12",
       text: "Gibt es Hinweise auf Unsicherheiten im Umgang mit Hilfsmitteln?",
     },
-  ],
-  K18: [
+    // Pflegegrad / Versorgungsniveau
     {
-      id: "M2-01",
+      id: "M2-13",
       text: "Besteht aktuell ein Pflegegrad?",
     },
     {
-      id: "M2-02",
+      id: "M2-14",
       text: "Wirkt die aktuelle Einstufung passend zur Situation?",
     },
   ],

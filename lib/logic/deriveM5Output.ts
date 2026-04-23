@@ -68,34 +68,9 @@ export const M5_TEXTS: Record<
     TO_DO: "Mitwirkung ist nicht ausreichend gegeben.",
   },
   K12: {
-    OK: "Mobilität im Alltag wirkt sicher und unauffällig.",
-    TO_DO: "Mobilität im Alltag ist aktuell nicht ausreichend geklärt.",
-  },
-  K13: {
-    OK: "Selbstversorgung im Alltag wirkt selbstständig möglich.",
-    TO_DO: "Selbstversorgung im Alltag ist aktuell nicht ausreichend geklärt.",
-  },
-  K14: {
-    OK: "Kognition / Orientierung wirkt im Alltag ausreichend gegeben.",
-    TO_DO: "Kognition / Orientierung ist aktuell nicht ausreichend geklärt.",
-    ZURÜCKSTELLEN: "Kognition / Orientierung ist unklar.",
-  },
-  K15: {
-    OK: "Ernährungssituation wirkt im Alltag ausreichend.",
-    TO_DO: "Ernährungssituation ist aktuell nicht ausreichend geklärt.",
-  },
-  K16: {
-    OK: "Flüssigkeitsaufnahme wirkt ausreichend.",
-    TO_DO: "Flüssigkeitsaufnahme ist aktuell nicht ausreichend geklärt.",
-  },
-  K17: {
-    OK: "Umgang mit Hilfsmitteln wirkt im Alltag sicher.",
-    TO_DO: "Umgang mit Hilfsmitteln ist aktuell nicht ausreichend geklärt.",
-  },
-  K18: {
-    OK: "Pflegegrad / Versorgungsniveau ist ausreichend bekannt und passend.",
-    TO_DO: "Pflegegrad / Versorgungsniveau ist aktuell nicht ausreichend geklärt.",
-    ZURÜCKSTELLEN: "Pflegegrad / Versorgungsniveau ist unklar.",
+    OK: "Alltagssituation / Pflegeeinschätzung wirkt unauffällig.",
+    TO_DO: "Alltagssituation / Pflegeeinschätzung ist aktuell nicht ausreichend geklärt.",
+    ZURÜCKSTELLEN: "Alltagssituation / Pflegeeinschätzung ist unklar.",
   },
 };
 

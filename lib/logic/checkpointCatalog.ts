@@ -143,98 +143,14 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     id: "K12",
     block_id: "pflegebeobachtung",
     type: CheckpointType.BEDARF,
-    category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
-    title: "Mobilität",
-    description:
-      "Beobachten, ob die Fortbewegung im Alltag sicher wirkt und ob Hinweise auf Sturzgefährdung bestehen.",
-    m4: {
-      type: "NOTICE",
-      text: "Es liegen Beobachtungshinweise zur Mobilität vor, die ärztlich eingeschätzt werden sollten.",
-    },
-  },
-  K13: {
-    id: "K13",
-    block_id: "pflegebeobachtung",
-    type: CheckpointType.BEDARF,
-    category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
-    title: "Selbstversorgung",
-    description:
-      "Beobachten, ob die Selbstversorgung im Alltag selbstständig möglich wirkt.",
-    m4: {
-      type: "NOTICE",
-      text: "Es liegen Beobachtungshinweise zur Selbstversorgung vor, die ärztlich eingeschätzt werden sollten.",
-    },
-  },
-  K14: {
-    id: "K14",
-    block_id: "pflegebeobachtung",
-    type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
-    relevance: CheckpointRelevance.A,
-    title: "Kognition / Orientierung",
-    description:
-      "Beobachten, ob der Patient im Alltag orientiert und strukturiert wirkt und ob Hinweise auf Vergessen oder Überforderung vorliegen.",
-    m4: {
-      type: "NOTICE",
-      text: "Es liegen Beobachtungshinweise zur Orientierung und Kognition vor, die ärztlich eingeschätzt werden sollten.",
-    },
-  },
-  K15: {
-    id: "K15",
-    block_id: "pflegebeobachtung",
-    type: CheckpointType.BEDARF,
-    category: CheckpointCategory.O,
     relevance: CheckpointRelevance.P,
-    title: "Ernährung",
+    title: "Alltagssituation / Pflegeeinschätzung",
     description:
-      "Beobachten, ob die Nahrungsaufnahme im Alltag ausreichend und regelmäßig wirkt.",
+      "Beobachten, wie die Alltagsrealität des Patienten von außen wirkt – Mobilität, Selbstversorgung, Kognition, Ernährung, Flüssigkeit, Hilfsmittelumgang und Pflegegrad.",
     m4: {
       type: "NOTICE",
-      text: "Es liegen Beobachtungshinweise zur Ernährungssituation vor, die ärztlich eingeschätzt werden sollten.",
-    },
-  },
-  K16: {
-    id: "K16",
-    block_id: "pflegebeobachtung",
-    type: CheckpointType.BEDARF,
-    category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
-    title: "Flüssigkeitsaufnahme",
-    description:
-      "Beobachten, ob die Flüssigkeitsaufnahme ausreichend wirkt und ob Hinweise auf zu geringes Trinken bestehen.",
-    m4: {
-      type: "NOTICE",
-      text: "Es liegen Beobachtungshinweise zur Flüssigkeitsaufnahme vor, die ärztlich eingeschätzt werden sollten.",
-    },
-  },
-  K17: {
-    id: "K17",
-    block_id: "pflegebeobachtung",
-    type: CheckpointType.BEDARF,
-    category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
-    title: "Umgang mit Hilfsmitteln",
-    description:
-      "Beobachten, ob der Umgang mit Hilfsmitteln (z. B. Rollator, Rollstuhl) im Alltag sicher wirkt.",
-    m4: {
-      type: "NOTICE",
-      text: "Es liegen Beobachtungshinweise zum Umgang mit Hilfsmitteln vor, die ärztlich eingeschätzt werden sollten.",
-    },
-  },
-  K18: {
-    id: "K18",
-    block_id: "pflegebeobachtung",
-    type: CheckpointType.BEDARF,
-    category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
-    title: "Pflegegrad / Versorgungsniveau",
-    description:
-      "Prüfen, ob ein Pflegegrad besteht und ob die aktuelle Einstufung zur beobachteten Situation passt.",
-    m4: {
-      type: "NOTICE",
-      text: "Es liegen Hinweise zur Versorgungseinstufung vor, die ärztlich eingeschätzt werden sollten.",
+      text: "Es liegen Beobachtungshinweise zur Alltagssituation vor, die ärztlich eingeschätzt werden sollten.",
     },
   },
 };

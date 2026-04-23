@@ -25,16 +25,8 @@ describe("M1_CHECKPOINT_MAP", () => {
     ]);
   });
 
-  it("pflegebeobachtung aktiviert K12, K13, K14, K15, K16, K17, K18", () => {
-    expect(M1_CHECKPOINT_MAP.pflegebeobachtung).toEqual([
-      "K12",
-      "K13",
-      "K14",
-      "K15",
-      "K16",
-      "K17",
-      "K18",
-    ]);
+  it("pflegebeobachtung aktiviert nur K12 (Einschätzungsblock)", () => {
+    expect(M1_CHECKPOINT_MAP.pflegebeobachtung).toEqual(["K12"]);
   });
 });
 
@@ -77,12 +69,6 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K06",
       "K07",
       "K12",
-      "K13",
-      "K14",
-      "K15",
-      "K16",
-      "K17",
-      "K18",
     ]);
   });
 
@@ -110,14 +96,6 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       versorgung_im_alltag: "klar",
       pflegebeobachtung: "unklar",
     };
-    expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual([
-      "K12",
-      "K13",
-      "K14",
-      "K15",
-      "K16",
-      "K17",
-      "K18",
-    ]);
+    expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual(["K12"]);
   });
 });
