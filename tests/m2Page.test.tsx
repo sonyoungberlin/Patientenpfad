@@ -70,6 +70,18 @@ const k04Checkpoint: ActiveCheckpoint = {
   m4: { type: "ACTION", text: "M4" },
 };
 
+/** K12 – Mobilität (nur Patienten-/Gesprächsfragen, keine MFA-Fragen) */
+const k12Checkpoint: ActiveCheckpoint = {
+  id: "K12",
+  block_id: "pflegebeobachtung",
+  type: CheckpointType.BEDARF,
+  relevance: CheckpointRelevance.P,
+  title: "Mobilität",
+  category: CheckpointCategory.O,
+  status: "TO_DO",
+  m4: { type: "NOTICE", text: "M4" },
+};
+
 describe("M2 Seite", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
@@ -132,6 +144,42 @@ describe("M2 Seite", () => {
     );
 
     expect(markup).toContain("Keine aktiven Checkpoints vorhanden.");
+  });
+
+  it("zeigt pflegebeobachtung-Checkpoint im MFA-Modus nicht an (keine MFA-Fragen)", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k12Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "mfa",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-pflege-mfa" }) }),
+    );
+
+    expect(markup).not.toContain('data-m2-checkpoint="K12"');
+    expect(markup).toContain("Keine aktiven Checkpoints vorhanden.");
+  });
+
+  it("zeigt pflegebeobachtung-Checkpoint im Gesprächsmodus mit Patientenkatalog", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k12Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "conversation",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-pflege-conversation" }) }),
+    );
+
+    expect(markup).toContain('data-m2-checkpoint="K12"');
+    expect(markup).toContain(
+      "Können Sie sich in Ihrer Wohnung bzw. Ihrem Alltag sicher fortbewegen?",
+    );
   });
 
   it("vorgespeicherte Antworten werden per data-Attribut auf Buttons reflektiert", async () => {

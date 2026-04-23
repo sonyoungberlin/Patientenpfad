@@ -14,6 +14,7 @@ const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
   medizinische_lage: "unklar",
   versorgung_im_alltag: "unklar",
+  pflegebeobachtung: "unklar",
 };
 
 type AccountInfo = {

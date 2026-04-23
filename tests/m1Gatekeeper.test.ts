@@ -4,11 +4,12 @@ import { isStandardCheckpoint } from "@/lib/types";
 import type { M1Selection } from "@/lib/types";
 
 describe("isGatekeeperCase", () => {
-  it("gibt true zurück wenn alle drei Blöcke klar sind", () => {
+  it("gibt true zurück wenn alle Blöcke klar sind", () => {
     const sel: M1Selection = {
       kommunikation: "klar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     expect(isGatekeeperCase(sel)).toBe(true);
   });
@@ -18,6 +19,7 @@ describe("isGatekeeperCase", () => {
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     expect(isGatekeeperCase(sel)).toBe(false);
   });
@@ -27,6 +29,7 @@ describe("isGatekeeperCase", () => {
       kommunikation: "unklar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "unklar",
+      pflegebeobachtung: "unklar",
     };
     expect(isGatekeeperCase(sel)).toBe(false);
   });
@@ -36,6 +39,7 @@ describe("isGatekeeperCase", () => {
       kommunikation: "klar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     expect(isGatekeeperCase(sel)).toBe(false);
   });
@@ -46,6 +50,7 @@ describe("M1-Flow: medizinische_lage unklar → Snapshot + aktive Checkpoints", 
     kommunikation: "klar",
     medizinische_lage: "unklar",
     versorgung_im_alltag: "klar",
+    pflegebeobachtung: "klar",
   };
 
   it("erstellt einen Snapshot mit K03, K04, K05 (K10 ist blockunabhängig)", () => {
@@ -85,6 +90,7 @@ describe("Gatekeeper-Fall: klar/klar/klar → kein Snapshot, keine Checkpoints",
     kommunikation: "klar",
     medizinische_lage: "klar",
     versorgung_im_alltag: "klar",
+    pflegebeobachtung: "klar",
   };
 
   it("isGatekeeperCase erkennt den Fall", () => {
@@ -114,10 +120,11 @@ describe("UI-Payload: m1Selection wird korrekt übermittelt", () => {
       kommunikation: "unklar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "unklar",
+      pflegebeobachtung: "unklar",
     };
     expect(isGatekeeperCase(initial)).toBe(false);
     const snapshot = buildM1SnapshotInitial(initial);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(13);
   });
 
   it("Payload mit m1Selection hat keinen Legacy-Pfad", () => {
@@ -127,6 +134,7 @@ describe("UI-Payload: m1Selection wird korrekt übermittelt", () => {
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     const snapshot = buildM1SnapshotInitial(anySelection);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);

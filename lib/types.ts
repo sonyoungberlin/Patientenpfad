@@ -123,7 +123,8 @@ export function isStandardCheckpoint(
 export type M1BlockId =
   | "kommunikation"
   | "medizinische_lage"
-  | "versorgung_im_alltag";
+  | "versorgung_im_alltag"
+  | "pflegebeobachtung";
 
 /** Binary state per block: klar → no activation, unklar → activate checkpoints */
 export type M1BlockStatus = "klar" | "unklar";

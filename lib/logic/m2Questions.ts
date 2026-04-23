@@ -166,6 +166,62 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Möchten Sie Informationen oder Erklärungen zur Nutzung unserer digitalen Angebote erhalten?",
     },
   ],
+  K12: [
+    {
+      id: "M2-01",
+      text: "Können Sie sich in Ihrer Wohnung bzw. Ihrem Alltag sicher fortbewegen?",
+    },
+    {
+      id: "M2-02",
+      text: "Benötigen Sie Hilfsmittel oder Unterstützung, um Wege und Termine zu bewältigen?",
+    },
+    {
+      id: "M2-03",
+      text: "Gab es in letzter Zeit Stürze oder Situationen mit erhöhter Unsicherheit bei der Mobilität?",
+    },
+  ],
+  K13: [
+    {
+      id: "M2-01",
+      text: "Können Sie alltägliche Aufgaben wie Körperpflege, Anziehen oder Essen selbstständig bewältigen?",
+    },
+    {
+      id: "M2-02",
+      text: "Brauchen Sie bei einzelnen Tätigkeiten regelmäßig Hilfe durch andere Personen?",
+    },
+    {
+      id: "M2-03",
+      text: "Hat sich Ihr Unterstützungsbedarf in der Selbstversorgung zuletzt verändert?",
+    },
+  ],
+  K14: [
+    {
+      id: "M2-01",
+      text: "Fällt es Ihnen im Alltag schwer, sich zeitlich oder örtlich zu orientieren?",
+    },
+    {
+      id: "M2-02",
+      text: "Kommt es vor, dass wichtige Termine, Absprachen oder Medikamente vergessen werden?",
+    },
+    {
+      id: "M2-03",
+      text: "Benötigen Sie Unterstützung, um Alltagsabläufe zu strukturieren oder Entscheidungen zu treffen?",
+    },
+  ],
+  K15: [
+    {
+      id: "M2-01",
+      text: "Wer unterstützt Sie aktuell zuverlässig im Alltag (z. B. Angehörige, Freunde, Dienste)?",
+    },
+    {
+      id: "M2-02",
+      text: "Ist diese Unterstützung aktuell ausreichend, um Ihren Alltag zu bewältigen?",
+    },
+    {
+      id: "M2-03",
+      text: "Gibt es Zeiten, in denen die notwendige Unterstützung nicht verfügbar ist?",
+    },
+  ],
 };
 
 /**

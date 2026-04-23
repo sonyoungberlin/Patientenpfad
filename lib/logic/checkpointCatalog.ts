@@ -10,7 +10,7 @@ import {
 } from "@/lib/types";
 
 /**
- * Statischer Checkpoint-Katalog für alle M1-Checkpoints K01–K08.
+ * Statischer Checkpoint-Katalog für alle M1-Checkpoints K01–K15.
  *
  * Jeder Eintrag ist ein vollständiges `ActiveCheckpoint`-Template ohne Status.
  * Der Status wird bei der Hydration auf `TO_DO` gesetzt.
@@ -137,6 +137,62 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     m4: {
       type: "ACTION",
       text: "Bitte vereinbaren Sie Termine, damit wir uns ausreichend Zeit für Sie nehmen können. Falls Sie verhindert sind, sagen Sie Termine bitte rechtzeitig ab und beachten Sie getroffene Absprachen. Nur so können wir eine gute Versorgung gewährleisten.",
+    },
+  },
+  K12: {
+    id: "K12",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.P,
+    title: "Mobilität",
+    description:
+      "Prüfen, ob die aktuelle Mobilität im Alltag zuverlässig eingeschätzt und dokumentiert ist.",
+    m4: {
+      type: "NOTICE",
+      text: "Bitte teilen Sie uns mit, wie gut Sie sich im Alltag selbstständig fortbewegen können und wo Unterstützung nötig ist.",
+    },
+  },
+  K13: {
+    id: "K13",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.P,
+    title: "Selbstversorgung",
+    description:
+      "Prüfen, ob die Selbstversorgung im Alltag ausreichend möglich ist.",
+    m4: {
+      type: "NOTICE",
+      text: "Bitte geben Sie an, bei welchen alltäglichen Tätigkeiten Sie Unterstützung benötigen.",
+    },
+  },
+  K14: {
+    id: "K14",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.M,
+    relevance: CheckpointRelevance.A,
+    title: "Kognition / Orientierung",
+    description:
+      "Prüfen, ob Hinweise auf Einschränkungen von Orientierung oder kognitiver Alltagsbewältigung vorliegen.",
+    m4: {
+      type: "NOTICE",
+      text: "Bitte teilen Sie uns mit, ob es im Alltag Schwierigkeiten bei Orientierung, Erinnerung oder Organisation gibt.",
+    },
+  },
+  K15: {
+    id: "K15",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    relevance: CheckpointRelevance.P,
+    title: "Unterstützung im Alltag",
+    description:
+      "Prüfen, welche Unterstützung im Alltag verfügbar ist und ob diese verlässlich greift.",
+    m4: {
+      type: "ACTION",
+      text: "Bitte benennen Sie die Personen oder Dienste, die Sie im Alltag unterstützen, damit wir die Versorgung sicher einplanen können.",
     },
   },
 };

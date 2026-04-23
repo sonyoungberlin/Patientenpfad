@@ -76,6 +76,7 @@ describe("Gatekeeper bleibt unverändert mit mode-Erweiterung", () => {
     kommunikation: "klar",
     medizinische_lage: "klar",
     versorgung_im_alltag: "klar",
+    pflegebeobachtung: "klar",
   };
 
   it("Gatekeeper auch bei mode=practice erkannt", () => {
@@ -95,6 +96,7 @@ describe("Payload enthält mode und patient_reference", () => {
         kommunikation: "unklar",
         medizinische_lage: "klar",
         versorgung_im_alltag: "klar",
+        pflegebeobachtung: "klar",
       } satisfies M1Selection,
       mode: "guest" as CaseMode,
     };
@@ -108,6 +110,7 @@ describe("Payload enthält mode und patient_reference", () => {
         kommunikation: "unklar",
         medizinische_lage: "klar",
         versorgung_im_alltag: "klar",
+        pflegebeobachtung: "klar",
       } satisfies M1Selection,
       mode: "practice" as CaseMode,
       patient_reference: "P-2024-001",

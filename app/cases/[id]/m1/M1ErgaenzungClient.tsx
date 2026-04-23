@@ -9,6 +9,7 @@ const INITIAL_SELECTION: M1Selection = {
   kommunikation: "klar",
   medizinische_lage: "klar",
   versorgung_im_alltag: "klar",
+  pflegebeobachtung: "klar",
 };
 
 export type M1ErgaenzungClientProps = {

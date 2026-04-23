@@ -12,6 +12,7 @@ export const M1_CHECKPOINT_MAP: Record<M1BlockId, readonly string[]> = {
   kommunikation: ["K01", "K08", "K09"],
   medizinische_lage: ["K03", "K04", "K05"],
   versorgung_im_alltag: ["K02", "K06", "K07"],
+  pflegebeobachtung: ["K12", "K13", "K14", "K15"],
 };
 
 /**
@@ -39,14 +40,15 @@ export function deriveActiveCheckpointIdsFromM1(
 /**
  * Prüft, ob eine M1-Auswahl einen Gatekeeper-Fall darstellt.
  *
- * Gatekeeper-Fall: alle drei Blöcke sind `klar`.
+ * Gatekeeper-Fall: alle Blöcke sind `klar`.
  * In diesem Fall wird kein Strukturfall gestartet und keine CaseSession angelegt.
  */
 export function isGatekeeperCase(blocks: M1Selection): boolean {
   return (
     blocks.kommunikation === "klar" &&
     blocks.medizinische_lage === "klar" &&
-    blocks.versorgung_im_alltag === "klar"
+    blocks.versorgung_im_alltag === "klar" &&
+    blocks.pflegebeobachtung === "klar"
   );
 }
 

@@ -5,8 +5,8 @@ import {
 import type { M1Selection } from "@/lib/types";
 
 describe("M1_CHECKPOINT_MAP", () => {
-  it("enthält genau 3 Blöcke", () => {
-    expect(Object.keys(M1_CHECKPOINT_MAP)).toHaveLength(3);
+  it("enthält genau 4 Blöcke", () => {
+    expect(Object.keys(M1_CHECKPOINT_MAP)).toHaveLength(4);
   });
 
   it("kommunikation aktiviert K01, K08 und K09", () => {
@@ -24,6 +24,15 @@ describe("M1_CHECKPOINT_MAP", () => {
       "K07",
     ]);
   });
+
+  it("pflegebeobachtung aktiviert K12, K13, K14, K15", () => {
+    expect(M1_CHECKPOINT_MAP.pflegebeobachtung).toEqual([
+      "K12",
+      "K13",
+      "K14",
+      "K15",
+    ]);
+  });
 });
 
 describe("deriveActiveCheckpointIdsFromM1", () => {
@@ -32,6 +41,7 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       kommunikation: "klar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual([]);
   });
@@ -41,6 +51,7 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual(["K01", "K08", "K09"]);
   });
@@ -50,6 +61,7 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       kommunikation: "unklar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "unklar",
+      pflegebeobachtung: "unklar",
     };
     expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual([
       "K01",
@@ -61,6 +73,10 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K02",
       "K06",
       "K07",
+      "K12",
+      "K13",
+      "K14",
+      "K15",
     ]);
   });
 
@@ -69,6 +85,7 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       kommunikation: "klar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "unklar",
+      pflegebeobachtung: "klar",
     };
     expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual([
       "K03",
@@ -77,6 +94,21 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K02",
       "K06",
       "K07",
+    ]);
+  });
+
+  it("aktiviert pflegebeobachtung korrekt", () => {
+    const selection: M1Selection = {
+      kommunikation: "klar",
+      medizinische_lage: "klar",
+      versorgung_im_alltag: "klar",
+      pflegebeobachtung: "unklar",
+    };
+    expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual([
+      "K12",
+      "K13",
+      "K14",
+      "K15",
     ]);
   });
 });
