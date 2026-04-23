@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { getOpenRun } from "@/lib/server/prefillRuns";
 import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 import { M2SkipButtonClient } from "./M2SkipButtonClient";
@@ -39,12 +40,33 @@ export default async function M2Page({
     ? (session.active_checkpoints as ActiveCheckpoint[])
     : [];
 
-  const prefill =
+  // Vorbelegung: Wenn ein offener PrefillRun existiert (z. B. nach einer
+  // Fallergänzung oder einer angefangenen, aber noch nicht eingefrorenen
+  // M2-Bearbeitung), ist **dieser** Run die einzige aktive
+  // Bearbeitungsgrundlage. Eingefrorene Runs und der `ctx_prefill`-Cache
+  // (der die Antworten des letzten eingefrorenen Runs enthält) dürfen
+  // dann nicht erneut als editierbarer Prefill übernommen werden – sonst
+  // erscheinen alte MFA-Antworten weiterhin aktiv im Formular.
+  // Nur wenn kein offener Run existiert, fällt die Vorbelegung auf
+  // `ctx_prefill` zurück (rückwärtskompatibel für den Standardfall).
+  const openRun = await getOpenRun(id).catch(() => null);
+
+  let prefill: M2PrefillData = {};
+  if (openRun) {
+    if (
+      openRun.answers &&
+      typeof openRun.answers === "object" &&
+      !Array.isArray(openRun.answers)
+    ) {
+      prefill = openRun.answers as unknown as M2PrefillData;
+    }
+  } else if (
     session.ctx_prefill &&
     typeof session.ctx_prefill === "object" &&
     !Array.isArray(session.ctx_prefill)
-      ? (session.ctx_prefill as M2PrefillData)
-      : {};
+  ) {
+    prefill = session.ctx_prefill as M2PrefillData;
+  }
 
   return (
     <main>

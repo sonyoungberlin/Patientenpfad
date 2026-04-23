@@ -25,6 +25,9 @@ jest.mock("@/lib/prisma", () => ({
     caseSession: {
       findUnique: jest.fn(),
     },
+    prefillRun: {
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
   },
 }));
 
@@ -33,6 +36,9 @@ import { prisma } from "@/lib/prisma";
 type PrismaMock = {
   caseSession: {
     findUnique: jest.Mock;
+  };
+  prefillRun: {
+    findFirst: jest.Mock;
   };
 };
 
@@ -65,6 +71,8 @@ const k04Checkpoint: ActiveCheckpoint = {
 describe("M2 Seite", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
+    prismaMock.prefillRun.findFirst.mockReset();
+    prismaMock.prefillRun.findFirst.mockResolvedValue(null);
   });
 
   it("rendert pro aktivem Checkpoint die M2-Fragen aus dem Katalog", async () => {

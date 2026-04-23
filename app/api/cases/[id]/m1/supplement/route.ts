@@ -8,7 +8,10 @@ import {
   type M1BlockId,
   type M1Selection,
 } from "@/lib/types";
-import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
+import {
+  CHECKPOINT_CATALOGUE,
+  hydrateActiveCheckpointsFromSnapshot,
+} from "@/lib/logic/checkpointCatalog";
 import { buildM1SnapshotInitial } from "@/lib/logic/m1Activation";
 import {
   createOpenRun,
@@ -122,9 +125,18 @@ export async function POST(
       ? (session.active_checkpoints as ActiveCheckpoint[])
       : [];
 
-    // Bereits aktive M1-Blöcke aus den vorhandenen Checkpoints ableiten.
+    // Bereits aktive M1-Blöcke nur aus Standard-Checkpoints (K01–K09)
+    // ableiten – Always-present MULTI_SELECT-Checkpoints (K10/K11) tragen
+    // zwar eine `block_id`, sind aber unabhängig von einer M1-Aktivierung
+    // im Fall vorhanden und dürfen den jeweiligen Block daher nicht als
+    // „bereits aktiv" markieren.
     const activeBlockIds = new Set<M1BlockId>();
     for (const cp of existingCheckpoints) {
+      const cpId = cp?.id;
+      if (typeof cpId !== "string") continue;
+      if (!Object.prototype.hasOwnProperty.call(CHECKPOINT_CATALOGUE, cpId)) {
+        continue;
+      }
       if (isM1BlockId(cp?.block_id)) {
         activeBlockIds.add(cp.block_id);
       }

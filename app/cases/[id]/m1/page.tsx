@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import type { ActiveCheckpoint, M1BlockId } from "@/lib/types";
+import { CHECKPOINT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 import M1ErgaenzungClient from "./M1ErgaenzungClient";
 
 const M1_BLOCK_IDS: ReadonlyArray<M1BlockId> = [
@@ -63,8 +64,19 @@ export default async function CaseM1Page({
     ? (session.active_checkpoints as ActiveCheckpoint[])
     : [];
 
+  // „bereits aktiv" darf ausschließlich aus Standard-Checkpoints (K01–K09)
+  // abgeleitet werden, die wirklich aus einer früheren M1-Aktivierung
+  // dieses Blocks stammen. Always-present MULTI_SELECT-Checkpoints (z. B.
+  // K10/K11) tragen zwar eine `block_id`, werden aber unabhängig von der
+  // M1-Auswahl angelegt und dürfen daher keinen Block als „bereits aktiv"
+  // markieren.
   const activeBlockIds = new Set<M1BlockId>();
   for (const cp of checkpoints) {
+    const cpId = cp?.id;
+    if (typeof cpId !== "string") continue;
+    if (!Object.prototype.hasOwnProperty.call(CHECKPOINT_CATALOGUE, cpId)) {
+      continue;
+    }
     const blockId = cp?.block_id;
     if (
       typeof blockId === "string" &&
