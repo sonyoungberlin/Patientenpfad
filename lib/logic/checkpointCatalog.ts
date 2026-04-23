@@ -154,9 +154,10 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "pflegebeobachtung",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
-    // K12 ist ein ASSESSMENT-Checkpoint: Die Fragen werden durch die MFA beantwortet,
-    // aber aus Patientenbeobachtung heraus (Fragesprache noch nicht bereinigt –
-    // TODO: K12-Fragesprache in separatem Schritt klären).
+    // K12 ist ein ASSESSMENT-Checkpoint: Die Einschätzung erfolgt durch MFA-Beobachtung,
+    // der Fragenkatalog ist jedoch in Patientenperspektive formuliert (Fragesprache noch
+    // nicht bereinigt – TODO: K12-Fragesprache in separatem Schritt klären).
+    // perspectives = [PATIENT] bedeutet: erscheint im Patientenfragen-Katalog (M2_QUESTIONS).
     perspectives: [CheckpointPerspective.PATIENT],
     relevance: CheckpointRelevance.P,
     title: "Alltagssituation / Pflegeeinschätzung",
