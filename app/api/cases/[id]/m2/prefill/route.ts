@@ -81,18 +81,13 @@ export async function PATCH(
     }
 
     // Defensive Server-Absicherung: Auch wenn der Client weniger schickt,
-    // werden alle Fragen aller aktiven Checkpoints gemäß Katalog ergänzt –
-    // fehlende Antworten landen als "offen" im Prefill.
+    // werden alle Fragen gemäß Katalog ergänzt. Das endgültige Fill erfolgt
+    // aber weiter unten nach Bestimmung des Runs (Fehler-1-Fix).
     const activeCheckpointIds: string[] = Array.isArray(session.active_checkpoints)
       ? (session.active_checkpoints as Array<{ id?: unknown }>)
           .map((cp) => (typeof cp?.id === "string" ? cp.id : null))
           .filter((id): id is string => id !== null)
       : [];
-    const filledPrefill = withDefaultOffenForCheckpoints(
-      sanitizedPrefill,
-      activeCheckpointIds,
-      preparationMode,
-    );
     const activeCheckpointsSnapshot = Array.isArray(session.active_checkpoints)
       ? (session.active_checkpoints as unknown[])
       : [];
@@ -113,11 +108,37 @@ export async function PATCH(
         // späteren Schritt aktiviert.
         allowConfirmed: true,
       }));
+
+    // Fehler-1-Fix: Im Ergänzungs-Flow speichert der offene Run nur das Delta
+    // (neue Checkpoints). Die Default-Fill-Logik soll daher ausschließlich für
+    // die Checkpoints des Runs arbeiten – nicht für den Gesamtfall-Stand aus
+    // `session.active_checkpoints`. Bei neuen Runs (kein existingOpen) enthält
+    // `run.active_checkpoints` den vollen Snapshot, was dem bisherigen
+    // Verhalten entspricht.
+    const runCheckpointIds: string[] =
+      Array.isArray(run.active_checkpoints) && run.active_checkpoints.length > 0
+        ? (run.active_checkpoints as Array<{ id?: unknown }>)
+            .map((cp) => (typeof cp?.id === "string" ? cp.id : null))
+            .filter((cpId): cpId is string => cpId !== null)
+        : activeCheckpointIds;
+
+    const filledPrefill = withDefaultOffenForCheckpoints(
+      sanitizedPrefill,
+      runCheckpointIds,
+      preparationMode,
+    );
+
     await freezeRun({
       caseId: id,
       runId: run.id,
       answers: filledPrefill as unknown as PrefillRunAnswers,
-      activeCheckpoints: activeCheckpointsSnapshot,
+      // `activeCheckpoints` wird NICHT überschrieben: der bei createOpenRun
+      // oder createOpenRun-Supplement gespeicherte Snapshot (Delta oder voll)
+      // bleibt erhalten. Dadurch bleibt der Ergänzungs-Run ein Delta-Snapshot.
+      // Fehler-2-Fix: source des Runs auf den tatsächlich genutzten Weg
+      // korrigieren, falls der Run ursprünglich mit einer anderen Quelle
+      // angelegt wurde (z. B. MFA-Ergänzungs-Run, aber Nutzer wählt Gespräch).
+      source: preparationMode,
       allowConfirmed: true,
     });
 

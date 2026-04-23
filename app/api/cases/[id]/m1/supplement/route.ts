@@ -239,7 +239,7 @@ export async function POST(
       const run = await createOpenRun({
         caseId: id,
         source: "mfa",
-        activeCheckpoints: updatedCheckpoints,
+        activeCheckpoints: toAdd,
         createdByAccountId: account.id,
       });
       return NextResponse.json({

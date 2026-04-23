@@ -509,8 +509,12 @@ export function M3ChecklistClient({
             >
               <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{checkpoint.title}</div>
               {PREFILL_SOURCES.map((source) => {
+                // Fehler-1-Fix: Im Ergänzungs-Flow haben spätere Runs nur
+                // Antworten für das Delta. Wir suchen daher den neuesten
+                // Run dieser Quelle, der tatsächlich Antworten für diesen
+                // Checkpoint enthält – nicht einfach den neuesten Run.
                 const latestRunForSource = frozenRuns
-                  .filter((r) => r.source === source)
+                  .filter((r) => r.source === source && r.answers[checkpoint.id] != null)
                   .sort((a, b) => b.sequence - a.sequence)[0];
 
                 const resolvedAnswers: { qId: string; text: string; answer: string }[] =

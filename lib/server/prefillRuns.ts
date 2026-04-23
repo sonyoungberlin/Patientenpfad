@@ -93,6 +93,12 @@ type FreezeRunInput = {
   answers: PrefillRunAnswers;
   /** Optional aktualisierter Snapshot (z. B. wenn M1 zwischenzeitlich änderte). */
   activeCheckpoints?: PrefillRunActiveCheckpoints;
+  /**
+   * Optionale Quell-Korrektur: Falls der offene Run mit einer anderen Quelle
+   * angelegt wurde (z. B. "mfa" bei Ergänzungs-Flow, aber Nutzer wechselt auf
+   * "conversation"), wird die Quelle beim Einfrieren auf diesen Wert gesetzt.
+   */
+  source?: PrefillRunSource;
   /** Siehe `CreateOpenRunInput.allowConfirmed`. */
   allowConfirmed?: boolean;
 };
@@ -206,6 +212,11 @@ export async function freezeRun(
     };
     if (input.activeCheckpoints !== undefined) {
       data.active_checkpoints = toJsonInput(input.activeCheckpoints);
+    }
+    // Fehler-2-Fix: Quelle korrigieren, wenn der Run mit anderer source angelegt
+    // wurde (z. B. MFA-Run aus Ergänzungs-Flow, jetzt als Patientengespräch gespeichert).
+    if (input.source !== undefined && input.source !== run.source) {
+      data.source = input.source;
     }
 
     return tx.prefillRun.update({

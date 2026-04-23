@@ -119,7 +119,7 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
       active_checkpoints: [{ id: "K01" }],
     });
     prismaMock.caseSession.update.mockResolvedValue({});
-    getOpenRunMock.mockResolvedValue({ id: "run-existing", sequence: 3, frozen_at: null });
+    getOpenRunMock.mockResolvedValue({ id: "run-existing", sequence: 3, source: "mfa", frozen_at: null, active_checkpoints: [{ id: "K01" }] });
     freezeRunMock.mockResolvedValue({ id: "run-existing", sequence: 3, frozen_at: new Date() });
 
     const req = new NextRequest("http://localhost/api/cases/c1/m2/prefill", {
@@ -133,6 +133,43 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     expect(createOpenRunMock).not.toHaveBeenCalled();
     expect(freezeRunMock).toHaveBeenCalledWith(
       expect.objectContaining({ runId: "run-existing" }),
+    );
+  });
+
+  // Fehler-2-Fix: offener MFA-Run wird auf Patientengespräch-Source umgestellt
+  it("korrigiert die source eines offenen MFA-Runs wenn als 'conversation' gespeichert wird", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      m2_status: "none",
+      active_checkpoints: [{ id: "K01" }],
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+    // Offener Run wurde als MFA angelegt (Ergänzungs-Flow default).
+    getOpenRunMock.mockResolvedValue({
+      id: "run-mfa-open",
+      sequence: 2,
+      source: "mfa",
+      frozen_at: null,
+      active_checkpoints: [{ id: "K01" }],
+    });
+    freezeRunMock.mockResolvedValue({ id: "run-mfa-open", sequence: 2, frozen_at: new Date() });
+
+    // Nutzer speichert im Patientengespräch-Modus.
+    const req = new NextRequest("http://localhost/api/cases/c1/m2/prefill", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prefill: { K01: { "M2-01": "ja" } }, mode: "conversation" }),
+    });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "c1" }) });
+    expect(res.status).toBe(200);
+
+    // freezeRun muss mit source="conversation" aufgerufen werden, damit
+    // der Run korrekt als Gesprächs-Run eingefroren wird – nicht als MFA.
+    expect(freezeRunMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runId: "run-mfa-open",
+        source: "conversation",
+      }),
     );
   });
 

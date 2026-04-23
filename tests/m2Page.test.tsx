@@ -189,4 +189,37 @@ describe("M2 Seite", () => {
     expect(idxMfaForm).toBeGreaterThan(idxConversation);
     expect(idxSave).toBeGreaterThan(idxMfaForm);
   });
+
+  // ------------------------------------------------------------------
+  // Fehler-1-Fix: Ergänzungs-Flow zeigt nur Delta-Checkpoints
+  // ------------------------------------------------------------------
+
+  it("zeigt im Ergänzungslauf nur die Delta-Checkpoints aus dem offenen Run", async () => {
+    // Session hat zwei Checkpoints (K01 = bereits vorbereitet, K04 = neu ergänzt).
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k01Checkpoint, k04Checkpoint],
+      ctx_prefill: { K01: { "MFA-K01-01": "ja" } },
+      preparation_mode: "mfa",
+      doctor_confirmed: false,
+    });
+    // Offener Run enthält nur das Delta (K04).
+    prismaMock.prefillRun.findFirst.mockResolvedValue({
+      id: "run-ergaenzung",
+      sequence: 2,
+      source: "mfa",
+      frozen_at: null,
+      active_checkpoints: [k04Checkpoint],
+      answers: {},
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-ergl" }) }),
+    );
+
+    // Nur K04 (Delta) soll als aktive Eingabe erscheinen.
+    expect(markup).toContain('data-m2-checkpoint="K04"');
+    // K01 (bereits vorbereitet) darf nicht erneut erscheinen.
+    expect(markup).not.toContain('data-m2-checkpoint="K01"');
+  });
 });

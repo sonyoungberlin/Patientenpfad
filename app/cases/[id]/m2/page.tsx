@@ -36,10 +36,6 @@ export default async function M2Page({
     redirect(`/cases/${id}/m3`);
   }
 
-  const checkpoints = Array.isArray(session.active_checkpoints)
-    ? (session.active_checkpoints as ActiveCheckpoint[])
-    : [];
-
   // Vorbelegung: Wenn ein offener PrefillRun existiert (z. B. nach einer
   // Fallergänzung oder einer angefangenen, aber noch nicht eingefrorenen
   // M2-Bearbeitung), ist **dieser** Run die einzige aktive
@@ -50,6 +46,23 @@ export default async function M2Page({
   // Nur wenn kein offener Run existiert, fällt die Vorbelegung auf
   // `ctx_prefill` zurück (rückwärtskompatibel für den Standardfall).
   const openRun = await getOpenRun(id).catch(() => null);
+
+  // Fehler-1-Fix: Im Ergänzungs-Flow enthält der offene Run nur die neu
+  // ergänzten Checkpoints (Delta). M2 soll daher ausschließlich diese Delta-
+  // Checkpoints als aktive Eingabe zeigen – nicht den Gesamtfall-Stand aus
+  // `session.active_checkpoints`. Nur wenn kein offener Run existiert oder
+  // dessen `active_checkpoints` leer sind, fällt die Anzeige auf den
+  // Gesamtfall-Stand zurück (Standardfall, erste Vorbereitung).
+  const openRunCheckpoints =
+    openRun && Array.isArray(openRun.active_checkpoints) && openRun.active_checkpoints.length > 0
+      ? (openRun.active_checkpoints as ActiveCheckpoint[])
+      : null;
+
+  const checkpoints = openRunCheckpoints ?? (
+    Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as ActiveCheckpoint[])
+      : []
+  );
 
   let prefill: M2PrefillData = {};
   if (openRun) {
