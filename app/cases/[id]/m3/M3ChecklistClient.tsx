@@ -533,6 +533,7 @@ export function M3ChecklistClient({
                       )
                     : [];
 
+                const isEmpty = resolvedAnswers.length === 0;
                 return (
                   <details
                     key={source}
@@ -541,9 +542,18 @@ export function M3ChecklistClient({
                     {...(resolvedAnswers.length > 0 && latestRunForSource
                       ? { "data-prefill-run-id": latestRunForSource.id }
                       : {})}
-                    style={{ marginBottom: "0.5rem" }}
+                    style={{
+                      marginBottom: "0.5rem",
+                      ...(isEmpty
+                        ? { pointerEvents: "none", opacity: 0.45 }
+                        : {}),
+                    }}
                   >
-                    <summary>{RUN_SOURCE_LABEL[source]}</summary>
+                    <summary
+                      style={isEmpty ? { color: "var(--text-muted, #888)" } : undefined}
+                    >
+                      {RUN_SOURCE_LABEL[source]}
+                    </summary>
                     {resolvedAnswers.length > 0 ? (
                       <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
                         {resolvedAnswers.map(({ qId, text, answer }) => {
