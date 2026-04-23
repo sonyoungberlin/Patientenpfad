@@ -198,6 +198,21 @@ describe("createOpenRun", () => {
     ).rejects.toMatchObject({ code: "case_confirmed" });
   });
 
+  it("erlaubt die Anlage bei doctor_confirmed=true mit allowConfirmed=true (Transition Schritt 2)", async () => {
+    const stub = makePrismaStub([{ ...baseCase, doctor_confirmed: true }]);
+    const run = await createOpenRun(
+      {
+        caseId: "case-1",
+        source: "mfa",
+        activeCheckpoints: [],
+        allowConfirmed: true,
+      },
+      stub.client,
+    );
+    expect(run.sequence).toBe(1);
+    expect(run.frozen_at).toBeNull();
+  });
+
   it("verweigert die Anlage bei clinical_status='confirmed' (Regel 3)", async () => {
     const stub = makePrismaStub([{ ...baseCase, clinical_status: "confirmed" }]);
     await expect(
@@ -324,6 +339,22 @@ describe("appendFrozenRun (Regel 1: Patientenrücklauf bei offenem MFA-Run)", ()
         stub.client,
       ),
     ).rejects.toMatchObject({ code: "case_confirmed" });
+  });
+
+  it("erlaubt appendFrozenRun bei bestätigtem Fall mit allowConfirmed=true (Transition Schritt 2)", async () => {
+    const stub = makePrismaStub([{ ...baseCase, clinical_status: "confirmed" }]);
+    const run = await appendFrozenRun(
+      {
+        caseId: "case-1",
+        source: "patient",
+        activeCheckpoints: [],
+        answers: { K01: { "M2-01": "ja" } },
+        allowConfirmed: true,
+      },
+      stub.client,
+    );
+    expect(run.sequence).toBe(1);
+    expect(run.frozen_at).toBeInstanceOf(Date);
   });
 });
 

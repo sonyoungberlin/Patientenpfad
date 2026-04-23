@@ -6,6 +6,12 @@ import {
   sanitizePrefillForMode,
   withDefaultOffenForCheckpoints,
 } from "@/lib/logic/m2Questions";
+import {
+  createOpenRun,
+  freezeRun,
+  getOpenRun,
+  type PrefillRunAnswers,
+} from "@/lib/server/prefillRuns";
 
 export async function PATCH(
   req: NextRequest,
@@ -87,10 +93,40 @@ export async function PATCH(
       activeCheckpointIds,
       preparationMode,
     );
+    const activeCheckpointsSnapshot = Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as unknown[])
+      : [];
 
-    // Konsistenz: Wird über einen nicht-asynchronen Weg (MFA / Gespräch)
-    // gespeichert, darf der Fall nicht weiter auf einen Patientenrücklauf
-    // warten. Ein eventuell ausstehender Token wird invalidiert.
+    // Schreibpfad: vorhandenen offenen Run weiterführen, sonst einen neuen
+    // anlegen; in beiden Fällen anschließend einfrieren. Der partielle
+    // Unique-Index `(case_id) WHERE frozen_at IS NULL` stellt sicher, dass
+    // pro Fall maximal ein offener Run existiert.
+    const existingOpen = await getOpenRun(id);
+    const run =
+      existingOpen ??
+      (await createOpenRun({
+        caseId: id,
+        source: preparationMode,
+        activeCheckpoints: activeCheckpointsSnapshot,
+        createdByAccountId: account.id,
+        // Schritt 2: Außenverhalten identisch; Confirm-Guard wird in einem
+        // späteren Schritt aktiviert.
+        allowConfirmed: true,
+      }));
+    await freezeRun({
+      caseId: id,
+      runId: run.id,
+      answers: filledPrefill as unknown as PrefillRunAnswers,
+      activeCheckpoints: activeCheckpointsSnapshot,
+      allowConfirmed: true,
+    });
+
+    // Cache / Kompatibilitätsschicht: `ctx_prefill` und `preparation_mode`
+    // werden parallel gesetzt, damit bestehende Lesepfade und die M3-Lock-
+    // Logik unverändert weiterarbeiten. `m2_status` bleibt unangetastet,
+    // außer wenn zuvor auf den Patientenrücklauf gewartet wurde – dann
+    // identisch zur bisherigen Route auf "none" zurücksetzen und den
+    // offenen Token invalidieren (M3-Lock-Verhalten unverändert).
     const data: Prisma.CaseSessionUpdateInput = {
       ctx_prefill: filledPrefill as unknown as Prisma.InputJsonValue,
       preparation_mode: preparationMode,

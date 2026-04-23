@@ -1,26 +1,28 @@
 /**
  * Service-Schicht für `PrefillRun`.
  *
- * Schritt 1 der PrefillRun-Migration: Diese Funktionen werden noch **nicht**
- * von den bestehenden API-Routen, M2/M3-Seiten oder der Statuslogik genutzt.
- * Sie sind die technische Grundlage für die folgenden Schritte.
+ * Ab Schritt 2 der PrefillRun-Umstellung werden die M2-Schreibpfade
+ * (`app/api/cases/[id]/m2/prefill/route.ts` und
+ * `app/api/m2-link/[token]/route.ts`) ausschließlich über diese Funktionen
+ * geführt. `ctx_prefill`, `preparation_mode` und `m2_status` werden parallel
+ * als Cache/Kompatibilitätsschicht synchron gehalten; Lesepfade und UI
+ * bleiben in diesem Schritt unverändert.
  *
- * Vorab festgelegte fachliche Regeln (in dieser Schicht vorbereitet, aber
- * noch nicht an Routen angebunden):
+ * Vorab festgelegte fachliche Regeln:
  *
  *  1. Patientenrücklauf bei offenem MFA-Run wird **nicht** gemerged und
  *     überschreibt **nicht** – `appendFrozenRun` mit `source = "patient"`
  *     liefert einen eigenen zusätzlichen Run und tastet einen offenen
  *     MFA-/Conversation-Run nicht an.
- *  2. Token-Invalidierung beim MFA-Speichern wird hier **nicht** ausgelöst
- *     (keine Mutation an `m2_token` / `m2_status`); die bestehende Route
- *     verhält sich in Schritt 1 unverändert.
+ *  2. Token-Invalidierung beim MFA-Speichern bleibt weiterhin Sache der
+ *     Route; diese Schicht ändert `m2_token` / `m2_status` nicht.
  *  3. Bei `clinical_status = "confirmed"` oder `doctor_confirmed = true`
- *     verweigern `createOpenRun`, `freezeRun` und `appendFrozenRun` die
- *     Anlage neuer Runs (Wurf von `PrefillRunError`).
- *
- * `ctx_prefill`, `preparation_mode` und `m2_status` werden in Schritt 1
- * **nicht** synchronisiert. Sie bleiben die heutige Quelle für Lesepfade.
+ *     verweigern `createOpenRun`, `freezeRun` und `appendFrozenRun` per
+ *     Default die Anlage neuer Runs (Wurf von `PrefillRunError`). Für die
+ *     Transition in Schritt 2 können Routen die Sperre mit
+ *     `allowConfirmed: true` überbrücken, damit das Außenverhalten
+ *     identisch zur vorherigen Implementierung bleibt; der endgültige
+ *     Hard-Stop folgt in einem späteren Schritt.
  */
 
 import { Prisma, type PrismaClient, type PrefillRun } from "@prisma/client";
@@ -75,6 +77,14 @@ type CreateOpenRunInput = {
   answers?: PrefillRunAnswers;
   createdByAccountId?: string | null;
   patientTokenUsed?: string | null;
+  /**
+   * Umgeht die Sperre für `doctor_confirmed` / `clinical_status="confirmed"`
+   * (Regel 3). Wird in Schritt 2 der PrefillRun-Umstellung von den
+   * umgestellten Routen gesetzt, damit das Außenverhalten identisch zur
+   * vorherigen Implementierung bleibt. Der endgültige Hard-Stop folgt in
+   * einem späteren Schritt.
+   */
+  allowConfirmed?: boolean;
 };
 
 type FreezeRunInput = {
@@ -83,6 +93,8 @@ type FreezeRunInput = {
   answers: PrefillRunAnswers;
   /** Optional aktualisierter Snapshot (z. B. wenn M1 zwischenzeitlich änderte). */
   activeCheckpoints?: PrefillRunActiveCheckpoints;
+  /** Siehe `CreateOpenRunInput.allowConfirmed`. */
+  allowConfirmed?: boolean;
 };
 
 type AppendFrozenRunInput = CreateOpenRunInput & {
@@ -135,7 +147,7 @@ export async function createOpenRun(
 
   return client.$transaction(async (tx) => {
     const guard = await loadCaseGuard(tx, input.caseId);
-    assertCaseAcceptsNewRun(guard);
+    if (!input.allowConfirmed) assertCaseAcceptsNewRun(guard);
 
     const existingOpen = await tx.prefillRun.findFirst({
       where: { case_id: input.caseId, frozen_at: null },
@@ -175,7 +187,7 @@ export async function freezeRun(
 ): Promise<PrefillRun> {
   return client.$transaction(async (tx) => {
     const guard = await loadCaseGuard(tx, input.caseId);
-    assertCaseAcceptsNewRun(guard);
+    if (!input.allowConfirmed) assertCaseAcceptsNewRun(guard);
 
     const run = await tx.prefillRun.findUnique({ where: { id: input.runId } });
     if (!run || run.case_id !== input.caseId) {
@@ -222,7 +234,7 @@ export async function appendFrozenRun(
 
   return client.$transaction(async (tx) => {
     const guard = await loadCaseGuard(tx, input.caseId);
-    assertCaseAcceptsNewRun(guard);
+    if (!input.allowConfirmed) assertCaseAcceptsNewRun(guard);
 
     const sequence = await nextSequence(tx, input.caseId);
     return tx.prefillRun.create({

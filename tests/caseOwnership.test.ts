@@ -27,6 +27,14 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+// Schritt 2: Schreibroute nutzt PrefillRun-Service – hier nur neutrale
+// Stubs, damit die Owner-/Approval-Kontrolle isoliert getestet bleibt.
+jest.mock("@/lib/server/prefillRuns", () => ({
+  getOpenRun: jest.fn().mockResolvedValue(null),
+  createOpenRun: jest.fn().mockResolvedValue({ id: "run-1", sequence: 1, frozen_at: null }),
+  freezeRun: jest.fn().mockResolvedValue({ id: "run-1", sequence: 1, frozen_at: new Date() }),
+}));
+
 import { prisma } from "@/lib/prisma";
 import { GET as getCaseHandler } from "@/app/api/cases/[id]/route";
 import { PATCH as prefillHandler } from "@/app/api/cases/[id]/m2/prefill/route";

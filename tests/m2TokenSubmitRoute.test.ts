@@ -10,12 +10,18 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+jest.mock("@/lib/server/prefillRuns", () => ({
+  appendFrozenRun: jest.fn(),
+}));
+
 import { prisma } from "@/lib/prisma";
+import { appendFrozenRun } from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: { findUnique: jest.Mock; update: jest.Mock };
 };
 const prismaMock = prisma as unknown as PrismaMock;
+const appendFrozenRunMock = appendFrozenRun as unknown as jest.Mock;
 
 function futureDate(daysFromNow: number): Date {
   return new Date(Date.now() + daysFromNow * 24 * 60 * 60 * 1000);
@@ -37,6 +43,13 @@ describe("POST /api/m2-link/[token]", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.update.mockReset();
+    appendFrozenRunMock.mockReset();
+    appendFrozenRunMock.mockResolvedValue({
+      id: "run-patient",
+      sequence: 1,
+      frozen_at: new Date(),
+      source: "patient",
+    });
   });
 
   it("schreibt ctx_prefill und löscht Token bei erfolgreichem Submit", async () => {

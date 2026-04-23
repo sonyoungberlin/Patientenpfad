@@ -18,7 +18,18 @@ jest.mock("@/lib/auth", () => ({
   }),
 }));
 
+jest.mock("@/lib/server/prefillRuns", () => ({
+  getOpenRun: jest.fn(),
+  createOpenRun: jest.fn(),
+  freezeRun: jest.fn(),
+}));
+
 import { prisma } from "@/lib/prisma";
+import {
+  createOpenRun,
+  freezeRun,
+  getOpenRun,
+} from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: {
@@ -28,11 +39,21 @@ type PrismaMock = {
 };
 
 const prismaMock = prisma as unknown as PrismaMock;
+const getOpenRunMock = getOpenRun as unknown as jest.Mock;
+const createOpenRunMock = createOpenRun as unknown as jest.Mock;
+const freezeRunMock = freezeRun as unknown as jest.Mock;
 
 describe("PATCH /api/cases/[id]/m2/prefill", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.update.mockReset();
+    getOpenRunMock.mockReset();
+    createOpenRunMock.mockReset();
+    freezeRunMock.mockReset();
+    // Defaults: kein offener Run vorhanden → createOpenRun wird genutzt.
+    getOpenRunMock.mockResolvedValue(null);
+    createOpenRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: null });
+    freezeRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: new Date() });
   });
 
   it("speichert strukturierte Prefill-Daten in ctx_prefill (mode-konsistente MFA-IDs)", async () => {

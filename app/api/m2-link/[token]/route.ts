@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sanitizePrefillForMode } from "@/lib/logic/m2Questions";
+import {
+  appendFrozenRun,
+  type PrefillRunAnswers,
+} from "@/lib/server/prefillRuns";
 
 export async function POST(
   req: NextRequest,
@@ -12,7 +16,11 @@ export async function POST(
 
     const session = await prisma.caseSession.findUnique({
       where: { m2_token: token },
-      select: { id: true, m2_token_expires_at: true },
+      select: {
+        id: true,
+        m2_token_expires_at: true,
+        active_checkpoints: true,
+      },
     });
 
     if (!session || !session.m2_token_expires_at) {
@@ -56,6 +64,27 @@ export async function POST(
     // - Antworten werden strikt gegen den Patientenkatalog sanitisiert.
     const sanitizedPrefill = sanitizePrefillForMode(body.prefill, "patient");
 
+    // Patientenrücklauf erzeugt **immer** einen eigenständigen, sofort
+    // eingefrorenen Run (Regel 1). Ein eventuell offener MFA-/Gesprächs-Run
+    // wird dabei bewusst NICHT angetastet, gemerged oder überschrieben.
+    const activeCheckpointsSnapshot = Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as unknown[])
+      : [];
+    await appendFrozenRun({
+      caseId: session.id,
+      source: "patient",
+      activeCheckpoints: activeCheckpointsSnapshot,
+      answers: sanitizedPrefill as unknown as PrefillRunAnswers,
+      patientTokenUsed: token,
+      // Schritt 2: Außenverhalten identisch.
+      allowConfirmed: true,
+    });
+
+    // Cache / Kompatibilitätsschicht synchron halten. `ctx_prefill` enthält
+    // die Antworten dieses neuen Runs (Patient-Reader lesen ausschließlich
+    // den Patientenkatalog); `preparation_mode = "patient"`, `m2_status =
+    // "completed"` und die Token-Invalidierung verhalten sich identisch
+    // zur bisherigen Implementierung.
     await prisma.caseSession.update({
       where: { id: session.id },
       data: {
