@@ -1,11 +1,21 @@
 # CP-K08 – Nutzung digitaler Praxisleistungen
 
-- **checkpoint_id:** `CP-K08`
-- **block_id:** `versorgungskanaele`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation und weicht an mehreren
+> Stellen vom aktuellen Code ab. Maßgeblich sind der `CHECKPOINT_CATALOGUE` in
+> `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> Bekannte Abweichungen in diesem Dokument:
+> - `block_id: "versorgungskanaele"` → Code: `"kommunikation"`
+> - `relevance: A` → Code K08: `relevance = P` (hat Vorbereitungsperspektiven)
+> - `typ: STATUS_KLAERUNG` → Code: `CheckpointType.VERIFIKATION`, neue Taxonomie: `DECISION`
+
+- **checkpoint_id:** `CP-K08` _(Code-ID: `K08`)_
+- **block_id:** `versorgungskanaele` _(Code: `kommunikation`)_
 - **block_title:** Nutzung digitaler Praxisleistungen
-- **typ:** STATUS_KLAERUNG
+- **typ:** STATUS_KLAERUNG _(Code: `VERIFIKATION`, neu: `DECISION`)_
 - **category:** `O` (organisatorisch)
-- **relevance:** `A` (optional)
+- **relevance:** `A` (optional) _(Code: `P`)_
 
 ---
 

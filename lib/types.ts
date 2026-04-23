@@ -13,6 +13,10 @@ export type BlockSummary = {
   active_checkpoint_count: number;
 };
 
+// TODO(refactor): Die Enum-Werte entsprechen nicht der kanonischen Checkpoint-Taxonomie
+// (DECISION / MULTI_SELECT / ASSESSMENT), die in docs/architecture/checkpoints.md definiert ist.
+// Eine Umbenennung würde bestehende JSON-Datenbankeinträge invalidieren und erfordert eine
+// eigene Migration. Maßgebliche Zuordnung: siehe docs/architecture/checkpoints.md, Abschnitt 1.1.
 export enum CheckpointType {
   PRESENCE_CHECK = "PRESENCE_CHECK",
   NACHWEIS = "NACHWEIS",
@@ -30,9 +34,9 @@ export enum CheckpointCategory {
 }
 
 export enum CheckpointRelevance {
-  /** Pflicht: immer sichtbar und zu bewerten */
+  /** Hat Vorbereitungsperspektive(n): Checkpoint erscheint in M2 (MFA und/oder Patient). */
   P = "P",
-  /** Additiv: nur in passenden Kontexten aktiv */
+  /** Keine Vorbereitung: Checkpoint erscheint ausschließlich in M3. */
   A = "A",
 }
 
@@ -55,7 +59,11 @@ type ActiveCheckpointBase = {
   title: string;
   description?: string;
   m4: {
-    /** Static per checkpoint – not computed from status */
+    /** Static per checkpoint – not computed from status.
+     * TODO(refactor): Ein explizites m4_behavior-Feld ("ACTION" | "NOTICE" | "NONE") soll
+     * dieses implizite Steuerungsmodell ablösen. Aktuell wird kein M4-Output durch einen
+     * leeren `text`-String signalisiert (K12). Maßgeblich: docs/architecture/checkpoints.md §1.4.
+     */
     type: "ACTION" | "NOTICE";
     text: string;
   };

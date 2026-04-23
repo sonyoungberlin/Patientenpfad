@@ -1,11 +1,22 @@
 # CP-K02 – Praktische Möglichkeit der Terminwahrnehmung
 
-- **checkpoint_id:** `CP-K02`
-- **block_id:** `zugang_versorgung`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation und weicht an mehreren
+> Stellen vom aktuellen Code ab. Maßgeblich sind der `CHECKPOINT_CATALOGUE` in
+> `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> Bekannte Abweichungen in diesem Dokument:
+> - `block_id: "zugang_versorgung"` → Code: `"versorgung_im_alltag"`
+> - `category: O` → Code: `CheckpointCategory.M`
+> - `typ: STATUS_KLAERUNG` → Code: `CheckpointType.BEDARF`, neue Taxonomie: `DECISION`
+> - `relevance: P` bedeutet jetzt „hat Vorbereitungsperspektiven" (nicht „pflichtrelevant")
+
+- **checkpoint_id:** `CP-K02` _(Code-ID: `K02`)_
+- **block_id:** `zugang_versorgung` _(Code: `versorgung_im_alltag`)_
 - **block_title:** Zugang zur Versorgung
-- **typ:** STATUS_KLAERUNG
-- **category:** `O` (organisatorisch)
-- **relevance:** `P` (pflichtrelevant)
+- **typ:** STATUS_KLAERUNG _(Code: `BEDARF`, neu: `DECISION`)_
+- **category:** `O` (organisatorisch) _(Code: `M`)_
+- **relevance:** `P` (hat Vorbereitungsperspektiven)
 
 ---
 

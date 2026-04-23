@@ -1,11 +1,21 @@
 # CP-K07 – Vorübergehender Unterstützungsbedarf
 
-- **checkpoint_id:** `CP-K07`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation. Felder `typ`, `block_id`
+> und `relevance` können vom aktuellen Code abweichen. Maßgeblich sind der
+> `CHECKPOINT_CATALOGUE` in `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> - `typ: BEDARF` entspricht dem Code-Wert `CheckpointType.BEDARF`; neue Taxonomie: `DECISION`
+> - `relevance: A` bedeutet jetzt „nur M3, keine Vorbereitung" (nicht „optional")
+> - Code K07: `relevance = A` ✓ (stimmt überein)
+> - `block_id: "versorgung_im_alltag"` ✓ (stimmt überein)
+
+- **checkpoint_id:** `CP-K07` _(Code-ID: `K07`)_
 - **block_id:** `versorgung_im_alltag`
 - **block_title:** Versorgung im Alltag
-- **typ:** BEDARF
+- **typ:** BEDARF _(Code: `CheckpointType.BEDARF`, neu: `DECISION`)_
 - **category:** `M` (medizinisch/versorgungsbezogen)
-- **relevance:** `A` (optional)
+- **relevance:** `A` (nur M3, keine Vorbereitung)
 
 ---
 

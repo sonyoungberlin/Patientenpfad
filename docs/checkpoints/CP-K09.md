@@ -1,11 +1,19 @@
 # CP-K09 – Mitwirkung
 
-- **checkpoint_id:** `CP-K09`
+> ℹ️ **Hinweis:** Die Felder `block_id`, `category` und `typ` stimmen mit dem Code überein.
+> Eine Abweichung betrifft nur die `relevance`-Semantik:
+> - `relevance: A` bedeutet in der neuen Semantik „nur M3, keine Vorbereitung"
+>   (früher: „additiv – nur M3"). ✓ Übereinstimmung mit Code K09.
+> - `typ: VERIFIKATION` entspricht `CheckpointType.VERIFIKATION`; neue Taxonomie: `DECISION`.
+>
+> Maßgebliche Gesamtdokumentation: `docs/architecture/checkpoints.md`.
+
+- **checkpoint_id:** `CP-K09` _(Code-ID: `K09`)_
 - **block_id:** `kommunikation`
 - **block_title:** Kommunikation & Erreichbarkeit
-- **typ:** VERIFIKATION
+- **typ:** VERIFIKATION _(Code: `CheckpointType.VERIFIKATION`, neu: `DECISION`)_
 - **category:** `O` (organisatorisch)
-- **relevance:** `A` (additiv – nur M3)
+- **relevance:** `A` (nur M3, keine Vorbereitung)
 
 ---
 

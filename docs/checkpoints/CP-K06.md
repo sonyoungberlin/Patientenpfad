@@ -1,11 +1,24 @@
 # CP-K06 – Externe Mitbehandler geklärt
 
-- **checkpoint_id:** `CP-K06`
-- **block_id:** `externe_mitbehandler`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation und weicht an mehreren
+> Stellen vom aktuellen Code ab. Maßgeblich sind der `CHECKPOINT_CATALOGUE` in
+> `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> Bekannte Abweichungen in diesem Dokument:
+> - `block_id: "externe_mitbehandler"` → Code K06 (`Unterstützung im Alltag`): `"versorgung_im_alltag"`
+> - Dieser Entwurf beschreibt einen anderen inhaltlichen Checkpoint als K06 im Code.
+>   K06 im Code heißt „Unterstützung im Alltag" (Pflegebedarf), nicht „Externe Mitbehandler".
+> - `typ: STATUS_KLAERUNG` → Code K06: `CheckpointType.BEDARF`, neue Taxonomie: `DECISION`
+> - `relevance: A` → Code K06: `relevance = P`
+> - `relevance: A` bedeutet in der neuen Semantik „nur M3, keine Vorbereitung"
+
+- **checkpoint_id:** `CP-K06` _(Code-ID unklar: K06 im Code hat abweichenden Inhalt)_
+- **block_id:** `externe_mitbehandler` _(Code K06: `versorgung_im_alltag`)_
 - **block_title:** Externe Mitbehandler
-- **typ:** STATUS_KLAERUNG
+- **typ:** STATUS_KLAERUNG _(Code: `BEDARF`, neu: `DECISION`)_
 - **category:** `O` (organisatorisch)
-- **relevance:** `A` (optional)
+- **relevance:** `A` (nur M3) _(Code K06: `P`)_
 
 ---
 

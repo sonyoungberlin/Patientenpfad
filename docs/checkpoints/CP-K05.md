@@ -1,11 +1,25 @@
 # CP-K05 – Diagnosenlage geklärt
 
-- **checkpoint_id:** `CP-K05`
-- **block_id:** `diagnosenlage`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation und weicht an mehreren
+> Stellen vom aktuellen Code ab. Maßgeblich sind der `CHECKPOINT_CATALOGUE` in
+> `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> Bekannte Abweichungen in diesem Dokument:
+> - `block_id: "diagnosenlage"` → im Code gibt es keinen Block `"diagnosenlage"`;
+>   K05 (Medizinische Mitbehandlung) liegt in `"medizinische_lage"`.
+> - Dieser Entwurf beschreibt einen Checkpoint „Diagnosenlage"; im Code entspricht K03
+>   dem Inhalt (Diagnosenlage, block `medizinische_lage`), nicht K05.
+> - `typ: STATUS_KLAERUNG` → Code K05: `CheckpointType.PROZESS_VORLAUF`, neue Taxonomie: `DECISION`
+> - `relevance: P` → Code K05: `relevance = A` (keine Pflicht-Perspektiven)
+> - `relevance: P` bedeutet in der neuen Semantik „hat Vorbereitungsperspektiven"
+
+- **checkpoint_id:** `CP-K05` _(Code-ID: `K05`, Titel im Code: „Medizinische Mitbehandlung")_
+- **block_id:** `diagnosenlage` _(Code: `medizinische_lage`)_
 - **block_title:** Diagnosenlage
-- **typ:** STATUS_KLAERUNG
+- **typ:** STATUS_KLAERUNG _(Code: `PROZESS_VORLAUF`, neu: `DECISION`)_
 - **category:** `M` (medizinisch)
-- **relevance:** `P` (Pflicht)
+- **relevance:** `P` (Pflicht) _(Code: `A`)_
 
 ---
 

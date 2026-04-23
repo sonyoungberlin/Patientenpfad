@@ -1,11 +1,23 @@
 # CP-K03 – Informationsbasis ausreichend
 
-- **checkpoint_id:** `CP-K03`
-- **block_id:** `dokumentenlage`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation und weicht an mehreren
+> Stellen vom aktuellen Code ab. Maßgeblich sind der `CHECKPOINT_CATALOGUE` in
+> `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> Bekannte Abweichungen in diesem Dokument:
+> - `block_id: "dokumentenlage"` → Code: `"medizinische_lage"`
+> - `typ: STATUS_KLAERUNG` → Code: `CheckpointType.NACHWEIS`, neue Taxonomie: `DECISION`
+> - `relevance: P` bedeutet jetzt „hat Vorbereitungsperspektiven" (nicht „Pflicht")
+> - Dieser Entwurf beschreibt den Checkpoint unter dem Titel „Informationsbasis ausreichend";
+>   im Code lautet der Titel „Diagnosenlage" (K03).
+
+- **checkpoint_id:** `CP-K03` _(Code-ID: `K03`)_
+- **block_id:** `dokumentenlage` _(Code: `medizinische_lage`)_
 - **block_title:** Dokumentenlage / Informationsbasis
-- **typ:** STATUS_KLAERUNG
+- **typ:** STATUS_KLAERUNG _(Code: `NACHWEIS`, neu: `DECISION`)_
 - **category:** `M` (medizinisch)
-- **relevance:** `P` (Pflicht)
+- **relevance:** `P` (hat Vorbereitungsperspektiven)
 
 ---
 

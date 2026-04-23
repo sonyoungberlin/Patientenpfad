@@ -1,6 +1,16 @@
 # CP-K01 – Kommunikation geklärt
 
-- **checkpoint_id:** `CP-K01`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation und weicht an mehreren
+> Stellen vom aktuellen Code ab. Maßgeblich sind der `CHECKPOINT_CATALOGUE` in
+> `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> Bekannte Abweichungen in diesem Dokument:
+> - `typ: STATUS_KLAERUNG` entspricht nicht dem Code-Wert `CheckpointType.PRESENCE_CHECK`
+> - In der neuen Taxonomie: `type = DECISION`
+> - `relevance: P` bedeutet jetzt „hat Vorbereitungsperspektiven" (nicht „Pflicht")
+
+- **checkpoint_id:** `CP-K01` _(Code-ID: `K01`)_
 - **block_id:** `kommunikation`
 - **block_title:** Kommunikation & Erreichbarkeit
 - **typ:** STATUS_KLAERUNG

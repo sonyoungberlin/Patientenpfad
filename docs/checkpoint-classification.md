@@ -1,5 +1,9 @@
 # Checkpoint-Klassifikation (M/O + P/A)
 
+> **Maßgebliche Gesamtdokumentation:** [`docs/architecture/checkpoints.md`](./architecture/checkpoints.md)
+>
+> Dieses Dokument beschreibt die Achsen `category` (M/O) und `relevance` (P/A).
+
 Jeder Checkpoint muss zwei Eigenschaften tragen:
 
 1. **Kategorie**:
@@ -9,8 +13,8 @@ Jeder Checkpoint muss zwei Eigenschaften tragen:
 
 2. **Relevanz**:
 
-   * `P` = Pflicht-Checkpoint
-   * `A` = additiv / kontextabhängig
+   * `P` = Checkpoint hat Vorbereitungsperspektive(n) und erscheint in M2
+   * `A` = Checkpoint hat keine Vorbereitung und erscheint nur in M3
 
 ---
 
@@ -68,17 +72,19 @@ Beispiele:
 
 ## 2. Relevanz: P vs. A
 
-### P – Pflicht
+### P – Vorbereitungsperspektive vorhanden
 
-* muss in jedem Fall bewertet werden
-* blockiert nicht den Ablauf, ist aber immer sichtbar
+* Der Checkpoint hat Vorbereitungsperspektive(n) und erscheint in M2.
+* Sowohl MFA- als auch Patientenfragen sind für diesen Checkpoint definiert
+  (bei `type = DECISION + P`) oder mindestens eine Perspektive ist vorhanden
+  (bei `type = ASSESSMENT + P`).
 
 ---
 
-### A – additiv
+### A – Nur M3 (keine Vorbereitung)
 
-* nur relevant in bestimmten Situationen
-* wird kontextabhängig aktiviert
+* Der Checkpoint hat keine Vorbereitung und erscheint ausschließlich in M3.
+* Kein M2-Fragenkatalog-Eintrag notwendig.
 
 ---
 
@@ -105,13 +111,15 @@ Beispiel:
 
 ### Für O-Checkpoints:
 
-* Status kann teilweise aus M2 abgeleitet werden
+* Status in M3: `OK` oder `TO_DO` (kein `ZURÜCKSTELLEN`)
+* Arzt muss sich entscheiden
 
 ### Für M-Checkpoints:
 
 * Status darf NICHT aus M2 abgeleitet werden
 * M2 liefert nur Kontext
 * Entscheidung erfolgt immer in M3
+* `ZURÜCKSTELLEN` ist erlaubt und führt in M5 zu einem „unklar"-Satz
 
 ---
 

@@ -1,11 +1,19 @@
 # CP-K11 – Formularanliegen
 
-- **checkpoint_id:** `CP-K11`
+> ℹ️ **Hinweis:** Die Felder in diesem Dokument stimmen weitgehend mit dem Code überein.
+> Abweichungen betreffen nur Terminologie:
+> - `typ: BEDARF` entspricht `CheckpointType.BEDARF`; neue Taxonomie: `MULTI_SELECT`.
+> - `relevance: A` bedeutet jetzt „nur M3, keine Vorbereitung" (früher: „additiv").
+>   ✓ Übereinstimmung mit Code K11 (`relevance = A`).
+>
+> Maßgebliche Gesamtdokumentation: `docs/architecture/checkpoints.md`.
+
+- **checkpoint_id:** `CP-K11` _(Code-ID: `K11`)_
 - **block_id:** `medizinische_lage`
-- **typ:** BEDARF
+- **typ:** BEDARF _(Code: `CheckpointType.BEDARF`, neu: `MULTI_SELECT`)_
 - **mode:** `MULTI_SELECT`
 - **category:** `O` (organisatorisch)
-- **relevance:** `A` (additiv, immer sichtbar als Doku-Checkpoint)
+- **relevance:** `A` (nur M3, keine Vorbereitung)
 - **sichtbar:** **nur Arztseite**
 
 ---

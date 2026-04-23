@@ -149,7 +149,10 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     description:
       "Beobachten, wie die Alltagsrealität des Patienten von außen wirkt – Mobilität, Selbstversorgung, Kognition, Ernährung, Flüssigkeit, Hilfsmittelumgang und Pflegegrad.",
     m4: {
-      // Einschätzungsblock: keine automatische Patienten-Nachricht oder Empfehlung
+      // K12 ist ein ASSESSMENT-Checkpoint (m4_behavior = NONE):
+      // Er erzeugt bewusst keinen Patientenhinweis. Solange m4_behavior noch kein
+      // eigenes Feld ist, wird NONE über einen leeren text-String signalisiert.
+      // TODO(refactor): Nach Einführung von m4_behavior als eigenem Feld auf NONE umstellen.
       type: "NOTICE",
       text: "",
     },

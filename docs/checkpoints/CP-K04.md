@@ -1,11 +1,21 @@
 # CP-K04 – Medikation geklärt
 
-- **checkpoint_id:** `CP-K04`
-- **block_id:** `medikation`
+> ⚠️ **Hinweis:** Dieses Dokument ist eine Entwurfsdokumentation und weicht an mehreren
+> Stellen vom aktuellen Code ab. Maßgeblich sind der `CHECKPOINT_CATALOGUE` in
+> `lib/logic/checkpointCatalog.ts` und die kanonischen Regeln in
+> `docs/architecture/checkpoints.md`.
+>
+> Bekannte Abweichungen in diesem Dokument:
+> - `block_id: "medikation"` → Code: `"medizinische_lage"`
+> - `typ: STATUS_KLAERUNG` → Code: `CheckpointType.VERIFIKATION`, neue Taxonomie: `DECISION`
+> - `relevance: P` bedeutet jetzt „hat Vorbereitungsperspektiven" (nicht „Pflicht")
+
+- **checkpoint_id:** `CP-K04` _(Code-ID: `K04`)_
+- **block_id:** `medikation` _(Code: `medizinische_lage`)_
 - **block_title:** Medikation
-- **typ:** STATUS_KLAERUNG
+- **typ:** STATUS_KLAERUNG _(Code: `VERIFIKATION`, neu: `DECISION`)_
 - **category:** `M` (medizinisch)
-- **relevance:** `P` (Pflicht)
+- **relevance:** `P` (hat Vorbereitungsperspektiven)
 
 ---
 
