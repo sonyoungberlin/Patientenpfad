@@ -101,6 +101,9 @@ const RUN_SOURCE_LABEL: Record<PrefillRunSource, string> = {
   patient: "Vorbereitung – Patientenfragebogen",
 };
 
+// Feste Reihenfolge der Vorbereitungs-Fenster pro Checkpoint (immer sichtbar).
+const PREFILL_SOURCES: PrefillRunSource[] = ["mfa", "conversation", "patient"];
+
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
@@ -489,34 +492,11 @@ export function M3ChecklistClient({
       ) : null}
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {checkpoints.map((checkpoint) => {
-          // Schritt 3: Pro Checkpoint werden alle eingefrorenen Runs in
-          // `sequence`-Reihenfolge separat dargestellt. Für jeden Run wird
-          // die bestehende Prefill-Rendering-Logik wiederverwendet; die
-          // Fragentext-Auflösung erfolgt auf Basis der jeweiligen
-          // `run.source` (nicht der globalen `preparation_mode`). Leere
-          // Runs (keine auflösbaren Antworten für diesen Checkpoint)
-          // werden komplett ausgeblendet – kein Platzhalter, kein Hinweis.
-          const runBlocks = frozenRuns
-            .slice()
-            .sort((a, b) => a.sequence - b.sequence)
-            .map((run) => {
-              const cpAnswers = run.answers[checkpoint.id];
-              const resolvedAnswers: { qId: string; text: string; answer: string }[] =
-                cpAnswers
-                  ? Object.entries(cpAnswers).flatMap(([qId, answer]) => {
-                      const text = resolveQuestionTextForDisplay(
-                        run.source,
-                        checkpoint.id,
-                        qId,
-                      );
-                      return text === null
-                        ? []
-                        : [{ qId, text, answer: answer as string }];
-                    })
-                  : [];
-              return { run, resolvedAnswers };
-            })
-            .filter((x) => x.resolvedAnswers.length > 0);
+          // Fachliche Regel: Pro Checkpoint werden immer drei feste
+          // Vorbereitungs-Fenster gerendert (mfa / conversation / patient),
+          // unabhängig davon ob ein eingefrorener Run vorhanden ist.
+          // Hat eine Quelle Antworten für diesen Checkpoint, werden diese
+          // angezeigt; andernfalls bleibt das Fenster leer (kein Platzhalter).
           return (
             <li
               key={checkpoint.id}
@@ -528,30 +508,55 @@ export function M3ChecklistClient({
               }}
             >
               <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{checkpoint.title}</div>
-              {runBlocks.map(({ run, resolvedAnswers }) => (
-                <details
-                  key={run.id}
-                  data-m2-prefill={checkpoint.id}
-                  data-prefill-run-id={run.id}
-                  data-prefill-run-source={run.source}
-                  data-prefill-run-sequence={run.sequence}
-                  style={{ marginBottom: "0.5rem" }}
-                >
-                  <summary>{RUN_SOURCE_LABEL[run.source]}</summary>
-                    <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
-                      {resolvedAnswers.map(({ qId, text, answer }) => {
-                        const symbol = getAnswerSymbol(answer);
-                        return (
-                          <li key={qId} style={{ marginBottom: "0.25rem" }}>
-                            <span>{text}</span>
-                            {" — "}
-                            <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
-                          </li>
-                      );
-                    })}
-                  </ul>
-                </details>
-              ))}
+              {PREFILL_SOURCES.map((source) => {
+                const latestRunForSource = frozenRuns
+                  .filter((r) => r.source === source)
+                  .sort((a, b) => b.sequence - a.sequence)[0];
+
+                const resolvedAnswers: { qId: string; text: string; answer: string }[] =
+                  latestRunForSource?.answers[checkpoint.id]
+                    ? Object.entries(latestRunForSource.answers[checkpoint.id]).flatMap(
+                        ([qId, answer]) => {
+                          const text = resolveQuestionTextForDisplay(
+                            source,
+                            checkpoint.id,
+                            qId,
+                          );
+                          return text === null
+                            ? []
+                            : [{ qId, text, answer: answer as string }];
+                        },
+                      )
+                    : [];
+
+                return (
+                  <details
+                    key={source}
+                    data-m2-prefill={checkpoint.id}
+                    data-prefill-source={source}
+                    {...(resolvedAnswers.length > 0 && latestRunForSource
+                      ? { "data-prefill-run-id": latestRunForSource.id }
+                      : {})}
+                    style={{ marginBottom: "0.5rem" }}
+                  >
+                    <summary>{RUN_SOURCE_LABEL[source]}</summary>
+                    {resolvedAnswers.length > 0 ? (
+                      <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
+                        {resolvedAnswers.map(({ qId, text, answer }) => {
+                          const symbol = getAnswerSymbol(answer);
+                          return (
+                            <li key={qId} style={{ marginBottom: "0.25rem" }}>
+                              <span>{text}</span>
+                              {" — "}
+                              <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : null}
+                  </details>
+                );
+              })}
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {getStatusOptions(checkpoint.category).map((statusOption) => (
                   <button

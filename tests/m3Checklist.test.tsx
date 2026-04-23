@@ -377,14 +377,14 @@ describe("M3 Checkliste", () => {
     expect(markup).not.toContain("MFA-K01-01");
   });
 
-  it("blendet alle Antworten aus, wenn keine ID zur Run-Quelle passt (kein Prefill-Block)", async () => {
+  it("zeigt Quellenblöcke immer an, blendet aber Cross-Mode-IDs aus (keine Roh-ID, kein Inhalt)", async () => {
     setupCase({
       active_checkpoints: [
         { ...mCheckpoint, id: "K01", title: "Kommunikation" },
       ],
     });
-    // Run-Quelle=mfa, aber nur Patienten-IDs vorhanden → Block wird nicht
-    // gerendert (leerer Run wird unterdrückt).
+    // Run-Quelle=mfa, aber nur Patienten-IDs vorhanden → Fenster wird
+    // gerendert, aber keine Antwort ist auflösbar (kein Inhalt, kein run-id).
     setFrozenRuns([
       { sequence: 1, source: "mfa", answers: { K01: { "M2-01": "ja" } } },
     ]);
@@ -393,13 +393,15 @@ describe("M3 Checkliste", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).not.toContain("Vorbereitung – MFA");
-    expect(markup).not.toContain("Vorbereitung – Patientengespräch");
-    expect(markup).not.toContain("Vorbereitung – Patientenfragebogen");
+    // Alle drei Fenster sind immer sichtbar.
+    expect(markup).toContain("Vorbereitung – MFA");
+    expect(markup).toContain("Vorbereitung – Patientengespräch");
+    expect(markup).toContain("Vorbereitung – Patientenfragebogen");
+    // Roh-ID darf nie auftauchen.
     expect(markup).not.toContain("M2-01");
   });
 
-  it("M3 zeigt keinen Prefill-Bereich wenn keine Runs existieren", async () => {
+  it("zeigt drei leere Vorbereitungs-Fenster auch wenn keine Runs existieren (kein Antwortinhalt)", async () => {
     // getFrozenRuns-Default ist bereits []; ctx_prefill würde selbst mit
     // Antworten **nicht mehr** konsultiert (kein Fallback in Schritt 3).
     setupCase({
@@ -411,7 +413,11 @@ describe("M3 Checkliste", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).not.toContain("Vorbereitung –");
+    // Alle drei Fenster immer angezeigt.
+    expect(markup).toContain("Vorbereitung – MFA");
+    expect(markup).toContain("Vorbereitung – Patientengespräch");
+    expect(markup).toContain("Vorbereitung – Patientenfragebogen");
+    // Kein Antwortinhalt (kein Fragetext aus ctx_prefill oder Runs).
     expect(markup).not.toContain("Sind Sie telefonisch und per SMS erreichbar?");
   });
 

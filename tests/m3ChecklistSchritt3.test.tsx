@@ -111,10 +111,10 @@ describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
     getFrozenRunsMock.mockResolvedValue([]);
   });
 
-  it("rendert mehrere Runs pro Checkpoint in aufsteigender sequence-Reihenfolge (keine Zusammenführung)", async () => {
+  it("rendert alle drei Quellen-Fenster pro Checkpoint in fester Reihenfolge (mfa, conversation, patient)", async () => {
     setupCase([cpK01]);
     // MFA-Run (sequence=2) UND Patient-Run (sequence=1) – bewusst
-    // verkehrt geliefert, um Sortierung zu prüfen.
+    // verkehrt geliefert, um die feste Quellenreihenfolge zu prüfen.
     setRuns([
       {
         id: "run-mfa",
@@ -134,18 +134,18 @@ describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    // Beide Blöcke sind sichtbar.
+    // Beide befüllten Blöcke sind sichtbar.
     expect(markup).toContain("Vorbereitung – Patientenfragebogen");
     expect(markup).toContain("Vorbereitung – MFA");
 
-    // Reihenfolge: Patient (sequence=1) vor MFA (sequence=2) im Markup.
+    // Feste Reihenfolge: MFA (Slot 1) vor Patientenfragebogen (Slot 3).
     const patientIdx = markup.indexOf("Vorbereitung – Patientenfragebogen");
     const mfaIdx = markup.indexOf("Vorbereitung – MFA");
     expect(patientIdx).toBeGreaterThan(-1);
-    expect(mfaIdx).toBeGreaterThan(patientIdx);
+    expect(mfaIdx).toBeLessThan(patientIdx);
 
     // Keine Zusammenführung: beide Antworten erscheinen separat, jede in
-    // ihrem eigenen Run-Block (Texttokens einmalig pro Block).
+    // ihrem eigenen Quellen-Block (Texttokens einmalig pro Block).
     expect(markup).toContain("Ist der Patient für uns grundsätzlich erreichbar?");
     expect(markup).toContain("Sind Sie telefonisch und per SMS erreichbar?");
   });
@@ -167,7 +167,7 @@ describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
     expect(markup).toContain("Vorbereitung – Patientenfragebogen");
   });
 
-  it("blendet leere Runs aus (kein Platzhalter, kein Hinweis)", async () => {
+  it("zeigt leere Fenster immer an, befüllte mit run-id – kein Platzhaltertext", async () => {
     setupCase([cpK01]);
     setRuns([
       { id: "run-empty", sequence: 1, source: "mfa", answers: {} },
@@ -183,11 +183,12 @@ describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    // Nur der nicht-leere Run wird als Block dargestellt.
+    // Alle drei Fenster werden immer gerendert (auch das leere MFA-Fenster).
+    expect(markup).toContain("Vorbereitung – MFA");
     expect(markup).toContain("Vorbereitung – Patientenfragebogen");
-    expect(markup).not.toContain("Vorbereitung – MFA");
-    // Kein Data-Attribut des leeren Runs im Markup.
+    // Leeres Fenster trägt keine data-prefill-run-id.
     expect(markup).not.toContain('data-prefill-run-id="run-empty"');
+    // Befülltes Fenster hat data-prefill-run-id.
     expect(markup).toContain('data-prefill-run-id="run-filled"');
   });
 
@@ -224,7 +225,7 @@ describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
     );
   });
 
-  it("single-run Fall: bestehende Struktur bleibt erhalten (ein Block pro Checkpoint mit Answers-Liste)", async () => {
+  it("single-run Fall: drei feste Quellenblöcke pro Checkpoint – befüllter Block mit Answers-Liste", async () => {
     setupCase([cpK01]);
     setRuns([
       {
@@ -239,8 +240,8 @@ describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    // Genau ein `<details>`-Prefill-Block für diesen Checkpoint.
+    // Drei `<details>`-Prefill-Blöcke für diesen Checkpoint (je eine Quelle).
     const matches = markup.match(/data-m2-prefill="K01"/g) ?? [];
-    expect(matches.length).toBe(1);
+    expect(matches.length).toBe(3);
   });
 });
