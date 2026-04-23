@@ -40,6 +40,55 @@ model Session {
   expiresAt  DateTime
 }
 
+/// Ein einzelner Vorbereitungsdurchlauf eines Falls (MFA, Patientengespräch,
+/// Patientenfragebogen, …). Ein Fall kann mehrere nacheinander abgeschlossene
+/// Runs haben. Ein eingefrorener Run (`frozen_at IS NOT NULL`) ist
+/// unveränderlich. Pro Fall darf höchstens **ein** offener Run
+/// (`frozen_at IS NULL`) existieren – durchgesetzt über einen partiellen
+/// Unique-Index in der Migration (Prisma kennt partielle Unique-Indexe nicht
+/// nativ). Die Reihenfolge wird über `sequence` (1..n, lückenfrei pro Fall)
+/// abgebildet.
+model PrefillRun {
+  id                    String       @id @default(cuid())
+
+  /// Fall, zu dem dieser Run gehört.
+  case_id               String
+  case                  CaseSession  @relation(fields: [case_id], references: [id], onDelete: Cascade)
+
+  /// Position innerhalb des Falls (1..n, monoton, lückenfrei).
+  sequence              Int
+
+  /// Quelle/Modus des Runs: "mfa" | "conversation" | "patient".
+  /// Kein DB-Enum, weil das Schwester-Feld `CaseSession.preparation_mode`
+  /// ebenfalls als String geführt wird; Whitelist-Validierung erfolgt in
+  /// der Service-Schicht.
+  source                String
+
+  /// Snapshot der zum Zeitpunkt des Runs aktiven Checkpoints
+  /// (Form analog `CaseSession.active_checkpoints`). Dadurch werden
+  /// eingefrorene Runs nicht durch spätere M1-Änderungen umgedeutet.
+  active_checkpoints    Json
+
+  /// Antworten dieses Runs. Form analog `CaseSession.ctx_prefill`:
+  /// `{ [checkpointId]: { [questionId]: "ja" | "nein" | "unklar" | "offen" } }`.
+  answers               Json
+
+  created_at            DateTime     @default(now())
+
+  /// Zeitpunkt des Einfrierens. `NULL` = offener Run.
+  frozen_at             DateTime?
+
+  /// Account, der den Run angelegt hat. NULL bei Patientenrücklauf via Token.
+  created_by_account_id String?
+
+  /// Optionales Audit: Token-Wert, mit dem ein Patientenrücklauf zugeordnet
+  /// wurde. NULL bei MFA-/Conversation-Runs.
+  patient_token_used    String?
+
+  @@unique([case_id, sequence])
+  @@index([case_id, frozen_at, sequence])
+}
+
 model CaseSession {
   id                   String      @id @default(cuid())
   createdAt            DateTime    @default(now())
@@ -101,4 +150,8 @@ model CaseSession {
   /// - "prepared" : Arzt hat in M3 vorbereitet / Lücken markiert (MFA übernimmt weiter)
   /// - "confirmed": Arzt hat M3 final geprüft (fachlicher Abschluss)
   clinical_status      String    @default("none")
+
+  /// Vorbereitungsdurchläufe dieses Falls. Wird in Schritt 1 noch nicht von
+  /// bestehenden Routen geschrieben; siehe `lib/server/prefillRuns.ts`.
+  prefill_runs         PrefillRun[]
 }

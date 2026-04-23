@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { getOpenRun, getFrozenRuns } from "@/lib/server/prefillRuns";
 import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 import { M2SkipButtonClient } from "./M2SkipButtonClient";
@@ -22,7 +23,7 @@ export default async function M2Page({
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
-    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, doctor_confirmed: true },
+    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, doctor_confirmed: true, preparation_mode: true },
   });
 
   if (!session || session.owner_account_id !== account.id) {
@@ -35,16 +36,66 @@ export default async function M2Page({
     redirect(`/cases/${id}/m3`);
   }
 
+  // Offenen Run und eingefrorene Runs parallel laden.
+  const [openRun, frozenRuns] = await Promise.all([
+    getOpenRun(id).catch(() => null),
+    getFrozenRuns(id).catch(() => []),
+  ]);
+
+  // Per-Source-Filter: Für jede Quelle wird ermittelt, welche Checkpoint-IDs
+  // bereits in einem eingefrorenen Run mit dieser Quelle beantwortet wurden.
+  // M2PrefillClient filtert die sichtbaren Checkpoints anhand dieser Listen:
+  // Ein Checkpoint wird nur angezeigt, wenn er für die aktuelle Quelle noch
+  // nicht in einem eingefrorenen Run vorhanden ist.
+  const answeredCheckpointIdsBySource: {
+    mfa: string[];
+    conversation: string[];
+    patient: string[];
+  } = { mfa: [], conversation: [], patient: [] };
+
+  for (const run of frozenRuns) {
+    const src = run.source as keyof typeof answeredCheckpointIdsBySource;
+    if (!(src in answeredCheckpointIdsBySource)) continue;
+    const answers =
+      run.answers && typeof run.answers === "object" && !Array.isArray(run.answers)
+        ? (run.answers as Record<string, unknown>)
+        : {};
+    for (const cpId of Object.keys(answers)) {
+      if (!answeredCheckpointIdsBySource[src].includes(cpId)) {
+        answeredCheckpointIdsBySource[src].push(cpId);
+      }
+    }
+  }
+
+  // Alle aktiven Checkpoints des Falls – die Filterung (pro Quelle) übernimmt
+  // M2PrefillClient auf Basis von `answeredCheckpointIdsBySource`.
   const checkpoints = Array.isArray(session.active_checkpoints)
     ? (session.active_checkpoints as ActiveCheckpoint[])
     : [];
 
-  const prefill =
+  // Vorbelegung: Wenn ein offener PrefillRun existiert (z. B. nach einer
+  // Fallergänzung oder einer angefangenen, aber noch nicht eingefrorenen
+  // M2-Bearbeitung), ist **dieser** Run die einzige aktive
+  // Bearbeitungsgrundlage. Eingefrorene Runs und der `ctx_prefill`-Cache
+  // dürfen dann nicht erneut als editierbarer Prefill übernommen werden.
+  // Nur wenn kein offener Run existiert, fällt die Vorbelegung auf
+  // `ctx_prefill` zurück (rückwärtskompatibel für den Standardfall).
+  let prefill: M2PrefillData = {};
+  if (openRun) {
+    if (
+      openRun.answers &&
+      typeof openRun.answers === "object" &&
+      !Array.isArray(openRun.answers)
+    ) {
+      prefill = openRun.answers as unknown as M2PrefillData;
+    }
+  } else if (
     session.ctx_prefill &&
     typeof session.ctx_prefill === "object" &&
     !Array.isArray(session.ctx_prefill)
-      ? (session.ctx_prefill as M2PrefillData)
-      : {};
+  ) {
+    prefill = session.ctx_prefill as M2PrefillData;
+  }
 
   return (
     <main>
@@ -84,6 +135,12 @@ export default async function M2Page({
         caseId={id}
         checkpoints={checkpoints}
         initialPrefill={prefill}
+        initialPreparationMode={
+          typeof session.preparation_mode === "string"
+            ? session.preparation_mode
+            : "none"
+        }
+        answeredCheckpointIdsBySource={answeredCheckpointIdsBySource}
       />
     </main>
   );

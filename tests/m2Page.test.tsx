@@ -25,6 +25,10 @@ jest.mock("@/lib/prisma", () => ({
     caseSession: {
       findUnique: jest.fn(),
     },
+    prefillRun: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   },
 }));
 
@@ -33,6 +37,10 @@ import { prisma } from "@/lib/prisma";
 type PrismaMock = {
   caseSession: {
     findUnique: jest.Mock;
+  };
+  prefillRun: {
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
   };
 };
 
@@ -65,6 +73,10 @@ const k04Checkpoint: ActiveCheckpoint = {
 describe("M2 Seite", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
+    prismaMock.prefillRun.findFirst.mockReset();
+    prismaMock.prefillRun.findFirst.mockResolvedValue(null);
+    prismaMock.prefillRun.findMany.mockReset();
+    prismaMock.prefillRun.findMany.mockResolvedValue([]);
   });
 
   it("rendert pro aktivem Checkpoint die M2-Fragen aus dem Katalog", async () => {
@@ -180,5 +192,42 @@ describe("M2 Seite", () => {
     expect(idxConversation).toBeGreaterThan(idxLink);
     expect(idxMfaForm).toBeGreaterThan(idxConversation);
     expect(idxSave).toBeGreaterThan(idxMfaForm);
+  });
+
+  // ------------------------------------------------------------------
+  // Per-Source-Filter: Checkpoints werden pro Quelle gefiltert
+  // ------------------------------------------------------------------
+
+  it("blendet im MFA-Modus Checkpoints aus, die bereits in einem eingefrorenen MFA-Run beantwortet wurden", async () => {
+    // Session hat K01 (bereits MFA-beantwortet) und K04 (neu).
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k01Checkpoint, k04Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "mfa",
+      doctor_confirmed: false,
+    });
+    // Kein offener Run – erster Ergänzungslauf nach bereits eingefrorenem Run.
+    prismaMock.prefillRun.findFirst.mockResolvedValue(null);
+    // Eingefrorener MFA-Run hat K01 bereits beantwortet.
+    prismaMock.prefillRun.findMany.mockResolvedValue([
+      {
+        id: "run-first",
+        sequence: 1,
+        source: "mfa",
+        frozen_at: new Date(),
+        active_checkpoints: [k01Checkpoint],
+        answers: { K01: { "MFA-K01-01": "ja" } },
+      },
+    ]);
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-perSrc" }) }),
+    );
+
+    // K04 (noch nicht MFA-beantwortet) soll erscheinen.
+    expect(markup).toContain('data-m2-checkpoint="K04"');
+    // K01 (bereits im eingefrorenen MFA-Run) darf nicht erscheinen.
+    expect(markup).not.toContain('data-m2-checkpoint="K01"');
   });
 });

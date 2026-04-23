@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import {
+  sanitizePrefillForMode,
+  withDefaultOffenForCheckpoints,
+} from "@/lib/logic/m2Questions";
+import {
+  createOpenRun,
+  freezeRun,
+  getOpenRun,
+  type PrefillRunAnswers,
+} from "@/lib/server/prefillRuns";
 
 export async function PATCH(
   req: NextRequest,
@@ -45,9 +55,22 @@ export async function PATCH(
     const preparationMode: "mfa" | "conversation" =
       body?.mode === "conversation" ? "conversation" : "mfa";
 
+    // Strikte Mode-Sanitisierung: Es werden ausschließlich Antworten
+    // akzeptiert, deren IDs zum Katalog des aktiven Vorbereitungswegs gehören.
+    // Damit kann `ctx_prefill` strukturell nie mehr eine Mischung aus
+    // MFA- und Patientenantworten enthalten.
+    const sanitizedPrefill = sanitizePrefillForMode(
+      body.prefill,
+      preparationMode,
+    );
+
     const session = await prisma.caseSession.findUnique({
       where: { id },
-      select: { owner_account_id: true, m2_status: true },
+      select: {
+        owner_account_id: true,
+        m2_status: true,
+        active_checkpoints: true,
+      },
     });
 
     if (!session || session.owner_account_id !== account.id) {
@@ -57,11 +80,76 @@ export async function PATCH(
       );
     }
 
-    // Konsistenz: Wird über einen nicht-asynchronen Weg (MFA / Gespräch)
-    // gespeichert, darf der Fall nicht weiter auf einen Patientenrücklauf
-    // warten. Ein eventuell ausstehender Token wird invalidiert.
+    // Defensive Server-Absicherung: Auch wenn der Client weniger schickt,
+    // werden alle Fragen gemäß Katalog ergänzt. Das endgültige Fill erfolgt
+    // aber weiter unten nach Bestimmung des Runs (Fehler-1-Fix).
+    const activeCheckpointIds: string[] = Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as Array<{ id?: unknown }>)
+          .map((cp) => (typeof cp?.id === "string" ? cp.id : null))
+          .filter((id): id is string => id !== null)
+      : [];
+    const activeCheckpointsSnapshot = Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as unknown[])
+      : [];
+
+    // Schreibpfad: vorhandenen offenen Run weiterführen, sonst einen neuen
+    // anlegen; in beiden Fällen anschließend einfrieren. Der partielle
+    // Unique-Index `(case_id) WHERE frozen_at IS NULL` stellt sicher, dass
+    // pro Fall maximal ein offener Run existiert.
+    const existingOpen = await getOpenRun(id);
+    const run =
+      existingOpen ??
+      (await createOpenRun({
+        caseId: id,
+        source: preparationMode,
+        activeCheckpoints: activeCheckpointsSnapshot,
+        createdByAccountId: account.id,
+        // Schritt 2: Außenverhalten identisch; Confirm-Guard wird in einem
+        // späteren Schritt aktiviert.
+        allowConfirmed: true,
+      }));
+
+    // Fehler-1-Fix: Im Ergänzungs-Flow speichert der offene Run nur das Delta
+    // (neue Checkpoints). Die Default-Fill-Logik soll daher ausschließlich für
+    // die Checkpoints des Runs arbeiten – nicht für den Gesamtfall-Stand aus
+    // `session.active_checkpoints`. Bei neuen Runs (kein existingOpen) enthält
+    // `run.active_checkpoints` den vollen Snapshot, was dem bisherigen
+    // Verhalten entspricht.
+    const runCheckpointIds: string[] =
+      Array.isArray(run.active_checkpoints) && run.active_checkpoints.length > 0
+        ? (run.active_checkpoints as Array<{ id?: unknown }>)
+            .map((cp) => (typeof cp?.id === "string" ? cp.id : null))
+            .filter((cpId): cpId is string => cpId !== null)
+        : activeCheckpointIds;
+
+    const filledPrefill = withDefaultOffenForCheckpoints(
+      sanitizedPrefill,
+      runCheckpointIds,
+      preparationMode,
+    );
+
+    await freezeRun({
+      caseId: id,
+      runId: run.id,
+      answers: filledPrefill as unknown as PrefillRunAnswers,
+      // `activeCheckpoints` wird NICHT überschrieben: der bei createOpenRun
+      // oder createOpenRun-Supplement gespeicherte Snapshot (Delta oder voll)
+      // bleibt erhalten. Dadurch bleibt der Ergänzungs-Run ein Delta-Snapshot.
+      // Fehler-2-Fix: source des Runs auf den tatsächlich genutzten Weg
+      // korrigieren, falls der Run ursprünglich mit einer anderen Quelle
+      // angelegt wurde (z. B. MFA-Ergänzungs-Run, aber Nutzer wählt Gespräch).
+      source: preparationMode,
+      allowConfirmed: true,
+    });
+
+    // Cache / Kompatibilitätsschicht: `ctx_prefill` und `preparation_mode`
+    // werden parallel gesetzt, damit bestehende Lesepfade und die M3-Lock-
+    // Logik unverändert weiterarbeiten. `m2_status` bleibt unangetastet,
+    // außer wenn zuvor auf den Patientenrücklauf gewartet wurde – dann
+    // identisch zur bisherigen Route auf "none" zurücksetzen und den
+    // offenen Token invalidieren (M3-Lock-Verhalten unverändert).
     const data: Prisma.CaseSessionUpdateInput = {
-      ctx_prefill: body.prefill as Prisma.InputJsonValue,
+      ctx_prefill: filledPrefill as unknown as Prisma.InputJsonValue,
       preparation_mode: preparationMode,
     };
 

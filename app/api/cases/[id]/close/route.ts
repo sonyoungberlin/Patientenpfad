@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 
@@ -16,6 +17,27 @@ export async function PATCH(
     }
 
     const { id } = await params;
+
+    // Optionaler Body: Checkpoints für den Batch-Save (Fachregel: nur
+    // „Ärztlich bestätigt" friert den finalen M3-Stand dauerhaft ein).
+    let body: Record<string, unknown> | null = null;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      body = null;
+    }
+    const rawCheckpoints = body?.checkpoints;
+    // Minimalvalidierung: Array von Objekten mit string-ID. Eine vollständige
+    // Typprüfung aller Checkpoint-Felder (Standard vs. MULTI_SELECT) wird
+    // bewusst nicht durchgeführt – die Daten stammen aus dem typisierten
+    // M3ChecklistClient und sind bereits durch das Frontend validiert.
+    const checkpointsToSave: Prisma.InputJsonValue | null =
+      Array.isArray(rawCheckpoints) &&
+      (rawCheckpoints as unknown[]).every(
+        (cp) => cp !== null && typeof cp === "object" && typeof (cp as Record<string, unknown>).id === "string",
+      )
+        ? (rawCheckpoints as Prisma.InputJsonValue)
+        : null;
 
     const session = await prisma.caseSession.findUnique({
       where: { id },
@@ -37,6 +59,7 @@ export async function PATCH(
         stage_status: "CLOSED",
         doctor_confirmed: true,
         doctor_confirmed_at: new Date(),
+        ...(checkpointsToSave !== null ? { active_checkpoints: checkpointsToSave } : {}),
       },
     });
 

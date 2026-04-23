@@ -18,7 +18,18 @@ jest.mock("@/lib/auth", () => ({
   }),
 }));
 
+jest.mock("@/lib/server/prefillRuns", () => ({
+  getOpenRun: jest.fn(),
+  createOpenRun: jest.fn(),
+  freezeRun: jest.fn(),
+}));
+
 import { prisma } from "@/lib/prisma";
+import {
+  createOpenRun,
+  freezeRun,
+  getOpenRun,
+} from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: {
@@ -28,19 +39,30 @@ type PrismaMock = {
 };
 
 const prismaMock = prisma as unknown as PrismaMock;
+const getOpenRunMock = getOpenRun as unknown as jest.Mock;
+const createOpenRunMock = createOpenRun as unknown as jest.Mock;
+const freezeRunMock = freezeRun as unknown as jest.Mock;
 
 describe("PATCH /api/cases/[id]/m2/prefill", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.update.mockReset();
+    getOpenRunMock.mockReset();
+    createOpenRunMock.mockReset();
+    freezeRunMock.mockReset();
+    // Defaults: kein offener Run vorhanden → createOpenRun wird genutzt.
+    getOpenRunMock.mockResolvedValue(null);
+    createOpenRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: null });
+    freezeRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: new Date() });
   });
 
-  it("speichert strukturierte Prefill-Daten in ctx_prefill", async () => {
+  it("speichert strukturierte Prefill-Daten in ctx_prefill (mode-konsistente MFA-IDs)", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", m2_status: "none" });
     prismaMock.caseSession.update.mockResolvedValue({});
 
+    // MFA-Default: nur Antworten mit MFA-IDs werden akzeptiert.
     const structuredPrefill = {
-      K04: { "M2-01": "ja", "M2-02": "nein", "M2-03": "unklar" },
+      K04: { "MFA-K04-01": "ja" },
     };
 
     const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
@@ -59,6 +81,32 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
       data: { ctx_prefill: structuredPrefill, preparation_mode: "mfa" },
+    });
+  });
+
+  it("verwirft Cross-Mode-IDs: MFA-Speicherung lässt Patienten-IDs (M2-…) nicht durch", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", m2_status: "none" });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    // Mischdaten: Patienten-IDs werden im MFA-Speicherweg verworfen.
+    const mixedPrefill = {
+      K04: { "M2-01": "ja", "M2-02": "nein", "M2-03": "unklar" },
+    };
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({ prefill: mixedPrefill }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
+      where: { id: "case-1" },
+      data: { ctx_prefill: {}, preparation_mode: "mfa" },
     });
   });
 
@@ -134,7 +182,41 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(response.status).toBe(200);
     expect(prismaMock.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
-      data: { ctx_prefill: { K01: {} }, preparation_mode: "mfa" },
+      data: { ctx_prefill: {}, preparation_mode: "mfa" },
+    });
+  });
+
+  it("ergänzt fehlende Fragen aktiver Checkpoints defensiv mit 'offen'", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      m2_status: "none",
+      // K01 hat im MFA-Katalog drei Fragen (MFA-K01-01..03).
+      active_checkpoints: [{ id: "K01" }],
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    // Client schickt nur eine Antwort.
+    const partialPrefill = { K01: { "MFA-K01-01": "ja" } };
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({ prefill: partialPrefill }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
+    // Alle drei Fragen sind im Prefill, fehlende auf "offen".
+    expect(updateData.ctx_prefill).toEqual({
+      K01: {
+        "MFA-K01-01": "ja",
+        "MFA-K01-02": "offen",
+        "MFA-K01-03": "offen",
+      },
     });
   });
 

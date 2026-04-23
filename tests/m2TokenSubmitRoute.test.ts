@@ -10,12 +10,18 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+jest.mock("@/lib/server/prefillRuns", () => ({
+  appendFrozenRun: jest.fn(),
+}));
+
 import { prisma } from "@/lib/prisma";
+import { appendFrozenRun } from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: { findUnique: jest.Mock; update: jest.Mock };
 };
 const prismaMock = prisma as unknown as PrismaMock;
+const appendFrozenRunMock = appendFrozenRun as unknown as jest.Mock;
 
 function futureDate(daysFromNow: number): Date {
   return new Date(Date.now() + daysFromNow * 24 * 60 * 60 * 1000);
@@ -37,6 +43,13 @@ describe("POST /api/m2-link/[token]", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.update.mockReset();
+    appendFrozenRunMock.mockReset();
+    appendFrozenRunMock.mockResolvedValue({
+      id: "run-patient",
+      sequence: 1,
+      frozen_at: new Date(),
+      source: "patient",
+    });
   });
 
   it("schreibt ctx_prefill und löscht Token bei erfolgreichem Submit", async () => {
@@ -60,6 +73,30 @@ describe("POST /api/m2-link/[token]", () => {
     expect(updateData.m2_token).toBeNull();
     expect(updateData.m2_token_expires_at).toBeNull();
     expect(updateData.m2_status).toBe("completed");
+    // Patientenlink-Rücklauf gehört eindeutig zum Patienten-Weg.
+    expect(updateData.preparation_mode).toBe("patient");
+  });
+
+  it("verwirft MFA-IDs im Patientenlink-Rücklauf (kein Datenmix)", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      m2_token_expires_at: futureDate(14),
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    const mixedPrefill = {
+      K01: { "M2-01": "ja", "MFA-K01-01": "nein" },
+    };
+    const req = makeRequest("valid-token", { prefill: mixedPrefill });
+    const response = await POST(req, {
+      params: Promise.resolve({ token: "valid-token" }),
+    });
+
+    expect(response.status).toBe(200);
+    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
+    // Nur die Patienten-ID überlebt die Sanitisierung.
+    expect(updateData.ctx_prefill).toEqual({ K01: { "M2-01": "ja" } });
+    expect(updateData.preparation_mode).toBe("patient");
   });
 
   it("nach erfolgreichem Submit ist der Token nicht mehr auffindbar (404)", async () => {

@@ -32,7 +32,19 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+jest.mock("@/lib/server/prefillRuns", () => {
+  // Hinweis: Der tatsächliche Import enthält `isPrefillRunSource`, den die
+  // page.tsx zum Filtern nutzt. Wir simulieren beides lokal.
+  const SOURCES = ["mfa", "conversation", "patient"] as const;
+  return {
+    getFrozenRuns: jest.fn().mockResolvedValue([]),
+    isPrefillRunSource: (v: unknown) =>
+      typeof v === "string" && (SOURCES as readonly string[]).includes(v),
+  };
+});
+
 import { prisma } from "@/lib/prisma";
+import { getFrozenRuns } from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: {
@@ -45,6 +57,7 @@ type PrismaMock = {
 };
 
 const prismaMock = prisma as unknown as PrismaMock;
+const getFrozenRunsMock = getFrozenRuns as unknown as jest.Mock;
 
 const mCheckpoint: ActiveCheckpoint = {
   id: "K-M",
@@ -72,15 +85,40 @@ describe("M3 Checkliste", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.account.findUnique.mockReset();
+    getFrozenRunsMock.mockReset();
+    getFrozenRunsMock.mockResolvedValue([]);
     // Default: keine Signatur hinterlegt
     prismaMock.account.findUnique.mockResolvedValue({ message_signature: null });
   });
 
-  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string; preparation_mode?: string }, opts?: { signature?: string }) {
+  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string; preparation_mode?: string; doctor_confirmed?: boolean; clinical_status?: string }, opts?: { signature?: string }) {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
     if (opts?.signature !== undefined) {
       prismaMock.account.findUnique.mockResolvedValue({ message_signature: opts.signature });
     }
+  }
+
+  function setFrozenRuns(
+    runs: Array<{
+      id?: string;
+      sequence: number;
+      source: "mfa" | "conversation" | "patient";
+      answers: Record<string, Record<string, string>>;
+    }>,
+  ) {
+    getFrozenRunsMock.mockResolvedValue(
+      runs.map((r, i) => ({
+        id: r.id ?? `run-${i + 1}`,
+        sequence: r.sequence,
+        source: r.source,
+        answers: r.answers,
+        case_id: "case-123",
+        frozen_at: new Date(),
+        active_checkpoints: [],
+        created_by_account_id: null,
+        patient_token_used: null,
+      })),
+    );
   }
 
   it("lädt active_checkpoints per Case-ID", async () => {
@@ -267,19 +305,21 @@ describe("M3 Checkliste", () => {
     );
   });
 
-  it("M3 zeigt M2-Antworten lesend als aufklappbaren Prefill an", async () => {
+  it("M3 zeigt M2-Antworten lesend als aufklappbaren Prefill an (Schritt 3: aus eingefrorenem Run)", async () => {
     setupCase({
       active_checkpoints: [
         { ...mCheckpoint, id: "K01", title: "Kommunikation" },
       ],
-      ctx_prefill: { K01: { "M2-01": "ja", "M2-02": "nein" } },
     });
+    setFrozenRuns([
+      { sequence: 1, source: "conversation", answers: { K01: { "M2-01": "ja", "M2-02": "nein" } } },
+    ]);
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Aus M2:");
+    expect(markup).toContain("Vorbereitung – Patientengespräch");
     // Fragetext aus Katalog wird angezeigt
     expect(markup).toContain(
       "Sind Sie telefonisch und per SMS erreichbar?",
@@ -288,20 +328,21 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("nein");
   });
 
-  it("löst Patientengespräch-IDs im Format Kxx-yy gegen den Patientenkatalog auf", async () => {
+  it("löst Patientengespräch-IDs im Format Kxx-yy gegen den Patientenkatalog auf (source=patient)", async () => {
     setupCase({
       active_checkpoints: [
         { ...mCheckpoint, id: "K02", title: "Terminwahrnehmung" },
       ],
-      ctx_prefill: { K02: { "K02-02": "ja" } },
-      preparation_mode: "patient",
     });
+    setFrozenRuns([
+      { sequence: 1, source: "patient", answers: { K02: { "K02-02": "ja" } } },
+    ]);
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Aus M2:");
+    expect(markup).toContain("Vorbereitung – Patientenfragebogen");
     expect(markup).toContain(
       "Haben Sie aktuell Schwierigkeiten, Termine in unserer Praxis wahrzunehmen (z. B. aufgrund eingeschränkter Mobilität oder organisatorischer Gründe)?",
     );
@@ -309,19 +350,75 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("ja");
   });
 
-  it("M3 zeigt keinen Prefill-Bereich wenn kein Prefill gespeichert", async () => {
+  it("blendet Cross-Mode-IDs aus, statt sie roh anzuzeigen (Run-Quelle=patient + MFA-IDs im Run)", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-NP", title: "Diagnose" },
+        { ...mCheckpoint, id: "K01", title: "Kommunikation" },
       ],
-      ctx_prefill: null,
+    });
+    // Defensive Darstellung: Auch wenn ein Patient-Run defensiv noch eine
+    // MFA-ID enthielte, darf sie nie roh auftauchen – die Auflösung nutzt
+    // jetzt `run.source` statt `preparation_mode`.
+    setFrozenRuns([
+      {
+        sequence: 1,
+        source: "patient",
+        answers: { K01: { "M2-01": "ja", "MFA-K01-01": "nein" } },
+      },
+    ]);
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    // Patientenfrage wird mit Klartext gerendert.
+    expect(markup).toContain("Sind Sie telefonisch und per SMS erreichbar?");
+    // MFA-Roh-ID wird NIE im Markup auftauchen.
+    expect(markup).not.toContain("MFA-K01-01");
+  });
+
+  it("zeigt Quellenblöcke immer an, blendet aber Cross-Mode-IDs aus (keine Roh-ID, kein Inhalt)", async () => {
+    setupCase({
+      active_checkpoints: [
+        { ...mCheckpoint, id: "K01", title: "Kommunikation" },
+      ],
+    });
+    // Run-Quelle=mfa, aber nur Patienten-IDs vorhanden → Fenster wird
+    // gerendert, aber keine Antwort ist auflösbar (kein Inhalt, kein run-id).
+    setFrozenRuns([
+      { sequence: 1, source: "mfa", answers: { K01: { "M2-01": "ja" } } },
+    ]);
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    // Alle drei Fenster sind immer sichtbar.
+    expect(markup).toContain("Vorbereitung – MFA");
+    expect(markup).toContain("Vorbereitung – Patientengespräch");
+    expect(markup).toContain("Vorbereitung – Patientenfragebogen");
+    // Roh-ID darf nie auftauchen.
+    expect(markup).not.toContain("M2-01");
+  });
+
+  it("zeigt drei leere Vorbereitungs-Fenster auch wenn keine Runs existieren (kein Antwortinhalt)", async () => {
+    // getFrozenRuns-Default ist bereits []; ctx_prefill würde selbst mit
+    // Antworten **nicht mehr** konsultiert (kein Fallback in Schritt 3).
+    setupCase({
+      active_checkpoints: [{ ...mCheckpoint, id: "K-M-NP", title: "Diagnose" }],
+      ctx_prefill: { "K-M-NP": { "M2-01": "ja" } },
     });
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).not.toContain("Aus M2:");
+    // Alle drei Fenster immer angezeigt.
+    expect(markup).toContain("Vorbereitung – MFA");
+    expect(markup).toContain("Vorbereitung – Patientengespräch");
+    expect(markup).toContain("Vorbereitung – Patientenfragebogen");
+    // Kein Antwortinhalt (kein Fragetext aus ctx_prefill oder Runs).
+    expect(markup).not.toContain("Sind Sie telefonisch und per SMS erreichbar?");
   });
 
   it("zeigt Wartebanner wenn m2_status = waiting_for_patient", async () => {
@@ -544,5 +641,64 @@ describe("M3 Checkliste", () => {
 
     expect(markup).not.toContain("data-message-preview");
     expect(markup).not.toContain("Liebe Patientin, lieber Patient,");
+  });
+
+  // Schritt 4 – Einstieg „Weitere Vorbereitung starten"
+  it("zeigt den Button 'Weitere Vorbereitung starten' neben 'Ärztlich vorbereitet' im Aktionsbereich", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-start-additional-prefill-run");
+    expect(markup).toContain("Weitere Vorbereitung starten");
+    // Liegt in derselben Button-Gruppe wie „Ärztlich vorbereitet" und
+    // VOR dem schwarzen „Ärztlich bestätigt"-Button.
+    const groupIdx = markup.indexOf("data-clinical-status-actions");
+    const startIdx = markup.indexOf("data-start-additional-prefill-run");
+    const confirmIdx = markup.indexOf("data-doctor-confirm");
+    expect(groupIdx).toBeGreaterThan(-1);
+    expect(startIdx).toBeGreaterThan(groupIdx);
+    expect(confirmIdx).toBeGreaterThan(startIdx);
+  });
+
+  it("blendet 'Weitere Vorbereitung starten' aus, wenn der Fall ärztlich bestätigt ist (doctor_confirmed)", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      doctor_confirmed: true,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("data-start-additional-prefill-run");
+    expect(markup).not.toContain("Weitere Vorbereitung starten");
+  });
+
+  it("blendet 'Weitere Vorbereitung starten' aus, wenn clinical_status === 'confirmed'", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      clinical_status: "confirmed",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("data-start-additional-prefill-run");
+  });
+
+  it("schwarzer 'Ärztlich bestätigt'-Button bleibt unverändert sichtbar, wenn 'Weitere Vorbereitung starten' eingebaut ist", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-doctor-confirm");
+    expect(markup).toContain("btn-primary");
+    expect(markup).toContain("Ärztlich bestätigt");
   });
 });

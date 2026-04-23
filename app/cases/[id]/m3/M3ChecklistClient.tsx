@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
-import { M2_QUESTIONS, M2_QUESTIONS_MFA, type M2PrefillData, type M2Question } from "@/lib/logic/m2Questions";
+import { resolveQuestionTextForMode, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
+import type { PrefillRunSource } from "@/lib/server/prefillRuns";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
@@ -51,31 +52,62 @@ function getAnswerSymbol(answer: string): string {
   return "";
 }
 
-function resolveQuestionText(
-  questions: M2Question[],
+/**
+ * Versucht den Fragetext einer gespeicherten `questionId` aufzulösen.
+ *
+ * Hauptweg ist der per Run-Quelle (bzw. als Fallback `preparationMode`)
+ * ausgewählte Katalog – genau eine Quelle pro Eintrag, keine Mischanzeige.
+ * Für Altdaten ohne expliziten Modus ("none" / "skipped") wird defensiv
+ * erst der Patientenkatalog und dann der MFA-Katalog versucht. Bleibt alles
+ * erfolglos, wird `null` zurückgegeben – der Aufrufer blendet den Eintrag
+ * dann aus, statt eine Roh-ID anzuzeigen.
+ */
+function resolveQuestionTextForDisplay(
+  preparationMode: string,
   checkpointId: string,
   questionId: string,
-  usePatientCatalog: boolean,
-): string {
-  const exactMatch = questions.find((q) => q.id === questionId);
-  if (exactMatch) return exactMatch.text;
-
-  if (usePatientCatalog) {
-    const prefixedPatientIdMatch = questionId.match(/^(K\d{2})-(\d{2})$/);
-    if (prefixedPatientIdMatch && prefixedPatientIdMatch[1] === checkpointId) {
-      const normalizedId = `M2-${prefixedPatientIdMatch[2]}`;
-      const normalizedMatch = questions.find((q) => q.id === normalizedId);
-      if (normalizedMatch) return normalizedMatch.text;
-    }
+): string | null {
+  if (
+    preparationMode === "mfa" ||
+    preparationMode === "conversation" ||
+    preparationMode === "patient"
+  ) {
+    return resolveQuestionTextForMode(preparationMode, checkpointId, questionId);
   }
-
-  return questionId;
+  // Legacy/unbekannt: Patientenkatalog hat in der bisherigen Implementierung
+  // priorität, danach MFA als zweiter Versuch.
+  return (
+    resolveQuestionTextForMode("conversation", checkpointId, questionId) ??
+    resolveQuestionTextForMode("mfa", checkpointId, questionId)
+  );
 }
+
+/**
+ * Schritt 3 der PrefillRun-Umstellung: M3 rendert pro Checkpoint die
+ * eingefrorenen Runs in `sequence`-Reihenfolge, jeden Run in einem eigenen
+ * Block mit festem Label. Keine Aggregation, keine Zusammenführung, keine
+ * Priorisierung.
+ */
+export type M3FrozenRunView = {
+  id: string;
+  sequence: number;
+  source: PrefillRunSource;
+  answers: M2PrefillData;
+};
+
+const RUN_SOURCE_LABEL: Record<PrefillRunSource, string> = {
+  mfa: "Vorbereitung – MFA",
+  conversation: "Vorbereitung – Patientengespräch",
+  patient: "Vorbereitung – Patientenfragebogen",
+};
+
+// Feste Reihenfolge der Vorbereitungs-Fenster pro Checkpoint (immer sichtbar).
+const PREFILL_SOURCES: PrefillRunSource[] = ["mfa", "conversation", "patient"];
 
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
-  prefill = {},
+  frozenRuns = [],
   m2Status = "none",
   preparationMode = "none",
   messageSignature = "",
@@ -84,7 +116,7 @@ export function M3ChecklistClient({
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
-  prefill?: M2PrefillData;
+  frozenRuns?: M3FrozenRunView[];
   m2Status?: string;
   preparationMode?: string;
   messageSignature?: string;
@@ -107,6 +139,10 @@ export function M3ChecklistClient({
   // - "confirmed" : Arzt hat M3 final geprüft (fachlicher Abschluss)
   const [clinical, setClinical] = useState<string>(clinicalStatus);
   const [savingClinical, setSavingClinical] = useState<"prepared" | "confirmed" | null>(null);
+  // Schritt 4 der PrefillRun-Umstellung: Einstieg „Weitere Vorbereitung
+  // starten". Nur lokaler UI-Zustand; Klick ruft die neue Route, navigiert
+  // dann nach M2. Keine Wirkung auf bestehende Buttons / M3-Lock-Logik.
+  const [startingPrefillRun, setStartingPrefillRun] = useState<boolean>(false);
   const isLocked = waitingForPatient || confirmed;
   // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
@@ -120,32 +156,27 @@ export function M3ChecklistClient({
   const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
     multiSelectInitial,
   );
-  const [savingCheckpointId, setSavingCheckpointId] = useState<string | null>(
-    null,
-  );
+  // isDirty tracks unsaved local M3 checkpoint changes (per-Klick-Saves
+  // wurden entfernt – nur "Ärztlich bestätigt" persistiert den Stand).
+  const [isDirty, setIsDirty] = useState<boolean>(false);
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [skipping, setSkipping] = useState(false);
-  const savingRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    savingRef.current = savingCheckpointId;
-  }, [savingCheckpointId]);
 
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
-      if (savingRef.current !== null) {
+      if (isDirty) {
         e.preventDefault();
         e.returnValue = "";
       }
     }
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
+  }, [isDirty]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (savingRef.current === null) return;
+      if (!isDirty) return;
       const anchor = (e.target as HTMLElement).closest("a");
       if (!anchor || !anchor.href) return;
       try {
@@ -161,7 +192,7 @@ export function M3ChecklistClient({
     }
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
-  }, []);
+  }, [isDirty]);
   const m4Entries = checkpoints
     .filter((cp) => cp.status === "TO_DO")
     .filter((cp) => (cp.m4?.text ?? "").length > 0);
@@ -264,39 +295,16 @@ export function M3ChecklistClient({
     }
   }
 
-  async function updateStatus(checkpointId: string, status: CheckpointStatus) {
-    const previous = checkpoints;
-
-    setError(null);
-    setSavingCheckpointId(checkpointId);
+  // Fachregel: M3 speichert nicht jeden Klick – Checkpoint-Status-Änderungen
+  // sind zunächst nur lokaler Arbeitsstand. Fehlerbehandlung und Persistenz
+  // erfolgen ausschließlich beim Batch-Save in closeCase().
+  function updateStatus(checkpointId: string, status: CheckpointStatus) {
     setCheckpoints((current) =>
       current.map((checkpoint) =>
         checkpoint.id === checkpointId ? { ...checkpoint, status } : checkpoint,
       ),
     );
-
-    try {
-      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          checkpoint_id: checkpointId,
-          status,
-        }),
-      });
-
-      if (!response.ok) {
-        setCheckpoints(previous);
-        setError("Status konnte nicht gespeichert werden.");
-      }
-    } catch {
-      setCheckpoints(previous);
-      setError("Status konnte nicht gespeichert werden.");
-    } finally {
-      setSavingCheckpointId(null);
-    }
+    setIsDirty(true);
   }
 
   async function skipM2Waiting() {
@@ -318,80 +326,50 @@ export function M3ChecklistClient({
     }
   }
 
-  async function toggleMultiSelectEnabled(checkpointId: string) {
+  function toggleMultiSelectEnabled(checkpointId: string) {
     const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
     if (!cp) return;
     const newEnabled = !cp.enabled;
     const newSelections = newEnabled ? cp.selections : [];
-    const previous = multiSelectCheckpoints;
 
-    setError(null);
-    setSavingCheckpointId(checkpointId);
     setMultiSelectCheckpoints((current) =>
       current.map((c) =>
         c.id === checkpointId ? { ...c, enabled: newEnabled, selections: newSelections } : c,
       ),
     );
-
-    try {
-      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkpoint_id: checkpointId, enabled: newEnabled, selections: newSelections }),
-      });
-      if (!response.ok) {
-        setMultiSelectCheckpoints(previous);
-        setError("Status konnte nicht gespeichert werden.");
-      }
-    } catch {
-      setMultiSelectCheckpoints(previous);
-      setError("Status konnte nicht gespeichert werden.");
-    } finally {
-      setSavingCheckpointId(null);
-    }
+    setIsDirty(true);
   }
 
-  async function toggleMultiSelectOption(checkpointId: string, option: string) {
+  function toggleMultiSelectOption(checkpointId: string, option: string) {
     const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
     if (!cp || !cp.enabled) return;
     const newSelections = cp.selections.includes(option)
       ? cp.selections.filter((s) => s !== option)
       : [...cp.selections, option];
-    const previous = multiSelectCheckpoints;
 
-    setError(null);
-    setSavingCheckpointId(checkpointId);
     setMultiSelectCheckpoints((current) =>
       current.map((c) =>
         c.id === checkpointId ? { ...c, selections: newSelections } : c,
       ),
     );
-
-    try {
-      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkpoint_id: checkpointId, enabled: cp.enabled, selections: newSelections }),
-      });
-      if (!response.ok) {
-        setMultiSelectCheckpoints(previous);
-        setError("Status konnte nicht gespeichert werden.");
-      }
-    } catch {
-      setMultiSelectCheckpoints(previous);
-      setError("Status konnte nicht gespeichert werden.");
-    } finally {
-      setSavingCheckpointId(null);
-    }
+    setIsDirty(true);
   }
 
   async function closeCase() {
     if (confirmed) return;
     setClosing(true);
     setError(null);
+    // Fachregel: „Ärztlich bestätigt" friert M3 ein und persistiert den
+    // finalen ärztlichen Stand (Checkpoint-Zustände als Batch-Save).
+    const allCp: ActiveCheckpoint[] = [
+      ...(checkpoints as unknown as ActiveCheckpoint[]),
+      ...multiSelectCheckpoints,
+    ];
     try {
       const response = await fetch(`/api/cases/${caseId}/close`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkpoints: allCp }),
       });
       if (!response.ok) {
         setError("Fall konnte nicht ärztlich bestätigt werden.");
@@ -399,6 +377,7 @@ export function M3ChecklistClient({
       }
       // Fall bleibt geöffnet: M3 wird eingefroren, M4/M5 bleiben nutzbar.
       setConfirmed(true);
+      setIsDirty(false);
       router.refresh();
     } catch {
       setError("Fall konnte nicht ärztlich bestätigt werden.");
@@ -441,6 +420,46 @@ export function M3ChecklistClient({
     }
   }
 
+  /**
+   * Schritt B des Ergänzungs-Flows: Einstieg „Weitere Vorbereitung
+   * starten" führt direkt auf die Per-Case-M1-Seite
+   * (`/cases/[id]/m1?mode=erweiterung`).
+   *
+   * Fachregel: „Ergänzung speichert nur den Status" – bevor zur M1-Seite
+   * navigiert wird, wird `clinical_status = "prepared"` gesetzt (sofern
+   * nicht bereits gesetzt). Die aktuellen M3-Checkpoint-Klicks werden
+   * dabei **nicht** dauerhaft übernommen.
+   */
+  async function startAdditionalPrefillRun() {
+    if (startingPrefillRun) return;
+    if (confirmed || clinical === "confirmed") return;
+    setStartingPrefillRun(true);
+    setError(null);
+    // Status speichern (best-effort) bevor zum Ergänzungs-Flow navigiert wird.
+    if (clinical !== "prepared") {
+      setSavingClinical("prepared");
+      try {
+        const res = await fetch(`/api/cases/${caseId}/clinical-status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "prepared" }),
+        });
+        if (res.ok) {
+          setClinical("prepared");
+        }
+      } catch {
+        // Best-effort: Navigation findet trotzdem statt.
+      } finally {
+        setSavingClinical(null);
+      }
+    }
+    try {
+      router.push(`/cases/${caseId}/m1?mode=erweiterung`);
+    } finally {
+      setStartingPrefillRun(false);
+    }
+  }
+
   return (
     <section>
       {m2Status === "waiting_for_patient" ? (
@@ -473,18 +492,11 @@ export function M3ChecklistClient({
       ) : null}
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {checkpoints.map((checkpoint) => {
-          const cpAnswers = prefill[checkpoint.id];
-          const hasAnswers =
-            cpAnswers !== undefined && Object.keys(cpAnswers).length > 0;
-          // Fragenquelle abhängig vom Vorbereitungsweg:
-          // - "mfa"          → MFA-Katalog (M2_QUESTIONS_MFA)
-          // - "patient"      → Patientenkatalog (externer Linkweg)
-          // - "conversation" → Patientenkatalog (Patientengespräch in der Praxis)
-          // - "skipped"/"none" → rückwärtskompatibel Patientenkatalog
-          const questionCatalog =
-            preparationMode === "mfa" ? M2_QUESTIONS_MFA : M2_QUESTIONS;
-          const usePatientCatalog = preparationMode !== "mfa";
-          const questions = questionCatalog[checkpoint.id] ?? [];
+          // Fachliche Regel: Pro Checkpoint werden immer drei feste
+          // Vorbereitungs-Fenster gerendert (mfa / conversation / patient),
+          // unabhängig davon ob ein eingefrorener Run vorhanden ist.
+          // Hat eine Quelle Antworten für diesen Checkpoint, werden diese
+          // angezeigt; andernfalls bleibt das Fenster leer (kein Platzhalter).
           return (
             <li
               key={checkpoint.id}
@@ -496,32 +508,69 @@ export function M3ChecklistClient({
               }}
             >
               <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{checkpoint.title}</div>
-              {hasAnswers ? (
-                <details
-                  data-m2-prefill={checkpoint.id}
-                  style={{ marginBottom: "0.5rem" }}
-                >
-                  <summary>Aus M2:</summary>
-                    <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
-                      {Object.entries(cpAnswers).map(([qId, answer]) => {
-                        const questionText = resolveQuestionText(
-                          questions,
-                          checkpoint.id,
-                          qId,
-                          usePatientCatalog,
-                        );
-                        const symbol = getAnswerSymbol(answer);
-                        return (
-                          <li key={qId} style={{ marginBottom: "0.25rem" }}>
-                            <span>{questionText}</span>
-                            {" — "}
-                            <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
-                          </li>
-                      );
-                    })}
-                  </ul>
-                </details>
-              ) : null}
+              {PREFILL_SOURCES.map((source) => {
+                // Fehler-1-Fix: Im Ergänzungs-Flow haben spätere Runs nur
+                // Antworten für das Delta. Wir suchen daher den neuesten
+                // Run dieser Quelle, der tatsächlich Antworten für diesen
+                // Checkpoint enthält – nicht einfach den neuesten Run.
+                const latestRunForSource = frozenRuns
+                  .filter((r) => r.source === source && r.answers[checkpoint.id] != null)
+                  .sort((a, b) => b.sequence - a.sequence)[0];
+
+                const resolvedAnswers: { qId: string; text: string; answer: string }[] =
+                  latestRunForSource?.answers[checkpoint.id]
+                    ? Object.entries(latestRunForSource.answers[checkpoint.id]).flatMap(
+                        ([qId, answer]) => {
+                          const text = resolveQuestionTextForDisplay(
+                            source,
+                            checkpoint.id,
+                            qId,
+                          );
+                          return text === null
+                            ? []
+                            : [{ qId, text, answer: answer as string }];
+                        },
+                      )
+                    : [];
+
+                const isEmpty = resolvedAnswers.length === 0;
+                return (
+                  <details
+                    key={source}
+                    data-m2-prefill={checkpoint.id}
+                    data-prefill-source={source}
+                    {...(resolvedAnswers.length > 0 && latestRunForSource
+                      ? { "data-prefill-run-id": latestRunForSource.id }
+                      : {})}
+                    style={{
+                      marginBottom: "0.5rem",
+                      ...(isEmpty
+                        ? { pointerEvents: "none", opacity: 0.45 }
+                        : {}),
+                    }}
+                  >
+                    <summary
+                      style={isEmpty ? { color: "var(--text-muted, #888)" } : undefined}
+                    >
+                      {RUN_SOURCE_LABEL[source]}
+                    </summary>
+                    {resolvedAnswers.length > 0 ? (
+                      <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
+                        {resolvedAnswers.map(({ qId, text, answer }) => {
+                          const symbol = getAnswerSymbol(answer);
+                          return (
+                            <li key={qId} style={{ marginBottom: "0.25rem" }}>
+                              <span>{text}</span>
+                              {" — "}
+                              <span style={{ fontWeight: 500 }}>{symbol} {answer}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : null}
+                  </details>
+                );
+              })}
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {getStatusOptions(checkpoint.category).map((statusOption) => (
                   <button
@@ -530,7 +579,7 @@ export function M3ChecklistClient({
                     className={`answer-btn${checkpoint.status === statusOption ? " active" : ""}`}
                     data-status-button={`${checkpoint.id}:${statusOption}`}
                     onClick={() => void updateStatus(checkpoint.id, statusOption)}
-                    disabled={savingCheckpointId === checkpoint.id || isLocked}
+                    disabled={isLocked}
                   >
                     {getStatusLabel(statusOption)}
                   </button>
@@ -553,7 +602,7 @@ export function M3ChecklistClient({
               data-multi-toggle={mscp.id}
               checked={mscp.enabled}
               onChange={() => void toggleMultiSelectEnabled(mscp.id)}
-              disabled={savingCheckpointId === mscp.id || isLocked}
+              disabled={isLocked}
             />
             {mscp.title}
           </label>
@@ -567,7 +616,7 @@ export function M3ChecklistClient({
                       data-multi-option={`${mscp.id}:${option}`}
                       checked={mscp.selections.includes(option)}
                       onChange={() => void toggleMultiSelectOption(mscp.id, option)}
-                      disabled={savingCheckpointId === mscp.id || isLocked}
+                      disabled={isLocked}
                     />
                     {option}
                   </label>
@@ -679,6 +728,19 @@ export function M3ChecklistClient({
                 ? "Ärztlich vorbereitet ✓"
                 : "Ärztlich vorbereitet"}
           </button>
+          {confirmed || clinical === "confirmed" ? null : (
+            <button
+              type="button"
+              data-start-additional-prefill-run
+              onClick={() => void startAdditionalPrefillRun()}
+              disabled={startingPrefillRun}
+              className="answer-btn"
+            >
+              {startingPrefillRun
+                ? "Wird gestartet…"
+                : "Weitere Vorbereitung starten"}
+            </button>
+          )}
         </div>
         <button
           type="button"
@@ -686,7 +748,7 @@ export function M3ChecklistClient({
           data-close-case
           data-doctor-confirm
           onClick={closeCase}
-          disabled={closing || savingCheckpointId !== null || confirmed}
+          disabled={closing || confirmed}
         >
           {confirmed
             ? "Ärztlich bestätigt ✓"
