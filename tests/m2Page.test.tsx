@@ -160,7 +160,7 @@ describe("M2 Seite", () => {
     );
 
     expect(markup).not.toContain('data-m2-checkpoint="K12"');
-    expect(markup).toContain("Keine aktiven Checkpoints vorhanden.");
+    expect(markup).toContain("data-m2-mfa-form");
   });
 
   it("zeigt pflegebeobachtung-Checkpoint im Gesprächsmodus mit Patientenkatalog", async () => {

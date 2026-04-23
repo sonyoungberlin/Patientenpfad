@@ -68,6 +68,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
       kommunikation: "klar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10");
@@ -80,6 +81,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
       kommunikation: "klar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10") as ActiveCheckpointMultiSelect;
@@ -92,6 +94,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "unklar",
+      pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10");
