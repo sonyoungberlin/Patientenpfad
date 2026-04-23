@@ -63,7 +63,9 @@ export default function M1ErgaenzungClient({
 
   async function handleSubmit() {
     if (loading) return;
-    if (newlySelectedBlocks.length === 0) return;
+    // Ergänzungs-Flow darf auch ohne neuen Block gestartet werden:
+    // In diesem Fall reicht der Server eine idempotente Antwort zurück
+    // und leitet direkt nach M2 weiter.
     setLoading(true);
     setError(null);
     try {
@@ -105,7 +107,7 @@ export default function M1ErgaenzungClient({
         onSubmit={handleSubmit}
         loading={loading}
         lockedBlocks={lockedBlocks}
-        submitDisabled={newlySelectedBlocks.length === 0}
+        submitDisabled={false}
       />
       {error ? (
         <p
