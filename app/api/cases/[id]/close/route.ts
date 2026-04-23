@@ -17,6 +17,24 @@ export async function PATCH(
 
     const { id } = await params;
 
+    // Optionaler Body: Checkpoints für den Batch-Save (Fachregel: nur
+    // „Ärztlich bestätigt" friert den finalen M3-Stand dauerhaft ein).
+    let body: Record<string, unknown> | null = null;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      body = null;
+    }
+    const rawCheckpoints = body?.checkpoints;
+    // Minimalvalidierung: Array von Objekten mit string-ID.
+    const checkpointsToSave =
+      Array.isArray(rawCheckpoints) &&
+      (rawCheckpoints as unknown[]).every(
+        (cp) => cp !== null && typeof cp === "object" && typeof (cp as Record<string, unknown>).id === "string",
+      )
+        ? (rawCheckpoints as unknown[])
+        : null;
+
     const session = await prisma.caseSession.findUnique({
       where: { id },
       select: { owner_account_id: true, doctor_confirmed: true },
@@ -37,6 +55,7 @@ export async function PATCH(
         stage_status: "CLOSED",
         doctor_confirmed: true,
         doctor_confirmed_at: new Date(),
+        ...(checkpointsToSave !== null ? { active_checkpoints: checkpointsToSave } : {}),
       },
     });
 

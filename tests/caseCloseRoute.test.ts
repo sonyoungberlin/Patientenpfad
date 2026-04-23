@@ -87,6 +87,53 @@ describe("PATCH /api/cases/[id]/close", () => {
     expect(updateCall.data.doctor_confirmed_at).toBeInstanceOf(Date);
   });
 
+  it("200 mit Checkpoints: speichert active_checkpoints als Batch-Save (Fachregel M3-Einfrieren)", async () => {
+    mockSession(true);
+    pm.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      doctor_confirmed: false,
+    });
+    pm.caseSession.update.mockResolvedValue({});
+
+    const checkpoints = [
+      { id: "K-M", status: "OK" },
+      { id: "K-O", status: "TO_DO" },
+    ];
+    const req = new NextRequest("http://localhost/api/cases/case-1/close", {
+      method: "PATCH",
+      headers: {
+        Cookie: `${SESSION_COOKIE}=good-token`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ checkpoints }),
+    });
+
+    const res = await closeHandler(req, { params: Promise.resolve({ id: "case-1" }) });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+
+    const updateCall = pm.caseSession.update.mock.calls[0][0];
+    expect(updateCall.data.stage_status).toBe("CLOSED");
+    expect(updateCall.data.doctor_confirmed).toBe(true);
+    expect(updateCall.data.active_checkpoints).toEqual(checkpoints);
+  });
+
+  it("200 ohne Checkpoints im Body: active_checkpoints wird nicht überschrieben", async () => {
+    mockSession(true);
+    pm.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      doctor_confirmed: false,
+    });
+    pm.caseSession.update.mockResolvedValue({});
+    const req = requestWithCookie("http://localhost/api/cases/case-1/close");
+    const res = await closeHandler(req, { params: Promise.resolve({ id: "case-1" }) });
+    expect(res.status).toBe(200);
+
+    const updateCall = pm.caseSession.update.mock.calls[0][0];
+    expect(updateCall.data).not.toHaveProperty("active_checkpoints");
+  });
+
   it("200 idempotent wenn bereits ärztlich bestätigt – kein DB-Update", async () => {
     mockSession(true);
     pm.caseSession.findUnique.mockResolvedValue({
