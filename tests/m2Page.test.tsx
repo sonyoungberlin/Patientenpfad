@@ -27,6 +27,7 @@ jest.mock("@/lib/prisma", () => ({
     },
     prefillRun: {
       findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
     },
   },
 }));
@@ -39,6 +40,7 @@ type PrismaMock = {
   };
   prefillRun: {
     findFirst: jest.Mock;
+    findMany: jest.Mock;
   };
 };
 
@@ -73,6 +75,8 @@ describe("M2 Seite", () => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.prefillRun.findFirst.mockReset();
     prismaMock.prefillRun.findFirst.mockResolvedValue(null);
+    prismaMock.prefillRun.findMany.mockReset();
+    prismaMock.prefillRun.findMany.mockResolvedValue([]);
   });
 
   it("rendert pro aktivem Checkpoint die M2-Fragen aus dem Katalog", async () => {
@@ -191,35 +195,39 @@ describe("M2 Seite", () => {
   });
 
   // ------------------------------------------------------------------
-  // Fehler-1-Fix: Ergänzungs-Flow zeigt nur Delta-Checkpoints
+  // Per-Source-Filter: Checkpoints werden pro Quelle gefiltert
   // ------------------------------------------------------------------
 
-  it("zeigt im Ergänzungslauf nur die Delta-Checkpoints aus dem offenen Run", async () => {
-    // Session hat zwei Checkpoints (K01 = bereits vorbereitet, K04 = neu ergänzt).
+  it("blendet im MFA-Modus Checkpoints aus, die bereits in einem eingefrorenen MFA-Run beantwortet wurden", async () => {
+    // Session hat K01 (bereits MFA-beantwortet) und K04 (neu).
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
       active_checkpoints: [k01Checkpoint, k04Checkpoint],
-      ctx_prefill: { K01: { "MFA-K01-01": "ja" } },
+      ctx_prefill: null,
       preparation_mode: "mfa",
       doctor_confirmed: false,
     });
-    // Offener Run enthält nur das Delta (K04).
-    prismaMock.prefillRun.findFirst.mockResolvedValue({
-      id: "run-ergaenzung",
-      sequence: 2,
-      source: "mfa",
-      frozen_at: null,
-      active_checkpoints: [k04Checkpoint],
-      answers: {},
-    });
+    // Kein offener Run – erster Ergänzungslauf nach bereits eingefrorenem Run.
+    prismaMock.prefillRun.findFirst.mockResolvedValue(null);
+    // Eingefrorener MFA-Run hat K01 bereits beantwortet.
+    prismaMock.prefillRun.findMany.mockResolvedValue([
+      {
+        id: "run-first",
+        sequence: 1,
+        source: "mfa",
+        frozen_at: new Date(),
+        active_checkpoints: [k01Checkpoint],
+        answers: { K01: { "MFA-K01-01": "ja" } },
+      },
+    ]);
 
     const markup = renderToStaticMarkup(
-      await M2Page({ params: Promise.resolve({ id: "case-ergl" }) }),
+      await M2Page({ params: Promise.resolve({ id: "case-perSrc" }) }),
     );
 
-    // Nur K04 (Delta) soll als aktive Eingabe erscheinen.
+    // K04 (noch nicht MFA-beantwortet) soll erscheinen.
     expect(markup).toContain('data-m2-checkpoint="K04"');
-    // K01 (bereits vorbereitet) darf nicht erneut erscheinen.
+    // K01 (bereits im eingefrorenen MFA-Run) darf nicht erscheinen.
     expect(markup).not.toContain('data-m2-checkpoint="K01"');
   });
 });
