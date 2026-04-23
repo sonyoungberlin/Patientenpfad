@@ -4,7 +4,12 @@ import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { ensureAlwaysPresentCheckpoints } from "@/lib/logic/checkpointCatalog";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import { M3ChecklistClient } from "./M3ChecklistClient";
+import {
+  getFrozenRuns,
+  isPrefillRunSource,
+  type PrefillRunSource,
+} from "@/lib/server/prefillRuns";
+import { M3ChecklistClient, type M3FrozenRunView } from "./M3ChecklistClient";
 
 export default async function M3Page({
   params,
@@ -53,12 +58,30 @@ export default async function M3Page({
       : [],
   );
 
-  const prefill =
-    session.ctx_prefill &&
-    typeof session.ctx_prefill === "object" &&
-    !Array.isArray(session.ctx_prefill)
-      ? (session.ctx_prefill as M2PrefillData)
-      : {};
+  // Schritt 3 der PrefillRun-Umstellung: M3 liest die anzuzeigenden
+  // Antworten ausschließlich aus den eingefrorenen `PrefillRun`s (in
+  // `sequence`-Reihenfolge). `ctx_prefill` bleibt als Cache/Kompatibilitäts-
+  // schicht bestehen, wird hier aber **nicht mehr** gerendert – es findet
+  // keine Aggregation, kein Merge und kein Fallback statt.
+  let frozenRuns: M3FrozenRunView[] = [];
+  try {
+    const runs = await getFrozenRuns(id);
+    frozenRuns = runs
+      .filter((r) => isPrefillRunSource(r.source))
+      .map((r) => ({
+        id: r.id,
+        sequence: r.sequence,
+        source: r.source as PrefillRunSource,
+        answers:
+          r.answers && typeof r.answers === "object" && !Array.isArray(r.answers)
+            ? (r.answers as unknown as M2PrefillData)
+            : {},
+      }));
+  } catch {
+    // Vor der Migration existiert die Tabelle ggf. noch nicht – leere Liste
+    // führt zum korrekten Verhalten (keine Prefill-Blöcke angezeigt).
+    frozenRuns = [];
+  }
 
   const m2Status = typeof session.m2_status === "string" ? session.m2_status : "none";
   const preparationMode =
@@ -69,7 +92,7 @@ export default async function M3Page({
   return (
     <main className="m3-page">
       <h1>Ärztliche Checkliste</h1>
-      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} prefill={prefill} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} doctorConfirmed={session.doctor_confirmed === true} clinicalStatus={clinicalStatus} />
+      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} frozenRuns={frozenRuns} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} doctorConfirmed={session.doctor_confirmed === true} clinicalStatus={clinicalStatus} />
     </main>
   );
 }

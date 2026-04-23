@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
 import { resolveQuestionTextForMode, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
+import type { PrefillRunSource } from "@/lib/server/prefillRuns";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
@@ -54,12 +55,12 @@ function getAnswerSymbol(answer: string): string {
 /**
  * Versucht den Fragetext einer gespeicherten `questionId` aufzulösen.
  *
- * Hauptweg ist der per `preparationMode` ausgewählte Katalog (genau eine
- * Quelle pro Eintrag, keine Mischanzeige). Für Altdaten ohne expliziten
- * Modus ("none" / "skipped") wird defensiv erst der Patientenkatalog und
- * dann der MFA-Katalog versucht. Bleibt alles erfolglos, wird `null`
- * zurückgegeben – der Aufrufer blendet den Eintrag dann aus, statt eine
- * Roh-ID anzuzeigen.
+ * Hauptweg ist der per Run-Quelle (bzw. als Fallback `preparationMode`)
+ * ausgewählte Katalog – genau eine Quelle pro Eintrag, keine Mischanzeige.
+ * Für Altdaten ohne expliziten Modus ("none" / "skipped") wird defensiv
+ * erst der Patientenkatalog und dann der MFA-Katalog versucht. Bleibt alles
+ * erfolglos, wird `null` zurückgegeben – der Aufrufer blendet den Eintrag
+ * dann aus, statt eine Roh-ID anzuzeigen.
  */
 function resolveQuestionTextForDisplay(
   preparationMode: string,
@@ -81,10 +82,29 @@ function resolveQuestionTextForDisplay(
   );
 }
 
+/**
+ * Schritt 3 der PrefillRun-Umstellung: M3 rendert pro Checkpoint die
+ * eingefrorenen Runs in `sequence`-Reihenfolge, jeden Run in einem eigenen
+ * Block mit festem Label. Keine Aggregation, keine Zusammenführung, keine
+ * Priorisierung.
+ */
+export type M3FrozenRunView = {
+  id: string;
+  sequence: number;
+  source: PrefillRunSource;
+  answers: M2PrefillData;
+};
+
+const RUN_SOURCE_LABEL: Record<PrefillRunSource, string> = {
+  mfa: "Vorbereitung – MFA",
+  conversation: "Vorbereitung – Patientengespräch",
+  patient: "Vorbereitung – Patientenfragebogen",
+};
+
 export function M3ChecklistClient({
   caseId,
   initialCheckpoints,
-  prefill = {},
+  frozenRuns = [],
   m2Status = "none",
   preparationMode = "none",
   messageSignature = "",
@@ -93,7 +113,7 @@ export function M3ChecklistClient({
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
-  prefill?: M2PrefillData;
+  frozenRuns?: M3FrozenRunView[];
   m2Status?: string;
   preparationMode?: string;
   messageSignature?: string;
@@ -482,25 +502,34 @@ export function M3ChecklistClient({
       ) : null}
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {checkpoints.map((checkpoint) => {
-          const cpAnswers = prefill[checkpoint.id];
-          // Pro Antwort wird der Fragetext anhand des persistierten
-          // Vorbereitungswegs aufgelöst. Einträge ohne auflösbaren Text
-          // (z. B. Reste eines anderen Wegs aus Alt-Daten) werden komplett
-          // ausgeblendet – nie wird eine Roh-ID dargestellt.
-          const resolvedAnswers: { qId: string; text: string; answer: string }[] =
-            cpAnswers
-              ? Object.entries(cpAnswers).flatMap(([qId, answer]) => {
-                  const text = resolveQuestionTextForDisplay(
-                    preparationMode,
-                    checkpoint.id,
-                    qId,
-                  );
-                  return text === null
-                    ? []
-                    : [{ qId, text, answer: answer as string }];
-                })
-              : [];
-          const hasAnswers = resolvedAnswers.length > 0;
+          // Schritt 3: Pro Checkpoint werden alle eingefrorenen Runs in
+          // `sequence`-Reihenfolge separat dargestellt. Für jeden Run wird
+          // die bestehende Prefill-Rendering-Logik wiederverwendet; die
+          // Fragentext-Auflösung erfolgt auf Basis der jeweiligen
+          // `run.source` (nicht der globalen `preparation_mode`). Leere
+          // Runs (keine auflösbaren Antworten für diesen Checkpoint)
+          // werden komplett ausgeblendet – kein Platzhalter, kein Hinweis.
+          const runBlocks = frozenRuns
+            .slice()
+            .sort((a, b) => a.sequence - b.sequence)
+            .map((run) => {
+              const cpAnswers = run.answers[checkpoint.id];
+              const resolvedAnswers: { qId: string; text: string; answer: string }[] =
+                cpAnswers
+                  ? Object.entries(cpAnswers).flatMap(([qId, answer]) => {
+                      const text = resolveQuestionTextForDisplay(
+                        run.source,
+                        checkpoint.id,
+                        qId,
+                      );
+                      return text === null
+                        ? []
+                        : [{ qId, text, answer: answer as string }];
+                    })
+                  : [];
+              return { run, resolvedAnswers };
+            })
+            .filter((x) => x.resolvedAnswers.length > 0);
           return (
             <li
               key={checkpoint.id}
@@ -512,12 +541,16 @@ export function M3ChecklistClient({
               }}
             >
               <div style={{ marginBottom: "0.5rem", fontWeight: 500 }}>{checkpoint.title}</div>
-              {hasAnswers ? (
+              {runBlocks.map(({ run, resolvedAnswers }) => (
                 <details
+                  key={run.id}
                   data-m2-prefill={checkpoint.id}
+                  data-prefill-run-id={run.id}
+                  data-prefill-run-source={run.source}
+                  data-prefill-run-sequence={run.sequence}
                   style={{ marginBottom: "0.5rem" }}
                 >
-                  <summary>Aus M2:</summary>
+                  <summary>{RUN_SOURCE_LABEL[run.source]}</summary>
                     <ul style={{ margin: "0.25rem 0 0 0", paddingLeft: "1rem", listStyle: "none" }}>
                       {resolvedAnswers.map(({ qId, text, answer }) => {
                         const symbol = getAnswerSymbol(answer);
@@ -531,7 +564,7 @@ export function M3ChecklistClient({
                     })}
                   </ul>
                 </details>
-              ) : null}
+              ))}
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {getStatusOptions(checkpoint.category).map((statusOption) => (
                   <button
