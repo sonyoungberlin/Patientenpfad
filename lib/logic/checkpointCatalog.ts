@@ -149,8 +149,9 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     description:
       "Beobachten, wie die Alltagsrealität des Patienten von außen wirkt – Mobilität, Selbstversorgung, Kognition, Ernährung, Flüssigkeit, Hilfsmittelumgang und Pflegegrad.",
     m4: {
+      // Einschätzungsblock: keine automatische Patienten-Nachricht oder Empfehlung
       type: "NOTICE",
-      text: "Es liegen Beobachtungshinweise zur Alltagssituation vor, die ärztlich eingeschätzt werden sollten.",
+      text: "",
     },
   },
 };
