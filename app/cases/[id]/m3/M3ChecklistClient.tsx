@@ -293,8 +293,8 @@ export function M3ChecklistClient({
   }
 
   // Fachregel: M3 speichert nicht jeden Klick – Checkpoint-Status-Änderungen
-  // sind zunächst nur lokaler Arbeitsstand. Batch-Save erfolgt bei
-  // „Ärztlich bestätigt" (closeCase).
+  // sind zunächst nur lokaler Arbeitsstand. Fehlerbehandlung und Persistenz
+  // erfolgen ausschließlich beim Batch-Save in closeCase().
   function updateStatus(checkpointId: string, status: CheckpointStatus) {
     setCheckpoints((current) =>
       current.map((checkpoint) =>

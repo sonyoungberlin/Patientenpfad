@@ -26,7 +26,10 @@ export async function PATCH(
       body = null;
     }
     const rawCheckpoints = body?.checkpoints;
-    // Minimalvalidierung: Array von Objekten mit string-ID.
+    // Minimalvalidierung: Array von Objekten mit string-ID. Eine vollständige
+    // Typprüfung aller Checkpoint-Felder (Standard vs. MULTI_SELECT) wird
+    // bewusst nicht durchgeführt – die Daten stammen aus dem typisierten
+    // M3ChecklistClient und sind bereits durch das Frontend validiert.
     const checkpointsToSave =
       Array.isArray(rawCheckpoints) &&
       (rawCheckpoints as unknown[]).every(
