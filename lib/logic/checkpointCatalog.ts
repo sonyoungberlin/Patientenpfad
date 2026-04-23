@@ -270,6 +270,34 @@ export function filterObsoleteCheckpoints(
 }
 
 /**
+ * Ergänzt `perspectives` für Altfälle, deren `active_checkpoints` noch vor der
+ * perspectives-Migration in der Datenbank gespeichert wurden.
+ *
+ * Regeln:
+ * - Ist `perspectives` bereits ein gültiges Array, bleibt der Checkpoint unverändert.
+ * - Fehlt `perspectives` oder ist es kein Array:
+ *   – Lookup nach `cp.id` in `CHECKPOINT_CATALOGUE` oder `MULTI_SELECT_CATALOGUE`
+ *   – Bei Treffer: `perspectives` aus dem Katalogeintrag übernehmen
+ *   – Bei keinem Treffer (z. B. Legacy-Fallback-Checkpoints ohne Katalogeintrag):
+ *     `perspectives = []` setzen (kein Vorbereitungsanteil)
+ *
+ * Kein anderes Feld wird verändert.
+ */
+export function backfillPerspectives(
+  checkpoints: ActiveCheckpoint[],
+): ActiveCheckpoint[] {
+  return checkpoints.map((cp) => {
+    if (Array.isArray(cp.perspectives)) {
+      return cp;
+    }
+    const catalogEntry =
+      CHECKPOINT_CATALOGUE[cp.id] ?? MULTI_SELECT_CATALOGUE[cp.id];
+    const perspectives = catalogEntry ? catalogEntry.perspectives : [];
+    return { ...cp, perspectives };
+  });
+}
+
+/**
  * Hydratisiert vollständige `ActiveCheckpoint`-Objekte aus einem M1-Snapshot.
  *
  * Einzige erlaubte Quelle für `active_checkpoints` eines Falls.

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
+import { backfillPerspectives } from "@/lib/logic/checkpointCatalog";
 import { M2TokenFormClient } from "./M2TokenFormClient";
 
 const EXPIRED_MESSAGE = "Dieser Link ist abgelaufen. Bitte wenden Sie sich an die Praxis.";
@@ -32,9 +33,11 @@ export default async function M2TokenPage({
     );
   }
 
-  const checkpoints = Array.isArray(session.active_checkpoints)
-    ? (session.active_checkpoints as ActiveCheckpoint[])
-    : [];
+  const checkpoints = backfillPerspectives(
+    Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as ActiveCheckpoint[])
+      : [],
+  );
 
   return (
     <main>
