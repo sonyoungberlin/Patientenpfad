@@ -231,6 +231,24 @@ export function ensureAlwaysPresentCheckpoints(
 }
 
 /**
+ * Entfernt Checkpoints, deren ID weder im `CHECKPOINT_CATALOGUE` noch im
+ * `MULTI_SELECT_CATALOGUE` vorkommt.
+ *
+ * Wird defensiv beim Laden von `active_checkpoints` aus der Datenbank
+ * eingesetzt, um sicherzustellen, dass veraltete IDs (z. B. K13–K18 nach
+ * dem Einschätzungsblock-Umbau) niemals gerendert werden – unabhängig
+ * davon, was in einem gespeicherten Fall steht.
+ */
+export function filterObsoleteCheckpoints(
+  checkpoints: ActiveCheckpoint[],
+): ActiveCheckpoint[] {
+  return checkpoints.filter(
+    (cp) =>
+      cp.id in CHECKPOINT_CATALOGUE || cp.id in MULTI_SELECT_CATALOGUE,
+  );
+}
+
+/**
  * Hydratisiert vollständige `ActiveCheckpoint`-Objekte aus einem M1-Snapshot.
  *
  * Einzige erlaubte Quelle für `active_checkpoints` eines Falls.
