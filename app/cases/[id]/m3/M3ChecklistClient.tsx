@@ -136,6 +136,10 @@ export function M3ChecklistClient({
   // - "confirmed" : Arzt hat M3 final geprüft (fachlicher Abschluss)
   const [clinical, setClinical] = useState<string>(clinicalStatus);
   const [savingClinical, setSavingClinical] = useState<"prepared" | "confirmed" | null>(null);
+  // Schritt 4 der PrefillRun-Umstellung: Einstieg „Weitere Vorbereitung
+  // starten". Nur lokaler UI-Zustand; Klick ruft die neue Route, navigiert
+  // dann nach M2. Keine Wirkung auf bestehende Buttons / M3-Lock-Logik.
+  const [startingPrefillRun, setStartingPrefillRun] = useState<boolean>(false);
   const isLocked = waitingForPatient || confirmed;
   // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
@@ -470,6 +474,43 @@ export function M3ChecklistClient({
     }
   }
 
+  /**
+   * Schritt 4: Startet einen weiteren PrefillRun für diesen Fall und
+   * navigiert anschließend nach M2. Wenn der Server bereits einen offenen
+   * Run hat, wird dieser idempotent wiederverwendet (Service-Schicht
+   * verändert ihn nicht). Confirmed-Fälle sind serverseitig hart geblockt;
+   * der Button ist in dem Fall zusätzlich gar nicht erst sichtbar.
+   */
+  async function startAdditionalPrefillRun() {
+    if (startingPrefillRun) return;
+    if (confirmed || clinical === "confirmed") return;
+    setStartingPrefillRun(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/cases/${caseId}/prefill-run/start`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        setError("Weitere Vorbereitung konnte nicht gestartet werden.");
+        return;
+      }
+      let redirectTo = `/cases/${caseId}/m2`;
+      try {
+        const data = (await response.json()) as { redirect?: unknown } | null;
+        if (data && typeof data.redirect === "string" && data.redirect.length > 0) {
+          redirectTo = data.redirect;
+        }
+      } catch {
+        // ignore – Default-Redirect bleibt bestehen
+      }
+      router.push(redirectTo);
+    } catch {
+      setError("Weitere Vorbereitung konnte nicht gestartet werden.");
+    } finally {
+      setStartingPrefillRun(false);
+    }
+  }
+
   return (
     <section>
       {m2Status === "waiting_for_patient" ? (
@@ -722,6 +763,19 @@ export function M3ChecklistClient({
                 ? "Ärztlich vorbereitet ✓"
                 : "Ärztlich vorbereitet"}
           </button>
+          {confirmed || clinical === "confirmed" ? null : (
+            <button
+              type="button"
+              data-start-additional-prefill-run
+              onClick={() => void startAdditionalPrefillRun()}
+              disabled={startingPrefillRun}
+              className="answer-btn"
+            >
+              {startingPrefillRun
+                ? "Wird gestartet…"
+                : "Weitere Vorbereitung starten"}
+            </button>
+          )}
         </div>
         <button
           type="button"

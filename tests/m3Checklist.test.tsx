@@ -91,7 +91,7 @@ describe("M3 Checkliste", () => {
     prismaMock.account.findUnique.mockResolvedValue({ message_signature: null });
   });
 
-  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string; preparation_mode?: string }, opts?: { signature?: string }) {
+  function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string; preparation_mode?: string; doctor_confirmed?: boolean; clinical_status?: string }, opts?: { signature?: string }) {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
     if (opts?.signature !== undefined) {
       prismaMock.account.findUnique.mockResolvedValue({ message_signature: opts.signature });
@@ -635,5 +635,64 @@ describe("M3 Checkliste", () => {
 
     expect(markup).not.toContain("data-message-preview");
     expect(markup).not.toContain("Liebe Patientin, lieber Patient,");
+  });
+
+  // Schritt 4 – Einstieg „Weitere Vorbereitung starten"
+  it("zeigt den Button 'Weitere Vorbereitung starten' neben 'Ärztlich vorbereitet' im Aktionsbereich", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-start-additional-prefill-run");
+    expect(markup).toContain("Weitere Vorbereitung starten");
+    // Liegt in derselben Button-Gruppe wie „Ärztlich vorbereitet" und
+    // VOR dem schwarzen „Ärztlich bestätigt"-Button.
+    const groupIdx = markup.indexOf("data-clinical-status-actions");
+    const startIdx = markup.indexOf("data-start-additional-prefill-run");
+    const confirmIdx = markup.indexOf("data-doctor-confirm");
+    expect(groupIdx).toBeGreaterThan(-1);
+    expect(startIdx).toBeGreaterThan(groupIdx);
+    expect(confirmIdx).toBeGreaterThan(startIdx);
+  });
+
+  it("blendet 'Weitere Vorbereitung starten' aus, wenn der Fall ärztlich bestätigt ist (doctor_confirmed)", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      doctor_confirmed: true,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("data-start-additional-prefill-run");
+    expect(markup).not.toContain("Weitere Vorbereitung starten");
+  });
+
+  it("blendet 'Weitere Vorbereitung starten' aus, wenn clinical_status === 'confirmed'", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      clinical_status: "confirmed",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("data-start-additional-prefill-run");
+  });
+
+  it("schwarzer 'Ärztlich bestätigt'-Button bleibt unverändert sichtbar, wenn 'Weitere Vorbereitung starten' eingebaut ist", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-doctor-confirm");
+    expect(markup).toContain("btn-primary");
+    expect(markup).toContain("Ärztlich bestätigt");
   });
 });
