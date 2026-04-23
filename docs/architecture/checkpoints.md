@@ -69,9 +69,8 @@ in M3 vorkommt.
 | `A` | Der Checkpoint hat keine Vorbereitung und erscheint nur in M3. |
 
 **Hinweis zum Ist-Stand:** In älteren Dokumenten (insbesondere `docs/checkpoint-classification.md`
-in der ursprünglichen Fassung und einigen `docs/checkpoints/CP-K*.md`-Dateien) wurden P/A
-mit „Pflicht / additiv" erklärt. Diese Bedeutung ist nicht mehr gültig. Maßgeblich ist
-die obige Definition.
+in der ursprünglichen Fassung) wurden P/A mit „Pflicht / additiv" erklärt. Diese Bedeutung
+ist nicht mehr gültig. Maßgeblich ist die obige Definition.
 
 ---
 
@@ -139,7 +138,20 @@ sich den Fragenkatalog `M2_QUESTIONS` in `lib/logic/m2Questions.ts`.
 - Spalte „type (neu)" = Zuordnung nach dieser Dokumentation.
 - „m4_behavior" für K12 ist `NONE`, obwohl das Feld im Code nicht existiert; es wird implizit durch `m4.text = ""` gesteuert.
 - K05 hat `relevance = A` und somit keine Pflichtperspektiven; dennoch existieren sowohl MFA- als auch Patient-Fragen im Code.
-- K09 hat `relevance = A` und nur MFA-Fragen (keine Patientenfragen).
+- K09 hat `relevance = A` und **bewusst keine Patientenfragen**: Der Checkpoint wird ausschließlich durch MFA/Praxis bewertet (Beobachtungs-Checkpoint). `M2_QUESTIONS.K09` existiert nicht im Code; wenn K09 aktiv und `mode = "patient"`, rendert M2 den Checkpoint leer.
+
+**MULTI_SELECT-Verhalten (K10, K11):**
+
+K10 und K11 sind `MULTI_SELECT`-Checkpoints mit folgendem gemeinsamen Verhalten:
+- **kein M2** – keine Patientenfragen, keine MFA-Vorbereitung
+- **kein M4** – kein Patientenhinweis
+- **kein Status** (kein OK / TO_DO / ZURÜCKSTELLEN)
+- **nur M5** – die getroffene Auswahl erscheint in der ärztlichen Dokumentation
+- **immer in M3 vorhanden** – beide Checkpoints sind in `ALWAYS_PRESENT_MULTI_SELECT_IDS` enthalten und werden unabhängig von der M1-Blockauswahl auf Arztseite gerendert
+
+Inhaltliche Abgrenzung:
+- **K10 (Besonderer Versorgungsaufwand):** dokumentiert organisatorische Versorgungsschwerpunkte (z. B. Multimedikation, postoperative Nachsorge).
+- **K11 (Formularanliegen):** dokumentiert den administrativen Anlass der strukturierten Prüfung (z. B. Pflegegradantrag, Attest). Kein Versorgungsstatus, kein Patientenbezug.
 
 ---
 
@@ -153,9 +165,7 @@ Sie stellen offene Punkte für Refactoring-Tickets dar.
 | 1 | `lib/types.ts` → `CheckpointType` | Enum-Werte entsprechen nicht der neuen Taxonomie (DECISION / MULTI_SELECT / ASSESSMENT). Umbenennung bricht bestehende Datenbankeinträge. |
 | 2 | `lib/types.ts` → `m4.type` | Kein `"NONE"`-Wert vorhanden. NONE wird implizit über leeren `m4.text` gesteuert (K12). |
 | 3 | `lib/logic/checkpointCatalog.ts` → K12 | `m4.type = "NOTICE"` + `text = ""` statt explizitem `m4_behavior = "NONE"`. |
-| 4 | `docs/checkpoints/CP-K*.md` | Felder `typ`, `block_id` und `relevance` in den Checkpoint-Einzeldokumenten weichen vom Code ab (veraltete Entwurfsdokumentation). |
-| 5 | `docs/checkpoint-classification.md` | P/A-Semantik war als „Pflicht/additiv" beschrieben (veraltet). Wurde im Zuge dieser Überarbeitung korrigiert. |
-| 6 | K05 (`PROZESS_VORLAUF`, relevance=A) | Hat sowohl MFA- als auch Patientenfragen, obwohl `relevance = A` (keine Pflichtperspektiven). |
-| 7 | K09 (`VERIFIKATION`, relevance=A) | Hat keine Patientenfragen; `M2_QUESTIONS.K09` existiert nicht. Wenn K09 aktiv und `mode = "patient"`, rendert M2 den Checkpoint leer. |
-| 8 | K12 (`BEDARF`/ASSESSMENT) | `relevance = P`, aber keine MFA-Fragen (`M2_QUESTIONS_MFA.K12` nicht definiert). MFA-Modus zeigt K12 leer. |
-| 9 | K12 Patientenfragen | 14 Fragen in Beobachtungsformulierung (Dritte Person, „Wirkt…"), aber der Katalog wird auch für `mode = "conversation"` genutzt (Patientenselbstauskunft). |
+| 4 | `docs/checkpoint-classification.md` | P/A-Semantik war als „Pflicht/additiv" beschrieben (veraltet). Wurde im Zuge dieser Überarbeitung korrigiert. |
+| 5 | K05 (`PROZESS_VORLAUF`, relevance=A) | Hat sowohl MFA- als auch Patientenfragen, obwohl `relevance = A` (keine Pflichtperspektiven). |
+| 6 | K12 (`BEDARF`/ASSESSMENT) | `relevance = P`, aber keine MFA-Fragen (`M2_QUESTIONS_MFA.K12` nicht definiert). MFA-Modus zeigt K12 leer. |
+| 7 | K12 Patientenfragen | 14 Fragen in Beobachtungsformulierung (Dritte Person, „Wirkt…"), aber der Katalog wird auch für `mode = "conversation"` genutzt (Patientenselbstauskunft). |

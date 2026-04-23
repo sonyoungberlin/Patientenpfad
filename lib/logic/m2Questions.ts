@@ -19,7 +19,7 @@ export type M2PrefillData = Record<string, M2CheckpointAnswers>;
 
 /**
  * Statischer Katalog der M2-Fragen pro Checkpoint K01–K08.
- * Quelle: docs/checkpoints/CP-K01.md bis CP-K08.md
+ * Maßgebliche Definitionen: lib/logic/checkpointCatalog.ts und docs/architecture/checkpoints.md
  */
 export const M2_QUESTIONS: Record<string, M2Question[]> = {
   K01: [
