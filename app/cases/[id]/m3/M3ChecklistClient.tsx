@@ -475,11 +475,11 @@ export function M3ChecklistClient({
   }
 
   /**
-   * Schritt 4: Startet einen weiteren PrefillRun für diesen Fall und
-   * navigiert anschließend nach M2. Wenn der Server bereits einen offenen
-   * Run hat, wird dieser idempotent wiederverwendet (Service-Schicht
-   * verändert ihn nicht). Confirmed-Fälle sind serverseitig hart geblockt;
-   * der Button ist in dem Fall zusätzlich gar nicht erst sichtbar.
+   * Schritt B des Ergänzungs-Flows: Einstieg „Weitere Vorbereitung
+   * starten" führt jetzt direkt auf die neue Per-Case-M1-Seite
+   * (`/cases/[id]/m1?mode=erweiterung`). Es wird in diesem Schritt
+   * absichtlich noch kein neuer PrefillRun angelegt – der Schreibpfad
+   * folgt erst in einem späteren Schritt.
    */
   async function startAdditionalPrefillRun() {
     if (startingPrefillRun) return;
@@ -487,25 +487,7 @@ export function M3ChecklistClient({
     setStartingPrefillRun(true);
     setError(null);
     try {
-      const response = await fetch(`/api/cases/${caseId}/prefill-run/start`, {
-        method: "POST",
-      });
-      if (!response.ok) {
-        setError("Weitere Vorbereitung konnte nicht gestartet werden.");
-        return;
-      }
-      let redirectTo = `/cases/${caseId}/m2`;
-      try {
-        const data = (await response.json()) as { redirect?: unknown } | null;
-        if (data && typeof data.redirect === "string" && data.redirect.length > 0) {
-          redirectTo = data.redirect;
-        }
-      } catch {
-        // ignore – Default-Redirect bleibt bestehen
-      }
-      router.push(redirectTo);
-    } catch {
-      setError("Weitere Vorbereitung konnte nicht gestartet werden.");
+      router.push(`/cases/${caseId}/m1?mode=erweiterung`);
     } finally {
       setStartingPrefillRun(false);
     }
