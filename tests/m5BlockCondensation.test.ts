@@ -7,6 +7,7 @@ import {
 import {
   CheckpointCategory,
   CheckpointMode,
+  CheckpointPerspective,
   CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
@@ -24,6 +25,7 @@ function makeStandard(
   return {
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.M,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     relevance: CheckpointRelevance.P,
     title: overrides.id,
     status: "TO_DO",
@@ -38,6 +40,7 @@ function makeMultiSelect(
   return {
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
+    perspectives: [],
     relevance: CheckpointRelevance.A,
     mode: CheckpointMode.MULTI_SELECT,
     title: overrides.id,

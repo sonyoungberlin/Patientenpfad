@@ -2,6 +2,7 @@ import { filterObsoleteCheckpoints } from "@/lib/logic/checkpointCatalog";
 import {
   CheckpointCategory,
   CheckpointMode,
+  CheckpointPerspective,
   CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
@@ -15,6 +16,7 @@ function makeStandard(id: string, block_id = "some_block"): StandardCheckpoint {
     block_id,
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     relevance: CheckpointRelevance.P,
     title: `Checkpoint ${id}`,
     status: "TO_DO",
@@ -28,6 +30,7 @@ function makeMultiSelect(id: string): ActiveCheckpointMultiSelect {
     block_id: "some_block",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
+    perspectives: [],
     relevance: CheckpointRelevance.A,
     mode: CheckpointMode.MULTI_SELECT,
     title: `MultiSelect ${id}`,

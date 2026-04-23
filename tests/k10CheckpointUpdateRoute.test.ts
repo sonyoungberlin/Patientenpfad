@@ -3,6 +3,7 @@ import { PATCH } from "@/app/api/cases/[id]/checkpoint/update/route";
 import {
   CheckpointCategory,
   CheckpointMode,
+  CheckpointPerspective,
   CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
@@ -42,6 +43,7 @@ const k10: ActiveCheckpointMultiSelect = {
   block_id: "medizinische_lage",
   type: CheckpointType.BEDARF,
   category: CheckpointCategory.O,
+  perspectives: [],
   relevance: CheckpointRelevance.A,
   mode: CheckpointMode.MULTI_SELECT,
   title: "Besonderer Versorgungsaufwand",
@@ -61,6 +63,7 @@ const stdCheckpoint: ActiveCheckpoint = {
   block_id: "medizinische_lage",
   type: CheckpointType.NACHWEIS,
   category: CheckpointCategory.M,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   relevance: CheckpointRelevance.P,
   status: "TO_DO",
   title: "Diagnosenlage",

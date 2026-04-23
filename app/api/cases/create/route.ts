@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import {
   BlockStatus,
   CheckpointCategory,
+  CheckpointPerspective,
   CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
@@ -57,6 +58,10 @@ const LEGACY_DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
     block_id: "dokumentenlage",
     type: CheckpointType.PRESENCE_CHECK,
     category: CheckpointCategory.O,
+    // TODO: Dieser Fallback-Checkpoint hat kein Katalog-Pendant. Die fachliche
+    // Zuordnung zu perspectives ist ungeklärt. Bis zur Entfernung dieses Fallbacks
+    // bleibt perspectives leer (kein Vorbereitungsanteil deklariert).
+    perspectives: [] as CheckpointPerspective[],
     relevance: CheckpointRelevance.P,
     title: "Arztbrief vorhanden",
     description:

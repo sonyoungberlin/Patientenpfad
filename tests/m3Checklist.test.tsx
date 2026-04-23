@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import M3Page from "@/app/cases/[id]/m3/page";
 import {
   CheckpointCategory,
+  CheckpointPerspective,
   CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
@@ -63,6 +64,7 @@ const mCheckpoint: ActiveCheckpoint = {
   id: "K03",
   block_id: "medizinische_lage",
   type: CheckpointType.VERIFIKATION,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   relevance: CheckpointRelevance.P,
   title: "Medizinischer Checkpoint",
   category: CheckpointCategory.M,
@@ -74,6 +76,7 @@ const oCheckpoint: ActiveCheckpoint = {
   id: "K01",
   block_id: "kommunikation",
   type: CheckpointType.PRESENCE_CHECK,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   relevance: CheckpointRelevance.P,
   title: "Organisatorischer Checkpoint",
   category: CheckpointCategory.O,

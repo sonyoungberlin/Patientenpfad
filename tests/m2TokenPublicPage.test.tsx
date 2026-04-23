@@ -97,6 +97,7 @@ describe("/m2-link/[token] Seite", () => {
           status: "TO_DO",
           type: "VERIFIKATION",
           relevance: "P",
+          perspectives: ["MFA", "PATIENT"],
           m4: { type: "ACTION", text: "M4" },
         },
       ],

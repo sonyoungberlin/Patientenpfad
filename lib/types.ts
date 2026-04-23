@@ -33,11 +33,31 @@ export enum CheckpointCategory {
   O = "O",
 }
 
+/**
+ * @deprecated Wird durch `perspectives: CheckpointPerspective[]` abgelöst.
+ * P/A unterscheidet nicht zwischen MFA- und Patientenperspektive und ist damit
+ * nicht ausdrucksstark genug. Entfernung nach DB-Migration geplant.
+ */
 export enum CheckpointRelevance {
   /** Hat Vorbereitungsperspektive(n): Checkpoint erscheint in M2 (MFA und/oder Patient). */
   P = "P",
   /** Keine Vorbereitung: Checkpoint erscheint ausschließlich in M3. */
   A = "A",
+}
+
+/**
+ * Vorbereitungsperspektive eines Checkpoints.
+ *
+ * MFA     – Checkpoint hat Vorbereitungsanteil für die MFA (erscheint im MFA-Fragenkatalog).
+ * PATIENT – Checkpoint hat Vorbereitungsanteil für den Patienten (Fragebogen-Link
+ *           und Patientengespräch sind zwei Erhebungswege derselben Perspektive).
+ *
+ * Ein leeres Array `[]` ist ein gültiger Zustand und bedeutet:
+ * kein Vorbereitungsanteil – Checkpoint erscheint ausschließlich in M3.
+ */
+export enum CheckpointPerspective {
+  MFA = "MFA",
+  PATIENT = "PATIENT",
 }
 
 /**
@@ -55,6 +75,16 @@ type ActiveCheckpointBase = {
   id: string;
   block_id: string;
   type: CheckpointType;
+  /**
+   * Vorbereitungsperspektiven dieses Checkpoints.
+   * Leeres Array = kein Vorbereitungsanteil (nur M3).
+   */
+  perspectives: CheckpointPerspective[];
+  /**
+   * @deprecated Durch `perspectives[]` abgelöst. Wird nach DB-Migration entfernt.
+   * Altfälle (aus der Datenbank geladen) haben dieses Feld noch gesetzt;
+   * neue Fälle sollten ausschließlich `perspectives` auswerten.
+   */
   relevance: CheckpointRelevance;
   title: string;
   description?: string;
@@ -95,6 +125,14 @@ export type ActiveCheckpointMultiSelect = {
   block_id: string;
   type: CheckpointType;
   category: CheckpointCategory;
+  /**
+   * Vorbereitungsperspektiven dieses Checkpoints.
+   * Leeres Array = kein Vorbereitungsanteil (nur M3/M5).
+   */
+  perspectives: CheckpointPerspective[];
+  /**
+   * @deprecated Durch `perspectives[]` abgelöst. Wird nach DB-Migration entfernt.
+   */
   relevance: CheckpointRelevance;
   mode: CheckpointMode.MULTI_SELECT;
   title: string;
