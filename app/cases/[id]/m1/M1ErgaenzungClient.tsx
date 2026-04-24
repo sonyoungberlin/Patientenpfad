@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
+import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
 import type { ActiveCheckpointMultiSelect, M1BlockId, M1BlockStatus, M1Selection } from "@/lib/types";
 
 const INITIAL_SELECTION: M1Selection = {
@@ -22,6 +23,11 @@ export type M1ErgaenzungClientProps = {
   lockedBlocks: ReadonlyArray<M1BlockId>;
   /** Aktueller MULTI_SELECT-Stand aus der DB (K10/K11). */
   initialMultiSelectCheckpoints: ActiveCheckpointMultiSelect[];
+  /**
+   * Aktueller K12-ASSESSMENT-Stand aus der DB.
+   * true: K12 ist aktiviert; false/undefined: nicht aktiviert.
+   */
+  initialK12Enabled?: boolean;
 };
 
 /**
@@ -44,12 +50,15 @@ export default function M1ErgaenzungClient({
   caseId,
   lockedBlocks,
   initialMultiSelectCheckpoints,
+  initialK12Enabled = false,
 }: M1ErgaenzungClientProps) {
   const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
   const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
     initialMultiSelectCheckpoints,
   );
+  // K12 (ASSESSMENT) – lokaler Stand; PATCH wird sofort ausgelöst, beim Submit zusätzlich im Payload mitgesendet
+  const [k12Enabled, setK12Enabled] = useState<boolean>(initialK12Enabled);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savingPrepared, setSavingPrepared] = useState(false);
@@ -91,6 +100,19 @@ export default function M1ErgaenzungClient({
     }
   }
 
+  async function patchAssessment(id: string, enabled: boolean) {
+    try {
+      await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ checkpoint_id: id, enabled }),
+      });
+    } catch {
+      // Best-effort: UI-Stand bleibt erhalten. Für Altfälle, bei denen K12
+      // noch nicht in active_checkpoints ist, wird der Wert beim Submit mitgesendet.
+    }
+  }
+
   function handleMultiToggleEnabled(id: string) {
     setMultiSelectCheckpoints((prev) =>
       prev.map((cp) => {
@@ -101,6 +123,14 @@ export default function M1ErgaenzungClient({
         return { ...cp, enabled: newEnabled, selections: newSelections };
       }),
     );
+  }
+
+  function handleK12Toggle() {
+    setK12Enabled((prev) => {
+      const newEnabled = !prev;
+      void patchAssessment("K12", newEnabled);
+      return newEnabled;
+    });
   }
 
   function handleMultiToggleOption(id: string, option: string) {
@@ -153,7 +183,10 @@ export default function M1ErgaenzungClient({
       const response = await fetch(`/api/cases/${caseId}/m1/supplement`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ blocks: newlySelectedBlocks }),
+        body: JSON.stringify({
+          blocks: newlySelectedBlocks,
+          assessmentEnabled: { K12: k12Enabled },
+        }),
       });
       if (!response.ok) {
         setError("Fallergänzung konnte nicht gespeichert werden.");
@@ -194,6 +227,10 @@ export default function M1ErgaenzungClient({
         loading={loading}
         lockedBlocks={lockedBlocks}
         submitDisabled={false}
+      />
+      <AssessmentCheckpointSection
+        checkpoints={[{ id: "K12", title: "Alltagssituation / Kontaktperson", enabled: k12Enabled }]}
+        onToggleEnabled={handleK12Toggle}
       />
       <button
         type="button"

@@ -3,11 +3,12 @@
 import React from "react";
 import type { M1BlockStatus, M1Selection } from "@/lib/types";
 
-const BLOCK_LABELS: Record<keyof M1Selection, string> = {
+const BLOCK_LABELS: Partial<Record<keyof M1Selection, string>> = {
   kommunikation: "Kommunikation",
   medizinische_lage: "Medizinische Lage",
   versorgung_im_alltag: "Versorgung im Alltag",
-  pflegebeobachtung: "Alltagssituation / Kontaktperson",
+  // pflegebeobachtung wird nicht als klar/unklar-Toggle gerendert:
+  // K12 (ASSESSMENT) wird per eigener Checkbox in AssessmentCheckpointSection gesteuert.
 };
 
 const STATUS_LABELS: Record<M1BlockStatus, string> = {

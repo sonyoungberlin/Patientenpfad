@@ -10,13 +10,16 @@ import {
 } from "@/lib/flow/caseNavigation";
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
+import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
 import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
   medizinische_lage: "unklar",
   versorgung_im_alltag: "unklar",
-  pflegebeobachtung: "unklar",
+  // pflegebeobachtung produziert keine block-aktivierten Checkpoints mehr;
+  // K12 wird als ASSESSMENT-Checkbox gesteuert (immer "klar" übergeben).
+  pflegebeobachtung: "klar",
 };
 
 function buildInitialMultiSelectCheckpoints(): ActiveCheckpointMultiSelect[] {
@@ -39,6 +42,8 @@ export default function HomePage() {
   const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
     buildInitialMultiSelectCheckpoints,
   );
+  // K12 (ASSESSMENT) – per Checkbox in M1 zuschaltbar; Default: nicht aktiviert
+  const [k12Enabled, setK12Enabled] = useState<boolean>(false);
   const [mode, setMode] = useState<CaseMode>("guest");
   const [patientReference, setPatientReference] = useState("");
   const [gatekeeper, setGatekeeper] = useState(false);
@@ -159,7 +164,12 @@ export default function HomePage() {
       for (const cp of multiSelectCheckpoints) {
         multiSelectSelections[cp.id] = { enabled: cp.enabled, selections: cp.selections };
       }
-      const body: Record<string, unknown> = { m1Selection: selection, mode, multiSelectSelections };
+      const body: Record<string, unknown> = {
+        m1Selection: selection,
+        mode,
+        multiSelectSelections,
+        assessmentEnabled: { K12: k12Enabled },
+      };
       if (mode === "practice" && patientReference.trim()) {
         body.patient_reference = patientReference.trim();
       }
@@ -202,11 +212,16 @@ export default function HomePage() {
     setGatekeeper(false);
     setError(null);
     try {
-      const multiSelectSelections: Record<string, { enabled: boolean; selections: string[] }> = {};
+      const multiSelectSelectionsForPreview: Record<string, { enabled: boolean; selections: string[] }> = {};
       for (const cp of multiSelectCheckpoints) {
-        multiSelectSelections[cp.id] = { enabled: cp.enabled, selections: cp.selections };
+        multiSelectSelectionsForPreview[cp.id] = { enabled: cp.enabled, selections: cp.selections };
       }
-      const body: Record<string, unknown> = { m1Selection: selection, mode, multiSelectSelections };
+      const body: Record<string, unknown> = {
+        m1Selection: selection,
+        mode,
+        multiSelectSelections: multiSelectSelectionsForPreview,
+        assessmentEnabled: { K12: k12Enabled },
+      };
       if (mode === "practice" && patientReference.trim()) {
         body.patient_reference = patientReference.trim();
       }
@@ -414,22 +429,35 @@ export default function HomePage() {
         Hinweis: Der Fall erscheint in Ihrer Fallübersicht. Eine Patienten-Referenz hilft beim späteren Wiederfinden.
       </p>
 
-      <div data-tour-id="m1-form">
-        <M1SelectionForm
-          selection={selection}
-          onBlockChange={handleBlockChange}
-          onSubmit={handleCreate}
-          loading={loading}
-        />
-      </div>
+<div data-tour-id="multi-select-section">
+  <MultiSelectCheckpointSection
+    checkpoints={multiSelectCheckpoints}
+    onToggleEnabled={handleMultiToggleEnabled}
+    onToggleOption={handleMultiToggleOption}
+  />
+</div>
 
-      <div data-tour-id="multi-select-section">
-        <MultiSelectCheckpointSection
-          checkpoints={multiSelectCheckpoints}
-          onToggleEnabled={handleMultiToggleEnabled}
-          onToggleOption={handleMultiToggleOption}
-        />
-      </div>
+<div data-tour-id="m1-form">
+  <M1SelectionForm
+    selection={selection}
+    onBlockChange={handleBlockChange}
+    onSubmit={handleCreate}
+    loading={loading}
+  />
+</div>
+
+<div data-tour-id="k12-checkbox">
+  <AssessmentCheckpointSection
+    checkpoints={[
+      {
+        id: "K12",
+        title: "Alltagssituation / Kontaktperson",
+        enabled: k12Enabled,
+      },
+    ]}
+    onToggleEnabled={() => setK12Enabled((v) => !v)}
+  />
+</div>
 
       <button
         type="button"

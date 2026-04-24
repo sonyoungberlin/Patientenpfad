@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
+import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint, isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
 import { getSessionAccount } from "@/lib/auth";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
@@ -78,8 +78,9 @@ export async function PATCH(
       );
     }
 
-    // Determine if this is a MULTI_SELECT update (has `enabled` field) or standard status update
-    const isMultiSelectUpdate = "enabled" in body;
+    // Determine whether this request carries an `enabled` field (MULTI_SELECT or ASSESSMENT update)
+    // or a `status` field (standard update). The exact update type is resolved after `target` is found.
+    const hasEnabled = "enabled" in body;
 
     const status =
       body?.status === "OK" ||
@@ -88,7 +89,7 @@ export async function PATCH(
         ? (body.status as CheckpointStatus)
         : undefined;
 
-    if (!isMultiSelectUpdate && !status) {
+    if (!hasEnabled && !status) {
       return NextResponse.json(
         { ok: false, error: "Invalid input" },
         { status: 400 },
@@ -133,6 +134,10 @@ export async function PATCH(
     const target = checkpoints[targetCheckpointIndex];
     const updatedCheckpoints = [...checkpoints];
 
+    // Determine the exact update type now that we have the target checkpoint.
+    const isMultiSelectUpdate = hasEnabled && !("status" in body) && isMultiSelectCheckpoint(target);
+    const isAssessmentUpdate = hasEnabled && !("status" in body) && isAssessmentCheckpoint(target);
+
     if (isMultiSelectUpdate) {
       // MULTI_SELECT checkpoint update: validate and apply enabled + selections
       if (!isMultiSelectCheckpoint(target)) {
@@ -150,7 +155,21 @@ export async function PATCH(
         enabled,
         selections: enabled ? selections : [],
       } as ActiveCheckpoint;
+    } else if (isAssessmentUpdate) {
+      // ASSESSMENT checkpoint update: only toggle enabled
+      const enabled = typeof body.enabled === "boolean" ? body.enabled : false;
+      updatedCheckpoints[targetCheckpointIndex] = {
+        ...target,
+        enabled,
+      } as ActiveCheckpoint;
     } else {
+      // Fallback: `enabled` was sent but checkpoint is neither MULTI_SELECT nor ASSESSMENT
+      if (hasEnabled && !status) {
+        return NextResponse.json(
+          { ok: false, error: "Checkpoint is not a multi-select type" },
+          { status: 400 },
+        );
+      }
       // Standard checkpoint update
       if (!isValidStatus(target, status!)) {
         return NextResponse.json(

@@ -25,8 +25,8 @@ describe("M1_CHECKPOINT_MAP", () => {
     ]);
   });
 
-  it("pflegebeobachtung aktiviert nur K12 (Einschätzungsblock)", () => {
-    expect(M1_CHECKPOINT_MAP.pflegebeobachtung).toEqual(["K12"]);
+  it("pflegebeobachtung hat keine block-aktivierten Checkpoints (K12 ist ASSESSMENT, wird per Checkbox gesteuert)", () => {
+    expect(M1_CHECKPOINT_MAP.pflegebeobachtung).toEqual([]);
   });
 });
 
@@ -51,7 +51,7 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
     expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual(["K01", "K08", "K09"]);
   });
 
-  it("aktiviert alle Checkpoints wenn alle Blöcke unklar sind", () => {
+  it("aktiviert alle Checkpoints wenn alle Blöcke unklar sind (K12 ist ASSESSMENT – nicht über Block aktiviert)", () => {
     const selection: M1Selection = {
       kommunikation: "unklar",
       medizinische_lage: "unklar",
@@ -68,7 +68,6 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
       "K02",
       "K06",
       "K07",
-      "K12",
     ]);
   });
 
@@ -89,13 +88,13 @@ describe("deriveActiveCheckpointIdsFromM1", () => {
     ]);
   });
 
-  it("aktiviert pflegebeobachtung korrekt", () => {
+  it("pflegebeobachtung 'unklar' aktiviert keine block-aktivierten Checkpoints (K12 ist ASSESSMENT)", () => {
     const selection: M1Selection = {
       kommunikation: "klar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
       pflegebeobachtung: "unklar",
     };
-    expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual(["K12"]);
+    expect(deriveActiveCheckpointIdsFromM1(selection)).toEqual([]);
   });
 });

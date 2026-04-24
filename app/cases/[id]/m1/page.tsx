@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import type { ActiveCheckpoint, ActiveCheckpointMultiSelect, M1BlockId } from "@/lib/types";
-import { isMultiSelectCheckpoint } from "@/lib/types";
+import { isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
 import { CHECKPOINT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 import M1ErgaenzungClient from "./M1ErgaenzungClient";
 
@@ -72,12 +72,14 @@ export default async function CaseM1Page({
     isMultiSelectCheckpoint,
   );
 
-  // „bereits aktiv" darf ausschließlich aus Standard-Checkpoints (K01–K09, K12–K15)
-  // abgeleitet werden, die wirklich aus einer früheren M1-Aktivierung
-  // dieses Blocks stammen. Always-present MULTI_SELECT-Checkpoints (z. B.
-  // K10/K11) tragen zwar eine `block_id`, werden aber unabhängig von der
-  // M1-Auswahl angelegt und dürfen daher keinen Block als „bereits aktiv"
-  // markieren.
+  // K12 (ASSESSMENT) enabled-Stand aus active_checkpoints lesen.
+  // Fehlt das enabled-Feld (Altfall), gilt enabled als false (nicht aktiviert).
+  const k12Checkpoint = checkpoints.find((cp) => cp.id === "K12");
+  const initialK12Enabled = k12Checkpoint ? (k12Checkpoint.enabled === true) : false;
+
+  // „bereits aktiv" darf ausschließlich aus Standard-DECISION-Checkpoints (K01–K09)
+  // abgeleitet werden. MULTI_SELECT- und ASSESSMENT-Checkpoints (K12) sind
+  // immer-present und werden unabhängig von M1-Block-Toggles gesteuert.
   const activeBlockIds = new Set<M1BlockId>();
   for (const cp of checkpoints) {
     const cpId = cp?.id;
@@ -85,6 +87,8 @@ export default async function CaseM1Page({
     if (!Object.prototype.hasOwnProperty.call(CHECKPOINT_CATALOGUE, cpId)) {
       continue;
     }
+    // ASSESSMENT- und MULTI_SELECT-Checkpoints nicht als "bereits aktiv" zählen
+    if (isMultiSelectCheckpoint(cp) || isAssessmentCheckpoint(cp)) continue;
     const blockId = cp?.block_id;
     if (
       typeof blockId === "string" &&
@@ -110,6 +114,7 @@ export default async function CaseM1Page({
         caseId={id}
         lockedBlocks={Array.from(activeBlockIds)}
         initialMultiSelectCheckpoints={multiSelectCheckpoints}
+        initialK12Enabled={initialK12Enabled}
       />
     </main>
   );
