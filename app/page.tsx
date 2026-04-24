@@ -377,6 +377,13 @@ export default function HomePage() {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             type="button"
+            onClick={() => router.push("/inquiries/demo")}
+            style={{ fontSize: "0.875rem" }}
+          >
+            Anfrage-Demo
+          </button>
+          <button
+            type="button"
             onClick={() => router.push("/demo/arzt")}
             style={{ fontSize: "0.875rem" }}
           >
