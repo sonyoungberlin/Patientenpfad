@@ -50,6 +50,7 @@ export default function M1ErgaenzungClient({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savingPrepared, setSavingPrepared] = useState(false);
 
   const lockedSet = useMemo(
     () => new Set<M1BlockId>(lockedBlocks),
@@ -113,6 +114,32 @@ export default function M1ErgaenzungClient({
     );
   }
 
+  /**
+   * Setzt clinical_status = "prepared" und navigiert zur Fallübersicht.
+   * Der Arzt signalisiert damit, dass der Fall im Rahmen von M1 vorbereitet wurde.
+   */
+  async function handlePrepare() {
+    if (savingPrepared || loading) return;
+    setSavingPrepared(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/cases/${caseId}/clinical-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "prepared" }),
+      });
+      if (!response.ok) {
+        setError('Ärztlich vorbereitet konnte nicht gespeichert werden.');
+        return;
+      }
+      router.push("/cases");
+    } catch {
+      setError('Ärztlich vorbereitet konnte nicht gespeichert werden.');
+    } finally {
+      setSavingPrepared(false);
+    }
+  }
+
   async function handleSubmit() {
     if (loading) return;
     // Ergänzungs-Flow darf auch ohne neuen Block gestartet werden:
@@ -166,6 +193,16 @@ export default function M1ErgaenzungClient({
         lockedBlocks={lockedBlocks}
         submitDisabled={false}
       />
+      <button
+        type="button"
+        data-clinical-status-prepared
+        className="answer-btn"
+        onClick={() => void handlePrepare()}
+        disabled={savingPrepared || loading}
+        style={{ marginTop: "0.75rem" }}
+      >
+        {savingPrepared ? "Wird gespeichert…" : "Ärztlich vorbereitet"}
+      </button>
       {error ? (
         <p
           role="alert"

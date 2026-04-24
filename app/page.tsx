@@ -56,6 +56,7 @@ export default function HomePage() {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
   const [regSuccess, setRegSuccess] = useState(false);
+  const [preparingLoading, setPreparingLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -186,6 +187,63 @@ export default function HomePage() {
       setError("Netzwerkfehler");
     } finally {
       setLoading(false);
+    }
+  }
+
+  /**
+   * Erstellt den Fall und setzt danach sofort clinical_status = "prepared".
+   * Navigiert dann zur Fallübersicht (/cases).
+   * Wird aufgerufen wenn der Arzt direkt aus M1-Erstanlage heraus als
+   * "ärztlich vorbereitet" abschließen möchte.
+   */
+  async function handleCreateAndPrepare() {
+    if (preparingLoading || loading) return;
+    setPreparingLoading(true);
+    setGatekeeper(false);
+    setError(null);
+    try {
+      const multiSelectSelections: Record<string, { enabled: boolean; selections: string[] }> = {};
+      for (const cp of multiSelectCheckpoints) {
+        multiSelectSelections[cp.id] = { enabled: cp.enabled, selections: cp.selections };
+      }
+      const body: Record<string, unknown> = { m1Selection: selection, mode, multiSelectSelections };
+      if (mode === "practice" && patientReference.trim()) {
+        body.patient_reference = patientReference.trim();
+      }
+      const res = await fetch("/api/cases/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json() as { ok?: boolean; case_id?: string; gatekeeper?: boolean };
+      if (!res.ok || !data.ok) {
+        setError("Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.");
+        return;
+      }
+      if (isGatekeeperResponse(data)) {
+        setGatekeeper(true);
+        return;
+      }
+      const caseId = data.case_id;
+      if (!caseId) {
+        setError("Fall-ID fehlt in der Antwort. Bitte erneut versuchen.");
+        return;
+      }
+      // Fall wurde erstellt – jetzt prepared setzen (best-effort, nicht blockierend)
+      try {
+        await fetch(`/api/cases/${caseId}/clinical-status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "prepared" }),
+        });
+      } catch {
+        // Best-effort: Navigation zur Übersicht findet trotzdem statt.
+      }
+      router.push("/cases");
+    } catch {
+      setError("Netzwerkfehler");
+    } finally {
+      setPreparingLoading(false);
     }
   }
 
@@ -360,6 +418,16 @@ export default function HomePage() {
         onToggleOption={handleMultiToggleOption}
       />
 
+      <button
+        type="button"
+        data-clinical-status-prepared
+        className="answer-btn"
+        onClick={() => void handleCreateAndPrepare()}
+        disabled={preparingLoading || loading}
+        style={{ marginTop: "0.75rem" }}
+      >
+        {preparingLoading ? "Wird gespeichert…" : "Ärztlich vorbereitet"}
+      </button>
 
 
       {gatekeeper && (

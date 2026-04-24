@@ -138,7 +138,7 @@ export function M3ChecklistClient({
   // - "prepared"  : Arzt hat in M3 vorbereitet / Lücken markiert (MFA übernimmt weiter)
   // - "confirmed" : Arzt hat M3 final geprüft (fachlicher Abschluss)
   const [clinical, setClinical] = useState<string>(clinicalStatus);
-  const [savingClinical, setSavingClinical] = useState<"prepared" | "confirmed" | null>(null);
+  const [savingClinical, setSavingClinical] = useState<boolean>(false);
   // Schritt 4 der PrefillRun-Umstellung: Einstieg „Weitere Vorbereitung
   // starten". Nur lokaler UI-Zustand; Klick ruft die neue Route, navigiert
   // dann nach M2. Keine Wirkung auf bestehende Buttons / M3-Lock-Logik.
@@ -358,40 +358,6 @@ export function M3ChecklistClient({
     }
   }
 
-  async function setClinicalStatus(next: "prepared" | "confirmed") {
-    if (clinical === next) return;
-    setSavingClinical(next);
-    setError(null);
-    const previous = clinical;
-    setClinical(next);
-    try {
-      const response = await fetch(`/api/cases/${caseId}/clinical-status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: next }),
-      });
-      if (!response.ok) {
-        setClinical(previous);
-        setError(
-          next === "prepared"
-            ? "Status „ärztlich vorbereitet“ konnte nicht gespeichert werden."
-            : "Status „ärztlich bestätigt“ konnte nicht gespeichert werden.",
-        );
-        return;
-      }
-      router.refresh();
-    } catch {
-      setClinical(previous);
-      setError(
-        next === "prepared"
-          ? "Status „ärztlich vorbereitet“ konnte nicht gespeichert werden."
-          : "Status „ärztlich bestätigt“ konnte nicht gespeichert werden.",
-      );
-    } finally {
-      setSavingClinical(null);
-    }
-  }
-
   /**
    * Schritt B des Ergänzungs-Flows: Einstieg „Weitere Vorbereitung
    * starten" führt direkt auf die Per-Case-M1-Seite
@@ -409,7 +375,7 @@ export function M3ChecklistClient({
     setError(null);
     // Status speichern (best-effort) bevor zum Ergänzungs-Flow navigiert wird.
     if (clinical !== "prepared") {
-      setSavingClinical("prepared");
+      setSavingClinical(true);
       try {
         const res = await fetch(`/api/cases/${caseId}/clinical-status`, {
           method: "PATCH",
@@ -422,7 +388,7 @@ export function M3ChecklistClient({
       } catch {
         // Best-effort: Navigation findet trotzdem statt.
       } finally {
-        setSavingClinical(null);
+        setSavingClinical(false);
       }
     }
     try {
@@ -649,20 +615,7 @@ export function M3ChecklistClient({
           data-clinical-status-actions
           style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}
         >
-          <button
-            type="button"
-            data-clinical-status-prepared
-            onClick={() => void setClinicalStatus("prepared")}
-            disabled={savingClinical !== null || clinical === "prepared"}
-            aria-pressed={clinical === "prepared"}
-            className={clinical === "prepared" ? "answer-btn active" : "answer-btn"}
-          >
-            {savingClinical === "prepared"
-              ? "Wird gespeichert…"
-              : clinical === "prepared"
-                ? "Ärztlich vorbereitet ✓"
-                : "Ärztlich vorbereitet"}
-          </button>
+          
           {confirmed || clinical === "confirmed" ? null : (
             <button
               type="button"
