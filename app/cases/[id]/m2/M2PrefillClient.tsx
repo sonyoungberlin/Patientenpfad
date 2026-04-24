@@ -193,11 +193,13 @@ export function M2PrefillClient({
           mode === "patient"
             ? CheckpointPerspective.PATIENT
             : CheckpointPerspective.MFA;
-        const visibleCheckpoints = checkpoints.filter(
-          (cp) =>
-            !answeredSet.has(cp.id) &&
-            cp.perspectives.includes(perspectiveForMode),
-        );
+        const visibleCheckpoints = checkpoints.filter((cp) => {
+          if (answeredSet.has(cp.id)) return false;
+          // Im MFA-Modus alle nicht beantworteten Checkpoints anzeigen,
+          // auch wenn sie keine MFA-Perspektive haben (Hinweistext statt Fragen).
+          if (mode === "mfa") return true;
+          return cp.perspectives.includes(perspectiveForMode);
+        });
 
         if (visibleCheckpoints.length === 0) {
           return <p>Für die MFA gibt es hier keine vorbereitenden Fragen.</p>;
@@ -209,7 +211,9 @@ export function M2PrefillClient({
               const questionCatalog =
                 mode === "patient" ? M2_QUESTIONS : M2_QUESTIONS_MFA;
               const questions = questionCatalog[cp.id] ?? [];
-              if (questions.length === 0) return null;
+              // Im MFA-Modus: Block trotzdem rendern, aber mit Hinweistext statt Fragen.
+              // Im Patienten-Modus: Checkpoint ohne Fragen ausblenden (bisheriges Verhalten).
+              if (mode !== "mfa" && questions.length === 0) return null;
               const cpAnswers = values[cp.id] ?? {};
               return (
                 <li
@@ -226,6 +230,7 @@ export function M2PrefillClient({
                       {cp.introText}
                     </div>
                   ) : null}
+                  {questions.length > 0 ? (
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     {questions.map((q) => (
                       <li
@@ -252,6 +257,11 @@ export function M2PrefillClient({
                       </li>
                     ))}
                   </ul>
+                  ) : (
+                    <p style={{ margin: 0, fontStyle: "italic" }}>
+                      Für die MFA gibt es hier keine vorbereitenden Fragen.
+                    </p>
+                  )}
                 </li>
               );
             })}
