@@ -24,14 +24,16 @@ describe("isGatekeeperCase", () => {
     expect(isGatekeeperCase(sel)).toBe(false);
   });
 
-  it("gibt false zurück wenn alle Blöcke unklar sind", () => {
+  it("pflegebeobachtung 'unklar' verhindert den Gatekeeper nicht (kein block-aktivierter Checkpoint)", () => {
+    // Hintergrundregel: pflegebeobachtung wird nicht mehr als DECISION-Block ausgewertet.
+    // K12 ist ASSESSMENT und immer-present (enabled: false by default).
     const sel: M1Selection = {
-      kommunikation: "unklar",
-      medizinische_lage: "unklar",
-      versorgung_im_alltag: "unklar",
+      kommunikation: "klar",
+      medizinische_lage: "klar",
+      versorgung_im_alltag: "klar",
       pflegebeobachtung: "unklar",
     };
-    expect(isGatekeeperCase(sel)).toBe(false);
+    expect(isGatekeeperCase(sel)).toBe(true);
   });
 
   it("gibt false zurück wenn nur medizinische_lage unklar ist", () => {
@@ -58,11 +60,11 @@ describe("M1-Flow: medizinische_lage unklar → Snapshot + aktive Checkpoints", 
     expect(snapshot.activated_checkpoint_ids).toEqual(["K03", "K04", "K05"]);
   });
 
-  it("hydratisiert 5 vollständige ActiveCheckpoints aus dem Snapshot (K10, K11 always-present)", () => {
+  it("hydratisiert 6 vollständige ActiveCheckpoints aus dem Snapshot (K10, K11, K12 always-present)", () => {
     const snapshot = buildM1SnapshotInitial(sel);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(5);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K03", "K04", "K05", "K10", "K11"]);
+    expect(checkpoints).toHaveLength(6);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K03", "K04", "K05", "K10", "K11", "K12"]);
   });
 
   it("alle Checkpoints haben status TO_DO", () => {
@@ -104,27 +106,29 @@ describe("Gatekeeper-Fall: klar/klar/klar → kein Snapshot, keine Checkpoints",
     expect(snapshot.activated_checkpoint_ids).toEqual([]);
   });
 
-  it("Hydration eines leeren Snapshots ergibt nur always-present Checkpoints (K10, K11)", () => {
+  it("Hydration eines leeren Snapshots ergibt always-present Checkpoints (K10, K11, K12)", () => {
     const snapshot = buildM1SnapshotInitial(sel);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(2);
+    expect(checkpoints).toHaveLength(3);
     expect(checkpoints[0].id).toBe("K10");
     expect(checkpoints[1].id).toBe("K11");
+    expect(checkpoints[2].id).toBe("K12");
   });
 });
 
 describe("UI-Payload: m1Selection wird korrekt übermittelt", () => {
-  it("Initialauswahl ist explizit (alle unklar)", () => {
-    // Spiegelt den INITIAL_SELECTION in page.tsx
+  it("Initialauswahl ist explizit (alle DECISION-Blöcke unklar, pflegebeobachtung klar)", () => {
+    // Spiegelt den INITIAL_SELECTION in page.tsx:
+    // pflegebeobachtung ist immer "klar" (K12 wird per ASSESSMENT-Checkbox gesteuert)
     const initial: M1Selection = {
       kommunikation: "unklar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "unklar",
-      pflegebeobachtung: "unklar",
+      pflegebeobachtung: "klar",
     };
     expect(isGatekeeperCase(initial)).toBe(false);
     const snapshot = buildM1SnapshotInitial(initial);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(10);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
   });
 
   it("Payload mit m1Selection hat keinen Legacy-Pfad", () => {

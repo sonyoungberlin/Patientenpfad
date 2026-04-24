@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint } from "@/lib/types";
+import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
 import { resolveQuestionTextForMode, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
 import type { PrefillRunSource } from "@/lib/server/prefillRuns";
@@ -149,8 +149,18 @@ export function M3ChecklistClient({
   // They are still included in allCheckpoints for M5 documentation output.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
   const multiSelectCheckpoints = initialCheckpoints.filter(isMultiSelectCheckpoint);
+  // Disabled ASSESSMENT checkpoints (K12 with enabled !== true) are kept in a
+  // passthrough list so they are preserved in active_checkpoints on closeCase(),
+  // but they are NOT rendered in the M3 UI or counted toward M5 output.
+  const disabledAssessmentCheckpoints = standardInitial.filter(
+    (cp) => isAssessmentCheckpoint(cp) && cp.enabled !== true,
+  );
+  // Only enabled standard checkpoints (incl. enabled ASSESSMENT) go into editable state.
+  const activeStandardInitial = standardInitial.filter(
+    (cp) => !isAssessmentCheckpoint(cp) || cp.enabled === true,
+  );
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
-    standardInitial.map((checkpoint) => ({
+    activeStandardInitial.map((checkpoint) => ({
       ...checkpoint,
       status: normalizeStatus(checkpoint),
     })),
@@ -212,6 +222,9 @@ export function M3ChecklistClient({
   // because M3Checkpoint is a strict superset of StandardCheckpoint's shape.
   const allCheckpoints: ActiveCheckpoint[] = [
     ...(checkpoints as unknown as ActiveCheckpoint[]),
+    // Disabled ASSESSMENT checkpoints pass through unchanged so they are
+    // preserved in active_checkpoints when closeCase() writes to DB.
+    ...(disabledAssessmentCheckpoints as unknown as ActiveCheckpoint[]),
     ...multiSelectCheckpoints,
   ];
   const m5Entries = deriveM5OutputCondensed(allCheckpoints);

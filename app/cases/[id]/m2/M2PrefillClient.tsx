@@ -8,6 +8,7 @@ const UNSAVED_WARNING =
 import {
   CheckpointPerspective,
   isMultiSelectCheckpoint,
+  isAssessmentCheckpoint,
   type ActiveCheckpoint,
 } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
@@ -201,6 +202,8 @@ export function M2PrefillClient({
           if (answeredSet.has(cp.id)) return false;
           // MULTI_SELECT-Checkpoints sind M3-only → immer aus M2 ausblenden.
           if (isMultiSelectCheckpoint(cp)) return false;
+          // ASSESSMENT-Checkpoints (K12) nur anzeigen, wenn enabled === true.
+          if (isAssessmentCheckpoint(cp) && cp.enabled !== true) return false;
           // Im MFA-Modus alle nicht beantworteten Standard-Checkpoints anzeigen,
           // auch wenn sie keine MFA-Perspektive haben (Hinweistext statt Fragen).
           if (mode === "mfa") return true;

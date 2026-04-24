@@ -5,6 +5,7 @@ import {
   CheckpointCategory,
   CheckpointType,
   isMultiSelectCheckpoint,
+  isAssessmentCheckpoint,
   type ActiveCheckpoint,
   type BlockSummary,
   type CaseMode,
@@ -32,6 +33,19 @@ function parseMultiSelectSelections(
       ? (v.selections as unknown[]).filter((s): s is string => typeof s === "string")
       : [];
     result[id] = { enabled, selections };
+  }
+  return result;
+}
+
+/**
+ * Validates and extracts ASSESSMENT enabled overrides from the create payload.
+ * The shape expected is: { [checkpointId: string]: boolean }
+ */
+function parseAssessmentEnabled(raw: unknown): Record<string, boolean> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const result: Record<string, boolean> = {};
+  for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === "boolean") result[id] = value;
   }
   return result;
 }
@@ -131,6 +145,10 @@ export async function POST(req: NextRequest) {
     // Erlaubt es, K10/K11 direkt beim Erstellen zu befüllen (aus M1-Sektion).
     const multiSelectSelections = parseMultiSelectSelections(body?.multiSelectSelections);
 
+    // ASSESSMENT-Auswahl aus dem Payload: { [id]: boolean }
+    // Erlaubt es, K12 direkt beim Erstellen auf enabled=true zu setzen (aus M1-Checkbox).
+    const assessmentEnabledOverrides = parseAssessmentEnabled(body?.assessmentEnabled);
+
     let activeCheckpoints: ActiveCheckpoint[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let m1SnapshotInitial: any = null;
@@ -150,14 +168,24 @@ export async function POST(req: NextRequest) {
       // MULTI_SELECT-Overrides anwenden: K10/K11 werden mit der vom Nutzer
       // gewählten Auswahl aus M1 überschrieben (statt Default enabled=false).
       activeCheckpoints = hydrated.map((cp) => {
-        if (!isMultiSelectCheckpoint(cp)) return cp;
-        const override = multiSelectSelections[cp.id];
-        if (!override) return cp;
-        return {
-          ...cp,
-          enabled: override.enabled,
-          selections: override.enabled ? override.selections : [],
-        };
+        if (isMultiSelectCheckpoint(cp)) {
+          const override = multiSelectSelections[cp.id];
+          if (!override) return cp;
+          return {
+            ...cp,
+            enabled: override.enabled,
+            selections: override.enabled ? override.selections : [],
+          };
+        }
+        // ASSESSMENT-Overrides anwenden: K12 wird mit dem vom Nutzer gewählten
+        // enabled-Wert aus der M1-Checkbox überschrieben (statt Default enabled=false).
+        if (isAssessmentCheckpoint(cp)) {
+          const enabledOverride = assessmentEnabledOverrides[cp.id];
+          if (typeof enabledOverride === "boolean") {
+            return { ...cp, enabled: enabledOverride };
+          }
+        }
+        return cp;
       });
     } else {
       // Übergangsmodus: kein m1Selection übergeben → Legacy-Fallback.
