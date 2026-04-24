@@ -38,13 +38,14 @@ jest.mock("@/lib/server/prefillRuns", () => {
   const SOURCES = ["mfa", "conversation", "patient"] as const;
   return {
     getFrozenRuns: jest.fn().mockResolvedValue([]),
+    getOpenRun: jest.fn().mockResolvedValue(null),
     isPrefillRunSource: (v: unknown) =>
       typeof v === "string" && (SOURCES as readonly string[]).includes(v),
   };
 });
 
 import { prisma } from "@/lib/prisma";
-import { getFrozenRuns } from "@/lib/server/prefillRuns";
+import { getFrozenRuns, getOpenRun } from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: {
@@ -58,6 +59,7 @@ type PrismaMock = {
 
 const prismaMock = prisma as unknown as PrismaMock;
 const getFrozenRunsMock = getFrozenRuns as unknown as jest.Mock;
+const getOpenRunMock = getOpenRun as unknown as jest.Mock;
 
 const mCheckpoint: ActiveCheckpoint = {
   id: "K03",
@@ -87,6 +89,8 @@ describe("M3 Checkliste", () => {
     prismaMock.account.findUnique.mockReset();
     getFrozenRunsMock.mockReset();
     getFrozenRunsMock.mockResolvedValue([]);
+    getOpenRunMock.mockReset();
+    getOpenRunMock.mockResolvedValue(null);
     // Default: keine Signatur hinterlegt
     prismaMock.account.findUnique.mockResolvedValue({ message_signature: null });
   });
@@ -713,5 +717,59 @@ describe("M3 Checkliste", () => {
     expect(markup).toContain("data-doctor-confirm");
     expect(markup).toContain("btn-primary");
     expect(markup).toContain("Ärztlich bestätigt");
+  });
+
+  // Ergänzungslauf-Sperre
+  it("deaktiviert 'Weitere Vorbereitung starten' wenn clinical_status prepared und frozen run vorhanden", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint], clinical_status: "prepared" });
+    setFrozenRuns([{ sequence: 1, source: "mfa", answers: {} }]);
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-start-additional-prefill-run");
+    expect(markup).toContain("disabled");
+    expect(markup).toContain("data-ergaenzung-gestartet-notice");
+    expect(markup).toContain("Weitere Vorbereitung wurde bereits gestartet.");
+  });
+
+  it("deaktiviert 'Weitere Vorbereitung starten' wenn clinical_status prepared und offener Run vorhanden", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint], clinical_status: "prepared" });
+    // keine frozen runs, aber open run existiert
+    getOpenRunMock.mockResolvedValue({ id: "run-open-1", sequence: 1 });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-start-additional-prefill-run");
+    expect(markup).toContain("disabled");
+    expect(markup).toContain("data-ergaenzung-gestartet-notice");
+  });
+
+  it("lässt 'Weitere Vorbereitung starten' aktiv wenn clinical_status prepared aber noch kein Run vorhanden", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint], clinical_status: "prepared" });
+    // keine frozen runs, kein open run (handleCreateAndPrepare-Fall)
+    getOpenRunMock.mockResolvedValue(null);
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-start-additional-prefill-run");
+    expect(markup).not.toContain("data-ergaenzung-gestartet-notice");
+  });
+
+  it("lässt 'Weitere Vorbereitung starten' aktiv wenn clinical_status none und frozen runs vorhanden", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint], clinical_status: "none" });
+    setFrozenRuns([{ sequence: 1, source: "mfa", answers: {} }]);
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-start-additional-prefill-run");
+    expect(markup).not.toContain("data-ergaenzung-gestartet-notice");
   });
 });
