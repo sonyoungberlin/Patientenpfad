@@ -148,7 +148,7 @@ export function M3ChecklistClient({
   // but are no longer editable in M3 – they are set/changed in M1.
   // They are still included in allCheckpoints for M5 documentation output.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
-  const multiSelectFromDb = initialCheckpoints.filter(isMultiSelectCheckpoint);
+  const multiSelectCheckpoints = initialCheckpoints.filter(isMultiSelectCheckpoint);
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     standardInitial.map((checkpoint) => ({
       ...checkpoint,
@@ -212,7 +212,7 @@ export function M3ChecklistClient({
   // because M3Checkpoint is a strict superset of StandardCheckpoint's shape.
   const allCheckpoints: ActiveCheckpoint[] = [
     ...(checkpoints as unknown as ActiveCheckpoint[]),
-    ...multiSelectFromDb,
+    ...multiSelectCheckpoints,
   ];
   const m5Entries = deriveM5OutputCondensed(allCheckpoints);
   const m5TextBlock = m5Entries
@@ -331,11 +331,11 @@ export function M3ChecklistClient({
     setError(null);
     // Fachregel: „Ärztlich bestätigt" friert M3 ein und persistiert den
     // finalen ärztlichen Stand (Checkpoint-Zustände als Batch-Save).
-    // MULTI_SELECT-Checkpoints (K10/K11) werden unverändert aus dem DB-Stand
-    // (multiSelectFromDb) übernommen, da sie nicht mehr in M3 bearbeitet werden.
+    // MULTI_SELECT-Checkpoints (K10/K11) werden unverändert übernommen,
+    // da sie nicht mehr in M3 bearbeitet werden.
     const allCp: ActiveCheckpoint[] = [
       ...(checkpoints as unknown as ActiveCheckpoint[]),
-      ...multiSelectFromDb,
+      ...multiSelectCheckpoints,
     ];
     try {
       const response = await fetch(`/api/cases/${caseId}/close`, {
