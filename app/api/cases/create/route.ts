@@ -4,6 +4,7 @@ import {
   BlockStatus,
   CheckpointCategory,
   CheckpointType,
+  isMultiSelectCheckpoint,
   type ActiveCheckpoint,
   type BlockSummary,
   type CaseMode,
@@ -12,6 +13,28 @@ import {
 import { buildM1SnapshotInitial, isGatekeeperCase } from "@/lib/logic/m1Activation";
 import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
 import { getSessionAccount } from "@/lib/auth";
+
+/**
+ * Validates and extracts per-checkpoint MULTI_SELECT overrides from the
+ * create payload.  The shape expected is:
+ *   { [checkpointId: string]: { enabled: boolean; selections: string[] } }
+ */
+function parseMultiSelectSelections(
+  raw: unknown,
+): Record<string, { enabled: boolean; selections: string[] }> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const result: Record<string, { enabled: boolean; selections: string[] }> = {};
+  for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const v = value as Record<string, unknown>;
+    const enabled = typeof v.enabled === "boolean" ? v.enabled : false;
+    const selections = Array.isArray(v.selections)
+      ? (v.selections as unknown[]).filter((s): s is string => typeof s === "string")
+      : [];
+    result[id] = { enabled, selections };
+  }
+  return result;
+}
 
 const DEFAULT_BLOCKS: BlockSummary[] = [
   {
@@ -104,6 +127,10 @@ export async function POST(req: NextRequest) {
         ? body.patient_reference.trim()
         : null;
 
+    // MULTI_SELECT-Auswahl aus dem Payload: { [id]: { enabled, selections } }
+    // Erlaubt es, K10/K11 direkt beim Erstellen zu befüllen (aus M1-Sektion).
+    const multiSelectSelections = parseMultiSelectSelections(body?.multiSelectSelections);
+
     let activeCheckpoints: ActiveCheckpoint[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let m1SnapshotInitial: any = null;
@@ -118,7 +145,20 @@ export async function POST(req: NextRequest) {
       // Der Snapshot ist die einzige erlaubte Quelle für active_checkpoints.
       const snapshot = buildM1SnapshotInitial(m1Selection);
       m1SnapshotInitial = snapshot;
-      activeCheckpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
+      const hydrated = hydrateActiveCheckpointsFromSnapshot(snapshot);
+
+      // MULTI_SELECT-Overrides anwenden: K10/K11 werden mit der vom Nutzer
+      // gewählten Auswahl aus M1 überschrieben (statt Default enabled=false).
+      activeCheckpoints = hydrated.map((cp) => {
+        if (!isMultiSelectCheckpoint(cp)) return cp;
+        const override = multiSelectSelections[cp.id];
+        if (!override) return cp;
+        return {
+          ...cp,
+          enabled: override.enabled,
+          selections: override.enabled ? override.selections : [],
+        };
+      });
     } else {
       // Übergangsmodus: kein m1Selection übergeben → Legacy-Fallback.
       // TODO: Entfernen, sobald die UI die M1-Auswahl immer mitliefert.

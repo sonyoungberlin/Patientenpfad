@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
+import type { ActiveCheckpointMultiSelect, CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
   getCreateSuccessRedirectPath,
   isGatekeeperResponse,
 } from "@/lib/flow/caseNavigation";
 import M1SelectionForm from "@/components/M1SelectionForm";
+import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
+import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
@@ -16,6 +18,14 @@ const INITIAL_SELECTION: M1Selection = {
   versorgung_im_alltag: "unklar",
   pflegebeobachtung: "unklar",
 };
+
+function buildInitialMultiSelectCheckpoints(): ActiveCheckpointMultiSelect[] {
+  return Object.values(MULTI_SELECT_CATALOGUE).map((template) => ({
+    ...template,
+    enabled: false,
+    selections: [],
+  })) as ActiveCheckpointMultiSelect[];
+}
 
 type AccountInfo = {
   id: string;
@@ -26,6 +36,9 @@ type AccountInfo = {
 export default function HomePage() {
   const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
+  const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
+    buildInitialMultiSelectCheckpoints,
+  );
   const [mode, setMode] = useState<CaseMode>("guest");
   const [patientReference, setPatientReference] = useState("");
   const [gatekeeper, setGatekeeper] = useState(false);
@@ -116,12 +129,36 @@ export default function HomePage() {
     setSelection((prev) => ({ ...prev, [blockId]: value }));
   }
 
+  function handleMultiToggleEnabled(id: string) {
+    setMultiSelectCheckpoints((prev) =>
+      prev.map((cp) =>
+        cp.id === id ? { ...cp, enabled: !cp.enabled, selections: cp.enabled ? [] : cp.selections } : cp,
+      ),
+    );
+  }
+
+  function handleMultiToggleOption(id: string, option: string) {
+    setMultiSelectCheckpoints((prev) =>
+      prev.map((cp) => {
+        if (cp.id !== id || !cp.enabled) return cp;
+        const newSelections = cp.selections.includes(option)
+          ? cp.selections.filter((s) => s !== option)
+          : [...cp.selections, option];
+        return { ...cp, selections: newSelections };
+      }),
+    );
+  }
+
   async function handleCreate() {
     setLoading(true);
     setGatekeeper(false);
     setError(null);
     try {
-      const body: Record<string, unknown> = { m1Selection: selection, mode };
+      const multiSelectSelections: Record<string, { enabled: boolean; selections: string[] }> = {};
+      for (const cp of multiSelectCheckpoints) {
+        multiSelectSelections[cp.id] = { enabled: cp.enabled, selections: cp.selections };
+      }
+      const body: Record<string, unknown> = { m1Selection: selection, mode, multiSelectSelections };
       if (mode === "practice" && patientReference.trim()) {
         body.patient_reference = patientReference.trim();
       }
@@ -315,6 +352,12 @@ export default function HomePage() {
         onBlockChange={handleBlockChange}
         onSubmit={handleCreate}
         loading={loading}
+      />
+
+      <MultiSelectCheckpointSection
+        checkpoints={multiSelectCheckpoints}
+        onToggleEnabled={handleMultiToggleEnabled}
+        onToggleOption={handleMultiToggleOption}
       />
 
 

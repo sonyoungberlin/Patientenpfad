@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import type { ActiveCheckpoint, M1BlockId } from "@/lib/types";
+import type { ActiveCheckpoint, ActiveCheckpointMultiSelect, M1BlockId } from "@/lib/types";
+import { isMultiSelectCheckpoint } from "@/lib/types";
 import { CHECKPOINT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 import M1ErgaenzungClient from "./M1ErgaenzungClient";
 
@@ -65,6 +66,12 @@ export default async function CaseM1Page({
     ? (session.active_checkpoints as ActiveCheckpoint[])
     : [];
 
+  // MULTI_SELECT-Checkpoints (K10/K11) aus active_checkpoints extrahieren,
+  // damit der Ergänzungs-Client den aktuellen DB-Stand anzeigen und ändern kann.
+  const multiSelectCheckpoints: ActiveCheckpointMultiSelect[] = checkpoints.filter(
+    isMultiSelectCheckpoint,
+  );
+
   // „bereits aktiv" darf ausschließlich aus Standard-Checkpoints (K01–K09, K12–K15)
   // abgeleitet werden, die wirklich aus einer früheren M1-Aktivierung
   // dieses Blocks stammen. Always-present MULTI_SELECT-Checkpoints (z. B.
@@ -99,7 +106,11 @@ export default async function CaseM1Page({
       <h1 style={{ marginBottom: "1.5rem" }}>
         Liegt genug Information vor, damit der Arzt direkt entscheiden kann?
       </h1>
-      <M1ErgaenzungClient caseId={id} lockedBlocks={Array.from(activeBlockIds)} />
+      <M1ErgaenzungClient
+        caseId={id}
+        lockedBlocks={Array.from(activeBlockIds)}
+        initialMultiSelectCheckpoints={multiSelectCheckpoints}
+      />
     </main>
   );
 }

@@ -3,7 +3,8 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import M1SelectionForm from "@/components/M1SelectionForm";
-import type { M1BlockId, M1BlockStatus, M1Selection } from "@/lib/types";
+import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
+import type { ActiveCheckpointMultiSelect, M1BlockId, M1BlockStatus, M1Selection } from "@/lib/types";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "klar",
@@ -17,6 +18,8 @@ export type M1ErgaenzungClientProps = {
   caseId: string;
   /** Block-IDs, die im aktuellen Fall bereits aktiv sind. */
   lockedBlocks: ReadonlyArray<M1BlockId>;
+  /** Aktueller MULTI_SELECT-Stand aus der DB (K10/K11). */
+  initialMultiSelectCheckpoints: ActiveCheckpointMultiSelect[];
 };
 
 /**
@@ -31,13 +34,20 @@ export type M1ErgaenzungClientProps = {
  *     vom Server zurückgegebenen Redirect).
  *   * Wenn nichts Neues ausgewählt wurde, ist der Button deaktiviert –
  *     keine Schreibwirkung.
+ *   * MULTI_SELECT-Checkpoints (K10/K11) werden separat oberhalb der
+ *     Blockauswahl angezeigt. Jede Änderung wird sofort via
+ *     PATCH /api/cases/[id]/checkpoint/update persistiert.
  */
 export default function M1ErgaenzungClient({
   caseId,
   lockedBlocks,
+  initialMultiSelectCheckpoints,
 }: M1ErgaenzungClientProps) {
   const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
+  const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
+    initialMultiSelectCheckpoints,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +70,47 @@ export default function M1ErgaenzungClient({
   function handleBlockChange(blockId: keyof M1Selection, value: M1BlockStatus) {
     if (lockedSet.has(blockId)) return;
     setSelection((prev) => ({ ...prev, [blockId]: value }));
+  }
+
+  async function patchMultiSelect(
+    id: string,
+    enabled: boolean,
+    selections: string[],
+  ) {
+    try {
+      await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ checkpoint_id: id, enabled, selections }),
+      });
+    } catch {
+      // Best-effort: UI-Stand bleibt erhalten, DB-Fehler wird still ignoriert.
+    }
+  }
+
+  function handleMultiToggleEnabled(id: string) {
+    setMultiSelectCheckpoints((prev) =>
+      prev.map((cp) => {
+        if (cp.id !== id) return cp;
+        const newEnabled = !cp.enabled;
+        const newSelections = newEnabled ? cp.selections : [];
+        void patchMultiSelect(id, newEnabled, newSelections);
+        return { ...cp, enabled: newEnabled, selections: newSelections };
+      }),
+    );
+  }
+
+  function handleMultiToggleOption(id: string, option: string) {
+    setMultiSelectCheckpoints((prev) =>
+      prev.map((cp) => {
+        if (cp.id !== id || !cp.enabled) return cp;
+        const newSelections = cp.selections.includes(option)
+          ? cp.selections.filter((s) => s !== option)
+          : [...cp.selections, option];
+        void patchMultiSelect(id, true, newSelections);
+        return { ...cp, selections: newSelections };
+      }),
+    );
   }
 
   async function handleSubmit() {
@@ -102,6 +153,11 @@ export default function M1ErgaenzungClient({
 
   return (
     <>
+      <MultiSelectCheckpointSection
+        checkpoints={multiSelectCheckpoints}
+        onToggleEnabled={handleMultiToggleEnabled}
+        onToggleOption={handleMultiToggleOption}
+      />
       <M1SelectionForm
         selection={selection}
         onBlockChange={handleBlockChange}
@@ -123,3 +179,4 @@ export default function M1ErgaenzungClient({
     </>
   );
 }
+
