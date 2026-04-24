@@ -30,72 +30,107 @@ export type TourStep = {
 };
 
 export const DOCTOR_TOUR: TourStep[] = [
+  // --- 1 – Einstieg --------------------------------------------------------
   {
-    id: "welcome",
+    id: "why-this-tool",
     route: "/",
-    title: "Willkommen in der Arzt-Demo",
-    body: "Diese Tour erklärt den Ablauf aus Arztsicht. Sie führt Sie durch die wichtigsten Schritte der Anwendung – ohne den normalen Workflow zu beeinflussen. Sie können die Tour jederzeit beenden.",
+    title: "Warum dieses Tool?",
+    body: "Dieses Tool nutzen Sie, wenn im Termin klar wird, dass wichtige Informationen fehlen. Zum Beispiel bei Neupatienten oder unklarer Vorgeschichte. Statt alles im Termin klären zu müssen, wird hier strukturiert vorbereitet, was noch fehlt.",
     role: "doctor",
   },
-  {
-    id: "m1-intro",
-    route: "/",
-    title: "Schritt 1: Aktivierungsblöcke (M1)",
-    body: "Zu Beginn bewerten Sie vier Bereiche: Kommunikation, Medizinische Lage, Versorgung im Alltag und Pflegebeobachtung. Für jeden Bereich wählen Sie, ob die Situation klar oder unklar ist.",
-    targetDataTourId: "m1-form",
-    role: "doctor",
-  },
-  {
-    id: "m1-blocks",
-    route: "/",
-    title: "Klar oder Unklar?",
-    body: "Klar bedeutet: Es liegen ausreichend Informationen für eine Entscheidung vor. Unklar bedeutet: Es fehlen noch Angaben. Nur unklare Bereiche aktivieren Checkpoints für den weiteren Workflow.",
-    targetDataTourId: "m1-form",
-    role: "doctor",
-  },
-  {
-    id: "mode-selection",
-    route: "/",
-    title: "Modus auswählen",
-    body: "Sie können einen Fall als Gast starten (ohne Patientenbezug) oder mit Praxiszuordnung. Bei der Praxiszuordnung können Sie eine Patientennummer vergeben, um den Fall später in der Übersicht leicht wiederzufinden.",
-    targetDataTourId: "mode-selection",
-    role: "doctor",
-  },
+  // --- 2 – Anlass / Besonderheiten -----------------------------------------
   {
     id: "multi-select",
     route: "/",
-    title: "Optionale Versorgungsaspekte",
-    body: "Unterhalb der Hauptbewertung können Sie weitere Versorgungsaspekte dokumentieren. Diese Mehrfachauswahl ist optional und dient der strukturierten Erfassung ergänzender Informationen – ohne Einfluss auf den M1/M2/M3-Workflow.",
+    title: "Anlass festlegen (optional)",
+    body: "Hier können Sie den Kontext des Falls markieren, z. B. Neupatient oder Formularanliegen. Das hilft bei der Einordnung, ist aber optional.",
     targetDataTourId: "multi-select-section",
     role: "doctor",
   },
+  // --- 3 – Unklare Bereiche ------------------------------------------------
   {
-    id: "create-case",
+    id: "unclear-areas",
     route: "/",
-    title: "Fall anlegen oder direkt vorbereiten",
-    body: "Mit Fall anlegen starten Sie den Checkpoint-Workflow (M2/M3). Mit Ärztlich vorbereitet markieren Sie den Fall direkt als vorbereitet und gelangen zur Fallübersicht – ohne den M2/M3-Durchlauf.",
+    title: "Was ist noch unklar?",
+    body: "Alle Bereiche sind zunächst auf unklar gesetzt. Sie klicken nur weg, was bereits geklärt ist. So legen Sie fest, was vorbereitet werden soll.",
+    targetDataTourId: "m1-form",
+    role: "doctor",
+  },
+  // --- 4 – Einschätzung (K12) ----------------------------------------------
+  {
+    id: "k12-assessment",
+    route: "/",
+    title: "Einschätzung hinzufügen (optional)",
+    body: "Hier können Sie zusätzlich eine Rückmeldung zur Alltagssituation einholen. Das ist sinnvoll, wenn eine Kontaktperson den Patienten gut kennt.",
+    targetDataTourId: "k12-checkbox",
+    role: "doctor",
+  },
+  // --- 5 – Ärztlich vorbereitet --------------------------------------------
+  {
+    id: "mark-prepared",
+    route: "/",
+    title: "Vorbereitung abschließen",
+    body: "Hier legen Sie fest: Das sind die offenen Bereiche, die jetzt geklärt werden sollen. Der Fall erscheint anschließend in der Fallliste.",
     targetDataTourId: "create-actions",
     role: "doctor",
   },
+  // --- 6 – Fallliste -------------------------------------------------------
   {
     id: "case-list",
     route: "/cases",
-    title: "Fallübersicht",
-    body: "In der Fallübersicht sehen Sie alle Ihre Fälle mit ihrem aktuellen Status. Sie können Fälle weiterbearbeiten, nach Patienten-Referenz suchen oder Fälle aus der Liste entfernen.",
+    title: "Weitergabe an die Praxis",
+    body: "Der Fall liegt jetzt in der Fallliste. Die MFA übernimmt die Vorbereitung und sammelt die fehlenden Informationen.",
+    targetDataTourId: "case-list",
     role: "doctor",
   },
+  // --- 7 – Vorbereitung (M2, MFA) ------------------------------------------
   {
-    id: "case-status",
+    id: "m2-preparation",
     route: "/cases",
-    title: "Status der Fälle verstehen",
-    body: "Jeder Fall zeigt seinen Bearbeitungsstand: Fall geöffnet, Vorbereitung abgeschlossen, Ärztlich vorbereitet oder Ärztlich bestätigt. So behalten Sie den Überblick über alle laufenden Fälle.",
+    title: "Vorbereitung der Informationen",
+    body: "Die MFA wählt den sinnvollsten Weg: entweder selbst vorbereiten oder den Patienten bzw. eine Kontaktperson einbeziehen. Es wird nur festgehalten, was vorliegt und was fehlt.",
     role: "doctor",
   },
+  // --- 8 – Ärztliche Bewertung (M3) ----------------------------------------
   {
-    id: "finish",
-    route: "/",
-    title: "Tour abgeschlossen",
-    body: "Sie haben die Arzt-Demo-Tour abgeschlossen. Im normalen Workflow stehen Ihnen alle gezeigten Funktionen zur Verfügung. Sie können die Tour jederzeit erneut starten.",
+    id: "m3-review",
+    route: "/cases",
+    title: "Ärztliche Bewertung",
+    body: "Sie entscheiden: reicht aus, reicht nicht aus oder zurückstellen. Damit legen Sie fest, welche Bereiche noch geklärt werden müssen.",
+    targetDataTourId: "m3-checklist",
+    role: "doctor",
+  },
+  // --- 9 – Entscheidungsreihenfolge ----------------------------------------
+  {
+    id: "m3-order",
+    route: "/cases",
+    title: "Wie Sie bewerten",
+    body: "Gehen Sie von oben nach unten vor: Zuerst 'reicht aus', dann 'reicht nicht aus', oder 'zurückstellen', wenn Sie noch nicht entscheiden möchten.",
+    role: "doctor",
+  },
+  // --- 10 – Abschluss ------------------------------------------------------
+  {
+    id: "confirm-case",
+    route: "/cases",
+    title: "Ärztlich bestätigt",
+    body: "Hier wird der aktuelle Stand festgelegt. Danach wird der Fall nicht mehr verändert.",
+    targetDataTourId: "confirm-action",
+    role: "doctor",
+  },
+  // --- 11 – Texte nutzen ---------------------------------------------------
+  {
+    id: "use-texts",
+    route: "/cases",
+    title: "Texte verwenden",
+    body: "Sie müssen keinen Freitext mehr schreiben. Die vorbereiteten Texte können für Patientenkommunikation und Dokumentation genutzt werden.",
+    role: "doctor",
+  },
+  // --- 12 – Abschluss des Falls --------------------------------------------
+  {
+    id: "case-done",
+    route: "/cases",
+    title: "Fall abgeschlossen",
+    body: "Der Fall ist eine Momentaufnahme des aktuellen Stands. Nach der Nutzung der Texte wird er aus der Fallliste entfernt.",
     role: "doctor",
   },
 ];
