@@ -615,7 +615,6 @@ export function M3ChecklistClient({
           data-clinical-status-actions
           style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}
         >
-          
           {confirmed || clinical === "confirmed" ? null : (
             <button
               type="button"

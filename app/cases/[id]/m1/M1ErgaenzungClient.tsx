@@ -13,6 +13,8 @@ const INITIAL_SELECTION: M1Selection = {
   pflegebeobachtung: "klar",
 };
 
+const PREPARE_ERROR_MSG = 'Ärztlich vorbereitet konnte nicht gespeichert werden.';
+
 export type M1ErgaenzungClientProps = {
   /** Case-ID für den Ergänzungs-Endpoint. */
   caseId: string;
@@ -129,12 +131,12 @@ export default function M1ErgaenzungClient({
         body: JSON.stringify({ status: "prepared" }),
       });
       if (!response.ok) {
-        setError('Ärztlich vorbereitet konnte nicht gespeichert werden.');
+        setError(PREPARE_ERROR_MSG);
         return;
       }
       router.push("/cases");
     } catch {
-      setError('Ärztlich vorbereitet konnte nicht gespeichert werden.');
+      setError(PREPARE_ERROR_MSG);
     } finally {
       setSavingPrepared(false);
     }
@@ -216,4 +218,3 @@ export default function M1ErgaenzungClient({
     </>
   );
 }
-
