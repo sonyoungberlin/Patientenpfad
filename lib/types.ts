@@ -70,6 +70,12 @@ type ActiveCheckpointBase = {
   perspectives: CheckpointPerspective[];
   title: string;
   description?: string;
+  /**
+   * Optionaler Einleitungssatz, der im M2-Frageblock vor den Fragen angezeigt wird.
+   * Wird vor allem bei ASSESSMENT-Checkpoints genutzt, um die angesprochene Person
+   * explizit zu adressieren (z. B. Angehörige / Kontaktperson).
+   */
+  introText?: string;
   m4: {
     /** Static per checkpoint – not computed from status.
      * TODO(refactor): Ein explizites m4_behavior-Feld ("ACTION" | "NOTICE" | "NONE") soll
