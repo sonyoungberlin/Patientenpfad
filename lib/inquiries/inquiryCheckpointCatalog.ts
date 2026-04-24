@@ -1,5 +1,6 @@
 import {
   InquiryCheckpointStatus,
+  ResponseKind,
   type InquiryCheckpointTemplate,
 } from "@/lib/inquiries/types";
 
@@ -23,6 +24,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
     ],
     hintText:
       "Als Neupatient bitten wir Sie, sich vorab in unserem System anzumelden.",
+    responseKind: ResponseKind.VORAUSSETZUNG,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Patientenstatus: Bestandspatient.",
       [InquiryCheckpointStatus.HINWEIS]: "Neupatient – Anmeldung in der Praxis erforderlich.",
@@ -40,6 +42,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
       },
     ],
     hintText: "Bitte füllen Sie vorab unsere Online-Anamnese aus.",
+    responseKind: ResponseKind.AKTION,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Online-Anamnese: vollständig vorhanden.",
       [InquiryCheckpointStatus.HINWEIS]: "Online-Anamnese fehlt – Ausfüllen angefordert.",
@@ -61,6 +64,8 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
     /** Optional: Beratung wird angeboten, ist aber nicht zwingend erforderlich. */
     hintTextOptional:
       "Wenn Sie vorab eine Impfberatung wünschen, buchen Sie bitte einen Beratungstermin.",
+    responseKind: ResponseKind.VORAUSSETZUNG,
+    responseKindOptional: ResponseKind.INFO,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Impfberatung: bereits erfolgt.",
       [InquiryCheckpointStatus.HINWEIS]: "Impfberatung notwendig – Termin empfohlen.",
@@ -79,6 +84,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
       },
     ],
     hintText: "Bitte bringen Sie Ihren Impfpass mit.",
+    responseKind: ResponseKind.VORBEREITUNG,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Impfpass: vorhanden.",
       [InquiryCheckpointStatus.HINWEIS]: "Impfpass – Mitbringen erbeten.",
@@ -97,6 +103,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
     ],
     hintText:
       "Bitte teilen Sie uns Ihren gewünschten Zeitraum für den Termin mit.",
+    responseKind: ResponseKind.AKTION,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Terminwunsch: angegeben.",
       [InquiryCheckpointStatus.HINWEIS]:
@@ -116,6 +123,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
     ],
     hintText:
       "Bitte nutzen Sie die Online-Terminbuchung für die Terminvereinbarung und Nachrichten der Praxis.",
+    responseKind: ResponseKind.AKTION,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Online-Terminbuchung: Zugang vorhanden.",
       [InquiryCheckpointStatus.HINWEIS]: "Online-Terminbuchung: Zugang fehlt – Einrichtung empfohlen.",

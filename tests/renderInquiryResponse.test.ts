@@ -4,6 +4,7 @@ import { INQUIRY_PROFILE_CATALOGUE } from "@/lib/inquiries/inquiryProfileCatalog
 import {
   InquiryCheckpointStatus,
   InquiryType,
+  ResponseKind,
   type ConfirmedInquiryCheckpoint,
 } from "@/lib/inquiries/types";
 
@@ -408,6 +409,188 @@ describe("INQUIRY_CHECKPOINT_CATALOGUE – Vollständigkeit", () => {
     expect(ic06.hintText).not.toContain("Doctolib");
     expect(ic06.hintText).not.toContain("Samedi");
     expect(ic06.hintText).not.toContain("Jameda");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ResponseKind – Typen im Katalog korrekt gesetzt
+// ---------------------------------------------------------------------------
+
+describe("INQUIRY_CHECKPOINT_CATALOGUE – responseKind", () => {
+  it("IC01 hat responseKind VORAUSSETZUNG", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOGUE["IC01"].responseKind).toBe(ResponseKind.VORAUSSETZUNG);
+  });
+
+  it("IC02 hat responseKind AKTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOGUE["IC02"].responseKind).toBe(ResponseKind.AKTION);
+  });
+
+  it("IC03 hat responseKind VORAUSSETZUNG und responseKindOptional INFO", () => {
+    const ic03 = INQUIRY_CHECKPOINT_CATALOGUE["IC03"];
+    expect(ic03.responseKind).toBe(ResponseKind.VORAUSSETZUNG);
+    expect(ic03.responseKindOptional).toBe(ResponseKind.INFO);
+  });
+
+  it("IC04 hat responseKind VORBEREITUNG", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOGUE["IC04"].responseKind).toBe(ResponseKind.VORBEREITUNG);
+  });
+
+  it("IC05 hat responseKind AKTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOGUE["IC05"].responseKind).toBe(ResponseKind.AKTION);
+  });
+
+  it("IC06 hat responseKind AKTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOGUE["IC06"].responseKind).toBe(ResponseKind.AKTION);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// groupedHints – alle GEKLAERT → alle Gruppen leer
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponse – groupedHints alle GEKLAERT", () => {
+  it("alle Gruppen sind leere Arrays", () => {
+    const result = renderInquiryResponse(
+      FSME_PROFILE,
+      allFsmeConfirmed(InquiryCheckpointStatus.GEKLAERT),
+    );
+    expect(result.groupedHints.voraussetzungen).toHaveLength(0);
+    expect(result.groupedHints.aktionen).toHaveLength(0);
+    expect(result.groupedHints.vorbereitungen).toHaveLength(0);
+    expect(result.groupedHints.infos).toHaveLength(0);
+    expect(result.groupedHints.ablehnungen).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// groupedHints – Routing nach ResponseKind
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponse – groupedHints Routing", () => {
+  it("IC01 HINWEIS landet in voraussetzungen", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC01", InquiryCheckpointStatus.HINWEIS),
+    ]);
+    expect(result.groupedHints.voraussetzungen).toContain(
+      INQUIRY_CHECKPOINT_CATALOGUE["IC01"].hintText,
+    );
+    expect(result.groupedHints.aktionen).toHaveLength(0);
+  });
+
+  it("IC02 HINWEIS landet in aktionen", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC02", InquiryCheckpointStatus.HINWEIS),
+    ]);
+    expect(result.groupedHints.aktionen).toContain(
+      INQUIRY_CHECKPOINT_CATALOGUE["IC02"].hintText,
+    );
+    expect(result.groupedHints.voraussetzungen).toHaveLength(0);
+  });
+
+  it("IC03 HINWEIS landet in voraussetzungen", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
+    ]);
+    expect(result.groupedHints.voraussetzungen).toContain(
+      INQUIRY_CHECKPOINT_CATALOGUE["IC03"].hintText,
+    );
+  });
+
+  it("IC03 HINWEIS_OPTIONAL landet in infos (responseKindOptional = INFO)", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS_OPTIONAL),
+    ]);
+    expect(result.groupedHints.infos).toContain(
+      INQUIRY_CHECKPOINT_CATALOGUE["IC03"].hintTextOptional,
+    );
+    expect(result.groupedHints.voraussetzungen).toHaveLength(0);
+  });
+
+  it("IC04 HINWEIS landet in vorbereitungen", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
+    ]);
+    expect(result.groupedHints.vorbereitungen).toContain(
+      INQUIRY_CHECKPOINT_CATALOGUE["IC04"].hintText,
+    );
+  });
+
+  it("IC05 HINWEIS landet in aktionen", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC05", InquiryCheckpointStatus.HINWEIS),
+    ]);
+    expect(result.groupedHints.aktionen).toContain(
+      INQUIRY_CHECKPOINT_CATALOGUE["IC05"].hintText,
+    );
+  });
+
+  it("IC06 HINWEIS landet in aktionen", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC06", InquiryCheckpointStatus.HINWEIS),
+    ]);
+    expect(result.groupedHints.aktionen).toContain(
+      INQUIRY_CHECKPOINT_CATALOGUE["IC06"].hintText,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// groupedHints – stabile Reihenfolge bei mehreren Hinweisen
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponse – groupedHints Reihenfolge", () => {
+  it("aktionen enthalten IC02 vor IC05 vor IC06 (Checkpoint-Reihenfolge)", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC02", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC03", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC05", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC06", InquiryCheckpointStatus.HINWEIS),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    expect(result.groupedHints.aktionen).toHaveLength(3);
+    expect(result.groupedHints.aktionen[0]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC02"].hintText);
+    expect(result.groupedHints.aktionen[1]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC05"].hintText);
+    expect(result.groupedHints.aktionen[2]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC06"].hintText);
+  });
+
+  it("groupedHints und hints enthalten dieselben Texte (Konsistenz)", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC02", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS_OPTIONAL),
+      makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC05", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC06", InquiryCheckpointStatus.HINWEIS),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    const allGrouped = [
+      ...result.groupedHints.voraussetzungen,
+      ...result.groupedHints.aktionen,
+      ...result.groupedHints.vorbereitungen,
+      ...result.groupedHints.infos,
+      ...result.groupedHints.ablehnungen,
+    ];
+    expect(allGrouped).toHaveLength(result.hints.length);
+    for (const hint of result.hints) {
+      expect(allGrouped).toContain(hint);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// groupedHints – leere Liste → alle Gruppen leer
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponse – groupedHints leere Checkpoint-Liste", () => {
+  it("alle Gruppen sind leer wenn keine Checkpoints übergeben werden", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, []);
+    expect(result.groupedHints.voraussetzungen).toHaveLength(0);
+    expect(result.groupedHints.aktionen).toHaveLength(0);
+    expect(result.groupedHints.vorbereitungen).toHaveLength(0);
+    expect(result.groupedHints.infos).toHaveLength(0);
+    expect(result.groupedHints.ablehnungen).toHaveLength(0);
   });
 });
 

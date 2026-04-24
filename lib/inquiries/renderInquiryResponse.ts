@@ -1,5 +1,6 @@
 import {
   InquiryCheckpointStatus,
+  ResponseKind,
   type ConfirmedInquiryCheckpoint,
   type InquiryOutput,
   type InquiryProfile,
@@ -56,6 +57,53 @@ export function renderInquiryResponse(
       return cp.hintText;
     });
 
+  // Grouped hints: each hint is placed into the bucket matching its responseKind.
+  // For HINWEIS_OPTIONAL, responseKindOptional takes precedence if defined.
+  const groupedHints: InquiryOutput["groupedHints"] = {
+    voraussetzungen: [],
+    aktionen: [],
+    vorbereitungen: [],
+    infos: [],
+    ablehnungen: [],
+  };
+
+  confirmed
+    .filter(
+      (cp) =>
+        cp.status === InquiryCheckpointStatus.HINWEIS ||
+        cp.status === InquiryCheckpointStatus.HINWEIS_OPTIONAL,
+    )
+    .forEach((cp) => {
+      const hintText =
+        cp.status === InquiryCheckpointStatus.HINWEIS_OPTIONAL
+          ? (cp.hintTextOptional ?? cp.hintText)
+          : cp.hintText;
+      const kind =
+        cp.status === InquiryCheckpointStatus.HINWEIS_OPTIONAL
+          ? (cp.responseKindOptional ?? cp.responseKind)
+          : cp.responseKind;
+
+      switch (kind) {
+        case ResponseKind.VORAUSSETZUNG:
+          groupedHints.voraussetzungen.push(hintText);
+          break;
+        case ResponseKind.AKTION:
+          groupedHints.aktionen.push(hintText);
+          break;
+        case ResponseKind.VORBEREITUNG:
+          groupedHints.vorbereitungen.push(hintText);
+          break;
+        case ResponseKind.ABLEHNUNG_ALTERNATIVE:
+          groupedHints.ablehnungen.push(hintText);
+          break;
+        case ResponseKind.INFO:
+        case ResponseKind.AKTENNOTIZ:
+        default:
+          groupedHints.infos.push(hintText);
+          break;
+      }
+    });
+
   const documentation: string[] = [
     `${profile.label} angefragt.`,
     ...confirmed.map((cp) => {
@@ -70,6 +118,7 @@ export function renderInquiryResponse(
   return {
     coreAnswer: profile.coreAnswer,
     hints,
+    groupedHints,
     documentation,
   };
 }

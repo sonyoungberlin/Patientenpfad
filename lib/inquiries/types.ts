@@ -14,6 +14,29 @@ export enum InquiryType {
 }
 
 // ---------------------------------------------------------------------------
+// ResponseKind – sprachliche Funktion eines Hinweisbausteins
+// ---------------------------------------------------------------------------
+
+/**
+ * Kategorisiert einen Hinweisbaustein nach seiner sprachlichen Funktion.
+ *
+ * INFO                 – ergänzende, weiche Information ohne Handlungsbedarf.
+ * VORAUSSETZUNG        – muss erfüllt sein, bevor der Termin stattfinden kann.
+ * AKTION               – konkrete Handlung, die der Patient ausführen soll.
+ * VORBEREITUNG         – etwas, das der Patient zum Termin mitbringen/vorbereiten soll.
+ * ABLEHNUNG_ALTERNATIVE – Anfrage kann nicht erfüllt werden; Alternative wird genannt.
+ * AKTENNOTIZ           – interner Hinweis, nicht für den Patienten gedacht.
+ */
+export enum ResponseKind {
+  INFO = "INFO",
+  VORAUSSETZUNG = "VORAUSSETZUNG",
+  AKTION = "AKTION",
+  VORBEREITUNG = "VORBEREITUNG",
+  ABLEHNUNG_ALTERNATIVE = "ABLEHNUNG_ALTERNATIVE",
+  AKTENNOTIZ = "AKTENNOTIZ",
+}
+
+// ---------------------------------------------------------------------------
 // Checkpoint-Status
 // ---------------------------------------------------------------------------
 
@@ -58,6 +81,13 @@ export type InquiryCheckpointTemplate = {
    * Falls nicht gesetzt, wird hintText als Fallback verwendet.
    */
   hintTextOptional?: string;
+  /** Sprachliche Funktion des Hinweises bei status === HINWEIS. */
+  responseKind: ResponseKind;
+  /**
+   * Sprachliche Funktion des Hinweises bei status === HINWEIS_OPTIONAL.
+   * Falls nicht gesetzt, wird responseKind als Fallback verwendet.
+   */
+  responseKindOptional?: ResponseKind;
   /** Dokumentationszeile pro Status. */
   docText: {
     [InquiryCheckpointStatus.GEKLAERT]: string;
@@ -120,6 +150,18 @@ export type InquiryOutput = {
   coreAnswer: string;
   /** Hinweisbausteine für alle Checkpoints mit status === HINWEIS oder HINWEIS_OPTIONAL. Leer wenn alle GEKLAERT. */
   hints: string[];
+  /**
+   * Hinweise gruppiert nach ihrer sprachlichen Funktion (ResponseKind).
+   * Rückwärtskompatibel mit hints – enthält dieselben Texte, nur kategorisiert.
+   * Gruppen ohne Inhalte sind leere Arrays.
+   */
+  groupedHints: {
+    voraussetzungen: string[];
+    aktionen: string[];
+    vorbereitungen: string[];
+    infos: string[];
+    ablehnungen: string[];
+  };
   /** Eine Dokumentationszeile pro Checkpoint. */
   documentation: string[];
 };
