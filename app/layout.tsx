@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import TourController from '@/components/TourController';
+import ScrollToTop from '@/components/ScrollToTop';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -22,6 +23,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         <Suspense fallback={null}>
           <TourController />
+        </Suspense>
+        <Suspense fallback={null}>
+          <ScrollToTop />
         </Suspense>
         <footer className="app-footer">
           <nav>
