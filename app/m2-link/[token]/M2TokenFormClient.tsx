@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckpointPerspective, type ActiveCheckpoint } from "@/lib/types";
+import { CheckpointPerspective, isMultiSelectCheckpoint, type ActiveCheckpoint } from "@/lib/types";
 import {
   M2_QUESTIONS,
   type M2Answer,
@@ -85,6 +85,8 @@ export function M2TokenFormClient({
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {checkpoints.map((cp) => {
+            // MULTI_SELECT-Checkpoints sind M3-only → immer ausblenden.
+            if (isMultiSelectCheckpoint(cp)) return null;
             // Primäre Sichtbarkeitsregel: Patientenformular zeigt nur Checkpoints
             // mit PATIENT-Perspektive (z. B. K10/K11 werden ausgeblendet).
             if (!cp.perspectives.includes(CheckpointPerspective.PATIENT)) return null;

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import M2Page from "@/app/cases/[id]/m2/page";
 import {
   CheckpointCategory,
+  CheckpointMode,
   CheckpointPerspective,
   CheckpointType,
   type ActiveCheckpoint,
@@ -82,6 +83,47 @@ const k12Checkpoint: ActiveCheckpoint = {
   m4: { type: "NOTICE", text: "M4" },
 };
 
+/** K09 – Mitwirkung (nur MFA-Perspektive, keine Patientenfragen) */
+const k09Checkpoint: ActiveCheckpoint = {
+  id: "K09",
+  block_id: "kommunikation",
+  type: CheckpointType.VERIFIKATION,
+  perspectives: [CheckpointPerspective.MFA],
+  title: "Mitwirkung",
+  category: CheckpointCategory.O,
+  status: "TO_DO",
+  m4: { type: "ACTION", text: "M4" },
+};
+
+/** K10 – MULTI_SELECT, kein M2-Anteil */
+const k10Checkpoint: ActiveCheckpoint = {
+  id: "K10",
+  block_id: "medizinische_lage",
+  type: CheckpointType.BEDARF,
+  category: CheckpointCategory.O,
+  perspectives: [],
+  mode: CheckpointMode.MULTI_SELECT,
+  title: "Besonderer Versorgungsaufwand",
+  options: ["Neupatient / unbekannt"],
+  selections: [],
+  enabled: false,
+};
+
+/** K11 – MULTI_SELECT, kein M2-Anteil */
+const k11Checkpoint: ActiveCheckpoint = {
+  id: "K11",
+  block_id: "medizinische_lage",
+  type: CheckpointType.BEDARF,
+  category: CheckpointCategory.O,
+  perspectives: [],
+  mode: CheckpointMode.MULTI_SELECT,
+  title: "Formularanliegen",
+  options: ["Pflegegrad / Höherstufung"],
+  selections: [],
+  enabled: false,
+};
+
+
 describe("M2 Seite", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
@@ -146,7 +188,7 @@ describe("M2 Seite", () => {
     expect(markup).toContain("Für die MFA gibt es hier keine vorbereitenden Fragen.");
   });
 
-  it("zeigt pflegebeobachtung-Checkpoint im MFA-Modus nicht an (keine MFA-Fragen)", async () => {
+  it("zeigt pflegebeobachtung-Checkpoint im MFA-Modus mit internem Hinweis statt Fragen", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
       active_checkpoints: [k12Checkpoint],
@@ -159,7 +201,12 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-pflege-mfa" }) }),
     );
 
-    expect(markup).not.toContain('data-m2-checkpoint="K12"');
+    // K12 erscheint im MFA-Modus – Titel sichtbar
+    expect(markup).toContain('data-m2-checkpoint="K12"');
+    // interner Hinweis statt Fragen
+    expect(markup).toContain("Für die MFA gibt es hier keine vorbereitenden Fragen.");
+    // keine Antwort-Buttons (keine MFA-Fragen vorhanden)
+    expect(markup).not.toContain("data-m2-question");
     expect(markup).toContain("data-m2-mfa-form");
   });
 
@@ -277,5 +324,96 @@ describe("M2 Seite", () => {
     expect(markup).toContain('data-m2-checkpoint="K04"');
     // K01 (bereits im eingefrorenen MFA-Run) darf nicht erscheinen.
     expect(markup).not.toContain('data-m2-checkpoint="K01"');
+  });
+
+  // ------------------------------------------------------------------
+  // Neue Rendering-Regeln: MULTI_SELECT, K09, kein MFA-Hinweis im Patientenmodus
+  // ------------------------------------------------------------------
+
+  it("blendet MULTI_SELECT-Checkpoints (K10, K11) im MFA-Modus aus", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k01Checkpoint, k10Checkpoint, k11Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "mfa",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-multi-mfa" }) }),
+    );
+
+    expect(markup).not.toContain('data-m2-checkpoint="K10"');
+    expect(markup).not.toContain('data-m2-checkpoint="K11"');
+    // K01 erscheint wie gewohnt
+    expect(markup).toContain('data-m2-checkpoint="K01"');
+  });
+
+  it("blendet MULTI_SELECT-Checkpoints (K10, K11) im PATIENT-Modus aus", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k12Checkpoint, k10Checkpoint, k11Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "conversation",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-multi-patient" }) }),
+    );
+
+    expect(markup).not.toContain('data-m2-checkpoint="K10"');
+    expect(markup).not.toContain('data-m2-checkpoint="K11"');
+  });
+
+  it("zeigt K09 im MFA-Modus (perspectives enthält MFA)", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k09Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "mfa",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-k09-mfa" }) }),
+    );
+
+    expect(markup).toContain('data-m2-checkpoint="K09"');
+  });
+
+  it("blendet K09 im PATIENT-Modus aus (perspectives enthält kein PATIENT)", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k09Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "conversation",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-k09-patient" }) }),
+    );
+
+    expect(markup).not.toContain('data-m2-checkpoint="K09"');
+  });
+
+  it("zeigt keinen internen MFA-Hinweis im PATIENT-Modus", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k12Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "conversation",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-no-hint-patient" }) }),
+    );
+
+    // K12 erscheint mit Patientenfragen
+    expect(markup).toContain('data-m2-checkpoint="K12"');
+    // interner MFA-Hinweis darf im PATIENT-Modus NICHT erscheinen
+    expect(markup).not.toContain("Für die MFA gibt es hier keine vorbereitenden Fragen.");
   });
 });

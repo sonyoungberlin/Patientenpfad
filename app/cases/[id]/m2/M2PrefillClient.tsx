@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
-import { CheckpointPerspective, type ActiveCheckpoint } from "@/lib/types";
+import {
+  CheckpointPerspective,
+  isMultiSelectCheckpoint,
+  type ActiveCheckpoint,
+} from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
   M2_QUESTIONS,
@@ -195,14 +199,19 @@ export function M2PrefillClient({
             : CheckpointPerspective.MFA;
         const visibleCheckpoints = checkpoints.filter((cp) => {
           if (answeredSet.has(cp.id)) return false;
-          // Im MFA-Modus alle nicht beantworteten Checkpoints anzeigen,
+          // MULTI_SELECT-Checkpoints sind M3-only → immer aus M2 ausblenden.
+          if (isMultiSelectCheckpoint(cp)) return false;
+          // Im MFA-Modus alle nicht beantworteten Standard-Checkpoints anzeigen,
           // auch wenn sie keine MFA-Perspektive haben (Hinweistext statt Fragen).
           if (mode === "mfa") return true;
           return cp.perspectives.includes(perspectiveForMode);
         });
 
         if (visibleCheckpoints.length === 0) {
-          return <p>Für die MFA gibt es hier keine vorbereitenden Fragen.</p>;
+          if (mode === "mfa") {
+            return <p>Für die MFA gibt es hier keine vorbereitenden Fragen.</p>;
+          }
+          return null;
         }
 
         return (
