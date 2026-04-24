@@ -212,14 +212,14 @@ export default function HomePage() {
     setGatekeeper(false);
     setError(null);
     try {
-      const multiSelectSelections2: Record<string, { enabled: boolean; selections: string[] }> = {};
+      const multiSelectSelectionsForPreview: Record<string, { enabled: boolean; selections: string[] }> = {};
       for (const cp of multiSelectCheckpoints) {
-        multiSelectSelections2[cp.id] = { enabled: cp.enabled, selections: cp.selections };
+        multiSelectSelectionsForPreview[cp.id] = { enabled: cp.enabled, selections: cp.selections };
       }
       const body: Record<string, unknown> = {
         m1Selection: selection,
         mode,
-        multiSelectSelections: multiSelectSelections2,
+        multiSelectSelections: multiSelectSelectionsForPreview,
         assessmentEnabled: { K12: k12Enabled },
       };
       if (mode === "practice" && patientReference.trim()) {
