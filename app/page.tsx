@@ -405,17 +405,17 @@ export default function HomePage() {
         Hinweis: Der Fall erscheint in Ihrer Fallübersicht. Eine Patienten-Referenz hilft beim späteren Wiederfinden.
       </p>
 
+      <MultiSelectCheckpointSection
+        checkpoints={multiSelectCheckpoints}
+        onToggleEnabled={handleMultiToggleEnabled}
+        onToggleOption={handleMultiToggleOption}
+      />
+
       <M1SelectionForm
         selection={selection}
         onBlockChange={handleBlockChange}
         onSubmit={handleCreate}
         loading={loading}
-      />
-
-      <MultiSelectCheckpointSection
-        checkpoints={multiSelectCheckpoints}
-        onToggleEnabled={handleMultiToggleEnabled}
-        onToggleOption={handleMultiToggleOption}
       />
 
       <button
