@@ -149,7 +149,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     // nicht bereinigt – TODO: K12-Fragesprache in separatem Schritt klären).
     // perspectives = [PATIENT] bedeutet: erscheint im Patientenfragen-Katalog (M2_QUESTIONS).
     perspectives: [CheckpointPerspective.PATIENT],
-    title: "Alltagssituation – Rückmeldung durch Angehörige / Kontaktperson",
+    title: "Alltagssituation – Rückmeldung Kontaktperson",
     introText:
       "Bitte beantworten Sie die folgenden Fragen, wenn Sie den Patienten im Alltag unterstützen oder gut kennen.",
     description:
