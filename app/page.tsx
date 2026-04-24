@@ -374,7 +374,16 @@ export default function HomePage() {
       {/* Account-Bar */}
       <div className="account-bar">
         <span className="account-email">{account.email}</span>
-        <button onClick={handleLogout}>Abmelden</button>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => router.push("/demo/arzt")}
+            style={{ fontSize: "0.875rem" }}
+          >
+            Arzt-Demo ansehen
+          </button>
+          <button onClick={handleLogout}>Abmelden</button>
+        </div>
       </div>
 
       <h1>Liegt genug Information vor, damit der Arzt direkt entscheiden kann?</h1>
@@ -384,7 +393,7 @@ export default function HomePage() {
       </p>
 
       {/* Modus-Auswahl */}
-      <div style={{ marginBottom: "1.5rem" }}>
+      <div data-tour-id="mode-selection" style={{ marginBottom: "1.5rem" }}>
         <strong>Modus</strong>
         <div style={{ marginTop: "0.4rem" }}>
           {(["guest", "practice"] as CaseMode[]).map((m) => (
@@ -420,26 +429,39 @@ export default function HomePage() {
         Hinweis: Der Fall erscheint in Ihrer Fallübersicht. Eine Patienten-Referenz hilft beim späteren Wiederfinden.
       </p>
 
-      <MultiSelectCheckpointSection
-        checkpoints={multiSelectCheckpoints}
-        onToggleEnabled={handleMultiToggleEnabled}
-        onToggleOption={handleMultiToggleOption}
-      />
+<div data-tour-id="multi-select-section">
+  <MultiSelectCheckpointSection
+    checkpoints={multiSelectCheckpoints}
+    onToggleEnabled={handleMultiToggleEnabled}
+    onToggleOption={handleMultiToggleOption}
+  />
+</div>
 
-      <M1SelectionForm
-        selection={selection}
-        onBlockChange={handleBlockChange}
-        onSubmit={handleCreate}
-        loading={loading}
-      />
+<div data-tour-id="m1-form">
+  <M1SelectionForm
+    selection={selection}
+    onBlockChange={handleBlockChange}
+    onSubmit={handleCreate}
+    loading={loading}
+  />
+</div>
 
-      <AssessmentCheckpointSection
-        checkpoints={[{ id: "K12", title: "Alltagssituation / Kontaktperson", enabled: k12Enabled }]}
-        onToggleEnabled={() => setK12Enabled((v) => !v)}
-      />
+<div data-tour-id="k12-checkbox">
+  <AssessmentCheckpointSection
+    checkpoints={[
+      {
+        id: "K12",
+        title: "Alltagssituation / Kontaktperson",
+        enabled: k12Enabled,
+      },
+    ]}
+    onToggleEnabled={() => setK12Enabled((v) => !v)}
+  />
+</div>
 
       <button
         type="button"
+        data-tour-id="create-actions"
         data-clinical-status-prepared
         className="answer-btn"
         onClick={() => void handleCreateAndPrepare()}

@@ -385,6 +385,61 @@ summary {
   max-width: 24rem;
 }
 
+/* ----- Demo Tour Overlay ----- */
+/* Mobile default: bottom panel spanning full width */
+.tour-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.tour-overlay-panel {
+  width: 100%;
+  max-width: var(--main-max-width);
+  margin-bottom: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+}
+
+/* Desktop: fixed right side-panel */
+@media (min-width: 768px) {
+  .tour-overlay {
+    bottom: auto;
+    left: auto;
+    right: 24px;
+    top: 96px;
+    padding: 0;
+    display: block;
+  }
+
+  .tour-overlay-panel {
+    width: 440px;
+    max-width: none;
+    max-height: calc(100vh - 120px);
+    overflow: auto;
+    margin-bottom: 0;
+    box-shadow: -4px 4px 24px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ----- Tour highlighting ----- */
+[data-tour-highlighted] {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: var(--radius);
+  scroll-margin-top: 1rem;
+}
+
 /* ----- Footer ----- */
 .app-footer {
   border-top: 1px solid var(--border);
