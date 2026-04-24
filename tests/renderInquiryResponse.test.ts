@@ -88,7 +88,7 @@ describe("renderInquiryResponse – einzelner HINWEIS", () => {
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(1);
-    expect(result.hints[0]).toBe("Bitte buchen Sie vorab einen Termin zur Impfberatung.");
+    expect(result.hints[0]).toBe("Zur Durchführung der Impfung ist eine ärztliche Beratung erforderlich.");
   });
 
   it("IC04 HINWEIS → Impfpass-Hinweis nennt nur 'Impfpass', nicht 'Nachweis'", () => {
@@ -102,7 +102,7 @@ describe("renderInquiryResponse – einzelner HINWEIS", () => {
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(1);
-    expect(result.hints[0]).toBe("Bitte bringen Sie Ihren Impfpass mit.");
+    expect(result.hints[0]).toBe("Zum Termin wird der Impfpass benötigt.");
     expect(result.hints[0]).not.toContain("Nachweis");
   });
 
@@ -161,7 +161,7 @@ describe("renderInquiryResponse – IC03 Impfberatung differenziert", () => {
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(1);
     expect(result.hints[0]).toBe(
-      "Wenn Sie vorab eine Impfberatung wünschen, buchen Sie bitte einen Beratungstermin.",
+      "Falls gewünscht, kann vorab ein Termin zur Impfberatung gebucht werden.",
     );
   });
 
@@ -188,7 +188,7 @@ describe("renderInquiryResponse – IC03 Impfberatung differenziert", () => {
       makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
-    expect(result.hints[0]).toBe("Bitte buchen Sie vorab einen Termin zur Impfberatung.");
+    expect(result.hints[0]).toBe("Zur Durchführung der Impfung ist eine ärztliche Beratung erforderlich.");
   });
 });
 
@@ -220,8 +220,8 @@ describe("renderInquiryResponse – mehrere HINWEIS", () => {
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(2);
-    expect(result.hints[0]).toBe("Bitte füllen Sie vorab unsere Online-Anamnese aus.");
-    expect(result.hints[1]).toBe("Bitte buchen Sie vorab einen Termin zur Impfberatung.");
+    expect(result.hints[0]).toBe("Zur Vervollständigung der Krankenakte wird eine ausgefüllte Online-Anamnese benötigt.");
+    expect(result.hints[1]).toBe("Zur Durchführung der Impfung ist eine ärztliche Beratung erforderlich.");
   });
 
   it("HINWEIS + HINWEIS_OPTIONAL gemischt → beide erscheinen in hints", () => {
@@ -235,8 +235,8 @@ describe("renderInquiryResponse – mehrere HINWEIS", () => {
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(2);
-    expect(result.hints[0]).toContain("Impfberatung wünschen");
-    expect(result.hints[1]).toBe("Bitte bringen Sie Ihren Impfpass mit.");
+    expect(result.hints[0]).toContain("Impfberatung");
+    expect(result.hints[1]).toBe("Zum Termin wird der Impfpass benötigt.");
   });
 
   it("dokumentation hat immer 7 Zeilen (Kopf + 6 Checkpoints)", () => {
@@ -591,6 +591,119 @@ describe("renderInquiryResponse – groupedHints leere Checkpoint-Liste", () => 
     expect(result.groupedHints.vorbereitungen).toHaveLength(0);
     expect(result.groupedHints.infos).toHaveLength(0);
     expect(result.groupedHints.ablehnungen).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// paragraphs – Fließtext-Ausgabe
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponse – paragraphs", () => {
+  it("alle GEKLAERT → paragraphs ist leer", () => {
+    const result = renderInquiryResponse(
+      FSME_PROFILE,
+      allFsmeConfirmed(InquiryCheckpointStatus.GEKLAERT),
+    );
+    expect(result.paragraphs).toHaveLength(0);
+  });
+
+  it("leere Checkpoint-Liste → paragraphs ist leer", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, []);
+    expect(result.paragraphs).toHaveLength(0);
+  });
+
+  it("paragraphs enthält dieselben Texte wie hints (Konsistenz)", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC02", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC05", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC06", InquiryCheckpointStatus.HINWEIS),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    expect(result.paragraphs).toHaveLength(result.hints.length);
+    for (const hint of result.hints) {
+      expect(result.paragraphs).toContain(hint);
+    }
+  });
+
+  it("VORAUSSETZUNG erscheint vor AKTION in paragraphs", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC02", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    // IC03 = VORAUSSETZUNG, IC02 = AKTION
+    const idxVoraussetzung = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC03"].hintText);
+    const idxAktion = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC02"].hintText);
+    expect(idxVoraussetzung).toBeGreaterThanOrEqual(0);
+    expect(idxAktion).toBeGreaterThanOrEqual(0);
+    expect(idxVoraussetzung).toBeLessThan(idxAktion);
+  });
+
+  it("AKTION erscheint vor VORBEREITUNG in paragraphs", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC02", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC03", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    // IC02 = AKTION, IC04 = VORBEREITUNG
+    const idxAktion = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC02"].hintText);
+    const idxVorbereitung = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC04"].hintText);
+    expect(idxAktion).toBeGreaterThanOrEqual(0);
+    expect(idxVorbereitung).toBeGreaterThanOrEqual(0);
+    expect(idxAktion).toBeLessThan(idxVorbereitung);
+  });
+
+  it("VORBEREITUNG erscheint vor INFO in paragraphs", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC02", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS_OPTIONAL),
+      makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    // IC04 = VORBEREITUNG, IC03 HINWEIS_OPTIONAL = INFO
+    const idxVorbereitung = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC04"].hintText);
+    const idxInfo = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC03"].hintTextOptional!);
+    expect(idxVorbereitung).toBeGreaterThanOrEqual(0);
+    expect(idxInfo).toBeGreaterThanOrEqual(0);
+    expect(idxVorbereitung).toBeLessThan(idxInfo);
+  });
+
+  it("alle 6 HINWEIS → paragraphs hat 6 Einträge, VORAUSSETZUNG zuerst", () => {
+    const result = renderInquiryResponse(
+      FSME_PROFILE,
+      allFsmeConfirmed(InquiryCheckpointStatus.HINWEIS),
+    );
+    expect(result.paragraphs).toHaveLength(6);
+    // IC01 und IC03 sind VORAUSSETZUNG → kommen vor IC02 (AKTION)
+    const idxIC01 = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC01"].hintText);
+    const idxIC02 = result.paragraphs.indexOf(INQUIRY_CHECKPOINT_CATALOGUE["IC02"].hintText);
+    expect(idxIC01).toBeGreaterThanOrEqual(0);
+    expect(idxIC02).toBeGreaterThanOrEqual(0);
+    expect(idxIC01).toBeLessThan(idxIC02);
+  });
+
+  it("keine Imperative in paragraphs (kein Satz beginnt mit 'Bitte')", () => {
+    const result = renderInquiryResponse(
+      FSME_PROFILE,
+      allFsmeConfirmed(InquiryCheckpointStatus.HINWEIS),
+    );
+    for (const para of result.paragraphs) {
+      expect(para.startsWith("Bitte")).toBe(false);
+    }
   });
 });
 

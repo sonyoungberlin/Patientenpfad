@@ -23,7 +23,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
       { id: "IC01-Q1", text: "Sind Sie bereits Patient in unserer Praxis?" },
     ],
     hintText:
-      "Als Neupatient bitten wir Sie, sich vorab in unserem System anzumelden.",
+      "Als Neupatient ist eine vorherige Anmeldung in der Praxis erforderlich.",
     responseKind: ResponseKind.VORAUSSETZUNG,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Patientenstatus: Bestandspatient.",
@@ -41,7 +41,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
         text: "Haben Sie unsere Online-Anamnese bereits vollständig ausgefüllt?",
       },
     ],
-    hintText: "Bitte füllen Sie vorab unsere Online-Anamnese aus.",
+    hintText: "Zur Vervollständigung der Krankenakte wird eine ausgefüllte Online-Anamnese benötigt.",
     responseKind: ResponseKind.AKTION,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Online-Anamnese: vollständig vorhanden.",
@@ -60,10 +60,10 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
       },
     ],
     /** Notwendig: Beratung ist vor der Impfung erforderlich. */
-    hintText: "Bitte buchen Sie vorab einen Termin zur Impfberatung.",
+    hintText: "Zur Durchführung der Impfung ist eine ärztliche Beratung erforderlich.",
     /** Optional: Beratung wird angeboten, ist aber nicht zwingend erforderlich. */
     hintTextOptional:
-      "Wenn Sie vorab eine Impfberatung wünschen, buchen Sie bitte einen Beratungstermin.",
+      "Falls gewünscht, kann vorab ein Termin zur Impfberatung gebucht werden.",
     responseKind: ResponseKind.VORAUSSETZUNG,
     responseKindOptional: ResponseKind.INFO,
     docText: {
@@ -83,7 +83,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
         text: "Haben Sie Ihren Impfpass zur Hand?",
       },
     ],
-    hintText: "Bitte bringen Sie Ihren Impfpass mit.",
+    hintText: "Zum Termin wird der Impfpass benötigt.",
     responseKind: ResponseKind.VORBEREITUNG,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Impfpass: vorhanden.",
@@ -102,7 +102,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
       },
     ],
     hintText:
-      "Bitte teilen Sie uns Ihren gewünschten Zeitraum für den Termin mit.",
+      "Zur Terminbuchung wird ein bevorzugter Zeitraum benötigt.",
     responseKind: ResponseKind.AKTION,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Terminwunsch: angegeben.",
@@ -122,7 +122,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
       },
     ],
     hintText:
-      "Bitte nutzen Sie die Online-Terminbuchung für die Terminvereinbarung und Nachrichten der Praxis.",
+      "Termine können über die Online-Terminbuchung der Praxis vereinbart werden.",
     responseKind: ResponseKind.AKTION,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Online-Terminbuchung: Zugang vorhanden.",

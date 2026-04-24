@@ -153,123 +153,18 @@ export default function InquiryDemoPage() {
             <>
               <div className="card" style={{ marginBottom: "1rem" }}>
                 <h3 style={{ marginBottom: "0.75rem" }}>Antwort</h3>
-                <p style={{ margin: "0" }}>{output.coreAnswer}</p>
+                <p style={{ margin: output.paragraphs.length > 0 ? "0 0 0.75rem" : "0" }}>
+                  {output.coreAnswer}
+                </p>
+                {output.paragraphs.map((para, i) => (
+                  <p
+                    key={i}
+                    style={{ margin: i < output.paragraphs.length - 1 ? "0 0 0.75rem" : "0" }}
+                  >
+                    {para}
+                  </p>
+                ))}
               </div>
-
-              {(output.groupedHints.voraussetzungen.length > 0 ||
-                output.groupedHints.aktionen.length > 0 ||
-                output.groupedHints.vorbereitungen.length > 0 ||
-                output.groupedHints.infos.length > 0 ||
-                output.groupedHints.ablehnungen.length > 0) && (
-                <div className="card" style={{ marginBottom: "1rem" }}>
-                  <h3 style={{ marginBottom: "0.75rem" }}>Hinweise</h3>
-
-                  {output.groupedHints.voraussetzungen.length > 0 && (
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <p
-                        style={{
-                          margin: "0 0 0.25rem",
-                          fontWeight: 500,
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        Wichtig vorab
-                      </p>
-                      <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                        {output.groupedHints.voraussetzungen.map((hint, i) => (
-                          <li key={i} style={{ marginBottom: "0.25rem" }}>
-                            {hint}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {output.groupedHints.aktionen.length > 0 && (
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <p
-                        style={{
-                          margin: "0 0 0.25rem",
-                          fontWeight: 500,
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        Nächste Schritte
-                      </p>
-                      <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                        {output.groupedHints.aktionen.map((hint, i) => (
-                          <li key={i} style={{ marginBottom: "0.25rem" }}>
-                            {hint}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {output.groupedHints.vorbereitungen.length > 0 && (
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <p
-                        style={{
-                          margin: "0 0 0.25rem",
-                          fontWeight: 500,
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        Bitte zum Termin mitbringen
-                      </p>
-                      <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                        {output.groupedHints.vorbereitungen.map((hint, i) => (
-                          <li key={i} style={{ marginBottom: "0.25rem" }}>
-                            {hint}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {output.groupedHints.infos.length > 0 && (
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <p
-                        style={{
-                          margin: "0 0 0.25rem",
-                          fontWeight: 500,
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        Weitere Hinweise
-                      </p>
-                      <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                        {output.groupedHints.infos.map((hint, i) => (
-                          <li key={i} style={{ marginBottom: "0.25rem" }}>
-                            {hint}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {output.groupedHints.ablehnungen.length > 0 && (
-                    <div>
-                      <p
-                        style={{
-                          margin: "0 0 0.25rem",
-                          fontWeight: 500,
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        Alternativen
-                      </p>
-                      <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                        {output.groupedHints.ablehnungen.map((hint, i) => (
-                          <li key={i} style={{ marginBottom: "0.25rem" }}>
-                            {hint}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="card">
                 <h3 style={{ marginBottom: "0.75rem" }}>Dokumentation</h3>

@@ -162,6 +162,13 @@ export type InquiryOutput = {
     infos: string[];
     ablehnungen: string[];
   };
+  /**
+   * Hinweise als geordnete Absatzliste, sortiert nach sprachlicher Funktion:
+   * Voraussetzungen → Aktionen → Vorbereitungen → Infos → Ablehnungen.
+   * Jeder Eintrag entspricht einem eigenen Absatz (kein Bulletpoint).
+   * Leer wenn alle Checkpoints GEKLAERT sind.
+   */
+  paragraphs: string[];
   /** Eine Dokumentationszeile pro Checkpoint. */
   documentation: string[];
 };

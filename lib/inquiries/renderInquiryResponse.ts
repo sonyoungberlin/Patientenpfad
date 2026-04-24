@@ -104,6 +104,15 @@ export function renderInquiryResponse(
       }
     });
 
+  // paragraphs: flat sorted list – Voraussetzungen → Aktionen → Vorbereitungen → Infos → Ablehnungen.
+  const paragraphs: string[] = [
+    ...groupedHints.voraussetzungen,
+    ...groupedHints.aktionen,
+    ...groupedHints.vorbereitungen,
+    ...groupedHints.infos,
+    ...groupedHints.ablehnungen,
+  ];
+
   const documentation: string[] = [
     `${profile.label} angefragt.`,
     ...confirmed.map((cp) => {
@@ -119,6 +128,7 @@ export function renderInquiryResponse(
     coreAnswer: profile.coreAnswer,
     hints,
     groupedHints,
+    paragraphs,
     documentation,
   };
 }
