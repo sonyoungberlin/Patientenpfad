@@ -223,15 +223,20 @@ export default function M1ErgaenzungClient({
       <M1SelectionForm
         selection={selection}
         onBlockChange={handleBlockChange}
-        onSubmit={handleSubmit}
-        loading={loading}
         lockedBlocks={lockedBlocks}
-        submitDisabled={false}
       />
       <AssessmentCheckpointSection
         checkpoints={[{ id: "K12", title: "Alltagssituation / Kontaktperson", enabled: k12Enabled }]}
         onToggleEnabled={handleK12Toggle}
       />
+      <button
+        className="btn-primary"
+        onClick={() => void handleSubmit()}
+        disabled={loading || savingPrepared}
+        style={{ marginTop: "1rem" }}
+      >
+        {loading ? "Lädt…" : "Fall anlegen"}
+      </button>
       <button
         type="button"
         data-clinical-status-prepared
