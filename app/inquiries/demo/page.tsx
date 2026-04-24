@@ -158,7 +158,7 @@ export default function InquiryDemoPage() {
                 </p>
                 {output.paragraphs.map((para, i) => (
                   <p
-                    key={i}
+                    key={para}
                     style={{ margin: i < output.paragraphs.length - 1 ? "0 0 0.75rem" : "0" }}
                   >
                     {para}
