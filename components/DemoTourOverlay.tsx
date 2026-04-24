@@ -37,31 +37,10 @@ export default function DemoTourOverlay({
       role="dialog"
       aria-modal="true"
       aria-labelledby="tour-title"
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        display: "flex",
-        justifyContent: "center",
-        zIndex: 2000,
-        padding: "1rem",
-        pointerEvents: "none",
-      }}
+      className="tour-overlay"
     >
       <div
-        className="card"
-        style={{
-          width: "100%",
-          maxWidth: "var(--main-max-width)",
-          marginBottom: "0.5rem",
-          padding: "1.25rem 1.5rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.75rem",
-          boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.15)",
-          pointerEvents: "auto",
-        }}
+        className="card tour-overlay-panel"
       >
         {/* Schrittzähler */}
         <p
