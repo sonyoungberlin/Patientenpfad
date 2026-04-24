@@ -6,6 +6,7 @@ import { ensureAlwaysPresentCheckpoints, filterObsoleteCheckpoints } from "@/lib
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import {
   getFrozenRuns,
+  getOpenRun,
   isPrefillRunSource,
   type PrefillRunSource,
 } from "@/lib/server/prefillRuns";
@@ -91,10 +92,28 @@ export default async function M3Page({
   const clinicalStatus =
     typeof session.clinical_status === "string" ? session.clinical_status : "none";
 
+  // Ergänzungslauf wurde gestartet, wenn clinical_status "prepared" ist und
+  // bereits mindestens ein PrefillRun existiert (frozen oder offen).
+  // Ein offener Run deutet auf einen laufenden Ergänzungs-M2 hin;
+  // ein frozen Run bedeutet der Ergänzungslauf wurde bereits abgeschlossen.
+  let ergaenzungGestartet = false;
+  if (clinicalStatus === "prepared") {
+    if (frozenRuns.length > 0) {
+      ergaenzungGestartet = true;
+    } else {
+      try {
+        const openRun = await getOpenRun(id);
+        ergaenzungGestartet = openRun !== null;
+      } catch {
+        ergaenzungGestartet = false;
+      }
+    }
+  }
+
   return (
     <main className="m3-page">
       <h1>Ärztliche Checkliste</h1>
-      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} frozenRuns={frozenRuns} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} doctorConfirmed={session.doctor_confirmed === true} clinicalStatus={clinicalStatus} />
+      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} frozenRuns={frozenRuns} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} doctorConfirmed={session.doctor_confirmed === true} clinicalStatus={clinicalStatus} ergaenzungGestartet={ergaenzungGestartet} />
     </main>
   );
 }

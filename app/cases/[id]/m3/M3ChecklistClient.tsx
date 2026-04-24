@@ -113,6 +113,7 @@ export function M3ChecklistClient({
   messageSignature = "",
   doctorConfirmed = false,
   clinicalStatus = "none",
+  ergaenzungGestartet = false,
 }: {
   caseId: string;
   initialCheckpoints: ActiveCheckpoint[];
@@ -122,6 +123,8 @@ export function M3ChecklistClient({
   messageSignature?: string;
   doctorConfirmed?: boolean;
   clinicalStatus?: string;
+  /** Wenn true, wurde für diesen Fall bereits ein Ergänzungslauf gestartet. */
+  ergaenzungGestartet?: boolean;
 }) {
   const router = useRouter();
   // M3 wird nur gesperrt, wenn der Patientenweg gewählt wurde und der
@@ -384,6 +387,7 @@ export function M3ChecklistClient({
   async function startAdditionalPrefillRun() {
     if (startingPrefillRun) return;
     if (confirmed || clinical === "confirmed") return;
+    if (ergaenzungGestartet) return;
     setStartingPrefillRun(true);
     setError(null);
     // Status speichern (best-effort) bevor zum Ergänzungs-Flow navigiert wird.
@@ -629,17 +633,28 @@ export function M3ChecklistClient({
           style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}
         >
           {confirmed || clinical === "confirmed" ? null : (
-            <button
-              type="button"
-              data-start-additional-prefill-run
-              onClick={() => void startAdditionalPrefillRun()}
-              disabled={startingPrefillRun}
-              className="answer-btn"
-            >
-              {startingPrefillRun
-                ? "Wird gestartet…"
-                : "Weitere Vorbereitung starten"}
-            </button>
+            <>
+              <button
+                type="button"
+                data-start-additional-prefill-run
+                onClick={() => void startAdditionalPrefillRun()}
+                disabled={startingPrefillRun || ergaenzungGestartet}
+                className="answer-btn"
+              >
+                {startingPrefillRun
+                  ? "Wird gestartet…"
+                  : "Weitere Vorbereitung starten"}
+              </button>
+              {ergaenzungGestartet && (
+                <p
+                  data-ergaenzung-gestartet-notice
+                  role="status"
+                  style={{ margin: "0.25rem 0 0", fontSize: "0.875em", color: "var(--color-text-muted, #666)" }}
+                >
+                  Weitere Vorbereitung wurde bereits gestartet.
+                </p>
+              )}
+            </>
           )}
         </div>
         <button
