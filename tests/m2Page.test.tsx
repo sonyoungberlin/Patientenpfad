@@ -271,21 +271,23 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-77" }) }),
     );
 
-    // Patientengespräch ist erreichbar
-    expect(markup).toContain("data-m2-patient-conversation-button");
-    expect(markup).toContain(">Patientengespräch<");
+    // MFA-Vorbereitung-Button ist erreichbar
+    expect(markup).toContain("data-m2-mfa-mode-button");
+    expect(markup).toContain(">MFA-Vorbereitung<");
 
-    // Reihenfolge: Skip → M2-Link → Patientengespräch → MFA-Formular → schwarzer Save-Button
+    // Reihenfolge: Skip → M2-Link → Patientengespräch → MFA-Vorbereitung → MFA-Formular → schwarzer Save-Button
     const idxConversation = markup.indexOf("data-m2-patient-conversation");
     const idxLink = markup.indexOf("data-m2-link-generator");
     const idxSkip = markup.indexOf("data-m2-skip");
+    const idxMfaMode = markup.indexOf("data-m2-mfa-mode");
     const idxMfaForm = markup.indexOf("data-m2-mfa-form");
     const idxSave = markup.indexOf("data-m2-save");
 
     expect(idxSkip).toBeGreaterThan(-1);
     expect(idxLink).toBeGreaterThan(idxSkip);
     expect(idxConversation).toBeGreaterThan(idxLink);
-    expect(idxMfaForm).toBeGreaterThan(idxConversation);
+    expect(idxMfaMode).toBeGreaterThan(idxConversation);
+    expect(idxMfaForm).toBeGreaterThan(idxMfaMode);
     expect(idxSave).toBeGreaterThan(idxMfaForm);
   });
 

@@ -9,6 +9,7 @@ import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 import { M2SkipButtonClient } from "./M2SkipButtonClient";
 import { M2PatientConversationClient } from "./M2PatientConversationClient";
+import { M2MfaModeClient } from "./M2MfaModeClient";
 
 export default async function M2Page({
   params,
@@ -121,7 +122,7 @@ export default async function M2Page({
         {/* Erste Zeile: Skip-Aktion als dezente Textaktion */}
         <M2SkipButtonClient caseId={id} />
 
-        {/* Zweite Zeile: Fragebogen-Link und Patientengespräch als stabile Gruppe */}
+        {/* Zweite Zeile: Fragebogen-Link, Patientengespräch und MFA-Vorbereitung als stabile Gruppe */}
         <div
           style={{
             display: "flex",
@@ -132,6 +133,7 @@ export default async function M2Page({
         >
           <M2LinkGeneratorClient caseId={id} />
           <M2PatientConversationClient />
+          <M2MfaModeClient />
         </div>
       </section>
 
