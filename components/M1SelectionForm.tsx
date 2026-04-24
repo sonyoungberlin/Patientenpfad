@@ -7,7 +7,7 @@ const BLOCK_LABELS: Record<keyof M1Selection, string> = {
   kommunikation: "Kommunikation",
   medizinische_lage: "Medizinische Lage",
   versorgung_im_alltag: "Versorgung im Alltag",
-  pflegebeobachtung: "Beobachtungen im Alltag / Pflege",
+  pflegebeobachtung: "Alltagssituation / Kontaktperson",
 };
 
 const STATUS_LABELS: Record<M1BlockStatus, string> = {

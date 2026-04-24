@@ -200,7 +200,7 @@ export function M2PrefillClient({
         );
 
         if (visibleCheckpoints.length === 0) {
-          return <p>Keine aktiven Checkpoints vorhanden.</p>;
+          return <p>Für die MFA gibt es hier keine vorbereitenden Fragen.</p>;
         }
 
         return (

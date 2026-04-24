@@ -143,7 +143,7 @@ describe("M2 Seite", () => {
       await M2Page({ params: Promise.resolve({ id: "case-1" }) }),
     );
 
-    expect(markup).toContain("Keine aktiven Checkpoints vorhanden.");
+    expect(markup).toContain("Für die MFA gibt es hier keine vorbereitenden Fragen.");
   });
 
   it("zeigt pflegebeobachtung-Checkpoint im MFA-Modus nicht an (keine MFA-Fragen)", async () => {

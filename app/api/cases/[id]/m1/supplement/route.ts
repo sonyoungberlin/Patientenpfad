@@ -30,7 +30,7 @@ const M1_BLOCK_TITLES: Record<M1BlockId, string> = {
   kommunikation: "Kommunikation",
   medizinische_lage: "Medizinische Lage",
   versorgung_im_alltag: "Versorgung im Alltag",
-  pflegebeobachtung: "Beobachtungen im Alltag / Pflege",
+  pflegebeobachtung: "Alltagssituation / Kontaktperson",
 };
 
 function isM1BlockId(value: unknown): value is M1BlockId {
