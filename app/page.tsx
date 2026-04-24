@@ -362,7 +362,7 @@ export default function HomePage() {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             type="button"
-            onClick={() => router.push("/?tour=doctor&step=0")}
+            onClick={() => router.push("/demo/arzt")}
             style={{ fontSize: "0.875rem" }}
           >
             Arzt-Demo ansehen

@@ -27,6 +27,14 @@ export type TourStep = {
   targetDataTourId?: string;
   /** Zielrolle – aktuell immer "doctor" für die Arzt-Demo-Tour. */
   role?: "doctor";
+  /**
+   * Optionaler Pfad zu einem Demo-Screenshot (relativ zu /public).
+   * Wird in der Demo-Tour-Seite (/demo/arzt) angezeigt, falls vorhanden.
+   * Beispiel: "/demo/screens/step-1-m1-form.png"
+   */
+  imageSrc?: string;
+  /** Alt-Text für das Demo-Bild (Pflicht, wenn imageSrc gesetzt ist). */
+  imageAlt?: string;
 };
 
 export const DOCTOR_TOUR: TourStep[] = [
