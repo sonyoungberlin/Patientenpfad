@@ -385,6 +385,14 @@ summary {
   max-width: 24rem;
 }
 
+/* ----- Tour highlighting ----- */
+[data-tour-highlighted] {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: var(--radius);
+  scroll-margin-top: 1rem;
+}
+
 /* ----- Footer ----- */
 .app-footer {
   border-top: 1px solid var(--border);

@@ -39,13 +39,14 @@ export default function DemoTourOverlay({
       aria-labelledby="tour-title"
       style={{
         position: "fixed",
-        inset: 0,
-        background: "rgba(0, 0, 0, 0.45)",
+        bottom: 0,
+        left: 0,
+        right: 0,
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
         zIndex: 2000,
         padding: "1rem",
+        pointerEvents: "none",
       }}
     >
       <div
@@ -53,11 +54,13 @@ export default function DemoTourOverlay({
         style={{
           width: "100%",
           maxWidth: "var(--main-max-width)",
-          marginBottom: "1rem",
+          marginBottom: "0.5rem",
           padding: "1.25rem 1.5rem",
           display: "flex",
           flexDirection: "column",
           gap: "0.75rem",
+          boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.15)",
+          pointerEvents: "auto",
         }}
       >
         {/* Schrittzähler */}

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
+import TourController from '@/components/TourController';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,6 +20,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="de">
       <body>
         {children}
+        <Suspense fallback={null}>
+          <TourController />
+        </Suspense>
         <footer className="app-footer">
           <nav>
             <Link href="/hinweise">Hinweise zur Nutzung</Link>

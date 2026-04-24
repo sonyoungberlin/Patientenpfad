@@ -21,7 +21,8 @@ export type TourStep = {
   body: string;
   /**
    * Optionaler Verweis auf ein UI-Element über dessen `data-tour-id`-Attribut.
-   * Wird aktuell noch nicht für Highlighting genutzt, aber bereits erfasst.
+   * Wenn gesetzt, hebt der TourController das passende Element beim Anzeigen
+   * dieses Schritts visuell hervor und scrollt es in den sichtbaren Bereich.
    */
   targetDataTourId?: string;
   /** Zielrolle – aktuell immer "doctor" für die Arzt-Demo-Tour. */

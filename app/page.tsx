@@ -11,7 +11,6 @@ import {
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
-import DemoTourOverlay from "@/components/DemoTourOverlay";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
@@ -58,19 +57,6 @@ export default function HomePage() {
   const [regError, setRegError] = useState<string | null>(null);
   const [regSuccess, setRegSuccess] = useState(false);
   const [preparingLoading, setPreparingLoading] = useState(false);
-  // Demo-Tour-State
-  const [tourActive, setTourActive] = useState(false);
-  const [tourStep, setTourStep] = useState(0);
-
-  function handleStartTour() {
-    setTourStep(0);
-    setTourActive(true);
-  }
-
-  function handleCloseTour() {
-    setTourActive(false);
-    setTourStep(0);
-  }
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -376,7 +362,7 @@ export default function HomePage() {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             type="button"
-            onClick={handleStartTour}
+            onClick={() => router.push("/?tour=doctor&step=0")}
             style={{ fontSize: "0.875rem" }}
           >
             Arzt-Demo ansehen
@@ -428,20 +414,22 @@ export default function HomePage() {
         Hinweis: Der Fall erscheint in Ihrer Fallübersicht. Eine Patienten-Referenz hilft beim späteren Wiederfinden.
       </p>
 
-      <M1SelectionForm
-        selection={selection}
-        onBlockChange={handleBlockChange}
-        onSubmit={handleCreate}
-        loading={loading}
-        data-tour-id="m1-form"
-      />
+      <div data-tour-id="m1-form">
+        <M1SelectionForm
+          selection={selection}
+          onBlockChange={handleBlockChange}
+          onSubmit={handleCreate}
+          loading={loading}
+        />
+      </div>
 
-      <MultiSelectCheckpointSection
-        checkpoints={multiSelectCheckpoints}
-        onToggleEnabled={handleMultiToggleEnabled}
-        onToggleOption={handleMultiToggleOption}
-        data-tour-id="multi-select-section"
-      />
+      <div data-tour-id="multi-select-section">
+        <MultiSelectCheckpointSection
+          checkpoints={multiSelectCheckpoints}
+          onToggleEnabled={handleMultiToggleEnabled}
+          onToggleOption={handleMultiToggleOption}
+        />
+      </div>
 
       <button
         type="button"
@@ -469,14 +457,6 @@ export default function HomePage() {
 
 
     </main>
-
-    {tourActive && (
-      <DemoTourOverlay
-        currentStep={tourStep}
-        onNavigate={(delta) => setTourStep((s) => s + delta)}
-        onClose={handleCloseTour}
-      />
-    )}
     </>
   );
 }
