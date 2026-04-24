@@ -217,10 +217,6 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       id: "M2-11",
       text: "Wirkt der Umgang mit Hilfsmitteln (z. B. Rollator, Rollstuhl) im Alltag sicher?",
     },
-    {
-      id: "M2-12",
-      text: "Gibt es Hinweise auf Unsicherheiten im Umgang mit Hilfsmitteln?",
-    },
     // Pflegegrad / Versorgungsniveau
     {
       id: "M2-13",
