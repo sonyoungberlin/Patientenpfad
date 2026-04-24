@@ -441,8 +441,6 @@ export default function HomePage() {
   <M1SelectionForm
     selection={selection}
     onBlockChange={handleBlockChange}
-    onSubmit={handleCreate}
-    loading={loading}
   />
 </div>
 
@@ -460,8 +458,17 @@ export default function HomePage() {
 </div>
 
       <button
-        type="button"
+        className="btn-primary"
         data-tour-id="create-actions"
+        onClick={() => void handleCreate()}
+        disabled={loading || preparingLoading}
+        style={{ marginTop: "1rem" }}
+      >
+        {loading ? "Lädt…" : "Fall anlegen"}
+      </button>
+
+      <button
+        type="button"
         data-clinical-status-prepared
         className="answer-btn"
         onClick={() => void handleCreateAndPrepare()}
