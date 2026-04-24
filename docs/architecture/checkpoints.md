@@ -114,6 +114,25 @@ sich den Fragenkatalog `M2_QUESTIONS` in `lib/logic/m2Questions.ts`.
 | `ASSESSMENT` | `P` | Mindestens eine Perspektive (MFA oder PATIENT) |
 | `MULTI_SELECT` | `A` | Keine – ausschließlich M3 |
 
+### 2.1 ASSESSMENT: Kanal und adressierte Person
+
+ASSESSMENT-Checkpoints laufen im PATIENT-Kanal und dienen der strukturierten Rückmeldung
+zur Situation des Patienten (z. B. Alltag, Pflege, Verlauf). Sie erzeugen keinen M4-Output.
+
+**Wichtig:** `PATIENT` beschreibt den Erhebungskanal, nicht zwingend die antwortende Person.
+Antworten können stellvertretend durch Angehörige oder Kontaktpersonen erfolgen.
+
+**Regel:** Die angesprochene Person muss pro Checkpoint klar definiert sein – über:
+- einen präzisen Titel (z. B. „… Rückmeldung durch Angehörige / Kontaktperson")
+- einen kurzen Einleitungssatz im Frageblock
+
+Standardformulierung für den Einleitungssatz:
+
+> „Bitte beantworten Sie die folgenden Fragen, wenn Sie den Patienten im Alltag unterstützen oder gut kennen."
+
+Es gibt keine parallelen Varianten (Patient vs. Kontaktperson) pro Checkpoint. Jeder
+ASSESSMENT-Checkpoint definiert genau eine adressierte Form.
+
 ---
 
 ## 3. Kombinationstabelle aller aktiven Checkpoints (Ist-Stand)
