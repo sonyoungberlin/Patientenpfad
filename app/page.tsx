@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
+import type { ActiveCheckpointMultiSelect, CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
   getCreateSuccessRedirectPath,
   isGatekeeperResponse,
 } from "@/lib/flow/caseNavigation";
 import M1SelectionForm from "@/components/M1SelectionForm";
+import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
+import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
@@ -16,6 +18,14 @@ const INITIAL_SELECTION: M1Selection = {
   versorgung_im_alltag: "unklar",
   pflegebeobachtung: "unklar",
 };
+
+function buildInitialMultiSelectCheckpoints(): ActiveCheckpointMultiSelect[] {
+  return Object.values(MULTI_SELECT_CATALOGUE).map((template) => ({
+    ...template,
+    enabled: false,
+    selections: [],
+  })) as ActiveCheckpointMultiSelect[];
+}
 
 type AccountInfo = {
   id: string;
@@ -26,6 +36,9 @@ type AccountInfo = {
 export default function HomePage() {
   const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
+  const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
+    buildInitialMultiSelectCheckpoints,
+  );
   const [mode, setMode] = useState<CaseMode>("guest");
   const [patientReference, setPatientReference] = useState("");
   const [gatekeeper, setGatekeeper] = useState(false);
@@ -43,6 +56,7 @@ export default function HomePage() {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
   const [regSuccess, setRegSuccess] = useState(false);
+  const [preparingLoading, setPreparingLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -116,12 +130,36 @@ export default function HomePage() {
     setSelection((prev) => ({ ...prev, [blockId]: value }));
   }
 
+  function handleMultiToggleEnabled(id: string) {
+    setMultiSelectCheckpoints((prev) =>
+      prev.map((cp) =>
+        cp.id === id ? { ...cp, enabled: !cp.enabled, selections: cp.enabled ? [] : cp.selections } : cp,
+      ),
+    );
+  }
+
+  function handleMultiToggleOption(id: string, option: string) {
+    setMultiSelectCheckpoints((prev) =>
+      prev.map((cp) => {
+        if (cp.id !== id || !cp.enabled) return cp;
+        const newSelections = cp.selections.includes(option)
+          ? cp.selections.filter((s) => s !== option)
+          : [...cp.selections, option];
+        return { ...cp, selections: newSelections };
+      }),
+    );
+  }
+
   async function handleCreate() {
     setLoading(true);
     setGatekeeper(false);
     setError(null);
     try {
-      const body: Record<string, unknown> = { m1Selection: selection, mode };
+      const multiSelectSelections: Record<string, { enabled: boolean; selections: string[] }> = {};
+      for (const cp of multiSelectCheckpoints) {
+        multiSelectSelections[cp.id] = { enabled: cp.enabled, selections: cp.selections };
+      }
+      const body: Record<string, unknown> = { m1Selection: selection, mode, multiSelectSelections };
       if (mode === "practice" && patientReference.trim()) {
         body.patient_reference = patientReference.trim();
       }
@@ -149,6 +187,63 @@ export default function HomePage() {
       setError("Netzwerkfehler");
     } finally {
       setLoading(false);
+    }
+  }
+
+  /**
+   * Erstellt den Fall und setzt danach sofort clinical_status = "prepared".
+   * Navigiert dann zur Fallübersicht (/cases).
+   * Wird aufgerufen wenn der Arzt direkt aus M1-Erstanlage heraus als
+   * "ärztlich vorbereitet" abschließen möchte.
+   */
+  async function handleCreateAndPrepare() {
+    if (preparingLoading || loading) return;
+    setPreparingLoading(true);
+    setGatekeeper(false);
+    setError(null);
+    try {
+      const multiSelectSelections: Record<string, { enabled: boolean; selections: string[] }> = {};
+      for (const cp of multiSelectCheckpoints) {
+        multiSelectSelections[cp.id] = { enabled: cp.enabled, selections: cp.selections };
+      }
+      const body: Record<string, unknown> = { m1Selection: selection, mode, multiSelectSelections };
+      if (mode === "practice" && patientReference.trim()) {
+        body.patient_reference = patientReference.trim();
+      }
+      const res = await fetch("/api/cases/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json() as { ok?: boolean; case_id?: string; gatekeeper?: boolean };
+      if (!res.ok || !data.ok) {
+        setError("Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.");
+        return;
+      }
+      if (isGatekeeperResponse(data)) {
+        setGatekeeper(true);
+        return;
+      }
+      const caseId = data.case_id;
+      if (!caseId) {
+        setError("Fall-ID fehlt in der Antwort. Bitte erneut versuchen.");
+        return;
+      }
+      // Fall wurde erstellt – jetzt prepared setzen (best-effort, nicht blockierend)
+      try {
+        await fetch(`/api/cases/${caseId}/clinical-status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "prepared" }),
+        });
+      } catch {
+        // Best-effort: Navigation zur Übersicht findet trotzdem statt.
+      }
+      router.push("/cases");
+    } catch {
+      setError("Netzwerkfehler");
+    } finally {
+      setPreparingLoading(false);
     }
   }
 
@@ -317,6 +412,22 @@ export default function HomePage() {
         loading={loading}
       />
 
+      <MultiSelectCheckpointSection
+        checkpoints={multiSelectCheckpoints}
+        onToggleEnabled={handleMultiToggleEnabled}
+        onToggleOption={handleMultiToggleOption}
+      />
+
+      <button
+        type="button"
+        data-clinical-status-prepared
+        className="answer-btn"
+        onClick={() => void handleCreateAndPrepare()}
+        disabled={preparingLoading || loading}
+        style={{ marginTop: "0.75rem" }}
+      >
+        {preparingLoading ? "Wird gespeichert…" : "Ärztlich vorbereitet"}
+      </button>
 
 
       {gatekeeper && (

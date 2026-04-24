@@ -138,23 +138,22 @@ export function M3ChecklistClient({
   // - "prepared"  : Arzt hat in M3 vorbereitet / Lücken markiert (MFA übernimmt weiter)
   // - "confirmed" : Arzt hat M3 final geprüft (fachlicher Abschluss)
   const [clinical, setClinical] = useState<string>(clinicalStatus);
-  const [savingClinical, setSavingClinical] = useState<"prepared" | "confirmed" | null>(null);
+  const [savingClinical, setSavingClinical] = useState<boolean>(false);
   // Schritt 4 der PrefillRun-Umstellung: Einstieg „Weitere Vorbereitung
   // starten". Nur lokaler UI-Zustand; Klick ruft die neue Route, navigiert
   // dann nach M2. Keine Wirkung auf bestehende Buttons / M3-Lock-Logik.
   const [startingPrefillRun, setStartingPrefillRun] = useState<boolean>(false);
   const isLocked = waitingForPatient || confirmed;
-  // MULTI_SELECT checkpoints are rendered separately with toggle + checkboxes.
+  // MULTI_SELECT checkpoints (K10/K11) are read from the DB via initialCheckpoints
+  // but are no longer editable in M3 – they are set/changed in M1.
+  // They are still included in allCheckpoints for M5 documentation output.
   const standardInitial = initialCheckpoints.filter(isStandardCheckpoint);
-  const multiSelectInitial = initialCheckpoints.filter(isMultiSelectCheckpoint);
+  const multiSelectCheckpoints = initialCheckpoints.filter(isMultiSelectCheckpoint);
   const [checkpoints, setCheckpoints] = useState<M3Checkpoint[]>(
     standardInitial.map((checkpoint) => ({
       ...checkpoint,
       status: normalizeStatus(checkpoint),
     })),
-  );
-  const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
-    multiSelectInitial,
   );
   // isDirty tracks unsaved local M3 checkpoint changes (per-Klick-Saves
   // wurden entfernt – nur "Ärztlich bestätigt" persistiert den Stand).
@@ -326,41 +325,14 @@ export function M3ChecklistClient({
     }
   }
 
-  function toggleMultiSelectEnabled(checkpointId: string) {
-    const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
-    if (!cp) return;
-    const newEnabled = !cp.enabled;
-    const newSelections = newEnabled ? cp.selections : [];
-
-    setMultiSelectCheckpoints((current) =>
-      current.map((c) =>
-        c.id === checkpointId ? { ...c, enabled: newEnabled, selections: newSelections } : c,
-      ),
-    );
-    setIsDirty(true);
-  }
-
-  function toggleMultiSelectOption(checkpointId: string, option: string) {
-    const cp = multiSelectCheckpoints.find((c) => c.id === checkpointId);
-    if (!cp || !cp.enabled) return;
-    const newSelections = cp.selections.includes(option)
-      ? cp.selections.filter((s) => s !== option)
-      : [...cp.selections, option];
-
-    setMultiSelectCheckpoints((current) =>
-      current.map((c) =>
-        c.id === checkpointId ? { ...c, selections: newSelections } : c,
-      ),
-    );
-    setIsDirty(true);
-  }
-
   async function closeCase() {
     if (confirmed) return;
     setClosing(true);
     setError(null);
     // Fachregel: „Ärztlich bestätigt" friert M3 ein und persistiert den
     // finalen ärztlichen Stand (Checkpoint-Zustände als Batch-Save).
+    // MULTI_SELECT-Checkpoints (K10/K11) werden unverändert übernommen,
+    // da sie nicht mehr in M3 bearbeitet werden.
     const allCp: ActiveCheckpoint[] = [
       ...(checkpoints as unknown as ActiveCheckpoint[]),
       ...multiSelectCheckpoints,
@@ -386,40 +358,6 @@ export function M3ChecklistClient({
     }
   }
 
-  async function setClinicalStatus(next: "prepared" | "confirmed") {
-    if (clinical === next) return;
-    setSavingClinical(next);
-    setError(null);
-    const previous = clinical;
-    setClinical(next);
-    try {
-      const response = await fetch(`/api/cases/${caseId}/clinical-status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: next }),
-      });
-      if (!response.ok) {
-        setClinical(previous);
-        setError(
-          next === "prepared"
-            ? "Status „ärztlich vorbereitet“ konnte nicht gespeichert werden."
-            : "Status „ärztlich bestätigt“ konnte nicht gespeichert werden.",
-        );
-        return;
-      }
-      router.refresh();
-    } catch {
-      setClinical(previous);
-      setError(
-        next === "prepared"
-          ? "Status „ärztlich vorbereitet“ konnte nicht gespeichert werden."
-          : "Status „ärztlich bestätigt“ konnte nicht gespeichert werden.",
-      );
-    } finally {
-      setSavingClinical(null);
-    }
-  }
-
   /**
    * Schritt B des Ergänzungs-Flows: Einstieg „Weitere Vorbereitung
    * starten" führt direkt auf die Per-Case-M1-Seite
@@ -437,7 +375,7 @@ export function M3ChecklistClient({
     setError(null);
     // Status speichern (best-effort) bevor zum Ergänzungs-Flow navigiert wird.
     if (clinical !== "prepared") {
-      setSavingClinical("prepared");
+      setSavingClinical(true);
       try {
         const res = await fetch(`/api/cases/${caseId}/clinical-status`, {
           method: "PATCH",
@@ -450,7 +388,7 @@ export function M3ChecklistClient({
       } catch {
         // Best-effort: Navigation findet trotzdem statt.
       } finally {
-        setSavingClinical(null);
+        setSavingClinical(false);
       }
     }
     try {
@@ -589,43 +527,6 @@ export function M3ChecklistClient({
           );
         })}
       </ul>
-      {multiSelectCheckpoints.map((mscp) => (
-        <div
-          key={mscp.id}
-          data-checkpoint-multi={mscp.id}
-          className="card"
-          style={{ marginBottom: "0.75rem", opacity: isLocked ? 0.5 : 1 }}
-        >
-          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 500, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              data-multi-toggle={mscp.id}
-              checked={mscp.enabled}
-              onChange={() => void toggleMultiSelectEnabled(mscp.id)}
-              disabled={isLocked}
-            />
-            {mscp.title}
-          </label>
-          {mscp.enabled ? (
-            <ul style={{ margin: "0.5rem 0 0 0", padding: 0, listStyle: "none" }}>
-              {mscp.options.map((option) => (
-                <li key={option} style={{ marginBottom: "0.25rem" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      data-multi-option={`${mscp.id}:${option}`}
-                      checked={mscp.selections.includes(option)}
-                      onChange={() => void toggleMultiSelectOption(mscp.id, option)}
-                      disabled={isLocked}
-                    />
-                    {option}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ))}
       {error ? (
         <p className="text-error" role="alert" aria-live="polite">
           {error}
@@ -714,20 +615,6 @@ export function M3ChecklistClient({
           data-clinical-status-actions
           style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem" }}
         >
-          <button
-            type="button"
-            data-clinical-status-prepared
-            onClick={() => void setClinicalStatus("prepared")}
-            disabled={savingClinical !== null || clinical === "prepared"}
-            aria-pressed={clinical === "prepared"}
-            className={clinical === "prepared" ? "answer-btn active" : "answer-btn"}
-          >
-            {savingClinical === "prepared"
-              ? "Wird gespeichert…"
-              : clinical === "prepared"
-                ? "Ärztlich vorbereitet ✓"
-                : "Ärztlich vorbereitet"}
-          </button>
           {confirmed || clinical === "confirmed" ? null : (
             <button
               type="button"

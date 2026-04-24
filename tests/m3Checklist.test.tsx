@@ -644,7 +644,7 @@ describe("M3 Checkliste", () => {
   });
 
   // Schritt 4 – Einstieg „Weitere Vorbereitung starten"
-  it("zeigt den Button 'Weitere Vorbereitung starten' neben 'Ärztlich vorbereitet' im Aktionsbereich", async () => {
+  it("zeigt den Button 'Weitere Vorbereitung starten' im Aktionsbereich (ohne 'Ärztlich vorbereitet')", async () => {
     setupCase({ active_checkpoints: [mCheckpoint] });
 
     const markup = renderToStaticMarkup(
@@ -653,14 +653,27 @@ describe("M3 Checkliste", () => {
 
     expect(markup).toContain("data-start-additional-prefill-run");
     expect(markup).toContain("Weitere Vorbereitung starten");
-    // Liegt in derselben Button-Gruppe wie „Ärztlich vorbereitet" und
-    // VOR dem schwarzen „Ärztlich bestätigt"-Button.
+    // „Ärztlich vorbereitet" wurde nach M1 verschoben – darf nicht mehr in M3 erscheinen.
+    expect(markup).not.toContain("data-clinical-status-prepared");
+    expect(markup).not.toContain("Ärztlich vorbereitet");
+    // „Weitere Vorbereitung starten" liegt VOR dem schwarzen „Ärztlich bestätigt"-Button.
     const groupIdx = markup.indexOf("data-clinical-status-actions");
     const startIdx = markup.indexOf("data-start-additional-prefill-run");
     const confirmIdx = markup.indexOf("data-doctor-confirm");
     expect(groupIdx).toBeGreaterThan(-1);
     expect(startIdx).toBeGreaterThan(groupIdx);
     expect(confirmIdx).toBeGreaterThan(startIdx);
+  });
+
+  it("M3 zeigt 'Ärztlich vorbereitet' nicht mehr (wurde nach M1 verschoben)", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).not.toContain("data-clinical-status-prepared");
+    expect(markup).not.toContain("Ärztlich vorbereitet");
   });
 
   it("blendet 'Weitere Vorbereitung starten' aus, wenn der Fall ärztlich bestätigt ist (doctor_confirmed)", async () => {

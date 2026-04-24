@@ -84,7 +84,7 @@ const k10Enabled: ActiveCheckpointMultiSelect = {
   selections: ["Multimedikation", "erhöhter Betreuungsbedarf"],
 };
 
-describe("M3 – K10 Besonderer Versorgungsaufwand", () => {
+describe("M3 – K10 nicht mehr in M3 (nach Migration nach M1)", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.account.findUnique.mockReset();
@@ -98,59 +98,61 @@ describe("M3 – K10 Besonderer Versorgungsaufwand", () => {
     });
   }
 
-  it("rendert K10 als Multi-Select-Block (nicht als Standard-Checkpoint)", async () => {
+  it("rendert K10 NICHT als Multi-Select-Block in M3 (nach Migration nach M1)", async () => {
     setupCase([mCheckpoint, k10Disabled]);
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    // K10 wird als data-checkpoint-multi gerendert, nicht als data-checkpoint-item
-    expect(markup).toContain('data-checkpoint-multi="K10"');
-    expect(markup).not.toContain('data-checkpoint-item="K10"');
+    // K10 darf nicht mehr als data-checkpoint-multi in M3 erscheinen
+    expect(markup).not.toContain('data-checkpoint-multi="K10"');
     // Standard-Checkpoint wird weiterhin als data-checkpoint-item gerendert
     expect(markup).toContain('data-checkpoint-item="K03"');
   });
 
-  it("zeigt Titel und Toggle-Checkbox für K10 (deaktiviert)", async () => {
+  it("zeigt keine Toggle-Checkbox für K10 in M3", async () => {
     setupCase([k10Disabled]);
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Besonderer Versorgungsaufwand");
-    expect(markup).toContain('data-multi-toggle="K10"');
+    expect(markup).not.toContain('data-multi-toggle="K10"');
   });
 
-  it("zeigt keine Auswahloptionen wenn K10 nicht aktiviert", async () => {
+  it("zeigt keine Auswahloptionen für K10 in M3 (auch wenn disabled)", async () => {
     setupCase([k10Disabled]);
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    // Optionen dürfen nicht sichtbar sein
-    expect(markup).not.toContain("Neupatient / unbekannt");
-    expect(markup).not.toContain("Multimedikation");
-    expect(markup).not.toContain("postoperative / akute Nachsorge");
+    // Keine interaktiven Option-Checkboxen für K10 in M3
+    expect(markup).not.toContain('data-multi-option="K10:Neupatient / unbekannt"');
+    expect(markup).not.toContain('data-multi-option="K10:Multimedikation"');
+    expect(markup).not.toContain('data-multi-option="K10:postoperative / akute Nachsorge"');
   });
 
-  it("zeigt Auswahloptionen wenn K10 aktiviert ist", async () => {
+  it("zeigt keine Auswahloptionen für K10 in M3 (auch wenn enabled)", async () => {
     setupCase([k10Enabled]);
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Neupatient / unbekannt");
-    expect(markup).toContain("Multimedikation");
-    expect(markup).toContain("postoperative / akute Nachsorge");
-    expect(markup).toContain("erhöhter Betreuungsbedarf");
-    expect(markup).toContain("eingeschränkte Kommunikation");
+    // Keine interaktive Option-UI für K10 in M3 – Optionen dürfen nicht als
+    // data-multi-option oder in einem data-checkpoint-multi-Block erscheinen.
+    expect(markup).not.toContain('data-multi-option="K10:Neupatient / unbekannt"');
+    expect(markup).not.toContain('data-multi-option="K10:Multimedikation"');
+    expect(markup).not.toContain('data-multi-option="K10:erhöhter Betreuungsbedarf"');
+    // Kein Toggle-Checkbox in M3
+    expect(markup).not.toContain('data-multi-toggle="K10"');
+    // Kein card-Container für K10
+    expect(markup).not.toContain('data-checkpoint-multi="K10"');
   });
 
-  it("hat keine ausreichend/nicht-ausreichend/unklar Buttons für K10", async () => {
+  it("hat keine Status-Buttons für K10", async () => {
     setupCase([k10Enabled]);
 
     const markup = renderToStaticMarkup(
@@ -206,9 +208,12 @@ describe("M3 – K10 Besonderer Versorgungsaufwand", () => {
     expect(markup).toContain("Bitte Befunde mitbringen.");
     // K03 M5 fallback text present
     expect(markup).toContain("Diagnosenlage ist aktuell nicht ausreichend geklärt.");
-    // K10 M5 also present
+    // K10 M5 also present (read from DB, not editable in M3)
     expect(markup).toContain(
       "Besonderer Versorgungsaufwand: Multimedikation, erhöhter Betreuungsbedarf",
     );
+    // But K10 has no toggle or options rendered in M3
+    expect(markup).not.toContain('data-checkpoint-multi="K10"');
+    expect(markup).not.toContain('data-multi-toggle="K10"');
   });
 });
