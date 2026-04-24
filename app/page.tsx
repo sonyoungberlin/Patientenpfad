@@ -62,6 +62,16 @@ export default function HomePage() {
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
 
+  function handleStartTour() {
+    setTourStep(0);
+    setTourActive(true);
+  }
+
+  function handleCloseTour() {
+    setTourActive(false);
+    setTourStep(0);
+  }
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -366,7 +376,7 @@ export default function HomePage() {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             type="button"
-            onClick={() => { setTourStep(0); setTourActive(true); }}
+            onClick={handleStartTour}
             style={{ fontSize: "0.875rem" }}
           >
             Arzt-Demo ansehen
@@ -464,7 +474,7 @@ export default function HomePage() {
       <DemoTourOverlay
         currentStep={tourStep}
         onNavigate={(delta) => setTourStep((s) => s + delta)}
-        onClose={() => { setTourActive(false); setTourStep(0); }}
+        onClose={handleCloseTour}
       />
     )}
     </>
