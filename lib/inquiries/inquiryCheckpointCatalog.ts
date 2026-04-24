@@ -49,35 +49,39 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
   IC03: {
     id: "IC03",
     title: "Impfberatung",
-    description: "Wurde eine Impfberatung bereits durchgeführt?",
+    description: "Wurde eine Impfberatung bereits durchgeführt oder wird sie gewünscht?",
     questions: [
       {
         id: "IC03-Q1",
         text: "Haben Sie bereits eine Impfberatung in unserer Praxis erhalten?",
       },
     ],
+    /** Notwendig: Beratung ist vor der Impfung erforderlich. */
     hintText: "Bitte buchen Sie vorab einen Termin zur Impfberatung.",
+    /** Optional: Beratung wird angeboten, ist aber nicht zwingend erforderlich. */
+    hintTextOptional:
+      "Wenn Sie vorab eine Impfberatung wünschen, buchen Sie bitte einen Beratungstermin.",
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Impfberatung: bereits erfolgt.",
-      [InquiryCheckpointStatus.HINWEIS]: "Impfberatung fehlt – Termin zur Beratung empfohlen.",
+      [InquiryCheckpointStatus.HINWEIS]: "Impfberatung notwendig – Termin empfohlen.",
+      [InquiryCheckpointStatus.HINWEIS_OPTIONAL]: "Impfberatung optional – Beratungstermin angeboten.",
     },
   },
 
   IC04: {
     id: "IC04",
     title: "Impfpass / Impfstatus",
-    description: "Liegt ein Impfpass oder Nachweis über Vorimpfungen vor?",
+    description: "Liegt ein Impfpass vor?",
     questions: [
       {
         id: "IC04-Q1",
-        text: "Haben Sie Ihren Impfpass oder einen Nachweis Ihres Impfstatus?",
+        text: "Haben Sie Ihren Impfpass zur Hand?",
       },
     ],
-    hintText:
-      "Bitte bringen Sie Ihren Impfpass oder einen Nachweis Ihres Impfstatus mit.",
+    hintText: "Bitte bringen Sie Ihren Impfpass mit.",
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Impfpass: vorhanden.",
-      [InquiryCheckpointStatus.HINWEIS]: "Impfpass fehlt – Mitbringen erbeten.",
+      [InquiryCheckpointStatus.HINWEIS]: "Impfpass – Mitbringen erbeten.",
     },
   },
 
@@ -97,6 +101,24 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
       [InquiryCheckpointStatus.GEKLAERT]: "Terminwunsch: angegeben.",
       [InquiryCheckpointStatus.HINWEIS]:
         "Kein Terminwunsch angegeben – Rückfrage gestellt.",
+    },
+  },
+
+  IC06: {
+    id: "IC06",
+    title: "Online-Terminbuchung",
+    description: "Hat die Person einen Zugang zur Online-Terminbuchung?",
+    questions: [
+      {
+        id: "IC06-Q1",
+        text: "Haben Sie bereits einen Zugang zur Online-Terminbuchung unserer Praxis?",
+      },
+    ],
+    hintText:
+      "Bitte nutzen Sie die Online-Terminbuchung für die Terminvereinbarung und Nachrichten der Praxis.",
+    docText: {
+      [InquiryCheckpointStatus.GEKLAERT]: "Online-Terminbuchung: Zugang vorhanden.",
+      [InquiryCheckpointStatus.HINWEIS]: "Online-Terminbuchung: Zugang fehlt – Einrichtung empfohlen.",
     },
   },
 };

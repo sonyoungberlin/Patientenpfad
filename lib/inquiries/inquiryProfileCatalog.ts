@@ -12,7 +12,7 @@ export const INQUIRY_PROFILE_CATALOGUE: Record<InquiryType, InquiryProfile> = {
     type: InquiryType.FSME_IMPFUNG,
     label: "FSME-Impfung",
     coreAnswer:
-      "Vielen Dank für Ihre Anfrage. Ein Termin zur FSME-Impfung kann bei uns gebucht werden.",
-    checkpointIds: ["IC01", "IC02", "IC03", "IC04", "IC05"],
+      "Vielen Dank für Ihre Anfrage. Ein Termin zur FSME-Impfung kann über unseren Online-Kalender gebucht werden.",
+    checkpointIds: ["IC01", "IC02", "IC03", "IC04", "IC05", "IC06"],
   },
 };

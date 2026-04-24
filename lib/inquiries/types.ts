@@ -20,14 +20,17 @@ export enum InquiryType {
 /**
  * Status eines einzelnen Klärpunkts.
  *
- * UNGEKLAERT – Initialzustand, darf NICHT in einem bestätigten Output vorkommen.
- * GEKLAERT   – Klärpunkt ist positiv beantwortet. Kein Hinweisbaustein.
- * HINWEIS    – Klärpunkt erfordert einen Hinweisbaustein in der Antwort.
+ * UNGEKLAERT      – Initialzustand, darf NICHT in einem bestätigten Output vorkommen.
+ * GEKLAERT        – Klärpunkt ist positiv beantwortet. Kein Hinweisbaustein.
+ * HINWEIS         – Klärpunkt erfordert einen Hinweisbaustein (notwendig).
+ * HINWEIS_OPTIONAL – Klärpunkt erzeugt einen weichen Hinweis (empfohlen, nicht zwingend).
+ *                    Verwendet `hintTextOptional` aus dem Template, falls vorhanden.
  */
 export enum InquiryCheckpointStatus {
   UNGEKLAERT = "UNGEKLAERT",
   GEKLAERT = "GEKLAERT",
   HINWEIS = "HINWEIS",
+  HINWEIS_OPTIONAL = "HINWEIS_OPTIONAL",
 }
 
 // ---------------------------------------------------------------------------
@@ -48,12 +51,19 @@ export type InquiryCheckpointTemplate = {
   title: string;
   description?: string;
   questions: InquiryQuestion[];
-  /** Hinweisbaustein, der im Antworttext erscheint wenn status === HINWEIS. */
+  /** Hinweisbaustein für status === HINWEIS (notwendig). */
   hintText: string;
+  /**
+   * Optionaler weicher Hinweisbaustein für status === HINWEIS_OPTIONAL.
+   * Falls nicht gesetzt, wird hintText als Fallback verwendet.
+   */
+  hintTextOptional?: string;
   /** Dokumentationszeile pro Status. */
   docText: {
     [InquiryCheckpointStatus.GEKLAERT]: string;
     [InquiryCheckpointStatus.HINWEIS]: string;
+    /** Optional – wird nur benötigt, wenn der Checkpoint HINWEIS_OPTIONAL unterstützt. */
+    [InquiryCheckpointStatus.HINWEIS_OPTIONAL]?: string;
   };
 };
 
@@ -74,7 +84,10 @@ export type DraftInquiryCheckpoint = InquiryCheckpointTemplate & {
  * UNGEKLAERT ist strukturell ausgeschlossen – erzwungen durch den Typ.
  */
 export type ConfirmedInquiryCheckpoint = InquiryCheckpointTemplate & {
-  status: InquiryCheckpointStatus.GEKLAERT | InquiryCheckpointStatus.HINWEIS;
+  status:
+    | InquiryCheckpointStatus.GEKLAERT
+    | InquiryCheckpointStatus.HINWEIS
+    | InquiryCheckpointStatus.HINWEIS_OPTIONAL;
 };
 
 // ---------------------------------------------------------------------------
@@ -105,7 +118,7 @@ export type InquiryProfile = {
 export type InquiryOutput = {
   /** Immer enthaltene Kernantwort des Profils. */
   coreAnswer: string;
-  /** Hinweisbausteine für alle Checkpoints mit status === HINWEIS. Leer wenn alle GEKLÄRT. */
+  /** Hinweisbausteine für alle Checkpoints mit status === HINWEIS oder HINWEIS_OPTIONAL. Leer wenn alle GEKLAERT. */
   hints: string[];
   /** Eine Dokumentationszeile pro Checkpoint. */
   documentation: string[];

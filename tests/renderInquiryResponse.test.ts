@@ -5,7 +5,6 @@ import {
   InquiryCheckpointStatus,
   InquiryType,
   type ConfirmedInquiryCheckpoint,
-  type InquiryCheckpointTemplate,
 } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
@@ -16,11 +15,11 @@ const FSME_PROFILE = INQUIRY_PROFILE_CATALOGUE[InquiryType.FSME_IMPFUNG];
 
 /**
  * Erstellt einen ConfirmedInquiryCheckpoint aus einem Katalogeintrag.
- * Nur GEKLAERT oder HINWEIS erlaubt (Typ-Constraint).
+ * Alle Statuses außer UNGEKLAERT sind zulässig.
  */
 function makeConfirmed(
   id: string,
-  status: InquiryCheckpointStatus.GEKLAERT | InquiryCheckpointStatus.HINWEIS,
+  status: ConfirmedInquiryCheckpoint["status"],
 ): ConfirmedInquiryCheckpoint {
   const template = INQUIRY_CHECKPOINT_CATALOGUE[id];
   if (!template) throw new Error(`Checkpoint ${id} not in catalogue`);
@@ -29,7 +28,7 @@ function makeConfirmed(
 
 /** Alle FSME-Checkpoints mit gegebenem Status. */
 function allFsmeConfirmed(
-  status: InquiryCheckpointStatus.GEKLAERT | InquiryCheckpointStatus.HINWEIS,
+  status: ConfirmedInquiryCheckpoint["status"],
 ): ConfirmedInquiryCheckpoint[] {
   return FSME_PROFILE.checkpointIds.map((id) => makeConfirmed(id, status));
 }
@@ -44,6 +43,11 @@ describe("renderInquiryResponse – alle GEKLAERT", () => {
     expect(result.coreAnswer).toBe(FSME_PROFILE.coreAnswer);
   });
 
+  it("Kernantwort enthält 'Online-Kalender'", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, allFsmeConfirmed(InquiryCheckpointStatus.GEKLAERT));
+    expect(result.coreAnswer).toContain("Online-Kalender");
+  });
+
   it("gibt keine Hinweise zurück", () => {
     const result = renderInquiryResponse(FSME_PROFILE, allFsmeConfirmed(InquiryCheckpointStatus.GEKLAERT));
     expect(result.hints).toHaveLength(0);
@@ -51,18 +55,19 @@ describe("renderInquiryResponse – alle GEKLAERT", () => {
 
   it("gibt eine Dokumentationszeile pro Checkpoint + Kopfzeile zurück", () => {
     const result = renderInquiryResponse(FSME_PROFILE, allFsmeConfirmed(InquiryCheckpointStatus.GEKLAERT));
-    // 1 Kopfzeile + 5 Checkpoints
-    expect(result.documentation).toHaveLength(6);
+    // 1 Kopfzeile + 6 Checkpoints (IC01–IC06)
+    expect(result.documentation).toHaveLength(7);
     expect(result.documentation[0]).toBe("FSME-Impfung angefragt.");
   });
 
-  it("Dokumentation enthält GEKLAERT-Texte", () => {
+  it("Dokumentation enthält GEKLAERT-Texte für alle Checkpoints", () => {
     const result = renderInquiryResponse(FSME_PROFILE, allFsmeConfirmed(InquiryCheckpointStatus.GEKLAERT));
     expect(result.documentation).toContain("Patientenstatus: Bestandspatient.");
     expect(result.documentation).toContain("Online-Anamnese: vollständig vorhanden.");
     expect(result.documentation).toContain("Impfberatung: bereits erfolgt.");
     expect(result.documentation).toContain("Impfpass: vorhanden.");
     expect(result.documentation).toContain("Terminwunsch: angegeben.");
+    expect(result.documentation).toContain("Online-Terminbuchung: Zugang vorhanden.");
   });
 });
 
@@ -71,46 +76,118 @@ describe("renderInquiryResponse – alle GEKLAERT", () => {
 // ---------------------------------------------------------------------------
 
 describe("renderInquiryResponse – einzelner HINWEIS", () => {
-  it("IC03 HINWEIS → Impfberatungs-Hinweis erscheint in hints", () => {
+  it("IC03 HINWEIS (notwendig) → Pflichtberatungs-Hinweis erscheint in hints", () => {
     const confirmed: ConfirmedInquiryCheckpoint[] = [
       makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC02", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
       makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(1);
     expect(result.hints[0]).toBe("Bitte buchen Sie vorab einen Termin zur Impfberatung.");
   });
 
-  it("IC04 HINWEIS → Impfpass-Hinweis erscheint in hints", () => {
+  it("IC04 HINWEIS → Impfpass-Hinweis nennt nur 'Impfpass', nicht 'Nachweis'", () => {
     const confirmed: ConfirmedInquiryCheckpoint[] = [
       makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC02", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC03", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
       makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(1);
-    expect(result.hints[0]).toBe(
-      "Bitte bringen Sie Ihren Impfpass oder einen Nachweis Ihres Impfstatus mit.",
-    );
+    expect(result.hints[0]).toBe("Bitte bringen Sie Ihren Impfpass mit.");
+    expect(result.hints[0]).not.toContain("Nachweis");
   });
 
-  it("IC03 HINWEIS → Dokumentation enthält HINWEIS-Text", () => {
+  it("IC03 HINWEIS → Dokumentation enthält notwendig-Text", () => {
     const confirmed: ConfirmedInquiryCheckpoint[] = [
       makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC02", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
       makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
-    expect(result.documentation).toContain(
-      "Impfberatung fehlt – Termin zur Beratung empfohlen.",
+    expect(result.documentation).toContain("Impfberatung notwendig – Termin empfohlen.");
+  });
+
+  it("IC06 HINWEIS → Online-Terminbuchungs-Hinweis erscheint in hints", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC02", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC03", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.HINWEIS),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    expect(result.hints).toHaveLength(1);
+    expect(result.hints[0]).toContain("Online-Terminbuchung");
+    expect(result.hints[0]).not.toContain("E-Mail");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// IC03 Impfberatung – differenzierter Status
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponse – IC03 Impfberatung differenziert", () => {
+  it("GEKLAERT → kein Hinweis, GEKLAERT-Dokumentation", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC03", InquiryCheckpointStatus.GEKLAERT),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    expect(result.hints).toHaveLength(0);
+    expect(result.documentation).toContain("Impfberatung: bereits erfolgt.");
+  });
+
+  it("HINWEIS_OPTIONAL → weicher Hinweis erscheint in hints", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC02", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS_OPTIONAL),
+      makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    expect(result.hints).toHaveLength(1);
+    expect(result.hints[0]).toBe(
+      "Wenn Sie vorab eine Impfberatung wünschen, buchen Sie bitte einen Beratungstermin.",
     );
+  });
+
+  it("HINWEIS_OPTIONAL → anderer Hinweistext als HINWEIS", () => {
+    const optionalResult = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS_OPTIONAL),
+    ]);
+    const notwendigResult = renderInquiryResponse(FSME_PROFILE, [
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
+    ]);
+    expect(optionalResult.hints[0]).not.toBe(notwendigResult.hints[0]);
+  });
+
+  it("HINWEIS_OPTIONAL → eigene Dokumentationszeile", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS_OPTIONAL),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    expect(result.documentation).toContain("Impfberatung optional – Beratungstermin angeboten.");
+  });
+
+  it("HINWEIS → notwendiger Hinweistext", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
+    ];
+    const result = renderInquiryResponse(FSME_PROFILE, confirmed);
+    expect(result.hints[0]).toBe("Bitte buchen Sie vorab einen Termin zur Impfberatung.");
   });
 });
 
@@ -119,21 +196,16 @@ describe("renderInquiryResponse – einzelner HINWEIS", () => {
 // ---------------------------------------------------------------------------
 
 describe("renderInquiryResponse – mehrere HINWEIS", () => {
-  it("hints erscheinen in der Reihenfolge der Checkpoints", () => {
-    const confirmed: ConfirmedInquiryCheckpoint[] = [
-      makeConfirmed("IC01", InquiryCheckpointStatus.HINWEIS),
-      makeConfirmed("IC02", InquiryCheckpointStatus.HINWEIS),
-      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
-      makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
-      makeConfirmed("IC05", InquiryCheckpointStatus.HINWEIS),
-    ];
+  it("hints erscheinen in der Reihenfolge der Checkpoints (alle HINWEIS)", () => {
+    const confirmed = allFsmeConfirmed(InquiryCheckpointStatus.HINWEIS);
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
-    expect(result.hints).toHaveLength(5);
+    expect(result.hints).toHaveLength(6);
     expect(result.hints[0]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC01"].hintText);
     expect(result.hints[1]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC02"].hintText);
     expect(result.hints[2]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC03"].hintText);
     expect(result.hints[3]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC04"].hintText);
     expect(result.hints[4]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC05"].hintText);
+    expect(result.hints[5]).toBe(INQUIRY_CHECKPOINT_CATALOGUE["IC06"].hintText);
   });
 
   it("IC02 HINWEIS + IC03 HINWEIS → beide Hinweise, in korrekter Reihenfolge", () => {
@@ -143,6 +215,7 @@ describe("renderInquiryResponse – mehrere HINWEIS", () => {
       makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS),
       makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     expect(result.hints).toHaveLength(2);
@@ -150,10 +223,24 @@ describe("renderInquiryResponse – mehrere HINWEIS", () => {
     expect(result.hints[1]).toBe("Bitte buchen Sie vorab einen Termin zur Impfberatung.");
   });
 
-  it("dokumentation hat immer 6 Zeilen (Kopf + 5 Checkpoints)", () => {
-    const confirmed = allFsmeConfirmed(InquiryCheckpointStatus.HINWEIS);
+  it("HINWEIS + HINWEIS_OPTIONAL gemischt → beide erscheinen in hints", () => {
+    const confirmed: ConfirmedInquiryCheckpoint[] = [
+      makeConfirmed("IC01", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC02", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC03", InquiryCheckpointStatus.HINWEIS_OPTIONAL),
+      makeConfirmed("IC04", InquiryCheckpointStatus.HINWEIS),
+      makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
+    ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
-    expect(result.documentation).toHaveLength(6);
+    expect(result.hints).toHaveLength(2);
+    expect(result.hints[0]).toContain("Impfberatung wünschen");
+    expect(result.hints[1]).toBe("Bitte bringen Sie Ihren Impfpass mit.");
+  });
+
+  it("dokumentation hat immer 7 Zeilen (Kopf + 6 Checkpoints)", () => {
+    const result = renderInquiryResponse(FSME_PROFILE, allFsmeConfirmed(InquiryCheckpointStatus.HINWEIS));
+    expect(result.documentation).toHaveLength(7);
   });
 });
 
@@ -169,9 +256,9 @@ describe("renderInquiryResponse – keine doppelten Online-Anamnese-Hinweise", (
       makeConfirmed("IC03", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
-    // IC01 hat einen eigenen Hinweis, aber keinen Anamnese-Text
     expect(result.hints).toHaveLength(1);
     expect(result.hints[0]).not.toContain("Online-Anamnese");
     expect(result.hints[0]).not.toContain("Anamnese");
@@ -184,6 +271,7 @@ describe("renderInquiryResponse – keine doppelten Online-Anamnese-Hinweise", (
       makeConfirmed("IC03", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC04", InquiryCheckpointStatus.GEKLAERT),
       makeConfirmed("IC05", InquiryCheckpointStatus.GEKLAERT),
+      makeConfirmed("IC06", InquiryCheckpointStatus.GEKLAERT),
     ];
     const result = renderInquiryResponse(FSME_PROFILE, confirmed);
     const anamneseHints = result.hints.filter((h) => h.includes("Online-Anamnese"));
@@ -197,8 +285,6 @@ describe("renderInquiryResponse – keine doppelten Online-Anamnese-Hinweise", (
 
 describe("renderInquiryResponse – UNGEKLAERT blockiert", () => {
   it("wirft Fehler wenn ein Checkpoint UNGEKLAERT ist", () => {
-    // Wir umgehen den TypeScript-Typ mit einem expliziten Cast,
-    // um den Laufzeit-Guard zu testen.
     const malformed = [
       {
         ...INQUIRY_CHECKPOINT_CATALOGUE["IC01"],
@@ -235,6 +321,12 @@ describe("renderInquiryResponse – UNGEKLAERT blockiert", () => {
       renderInquiryResponse(FSME_PROFILE, allFsmeConfirmed(InquiryCheckpointStatus.HINWEIS)),
     ).not.toThrow();
   });
+
+  it("wirft nicht wenn alle Checkpoints HINWEIS_OPTIONAL sind", () => {
+    expect(() =>
+      renderInquiryResponse(FSME_PROFILE, allFsmeConfirmed(InquiryCheckpointStatus.HINWEIS_OPTIONAL)),
+    ).not.toThrow();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -248,6 +340,25 @@ describe("renderInquiryResponse – leere Checkpoint-Liste", () => {
     expect(result.hints).toHaveLength(0);
     expect(result.documentation).toHaveLength(1);
     expect(result.documentation[0]).toBe("FSME-Impfung angefragt.");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Kein E-Mail-Bezug
+// ---------------------------------------------------------------------------
+
+describe("Kein E-Mail-Bezug im FSME-Profil", () => {
+  it("coreAnswer enthält kein 'E-Mail'", () => {
+    expect(FSME_PROFILE.coreAnswer.toLowerCase()).not.toContain("e-mail");
+    expect(FSME_PROFILE.coreAnswer.toLowerCase()).not.toContain("email");
+  });
+
+  it("kein Checkpoint-hintText enthält 'E-Mail'", () => {
+    for (const id of FSME_PROFILE.checkpointIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOGUE[id];
+      expect(cp.hintText.toLowerCase()).not.toContain("e-mail");
+      expect(cp.hintText.toLowerCase()).not.toContain("email");
+    }
   });
 });
 
@@ -275,4 +386,28 @@ describe("INQUIRY_CHECKPOINT_CATALOGUE – Vollständigkeit", () => {
     );
     expect(withAnamnese).toEqual(["IC02"]);
   });
+
+  it("IC03 hat hintTextOptional für den weichen Hinweis", () => {
+    const ic03 = INQUIRY_CHECKPOINT_CATALOGUE["IC03"];
+    expect(ic03.hintTextOptional).toBeDefined();
+    expect(ic03.hintTextOptional).not.toBe(ic03.hintText);
+  });
+
+  it("IC04 hintText enthält nicht 'Nachweis'", () => {
+    const ic04 = INQUIRY_CHECKPOINT_CATALOGUE["IC04"];
+    expect(ic04.hintText).not.toContain("Nachweis");
+  });
+
+  it("IC06 ist im FSME-Profil enthalten", () => {
+    expect(FSME_PROFILE.checkpointIds).toContain("IC06");
+  });
+
+  it("IC06 hintText enthält keine Anbieterfirma", () => {
+    const ic06 = INQUIRY_CHECKPOINT_CATALOGUE["IC06"];
+    // Keine konkreten Firmennamen
+    expect(ic06.hintText).not.toContain("Doctolib");
+    expect(ic06.hintText).not.toContain("Samedi");
+    expect(ic06.hintText).not.toContain("Jameda");
+  });
 });
+
