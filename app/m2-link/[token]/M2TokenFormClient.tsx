@@ -101,7 +101,7 @@ export function M2TokenFormClient({
                 <div style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
                   {cp.title}
                 </div>
-                {cp.introText ? (
+                {"introText" in cp && cp.introText ? (
                   <div style={{ marginBottom: "0.75rem", fontStyle: "italic" }}>
                     {cp.introText}
                   </div>
