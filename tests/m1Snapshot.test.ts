@@ -13,12 +13,14 @@ const ALL_UNKLAR: M1Selection = {
   kommunikation: "unklar",
   medizinische_lage: "unklar",
   versorgung_im_alltag: "unklar",
+  pflegebeobachtung: "unklar",
 };
 
 const ALL_KLAR: M1Selection = {
   kommunikation: "klar",
   medizinische_lage: "klar",
   versorgung_im_alltag: "klar",
+  pflegebeobachtung: "klar",
 };
 
 describe("buildM1SnapshotInitial", () => {
@@ -39,9 +41,9 @@ describe("buildM1SnapshotInitial", () => {
     expect(snapshot.activated_checkpoint_ids).toEqual([]);
   });
 
-  it("enthält alle 9 blockabhängigen IDs wenn alle Blöcke unklar sind (K10 ist blockunabhängig)", () => {
+  it("enthält alle 10 blockabhängigen IDs wenn alle Blöcke unklar sind (K10/K11 sind blockunabhängig)", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(10);
     expect(snapshot.activated_checkpoint_ids).toContain("K01");
     expect(snapshot.activated_checkpoint_ids).toContain("K08");
     expect(snapshot.activated_checkpoint_ids).toContain("K09");
@@ -51,6 +53,7 @@ describe("buildM1SnapshotInitial", () => {
     expect(snapshot.activated_checkpoint_ids).toContain("K02");
     expect(snapshot.activated_checkpoint_ids).toContain("K06");
     expect(snapshot.activated_checkpoint_ids).toContain("K07");
+    expect(snapshot.activated_checkpoint_ids).toContain("K12");
   });
 
   it("enthält nur kommunikation-Checkpoints wenn nur kommunikation unklar", () => {
@@ -58,6 +61,7 @@ describe("buildM1SnapshotInitial", () => {
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     const snapshot = buildM1SnapshotInitial(sel);
     expect(snapshot.activated_checkpoint_ids).toEqual(["K01", "K08", "K09"]);
@@ -65,8 +69,8 @@ describe("buildM1SnapshotInitial", () => {
 });
 
 describe("CHECKPOINT_CATALOGUE", () => {
-  it("enthält genau 9 Einträge (K01–K09)", () => {
-    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(9);
+  it("enthält genau 10 Einträge (K01–K09, K12)", () => {
+    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(10);
   });
 
   it("jeder Eintrag hat eine id, block_id und m4", () => {
@@ -94,6 +98,7 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     expect(checkpoints).toHaveLength(5);
@@ -110,10 +115,10 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
     }
   });
 
-  it("hydratisiert alle 11 Checkpoints wenn alle Blöcke unklar", () => {
+  it("hydratisiert alle 12 Checkpoints wenn alle Blöcke unklar", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(11);
+    expect(checkpoints).toHaveLength(12);
   });
 
   it("überspringt unbekannte IDs defensiv (K10, K11 still always-present)", () => {
@@ -136,6 +141,7 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
         kommunikation: "unklar",
         medizinische_lage: "klar",
         versorgung_im_alltag: "klar",
+        pflegebeobachtung: "klar",
       },
       activated_checkpoint_ids: ["K01", "K08"], // eingefrorene IDs
     };

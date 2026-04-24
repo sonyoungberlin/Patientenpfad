@@ -43,7 +43,7 @@ import { POST as blockUpdateHandler } from "@/app/api/cases/[id]/block/update/ro
 import { SESSION_COOKIE } from "@/lib/auth";
 import {
   CheckpointCategory,
-  CheckpointRelevance,
+  CheckpointPerspective,
   CheckpointType,
   type ActiveCheckpoint,
 } from "@/lib/types";
@@ -98,7 +98,7 @@ const mCheckpoint: ActiveCheckpoint = {
   id: "cp-1",
   block_id: "diagnosis_status",
   type: CheckpointType.VERIFIKATION,
-  relevance: CheckpointRelevance.P,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   title: "Test",
   category: CheckpointCategory.M,
   status: "TO_DO",

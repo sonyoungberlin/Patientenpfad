@@ -1,7 +1,7 @@
 import {
   CheckpointCategory,
   CheckpointMode,
-  CheckpointRelevance,
+  CheckpointPerspective,
   CheckpointType,
   isMultiSelectCheckpoint,
   isStandardCheckpoint,
@@ -32,8 +32,8 @@ describe("K10 – MULTI_SELECT_CATALOGUE", () => {
     expect(k10.block_id).toBe("medizinische_lage");
   });
 
-  it("hat Relevanz A (additiv)", () => {
-    expect(k10.relevance).toBe(CheckpointRelevance.A);
+  it("hat keine Vorbereitungsperspektiven", () => {
+    expect(k10.perspectives).toEqual([]);
   });
 
   it("hat mode MULTI_SELECT", () => {
@@ -68,6 +68,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
       kommunikation: "klar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10");
@@ -80,6 +81,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
       kommunikation: "klar",
       medizinische_lage: "unklar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10") as ActiveCheckpointMultiSelect;
@@ -92,6 +94,7 @@ describe("K10 – Hydration aus M1-Snapshot", () => {
       kommunikation: "unklar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "unklar",
+      pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
     const k10 = checkpoints.find((c) => c.id === "K10");
@@ -110,7 +113,7 @@ describe("K10 – M4 (Patientenhinweise)", () => {
     block_id: "medizinische_lage",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.A,
+    perspectives: [],
     mode: CheckpointMode.MULTI_SELECT,
     title: "Besonderer Versorgungsaufwand",
     options: ["Neupatient / unbekannt", "Multimedikation"],
@@ -129,7 +132,7 @@ describe("K10 – M4 (Patientenhinweise)", () => {
       block_id: "medizinische_lage",
       type: CheckpointType.NACHWEIS,
       category: CheckpointCategory.M,
-      relevance: CheckpointRelevance.P,
+      perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
       status: "TO_DO",
       title: "Diagnosenlage",
       m4: { type: "ACTION", text: "Bitte Befunde mitbringen." },
@@ -150,7 +153,7 @@ describe("K10 – M5 (Dokumentation)", () => {
       block_id: "medizinische_lage",
       type: CheckpointType.BEDARF,
       category: CheckpointCategory.O,
-      relevance: CheckpointRelevance.A,
+      perspectives: [],
       mode: CheckpointMode.MULTI_SELECT,
       title: "Besonderer Versorgungsaufwand",
       options: [
@@ -213,7 +216,7 @@ describe("K10 – Block-Status", () => {
       block_id: "medizinische_lage",
       type: CheckpointType.BEDARF,
       category: CheckpointCategory.O,
-      relevance: CheckpointRelevance.A,
+      perspectives: [],
       mode: CheckpointMode.MULTI_SELECT,
       title: "Besonderer Versorgungsaufwand",
       options: ["Multimedikation"],

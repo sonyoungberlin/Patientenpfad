@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import M3Page from "@/app/cases/[id]/m3/page";
 import {
   CheckpointCategory,
-  CheckpointRelevance,
+  CheckpointPerspective,
   CheckpointType,
   type ActiveCheckpoint,
 } from "@/lib/types";
@@ -60,10 +60,10 @@ const prismaMock = prisma as unknown as PrismaMock;
 const getFrozenRunsMock = getFrozenRuns as unknown as jest.Mock;
 
 const mCheckpoint: ActiveCheckpoint = {
-  id: "K-M",
-  block_id: "diagnosis_status",
+  id: "K03",
+  block_id: "medizinische_lage",
   type: CheckpointType.VERIFIKATION,
-  relevance: CheckpointRelevance.P,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   title: "Medizinischer Checkpoint",
   category: CheckpointCategory.M,
   status: "TO_DO",
@@ -71,10 +71,10 @@ const mCheckpoint: ActiveCheckpoint = {
 };
 
 const oCheckpoint: ActiveCheckpoint = {
-  id: "K-O",
-  block_id: "communication",
+  id: "K01",
+  block_id: "kommunikation",
   type: CheckpointType.PRESENCE_CHECK,
-  relevance: CheckpointRelevance.P,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   title: "Organisatorischer Checkpoint",
   category: CheckpointCategory.O,
   status: "TO_DO",
@@ -151,8 +151,8 @@ describe("M3 Checkliste", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain('data-status-button="K-M:ZURÜCKSTELLEN"');
-    expect(markup).not.toContain('data-status-button="K-O:ZURÜCKSTELLEN"');
+    expect(markup).toContain('data-status-button="K03:ZURÜCKSTELLEN"');
+    expect(markup).not.toContain('data-status-button="K01:ZURÜCKSTELLEN"');
   });
 
   it("zeigt bei TO_DO nur die abgeleiteten M4-Texte (OK/ZURÜCKSTELLEN ohne Output)", async () => {
@@ -160,19 +160,19 @@ describe("M3 Checkliste", () => {
       active_checkpoints: [
         {
           ...mCheckpoint,
-          id: "K-M-TODO",
+          id: "K04",
           status: "TO_DO",
           m4: { type: "ACTION", text: "Bitte Termin buchen." },
         },
         {
           ...mCheckpoint,
-          id: "K-M-OK",
+          id: "K05",
           status: "OK",
           m4: { type: "ACTION", text: "Soll nicht erscheinen (OK)." },
         },
         {
           ...mCheckpoint,
-          id: "K-M-Z",
+          id: "K07",
           status: "ZURÜCKSTELLEN",
           m4: { type: "ACTION", text: "Soll nicht erscheinen (Z)." },
         },
@@ -194,13 +194,13 @@ describe("M3 Checkliste", () => {
       active_checkpoints: [
         {
           ...mCheckpoint,
-          id: "K-M-TODO-1",
+          id: "K04",
           status: "TO_DO",
           m4: { type: "ACTION", text: "Zeile A" },
         },
         {
           ...oCheckpoint,
-          id: "K-O-TODO-2",
+          id: "K06",
           status: "TO_DO",
           m4: { type: "NOTICE", text: "Zeile B" },
         },
@@ -219,12 +219,12 @@ describe("M3 Checkliste", () => {
       active_checkpoints: [
         {
           ...mCheckpoint,
-          id: "K-M-OK-ONLY",
+          id: "K03",
           status: "OK",
         },
         {
           ...mCheckpoint,
-          id: "K-M-Z-ONLY",
+          id: "K04",
           status: "ZURÜCKSTELLEN",
         },
       ],
@@ -241,16 +241,16 @@ describe("M3 Checkliste", () => {
   it("M5: M-OK → ausreichend geklärt, M-TODO → nicht ausreichend, M-ZURÜCKSTELLEN → unklar", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-OK", title: "Diagnose", status: "OK" },
+        { ...mCheckpoint, id: "K03", title: "Diagnose", status: "OK" },
         {
           ...mCheckpoint,
-          id: "K-M-TODO",
+          id: "K04",
           title: "Behandlungsplan",
           status: "TO_DO",
         },
         {
           ...mCheckpoint,
-          id: "K-M-Z",
+          id: "K05",
           title: "Prognose",
           status: "ZURÜCKSTELLEN",
         },
@@ -262,18 +262,18 @@ describe("M3 Checkliste", () => {
     );
 
     expect(markup).toContain("Dokumentation für das Krankenblatt");
-    expect(markup).toContain("Diagnose ist ausreichend geklärt.");
-    expect(markup).toContain("Behandlungsplan ist aktuell nicht ausreichend geklärt.");
-    expect(markup).toContain("Prognose ist unklar.");
+    expect(markup).toContain("Diagnosenlage ist ausreichend geklärt.");
+    expect(markup).toContain("Medikation ist nicht ausreichend geprüft.");
+    expect(markup).toContain("Medizinische Mitbehandlung ist unklar.");
   });
 
   it("M5: O-OK → geklärt, O-TODO → nicht ausreichend", async () => {
     setupCase({
       active_checkpoints: [
-        { ...oCheckpoint, id: "K-O-OK", title: "Terminkoordination", status: "OK" },
+        { ...oCheckpoint, id: "K01", title: "Terminkoordination", status: "OK" },
         {
           ...oCheckpoint,
-          id: "K-O-TODO",
+          id: "K06",
           title: "Überweisung",
           status: "TO_DO",
         },
@@ -284,15 +284,15 @@ describe("M3 Checkliste", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Terminkoordination ist geklärt.");
-    expect(markup).toContain("Überweisung ist aktuell nicht ausreichend geklärt.");
+    expect(markup).toContain("Erreichbarkeit des Patienten ist ausreichend gegeben.");
+    expect(markup).toContain("Unterstützung im Alltag ist aktuell nicht ausreichend organisiert.");
   });
 
   it("M5: mehrere Checkpoints → mehrere Zeilen", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-1", title: "Alpha", status: "OK" },
-        { ...oCheckpoint, id: "K-O-1", title: "Beta", status: "TO_DO" },
+        { ...mCheckpoint, id: "K03", title: "Alpha", status: "OK" },
+        { ...oCheckpoint, id: "K01", title: "Beta", status: "TO_DO" },
       ],
     });
 
@@ -301,7 +301,7 @@ describe("M3 Checkliste", () => {
     );
 
     expect(markup).toContain(
-      "Alpha ist ausreichend geklärt.\nBeta ist aktuell nicht ausreichend geklärt.",
+      "Diagnosenlage ist ausreichend geklärt.\nErreichbarkeit des Patienten ist nicht ausreichend gegeben.",
     );
   });
 
@@ -405,7 +405,7 @@ describe("M3 Checkliste", () => {
     // getFrozenRuns-Default ist bereits []; ctx_prefill würde selbst mit
     // Antworten **nicht mehr** konsultiert (kein Fallback in Schritt 3).
     setupCase({
-      active_checkpoints: [{ ...mCheckpoint, id: "K-M-NP", title: "Diagnose" }],
+      active_checkpoints: [{ ...mCheckpoint, id: "K03", title: "Diagnose" }],
       ctx_prefill: { "K-M-NP": { "M2-01": "ja" } },
     });
 
@@ -519,7 +519,7 @@ describe("M3 Checkliste", () => {
   it("zeigt 'Nachricht kopieren'-Button disabled + Hinweis wenn keine Signatur", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-T", status: "TO_DO", m4: { type: "ACTION", text: "Termin buchen." } },
+        { ...mCheckpoint, id: "K03", status: "TO_DO", m4: { type: "ACTION", text: "Termin buchen." } },
       ],
     });
 
@@ -539,7 +539,7 @@ describe("M3 Checkliste", () => {
     setupCase(
       {
         active_checkpoints: [
-          { ...mCheckpoint, id: "K-M-T", status: "TO_DO", m4: { type: "ACTION", text: "Termin buchen." } },
+          { ...mCheckpoint, id: "K03", status: "TO_DO", m4: { type: "ACTION", text: "Termin buchen." } },
         ],
       },
       { signature: "Mit freundlichen Grüßen\nDr. Muster" },
@@ -558,7 +558,7 @@ describe("M3 Checkliste", () => {
   it("zeigt keinen 'Nachricht kopieren'-Button wenn keine TO_DOs", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-OK-ONLY", status: "OK" },
+        { ...mCheckpoint, id: "K03", status: "OK" },
       ],
     });
 
@@ -574,7 +574,7 @@ describe("M3 Checkliste", () => {
   it("bestehende 'Text kopieren'-Funktion bleibt bei TO_DO erhalten", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-T2", status: "TO_DO", m4: { type: "ACTION", text: "Bitte Termin buchen." } },
+        { ...mCheckpoint, id: "K03", status: "TO_DO", m4: { type: "ACTION", text: "Bitte Termin buchen." } },
       ],
     });
 
@@ -593,7 +593,7 @@ describe("M3 Checkliste", () => {
   it("zeigt Nachrichtenvorschau mit Intro + To-do-Text ohne Signatur", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-P1", status: "TO_DO", m4: { type: "ACTION", text: "Bitte Termin buchen." } },
+        { ...mCheckpoint, id: "K03", status: "TO_DO", m4: { type: "ACTION", text: "Bitte Termin buchen." } },
       ],
     });
 
@@ -611,7 +611,7 @@ describe("M3 Checkliste", () => {
     setupCase(
       {
         active_checkpoints: [
-          { ...mCheckpoint, id: "K-M-P2", status: "TO_DO", m4: { type: "ACTION", text: "Befund mitbringen." } },
+          { ...mCheckpoint, id: "K03", status: "TO_DO", m4: { type: "ACTION", text: "Befund mitbringen." } },
         ],
       },
       { signature: "Mit freundlichen Grüßen\nDr. Muster" },
@@ -631,7 +631,7 @@ describe("M3 Checkliste", () => {
   it("zeigt keine Nachrichtenvorschau wenn keine TO_DOs", async () => {
     setupCase({
       active_checkpoints: [
-        { ...mCheckpoint, id: "K-M-OK-NP", status: "OK" },
+        { ...mCheckpoint, id: "K03", status: "OK" },
       ],
     });
 

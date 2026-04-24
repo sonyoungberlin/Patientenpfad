@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import M3Page from "@/app/cases/[id]/m3/page";
 import {
   CheckpointCategory,
-  CheckpointRelevance,
+  CheckpointPerspective,
   CheckpointType,
   type ActiveCheckpoint,
 } from "@/lib/types";
@@ -55,7 +55,7 @@ const cpK01: ActiveCheckpoint = {
   id: "K01",
   block_id: "communication",
   type: CheckpointType.PRESENCE_CHECK,
-  relevance: CheckpointRelevance.P,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   title: "Kommunikation",
   category: CheckpointCategory.M,
   status: "TO_DO",

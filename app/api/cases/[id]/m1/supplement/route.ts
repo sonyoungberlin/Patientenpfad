@@ -23,12 +23,14 @@ const M1_BLOCK_IDS: ReadonlyArray<M1BlockId> = [
   "kommunikation",
   "medizinische_lage",
   "versorgung_im_alltag",
+  "pflegebeobachtung",
 ];
 
 const M1_BLOCK_TITLES: Record<M1BlockId, string> = {
   kommunikation: "Kommunikation",
   medizinische_lage: "Medizinische Lage",
   versorgung_im_alltag: "Versorgung im Alltag",
+  pflegebeobachtung: "Alltagssituation / Kontaktperson",
 };
 
 function isM1BlockId(value: unknown): value is M1BlockId {
@@ -125,7 +127,7 @@ export async function POST(
       ? (session.active_checkpoints as ActiveCheckpoint[])
       : [];
 
-    // Bereits aktive M1-Blöcke nur aus Standard-Checkpoints (K01–K09)
+    // Bereits aktive M1-Blöcke nur aus Standard-Checkpoints (K01–K09, K12–K15)
     // ableiten – Always-present MULTI_SELECT-Checkpoints (K10/K11) tragen
     // zwar eine `block_id`, sind aber unabhängig von einer M1-Aktivierung
     // im Fall vorhanden und dürfen den jeweiligen Block daher nicht als
@@ -170,6 +172,7 @@ export async function POST(
       kommunikation: "klar",
       medizinische_lage: "klar",
       versorgung_im_alltag: "klar",
+      pflegebeobachtung: "klar",
     };
     for (const b of newBlocks) supplementSelection[b] = "unklar";
 

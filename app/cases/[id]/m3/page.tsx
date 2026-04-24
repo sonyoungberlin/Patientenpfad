@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
-import { ensureAlwaysPresentCheckpoints } from "@/lib/logic/checkpointCatalog";
+import { ensureAlwaysPresentCheckpoints, filterObsoleteCheckpoints } from "@/lib/logic/checkpointCatalog";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import {
   getFrozenRuns,
@@ -53,9 +53,11 @@ export default async function M3Page({
   }
 
   const checkpoints = ensureAlwaysPresentCheckpoints(
-    Array.isArray(session.active_checkpoints)
-      ? (session.active_checkpoints as ActiveCheckpoint[])
-      : [],
+    filterObsoleteCheckpoints(
+      Array.isArray(session.active_checkpoints)
+        ? (session.active_checkpoints as ActiveCheckpoint[])
+        : [],
+    ),
   );
 
   // Schritt 3 der PrefillRun-Umstellung: M3 liest die anzuzeigenden

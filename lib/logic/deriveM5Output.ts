@@ -13,6 +13,8 @@ export const M5_BLOCK_SUMMARY_TEXTS: Record<string, string> = {
   kommunikation: "Die Kommunikation ist insgesamt nicht ausreichend geklärt.",
   medizinische_lage: "Die medizinische Lage ist insgesamt nicht ausreichend geklärt.",
   versorgung_im_alltag: "Die Versorgung im Alltag ist insgesamt nicht ausreichend geklärt.",
+  pflegebeobachtung:
+    "Beobachtungen im Alltag / Pflege sind insgesamt nicht ausreichend geklärt.",
 };
 
 /**
@@ -64,6 +66,11 @@ export const M5_TEXTS: Record<
   K09: {
     OK: "Mitwirkung ist ausreichend gegeben.",
     TO_DO: "Mitwirkung ist nicht ausreichend gegeben.",
+  },
+  K12: {
+    OK: "Alltagssituation / Pflegeeinschätzung wirkt unauffällig.",
+    TO_DO: "Alltagssituation / Pflegeeinschätzung ist aktuell nicht ausreichend geklärt.",
+    ZURÜCKSTELLEN: "Alltagssituation / Pflegeeinschätzung ist unklar.",
   },
 };
 

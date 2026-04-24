@@ -19,7 +19,7 @@ export type M2PrefillData = Record<string, M2CheckpointAnswers>;
 
 /**
  * Statischer Katalog der M2-Fragen pro Checkpoint K01–K08.
- * Quelle: docs/checkpoints/CP-K01.md bis CP-K08.md
+ * Maßgebliche Definitionen: lib/logic/checkpointCatalog.ts und docs/architecture/checkpoints.md
  */
 export const M2_QUESTIONS: Record<string, M2Question[]> = {
   K01: [
@@ -164,6 +164,67 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
     {
       id: "M2-04",
       text: "Möchten Sie Informationen oder Erklärungen zur Nutzung unserer digitalen Angebote erhalten?",
+    },
+  ],
+  K12: [
+    // Mobilität
+    {
+      id: "M2-01",
+      text: "Wirkt die Fortbewegung im Alltag sicher?",
+    },
+    {
+      id: "M2-02",
+      text: "Gibt es Hinweise auf Unsicherheit oder Sturzgefährdung?",
+    },
+    // Selbstversorgung
+    {
+      id: "M2-03",
+      text: "Wirkt die Selbstversorgung im Alltag selbstständig möglich?",
+    },
+    {
+      id: "M2-04",
+      text: "Gibt es Hinweise, dass Unterstützung notwendig ist?",
+    },
+    // Kognition / Orientierung
+    {
+      id: "M2-05",
+      text: "Wirkt der Patient im Alltag orientiert und strukturiert?",
+    },
+    {
+      id: "M2-06",
+      text: "Gibt es Hinweise auf Vergessen oder Überforderung im Alltag?",
+    },
+    // Ernährung
+    {
+      id: "M2-07",
+      text: "Wirkt die Nahrungsaufnahme im Alltag ausreichend und regelmäßig?",
+    },
+    {
+      id: "M2-08",
+      text: "Gibt es Hinweise auf Probleme beim Essen?",
+    },
+    // Flüssigkeitsaufnahme
+    {
+      id: "M2-09",
+      text: "Wirkt die Flüssigkeitsaufnahme ausreichend?",
+    },
+    {
+      id: "M2-10",
+      text: "Gibt es Hinweise, dass zu wenig getrunken wird?",
+    },
+    // Umgang mit Hilfsmitteln
+    {
+      id: "M2-11",
+      text: "Wirkt der Umgang mit Hilfsmitteln (z. B. Rollator, Rollstuhl) im Alltag sicher?",
+    },
+    // Pflegegrad / Versorgungsniveau
+    {
+      id: "M2-13",
+      text: "Besteht aktuell ein Pflegegrad?",
+    },
+    {
+      id: "M2-14",
+      text: "Wirkt die aktuelle Einstufung passend zur Situation?",
     },
   ],
 };

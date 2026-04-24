@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/cases/[id]/checkpoint/update/route";
 import {
   CheckpointCategory,
-  CheckpointRelevance,
+  CheckpointPerspective,
   CheckpointType,
   type ActiveCheckpoint,
 } from "@/lib/types";
@@ -39,7 +39,7 @@ const mCheckpoint: ActiveCheckpoint = {
   id: "K-M",
   block_id: "diagnosis_status",
   type: CheckpointType.VERIFIKATION,
-  relevance: CheckpointRelevance.P,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   title: "Medizinischer Checkpoint",
   category: CheckpointCategory.M,
   status: "TO_DO",

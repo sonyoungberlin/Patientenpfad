@@ -9,6 +9,7 @@ const M1_BLOCK_IDS: ReadonlyArray<M1BlockId> = [
   "kommunikation",
   "medizinische_lage",
   "versorgung_im_alltag",
+  "pflegebeobachtung",
 ];
 
 /**
@@ -19,7 +20,7 @@ const M1_BLOCK_IDS: ReadonlyArray<M1BlockId> = [
  *   * Bestätigte Fälle (`doctor_confirmed === true` oder
  *     `clinical_status === "confirmed"`) werden direkt nach M3 umgeleitet.
  *   * Bereits aktive M1-Blöcke werden aus `active_checkpoints` abgeleitet
- *     (eindeutige `block_id`s, eingeschränkt auf die drei M1-Block-IDs)
+ *     (eindeutige `block_id`s, eingeschränkt auf die M1-Block-IDs)
  *     und an die Client-Komponente weitergegeben, die sie über die
  *     extrahierte `M1SelectionForm` als „bereits aktiv" markiert.
  *
@@ -64,7 +65,7 @@ export default async function CaseM1Page({
     ? (session.active_checkpoints as ActiveCheckpoint[])
     : [];
 
-  // „bereits aktiv" darf ausschließlich aus Standard-Checkpoints (K01–K09)
+  // „bereits aktiv" darf ausschließlich aus Standard-Checkpoints (K01–K09, K12–K15)
   // abgeleitet werden, die wirklich aus einer früheren M1-Aktivierung
   // dieses Blocks stammen. Always-present MULTI_SELECT-Checkpoints (z. B.
   // K10/K11) tragen zwar eine `block_id`, werden aber unabhängig von der

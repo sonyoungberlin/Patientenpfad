@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
-import type { ActiveCheckpoint } from "@/lib/types";
+import {
+  CheckpointPerspective,
+  isMultiSelectCheckpoint,
+  type ActiveCheckpoint,
+} from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
   M2_QUESTIONS,
@@ -187,12 +191,27 @@ export function M2PrefillClient({
         const answeredSet = new Set(
           answeredCheckpointIdsBySource[sourceForMode] ?? [],
         );
-        const visibleCheckpoints = checkpoints.filter(
-          (cp) => !answeredSet.has(cp.id),
-        );
+        // Primäre Sichtbarkeitsregel: nur Checkpoints rendern, deren perspectives
+        // die aktive Vorbereitungsperspektive enthält.
+        const perspectiveForMode =
+          mode === "patient"
+            ? CheckpointPerspective.PATIENT
+            : CheckpointPerspective.MFA;
+        const visibleCheckpoints = checkpoints.filter((cp) => {
+          if (answeredSet.has(cp.id)) return false;
+          // MULTI_SELECT-Checkpoints sind M3-only → immer aus M2 ausblenden.
+          if (isMultiSelectCheckpoint(cp)) return false;
+          // Im MFA-Modus alle nicht beantworteten Standard-Checkpoints anzeigen,
+          // auch wenn sie keine MFA-Perspektive haben (Hinweistext statt Fragen).
+          if (mode === "mfa") return true;
+          return cp.perspectives.includes(perspectiveForMode);
+        });
 
         if (visibleCheckpoints.length === 0) {
-          return <p>Keine aktiven Checkpoints vorhanden.</p>;
+          if (mode === "mfa") {
+            return <p>Für die MFA gibt es hier keine vorbereitenden Fragen.</p>;
+          }
+          return null;
         }
 
         return (
@@ -201,7 +220,9 @@ export function M2PrefillClient({
               const questionCatalog =
                 mode === "patient" ? M2_QUESTIONS : M2_QUESTIONS_MFA;
               const questions = questionCatalog[cp.id] ?? [];
-              if (questions.length === 0) return null;
+              // Im MFA-Modus: Block trotzdem rendern, aber mit Hinweistext statt Fragen.
+              // Im Patienten-Modus: Checkpoint ohne Fragen ausblenden (bisheriges Verhalten).
+              if (mode !== "mfa" && questions.length === 0) return null;
               const cpAnswers = values[cp.id] ?? {};
               return (
                 <li
@@ -213,6 +234,12 @@ export function M2PrefillClient({
                   <div style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
                     {cp.title}
                   </div>
+                  {"introText" in cp && cp.introText ? (
+                    <div style={{ marginBottom: "0.75rem", fontStyle: "italic" }}>
+                      {cp.introText}
+                    </div>
+                  ) : null}
+                  {questions.length > 0 ? (
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     {questions.map((q) => (
                       <li
@@ -239,6 +266,11 @@ export function M2PrefillClient({
                       </li>
                     ))}
                   </ul>
+                  ) : (
+                    <p style={{ margin: 0, fontStyle: "italic" }}>
+                      Für die MFA gibt es hier keine vorbereitenden Fragen.
+                    </p>
+                  )}
                 </li>
               );
             })}

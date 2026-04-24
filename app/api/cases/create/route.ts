@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import {
   BlockStatus,
   CheckpointCategory,
-  CheckpointRelevance,
   CheckpointType,
   type ActiveCheckpoint,
   type BlockSummary,
@@ -57,7 +56,10 @@ const LEGACY_DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
     block_id: "dokumentenlage",
     type: CheckpointType.PRESENCE_CHECK,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
+    // TODO: Dieser Fallback-Checkpoint hat kein Katalog-Pendant. Die fachliche
+    // Zuordnung zu perspectives ist ungeklärt. Bis zur Entfernung dieses Fallbacks
+    // bleibt perspectives leer (kein Vorbereitungsanteil deklariert).
+    perspectives: [],
     title: "Arztbrief vorhanden",
     description:
       "Prüfen, ob ein aktueller Arztbrief oder vergleichbares Dokument vorliegt.",

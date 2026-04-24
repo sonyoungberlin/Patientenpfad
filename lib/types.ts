@@ -13,6 +13,10 @@ export type BlockSummary = {
   active_checkpoint_count: number;
 };
 
+// TODO(refactor): Die Enum-Werte entsprechen nicht der kanonischen Checkpoint-Taxonomie
+// (DECISION / MULTI_SELECT / ASSESSMENT), die in docs/architecture/checkpoints.md definiert ist.
+// Eine Umbenennung würde bestehende JSON-Datenbankeinträge invalidieren und erfordert eine
+// eigene Migration. Maßgebliche Zuordnung: siehe docs/architecture/checkpoints.md, Abschnitt 1.1.
 export enum CheckpointType {
   PRESENCE_CHECK = "PRESENCE_CHECK",
   NACHWEIS = "NACHWEIS",
@@ -29,11 +33,19 @@ export enum CheckpointCategory {
   O = "O",
 }
 
-export enum CheckpointRelevance {
-  /** Pflicht: immer sichtbar und zu bewerten */
-  P = "P",
-  /** Additiv: nur in passenden Kontexten aktiv */
-  A = "A",
+/**
+ * Vorbereitungsperspektive eines Checkpoints.
+ *
+ * MFA     – Checkpoint hat Vorbereitungsanteil für die MFA (erscheint im MFA-Fragenkatalog).
+ * PATIENT – Checkpoint hat Vorbereitungsanteil für den Patienten (Fragebogen-Link
+ *           und Patientengespräch sind zwei Erhebungswege derselben Perspektive).
+ *
+ * Ein leeres Array `[]` ist ein gültiger Zustand und bedeutet:
+ * kein Vorbereitungsanteil – Checkpoint erscheint ausschließlich in M3.
+ */
+export enum CheckpointPerspective {
+  MFA = "MFA",
+  PATIENT = "PATIENT",
 }
 
 /**
@@ -51,11 +63,25 @@ type ActiveCheckpointBase = {
   id: string;
   block_id: string;
   type: CheckpointType;
-  relevance: CheckpointRelevance;
+  /**
+   * Vorbereitungsperspektiven dieses Checkpoints.
+   * Leeres Array = kein Vorbereitungsanteil (nur M3).
+   */
+  perspectives: CheckpointPerspective[];
   title: string;
   description?: string;
+  /**
+   * Optionaler Einleitungssatz, der im M2-Frageblock vor den Fragen angezeigt wird.
+   * Wird vor allem bei ASSESSMENT-Checkpoints genutzt, um die angesprochene Person
+   * explizit zu adressieren (z. B. Angehörige / Kontaktperson).
+   */
+  introText?: string;
   m4: {
-    /** Static per checkpoint – not computed from status */
+    /** Static per checkpoint – not computed from status.
+     * TODO(refactor): Ein explizites m4_behavior-Feld ("ACTION" | "NOTICE" | "NONE") soll
+     * dieses implizite Steuerungsmodell ablösen. Aktuell wird kein M4-Output durch einen
+     * leeren `text`-String signalisiert (K12). Maßgeblich: docs/architecture/checkpoints.md §1.4.
+     */
     type: "ACTION" | "NOTICE";
     text: string;
   };
@@ -87,7 +113,11 @@ export type ActiveCheckpointMultiSelect = {
   block_id: string;
   type: CheckpointType;
   category: CheckpointCategory;
-  relevance: CheckpointRelevance;
+  /**
+   * Vorbereitungsperspektiven dieses Checkpoints.
+   * Leeres Array = kein Vorbereitungsanteil (nur M3/M5).
+   */
+  perspectives: CheckpointPerspective[];
   mode: CheckpointMode.MULTI_SELECT;
   title: string;
   description?: string;
@@ -123,7 +153,8 @@ export function isStandardCheckpoint(
 export type M1BlockId =
   | "kommunikation"
   | "medizinische_lage"
-  | "versorgung_im_alltag";
+  | "versorgung_im_alltag"
+  | "pflegebeobachtung";
 
 /** Binary state per block: klar → no activation, unklar → activate checkpoints */
 export type M1BlockStatus = "klar" | "unklar";

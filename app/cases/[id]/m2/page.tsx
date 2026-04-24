@@ -4,10 +4,12 @@ import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { getOpenRun, getFrozenRuns } from "@/lib/server/prefillRuns";
+import { backfillPerspectives } from "@/lib/logic/checkpointCatalog";
 import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
 import { M2SkipButtonClient } from "./M2SkipButtonClient";
 import { M2PatientConversationClient } from "./M2PatientConversationClient";
+import { M2MfaModeClient } from "./M2MfaModeClient";
 
 export default async function M2Page({
   params,
@@ -67,11 +69,15 @@ export default async function M2Page({
     }
   }
 
-  // Alle aktiven Checkpoints des Falls – die Filterung (pro Quelle) übernimmt
-  // M2PrefillClient auf Basis von `answeredCheckpointIdsBySource`.
-  const checkpoints = Array.isArray(session.active_checkpoints)
-    ? (session.active_checkpoints as ActiveCheckpoint[])
-    : [];
+  // Alle aktiven Checkpoints des Falls – perspectives für Altfälle aus dem
+  // Katalog ergänzen (Rückwärtskompatibilität vor Schritt 4).
+  // Die Filterung (pro Quelle) übernimmt M2PrefillClient auf Basis von
+  // `answeredCheckpointIdsBySource`.
+  const checkpoints = backfillPerspectives(
+    Array.isArray(session.active_checkpoints)
+      ? (session.active_checkpoints as ActiveCheckpoint[])
+      : [],
+  );
 
   // Vorbelegung: Wenn ein offener PrefillRun existiert (z. B. nach einer
   // Fallergänzung oder einer angefangenen, aber noch nicht eingefrorenen
@@ -116,7 +122,7 @@ export default async function M2Page({
         {/* Erste Zeile: Skip-Aktion als dezente Textaktion */}
         <M2SkipButtonClient caseId={id} />
 
-        {/* Zweite Zeile: Fragebogen-Link und Patientengespräch als stabile Gruppe */}
+        {/* Zweite Zeile: Fragebogen-Link, Patientengespräch und MFA-Vorbereitung als stabile Gruppe */}
         <div
           style={{
             display: "flex",
@@ -127,6 +133,7 @@ export default async function M2Page({
         >
           <M2LinkGeneratorClient caseId={id} />
           <M2PatientConversationClient />
+          <M2MfaModeClient />
         </div>
       </section>
 

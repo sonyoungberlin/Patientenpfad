@@ -1,7 +1,7 @@
 import {
   CheckpointCategory,
   CheckpointMode,
-  CheckpointRelevance,
+  CheckpointPerspective,
   CheckpointType,
   type ActiveCheckpoint,
   type ActiveCheckpointMultiSelect,
@@ -10,7 +10,7 @@ import {
 } from "@/lib/types";
 
 /**
- * Statischer Checkpoint-Katalog für alle M1-Checkpoints K01–K08.
+ * Statischer Checkpoint-Katalog für alle M1-Checkpoints K01–K15.
  *
  * Jeder Eintrag ist ein vollständiges `ActiveCheckpoint`-Template ohne Status.
  * Der Status wird bei der Hydration auf `TO_DO` gesetzt.
@@ -25,7 +25,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "kommunikation",
     type: CheckpointType.PRESENCE_CHECK,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Erreichbarkeit des Patienten",
     description: "Prüfen, ob der Patient zuverlässig erreichbar ist.",
     m4: {
@@ -38,7 +38,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "versorgung_im_alltag",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
-    relevance: CheckpointRelevance.P,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Praktische Möglichkeit der Terminwahrnehmung",
     description: "Prüfen, ob eine ausreichende Versorgung im Alltag besteht.",
     m4: {
@@ -51,7 +51,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "medizinische_lage",
     type: CheckpointType.NACHWEIS,
     category: CheckpointCategory.M,
-    relevance: CheckpointRelevance.P,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Diagnosenlage",
     description: "Prüfen, ob alle relevanten Diagnosen dokumentiert sind.",
     m4: {
@@ -64,7 +64,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "medizinische_lage",
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.M,
-    relevance: CheckpointRelevance.P,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Medikation",
     description: "Aktuelle Medikation ist bekannt und geprüft.",
     m4: {
@@ -77,7 +77,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "medizinische_lage",
     type: CheckpointType.PROZESS_VORLAUF,
     category: CheckpointCategory.M,
-    relevance: CheckpointRelevance.A,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Medizinische Mitbehandlung",
     description: "Relevante externe Fachärzte sind bekannt und einbezogen.",
     m4: {
@@ -90,7 +90,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "versorgung_im_alltag",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Unterstützung im Alltag",
     description: "Pflegebedarf ist dokumentiert und bewertet.",
     m4: {
@@ -103,7 +103,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "versorgung_im_alltag",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
-    relevance: CheckpointRelevance.A,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Vorübergehender Unterstützungsbedarf",
     description:
       "Es besteht ein vorübergehender Unterstützungsbedarf (z. B. nach Operation oder akuter Erkrankung), und die notwendige Unterstützung ist organisiert.",
@@ -117,7 +117,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "kommunikation",
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.P,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
     title: "Nutzung digitaler Praxisleistungen",
     description:
       "Der Patient nutzt digitale Praxisangebote aktiv (z. B. Videosprechstunde, digitale Anfragen oder digitale Übermittlung von Dokumenten).",
@@ -131,12 +131,36 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "kommunikation",
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.A,
+    perspectives: [CheckpointPerspective.MFA],
     title: "Mitwirkung",
     description: "Prüfen, ob die Mitwirkung des Patienten ausreichend gegeben ist.",
     m4: {
       type: "ACTION",
       text: "Bitte vereinbaren Sie Termine, damit wir uns ausreichend Zeit für Sie nehmen können. Falls Sie verhindert sind, sagen Sie Termine bitte rechtzeitig ab und beachten Sie getroffene Absprachen. Nur so können wir eine gute Versorgung gewährleisten.",
+    },
+  },
+  K12: {
+    id: "K12",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.M,
+    // K12 ist ein ASSESSMENT-Checkpoint: Die Einschätzung erfolgt durch MFA-Beobachtung,
+    // der Fragenkatalog ist jedoch in Patientenperspektive formuliert (Fragesprache noch
+    // nicht bereinigt – TODO: K12-Fragesprache in separatem Schritt klären).
+    // perspectives = [PATIENT] bedeutet: erscheint im Patientenfragen-Katalog (M2_QUESTIONS).
+    perspectives: [CheckpointPerspective.PATIENT],
+    title: "Alltagssituation – Rückmeldung Kontaktperson",
+    introText:
+      "Bitte beantworten Sie die folgenden Fragen, wenn Sie den Patienten im Alltag unterstützen oder gut kennen.",
+    description:
+      "Beobachten, wie die Alltagsrealität des Patienten von außen wirkt – Mobilität, Selbstversorgung, Kognition, Ernährung, Flüssigkeit, Hilfsmittelumgang und Pflegegrad.",
+    m4: {
+      // K12 ist ein ASSESSMENT-Checkpoint (m4_behavior = NONE):
+      // Er erzeugt bewusst keinen Patientenhinweis. Solange m4_behavior noch kein
+      // eigenes Feld ist, wird NONE über einen leeren text-String signalisiert.
+      // TODO(refactor): Nach Einführung von m4_behavior als eigenem Feld auf NONE umstellen.
+      type: "NOTICE",
+      text: "",
     },
   },
 };
@@ -153,7 +177,7 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
     block_id: "medizinische_lage",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.A,
+    perspectives: [],
     mode: CheckpointMode.MULTI_SELECT,
     title: "Besonderer Versorgungsaufwand",
     description:
@@ -173,7 +197,7 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
     block_id: "medizinische_lage",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.O,
-    relevance: CheckpointRelevance.A,
+    perspectives: [],
     mode: CheckpointMode.MULTI_SELECT,
     title: "Formularanliegen",
     description:
@@ -214,6 +238,52 @@ export function ensureAlwaysPresentCheckpoints(
     }
   }
   return missing.length > 0 ? [...checkpoints, ...missing] : checkpoints;
+}
+
+/**
+ * Entfernt Checkpoints, deren ID weder im `CHECKPOINT_CATALOGUE` noch im
+ * `MULTI_SELECT_CATALOGUE` vorkommt.
+ *
+ * Wird defensiv beim Laden von `active_checkpoints` aus der Datenbank
+ * eingesetzt, um sicherzustellen, dass veraltete IDs (z. B. K13–K18 nach
+ * dem Einschätzungsblock-Umbau) niemals gerendert werden – unabhängig
+ * davon, was in einem gespeicherten Fall steht.
+ */
+export function filterObsoleteCheckpoints(
+  checkpoints: ActiveCheckpoint[],
+): ActiveCheckpoint[] {
+  return checkpoints.filter(
+    (cp) =>
+      cp.id in CHECKPOINT_CATALOGUE || cp.id in MULTI_SELECT_CATALOGUE,
+  );
+}
+
+/**
+ * Ergänzt `perspectives` für Altfälle, deren `active_checkpoints` noch vor der
+ * perspectives-Migration in der Datenbank gespeichert wurden.
+ *
+ * Regeln:
+ * - Ist `perspectives` bereits ein gültiges Array, bleibt der Checkpoint unverändert.
+ * - Fehlt `perspectives` oder ist es kein Array:
+ *   – Lookup nach `cp.id` in `CHECKPOINT_CATALOGUE` oder `MULTI_SELECT_CATALOGUE`
+ *   – Bei Treffer: `perspectives` aus dem Katalogeintrag übernehmen
+ *   – Bei keinem Treffer (z. B. Legacy-Fallback-Checkpoints ohne Katalogeintrag):
+ *     `perspectives = []` setzen (kein Vorbereitungsanteil)
+ *
+ * Kein anderes Feld wird verändert.
+ */
+export function backfillPerspectives(
+  checkpoints: ActiveCheckpoint[],
+): ActiveCheckpoint[] {
+  return checkpoints.map((cp) => {
+    if (Array.isArray(cp.perspectives)) {
+      return cp;
+    }
+    const catalogEntry =
+      CHECKPOINT_CATALOGUE[cp.id] ?? MULTI_SELECT_CATALOGUE[cp.id];
+    const perspectives = catalogEntry ? catalogEntry.perspectives : [];
+    return { ...cp, perspectives };
+  });
 }
 
 /**

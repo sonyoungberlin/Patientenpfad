@@ -3,7 +3,7 @@ import M3Page from "@/app/cases/[id]/m3/page";
 import {
   CheckpointCategory,
   CheckpointMode,
-  CheckpointRelevance,
+  CheckpointPerspective,
   CheckpointType,
   type ActiveCheckpoint,
   type ActiveCheckpointMultiSelect,
@@ -53,7 +53,7 @@ const mCheckpoint: ActiveCheckpoint = {
   block_id: "medizinische_lage",
   type: CheckpointType.NACHWEIS,
   category: CheckpointCategory.M,
-  relevance: CheckpointRelevance.P,
+  perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
   status: "TO_DO",
   title: "Diagnosenlage",
   m4: { type: "ACTION", text: "Bitte Befunde mitbringen." },
@@ -64,7 +64,7 @@ const k10Disabled: ActiveCheckpointMultiSelect = {
   block_id: "medizinische_lage",
   type: CheckpointType.BEDARF,
   category: CheckpointCategory.O,
-  relevance: CheckpointRelevance.A,
+  perspectives: [],
   mode: CheckpointMode.MULTI_SELECT,
   title: "Besonderer Versorgungsaufwand",
   options: [
