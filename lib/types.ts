@@ -53,10 +53,13 @@ export enum CheckpointPerspective {
  *
  * STANDARD: Bewertungsbasiert (OK / TO_DO / ggf. ZURÜCKSTELLEN).
  * MULTI_SELECT: Dokumentationsbasiert – Mehrfachauswahl ohne Bewertung, nur M5.
+ * ASSESSMENT: Einschätzungsblock – wird per Checkbox bewusst zugeschaltet,
+ *             hat M2/M3/M5 aber kein M4. Default: nicht aktiviert (enabled: false).
  */
 export enum CheckpointMode {
   STANDARD = "STANDARD",
   MULTI_SELECT = "MULTI_SELECT",
+  ASSESSMENT = "ASSESSMENT",
 }
 
 type ActiveCheckpointBase = {
@@ -68,6 +71,18 @@ type ActiveCheckpointBase = {
    * Leeres Array = kein Vorbereitungsanteil (nur M3).
    */
   perspectives: CheckpointPerspective[];
+  /**
+   * Interaktionsmodus. Nur für ASSESSMENT-Checkpoints gesetzt.
+   * Fehlt das Feld (undefined), handelt es sich um einen normalen DECISION-Checkpoint.
+   */
+  mode?: CheckpointMode.ASSESSMENT;
+  /**
+   * Aktivierungszustand für ASSESSMENT-Checkpoints.
+   * false / undefined = nicht aktiviert (K12 erscheint nicht in M2/M3/M5).
+   * true = aktiviert (K12 erscheint in M2/M3/M5, aber nie in M4).
+   * Für DECISION-Checkpoints irrelevant (immer als aktiviert behandelt).
+   */
+  enabled?: boolean;
   title: string;
   description?: string;
   /**
@@ -143,6 +158,19 @@ export function isStandardCheckpoint(
   cp: ActiveCheckpoint,
 ): cp is StandardCheckpoint {
   return !isMultiSelectCheckpoint(cp);
+}
+
+/**
+ * Type guard: prüft ob ein Checkpoint ein ASSESSMENT-Einschätzungsblock ist.
+ *
+ * ASSESSMENT-Checkpoints sind StandardCheckpoints mit `mode: ASSESSMENT`.
+ * Sie werden per Checkbox zugeschaltet und erscheinen in M2/M3/M5 nur wenn
+ * `enabled === true`. In M4 erscheinen sie nie.
+ */
+export function isAssessmentCheckpoint(
+  cp: ActiveCheckpoint,
+): cp is StandardCheckpoint & { mode: CheckpointMode.ASSESSMENT } {
+  return !isMultiSelectCheckpoint(cp) && cp.mode === CheckpointMode.ASSESSMENT;
 }
 
 // ---------------------------------------------------------------------------

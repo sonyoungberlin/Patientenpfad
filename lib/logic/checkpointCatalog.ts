@@ -144,9 +144,10 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     block_id: "pflegebeobachtung",
     type: CheckpointType.BEDARF,
     category: CheckpointCategory.M,
-    // K12 ist ein ASSESSMENT-Checkpoint: Die Einschätzung erfolgt durch MFA-Beobachtung,
-    // der Fragenkatalog ist jedoch in Patientenperspektive formuliert (Fragesprache noch
-    // nicht bereinigt – TODO: K12-Fragesprache in separatem Schritt klären).
+    // K12 ist ein ASSESSMENT-Checkpoint: wird per Checkbox in M1 bewusst zugeschaltet.
+    // Default: nicht aktiviert (enabled: false). Erscheint in M2/M3/M5 nur wenn enabled.
+    // Kein M4-Output (m4.text: "").
+    mode: CheckpointMode.ASSESSMENT,
     // perspectives = [PATIENT] bedeutet: erscheint im Patientenfragen-Katalog (M2_QUESTIONS).
     perspectives: [CheckpointPerspective.PATIENT],
     title: "Alltagssituation – Rückmeldung Kontaktperson",
@@ -155,9 +156,7 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
     description:
       "Beobachten, wie die Alltagsrealität des Patienten von außen wirkt – Mobilität, Selbstversorgung, Kognition, Ernährung, Flüssigkeit, Hilfsmittelumgang und Pflegegrad.",
     m4: {
-      // K12 ist ein ASSESSMENT-Checkpoint (m4_behavior = NONE):
-      // Er erzeugt bewusst keinen Patientenhinweis. Solange m4_behavior noch kein
-      // eigenes Feld ist, wird NONE über einen leeren text-String signalisiert.
+      // K12 erzeugt bewusst keinen Patientenhinweis (m4_behavior = NONE).
       // TODO(refactor): Nach Einführung von m4_behavior als eigenem Feld auf NONE umstellen.
       type: "NOTICE",
       text: "",
@@ -221,8 +220,17 @@ export const MULTI_SELECT_CATALOGUE: Record<string, MultiSelectTemplate> = {
 const ALWAYS_PRESENT_MULTI_SELECT_IDS: readonly string[] = ["K10", "K11"];
 
 /**
+ * IDs of ASSESSMENT checkpoints that are always present in active_checkpoints,
+ * regardless of M1 block activation. Default: enabled = false (opt-in via M1 checkbox).
+ */
+export const ALWAYS_PRESENT_ASSESSMENT_IDS: readonly string[] = ["K12"];
+
+/**
  * Ensures always-present MULTI_SELECT checkpoints are in the list.
  * If missing, appends them with default values (enabled=false, empty selections).
+ *
+ * Also ensures always-present ASSESSMENT checkpoints are in the list.
+ * If missing, appends them with status=TO_DO and enabled=false.
  */
 export function ensureAlwaysPresentCheckpoints(
   checkpoints: ActiveCheckpoint[],
@@ -234,6 +242,14 @@ export function ensureAlwaysPresentCheckpoints(
       const template = MULTI_SELECT_CATALOGUE[id];
       if (template) {
         missing.push({ ...template, selections: [], enabled: false } as ActiveCheckpoint);
+      }
+    }
+  }
+  for (const id of ALWAYS_PRESENT_ASSESSMENT_IDS) {
+    if (!ids.has(id)) {
+      const template = CHECKPOINT_CATALOGUE[id];
+      if (template) {
+        missing.push({ ...template, status: "TO_DO", enabled: false } as ActiveCheckpoint);
       }
     }
   }

@@ -9,6 +9,7 @@ import {
   type M1Selection,
 } from "@/lib/types";
 import {
+  ALWAYS_PRESENT_ASSESSMENT_IDS,
   CHECKPOINT_CATALOGUE,
   hydrateActiveCheckpointsFromSnapshot,
 } from "@/lib/logic/checkpointCatalog";
@@ -87,10 +88,22 @@ export async function POST(
 
     const body = (await req.json().catch(() => ({}))) as {
       blocks?: unknown;
+      assessmentEnabled?: unknown;
     };
     const requestedBlocks: M1BlockId[] = Array.isArray(body?.blocks)
       ? Array.from(new Set(body.blocks.filter(isM1BlockId)))
       : [];
+
+    // ASSESSMENT enabled-Overrides aus dem Payload
+    const assessmentEnabledRaw = body?.assessmentEnabled;
+    const assessmentEnabled: Record<string, boolean> =
+      assessmentEnabledRaw && typeof assessmentEnabledRaw === "object" && !Array.isArray(assessmentEnabledRaw)
+        ? Object.fromEntries(
+            Object.entries(assessmentEnabledRaw as Record<string, unknown>).filter(
+              ([, v]) => typeof v === "boolean",
+            ) as [string, boolean][],
+          )
+        : {};
 
     const session = await prisma.caseSession.findUnique({
       where: { id },
@@ -183,9 +196,35 @@ export async function POST(
     const existingIds = new Set(existingCheckpoints.map((cp) => cp.id));
     const toAdd = hydrated.filter((cp) => !existingIds.has(cp.id));
 
+    // Sicherstellen, dass ASSESSMENT-Checkpoints (K12) immer in active_checkpoints
+    // vorhanden sind (analog zu always-present MULTI_SELECT K10/K11).
+    // Für Altfälle, bei denen K12 noch nicht in active_checkpoints ist, wird K12
+    // mit enabled=false ergänzt.
+    for (const assessmentId of ALWAYS_PRESENT_ASSESSMENT_IDS) {
+      if (!existingIds.has(assessmentId) && !toAdd.some((cp) => cp.id === assessmentId)) {
+        const template = CHECKPOINT_CATALOGUE[assessmentId];
+        if (template) {
+          toAdd.push({ ...template, status: "TO_DO", enabled: false } as ActiveCheckpoint);
+        }
+      }
+    }
+
+    // ASSESSMENT enabled-Overrides anwenden: entweder auf bestehende oder neu hinzugefügte
+    // K12-Einträge. Dies ermöglicht es dem M1ErgaenzungClient, den enabled-Stand
+    // des K12 aus dem UI beim Submit mitzusenden (Fallback für Altfälle ohne PATCH).
     const updatedCheckpoints: ActiveCheckpoint[] = [
-      ...existingCheckpoints,
-      ...toAdd,
+      ...existingCheckpoints.map((cp) => {
+        if (cp.id in assessmentEnabled) {
+          return { ...cp, enabled: assessmentEnabled[cp.id] };
+        }
+        return cp;
+      }),
+      ...toAdd.map((cp) => {
+        if (cp.id in assessmentEnabled) {
+          return { ...cp, enabled: assessmentEnabled[cp.id] };
+        }
+        return cp;
+      }),
     ];
 
     // `block_status_anchor` minimal additiv ergänzen: bestehende Einträge
@@ -211,7 +250,8 @@ export async function POST(
         : existingAnchor;
 
     // Nur schreiben, wenn sich tatsächlich etwas ändert.
-    if (toAdd.length > 0 || anchorAdditions.length > 0) {
+    // ASSESSMENT-Additions (K12 fehlt in Altfällen) und enabled-Overrides lösen ebenfalls einen Write aus.
+    if (toAdd.length > 0 || anchorAdditions.length > 0 || Object.keys(assessmentEnabled).length > 0) {
       await prisma.caseSession.update({
         where: { id },
         data: {

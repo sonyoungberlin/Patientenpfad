@@ -1,4 +1,4 @@
-import { CheckpointCategory, isMultiSelectCheckpoint, isStandardCheckpoint, type ActiveCheckpoint, type StandardCheckpoint } from "@/lib/types";
+import { CheckpointCategory, isMultiSelectCheckpoint, isStandardCheckpoint, isAssessmentCheckpoint, type ActiveCheckpoint, type StandardCheckpoint } from "@/lib/types";
 
 export type M5Entry = {
   checkpoint_id: string;
@@ -108,6 +108,7 @@ export function resolveM5Text(cp: {
 /**
  * M3 → M5: Returns exactly one documentation sentence per checkpoint.
  * MULTI_SELECT checkpoints generate text from their selections (only if enabled).
+ * ASSESSMENT checkpoints generate text only if enabled === true; otherwise empty.
  */
 export function deriveM5Output(checkpoints: ActiveCheckpoint[]): M5Entry[] {
   return checkpoints.map((cp) => {
@@ -120,6 +121,10 @@ export function deriveM5Output(checkpoints: ActiveCheckpoint[]): M5Entry[] {
             : "",
       };
     }
+    // ASSESSMENT checkpoint: only document if enabled
+    if (isAssessmentCheckpoint(cp) && cp.enabled !== true) {
+      return { checkpoint_id: cp.id, text: "" };
+    }
     return {
       checkpoint_id: cp.id,
       text: resolveM5Text(cp),
@@ -131,12 +136,15 @@ export function deriveM5Output(checkpoints: ActiveCheckpoint[]): M5Entry[] {
  * Determines which block_ids should be condensed into a single summary sentence.
  *
  * A block qualifies for condensation when:
- * 1. It has at least 2 active standard checkpoints (multi-select excluded)
+ * 1. It has at least 2 active standard checkpoints (multi-select and disabled ASSESSMENT excluded)
  * 2. ALL of those standard checkpoints have status "TO_DO"
  * 3. A summary text exists for the block_id in M5_BLOCK_SUMMARY_TEXTS
  */
 export function getCondensedBlockIds(checkpoints: ActiveCheckpoint[]): Set<string> {
-  const standardCps = checkpoints.filter(isStandardCheckpoint);
+  const standardCps = checkpoints.filter(isStandardCheckpoint).filter(
+    // Disabled ASSESSMENT checkpoints do not count toward condensation
+    (cp) => !isAssessmentCheckpoint(cp) || cp.enabled === true,
+  );
 
   // Group standard checkpoints by block_id
   const byBlock = new Map<string, StandardCheckpoint[]>();
@@ -169,6 +177,8 @@ export function getCondensedBlockIds(checkpoints: ActiveCheckpoint[]): Set<strin
  * MULTI_SELECT checkpoints are always rendered individually and never
  * participate in condensation.
  *
+ * ASSESSMENT checkpoints with enabled !== true are skipped (empty entry).
+ *
  * M4 / patient-facing output is not affected by this function.
  */
 export function deriveM5OutputCondensed(checkpoints: ActiveCheckpoint[]): M5Entry[] {
@@ -186,6 +196,12 @@ export function deriveM5OutputCondensed(checkpoints: ActiveCheckpoint[]): M5Entr
             ? `${cp.title}: ${cp.selections.join(", ")}`
             : "",
       });
+      continue;
+    }
+
+    // ASSESSMENT checkpoint: only document if enabled
+    if (isAssessmentCheckpoint(cp) && cp.enabled !== true) {
+      result.push({ checkpoint_id: cp.id, text: "" });
       continue;
     }
 

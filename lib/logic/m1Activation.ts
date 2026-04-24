@@ -12,7 +12,9 @@ export const M1_CHECKPOINT_MAP: Record<M1BlockId, readonly string[]> = {
   kommunikation: ["K01", "K08", "K09"],
   medizinische_lage: ["K03", "K04", "K05"],
   versorgung_im_alltag: ["K02", "K06", "K07"],
-  pflegebeobachtung: ["K12"],
+  // pflegebeobachtung hat keine block-aktivierten Checkpoints mehr.
+  // K12 (ASSESSMENT) wird immer-present angelegt und per Checkbox in M1 zugeschaltet.
+  pflegebeobachtung: [],
 };
 
 /**
@@ -40,15 +42,16 @@ export function deriveActiveCheckpointIdsFromM1(
 /**
  * Prüft, ob eine M1-Auswahl einen Gatekeeper-Fall darstellt.
  *
- * Gatekeeper-Fall: alle Blöcke sind `klar`.
+ * Gatekeeper-Fall: alle DECISION-Blöcke sind `klar`.
+ * (pflegebeobachtung hat keine block-aktivierten Checkpoints; K12 ist ASSESSMENT
+ * und wird unabhängig davon immer-present angelegt.)
  * In diesem Fall wird kein Strukturfall gestartet und keine CaseSession angelegt.
  */
 export function isGatekeeperCase(blocks: M1Selection): boolean {
   return (
     blocks.kommunikation === "klar" &&
     blocks.medizinische_lage === "klar" &&
-    blocks.versorgung_im_alltag === "klar" &&
-    blocks.pflegebeobachtung === "klar"
+    blocks.versorgung_im_alltag === "klar"
   );
 }
 
