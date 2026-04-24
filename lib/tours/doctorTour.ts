@@ -79,7 +79,7 @@ export const DOCTOR_TOUR: TourStep[] = [
     id: "case-list",
     route: "/cases",
     title: "Weitergabe an die Praxis",
-    body: "Der Fall liegt jetzt in der Fallliste. Die MFA übernimmt die Vorbereitung und sammelt die fehlenden Informationen.",
+    body: "Sie verlassen jetzt die ärztliche Vorbereitung. Der Fall liegt in der Fallliste und kann von der Praxis weiter vorbereitet werden.",
     targetDataTourId: "case-list",
     role: "doctor",
   },
@@ -88,7 +88,7 @@ export const DOCTOR_TOUR: TourStep[] = [
     id: "m2-preparation",
     route: "/cases",
     title: "Vorbereitung der Informationen",
-    body: "Die MFA wählt den sinnvollsten Weg: entweder selbst vorbereiten oder den Patienten bzw. eine Kontaktperson einbeziehen. Es wird nur festgehalten, was vorliegt und was fehlt.",
+    body: "Wenn die MFA den Fall öffnet, beginnt die Vorbereitung. Die MFA wählt den sinnvollsten Weg: selbst vorbereiten oder den Patienten bzw. eine Kontaktperson einbeziehen. Es wird nur festgehalten, was vorliegt und was fehlt.",
     role: "doctor",
   },
   // --- 8 – Ärztliche Bewertung (M3) ----------------------------------------
@@ -96,7 +96,7 @@ export const DOCTOR_TOUR: TourStep[] = [
     id: "m3-review",
     route: "/cases",
     title: "Ärztliche Bewertung",
-    body: "Sie entscheiden: reicht aus, reicht nicht aus oder zurückstellen. Damit legen Sie fest, welche Bereiche noch geklärt werden müssen.",
+    body: "Nach der Vorbereitung sieht der Arzt den Ist-Stand der vorliegenden Informationen. Jetzt wird bewertet, ob die Informationen für den Moment ausreichen oder ob noch etwas geklärt werden muss.",
     targetDataTourId: "m3-checklist",
     role: "doctor",
   },
@@ -105,7 +105,7 @@ export const DOCTOR_TOUR: TourStep[] = [
     id: "m3-order",
     route: "/cases",
     title: "Wie Sie bewerten",
-    body: "Gehen Sie von oben nach unten vor: Zuerst 'reicht aus', dann 'reicht nicht aus', oder 'zurückstellen', wenn Sie noch nicht entscheiden möchten.",
+    body: "Gehen Sie in der Reihenfolge der Buttons vor: zuerst 'reicht aus', dann 'reicht nicht aus', oder 'zurückstellen', wenn Sie noch nicht entscheiden möchten.",
     role: "doctor",
   },
   // --- 10 – Abschluss ------------------------------------------------------
@@ -122,7 +122,7 @@ export const DOCTOR_TOUR: TourStep[] = [
     id: "use-texts",
     route: "/cases",
     title: "Texte verwenden",
-    body: "Sie müssen keinen Freitext mehr schreiben. Die vorbereiteten Texte können für Patientenkommunikation und Dokumentation genutzt werden.",
+    body: "Aus der Bewertung entstehen vorbereitete Texte. Sie können für die Patientenkommunikation und für die Dokumentation im Praxissystem genutzt werden.",
     role: "doctor",
   },
   // --- 12 – Abschluss des Falls --------------------------------------------
@@ -130,7 +130,7 @@ export const DOCTOR_TOUR: TourStep[] = [
     id: "case-done",
     route: "/cases",
     title: "Fall abgeschlossen",
-    body: "Der Fall ist eine Momentaufnahme des aktuellen Stands. Nach der Nutzung der Texte wird er aus der Fallliste entfernt.",
+    body: "Der Fall ist eine Momentaufnahme des aktuellen Stands. Nach der Nutzung der Texte wird der Fall aus der Fallliste entfernt.",
     role: "doctor",
   },
 ];
