@@ -11,6 +11,7 @@ import {
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
+import DemoTourOverlay from "@/components/DemoTourOverlay";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
@@ -57,6 +58,9 @@ export default function HomePage() {
   const [regError, setRegError] = useState<string | null>(null);
   const [regSuccess, setRegSuccess] = useState(false);
   const [preparingLoading, setPreparingLoading] = useState(false);
+  // Demo-Tour-State
+  const [tourActive, setTourActive] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -359,7 +363,16 @@ export default function HomePage() {
       {/* Account-Bar */}
       <div className="account-bar">
         <span className="account-email">{account.email}</span>
-        <button onClick={handleLogout}>Abmelden</button>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => { setTourStep(0); setTourActive(true); }}
+            style={{ fontSize: "0.875rem" }}
+          >
+            Arzt-Demo ansehen
+          </button>
+          <button onClick={handleLogout}>Abmelden</button>
+        </div>
       </div>
 
       <h1>Liegt genug Information vor, damit der Arzt direkt entscheiden kann?</h1>
@@ -369,7 +382,7 @@ export default function HomePage() {
       </p>
 
       {/* Modus-Auswahl */}
-      <div style={{ marginBottom: "1.5rem" }}>
+      <div data-tour-id="mode-selection" style={{ marginBottom: "1.5rem" }}>
         <strong>Modus</strong>
         <div style={{ marginTop: "0.4rem" }}>
           {(["guest", "practice"] as CaseMode[]).map((m) => (
@@ -410,16 +423,19 @@ export default function HomePage() {
         onBlockChange={handleBlockChange}
         onSubmit={handleCreate}
         loading={loading}
+        data-tour-id="m1-form"
       />
 
       <MultiSelectCheckpointSection
         checkpoints={multiSelectCheckpoints}
         onToggleEnabled={handleMultiToggleEnabled}
         onToggleOption={handleMultiToggleOption}
+        data-tour-id="multi-select-section"
       />
 
       <button
         type="button"
+        data-tour-id="create-actions"
         data-clinical-status-prepared
         className="answer-btn"
         onClick={() => void handleCreateAndPrepare()}
@@ -443,6 +459,14 @@ export default function HomePage() {
 
 
     </main>
+
+    {tourActive && (
+      <DemoTourOverlay
+        currentStep={tourStep}
+        onNavigate={(delta) => setTourStep((s) => s + delta)}
+        onClose={() => { setTourActive(false); setTourStep(0); }}
+      />
+    )}
     </>
   );
 }
