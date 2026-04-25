@@ -185,7 +185,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "AU_BACKDATE_LIMIT-Q1", text: "Liegt die gewünschte Rückdatierung außerhalb des zulässigen Rahmens?" },
+      { id: "AU_BACKDATE_LIMIT-Q1", text: "Liegt der gewünschte Beginn der Arbeitsunfähigkeit länger als zwei Tage zurück?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -217,7 +217,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "AU_WORK_ACCIDENT-Q1", text: "Handelt es sich um einen Arbeits- oder Wegeunfall?" },
+      { id: "AU_WORK_ACCIDENT-Q1", text: "Handelt es sich um Beschwerden im Zusammenhang mit einem Arbeits- oder Wegeunfall?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -233,7 +233,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "AU_CHILD_SICK-Q1", text: "Geht es um eine Bescheinigung wegen Betreuung eines erkrankten Kindes?" },
+      { id: "AU_CHILD_SICK-Q1", text: "Geht es ausschließlich um eine Bescheinigung zur Betreuung eines erkrankten Kindes?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -249,7 +249,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "AU_CONTINUITY_REQUIRED-Q1", text: "Muss eine Folge-AU lückenlos an einen Vorzeitraum anschließen?" },
+      { id: "AU_CONTINUITY_REQUIRED-Q1", text: "Handelt es sich um eine Folge-AU und besteht dabei eine zeitliche Lücke zum vorherigen Zeitraum?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -265,7 +265,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "AU_RETURN_TO_WORK-Q1", text: "Geht es um vorzeitige Arbeitsaufnahme oder eine gewünschte Gesundschreibung?" },
+      { id: "AU_RETURN_TO_WORK-Q1", text: "Geht es um eine vorzeitige Rückkehr an den Arbeitsplatz oder eine gewünschte Gesundschreibung?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
