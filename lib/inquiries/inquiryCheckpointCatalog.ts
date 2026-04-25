@@ -212,6 +212,84 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- PRESCRIPTION DECISION ----
+
+  PRESCRIPTION_DECISION: {
+    id: "PRESCRIPTION_DECISION",
+    label: "Rezept-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Ein Rezept kann ausgestellt werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Ein Rezept kann nicht ausgestellt werden.",
+    },
+  },
+
+  // ---- PRESCRIPTION SPECIFIC EXPLANATIONS ----
+
+  PRESCRIPTION_KNOWN_MEDICATION: {
+    id: "PRESCRIPTION_KNOWN_MEDICATION",
+    label: "Medikament bekannt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.NO]:
+        "Rezept-Hinweis: Medikament / Verordnung in der Praxis nicht bekannt.",
+      [ExplanationStatus.UNKNOWN]:
+        "Rezept-Hinweis: Medikament bitte vollständig angeben.",
+    },
+  },
+
+  PRESCRIPTION_FOLLOW_UP: {
+    id: "PRESCRIPTION_FOLLOW_UP",
+    label: "Folgerezept / Dauermedikation",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Folgerezept / Dauermedikation.",
+    },
+  },
+
+  PRESCRIPTION_SPECIALIST_REQUIRED: {
+    id: "PRESCRIPTION_SPECIALIST_REQUIRED",
+    label: "Fachärztliche Mitbehandlung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Fachärztliche Mitbehandlung / Bericht erforderlich.",
+    },
+  },
+
+  PRESCRIPTION_CONTROL_OVERDUE: {
+    id: "PRESCRIPTION_CONTROL_OVERDUE",
+    label: "Kontrolle überfällig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Notwendige Kontrolle überfällig.",
+    },
+  },
+
+  PRESCRIPTION_SPECIAL_TYPE: {
+    id: "PRESCRIPTION_SPECIAL_TYPE",
+    label: "Sonderfall",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Sonderfall (BtM, Privatrezept, Pille etc.).",
+    },
+  },
+
   // ---- GLOBAL EXPLANATIONS ----
 
   IS_NEW_PATIENT: {

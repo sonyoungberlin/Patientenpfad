@@ -937,3 +937,148 @@ describe("IS_CHRONIC_PATIENT – kein Profil-Binding", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// PRESCRIPTION-Profil – Struktur
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
+  const prescriptionProfile = INQUIRY_PROFILE_CATALOG_V2["PRESCRIPTION"];
+
+  it("PRESCRIPTION-Profil existiert", () => {
+    expect(prescriptionProfile).toBeDefined();
+  });
+
+  it("PRESCRIPTION-Profil bindet alle fünf Specific Checkpoints", () => {
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_KNOWN_MEDICATION");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_FOLLOW_UP");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REQUIRED");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CONTROL_OVERDUE");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIAL_TYPE");
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(5);
+  });
+
+  it("PRESCRIPTION-Profil bindet alle fünf Global Checkpoints", () => {
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toHaveLength(5);
+  });
+
+  it("Alle gebundenen Global Checkpoints haben globalHints im PRESCRIPTION-Profil", () => {
+    for (const id of prescriptionProfile.boundGlobalCheckpointIds) {
+      expect(prescriptionProfile.globalHints).toHaveProperty(id);
+    }
+  });
+
+  it("GLOBAL/EXPLANATION-Checkpoints im PRESCRIPTION-Profil haben kein textByStatus", () => {
+    for (const id of prescriptionProfile.boundGlobalCheckpointIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+      expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+      expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PRESCRIPTION-Profil – globalHints
+// ---------------------------------------------------------------------------
+
+/** Minimale PRESCRIPTION-Section. */
+function makePrescriptionSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "PRESCRIPTION",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("PRESCRIPTION-Profil – IS_CHRONIC_PATIENT globalHint", () => {
+  it("IS_CHRONIC_PATIENT YES → Rezept-spezifischer Hint erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
+    );
+  });
+
+  it("IS_NEW_PATIENT YES → Rezept-spezifischer Hint erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Rezept-Hinweis: Neupatient, Termin erforderlich.",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PRESCRIPTION-Profil – SPECIFIC Checkpoints erzeugen attachedParagraphs
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
+  it("PRESCRIPTION_FOLLOW_UP YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_FOLLOW_UP: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Folgerezept")),
+    ).toBe(true);
+  });
+
+  it("PRESCRIPTION_SPECIALIST_REQUIRED YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_SPECIALIST_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Fachärztliche")),
+    ).toBe(true);
+  });
+
+  it("PRESCRIPTION_CONTROL_OVERDUE YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_CONTROL_OVERDUE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Kontrolle überfällig")),
+    ).toBe(true);
+  });
+
+  it("PRESCRIPTION_SPECIAL_TYPE YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_SPECIAL_TYPE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Sonderfall")),
+    ).toBe(true);
+  });
+
+  it("PRESCRIPTION_KNOWN_MEDICATION NO → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_KNOWN_MEDICATION: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("nicht bekannt")),
+    ).toBe(true);
+  });
+});

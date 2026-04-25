@@ -57,4 +57,37 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       DATA_INCOMPLETE: "AU-Hinweis: Angaben / Daten unvollständig.",
     },
   },
+
+  PRESCRIPTION: {
+    id: "PRESCRIPTION",
+    label: "Rezept",
+    decisionCheckpointId: "PRESCRIPTION_DECISION",
+    specificCheckpointIds: [
+      "PRESCRIPTION_KNOWN_MEDICATION",
+      "PRESCRIPTION_FOLLOW_UP",
+      "PRESCRIPTION_SPECIALIST_REQUIRED",
+      "PRESCRIPTION_CONTROL_OVERDUE",
+      "PRESCRIPTION_SPECIAL_TYPE",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_NEW_PATIENT",
+      "PATIENT_NOT_IN_GERMANY",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_INCOMPLETE",
+      "IS_CHRONIC_PATIENT",
+    ],
+    availableActionIds: [
+      "DIGITAL_REQUEST",
+      "ONLINE_ANAMNESIS",
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+    ],
+    globalHints: {
+      IS_NEW_PATIENT: "Rezept-Hinweis: Neupatient, Termin erforderlich.",
+      PATIENT_NOT_IN_GERMANY: "Rezept-Hinweis: Aufenthalt außerhalb Deutschlands.",
+      DOCTOR_REVIEW_REQUIRED: "Rezept-Hinweis: ärztliche Prüfung notwendig.",
+      DATA_INCOMPLETE: "Rezept-Hinweis: Unterlagen / Daten fehlen.",
+      IS_CHRONIC_PATIENT: "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
+    },
+  },
 };
