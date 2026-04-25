@@ -230,6 +230,21 @@ Labor (LAB):
   - BOOK_APPOINTMENT
   - OPEN_CONSULTATION
 
+### Semantische Abgrenzung: LAB_MEDICAL_INDICATION vs. DOCTOR_REVIEW_REQUIRED
+
+`LAB_MEDICAL_INDICATION` (SPECIFIC) klärt den **Anlass / Kontext** für die Laboranforderung:
+warum Labor gewünscht oder sinnvoll sein könnte (Beschwerden, Routinekontrolle,
+externe Überweisung, Wunschleistung). Es ist ein reiner Kontext-Checkpoint.
+
+`DOCTOR_REVIEW_REQUIRED` (GLOBAL) ist ein **Freigabe-Schalter**:
+bedeutet, dass vor Terminvergabe oder Laboranforderung erst eine ärztliche
+Klärung stattfinden muss. Er ist unabhängig davon, ob bereits ein Anlass vorliegt.
+
+Beide Checkpoints können gleichzeitig aktiv sein: ein Anlass liegt vor
+(LAB_MEDICAL_INDICATION = YES), aber vor Weiterbearbeitung ist trotzdem
+ärztliche Klärung notwendig (DOCTOR_REVIEW_REQUIRED = YES).
+Das ist kein Widerspruch – SPECIFIC-Kontext und GLOBAL-Schalter haben verschiedene Rollen.
+
 ## 17. Noch offen
 - genaue Texte werden später geschliffen
 - zunächst zählt Architektur / Schnitt

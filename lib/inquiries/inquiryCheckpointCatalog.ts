@@ -306,21 +306,28 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- LAB SPECIFIC CHECKPOINTS ----
 
+  // Labor-Anlass / Indikation: klärt den Grund / Kontext für die Laboranforderung.
+  // Dieser Checkpoint beschreibt, warum Labor gewünscht oder sinnvoll sein könnte
+  // (z. B. Beschwerden, Routinekontrolle, externe Anordnung, Wunschleistung).
+  // Er ist ein anliegenspezifischer Kontext-Checkpoint und löst keine automatische
+  // Entscheidung aus. Abgrenzung zu DOCTOR_REVIEW_REQUIRED (GLOBAL):
+  // DOCTOR_REVIEW_REQUIRED bedeutet, dass vor Weiterbearbeitung erst eine ärztliche
+  // Klärung/Freigabe stattfinden muss – unabhängig davon, ob ein Anlass vorliegt.
   LAB_MEDICAL_INDICATION: {
     id: "LAB_MEDICAL_INDICATION",
-    label: "Medizinische Indikation",
+    label: "Labor-Anlass / Indikation",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
       { id: "LAB_MEDICAL_INDICATION-Q1", text: "Liegen Beschwerden vor?" },
-      { id: "LAB_MEDICAL_INDICATION-Q2", text: "Gibt es eine ärztliche Anordnung?" },
+      { id: "LAB_MEDICAL_INDICATION-Q2", text: "Liegt eine Überweisung oder externe Anordnung vor?" },
       { id: "LAB_MEDICAL_INDICATION-Q3", text: "Geht es um eine Routinekontrolle?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: Medizinische Indikation liegt vor.",
-      [ExplanationStatus.NO]: "Labor-Hinweis: Medizinische Indikation nicht erkennbar.",
-      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Indikation bitte genauer angeben.",
+      [ExplanationStatus.YES]: "Labor-Hinweis: Anlass für Laboruntersuchung ist angegeben.",
+      [ExplanationStatus.NO]: "Labor-Hinweis: Kein Laboranlass / Indikation nicht erkennbar.",
+      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Laboranlass bitte genauer angeben.",
     },
   },
 

@@ -116,7 +116,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {
       IS_NEW_PATIENT: "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
       PATIENT_NOT_IN_GERMANY: "Labor-Hinweis: Videosprechstunde / Besprechung bei Aufenthalt außerhalb Deutschlands nicht möglich.",
-      DOCTOR_REVIEW_REQUIRED: "Labor-Hinweis: ärztliche Klärung vor Labor notwendig.",
+      DOCTOR_REVIEW_REQUIRED: "Labor-Hinweis: ärztliche Klärung vor Terminvergabe oder Laboranforderung notwendig.",
       DATA_INCOMPLETE: "Labor-Hinweis: Angaben oder Versicherungsdaten fehlen.",
       IS_CHRONIC_PATIENT: "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
     },
