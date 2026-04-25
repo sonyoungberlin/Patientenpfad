@@ -848,13 +848,13 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat genau sechs Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(6);
+  it("AU-Profil hat genau fünf Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(5);
   });
 
-  it("AU-Profil bindet alle sechs AU SPECIFIC Explanation Checkpoints", () => {
+  it("AU-Profil bindet alle fünf AU SPECIFIC Explanation Checkpoints", () => {
     expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_LIMIT");
-    expect(auProfile.specificCheckpointIds).toContain("AU_DURATION_LIMIT");
+    expect(auProfile.specificCheckpointIds).not.toContain("AU_DURATION_LIMIT");
     expect(auProfile.specificCheckpointIds).toContain("AU_WORK_ACCIDENT");
     expect(auProfile.specificCheckpointIds).toContain("AU_CHILD_SICK");
     expect(auProfile.specificCheckpointIds).toContain("AU_CONTINUITY_REQUIRED");
@@ -947,13 +947,14 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("AU_DURATION_LIMIT YES → Erklärungstext in attachedParagraphs", () => {
+  it("AU_DURATION_LIMIT YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { AU_DURATION_LIMIT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("AU-Dauer"))).toBe(true);
+    // AU_DURATION_LIMIT ist nicht in specificCheckpointIds → erzeugt keinen Output
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("AU_WORK_ACCIDENT YES → Erklärungstext in attachedParagraphs", () => {
@@ -1001,8 +1002,8 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Arbeitsaufnahme"))).toBe(true);
   });
 
-  it("Alle sechs AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
-    for (const id of ["AU_BACKDATE_LIMIT", "AU_DURATION_LIMIT", "AU_WORK_ACCIDENT", "AU_CHILD_SICK", "AU_CONTINUITY_REQUIRED", "AU_RETURN_TO_WORK"]) {
+  it("Alle fünf gebundenen AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
+    for (const id of ["AU_BACKDATE_LIMIT", "AU_WORK_ACCIDENT", "AU_CHILD_SICK", "AU_CONTINUITY_REQUIRED", "AU_RETURN_TO_WORK"]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp).toBeDefined();
       expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);

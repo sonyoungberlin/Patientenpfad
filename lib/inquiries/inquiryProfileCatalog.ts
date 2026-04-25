@@ -35,7 +35,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "AU_DECISION",
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
-      "AU_DURATION_LIMIT",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
       "AU_CONTINUITY_REQUIRED",
