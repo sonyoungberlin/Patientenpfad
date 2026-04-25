@@ -189,7 +189,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "AU-Hinweis: Rückdatierung liegt außerhalb des zulässigen Rahmens.",
+        "Arbeitsunfähigkeitsbescheinigungen können nur bis zu zwei Tage rückwirkend ausgestellt werden.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -221,7 +221,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "AU-Hinweis: Arbeitsunfall / Wegeunfall – D-Arzt-Zuständigkeit prüfen.",
+        "Die medizinische Behandlung und Krankschreibung nach einem Arbeits- oder Wegeunfall erfolgt über einen Durchgangsarzt (D-Arzt).",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -237,7 +237,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "AU-Hinweis: Kindkrank-Bescheinigung – gesondertes Verfahren.",
+        "Bescheinigungen zur Betreuung eines erkrankten Kindes werden ausschließlich durch die behandelnde Kinderarztpraxis ausgestellt.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -253,7 +253,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "AU-Hinweis: Lückenlose Folge-AU erforderlich.",
+        "Folgebescheinigungen müssen unmittelbar an den vorherigen Zeitraum anschließen, um Lücken im Versicherungsverlauf zu vermeiden.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -269,7 +269,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "AU-Hinweis: Vorzeitige Arbeitsaufnahme / Gesundschreibung – ärztliche Einschätzung erforderlich.",
+        "Eine formale Gesundschreibung gibt es nicht; eine vorzeitige Rückkehr an den Arbeitsplatz ist möglich, wenn man sich arbeitsfähig fühlt.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },

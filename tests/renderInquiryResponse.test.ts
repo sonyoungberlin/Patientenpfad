@@ -935,7 +935,7 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
         checkpointStatuses: { AU_BACKDATE_LIMIT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Rückdatierung"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("rückwirkend"))).toBe(true);
   });
 
   it("AU_BACKDATE_LIMIT NO → kein Output in attachedParagraphs", () => {
@@ -963,7 +963,7 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
         checkpointStatuses: { AU_WORK_ACCIDENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Arbeitsunfall"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Durchgangsarzt"))).toBe(true);
   });
 
   it("AU_WORK_ACCIDENT NO → kein Output in attachedParagraphs", () => {
@@ -981,7 +981,7 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
         checkpointStatuses: { AU_CHILD_SICK: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Kindkrank"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Kinderarztpraxis"))).toBe(true);
   });
 
   it("AU_CONTINUITY_REQUIRED YES → Erklärungstext in attachedParagraphs", () => {
@@ -990,7 +990,7 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
         checkpointStatuses: { AU_CONTINUITY_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Folge-AU"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Folgebescheinigungen"))).toBe(true);
   });
 
   it("AU_RETURN_TO_WORK YES → Erklärungstext in attachedParagraphs", () => {
@@ -999,7 +999,7 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
         checkpointStatuses: { AU_RETURN_TO_WORK: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Arbeitsaufnahme"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Gesundschreibung"))).toBe(true);
   });
 
   it("Alle fünf gebundenen AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
@@ -1021,7 +1021,7 @@ describe("AU-Profil – IS_NEW_PATIENT globalHint", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "AU-Hinweis: Neupatient / Erstkontakt relevant.",
+      "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
     );
   });
 
@@ -1460,7 +1460,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
     ]);
     // AU-spezifischer Hint in Section 0
     expect(result.sections[0].attachedParagraphs).toContain(
-      "AU-Hinweis: Neupatient / Erstkontakt relevant.",
+      "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
     );
     // PRESCRIPTION-spezifischer Hint in Section 1
     expect(result.sections[1].attachedParagraphs).toContain(
