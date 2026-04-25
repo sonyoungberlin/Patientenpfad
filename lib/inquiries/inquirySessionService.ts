@@ -301,6 +301,28 @@ export async function confirmInquirySession(
   });
 }
 
+/**
+ * Liest eine InquirySession inkl. generiertem Output aus der DB.
+ *
+ * Gibt null zurück, wenn die Session nicht existiert.
+ * Optionaler Guard: Wird `ownerAccountId` übergeben, schlägt die Abfrage fehl
+ * (gibt null zurück), wenn die Session einem anderen Account gehört.
+ */
+export async function getInquirySessionWithOutput(
+  sessionId: string,
+  ownerAccountId?: string,
+  client: PrismaLike = defaultPrisma,
+): Promise<InquirySession | null> {
+  const session = await client.inquirySession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) return null;
+  if (ownerAccountId && session.owner_account_id !== ownerAccountId) return null;
+
+  return session;
+}
+
 // ---------------------------------------------------------------------------
 // Interne Hilfsfunktionen
 // ---------------------------------------------------------------------------
