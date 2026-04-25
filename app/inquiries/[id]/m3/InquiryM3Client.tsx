@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { type InquiryResponseV2Output } from "@/lib/inquiries/types";
+import { useMemo, useState } from "react";
+import {
+  DecisionStatus,
+  type CheckpointStatusValue,
+  type InquirySection,
+  type InquiryResponseV2Output,
+} from "@/lib/inquiries/types";
+import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 
 export type M3SectionData = {
   inquiryId: string;
@@ -77,13 +83,19 @@ function StatusButtons({
   );
 }
 
-function OutputView({ output }: { output: InquiryResponseV2Output }) {
+function OutputView({
+  output,
+  heading,
+}: {
+  output: InquiryResponseV2Output;
+  heading: string;
+}) {
   return (
     <div
       className="card"
       style={{ marginTop: "2rem", display: "grid", gap: "1rem" }}
     >
-      <h2 style={{ marginTop: 0 }}>Generierter Output</h2>
+      <h2 style={{ marginTop: 0 }}>{heading}</h2>
 
       {output.sections.map((sec) => (
         <section key={sec.inquiryId}>
@@ -143,14 +155,31 @@ export default function InquiryM3Client({
     ...initialActionStatuses,
   });
   const [confirmed, setConfirmed] = useState(isConfirmed);
-  const [output, setOutput] = useState<InquiryResponseV2Output | null>(
+  const [frozenOutput, setFrozenOutput] = useState<InquiryResponseV2Output | null>(
     initialGeneratedOutput,
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Live preview: computed from current statuses on every render before confirm.
+  // renderInquiryResponseFromSections is a pure function (no network, no side effects).
+  const livePreview = useMemo((): InquiryResponseV2Output | null => {
+    if (confirmed) return null;
+    try {
+      const inquirySections: InquirySection[] = sections.map((sec) => ({
+        inquiryId: sec.inquiryId,
+        decisionStatus:
+          (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
+          DecisionStatus.DISABLED,
+        checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
+      }));
+      return renderInquiryResponseFromSections(inquirySections);
+    } catch {
+      return null;
+    }
+  }, [confirmed, statuses, sections]);
+
   function setStatus(checkpointId: string, value: string) {
-    if (confirmed) return;
     setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
   }
 
@@ -190,7 +219,7 @@ export default function InquiryM3Client({
         return;
       }
 
-      setOutput(confirmData.output as InquiryResponseV2Output);
+      setFrozenOutput(confirmData.output as InquiryResponseV2Output);
       setConfirmed(true);
     } catch {
       setError("Netzwerkfehler. Bitte erneut versuchen.");
@@ -201,77 +230,86 @@ export default function InquiryM3Client({
 
   return (
     <div style={{ maxWidth: "42rem" }}>
-      {confirmed && (
-        <div
-          style={{
-            padding: "0.5rem 1rem",
-            background: "var(--success-bg, #dcfce7)",
-            borderRadius: "var(--radius)",
-            marginBottom: "1.5rem",
-            color: "var(--success-fg, #166534)",
-            fontWeight: 500,
-          }}
-        >
-          ✓ Anfrage bestätigt – Ansicht ist schreibgeschützt.
-        </div>
-      )}
-
-      {/* Decision per inquiry */}
-      {sections.map((section) => (
-        <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
-          <div>
-            <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
-            <StatusButtons
-              checkpointId={section.decisionCheckpointId}
-              options={DECISION_OPTIONS}
-              value={statuses[section.decisionCheckpointId]}
-              onChange={setStatus}
-              disabled={confirmed}
-            />
-          </div>
-        </section>
-      ))}
-
-      {/* Action checkpoints */}
-      {actionCheckpoints.length > 0 && (
-        <section style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{ marginBottom: "0.5rem" }}>Aktionen</h2>
-          {actionCheckpoints.map((cp) => (
-            <div
-              key={cp.id}
-              style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-            >
-              <div style={{ fontWeight: 500 }}>{cp.label}</div>
-              <StatusButtons
-                checkpointId={cp.id}
-                options={ACTION_OPTIONS}
-                value={statuses[cp.id]}
-                onChange={setStatus}
-                disabled={confirmed}
-              />
-            </div>
-          ))}
-        </section>
-      )}
-
-      {!confirmed && (
+      {confirmed ? (
         <>
-          {error && (
-            <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>
-          )}
-          <button
-            type="button"
-            onClick={() => void handleConfirm()}
-            disabled={submitting}
-            style={{ fontWeight: 500 }}
+          <div
+            style={{
+              padding: "0.5rem 1rem",
+              background: "var(--success-bg, #dcfce7)",
+              borderRadius: "var(--radius)",
+              marginBottom: "1.5rem",
+              color: "var(--success-fg, #166534)",
+              fontWeight: 500,
+            }}
           >
-            {submitting ? "Wird bestätigt…" : "Anfrage bestätigen"}
-          </button>
+            ✓ Anfrage bestätigt – Ansicht ist schreibgeschützt.
+          </div>
+          {frozenOutput && (
+            <OutputView output={frozenOutput} heading="Bestätigter Output" />
+          )}
+        </>
+      ) : (
+        <>
+          {/* Decision per inquiry */}
+          {sections.map((section) => (
+            <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
+              <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
+              <div>
+                <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
+                <StatusButtons
+                  checkpointId={section.decisionCheckpointId}
+                  options={DECISION_OPTIONS}
+                  value={statuses[section.decisionCheckpointId]}
+                  onChange={setStatus}
+                  disabled={false}
+                />
+              </div>
+            </section>
+          ))}
+
+          {/* Action checkpoints */}
+          {actionCheckpoints.length > 0 && (
+            <section style={{ marginBottom: "1.5rem" }}>
+              <h2 style={{ marginBottom: "0.5rem" }}>Aktionen</h2>
+              {actionCheckpoints.map((cp) => (
+                <div
+                  key={cp.id}
+                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                >
+                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                  <StatusButtons
+                    checkpointId={cp.id}
+                    options={ACTION_OPTIONS}
+                    value={statuses[cp.id]}
+                    onChange={setStatus}
+                    disabled={false}
+                  />
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* Live preview */}
+          {livePreview && (
+            <OutputView output={livePreview} heading="Vorschau" />
+          )}
+
+          {error && (
+            <p style={{ color: "var(--destructive)", margin: "1rem 0 0.5rem" }}>{error}</p>
+          )}
+
+          <div style={{ marginTop: "1.5rem" }}>
+            <button
+              type="button"
+              onClick={() => void handleConfirm()}
+              disabled={submitting}
+              style={{ fontWeight: 500 }}
+            >
+              {submitting ? "Wird bestätigt…" : "Anfrage bestätigen"}
+            </button>
+          </div>
         </>
       )}
-
-      {output && <OutputView output={output} />}
     </div>
   );
 }
