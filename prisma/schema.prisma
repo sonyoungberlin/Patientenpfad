@@ -27,8 +27,13 @@ model Account {
   /// Freitext-Signatur für Nachrichten (max. 300 Zeichen, accountbezogen)
   message_signature String?
 
+  /// Freigabe für den Anfrage-Assistenten (separater zweiter Modus).
+  /// Muss explizit durch Admin aktiviert werden; Standard: false.
+  inquiry_assistant_enabled Boolean @default(false)
+
   cases             CaseSession[]
   sessions          Session[]
+  inquiry_sessions  InquirySession[]
 }
 
 model Session {
@@ -154,4 +159,43 @@ model CaseSession {
   /// Vorbereitungsdurchläufe dieses Falls. Wird in Schritt 1 noch nicht von
   /// bestehenden Routen geschrieben; siehe `lib/server/prefillRuns.ts`.
   prefill_runs         PrefillRun[]
+}
+
+enum InquirySessionStatus {
+  DRAFT
+  CONFIRMED
+  ARCHIVED
+}
+
+/// Sitzung des Anfrage-Assistenten.
+/// JSON-Felder werden bewusst verwendet, da die Checkpoint-Struktur
+/// noch in der Validierungsphase ist. Keine Einzeltabellen für Checkpoints.
+model InquirySession {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Optionale Verknüpfung zum eingeloggten Account.
+  owner_account_id String?
+  owner_account    Account? @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
+
+  status InquirySessionStatus @default(DRAFT)
+
+  /// Liste der ausgewählten Anliegen-IDs (z. B. ["AU"]).
+  selected_inquiry_ids Json?
+
+  /// Snapshot der Anliegen-Abschnitte zum Zeitpunkt der Generierung.
+  section_snapshot Json?
+
+  /// Checkpoint-Statuses: Record<checkpointId, StatusValue>.
+  checkpoint_statuses Json?
+
+  /// Aktions-Statuses: Record<actionId, ActionStatus>.
+  action_statuses Json?
+
+  /// Generierter Output (renderInquiryResponseFromSections-Ergebnis).
+  generated_output Json?
+
+  /// Zeitpunkt der Bestätigung (gesetzt zusammen mit status = CONFIRMED).
+  confirmed_at DateTime?
 }
