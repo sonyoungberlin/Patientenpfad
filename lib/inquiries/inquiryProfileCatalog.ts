@@ -33,7 +33,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     id: "AU",
     label: "AU / Krankschreibung",
     decisionCheckpointId: "AU_DECISION",
-    specificCheckpointIds: [],
+    specificCheckpointIds: [
+      "AU_BACKDATE_LIMIT",
+      "AU_DURATION_LIMIT",
+      "AU_WORK_ACCIDENT",
+      "AU_CHILD_SICK",
+      "AU_CONTINUITY_REQUIRED",
+      "AU_RETURN_TO_WORK",
+    ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",
       "PATIENT_NOT_IN_GERMANY",
@@ -45,6 +52,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
     ],
     globalHints: {
       IS_NEW_PATIENT: "AU-Hinweis: Neupatient / Erstkontakt relevant.",

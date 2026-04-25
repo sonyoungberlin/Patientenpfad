@@ -848,8 +848,17 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat keine Specific Checkpoints (Rückdatierung, Dauer, Wiederholung sind questions auf AU_DECISION)", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(0);
+  it("AU-Profil hat genau sechs Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(6);
+  });
+
+  it("AU-Profil bindet alle sechs AU SPECIFIC Explanation Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_LIMIT");
+    expect(auProfile.specificCheckpointIds).toContain("AU_DURATION_LIMIT");
+    expect(auProfile.specificCheckpointIds).toContain("AU_WORK_ACCIDENT");
+    expect(auProfile.specificCheckpointIds).toContain("AU_CHILD_SICK");
+    expect(auProfile.specificCheckpointIds).toContain("AU_CONTINUITY_REQUIRED");
+    expect(auProfile.specificCheckpointIds).toContain("AU_RETURN_TO_WORK");
   });
 
   it("AU-Profil bindet alle vier Global Checkpoints", () => {
@@ -875,37 +884,131 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
       expect(Object.keys(cp.textByStatus)).toHaveLength(0);
     }
   });
+
+  it("IS_CHRONIC_PATIENT ist nicht bei AU gebunden", () => {
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
+  });
 });
 
 describe("AU_DECISION – questions als Klärungshilfe", () => {
-  it("AU_DECISION hat genau drei questions (Rückdatierung, Dauer, Wiederholung)", () => {
+  it("AU_DECISION hat genau zwei questions (Beschwerden/Diagnose und Zeitraum)", () => {
     const auDecision = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"];
     expect(auDecision.questions).toBeDefined();
-    expect((auDecision.questions ?? []).length).toBe(3);
+    expect((auDecision.questions ?? []).length).toBe(2);
   });
 
-  it("AU_DECISION question-Texte enthalten Rückdatierung, Dauer und Wiederholung", () => {
+  it("AU_DECISION question-Texte betreffen Beschwerden/Diagnose und Zeitraum", () => {
     const questions = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"].questions ?? [];
     const texts = questions.map((q) => q.text);
-    expect(texts.some((t) => t.toLowerCase().includes("rückwirkend"))).toBe(true);
+    expect(texts.some((t) => t.toLowerCase().includes("beschwerden") || t.toLowerCase().includes("diagnose"))).toBe(true);
     expect(texts.some((t) => t.toLowerCase().includes("zeitraum"))).toBe(true);
-    expect(texts.some((t) => t.toLowerCase().includes("wiederholung") || t.toLowerCase().includes("untersuchung"))).toBe(true);
   });
 
-  it("AU-Profil hat keine Specific Checkpoints mehr – AU_BACKDATE_ALLOWED nicht in specificCheckpointIds", () => {
+  it("AU_DECISION enthält keine Rückdatierungsfrage mehr", () => {
+    const questions = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"].questions ?? [];
+    const texts = questions.map((q) => q.text.toLowerCase());
+    expect(texts.some((t) => t.includes("rückwirkend") || t.includes("rückdatierung"))).toBe(false);
+  });
+
+  it("AU_DECISION enthält keine Wiederholung-ohne-Untersuchung-Frage mehr", () => {
+    const questions = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"].questions ?? [];
+    const texts = questions.map((q) => q.text.toLowerCase());
+    expect(texts.some((t) => t.includes("wiederholung") || t.includes("ohne neue untersuchung"))).toBe(false);
+  });
+
+  it("Alte AU-IDs sind nicht in specificCheckpointIds (AU_BACKDATE_ALLOWED, AU_DURATION_ALLOWED, AU_REPEAT_WITHOUT_EXAM)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["AU"];
     expect(profile.specificCheckpointIds).not.toContain("AU_BACKDATE_ALLOWED");
     expect(profile.specificCheckpointIds).not.toContain("AU_DURATION_ALLOWED");
     expect(profile.specificCheckpointIds).not.toContain("AU_REPEAT_WITHOUT_EXAM");
   });
 
-  it("AU_BACKDATE_ALLOWED in checkpointStatuses erzeugt keinen attachedParagraph (nicht mehr in specificCheckpointIds)", () => {
+  it("AU_REPEAT_WITHOUT_EXAM ist nicht mehr im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["AU_REPEAT_WITHOUT_EXAM"]).toBeUndefined();
+  });
+});
+
+describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
+  it("AU_BACKDATE_LIMIT YES → Erklärungstext in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { AU_BACKDATE_ALLOWED: ExplanationStatus.NO },
+        checkpointStatuses: { AU_BACKDATE_LIMIT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Rückdatierung"))).toBe(true);
+  });
+
+  it("AU_BACKDATE_LIMIT NO → kein Output in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_BACKDATE_LIMIT: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("AU_DURATION_LIMIT YES → Erklärungstext in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_DURATION_LIMIT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("AU-Dauer"))).toBe(true);
+  });
+
+  it("AU_WORK_ACCIDENT YES → Erklärungstext in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_WORK_ACCIDENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Arbeitsunfall"))).toBe(true);
+  });
+
+  it("AU_WORK_ACCIDENT NO → kein Output in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_WORK_ACCIDENT: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("AU_CHILD_SICK YES → Erklärungstext in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_CHILD_SICK: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Kindkrank"))).toBe(true);
+  });
+
+  it("AU_CONTINUITY_REQUIRED YES → Erklärungstext in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_CONTINUITY_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Folge-AU"))).toBe(true);
+  });
+
+  it("AU_RETURN_TO_WORK YES → Erklärungstext in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_RETURN_TO_WORK: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Arbeitsaufnahme"))).toBe(true);
+  });
+
+  it("Alle sechs AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
+    for (const id of ["AU_BACKDATE_LIMIT", "AU_DURATION_LIMIT", "AU_WORK_ACCIDENT", "AU_CHILD_SICK", "AU_CONTINUITY_REQUIRED", "AU_RETURN_TO_WORK"]) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+      expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+      expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+    }
   });
 });
 
@@ -930,6 +1033,74 @@ describe("AU-Profil – IS_NEW_PATIENT globalHint", () => {
     expect(result.sections[0].attachedParagraphs).toContain(
       "AU-Hinweis: Angaben / Daten unvollständig.",
     );
+  });
+
+  it("DOCTOR_REVIEW_REQUIRED bleibt globaler AU-Hinweis", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { DOCTOR_REVIEW_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "AU-Hinweis: ärztliche Einschätzung erforderlich.",
+    );
+  });
+});
+
+describe("PROCESSING_DELAY und TECHNICAL_ISSUE – GLOBAL SHARED_BOTTOM", () => {
+  it("PROCESSING_DELAY ist im Katalog als ACTION / GLOBAL / SHARED_BOTTOM definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["PROCESSING_DELAY"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+  });
+
+  it("TECHNICAL_ISSUE ist im Katalog als ACTION / GLOBAL / SHARED_BOTTOM definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TECHNICAL_ISSUE"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+  });
+
+  it("PROCESSING_DELAY ACTIVE → Text erscheint in sharedBottom (AU-Section)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { PROCESSING_DELAY: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom.some((t) => t.includes("Bearbeitung"))).toBe(true);
+  });
+
+  it("TECHNICAL_ISSUE ACTIVE → Text erscheint in sharedBottom (AU-Section)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { TECHNICAL_ISSUE: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom.some((t) => t.includes("technische Störung"))).toBe(true);
+  });
+
+  it("PROCESSING_DELAY INACTIVE → kein Eintrag in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { PROCESSING_DELAY: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+
+  it("PROCESSING_DELAY und TECHNICAL_ISSUE beide ACTIVE → beide in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          PROCESSING_DELAY: ActionStatus.ACTIVE,
+          TECHNICAL_ISSUE: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(2);
   });
 });
 

@@ -159,12 +159,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     // Klärungsfragen zur AU-Entscheidung (erscheinen in M2 als Fragenblock und in M3 als Kontext).
-    // Rückdatierung, Dauer und Wiederholung werden als Sammelfragen modelliert,
-    // nicht als eigene entscheidbare Checkpoints.
+    // Nur echte Entscheidungsgrundlagen – kein Thema, das eine eigene Patientenerklärung braucht.
+    // Rückdatierung ist ein eigener SPECIFIC Explanation Checkpoint (AU_BACKDATE_LIMIT).
+    // Wiederholung ohne Untersuchung wird global über DOCTOR_REVIEW_REQUIRED abgebildet.
     questions: [
-      { id: "AU_DECISION-Q1", text: "Soll die AU rückwirkend ausgestellt werden?" },
-      { id: "AU_DECISION-Q2", text: "Welchen Zeitraum soll die AU umfassen?" },
-      { id: "AU_DECISION-Q3", text: "Handelt es sich um eine Wiederholung ohne neue Untersuchung?" },
+      { id: "AU_DECISION-Q1", text: "Sind Beschwerden oder eine Diagnose plausibel dargelegt?" },
+      { id: "AU_DECISION-Q2", text: "Ist der gewünschte AU-Zeitraum bekannt?" },
     ],
     textByStatus: {
       // DecisionStatus.DISABLED ist nicht befüllt: bedeutet „noch keine manuelle Entscheidung
@@ -176,47 +176,101 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  // ---- SPECIFIC EXPLANATIONS ----
+  // ---- AU SPECIFIC EXPLANATIONS ----
 
-  AU_BACKDATE_ALLOWED: {
-    id: "AU_BACKDATE_ALLOWED",
-    label: "Rückdatierung",
+  AU_BACKDATE_LIMIT: {
+    id: "AU_BACKDATE_LIMIT",
+    label: "Rückdatierungsgrenze",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_BACKDATE_LIMIT-Q1", text: "Liegt die gewünschte Rückdatierung außerhalb des zulässigen Rahmens?" },
+    ],
     textByStatus: {
-      [ExplanationStatus.NO]:
-        "Eine rückwirkende Ausstellung ist nur begrenzt möglich. Der gewünschte Zeitraum liegt darüber hinaus.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Prüfung benötigen wir den genauen Zeitraum der gewünschten Arbeitsunfähigkeit.",
+      [ExplanationStatus.YES]:
+        "AU-Hinweis: Rückdatierung liegt außerhalb des zulässigen Rahmens.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
-  AU_DURATION_ALLOWED: {
-    id: "AU_DURATION_ALLOWED",
-    label: "Zulässige Dauer",
+  AU_DURATION_LIMIT: {
+    id: "AU_DURATION_LIMIT",
+    label: "AU-Dauer überschreitet Rahmen",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_DURATION_LIMIT-Q1", text: "Überschreitet die gewünschte AU-Dauer den zulässigen Rahmen?" },
+    ],
     textByStatus: {
-      [ExplanationStatus.NO]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann nur für einen begrenzten Zeitraum ausgestellt werden.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Prüfung benötigen wir den gewünschten Zeitraum der Arbeitsunfähigkeit.",
+      [ExplanationStatus.YES]:
+        "AU-Hinweis: Gewünschte AU-Dauer überschreitet den zulässigen Rahmen.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
-  AU_REPEAT_WITHOUT_EXAM: {
-    id: "AU_REPEAT_WITHOUT_EXAM",
-    label: "Wiederholte digitale AU ohne Untersuchung",
+  AU_WORK_ACCIDENT: {
+    id: "AU_WORK_ACCIDENT",
+    label: "Arbeitsunfall / Wegeunfall",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_WORK_ACCIDENT-Q1", text: "Handelt es sich um einen Arbeits- oder Wegeunfall?" },
+    ],
     textByStatus: {
-      [ExplanationStatus.NO]:
-        "AU-Hinweis: Wiederholte digitale AU ohne ärztliche Untersuchung nicht möglich.",
-      [ExplanationStatus.UNKNOWN]:
-        "AU-Hinweis: Prüfung erforderlich, ob wiederholte AU ohne Untersuchung zulässig ist.",
+      [ExplanationStatus.YES]:
+        "AU-Hinweis: Arbeitsunfall / Wegeunfall – D-Arzt-Zuständigkeit prüfen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_CHILD_SICK: {
+    id: "AU_CHILD_SICK",
+    label: "Kind krank / Kindkrank-Bescheinigung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_CHILD_SICK-Q1", text: "Geht es um eine Bescheinigung wegen Betreuung eines erkrankten Kindes?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "AU-Hinweis: Kindkrank-Bescheinigung – gesondertes Verfahren.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_CONTINUITY_REQUIRED: {
+    id: "AU_CONTINUITY_REQUIRED",
+    label: "Folge-AU / Lückenlosigkeit",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_CONTINUITY_REQUIRED-Q1", text: "Muss eine Folge-AU lückenlos an einen Vorzeitraum anschließen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "AU-Hinweis: Lückenlose Folge-AU erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_RETURN_TO_WORK: {
+    id: "AU_RETURN_TO_WORK",
+    label: "Vorzeitige Arbeitsaufnahme / Gesundschreibung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_RETURN_TO_WORK-Q1", text: "Geht es um vorzeitige Arbeitsaufnahme oder eine gewünschte Gesundschreibung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "AU-Hinweis: Vorzeitige Arbeitsaufnahme / Gesundschreibung – ärztliche Einschätzung erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
@@ -486,6 +540,30 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Termine können über den Online-Kalender vereinbart werden.",
+    },
+  },
+
+  PROCESSING_DELAY: {
+    id: "PROCESSING_DELAY",
+    label: "Bearbeitungsverzögerung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Hinweis: Die Bearbeitung kann derzeit länger dauern als üblich.",
+    },
+  },
+
+  TECHNICAL_ISSUE: {
+    id: "TECHNICAL_ISSUE",
+    label: "Technische Störung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Hinweis: Aktuell liegt eine technische Störung vor. Der Systemzugriff ist eingeschränkt.",
     },
   },
 };
