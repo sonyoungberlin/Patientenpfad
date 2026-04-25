@@ -40,9 +40,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",
-      "PATIENT_IN_GERMANY",
+      "PATIENT_NOT_IN_GERMANY",
       "DOCTOR_REVIEW_REQUIRED",
-      "DATA_COMPLETE",
+      "DATA_INCOMPLETE",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -52,9 +52,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     globalHints: {
       IS_NEW_PATIENT: "AU-Hinweis: Neupatient / Erstkontakt relevant.",
-      PATIENT_IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
+      PATIENT_NOT_IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
       DOCTOR_REVIEW_REQUIRED: "AU-Hinweis: ärztliche Einschätzung erforderlich.",
-      DATA_COMPLETE: "AU-Hinweis: Angaben / Daten unvollständig.",
+      DATA_INCOMPLETE: "AU-Hinweis: Angaben / Daten unvollständig.",
     },
   },
 };

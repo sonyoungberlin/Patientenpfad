@@ -224,13 +224,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
-  PATIENT_IN_GERMANY: {
-    id: "PATIENT_IN_GERMANY",
-    label: "Aufenthaltsort Deutschland",
+  PATIENT_NOT_IN_GERMANY: {
+    id: "PATIENT_NOT_IN_GERMANY",
+    label: "Aufenthaltsort außerhalb Deutschland",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    question: "Befindet sich die Person aktuell in Deutschland?",
+    question: "Befindet sich der Patient aktuell NICHT in Deutschland?",
     textByStatus: {},
   },
 
@@ -244,13 +244,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
-  DATA_COMPLETE: {
-    id: "DATA_COMPLETE",
-    label: "Angaben vollständig",
+  DATA_INCOMPLETE: {
+    id: "DATA_INCOMPLETE",
+    label: "Angaben unvollständig",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    question: "Sind alle erforderlichen Angaben und Daten vollständig?",
+    question: "Fehlen relevante Angaben oder Daten?",
     textByStatus: {},
   },
 

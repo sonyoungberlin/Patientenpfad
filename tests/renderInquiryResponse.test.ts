@@ -750,10 +750,10 @@ describe("renderInquiryResponseFromSections – Decision", () => {
 });
 
 describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints", () => {
-  it("PATIENT_IN_GERMANY YES → Hinweis aus globalHints erscheint in attachedParagraphs", () => {
+  it("PATIENT_NOT_IN_GERMANY YES → Hinweis aus globalHints erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.YES },
+        checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
@@ -761,27 +761,27 @@ describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints",
     );
   });
 
-  it("PATIENT_IN_GERMANY NO → kein Hinweis in attachedParagraphs", () => {
+  it("PATIENT_NOT_IN_GERMANY NO → kein Hinweis in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.NO },
+        checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.NO },
       }),
     ]);
     const texts = result.sections[0].attachedParagraphs.join(" ");
-    expect(texts).not.toContain("PATIENT_IN_GERMANY");
+    expect(texts).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(texts).not.toContain("Deutschland");
   });
 
-  it("PATIENT_IN_GERMANY UNKNOWN → kein Hinweis in attachedParagraphs", () => {
+  it("PATIENT_NOT_IN_GERMANY UNKNOWN → kein Hinweis in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.UNKNOWN },
+        checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.UNKNOWN },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("PATIENT_IN_GERMANY fehlt → kein Hinweis in attachedParagraphs", () => {
+  it("PATIENT_NOT_IN_GERMANY fehlt → kein Hinweis in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([makeAuSection()]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
@@ -798,10 +798,10 @@ describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints",
   });
 
   it("checkpoint.textByStatus wird für GLOBAL EXPLANATION NICHT verwendet (auch wenn befüllt)", () => {
-    // PATIENT_IN_GERMANY hat textByStatus: {} – kein Text darf durchkommen
+    // PATIENT_NOT_IN_GERMANY hat textByStatus: {} – kein Text darf durchkommen
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.NO },
+        checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -857,9 +857,9 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
 
   it("AU-Profil bindet alle vier Global Checkpoints", () => {
     expect(auProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(auProfile.boundGlobalCheckpointIds).toContain("PATIENT_IN_GERMANY");
+    expect(auProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
     expect(auProfile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(auProfile.boundGlobalCheckpointIds).toContain("DATA_COMPLETE");
+    expect(auProfile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
     expect(auProfile.boundGlobalCheckpointIds).toHaveLength(4);
   });
 
@@ -914,10 +914,10 @@ describe("AU-Profil – IS_NEW_PATIENT globalHint", () => {
     );
   });
 
-  it("DATA_COMPLETE YES → AU-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("DATA_INCOMPLETE YES → AU-spezifischer Hint erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { DATA_COMPLETE: ExplanationStatus.YES },
+        checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
