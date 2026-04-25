@@ -212,22 +212,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  AU_PATIENT_KNOWN: {
-    id: "AU_PATIENT_KNOWN",
-    label: "Patient bekannt",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Bei bekannten Beschwerden kann eine Arbeitsunfähigkeitsbescheinigung für bis zu fünf Tage ausgestellt werden.",
-      [ExplanationStatus.NO]:
-        "Bei neuen Patientinnen und Patienten kann eine Arbeitsunfähigkeitsbescheinigung zunächst nur für bis zu drei Tage ausgestellt werden.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Einschätzung ist wichtig, ob bereits eine Behandlung in unserer Praxis erfolgt ist.",
-    },
-  },
-
   // ---- GLOBAL EXPLANATIONS ----
 
   IS_NEW_PATIENT: {
@@ -267,26 +251,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
     question: "Sind alle erforderlichen Angaben und Daten vollständig?",
-    textByStatus: {},
-  },
-
-  IN_GERMANY: {
-    id: "IN_GERMANY",
-    label: "Aufenthaltsort Deutschland",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    question: "Befindet sich die Person aktuell in Deutschland?",
-    textByStatus: {},
-  },
-
-  DOCTOR_ASSESSMENT_REQUIRED: {
-    id: "DOCTOR_ASSESSMENT_REQUIRED",
-    label: "Ärztliche Einschätzung erforderlich",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    question: "Ist für dieses Anliegen eine ärztliche Einschätzung erforderlich?",
     textByStatus: {},
   },
 
