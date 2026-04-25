@@ -163,8 +163,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     // Rückdatierung ist ein eigener SPECIFIC Explanation Checkpoint (AU_BACKDATE_LIMIT).
     // Wiederholung ohne Untersuchung wird global über DOCTOR_REVIEW_REQUIRED abgebildet.
     questions: [
-      { id: "AU_DECISION-Q1", text: "Sind Beschwerden oder eine Diagnose plausibel dargelegt?" },
-      { id: "AU_DECISION-Q2", text: "Ist der gewünschte AU-Zeitraum bekannt?" },
+      { id: "AU_DECISION-Q1", text: "Sind Beschwerden oder eine Diagnose nachvollziehbar angegeben?" },
+      { id: "AU_DECISION-Q2", text: "Liegt der Zeitraum der angefragten Arbeitsunfähigkeit bei maximal fünf Tagen?" },
+      { id: "AU_DECISION-Q3", text: "Bei Langzeit-AU: Liegt eine ärztliche Freigabe vor?" },
     ],
     textByStatus: {
       // DecisionStatus.DISABLED ist nicht befüllt: bedeutet „noch keine manuelle Entscheidung

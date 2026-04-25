@@ -891,10 +891,10 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
 });
 
 describe("AU_DECISION – questions als Klärungshilfe", () => {
-  it("AU_DECISION hat genau zwei questions (Beschwerden/Diagnose und Zeitraum)", () => {
+  it("AU_DECISION hat genau drei questions (Beschwerden/Diagnose, Zeitraum und Langzeit-AU)", () => {
     const auDecision = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"];
     expect(auDecision.questions).toBeDefined();
-    expect((auDecision.questions ?? []).length).toBe(2);
+    expect((auDecision.questions ?? []).length).toBe(3);
   });
 
   it("AU_DECISION question-Texte betreffen Beschwerden/Diagnose und Zeitraum", () => {
