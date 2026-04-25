@@ -926,3 +926,14 @@ describe("AU-Profil – IS_NEW_PATIENT globalHint", () => {
   });
 });
 
+
+describe("IS_CHRONIC_PATIENT – kein Profil-Binding", () => {
+  it("IS_CHRONIC_PATIENT YES ohne Binding im Profil → kein Output in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});

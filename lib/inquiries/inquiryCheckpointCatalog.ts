@@ -254,6 +254,16 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  IS_CHRONIC_PATIENT: {
+    id: "IS_CHRONIC_PATIENT",
+    label: "Chronische Erkrankung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Liegt eine chronische oder dauerhaft behandlungsbedürftige Erkrankung vor?",
+    textByStatus: {},
+  },
+
   // ---- GLOBAL ACTIONS ----
 
   OPEN_CONSULTATION: {
