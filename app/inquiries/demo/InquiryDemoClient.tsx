@@ -96,6 +96,11 @@ export default function InquiryDemoClient() {
   }, [hasActiveInput, decisionStatus, renderStatuses]);
 
   const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[AU_PROFILE.decisionCheckpointId];
+  if (!decisionCp) {
+    throw new Error(
+      `InquiryDemoClient: Decision-Checkpoint "${AU_PROFILE.decisionCheckpointId}" nicht im Katalog gefunden.`,
+    );
+  }
 
   const explanationIds = [
     ...AU_PROFILE.specificCheckpointIds,
