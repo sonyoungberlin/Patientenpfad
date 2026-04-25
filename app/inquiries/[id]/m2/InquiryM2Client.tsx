@@ -44,6 +44,40 @@ const YES_NO_OPTIONS = [
   { value: "NO", label: "Nein" },
 ];
 
+function YesNoButtons({
+  checkpointId,
+  value,
+  onChange,
+}: {
+  checkpointId: string;
+  value: string | undefined;
+  onChange: (id: string, val: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+      {YES_NO_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(checkpointId, opt.value)}
+          style={{
+            padding: "0.25rem 0.75rem",
+            borderRadius: "var(--radius)",
+            border: "1px solid var(--border)",
+            background: value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
+            color: value === opt.value ? "#fff" : "var(--foreground)",
+            fontWeight: value === opt.value ? 600 : 400,
+            cursor: "pointer",
+            fontSize: "0.85rem",
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function SwitchRow({
   checkpoint,
   value,
@@ -61,27 +95,7 @@ function SwitchRow({
           {checkpoint.question}
         </div>
       )}
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
-        {YES_NO_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(checkpoint.id, opt.value)}
-            style={{
-              padding: "0.25rem 0.75rem",
-              borderRadius: "var(--radius)",
-              border: "1px solid var(--border)",
-              background: value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
-              color: value === opt.value ? "#fff" : "var(--foreground)",
-              fontWeight: value === opt.value ? 600 : 400,
-              cursor: "pointer",
-              fontSize: "0.85rem",
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <YesNoButtons checkpointId={checkpoint.id} value={value} onChange={onChange} />
     </div>
   );
 }
@@ -101,6 +115,46 @@ function QuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/**
+ * Zeigt einen SPECIFIC EXPLANATION Checkpoint mit dessen Klärungsfragen als primären Inhalt.
+ * Das Label erscheint nur dezent als Kontext. Ja/Nein-Buttons speichern den M2-Status.
+ */
+function ExplanationQuestionRow({
+  checkpoint,
+  value,
+  onChange,
+}: {
+  checkpoint: PlainCheckpoint;
+  value: string | undefined;
+  onChange: (id: string, val: string) => void;
+}) {
+  const questions = checkpoint.questions ?? [];
+  return (
+    <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
+      {questions.length === 1 ? (
+        <div>{questions[0].text}</div>
+      ) : questions.length > 1 ? (
+        <ul style={{ margin: "0 0 0 1.25rem", padding: 0 }}>
+          {questions.map((q) => (
+            <li key={q.id}>{q.text}</li>
+          ))}
+        </ul>
+      ) : (
+        <div>{checkpoint.label}</div>
+      )}
+      {questions.length > 0 && (
+        <div
+          className="text-muted text-small"
+          style={{ marginTop: "0.2rem" }}
+        >
+          {checkpoint.label}
+        </div>
+      )}
+      <YesNoButtons checkpointId={checkpoint.id} value={value} onChange={onChange} />
     </div>
   );
 }
@@ -158,16 +212,16 @@ function SpecificSection({
           {/* 2.1 Decision-Questions – reiner Fragenblock, keine Buttons */}
           <DecisionQuestionBlock questions={section.decisionQuestions} />
 
-          {/* 2.2 Standard SPECIFIC Explanation Checkpoints – Ja/Nein-Auswahl */}
+          {/* 2.2 Standard SPECIFIC Explanation Checkpoints – Fragen als primärer Inhalt mit Ja/Nein */}
           {standardCheckpoints.map((cp) =>
             cp.kind === InquiryCheckpointKind.EXPLANATION ? (
-              <SwitchRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
+              <ExplanationQuestionRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
             ) : (
               <QuestionBlock key={cp.id} checkpoint={cp} />
             ),
           )}
 
-          {/* 3. Optionale Spezialfälle – einklappbar, reiner Fragenblock */}
+          {/* 3. Optionale Spezialfälle – einklappbar, EXPLANATION mit Ja/Nein */}
           {optionalCheckpoints.length > 0 && (
             <>
               <button
@@ -188,9 +242,13 @@ function SpecificSection({
               </button>
               {isExpanded && (
                 <div style={{ marginTop: "0.5rem" }}>
-                  {optionalCheckpoints.map((cp) => (
-                    <QuestionBlock key={cp.id} checkpoint={cp} />
-                  ))}
+                  {optionalCheckpoints.map((cp) =>
+                    cp.kind === InquiryCheckpointKind.EXPLANATION ? (
+                      <ExplanationQuestionRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
+                    ) : (
+                      <QuestionBlock key={cp.id} checkpoint={cp} />
+                    ),
+                  )}
                 </div>
               )}
             </>
