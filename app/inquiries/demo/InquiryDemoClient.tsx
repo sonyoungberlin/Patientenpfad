@@ -1,286 +1,117 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import {
+  DecisionStatus,
+  ExplanationStatus,
+  ActionStatus,
+  InquiryCheckpointKind,
+  type CheckpointStatusValue,
+} from "@/lib/inquiries/types";
+import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 
 // ---------------------------------------------------------------------------
-// Topic decisions (Anliegen) – local to this demo page
+// AU-Profil aus V2-Katalog
 // ---------------------------------------------------------------------------
 
-type TopicDecision = "possible" | "not_possible" | null;
+const AU_PROFILE = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-type Topic = {
-  id: string;
-  label: string;
-  heading: string;
-  textByDecision: {
-    possible: string;
-    not_possible: string;
-  };
-  docByDecision: {
-    possible: string;
-    not_possible: string;
-  };
-};
-
-const TOPICS: Topic[] = [
-  {
-    id: "impfung",
-    label: "Impfung",
-    heading: "Zur Impfung",
-    textByDecision: {
-      possible: "Eine Impfung kann in unserer Praxis durchgeführt werden.",
-      not_possible: "Eine direkte Impfung ist aktuell nicht möglich.",
-    },
-    docByDecision: {
-      possible: "Impfung: möglich.",
-      not_possible: "Impfung: nicht möglich.",
-    },
-  },
-  {
-    id: "au",
-    label: "AU / Krankschreibung",
-    heading: "Zur Arbeitsunfähigkeitsbescheinigung",
-    textByDecision: {
-      possible: "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
-      not_possible:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann nicht ausgestellt werden.",
-    },
-    docByDecision: {
-      possible: "AU: möglich.",
-      not_possible: "AU: nicht möglich.",
-    },
-  },
-  {
-    id: "rezept",
-    label: "Rezept",
-    heading: "Zum Rezept",
-    textByDecision: {
-      possible: "Ein Rezept kann ausgestellt werden.",
-      not_possible: "Ein Rezept kann nicht ausgestellt werden.",
-    },
-    docByDecision: {
-      possible: "Rezept: möglich.",
-      not_possible: "Rezept: nicht möglich.",
-    },
-  },
-  {
-    id: "wundversorgung",
-    label: "Wundversorgung",
-    heading: "Zur Wundversorgung",
-    textByDecision: {
-      possible:
-        "Eine Wundversorgung kann in unserer Praxis durchgeführt werden.",
-      not_possible:
-        "Diese Form der Wundversorgung führen wir in unserer Praxis nicht durch.",
-    },
-    docByDecision: {
-      possible: "Wundversorgung: möglich.",
-      not_possible: "Wundversorgung: nicht möglich.",
-    },
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Global Checkpoints (Erklärungen + Wege) – local to this demo page
-// ---------------------------------------------------------------------------
-
-type GlobalCheckpointStatus = "yes" | "no" | "unknown";
-
-type GlobalCheckpoint = {
-  id: string;
-  label: string;
-  type: "explanation" | "way";
-  textByStatus?: {
-    yes?: string;
-    no?: string;
-    unknown?: string;
-  };
-  text?: string; // für Wege ohne Status
-};
-
-const GLOBAL_CHECKPOINTS: GlobalCheckpoint[] = [
-  {
-    id: "abroad",
-    label: "Patient im Ausland",
-    type: "explanation",
-    textByStatus: {
-      yes: "Bestimmte Leistungen können nur durchgeführt werden, wenn sich die Person in Deutschland befindet.",
-      unknown:
-        "Befinden Sie sich aktuell in Deutschland? Falls nicht, können bestimmte Leistungen nicht durchgeführt werden.",
-    },
-  },
-  {
-    id: "missing_data",
-    label: "Daten unvollständig",
-    type: "explanation",
-    textByStatus: {
-      yes: "Für die Bearbeitung fehlen noch notwendige Angaben.",
-      unknown: "Damit wir das prüfen können, benötigen wir noch einige Angaben.",
-    },
-  },
-  {
-    id: "doctor_required",
-    label: "Ärztliche Vorstellung erforderlich",
-    type: "explanation",
-    textByStatus: {
-      yes: "Für dieses Anliegen ist eine persönliche ärztliche Vorstellung erforderlich.",
-      unknown:
-        "Gegebenenfalls ist eine persönliche ärztliche Vorstellung erforderlich.",
-    },
-  },
-  {
-    id: "booking",
-    label: "Termin buchen",
-    type: "way",
-    text: "Termine können über den Online-Kalender vereinbart werden.",
-  },
-  {
-    id: "digital",
-    label: "Digitale Anfrage",
-    type: "way",
-    text: "Die Anfrage kann über die digitale Anfrage gestellt werden.",
-  },
-  {
-    id: "documents",
-    label: "Unterlagen mitbringen",
-    type: "way",
-    text: "Zum Termin werden die relevanten Unterlagen benötigt.",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Section – one Antwortabschnitt with its own topic + global checkpoints
-// ---------------------------------------------------------------------------
-
-type Section = {
-  id: string;
-  topicId: string | null;
-  topicDecision: TopicDecision;
-  globalState: Record<string, GlobalCheckpointStatus>;
-};
-
-let _sectionCounter = 0;
-
-function buildInitialGlobalState(): Record<string, GlobalCheckpointStatus> {
-  return Object.fromEntries(GLOBAL_CHECKPOINTS.map((cp) => [cp.id, "unknown"]));
-}
-
-function newSection(): Section {
-  return {
-    id: String(++_sectionCounter),
-    topicId: null,
-    topicDecision: null,
-    globalState: buildInitialGlobalState(),
-  };
-}
-
-function getSectionParagraphs(s: Section): string[] {
-  const paras: string[] = [];
-
-  if (s.topicId && s.topicDecision) {
-    const topic = TOPICS.find((t) => t.id === s.topicId);
-    if (topic) paras.push(topic.textByDecision[s.topicDecision]);
+/** Baut den initialen Checkpoint-Status-State aus dem AU-Profil.
+ *  Explanation-Checkpoints: NO (kein automatischer Text)
+ *  Action-Checkpoints:      INACTIVE
+ */
+function buildInitialStatuses(): Record<string, CheckpointStatusValue> {
+  const result: Record<string, CheckpointStatusValue> = {};
+  const allIds = [
+    ...AU_PROFILE.specificCheckpointIds,
+    ...AU_PROFILE.boundGlobalCheckpointIds,
+    ...AU_PROFILE.availableActionIds,
+  ];
+  for (const id of allIds) {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+    if (!cp) continue;
+    result[id] =
+      cp.kind === InquiryCheckpointKind.ACTION
+        ? ActionStatus.INACTIVE
+        : ExplanationStatus.NO;
   }
-
-  GLOBAL_CHECKPOINTS.filter((cp) => cp.type === "explanation").forEach((cp) => {
-    const status = s.globalState[cp.id] ?? "unknown";
-    const text = cp.textByStatus?.[status];
-    if (text) paras.push(text);
-  });
-
-  return paras;
-}
-
-function getSectionHeading(s: Section): string {
-  if (s.topicId) {
-    const topic = TOPICS.find((t) => t.id === s.topicId);
-    if (topic) return topic.heading;
-  }
-  return "Allgemeiner Hinweis";
-}
-
-function getSectionDocLines(s: Section): string[] {
-  if (!s.topicId || !s.topicDecision) return [];
-  const topic = TOPICS.find((t) => t.id === s.topicId);
-  return topic ? [topic.docByDecision[s.topicDecision]] : [];
+  return result;
 }
 
 /**
- * Demo-Seite: Mehrere Antwortabschnitte, jeder mit eigenem Anliegen + globalen Bausteinen.
+ * Demo-Seite: AU / Krankschreibung aus INQUIRY_PROFILE_CATALOG_V2 und
+ * INQUIRY_CHECKPOINT_CATALOG_V2 rendern.
  *
  * Kein API-Aufruf, kein Login, kein Speichern.
  */
 export default function InquiryDemoClient() {
-  const [sections, setSections] = useState<Section[]>(() => [newSection()]);
+  const [decisionStatus, setDecisionStatus] = useState<DecisionStatus>(
+    DecisionStatus.DISABLED,
+  );
+  const [checkpointStatuses, setCheckpointStatuses] = useState<
+    Record<string, CheckpointStatusValue>
+  >(buildInitialStatuses);
 
-  function addSection() {
-    setSections((prev) => [...prev, newSection()]);
+  function setStatus(id: string, status: CheckpointStatusValue) {
+    setCheckpointStatuses((prev) => ({ ...prev, [id]: status }));
   }
 
-  function removeSection(id: string) {
-    setSections((prev) => prev.filter((s) => s.id !== id));
-  }
-
-  function setTopicDecision(
-    sectionId: string,
-    topicId: string,
-    decision: TopicDecision,
-  ) {
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId ? { ...s, topicId, topicDecision: decision } : s,
-      ),
-    );
-  }
-
-  function clearTopic(sectionId: string) {
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId ? { ...s, topicId: null, topicDecision: null } : s,
-      ),
-    );
-  }
-
-  function setGlobalStatus(
-    sectionId: string,
-    cpId: string,
-    status: GlobalCheckpointStatus,
-  ) {
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? { ...s, globalState: { ...s.globalState, [cpId]: status } }
-          : s,
-      ),
-    );
-  }
-
-  const allSectionOutputs = sections.map((s) => ({
-    id: s.id,
-    heading: getSectionHeading(s),
-    paragraphs: getSectionParagraphs(s),
-    docLines: getSectionDocLines(s),
-  }));
-
-  const hasAnyOutput = allSectionOutputs.some((o) => o.paragraphs.length > 0);
-  const allDocLines = allSectionOutputs.flatMap((o) => o.docLines);
-
-  // Collect unique active "way" checkpoints across all sections
-  const activeWayTexts: string[] = [];
-  GLOBAL_CHECKPOINTS.filter((cp) => cp.type === "way").forEach((cp) => {
-    const isActiveInAnySection = sections.some(
-      (s) => s.globalState[cp.id] === "yes",
-    );
-    if (isActiveInAnySection && cp.text) {
-      activeWayTexts.push(cp.text);
+  // Statuses für den Renderer: NO-Explanations werden ausgeblendet, damit
+  // kein automatischer Text bei Default-Zustand erscheint.
+  const renderStatuses = useMemo(() => {
+    const filtered: Record<string, CheckpointStatusValue> = {};
+    for (const [id, status] of Object.entries(checkpointStatuses)) {
+      if (status !== ExplanationStatus.NO) {
+        filtered[id] = status;
+      }
     }
-  });
+    return filtered;
+  }, [checkpointStatuses]);
+
+  // Ausgabe erst zeigen, wenn Decision gesetzt oder mindestens ein
+  // Explanation-/Action-Checkpoint aktiv ist.
+  const hasActiveInput =
+    decisionStatus !== DecisionStatus.DISABLED ||
+    Object.entries(checkpointStatuses).some(([id, status]) => {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      if (!cp) return false;
+      if (cp.kind === InquiryCheckpointKind.ACTION)
+        return status === ActionStatus.ACTIVE;
+      return (
+        status === ExplanationStatus.YES || status === ExplanationStatus.UNKNOWN
+      );
+    });
+
+  const output = useMemo(() => {
+    if (!hasActiveInput) return null;
+    return renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus,
+        checkpointStatuses: renderStatuses,
+      },
+    ]);
+  }, [hasActiveInput, decisionStatus, renderStatuses]);
+
+  const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[AU_PROFILE.decisionCheckpointId];
+
+  const explanationIds = [
+    ...AU_PROFILE.specificCheckpointIds,
+    ...AU_PROFILE.boundGlobalCheckpointIds,
+  ];
+
+  const hasOutputContent =
+    output !== null &&
+    (output.sections.some((s) => s.attachedParagraphs.length > 0) ||
+      output.sharedBottom.length > 0);
 
   return (
     <main style={{ maxWidth: "72rem" }}>
       <h1 style={{ marginBottom: "0.25rem" }}>Anfrage-Assistent – Demo</h1>
       <p className="text-muted text-small" style={{ marginBottom: "1.5rem" }}>
-        Stateless-Prototyp · Antwortabschnitte · Kein Speichern, kein Login
+        AU / Krankschreibung · V2-Katalog · Kein Speichern, kein Login
       </p>
 
       <div
@@ -291,178 +122,133 @@ export default function InquiryDemoClient() {
           flexWrap: "wrap",
         }}
       >
-        {/* ── Left column: sections ── */}
+        {/* ── Left column: controls ── */}
         <div style={{ flex: "1 1 20rem", minWidth: 0 }}>
-          {sections.map((section, idx) => (
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
+            <h2 style={{ marginBottom: "0.75rem" }}>{AU_PROFILE.label}</h2>
+
+            {/* Decision */}
+            <h3 style={{ marginBottom: "0.5rem" }}>{decisionCp.label}</h3>
             <div
-              key={section.id}
-              className="card"
-              style={{ marginBottom: "1.5rem" }}
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                flexWrap: "wrap",
+                marginBottom: "1rem",
+              }}
             >
-              {/* Section header */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "0.75rem",
-                }}
-              >
-                <h2 style={{ margin: 0 }}>Abschnitt {idx + 1}</h2>
-                {sections.length > 1 && (
-                  <button
-                    type="button"
-                    className="answer-btn"
-                    onClick={() => removeSection(section.id)}
-                  >
-                    Abschnitt entfernen
-                  </button>
-                )}
-              </div>
-
-              {/* Anliegen */}
-              <h3 style={{ marginBottom: "0.5rem" }}>Anliegen</h3>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                {TOPICS.map((t) => {
-                  const isSelected = section.topicId === t.id;
-                  const current = isSelected ? section.topicDecision : null;
-                  return (
-                    <div key={t.id} className="card">
-                      <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
-                        {t.label}
-                      </p>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "0.5rem",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className={`answer-btn${current === "possible" ? " active" : ""}`}
-                          onClick={() =>
-                            setTopicDecision(section.id, t.id, "possible")
-                          }
-                        >
-                          möglich
-                        </button>
-                        <button
-                          type="button"
-                          className={`answer-btn${current === "not_possible" ? " active" : ""}`}
-                          onClick={() =>
-                            setTopicDecision(section.id, t.id, "not_possible")
-                          }
-                        >
-                          nicht möglich
-                        </button>
-                        {isSelected && (
-                          <button
-                            type="button"
-                            className="answer-btn"
-                            onClick={() => clearTopic(section.id)}
-                          >
-                            deaktivieren
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Globale Checkpoints */}
-              <h3 style={{ marginBottom: "0.5rem" }}>Globale Checkpoints</h3>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                }}
-              >
-                {GLOBAL_CHECKPOINTS.map((cp) => {
-                  const current = section.globalState[cp.id];
-                  return (
-                    <div key={cp.id} className="card">
-                      <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
-                        {cp.label}
-                      </p>
-                      {cp.type === "explanation" ? (
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "0.5rem",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            className={`answer-btn${current === "yes" ? " active" : ""}`}
-                            onClick={() =>
-                              setGlobalStatus(section.id, cp.id, "yes")
-                            }
-                          >
-                            Ja
-                          </button>
-                          <button
-                            type="button"
-                            className={`answer-btn${current === "no" ? " active" : ""}`}
-                            onClick={() =>
-                              setGlobalStatus(section.id, cp.id, "no")
-                            }
-                          >
-                            Nein
-                          </button>
-                          <button
-                            type="button"
-                            className={`answer-btn${current === "unknown" ? " active" : ""}`}
-                            onClick={() =>
-                              setGlobalStatus(section.id, cp.id, "unknown")
-                            }
-                          >
-                            Unklar
-                          </button>
-                        </div>
-                      ) : (
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={current === "yes"}
-                            onChange={(e) =>
-                              setGlobalStatus(
-                                section.id,
-                                cp.id,
-                                e.target.checked ? "yes" : "unknown",
-                              )
-                            }
-                          />
-                          <span className="text-small">Aktiv</span>
-                        </label>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {(
+                [
+                  DecisionStatus.POSSIBLE,
+                  DecisionStatus.NOT_POSSIBLE,
+                  DecisionStatus.DISABLED,
+                ] as const
+              ).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`answer-btn${decisionStatus === s ? " active" : ""}`}
+                  onClick={() => setDecisionStatus(s)}
+                >
+                  {s === DecisionStatus.POSSIBLE
+                    ? "möglich"
+                    : s === DecisionStatus.NOT_POSSIBLE
+                      ? "nicht möglich"
+                      : "deaktiviert"}
+                </button>
+              ))}
             </div>
-          ))}
 
-          <button type="button" className="answer-btn" onClick={addSection}>
-            Weiteren Abschnitt hinzufügen
-          </button>
+            {/* Explanation checkpoints (specific + bound global) */}
+            <h3 style={{ marginBottom: "0.5rem" }}>Klärpunkte</h3>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+                marginBottom: "1rem",
+              }}
+            >
+              {explanationIds.map((id) => {
+                const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+                if (!cp) return null;
+                const current = checkpointStatuses[id] as ExplanationStatus;
+                return (
+                  <div key={id} className="card">
+                    <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
+                      {cp.label}
+                    </p>
+                    <div
+                      style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
+                    >
+                      {(
+                        [
+                          ExplanationStatus.YES,
+                          ExplanationStatus.NO,
+                          ExplanationStatus.UNKNOWN,
+                        ] as const
+                      ).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className={`answer-btn${current === s ? " active" : ""}`}
+                          onClick={() => setStatus(id, s)}
+                        >
+                          {s === ExplanationStatus.YES
+                            ? "Ja"
+                            : s === ExplanationStatus.NO
+                              ? "Nein"
+                              : "Unklar"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Action checkpoints */}
+            <h3 style={{ marginBottom: "0.5rem" }}>Aktionen</h3>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+              }}
+            >
+              {AU_PROFILE.availableActionIds.map((id) => {
+                const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+                if (!cp) return null;
+                const isActive = checkpointStatuses[id] === ActionStatus.ACTIVE;
+                return (
+                  <div key={id} className="card">
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isActive}
+                        onChange={(e) =>
+                          setStatus(
+                            id,
+                            e.target.checked
+                              ? ActionStatus.ACTIVE
+                              : ActionStatus.INACTIVE,
+                          )
+                        }
+                      />
+                      <span className="text-small">{cp.label}</span>
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* ── Right column: Live-Vorschau ── */}
@@ -471,17 +257,16 @@ export default function InquiryDemoClient() {
 
           <div className="card" style={{ marginBottom: "1rem" }}>
             <h3 style={{ marginBottom: "0.75rem" }}>Antwort</h3>
-            {!hasAnyOutput && activeWayTexts.length === 0 ? (
+            {!hasOutputContent ? (
               <p style={{ margin: 0, color: "var(--muted-foreground)" }}>
-                Bitte Anliegen oder globale Bausteine auswählen.
+                Bitte Entscheidung oder Klärpunkte auswählen.
               </p>
             ) : (
               <>
-                {allSectionOutputs
-                  .filter((o) => o.paragraphs.length > 0)
-                  .map((output, idx) => (
+                {output!.sections.map((sec, idx) =>
+                  sec.attachedParagraphs.length > 0 ? (
                     <div
-                      key={output.id}
+                      key={sec.inquiryId}
                       style={
                         idx > 0
                           ? {
@@ -502,14 +287,17 @@ export default function InquiryDemoClient() {
                           color: "var(--muted-foreground)",
                         }}
                       >
-                        {output.heading}
+                        {sec.label}
                       </p>
-                      <p style={{ margin: 0 }}>
-                        {output.paragraphs.join(" ")}
-                      </p>
+                      {sec.attachedParagraphs.map((p, i) => (
+                        <p key={i} style={{ margin: i > 0 ? "0.5rem 0 0" : 0 }}>
+                          {p}
+                        </p>
+                      ))}
                     </div>
-                  ))}
-                {activeWayTexts.length > 0 && (
+                  ) : null,
+                )}
+                {output!.sharedBottom.length > 0 && (
                   <div
                     style={{
                       borderTop: "1px solid var(--border, #e5e7eb)",
@@ -517,20 +305,22 @@ export default function InquiryDemoClient() {
                       marginTop: "1rem",
                     }}
                   >
-                    <p style={{ margin: 0 }}>
-                      {activeWayTexts.join(" ")}
-                    </p>
+                    {output!.sharedBottom.map((p, i) => (
+                      <p key={i} style={{ margin: i > 0 ? "0.5rem 0 0" : 0 }}>
+                        {p}
+                      </p>
+                    ))}
                   </div>
                 )}
               </>
             )}
           </div>
 
-          {allDocLines.length > 0 && (
+          {output !== null && output.documentation.length > 0 && (
             <div className="card">
               <h3 style={{ marginBottom: "0.75rem" }}>Dokumentation</h3>
               <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                {allDocLines.map((line, i) => (
+                {output.documentation.map((line, i) => (
                   <li
                     key={i}
                     style={{ marginBottom: "0.25rem", fontSize: "0.875rem" }}
@@ -546,6 +336,4 @@ export default function InquiryDemoClient() {
     </main>
   );
 }
-
-
 
