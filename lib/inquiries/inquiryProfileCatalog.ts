@@ -36,20 +36,25 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "AU_BACKDATE_ALLOWED",
       "AU_DURATION_ALLOWED",
-      "AU_PATIENT_KNOWN",
+      "AU_REPEAT_WITHOUT_EXAM",
     ],
     boundGlobalCheckpointIds: [
-      "IN_GERMANY",
-      "DOCTOR_ASSESSMENT_REQUIRED",
+      "IS_NEW_PATIENT",
+      "PATIENT_IN_GERMANY",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_COMPLETE",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
     ],
     globalHints: {
-      IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
-      DOCTOR_ASSESSMENT_REQUIRED: "AU-Hinweis: ärztliche Einschätzung erforderlich.",
+      IS_NEW_PATIENT: "AU-Hinweis: Neupatient / Erstkontakt relevant.",
+      PATIENT_IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
+      DOCTOR_REVIEW_REQUIRED: "AU-Hinweis: ärztliche Einschätzung erforderlich.",
+      DATA_COMPLETE: "AU-Hinweis: Angaben / Daten unvollständig.",
     },
   },
 };

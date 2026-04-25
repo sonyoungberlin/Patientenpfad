@@ -750,10 +750,10 @@ describe("renderInquiryResponseFromSections – Decision", () => {
 });
 
 describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints", () => {
-  it("IN_GERMANY YES → Hinweis aus globalHints erscheint in attachedParagraphs", () => {
+  it("PATIENT_IN_GERMANY YES → Hinweis aus globalHints erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { IN_GERMANY: ExplanationStatus.YES },
+        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
@@ -761,35 +761,35 @@ describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints",
     );
   });
 
-  it("IN_GERMANY NO → kein Hinweis in attachedParagraphs", () => {
+  it("PATIENT_IN_GERMANY NO → kein Hinweis in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { IN_GERMANY: ExplanationStatus.NO },
+        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.NO },
       }),
     ]);
     const texts = result.sections[0].attachedParagraphs.join(" ");
-    expect(texts).not.toContain("IN_GERMANY");
+    expect(texts).not.toContain("PATIENT_IN_GERMANY");
     expect(texts).not.toContain("Deutschland");
   });
 
-  it("IN_GERMANY UNKNOWN → kein Hinweis in attachedParagraphs", () => {
+  it("PATIENT_IN_GERMANY UNKNOWN → kein Hinweis in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { IN_GERMANY: ExplanationStatus.UNKNOWN },
+        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.UNKNOWN },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("IN_GERMANY fehlt → kein Hinweis in attachedParagraphs", () => {
+  it("PATIENT_IN_GERMANY fehlt → kein Hinweis in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([makeAuSection()]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("DOCTOR_ASSESSMENT_REQUIRED YES → Hinweis aus globalHints erscheint", () => {
+  it("DOCTOR_REVIEW_REQUIRED YES → Hinweis aus globalHints erscheint", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { DOCTOR_ASSESSMENT_REQUIRED: ExplanationStatus.YES },
+        checkpointStatuses: { DOCTOR_REVIEW_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
@@ -798,10 +798,10 @@ describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints",
   });
 
   it("checkpoint.textByStatus wird für GLOBAL EXPLANATION NICHT verwendet (auch wenn befüllt)", () => {
-    // IN_GERMANY hat textByStatus: {} – kein Text darf durchkommen
+    // PATIENT_IN_GERMANY hat textByStatus: {} – kein Text darf durchkommen
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { IN_GERMANY: ExplanationStatus.NO },
+        checkpointStatuses: { PATIENT_IN_GERMANY: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -834,6 +834,95 @@ describe("renderInquiryResponseFromSections – ACTION/SHARED_BOTTOM", () => {
       }),
     ]);
     expect(result.sharedBottom).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AU-Profil-Struktur
+// ---------------------------------------------------------------------------
+
+import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
+
+describe("AU-Profil – Checkpoint-Bindungen", () => {
+  const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
+
+  it("AU-Profil bindet alle drei Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_ALLOWED");
+    expect(auProfile.specificCheckpointIds).toContain("AU_DURATION_ALLOWED");
+    expect(auProfile.specificCheckpointIds).toContain("AU_REPEAT_WITHOUT_EXAM");
+    expect(auProfile.specificCheckpointIds).toHaveLength(3);
+  });
+
+  it("AU-Profil bindet alle vier Global Checkpoints", () => {
+    expect(auProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
+    expect(auProfile.boundGlobalCheckpointIds).toContain("PATIENT_IN_GERMANY");
+    expect(auProfile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(auProfile.boundGlobalCheckpointIds).toContain("DATA_COMPLETE");
+    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(4);
+  });
+
+  it("Alle gebundenen Global Checkpoints haben globalHints im AU-Profil", () => {
+    for (const id of auProfile.boundGlobalCheckpointIds) {
+      expect(auProfile.globalHints).toHaveProperty(id);
+    }
+  });
+
+  it("GLOBAL/EXPLANATION-Checkpoints haben kein textByStatus", () => {
+    for (const id of auProfile.boundGlobalCheckpointIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+      expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+      expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+    }
+  });
+});
+
+describe("AU-Profil – AU_REPEAT_WITHOUT_EXAM als Specific Checkpoint", () => {
+  it("AU_REPEAT_WITHOUT_EXAM NO → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_REPEAT_WITHOUT_EXAM: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Wiederholte digitale AU")),
+    ).toBe(true);
+  });
+
+  it("AU_REPEAT_WITHOUT_EXAM YES → kein Text in attachedParagraphs (kein textByStatus für YES)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { AU_REPEAT_WITHOUT_EXAM: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("AU-Profil – IS_NEW_PATIENT globalHint", () => {
+  it("IS_NEW_PATIENT YES → AU-spezifischer Hint erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "AU-Hinweis: Neupatient / Erstkontakt relevant.",
+    );
+  });
+
+  it("DATA_COMPLETE YES → AU-spezifischer Hint erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { DATA_COMPLETE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "AU-Hinweis: Angaben / Daten unvollständig.",
+    );
   });
 });
 

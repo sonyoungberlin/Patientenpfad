@@ -198,6 +198,20 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  AU_REPEAT_WITHOUT_EXAM: {
+    id: "AU_REPEAT_WITHOUT_EXAM",
+    label: "Wiederholte digitale AU ohne Untersuchung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.NO]:
+        "AU-Hinweis: Wiederholte digitale AU ohne ärztliche Untersuchung nicht möglich.",
+      [ExplanationStatus.UNKNOWN]:
+        "AU-Hinweis: Prüfung erforderlich, ob wiederholte AU ohne Untersuchung zulässig ist.",
+    },
+  },
+
   AU_PATIENT_KNOWN: {
     id: "AU_PATIENT_KNOWN",
     label: "Patient bekannt",
@@ -215,6 +229,46 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- GLOBAL EXPLANATIONS ----
+
+  IS_NEW_PATIENT: {
+    id: "IS_NEW_PATIENT",
+    label: "Neupatient",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Ist die Person ein neuer Patient (Erstkontakt)?",
+    textByStatus: {},
+  },
+
+  PATIENT_IN_GERMANY: {
+    id: "PATIENT_IN_GERMANY",
+    label: "Aufenthaltsort Deutschland",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Befindet sich die Person aktuell in Deutschland?",
+    textByStatus: {},
+  },
+
+  DOCTOR_REVIEW_REQUIRED: {
+    id: "DOCTOR_REVIEW_REQUIRED",
+    label: "Ärztliche Einschätzung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Ist für dieses Anliegen eine ärztliche Einschätzung erforderlich?",
+    textByStatus: {},
+  },
+
+  DATA_COMPLETE: {
+    id: "DATA_COMPLETE",
+    label: "Angaben vollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Sind alle erforderlichen Angaben und Daten vollständig?",
+    textByStatus: {},
+  },
 
   IN_GERMANY: {
     id: "IN_GERMANY",
@@ -237,6 +291,18 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- GLOBAL ACTIONS ----
+
+  OPEN_CONSULTATION: {
+    id: "OPEN_CONSULTATION",
+    label: "Ärztliche Konsultation",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
 
   DIGITAL_REQUEST: {
     id: "DIGITAL_REQUEST",
