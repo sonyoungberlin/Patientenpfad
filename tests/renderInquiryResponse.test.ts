@@ -843,7 +843,7 @@ describe("renderInquiryResponseFromSections – ACTION/SHARED_BOTTOM", () => {
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
-import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
+import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlacement } from "@/lib/inquiries/types";
 
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
@@ -1080,5 +1080,160 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     expect(
       result.sections[0].attachedParagraphs.some((t) => t.includes("nicht bekannt")),
     ).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB-Profil – Struktur
+// ---------------------------------------------------------------------------
+
+describe("LAB-Profil – Checkpoint-Bindungen", () => {
+  const labProfile = INQUIRY_PROFILE_CATALOG_V2["LAB"];
+
+  it("LAB-Profil existiert", () => {
+    expect(labProfile).toBeDefined();
+  });
+
+  it("LAB-Profil bindet alle vier Specific Checkpoints", () => {
+    expect(labProfile.specificCheckpointIds).toContain("LAB_MEDICAL_INDICATION");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_ELIGIBLE");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_VALUES_DEFINED");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_FASTING_REQUIRED");
+    expect(labProfile.specificCheckpointIds).toHaveLength(4);
+  });
+
+  it("LAB-Profil bindet alle fünf Global Checkpoints", () => {
+    expect(labProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
+    expect(labProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
+    expect(labProfile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(labProfile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+    expect(labProfile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
+    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(5);
+  });
+
+  it("Alle gebundenen Global Checkpoints haben globalHints im LAB-Profil", () => {
+    for (const id of labProfile.boundGlobalCheckpointIds) {
+      expect(labProfile.globalHints).toHaveProperty(id);
+    }
+  });
+
+  it("LAB_FASTING_REQUIRED ist PREPARATION/ATTACHED im Katalog", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.PREPARATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+  });
+
+  it("SPECIFIC Checkpoints LAB_MEDICAL_INDICATION / LAB_CHECKUP_ELIGIBLE / LAB_VALUES_DEFINED haben questions", () => {
+    for (const id of ["LAB_MEDICAL_INDICATION", "LAB_CHECKUP_ELIGIBLE", "LAB_VALUES_DEFINED"]) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.questions).toBeDefined();
+      expect((cp.questions ?? []).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("questions der LAB-Checkpoints lösen keine automatische Entscheidung aus (kein DecisionStatus in textByStatus)", () => {
+    for (const id of ["LAB_MEDICAL_INDICATION", "LAB_CHECKUP_ELIGIBLE", "LAB_VALUES_DEFINED"]) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.textByStatus).not.toHaveProperty(DecisionStatus.POSSIBLE);
+      expect(cp.textByStatus).not.toHaveProperty(DecisionStatus.NOT_POSSIBLE);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB-Profil – globalHints
+// ---------------------------------------------------------------------------
+
+function makeLabSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "LAB",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("LAB-Profil – globalHints", () => {
+  it("IS_NEW_PATIENT YES → Labor-spezifischer Hint erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
+    );
+  });
+
+  it("IS_CHRONIC_PATIENT YES → Labor-spezifischer Hint erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB-Profil – SPECIFIC Checkpoints erzeugen attachedParagraphs
+// ---------------------------------------------------------------------------
+
+describe("LAB-Profil – SPECIFIC Checkpoints", () => {
+  it("LAB_MEDICAL_INDICATION NO → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_MEDICAL_INDICATION: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Indikation nicht erkennbar")),
+    ).toBe(true);
+  });
+
+  it("LAB_CHECKUP_ELIGIBLE UNKNOWN → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_CHECKUP_ELIGIBLE: ExplanationStatus.UNKNOWN },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Check-up-Berechtigung")),
+    ).toBe(true);
+  });
+
+  it("LAB_VALUES_DEFINED NO → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_VALUES_DEFINED: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("konkret angeben")),
+    ).toBe(true);
+  });
+
+  it("LAB_FASTING_REQUIRED ACTIVE → Vorbereitungshinweis in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("nüchtern")),
+    ).toBe(true);
+  });
+
+  it("LAB_FASTING_REQUIRED INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });

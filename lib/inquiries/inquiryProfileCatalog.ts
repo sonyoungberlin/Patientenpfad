@@ -90,4 +90,35 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       IS_CHRONIC_PATIENT: "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
     },
   },
+
+  LAB: {
+    id: "LAB",
+    label: "Labor",
+    decisionCheckpointId: "LAB_DECISION",
+    specificCheckpointIds: [
+      "LAB_MEDICAL_INDICATION",
+      "LAB_CHECKUP_ELIGIBLE",
+      "LAB_VALUES_DEFINED",
+      "LAB_FASTING_REQUIRED",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_NEW_PATIENT",
+      "PATIENT_NOT_IN_GERMANY",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_INCOMPLETE",
+      "IS_CHRONIC_PATIENT",
+    ],
+    availableActionIds: [
+      "ONLINE_ANAMNESIS",
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+    ],
+    globalHints: {
+      IS_NEW_PATIENT: "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
+      PATIENT_NOT_IN_GERMANY: "Labor-Hinweis: Videosprechstunde / Besprechung bei Aufenthalt außerhalb Deutschlands nicht möglich.",
+      DOCTOR_REVIEW_REQUIRED: "Labor-Hinweis: ärztliche Klärung vor Labor notwendig.",
+      DATA_INCOMPLETE: "Labor-Hinweis: Angaben oder Versicherungsdaten fehlen.",
+      IS_CHRONIC_PATIENT: "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
+    },
+  },
 };

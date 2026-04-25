@@ -290,6 +290,88 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- LAB DECISION ----
+
+  LAB_DECISION: {
+    id: "LAB_DECISION",
+    label: "Labor-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
+    },
+  },
+
+  // ---- LAB SPECIFIC CHECKPOINTS ----
+
+  LAB_MEDICAL_INDICATION: {
+    id: "LAB_MEDICAL_INDICATION",
+    label: "Medizinische Indikation",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_MEDICAL_INDICATION-Q1", text: "Liegen Beschwerden vor?" },
+      { id: "LAB_MEDICAL_INDICATION-Q2", text: "Gibt es eine ärztliche Anordnung?" },
+      { id: "LAB_MEDICAL_INDICATION-Q3", text: "Geht es um eine Routinekontrolle?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Medizinische Indikation liegt vor.",
+      [ExplanationStatus.NO]: "Labor-Hinweis: Medizinische Indikation nicht erkennbar.",
+      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Indikation bitte genauer angeben.",
+    },
+  },
+
+  LAB_CHECKUP_ELIGIBLE: {
+    id: "LAB_CHECKUP_ELIGIBLE",
+    label: "Check-up / Vorsorge",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_CHECKUP_ELIGIBLE-Q1", text: "Geht es um Check-up / Vorsorge?" },
+      { id: "LAB_CHECKUP_ELIGIBLE-Q2", text: "Wann war der letzte Check-up?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Check-up / Vorsorge möglich.",
+      [ExplanationStatus.NO]: "Labor-Hinweis: Check-up / Vorsorge derzeit nicht vorgesehen.",
+      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Prüfung Check-up-Berechtigung erforderlich.",
+    },
+  },
+
+  LAB_VALUES_DEFINED: {
+    id: "LAB_VALUES_DEFINED",
+    label: "Laborwerte definiert",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_VALUES_DEFINED-Q1", text: "Welche Werte werden gewünscht?" },
+      { id: "LAB_VALUES_DEFINED-Q2", text: "Sind die Werte konkret benannt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Gewünschte Laborwerte sind benannt.",
+      [ExplanationStatus.NO]: "Labor-Hinweis: Laborwerte bitte konkret angeben.",
+      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Angabe der gewünschten Werte fehlt.",
+    },
+  },
+
+  LAB_FASTING_REQUIRED: {
+    id: "LAB_FASTING_REQUIRED",
+    label: "Nüchternabnahme erforderlich",
+    kind: InquiryCheckpointKind.PREPARATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_FASTING_REQUIRED-Q1", text: "Sind nüchterne Werte erforderlich?" },
+    ],
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Labor-Hinweis: Bitte nüchtern zur Blutentnahme erscheinen (mind. 8 Std. ohne Essen).",
+    },
+  },
+
   // ---- GLOBAL EXPLANATIONS ----
 
   IS_NEW_PATIENT: {

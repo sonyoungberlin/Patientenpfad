@@ -23,7 +23,17 @@ Ein Anliegen ist z. B.:
 
 Das Anliegen trägt die konkrete Hauptfrage.
 
-## 4. Checkpoint-Arten
+## 4. Grundprinzip: Keine automatische Entscheidung
+
+**Der Anfrage-Assistent trifft keine fachliche Entscheidung automatisch.**
+
+M2-Fragen (spezifische Checkpoints) dienen ausschließlich als strukturierte Entscheidungshilfe
+und als Prefill für M3.
+Die Entscheidung (möglich / nicht möglich / deaktiviert) bleibt immer manuell in M3.
+
+Dieses Prinzip gilt für alle Anliegen: AU, Rezept, Labor und alle zukünftigen Anliegen.
+
+## 5. Checkpoint-Arten (Details)
 
 ### DECISION
 - themengebunden
@@ -48,7 +58,7 @@ Das Anliegen trägt die konkrete Hauptfrage.
 - z. B. Impfpass, Gesundheitskarte, Befund
 - Status: aktiv / inaktiv oder Auswahl mehrerer Items
 
-## 5. Scope
+## 6. Scope
 
 ### SPECIFIC
 Checkpoint gehört nur zu einem Anliegen.
@@ -79,7 +89,7 @@ Semantik eines globalen Checkpoints:
 - Derselbe globale Checkpoint kann bei AU einen anderen Hinweis auslösen als bei Rezept.
 - Ist kein Anliegen ausgewählt, das diesen Checkpoint bindet, wird er nicht abgefragt.
 
-## 6. Binding-Regel
+## 7. Binding-Regel
 Jedes Anliegen definiert:
 - decisionCheckpoint
 - boundGlobalCheckpointIds
@@ -90,7 +100,7 @@ Jedes Anliegen definiert:
 
 Wenn mehrere Anliegen denselben globalen Checkpoint binden, erscheint er in M2 nur einmal.
 
-## 7. M1–M5-Flow
+## 8. M1–M5-Flow
 
 ### M1
 Anliegen auswählen.
@@ -118,7 +128,7 @@ Antwortabschnitte bilden:
 Gemeinsame Wege / Sammelhinweise unten einmal ausgeben.
 Dokumentation erzeugen.
 
-## 8. Placement
+## 9. Placement
 
 ### ATTACHED
 Baustein hängt am jeweiligen Anliegen-Abschnitt.
@@ -130,7 +140,7 @@ Regel:
 - Entscheidungen und Erklärungen meist ATTACHED
 - Wege und Sammelhinweise meist SHARED_BOTTOM
 
-## 9. Allgemeine Hinweise / Multi-Checkpoints
+## 10. Allgemeine Hinweise / Multi-Checkpoints
 
 Allgemeine Hinweise sind unabhängig von einzelnen Anliegen.
 Sie erscheinen einmalig global am Ende der Antwort (SHARED_BOTTOM).
@@ -138,12 +148,12 @@ Sie sind nicht Teil der anliegenspezifischen Entscheidungslogik.
 Sie werden manuell in M3 zugeschaltet.
 Beispiele: allgemeine Wege (Termin buchen, digitale Anfrage), sammelhinweise.
 
-## 10. Deduplizierung
+## 11. Deduplizierung
 Globale Checkpoints werden nur einmal abgefragt.
 SHARED_BOTTOM-Bausteine werden nur einmal ausgegeben.
 Eine Ursache soll nicht mehrfach erklärt werden.
 
-## 11. Ja/Nein-Logik
+## 12. Ja/Nein-Logik
 Standard-Checkpoints sollen möglichst als Ja/Nein/Unklar formuliert werden.
 Keine unnötigen Auswahlfelder, wenn mehrere Antworten dieselbe Konsequenz haben.
 
@@ -152,7 +162,7 @@ Nicht: GKV / privat / ausländisch
 Sondern: eGK vorhanden? ja/nein/unklar
 Nein → Identitäts- oder Versicherungsnachweis nachreichen.
 
-## 12. Textregel
+## 13. Textregel
 Jeder Checkpoint-Text muss für sich alleine verständlich sein.
 Keine Formulierungen wie:
 - „auch"
@@ -160,7 +170,7 @@ Keine Formulierungen wie:
 - „danach"
 wenn sie einen vorherigen Satz voraussetzen.
 
-## 13. AU-Beispiel
+## 14. AU-Beispiel
 
 AU:
 - decision: AU_DECISION
@@ -176,30 +186,51 @@ AU:
   - ONLINE_ANAMNESIS
   - BOOK_APPOINTMENT
 
-## 14. Rezept-Beispiel (Platzhalter)
+## 15. Rezept-Beispiel (Platzhalter)
 
-> **Hinweis:** Die Checkpoint-IDs dieses Beispiels existieren noch nicht im Katalog.
-> Dieses Beispiel ist ein Strukturplatzhalter für eine spätere Implementierung.
-> Es darf nicht als fachliche Referenz für vorhandenen Code verwendet werden.
+> **Hinweis:** Die Checkpoint-IDs dieses Beispiels entsprechen dem implementierten Stand.
 
 Rezept:
 - decision: PRESCRIPTION_DECISION
 - specific:
-  - PRESCRIPTION_TYPE
-  - PRESCRIPTION_MEDICATION_DOCUMENTED
-  - PRESCRIPTION_LONG_TERM_MEDICATION
-  - PRESCRIPTION_CONTROL_REQUIRED
-  - PRESCRIPTION_BTM
-  - PRESCRIPTION_GYN_MEDICATION
+  - PRESCRIPTION_KNOWN_MEDICATION
+  - PRESCRIPTION_FOLLOW_UP
+  - PRESCRIPTION_SPECIALIST_REQUIRED
+  - PRESCRIPTION_CONTROL_OVERDUE
+  - PRESCRIPTION_SPECIAL_TYPE
 - boundGlobals:
-  - DOCTOR_ASSESSMENT_REQUIRED
+  - IS_NEW_PATIENT
+  - PATIENT_NOT_IN_GERMANY
+  - DOCTOR_REVIEW_REQUIRED
+  - DATA_INCOMPLETE
+  - IS_CHRONIC_PATIENT
 - actions:
   - DIGITAL_REQUEST
+  - ONLINE_ANAMNESIS
   - BOOK_APPOINTMENT
-  - UPLOAD_REPORT
-  - PICKUP_IN_PRACTICE
+  - OPEN_CONSULTATION
 
-## 15. Noch offen
+## 16. Labor-Beispiel
+
+Labor (LAB):
+- decision: LAB_DECISION
+- specific:
+  - LAB_MEDICAL_INDICATION
+  - LAB_CHECKUP_ELIGIBLE
+  - LAB_VALUES_DEFINED
+  - LAB_FASTING_REQUIRED
+- boundGlobals:
+  - IS_NEW_PATIENT
+  - PATIENT_NOT_IN_GERMANY
+  - DOCTOR_REVIEW_REQUIRED
+  - DATA_INCOMPLETE
+  - IS_CHRONIC_PATIENT
+- actions:
+  - ONLINE_ANAMNESIS
+  - BOOK_APPOINTMENT
+  - OPEN_CONSULTATION
+
+## 17. Noch offen
 - genaue Texte werden später geschliffen
 - zunächst zählt Architektur / Schnitt
 - Testumgebung bleibt stateless, bis der Schnitt stabil ist
