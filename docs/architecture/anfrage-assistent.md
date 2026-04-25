@@ -29,6 +29,9 @@ Das Anliegen trägt die konkrete Hauptfrage.
 - themengebunden
 - erzeugt Hauptsatz
 - Status: möglich / nicht möglich / deaktiviert
+- M2-Klärungsfragen zu diesem Checkpoint sind nur interne Entscheidungshilfe / Prefill.
+  Sie lösen selbst nichts aus.
+- Die Entscheidung (möglich / nicht möglich) wird manuell in M3 getroffen.
 
 ### EXPLANATION
 - erklärt Ursache oder Bedingung
@@ -69,12 +72,21 @@ Wichtig:
 GLOBAL bedeutet nicht „immer anzeigen".
 GLOBAL bedeutet „wiederverwendbar".
 
+Semantik eines globalen Checkpoints:
+- Er ist eine einmalige Frage in M2 (reiner Schalter: ja / nein).
+- Er erzeugt selbst keinen Antworttext.
+- Der Hinweistext bei „ja" ist im jeweiligen Anliegen-Profil definiert, nicht im Checkpoint.
+- Derselbe globale Checkpoint kann bei AU einen anderen Hinweis auslösen als bei Rezept.
+- Ist kein Anliegen ausgewählt, das diesen Checkpoint bindet, wird er nicht abgefragt.
+
 ## 6. Binding-Regel
 Jedes Anliegen definiert:
 - decisionCheckpoint
 - boundGlobalCheckpointIds
 - specificCheckpointIds
 - availableActions
+- globalHints: pro gebundenem globalem Checkpoint ein anliegenspezifischer Hinweistext,
+  der sichtbar wird, wenn der globale Checkpoint mit „ja" beantwortet wurde
 
 Wenn mehrere Anliegen denselben globalen Checkpoint binden, erscheint er in M2 nur einmal.
 
@@ -86,14 +98,21 @@ Anliegen auswählen.
 ### M2
 Alle gebundenen Checkpoints dedupliziert abfragen.
 
+Für jeden gebundenen **globalen** Checkpoint: genau eine Ja/Nein-Frage (Schalter).
+Für jeden **spezifischen** Checkpoint: Klärungsfragen als Entscheidungshilfe / Prefill für M3.
+
 ### M3
-Pro Anliegen Entscheidung treffen.
-Globale Checkpoints liefern Kontext / Prefill.
+Pro Anliegen Entscheidung treffen (Decision-Checkpoint: möglich / nicht möglich / deaktiviert).
+Spezifische Klärungsfragen aus M2 dienen als Entscheidungshilfe / Prefill.
+Globale Checkpoints sind zu diesem Zeitpunkt bereits durch M2 beantwortet;
+sie wirken im Output als Schalter und werden in M3 nicht erneut entschieden.
+Allgemeine Hinweise / Multi-Checkpoints können in M3 manuell zugeschaltet werden.
 
 ### M4
 Antwortabschnitte bilden:
-- pro Anliegen ein Abschnitt
-- Entscheidung + relevante Erklärungen
+- pro Anliegen ein Abschnitt: Hauptentscheidung + anliegenspezifische Hinweise
+  (inkl. Hinweise aus gebundenen globalen Checkpoints, falls „ja" beantwortet)
+- danach einmalig: allgemeine Hinweise / Wege (SHARED_BOTTOM, keine Dopplungen)
 
 ### M5
 Gemeinsame Wege / Sammelhinweise unten einmal ausgeben.
@@ -111,12 +130,20 @@ Regel:
 - Entscheidungen und Erklärungen meist ATTACHED
 - Wege und Sammelhinweise meist SHARED_BOTTOM
 
-## 9. Deduplizierung
+## 9. Allgemeine Hinweise / Multi-Checkpoints
+
+Allgemeine Hinweise sind unabhängig von einzelnen Anliegen.
+Sie erscheinen einmalig global am Ende der Antwort (SHARED_BOTTOM).
+Sie sind nicht Teil der anliegenspezifischen Entscheidungslogik.
+Sie werden manuell in M3 zugeschaltet.
+Beispiele: allgemeine Wege (Termin buchen, digitale Anfrage), sammelhinweise.
+
+## 10. Deduplizierung
 Globale Checkpoints werden nur einmal abgefragt.
 SHARED_BOTTOM-Bausteine werden nur einmal ausgegeben.
 Eine Ursache soll nicht mehrfach erklärt werden.
 
-## 10. Ja/Nein-Logik
+## 11. Ja/Nein-Logik
 Standard-Checkpoints sollen möglichst als Ja/Nein/Unklar formuliert werden.
 Keine unnötigen Auswahlfelder, wenn mehrere Antworten dieselbe Konsequenz haben.
 
@@ -125,7 +152,7 @@ Nicht: GKV / privat / ausländisch
 Sondern: eGK vorhanden? ja/nein/unklar
 Nein → Identitäts- oder Versicherungsnachweis nachreichen.
 
-## 11. Textregel
+## 12. Textregel
 Jeder Checkpoint-Text muss für sich alleine verständlich sein.
 Keine Formulierungen wie:
 - „auch"
@@ -133,7 +160,7 @@ Keine Formulierungen wie:
 - „danach"
 wenn sie einen vorherigen Satz voraussetzen.
 
-## 12. AU-Beispiel
+## 13. AU-Beispiel
 
 AU:
 - decision: AU_DECISION
@@ -149,7 +176,11 @@ AU:
   - ONLINE_ANAMNESIS
   - BOOK_APPOINTMENT
 
-## 13. Rezept-Beispiel
+## 14. Rezept-Beispiel (Platzhalter)
+
+> **Hinweis:** Die Checkpoint-IDs dieses Beispiels existieren noch nicht im Katalog.
+> Dieses Beispiel ist ein Strukturplatzhalter für eine spätere Implementierung.
+> Es darf nicht als fachliche Referenz für vorhandenen Code verwendet werden.
 
 Rezept:
 - decision: PRESCRIPTION_DECISION
@@ -168,7 +199,7 @@ Rezept:
   - UPLOAD_REPORT
   - PICKUP_IN_PRACTICE
 
-## 14. Noch offen
+## 15. Noch offen
 - genaue Texte werden später geschliffen
 - zunächst zählt Architektur / Schnitt
 - Testumgebung bleibt stateless, bis der Schnitt stabil ist
