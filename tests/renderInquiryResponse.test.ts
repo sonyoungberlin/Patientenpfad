@@ -730,14 +730,14 @@ describe("renderInquiryResponseFromSections – Decision", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ decisionStatus: DecisionStatus.POSSIBLE }),
     ]);
-    expect(result.sections[0].mainDecision).toContain("kann ausgestellt werden");
+    expect(result.sections[0].mainDecision).toContain("wurde ausgestellt");
   });
 
   it("Decision NOT_POSSIBLE → mainDecision enthält Ablehnungstext", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
     ]);
-    expect(result.sections[0].mainDecision).toContain("kann nicht ausgestellt werden");
+    expect(result.sections[0].mainDecision).toContain("wurde nicht ausgestellt");
   });
 
   it("Decision-Text erscheint NICHT in attachedParagraphs", () => {

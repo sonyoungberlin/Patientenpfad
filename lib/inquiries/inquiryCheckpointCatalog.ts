@@ -170,9 +170,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // DecisionStatus.DISABLED ist nicht befüllt: bedeutet „noch keine manuelle Entscheidung
       // getroffen". Der Renderer liefert in diesem Fall mainDecision: null – kein Ausgabetext.
       [DecisionStatus.POSSIBLE]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
+        "Ihre Arbeitsunfähigkeitsbescheinigung wurde ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann nicht ausgestellt werden.",
+        "Die von Ihnen angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
     },
   },
 
