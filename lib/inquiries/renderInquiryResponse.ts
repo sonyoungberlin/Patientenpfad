@@ -170,6 +170,9 @@ export function renderInquiryResponseFromSections(
   const sharedBottomTexts: string[] = [];
   const sharedBottomSeen = new Set<string>();
   const allDocumentation: string[] = [];
+  // Track which GLOBAL checkpoints have already contributed a M5 doc entry.
+  // GLOBAL docs must appear exactly once across all sections (not per-anliegen).
+  const globalDocSeen = new Set<string>();
 
   for (const section of sections) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[section.inquiryId];
@@ -224,8 +227,14 @@ export function renderInquiryResponseFromSections(
       const hintText = profile.globalHints?.[checkpointId];
       if (!hintText) continue;
 
+      // M4: anliegenspezifischer Hinweistext erscheint pro Anliegen in attachedParagraphs.
       attachedParagraphs.push(hintText);
-      sectionDocumentation.push(`${checkpoint.label}: ${hintText}`);
+
+      // M5: Dokumentationsmarke erscheint genau einmal über alle Anliegen hinweg.
+      if (!globalDocSeen.has(checkpointId)) {
+        globalDocSeen.add(checkpointId);
+        sectionDocumentation.push(checkpoint.label);
+      }
     }
 
     // ---- D) ACTION/SHARED_BOTTOM (availableActionIds) – unverändert ----

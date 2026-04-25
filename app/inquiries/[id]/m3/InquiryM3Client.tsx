@@ -30,16 +30,10 @@ export type M3ActionData = {
   label: string;
 };
 
-export type M3GlobalContextCheckpoint = {
-  id: string;
-  label: string;
-};
-
 type Props = {
   sessionId: string;
   sections: M3SectionData[];
   actionCheckpoints: M3ActionData[];
-  globalContextCheckpoints: M3GlobalContextCheckpoint[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   actionIds: string[];
@@ -71,12 +65,6 @@ function optionsForKind(kind: InquiryCheckpointKind) {
     default:
       return EXPLANATION_OPTIONS;
   }
-}
-
-function globalStatusLabel(status: string | undefined): string {
-  if (status === "YES") return "Ja";
-  if (status === "NO") return "Nein";
-  return "—";
 }
 
 function StatusButtons({
@@ -178,7 +166,6 @@ export default function InquiryM3Client({
   sessionId,
   sections,
   actionCheckpoints,
-  globalContextCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
   actionIds,
@@ -287,31 +274,6 @@ export default function InquiryM3Client({
         </>
       ) : (
         <>
-          {/* M2-Kontext: GLOBAL Checkpoints (read-only) */}
-          {globalContextCheckpoints.length > 0 && (
-            <section
-              style={{
-                marginBottom: "2rem",
-                padding: "0.75rem 1rem",
-                background: "var(--muted-bg, #f8fafc)",
-                borderRadius: "var(--radius)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <h2 style={{ marginBottom: "0.5rem", fontSize: "1rem" }}>
-                Kontext aus M2 (Tatsachen)
-              </h2>
-              <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                {globalContextCheckpoints.map((cp) => (
-                  <li key={cp.id} className="text-small" style={{ marginBottom: "0.2rem" }}>
-                    <span style={{ fontWeight: 500 }}>{cp.label}:</span>{" "}
-                    {globalStatusLabel(statuses[cp.id])}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           {/* Decision + SPECIFIC Checkpoints per inquiry */}
           {sections.map((section) => (
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>

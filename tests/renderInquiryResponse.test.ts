@@ -1237,3 +1237,97 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// GLOBAL M5 Deduplizierung – Kernregel: einmal pro aktivem Checkpoint
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () => {
+  it("IS_NEW_PATIENT YES in AU + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+    ]);
+    const entries = result.documentation.filter((d) => d.includes("Neupatient"));
+    expect(entries).toHaveLength(1);
+  });
+
+  it("IS_NEW_PATIENT YES in AU + LAB + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+    ]);
+    const entries = result.documentation.filter((d) => d.includes("Neupatient"));
+    expect(entries).toHaveLength(1);
+  });
+
+  it("IS_NEW_PATIENT YES → M5-Marker ist checkpoint.label (kurzer Text, kein Hint-Text)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+    ]);
+    const auGlobalHint = INQUIRY_PROFILE_CATALOG_V2["AU"].globalHints?.["IS_NEW_PATIENT"] ?? "";
+    // Der Hint-Text darf NICHT als Doku-Marker erscheinen
+    expect(result.documentation).not.toContain(auGlobalHint);
+    // Nur der kurze Label (checkpoint.label) erscheint
+    const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].label;
+    expect(result.documentation).toContain(cpLabel);
+  });
+
+  it("IS_NEW_PATIENT YES → M4 attachedParagraphs erscheinen pro Anliegen separat (anliegenspezifisch)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+    ]);
+    // AU-spezifischer Hint in Section 0
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "AU-Hinweis: Neupatient / Erstkontakt relevant.",
+    );
+    // PRESCRIPTION-spezifischer Hint in Section 1
+    expect(result.sections[1].attachedParagraphs).toContain(
+      "Rezept-Hinweis: Neupatient, Termin erforderlich.",
+    );
+  });
+
+  it("GLOBAL NO in einem Anliegen → kein M5-Eintrag und kein M4-Hint", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.NO } }),
+    ]);
+    const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].label;
+    expect(result.documentation).not.toContain(cpLabel);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("DATA_INCOMPLETE YES in zwei Anliegen → M5-Doku enthält den Label genau einmal", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES } }),
+      makePrescriptionSection({ checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES } }),
+    ]);
+    const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["DATA_INCOMPLETE"].label;
+    const entries = result.documentation.filter((d) => d === cpLabel);
+    expect(entries).toHaveLength(1);
+  });
+
+  it("SPECIFIC Checkpoints werden unverändert pro Anliegen dokumentiert (kein Verlust durch GLOBAL-Dedup)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          IS_NEW_PATIENT: ExplanationStatus.YES,
+          AU_BACKDATE_ALLOWED: ExplanationStatus.NO,
+        },
+      }),
+      makePrescriptionSection({
+        checkpointStatuses: {
+          IS_NEW_PATIENT: ExplanationStatus.YES,
+          PRESCRIPTION_FOLLOW_UP: ExplanationStatus.YES,
+        },
+      }),
+    ]);
+    // SPECIFIC docs: both inquiries
+    expect(result.documentation.some((d) => d.includes("Rückdatierung"))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Folgerezept"))).toBe(true);
+    // GLOBAL doc: exactly once
+    const entries = result.documentation.filter((d) => d.includes("Neupatient"));
+    expect(entries).toHaveLength(1);
+  });
+});
