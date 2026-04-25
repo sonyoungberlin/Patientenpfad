@@ -1,7 +1,10 @@
 import {
   InquiryCheckpointStatus,
+  InquiryCheckpointKind,
+  InquiryCheckpointScope,
   InquiryCheckpointPlacement,
   ActionStatus,
+  ExplanationStatus,
   ResponseKind,
   type ConfirmedInquiryCheckpoint,
   type InquiryOutput,
@@ -149,11 +152,12 @@ export function renderInquiryResponse(
  * aus einem oder mehreren Anliegen-Abschnitten (Sections) nach der neuen Architektur.
  *
  * Regeln:
- * - ATTACHED-Checkpoints werden pro Abschnitt ausgegeben.
- * - SHARED_BOTTOM-Checkpoints werden gesammelt und einmal dedupliziert unten ausgegeben.
- * - Ein Checkpoint-Text erscheint nur, wenn der Status einen Text in textByStatus hat.
- * - ACTION-Checkpoints mit Status INACTIVE werden übersprungen.
- * - Globale Checkpoints werden über mehrere Sections hinweg nur einmal in sharedBottom aufgeführt.
+ * - DECISION-Checkpoint liefert mainDecision (wird NICHT in attachedParagraphs aufgeführt).
+ * - SPECIFIC/ATTACHED-Checkpoints werden pro Abschnitt in attachedParagraphs ausgegeben.
+ * - GLOBAL/EXPLANATION-Checkpoints sind reine M2-Schalter:
+ *   - Status YES  → Hinweistext aus profile.globalHints[checkpointId] → attachedParagraphs.
+ *   - Status NO / UNKNOWN / fehlend → kein Output, kein Text aus checkpoint.textByStatus.
+ * - SHARED_BOTTOM-Checkpoints (ACTION) werden gesammelt und einmal dedupliziert unten ausgegeben.
  * - Keine LLM-Logik, kein Netzwerk, keine Seiteneffekte.
  *
  * @param sections – Eine Section pro Anliegen mit Entscheidungsstatus und Checkpoint-Statuses.
@@ -178,49 +182,58 @@ export function renderInquiryResponseFromSections(
     const attachedParagraphs: string[] = [];
     const sectionDocumentation: string[] = [];
 
-    // Geordnete Checkpoint-IDs: decision → specific → boundGlobals
-    const orderedIds = [
-      profile.decisionCheckpointId,
-      ...profile.specificCheckpointIds,
-      ...profile.boundGlobalCheckpointIds,
-    ];
+    // ---- A) Decision-Checkpoint → mainDecision ----
+    let mainDecision: string | null = null;
+    const decisionCheckpoint = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
+    if (decisionCheckpoint) {
+      const text = decisionCheckpoint.textByStatus[section.decisionStatus] ?? null;
+      mainDecision = text;
+      if (text) {
+        const docText = decisionCheckpoint.docByStatus?.[section.decisionStatus] ?? text;
+        sectionDocumentation.push(`${decisionCheckpoint.label}: ${docText}`);
+      }
+    }
 
-    for (const checkpointId of orderedIds) {
+    // ---- B) Specific Checkpoints → attachedParagraphs ----
+    for (const checkpointId of profile.specificCheckpointIds) {
       const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
       if (!checkpoint) continue;
 
-      const status =
-        checkpointId === profile.decisionCheckpointId
-          ? section.decisionStatus
-          : section.checkpointStatuses[checkpointId];
-
+      const status = section.checkpointStatuses[checkpointId];
       if (status === undefined) continue;
-
-      // ACTION INACTIVE → überspringen
       if (status === ActionStatus.INACTIVE) continue;
 
       const text = checkpoint.textByStatus[status];
       if (!text) continue;
 
-      const docText =
-        (checkpoint.docByStatus?.[status]) ?? text;
-
-      if (checkpoint.placement === InquiryCheckpointPlacement.ATTACHED) {
-        attachedParagraphs.push(text);
-        sectionDocumentation.push(`${checkpoint.label}: ${docText}`);
-      } else {
-        // SHARED_BOTTOM – dedupliziert
-        if (!sharedBottomSeen.has(checkpointId)) {
-          sharedBottomSeen.add(checkpointId);
-          sharedBottomTexts.push(text);
-        }
-      }
+      const docText = checkpoint.docByStatus?.[status] ?? text;
+      attachedParagraphs.push(text);
+      sectionDocumentation.push(`${checkpoint.label}: ${docText}`);
     }
 
-    // Verfügbare Aktionen (availableActionIds) in SHARED_BOTTOM einmalig ausgeben
+    // ---- C) Global EXPLANATION Checkpoints → nur YES → globalHints ----
+    for (const checkpointId of profile.boundGlobalCheckpointIds) {
+      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
+      if (!checkpoint) continue;
+      if (checkpoint.scope !== InquiryCheckpointScope.GLOBAL) continue;
+      if (checkpoint.kind !== InquiryCheckpointKind.EXPLANATION) continue;
+
+      const status = section.checkpointStatuses[checkpointId];
+      if (status !== ExplanationStatus.YES) continue;
+
+      const hintText = profile.globalHints?.[checkpointId];
+      if (!hintText) continue;
+
+      attachedParagraphs.push(hintText);
+      sectionDocumentation.push(`${checkpoint.label}: ${hintText}`);
+    }
+
+    // ---- D) ACTION/SHARED_BOTTOM (availableActionIds) – unverändert ----
     for (const actionId of profile.availableActionIds) {
       const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
       if (!checkpoint) continue;
+      if (checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
+      if (checkpoint.placement !== InquiryCheckpointPlacement.SHARED_BOTTOM) continue;
 
       const status = section.checkpointStatuses[actionId];
       if (status === undefined || status === ActionStatus.INACTIVE) continue;
@@ -228,10 +241,7 @@ export function renderInquiryResponseFromSections(
       const text = checkpoint.textByStatus[status];
       if (!text) continue;
 
-      if (
-        checkpoint.placement === InquiryCheckpointPlacement.SHARED_BOTTOM &&
-        !sharedBottomSeen.has(actionId)
-      ) {
+      if (!sharedBottomSeen.has(actionId)) {
         sharedBottomSeen.add(actionId);
         sharedBottomTexts.push(text);
       }
@@ -240,6 +250,7 @@ export function renderInquiryResponseFromSections(
     sectionOutputs.push({
       inquiryId: section.inquiryId,
       label: profile.label,
+      mainDecision,
       attachedParagraphs,
       documentation: sectionDocumentation,
     });

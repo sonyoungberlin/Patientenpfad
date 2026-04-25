@@ -9,6 +9,9 @@
 // Inquiry Types
 // ---------------------------------------------------------------------------
 
+/**
+ * @deprecated V1-Anfragetyp. Verwende stattdessen Profil-IDs in INQUIRY_PROFILE_CATALOG_V2.
+ */
 export enum InquiryType {
   FSME_IMPFUNG = "FSME_IMPFUNG",
 }
@@ -26,6 +29,9 @@ export enum InquiryType {
  * VORBEREITUNG         – etwas, das der Patient zum Termin mitbringen/vorbereiten soll.
  * ABLEHNUNG_ALTERNATIVE – Anfrage kann nicht erfüllt werden; Alternative wird genannt.
  * AKTENNOTIZ           – interner Hinweis, nicht für den Patienten gedacht.
+ *
+ * @deprecated V1-Konzept. Im V2-Modell gehört die sprachliche Kategorisierung
+ * nicht mehr in den Checkpoint-Typ, sondern in den Antwort-Renderer.
  */
 export enum ResponseKind {
   INFO = "INFO",
@@ -48,6 +54,9 @@ export enum ResponseKind {
  * HINWEIS         – Klärpunkt erfordert einen Hinweisbaustein (notwendig).
  * HINWEIS_OPTIONAL – Klärpunkt erzeugt einen weichen Hinweis (empfohlen, nicht zwingend).
  *                    Verwendet `hintTextOptional` aus dem Template, falls vorhanden.
+ *
+ * @deprecated V1-Statusmodell. Im V2-Modell werden DecisionStatus, ExplanationStatus
+ * und ActionStatus verwendet.
  */
 export enum InquiryCheckpointStatus {
   UNGEKLAERT = "UNGEKLAERT",
@@ -68,6 +77,8 @@ export type InquiryQuestion = {
 /**
  * Unveränderliches Checkpoint-Template aus dem statischen Katalog.
  * Status ist nicht Teil des Templates – wird in ActiveInquiryCheckpoint ergänzt.
+ *
+ * @deprecated V1-Template. Im V2-Modell wird InquiryCheckpoint verwendet.
  */
 export type InquiryCheckpointTemplate = {
   id: string;
@@ -104,6 +115,8 @@ export type InquiryCheckpointTemplate = {
 /**
  * Checkpoint mit draft-Status (noch nicht bestätigt, I2).
  * Darf UNGEKLAERT enthalten.
+ *
+ * @deprecated V1-Typ. Im V2-Modell entfällt dieses Zwischenmodell.
  */
 export type DraftInquiryCheckpoint = InquiryCheckpointTemplate & {
   status: InquiryCheckpointStatus;
@@ -112,6 +125,8 @@ export type DraftInquiryCheckpoint = InquiryCheckpointTemplate & {
 /**
  * Checkpoint mit bestätigtem Status (I3 abgeschlossen).
  * UNGEKLAERT ist strukturell ausgeschlossen – erzwungen durch den Typ.
+ *
+ * @deprecated V1-Typ. Im V2-Modell entfällt dieses Zwischenmodell.
  */
 export type ConfirmedInquiryCheckpoint = InquiryCheckpointTemplate & {
   status:
@@ -127,6 +142,8 @@ export type ConfirmedInquiryCheckpoint = InquiryCheckpointTemplate & {
 /**
  * Statisches Profil für einen Anfragetyp.
  * Definiert Kernantwort und Reihenfolge der Klärpunkte.
+ *
+ * @deprecated V1-Profil. Im V2-Modell wird InquiryProfileV2 verwendet.
  */
 export type InquiryProfile = {
   type: InquiryType;
@@ -211,6 +228,16 @@ export type CheckpointStatusValue =
 /**
  * Checkpoint-Definition nach der neuen Architektur.
  *
+ * Für GLOBAL-Checkpoints:
+ * - `question` enthält die einmalige M2-Frage (reiner Schalter: ja / nein).
+ * - `textByStatus` darf bei GLOBAL-Checkpoints nicht befüllt werden;
+ *   der Antworttext wird aus `InquiryProfileV2.globalHints` bezogen.
+ *
+ * Für SPECIFIC-Checkpoints:
+ * - `questions` enthält Klärungsfragen als Entscheidungshilfe / Prefill für M3.
+ *   Sie lösen selbst nichts aus und erzeugen keinen automatischen Output.
+ * - `textByStatus` enthält den Antworttext je Statuswert.
+ *
  * textByStatus – Antworttext je Statuswert (nur aktive Stati müssen befüllt sein).
  * docByStatus  – Dokumentationszeile je Statuswert (optional; fällt auf textByStatus zurück).
  */
@@ -220,6 +247,17 @@ export type InquiryCheckpoint = {
   kind: InquiryCheckpointKind;
   scope: InquiryCheckpointScope;
   placement: InquiryCheckpointPlacement;
+  /**
+   * Einmalige M2-Frage für GLOBAL-Checkpoints (reiner Schalter: ja / nein).
+   * Bei SPECIFIC-Checkpoints nicht gesetzt.
+   */
+  question?: string;
+  /**
+   * Klärungsfragen für SPECIFIC-Checkpoints als Entscheidungshilfe / Prefill für M3.
+   * Lösen selbst nichts aus und erzeugen keinen automatischen Output.
+   * Bei GLOBAL-Checkpoints nicht gesetzt.
+   */
+  questions?: InquiryQuestion[];
   textByStatus: Partial<Record<CheckpointStatusValue, string>>;
   docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
 };
@@ -229,6 +267,12 @@ export type InquiryCheckpoint = {
  *
  * Bindet einen DECISION-Checkpoint, spezifische Checkpoints,
  * gebundene globale Checkpoints und verfügbare Aktionen.
+ *
+ * globalHints definiert pro gebundenem globalem Checkpoint den
+ * anliegenspezifischen Hinweistext, der erscheint, wenn der globale
+ * Checkpoint mit „ja" beantwortet wurde. Der Text ist bewusst im Profil
+ * (nicht im Checkpoint) definiert, da derselbe globale Checkpoint bei
+ * verschiedenen Anliegen unterschiedliche Hinweise auslösen kann.
  */
 export type InquiryProfileV2 = {
   id: string;
@@ -237,6 +281,12 @@ export type InquiryProfileV2 = {
   specificCheckpointIds: string[];
   boundGlobalCheckpointIds: string[];
   availableActionIds: string[];
+  /**
+   * Anliegenspezifische Hinweistexte aus globalen Checkpoints.
+   * Key = globalCheckpointId; Value = Hinweistext, der bei Status „ja"
+   * für dieses Anliegen in M4 erscheint.
+   */
+  globalHints?: Record<string, string>;
 };
 
 /**
@@ -253,7 +303,12 @@ export type InquirySection = {
 export type InquirySectionOutput = {
   inquiryId: string;
   label: string;
-  /** Texte der ATTACHED-Checkpoints dieses Abschnitts. */
+  /**
+   * Text des DECISION-Checkpoints für dieses Anliegen.
+   * null, wenn kein Text für den aktuellen DecisionStatus definiert ist.
+   */
+  mainDecision: string | null;
+  /** Texte der ATTACHED-Checkpoints dieses Abschnitts (ohne Decision). */
   attachedParagraphs: string[];
   /** Dokumentationszeilen für diesen Abschnitt. */
   documentation: string[];
@@ -279,6 +334,8 @@ export type InquiryResponseV2Output = {
 /**
  * Ergebnis von renderInquiryResponse.
  * Vollständig deterministisch – kein LLM, keine Seiteneffekte.
+ *
+ * @deprecated V1-Output. Im V2-Modell wird InquiryResponseV2Output verwendet.
  */
 export type InquiryOutput = {
   /** Immer enthaltene Kernantwort des Profils. */

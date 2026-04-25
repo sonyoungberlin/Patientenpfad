@@ -159,6 +159,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     textByStatus: {
+      // DecisionStatus.DISABLED ist nicht befüllt: bedeutet „noch keine manuelle Entscheidung
+      // getroffen". Der Renderer liefert in diesem Fall mainDecision: null – kein Ausgabetext.
       [DecisionStatus.POSSIBLE]:
         "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
       [DecisionStatus.NOT_POSSIBLE]:
@@ -196,53 +198,252 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  AU_PATIENT_KNOWN: {
-    id: "AU_PATIENT_KNOWN",
-    label: "Patient bekannt",
+  AU_REPEAT_WITHOUT_EXAM: {
+    id: "AU_REPEAT_WITHOUT_EXAM",
+    label: "Wiederholte digitale AU ohne Untersuchung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.NO]:
+        "AU-Hinweis: Wiederholte digitale AU ohne ärztliche Untersuchung nicht möglich.",
+      [ExplanationStatus.UNKNOWN]:
+        "AU-Hinweis: Prüfung erforderlich, ob wiederholte AU ohne Untersuchung zulässig ist.",
+    },
+  },
+
+  // ---- PRESCRIPTION DECISION ----
+
+  PRESCRIPTION_DECISION: {
+    id: "PRESCRIPTION_DECISION",
+    label: "Rezept-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Ein Rezept kann ausgestellt werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Ein Rezept kann nicht ausgestellt werden.",
+    },
+  },
+
+  // ---- PRESCRIPTION SPECIFIC EXPLANATIONS ----
+
+  PRESCRIPTION_KNOWN_MEDICATION: {
+    id: "PRESCRIPTION_KNOWN_MEDICATION",
+    label: "Medikament bekannt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.NO]:
+        "Rezept-Hinweis: Medikament / Verordnung in der Praxis nicht bekannt.",
+      [ExplanationStatus.UNKNOWN]:
+        "Rezept-Hinweis: Medikament bitte vollständig angeben.",
+    },
+  },
+
+  PRESCRIPTION_FOLLOW_UP: {
+    id: "PRESCRIPTION_FOLLOW_UP",
+    label: "Folgerezept / Dauermedikation",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bei bekannten Beschwerden kann eine Arbeitsunfähigkeitsbescheinigung für bis zu fünf Tage ausgestellt werden.",
-      [ExplanationStatus.NO]:
-        "Bei neuen Patientinnen und Patienten kann eine Arbeitsunfähigkeitsbescheinigung zunächst nur für bis zu drei Tage ausgestellt werden.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Einschätzung ist wichtig, ob bereits eine Behandlung in unserer Praxis erfolgt ist.",
+        "Rezept-Hinweis: Folgerezept / Dauermedikation.",
+    },
+  },
+
+  PRESCRIPTION_SPECIALIST_REQUIRED: {
+    id: "PRESCRIPTION_SPECIALIST_REQUIRED",
+    label: "Fachärztliche Mitbehandlung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Fachärztliche Mitbehandlung / Bericht erforderlich.",
+    },
+  },
+
+  PRESCRIPTION_CONTROL_OVERDUE: {
+    id: "PRESCRIPTION_CONTROL_OVERDUE",
+    label: "Kontrolle überfällig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Notwendige Kontrolle überfällig.",
+    },
+  },
+
+  PRESCRIPTION_SPECIAL_TYPE: {
+    id: "PRESCRIPTION_SPECIAL_TYPE",
+    label: "Sonderfall",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Sonderfall (BtM, Privatrezept, Pille etc.).",
+    },
+  },
+
+  // ---- LAB DECISION ----
+
+  LAB_DECISION: {
+    id: "LAB_DECISION",
+    label: "Labor-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
+    },
+  },
+
+  // ---- LAB SPECIFIC CHECKPOINTS ----
+
+  // Labor-Anlass / Indikation: klärt den Grund / Kontext für die Laboranforderung.
+  // Dieser Checkpoint beschreibt, warum Labor gewünscht oder sinnvoll sein könnte
+  // (z. B. Beschwerden, Routinekontrolle, externe Anordnung, Wunschleistung).
+  // Er ist ein anliegenspezifischer Kontext-Checkpoint und löst keine automatische
+  // Entscheidung aus. Abgrenzung zu DOCTOR_REVIEW_REQUIRED (GLOBAL):
+  // DOCTOR_REVIEW_REQUIRED bedeutet, dass vor Weiterbearbeitung erst eine ärztliche
+  // Klärung/Freigabe stattfinden muss – unabhängig davon, ob ein Anlass vorliegt.
+  LAB_MEDICAL_INDICATION: {
+    id: "LAB_MEDICAL_INDICATION",
+    label: "Labor-Anlass / Indikation",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_MEDICAL_INDICATION-Q1", text: "Liegen Beschwerden vor?" },
+      { id: "LAB_MEDICAL_INDICATION-Q2", text: "Liegt eine Überweisung oder externe Anordnung vor?" },
+      { id: "LAB_MEDICAL_INDICATION-Q3", text: "Geht es um eine Routinekontrolle?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Anlass für Laboruntersuchung ist angegeben.",
+      [ExplanationStatus.NO]: "Labor-Hinweis: Kein Laboranlass / Indikation nicht erkennbar.",
+      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Laboranlass bitte genauer angeben.",
+    },
+  },
+
+  LAB_CHECKUP_ELIGIBLE: {
+    id: "LAB_CHECKUP_ELIGIBLE",
+    label: "Check-up / Vorsorge",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_CHECKUP_ELIGIBLE-Q1", text: "Geht es um Check-up / Vorsorge?" },
+      { id: "LAB_CHECKUP_ELIGIBLE-Q2", text: "Wann war der letzte Check-up?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Check-up / Vorsorge möglich.",
+      [ExplanationStatus.NO]: "Labor-Hinweis: Check-up / Vorsorge derzeit nicht vorgesehen.",
+      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Prüfung Check-up-Berechtigung erforderlich.",
+    },
+  },
+
+  LAB_VALUES_DEFINED: {
+    id: "LAB_VALUES_DEFINED",
+    label: "Laborwerte definiert",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_VALUES_DEFINED-Q1", text: "Welche Werte werden gewünscht?" },
+      { id: "LAB_VALUES_DEFINED-Q2", text: "Sind die Werte konkret benannt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Gewünschte Laborwerte sind benannt.",
+      [ExplanationStatus.NO]: "Labor-Hinweis: Laborwerte bitte konkret angeben.",
+      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Angabe der gewünschten Werte fehlt.",
+    },
+  },
+
+  LAB_FASTING_REQUIRED: {
+    id: "LAB_FASTING_REQUIRED",
+    label: "Nüchternabnahme erforderlich",
+    kind: InquiryCheckpointKind.PREPARATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_FASTING_REQUIRED-Q1", text: "Sind nüchterne Werte erforderlich?" },
+    ],
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Labor-Hinweis: Bitte nüchtern zur Blutentnahme erscheinen (mind. 8 Std. ohne Essen).",
     },
   },
 
   // ---- GLOBAL EXPLANATIONS ----
 
-  IN_GERMANY: {
-    id: "IN_GERMANY",
-    label: "Aufenthaltsort Deutschland",
+  IS_NEW_PATIENT: {
+    id: "IS_NEW_PATIENT",
+    label: "Neupatient",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.NO]:
-        "Bestimmte Leistungen können wir nur durchführen, wenn sich die Person in Deutschland befindet.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Bearbeitung ist relevant, ob sich die Person aktuell in Deutschland befindet.",
-    },
+    question: "Ist die Person ein neuer Patient (Erstkontakt)?",
+    textByStatus: {},
   },
 
-  DOCTOR_ASSESSMENT_REQUIRED: {
-    id: "DOCTOR_ASSESSMENT_REQUIRED",
+  PATIENT_NOT_IN_GERMANY: {
+    id: "PATIENT_NOT_IN_GERMANY",
+    label: "Aufenthaltsort außerhalb Deutschland",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Befindet sich der Patient aktuell NICHT in Deutschland?",
+    textByStatus: {},
+  },
+
+  DOCTOR_REVIEW_REQUIRED: {
+    id: "DOCTOR_REVIEW_REQUIRED",
     label: "Ärztliche Einschätzung erforderlich",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Für dieses Anliegen ist eine ärztliche Einschätzung erforderlich.",
-      [ExplanationStatus.UNKNOWN]:
-        "Gegebenenfalls ist eine ärztliche Einschätzung erforderlich.",
-    },
+    question: "Ist für dieses Anliegen eine ärztliche Einschätzung erforderlich?",
+    textByStatus: {},
+  },
+
+  DATA_INCOMPLETE: {
+    id: "DATA_INCOMPLETE",
+    label: "Angaben unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Fehlen relevante Angaben oder Daten?",
+    textByStatus: {},
+  },
+
+  IS_CHRONIC_PATIENT: {
+    id: "IS_CHRONIC_PATIENT",
+    label: "Chronische Erkrankung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Liegt eine chronische oder dauerhaft behandlungsbedürftige Erkrankung vor?",
+    textByStatus: {},
   },
 
   // ---- GLOBAL ACTIONS ----
+
+  OPEN_CONSULTATION: {
+    id: "OPEN_CONSULTATION",
+    label: "Ärztliche Konsultation",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
 
   DIGITAL_REQUEST: {
     id: "DIGITAL_REQUEST",
