@@ -13,8 +13,42 @@ import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpoint
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 
 // ---------------------------------------------------------------------------
-// AU-Profil aus V2-Katalog
+// Checkpoint-spezifische Button-Labels
 // ---------------------------------------------------------------------------
+
+/**
+ * Überschreibt die generischen Ja/Nein/Unklar-Labels pro Checkpoint,
+ * wenn der fachliche Kontext eine präzisere Formulierung erlaubt.
+ */
+const CHECKPOINT_LABELS: Partial<
+  Record<string, Partial<Record<ExplanationStatus, string>>>
+> = {
+  AU_BACKDATE_ALLOWED: {
+    [ExplanationStatus.YES]: "zulässig",
+    [ExplanationStatus.NO]: "nicht zulässig",
+    [ExplanationStatus.UNKNOWN]: "unklar",
+  },
+  AU_DURATION_ALLOWED: {
+    [ExplanationStatus.YES]: "zulässig",
+    [ExplanationStatus.NO]: "nicht zulässig",
+    [ExplanationStatus.UNKNOWN]: "unklar",
+  },
+  DOCTOR_ASSESSMENT_REQUIRED: {
+    [ExplanationStatus.YES]: "erforderlich",
+    [ExplanationStatus.NO]: "nicht erforderlich",
+    [ExplanationStatus.UNKNOWN]: "unklar",
+  },
+};
+
+const DEFAULT_EXPLANATION_LABELS: Record<ExplanationStatus, string> = {
+  [ExplanationStatus.YES]: "Ja",
+  [ExplanationStatus.NO]: "Nein",
+  [ExplanationStatus.UNKNOWN]: "Unklar",
+};
+
+function getExplanationLabel(id: string, status: ExplanationStatus): string {
+  return CHECKPOINT_LABELS[id]?.[status] ?? DEFAULT_EXPLANATION_LABELS[status];
+}
 
 const AU_PROFILE = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
@@ -178,6 +212,12 @@ export default function InquiryDemoClient() {
                 const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
                 if (!cp) return null;
                 const current = checkpointStatuses[id] as ExplanationStatus;
+                const isSilent = cp.textByStatus[current] === undefined;
+                const silentHint = isSilent
+                  ? cp.docByStatus?.[current] !== undefined
+                    ? "still / nur Doku"
+                    : "kein Antworttext bei diesem Status"
+                  : null;
                 return (
                   <div key={id} className="card">
                     <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
@@ -199,14 +239,22 @@ export default function InquiryDemoClient() {
                           className={`answer-btn${current === s ? " active" : ""}`}
                           onClick={() => setStatus(id, s)}
                         >
-                          {s === ExplanationStatus.YES
-                            ? "Ja"
-                            : s === ExplanationStatus.NO
-                              ? "Nein"
-                              : "Unklar"}
+                          {getExplanationLabel(id, s)}
                         </button>
                       ))}
                     </div>
+                    {silentHint !== null && (
+                      <p
+                        style={{
+                          margin: "0.4rem 0 0",
+                          fontSize: "0.75rem",
+                          color: "var(--muted-foreground)",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {silentHint}
+                      </p>
+                    )}
                   </div>
                 );
               })}
