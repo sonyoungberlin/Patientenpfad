@@ -457,34 +457,41 @@ export default function InquiryDemoPage() {
                 Bitte Anliegen oder globale Bausteine auswählen.
               </p>
             ) : (
-              allSectionOutputs.map((output, si) => {
-                if (output.paragraphs.length === 0) return null;
-                const isLast =
-                  si ===
-                  allSectionOutputs.filter((o) => o.paragraphs.length > 0)
-                    .length -
-                    1;
-                return (
+              (() => {
+                const activeOutputs = allSectionOutputs.filter(
+                  (o) => o.paragraphs.length > 0,
+                );
+                return activeOutputs.map((output, idx) => (
                   <div
                     key={output.id}
-                    style={{ marginBottom: isLast ? 0 : "1.25rem" }}
+                    style={
+                      idx > 0
+                        ? {
+                            borderTop: "1px solid var(--border, #e5e7eb)",
+                            paddingTop: "1rem",
+                            marginTop: "1rem",
+                          }
+                        : undefined
+                    }
                   >
-                    {output.paragraphs.map((para, i) => (
-                      <p
-                        key={`${output.id}-${i}`}
-                        style={{
-                          margin:
-                            i < output.paragraphs.length - 1
-                              ? "0 0 0.75rem"
-                              : "0",
-                        }}
-                      >
-                        {para}
-                      </p>
-                    ))}
+                    <p
+                      style={{
+                        margin: "0 0 0.25rem",
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "var(--muted-foreground)",
+                      }}
+                    >
+                      Abschnitt {idx + 1}
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      {output.paragraphs.join(" ")}
+                    </p>
                   </div>
-                );
-              })
+                ));
+              })()
             )}
           </div>
 
