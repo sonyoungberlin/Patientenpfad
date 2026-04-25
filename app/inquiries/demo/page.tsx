@@ -11,6 +11,7 @@ type TopicDecision = "possible" | "not_possible" | null;
 type Topic = {
   id: string;
   label: string;
+  heading: string;
   textByDecision: {
     possible: string;
     not_possible: string;
@@ -25,6 +26,7 @@ const TOPICS: Topic[] = [
   {
     id: "impfung",
     label: "Impfung",
+    heading: "Zur Impfung",
     textByDecision: {
       possible: "Eine Impfung kann in unserer Praxis durchgeführt werden.",
       not_possible: "Eine direkte Impfung ist aktuell nicht möglich.",
@@ -37,6 +39,7 @@ const TOPICS: Topic[] = [
   {
     id: "au",
     label: "AU / Krankschreibung",
+    heading: "Zur Arbeitsunfähigkeitsbescheinigung",
     textByDecision: {
       possible: "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
       not_possible:
@@ -50,6 +53,7 @@ const TOPICS: Topic[] = [
   {
     id: "rezept",
     label: "Rezept",
+    heading: "Zum Rezept",
     textByDecision: {
       possible: "Ein Rezept kann ausgestellt werden.",
       not_possible: "Ein Rezept kann nicht ausgestellt werden.",
@@ -62,6 +66,7 @@ const TOPICS: Topic[] = [
   {
     id: "wundversorgung",
     label: "Wundversorgung",
+    heading: "Zur Wundversorgung",
     textByDecision: {
       possible:
         "Eine Wundversorgung kann in unserer Praxis durchgeführt werden.",
@@ -183,13 +188,15 @@ function getSectionParagraphs(s: Section): string[] {
     if (text) paras.push(text);
   });
 
-  GLOBAL_CHECKPOINTS.filter(
-    (cp) => cp.type === "way" && s.globalState[cp.id] === "yes",
-  ).forEach((cp) => {
-    if (cp.text) paras.push(cp.text);
-  });
-
   return paras;
+}
+
+function getSectionHeading(s: Section): string {
+  if (s.topicId) {
+    const topic = TOPICS.find((t) => t.id === s.topicId);
+    if (topic) return topic.heading;
+  }
+  return "Allgemeiner Hinweis";
 }
 
 function getSectionDocLines(s: Section): string[] {
@@ -250,12 +257,24 @@ export default function InquiryDemoPage() {
 
   const allSectionOutputs = sections.map((s) => ({
     id: s.id,
+    heading: getSectionHeading(s),
     paragraphs: getSectionParagraphs(s),
     docLines: getSectionDocLines(s),
   }));
 
   const hasAnyOutput = allSectionOutputs.some((o) => o.paragraphs.length > 0);
   const allDocLines = allSectionOutputs.flatMap((o) => o.docLines);
+
+  // Collect unique active "way" checkpoints across all sections
+  const activeWayTexts: string[] = [];
+  GLOBAL_CHECKPOINTS.filter((cp) => cp.type === "way").forEach((cp) => {
+    const isActiveInAnySection = sections.some(
+      (s) => s.globalState[cp.id] === "yes",
+    );
+    if (isActiveInAnySection && cp.text) {
+      activeWayTexts.push(cp.text);
+    }
+  });
 
   return (
     <main style={{ maxWidth: "72rem" }}>
@@ -452,46 +471,58 @@ export default function InquiryDemoPage() {
 
           <div className="card" style={{ marginBottom: "1rem" }}>
             <h3 style={{ marginBottom: "0.75rem" }}>Antwort</h3>
-            {!hasAnyOutput ? (
+            {!hasAnyOutput && activeWayTexts.length === 0 ? (
               <p style={{ margin: 0, color: "var(--muted-foreground)" }}>
                 Bitte Anliegen oder globale Bausteine auswählen.
               </p>
             ) : (
-              (() => {
-                const activeOutputs = allSectionOutputs.filter(
-                  (o) => o.paragraphs.length > 0,
-                );
-                return activeOutputs.map((output, idx) => (
-                  <div
-                    key={output.id}
-                    style={
-                      idx > 0
-                        ? {
-                            borderTop: "1px solid var(--border, #e5e7eb)",
-                            paddingTop: "1rem",
-                            marginTop: "1rem",
-                          }
-                        : undefined
-                    }
-                  >
-                    <p
-                      style={{
-                        margin: "0 0 0.25rem",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: "var(--muted-foreground)",
-                      }}
+              <>
+                {allSectionOutputs
+                  .filter((o) => o.paragraphs.length > 0)
+                  .map((output, idx) => (
+                    <div
+                      key={output.id}
+                      style={
+                        idx > 0
+                          ? {
+                              borderTop: "1px solid var(--border, #e5e7eb)",
+                              paddingTop: "1rem",
+                              marginTop: "1rem",
+                            }
+                          : undefined
+                      }
                     >
-                      Abschnitt {idx + 1}
-                    </p>
+                      <p
+                        style={{
+                          margin: "0 0 0.25rem",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          color: "var(--muted-foreground)",
+                        }}
+                      >
+                        {output.heading}
+                      </p>
+                      <p style={{ margin: 0 }}>
+                        {output.paragraphs.join(" ")}
+                      </p>
+                    </div>
+                  ))}
+                {activeWayTexts.length > 0 && (
+                  <div
+                    style={{
+                      borderTop: "1px solid var(--border, #e5e7eb)",
+                      paddingTop: "1rem",
+                      marginTop: "1rem",
+                    }}
+                  >
                     <p style={{ margin: 0 }}>
-                      {output.paragraphs.join(" ")}
+                      {activeWayTexts.join(" ")}
                     </p>
                   </div>
-                ));
-              })()
+                )}
+              </>
             )}
           </div>
 
