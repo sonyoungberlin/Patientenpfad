@@ -109,7 +109,7 @@ const GLOBAL_CHECKPOINTS: GlobalCheckpoint[] = [
     label: "Daten unvollständig",
     type: "explanation",
     textByStatus: {
-      no: "Für die Bearbeitung fehlen noch notwendige Angaben.",
+      yes: "Für die Bearbeitung fehlen noch notwendige Angaben.",
       unknown: "Damit wir das prüfen können, benötigen wir noch einige Angaben.",
     },
   },
@@ -143,73 +143,125 @@ const GLOBAL_CHECKPOINTS: GlobalCheckpoint[] = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Section – one Antwortabschnitt with its own topic + global checkpoints
+// ---------------------------------------------------------------------------
+
+type Section = {
+  id: string;
+  topicId: string | null;
+  topicDecision: TopicDecision;
+  globalState: Record<string, GlobalCheckpointStatus>;
+};
+
+let _sectionCounter = 0;
+
+function buildInitialGlobalState(): Record<string, GlobalCheckpointStatus> {
+  return Object.fromEntries(GLOBAL_CHECKPOINTS.map((cp) => [cp.id, "unknown"]));
+}
+
+function newSection(): Section {
+  return {
+    id: String(++_sectionCounter),
+    topicId: null,
+    topicDecision: null,
+    globalState: buildInitialGlobalState(),
+  };
+}
+
+function getSectionParagraphs(s: Section): string[] {
+  const paras: string[] = [];
+
+  if (s.topicId && s.topicDecision) {
+    const topic = TOPICS.find((t) => t.id === s.topicId);
+    if (topic) paras.push(topic.textByDecision[s.topicDecision]);
+  }
+
+  GLOBAL_CHECKPOINTS.filter((cp) => cp.type === "explanation").forEach((cp) => {
+    const status = s.globalState[cp.id] ?? "unknown";
+    const text = cp.textByStatus?.[status];
+    if (text) paras.push(text);
+  });
+
+  GLOBAL_CHECKPOINTS.filter(
+    (cp) => cp.type === "way" && s.globalState[cp.id] === "yes",
+  ).forEach((cp) => {
+    if (cp.text) paras.push(cp.text);
+  });
+
+  return paras;
+}
+
+function getSectionDocLines(s: Section): string[] {
+  if (!s.topicId || !s.topicDecision) return [];
+  const topic = TOPICS.find((t) => t.id === s.topicId);
+  return topic ? [topic.docByDecision[s.topicDecision]] : [];
+}
+
 /**
- * Demo-Seite: Anliegen-Entscheidung + globale Erklärungen + globale Wege.
+ * Demo-Seite: Mehrere Antwortabschnitte, jeder mit eigenem Anliegen + globalen Bausteinen.
  *
  * Kein API-Aufruf, kein Login, kein Speichern.
- * Ziel: testen, ob Entscheidung + globale Erklärung + globaler Weg als Puzzle funktioniert.
  */
 export default function InquiryDemoPage() {
-  const [topicState, setTopicState] = useState<Record<string, TopicDecision>>(
-    () => Object.fromEntries(TOPICS.map((t) => [t.id, null])),
-  );
-  const [globalState, setGlobalState] = useState<
-    Record<string, GlobalCheckpointStatus>
-  >(
-    () =>
-      Object.fromEntries(GLOBAL_CHECKPOINTS.map((cp) => [cp.id, "unknown"])),
-  );
+  const [sections, setSections] = useState<Section[]>(() => [newSection()]);
 
-  // ── Computed output paragraphs ──────────────────────────────────────────
-
-  const topicParagraphs: string[] = TOPICS.flatMap((t) => {
-    const decision = topicState[t.id];
-    return decision ? [t.textByDecision[decision]] : [];
-  });
-
-  const globalExplanationParagraphs: string[] = GLOBAL_CHECKPOINTS.filter(
-    (cp) => cp.type === "explanation",
-  ).flatMap((cp) => {
-    const status = globalState[cp.id] ?? "unknown";
-    const text = cp.textByStatus?.[status];
-    return text ? [text] : [];
-  });
-
-  const globalWayParagraphs: string[] = GLOBAL_CHECKPOINTS.filter(
-    (cp) => cp.type === "way" && globalState[cp.id] === "yes",
-  ).flatMap((cp) => (cp.text ? [cp.text] : []));
-
-  const allParagraphs = [
-    ...topicParagraphs,
-    ...globalExplanationParagraphs,
-    ...globalWayParagraphs,
-  ];
-
-  // ── Computed documentation lines ────────────────────────────────────────
-
-  const docLines: string[] = TOPICS.flatMap((t) => {
-    const decision = topicState[t.id];
-    return decision ? [t.docByDecision[decision]] : [];
-  });
-
-  // ── Helpers ─────────────────────────────────────────────────────────────
-
-  function setTopicDecision(id: string, decision: TopicDecision) {
-    setTopicState((prev) => ({ ...prev, [id]: decision }));
+  function addSection() {
+    setSections((prev) => [...prev, newSection()]);
   }
 
-  function setGlobalStatus(id: string, status: GlobalCheckpointStatus) {
-    setGlobalState((prev) => ({ ...prev, [id]: status }));
+  function removeSection(id: string) {
+    setSections((prev) => prev.filter((s) => s.id !== id));
   }
 
-  const hasAnyOutput = allParagraphs.length > 0;
+  function setTopicDecision(
+    sectionId: string,
+    topicId: string,
+    decision: TopicDecision,
+  ) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId ? { ...s, topicId, topicDecision: decision } : s,
+      ),
+    );
+  }
+
+  function clearTopic(sectionId: string) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId ? { ...s, topicId: null, topicDecision: null } : s,
+      ),
+    );
+  }
+
+  function setGlobalStatus(
+    sectionId: string,
+    cpId: string,
+    status: GlobalCheckpointStatus,
+  ) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? { ...s, globalState: { ...s.globalState, [cpId]: status } }
+          : s,
+      ),
+    );
+  }
+
+  const allSectionOutputs = sections.map((s) => ({
+    id: s.id,
+    paragraphs: getSectionParagraphs(s),
+    docLines: getSectionDocLines(s),
+  }));
+
+  const hasAnyOutput = allSectionOutputs.some((o) => o.paragraphs.length > 0);
+  const allDocLines = allSectionOutputs.flatMap((o) => o.docLines);
 
   return (
     <main style={{ maxWidth: "72rem" }}>
       <h1 style={{ marginBottom: "0.25rem" }}>Anfrage-Assistent – Demo</h1>
       <p className="text-muted text-small" style={{ marginBottom: "1.5rem" }}>
-        Stateless-Prototyp · Anliegen + globale Bausteine · Kein Speichern,
-        kein Login
+        Stateless-Prototyp · Antwortabschnitte · Kein Speichern, kein Login
       </p>
 
       <div
@@ -220,120 +272,178 @@ export default function InquiryDemoPage() {
           flexWrap: "wrap",
         }}
       >
-        {/* ── Left column ── */}
+        {/* ── Left column: sections ── */}
         <div style={{ flex: "1 1 20rem", minWidth: 0 }}>
-          {/* ── Anliegen ── */}
-          <h2>Anliegen</h2>
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-          >
-            {TOPICS.map((t) => {
-              const current = topicState[t.id];
-              return (
-                <div key={t.id} className="card">
-                  <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
-                    {t.label}
-                  </p>
-                  <div
-                    style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
+          {sections.map((section, idx) => (
+            <div
+              key={section.id}
+              className="card"
+              style={{ marginBottom: "1.5rem" }}
+            >
+              {/* Section header */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                <h2 style={{ margin: 0 }}>Abschnitt {idx + 1}</h2>
+                {sections.length > 1 && (
+                  <button
+                    type="button"
+                    className="answer-btn"
+                    onClick={() => removeSection(section.id)}
                   >
-                    <button
-                      type="button"
-                      className={`answer-btn${current === "possible" ? " active" : ""}`}
-                      onClick={() => setTopicDecision(t.id, "possible")}
-                    >
-                      möglich
-                    </button>
-                    <button
-                      type="button"
-                      className={`answer-btn${current === "not_possible" ? " active" : ""}`}
-                      onClick={() => setTopicDecision(t.id, "not_possible")}
-                    >
-                      nicht möglich
-                    </button>
-                    {current !== null && (
-                      <button
-                        type="button"
-                        className="answer-btn"
-                        onClick={() => setTopicDecision(t.id, null)}
-                      >
-                        deaktivieren
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                    Abschnitt entfernen
+                  </button>
+                )}
+              </div>
 
-          {/* ── Globale Checkpoints ── */}
-          <h2 style={{ marginTop: "1.5rem" }}>Globale Checkpoints</h2>
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-          >
-            {GLOBAL_CHECKPOINTS.map((cp) => {
-              const current = globalState[cp.id];
-              return (
-                <div key={cp.id} className="card">
-                  <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
-                    {cp.label}
-                  </p>
-                  {cp.type === "explanation" ? (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className={`answer-btn${current === "yes" ? " active" : ""}`}
-                        onClick={() => setGlobalStatus(cp.id, "yes")}
+              {/* Anliegen */}
+              <h3 style={{ marginBottom: "0.5rem" }}>Anliegen</h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                {TOPICS.map((t) => {
+                  const isSelected = section.topicId === t.id;
+                  const current = isSelected ? section.topicDecision : null;
+                  return (
+                    <div key={t.id} className="card">
+                      <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
+                        {t.label}
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          flexWrap: "wrap",
+                        }}
                       >
-                        Ja
-                      </button>
-                      <button
-                        type="button"
-                        className={`answer-btn${current === "no" ? " active" : ""}`}
-                        onClick={() => setGlobalStatus(cp.id, "no")}
-                      >
-                        Nein
-                      </button>
-                      <button
-                        type="button"
-                        className={`answer-btn${current === "unknown" ? " active" : ""}`}
-                        onClick={() => setGlobalStatus(cp.id, "unknown")}
-                      >
-                        Unklar
-                      </button>
+                        <button
+                          type="button"
+                          className={`answer-btn${current === "possible" ? " active" : ""}`}
+                          onClick={() =>
+                            setTopicDecision(section.id, t.id, "possible")
+                          }
+                        >
+                          möglich
+                        </button>
+                        <button
+                          type="button"
+                          className={`answer-btn${current === "not_possible" ? " active" : ""}`}
+                          onClick={() =>
+                            setTopicDecision(section.id, t.id, "not_possible")
+                          }
+                        >
+                          nicht möglich
+                        </button>
+                        {isSelected && (
+                          <button
+                            type="button"
+                            className="answer-btn"
+                            onClick={() => clearTopic(section.id)}
+                          >
+                            deaktivieren
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={current === "yes"}
-                        onChange={(e) =>
-                          setGlobalStatus(
-                            cp.id,
-                            e.target.checked ? "yes" : "unknown",
-                          )
-                        }
-                      />
-                      <span className="text-small">Aktiv</span>
-                    </label>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+
+              {/* Globale Checkpoints */}
+              <h3 style={{ marginBottom: "0.5rem" }}>Globale Checkpoints</h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                }}
+              >
+                {GLOBAL_CHECKPOINTS.map((cp) => {
+                  const current = section.globalState[cp.id];
+                  return (
+                    <div key={cp.id} className="card">
+                      <p style={{ margin: "0 0 0.5rem", fontWeight: 500 }}>
+                        {cp.label}
+                      </p>
+                      {cp.type === "explanation" ? (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className={`answer-btn${current === "yes" ? " active" : ""}`}
+                            onClick={() =>
+                              setGlobalStatus(section.id, cp.id, "yes")
+                            }
+                          >
+                            Ja
+                          </button>
+                          <button
+                            type="button"
+                            className={`answer-btn${current === "no" ? " active" : ""}`}
+                            onClick={() =>
+                              setGlobalStatus(section.id, cp.id, "no")
+                            }
+                          >
+                            Nein
+                          </button>
+                          <button
+                            type="button"
+                            className={`answer-btn${current === "unknown" ? " active" : ""}`}
+                            onClick={() =>
+                              setGlobalStatus(section.id, cp.id, "unknown")
+                            }
+                          >
+                            Unklar
+                          </button>
+                        </div>
+                      ) : (
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={current === "yes"}
+                            onChange={(e) =>
+                              setGlobalStatus(
+                                section.id,
+                                cp.id,
+                                e.target.checked ? "yes" : "unknown",
+                              )
+                            }
+                          />
+                          <span className="text-small">Aktiv</span>
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <button type="button" className="answer-btn" onClick={addSection}>
+            Weiteren Abschnitt hinzufügen
+          </button>
         </div>
 
         {/* ── Right column: Live-Vorschau ── */}
@@ -347,24 +457,42 @@ export default function InquiryDemoPage() {
                 Bitte Anliegen oder globale Bausteine auswählen.
               </p>
             ) : (
-              allParagraphs.map((para, i) => (
-                <p
-                  key={para}
-                  style={{
-                    margin: i < allParagraphs.length - 1 ? "0 0 0.75rem" : "0",
-                  }}
-                >
-                  {para}
-                </p>
-              ))
+              allSectionOutputs.map((output, si) => {
+                if (output.paragraphs.length === 0) return null;
+                const isLast =
+                  si ===
+                  allSectionOutputs.filter((o) => o.paragraphs.length > 0)
+                    .length -
+                    1;
+                return (
+                  <div
+                    key={output.id}
+                    style={{ marginBottom: isLast ? 0 : "1.25rem" }}
+                  >
+                    {output.paragraphs.map((para, i) => (
+                      <p
+                        key={`${output.id}-${i}`}
+                        style={{
+                          margin:
+                            i < output.paragraphs.length - 1
+                              ? "0 0 0.75rem"
+                              : "0",
+                        }}
+                      >
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+                );
+              })
             )}
           </div>
 
-          {docLines.length > 0 && (
+          {allDocLines.length > 0 && (
             <div className="card">
               <h3 style={{ marginBottom: "0.75rem" }}>Dokumentation</h3>
               <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                {docLines.map((line, i) => (
+                {allDocLines.map((line, i) => (
                   <li
                     key={i}
                     style={{ marginBottom: "0.25rem", fontSize: "0.875rem" }}
