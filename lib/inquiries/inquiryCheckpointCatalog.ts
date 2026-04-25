@@ -158,6 +158,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    // Klärungsfragen zur AU-Entscheidung (erscheinen in M2 als Fragenblock und in M3 als Kontext).
+    // Rückdatierung, Dauer und Wiederholung werden als Sammelfragen modelliert,
+    // nicht als eigene entscheidbare Checkpoints.
+    questions: [
+      { id: "AU_DECISION-Q1", text: "Soll die AU rückwirkend ausgestellt werden?" },
+      { id: "AU_DECISION-Q2", text: "Welchen Zeitraum soll die AU umfassen?" },
+      { id: "AU_DECISION-Q3", text: "Handelt es sich um eine Wiederholung ohne neue Untersuchung?" },
+    ],
     textByStatus: {
       // DecisionStatus.DISABLED ist nicht befüllt: bedeutet „noch keine manuelle Entscheidung
       // getroffen". Der Renderer liefert in diesem Fall mainDecision: null – kein Ausgabetext.

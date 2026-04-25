@@ -848,11 +848,8 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil bindet alle drei Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_ALLOWED");
-    expect(auProfile.specificCheckpointIds).toContain("AU_DURATION_ALLOWED");
-    expect(auProfile.specificCheckpointIds).toContain("AU_REPEAT_WITHOUT_EXAM");
-    expect(auProfile.specificCheckpointIds).toHaveLength(3);
+  it("AU-Profil hat keine Specific Checkpoints (Rückdatierung, Dauer, Wiederholung sind questions auf AU_DECISION)", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(0);
   });
 
   it("AU-Profil bindet alle vier Global Checkpoints", () => {
@@ -880,22 +877,32 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
   });
 });
 
-describe("AU-Profil – AU_REPEAT_WITHOUT_EXAM als Specific Checkpoint", () => {
-  it("AU_REPEAT_WITHOUT_EXAM NO → Text erscheint in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAuSection({
-        checkpointStatuses: { AU_REPEAT_WITHOUT_EXAM: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Wiederholte digitale AU")),
-    ).toBe(true);
+describe("AU_DECISION – questions als Klärungshilfe", () => {
+  it("AU_DECISION hat genau drei questions (Rückdatierung, Dauer, Wiederholung)", () => {
+    const auDecision = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"];
+    expect(auDecision.questions).toBeDefined();
+    expect((auDecision.questions ?? []).length).toBe(3);
   });
 
-  it("AU_REPEAT_WITHOUT_EXAM YES → kein Text in attachedParagraphs (kein textByStatus für YES)", () => {
+  it("AU_DECISION question-Texte enthalten Rückdatierung, Dauer und Wiederholung", () => {
+    const questions = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"].questions ?? [];
+    const texts = questions.map((q) => q.text);
+    expect(texts.some((t) => t.toLowerCase().includes("rückwirkend"))).toBe(true);
+    expect(texts.some((t) => t.toLowerCase().includes("zeitraum"))).toBe(true);
+    expect(texts.some((t) => t.toLowerCase().includes("wiederholung") || t.toLowerCase().includes("untersuchung"))).toBe(true);
+  });
+
+  it("AU-Profil hat keine Specific Checkpoints mehr – AU_BACKDATE_ALLOWED nicht in specificCheckpointIds", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["AU"];
+    expect(profile.specificCheckpointIds).not.toContain("AU_BACKDATE_ALLOWED");
+    expect(profile.specificCheckpointIds).not.toContain("AU_DURATION_ALLOWED");
+    expect(profile.specificCheckpointIds).not.toContain("AU_REPEAT_WITHOUT_EXAM");
+  });
+
+  it("AU_BACKDATE_ALLOWED in checkpointStatuses erzeugt keinen attachedParagraph (nicht mehr in specificCheckpointIds)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { AU_REPEAT_WITHOUT_EXAM: ExplanationStatus.YES },
+        checkpointStatuses: { AU_BACKDATE_ALLOWED: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -1310,10 +1317,10 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
 
   it("SPECIFIC Checkpoints werden unverändert pro Anliegen dokumentiert (kein Verlust durch GLOBAL-Dedup)", () => {
     const result = renderInquiryResponseFromSections([
-      makeAuSection({
+      makeLabSection({
         checkpointStatuses: {
           IS_NEW_PATIENT: ExplanationStatus.YES,
-          AU_BACKDATE_ALLOWED: ExplanationStatus.NO,
+          LAB_MEDICAL_INDICATION: ExplanationStatus.NO,
         },
       }),
       makePrescriptionSection({
@@ -1324,7 +1331,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
       }),
     ]);
     // SPECIFIC docs: both inquiries
-    expect(result.documentation.some((d) => d.includes("Rückdatierung"))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Indikation nicht erkennbar"))).toBe(true);
     expect(result.documentation.some((d) => d.includes("Folgerezept"))).toBe(true);
     // GLOBAL doc: exactly once
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
