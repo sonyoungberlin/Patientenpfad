@@ -141,6 +141,141 @@ export type InquiryProfile = {
 // Output
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Neue Architektur – Checkpoint-Arten, Scope, Placement, Statusmodelle
+// ---------------------------------------------------------------------------
+
+/**
+ * Sprachliche Funktion eines Checkpoints nach der neuen Architektur.
+ *
+ * DECISION    – trifft die Kernentscheidung (möglich / nicht möglich).
+ * EXPLANATION – erklärt Ursache oder Bedingung.
+ * ACTION      – beschreibt den nächsten Schritt.
+ * PREPARATION – sammelt Mitbring- oder Vorbereitungshinweise.
+ */
+export enum InquiryCheckpointKind {
+  DECISION = "DECISION",
+  EXPLANATION = "EXPLANATION",
+  ACTION = "ACTION",
+  PREPARATION = "PREPARATION",
+}
+
+/**
+ * Geltungsbereich eines Checkpoints.
+ *
+ * SPECIFIC – gehört nur zu einem Anliegen.
+ * GLOBAL   – wiederverwendbar; wird durch Anliegen gebunden, aber nicht immer aktiv.
+ */
+export enum InquiryCheckpointScope {
+  SPECIFIC = "SPECIFIC",
+  GLOBAL = "GLOBAL",
+}
+
+/**
+ * Ausgabeposition eines Checkpoints in der Antwort.
+ *
+ * ATTACHED      – hängt am jeweiligen Anliegen-Abschnitt.
+ * SHARED_BOTTOM – wird einmal unten in der Nachricht gesammelt (dedupliziert).
+ */
+export enum InquiryCheckpointPlacement {
+  ATTACHED = "ATTACHED",
+  SHARED_BOTTOM = "SHARED_BOTTOM",
+}
+
+/** Status für DECISION-Checkpoints. */
+export enum DecisionStatus {
+  POSSIBLE = "POSSIBLE",
+  NOT_POSSIBLE = "NOT_POSSIBLE",
+  DISABLED = "DISABLED",
+}
+
+/** Status für EXPLANATION-Checkpoints. */
+export enum ExplanationStatus {
+  YES = "YES",
+  NO = "NO",
+  UNKNOWN = "UNKNOWN",
+}
+
+/** Status für ACTION- und PREPARATION-Checkpoints. */
+export enum ActionStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+}
+
+/** Union aller möglichen Checkpoint-Statuswerte. */
+export type CheckpointStatusValue =
+  | DecisionStatus
+  | ExplanationStatus
+  | ActionStatus;
+
+/**
+ * Checkpoint-Definition nach der neuen Architektur.
+ *
+ * textByStatus – Antworttext je Statuswert (nur aktive Stati müssen befüllt sein).
+ * docByStatus  – Dokumentationszeile je Statuswert (optional; fällt auf textByStatus zurück).
+ */
+export type InquiryCheckpoint = {
+  id: string;
+  label: string;
+  kind: InquiryCheckpointKind;
+  scope: InquiryCheckpointScope;
+  placement: InquiryCheckpointPlacement;
+  textByStatus: Partial<Record<CheckpointStatusValue, string>>;
+  docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
+};
+
+/**
+ * Anfrageprofil nach der neuen Architektur.
+ *
+ * Bindet einen DECISION-Checkpoint, spezifische Checkpoints,
+ * gebundene globale Checkpoints und verfügbare Aktionen.
+ */
+export type InquiryProfileV2 = {
+  id: string;
+  label: string;
+  decisionCheckpointId: string;
+  specificCheckpointIds: string[];
+  boundGlobalCheckpointIds: string[];
+  availableActionIds: string[];
+};
+
+/**
+ * Eingabe für renderInquiryResponseFromSections:
+ * ein Anliegen mit Entscheidungsstatus und allen Checkpoint-Statuses.
+ */
+export type InquirySection = {
+  inquiryId: string;
+  decisionStatus: DecisionStatus;
+  checkpointStatuses: Record<string, CheckpointStatusValue>;
+};
+
+/** Ausgabe eines einzelnen Anliegen-Abschnitts. */
+export type InquirySectionOutput = {
+  inquiryId: string;
+  label: string;
+  /** Texte der ATTACHED-Checkpoints dieses Abschnitts. */
+  attachedParagraphs: string[];
+  /** Dokumentationszeilen für diesen Abschnitt. */
+  documentation: string[];
+};
+
+/**
+ * Gesamtergebnis von renderInquiryResponseFromSections.
+ *
+ * sections     – ein Abschnitt pro Anliegen mit ATTACHED-Bausteinen.
+ * sharedBottom – deduplizierte SHARED_BOTTOM-Bausteine (Wege, Sammelhinweise).
+ * documentation – alle Dokumentationszeilen aller Abschnitte.
+ */
+export type InquiryResponseV2Output = {
+  sections: InquirySectionOutput[];
+  sharedBottom: string[];
+  documentation: string[];
+};
+
+// ---------------------------------------------------------------------------
+// Output (Altarchitektur)
+// ---------------------------------------------------------------------------
+
 /**
  * Ergebnis von renderInquiryResponse.
  * Vollständig deterministisch – kein LLM, keine Seiteneffekte.

@@ -1,7 +1,14 @@
 import {
   InquiryCheckpointStatus,
+  InquiryCheckpointKind,
+  InquiryCheckpointScope,
+  InquiryCheckpointPlacement,
+  DecisionStatus,
+  ExplanationStatus,
+  ActionStatus,
   ResponseKind,
   type InquiryCheckpointTemplate,
+  type InquiryCheckpoint,
 } from "@/lib/inquiries/types";
 
 /**
@@ -127,6 +134,149 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Online-Terminbuchung: Zugang vorhanden.",
       [InquiryCheckpointStatus.HINWEIS]: "Online-Terminbuchung: Zugang fehlt – Einrichtung empfohlen.",
+    },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Neuer Katalog (Architektur v2) – AU-Checkpoints
+// ---------------------------------------------------------------------------
+
+/**
+ * Checkpoint-Katalog nach der neuen Architektur.
+ *
+ * Enthält alle Checkpoints des AU-Anliegen sowie die wiederverwendbaren
+ * globalen Checkpoints (GLOBAL scope).
+ */
+export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = {
+
+  // ---- DECISION ----
+
+  AU_DECISION: {
+    id: "AU_DECISION",
+    label: "AU-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Eine Arbeitsunfähigkeitsbescheinigung kann nicht ausgestellt werden.",
+    },
+  },
+
+  // ---- SPECIFIC EXPLANATIONS ----
+
+  AU_BACKDATE_ALLOWED: {
+    id: "AU_BACKDATE_ALLOWED",
+    label: "Rückdatierung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.NO]:
+        "Eine rückwirkende Ausstellung ist nur begrenzt möglich. Der gewünschte Zeitraum liegt darüber hinaus.",
+      [ExplanationStatus.UNKNOWN]:
+        "Für die Prüfung benötigen wir den genauen Zeitraum der gewünschten Arbeitsunfähigkeit.",
+    },
+  },
+
+  AU_DURATION_ALLOWED: {
+    id: "AU_DURATION_ALLOWED",
+    label: "Zulässige Dauer",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.NO]:
+        "Eine Arbeitsunfähigkeitsbescheinigung kann nur für einen begrenzten Zeitraum ausgestellt werden.",
+      [ExplanationStatus.UNKNOWN]:
+        "Für die Prüfung benötigen wir den gewünschten Zeitraum der Arbeitsunfähigkeit.",
+    },
+  },
+
+  AU_PATIENT_KNOWN: {
+    id: "AU_PATIENT_KNOWN",
+    label: "Patient bekannt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei bekannten Beschwerden kann eine Arbeitsunfähigkeitsbescheinigung für bis zu fünf Tage ausgestellt werden.",
+      [ExplanationStatus.NO]:
+        "Bei neuen Patientinnen und Patienten kann eine Arbeitsunfähigkeitsbescheinigung zunächst nur für bis zu drei Tage ausgestellt werden.",
+      [ExplanationStatus.UNKNOWN]:
+        "Für die Einschätzung ist wichtig, ob bereits eine Behandlung in unserer Praxis erfolgt ist.",
+    },
+  },
+
+  // ---- GLOBAL EXPLANATIONS ----
+
+  IN_GERMANY: {
+    id: "IN_GERMANY",
+    label: "Aufenthaltsort Deutschland",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.NO]:
+        "Bestimmte Leistungen können wir nur durchführen, wenn sich die Person in Deutschland befindet.",
+      [ExplanationStatus.UNKNOWN]:
+        "Für die Bearbeitung ist relevant, ob sich die Person aktuell in Deutschland befindet.",
+    },
+  },
+
+  DOCTOR_ASSESSMENT_REQUIRED: {
+    id: "DOCTOR_ASSESSMENT_REQUIRED",
+    label: "Ärztliche Einschätzung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für dieses Anliegen ist eine ärztliche Einschätzung erforderlich.",
+      [ExplanationStatus.UNKNOWN]:
+        "Gegebenenfalls ist eine ärztliche Einschätzung erforderlich.",
+    },
+  },
+
+  // ---- GLOBAL ACTIONS ----
+
+  DIGITAL_REQUEST: {
+    id: "DIGITAL_REQUEST",
+    label: "Digitale Anfrage",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Anfrage kann über die digitale Anfrage gestellt werden.",
+    },
+  },
+
+  ONLINE_ANAMNESIS: {
+    id: "ONLINE_ANAMNESIS",
+    label: "Online-Anamnese",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Fehlende Angaben können über die Online-Anamnese ergänzt werden.",
+    },
+  },
+
+  BOOK_APPOINTMENT: {
+    id: "BOOK_APPOINTMENT",
+    label: "Termin buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Termine können über den Online-Kalender vereinbart werden.",
     },
   },
 };
