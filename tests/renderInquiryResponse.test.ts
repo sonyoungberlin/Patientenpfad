@@ -707,3 +707,160 @@ describe("renderInquiryResponse – paragraphs", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// V2-Architektur – renderInquiryResponseFromSections (M2/M3-Trennung)
+// ---------------------------------------------------------------------------
+
+import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
+import { INQUIRY_FACT_CATALOG, INQUIRY_OUTPUT_BLOCK_CATALOG } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { DecisionStatus, ExplanationStatus } from "@/lib/inquiries/types";
+
+describe("renderInquiryResponseFromSections – M2-Facts erzeugen keinen Patiententext", () => {
+  it("factStatuses allein (keine OutputBlocks gewählt) → kein attachedParagraph", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.DISABLED,
+        selectedOutputBlockIds: [],
+        selectedActionIds: [],
+        factStatuses: {
+          IN_GERMANY: ExplanationStatus.NO,
+          AU_PATIENT_KNOWN: ExplanationStatus.YES,
+          DOCTOR_ASSESSMENT_CONTEXT: ExplanationStatus.YES,
+        },
+      },
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+
+  it("IN_GERMANY=NO allein erzeugt keinen Output", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.DISABLED,
+        selectedOutputBlockIds: [],
+        selectedActionIds: [],
+        factStatuses: { IN_GERMANY: ExplanationStatus.NO },
+      },
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.documentation).toHaveLength(0);
+  });
+
+  it("INQUIRY_FACT_CATALOG-Einträge haben kein text-Feld", () => {
+    for (const fact of Object.values(INQUIRY_FACT_CATALOG)) {
+      expect((fact as Record<string, unknown>)["text"]).toBeUndefined();
+      expect((fact as Record<string, unknown>)["textByStatus"]).toBeUndefined();
+    }
+  });
+});
+
+describe("renderInquiryResponseFromSections – AU möglich + DIGITAL_REQUEST", () => {
+  it("erzeugt Entscheidungstext in attachedParagraphs + DIGITAL_REQUEST in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        selectedOutputBlockIds: [],
+        selectedActionIds: ["DIGITAL_REQUEST"],
+      },
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      INQUIRY_OUTPUT_BLOCK_CATALOG["AU_DECISION_POSSIBLE"].text,
+    );
+    expect(result.sharedBottom).toContain(
+      INQUIRY_OUTPUT_BLOCK_CATALOG["DIGITAL_REQUEST"].text,
+    );
+  });
+
+  it("documentation enthält Label des Entscheidungsblocks", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        selectedOutputBlockIds: [],
+        selectedActionIds: [],
+      },
+    ]);
+    expect(result.documentation.some((d) => d.includes("AU – möglich"))).toBe(true);
+  });
+});
+
+describe("renderInquiryResponseFromSections – AU nicht möglich + AU_REASON_ABROAD", () => {
+  it("erzeugt nicht-möglich-Text + Ausland-Begründung in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        selectedOutputBlockIds: ["AU_REASON_ABROAD"],
+        selectedActionIds: [],
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    expect(paragraphs).toContain(
+      INQUIRY_OUTPUT_BLOCK_CATALOG["AU_DECISION_NOT_POSSIBLE"].text,
+    );
+    expect(paragraphs).toContain(
+      INQUIRY_OUTPUT_BLOCK_CATALOG["AU_REASON_ABROAD"].text,
+    );
+  });
+
+  it("AU nicht möglich + AU_REASON_ABROAD + BOOK_APPOINTMENT → sharedBottom enthält Termin-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        selectedOutputBlockIds: ["AU_REASON_ABROAD"],
+        selectedActionIds: ["BOOK_APPOINTMENT"],
+      },
+    ]);
+    expect(result.sharedBottom).toContain(
+      INQUIRY_OUTPUT_BLOCK_CATALOG["BOOK_APPOINTMENT"].text,
+    );
+  });
+});
+
+describe("renderInquiryResponseFromSections – SHARED_BOTTOM Deduplizierung", () => {
+  it("DIGITAL_REQUEST doppelt in selectedActionIds erscheint nur einmal in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.DISABLED,
+        selectedOutputBlockIds: [],
+        selectedActionIds: ["DIGITAL_REQUEST", "DIGITAL_REQUEST"],
+      },
+    ]);
+    const digitalCount = result.sharedBottom.filter(
+      (t) => t === INQUIRY_OUTPUT_BLOCK_CATALOG["DIGITAL_REQUEST"].text,
+    ).length;
+    expect(digitalCount).toBe(1);
+  });
+});
+
+describe("renderInquiryResponseFromSections – Katalog-Vollständigkeit", () => {
+  it("AU-Profil ist im Katalog vorhanden", () => {
+    expect(INQUIRY_PROFILE_CATALOG_V2["AU"]).toBeDefined();
+  });
+
+  it("alle AU-Facts sind im INQUIRY_FACT_CATALOG", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["AU"];
+    for (const id of [...profile.specificFactIds, ...profile.boundGlobalFactIds]) {
+      expect(INQUIRY_FACT_CATALOG[id]).toBeDefined();
+    }
+  });
+
+  it("alle AU-OutputBlocks sind im INQUIRY_OUTPUT_BLOCK_CATALOG", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["AU"];
+    const allBlockIds = [
+      profile.decisionPossibleOutputBlockId,
+      profile.decisionNotPossibleOutputBlockId,
+      ...profile.availableOutputBlockIds,
+      ...profile.availableActionIds,
+    ];
+    for (const id of allBlockIds) {
+      expect(INQUIRY_OUTPUT_BLOCK_CATALOG[id]).toBeDefined();
+    }
+  });
+});

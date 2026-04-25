@@ -3,12 +3,10 @@ import {
   InquiryCheckpointKind,
   InquiryCheckpointScope,
   InquiryCheckpointPlacement,
-  DecisionStatus,
-  ExplanationStatus,
-  ActionStatus,
   ResponseKind,
   type InquiryCheckpointTemplate,
-  type InquiryCheckpoint,
+  type InquiryFact,
+  type InquiryOutputBlock,
 } from "@/lib/inquiries/types";
 
 /**
@@ -139,107 +137,127 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
 };
 
 // ---------------------------------------------------------------------------
-// Neuer Katalog (Architektur v2) – AU-Checkpoints
+// M2-Fakten-Katalog – erzeugen KEINEN Patiententext
 // ---------------------------------------------------------------------------
 
 /**
- * Checkpoint-Katalog nach der neuen Architektur.
+ * Katalog der M2-Klärfragen/Fakten für den AU-Assistenten.
  *
- * Enthält alle Checkpoints des AU-Anliegen sowie die wiederverwendbaren
- * globalen Checkpoints (GLOBAL scope).
+ * Facts sammeln Kontext für M3 (Prefill/Entscheidungshilfe).
+ * Sie haben kein text-Feld und dürfen den Renderer nie direkt speisen.
  */
-export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = {
+export const INQUIRY_FACT_CATALOG: Record<string, InquiryFact> = {
 
-  // ---- DECISION ----
-
-  AU_DECISION: {
-    id: "AU_DECISION",
-    label: "AU-Entscheidung",
-    kind: InquiryCheckpointKind.DECISION,
+  AU_BACKDATE_IN_RANGE: {
+    id: "AU_BACKDATE_IN_RANGE",
+    label: "Rückdatierung im zulässigen Bereich",
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [DecisionStatus.POSSIBLE]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
-      [DecisionStatus.NOT_POSSIBLE]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann nicht ausgestellt werden.",
-    },
   },
 
-  // ---- SPECIFIC EXPLANATIONS ----
-
-  AU_BACKDATE_ALLOWED: {
-    id: "AU_BACKDATE_ALLOWED",
-    label: "Rückdatierung",
-    kind: InquiryCheckpointKind.EXPLANATION,
+  AU_DURATION_IN_RANGE: {
+    id: "AU_DURATION_IN_RANGE",
+    label: "Dauer im zulässigen Bereich",
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.NO]:
-        "Eine rückwirkende Ausstellung ist nur begrenzt möglich. Der gewünschte Zeitraum liegt darüber hinaus.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Prüfung benötigen wir den genauen Zeitraum der gewünschten Arbeitsunfähigkeit.",
-    },
-  },
-
-  AU_DURATION_ALLOWED: {
-    id: "AU_DURATION_ALLOWED",
-    label: "Zulässige Dauer",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.NO]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann nur für einen begrenzten Zeitraum ausgestellt werden.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Prüfung benötigen wir den gewünschten Zeitraum der Arbeitsunfähigkeit.",
-    },
   },
 
   AU_PATIENT_KNOWN: {
     id: "AU_PATIENT_KNOWN",
     label: "Patient bekannt",
-    kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Bei bekannten Beschwerden kann eine Arbeitsunfähigkeitsbescheinigung für bis zu fünf Tage ausgestellt werden.",
-      [ExplanationStatus.NO]:
-        "Bei neuen Patientinnen und Patienten kann eine Arbeitsunfähigkeitsbescheinigung zunächst nur für bis zu drei Tage ausgestellt werden.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Einschätzung ist wichtig, ob bereits eine Behandlung in unserer Praxis erfolgt ist.",
-    },
   },
-
-  // ---- GLOBAL EXPLANATIONS ----
 
   IN_GERMANY: {
     id: "IN_GERMANY",
     label: "Aufenthaltsort Deutschland",
-    kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.NO]:
-        "Bestimmte Leistungen können wir nur durchführen, wenn sich die Person in Deutschland befindet.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Bearbeitung ist relevant, ob sich die Person aktuell in Deutschland befindet.",
-    },
   },
 
-  DOCTOR_ASSESSMENT_REQUIRED: {
-    id: "DOCTOR_ASSESSMENT_REQUIRED",
+  DOCTOR_ASSESSMENT_CONTEXT: {
+    id: "DOCTOR_ASSESSMENT_CONTEXT",
     label: "Ärztliche Einschätzung erforderlich",
+    scope: InquiryCheckpointScope.GLOBAL,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// M3-Ausgabebausteine-Katalog – erzeugen Patiententext
+// ---------------------------------------------------------------------------
+
+/**
+ * Katalog der M3-Ausgabebausteine für den AU-Assistenten sowie globale Aktionen.
+ *
+ * OutputBlocks werden vom Arzt/MFA explizit ausgewählt.
+ * Sie enthalten direkt den Patiententext (kein textByStatus-Mapping).
+ */
+export const INQUIRY_OUTPUT_BLOCK_CATALOG: Record<string, InquiryOutputBlock> = {
+
+  // ---- DECISION ----
+
+  AU_DECISION_POSSIBLE: {
+    id: "AU_DECISION_POSSIBLE",
+    label: "AU – möglich",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    text: "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
+  },
+
+  AU_DECISION_NOT_POSSIBLE: {
+    id: "AU_DECISION_NOT_POSSIBLE",
+    label: "AU – nicht möglich",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    text: "Eine Arbeitsunfähigkeitsbescheinigung kann nicht ausgestellt werden.",
+  },
+
+  // ---- SPECIFIC EXPLANATIONS ----
+
+  AU_REASON_TOO_LATE: {
+    id: "AU_REASON_TOO_LATE",
+    label: "Begründung: Rückdatierung zu spät",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    text: "Eine rückwirkende Ausstellung ist nur begrenzt möglich. Der gewünschte Zeitraum liegt darüber hinaus.",
+  },
+
+  AU_INFO_KNOWN_PATIENT_5_DAYS: {
+    id: "AU_INFO_KNOWN_PATIENT_5_DAYS",
+    label: "Info: Bekannter Patient – bis 5 Tage",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    text: "Bei bekannten Beschwerden kann eine Arbeitsunfähigkeitsbescheinigung für bis zu fünf Tage ausgestellt werden.",
+  },
+
+  AU_INFO_NEW_PATIENT_3_DAYS: {
+    id: "AU_INFO_NEW_PATIENT_3_DAYS",
+    label: "Info: Neuer Patient – bis 3 Tage",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    text: "Bei neuen Patientinnen und Patienten kann eine Arbeitsunfähigkeitsbescheinigung zunächst nur für bis zu drei Tage ausgestellt werden.",
+  },
+
+  // ---- GLOBAL EXPLANATIONS ----
+
+  AU_REASON_ABROAD: {
+    id: "AU_REASON_ABROAD",
+    label: "Begründung: Ausland",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Für dieses Anliegen ist eine ärztliche Einschätzung erforderlich.",
-      [ExplanationStatus.UNKNOWN]:
-        "Gegebenenfalls ist eine ärztliche Einschätzung erforderlich.",
-    },
+    text: "Bestimmte Leistungen können wir nur durchführen, wenn sich die Person in Deutschland befindet.",
+  },
+
+  AU_REASON_DOCTOR_REQUIRED: {
+    id: "AU_REASON_DOCTOR_REQUIRED",
+    label: "Begründung: Ärztliche Einschätzung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    text: "Für dieses Anliegen ist eine ärztliche Einschätzung erforderlich.",
   },
 
   // ---- GLOBAL ACTIONS ----
@@ -250,10 +268,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Die Anfrage kann über die digitale Anfrage gestellt werden.",
-    },
+    text: "Die Anfrage kann über die digitale Anfrage gestellt werden.",
   },
 
   ONLINE_ANAMNESIS: {
@@ -262,10 +277,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Fehlende Angaben können über die Online-Anamnese ergänzt werden.",
-    },
+    text: "Fehlende Angaben können über die Online-Anamnese ergänzt werden.",
   },
 
   BOOK_APPOINTMENT: {
@@ -274,9 +286,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Termine können über den Online-Kalender vereinbart werden.",
-    },
+    text: "Termine können über den Online-Kalender vereinbart werden.",
   },
 };

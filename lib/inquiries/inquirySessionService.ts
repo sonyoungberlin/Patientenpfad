@@ -66,7 +66,8 @@ export function buildInitialInquirySectionSnapshot(
     .map((id) => ({
       inquiryId: id,
       decisionStatus: DecisionStatus.DISABLED,
-      checkpointStatuses: {},
+      selectedOutputBlockIds: [],
+      selectedActionIds: [],
     }));
 }
 

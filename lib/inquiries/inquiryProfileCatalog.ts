@@ -32,15 +32,23 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   AU: {
     id: "AU",
     label: "AU / Krankschreibung",
-    decisionCheckpointId: "AU_DECISION",
-    specificCheckpointIds: [
-      "AU_BACKDATE_ALLOWED",
-      "AU_DURATION_ALLOWED",
+    specificFactIds: [
+      "AU_BACKDATE_IN_RANGE",
+      "AU_DURATION_IN_RANGE",
       "AU_PATIENT_KNOWN",
     ],
-    boundGlobalCheckpointIds: [
+    boundGlobalFactIds: [
       "IN_GERMANY",
-      "DOCTOR_ASSESSMENT_REQUIRED",
+      "DOCTOR_ASSESSMENT_CONTEXT",
+    ],
+    decisionPossibleOutputBlockId: "AU_DECISION_POSSIBLE",
+    decisionNotPossibleOutputBlockId: "AU_DECISION_NOT_POSSIBLE",
+    availableOutputBlockIds: [
+      "AU_REASON_TOO_LATE",
+      "AU_REASON_ABROAD",
+      "AU_REASON_DOCTOR_REQUIRED",
+      "AU_INFO_KNOWN_PATIENT_5_DAYS",
+      "AU_INFO_NEW_PATIENT_3_DAYS",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",

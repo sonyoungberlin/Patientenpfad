@@ -1,7 +1,7 @@
 import {
   InquiryCheckpointStatus,
   InquiryCheckpointPlacement,
-  ActionStatus,
+  DecisionStatus,
   ResponseKind,
   type ConfirmedInquiryCheckpoint,
   type InquiryOutput,
@@ -10,7 +10,7 @@ import {
   type InquirySectionOutput,
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
-import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_OUTPUT_BLOCK_CATALOG } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 
 /**
@@ -146,17 +146,17 @@ export function renderInquiryResponse(
 
 /**
  * Erzeugt deterministisch den strukturierten Antworttext und die Dokumentation
- * aus einem oder mehreren Anliegen-Abschnitten (Sections) nach der neuen Architektur.
+ * aus einem oder mehreren Anliegen-Abschnitten (Sections) nach der neuen M2/M3-Architektur.
  *
  * Regeln:
- * - ATTACHED-Checkpoints werden pro Abschnitt ausgegeben.
- * - SHARED_BOTTOM-Checkpoints werden gesammelt und einmal dedupliziert unten ausgegeben.
- * - Ein Checkpoint-Text erscheint nur, wenn der Status einen Text in textByStatus hat.
- * - ACTION-Checkpoints mit Status INACTIVE werden übersprungen.
- * - Globale Checkpoints werden über mehrere Sections hinweg nur einmal in sharedBottom aufgeführt.
+ * - Nur explizit ausgewählte OutputBlocks erzeugen Patiententext.
+ * - Facts (factStatuses) werden NICHT gerendert – sie liefern nur Kontext.
+ * - ATTACHED-OutputBlocks werden pro Abschnitt ausgegeben.
+ * - SHARED_BOTTOM-OutputBlocks werden gesammelt und einmal dedupliziert unten ausgegeben.
  * - Keine LLM-Logik, kein Netzwerk, keine Seiteneffekte.
  *
- * @param sections – Eine Section pro Anliegen mit Entscheidungsstatus und Checkpoint-Statuses.
+ * @param sections – Eine Section pro Anliegen mit Entscheidungsstatus und
+ *                   explizit gewählten OutputBlock-IDs.
  * @returns InquiryResponseV2Output mit sections, sharedBottom und documentation.
  */
 export function renderInquiryResponseFromSections(
@@ -178,64 +178,43 @@ export function renderInquiryResponseFromSections(
     const attachedParagraphs: string[] = [];
     const sectionDocumentation: string[] = [];
 
-    // Geordnete Checkpoint-IDs: decision → specific → boundGlobals
-    const orderedIds = [
-      profile.decisionCheckpointId,
-      ...profile.specificCheckpointIds,
-      ...profile.boundGlobalCheckpointIds,
-    ];
-
-    for (const checkpointId of orderedIds) {
-      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
-      if (!checkpoint) continue;
-
-      const status =
-        checkpointId === profile.decisionCheckpointId
-          ? section.decisionStatus
-          : section.checkpointStatuses[checkpointId];
-
-      if (status === undefined) continue;
-
-      // ACTION INACTIVE → überspringen
-      if (status === ActionStatus.INACTIVE) continue;
-
-      const text = checkpoint.textByStatus[status];
-      if (!text) continue;
-
-      const docText =
-        (checkpoint.docByStatus?.[status]) ?? text;
-
-      if (checkpoint.placement === InquiryCheckpointPlacement.ATTACHED) {
-        attachedParagraphs.push(text);
-        sectionDocumentation.push(`${checkpoint.label}: ${docText}`);
-      } else {
-        // SHARED_BOTTOM – dedupliziert
-        if (!sharedBottomSeen.has(checkpointId)) {
-          sharedBottomSeen.add(checkpointId);
-          sharedBottomTexts.push(text);
-        }
+    // 1. Entscheidungs-OutputBlock (DECISION)
+    if (section.decisionStatus !== DecisionStatus.DISABLED) {
+      const blockId =
+        section.decisionStatus === DecisionStatus.POSSIBLE
+          ? profile.decisionPossibleOutputBlockId
+          : profile.decisionNotPossibleOutputBlockId;
+      const block = INQUIRY_OUTPUT_BLOCK_CATALOG[blockId];
+      if (block && block.placement === InquiryCheckpointPlacement.ATTACHED) {
+        attachedParagraphs.push(block.text);
+        sectionDocumentation.push(`${block.label}: ${block.docText ?? block.text}`);
       }
     }
 
-    // Verfügbare Aktionen (availableActionIds) in SHARED_BOTTOM einmalig ausgeben
-    for (const actionId of profile.availableActionIds) {
-      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
-      if (!checkpoint) continue;
+    // 2. Explizit gewählte ATTACHED-OutputBlocks (M3-Begründungen/Infos)
+    for (const blockId of section.selectedOutputBlockIds) {
+      const block = INQUIRY_OUTPUT_BLOCK_CATALOG[blockId];
+      if (!block) continue;
+      if (block.placement === InquiryCheckpointPlacement.ATTACHED) {
+        attachedParagraphs.push(block.text);
+        sectionDocumentation.push(`${block.label}: ${block.docText ?? block.text}`);
+      }
+    }
 
-      const status = section.checkpointStatuses[actionId];
-      if (status === undefined || status === ActionStatus.INACTIVE) continue;
-
-      const text = checkpoint.textByStatus[status];
-      if (!text) continue;
-
+    // 3. Explizit gewählte SHARED_BOTTOM-Aktionsblöcke (dedupliziert)
+    for (const actionId of section.selectedActionIds) {
+      const block = INQUIRY_OUTPUT_BLOCK_CATALOG[actionId];
+      if (!block) continue;
       if (
-        checkpoint.placement === InquiryCheckpointPlacement.SHARED_BOTTOM &&
+        block.placement === InquiryCheckpointPlacement.SHARED_BOTTOM &&
         !sharedBottomSeen.has(actionId)
       ) {
         sharedBottomSeen.add(actionId);
-        sharedBottomTexts.push(text);
+        sharedBottomTexts.push(block.text);
       }
     }
+
+    // 4. Facts (factStatuses) werden bewusst NICHT gerendert.
 
     sectionOutputs.push({
       inquiryId: section.inquiryId,

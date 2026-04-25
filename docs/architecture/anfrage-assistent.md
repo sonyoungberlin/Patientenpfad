@@ -78,25 +78,50 @@ Jedes Anliegen definiert:
 
 Wenn mehrere Anliegen denselben globalen Checkpoint binden, erscheint er in M2 nur einmal.
 
-## 7. M1–M5-Flow
+## 7. M2-Facts vs. M3-OutputBlocks (Kerntrennung)
+
+### Regel
+M2-Facts sammeln Informationen. Sie erzeugen **keinen** Patiententext.
+M3-OutputBlocks erzeugen Patiententext. Sie werden vom Arzt/MFA explizit gewählt.
+
+### InquiryFact (M2)
+- id, label, scope
+- Status: YES / NO / UNKNOWN
+- Kein `text`-Feld
+- Dienen als Kontext/Prefill für M3-Entscheidung
+- Beispiele: AU_BACKDATE_IN_RANGE, AU_PATIENT_KNOWN, IN_GERMANY
+
+### InquiryOutputBlock (M3)
+- id, label, kind, scope, placement, text, docText?
+- Werden explizit vom Arzt/MFA ausgewählt
+- Placement: ATTACHED (am Anliegen) oder SHARED_BOTTOM (einmal unten)
+- Beispiele: AU_DECISION_POSSIBLE, AU_REASON_TOO_LATE, BOOK_APPOINTMENT
+
+## 8. M1–M5-Flow
 
 ### M1
 Anliegen auswählen.
 
 ### M2
-Alle gebundenen Checkpoints dedupliziert abfragen.
+Alle gebundenen Facts (specificFactIds + boundGlobalFactIds) dedupliziert abfragen.
+Facts sind Ja/Nein/Unklar.
+Sie liefern Kontext – kein Patiententext.
 
 ### M3
-Pro Anliegen Entscheidung treffen.
-Globale Checkpoints liefern Kontext / Prefill.
+Pro Anliegen:
+1. Entscheidung treffen (möglich / nicht möglich → wählt Entscheidungs-OutputBlock).
+2. Relevante Begründungs-/Info-OutputBlocks manuell auswählen (ATTACHED).
+3. Aktions-OutputBlocks auswählen (SHARED_BOTTOM).
+
+M2-Facts dienen als Prefill/Kontext für M3-Auswahl, erscheinen aber nicht im Antworttext.
 
 ### M4
 Antwortabschnitte bilden:
 - pro Anliegen ein Abschnitt
-- Entscheidung + relevante Erklärungen
+- Entscheidungs-OutputBlock + gewählte ATTACHED-OutputBlocks
 
 ### M5
-Gemeinsame Wege / Sammelhinweise unten einmal ausgeben.
+Gewählte SHARED_BOTTOM-OutputBlocks einmal unten ausgeben (dedupliziert).
 Dokumentation erzeugen.
 
 ## 8. Placement
@@ -133,21 +158,35 @@ Keine Formulierungen wie:
 - „danach"
 wenn sie einen vorherigen Satz voraussetzen.
 
-## 12. AU-Beispiel
+## 13. AU-Beispiel (M2/M3-Schnitt)
 
 AU:
-- decision: AU_DECISION
-- specific:
-  - AU_BACKDATE_ALLOWED
-  - AU_DURATION_ALLOWED
+- specificFacts:
+  - AU_BACKDATE_IN_RANGE
+  - AU_DURATION_IN_RANGE
   - AU_PATIENT_KNOWN
-- boundGlobals:
+- boundGlobalFacts:
   - IN_GERMANY
-  - DOCTOR_ASSESSMENT_REQUIRED
-- actions:
+  - DOCTOR_ASSESSMENT_CONTEXT
+- decisionOutputBlocks:
+  - AU_DECISION_POSSIBLE
+  - AU_DECISION_NOT_POSSIBLE
+- availableOutputBlocks (ATTACHED):
+  - AU_REASON_TOO_LATE
+  - AU_REASON_ABROAD
+  - AU_REASON_DOCTOR_REQUIRED
+  - AU_INFO_KNOWN_PATIENT_5_DAYS
+  - AU_INFO_NEW_PATIENT_3_DAYS
+- availableActions (SHARED_BOTTOM):
   - DIGITAL_REQUEST
   - ONLINE_ANAMNESIS
   - BOOK_APPOINTMENT
+
+Beispielausgabe – AU nicht möglich + Ausland-Begründung + Termin buchen:
+> Eine Arbeitsunfähigkeitsbescheinigung kann nicht ausgestellt werden.
+> Bestimmte Leistungen können wir nur durchführen, wenn sich die Person in Deutschland befindet.
+> —
+> Termine können über den Online-Kalender vereinbart werden.
 
 ## 13. Rezept-Beispiel
 

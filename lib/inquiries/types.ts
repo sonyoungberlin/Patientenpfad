@@ -142,7 +142,7 @@ export type InquiryProfile = {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Neue Architektur – Checkpoint-Arten, Scope, Placement, Statusmodelle
+// Neue Architektur – M2-Facts, M3-OutputBlocks und überarbeitete V2-Typen
 // ---------------------------------------------------------------------------
 
 /**
@@ -189,7 +189,7 @@ export enum DecisionStatus {
   DISABLED = "DISABLED",
 }
 
-/** Status für EXPLANATION-Checkpoints. */
+/** Status für EXPLANATION-Checkpoints und M2-Facts. */
 export enum ExplanationStatus {
   YES = "YES",
   NO = "NO",
@@ -209,7 +209,36 @@ export type CheckpointStatusValue =
   | ActionStatus;
 
 /**
- * Checkpoint-Definition nach der neuen Architektur.
+ * M2-Fakt – sammelt Kontext/Information für M3.
+ * Erzeugt bewusst KEINEN Patiententext.
+ * Status: YES / NO / UNKNOWN (ExplanationStatus).
+ */
+export type InquiryFact = {
+  id: string;
+  label: string;
+  scope: InquiryCheckpointScope;
+};
+
+/**
+ * M3-Ausgabebaustein – erzeugt Patiententext.
+ * Wird vom Arzt/MFA explizit ausgewählt.
+ * Erzeugt keinen Text aus Status-Mapping, sondern enthält direkt den Text.
+ */
+export type InquiryOutputBlock = {
+  id: string;
+  label: string;
+  kind: InquiryCheckpointKind;
+  scope: InquiryCheckpointScope;
+  placement: InquiryCheckpointPlacement;
+  /** Patiententext dieses Bausteins. */
+  text: string;
+  /** Optionaler Dokumentationstext. Fällt auf text zurück. */
+  docText?: string;
+};
+
+/**
+ * Checkpoint-Definition nach der alten V2-Architektur.
+ * @deprecated Verwende InquiryFact (M2) und InquiryOutputBlock (M3).
  *
  * textByStatus – Antworttext je Statuswert (nur aktive Stati müssen befüllt sein).
  * docByStatus  – Dokumentationszeile je Statuswert (optional; fällt auf textByStatus zurück).
@@ -225,35 +254,49 @@ export type InquiryCheckpoint = {
 };
 
 /**
- * Anfrageprofil nach der neuen Architektur.
+ * Anfrageprofil nach der neuen M2/M3-Architektur.
  *
- * Bindet einen DECISION-Checkpoint, spezifische Checkpoints,
- * gebundene globale Checkpoints und verfügbare Aktionen.
+ * Trennt M2-Fakten (keine Textausgabe) von M3-Ausgabebausteinen (explizit gewählt).
  */
 export type InquiryProfileV2 = {
   id: string;
   label: string;
-  decisionCheckpointId: string;
-  specificCheckpointIds: string[];
-  boundGlobalCheckpointIds: string[];
+  /** M2 – spezifische Klärfragen/Fakten, kein Patiententext. */
+  specificFactIds: string[];
+  /** M2 – gebundene globale Fakten, kein Patiententext. */
+  boundGlobalFactIds: string[];
+  /** M3 – OutputBlock-ID für Entscheidung POSSIBLE. */
+  decisionPossibleOutputBlockId: string;
+  /** M3 – OutputBlock-ID für Entscheidung NOT_POSSIBLE. */
+  decisionNotPossibleOutputBlockId: string;
+  /** M3 – wählbare ATTACHED-Begründungs-/Info-Bausteine. */
+  availableOutputBlockIds: string[];
+  /** M3 – wählbare SHARED_BOTTOM-Aktionsbausteine. */
   availableActionIds: string[];
 };
 
 /**
  * Eingabe für renderInquiryResponseFromSections:
- * ein Anliegen mit Entscheidungsstatus und allen Checkpoint-Statuses.
+ * Explizit ausgewählte M3-Ausgabebausteine pro Anliegen.
+ *
+ * Facts erscheinen in factStatuses nur als Kontext – sie erzeugen keinen Text.
  */
 export type InquirySection = {
   inquiryId: string;
   decisionStatus: DecisionStatus;
-  checkpointStatuses: Record<string, CheckpointStatusValue>;
+  /** Explizit gewählte ATTACHED-Ausgabebausteine (M3). */
+  selectedOutputBlockIds: string[];
+  /** Explizit gewählte SHARED_BOTTOM-Aktionsbausteine (M3). */
+  selectedActionIds: string[];
+  /** M2-Faktstatus – nur Kontext, wird nicht gerendert. */
+  factStatuses?: Record<string, ExplanationStatus>;
 };
 
 /** Ausgabe eines einzelnen Anliegen-Abschnitts. */
 export type InquirySectionOutput = {
   inquiryId: string;
   label: string;
-  /** Texte der ATTACHED-Checkpoints dieses Abschnitts. */
+  /** Texte der ATTACHED-OutputBlocks dieses Abschnitts. */
   attachedParagraphs: string[];
   /** Dokumentationszeilen für diesen Abschnitt. */
   documentation: string[];
