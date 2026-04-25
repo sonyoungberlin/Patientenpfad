@@ -34,6 +34,8 @@ type AccountInfo = {
   id: string;
   email: string;
   is_approved: boolean;
+  is_admin: boolean;
+  inquiry_assistant_enabled: boolean;
 };
 
 export default function HomePage() {
@@ -377,22 +379,23 @@ export default function HomePage() {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             type="button"
-            onClick={() => router.push("/inquiries/demo")}
-            style={{ fontSize: "0.875rem" }}
-          >
-            Anfrage-Demo
-          </button>
-          <button
-            type="button"
             onClick={() => router.push("/demo/arzt")}
             style={{ fontSize: "0.875rem" }}
           >
             Arzt-Demo ansehen
           </button>
+          {(account.inquiry_assistant_enabled || account.is_admin) && (
+            <button
+              type="button"
+              onClick={() => router.push("/inquiries/demo")}
+              style={{ fontSize: "0.875rem" }}
+            >
+              Anfrage-Demo
+            </button>
+          )}
           <button onClick={handleLogout}>Abmelden</button>
         </div>
       </div>
-
       <h1>Liegt genug Information vor, damit der Arzt direkt entscheiden kann?</h1>
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         „Wissen wir genug über die Situation – nicht, ob sie gut oder schlecht ist?"

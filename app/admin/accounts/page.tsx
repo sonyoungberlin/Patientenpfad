@@ -9,7 +9,7 @@ export default async function AdminAccountsPage() {
   }
 
   const accounts = await prisma.account.findMany({
-    select: { id: true, email: true, is_approved: true, is_admin: true, createdAt: true },
+    select: { id: true, email: true, is_approved: true, is_admin: true, inquiry_assistant_enabled: true, createdAt: true },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
   });
 
@@ -25,6 +25,7 @@ export default async function AdminAccountsPage() {
             <th>E-Mail</th>
             <th>Status</th>
             <th>Admin</th>
+            <th>Anfrage-Assistent</th>
             <th>Angelegt</th>
             <th>Aktion</th>
           </tr>
@@ -35,8 +36,9 @@ export default async function AdminAccountsPage() {
               <td>{acc.email}</td>
               <td>{acc.is_approved ? "✓ freigeschaltet" : "✗ gesperrt"}</td>
               <td>{acc.is_admin ? "Admin" : "–"}</td>
+              <td>{acc.inquiry_assistant_enabled ? "✓ aktiv" : "–"}</td>
               <td>{acc.createdAt.toISOString().slice(0, 10)}</td>
-              <td>
+              <td style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <form method="POST" action="/api/admin/accounts">
                   <input type="hidden" name="email" value={acc.email} />
                   <input
@@ -48,12 +50,23 @@ export default async function AdminAccountsPage() {
                     {acc.is_approved ? "Sperren" : "Freischalten"}
                   </button>
                 </form>
+                <form method="POST" action="/api/admin/accounts">
+                  <input type="hidden" name="email" value={acc.email} />
+                  <input
+                    type="hidden"
+                    name="action"
+                    value={acc.inquiry_assistant_enabled ? "disable_inquiry" : "enable_inquiry"}
+                  />
+                  <button type="submit">
+                    {acc.inquiry_assistant_enabled ? "Anfrage deaktivieren" : "Anfrage aktivieren"}
+                  </button>
+                </form>
               </td>
             </tr>
           ))}
           {accounts.length === 0 && (
             <tr>
-              <td colSpan={5} className="text-muted">
+              <td colSpan={6} className="text-muted">
                 Keine Accounts vorhanden.
               </td>
             </tr>

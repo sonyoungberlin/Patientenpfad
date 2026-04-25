@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionAccount } from "@/lib/auth";
-import { approveAccount, revokeAccount } from "@/lib/adminActions";
+import { approveAccount, revokeAccount, enableInquiryAssistant, disableInquiryAssistant } from "@/lib/adminActions";
 import { prisma } from "@/lib/prisma";
 
 async function requireAdmin(req: NextRequest) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   if (error) return error;
 
   const accounts = await prisma.account.findMany({
-    select: { id: true, email: true, is_approved: true, is_admin: true, createdAt: true },
+    select: { id: true, email: true, is_approved: true, is_admin: true, inquiry_assistant_enabled: true, createdAt: true },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
   });
 
@@ -54,16 +54,18 @@ export async function POST(req: NextRequest) {
     action = body.action;
   }
 
-  if (!email || (action !== "approve" && action !== "revoke")) {
+  if (!email || (action !== "approve" && action !== "revoke" && action !== "enable_inquiry" && action !== "disable_inquiry")) {
     return NextResponse.json(
-      { ok: false, error: "Ungültige Parameter. Erwartet: { email, action: 'approve' | 'revoke' }" },
+      { ok: false, error: "Ungültige Parameter. Erwartet: { email, action: 'approve' | 'revoke' | 'enable_inquiry' | 'disable_inquiry' }" },
       { status: 400 },
     );
   }
 
-  const result = action === "approve"
-    ? await approveAccount(email)
-    : await revokeAccount(email);
+  let result;
+  if (action === "approve") result = await approveAccount(email);
+  else if (action === "revoke") result = await revokeAccount(email);
+  else if (action === "enable_inquiry") result = await enableInquiryAssistant(email);
+  else result = await disableInquiryAssistant(email);
 
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.message }, { status: 404 });

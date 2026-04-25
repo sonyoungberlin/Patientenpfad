@@ -137,7 +137,7 @@ describe("listAccounts", () => {
     expect(accounts[1].is_approved).toBe(false);
     expect(pm.account.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        select: { id: true, email: true, is_approved: true, is_admin: true, createdAt: true },
+        select: { id: true, email: true, is_approved: true, is_admin: true, inquiry_assistant_enabled: true, createdAt: true },
         orderBy: { createdAt: "desc" },
       }),
     );
