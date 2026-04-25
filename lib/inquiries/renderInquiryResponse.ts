@@ -1,6 +1,7 @@
 import {
   InquiryCheckpointStatus,
   InquiryCheckpointKind,
+  InquiryCheckpointScope,
   InquiryCheckpointPlacement,
   ActionStatus,
   ExplanationStatus,
@@ -214,6 +215,7 @@ export function renderInquiryResponseFromSections(
     for (const checkpointId of profile.boundGlobalCheckpointIds) {
       const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
       if (!checkpoint) continue;
+      if (checkpoint.scope !== InquiryCheckpointScope.GLOBAL) continue;
       if (checkpoint.kind !== InquiryCheckpointKind.EXPLANATION) continue;
 
       const status = section.checkpointStatuses[checkpointId];
@@ -230,6 +232,8 @@ export function renderInquiryResponseFromSections(
     for (const actionId of profile.availableActionIds) {
       const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
       if (!checkpoint) continue;
+      if (checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
+      if (checkpoint.placement !== InquiryCheckpointPlacement.SHARED_BOTTOM) continue;
 
       const status = section.checkpointStatuses[actionId];
       if (status === undefined || status === ActionStatus.INACTIVE) continue;
@@ -237,10 +241,7 @@ export function renderInquiryResponseFromSections(
       const text = checkpoint.textByStatus[status];
       if (!text) continue;
 
-      if (
-        checkpoint.placement === InquiryCheckpointPlacement.SHARED_BOTTOM &&
-        !sharedBottomSeen.has(actionId)
-      ) {
+      if (!sharedBottomSeen.has(actionId)) {
         sharedBottomSeen.add(actionId);
         sharedBottomTexts.push(text);
       }

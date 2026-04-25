@@ -159,6 +159,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     textByStatus: {
+      // DecisionStatus.DISABLED ist nicht befüllt: bedeutet „noch keine manuelle Entscheidung
+      // getroffen". Der Renderer liefert in diesem Fall mainDecision: null – kein Ausgabetext.
       [DecisionStatus.POSSIBLE]:
         "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
       [DecisionStatus.NOT_POSSIBLE]:
