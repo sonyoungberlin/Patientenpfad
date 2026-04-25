@@ -3,20 +3,34 @@
 import { useMemo, useState } from "react";
 import {
   DecisionStatus,
+  InquiryCheckpointKind,
   type CheckpointStatusValue,
   type InquirySection,
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 
+export type M3SpecificCheckpoint = {
+  id: string;
+  label: string;
+  kind: InquiryCheckpointKind;
+  questions?: Array<{ id: string; text: string }>;
+};
+
 export type M3SectionData = {
   inquiryId: string;
   label: string;
   decisionCheckpointId: string;
   decisionLabel: string;
+  specificCheckpoints: M3SpecificCheckpoint[];
 };
 
 export type M3ActionData = {
+  id: string;
+  label: string;
+};
+
+export type M3GlobalContextCheckpoint = {
   id: string;
   label: string;
 };
@@ -25,6 +39,7 @@ type Props = {
   sessionId: string;
   sections: M3SectionData[];
   actionCheckpoints: M3ActionData[];
+  globalContextCheckpoints: M3GlobalContextCheckpoint[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   actionIds: string[];
@@ -38,10 +53,31 @@ const DECISION_OPTIONS = [
   { value: "DISABLED", label: "Keine Entscheidung" },
 ];
 
+const EXPLANATION_OPTIONS = [
+  { value: "YES", label: "Ja" },
+  { value: "NO", label: "Nein" },
+  { value: "UNKNOWN", label: "Unbekannt" },
+];
+
 const ACTION_OPTIONS = [
   { value: "ACTIVE", label: "Aktiv" },
   { value: "INACTIVE", label: "Inaktiv" },
 ];
+
+function optionsForKind(kind: InquiryCheckpointKind) {
+  switch (kind) {
+    case InquiryCheckpointKind.PREPARATION:
+      return ACTION_OPTIONS;
+    default:
+      return EXPLANATION_OPTIONS;
+  }
+}
+
+function globalStatusLabel(status: string | undefined): string {
+  if (status === "YES") return "Ja";
+  if (status === "NO") return "Nein";
+  return "—";
+}
 
 function StatusButtons({
   checkpointId,
@@ -142,6 +178,7 @@ export default function InquiryM3Client({
   sessionId,
   sections,
   actionCheckpoints,
+  globalContextCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
   actionIds,
@@ -187,7 +224,7 @@ export default function InquiryM3Client({
     setSubmitting(true);
     setError(null);
     try {
-      // 1. Save current decision + action statuses
+      // 1. Save current decision + specific + action statuses
       const checkpointStatuses: Record<string, string> = {};
       const actionStatuses: Record<string, string> = {};
       for (const [k, v] of Object.entries(statuses)) {
@@ -250,11 +287,38 @@ export default function InquiryM3Client({
         </>
       ) : (
         <>
-          {/* Decision per inquiry */}
+          {/* M2-Kontext: GLOBAL Checkpoints (read-only) */}
+          {globalContextCheckpoints.length > 0 && (
+            <section
+              style={{
+                marginBottom: "2rem",
+                padding: "0.75rem 1rem",
+                background: "var(--muted-bg, #f8fafc)",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <h2 style={{ marginBottom: "0.5rem", fontSize: "1rem" }}>
+                Kontext aus M2 (Tatsachen)
+              </h2>
+              <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                {globalContextCheckpoints.map((cp) => (
+                  <li key={cp.id} className="text-small" style={{ marginBottom: "0.2rem" }}>
+                    <span style={{ fontWeight: 500 }}>{cp.label}:</span>{" "}
+                    {globalStatusLabel(statuses[cp.id])}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Decision + SPECIFIC Checkpoints per inquiry */}
           {sections.map((section) => (
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
-              <div>
+
+              {/* Decision */}
+              <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
                 <StatusButtons
                   checkpointId={section.decisionCheckpointId}
@@ -264,6 +328,33 @@ export default function InquiryM3Client({
                   disabled={false}
                 />
               </div>
+
+              {/* SPECIFIC Checkpoints */}
+              {section.specificCheckpoints.map((cp) => (
+                <div
+                  key={cp.id}
+                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                >
+                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                  {cp.questions && cp.questions.length > 0 && (
+                    <ul
+                      className="text-muted text-small"
+                      style={{ margin: "0.2rem 0 0.2rem 1.25rem", padding: 0 }}
+                    >
+                      {cp.questions.map((q) => (
+                        <li key={q.id}>{q.text}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <StatusButtons
+                    checkpointId={cp.id}
+                    options={optionsForKind(cp.kind)}
+                    value={statuses[cp.id]}
+                    onChange={setStatus}
+                    disabled={false}
+                  />
+                </div>
+              ))}
             </section>
           ))}
 

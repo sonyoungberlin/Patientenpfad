@@ -62,20 +62,17 @@ export default async function InquiryM2Page({
     ? (session.selected_inquiry_ids as string[])
     : [];
 
-  // Build per-inquiry sections (DECISION + SPECIFIC checkpoints)
+  // Build per-inquiry sections (SPECIFIC checkpoints only – no decision in M2)
   const sections: M2SectionData[] = selectedIds
     .map((inquiryId) => {
       const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
       if (!profile) return null;
-      const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
-      if (!decisionCp) return null;
       const specificCps = profile.specificCheckpointIds
         .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
         .filter((cp): cp is InquiryCheckpoint => !!cp);
       return {
         inquiryId,
         label: profile.label,
-        decisionCheckpoint: toPlain(decisionCp),
         specificCheckpoints: specificCps.map(toPlain),
       };
     })
@@ -101,14 +98,6 @@ export default async function InquiryM2Page({
     )
     .map(toPlain);
 
-  const actionCheckpoints: PlainCheckpoint[] = Array.from(actionIds)
-    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
-    .filter(
-      (cp): cp is InquiryCheckpoint =>
-        !!cp && cp.kind === InquiryCheckpointKind.ACTION,
-    )
-    .map(toPlain);
-
   const checkpointStatuses: Record<string, string> =
     session.checkpoint_statuses !== null &&
     typeof session.checkpoint_statuses === "object" &&
@@ -130,7 +119,6 @@ export default async function InquiryM2Page({
         sessionId={id}
         sections={sections}
         globalCheckpoints={globalCheckpoints}
-        actionCheckpoints={actionCheckpoints}
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
         actionIds={Array.from(actionIds)}

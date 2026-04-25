@@ -16,7 +16,6 @@ export type PlainCheckpoint = {
 export type M2SectionData = {
   inquiryId: string;
   label: string;
-  decisionCheckpoint: PlainCheckpoint;
   specificCheckpoints: PlainCheckpoint[];
 };
 
@@ -24,82 +23,18 @@ type Props = {
   sessionId: string;
   sections: M2SectionData[];
   globalCheckpoints: PlainCheckpoint[];
-  actionCheckpoints: PlainCheckpoint[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   actionIds: string[];
 };
 
-const EXPLANATION_OPTIONS = [
+/** Einfache Ja/Nein-Schalter für GLOBAL Checkpoints. */
+const GLOBAL_OPTIONS = [
   { value: "YES", label: "Ja" },
   { value: "NO", label: "Nein" },
-  { value: "UNKNOWN", label: "Unbekannt" },
 ];
 
-const DECISION_OPTIONS = [
-  { value: "POSSIBLE", label: "Möglich" },
-  { value: "NOT_POSSIBLE", label: "Nicht möglich" },
-  { value: "DISABLED", label: "—" },
-];
-
-const ACTION_OPTIONS = [
-  { value: "ACTIVE", label: "Aktiv" },
-  { value: "INACTIVE", label: "Inaktiv" },
-];
-
-const PREPARATION_OPTIONS = ACTION_OPTIONS;
-
-function optionsForKind(kind: InquiryCheckpointKind) {
-  switch (kind) {
-    case InquiryCheckpointKind.DECISION:
-      return DECISION_OPTIONS;
-    case InquiryCheckpointKind.ACTION:
-      return ACTION_OPTIONS;
-    case InquiryCheckpointKind.PREPARATION:
-      return PREPARATION_OPTIONS;
-    default:
-      return EXPLANATION_OPTIONS;
-  }
-}
-
-function StatusButtons({
-  checkpointId,
-  kind,
-  value,
-  onChange,
-}: {
-  checkpointId: string;
-  kind: InquiryCheckpointKind;
-  value: string | undefined;
-  onChange: (id: string, val: string) => void;
-}) {
-  const options = optionsForKind(kind);
-  return (
-    <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => onChange(checkpointId, opt.value)}
-          style={{
-            padding: "0.25rem 0.75rem",
-            borderRadius: "var(--radius)",
-            border: "1px solid var(--border)",
-            background: value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
-            color: value === opt.value ? "#fff" : "var(--foreground)",
-            fontWeight: value === opt.value ? 600 : 400,
-            cursor: "pointer",
-            fontSize: "0.85rem",
-          }}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function CheckpointRow({
+function GlobalSwitchRow({
   checkpoint,
   value,
   onChange,
@@ -116,6 +51,36 @@ function CheckpointRow({
           {checkpoint.question}
         </div>
       )}
+      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+        {GLOBAL_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(checkpoint.id, opt.value)}
+            style={{
+              padding: "0.25rem 0.75rem",
+              borderRadius: "var(--radius)",
+              border: "1px solid var(--border)",
+              background: value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
+              color: value === opt.value ? "#fff" : "var(--foreground)",
+              fontWeight: value === opt.value ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "0.85rem",
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Zeigt SPECIFIC Checkpoints nur als Fragenblock – keine Status-Buttons. */
+function SpecificQuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
+  return (
+    <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ fontWeight: 500 }}>{checkpoint.label}</div>
       {checkpoint.questions && checkpoint.questions.length > 0 && (
         <ul
           className="text-muted text-small"
@@ -126,12 +91,6 @@ function CheckpointRow({
           ))}
         </ul>
       )}
-      <StatusButtons
-        checkpointId={checkpoint.id}
-        kind={checkpoint.kind}
-        value={value}
-        onChange={onChange}
-      />
     </div>
   );
 }
@@ -140,7 +99,6 @@ export default function InquiryM2Client({
   sessionId,
   sections,
   globalCheckpoints,
-  actionCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
   actionIds,
@@ -192,59 +150,34 @@ export default function InquiryM2Client({
 
   return (
     <div style={{ maxWidth: "42rem" }}>
-      {/* Per-inquiry sections */}
+      {/* GLOBAL Checkpoints – einmalig, dedupliziert, Ja/Nein-Schalter */}
+      {globalCheckpoints.length > 0 && (
+        <section style={{ marginBottom: "2rem" }}>
+          <h2 style={{ marginBottom: "0.5rem" }}>Allgemeine Tatsachen</h2>
+          {globalCheckpoints.map((cp) => (
+            <GlobalSwitchRow
+              key={cp.id}
+              checkpoint={cp}
+              value={statuses[cp.id]}
+              onChange={setStatus}
+            />
+          ))}
+        </section>
+      )}
+
+      {/* SPECIFIC Checkpoints pro Anliegen – nur Fragenblöcke, keine Status-Buttons */}
       {sections.map((section) => (
         <section key={section.inquiryId} style={{ marginBottom: "2rem" }}>
           <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
-
-          {/* Decision (optional in M2) */}
-          <CheckpointRow
-            checkpoint={section.decisionCheckpoint}
-            value={statuses[section.decisionCheckpoint.id]}
-            onChange={setStatus}
-          />
-
-          {/* Specific Explanation Checkpoints */}
-          {section.specificCheckpoints.map((cp) => (
-            <CheckpointRow
-              key={cp.id}
-              checkpoint={cp}
-              value={statuses[cp.id]}
-              onChange={setStatus}
-            />
-          ))}
+          {section.specificCheckpoints.length === 0 ? (
+            <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
+          ) : (
+            section.specificCheckpoints.map((cp) => (
+              <SpecificQuestionBlock key={cp.id} checkpoint={cp} />
+            ))
+          )}
         </section>
       ))}
-
-      {/* Deduplicated Global EXPLANATION Checkpoints */}
-      {globalCheckpoints.length > 0 && (
-        <section style={{ marginBottom: "2rem" }}>
-          <h2 style={{ marginBottom: "0.5rem" }}>Allgemeine Klärpunkte</h2>
-          {globalCheckpoints.map((cp) => (
-            <CheckpointRow
-              key={cp.id}
-              checkpoint={cp}
-              value={statuses[cp.id]}
-              onChange={setStatus}
-            />
-          ))}
-        </section>
-      )}
-
-      {/* Action Checkpoints */}
-      {actionCheckpoints.length > 0 && (
-        <section style={{ marginBottom: "2rem" }}>
-          <h2 style={{ marginBottom: "0.5rem" }}>Aktionen</h2>
-          {actionCheckpoints.map((cp) => (
-            <CheckpointRow
-              key={cp.id}
-              checkpoint={cp}
-              value={statuses[cp.id]}
-              onChange={setStatus}
-            />
-          ))}
-        </section>
-      )}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>
