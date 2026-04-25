@@ -4,6 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 
+/** Checkpoint-IDs, die als optionale Spezialfälle eingeklappt dargestellt werden. */
+const OPTIONAL_SPECIFIC_IDS = new Set([
+  "AU_WORK_ACCIDENT",
+  "AU_CHILD_SICK",
+  "AU_CONTINUITY_REQUIRED",
+  "AU_RETURN_TO_WORK",
+]);
+
 export type PlainCheckpoint = {
   id: string;
   label: string;
@@ -95,6 +103,60 @@ function SpecificQuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) 
   );
 }
 
+/** Sektion mit Standard-Checkpoints (immer sichtbar) und optionalen Spezialfällen (einklappbar). */
+function SpecificSection({ section }: { section: M2SectionData }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const standardCheckpoints = section.specificCheckpoints.filter(
+    (cp) => !OPTIONAL_SPECIFIC_IDS.has(cp.id),
+  );
+  const optionalCheckpoints = section.specificCheckpoints.filter((cp) =>
+    OPTIONAL_SPECIFIC_IDS.has(cp.id),
+  );
+
+  return (
+    <section style={{ marginBottom: "2rem" }}>
+      <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
+      {section.specificCheckpoints.length === 0 ? (
+        <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
+      ) : (
+        <>
+          {standardCheckpoints.map((cp) => (
+            <SpecificQuestionBlock key={cp.id} checkpoint={cp} />
+          ))}
+          {optionalCheckpoints.length > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsExpanded((prev) => !prev)}
+                style={{
+                  marginTop: "0.75rem",
+                  padding: "0.3rem 0.8rem",
+                  borderRadius: "var(--radius)",
+                  border: "1px solid var(--border)",
+                  background: "var(--background)",
+                  color: "var(--foreground)",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                }}
+              >
+                {isExpanded ? "Spezielle Fälle ausblenden ▲" : "Spezielle Fälle anzeigen ▼"}
+              </button>
+              {isExpanded && (
+                <div style={{ marginTop: "0.5rem" }}>
+                  {optionalCheckpoints.map((cp) => (
+                    <SpecificQuestionBlock key={cp.id} checkpoint={cp} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function InquiryM2Client({
   sessionId,
   sections,
@@ -150,9 +212,22 @@ export default function InquiryM2Client({
 
   return (
     <div style={{ maxWidth: "42rem" }}>
-      {/* GLOBAL Checkpoints – einmalig, dedupliziert, Ja/Nein-Schalter */}
+      {/* SPECIFIC Checkpoints pro Anliegen – Standard sichtbar, Spezialfälle einklappbar */}
+      {sections.map((section) => (
+        <SpecificSection key={section.inquiryId} section={section} />
+      ))}
+
+      {/* GLOBAL Checkpoints – visuell abgesetzt, dedupliziert, Ja/Nein-Schalter */}
       {globalCheckpoints.length > 0 && (
-        <section style={{ marginBottom: "2rem" }}>
+        <section
+          style={{
+            marginBottom: "2rem",
+            background: "#f5f5f5",
+            border: "1px solid #e0e0e0",
+            borderRadius: "var(--radius)",
+            padding: "1rem",
+          }}
+        >
           <h2 style={{ marginBottom: "0.5rem" }}>Allgemeine Tatsachen</h2>
           {globalCheckpoints.map((cp) => (
             <GlobalSwitchRow
@@ -164,20 +239,6 @@ export default function InquiryM2Client({
           ))}
         </section>
       )}
-
-      {/* SPECIFIC Checkpoints pro Anliegen – nur Fragenblöcke, keine Status-Buttons */}
-      {sections.map((section) => (
-        <section key={section.inquiryId} style={{ marginBottom: "2rem" }}>
-          <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
-          {section.specificCheckpoints.length === 0 ? (
-            <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
-          ) : (
-            section.specificCheckpoints.map((cp) => (
-              <SpecificQuestionBlock key={cp.id} checkpoint={cp} />
-            ))
-          )}
-        </section>
-      ))}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>
