@@ -220,12 +220,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.NO]:
-        "Bestimmte Leistungen können wir nur durchführen, wenn sich die Person in Deutschland befindet.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Bearbeitung ist relevant, ob sich die Person aktuell in Deutschland befindet.",
-    },
+    question: "Befindet sich die Person aktuell in Deutschland?",
+    textByStatus: {},
   },
 
   DOCTOR_ASSESSMENT_REQUIRED: {
@@ -234,12 +230,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Für dieses Anliegen ist eine ärztliche Einschätzung erforderlich.",
-      [ExplanationStatus.UNKNOWN]:
-        "Gegebenenfalls ist eine ärztliche Einschätzung erforderlich.",
-    },
+    question: "Ist für dieses Anliegen eine ärztliche Einschätzung erforderlich?",
+    textByStatus: {},
   },
 
   // ---- GLOBAL ACTIONS ----

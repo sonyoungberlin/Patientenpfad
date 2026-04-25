@@ -303,7 +303,12 @@ export type InquirySection = {
 export type InquirySectionOutput = {
   inquiryId: string;
   label: string;
-  /** Texte der ATTACHED-Checkpoints dieses Abschnitts. */
+  /**
+   * Text des DECISION-Checkpoints für dieses Anliegen.
+   * null, wenn kein Text für den aktuellen DecisionStatus definiert ist.
+   */
+  mainDecision: string | null;
+  /** Texte der ATTACHED-Checkpoints dieses Abschnitts (ohne Decision). */
   attachedParagraphs: string[];
   /** Dokumentationszeilen für diesen Abschnitt. */
   documentation: string[];

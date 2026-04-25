@@ -47,5 +47,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
     ],
+    globalHints: {
+      IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
+      DOCTOR_ASSESSMENT_REQUIRED: "AU-Hinweis: ärztliche Einschätzung erforderlich.",
+    },
   },
 };

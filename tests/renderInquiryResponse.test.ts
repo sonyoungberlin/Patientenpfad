@@ -1,11 +1,15 @@
-import { renderInquiryResponse } from "@/lib/inquiries/renderInquiryResponse";
+import { renderInquiryResponse, renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { INQUIRY_CHECKPOINT_CATALOGUE } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOGUE } from "@/lib/inquiries/inquiryProfileCatalog";
 import {
   InquiryCheckpointStatus,
   InquiryType,
   ResponseKind,
+  DecisionStatus,
+  ExplanationStatus,
+  ActionStatus,
   type ConfirmedInquiryCheckpoint,
+  type InquirySection,
 } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
@@ -704,6 +708,132 @@ describe("renderInquiryResponse – paragraphs", () => {
     for (const para of result.paragraphs) {
       expect(para.startsWith("Bitte")).toBe(false);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// renderInquiryResponseFromSections – V2 Architecture Tests
+// ---------------------------------------------------------------------------
+
+/** Minimale AU-Section ohne Checkpoints (Decision POSSIBLE, alles leer). */
+function makeAuSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "AU",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("renderInquiryResponseFromSections – Decision", () => {
+  it("Decision POSSIBLE → mainDecision enthält den Entscheidungstext", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("kann ausgestellt werden");
+  });
+
+  it("Decision NOT_POSSIBLE → mainDecision enthält Ablehnungstext", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("kann nicht ausgestellt werden");
+  });
+
+  it("Decision-Text erscheint NICHT in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    const decisionText = result.sections[0].mainDecision ?? "";
+    expect(result.sections[0].attachedParagraphs).not.toContain(decisionText);
+  });
+});
+
+describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints", () => {
+  it("IN_GERMANY YES → Hinweis aus globalHints erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { IN_GERMANY: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "AU-Hinweis: Aufenthalt in Deutschland relevant.",
+    );
+  });
+
+  it("IN_GERMANY NO → kein Hinweis in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { IN_GERMANY: ExplanationStatus.NO },
+      }),
+    ]);
+    const texts = result.sections[0].attachedParagraphs.join(" ");
+    expect(texts).not.toContain("IN_GERMANY");
+    expect(texts).not.toContain("Deutschland");
+  });
+
+  it("IN_GERMANY UNKNOWN → kein Hinweis in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { IN_GERMANY: ExplanationStatus.UNKNOWN },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("IN_GERMANY fehlt → kein Hinweis in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([makeAuSection()]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("DOCTOR_ASSESSMENT_REQUIRED YES → Hinweis aus globalHints erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { DOCTOR_ASSESSMENT_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "AU-Hinweis: ärztliche Einschätzung erforderlich.",
+    );
+  });
+
+  it("checkpoint.textByStatus wird für GLOBAL EXPLANATION NICHT verwendet (auch wenn befüllt)", () => {
+    // IN_GERMANY hat textByStatus: {} – kein Text darf durchkommen
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { IN_GERMANY: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("renderInquiryResponseFromSections – ACTION/SHARED_BOTTOM", () => {
+  it("DIGITAL_REQUEST ACTIVE → Text landet in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { DIGITAL_REQUEST: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom.some((t) => t.includes("digitale Anfrage"))).toBe(true);
+  });
+
+  it("DIGITAL_REQUEST ACTIVE → Text erscheint NICHT in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { DIGITAL_REQUEST: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("digitale Anfrage"))).toBe(false);
+  });
+
+  it("DIGITAL_REQUEST INACTIVE → kein Eintrag in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: { DIGITAL_REQUEST: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
   });
 });
 
