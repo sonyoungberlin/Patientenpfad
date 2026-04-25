@@ -62,17 +62,19 @@ export default async function InquiryM2Page({
     ? (session.selected_inquiry_ids as string[])
     : [];
 
-  // Build per-inquiry sections (SPECIFIC checkpoints only – no decision in M2)
+  // Build per-inquiry sections (SPECIFIC checkpoints + decision questions for M2)
   const sections: M2SectionData[] = selectedIds
     .map((inquiryId) => {
       const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
       if (!profile) return null;
+      const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
       const specificCps = profile.specificCheckpointIds
         .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
         .filter((cp): cp is InquiryCheckpoint => !!cp);
       return {
         inquiryId,
         label: profile.label,
+        decisionQuestions: decisionCp?.questions ?? [],
         specificCheckpoints: specificCps.map(toPlain),
       };
     })

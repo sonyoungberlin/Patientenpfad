@@ -24,6 +24,8 @@ export type PlainCheckpoint = {
 export type M2SectionData = {
   inquiryId: string;
   label: string;
+  /** Klärungsfragen des Decision-Checkpoints – werden als reiner Fragenblock angezeigt. */
+  decisionQuestions: Array<{ id: string; text: string }>;
   specificCheckpoints: PlainCheckpoint[];
 };
 
@@ -36,13 +38,13 @@ type Props = {
   actionIds: string[];
 };
 
-/** Einfache Ja/Nein-Schalter für GLOBAL Checkpoints. */
-const GLOBAL_OPTIONS = [
+/** Einfache Ja/Nein-Schalter für GLOBAL und SPECIFIC EXPLANATION Checkpoints. */
+const YES_NO_OPTIONS = [
   { value: "YES", label: "Ja" },
   { value: "NO", label: "Nein" },
 ];
 
-function GlobalSwitchRow({
+function SwitchRow({
   checkpoint,
   value,
   onChange,
@@ -60,7 +62,7 @@ function GlobalSwitchRow({
         </div>
       )}
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
-        {GLOBAL_OPTIONS.map((opt) => (
+        {YES_NO_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             type="button"
@@ -84,8 +86,8 @@ function GlobalSwitchRow({
   );
 }
 
-/** Zeigt SPECIFIC Checkpoints nur als Fragenblock – keine Status-Buttons. */
-function SpecificQuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
+/** Zeigt einen Checkpoint nur als Fragenblock – keine Status-Buttons. */
+function QuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
   return (
     <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
       <div style={{ fontWeight: 500 }}>{checkpoint.label}</div>
@@ -103,8 +105,40 @@ function SpecificQuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) 
   );
 }
 
-/** Sektion mit Standard-Checkpoints (immer sichtbar) und optionalen Spezialfällen (einklappbar). */
-function SpecificSection({ section }: { section: M2SectionData }) {
+/** Zeigt die Klärungsfragen des Decision-Checkpoints als reinen Fragenblock. */
+function DecisionQuestionBlock({
+  questions,
+}: {
+  questions: Array<{ id: string; text: string }>;
+}) {
+  if (questions.length === 0) return null;
+  return (
+    <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ fontWeight: 500, color: "var(--muted-foreground, #6b7280)", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+        Entscheidungsgrundlage
+      </div>
+      <ul
+        className="text-muted text-small"
+        style={{ margin: "0.25rem 0 0 1.25rem", padding: 0 }}
+      >
+        {questions.map((q) => (
+          <li key={q.id}>{q.text}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Sektion mit Decision-Fragen, Standard-Checkpoints (Ja/Nein) und optionalen Spezialfällen (einklappbar). */
+function SpecificSection({
+  section,
+  statuses,
+  onChange,
+}: {
+  section: M2SectionData;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const standardCheckpoints = section.specificCheckpoints.filter(
@@ -117,13 +151,23 @@ function SpecificSection({ section }: { section: M2SectionData }) {
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
-      {section.specificCheckpoints.length === 0 ? (
+      {section.decisionQuestions.length === 0 && section.specificCheckpoints.length === 0 ? (
         <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
       ) : (
         <>
-          {standardCheckpoints.map((cp) => (
-            <SpecificQuestionBlock key={cp.id} checkpoint={cp} />
-          ))}
+          {/* 2.1 Decision-Questions – reiner Fragenblock, keine Buttons */}
+          <DecisionQuestionBlock questions={section.decisionQuestions} />
+
+          {/* 2.2 Standard SPECIFIC Explanation Checkpoints – Ja/Nein-Auswahl */}
+          {standardCheckpoints.map((cp) =>
+            cp.kind === InquiryCheckpointKind.EXPLANATION ? (
+              <SwitchRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
+            ) : (
+              <QuestionBlock key={cp.id} checkpoint={cp} />
+            ),
+          )}
+
+          {/* 3. Optionale Spezialfälle – einklappbar, reiner Fragenblock */}
           {optionalCheckpoints.length > 0 && (
             <>
               <button
@@ -145,7 +189,7 @@ function SpecificSection({ section }: { section: M2SectionData }) {
               {isExpanded && (
                 <div style={{ marginTop: "0.5rem" }}>
                   {optionalCheckpoints.map((cp) => (
-                    <SpecificQuestionBlock key={cp.id} checkpoint={cp} />
+                    <QuestionBlock key={cp.id} checkpoint={cp} />
                   ))}
                 </div>
               )}
@@ -212,12 +256,7 @@ export default function InquiryM2Client({
 
   return (
     <div style={{ maxWidth: "42rem" }}>
-      {/* SPECIFIC Checkpoints pro Anliegen – Standard sichtbar, Spezialfälle einklappbar */}
-      {sections.map((section) => (
-        <SpecificSection key={section.inquiryId} section={section} />
-      ))}
-
-      {/* GLOBAL Checkpoints – visuell abgesetzt, dedupliziert, Ja/Nein-Schalter */}
+      {/* 1. GLOBAL Checkpoints – oben, visuell abgesetzt, Ja/Nein-Schalter */}
       {globalCheckpoints.length > 0 && (
         <section
           style={{
@@ -228,9 +267,9 @@ export default function InquiryM2Client({
             padding: "1rem",
           }}
         >
-          <h2 style={{ marginBottom: "0.5rem" }}>Allgemeine Tatsachen</h2>
+          <h2 style={{ marginBottom: "0.5rem" }}>Basisinformationen</h2>
           {globalCheckpoints.map((cp) => (
-            <GlobalSwitchRow
+            <SwitchRow
               key={cp.id}
               checkpoint={cp}
               value={statuses[cp.id]}
@@ -239,6 +278,16 @@ export default function InquiryM2Client({
           ))}
         </section>
       )}
+
+      {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen */}
+      {sections.map((section) => (
+        <SpecificSection
+          key={section.inquiryId}
+          section={section}
+          statuses={statuses}
+          onChange={setStatus}
+        />
+      ))}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>
