@@ -174,17 +174,26 @@ wenn sie einen vorherigen Satz voraussetzen.
 
 AU:
 - decision: AU_DECISION
-- specific:
-  - AU_BACKDATE_ALLOWED
-  - AU_DURATION_ALLOWED
-  - AU_PATIENT_KNOWN
+  - questions (Klärungsfragen / Sammelinfos, keine eigenständigen Checkpoints):
+    - Soll die AU rückwirkend ausgestellt werden?
+    - Welchen Zeitraum soll die AU umfassen?
+    - Handelt es sich um eine Wiederholung ohne neue Untersuchung?
+- specific: (keine)
 - boundGlobals:
-  - IN_GERMANY
-  - DOCTOR_ASSESSMENT_REQUIRED
+  - IS_NEW_PATIENT
+  - PATIENT_NOT_IN_GERMANY
+  - DOCTOR_REVIEW_REQUIRED
+  - DATA_INCOMPLETE
 - actions:
   - DIGITAL_REQUEST
   - ONLINE_ANAMNESIS
   - BOOK_APPOINTMENT
+  - OPEN_CONSULTATION
+
+**Begründung:** Rückdatierung, Dauer und wiederholte digitale AU werden fachlich nicht als
+eigenständige entscheidbare Checkpoints modelliert. Sie erscheinen stattdessen als
+Klärungsfragen (`questions`) am `AU_DECISION`-Checkpoint. Zur Modellierung von Klärungsfragen
+als Fragenblock ohne eigenen Entscheidungsstatus → siehe Abschnitt 18.
 
 ## 15. Rezept-Beispiel (Platzhalter)
 
@@ -249,3 +258,70 @@ Das ist kein Widerspruch – SPECIFIC-Kontext und GLOBAL-Schalter haben verschie
 - genaue Texte werden später geschliffen
 - zunächst zählt Architektur / Schnitt
 - Testumgebung bleibt stateless, bis der Schnitt stabil ist
+
+---
+
+## 18. SPECIFIC Explanation Checkpoint
+
+### Definition
+
+Ein **spezifischer Erklärungs-Checkpoint** ist ein anliegenspezifischer Checkpoint, der
+keine Hauptentscheidung trifft, sondern eine fachliche Regel oder Tatsache abbildet und –
+falls relevant – eine neutrale Erklärung im Antworttext erzeugt.
+
+### Eigenschaften
+
+#### 1. Zugehörigkeit
+- Gehört immer genau zu einem Anliegen (z. B. AU, Rezept, Labor)
+
+#### 2. Keine Entscheidungsautomatik
+- Steht nicht in direkter Abhängigkeit zur Hauptentscheidung
+- Darf keine automatische Entscheidung auslösen
+- Unterstützt nur den menschlichen Entscheidungsprozess
+
+#### 3. M2 (Denken / Sammlung)
+- Wird in M2 abgefragt
+- Wird dort aktiv gesetzt (z. B. Ja/Nein)
+- Ist Teil des Sammel- und Denkprozesses
+
+#### 4. M3 (Entscheidung)
+- Wird als vorausgefüllter Status angezeigt (Prefill)
+- Kann dort bei Bedarf geändert werden
+- Ist kein primärer Entscheidungs-Checkpoint
+
+#### 5. M4 (Antwort)
+- Kann eine neutrale Erklärung ausgeben
+- Erklärung darf keine Rechtfertigung oder Argumentation enthalten
+- Keine Formulierungen wie „trotzdem", „deshalb", „weil du …"
+- Muss unabhängig von der Hauptentscheidung funktionieren
+
+#### 6. M5 (Dokumentation)
+- Liefert eine kurze Dokumentation, wenn der Checkpoint relevant ist
+
+#### 7. Bewusst stille Zustände
+- Jeder Status muss bewusst definiert sein:
+  - entweder mit Erklärung
+  - oder explizit „keine Erklärung notwendig"
+- Stille darf nicht durch fehlende Texte entstehen
+
+### Merksatz
+- **Decision-Checkpoint** entscheidet
+- **Explanation-Checkpoint** erklärt
+- **Global-Checkpoint** beschreibt eine fallbezogene Tatsache
+
+### Abgrenzung zu Klärungsfragen (`questions`) am Decision-Checkpoint
+
+Wenn fachliche Aspekte (z. B. Rückdatierung, Dauer, Wiederholung) ausschließlich als
+Klärungshilfe für die Hauptentscheidung dienen und **keinen eigenen Ausgabetext** in M4
+erzeugen sollen, werden sie nicht als Explanation-Checkpoints modelliert, sondern als
+`questions`-Fragenblock direkt am Decision-Checkpoint.
+
+Beispiel: `AU_DECISION` trägt die Fragen zu Rückdatierung, Dauer und Wiederholung als
+`questions`-Array. Sie erscheinen in M2 als Sammelblock und in M3 als Kontext –
+ohne eigenständigen Status oder M4-Output.
+
+Ein SPECIFIC Explanation Checkpoint ist nur dann angemessen, wenn er:
+- einen eigenen fachlichen Status hat (YES / NO / UNKNOWN), der bewusst gesetzt wird, **und**
+- einen eigenen, anliegenspezifischen Ausgabetext in M4 erzeugen kann.
+
+→ Zur Implementierung: `InquiryCheckpoint` in `lib/inquiries/types.ts`

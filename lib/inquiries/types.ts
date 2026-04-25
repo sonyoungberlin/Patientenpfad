@@ -240,6 +240,14 @@ export type CheckpointStatusValue =
  *
  * textByStatus – Antworttext je Statuswert (nur aktive Stati müssen befüllt sein).
  * docByStatus  – Dokumentationszeile je Statuswert (optional; fällt auf textByStatus zurück).
+ *
+ * ### SPECIFIC Explanation Checkpoint
+ * Ein SPECIFIC EXPLANATION-Checkpoint hat `scope = SPECIFIC` und `kind = EXPLANATION`.
+ * Er trifft keine Hauptentscheidung, sondern bildet eine fachliche Regel ab und kann
+ * – falls der Status relevant ist – eine neutrale Erklärung in M4 erzeugen.
+ * Jeder Status muss bewusst definiert sein (mit Text oder explizit ohne).
+ * Stille durch fehlende Einträge in `textByStatus` ist nicht erlaubt.
+ * → Vollständige Definition: docs/architecture/anfrage-assistent.md §18
  */
 export type InquiryCheckpoint = {
   id: string;
