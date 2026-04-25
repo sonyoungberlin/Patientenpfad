@@ -387,10 +387,10 @@ export default function HomePage() {
           {(account.inquiry_assistant_enabled || account.is_admin) && (
             <button
               type="button"
-              onClick={() => router.push("/inquiries/demo")}
+              onClick={() => router.push("/inquiries")}
               style={{ fontSize: "0.875rem" }}
             >
-              Anfrage-Demo
+              Praxis Kommunikation
             </button>
           )}
           <button onClick={handleLogout}>Abmelden</button>

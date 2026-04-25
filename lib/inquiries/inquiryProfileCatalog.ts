@@ -31,12 +31,14 @@ export const INQUIRY_PROFILE_CATALOGUE: Record<InquiryType, InquiryProfile> = {
 export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   AU: {
     id: "AU",
-    label: "AU / Krankschreibung",
+    label: "AU / Arbeitsunfähigkeitsbescheinigung",
     decisionCheckpointId: "AU_DECISION",
     specificCheckpointIds: [
-      "AU_BACKDATE_ALLOWED",
-      "AU_DURATION_ALLOWED",
-      "AU_REPEAT_WITHOUT_EXAM",
+      "AU_BACKDATE_LIMIT",
+      "AU_WORK_ACCIDENT",
+      "AU_CHILD_SICK",
+      "AU_CONTINUITY_REQUIRED",
+      "AU_RETURN_TO_WORK",
     ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",
@@ -49,9 +51,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "AU-Hinweis: Neupatient / Erstkontakt relevant.",
+      IS_NEW_PATIENT: "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
       PATIENT_NOT_IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
       DOCTOR_REVIEW_REQUIRED: "AU-Hinweis: ärztliche Einschätzung erforderlich.",
       DATA_INCOMPLETE: "AU-Hinweis: Angaben / Daten unvollständig.",

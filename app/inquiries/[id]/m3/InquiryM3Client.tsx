@@ -3,17 +3,26 @@
 import { useMemo, useState } from "react";
 import {
   DecisionStatus,
+  InquiryCheckpointKind,
   type CheckpointStatusValue,
   type InquirySection,
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 
+export type M3SpecificCheckpoint = {
+  id: string;
+  label: string;
+  kind: InquiryCheckpointKind;
+  questions?: Array<{ id: string; text: string }>;
+};
+
 export type M3SectionData = {
   inquiryId: string;
   label: string;
   decisionCheckpointId: string;
   decisionLabel: string;
+  specificCheckpoints: M3SpecificCheckpoint[];
 };
 
 export type M3ActionData = {
@@ -38,10 +47,24 @@ const DECISION_OPTIONS = [
   { value: "DISABLED", label: "Keine Entscheidung" },
 ];
 
+const EXPLANATION_OPTIONS = [
+  { value: "YES", label: "Ja" },
+  { value: "NO", label: "Nein" },
+];
+
 const ACTION_OPTIONS = [
   { value: "ACTIVE", label: "Aktiv" },
   { value: "INACTIVE", label: "Inaktiv" },
 ];
+
+function optionsForKind(kind: InquiryCheckpointKind) {
+  switch (kind) {
+    case InquiryCheckpointKind.PREPARATION:
+      return ACTION_OPTIONS;
+    default:
+      return EXPLANATION_OPTIONS;
+  }
+}
 
 function StatusButtons({
   checkpointId,
@@ -187,7 +210,7 @@ export default function InquiryM3Client({
     setSubmitting(true);
     setError(null);
     try {
-      // 1. Save current decision + action statuses
+      // 1. Save current decision + specific + action statuses
       const checkpointStatuses: Record<string, string> = {};
       const actionStatuses: Record<string, string> = {};
       for (const [k, v] of Object.entries(statuses)) {
@@ -250,11 +273,13 @@ export default function InquiryM3Client({
         </>
       ) : (
         <>
-          {/* Decision per inquiry */}
+          {/* Decision + SPECIFIC Checkpoints per inquiry */}
           {sections.map((section) => (
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
-              <div>
+
+              {/* Decision */}
+              <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
                 <StatusButtons
                   checkpointId={section.decisionCheckpointId}
@@ -264,6 +289,42 @@ export default function InquiryM3Client({
                   disabled={false}
                 />
               </div>
+
+              {/* SPECIFIC Checkpoints */}
+              {section.specificCheckpoints.map((cp) => (
+                <div
+                  key={cp.id}
+                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                >
+                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                  {cp.questions && cp.questions.length > 0 && (
+                    <ul
+                      className="text-muted text-small"
+                      style={{ margin: "0.2rem 0 0.2rem 1.25rem", padding: 0 }}
+                    >
+                      {cp.questions.map((q) => (
+                        <li key={q.id}>{q.text}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <StatusButtons
+                    checkpointId={cp.id}
+                    options={optionsForKind(cp.kind)}
+                    value={statuses[cp.id]}
+                    onChange={setStatus}
+                    disabled={false}
+                  />
+                  {cp.kind === InquiryCheckpointKind.EXPLANATION &&
+                    statuses[cp.id] === "NO" && (
+                      <div
+                        className="text-muted text-small"
+                        style={{ marginTop: "0.25rem", fontStyle: "italic" }}
+                      >
+                        keine Erklärung erforderlich
+                      </div>
+                    )}
+                </div>
+              ))}
             </section>
           ))}
 

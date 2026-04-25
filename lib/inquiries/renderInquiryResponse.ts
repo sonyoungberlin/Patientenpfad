@@ -156,7 +156,7 @@ export function renderInquiryResponse(
  * - SPECIFIC/ATTACHED-Checkpoints werden pro Abschnitt in attachedParagraphs ausgegeben.
  * - GLOBAL/EXPLANATION-Checkpoints sind reine M2-Schalter:
  *   - Status YES  → Hinweistext aus profile.globalHints[checkpointId] → attachedParagraphs.
- *   - Status NO / UNKNOWN / fehlend → kein Output, kein Text aus checkpoint.textByStatus.
+ *   - Status NO / fehlend → kein Output, kein Text aus checkpoint.textByStatus.
  * - SHARED_BOTTOM-Checkpoints (ACTION) werden gesammelt und einmal dedupliziert unten ausgegeben.
  * - Keine LLM-Logik, kein Netzwerk, keine Seiteneffekte.
  *
@@ -170,6 +170,9 @@ export function renderInquiryResponseFromSections(
   const sharedBottomTexts: string[] = [];
   const sharedBottomSeen = new Set<string>();
   const allDocumentation: string[] = [];
+  // Track which GLOBAL checkpoints have already contributed a M5 doc entry.
+  // GLOBAL docs must appear exactly once across all sections (not per-anliegen).
+  const globalDocSeen = new Set<string>();
 
   for (const section of sections) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[section.inquiryId];
@@ -203,6 +206,14 @@ export function renderInquiryResponseFromSections(
       if (status === undefined) continue;
       if (status === ActionStatus.INACTIVE) continue;
 
+      // For SPECIFIC EXPLANATION checkpoints: only YES produces M4 output.
+      // NO means "keine Erklärung erforderlich" and is silent in the output.
+      if (
+        checkpoint.kind === InquiryCheckpointKind.EXPLANATION &&
+        checkpoint.scope === InquiryCheckpointScope.SPECIFIC &&
+        status !== ExplanationStatus.YES
+      ) continue;
+
       const text = checkpoint.textByStatus[status];
       if (!text) continue;
 
@@ -224,8 +235,14 @@ export function renderInquiryResponseFromSections(
       const hintText = profile.globalHints?.[checkpointId];
       if (!hintText) continue;
 
+      // M4: anliegenspezifischer Hinweistext erscheint pro Anliegen in attachedParagraphs.
       attachedParagraphs.push(hintText);
-      sectionDocumentation.push(`${checkpoint.label}: ${hintText}`);
+
+      // M5: Dokumentationsmarke erscheint genau einmal über alle Anliegen hinweg.
+      if (!globalDocSeen.has(checkpointId)) {
+        globalDocSeen.add(checkpointId);
+        sectionDocumentation.push(checkpoint.label);
+      }
     }
 
     // ---- D) ACTION/SHARED_BOTTOM (availableActionIds) – unverändert ----

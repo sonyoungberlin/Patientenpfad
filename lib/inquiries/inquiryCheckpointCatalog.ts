@@ -158,57 +158,120 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    // Klärungsfragen zur AU-Entscheidung (erscheinen in M2 als Fragenblock und in M3 als Kontext).
+    // Nur echte Entscheidungsgrundlagen – kein Thema, das eine eigene Patientenerklärung braucht.
+    // Rückdatierung ist ein eigener SPECIFIC Explanation Checkpoint (AU_BACKDATE_LIMIT).
+    // Wiederholung ohne Untersuchung wird global über DOCTOR_REVIEW_REQUIRED abgebildet.
+    questions: [
+      { id: "AU_DECISION-Q1", text: "Sind Beschwerden oder eine Diagnose nachvollziehbar angegeben?" },
+      { id: "AU_DECISION-Q2", text: "Liegt der Zeitraum der angefragten Arbeitsunfähigkeit bei maximal fünf Tagen?" },
+      { id: "AU_DECISION-Q3", text: "Bei Langzeit-AU: Liegt eine ärztliche Freigabe vor?" },
+    ],
     textByStatus: {
       // DecisionStatus.DISABLED ist nicht befüllt: bedeutet „noch keine manuelle Entscheidung
       // getroffen". Der Renderer liefert in diesem Fall mainDecision: null – kein Ausgabetext.
       [DecisionStatus.POSSIBLE]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann ausgestellt werden.",
+        "Ihre Arbeitsunfähigkeitsbescheinigung wurde ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann nicht ausgestellt werden.",
+        "Die von Ihnen angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
     },
   },
 
-  // ---- SPECIFIC EXPLANATIONS ----
+  // ---- AU SPECIFIC EXPLANATIONS ----
 
-  AU_BACKDATE_ALLOWED: {
-    id: "AU_BACKDATE_ALLOWED",
-    label: "Rückdatierung",
+  AU_BACKDATE_LIMIT: {
+    id: "AU_BACKDATE_LIMIT",
+    label: "Rückdatierungsgrenze",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_BACKDATE_LIMIT-Q1", text: "Liegt der gewünschte Beginn der Arbeitsunfähigkeit länger als zwei Tage zurück?" },
+    ],
     textByStatus: {
-      [ExplanationStatus.NO]:
-        "Eine rückwirkende Ausstellung ist nur begrenzt möglich. Der gewünschte Zeitraum liegt darüber hinaus.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Prüfung benötigen wir den genauen Zeitraum der gewünschten Arbeitsunfähigkeit.",
+      [ExplanationStatus.YES]:
+        "Arbeitsunfähigkeitsbescheinigungen können nur bis zu zwei Tage rückwirkend ausgestellt werden.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
-  AU_DURATION_ALLOWED: {
-    id: "AU_DURATION_ALLOWED",
-    label: "Zulässige Dauer",
+  AU_DURATION_LIMIT: {
+    id: "AU_DURATION_LIMIT",
+    label: "AU-Dauer überschreitet Rahmen",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_DURATION_LIMIT-Q1", text: "Überschreitet die gewünschte AU-Dauer den zulässigen Rahmen?" },
+    ],
     textByStatus: {
-      [ExplanationStatus.NO]:
-        "Eine Arbeitsunfähigkeitsbescheinigung kann nur für einen begrenzten Zeitraum ausgestellt werden.",
-      [ExplanationStatus.UNKNOWN]:
-        "Für die Prüfung benötigen wir den gewünschten Zeitraum der Arbeitsunfähigkeit.",
+      [ExplanationStatus.YES]:
+        "AU-Hinweis: Gewünschte AU-Dauer überschreitet den zulässigen Rahmen.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
-  AU_REPEAT_WITHOUT_EXAM: {
-    id: "AU_REPEAT_WITHOUT_EXAM",
-    label: "Wiederholte digitale AU ohne Untersuchung",
+  AU_WORK_ACCIDENT: {
+    id: "AU_WORK_ACCIDENT",
+    label: "Arbeitsunfall / Wegeunfall",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_WORK_ACCIDENT-Q1", text: "Handelt es sich um Beschwerden im Zusammenhang mit einem Arbeits- oder Wegeunfall?" },
+    ],
     textByStatus: {
-      [ExplanationStatus.NO]:
-        "AU-Hinweis: Wiederholte digitale AU ohne ärztliche Untersuchung nicht möglich.",
-      [ExplanationStatus.UNKNOWN]:
-        "AU-Hinweis: Prüfung erforderlich, ob wiederholte AU ohne Untersuchung zulässig ist.",
+      [ExplanationStatus.YES]:
+        "Die medizinische Behandlung und Krankschreibung nach einem Arbeits- oder Wegeunfall erfolgt über einen Durchgangsarzt (D-Arzt).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_CHILD_SICK: {
+    id: "AU_CHILD_SICK",
+    label: "Kind krank / Kindkrank-Bescheinigung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_CHILD_SICK-Q1", text: "Geht es ausschließlich um eine Bescheinigung zur Betreuung eines erkrankten Kindes?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bescheinigungen zur Betreuung eines erkrankten Kindes werden ausschließlich durch die behandelnde Kinderarztpraxis ausgestellt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_CONTINUITY_REQUIRED: {
+    id: "AU_CONTINUITY_REQUIRED",
+    label: "Folge-AU / Lückenlosigkeit",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_CONTINUITY_REQUIRED-Q1", text: "Handelt es sich um eine Folge-AU und besteht dabei eine zeitliche Lücke zum vorherigen Zeitraum?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Folgebescheinigungen müssen unmittelbar an den vorherigen Zeitraum anschließen, um Lücken im Versicherungsverlauf zu vermeiden. Aus diesem Grund ist die Ausstellung einer Folgebescheinigung nicht möglich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_RETURN_TO_WORK: {
+    id: "AU_RETURN_TO_WORK",
+    label: "Vorzeitige Arbeitsaufnahme / Gesundschreibung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_RETURN_TO_WORK-Q1", text: "Geht es um eine vorzeitige Rückkehr an den Arbeitsplatz oder eine gewünschte Gesundschreibung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine formale Gesundschreibung gibt es nicht; eine vorzeitige Rückkehr an den Arbeitsplatz ist möglich, wenn man sich arbeitsfähig fühlt.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
@@ -237,8 +300,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.NO]:
         "Rezept-Hinweis: Medikament / Verordnung in der Praxis nicht bekannt.",
-      [ExplanationStatus.UNKNOWN]:
-        "Rezept-Hinweis: Medikament bitte vollständig angeben.",
     },
   },
 
@@ -327,7 +388,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Anlass für Laboruntersuchung ist angegeben.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Kein Laboranlass / Indikation nicht erkennbar.",
-      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Laboranlass bitte genauer angeben.",
     },
   },
 
@@ -344,7 +404,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Check-up / Vorsorge möglich.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Check-up / Vorsorge derzeit nicht vorgesehen.",
-      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Prüfung Check-up-Berechtigung erforderlich.",
     },
   },
 
@@ -361,7 +420,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Gewünschte Laborwerte sind benannt.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Laborwerte bitte konkret angeben.",
-      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Angabe der gewünschten Werte fehlt.",
     },
   },
 
@@ -478,6 +536,30 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Termine können über den Online-Kalender vereinbart werden.",
+    },
+  },
+
+  PROCESSING_DELAY: {
+    id: "PROCESSING_DELAY",
+    label: "Bearbeitungsverzögerung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Hinweis: Die Bearbeitung kann derzeit länger dauern als üblich.",
+    },
+  },
+
+  TECHNICAL_ISSUE: {
+    id: "TECHNICAL_ISSUE",
+    label: "Technische Störung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Hinweis: Aktuell liegt eine technische Störung vor. Der Systemzugriff ist eingeschränkt.",
     },
   },
 };

@@ -3,7 +3,11 @@ import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
-import { InquiryCheckpointKind, type InquiryCheckpoint, type InquiryResponseV2Output } from "@/lib/inquiries/types";
+import {
+  InquiryCheckpointKind,
+  type InquiryCheckpoint,
+  type InquiryResponseV2Output,
+} from "@/lib/inquiries/types";
 import InquiryM3Client, {
   type M3SectionData,
   type M3ActionData,
@@ -14,11 +18,20 @@ function toM3Section(inquiryId: string): M3SectionData | null {
   if (!profile) return null;
   const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
   if (!decisionCp) return null;
+  const specificCps = profile.specificCheckpointIds
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter((cp): cp is InquiryCheckpoint => !!cp);
   return {
     inquiryId,
     label: profile.label,
     decisionCheckpointId: profile.decisionCheckpointId,
     decisionLabel: decisionCp.label,
+    specificCheckpoints: specificCps.map((cp) => ({
+      id: cp.id,
+      label: cp.label,
+      kind: cp.kind,
+      questions: cp.questions,
+    })),
   };
 }
 
@@ -57,7 +70,7 @@ export default async function InquiryM3Page({
     ? (session.selected_inquiry_ids as string[])
     : [];
 
-  // Decision sections (one per inquiry)
+  // Decision sections (one per inquiry, with specific checkpoints)
   const sections: M3SectionData[] = selectedIds
     .map(toM3Section)
     .filter((s): s is M3SectionData => s !== null);
@@ -77,6 +90,9 @@ export default async function InquiryM3Page({
         !!cp && cp.kind === InquiryCheckpointKind.ACTION,
     )
     .map((cp) => ({ id: cp.id, label: cp.label }));
+
+  // Global context checkpoints (read-only in M3, set in M2)
+  // NOTE: per architecture spec, GLOBAL checkpoints must NOT appear in M3 at all.
 
   const checkpointStatuses: Record<string, string> =
     session.checkpoint_statuses !== null &&
