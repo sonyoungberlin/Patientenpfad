@@ -300,8 +300,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.NO]:
         "Rezept-Hinweis: Medikament / Verordnung in der Praxis nicht bekannt.",
-      [ExplanationStatus.UNKNOWN]:
-        "Rezept-Hinweis: Medikament bitte vollständig angeben.",
     },
   },
 
@@ -390,7 +388,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Anlass für Laboruntersuchung ist angegeben.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Kein Laboranlass / Indikation nicht erkennbar.",
-      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Laboranlass bitte genauer angeben.",
     },
   },
 
@@ -407,7 +404,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Check-up / Vorsorge möglich.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Check-up / Vorsorge derzeit nicht vorgesehen.",
-      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Prüfung Check-up-Berechtigung erforderlich.",
     },
   },
 
@@ -424,7 +420,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Gewünschte Laborwerte sind benannt.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Laborwerte bitte konkret angeben.",
-      [ExplanationStatus.UNKNOWN]: "Labor-Hinweis: Angabe der gewünschten Werte fehlt.",
     },
   },
 

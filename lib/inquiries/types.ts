@@ -210,7 +210,6 @@ export enum DecisionStatus {
 export enum ExplanationStatus {
   YES = "YES",
   NO = "NO",
-  UNKNOWN = "UNKNOWN",
 }
 
 /** Status für ACTION- und PREPARATION-Checkpoints. */

@@ -31,7 +31,7 @@ export const INQUIRY_PROFILE_CATALOGUE: Record<InquiryType, InquiryProfile> = {
 export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   AU: {
     id: "AU",
-    label: "AU / Krankschreibung",
+    label: "AU / Arbeitsunfähigkeitsbescheinigung",
     decisionCheckpointId: "AU_DECISION",
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",

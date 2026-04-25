@@ -156,7 +156,7 @@ export function renderInquiryResponse(
  * - SPECIFIC/ATTACHED-Checkpoints werden pro Abschnitt in attachedParagraphs ausgegeben.
  * - GLOBAL/EXPLANATION-Checkpoints sind reine M2-Schalter:
  *   - Status YES  → Hinweistext aus profile.globalHints[checkpointId] → attachedParagraphs.
- *   - Status NO / UNKNOWN / fehlend → kein Output, kein Text aus checkpoint.textByStatus.
+ *   - Status NO / fehlend → kein Output, kein Text aus checkpoint.textByStatus.
  * - SHARED_BOTTOM-Checkpoints (ACTION) werden gesammelt und einmal dedupliziert unten ausgegeben.
  * - Keine LLM-Logik, kein Netzwerk, keine Seiteneffekte.
  *
@@ -205,6 +205,14 @@ export function renderInquiryResponseFromSections(
       const status = section.checkpointStatuses[checkpointId];
       if (status === undefined) continue;
       if (status === ActionStatus.INACTIVE) continue;
+
+      // For SPECIFIC EXPLANATION checkpoints: only YES produces M4 output.
+      // NO means "keine Erklärung erforderlich" and is silent in the output.
+      if (
+        checkpoint.kind === InquiryCheckpointKind.EXPLANATION &&
+        checkpoint.scope === InquiryCheckpointScope.SPECIFIC &&
+        status !== ExplanationStatus.YES
+      ) continue;
 
       const text = checkpoint.textByStatus[status];
       if (!text) continue;

@@ -50,7 +50,6 @@ const DECISION_OPTIONS = [
 const EXPLANATION_OPTIONS = [
   { value: "YES", label: "Ja" },
   { value: "NO", label: "Nein" },
-  { value: "UNKNOWN", label: "Unbekannt" },
 ];
 
 const ACTION_OPTIONS = [
@@ -315,6 +314,15 @@ export default function InquiryM3Client({
                     onChange={setStatus}
                     disabled={false}
                   />
+                  {cp.kind === InquiryCheckpointKind.EXPLANATION &&
+                    statuses[cp.id] === "NO" && (
+                      <div
+                        className="text-muted text-small"
+                        style={{ marginTop: "0.25rem", fontStyle: "italic" }}
+                      >
+                        keine Erklärung erforderlich
+                      </div>
+                    )}
                 </div>
               ))}
             </section>

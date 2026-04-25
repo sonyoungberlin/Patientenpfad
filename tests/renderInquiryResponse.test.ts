@@ -772,10 +772,10 @@ describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints",
     expect(texts).not.toContain("Deutschland");
   });
 
-  it("PATIENT_NOT_IN_GERMANY UNKNOWN → kein Hinweis in attachedParagraphs", () => {
+  it("PATIENT_NOT_IN_GERMANY NO → kein Hinweis in attachedParagraphs (UNKNOWN entfernt)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
-        checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.UNKNOWN },
+        checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -1250,15 +1250,13 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     ).toBe(true);
   });
 
-  it("PRESCRIPTION_KNOWN_MEDICATION NO → Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_KNOWN_MEDICATION NO → kein Text in attachedParagraphs (SPECIFIC EXPLANATION, nur YES erzeugt Output)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_KNOWN_MEDICATION: ExplanationStatus.NO },
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("nicht bekannt")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -1363,37 +1361,31 @@ describe("LAB-Profil – globalHints", () => {
 // ---------------------------------------------------------------------------
 
 describe("LAB-Profil – SPECIFIC Checkpoints", () => {
-  it("LAB_MEDICAL_INDICATION NO → Text in attachedParagraphs", () => {
+  it("LAB_MEDICAL_INDICATION NO → kein Text in attachedParagraphs (SPECIFIC EXPLANATION, nur YES erzeugt Output)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_MEDICAL_INDICATION: ExplanationStatus.NO },
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Indikation nicht erkennbar")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_CHECKUP_ELIGIBLE UNKNOWN → Text in attachedParagraphs", () => {
+  it("LAB_CHECKUP_ELIGIBLE NO → kein Text in attachedParagraphs (SPECIFIC EXPLANATION, nur YES erzeugt Output)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_CHECKUP_ELIGIBLE: ExplanationStatus.UNKNOWN },
+        checkpointStatuses: { LAB_CHECKUP_ELIGIBLE: ExplanationStatus.NO },
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Check-up-Berechtigung")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_VALUES_DEFINED NO → Text in attachedParagraphs", () => {
+  it("LAB_VALUES_DEFINED NO → kein Text in attachedParagraphs (SPECIFIC EXPLANATION, nur YES erzeugt Output)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_VALUES_DEFINED: ExplanationStatus.NO },
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("konkret angeben")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("LAB_FASTING_REQUIRED ACTIVE → Vorbereitungshinweis in attachedParagraphs", () => {
@@ -1492,7 +1484,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
       makeLabSection({
         checkpointStatuses: {
           IS_NEW_PATIENT: ExplanationStatus.YES,
-          LAB_MEDICAL_INDICATION: ExplanationStatus.NO,
+          LAB_MEDICAL_INDICATION: ExplanationStatus.YES,
         },
       }),
       makePrescriptionSection({
@@ -1502,8 +1494,8 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
         },
       }),
     ]);
-    // SPECIFIC docs: both inquiries
-    expect(result.documentation.some((d) => d.includes("Indikation nicht erkennbar"))).toBe(true);
+    // SPECIFIC docs: both inquiries (YES → output produced)
+    expect(result.documentation.some((d) => d.includes("Anlass für Laboruntersuchung"))).toBe(true);
     expect(result.documentation.some((d) => d.includes("Folgerezept"))).toBe(true);
     // GLOBAL doc: exactly once
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
