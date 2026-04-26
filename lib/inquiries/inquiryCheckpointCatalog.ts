@@ -870,7 +870,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.POSSIBLE]:
         "Sie können sich mit Ihrem Anliegen im Rahmen eines Akuttermins oder der offenen Sprechstunde vorstellen.",
       [DecisionStatus.NOT_POSSIBLE]:
-        "Für Ihr Anliegen ist die Akutsprechstunde nicht geeignet.",
+        "Für Ihr Anliegen ist diese Terminart nicht geeignet.",
     },
   },
 
@@ -903,7 +903,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde verfügbar.",
+        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde möglich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -919,7 +919,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die offene Sprechstunde findet täglich morgens statt; es ist keine Terminbuchung und keine Arztwahl möglich.",
+        "Die offene Sprechstunde findet zwischen 9 und 10 Uhr statt. Sie können ohne Termin in die Praxis kommen; die Behandlung erfolgt durch den jeweils verfügbaren Arzt.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -951,7 +951,89 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bei hoher Auslastung kann es vorkommen, dass an einem Tag keine weiteren Patienten aufgenommen werden können.",
+        "Bei hoher Auslastung kann es vorkommen, dass keine weiteren Patienten aufgenommen werden können.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- ACUTE_CARE NEW SPECIFIC CHECKPOINTS ----
+
+  ACUTE_PURPOSE: {
+    id: "ACUTE_PURPOSE",
+    label: "Zweck der Akutsprechstunde",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "ACUTE_PURPOSE-Q1", text: "Geht es um kurzfristig aufgetretene oder sich verschlechternde Beschwerden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Dieser Weg ist für Beschwerden gedacht, die kurzfristig auftreten oder sich deutlich verschlechtern und zeitnah abgeklärt werden müssen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ACUTE_EXCLUSION: {
+    id: "ACUTE_EXCLUSION",
+    label: "Ausschluss planbarer Anliegen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "ACUTE_EXCLUSION-Q1", text: "Geht es um ein planbares oder organisatorisches Anliegen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Planbare oder organisatorische Anliegen gehören nicht in diesen Bereich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  WAITING_TIME: {
+    id: "WAITING_TIME",
+    label: "Wartezeiten",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "WAITING_TIME-Q1", text: "Geht es um mögliche Wartezeiten?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Es kann zu Wartezeiten kommen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  CHRONIC_EXCLUSION: {
+    id: "CHRONIC_EXCLUSION",
+    label: "Chronische Erkrankung – Ausschluss planbarer Anliegen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "CHRONIC_EXCLUSION-Q1", text: "Geht es um ein planbares Anliegen bei chronischer Erkrankung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Auch bei chronischen Erkrankungen gehören planbare Anliegen in die reguläre Sprechstunde und nicht in diesen Bereich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  INFECTIOUS_PROTOCOL: {
+    id: "INFECTIOUS_PROTOCOL",
+    label: "Infektionsschutz – Hinweis",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "INFECTIOUS_PROTOCOL-Q1", text: "Besteht Verdacht auf eine ansteckende Erkrankung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
