@@ -1776,3 +1776,196 @@ describe("URINE_SAMPLE_ONSITE – GLOBAL SHARED_BOTTOM", () => {
     expect(result.sharedBottom).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// SAMPLE_COLLECTION-Profil
+// ---------------------------------------------------------------------------
+
+function makeSampleCollectionSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "SAMPLE_COLLECTION",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
+  it("Profil SAMPLE_COLLECTION ist im Katalog registriert", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    expect(profile).toBeDefined();
+    expect(profile.id).toBe("SAMPLE_COLLECTION");
+    expect(profile.label).toBe("Urin- und Stuhlprobe");
+  });
+
+  it("SAMPLE_COLLECTION_DECISION hat genau 3 questions", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["SAMPLE_COLLECTION_DECISION"];
+    expect(cp).toBeDefined();
+    expect(cp.questions).toHaveLength(3);
+  });
+
+  it("alle 4 SPECIFIC Checkpoints sind im Katalog und an SAMPLE_COLLECTION gebunden", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER", "LAB_RESULT_TIME"];
+    for (const id of ids) {
+      expect(profile.specificCheckpointIds).toContain(id);
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    }
+  });
+
+  it("SAMPLE_COLLECTION hat die erwarteten boundGlobalCheckpointIds", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    expect(profile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
+    expect(profile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
+    expect(profile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(profile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+  });
+
+  it("SAMPLE_COLLECTION hat die erwarteten availableActionIds", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
+    expect(profile.availableActionIds).toContain("OPEN_CONSULTATION");
+    expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
+    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+  });
+});
+
+describe("SAMPLE_COLLECTION-Profil – Decision", () => {
+  it("POSSIBLE → mainDecision enthält Probentext", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("Probenabgabe");
+  });
+
+  it("NOT_POSSIBLE → mainDecision enthält Ablehnungstext", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("nicht berücksichtigt");
+  });
+});
+
+describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
+  it("URINE_SAMPLE_INSTRUCTIONS YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
+    );
+  });
+
+  it("URINE_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("STOOL_SAMPLE_INSTRUCTIONS YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
+    );
+  });
+
+  it("STOOL_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("SAMPLE_HANDOVER YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { SAMPLE_HANDOVER: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
+    );
+  });
+
+  it("SAMPLE_HANDOVER NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { SAMPLE_HANDOVER: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("LAB_RESULT_TIME YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { LAB_RESULT_TIME: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
+    );
+  });
+
+  it("LAB_RESULT_TIME NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { LAB_RESULT_TIME: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("SAMPLE_COLLECTION-Profil – GLOBALs unverändert", () => {
+  it("IS_NEW_PATIENT YES → proben-spezifischer Hint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
+    );
+  });
+
+  it("PROCESSING_DELAY ACTIVE → Text in sharedBottom (SAMPLE_COLLECTION-Section)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { PROCESSING_DELAY: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom.some((t) => t.includes("Bearbeitung"))).toBe(true);
+  });
+
+  it("PROCESSING_DELAY INACTIVE → kein Eintrag in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { PROCESSING_DELAY: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+
+  it("LAB-Profil bleibt durch SAMPLE_COLLECTION unberührt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.",
+    );
+  });
+});

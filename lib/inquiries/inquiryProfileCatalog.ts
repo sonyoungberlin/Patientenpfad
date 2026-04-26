@@ -133,4 +133,34 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       IS_CHRONIC_PATIENT: "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
     },
   },
+
+  SAMPLE_COLLECTION: {
+    id: "SAMPLE_COLLECTION",
+    label: "Urin- und Stuhlprobe",
+    decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
+    specificCheckpointIds: [
+      "URINE_SAMPLE_INSTRUCTIONS",
+      "STOOL_SAMPLE_INSTRUCTIONS",
+      "SAMPLE_HANDOVER",
+      "LAB_RESULT_TIME",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_NEW_PATIENT",
+      "PATIENT_NOT_IN_GERMANY",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_INCOMPLETE",
+    ],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    globalHints: {
+      IS_NEW_PATIENT: "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
+      PATIENT_NOT_IN_GERMANY: "Proben-Hinweis: Probenabgabe ist nur vor Ort in Deutschland möglich.",
+      DOCTOR_REVIEW_REQUIRED: "Proben-Hinweis: ärztliche Klärung vor Probenabgabe erforderlich.",
+      DATA_INCOMPLETE: "Proben-Hinweis: Angaben oder Versicherungsdaten fehlen.",
+    },
+  },
 };

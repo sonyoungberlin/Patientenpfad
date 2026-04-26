@@ -773,4 +773,85 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Eine Urinprobe kann vor Ort in der Praxis abgegeben werden.",
     },
   },
+
+  // ---- SAMPLE_COLLECTION DECISION ----
+
+  SAMPLE_COLLECTION_DECISION: {
+    id: "SAMPLE_COLLECTION_DECISION",
+    label: "Probenabgabe möglich",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "SAMPLE_COLLECTION_DECISION-Q1", text: "Handelt es sich um eine Urinprobe oder eine Stuhlprobe?" },
+      { id: "SAMPLE_COLLECTION_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+      { id: "SAMPLE_COLLECTION_DECISION-Q3", text: "Wird ein Probengefäß aus der Praxis benötigt?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Die Probenabgabe kann wie besprochen durchgeführt werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Die angefragte Probenabgabe wurde nicht berücksichtigt.",
+    },
+  },
+
+  // ---- SAMPLE_COLLECTION SPECIFIC CHECKPOINTS ----
+
+  URINE_SAMPLE_INSTRUCTIONS: {
+    id: "URINE_SAMPLE_INSTRUCTIONS",
+    label: "Urinprobe – Hinweis",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "URINE_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Urinprobe abgegeben werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  STOOL_SAMPLE_INSTRUCTIONS: {
+    id: "STOOL_SAMPLE_INSTRUCTIONS",
+    label: "Stuhlprobe – Hinweis",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "STOOL_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Stuhlprobe abgegeben werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  SAMPLE_HANDOVER: {
+    id: "SAMPLE_HANDOVER",
+    label: "Probenabgabe / Aufbewahrung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "SAMPLE_HANDOVER-Q1", text: "Geht es um die Abgabe oder Aufbewahrung der Probe?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_RESULT_TIME: {
+    id: "LAB_RESULT_TIME",
+    label: "Befundübermittlung / Auswertungsdauer",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_RESULT_TIME-Q1", text: "Geht es um die Dauer oder den Ablauf der Befundübermittlung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
 };
