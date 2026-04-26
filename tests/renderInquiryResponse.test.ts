@@ -750,15 +750,13 @@ describe("renderInquiryResponseFromSections – Decision", () => {
 });
 
 describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints", () => {
-  it("PATIENT_NOT_IN_GERMANY YES → Hinweis aus globalHints erscheint in attachedParagraphs", () => {
+  it("PATIENT_NOT_IN_GERMANY YES → kein Hinweis in attachedParagraphs (nicht mehr an AU gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Eine AU-Bescheinigung setzt in der Regel einen Aufenthalt in Deutschland voraus.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("PATIENT_NOT_IN_GERMANY NO → kein Hinweis in attachedParagraphs", () => {
@@ -846,25 +844,25 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat genau fünf Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(5);
+  it("AU-Profil hat genau drei Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(3);
   });
 
-  it("AU-Profil bindet alle fünf AU SPECIFIC Explanation Checkpoints", () => {
+  it("AU-Profil bindet genau drei AU SPECIFIC Explanation Checkpoints", () => {
     expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_LIMIT");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_DURATION_LIMIT");
     expect(auProfile.specificCheckpointIds).toContain("AU_WORK_ACCIDENT");
     expect(auProfile.specificCheckpointIds).toContain("AU_CHILD_SICK");
-    expect(auProfile.specificCheckpointIds).toContain("AU_CONTINUITY_REQUIRED");
-    expect(auProfile.specificCheckpointIds).toContain("AU_RETURN_TO_WORK");
+    expect(auProfile.specificCheckpointIds).not.toContain("AU_CONTINUITY_REQUIRED");
+    expect(auProfile.specificCheckpointIds).not.toContain("AU_RETURN_TO_WORK");
   });
 
-  it("AU-Profil bindet alle zwei Global Checkpoints", () => {
-    expect(auProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(auProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
+  it("AU-Profil hat keine gebundenen Global Checkpoints", () => {
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
-    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(2);
+    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(0);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im AU-Profil", () => {
@@ -889,17 +887,17 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
 });
 
 describe("AU_DECISION – questions als Klärungshilfe", () => {
-  it("AU_DECISION hat genau drei questions (Beschwerden/Diagnose, Zeitraum und Langzeit-AU)", () => {
+  it("AU_DECISION hat genau zwei questions (Beschwerden/Diagnose und Langzeit-AU)", () => {
     const auDecision = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"];
     expect(auDecision.questions).toBeDefined();
-    expect((auDecision.questions ?? []).length).toBe(3);
+    expect((auDecision.questions ?? []).length).toBe(2);
   });
 
-  it("AU_DECISION question-Texte betreffen Beschwerden/Diagnose und Zeitraum", () => {
+  it("AU_DECISION question-Texte betreffen Beschwerden/Diagnose und Langzeit-AU", () => {
     const questions = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"].questions ?? [];
     const texts = questions.map((q) => q.text);
     expect(texts.some((t) => t.toLowerCase().includes("beschwerden") || t.toLowerCase().includes("diagnose"))).toBe(true);
-    expect(texts.some((t) => t.toLowerCase().includes("zeitraum"))).toBe(true);
+    expect(texts.some((t) => t.toLowerCase().includes("langzeit"))).toBe(true);
   });
 
   it("AU_DECISION enthält keine Rückdatierungsfrage mehr", () => {
@@ -982,26 +980,26 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Kinderarztpraxis"))).toBe(true);
   });
 
-  it("AU_CONTINUITY_REQUIRED YES → Erklärungstext in attachedParagraphs", () => {
+  it("AU_CONTINUITY_REQUIRED YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { AU_CONTINUITY_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Folgebescheinigungen"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("AU_RETURN_TO_WORK YES → Erklärungstext in attachedParagraphs", () => {
+  it("AU_RETURN_TO_WORK YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { AU_RETURN_TO_WORK: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Gesundschreibung"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("Alle fünf gebundenen AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
-    for (const id of ["AU_BACKDATE_LIMIT", "AU_WORK_ACCIDENT", "AU_CHILD_SICK", "AU_CONTINUITY_REQUIRED", "AU_RETURN_TO_WORK"]) {
+  it("Alle drei gebundenen AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
+    for (const id of ["AU_BACKDATE_LIMIT", "AU_WORK_ACCIDENT", "AU_CHILD_SICK"]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp).toBeDefined();
       expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
@@ -1012,15 +1010,13 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
 });
 
 describe("AU-Profil – IS_NEW_PATIENT globalHint", () => {
-  it("IS_NEW_PATIENT YES → AU-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("IS_NEW_PATIENT YES → kein Hint in AU (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("DATA_INCOMPLETE YES → kein Hint in AU (nicht mehr gebunden)", () => {
@@ -1689,10 +1685,10 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
 // ---------------------------------------------------------------------------
 
 describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () => {
-  it("IS_NEW_PATIENT YES in AU + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
+  it("IS_NEW_PATIENT YES in LAB + REFERRAL → M5-Doku enthält den Label genau einmal", () => {
     const result = renderInquiryResponseFromSections([
-      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
-      makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
     expect(entries).toHaveLength(1);
@@ -1710,11 +1706,11 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
 
   it("IS_NEW_PATIENT YES → M5-Marker ist checkpoint.label (kurzer Text, kein Hint-Text)", () => {
     const result = renderInquiryResponseFromSections([
-      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    const auGlobalHint = INQUIRY_PROFILE_CATALOG_V2["AU"].globalHints?.["IS_NEW_PATIENT"] ?? "";
+    const labGlobalHint = INQUIRY_PROFILE_CATALOG_V2["LAB"].globalHints?.["IS_NEW_PATIENT"] ?? "";
     // Der Hint-Text darf NICHT als Doku-Marker erscheinen
-    expect(result.documentation).not.toContain(auGlobalHint);
+    expect(result.documentation).not.toContain(labGlobalHint);
     // Nur der kurze Label (checkpoint.label) erscheint
     const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].label;
     expect(result.documentation).toContain(cpLabel);
@@ -1722,16 +1718,16 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
 
   it("IS_NEW_PATIENT YES → M4 attachedParagraphs erscheinen pro Anliegen separat (anliegenspezifisch)", () => {
     const result = renderInquiryResponseFromSections([
-      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    // AU-spezifischer Hint in Section 0
+    // LAB-spezifischer Hint in Section 0
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
-    );
-    // LAB-spezifischer Hint in Section 1
-    expect(result.sections[1].attachedParagraphs).toContain(
       "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
+    );
+    // REFERRAL-spezifischer Hint in Section 1
+    expect(result.sections[1].attachedParagraphs).toContain(
+      "Bei Erstpatienten erfolgt die Ausstellung einer Überweisung in der Regel nach persönlicher Vorstellung.",
     );
   });
 

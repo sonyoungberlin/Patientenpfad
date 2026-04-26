@@ -37,13 +37,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_BACKDATE_LIMIT",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
-      "AU_CONTINUITY_REQUIRED",
-      "AU_RETURN_TO_WORK",
     ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
@@ -52,10 +47,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
-      PATIENT_NOT_IN_GERMANY: "Eine AU-Bescheinigung setzt in der Regel einen Aufenthalt in Deutschland voraus.",
-    },
   },
 
   PRESCRIPTION: {
