@@ -2485,3 +2485,77 @@ describe("ACUTE_CARE-Profil – GlobalHints", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Checkpoint Classification
+// ---------------------------------------------------------------------------
+
+describe("Checkpoint-Klassifizierung – GLOBAL_STATE", () => {
+  it("IS_NEW_PATIENT hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("PATIENT_NOT_IN_GERMANY hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["PATIENT_NOT_IN_GERMANY"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("DOCTOR_REVIEW_REQUIRED hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["DOCTOR_REVIEW_REQUIRED"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("DATA_INCOMPLETE hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["DATA_INCOMPLETE"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("IS_CHRONIC_PATIENT hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IS_CHRONIC_PATIENT"].classification).toBe("GLOBAL_STATE");
+  });
+});
+
+describe("Checkpoint-Klassifizierung – CONTEXT_SPECIFIC", () => {
+  it("ACUTE_CARE_DECISION hat classification CONTEXT_SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_CARE_DECISION"].classification).toBe("CONTEXT_SPECIFIC");
+  });
+
+  it("ACUTE_APPOINTMENT_INFO hat classification CONTEXT_SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_APPOINTMENT_INFO"].classification).toBe("CONTEXT_SPECIFIC");
+  });
+
+  it("OPEN_CONSULTATION_INFO hat classification CONTEXT_SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["OPEN_CONSULTATION_INFO"].classification).toBe("CONTEXT_SPECIFIC");
+  });
+});
+
+describe("Checkpoint-Klassifizierung – MODULAR", () => {
+  it("CAPACITY_LIMIT hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["CAPACITY_LIMIT"].classification).toBe("MODULAR");
+  });
+
+  it("ACUTE_ONLY_LIMIT hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_ONLY_LIMIT"].classification).toBe("MODULAR");
+  });
+
+  it("ACUTE_PURPOSE hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_PURPOSE"].classification).toBe("MODULAR");
+  });
+
+  it("ACUTE_EXCLUSION hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_EXCLUSION"].classification).toBe("MODULAR");
+  });
+
+  it("NO_FIXED_TIME hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["NO_FIXED_TIME"].classification).toBe("MODULAR");
+  });
+
+  it("WAITING_TIME hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["WAITING_TIME"].classification).toBe("MODULAR");
+  });
+
+  it("CHRONIC_EXCLUSION hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["CHRONIC_EXCLUSION"].classification).toBe("MODULAR");
+  });
+
+  it("INFECTIOUS_PROTOCOL hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["INFECTIOUS_PROTOCOL"].classification).toBe("MODULAR");
+  });
+});
