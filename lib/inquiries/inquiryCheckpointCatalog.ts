@@ -322,7 +322,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED-Q1", text: "Fehlt ein aktueller Facharztbericht für die angefragte Medikation?" },
+      { id: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED-Q1", text: "Fehlt ein aktueller fachärztlicher Behandlungsbericht für die angefragte Medikation?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -338,7 +338,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "PRESCRIPTION_BTM_ADHS_RULES-Q1", text: "Geht es um ein BtM- oder ADHS-Medikament mit fachärztlicher Zuständigkeit?" },
+      { id: "PRESCRIPTION_BTM_ADHS_RULES-Q1", text: "Geht es um ein ADHS- oder BtM-Medikament mit fachärztlicher Zuständigkeit?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
