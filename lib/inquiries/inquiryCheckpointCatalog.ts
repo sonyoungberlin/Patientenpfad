@@ -806,9 +806,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "SAMPLE_COLLECTION_DECISION-Q1", text: "Handelt es sich um eine Urinprobe oder eine Stuhlprobe?" },
       { id: "SAMPLE_COLLECTION_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
-      { id: "SAMPLE_COLLECTION_DECISION-Q3", text: "Wird ein Probengefäß aus der Praxis benötigt?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Die Probenabgabe kann wie besprochen durchgeführt werden.",

@@ -102,12 +102,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     id: "SAMPLE_COLLECTION",
     label: "Urin- und Stuhlprobe",
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
-    specificCheckpointIds: [
-      "URINE_SAMPLE_INSTRUCTIONS",
-      "STOOL_SAMPLE_INSTRUCTIONS",
-      "SAMPLE_HANDOVER",
-      "LAB_RESULT_TIME",
-    ],
+    specificCheckpointIds: [],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
       "BOOK_APPOINTMENT",

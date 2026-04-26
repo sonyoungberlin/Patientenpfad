@@ -1780,17 +1780,17 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(profile.label).toBe("Urin- und Stuhlprobe");
   });
 
-  it("SAMPLE_COLLECTION_DECISION hat genau 3 questions", () => {
+  it("SAMPLE_COLLECTION_DECISION hat genau 1 question", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["SAMPLE_COLLECTION_DECISION"];
     expect(cp).toBeDefined();
-    expect(cp.questions).toHaveLength(3);
+    expect(cp.questions).toHaveLength(1);
   });
 
-  it("alle 4 SPECIFIC Checkpoints sind im Katalog und an SAMPLE_COLLECTION gebunden", () => {
+  it("alle 4 SPECIFIC Checkpoints sind im Katalog (ungebunden)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER", "LAB_RESULT_TIME"];
+    expect(profile.specificCheckpointIds).toHaveLength(0);
     for (const id of ids) {
-      expect(profile.specificCheckpointIds).toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
     }
   });
@@ -1830,15 +1830,13 @@ describe("SAMPLE_COLLECTION-Profil – Decision", () => {
 });
 
 describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
-  it("URINE_SAMPLE_INSTRUCTIONS YES → Text in attachedParagraphs", () => {
+  it("URINE_SAMPLE_INSTRUCTIONS YES → kein Text (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
         checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("URINE_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
@@ -1850,15 +1848,13 @@ describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("STOOL_SAMPLE_INSTRUCTIONS YES → Text in attachedParagraphs", () => {
+  it("STOOL_SAMPLE_INSTRUCTIONS YES → kein Text (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
         checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("STOOL_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
@@ -1870,15 +1866,13 @@ describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("SAMPLE_HANDOVER YES → Text in attachedParagraphs", () => {
+  it("SAMPLE_HANDOVER YES → kein Text (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
         checkpointStatuses: { SAMPLE_HANDOVER: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("SAMPLE_HANDOVER NO → kein Text in attachedParagraphs", () => {
@@ -1890,15 +1884,13 @@ describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_RESULT_TIME YES → Text in attachedParagraphs", () => {
+  it("LAB_RESULT_TIME YES → kein Text (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
         checkpointStatuses: { LAB_RESULT_TIME: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("LAB_RESULT_TIME NO → kein Text in attachedParagraphs", () => {
