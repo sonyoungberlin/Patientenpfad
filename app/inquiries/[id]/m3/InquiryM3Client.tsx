@@ -283,14 +283,19 @@ export default function InquiryM3Client({
               <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
                 {section.decisionQuestions.length > 0 && (
-                  <ul
-                    className="text-muted text-small"
-                    style={{ margin: "0.2rem 0 0.2rem 1.25rem", padding: 0 }}
-                  >
-                    {section.decisionQuestions.map((q) => (
-                      <li key={q.id}>{q.text}</li>
-                    ))}
-                  </ul>
+                  <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                    {section.decisionQuestions
+                      .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
+                      .map((q) => {
+                        const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
+                        return (
+                          <div key={q.id}>
+                            M2: {q.text}
+                            <span style={{ fontWeight: 500 }}> — {answer}</span>
+                          </div>
+                        );
+                      })}
+                  </div>
                 )}
                 <StatusButtons
                   checkpointId={section.decisionCheckpointId}

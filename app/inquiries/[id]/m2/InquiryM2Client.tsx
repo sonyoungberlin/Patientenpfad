@@ -159,11 +159,15 @@ function ExplanationQuestionRow({
   );
 }
 
-/** Zeigt die Klärungsfragen des Decision-Checkpoints als reinen Fragenblock. */
+/** Zeigt die Klärungsfragen des Decision-Checkpoints – je Frage Ja/Nein-Buttons. */
 function DecisionQuestionBlock({
   questions,
+  statuses,
+  onChange,
 }: {
   questions: Array<{ id: string; text: string }>;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
 }) {
   if (questions.length === 0) return null;
   return (
@@ -176,17 +180,12 @@ function DecisionQuestionBlock({
         marginBottom: "1rem",
       }}
     >
-      <div style={{ fontWeight: 500, color: "var(--muted-foreground, #6b7280)", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-        Entscheidungsgrundlage
-      </div>
-      <ul
-        className="text-muted text-small"
-        style={{ margin: "0.25rem 0 0 1.25rem", padding: 0 }}
-      >
-        {questions.map((q) => (
-          <li key={q.id}>{q.text}</li>
-        ))}
-      </ul>
+      {questions.map((q) => (
+        <div key={q.id} style={{ marginBottom: "0.5rem" }}>
+          <div className="text-small">{q.text}</div>
+          <YesNoButtons checkpointId={q.id} value={statuses[q.id]} onChange={onChange} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -217,8 +216,8 @@ function SpecificSection({
         <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
       ) : (
         <>
-          {/* 2.1 Decision-Questions – reiner Fragenblock, keine Buttons */}
-          <DecisionQuestionBlock questions={section.decisionQuestions} />
+          {/* 2.1 Decision-Questions – je Frage Ja/Nein-Buttons, kein Pflichtfeld */}
+          <DecisionQuestionBlock questions={section.decisionQuestions} statuses={statuses} onChange={onChange} />
 
           {/* 2.2 Standard SPECIFIC Explanation Checkpoints – Fragen als primärer Inhalt mit Ja/Nein */}
           {standardCheckpoints.map((cp) =>
