@@ -158,9 +158,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     globalHints: {
       IS_NEW_PATIENT: "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
-      PATIENT_NOT_IN_GERMANY: "Proben-Hinweis: Probenabgabe ist nur vor Ort in Deutschland möglich.",
-      DOCTOR_REVIEW_REQUIRED: "Proben-Hinweis: ärztliche Klärung vor Probenabgabe erforderlich.",
-      DATA_INCOMPLETE: "Proben-Hinweis: Angaben oder Versicherungsdaten fehlen.",
+      PATIENT_NOT_IN_GERMANY: "Proben-Hinweis: Die Probenabgabe ist nur vor Ort in der Praxis möglich.",
+      DOCTOR_REVIEW_REQUIRED: "Proben-Hinweis: Vor der Probenabgabe ist eine ärztliche Klärung erforderlich.",
+      DATA_INCOMPLETE: "Proben-Hinweis: Für die Zuordnung der Probe werden vollständige Patientendaten benötigt.",
     },
   },
 };
