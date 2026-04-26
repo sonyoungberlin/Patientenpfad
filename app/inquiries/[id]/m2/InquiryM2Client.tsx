@@ -167,7 +167,15 @@ function DecisionQuestionBlock({
 }) {
   if (questions.length === 0) return null;
   return (
-    <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
+    <div
+      style={{
+        background: "var(--muted, #f3f4f6)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius)",
+        padding: "0.75rem 1rem",
+        marginBottom: "1rem",
+      }}
+    >
       <div style={{ fontWeight: 500, color: "var(--muted-foreground, #6b7280)", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
         Entscheidungsgrundlage
       </div>
