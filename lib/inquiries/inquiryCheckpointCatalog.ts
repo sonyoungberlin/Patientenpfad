@@ -310,7 +310,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezept-Hinweis: Kontrolltermin erforderlich.",
+        "Rezepte für Dauermedikamente setzen regelmäßige ärztliche Kontrolltermine zur Überprüfung der Therapie voraus.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -326,7 +326,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezept-Hinweis: aktueller Facharztbericht erforderlich.",
+        "Für diese Medikation ist ein aktueller fachärztlicher Behandlungsbericht erforderlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -342,7 +342,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezept-Hinweis: fachärztliche Zuständigkeit bei BtM/ADHS.",
+        "Einstellung und Dosisanpassung von ADHS-Medikamenten erfolgen durch Fachärzte; die Hausarztpraxis stellt nur stabile Folgerezepte bei bestehender Mitbehandlung aus.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -358,7 +358,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezept-Hinweis: nur als Privatrezept möglich.",
+        "Dieses Präparat ist keine Leistung der gesetzlichen Krankenkasse und wird als Privatrezept verordnet.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -374,7 +374,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezept-Hinweis: gynäkologische Zuständigkeit.",
+        "Verordnungen für die Pille erfolgen über die gynäkologische Fachpraxis.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -390,7 +390,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezept-Hinweis: Postversand nicht möglich.",
+        "Ein Postversand von Rezepten erfolgt nicht; die Bereitstellung erfolgt als eRezept oder über eine Apotheke.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
