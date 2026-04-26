@@ -113,8 +113,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "URINE_SAMPLE_ONSITE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "Bei Neupatienten ist vor der Labordiagnostik eine Erstvorstellung erforderlich.",
-      PATIENT_NOT_IN_GERMANY: "Die Besprechung von Laborbefunden per Videosprechstunde ist bei Aufenthalt außerhalb Deutschlands eingeschränkt.",
+      IS_NEW_PATIENT: "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
+      PATIENT_NOT_IN_GERMANY: "Die Besprechung von Laborbefunden per Videosprechstunde ist bei Aufenthalt außerhalb Deutschlands nicht möglich.",
       IS_CHRONIC_PATIENT: "Bei chronischen Erkrankungen sind regelmäßige Verlaufskontrollen vorgesehen.",
     },
   },
@@ -184,7 +184,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "Bei Erstpatienten ist vor Ausstellung einer Überweisung eine persönliche Vorstellung erforderlich.",
+      IS_NEW_PATIENT: "Bei Erstpatienten erfolgt die Ausstellung einer Überweisung in der Regel nach persönlicher Vorstellung.",
     },
   },
 };

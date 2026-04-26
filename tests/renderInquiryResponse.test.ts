@@ -1566,7 +1566,7 @@ describe("LAB-Profil – globalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Neupatienten ist vor der Labordiagnostik eine Erstvorstellung erforderlich.",
+      "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
     );
   });
 
@@ -1731,7 +1731,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
     );
     // LAB-spezifischer Hint in Section 1
     expect(result.sections[1].attachedParagraphs).toContain(
-      "Bei Neupatienten ist vor der Labordiagnostik eine Erstvorstellung erforderlich.",
+      "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
     );
   });
 
@@ -2204,7 +2204,7 @@ describe("REFERRAL-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Erstpatienten ist vor Ausstellung einer Überweisung eine persönliche Vorstellung erforderlich.",
+      "Bei Erstpatienten erfolgt die Ausstellung einer Überweisung in der Regel nach persönlicher Vorstellung.",
     );
   });
 
