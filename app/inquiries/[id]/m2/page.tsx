@@ -21,6 +21,7 @@ function toPlain(cp: InquiryCheckpoint): PlainCheckpoint {
     scope: cp.scope,
     question: cp.question,
     questions: cp.questions,
+    actionCategory: cp.actionCategory,
   };
 }
 
@@ -71,11 +72,15 @@ export default async function InquiryM2Page({
       const specificCps = profile.specificCheckpointIds
         .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
         .filter((cp): cp is InquiryCheckpoint => !!cp);
+      const actionCps = (profile.boundActionCheckpointIds ?? [])
+        .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+        .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
       return {
         inquiryId,
         label: profile.label,
         decisionQuestions: decisionCp?.questions ?? [],
         specificCheckpoints: specificCps.map(toPlain),
+        actionCheckpoints: actionCps.map(toPlain),
       };
     })
     .filter((s): s is M2SectionData => s !== null);
@@ -88,6 +93,8 @@ export default async function InquiryM2Page({
     if (!profile) continue;
     profile.boundGlobalCheckpointIds.forEach((cpId) => globalIds.add(cpId));
     profile.availableActionIds.forEach((cpId) => actionIds.add(cpId));
+    // boundActionCheckpointIds must also be saved as actionStatuses
+    (profile.boundActionCheckpointIds ?? []).forEach((cpId) => actionIds.add(cpId));
   }
 
   const globalCheckpoints: PlainCheckpoint[] = Array.from(globalIds)

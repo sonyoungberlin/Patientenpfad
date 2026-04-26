@@ -37,15 +37,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_BACKDATE_LIMIT",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
-      "AU_CONTINUITY_REQUIRED",
-      "AU_RETURN_TO_WORK",
     ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
-      "DOCTOR_REVIEW_REQUIRED",
-      "DATA_INCOMPLETE",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
@@ -54,12 +47,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
-      PATIENT_NOT_IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
-      DOCTOR_REVIEW_REQUIRED: "AU-Hinweis: ärztliche Einschätzung erforderlich.",
-      DATA_INCOMPLETE: "AU-Hinweis: Angaben / Daten unvollständig.",
-    },
   },
 
   PRESCRIPTION: {
@@ -67,19 +54,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Rezept",
     decisionCheckpointId: "PRESCRIPTION_DECISION",
     specificCheckpointIds: [
-      "PRESCRIPTION_CONTROL_OVERDUE",
-      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
-      "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
+      "PRESCRIPTION_BTM_ADHS_RULES",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
     ],
     boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
-      "DOCTOR_REVIEW_REQUIRED",
-      "DATA_INCOMPLETE",
       "IS_CHRONIC_PATIENT",
+      "PATIENT_NOT_IN_GERMANY",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -93,11 +76,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "Rezept-Hinweis: Neupatient, Termin erforderlich.",
-      PATIENT_NOT_IN_GERMANY: "Rezept-Hinweis: Aufenthalt außerhalb Deutschlands.",
-      DOCTOR_REVIEW_REQUIRED: "Rezept-Hinweis: ärztliche Prüfung notwendig.",
-      DATA_INCOMPLETE: "Rezept-Hinweis: Unterlagen / Daten fehlen.",
-      IS_CHRONIC_PATIENT: "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
+      PATIENT_NOT_IN_GERMANY: "Rezepte können in deutschen Apotheken zuverlässig eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
+      IS_CHRONIC_PATIENT: "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
     },
   },
 
@@ -106,18 +86,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Labor",
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
-      "LAB_CHECKUP_RULES",
-      "LAB_FASTING_REQUIRED",
       "LAB_SELF_PAYER_IGEL",
-      "LAB_DISCUSSION_PROCESS_CODE",
-      "LAB_MPU_EXCLUSION",
     ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
-      "DOCTOR_REVIEW_REQUIRED",
-      "DATA_INCOMPLETE",
-      "IS_CHRONIC_PATIENT",
+    boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
+      "LAB_FASTING_REQUIRED",
     ],
     availableActionIds: [
       "ONLINE_ANAMNESIS",
@@ -125,30 +98,19 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "OPEN_CONSULTATION",
       "URINE_SAMPLE_ONSITE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
-      PATIENT_NOT_IN_GERMANY: "Labor-Hinweis: Videosprechstunde / Besprechung bei Aufenthalt außerhalb Deutschlands nicht möglich.",
-      DOCTOR_REVIEW_REQUIRED: "Labor-Hinweis: ärztliche Klärung vor Terminvergabe oder Laboranforderung notwendig.",
-      DATA_INCOMPLETE: "Labor-Hinweis: Angaben oder Versicherungsdaten fehlen.",
-      IS_CHRONIC_PATIENT: "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
-    },
   },
 
   SAMPLE_COLLECTION: {
     id: "SAMPLE_COLLECTION",
     label: "Urin- und Stuhlprobe",
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
-    specificCheckpointIds: [
+    specificCheckpointIds: [],
+    boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
       "URINE_SAMPLE_INSTRUCTIONS",
       "STOOL_SAMPLE_INSTRUCTIONS",
       "SAMPLE_HANDOVER",
       "LAB_RESULT_TIME",
-    ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
-      "DOCTOR_REVIEW_REQUIRED",
-      "DATA_INCOMPLETE",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -156,12 +118,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
-      PATIENT_NOT_IN_GERMANY: "Proben-Hinweis: Die Probenabgabe ist nur vor Ort in der Praxis möglich.",
-      DOCTOR_REVIEW_REQUIRED: "Proben-Hinweis: Vor der Probenabgabe ist eine ärztliche Klärung erforderlich.",
-      DATA_INCOMPLETE: "Proben-Hinweis: Für die Zuordnung der Probe werden vollständige Patientendaten benötigt.",
-    },
+    globalHints: {},
   },
 
   ACUTE_CARE: {
@@ -172,14 +129,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "ACUTE_APPOINTMENT_INFO",
-      "OPEN_CONSULTATION_INFO",
-      "WAITING_TIME",
-      "CAPACITY_LIMIT",
+      "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
-      "INFECTIOUS_PROTOCOL",
     ],
     boundGlobalCheckpointIds: [
-      "IS_CHRONIC_PATIENT",
+      "INFECTIOUS_PROTOCOL",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -188,7 +142,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     globalHints: {
-      IS_CHRONIC_PATIENT: "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
+      INFECTIOUS_PROTOCOL:
+        "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
     },
   },
 
@@ -196,17 +151,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     id: "REFERRAL",
     label: "Überweisung",
     decisionCheckpointId: "REFERRAL_DECISION",
-    specificCheckpointIds: [
-      "REF_DOCTOR_CONTACT_REQUIRED",
+    specificCheckpointIds: [],
+    boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
+      "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
       "REF_PSYCHOTHERAPY_FIRST_STEP",
-      "REF_SPECIALTY_REQUIRED",
-      "REF_BOOKING_CODE_PROCESS",
-    ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "DOCTOR_REVIEW_REQUIRED",
-      "DATA_INCOMPLETE",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -214,10 +164,5 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Überweisungs-Hinweis: Bei Neupatienten ist vor der Ausstellung in der Regel ein persönlicher Erstkontakt erforderlich.",
-      DOCTOR_REVIEW_REQUIRED: "Überweisungs-Hinweis: Die Ausstellung erfolgt nach ärztlicher Einschätzung.",
-      DATA_INCOMPLETE: "Überweisungs-Hinweis: Für die Erstellung werden vollständige Patientendaten benötigt.",
-    },
   },
 };

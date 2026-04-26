@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   DecisionStatus,
   ExplanationOutputStatus,
@@ -18,6 +18,13 @@ export type M3SpecificCheckpoint = {
   questions?: Array<{ id: string; text: string }>;
 };
 
+export type M3BoundActionData = {
+  id: string;
+  label: string;
+  actionCategory?: string;
+  questions?: Array<{ id: string; text: string }>;
+};
+
 export type M3SectionData = {
   inquiryId: string;
   label: string;
@@ -25,6 +32,8 @@ export type M3SectionData = {
   decisionLabel: string;
   decisionQuestions: Array<{ id: string; text: string }>;
   specificCheckpoints: M3SpecificCheckpoint[];
+  /** Profil-spezifische ACTION-Checkpoints (boundActionCheckpointIds) – in Aktionen/Infos. */
+  boundActionCheckpoints: M3BoundActionData[];
 };
 
 export type M3ActionData = {
@@ -66,6 +75,33 @@ const ACTION_OPTIONS = [
   { value: "ACTIVE", label: "Aktiv" },
   { value: "INACTIVE", label: "Inaktiv" },
 ];
+
+const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
+  {
+    label: "Kontakt & Anfrage",
+    ids: ["DIGITAL_REQUEST", "ONLINE_ANAMNESIS"],
+  },
+  {
+    label: "Termin & Behandlung",
+    ids: ["BOOK_APPOINTMENT", "OPEN_CONSULTATION"],
+  },
+  {
+    label: "Rezept & Einlösung",
+    ids: ["E_RECIPE_USE", "PHARMACY_INFORMATION"],
+  },
+  {
+    label: "Organisation & Hinweise",
+    ids: ["DOCUMENT_UPLOAD", "PROCESSING_DELAY", "TECHNICAL_ISSUE"],
+  },
+];
+
+/** Menschenlesbare Bezeichnung für actionCategory. */
+const ACTION_CATEGORY_LABELS: Record<string, string> = {
+  PREPARATION: "Vorbereitung",
+  PROCESS: "Ablauf",
+  NEXT_STEP: "Nächste Schritte",
+  INFO: "Information",
+};
 
 function optionsForKind(kind: InquiryCheckpointKind) {
   switch (kind) {
@@ -132,7 +168,6 @@ function OutputView({
 
       {output.sections.map((sec) => (
         <section key={sec.inquiryId}>
-          <h3 style={{ marginBottom: "0.5rem" }}>{sec.label}</h3>
           {sec.mainDecision && (
             <p style={{ fontWeight: 600, margin: "0 0 0.5rem" }}>{sec.mainDecision}</p>
           )}
@@ -146,7 +181,6 @@ function OutputView({
 
       {output.sharedBottom.length > 0 && (
         <section>
-          <h3 style={{ marginBottom: "0.5rem" }}>Allgemeine Hinweise</h3>
           {output.sharedBottom.map((p, i) => (
             <p key={i} style={{ margin: "0.25rem 0" }}>
               {p}
@@ -215,6 +249,20 @@ export default function InquiryM3Client({
       }
     }
     return result;
+  });
+
+  const [actionsOpen, setActionsOpen] = useState(() => {
+    // Automatisch aufklappen, wenn bereits ein Action-Status gesetzt ist
+    // (globale Actions oder boundActionCheckpointIds).
+    const allBoundActionIds = sections.flatMap((s) => s.boundActionCheckpoints.map((cp) => cp.id));
+    return (
+      actionIds.some(
+        (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
+      ) ||
+      allBoundActionIds.some(
+        (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
+      )
+    );
   });
 
   const [confirmed, setConfirmed] = useState(isConfirmed);
@@ -438,25 +486,159 @@ export default function InquiryM3Client({
             </section>
           ))}
 
-          {/* Action checkpoints */}
-          {actionCheckpoints.length > 0 && (
+          {/* Action checkpoints (globale availableActionIds + profilgebundene boundActionCheckpointIds) */}
+          {(actionCheckpoints.length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
             <section style={{ marginBottom: "1.5rem" }}>
-              <h2 style={{ marginBottom: "0.5rem" }}>Aktionen</h2>
-              {actionCheckpoints.map((cp) => (
-                <div
-                  key={cp.id}
-                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: actionsOpen ? "0.5rem" : 0 }}>
+                <h2 style={{ margin: 0 }}>Aktionen / Infos</h2>
+                <button
+                  type="button"
+                  onClick={() => setActionsOpen((o) => !o)}
+                  style={{
+                    padding: "0.15rem 0.6rem",
+                    borderRadius: "var(--radius)",
+                    border: "1px solid var(--border)",
+                    background: "var(--background)",
+                    color: "var(--foreground)",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
                 >
-                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                  <StatusButtons
-                    checkpointId={cp.id}
-                    options={ACTION_OPTIONS}
-                    value={statuses[cp.id]}
-                    onChange={setStatus}
-                    disabled={false}
-                  />
-                </div>
-              ))}
+                  {actionsOpen ? "Weniger ▲" : "Mehr ▼"}
+                </button>
+              </div>
+              {actionsOpen && (() => {
+                const groupElements: ReactNode[] = [];
+
+                // --- Globale availableActionIds (gruppiert nach ACTION_GROUPS) ---
+                if (actionCheckpoints.length > 0) {
+                  const cpById = Object.fromEntries(actionCheckpoints.map((cp) => [cp.id, cp]));
+                  const renderedIds = new Set<string>();
+
+                  for (const group of ACTION_GROUPS) {
+                    const groupCps = group.ids
+                      .map((id) => cpById[id])
+                      .filter((cp): cp is M3ActionData => !!cp);
+                    if (groupCps.length === 0) continue;
+                    groupCps.forEach((cp) => renderedIds.add(cp.id));
+                    groupElements.push(
+                      <div key={group.label} style={{ marginTop: "0.75rem" }}>
+                        <div
+                          className="text-muted text-small"
+                          style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
+                        >
+                          {group.label}
+                        </div>
+                        {groupCps.map((cp) => (
+                          <div
+                            key={cp.id}
+                            style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                          >
+                            <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                            <StatusButtons
+                              checkpointId={cp.id}
+                              options={ACTION_OPTIONS}
+                              value={statuses[cp.id]}
+                              onChange={setStatus}
+                              disabled={false}
+                            />
+                          </div>
+                        ))}
+                      </div>,
+                    );
+                  }
+
+                  // Ungrouped fallback
+                  const ungrouped = actionCheckpoints.filter((cp) => !renderedIds.has(cp.id));
+                  if (ungrouped.length > 0) {
+                    groupElements.push(
+                      <div key="__ungrouped__" style={{ marginTop: "0.75rem" }}>
+                        {ungrouped.map((cp) => (
+                          <div
+                            key={cp.id}
+                            style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                          >
+                            <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                            <StatusButtons
+                              checkpointId={cp.id}
+                              options={ACTION_OPTIONS}
+                              value={statuses[cp.id]}
+                              onChange={setStatus}
+                              disabled={false}
+                            />
+                          </div>
+                        ))}
+                      </div>,
+                    );
+                  }
+                }
+
+                // --- Profil-spezifische boundActionCheckpoints (nur wenn M2-Status gesetzt) ---
+                for (const sec of sections) {
+                  // Filtere auf Checkpoints, die in M2 gesetzt wurden (ACTIVE oder INACTIVE).
+                  const setCps = sec.boundActionCheckpoints.filter(
+                    (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
+                  );
+                  if (setCps.length === 0) continue;
+
+                  // Gruppiere nach actionCategory.
+                  const order = ["PREPARATION", "PROCESS", "NEXT_STEP", "INFO"] as const;
+                  const byCategory = new Map<string, M3BoundActionData[]>();
+                  for (const cp of setCps) {
+                    const cat = cp.actionCategory ?? "INFO";
+                    if (!byCategory.has(cat)) byCategory.set(cat, []);
+                    byCategory.get(cat)!.push(cp);
+                  }
+                  const catGroups = order
+                    .map((cat) => ({ cat, cps: byCategory.get(cat) ?? [] }))
+                    .filter(({ cps }) => cps.length > 0);
+
+                  groupElements.push(
+                    <div key={`bound-${sec.inquiryId}`} style={{ marginTop: "0.75rem" }}>
+                      <div
+                        className="text-muted text-small"
+                        style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
+                      >
+                        {sec.label}
+                      </div>
+                      {catGroups.map(({ cat, cps }) => (
+                        <div key={cat}>
+                          <div
+                            className="text-muted text-small"
+                            style={{ marginTop: "0.5rem", marginBottom: "0.15rem", fontStyle: "italic" }}
+                          >
+                            {ACTION_CATEGORY_LABELS[cat] ?? cat}
+                          </div>
+                          {cps.map((cp) => (
+                            <div
+                              key={cp.id}
+                              style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                            >
+                              <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                              {cp.questions && cp.questions.length > 0 && (
+                                <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                                  {cp.questions.map((q) => (
+                                    <div key={q.id}>{q.text}</div>
+                                  ))}
+                                </div>
+                              )}
+                              <StatusButtons
+                                checkpointId={cp.id}
+                                options={ACTION_OPTIONS}
+                                value={statuses[cp.id]}
+                                onChange={setStatus}
+                                disabled={false}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>,
+                  );
+                }
+
+                return groupElements;
+              })()}
             </section>
           )}
 

@@ -750,15 +750,13 @@ describe("renderInquiryResponseFromSections – Decision", () => {
 });
 
 describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints", () => {
-  it("PATIENT_NOT_IN_GERMANY YES → Hinweis aus globalHints erscheint in attachedParagraphs", () => {
+  it("PATIENT_NOT_IN_GERMANY YES → kein Hinweis in attachedParagraphs (nicht mehr an AU gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "AU-Hinweis: Aufenthalt in Deutschland relevant.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("PATIENT_NOT_IN_GERMANY NO → kein Hinweis in attachedParagraphs", () => {
@@ -786,15 +784,13 @@ describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints",
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("DOCTOR_REVIEW_REQUIRED YES → Hinweis aus globalHints erscheint", () => {
+  it("DOCTOR_REVIEW_REQUIRED YES → kein Hinweis (nicht mehr in AU gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { DOCTOR_REVIEW_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "AU-Hinweis: ärztliche Einschätzung erforderlich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("checkpoint.textByStatus wird für GLOBAL EXPLANATION NICHT verwendet (auch wenn befüllt)", () => {
@@ -848,25 +844,25 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat genau fünf Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(5);
+  it("AU-Profil hat genau drei Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(3);
   });
 
-  it("AU-Profil bindet alle fünf AU SPECIFIC Explanation Checkpoints", () => {
+  it("AU-Profil bindet genau drei AU SPECIFIC Explanation Checkpoints", () => {
     expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_LIMIT");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_DURATION_LIMIT");
     expect(auProfile.specificCheckpointIds).toContain("AU_WORK_ACCIDENT");
     expect(auProfile.specificCheckpointIds).toContain("AU_CHILD_SICK");
-    expect(auProfile.specificCheckpointIds).toContain("AU_CONTINUITY_REQUIRED");
-    expect(auProfile.specificCheckpointIds).toContain("AU_RETURN_TO_WORK");
+    expect(auProfile.specificCheckpointIds).not.toContain("AU_CONTINUITY_REQUIRED");
+    expect(auProfile.specificCheckpointIds).not.toContain("AU_RETURN_TO_WORK");
   });
 
-  it("AU-Profil bindet alle vier Global Checkpoints", () => {
-    expect(auProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(auProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
-    expect(auProfile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(auProfile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
-    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(4);
+  it("AU-Profil hat keine gebundenen Global Checkpoints", () => {
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
+    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(0);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im AU-Profil", () => {
@@ -891,17 +887,17 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
 });
 
 describe("AU_DECISION – questions als Klärungshilfe", () => {
-  it("AU_DECISION hat genau drei questions (Beschwerden/Diagnose, Zeitraum und Langzeit-AU)", () => {
+  it("AU_DECISION hat genau zwei questions (Beschwerden/Diagnose und Langzeit-AU)", () => {
     const auDecision = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"];
     expect(auDecision.questions).toBeDefined();
-    expect((auDecision.questions ?? []).length).toBe(3);
+    expect((auDecision.questions ?? []).length).toBe(2);
   });
 
-  it("AU_DECISION question-Texte betreffen Beschwerden/Diagnose und Zeitraum", () => {
+  it("AU_DECISION question-Texte betreffen Beschwerden/Diagnose und Langzeit-AU", () => {
     const questions = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"].questions ?? [];
     const texts = questions.map((q) => q.text);
     expect(texts.some((t) => t.toLowerCase().includes("beschwerden") || t.toLowerCase().includes("diagnose"))).toBe(true);
-    expect(texts.some((t) => t.toLowerCase().includes("zeitraum"))).toBe(true);
+    expect(texts.some((t) => t.toLowerCase().includes("langzeit"))).toBe(true);
   });
 
   it("AU_DECISION enthält keine Rückdatierungsfrage mehr", () => {
@@ -984,26 +980,26 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Kinderarztpraxis"))).toBe(true);
   });
 
-  it("AU_CONTINUITY_REQUIRED YES → Erklärungstext in attachedParagraphs", () => {
+  it("AU_CONTINUITY_REQUIRED YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { AU_CONTINUITY_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Folgebescheinigungen"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("AU_RETURN_TO_WORK YES → Erklärungstext in attachedParagraphs", () => {
+  it("AU_RETURN_TO_WORK YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { AU_RETURN_TO_WORK: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Gesundschreibung"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("Alle fünf gebundenen AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
-    for (const id of ["AU_BACKDATE_LIMIT", "AU_WORK_ACCIDENT", "AU_CHILD_SICK", "AU_CONTINUITY_REQUIRED", "AU_RETURN_TO_WORK"]) {
+  it("Alle drei gebundenen AU SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
+    for (const id of ["AU_BACKDATE_LIMIT", "AU_WORK_ACCIDENT", "AU_CHILD_SICK"]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp).toBeDefined();
       expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
@@ -1014,37 +1010,31 @@ describe("AU-Profil – SPECIFIC Explanation Checkpoints", () => {
 });
 
 describe("AU-Profil – IS_NEW_PATIENT globalHint", () => {
-  it("IS_NEW_PATIENT YES → AU-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("IS_NEW_PATIENT YES → kein Hint in AU (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("DATA_INCOMPLETE YES → AU-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("DATA_INCOMPLETE YES → kein Hint in AU (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "AU-Hinweis: Angaben / Daten unvollständig.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("DOCTOR_REVIEW_REQUIRED bleibt globaler AU-Hinweis", () => {
+  it("DOCTOR_REVIEW_REQUIRED YES → kein Hint in AU (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({
         checkpointStatuses: { DOCTOR_REVIEW_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "AU-Hinweis: ärztliche Einschätzung erforderlich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -1128,30 +1118,41 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle sechs Specific Checkpoints", () => {
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CONTROL_OVERDUE");
+  it("PRESCRIPTION-Profil bindet alle fünf Specific Checkpoints", () => {
+    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(6);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(5);
+  });
+
+  it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
+    expect(prescriptionProfile.specificCheckpointIds).toEqual([
+      "PRESCRIPTION_STATUTORY_POSSIBLE",
+      "PRESCRIPTION_BTM_ADHS_RULES",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+      "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_NO_POSTAL_DELIVERY",
+    ]);
   });
 
   it("Alte Checkpoints sind nicht mehr in PRESCRIPTION.specificCheckpointIds", () => {
+    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_KNOWN_MEDICATION");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_FOLLOW_UP");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_SPECIAL_TYPE");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_PRIVATE_ONLY");
   });
 
-  it("PRESCRIPTION-Profil bindet alle fünf Global Checkpoints", () => {
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+  it("PRESCRIPTION-Profil bindet genau zwei Global Checkpoints", () => {
     expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toHaveLength(5);
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toHaveLength(2);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im PRESCRIPTION-Profil", () => {
@@ -1176,18 +1177,17 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
 // ---------------------------------------------------------------------------
 
 describe("PRESCRIPTION_DECISION – questions als Klärungshilfe", () => {
-  it("PRESCRIPTION_DECISION hat genau drei questions", () => {
+  it("PRESCRIPTION_DECISION hat genau zwei questions", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_DECISION"];
     expect(cp.questions).toBeDefined();
-    expect((cp.questions ?? []).length).toBe(3);
+    expect((cp.questions ?? []).length).toBe(2);
   });
 
-  it("PRESCRIPTION_DECISION question-Texte betreffen Indikation, Wiederverordnung und Anordnung", () => {
+  it("PRESCRIPTION_DECISION question-Texte betreffen Wiederverordnung und Neupatient", () => {
     const questions = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_DECISION"].questions ?? [];
     const texts = questions.map((q) => q.text.toLowerCase());
-    expect(texts.some((t) => t.includes("indiziert") || t.includes("medizinisch nachvollziehbar"))).toBe(true);
     expect(texts.some((t) => t.includes("wiederverordnung") || t.includes("dauermedikation"))).toBe(true);
-    expect(texts.some((t) => t.includes("anordnung"))).toBe(true);
+    expect(texts.some((t) => t.includes("neupatient"))).toBe(true);
   });
 
   it("PRESCRIPTION_DECISION POSSIBLE → mainDecision ist 'Ihr Rezept wurde ausgestellt.'", () => {
@@ -1227,19 +1227,17 @@ describe("PRESCRIPTION-Profil – IS_CHRONIC_PATIENT globalHint", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
+      "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
     );
   });
 
-  it("IS_NEW_PATIENT YES → Rezept-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("IS_NEW_PATIENT YES → kein Hint in PRESCRIPTION (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Rezept-Hinweis: Neupatient, Termin erforderlich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -1248,7 +1246,7 @@ describe("PRESCRIPTION-Profil – IS_CHRONIC_PATIENT globalHint", () => {
 // ---------------------------------------------------------------------------
 
 describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
-  it("Alle sechs gebundenen PRESCRIPTION SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
+  it("Alle fünf gebundenen PRESCRIPTION SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["PRESCRIPTION"];
     for (const id of profile.specificCheckpointIds) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -1259,15 +1257,13 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     }
   });
 
-  it("PRESCRIPTION_CONTROL_OVERDUE YES → Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_CONTROL_OVERDUE YES → kein Output in attachedParagraphs (deprecated, nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_CONTROL_OVERDUE: ExplanationStatus.YES },
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Kontrolltermin")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("PRESCRIPTION_CONTROL_OVERDUE NO → kein Output in attachedParagraphs", () => {
@@ -1477,13 +1473,9 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile).toBeDefined();
   });
 
-  it("LAB-Profil bindet alle fünf Specific Checkpoints", () => {
-    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_RULES");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_FASTING_REQUIRED");
+  it("LAB-Profil bindet genau einen Specific Checkpoint", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_DISCUSSION_PROCESS_CODE");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
-    expect(labProfile.specificCheckpointIds).toHaveLength(5);
+    expect(labProfile.specificCheckpointIds).toHaveLength(1);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1492,13 +1484,13 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_VALUES_DEFINED");
   });
 
-  it("LAB-Profil bindet alle fünf Global Checkpoints", () => {
-    expect(labProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(labProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
-    expect(labProfile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(labProfile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
-    expect(labProfile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
-    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(5);
+  it("LAB-Profil bindet keine Global Checkpoints", () => {
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
+    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(0);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im LAB-Profil", () => {
@@ -1507,41 +1499,39 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     }
   });
 
-  it("LAB_DECISION hat genau 2 questions", () => {
+  it("LAB_DECISION hat genau 1 question", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
-    expect(cp.questions).toHaveLength(2);
-    expect(cp.questions![0].text).toBe("Liegt eine externe Anordnung oder Überweisung vor?");
-    expect(cp.questions![1].text).toBe("Liegt eine ärztliche Anordnung aus unserer Praxis vor?");
+    expect(cp.questions).toHaveLength(1);
+    expect(cp.questions![0].text).toBe("Liegt eine gültige Laboranforderung vor?");
   });
 
-  it("Alle fünf neuen SPECIFIC Checkpoints sind EXPLANATION/SPECIFIC/ATTACHED im Katalog", () => {
-    for (const id of [
-      "LAB_CHECKUP_RULES",
-      "LAB_FASTING_REQUIRED",
-      "LAB_SELF_PAYER_IGEL",
-      "LAB_DISCUSSION_PROCESS_CODE",
-      "LAB_MPU_EXCLUSION",
-    ]) {
-      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
-      expect(cp).toBeDefined();
-      expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
-      expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
-      expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
-    }
+  it("LAB_SELF_PAYER_IGEL ist EXPLANATION/SPECIFIC/ATTACHED im Katalog", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_IGEL"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
   });
 
-  it("Alle fünf neuen SPECIFIC Checkpoints haben questions", () => {
-    for (const id of [
-      "LAB_CHECKUP_RULES",
-      "LAB_FASTING_REQUIRED",
-      "LAB_SELF_PAYER_IGEL",
-      "LAB_DISCUSSION_PROCESS_CODE",
-      "LAB_MPU_EXCLUSION",
-    ]) {
-      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
-      expect(cp.questions).toBeDefined();
-      expect((cp.questions ?? []).length).toBeGreaterThan(0);
-    }
+  it("LAB_SELF_PAYER_IGEL hat questions", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_IGEL"];
+    expect(cp.questions).toBeDefined();
+    expect((cp.questions ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("LAB_FASTING_REQUIRED ist ACTION/GLOBAL/SHARED_BOTTOM im Katalog mit actionCategory PREPARATION", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+    expect(cp.actionCategory).toBe("PREPARATION");
+  });
+
+  it("LAB_FASTING_REQUIRED ist in LAB.boundActionCheckpointIds enthalten (nicht mehr in availableActionIds)", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["LAB"];
+    expect(profile.boundActionCheckpointIds).toContain("LAB_FASTING_REQUIRED");
+    expect(profile.availableActionIds).not.toContain("LAB_FASTING_REQUIRED");
   });
 });
 
@@ -1559,26 +1549,22 @@ function makeLabSection(overrides: Partial<InquirySection> = {}): InquirySection
 }
 
 describe("LAB-Profil – globalHints", () => {
-  it("IS_NEW_PATIENT YES → Labor-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("IS_NEW_PATIENT YES → kein Labor-Hint in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("IS_CHRONIC_PATIENT YES → Labor-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("IS_CHRONIC_PATIENT YES → kein Labor-Hint in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -1587,42 +1573,32 @@ describe("LAB-Profil – globalHints", () => {
 // ---------------------------------------------------------------------------
 
 describe("LAB-Profil – SPECIFIC Checkpoints", () => {
-  it("LAB_CHECKUP_RULES NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("LAB_CHECKUP_RULES YES → Output in attachedParagraphs", () => {
+  it("LAB_CHECKUP_RULES YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain("Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.");
-  });
-
-  it("LAB_FASTING_REQUIRED NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_FASTING_REQUIRED: ExplanationStatus.NO },
-      }),
-    ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_FASTING_REQUIRED YES → Hinweis in attachedParagraphs", () => {
+  it("LAB_FASTING_REQUIRED ACTIVE → Nüchtern-Hinweis erscheint in sharedBottom", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_FASTING_REQUIRED: ExplanationStatus.YES },
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bitte kommen Sie nüchtern zur Blutentnahme (mindestens 8 Stunden vorher nichts essen, kein Kaffee; Wasser ist erlaubt).",
-    );
+    expect(result.sharedBottom.some((t) => t.includes("nüchtern"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("LAB_FASTING_REQUIRED INACTIVE → kein Eintrag in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
   });
 
   it("LAB_SELF_PAYER_IGEL NO → kein Text in attachedParagraphs", () => {
@@ -1643,44 +1619,22 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toContain("Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.");
   });
 
-  it("LAB_DISCUSSION_PROCESS_CODE NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_DISCUSSION_PROCESS_CODE: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("LAB_DISCUSSION_PROCESS_CODE YES → Output in attachedParagraphs", () => {
+  it("LAB_DISCUSSION_PROCESS_CODE YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_DISCUSSION_PROCESS_CODE: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Der Buchungscode für die Befundbesprechung wird automatisch versendet, sobald alle Laborergebnisse vorliegen.",
-    );
-  });
-
-  it("LAB_MPU_EXCLUSION NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.NO },
-      }),
-    ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_MPU_EXCLUSION YES → Output in attachedParagraphs", () => {
+  it("LAB_MPU_EXCLUSION YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -1689,50 +1643,41 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
 // ---------------------------------------------------------------------------
 
 describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () => {
-  it("IS_NEW_PATIENT YES in AU + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
+  it("IS_NEW_PATIENT YES in AU + REFERRAL → kein M5-Eintrag (kein Profil bindet IS_NEW_PATIENT mehr)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+    ]);
+    const entries = result.documentation.filter((d) => d.includes("Neupatient"));
+    expect(entries).toHaveLength(0);
+  });
+
+  it("IS_NEW_PATIENT YES in AU + REFERRAL + PRESCRIPTION → kein M5-Eintrag (kein Profil bindet IS_NEW_PATIENT mehr)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
-    expect(entries).toHaveLength(1);
+    expect(entries).toHaveLength(0);
   });
 
-  it("IS_NEW_PATIENT YES in AU + LAB + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
+  it("IS_NEW_PATIENT YES → kein M5-Marker (nicht mehr an ein Profil gebunden)", () => {
     const result = renderInquiryResponseFromSections([
-      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
-      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
-      makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    const entries = result.documentation.filter((d) => d.includes("Neupatient"));
-    expect(entries).toHaveLength(1);
-  });
-
-  it("IS_NEW_PATIENT YES → M5-Marker ist checkpoint.label (kurzer Text, kein Hint-Text)", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
-    ]);
-    const auGlobalHint = INQUIRY_PROFILE_CATALOG_V2["AU"].globalHints?.["IS_NEW_PATIENT"] ?? "";
-    // Der Hint-Text darf NICHT als Doku-Marker erscheinen
-    expect(result.documentation).not.toContain(auGlobalHint);
-    // Nur der kurze Label (checkpoint.label) erscheint
     const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].label;
-    expect(result.documentation).toContain(cpLabel);
+    expect(result.documentation).not.toContain(cpLabel);
   });
 
-  it("IS_NEW_PATIENT YES → M4 attachedParagraphs erscheinen pro Anliegen separat (anliegenspezifisch)", () => {
+  it("IS_NEW_PATIENT YES → kein M4-Hint in gebundenen Profilen (IS_NEW_PATIENT ist ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
-      makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    // AU-spezifischer Hint in Section 0
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
-    );
-    // PRESCRIPTION-spezifischer Hint in Section 1
-    expect(result.sections[1].attachedParagraphs).toContain(
-      "Rezept-Hinweis: Neupatient, Termin erforderlich.",
-    );
+    // Kein Profil bindet IS_NEW_PATIENT mehr → kein Hint in beiden Sections
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.sections[1].attachedParagraphs).toHaveLength(0);
   });
 
   it("GLOBAL NO in einem Anliegen → kein M5-Eintrag und kein M4-Hint", () => {
@@ -1744,36 +1689,37 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("DATA_INCOMPLETE YES in zwei Anliegen → M5-Doku enthält den Label genau einmal", () => {
+  it("PATIENT_NOT_IN_GERMANY YES in AU + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
     const result = renderInquiryResponseFromSections([
-      makeAuSection({ checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES } }),
-      makePrescriptionSection({ checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES } }),
+      makeAuSection({ checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES } }),
+      makePrescriptionSection({ checkpointStatuses: { PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES } }),
     ]);
-    const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["DATA_INCOMPLETE"].label;
+    const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["PATIENT_NOT_IN_GERMANY"].label;
     const entries = result.documentation.filter((d) => d === cpLabel);
     expect(entries).toHaveLength(1);
   });
 
   it("SPECIFIC Checkpoints werden unverändert pro Anliegen dokumentiert (kein Verlust durch GLOBAL-Dedup)", () => {
     const result = renderInquiryResponseFromSections([
-      makeLabSection({
+      makeAuSection({
         checkpointStatuses: {
-          IS_NEW_PATIENT: ExplanationStatus.YES,
-          LAB_CHECKUP_RULES: ExplanationStatus.YES,
+          PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES,
+          AU_BACKDATE_LIMIT: ExplanationStatus.YES,
         },
       }),
       makePrescriptionSection({
         checkpointStatuses: {
-          IS_NEW_PATIENT: ExplanationStatus.YES,
-          PRESCRIPTION_CONTROL_OVERDUE: ExplanationStatus.YES,
+          PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES,
+          PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: ExplanationStatus.YES,
         },
       }),
     ]);
-    // SPECIFIC docs: both inquiries (YES → output produced)
-    expect(result.documentation.some((d) => d.includes("Check-up-Regelung"))).toBe(true);
-    expect(result.documentation.some((d) => d.includes("Kontrolltermin"))).toBe(true);
-    // GLOBAL doc: exactly once
-    const entries = result.documentation.filter((d) => d.includes("Neupatient"));
+    // SPECIFIC docs: beide Anliegen (YES → Output erzeugt)
+    expect(result.documentation.some((d) => d.includes("Rückdatierungsgrenze"))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Facharztbericht"))).toBe(true);
+    // GLOBAL doc: PATIENT_NOT_IN_GERMANY genau einmal (nur PRESCRIPTION bindet es)
+    const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["PATIENT_NOT_IN_GERMANY"].label;
+    const entries = result.documentation.filter((d) => d === cpLabel);
     expect(entries).toHaveLength(1);
   });
 });
@@ -1836,27 +1782,32 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(profile.label).toBe("Urin- und Stuhlprobe");
   });
 
-  it("SAMPLE_COLLECTION_DECISION hat genau 3 questions", () => {
+  it("SAMPLE_COLLECTION_DECISION hat genau 1 question", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["SAMPLE_COLLECTION_DECISION"];
     expect(cp).toBeDefined();
-    expect(cp.questions).toHaveLength(3);
+    expect(cp.questions).toHaveLength(1);
   });
 
-  it("alle 4 SPECIFIC Checkpoints sind im Katalog und an SAMPLE_COLLECTION gebunden", () => {
+  it("alle 4 Action-Checkpoints sind als ACTION/PREPARATION|PROCESS|INFO im Katalog und in boundActionCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER", "LAB_RESULT_TIME"];
+    expect(profile.specificCheckpointIds).toHaveLength(0);
     for (const id of ids) {
-      expect(profile.specificCheckpointIds).toContain(id);
-      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+      expect(cp.actionCategory).toBeDefined();
     }
+    expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(ids));
   });
 
-  it("SAMPLE_COLLECTION hat die erwarteten boundGlobalCheckpointIds", () => {
+  it("SAMPLE_COLLECTION hat keine boundGlobalCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
-    expect(profile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(profile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
-    expect(profile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(profile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
   });
 
   it("SAMPLE_COLLECTION hat die erwarteten availableActionIds", () => {
@@ -1884,98 +1835,92 @@ describe("SAMPLE_COLLECTION-Profil – Decision", () => {
   });
 });
 
-describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
-  it("URINE_SAMPLE_INSTRUCTIONS YES → Text in attachedParagraphs", () => {
+describe("SAMPLE_COLLECTION-Profil – Action-Checkpoints (boundActionCheckpointIds)", () => {
+  it("URINE_SAMPLE_INSTRUCTIONS ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
+        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Mittelstrahl");
   });
 
-  it("URINE_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
+  it("URINE_SAMPLE_INSTRUCTIONS INACTIVE → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("STOOL_SAMPLE_INSTRUCTIONS YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeSampleCollectionSection({
-        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
-    );
-  });
-
-  it("STOOL_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeSampleCollectionSection({
-        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ExplanationStatus.NO },
+        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("SAMPLE_HANDOVER YES → Text in attachedParagraphs", () => {
+  it("STOOL_SAMPLE_INSTRUCTIONS ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { SAMPLE_HANDOVER: ExplanationStatus.YES },
+        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Stuhlprobe");
   });
 
-  it("SAMPLE_HANDOVER NO → kein Text in attachedParagraphs", () => {
+  it("STOOL_SAMPLE_INSTRUCTIONS INACTIVE → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { SAMPLE_HANDOVER: ExplanationStatus.NO },
+        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_RESULT_TIME YES → Text in attachedParagraphs", () => {
+  it("SAMPLE_HANDOVER ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { LAB_RESULT_TIME: ExplanationStatus.YES },
+        checkpointStatuses: { SAMPLE_HANDOVER: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("beschriftet");
   });
 
-  it("LAB_RESULT_TIME NO → kein Text in attachedParagraphs", () => {
+  it("SAMPLE_HANDOVER INACTIVE → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { LAB_RESULT_TIME: ExplanationStatus.NO },
+        checkpointStatuses: { SAMPLE_HANDOVER: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("LAB_RESULT_TIME ACTIVE → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { LAB_RESULT_TIME: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Auswertung");
+  });
+
+  it("LAB_RESULT_TIME INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { LAB_RESULT_TIME: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
-describe("SAMPLE_COLLECTION-Profil – GLOBALs unverändert", () => {
-  it("IS_NEW_PATIENT YES → proben-spezifischer Hint in attachedParagraphs", () => {
+describe("SAMPLE_COLLECTION-Profil – GLOBALs entfernt", () => {
+  it("IS_NEW_PATIENT YES → kein proben-spezifischer Hint (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("PROCESSING_DELAY ACTIVE → Text in sharedBottom (SAMPLE_COLLECTION-Section)", () => {
@@ -1999,11 +1944,11 @@ describe("SAMPLE_COLLECTION-Profil – GLOBALs unverändert", () => {
   it("LAB-Profil bleibt durch SAMPLE_COLLECTION unberührt", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.",
+      "Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.",
     );
   });
 });
@@ -2029,13 +1974,13 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(profile.label).toBe("Überweisung");
   });
 
-  it("REFERRAL_DECISION hat genau 2 questions", () => {
+  it("REFERRAL_DECISION hat genau 1 question", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["REFERRAL_DECISION"];
     expect(cp).toBeDefined();
-    expect(cp.questions).toHaveLength(2);
+    expect(cp.questions).toHaveLength(1);
   });
 
-  it("alle 5 SPECIFIC Checkpoints sind im Katalog und an REFERRAL gebunden", () => {
+  it("5 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
@@ -2044,28 +1989,33 @@ describe("REFERRAL-Profil – Struktur", () => {
       "REF_SPECIALTY_REQUIRED",
       "REF_BOOKING_CODE_PROCESS",
     ];
+    expect(profile.specificCheckpointIds).toHaveLength(0);
     for (const id of ids) {
-      expect(profile.specificCheckpointIds).toContain(id);
+      expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
     }
   });
 
-  it("REFERRAL hat genau 3 boundGlobalCheckpointIds", () => {
+  it("3 migrierte Action-Checkpoints sind in boundActionCheckpointIds mit kind ACTION und actionCategory", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(3);
-    expect(profile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(profile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(profile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+    const actionIds = ["REF_BOOKING_CODE_PROCESS", "REF_ORIGINAL_VS_PDF", "REF_PSYCHOTHERAPY_FIRST_STEP"];
+    expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(actionIds));
+    for (const id of actionIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+      expect(cp.actionCategory).toBeDefined();
+    }
   });
 
-  it("REFERRAL.globalHints enthält genau die drei gebundenen Global-Keys", () => {
+  it("REFERRAL hat keine boundGlobalCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
-    expect(profile.globalHints).toBeDefined();
-    const keys = Object.keys(profile.globalHints!);
-    expect(keys).toHaveLength(3);
-    expect(keys).toContain("IS_NEW_PATIENT");
-    expect(keys).toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(keys).toContain("DATA_INCOMPLETE");
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+  });
+
+  it("REFERRAL hat keine globalHints", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    expect(profile.globalHints).toBeUndefined();
   });
 
   it("REFERRAL hat die erwarteten availableActionIds", () => {
@@ -2093,86 +2043,29 @@ describe("REFERRAL-Profil – Decision", () => {
   });
 });
 
-describe("REFERRAL-Profil – SPECIFIC Checkpoints YES → Output", () => {
-  it("REF_DOCTOR_CONTACT_REQUIRED YES → Text in attachedParagraphs", () => {
+describe("REFERRAL-Profil – nicht migrierte SPECIFIC Checkpoints → kein Output (ungebunden)", () => {
+  it("REF_DOCTOR_CONTACT_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei neuen oder unklaren Beschwerden ist vor einer Überweisung eine ärztliche Einschätzung in der Sprechstunde erforderlich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_ORIGINAL_VS_PDF YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Überweisung kann digital für die Terminvereinbarung genutzt werden; für die Vorstellung in der Facharztpraxis wird häufig das Original benötigt.",
-    );
-  });
-
-  it("REF_PSYCHOTHERAPY_FIRST_STEP YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
-    );
-  });
-
-  it("REF_SPECIALTY_REQUIRED YES → Text in attachedParagraphs", () => {
+  it("REF_SPECIALTY_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_SPECIALTY_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Für die Ausstellung einer Überweisung muss die gewünschte Fachrichtung angegeben werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_BOOKING_CODE_PROCESS YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
-    );
-  });
-});
-
-describe("REFERRAL-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
   it("REF_DOCTOR_CONTACT_REQUIRED NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("REF_ORIGINAL_VS_PDF NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("REF_PSYCHOTHERAPY_FIRST_STEP NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2186,11 +2079,61 @@ describe("REFERRAL-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
+});
 
-  it("REF_BOOKING_CODE_PROCESS NO → kein Text in attachedParagraphs", () => {
+describe("REFERRAL-Profil – migrierte Action-Checkpoints (boundActionCheckpointIds)", () => {
+  it("REF_ORIGINAL_VS_PDF ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
-        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ExplanationStatus.NO },
+        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Original");
+  });
+
+  it("REF_ORIGINAL_VS_PDF INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_PSYCHOTHERAPY_FIRST_STEP ACTIVE → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("psychotherapeutischen");
+  });
+
+  it("REF_PSYCHOTHERAPY_FIRST_STEP INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_BOOKING_CODE_PROCESS ACTIVE → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Buchungscode");
+  });
+
+  it("REF_BOOKING_CODE_PROCESS INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2198,37 +2141,31 @@ describe("REFERRAL-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
 });
 
 describe("REFERRAL-Profil – GlobalHints", () => {
-  it("IS_NEW_PATIENT YES → überweisungs-spezifischer Hint in attachedParagraphs", () => {
+  it("IS_NEW_PATIENT YES → kein Hint in REFERRAL (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Überweisungs-Hinweis: Bei Neupatienten ist vor der Ausstellung in der Regel ein persönlicher Erstkontakt erforderlich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("DOCTOR_REVIEW_REQUIRED YES → überweisungs-spezifischer Hint in attachedParagraphs", () => {
+  it("DOCTOR_REVIEW_REQUIRED YES → kein Hint in REFERRAL (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { DOCTOR_REVIEW_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Überweisungs-Hinweis: Die Ausstellung erfolgt nach ärztlicher Einschätzung.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("DATA_INCOMPLETE YES → überweisungs-spezifischer Hint in attachedParagraphs", () => {
+  it("DATA_INCOMPLETE YES → kein Hint in REFERRAL (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Überweisungs-Hinweis: Für die Erstellung werden vollständige Patientendaten benötigt.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("PROCESSING_DELAY ACTIVE → Text in sharedBottom", () => {
@@ -2268,22 +2205,19 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("ACUTE_CARE hat genau 8 specificCheckpointIds", () => {
+  it("ACUTE_CARE hat genau 5 specificCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.specificCheckpointIds).toHaveLength(8);
+    expect(profile.specificCheckpointIds).toHaveLength(5);
   });
 
-  it("alle 8 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+  it("alle 5 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     const ids = [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "ACUTE_APPOINTMENT_INFO",
-      "OPEN_CONSULTATION_INFO",
-      "WAITING_TIME",
-      "CAPACITY_LIMIT",
+      "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
-      "INFECTIOUS_PROTOCOL",
     ];
     for (const id of ids) {
       expect(profile.specificCheckpointIds).toContain(id);
@@ -2291,16 +2225,13 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("alle 8 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
+  it("alle 5 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
     for (const id of [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "ACUTE_APPOINTMENT_INFO",
-      "OPEN_CONSULTATION_INFO",
-      "WAITING_TIME",
-      "CAPACITY_LIMIT",
+      "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
-      "INFECTIOUS_PROTOCOL",
     ]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
@@ -2309,13 +2240,14 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat genau 1 boundGlobalCheckpointId", () => {
+  it("ACUTE_CARE hat 1 boundGlobalCheckpointId: INFECTIOUS_PROTOCOL", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
-    expect(profile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
+    expect(profile.boundGlobalCheckpointIds).toContain("INFECTIOUS_PROTOCOL");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
   });
 
-  it("ACUTE_CARE.globalHints enthält Einträge für alle gebundenen Globals", () => {
+  it("ACUTE_CARE.globalHints enthält Eintrag für INFECTIOUS_PROTOCOL", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     for (const id of profile.boundGlobalCheckpointIds) {
       expect(profile.globalHints).toHaveProperty(id);
@@ -2381,36 +2313,14 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
     );
   });
 
-  it("OPEN_CONSULTATION_INFO YES → Text in attachedParagraphs", () => {
+  it("ACUTE_OPEN_CONSULTATION_INFO YES → Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
-        checkpointStatuses: { OPEN_CONSULTATION_INFO: ExplanationStatus.YES },
+        checkpointStatuses: { ACUTE_OPEN_CONSULTATION_INFO: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Die offene Sprechstunde findet zwischen 9 und 10 Uhr statt. Sie können ohne Termin in die Praxis kommen; die Behandlung erfolgt durch den jeweils verfügbaren Arzt.",
-    );
-  });
-
-  it("WAITING_TIME YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { WAITING_TIME: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Je nach Auslastung kann es zu Wartezeiten kommen.",
-    );
-  });
-
-  it("CAPACITY_LIMIT YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { CAPACITY_LIMIT: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei hoher Auslastung kann es vorkommen, dass keine weiteren Patienten aufgenommen werden können.",
+      "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     );
   });
 
@@ -2465,28 +2375,10 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints NO → kein Output", () => 
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("OPEN_CONSULTATION_INFO NO → kein Text in attachedParagraphs", () => {
+  it("ACUTE_OPEN_CONSULTATION_INFO NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
-        checkpointStatuses: { OPEN_CONSULTATION_INFO: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("WAITING_TIME NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { WAITING_TIME: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("CAPACITY_LIMIT NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { CAPACITY_LIMIT: ExplanationStatus.NO },
+        checkpointStatuses: { ACUTE_OPEN_CONSULTATION_INFO: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2512,15 +2404,13 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints NO → kein Output", () => 
 });
 
 describe("ACUTE_CARE-Profil – GlobalHints", () => {
-  it("IS_CHRONIC_PATIENT YES → akut-spezifischer Hint in attachedParagraphs", () => {
+  it("IS_CHRONIC_PATIENT YES → kein Hint in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
         checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -2558,15 +2448,11 @@ describe("Checkpoint-Klassifizierung – CONTEXT_SPECIFIC", () => {
   it("ACUTE_APPOINTMENT_INFO hat classification CONTEXT_SPECIFIC", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_APPOINTMENT_INFO"].classification).toBe("CONTEXT_SPECIFIC");
   });
-
-  it("OPEN_CONSULTATION_INFO hat classification CONTEXT_SPECIFIC", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["OPEN_CONSULTATION_INFO"].classification).toBe("CONTEXT_SPECIFIC");
-  });
 });
 
 describe("Checkpoint-Klassifizierung – MODULAR", () => {
-  it("CAPACITY_LIMIT hat classification MODULAR", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["CAPACITY_LIMIT"].classification).toBe("MODULAR");
+  it("ACUTE_OPEN_CONSULTATION_INFO hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"].classification).toBe("MODULAR");
   });
 
   it("ACUTE_ONLY_LIMIT hat classification MODULAR", () => {
@@ -2585,15 +2471,15 @@ describe("Checkpoint-Klassifizierung – MODULAR", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["NO_FIXED_TIME"].classification).toBe("MODULAR");
   });
 
-  it("WAITING_TIME hat classification MODULAR", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["WAITING_TIME"].classification).toBe("MODULAR");
-  });
-
   it("CHRONIC_EXCLUSION hat classification MODULAR", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["CHRONIC_EXCLUSION"].classification).toBe("MODULAR");
   });
 
   it("INFECTIOUS_PROTOCOL hat classification MODULAR", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["INFECTIOUS_PROTOCOL"].classification).toBe("MODULAR");
+  });
+
+  it("INFECTIOUS_PROTOCOL hat scope GLOBAL", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["INFECTIOUS_PROTOCOL"].scope).toBe(InquiryCheckpointScope.GLOBAL);
   });
 });

@@ -164,7 +164,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     // Wiederholung ohne Untersuchung wird global über DOCTOR_REVIEW_REQUIRED abgebildet.
     questions: [
       { id: "AU_DECISION-Q1", text: "Sind Beschwerden oder eine Diagnose nachvollziehbar angegeben?" },
-      { id: "AU_DECISION-Q2", text: "Liegt der Zeitraum der angefragten Arbeitsunfähigkeit bei maximal fünf Tagen?" },
       { id: "AU_DECISION-Q3", text: "Bei Langzeit-AU: Liegt eine ärztliche Freigabe vor?" },
     ],
     textByStatus: {
@@ -195,6 +194,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr an AU gebunden. Inhaltlich durch AU_DECISION-Q2 abgedeckt (entfernt). */
   AU_DURATION_LIMIT: {
     id: "AU_DURATION_LIMIT",
     label: "AU-Dauer überschreitet Rahmen",
@@ -243,6 +243,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr an AU gebunden. Enthält Entscheidungsaussage (NOT_POSSIBLE) statt Erklärung – falsch eingeordnet. */
   AU_CONTINUITY_REQUIRED: {
     id: "AU_CONTINUITY_REQUIRED",
     label: "Folge-AU / Lückenlosigkeit",
@@ -259,6 +260,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr an AU gebunden. Prozesshinweis ohne Entscheidungsbezug – falsch eingeordnet. */
   AU_RETURN_TO_WORK: {
     id: "AU_RETURN_TO_WORK",
     label: "Vorzeitige Arbeitsaufnahme / Gesundschreibung",
@@ -287,9 +289,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     // Nur echte Entscheidungsgrundlagen – kein Thema, das eine eigene Patientenerklärung braucht.
     // Sonderfälle (BtM, Privatrezept, Pille) werden über SPECIFIC Explanation Checkpoints abgebildet.
     questions: [
-      { id: "PRESCRIPTION_DECISION-Q1", text: "Ist die Verordnung medizinisch nachvollziehbar / indiziert?" },
       { id: "PRESCRIPTION_DECISION-Q2", text: "Handelt es sich um eine Wiederverordnung von Dauermedikation?" },
-      { id: "PRESCRIPTION_DECISION-Q3", text: "Liegt eine ärztliche Anordnung vor?" },
+      { id: "PRESCRIPTION_DECISION-Q4", text: "Handelt es sich um einen Neupatienten?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt.",
@@ -475,8 +476,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "LAB_DECISION-Q1", text: "Liegt eine externe Anordnung oder Überweisung vor?" },
-      { id: "LAB_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+      { id: "LAB_DECISION-Q1", text: "Liegt eine gültige Laboranforderung vor?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
@@ -486,6 +486,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- LAB SPECIFIC CHECKPOINTS ----
 
+  /** @deprecated ungebunden – nicht mehr in LAB.specificCheckpointIds */
   LAB_CHECKUP_RULES: {
     id: "LAB_CHECKUP_RULES",
     label: "Check-up-Regelung",
@@ -503,16 +504,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   LAB_FASTING_REQUIRED: {
     id: "LAB_FASTING_REQUIRED",
-    label: "Nüchternabnahme erforderlich",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    questions: [
-      { id: "LAB_FASTING_REQUIRED-Q1", text: "Erfordern die angefragten Laborwerte eine nüchterne Blutentnahme?" },
-    ],
+    label: "Vorbereitung: nüchtern erscheinen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "PREPARATION",
     textByStatus: {
-      [ExplanationStatus.YES]: "Bitte kommen Sie nüchtern zur Blutentnahme (mindestens 8 Stunden vorher nichts essen, kein Kaffee; Wasser ist erlaubt).",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]:
+        "Bitte kommen Sie nüchtern zur Blutentnahme. Essen Sie mindestens acht Stunden vorher nichts; Wasser ist erlaubt, Kaffee bitte nicht.",
     },
   },
 
@@ -531,6 +530,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated ungebunden – nicht mehr in LAB.specificCheckpointIds */
   LAB_DISCUSSION_PROCESS_CODE: {
     id: "LAB_DISCUSSION_PROCESS_CODE",
     label: "Befundbesprechung nach Laboreingang",
@@ -807,9 +807,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "SAMPLE_COLLECTION_DECISION-Q1", text: "Handelt es sich um eine Urinprobe oder eine Stuhlprobe?" },
       { id: "SAMPLE_COLLECTION_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
-      { id: "SAMPLE_COLLECTION_DECISION-Q3", text: "Wird ein Probengefäß aus der Praxis benötigt?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Die Probenabgabe kann wie besprochen durchgeführt werden.",
@@ -822,60 +820,60 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   URINE_SAMPLE_INSTRUCTIONS: {
     id: "URINE_SAMPLE_INSTRUCTIONS",
     label: "Urinprobe – Hinweis",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PREPARATION",
     questions: [
       { id: "URINE_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Urinprobe abgegeben werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
     },
   },
 
   STOOL_SAMPLE_INSTRUCTIONS: {
     id: "STOOL_SAMPLE_INSTRUCTIONS",
     label: "Stuhlprobe – Hinweis",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PREPARATION",
     questions: [
       { id: "STOOL_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Stuhlprobe abgegeben werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
     },
   },
 
   SAMPLE_HANDOVER: {
     id: "SAMPLE_HANDOVER",
     label: "Probenabgabe / Aufbewahrung",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PROCESS",
     questions: [
       { id: "SAMPLE_HANDOVER-Q1", text: "Geht es um die Abgabe oder Aufbewahrung der Probe?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
     },
   },
 
   LAB_RESULT_TIME: {
     id: "LAB_RESULT_TIME",
     label: "Befundübermittlung / Auswertungsdauer",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
     questions: [
       { id: "LAB_RESULT_TIME-Q1", text: "Geht es um die Dauer oder den Ablauf der Befundübermittlung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
     },
   },
 
@@ -936,6 +934,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Ersetzt durch ACUTE_OPEN_CONSULTATION_INFO */
   OPEN_CONSULTATION_INFO: {
     id: "OPEN_CONSULTATION_INFO",
     label: "Offene Sprechstunde – Ablauf",
@@ -971,6 +970,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Ersetzt durch ACUTE_OPEN_CONSULTATION_INFO */
   CAPACITY_LIMIT: {
     id: "CAPACITY_LIMIT",
     label: "Kapazitätsgrenze / Überfüllung",
@@ -1024,6 +1024,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Ersetzt durch ACUTE_OPEN_CONSULTATION_INFO */
   WAITING_TIME: {
     id: "WAITING_TIME",
     label: "Wartezeiten",
@@ -1037,6 +1038,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]:
         "Je nach Auslastung kann es zu Wartezeiten kommen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ACUTE_OPEN_CONSULTATION_INFO: {
+    id: "ACUTE_OPEN_CONSULTATION_INFO",
+    label: "Offene Sprechstunde – Info",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "ACUTE_OPEN_CONSULTATION_INFO-Q1", text: "Soll ein Hinweis zur offenen Sprechstunde angezeigt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1062,7 +1080,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     id: "INFECTIOUS_PROTOCOL",
     label: "Infektionsschutz – Hinweis",
     kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
+    scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
     questions: [
@@ -1085,7 +1103,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
       { id: "REFERRAL_DECISION-Q1", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
-      { id: "REFERRAL_DECISION-Q2", text: "Handelt es sich um eine Wiederholung einer bestehenden Überweisung?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]:
@@ -1116,32 +1133,32 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   REF_ORIGINAL_VS_PDF: {
     id: "REF_ORIGINAL_VS_PDF",
     label: "Digitale vs. Original-Überweisung",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
     questions: [
       { id: "REF_ORIGINAL_VS_PDF-Q1", text: "Geht es um die Nutzung einer digitalen Überweisung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Die Überweisung kann digital für die Terminvereinbarung genutzt werden; für die Vorstellung in der Facharztpraxis wird häufig das Original benötigt.",
-      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
   REF_PSYCHOTHERAPY_FIRST_STEP: {
     id: "REF_PSYCHOTHERAPY_FIRST_STEP",
     label: "Psychotherapie – Erstvorstellung",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
     questions: [
       { id: "REF_PSYCHOTHERAPY_FIRST_STEP-Q1", text: "Geht es um eine Erstvorstellung zur Psychotherapie?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
-      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
@@ -1164,16 +1181,16 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   REF_BOOKING_CODE_PROCESS: {
     id: "REF_BOOKING_CODE_PROCESS",
     label: "Vermittlungs- / Buchungscode",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
     questions: [
       { id: "REF_BOOKING_CODE_PROCESS-Q1", text: "Geht es um die Terminbuchung mit Vermittlungs- oder Buchungscode?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
-      // NO: bewusst still – keine Erklärung nötig
     },
   },
 };
