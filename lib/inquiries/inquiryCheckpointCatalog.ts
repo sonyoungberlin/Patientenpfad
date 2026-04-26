@@ -310,7 +310,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezepte für Dauermedikamente setzen regelmäßige ärztliche Kontrolltermine zur Überprüfung der Therapie voraus.",
+        "Regelmäßige ärztliche Kontrolltermine sind erforderlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -326,7 +326,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für diese Medikation ist ein aktueller Facharztbericht erforderlich.",
+        "Ein aktueller Facharztbericht ist erforderlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -342,7 +342,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Einstellung und Dosisanpassung von ADHS-Medikamenten erfolgen durch Fachärzte; die Hausarztpraxis stellt nur stabile Folgerezepte bei bestehender Mitbehandlung aus.",
+        "Einstellung und Dosisanpassung erfolgen fachärztlich; stabile Folgerezepte sind bei bestehender Mitbehandlung möglich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -358,7 +358,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Dieses Präparat ist keine Leistung der gesetzlichen Krankenkasse und wird als Privatrezept verordnet.",
+        "Das Präparat ist keine Leistung der gesetzlichen Krankenkasse und wird privat abgerechnet.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -374,7 +374,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Verordnungen für die Pille erfolgen über die gynäkologische Fachpraxis.",
+        "Die Verordnung erfolgt über die gynäkologische Fachpraxis.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -390,7 +390,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Ein Postversand von Rezepten erfolgt nicht; die Bereitstellung erfolgt als eRezept oder über eine Apotheke.",
+        "Ein Postversand erfolgt nicht; die Bereitstellung erfolgt als eRezept oder über eine Apotheke.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -887,7 +887,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Akutsprechstunde ist ausschließlich für akute Beschwerden vorgesehen und nicht für planbare oder organisatorische Anliegen.",
+        "Die Sprechstunde ist ausschließlich für akute Beschwerden vorgesehen.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -903,7 +903,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde verfügbar.",
+        "Termine können in der Regel 24 Stunden vorher online gebucht werden und sind auch als Videosprechstunde verfügbar.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -919,7 +919,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die offene Sprechstunde findet täglich morgens statt; es ist keine Terminbuchung und keine Arztwahl möglich.",
+        "Die offene Sprechstunde findet morgens statt; eine Terminbuchung und Arztwahl sind nicht möglich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -935,7 +935,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "In der offenen Sprechstunde erfolgt die Behandlung ohne feste Termine; es kann zu Wartezeiten kommen.",
+        "Die Behandlung erfolgt ohne feste Uhrzeit; Wartezeiten sind möglich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -951,7 +951,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bei hoher Auslastung kann es vorkommen, dass an einem Tag keine weiteren Patienten aufgenommen werden können.",
+        "Bei hoher Auslastung können keine weiteren Patienten aufgenommen werden.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },

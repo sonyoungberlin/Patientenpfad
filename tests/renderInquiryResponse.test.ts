@@ -1212,7 +1212,7 @@ describe("PRESCRIPTION-Profil – IS_CHRONIC_PATIENT globalHint", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
+      "Regelmäßige ärztliche Kontrolltermine sind erforderlich.",
     );
   });
 
@@ -1223,7 +1223,7 @@ describe("PRESCRIPTION-Profil – IS_CHRONIC_PATIENT globalHint", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Rezept-Hinweis: Neupatient, Termin erforderlich.",
+      "Vor der ersten Ausstellung ist ein persönlicher Erstkontakt erforderlich.",
     );
   });
 });
@@ -1291,7 +1291,7 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
       }),
     ]);
     expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("BtM") || t.includes("ADHS")),
+      result.sections[0].attachedParagraphs.some((t) => t.includes("fachärztlich")),
     ).toBe(true);
   });
 
@@ -1311,7 +1311,7 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
       }),
     ]);
     expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Privatrezept")),
+      result.sections[0].attachedParagraphs.some((t) => t.includes("privat abgerechnet")),
     ).toBe(true);
   });
 
@@ -1693,7 +1693,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
     );
     // PRESCRIPTION-spezifischer Hint in Section 1
     expect(result.sections[1].attachedParagraphs).toContain(
-      "Rezept-Hinweis: Neupatient, Termin erforderlich.",
+      "Vor der ersten Ausstellung ist ein persönlicher Erstkontakt erforderlich.",
     );
   });
 
@@ -2314,7 +2314,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Akutsprechstunde ist ausschließlich für akute Beschwerden vorgesehen und nicht für planbare oder organisatorische Anliegen.",
+      "Die Sprechstunde ist ausschließlich für akute Beschwerden vorgesehen.",
     );
   });
 
@@ -2325,7 +2325,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde verfügbar.",
+      "Termine können in der Regel 24 Stunden vorher online gebucht werden und sind auch als Videosprechstunde verfügbar.",
     );
   });
 
@@ -2336,7 +2336,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Die offene Sprechstunde findet täglich morgens statt; es ist keine Terminbuchung und keine Arztwahl möglich.",
+      "Die offene Sprechstunde findet morgens statt; eine Terminbuchung und Arztwahl sind nicht möglich.",
     );
   });
 
@@ -2347,7 +2347,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "In der offenen Sprechstunde erfolgt die Behandlung ohne feste Termine; es kann zu Wartezeiten kommen.",
+      "Die Behandlung erfolgt ohne feste Uhrzeit; Wartezeiten sind möglich.",
     );
   });
 
@@ -2358,7 +2358,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei hoher Auslastung kann es vorkommen, dass an einem Tag keine weiteren Patienten aufgenommen werden können.",
+      "Bei hoher Auslastung können keine weiteren Patienten aufgenommen werden.",
     );
   });
 });
@@ -2418,7 +2418,7 @@ describe("ACUTE_CARE-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Akut-Hinweis: Auch im Akutfall ist für Neupatienten eine persönliche Vorstellung erforderlich.",
+      "Auch im Akutfall ist eine persönliche Vorstellung erforderlich.",
     );
   });
 
@@ -2429,7 +2429,7 @@ describe("ACUTE_CARE-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Akut-Hinweis: Die Behandlung erfolgt nach ärztlicher Einschätzung vor Ort.",
+      "Die Behandlung erfolgt nach ärztlicher Einschätzung.",
     );
   });
 
@@ -2440,7 +2440,7 @@ describe("ACUTE_CARE-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Akut-Hinweis: Bitte bringen Sie Ihre Versichertenkarte zur Behandlung mit.",
+      "Bitte bringen Sie Ihre Versichertenkarte mit.",
     );
   });
 
@@ -2460,7 +2460,7 @@ describe("ACUTE_CARE-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
+      "Auch bei chronischen Erkrankungen gilt dies für planbare Anliegen.",
     );
   });
 });
