@@ -287,9 +287,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     // Nur echte Entscheidungsgrundlagen – kein Thema, das eine eigene Patientenerklärung braucht.
     // Sonderfälle (BtM, Privatrezept, Pille) werden über SPECIFIC Explanation Checkpoints abgebildet.
     questions: [
-      { id: "PRESCRIPTION_DECISION-Q1", text: "Ist die Verordnung medizinisch nachvollziehbar / indiziert?" },
       { id: "PRESCRIPTION_DECISION-Q2", text: "Handelt es sich um eine Wiederverordnung von Dauermedikation?" },
-      { id: "PRESCRIPTION_DECISION-Q3", text: "Liegt eine ärztliche Anordnung vor?" },
+      { id: "PRESCRIPTION_DECISION-Q4", text: "Handelt es sich um einen Neupatienten?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt.",
