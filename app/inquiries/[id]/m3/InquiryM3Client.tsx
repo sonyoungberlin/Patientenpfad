@@ -290,7 +290,7 @@ export default function InquiryM3Client({
                         const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
                         return (
                           <div key={q.id}>
-                            M2: {q.text}
+                            {q.text}
                             <span style={{ fontWeight: 500 }}> — {answer}</span>
                           </div>
                         );
@@ -307,7 +307,13 @@ export default function InquiryM3Client({
               </div>
 
               {/* SPECIFIC Checkpoints */}
-              {section.specificCheckpoints.map((cp) => {
+              {section.specificCheckpoints
+                .filter((cp) =>
+                  cp.kind !== InquiryCheckpointKind.EXPLANATION ||
+                  statuses[cp.id] === "YES" ||
+                  statuses[cp.id] === "NO",
+                )
+                .map((cp) => {
                 const m2Status = statuses[cp.id];
                 const m2Label =
                   m2Status === "YES" ? "Ja" : m2Status === "NO" ? "Nein" : undefined;
@@ -327,7 +333,7 @@ export default function InquiryM3Client({
                         >
                           {cp.questions.map((q) => (
                             <div key={q.id}>
-                              M2: {q.text}
+                              {q.text}
                               {m2Label !== undefined && (
                                 <span style={{ fontWeight: 500 }}> — {m2Label}</span>
                               )}

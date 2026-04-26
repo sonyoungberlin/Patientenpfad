@@ -171,22 +171,14 @@ function DecisionQuestionBlock({
 }) {
   if (questions.length === 0) return null;
   return (
-    <div
-      style={{
-        background: "var(--muted, #f3f4f6)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "0.75rem 1rem",
-        marginBottom: "1rem",
-      }}
-    >
+    <>
       {questions.map((q) => (
-        <div key={q.id} style={{ marginBottom: "0.5rem" }}>
+        <div key={q.id} style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
           <div className="text-small">{q.text}</div>
           <YesNoButtons checkpointId={q.id} value={statuses[q.id]} onChange={onChange} />
         </div>
       ))}
-    </div>
+    </>
   );
 }
 
