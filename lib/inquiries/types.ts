@@ -224,6 +224,26 @@ export enum ExplanationStatus {
   NO = "NO",
 }
 
+/**
+ * outputStatus für EXPLANATION-Checkpoints (M3).
+ *
+ * M3 entscheidet separat über die Ausgabe – unabhängig vom factStatus (M2):
+ *   SHOW      – Erklärungstext in M4 anzeigen.
+ *   HIDE      – Erklärung nicht anzeigen (kein Text in M4).
+ *   undefined – Keine Ausgabe (Checkpoint erscheint nicht in M4).
+ *
+ * Defaults (Vorauswahl in M3):
+ *   factStatus YES       → SHOW vorausgewählt.
+ *   factStatus NO        → HIDE vorausgewählt + Hinweis „keine Erklärung erforderlich".
+ *   factStatus undefined → Checkpoint erscheint gar nicht in M3.
+ *
+ * Vollständige Regel: docs/architecture/anfrage-assistent.md §18
+ */
+export enum ExplanationOutputStatus {
+  SHOW = "SHOW",
+  HIDE = "HIDE",
+}
+
 /** Status für ACTION- und PREPARATION-Checkpoints. */
 export enum ActionStatus {
   ACTIVE = "ACTIVE",
@@ -327,6 +347,19 @@ export type InquirySection = {
   inquiryId: string;
   decisionStatus: DecisionStatus;
   checkpointStatuses: Record<string, CheckpointStatusValue>;
+  /**
+   * outputStatus für EXPLANATION-Checkpoints (gesetzt von M3, §18).
+   *
+   * SHOW      → Erklärungstext in M4 ausgeben.
+   * HIDE      → kein Text.
+   * undefined → kein Text (kein Output).
+   *
+   * Falls dieses Feld fehlt (ältere Sessions / Backward-Compat):
+   * Der Renderer leitet den outputStatus aus dem factStatus ab:
+   *   factStatus YES → wie SHOW (Text erscheint).
+   *   factStatus NO / undefined → kein Output.
+   */
+  explanationOutputStatuses?: Record<string, ExplanationOutputStatus>;
 };
 
 /** Ausgabe eines einzelnen Anliegen-Abschnitts. */

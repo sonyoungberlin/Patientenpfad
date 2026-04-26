@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   DecisionStatus,
+  ExplanationOutputStatus,
   InquiryCheckpointKind,
   type CheckpointStatusValue,
   type InquirySection,
@@ -37,6 +38,8 @@ type Props = {
   actionCheckpoints: M3ActionData[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
+  /** Gespeicherte outputStatus-Entscheidungen aus M3 (SHOW / HIDE pro EXPLANATION-Checkpoint). */
+  initialExplanationOutputStatuses: Record<string, string>;
   actionIds: string[];
   initialGeneratedOutput: InquiryResponseV2Output | null;
   isConfirmed: boolean;
@@ -51,6 +54,12 @@ const DECISION_OPTIONS = [
 const EXPLANATION_OPTIONS = [
   { value: "YES", label: "Ja" },
   { value: "NO", label: "Nein" },
+];
+
+/** Ausgabe-Entscheidung in M3 für EXPLANATION-Checkpoints (outputStatus). */
+const OUTPUT_OPTIONS = [
+  { value: ExplanationOutputStatus.SHOW, label: "Anzeigen" },
+  { value: ExplanationOutputStatus.HIDE, label: "Nicht anzeigen" },
 ];
 
 const ACTION_OPTIONS = [
@@ -168,16 +177,46 @@ export default function InquiryM3Client({
   actionCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
+  initialExplanationOutputStatuses,
   actionIds,
   initialGeneratedOutput,
   isConfirmed,
 }: Props) {
   const actionIdSet = new Set(actionIds);
 
+  // IDs aller EXPLANATION-Checkpoints aus allen Sections (für outputStatus-Initialisierung).
+  const explanationCheckpointIds = useMemo(
+    () =>
+      new Set(
+        sections
+          .flatMap((s) => s.specificCheckpoints)
+          .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
+          .map((cp) => cp.id),
+      ),
+    [sections],
+  );
+
   const [statuses, setStatuses] = useState<Record<string, string>>({
     ...initialCheckpointStatuses,
     ...initialActionStatuses,
   });
+
+  // outputStatuses: M3-Ausgabeentscheidung (SHOW / HIDE) pro EXPLANATION-Checkpoint.
+  // Initialisierung: gespeicherte Werte haben Vorrang; fehlende Werte werden aus factStatus abgeleitet.
+  //   factStatus YES → SHOW vorausgewählt
+  //   factStatus NO  → HIDE vorausgewählt
+  const [outputStatuses, setOutputStatuses] = useState<Record<string, string>>(() => {
+    const result: Record<string, string> = { ...initialExplanationOutputStatuses };
+    for (const id of explanationCheckpointIds) {
+      if (!result[id]) {
+        const factStatus = initialCheckpointStatuses[id];
+        if (factStatus === "YES") result[id] = ExplanationOutputStatus.SHOW;
+        else if (factStatus === "NO") result[id] = ExplanationOutputStatus.HIDE;
+      }
+    }
+    return result;
+  });
+
   const [confirmed, setConfirmed] = useState(isConfirmed);
   const [frozenOutput, setFrozenOutput] = useState<InquiryResponseV2Output | null>(
     initialGeneratedOutput,
@@ -196,22 +235,27 @@ export default function InquiryM3Client({
           (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
           DecisionStatus.DISABLED,
         checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
+        explanationOutputStatuses: outputStatuses as Record<string, ExplanationOutputStatus>,
       }));
       return renderInquiryResponseFromSections(inquirySections);
     } catch {
       return null;
     }
-  }, [confirmed, statuses, sections]);
+  }, [confirmed, statuses, outputStatuses, sections]);
 
   function setStatus(checkpointId: string, value: string) {
     setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
+  }
+
+  function setOutputStatus(checkpointId: string, value: string) {
+    setOutputStatuses((prev) => ({ ...prev, [checkpointId]: value }));
   }
 
   async function handleConfirm() {
     setSubmitting(true);
     setError(null);
     try {
-      // 1. Save current decision + specific + action statuses
+      // 1. Save current decision + specific + action statuses + explanationOutputStatuses
       const checkpointStatuses: Record<string, string> = {};
       const actionStatuses: Record<string, string> = {};
       for (const [k, v] of Object.entries(statuses)) {
@@ -222,10 +266,16 @@ export default function InquiryM3Client({
         }
       }
 
+      // Nur tatsächlich gesetzte outputStatuses senden.
+      const explanationOutputStatuses: Record<string, string> = {};
+      for (const [k, v] of Object.entries(outputStatuses)) {
+        if (v) explanationOutputStatuses[k] = v;
+      }
+
       const patchRes = await fetch(`/api/inquiries/${sessionId}/checkpoints`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkpointStatuses, actionStatuses }),
+        body: JSON.stringify({ checkpointStatuses, actionStatuses, explanationOutputStatuses }),
       });
       if (!patchRes.ok) {
         const data = await patchRes.json().catch(() => null);
@@ -323,7 +373,7 @@ export default function InquiryM3Client({
                     style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
                   >
                     <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                    {/* M2 Prefill – zeigt Fragen + M2-Antwort als Kontext */}
+                    {/* M2 Prefill – zeigt Fragen + M2-Antwort als Kontext (schreibgeschützt) */}
                     {cp.kind === InquiryCheckpointKind.EXPLANATION &&
                       cp.questions &&
                       cp.questions.length > 0 && (
@@ -354,15 +404,27 @@ export default function InquiryM3Client({
                           ))}
                         </ul>
                       )}
-                    <StatusButtons
-                      checkpointId={cp.id}
-                      options={optionsForKind(cp.kind)}
-                      value={statuses[cp.id]}
-                      onChange={setStatus}
-                      disabled={false}
-                    />
+                    {/* EXPLANATION: outputStatus-Buttons (SHOW / HIDE) statt factStatus-Buttons */}
+                    {cp.kind === InquiryCheckpointKind.EXPLANATION ? (
+                      <StatusButtons
+                        checkpointId={cp.id}
+                        options={OUTPUT_OPTIONS}
+                        value={outputStatuses[cp.id]}
+                        onChange={setOutputStatus}
+                        disabled={false}
+                      />
+                    ) : (
+                      <StatusButtons
+                        checkpointId={cp.id}
+                        options={optionsForKind(cp.kind)}
+                        value={statuses[cp.id]}
+                        onChange={setStatus}
+                        disabled={false}
+                      />
+                    )}
+                    {/* Hinweis bei outputStatus HIDE */}
                     {cp.kind === InquiryCheckpointKind.EXPLANATION &&
-                      statuses[cp.id] === "NO" && (
+                      outputStatuses[cp.id] === ExplanationOutputStatus.HIDE && (
                         <div
                           className="text-muted text-small"
                           style={{ marginTop: "0.25rem", fontStyle: "italic" }}

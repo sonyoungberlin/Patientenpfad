@@ -22,6 +22,7 @@ import { Prisma, type PrismaClient, type InquirySession } from "@prisma/client";
 
 import {
   DecisionStatus,
+  ExplanationOutputStatus,
   type InquirySection,
   type InquiryResponseV2Output,
   type CheckpointStatusValue,
@@ -57,6 +58,11 @@ export type UpdateCheckpointStatusesInput = {
    */
   checkpointStatuses: Record<string, string>;
   actionStatuses?: Record<string, string>;
+  /**
+   * outputStatus-Entscheidungen von M3 für EXPLANATION-Checkpoints (§18).
+   * Record<checkpointId, "SHOW" | "HIDE"> – nur SHOW erzeugt M4-Output.
+   */
+  explanationOutputStatuses?: Record<string, string>;
 };
 
 // ---------------------------------------------------------------------------
@@ -207,6 +213,7 @@ export async function updateInquiryCheckpointStatuses(
     data: {
       checkpoint_statuses: toJsonInput(input.checkpointStatuses),
       action_statuses: toJsonInput(input.actionStatuses ?? {}),
+      explanation_output_statuses: toJsonInput(input.explanationOutputStatuses ?? {}),
     },
   });
 }
@@ -266,6 +273,17 @@ export async function confirmInquirySession(
         ? (session.action_statuses as Record<string, string>)
         : {};
 
+    // explanationOutputStatuses: gesetzt von M3 – nur SHOW erzeugt M4-Output.
+    // Ist der Blob null/leer (ältere Sessions), bleibt explanationOutputStatuses undefined
+    // damit der Renderer die Übergangsableitung aus factStatus nutzt.
+    const explanationOutputStatusesRaw: Record<string, string> | undefined =
+      session.explanation_output_statuses !== null &&
+      typeof session.explanation_output_statuses === "object" &&
+      !Array.isArray(session.explanation_output_statuses) &&
+      Object.keys(session.explanation_output_statuses as object).length > 0
+        ? (session.explanation_output_statuses as Record<string, string>)
+        : undefined;
+
     // Alle Statuses zu einer flachen Map zusammenführen.
     // renderInquiryResponseFromSections liest pro Section nur die für das
     // jeweilige Anliegen relevanten Einträge heraus.
@@ -285,6 +303,9 @@ export async function confirmInquirySession(
           ? decisionRaw
           : DecisionStatus.DISABLED,
         checkpointStatuses: mergedStatuses,
+        explanationOutputStatuses: explanationOutputStatusesRaw as
+          | Record<string, ExplanationOutputStatus>
+          | undefined,
       };
     });
 
