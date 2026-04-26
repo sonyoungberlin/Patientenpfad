@@ -326,7 +326,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für diese Medikation ist ein aktueller fachärztlicher Behandlungsbericht erforderlich.",
+        "Für diese Medikation ist ein aktueller Facharztbericht erforderlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },

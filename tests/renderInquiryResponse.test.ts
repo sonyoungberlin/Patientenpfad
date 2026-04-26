@@ -1271,7 +1271,7 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
       }),
     ]);
     expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Behandlungsbericht") || t.includes("Facharztbericht")),
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Facharztbericht")),
     ).toBe(true);
   });
 
