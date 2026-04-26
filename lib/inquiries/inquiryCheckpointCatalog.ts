@@ -292,8 +292,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "PRESCRIPTION_DECISION-Q3", text: "Liegt eine ärztliche Anordnung vor?" },
     ],
     textByStatus: {
-      [DecisionStatus.POSSIBLE]: "Ein Rezept kann ausgestellt werden.",
-      [DecisionStatus.NOT_POSSIBLE]: "Ein Rezept kann nicht ausgestellt werden.",
+      [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt und kann mit Ihrer Gesundheitskarte in der Apotheke eingelöst werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Das von Ihnen angefragte Rezept wurde nicht ausgestellt.",
     },
   },
 
