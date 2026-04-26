@@ -206,10 +206,42 @@ export enum DecisionStatus {
   DISABLED = "DISABLED",
 }
 
-/** Status für EXPLANATION-Checkpoints. */
+/**
+ * factStatus für EXPLANATION-Checkpoints (M2).
+ *
+ * M2 speichert ausschließlich den Sachverhalt – nicht die Ausgabe-Entscheidung:
+ *   YES       – Sachverhalt liegt vor.
+ *   NO        – Bewusst geprüft; Sachverhalt liegt nicht vor.
+ *   undefined – Nicht geprüft / nicht relevant (Checkpoint erscheint nicht in M3).
+ *
+ * Die Ausgabe-Entscheidung (SHOW / HIDE) trifft M3 separat (outputStatus).
+ * M4 erzeugt Erklärungstext nur bei outputStatus = SHOW.
+ *
+ * Vollständige Regel: docs/architecture/anfrage-assistent.md §18
+ */
 export enum ExplanationStatus {
   YES = "YES",
   NO = "NO",
+}
+
+/**
+ * outputStatus für EXPLANATION-Checkpoints (M3).
+ *
+ * M3 entscheidet separat über die Ausgabe – unabhängig vom factStatus (M2):
+ *   SHOW      – Erklärungstext in M4 anzeigen.
+ *   HIDE      – Erklärung nicht anzeigen (kein Text in M4).
+ *   undefined – Keine Ausgabe (Checkpoint erscheint nicht in M4).
+ *
+ * Defaults (Vorauswahl in M3):
+ *   factStatus YES       → SHOW vorausgewählt.
+ *   factStatus NO        → HIDE vorausgewählt + Hinweis „keine Erklärung erforderlich".
+ *   factStatus undefined → Checkpoint erscheint gar nicht in M3.
+ *
+ * Vollständige Regel: docs/architecture/anfrage-assistent.md §18
+ */
+export enum ExplanationOutputStatus {
+  SHOW = "SHOW",
+  HIDE = "HIDE",
 }
 
 /** Status für ACTION- und PREPARATION-Checkpoints. */
@@ -254,6 +286,17 @@ export type InquiryCheckpoint = {
   kind: InquiryCheckpointKind;
   scope: InquiryCheckpointScope;
   placement: InquiryCheckpointPlacement;
+  /**
+   * Optionale Feinklassifikation eines Checkpoints.
+   *
+   * OUTCOME kennzeichnet Checkpoints, die das Ergebnis einer positiven Hauptentscheidung
+   * beschreiben. Sie folgen nicht der factStatus/outputStatus-Regel (§18), sondern werden
+   * nur gerendert, wenn section.decisionStatus === POSSIBLE (OUTCOME-Guard im Renderer).
+   * Beispiel: PRESCRIPTION_STATUTORY_POSSIBLE.
+   *
+   * Vollständige Abgrenzung EXPLANATION vs. OUTCOME: docs/architecture/anfrage-assistent.md §19
+   */
+  classification?: "GLOBAL_STATE" | "MODULAR" | "CONTEXT_SPECIFIC" | "OUTCOME";
   /**
    * Einmalige M2-Frage für GLOBAL-Checkpoints (reiner Schalter: ja / nein).
    * Bei SPECIFIC-Checkpoints nicht gesetzt.
@@ -304,6 +347,19 @@ export type InquirySection = {
   inquiryId: string;
   decisionStatus: DecisionStatus;
   checkpointStatuses: Record<string, CheckpointStatusValue>;
+  /**
+   * outputStatus für EXPLANATION-Checkpoints (gesetzt von M3, §18).
+   *
+   * SHOW      → Erklärungstext in M4 ausgeben.
+   * HIDE      → kein Text.
+   * undefined → kein Text (kein Output).
+   *
+   * Falls dieses Feld fehlt (ältere Sessions / Backward-Compat):
+   * Der Renderer leitet den outputStatus aus dem factStatus ab:
+   *   factStatus YES → wie SHOW (Text erscheint).
+   *   factStatus NO / undefined → kein Output.
+   */
+  explanationOutputStatuses?: Record<string, ExplanationOutputStatus>;
 };
 
 /** Ausgabe eines einzelnen Anliegen-Abschnitts. */

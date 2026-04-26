@@ -193,7 +193,10 @@ model InquirySession {
   /// Aktions-Statuses: Record<actionId, ActionStatus>.
   action_statuses Json?
 
-  /// Generierter Output (renderInquiryResponseFromSections-Ergebnis).
+  /// outputStatus-Entscheidungen von M3 für EXPLANATION-Checkpoints.
+  /// Record<checkpointId, "SHOW" | "HIDE"> – Ausgabe nur bei SHOW.
+  explanation_output_statuses Json?
+
   generated_output Json?
 
   /// Zeitpunkt der Bestätigung (gesetzt zusammen mit status = CONFIRMED).

@@ -84,10 +84,18 @@ export async function PATCH(
         ? (body.actionStatuses as Record<string, string>)
         : undefined;
 
+    const explanationOutputStatuses =
+      body?.explanationOutputStatuses &&
+      typeof body.explanationOutputStatuses === "object" &&
+      !Array.isArray(body.explanationOutputStatuses)
+        ? (body.explanationOutputStatuses as Record<string, string>)
+        : undefined;
+
     await updateInquiryCheckpointStatuses({
       sessionId: id,
       checkpointStatuses,
       actionStatuses,
+      explanationOutputStatuses,
     });
 
     return NextResponse.json({ ok: true });

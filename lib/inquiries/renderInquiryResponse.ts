@@ -5,6 +5,8 @@ import {
   InquiryCheckpointPlacement,
   ActionStatus,
   ExplanationStatus,
+  ExplanationOutputStatus,
+  DecisionStatus,
   ResponseKind,
   type ConfirmedInquiryCheckpoint,
   type InquiryOutput,
@@ -157,6 +159,11 @@ export function renderInquiryResponse(
  * - GLOBAL/EXPLANATION-Checkpoints sind reine M2-Schalter:
  *   - Status YES  → Hinweistext aus profile.globalHints[checkpointId] → attachedParagraphs.
  *   - Status NO / fehlend → kein Output, kein Text aus checkpoint.textByStatus.
+ * - SPECIFIC EXPLANATION-Checkpoints folgen der factStatus/outputStatus-Regel (§18):
+ *   - explanationOutputStatuses vorhanden: nur SHOW erzeugt Output.
+ *   - explanationOutputStatuses fehlt (Backward-Compat): factStatus YES → wie SHOW.
+ * - OUTCOME-Checkpoints (classification = "OUTCOME") folgen nicht der EXPLANATION-Regel (§19):
+ *   - werden nur gerendert, wenn decisionStatus = POSSIBLE.
  * - SHARED_BOTTOM-Checkpoints (ACTION) werden gesammelt und einmal dedupliziert unten ausgegeben.
  * - Keine LLM-Logik, kein Netzwerk, keine Seiteneffekte.
  *
@@ -206,13 +213,27 @@ export function renderInquiryResponseFromSections(
       if (status === undefined) continue;
       if (status === ActionStatus.INACTIVE) continue;
 
-      // For SPECIFIC EXPLANATION checkpoints: only YES produces M4 output.
-      // NO means "keine Erklärung erforderlich" and is silent in the output.
+      // OUTCOME-Guard: OUTCOME-Checkpoints beschreiben das Ergebnis einer positiven
+      // Hauptentscheidung und dürfen nur gerendert werden, wenn decisionStatus = POSSIBLE.
+      // → docs/architecture/anfrage-assistent.md §19
+      if (checkpoint.classification === "OUTCOME" && section.decisionStatus !== DecisionStatus.POSSIBLE) continue;
+
+      // EXPLANATION-Regel (factStatus / outputStatus, gilt nur für Nicht-OUTCOME):
+      // OUTCOME-Checkpoints nutzen weiterhin textByStatus direkt und folgen dieser Regel nicht.
       if (
         checkpoint.kind === InquiryCheckpointKind.EXPLANATION &&
         checkpoint.scope === InquiryCheckpointScope.SPECIFIC &&
-        status !== ExplanationStatus.YES
-      ) continue;
+        checkpoint.classification !== "OUTCOME"
+      ) {
+        if (section.explanationOutputStatuses) {
+          // Neue Regel (§18): M4 rendert nur, wenn M3 outputStatus = SHOW gesetzt hat.
+          if (section.explanationOutputStatuses[checkpointId] !== ExplanationOutputStatus.SHOW) continue;
+        } else {
+          // Übergangsableitung (Backward-Compat): factStatus YES → wie SHOW, sonst kein Output.
+          // Gilt für ältere Sessions ohne gespeichertes explanationOutputStatuses.
+          if (status !== ExplanationStatus.YES) continue;
+        }
+      }
 
       const text = checkpoint.textByStatus[status];
       if (!text) continue;

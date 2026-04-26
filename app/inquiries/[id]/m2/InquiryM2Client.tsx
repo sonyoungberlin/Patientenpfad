@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 
-/** Checkpoint-IDs, die als optionale Spezialfälle eingeklappt dargestellt werden. */
-const OPTIONAL_SPECIFIC_IDS = new Set([
-  "AU_WORK_ACCIDENT",
-  "AU_CHILD_SICK",
-  "AU_CONTINUITY_REQUIRED",
-  "AU_RETURN_TO_WORK",
-]);
-
 export type PlainCheckpoint = {
   id: string;
   label: string;
@@ -182,7 +174,7 @@ function DecisionQuestionBlock({
   );
 }
 
-/** Sektion mit Decision-Fragen, Standard-Checkpoints (Ja/Nein) und optionalen Spezialfällen (einklappbar). */
+/** Sektion mit Decision-Fragen; SPECIFIC EXPLANATION Checkpoints hinter "Mehr"/"Weniger" Toggle. */
 function SpecificSection({
   section,
   statuses,
@@ -192,14 +184,11 @@ function SpecificSection({
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const standardCheckpoints = section.specificCheckpoints.filter(
-    (cp) => !OPTIONAL_SPECIFIC_IDS.has(cp.id),
+  // Auto-expand wenn mindestens ein SPECIFIC EXPLANATION Checkpoint bereits YES/NO hat.
+  const hasAnsweredSpecific = section.specificCheckpoints.some(
+    (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
   );
-  const optionalCheckpoints = section.specificCheckpoints.filter((cp) =>
-    OPTIONAL_SPECIFIC_IDS.has(cp.id),
-  );
+  const [isExpanded, setIsExpanded] = useState(hasAnsweredSpecific);
 
   return (
     <section style={{ marginBottom: "2rem" }}>
@@ -208,20 +197,11 @@ function SpecificSection({
         <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
       ) : (
         <>
-          {/* 2.1 Decision-Questions – je Frage Ja/Nein-Buttons, kein Pflichtfeld */}
+          {/* Decision-Questions – immer sichtbar */}
           <DecisionQuestionBlock questions={section.decisionQuestions} statuses={statuses} onChange={onChange} />
 
-          {/* 2.2 Standard SPECIFIC Explanation Checkpoints – Fragen als primärer Inhalt mit Ja/Nein */}
-          {standardCheckpoints.map((cp) =>
-            cp.kind === InquiryCheckpointKind.EXPLANATION ? (
-              <ExplanationQuestionRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
-            ) : (
-              <QuestionBlock key={cp.id} checkpoint={cp} />
-            ),
-          )}
-
-          {/* 3. Optionale Spezialfälle – einklappbar, EXPLANATION mit Ja/Nein */}
-          {optionalCheckpoints.length > 0 && (
+          {/* SPECIFIC EXPLANATION Checkpoints – hinter Toggle */}
+          {section.specificCheckpoints.length > 0 && (
             <>
               <button
                 type="button"
@@ -237,11 +217,11 @@ function SpecificSection({
                   fontSize: "0.85rem",
                 }}
               >
-                {isExpanded ? "Spezielle Fälle ausblenden ▲" : "Spezielle Fälle anzeigen ▼"}
+                {isExpanded ? "Weniger" : "Mehr"}
               </button>
               {isExpanded && (
                 <div style={{ marginTop: "0.5rem" }}>
-                  {optionalCheckpoints.map((cp) =>
+                  {section.specificCheckpoints.map((cp) =>
                     cp.kind === InquiryCheckpointKind.EXPLANATION ? (
                       <ExplanationQuestionRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
                     ) : (

@@ -70,7 +70,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_CONTROL_OVERDUE",
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_BTM_ADHS_RULES",
-      "PRESCRIPTION_PRIVATE_ONLY",
+      "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
     ],
@@ -161,6 +161,34 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       PATIENT_NOT_IN_GERMANY: "Proben-Hinweis: Die Probenabgabe ist nur vor Ort in der Praxis möglich.",
       DOCTOR_REVIEW_REQUIRED: "Proben-Hinweis: Vor der Probenabgabe ist eine ärztliche Klärung erforderlich.",
       DATA_INCOMPLETE: "Proben-Hinweis: Für die Zuordnung der Probe werden vollständige Patientendaten benötigt.",
+    },
+  },
+
+  ACUTE_CARE: {
+    id: "ACUTE_CARE",
+    label: "Akuttermin / offene Sprechstunde",
+    decisionCheckpointId: "ACUTE_CARE_DECISION",
+    specificCheckpointIds: [
+      "ACUTE_PURPOSE",
+      "ACUTE_EXCLUSION",
+      "ACUTE_APPOINTMENT_INFO",
+      "OPEN_CONSULTATION_INFO",
+      "WAITING_TIME",
+      "CAPACITY_LIMIT",
+      "CHRONIC_EXCLUSION",
+      "INFECTIOUS_PROTOCOL",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_CHRONIC_PATIENT",
+    ],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    globalHints: {
+      IS_CHRONIC_PATIENT: "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
     },
   },
 

@@ -1132,7 +1132,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PRIVATE_ONLY");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
     expect(prescriptionProfile.specificCheckpointIds).toHaveLength(6);
@@ -1142,6 +1142,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_KNOWN_MEDICATION");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_FOLLOW_UP");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_SPECIAL_TYPE");
+    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_PRIVATE_ONLY");
   });
 
   it("PRESCRIPTION-Profil bindet alle fünf Global Checkpoints", () => {
@@ -1187,6 +1188,20 @@ describe("PRESCRIPTION_DECISION – questions als Klärungshilfe", () => {
     expect(texts.some((t) => t.includes("indiziert") || t.includes("medizinisch nachvollziehbar"))).toBe(true);
     expect(texts.some((t) => t.includes("wiederverordnung") || t.includes("dauermedikation"))).toBe(true);
     expect(texts.some((t) => t.includes("anordnung"))).toBe(true);
+  });
+
+  it("PRESCRIPTION_DECISION POSSIBLE → mainDecision ist 'Ihr Rezept wurde ausgestellt.'", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toBe("Ihr Rezept wurde ausgestellt.");
+  });
+
+  it("PRESCRIPTION_DECISION NOT_POSSIBLE → mainDecision enthält 'nicht ausgestellt'", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("nicht ausgestellt");
   });
 });
 
@@ -1304,10 +1319,21 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("PRESCRIPTION_PRIVATE_ONLY YES → Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES (POSSIBLE) → eRezept-Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
-        checkpointStatuses: { PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.YES },
+        checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("eRezept") || t.includes("Gesundheitskarte")),
+    ).toBe(true);
+  });
+
+  it("PRESCRIPTION_STATUTORY_POSSIBLE NO (POSSIBLE) → Privatrezept-Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO },
       }),
     ]);
     expect(
@@ -1315,10 +1341,22 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     ).toBe(true);
   });
 
-  it("PRESCRIPTION_PRIVATE_ONLY NO → kein Output in attachedParagraphs", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES (NOT_POSSIBLE) → kein eRezept-Text (OUTCOME-Guard)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
-        checkpointStatuses: { PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.NO },
+        decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("eRezept") || t.includes("Gesundheitskarte")),
+    ).toBe(false);
+  });
+
+  it("PRESCRIPTION_PRIVATE_ONLY YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2200,5 +2238,362 @@ describe("REFERRAL-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sharedBottom.some((t) => t.includes("Bearbeitung"))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ACUTE_CARE-Profil
+// ---------------------------------------------------------------------------
+
+function makeAcuteCareSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "ACUTE_CARE",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("ACUTE_CARE-Profil – Struktur", () => {
+  it("Profil ACUTE_CARE ist im Katalog registriert", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    expect(profile).toBeDefined();
+    expect(profile.id).toBe("ACUTE_CARE");
+    expect(profile.label).toBe("Akuttermin / offene Sprechstunde");
+  });
+
+  it("ACUTE_CARE_DECISION hat genau 1 question", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_CARE_DECISION"];
+    expect(cp).toBeDefined();
+    expect(cp.questions).toHaveLength(1);
+  });
+
+  it("ACUTE_CARE hat genau 8 specificCheckpointIds", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    expect(profile.specificCheckpointIds).toHaveLength(8);
+  });
+
+  it("alle 8 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    const ids = [
+      "ACUTE_PURPOSE",
+      "ACUTE_EXCLUSION",
+      "ACUTE_APPOINTMENT_INFO",
+      "OPEN_CONSULTATION_INFO",
+      "WAITING_TIME",
+      "CAPACITY_LIMIT",
+      "CHRONIC_EXCLUSION",
+      "INFECTIOUS_PROTOCOL",
+    ];
+    for (const id of ids) {
+      expect(profile.specificCheckpointIds).toContain(id);
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    }
+  });
+
+  it("alle 8 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
+    for (const id of [
+      "ACUTE_PURPOSE",
+      "ACUTE_EXCLUSION",
+      "ACUTE_APPOINTMENT_INFO",
+      "OPEN_CONSULTATION_INFO",
+      "WAITING_TIME",
+      "CAPACITY_LIMIT",
+      "CHRONIC_EXCLUSION",
+      "INFECTIOUS_PROTOCOL",
+    ]) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+      expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+      expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+    }
+  });
+
+  it("ACUTE_CARE hat genau 1 boundGlobalCheckpointId", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
+    expect(profile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
+  });
+
+  it("ACUTE_CARE.globalHints enthält Einträge für alle gebundenen Globals", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    for (const id of profile.boundGlobalCheckpointIds) {
+      expect(profile.globalHints).toHaveProperty(id);
+    }
+  });
+
+  it("ACUTE_CARE hat die erwarteten availableActionIds", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
+    expect(profile.availableActionIds).toContain("OPEN_CONSULTATION");
+    expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
+    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+  });
+});
+
+describe("ACUTE_CARE-Profil – Decision", () => {
+  it("POSSIBLE → mainDecision enthält Akuttermin-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("Akuttermins");
+  });
+
+  it("NOT_POSSIBLE → mainDecision enthält Ablehnungstext", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("nicht geeignet");
+  });
+});
+
+describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
+  it("ACUTE_PURPOSE YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { ACUTE_PURPOSE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Dieser Weg ist für Beschwerden gedacht, die kurzfristig auftreten oder sich deutlich verschlechtern und zeitnah abgeklärt werden müssen.",
+    );
+  });
+
+  it("ACUTE_EXCLUSION YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { ACUTE_EXCLUSION: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Für planbare oder organisatorische Anliegen ist eine reguläre Sprechstunde erforderlich.",
+    );
+  });
+
+  it("ACUTE_APPOINTMENT_INFO YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { ACUTE_APPOINTMENT_INFO: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde möglich.",
+    );
+  });
+
+  it("OPEN_CONSULTATION_INFO YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { OPEN_CONSULTATION_INFO: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die offene Sprechstunde findet zwischen 9 und 10 Uhr statt. Sie können ohne Termin in die Praxis kommen; die Behandlung erfolgt durch den jeweils verfügbaren Arzt.",
+    );
+  });
+
+  it("WAITING_TIME YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { WAITING_TIME: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Je nach Auslastung kann es zu Wartezeiten kommen.",
+    );
+  });
+
+  it("CAPACITY_LIMIT YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { CAPACITY_LIMIT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Bei hoher Auslastung kann es vorkommen, dass keine weiteren Patienten aufgenommen werden können.",
+    );
+  });
+
+  it("CHRONIC_EXCLUSION YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { CHRONIC_EXCLUSION: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Auch bei chronischen Erkrankungen gehören planbare Anliegen in die reguläre Sprechstunde und nicht in diesen Bereich.",
+    );
+  });
+
+  it("INFECTIOUS_PROTOCOL YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { INFECTIOUS_PROTOCOL: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
+    );
+  });
+});
+
+describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
+  it("ACUTE_PURPOSE NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { ACUTE_PURPOSE: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("ACUTE_EXCLUSION NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { ACUTE_EXCLUSION: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("ACUTE_APPOINTMENT_INFO NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { ACUTE_APPOINTMENT_INFO: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("OPEN_CONSULTATION_INFO NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { OPEN_CONSULTATION_INFO: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("WAITING_TIME NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { WAITING_TIME: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("CAPACITY_LIMIT NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { CAPACITY_LIMIT: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("CHRONIC_EXCLUSION NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { CHRONIC_EXCLUSION: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("INFECTIOUS_PROTOCOL NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { INFECTIOUS_PROTOCOL: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("ACUTE_CARE-Profil – GlobalHints", () => {
+  it("IS_CHRONIC_PATIENT YES → akut-spezifischer Hint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Checkpoint Classification
+// ---------------------------------------------------------------------------
+
+describe("Checkpoint-Klassifizierung – GLOBAL_STATE", () => {
+  it("IS_NEW_PATIENT hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("PATIENT_NOT_IN_GERMANY hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["PATIENT_NOT_IN_GERMANY"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("DOCTOR_REVIEW_REQUIRED hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["DOCTOR_REVIEW_REQUIRED"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("DATA_INCOMPLETE hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["DATA_INCOMPLETE"].classification).toBe("GLOBAL_STATE");
+  });
+
+  it("IS_CHRONIC_PATIENT hat classification GLOBAL_STATE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IS_CHRONIC_PATIENT"].classification).toBe("GLOBAL_STATE");
+  });
+});
+
+describe("Checkpoint-Klassifizierung – CONTEXT_SPECIFIC", () => {
+  it("ACUTE_CARE_DECISION hat classification CONTEXT_SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_CARE_DECISION"].classification).toBe("CONTEXT_SPECIFIC");
+  });
+
+  it("ACUTE_APPOINTMENT_INFO hat classification CONTEXT_SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_APPOINTMENT_INFO"].classification).toBe("CONTEXT_SPECIFIC");
+  });
+
+  it("OPEN_CONSULTATION_INFO hat classification CONTEXT_SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["OPEN_CONSULTATION_INFO"].classification).toBe("CONTEXT_SPECIFIC");
+  });
+});
+
+describe("Checkpoint-Klassifizierung – MODULAR", () => {
+  it("CAPACITY_LIMIT hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["CAPACITY_LIMIT"].classification).toBe("MODULAR");
+  });
+
+  it("ACUTE_ONLY_LIMIT hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_ONLY_LIMIT"].classification).toBe("MODULAR");
+  });
+
+  it("ACUTE_PURPOSE hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_PURPOSE"].classification).toBe("MODULAR");
+  });
+
+  it("ACUTE_EXCLUSION hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_EXCLUSION"].classification).toBe("MODULAR");
+  });
+
+  it("NO_FIXED_TIME hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["NO_FIXED_TIME"].classification).toBe("MODULAR");
+  });
+
+  it("WAITING_TIME hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["WAITING_TIME"].classification).toBe("MODULAR");
+  });
+
+  it("CHRONIC_EXCLUSION hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["CHRONIC_EXCLUSION"].classification).toBe("MODULAR");
+  });
+
+  it("INFECTIOUS_PROTOCOL hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["INFECTIOUS_PROTOCOL"].classification).toBe("MODULAR");
   });
 });
