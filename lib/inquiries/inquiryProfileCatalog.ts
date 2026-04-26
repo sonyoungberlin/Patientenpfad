@@ -163,4 +163,33 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       DATA_INCOMPLETE: "Proben-Hinweis: Für die Zuordnung der Probe werden vollständige Patientendaten benötigt.",
     },
   },
+
+  REFERRAL: {
+    id: "REFERRAL",
+    label: "Überweisung",
+    decisionCheckpointId: "REFERRAL_DECISION",
+    specificCheckpointIds: [
+      "REF_DOCTOR_CONTACT_REQUIRED",
+      "REF_ORIGINAL_VS_PDF",
+      "REF_PSYCHOTHERAPY_FIRST_STEP",
+      "REF_SPECIALTY_REQUIRED",
+      "REF_BOOKING_CODE_PROCESS",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_NEW_PATIENT",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_INCOMPLETE",
+    ],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    globalHints: {
+      IS_NEW_PATIENT: "Überweisungs-Hinweis: Bei Neupatienten ist vor der Ausstellung in der Regel ein persönlicher Erstkontakt erforderlich.",
+      DOCTOR_REVIEW_REQUIRED: "Überweisungs-Hinweis: Die Ausstellung erfolgt nach ärztlicher Einschätzung.",
+      DATA_INCOMPLETE: "Überweisungs-Hinweis: Für die Erstellung werden vollständige Patientendaten benötigt.",
+    },
+  },
 };

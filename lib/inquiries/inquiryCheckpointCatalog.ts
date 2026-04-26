@@ -854,4 +854,106 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.NO]: "",
     },
   },
+
+  // ---- REFERRAL DECISION ----
+
+  REFERRAL_DECISION: {
+    id: "REFERRAL_DECISION",
+    label: "Überweisungs-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REFERRAL_DECISION-Q1", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+      { id: "REFERRAL_DECISION-Q2", text: "Handelt es sich um eine Wiederholung einer bestehenden Überweisung?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Ihre Überweisung wurde ausgestellt und liegt zur Abholung in der Praxis bereit.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Die von Ihnen angefragte Überweisung wurde nicht ausgestellt.",
+    },
+  },
+
+  // ---- REFERRAL SPECIFIC EXPLANATIONS ----
+
+  REF_DOCTOR_CONTACT_REQUIRED: {
+    id: "REF_DOCTOR_CONTACT_REQUIRED",
+    label: "Ärztlicher Kontakt erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_DOCTOR_CONTACT_REQUIRED-Q1", text: "Handelt es sich um neue oder unklare Beschwerden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei neuen oder unklaren Beschwerden ist vor einer Überweisung eine ärztliche Einschätzung in der Sprechstunde erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_ORIGINAL_VS_PDF: {
+    id: "REF_ORIGINAL_VS_PDF",
+    label: "Digitale vs. Original-Überweisung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_ORIGINAL_VS_PDF-Q1", text: "Geht es um die Nutzung einer digitalen Überweisung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Überweisung kann digital für die Terminvereinbarung genutzt werden; für die Vorstellung in der Facharztpraxis wird häufig das Original benötigt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_PSYCHOTHERAPY_FIRST_STEP: {
+    id: "REF_PSYCHOTHERAPY_FIRST_STEP",
+    label: "Psychotherapie – Erstvorstellung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_PSYCHOTHERAPY_FIRST_STEP-Q1", text: "Geht es um eine Erstvorstellung zur Psychotherapie?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_SPECIALTY_REQUIRED: {
+    id: "REF_SPECIALTY_REQUIRED",
+    label: "Fachrichtung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung oder der Facharzt bekannt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung einer Überweisung muss die gewünschte Fachrichtung angegeben werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_BOOKING_CODE_PROCESS: {
+    id: "REF_BOOKING_CODE_PROCESS",
+    label: "Vermittlungs- / Buchungscode",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_BOOKING_CODE_PROCESS-Q1", text: "Geht es um die Terminbuchung mit Vermittlungs- oder Buchungscode?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 };

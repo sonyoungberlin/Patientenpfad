@@ -1969,3 +1969,236 @@ describe("SAMPLE_COLLECTION-Profil – GLOBALs unverändert", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// REFERRAL-Profil
+// ---------------------------------------------------------------------------
+
+function makeReferralSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "REFERRAL",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("REFERRAL-Profil – Struktur", () => {
+  it("Profil REFERRAL ist im Katalog registriert", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    expect(profile).toBeDefined();
+    expect(profile.id).toBe("REFERRAL");
+    expect(profile.label).toBe("Überweisung");
+  });
+
+  it("REFERRAL_DECISION hat genau 2 questions", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["REFERRAL_DECISION"];
+    expect(cp).toBeDefined();
+    expect(cp.questions).toHaveLength(2);
+  });
+
+  it("alle 5 SPECIFIC Checkpoints sind im Katalog und an REFERRAL gebunden", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    const ids = [
+      "REF_DOCTOR_CONTACT_REQUIRED",
+      "REF_ORIGINAL_VS_PDF",
+      "REF_PSYCHOTHERAPY_FIRST_STEP",
+      "REF_SPECIALTY_REQUIRED",
+      "REF_BOOKING_CODE_PROCESS",
+    ];
+    for (const id of ids) {
+      expect(profile.specificCheckpointIds).toContain(id);
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    }
+  });
+
+  it("REFERRAL hat genau 3 boundGlobalCheckpointIds", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(3);
+    expect(profile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
+    expect(profile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(profile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+  });
+
+  it("REFERRAL.globalHints enthält genau die drei gebundenen Global-Keys", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    expect(profile.globalHints).toBeDefined();
+    const keys = Object.keys(profile.globalHints!);
+    expect(keys).toHaveLength(3);
+    expect(keys).toContain("IS_NEW_PATIENT");
+    expect(keys).toContain("DOCTOR_REVIEW_REQUIRED");
+    expect(keys).toContain("DATA_INCOMPLETE");
+  });
+
+  it("REFERRAL hat die erwarteten availableActionIds", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
+    expect(profile.availableActionIds).toContain("OPEN_CONSULTATION");
+    expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
+    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+  });
+});
+
+describe("REFERRAL-Profil – Decision", () => {
+  it("POSSIBLE → mainDecision enthält 'Überweisung'", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("Überweisung");
+  });
+
+  it("NOT_POSSIBLE → mainDecision enthält 'nicht ausgestellt'", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("nicht ausgestellt");
+  });
+});
+
+describe("REFERRAL-Profil – SPECIFIC Checkpoints YES → Output", () => {
+  it("REF_DOCTOR_CONTACT_REQUIRED YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Bei neuen oder unklaren Beschwerden ist vor einer Überweisung eine ärztliche Einschätzung in der Sprechstunde erforderlich.",
+    );
+  });
+
+  it("REF_ORIGINAL_VS_PDF YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die Überweisung kann digital für die Terminvereinbarung genutzt werden; für die Vorstellung in der Facharztpraxis wird häufig das Original benötigt.",
+    );
+  });
+
+  it("REF_PSYCHOTHERAPY_FIRST_STEP YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
+    );
+  });
+
+  it("REF_SPECIALTY_REQUIRED YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_SPECIALTY_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Für die Ausstellung einer Überweisung muss die gewünschte Fachrichtung angegeben werden.",
+    );
+  });
+
+  it("REF_BOOKING_CODE_PROCESS YES → Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
+    );
+  });
+});
+
+describe("REFERRAL-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
+  it("REF_DOCTOR_CONTACT_REQUIRED NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_ORIGINAL_VS_PDF NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_PSYCHOTHERAPY_FIRST_STEP NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_SPECIALTY_REQUIRED NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_SPECIALTY_REQUIRED: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_BOOKING_CODE_PROCESS NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("REFERRAL-Profil – GlobalHints", () => {
+  it("IS_NEW_PATIENT YES → überweisungs-spezifischer Hint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Überweisungs-Hinweis: Bei Neupatienten ist vor der Ausstellung in der Regel ein persönlicher Erstkontakt erforderlich.",
+    );
+  });
+
+  it("DOCTOR_REVIEW_REQUIRED YES → überweisungs-spezifischer Hint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { DOCTOR_REVIEW_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Überweisungs-Hinweis: Die Ausstellung erfolgt nach ärztlicher Einschätzung.",
+    );
+  });
+
+  it("DATA_INCOMPLETE YES → überweisungs-spezifischer Hint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { DATA_INCOMPLETE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Überweisungs-Hinweis: Für die Erstellung werden vollständige Patientendaten benötigt.",
+    );
+  });
+
+  it("PROCESSING_DELAY ACTIVE → Text in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { PROCESSING_DELAY: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom.some((t) => t.includes("Bearbeitung"))).toBe(true);
+  });
+});
