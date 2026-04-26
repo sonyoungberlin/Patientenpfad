@@ -1122,17 +1122,18 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle sechs Specific Checkpoints", () => {
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CONTROL_OVERDUE");
+  it("PRESCRIPTION-Profil bindet alle fünf Specific Checkpoints", () => {
+    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(6);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(5);
   });
 
   it("Alte Checkpoints sind nicht mehr in PRESCRIPTION.specificCheckpointIds", () => {
+    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_KNOWN_MEDICATION");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_FOLLOW_UP");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_SPECIAL_TYPE");
@@ -1220,7 +1221,7 @@ describe("PRESCRIPTION-Profil – IS_CHRONIC_PATIENT globalHint", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
+      "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
     );
   });
 
@@ -1239,7 +1240,7 @@ describe("PRESCRIPTION-Profil – IS_CHRONIC_PATIENT globalHint", () => {
 // ---------------------------------------------------------------------------
 
 describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
-  it("Alle sechs gebundenen PRESCRIPTION SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
+  it("Alle fünf gebundenen PRESCRIPTION SPECIFIC Checkpoints sind kind EXPLANATION, scope SPECIFIC, placement ATTACHED", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["PRESCRIPTION"];
     for (const id of profile.specificCheckpointIds) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -1250,15 +1251,13 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     }
   });
 
-  it("PRESCRIPTION_CONTROL_OVERDUE YES → Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_CONTROL_OVERDUE YES → kein Output in attachedParagraphs (deprecated, nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_CONTROL_OVERDUE: ExplanationStatus.YES },
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Kontrolltermin")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("PRESCRIPTION_CONTROL_OVERDUE NO → kein Output in attachedParagraphs", () => {
@@ -1756,13 +1755,13 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
       makePrescriptionSection({
         checkpointStatuses: {
           IS_NEW_PATIENT: ExplanationStatus.YES,
-          PRESCRIPTION_CONTROL_OVERDUE: ExplanationStatus.YES,
+          PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: ExplanationStatus.YES,
         },
       }),
     ]);
     // SPECIFIC docs: both inquiries (YES → output produced)
     expect(result.documentation.some((d) => d.includes("Check-up-Regelung"))).toBe(true);
-    expect(result.documentation.some((d) => d.includes("Kontrolltermin"))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Facharztbericht"))).toBe(true);
     // GLOBAL doc: exactly once
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
     expect(entries).toHaveLength(1);

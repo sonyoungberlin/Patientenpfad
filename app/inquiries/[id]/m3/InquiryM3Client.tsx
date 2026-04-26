@@ -217,6 +217,13 @@ export default function InquiryM3Client({
     return result;
   });
 
+  const [actionsOpen, setActionsOpen] = useState(() => {
+    // Automatisch aufklappen, wenn bereits ein Action-Status gesetzt ist.
+    return actionIds.some(
+      (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
+    );
+  });
+
   const [confirmed, setConfirmed] = useState(isConfirmed);
   const [frozenOutput, setFrozenOutput] = useState<InquiryResponseV2Output | null>(
     initialGeneratedOutput,
@@ -441,8 +448,25 @@ export default function InquiryM3Client({
           {/* Action checkpoints */}
           {actionCheckpoints.length > 0 && (
             <section style={{ marginBottom: "1.5rem" }}>
-              <h2 style={{ marginBottom: "0.5rem" }}>Aktionen</h2>
-              {actionCheckpoints.map((cp) => (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: actionsOpen ? "0.5rem" : 0 }}>
+                <h2 style={{ margin: 0 }}>Aktionen</h2>
+                <button
+                  type="button"
+                  onClick={() => setActionsOpen((o) => !o)}
+                  style={{
+                    padding: "0.15rem 0.6rem",
+                    borderRadius: "var(--radius)",
+                    border: "1px solid var(--border)",
+                    background: "var(--background)",
+                    color: "var(--foreground)",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {actionsOpen ? "Weniger ▲" : "Mehr ▼"}
+                </button>
+              </div>
+              {actionsOpen && actionCheckpoints.map((cp) => (
                 <div
                   key={cp.id}
                   style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
