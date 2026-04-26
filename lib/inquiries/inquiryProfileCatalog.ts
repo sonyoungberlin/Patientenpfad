@@ -94,6 +94,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
       "URINE_SAMPLE_ONSITE",
+      "LAB_FASTING_REQUIRED",
     ],
   },
 

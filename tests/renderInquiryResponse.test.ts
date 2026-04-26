@@ -1518,6 +1518,19 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(cp.questions).toBeDefined();
     expect((cp.questions ?? []).length).toBeGreaterThan(0);
   });
+
+  it("LAB_FASTING_REQUIRED ist ACTION/GLOBAL/SHARED_BOTTOM im Katalog", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+  });
+
+  it("LAB_FASTING_REQUIRED ist in LAB.availableActionIds enthalten", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["LAB"];
+    expect(profile.availableActionIds).toContain("LAB_FASTING_REQUIRED");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1567,13 +1580,23 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_FASTING_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
+  it("LAB_FASTING_REQUIRED ACTIVE → Nüchtern-Hinweis erscheint in sharedBottom", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_FASTING_REQUIRED: ExplanationStatus.YES },
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.ACTIVE },
       }),
     ]);
+    expect(result.sharedBottom.some((t) => t.includes("nüchtern"))).toBe(true);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("LAB_FASTING_REQUIRED INACTIVE → kein Eintrag in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
   });
 
   it("LAB_SELF_PAYER_IGEL NO → kein Text in attachedParagraphs", () => {

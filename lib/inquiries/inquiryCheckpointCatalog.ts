@@ -502,19 +502,15 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  /** @deprecated ungebunden – nicht mehr in LAB.specificCheckpointIds */
   LAB_FASTING_REQUIRED: {
     id: "LAB_FASTING_REQUIRED",
-    label: "Nüchternabnahme erforderlich",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    questions: [
-      { id: "LAB_FASTING_REQUIRED-Q1", text: "Erfordern die angefragten Laborwerte eine nüchterne Blutentnahme?" },
-    ],
+    label: "Vorbereitung: nüchtern erscheinen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     textByStatus: {
-      [ExplanationStatus.YES]: "Bitte kommen Sie nüchtern zur Blutentnahme (mindestens 8 Stunden vorher nichts essen, kein Kaffee; Wasser ist erlaubt).",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]:
+        "Bitte kommen Sie nüchtern zur Blutentnahme. Essen Sie mindestens acht Stunden vorher nichts; Wasser ist erlaubt, Kaffee bitte nicht.",
     },
   },
 
