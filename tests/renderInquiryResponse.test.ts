@@ -2263,20 +2263,18 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("ACUTE_CARE hat genau 8 specificCheckpointIds", () => {
+  it("ACUTE_CARE hat genau 6 specificCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.specificCheckpointIds).toHaveLength(8);
+    expect(profile.specificCheckpointIds).toHaveLength(6);
   });
 
-  it("alle 8 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+  it("alle 6 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     const ids = [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "ACUTE_APPOINTMENT_INFO",
-      "OPEN_CONSULTATION_INFO",
-      "WAITING_TIME",
-      "CAPACITY_LIMIT",
+      "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
       "INFECTIOUS_PROTOCOL",
     ];
@@ -2286,14 +2284,12 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("alle 8 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
+  it("alle 6 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
     for (const id of [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "ACUTE_APPOINTMENT_INFO",
-      "OPEN_CONSULTATION_INFO",
-      "WAITING_TIME",
-      "CAPACITY_LIMIT",
+      "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
       "INFECTIOUS_PROTOCOL",
     ]) {
@@ -2376,36 +2372,14 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
     );
   });
 
-  it("OPEN_CONSULTATION_INFO YES → Text in attachedParagraphs", () => {
+  it("ACUTE_OPEN_CONSULTATION_INFO YES → Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
-        checkpointStatuses: { OPEN_CONSULTATION_INFO: ExplanationStatus.YES },
+        checkpointStatuses: { ACUTE_OPEN_CONSULTATION_INFO: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Die offene Sprechstunde findet zwischen 9 und 10 Uhr statt. Sie können ohne Termin in die Praxis kommen; die Behandlung erfolgt durch den jeweils verfügbaren Arzt.",
-    );
-  });
-
-  it("WAITING_TIME YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { WAITING_TIME: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Je nach Auslastung kann es zu Wartezeiten kommen.",
-    );
-  });
-
-  it("CAPACITY_LIMIT YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { CAPACITY_LIMIT: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei hoher Auslastung kann es vorkommen, dass keine weiteren Patienten aufgenommen werden können.",
+      "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     );
   });
 
@@ -2460,28 +2434,10 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints NO → kein Output", () => 
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("OPEN_CONSULTATION_INFO NO → kein Text in attachedParagraphs", () => {
+  it("ACUTE_OPEN_CONSULTATION_INFO NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
-        checkpointStatuses: { OPEN_CONSULTATION_INFO: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("WAITING_TIME NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { WAITING_TIME: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("CAPACITY_LIMIT NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { CAPACITY_LIMIT: ExplanationStatus.NO },
+        checkpointStatuses: { ACUTE_OPEN_CONSULTATION_INFO: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2551,15 +2507,11 @@ describe("Checkpoint-Klassifizierung – CONTEXT_SPECIFIC", () => {
   it("ACUTE_APPOINTMENT_INFO hat classification CONTEXT_SPECIFIC", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_APPOINTMENT_INFO"].classification).toBe("CONTEXT_SPECIFIC");
   });
-
-  it("OPEN_CONSULTATION_INFO hat classification CONTEXT_SPECIFIC", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["OPEN_CONSULTATION_INFO"].classification).toBe("CONTEXT_SPECIFIC");
-  });
 });
 
 describe("Checkpoint-Klassifizierung – MODULAR", () => {
-  it("CAPACITY_LIMIT hat classification MODULAR", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["CAPACITY_LIMIT"].classification).toBe("MODULAR");
+  it("ACUTE_OPEN_CONSULTATION_INFO hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"].classification).toBe("MODULAR");
   });
 
   it("ACUTE_ONLY_LIMIT hat classification MODULAR", () => {
@@ -2576,10 +2528,6 @@ describe("Checkpoint-Klassifizierung – MODULAR", () => {
 
   it("NO_FIXED_TIME hat classification MODULAR", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["NO_FIXED_TIME"].classification).toBe("MODULAR");
-  });
-
-  it("WAITING_TIME hat classification MODULAR", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["WAITING_TIME"].classification).toBe("MODULAR");
   });
 
   it("CHRONIC_EXCLUSION hat classification MODULAR", () => {
