@@ -1564,7 +1564,7 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
         checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain("Labor-Hinweis: Check-up-Regelung.");
+    expect(result.sections[0].attachedParagraphs).toContain("Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.");
   });
 
   it("LAB_FASTING_REQUIRED NO → kein Text in attachedParagraphs", () => {
@@ -1583,7 +1583,7 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Labor-Hinweis: nüchtern zur Blutentnahme erscheinen.",
+      "Bitte kommen Sie nüchtern zur Blutentnahme (mindestens 8 Stunden vorher nichts essen, kein Kaffee; Wasser ist erlaubt).",
     );
   });
 
@@ -1602,7 +1602,7 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
         checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain("Labor-Hinweis: Selbstzahlerleistung.");
+    expect(result.sections[0].attachedParagraphs).toContain("Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.");
   });
 
   it("LAB_DISCUSSION_PROCESS_CODE NO → kein Text in attachedParagraphs", () => {
@@ -1621,7 +1621,7 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Labor-Hinweis: Befundbesprechung nach Laboreingang.",
+      "Der Buchungscode für die Befundbesprechung wird automatisch versendet, sobald alle Laborergebnisse vorliegen.",
     );
   });
 
@@ -1641,7 +1641,7 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Labor-Hinweis: MPU-/forensisches Screening nicht möglich.",
+      "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
     );
   });
 });

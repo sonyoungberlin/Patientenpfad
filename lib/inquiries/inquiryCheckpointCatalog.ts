@@ -477,7 +477,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_CHECKUP_RULES-Q1", text: "Geht es um eine Laborkontrolle im Rahmen eines gesetzlichen Check-ups?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: Check-up-Regelung.",
+      [ExplanationStatus.YES]: "Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -492,7 +492,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_FASTING_REQUIRED-Q1", text: "Erfordern die angefragten Laborwerte eine nüchterne Blutentnahme?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: nüchtern zur Blutentnahme erscheinen.",
+      [ExplanationStatus.YES]: "Bitte kommen Sie nüchtern zur Blutentnahme (mindestens 8 Stunden vorher nichts essen, kein Kaffee; Wasser ist erlaubt).",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -507,7 +507,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_SELF_PAYER_IGEL-Q1", text: "Handelt es sich um gewünschte Laborwerte ohne Kassenleistung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: Selbstzahlerleistung.",
+      [ExplanationStatus.YES]: "Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -522,7 +522,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_DISCUSSION_PROCESS_CODE-Q1", text: "Geht es um den Ablauf der Befundbesprechung nach der Blutentnahme?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: Befundbesprechung nach Laboreingang.",
+      [ExplanationStatus.YES]: "Der Buchungscode für die Befundbesprechung wird automatisch versendet, sobald alle Laborergebnisse vorliegen.",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -537,7 +537,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_MPU_EXCLUSION-Q1", text: "Wird ein forensisches Labor oder MPU-Screening angefragt?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: MPU-/forensisches Screening nicht möglich.",
+      [ExplanationStatus.YES]: "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
       [ExplanationStatus.NO]: "",
     },
   },
