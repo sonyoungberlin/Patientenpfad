@@ -285,6 +285,30 @@ export function renderInquiryResponseFromSections(
       }
     }
 
+    // ---- E) Profil-spezifische ACTION-Checkpoints (boundActionCheckpointIds) ----
+    for (const actionId of profile.boundActionCheckpointIds ?? []) {
+      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
+      if (!checkpoint) continue;
+      if (checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
+
+      const status = section.checkpointStatuses[actionId];
+      if (status === undefined || status === ActionStatus.INACTIVE) continue;
+
+      const text = checkpoint.textByStatus[status];
+      if (!text) continue;
+
+      if (checkpoint.placement === InquiryCheckpointPlacement.SHARED_BOTTOM) {
+        if (!sharedBottomSeen.has(actionId)) {
+          sharedBottomSeen.add(actionId);
+          sharedBottomTexts.push(text);
+        }
+      } else {
+        const docText = checkpoint.docByStatus?.[status] ?? text;
+        attachedParagraphs.push(text);
+        sectionDocumentation.push(`${checkpoint.label}: ${docText}`);
+      }
+    }
+
     sectionOutputs.push({
       inquiryId: section.inquiryId,
       label: profile.label,

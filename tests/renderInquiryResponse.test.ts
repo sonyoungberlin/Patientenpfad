@@ -1519,17 +1519,19 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect((cp.questions ?? []).length).toBeGreaterThan(0);
   });
 
-  it("LAB_FASTING_REQUIRED ist ACTION/GLOBAL/SHARED_BOTTOM im Katalog", () => {
+  it("LAB_FASTING_REQUIRED ist ACTION/GLOBAL/SHARED_BOTTOM im Katalog mit actionCategory PREPARATION", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
     expect(cp).toBeDefined();
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
     expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
     expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+    expect(cp.actionCategory).toBe("PREPARATION");
   });
 
-  it("LAB_FASTING_REQUIRED ist in LAB.availableActionIds enthalten", () => {
+  it("LAB_FASTING_REQUIRED ist in LAB.boundActionCheckpointIds enthalten (nicht mehr in availableActionIds)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["LAB"];
-    expect(profile.availableActionIds).toContain("LAB_FASTING_REQUIRED");
+    expect(profile.boundActionCheckpointIds).toContain("LAB_FASTING_REQUIRED");
+    expect(profile.availableActionIds).not.toContain("LAB_FASTING_REQUIRED");
   });
 });
 
@@ -1786,13 +1788,17 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("alle 4 SPECIFIC Checkpoints sind im Katalog (ungebunden)", () => {
+  it("alle 4 Action-Checkpoints sind als ACTION/PREPARATION|PROCESS|INFO im Katalog und in boundActionCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER", "LAB_RESULT_TIME"];
     expect(profile.specificCheckpointIds).toHaveLength(0);
     for (const id of ids) {
-      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+      expect(cp.actionCategory).toBeDefined();
     }
+    expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(ids));
   });
 
   it("SAMPLE_COLLECTION hat keine boundGlobalCheckpointIds", () => {
@@ -1829,74 +1835,78 @@ describe("SAMPLE_COLLECTION-Profil – Decision", () => {
   });
 });
 
-describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
-  it("URINE_SAMPLE_INSTRUCTIONS YES → kein Text (ungebunden)", () => {
+describe("SAMPLE_COLLECTION-Profil – Action-Checkpoints (boundActionCheckpointIds)", () => {
+  it("URINE_SAMPLE_INSTRUCTIONS ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
+        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Mittelstrahl");
+  });
+
+  it("URINE_SAMPLE_INSTRUCTIONS INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("URINE_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
+  it("STOOL_SAMPLE_INSTRUCTIONS ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { URINE_SAMPLE_INSTRUCTIONS: ExplanationStatus.NO },
+        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Stuhlprobe");
+  });
+
+  it("STOOL_SAMPLE_INSTRUCTIONS INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("STOOL_SAMPLE_INSTRUCTIONS YES → kein Text (ungebunden)", () => {
+  it("SAMPLE_HANDOVER ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ExplanationStatus.YES },
+        checkpointStatuses: { SAMPLE_HANDOVER: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("beschriftet");
+  });
+
+  it("SAMPLE_HANDOVER INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { SAMPLE_HANDOVER: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("STOOL_SAMPLE_INSTRUCTIONS NO → kein Text in attachedParagraphs", () => {
+  it("LAB_RESULT_TIME ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { STOOL_SAMPLE_INSTRUCTIONS: ExplanationStatus.NO },
+        checkpointStatuses: { LAB_RESULT_TIME: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Auswertung");
   });
 
-  it("SAMPLE_HANDOVER YES → kein Text (ungebunden)", () => {
+  it("LAB_RESULT_TIME INACTIVE → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
-        checkpointStatuses: { SAMPLE_HANDOVER: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("SAMPLE_HANDOVER NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeSampleCollectionSection({
-        checkpointStatuses: { SAMPLE_HANDOVER: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("LAB_RESULT_TIME YES → kein Text (ungebunden)", () => {
-    const result = renderInquiryResponseFromSections([
-      makeSampleCollectionSection({
-        checkpointStatuses: { LAB_RESULT_TIME: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("LAB_RESULT_TIME NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeSampleCollectionSection({
-        checkpointStatuses: { LAB_RESULT_TIME: ExplanationStatus.NO },
+        checkpointStatuses: { LAB_RESULT_TIME: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -1970,7 +1980,7 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("5 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL gebunden", () => {
+  it("5 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
@@ -1983,6 +1993,17 @@ describe("REFERRAL-Profil – Struktur", () => {
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    }
+  });
+
+  it("3 migrierte Action-Checkpoints sind in boundActionCheckpointIds mit kind ACTION und actionCategory", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    const actionIds = ["REF_BOOKING_CODE_PROCESS", "REF_ORIGINAL_VS_PDF", "REF_PSYCHOTHERAPY_FIRST_STEP"];
+    expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(actionIds));
+    for (const id of actionIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+      expect(cp.actionCategory).toBeDefined();
     }
   });
 
@@ -2022,29 +2043,11 @@ describe("REFERRAL-Profil – Decision", () => {
   });
 });
 
-describe("REFERRAL-Profil – SPECIFIC Checkpoints YES → kein Output (ungebunden)", () => {
+describe("REFERRAL-Profil – nicht migrierte SPECIFIC Checkpoints → kein Output (ungebunden)", () => {
   it("REF_DOCTOR_CONTACT_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("REF_ORIGINAL_VS_PDF YES → kein Output in attachedParagraphs (ungebunden)", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("REF_PSYCHOTHERAPY_FIRST_STEP YES → kein Output in attachedParagraphs (ungebunden)", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2059,39 +2062,10 @@ describe("REFERRAL-Profil – SPECIFIC Checkpoints YES → kein Output (ungebund
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_BOOKING_CODE_PROCESS YES → kein Output in attachedParagraphs (ungebunden)", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-});
-
-describe("REFERRAL-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
   it("REF_DOCTOR_CONTACT_REQUIRED NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("REF_ORIGINAL_VS_PDF NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("REF_PSYCHOTHERAPY_FIRST_STEP NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2105,11 +2079,61 @@ describe("REFERRAL-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
+});
 
-  it("REF_BOOKING_CODE_PROCESS NO → kein Text in attachedParagraphs", () => {
+describe("REFERRAL-Profil – migrierte Action-Checkpoints (boundActionCheckpointIds)", () => {
+  it("REF_ORIGINAL_VS_PDF ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
-        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ExplanationStatus.NO },
+        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Original");
+  });
+
+  it("REF_ORIGINAL_VS_PDF INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_ORIGINAL_VS_PDF: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_PSYCHOTHERAPY_FIRST_STEP ACTIVE → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("psychotherapeutischen");
+  });
+
+  it("REF_PSYCHOTHERAPY_FIRST_STEP INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_BOOKING_CODE_PROCESS ACTIVE → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Buchungscode");
+  });
+
+  it("REF_BOOKING_CODE_PROCESS INACTIVE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ActionStatus.INACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);

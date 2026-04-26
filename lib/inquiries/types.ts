@@ -298,6 +298,18 @@ export type InquiryCheckpoint = {
    */
   classification?: "GLOBAL_STATE" | "MODULAR" | "CONTEXT_SPECIFIC" | "OUTCOME";
   /**
+   * Thematische Unterkategorie für ACTION-Checkpoints (kind = ACTION).
+   *
+   * Dient der Gruppierung und Darstellung in M2/M3 (z. B. Vorbereitungshinweise,
+   * Prozessinfos, nächste Schritte). Hat keinen Einfluss auf die Decision-Logik.
+   *
+   * PREPARATION – Patientenhinweise vor dem Termin (z. B. nüchtern, Probe vorbereiten).
+   * PROCESS     – Ablaufhinweise (z. B. Probenabgabe).
+   * NEXT_STEP   – Hinweise auf nächste Handlungsschritte (z. B. Buchungscode nutzen).
+   * INFO        – Allgemeine Sachinformationen (z. B. Befunddauer).
+   */
+  actionCategory?: "PREPARATION" | "PROCESS" | "NEXT_STEP" | "INFO";
+  /**
    * Einmalige M2-Frage für GLOBAL-Checkpoints (reiner Schalter: ja / nein).
    * Bei SPECIFIC-Checkpoints nicht gesetzt.
    */
@@ -331,6 +343,18 @@ export type InquiryProfileV2 = {
   specificCheckpointIds: string[];
   boundGlobalCheckpointIds: string[];
   availableActionIds: string[];
+  /**
+   * Profil-spezifische Action/Info/Preparation-Checkpoints (kind = ACTION).
+   *
+   * Diese Checkpoints werden in M2 abgefragt (factStatus) und in M3 schaltbar
+   * angeboten (outputStatus, Default: HIDE). M4 rendert ihren Text nur, wenn
+   * der Status ACTIVE ist.
+   *
+   * Abgrenzung zu availableActionIds: availableActionIds sind globale,
+   * profilübergreifende Aktionen (z. B. PROCESSING_DELAY), die in sharedBottom
+   * erscheinen. boundActionCheckpointIds sind anliegenspezifisch.
+   */
+  boundActionCheckpointIds?: string[];
   /**
    * Anliegenspezifische Hinweistexte aus globalen Checkpoints.
    * Key = globalCheckpointId; Value = Hinweistext, der bei Status „ja"

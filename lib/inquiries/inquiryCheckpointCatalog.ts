@@ -508,6 +508,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "PREPARATION",
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Bitte kommen Sie nüchtern zur Blutentnahme. Essen Sie mindestens acht Stunden vorher nichts; Wasser ist erlaubt, Kaffee bitte nicht.",
@@ -819,60 +820,60 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   URINE_SAMPLE_INSTRUCTIONS: {
     id: "URINE_SAMPLE_INSTRUCTIONS",
     label: "Urinprobe – Hinweis",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PREPARATION",
     questions: [
       { id: "URINE_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Urinprobe abgegeben werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
     },
   },
 
   STOOL_SAMPLE_INSTRUCTIONS: {
     id: "STOOL_SAMPLE_INSTRUCTIONS",
     label: "Stuhlprobe – Hinweis",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PREPARATION",
     questions: [
       { id: "STOOL_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Stuhlprobe abgegeben werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
     },
   },
 
   SAMPLE_HANDOVER: {
     id: "SAMPLE_HANDOVER",
     label: "Probenabgabe / Aufbewahrung",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PROCESS",
     questions: [
       { id: "SAMPLE_HANDOVER-Q1", text: "Geht es um die Abgabe oder Aufbewahrung der Probe?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
     },
   },
 
   LAB_RESULT_TIME: {
     id: "LAB_RESULT_TIME",
     label: "Befundübermittlung / Auswertungsdauer",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
     questions: [
       { id: "LAB_RESULT_TIME-Q1", text: "Geht es um die Dauer oder den Ablauf der Befundübermittlung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
-      [ExplanationStatus.NO]: "",
+      [ActionStatus.ACTIVE]: "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
     },
   },
 
@@ -1132,32 +1133,32 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   REF_ORIGINAL_VS_PDF: {
     id: "REF_ORIGINAL_VS_PDF",
     label: "Digitale vs. Original-Überweisung",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
     questions: [
       { id: "REF_ORIGINAL_VS_PDF-Q1", text: "Geht es um die Nutzung einer digitalen Überweisung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Die Überweisung kann digital für die Terminvereinbarung genutzt werden; für die Vorstellung in der Facharztpraxis wird häufig das Original benötigt.",
-      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
   REF_PSYCHOTHERAPY_FIRST_STEP: {
     id: "REF_PSYCHOTHERAPY_FIRST_STEP",
     label: "Psychotherapie – Erstvorstellung",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
     questions: [
       { id: "REF_PSYCHOTHERAPY_FIRST_STEP-Q1", text: "Geht es um eine Erstvorstellung zur Psychotherapie?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
-      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
@@ -1180,16 +1181,16 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   REF_BOOKING_CODE_PROCESS: {
     id: "REF_BOOKING_CODE_PROCESS",
     label: "Vermittlungs- / Buchungscode",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
     questions: [
       { id: "REF_BOOKING_CODE_PROCESS-Q1", text: "Geht es um die Terminbuchung mit Vermittlungs- oder Buchungscode?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
-      // NO: bewusst still – keine Erklärung nötig
     },
   },
 };

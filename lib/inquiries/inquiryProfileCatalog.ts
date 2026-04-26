@@ -89,12 +89,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_SELF_PAYER_IGEL",
     ],
     boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
+      "LAB_FASTING_REQUIRED",
+    ],
     availableActionIds: [
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
       "URINE_SAMPLE_ONSITE",
-      "LAB_FASTING_REQUIRED",
     ],
   },
 
@@ -104,6 +106,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
     specificCheckpointIds: [],
     boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
+      "URINE_SAMPLE_INSTRUCTIONS",
+      "STOOL_SAMPLE_INSTRUCTIONS",
+      "SAMPLE_HANDOVER",
+      "LAB_RESULT_TIME",
+    ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
@@ -145,6 +153,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [],
     boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
+      "REF_BOOKING_CODE_PROCESS",
+      "REF_ORIGINAL_VS_PDF",
+      "REF_PSYCHOTHERAPY_FIRST_STEP",
+    ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
