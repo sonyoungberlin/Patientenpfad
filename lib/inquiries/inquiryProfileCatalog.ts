@@ -93,11 +93,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "Vor der ersten Ausstellung ist ein persönlicher Erstkontakt erforderlich.",
-      PATIENT_NOT_IN_GERMANY: "Eine digitale Ausstellung ist bei Aufenthalt außerhalb Deutschlands nicht möglich.",
-      DOCTOR_REVIEW_REQUIRED: "Eine ärztliche Prüfung ist erforderlich.",
-      DATA_INCOMPLETE: "Bitte ergänzen Sie die fehlenden Unterlagen oder Angaben.",
-      IS_CHRONIC_PATIENT: "Regelmäßige ärztliche Kontrolltermine sind erforderlich.",
+      IS_NEW_PATIENT: "Rezept-Hinweis: Neupatient, Termin erforderlich.",
+      PATIENT_NOT_IN_GERMANY: "Rezept-Hinweis: Aufenthalt außerhalb Deutschlands.",
+      DOCTOR_REVIEW_REQUIRED: "Rezept-Hinweis: ärztliche Prüfung notwendig.",
+      DATA_INCOMPLETE: "Rezept-Hinweis: Unterlagen / Daten fehlen.",
+      IS_CHRONIC_PATIENT: "Rezept-Hinweis: regelmäßige Kontrolle bei Dauermedikation erforderlich.",
     },
   },
 
@@ -188,10 +188,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "Auch im Akutfall ist eine persönliche Vorstellung erforderlich.",
-      DOCTOR_REVIEW_REQUIRED: "Die Behandlung erfolgt nach ärztlicher Einschätzung.",
-      DATA_INCOMPLETE: "Bitte bringen Sie Ihre Versichertenkarte mit.",
-      IS_CHRONIC_PATIENT: "Auch bei chronischen Erkrankungen gilt dies für planbare Anliegen.",
+      IS_NEW_PATIENT: "Akut-Hinweis: Auch im Akutfall ist für Neupatienten eine persönliche Vorstellung erforderlich.",
+      DOCTOR_REVIEW_REQUIRED: "Akut-Hinweis: Die Behandlung erfolgt nach ärztlicher Einschätzung vor Ort.",
+      DATA_INCOMPLETE: "Akut-Hinweis: Bitte bringen Sie Ihre Versichertenkarte zur Behandlung mit.",
+      IS_CHRONIC_PATIENT: "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
     },
   },
 
