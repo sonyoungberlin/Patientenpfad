@@ -11,6 +11,7 @@ export type PlainCheckpoint = {
   scope: InquiryCheckpointScope;
   question?: string;
   questions?: Array<{ id: string; text: string }>;
+  actionCategory?: string;
 };
 
 export type M2SectionData = {
@@ -19,6 +20,8 @@ export type M2SectionData = {
   /** Klärungsfragen des Decision-Checkpoints – werden als reiner Fragenblock angezeigt. */
   decisionQuestions: Array<{ id: string; text: string }>;
   specificCheckpoints: PlainCheckpoint[];
+  /** Profil-spezifische ACTION-Checkpoints (boundActionCheckpointIds) – im Mehr-Bereich. */
+  actionCheckpoints: PlainCheckpoint[];
 };
 
 type Props = {
@@ -35,6 +38,20 @@ const YES_NO_OPTIONS = [
   { value: "YES", label: "Ja" },
   { value: "NO", label: "Nein" },
 ];
+
+/** ACTIVE/INACTIVE-Schalter für ACTION-Checkpoints (boundActionCheckpointIds). */
+const ACTIVE_INACTIVE_OPTIONS = [
+  { value: "ACTIVE", label: "Aktiv" },
+  { value: "INACTIVE", label: "Inaktiv" },
+];
+
+/** Menschenlesbare Bezeichnung für actionCategory. */
+const ACTION_CATEGORY_LABELS: Record<string, string> = {
+  PREPARATION: "Vorbereitung",
+  PROCESS: "Ablauf",
+  NEXT_STEP: "Nächste Schritte",
+  INFO: "Information",
+};
 
 function YesNoButtons({
   checkpointId,
@@ -174,6 +191,64 @@ function DecisionQuestionBlock({
   );
 }
 
+/**
+ * Zeigt einen ACTION-Checkpoint (boundActionCheckpointId) mit ACTIVE/INACTIVE-Schaltern.
+ * Klärungsfragen werden als Kontext angezeigt.
+ */
+function BoundActionRow({
+  checkpoint,
+  value,
+  onChange,
+}: {
+  checkpoint: PlainCheckpoint;
+  value: string | undefined;
+  onChange: (id: string, val: string) => void;
+}) {
+  const questions = checkpoint.questions ?? [];
+  return (
+    <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
+      {questions.length === 1 ? (
+        <div>{questions[0].text}</div>
+      ) : questions.length > 1 ? (
+        <ul style={{ margin: "0 0 0 1.25rem", padding: 0 }}>
+          {questions.map((q) => (
+            <li key={q.id}>{q.text}</li>
+          ))}
+        </ul>
+      ) : (
+        <div>{checkpoint.label}</div>
+      )}
+      {questions.length > 0 && (
+        <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+          {checkpoint.label}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+        {ACTIVE_INACTIVE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(checkpoint.id, opt.value)}
+            style={{
+              padding: "0.25rem 0.75rem",
+              borderRadius: "var(--radius)",
+              border: "1px solid var(--border)",
+              background: value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
+              color: value === opt.value ? "#fff" : "var(--foreground)",
+              fontWeight: value === opt.value ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "0.85rem",
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 /** Sektion mit Decision-Fragen; SPECIFIC EXPLANATION Checkpoints hinter "Mehr"/"Weniger" Toggle. */
 function SpecificSection({
   section,
@@ -188,20 +263,39 @@ function SpecificSection({
   const hasAnsweredSpecific = section.specificCheckpoints.some(
     (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
   );
-  const [isExpanded, setIsExpanded] = useState(hasAnsweredSpecific);
+  // Auto-expand auch wenn ein ACTION Checkpoint gesetzt wurde.
+  const hasAnsweredAction = section.actionCheckpoints.some(
+    (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
+  );
+  const hasMore = section.specificCheckpoints.length > 0 || section.actionCheckpoints.length > 0;
+  const [isExpanded, setIsExpanded] = useState(hasAnsweredSpecific || hasAnsweredAction);
+
+  // Bound action checkpoints nach actionCategory gruppieren.
+  const actionGroups = (() => {
+    const order = ["PREPARATION", "PROCESS", "NEXT_STEP", "INFO"] as const;
+    const byCategory = new Map<string, PlainCheckpoint[]>();
+    for (const cp of section.actionCheckpoints) {
+      const cat = cp.actionCategory ?? "INFO";
+      if (!byCategory.has(cat)) byCategory.set(cat, []);
+      byCategory.get(cat)!.push(cp);
+    }
+    return order
+      .map((cat) => ({ cat, cps: byCategory.get(cat) ?? [] }))
+      .filter(({ cps }) => cps.length > 0);
+  })();
 
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
-      {section.decisionQuestions.length === 0 && section.specificCheckpoints.length === 0 ? (
+      {section.decisionQuestions.length === 0 && !hasMore ? (
         <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
       ) : (
         <>
           {/* Decision-Questions – immer sichtbar */}
           <DecisionQuestionBlock questions={section.decisionQuestions} statuses={statuses} onChange={onChange} />
 
-          {/* SPECIFIC EXPLANATION Checkpoints – hinter Toggle */}
-          {section.specificCheckpoints.length > 0 && (
+          {/* SPECIFIC EXPLANATION + ACTION Checkpoints – hinter Toggle */}
+          {hasMore && (
             <>
               <button
                 type="button"
@@ -221,6 +315,7 @@ function SpecificSection({
               </button>
               {isExpanded && (
                 <div style={{ marginTop: "0.5rem" }}>
+                  {/* SPECIFIC EXPLANATION Checkpoints */}
                   {section.specificCheckpoints.map((cp) =>
                     cp.kind === InquiryCheckpointKind.EXPLANATION ? (
                       <ExplanationQuestionRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
@@ -228,6 +323,31 @@ function SpecificSection({
                       <QuestionBlock key={cp.id} checkpoint={cp} />
                     ),
                   )}
+
+                  {/* Bound ACTION Checkpoints – nach Kategorie gruppiert */}
+                  {actionGroups.map(({ cat, cps }) => (
+                    <div key={cat} style={{ marginTop: "0.75rem" }}>
+                      <div
+                        className="text-muted text-small"
+                        style={{
+                          fontWeight: 600,
+                          marginBottom: "0.25rem",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                        }}
+                      >
+                        {ACTION_CATEGORY_LABELS[cat] ?? cat}
+                      </div>
+                      {cps.map((cp) => (
+                        <BoundActionRow
+                          key={cp.id}
+                          checkpoint={cp}
+                          value={statuses[cp.id]}
+                          onChange={onChange}
+                        />
+                      ))}
+                    </div>
+                  ))}
                 </div>
               )}
             </>

@@ -11,6 +11,7 @@ import {
 import InquiryM3Client, {
   type M3SectionData,
   type M3ActionData,
+  type M3BoundActionData,
 } from "./InquiryM3Client";
 
 function toM3Section(inquiryId: string): M3SectionData | null {
@@ -21,6 +22,15 @@ function toM3Section(inquiryId: string): M3SectionData | null {
   const specificCps = profile.specificCheckpointIds
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
     .filter((cp): cp is InquiryCheckpoint => !!cp);
+  const boundActionCps = (profile.boundActionCheckpointIds ?? [])
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
+  const boundActionCheckpoints: M3BoundActionData[] = boundActionCps.map((cp) => ({
+    id: cp.id,
+    label: cp.label,
+    actionCategory: cp.actionCategory,
+    questions: cp.questions,
+  }));
   return {
     inquiryId,
     label: profile.label,
@@ -33,6 +43,7 @@ function toM3Section(inquiryId: string): M3SectionData | null {
       kind: cp.kind,
       questions: cp.questions,
     })),
+    boundActionCheckpoints,
   };
 }
 
@@ -83,6 +94,8 @@ export default async function InquiryM3Page({
     const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
     if (!profile) continue;
     profile.availableActionIds.forEach((cpId) => actionIds.add(cpId));
+    // boundActionCheckpointIds must also be routed to actionStatuses
+    (profile.boundActionCheckpointIds ?? []).forEach((cpId) => actionIds.add(cpId));
   }
 
   const actionCheckpoints: M3ActionData[] = Array.from(actionIds)
