@@ -67,11 +67,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Rezept",
     decisionCheckpointId: "PRESCRIPTION_DECISION",
     specificCheckpointIds: [
-      "PRESCRIPTION_KNOWN_MEDICATION",
-      "PRESCRIPTION_FOLLOW_UP",
-      "PRESCRIPTION_SPECIALIST_REQUIRED",
       "PRESCRIPTION_CONTROL_OVERDUE",
-      "PRESCRIPTION_SPECIAL_TYPE",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+      "PRESCRIPTION_BTM_ADHS_RULES",
+      "PRESCRIPTION_PRIVATE_ONLY",
+      "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_NO_POSTAL_DELIVERY",
     ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",
@@ -85,6 +86,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
+      "E_RECIPE_USE",
+      "PHARMACY_INFORMATION",
+      "DOCUMENT_UPLOAD",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
     ],
     globalHints: {
       IS_NEW_PATIENT: "Rezept-Hinweis: Neupatient, Termin erforderlich.",
@@ -100,10 +106,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Labor",
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
-      "LAB_MEDICAL_INDICATION",
-      "LAB_CHECKUP_ELIGIBLE",
-      "LAB_VALUES_DEFINED",
+      "LAB_CHECKUP_RULES",
       "LAB_FASTING_REQUIRED",
+      "LAB_SELF_PAYER_IGEL",
+      "LAB_DISCUSSION_PROCESS_CODE",
+      "LAB_MPU_EXCLUSION",
     ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",
@@ -116,6 +123,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
+      "URINE_SAMPLE_ONSITE",
     ],
     globalHints: {
       IS_NEW_PATIENT: "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
@@ -123,6 +131,65 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       DOCTOR_REVIEW_REQUIRED: "Labor-Hinweis: ärztliche Klärung vor Terminvergabe oder Laboranforderung notwendig.",
       DATA_INCOMPLETE: "Labor-Hinweis: Angaben oder Versicherungsdaten fehlen.",
       IS_CHRONIC_PATIENT: "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
+    },
+  },
+
+  SAMPLE_COLLECTION: {
+    id: "SAMPLE_COLLECTION",
+    label: "Urin- und Stuhlprobe",
+    decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
+    specificCheckpointIds: [
+      "URINE_SAMPLE_INSTRUCTIONS",
+      "STOOL_SAMPLE_INSTRUCTIONS",
+      "SAMPLE_HANDOVER",
+      "LAB_RESULT_TIME",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_NEW_PATIENT",
+      "PATIENT_NOT_IN_GERMANY",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_INCOMPLETE",
+    ],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    globalHints: {
+      IS_NEW_PATIENT: "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
+      PATIENT_NOT_IN_GERMANY: "Proben-Hinweis: Die Probenabgabe ist nur vor Ort in der Praxis möglich.",
+      DOCTOR_REVIEW_REQUIRED: "Proben-Hinweis: Vor der Probenabgabe ist eine ärztliche Klärung erforderlich.",
+      DATA_INCOMPLETE: "Proben-Hinweis: Für die Zuordnung der Probe werden vollständige Patientendaten benötigt.",
+    },
+  },
+
+  REFERRAL: {
+    id: "REFERRAL",
+    label: "Überweisung",
+    decisionCheckpointId: "REFERRAL_DECISION",
+    specificCheckpointIds: [
+      "REF_DOCTOR_CONTACT_REQUIRED",
+      "REF_ORIGINAL_VS_PDF",
+      "REF_PSYCHOTHERAPY_FIRST_STEP",
+      "REF_SPECIALTY_REQUIRED",
+      "REF_BOOKING_CODE_PROCESS",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_NEW_PATIENT",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_INCOMPLETE",
+    ],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    globalHints: {
+      IS_NEW_PATIENT: "Überweisungs-Hinweis: Bei Neupatienten ist vor der Ausstellung in der Regel ein persönlicher Erstkontakt erforderlich.",
+      DOCTOR_REVIEW_REQUIRED: "Überweisungs-Hinweis: Die Ausstellung erfolgt nach ärztlicher Einschätzung.",
+      DATA_INCOMPLETE: "Überweisungs-Hinweis: Für die Erstellung werden vollständige Patientendaten benötigt.",
     },
   },
 };

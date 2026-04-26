@@ -22,6 +22,7 @@ export type M3SectionData = {
   label: string;
   decisionCheckpointId: string;
   decisionLabel: string;
+  decisionQuestions: Array<{ id: string; text: string }>;
   specificCheckpoints: M3SpecificCheckpoint[];
 };
 
@@ -281,6 +282,21 @@ export default function InquiryM3Client({
               {/* Decision */}
               <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
+                {section.decisionQuestions.length > 0 && (
+                  <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                    {section.decisionQuestions
+                      .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
+                      .map((q) => {
+                        const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
+                        return (
+                          <div key={q.id}>
+                            {q.text}
+                            <span style={{ fontWeight: 500 }}> — {answer}</span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
                 <StatusButtons
                   checkpointId={section.decisionCheckpointId}
                   options={DECISION_OPTIONS}
@@ -291,40 +307,72 @@ export default function InquiryM3Client({
               </div>
 
               {/* SPECIFIC Checkpoints */}
-              {section.specificCheckpoints.map((cp) => (
-                <div
-                  key={cp.id}
-                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                >
-                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                  {cp.questions && cp.questions.length > 0 && (
-                    <ul
-                      className="text-muted text-small"
-                      style={{ margin: "0.2rem 0 0.2rem 1.25rem", padding: 0 }}
-                    >
-                      {cp.questions.map((q) => (
-                        <li key={q.id}>{q.text}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <StatusButtons
-                    checkpointId={cp.id}
-                    options={optionsForKind(cp.kind)}
-                    value={statuses[cp.id]}
-                    onChange={setStatus}
-                    disabled={false}
-                  />
-                  {cp.kind === InquiryCheckpointKind.EXPLANATION &&
-                    statuses[cp.id] === "NO" && (
-                      <div
-                        className="text-muted text-small"
-                        style={{ marginTop: "0.25rem", fontStyle: "italic" }}
-                      >
-                        keine Erklärung erforderlich
-                      </div>
-                    )}
-                </div>
-              ))}
+              {section.specificCheckpoints
+                .filter((cp) =>
+                  cp.kind !== InquiryCheckpointKind.EXPLANATION ||
+                  statuses[cp.id] === "YES" ||
+                  statuses[cp.id] === "NO",
+                )
+                .map((cp) => {
+                const m2Status = statuses[cp.id];
+                const m2Label =
+                  m2Status === "YES" ? "Ja" : m2Status === "NO" ? "Nein" : undefined;
+                return (
+                  <div
+                    key={cp.id}
+                    style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                  >
+                    <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                    {/* M2 Prefill – zeigt Fragen + M2-Antwort als Kontext */}
+                    {cp.kind === InquiryCheckpointKind.EXPLANATION &&
+                      cp.questions &&
+                      cp.questions.length > 0 && (
+                        <div
+                          className="text-muted text-small"
+                          style={{ marginTop: "0.2rem" }}
+                        >
+                          {cp.questions.map((q) => (
+                            <div key={q.id}>
+                              {q.text}
+                              {m2Label !== undefined && (
+                                <span style={{ fontWeight: 500 }}> — {m2Label}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    {/* Legacy: non-EXPLANATION questions (informational only) */}
+                    {cp.kind !== InquiryCheckpointKind.EXPLANATION &&
+                      cp.questions &&
+                      cp.questions.length > 0 && (
+                        <ul
+                          className="text-muted text-small"
+                          style={{ margin: "0.2rem 0 0.2rem 1.25rem", padding: 0 }}
+                        >
+                          {cp.questions.map((q) => (
+                            <li key={q.id}>{q.text}</li>
+                          ))}
+                        </ul>
+                      )}
+                    <StatusButtons
+                      checkpointId={cp.id}
+                      options={optionsForKind(cp.kind)}
+                      value={statuses[cp.id]}
+                      onChange={setStatus}
+                      disabled={false}
+                    />
+                    {cp.kind === InquiryCheckpointKind.EXPLANATION &&
+                      statuses[cp.id] === "NO" && (
+                        <div
+                          className="text-muted text-small"
+                          style={{ marginTop: "0.25rem", fontStyle: "italic" }}
+                        >
+                          keine Erklärung erforderlich
+                        </div>
+                      )}
+                  </div>
+                );
+              })}
             </section>
           ))}
 

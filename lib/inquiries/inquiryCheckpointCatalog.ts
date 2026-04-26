@@ -283,13 +283,121 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    // Klärungsfragen zur Rezept-Entscheidung (erscheinen in M2 als Fragenblock und in M3 als Kontext).
+    // Nur echte Entscheidungsgrundlagen – kein Thema, das eine eigene Patientenerklärung braucht.
+    // Sonderfälle (BtM, Privatrezept, Pille) werden über SPECIFIC Explanation Checkpoints abgebildet.
+    questions: [
+      { id: "PRESCRIPTION_DECISION-Q1", text: "Ist die Verordnung medizinisch nachvollziehbar / indiziert?" },
+      { id: "PRESCRIPTION_DECISION-Q2", text: "Handelt es sich um eine Wiederverordnung von Dauermedikation?" },
+      { id: "PRESCRIPTION_DECISION-Q3", text: "Liegt eine ärztliche Anordnung vor?" },
+    ],
     textByStatus: {
-      [DecisionStatus.POSSIBLE]: "Ein Rezept kann ausgestellt werden.",
-      [DecisionStatus.NOT_POSSIBLE]: "Ein Rezept kann nicht ausgestellt werden.",
+      [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt und kann mit Ihrer Gesundheitskarte in der Apotheke eingelöst werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Das von Ihnen angefragte Rezept wurde nicht ausgestellt.",
     },
   },
 
   // ---- PRESCRIPTION SPECIFIC EXPLANATIONS ----
+
+  PRESCRIPTION_CONTROL_OVERDUE: {
+    id: "PRESCRIPTION_CONTROL_OVERDUE",
+    label: "Kontrollintervall überfällig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_CONTROL_OVERDUE-Q1", text: "Ist das erforderliche Kontrollintervall für die Medikation überschritten?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezepte für Dauermedikamente setzen regelmäßige ärztliche Kontrolltermine zur Überprüfung der Therapie voraus.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: {
+    id: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+    label: "Facharztbericht erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED-Q1", text: "Fehlt ein aktueller fachärztlicher Behandlungsbericht für die angefragte Medikation?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für diese Medikation ist ein aktueller Facharztbericht erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_BTM_ADHS_RULES: {
+    id: "PRESCRIPTION_BTM_ADHS_RULES",
+    label: "BtM / ADHS / Facharztpflicht",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_BTM_ADHS_RULES-Q1", text: "Geht es um ein ADHS- oder BtM-Medikament mit fachärztlicher Zuständigkeit?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Einstellung und Dosisanpassung von ADHS-Medikamenten erfolgen durch Fachärzte; die Hausarztpraxis stellt nur stabile Folgerezepte bei bestehender Mitbehandlung aus.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_PRIVATE_ONLY: {
+    id: "PRESCRIPTION_PRIVATE_ONLY",
+    label: "Privatrezept / Selbstzahler",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_PRIVATE_ONLY-Q1", text: "Handelt es sich um ein Präparat, das nur privat verordnet werden kann?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Dieses Präparat ist keine Leistung der gesetzlichen Krankenkasse und wird als Privatrezept verordnet.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_GYN_EXCLUSIVITY: {
+    id: "PRESCRIPTION_GYN_EXCLUSIVITY",
+    label: "Gynäkologische Verordnung / Pille",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_GYN_EXCLUSIVITY-Q1", text: "Handelt es sich um eine gynäkologische Verordnung, z. B. die Pille?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Verordnungen für die Pille erfolgen über die gynäkologische Fachpraxis.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_NO_POSTAL_DELIVERY: {
+    id: "PRESCRIPTION_NO_POSTAL_DELIVERY",
+    label: "Kein Postversand",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_NO_POSTAL_DELIVERY-Q1", text: "Wurde ein Postversand des Rezepts angefragt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ein Postversand von Rezepten erfolgt nicht; die Bereitstellung erfolgt als eRezept oder über eine Apotheke.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- PRESCRIPTION SPECIFIC EXPLANATIONS (ungebunden / veraltet) ----
+  // Diese Checkpoints werden nicht mehr im PRESCRIPTION-Profil gebunden.
+  // Sie verbleiben vorerst im Katalog, bis alle Referenzen bereinigt sind.
 
   PRESCRIPTION_KNOWN_MEDICATION: {
     id: "PRESCRIPTION_KNOWN_MEDICATION",
@@ -327,18 +435,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  PRESCRIPTION_CONTROL_OVERDUE: {
-    id: "PRESCRIPTION_CONTROL_OVERDUE",
-    label: "Kontrolle überfällig",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Rezept-Hinweis: Notwendige Kontrolle überfällig.",
-    },
-  },
-
   PRESCRIPTION_SPECIAL_TYPE: {
     id: "PRESCRIPTION_SPECIAL_TYPE",
     label: "Sonderfall",
@@ -359,6 +455,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_DECISION-Q1", text: "Liegt eine externe Anordnung oder Überweisung vor?" },
+      { id: "LAB_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+    ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
@@ -366,6 +466,83 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- LAB SPECIFIC CHECKPOINTS ----
+
+  LAB_CHECKUP_RULES: {
+    id: "LAB_CHECKUP_RULES",
+    label: "Check-up-Regelung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_CHECKUP_RULES-Q1", text: "Geht es um eine Laborkontrolle im Rahmen eines gesetzlichen Check-ups?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_FASTING_REQUIRED: {
+    id: "LAB_FASTING_REQUIRED",
+    label: "Nüchternabnahme erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_FASTING_REQUIRED-Q1", text: "Erfordern die angefragten Laborwerte eine nüchterne Blutentnahme?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Bitte kommen Sie nüchtern zur Blutentnahme (mindestens 8 Stunden vorher nichts essen, kein Kaffee; Wasser ist erlaubt).",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_SELF_PAYER_IGEL: {
+    id: "LAB_SELF_PAYER_IGEL",
+    label: "Selbstzahlerleistung / IGeL",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_SELF_PAYER_IGEL-Q1", text: "Handelt es sich um gewünschte Laborwerte ohne Kassenleistung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_DISCUSSION_PROCESS_CODE: {
+    id: "LAB_DISCUSSION_PROCESS_CODE",
+    label: "Befundbesprechung nach Laboreingang",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_DISCUSSION_PROCESS_CODE-Q1", text: "Geht es um den Ablauf der Befundbesprechung nach der Blutentnahme?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Der Buchungscode für die Befundbesprechung wird automatisch versendet, sobald alle Laborergebnisse vorliegen.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_MPU_EXCLUSION: {
+    id: "LAB_MPU_EXCLUSION",
+    label: "MPU / forensisches Screening",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_MPU_EXCLUSION-Q1", text: "Wird ein forensisches Labor oder MPU-Screening angefragt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  // ---- LAB SPECIFIC CHECKPOINTS (legacy, ungebunden) ----
 
   // Labor-Anlass / Indikation: klärt den Grund / Kontext für die Laboranforderung.
   // Dieser Checkpoint beschreibt, warum Labor gewünscht oder sinnvoll sein könnte
@@ -420,20 +597,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Gewünschte Laborwerte sind benannt.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Laborwerte bitte konkret angeben.",
-    },
-  },
-
-  LAB_FASTING_REQUIRED: {
-    id: "LAB_FASTING_REQUIRED",
-    label: "Nüchternabnahme erforderlich",
-    kind: InquiryCheckpointKind.PREPARATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    questions: [
-      { id: "LAB_FASTING_REQUIRED-Q1", text: "Sind nüchterne Werte erforderlich?" },
-    ],
-    textByStatus: {
-      [ActionStatus.ACTIVE]: "Labor-Hinweis: Bitte nüchtern zur Blutentnahme erscheinen (mind. 8 Std. ohne Essen).",
     },
   },
 
@@ -560,6 +723,237 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Hinweis: Aktuell liegt eine technische Störung vor. Der Systemzugriff ist eingeschränkt.",
+    },
+  },
+
+  E_RECIPE_USE: {
+    id: "E_RECIPE_USE",
+    label: "eRezept nutzen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Das Rezept wird als eRezept ausgestellt und kann mit der elektronischen Gesundheitskarte (eGK) in der Apotheke eingelöst werden.",
+    },
+  },
+
+  PHARMACY_INFORMATION: {
+    id: "PHARMACY_INFORMATION",
+    label: "Apotheke / Direktübermittlung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte geben Sie Ihre bevorzugte Apotheke an, damit das Rezept direkt übermittelt werden kann.",
+    },
+  },
+
+  DOCUMENT_UPLOAD: {
+    id: "DOCUMENT_UPLOAD",
+    label: "Unterlagen hochladen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte laden Sie relevante Unterlagen (z. B. Facharztbericht, Medikamentenplan) über die digitale Anfrage hoch.",
+    },
+  },
+
+  URINE_SAMPLE_ONSITE: {
+    id: "URINE_SAMPLE_ONSITE",
+    label: "Urinprobe vor Ort",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Eine Urinprobe kann vor Ort in der Praxis abgegeben werden.",
+    },
+  },
+
+  // ---- SAMPLE_COLLECTION DECISION ----
+
+  SAMPLE_COLLECTION_DECISION: {
+    id: "SAMPLE_COLLECTION_DECISION",
+    label: "Probenabgabe möglich",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "SAMPLE_COLLECTION_DECISION-Q1", text: "Handelt es sich um eine Urinprobe oder eine Stuhlprobe?" },
+      { id: "SAMPLE_COLLECTION_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+      { id: "SAMPLE_COLLECTION_DECISION-Q3", text: "Wird ein Probengefäß aus der Praxis benötigt?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Die Probenabgabe kann wie besprochen durchgeführt werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Die angefragte Probenabgabe wurde nicht berücksichtigt.",
+    },
+  },
+
+  // ---- SAMPLE_COLLECTION SPECIFIC CHECKPOINTS ----
+
+  URINE_SAMPLE_INSTRUCTIONS: {
+    id: "URINE_SAMPLE_INSTRUCTIONS",
+    label: "Urinprobe – Hinweis",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "URINE_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Urinprobe abgegeben werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Urinprobe sollte als Mittelstrahl in ein steriles Gefäß abgegeben werden.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  STOOL_SAMPLE_INSTRUCTIONS: {
+    id: "STOOL_SAMPLE_INSTRUCTIONS",
+    label: "Stuhlprobe – Hinweis",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "STOOL_SAMPLE_INSTRUCTIONS-Q1", text: "Soll eine Stuhlprobe abgegeben werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Stuhlprobe wird mit dem Probenröhrchen entnommen; eine kleine Menge ist ausreichend und sollte nicht aus dem Toilettenwasser entnommen werden.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  SAMPLE_HANDOVER: {
+    id: "SAMPLE_HANDOVER",
+    label: "Probenabgabe / Aufbewahrung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "SAMPLE_HANDOVER-Q1", text: "Geht es um die Abgabe oder Aufbewahrung der Probe?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Probe sollte mit Name und Datum beschriftet und zeitnah in der Praxis abgegeben werden.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_RESULT_TIME: {
+    id: "LAB_RESULT_TIME",
+    label: "Befundübermittlung / Auswertungsdauer",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_RESULT_TIME-Q1", text: "Geht es um die Dauer oder den Ablauf der Befundübermittlung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Auswertung kann mehrere Tage dauern. Die Befunde werden übermittelt, sobald sie vorliegen.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  // ---- REFERRAL DECISION ----
+
+  REFERRAL_DECISION: {
+    id: "REFERRAL_DECISION",
+    label: "Überweisungs-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REFERRAL_DECISION-Q1", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+      { id: "REFERRAL_DECISION-Q2", text: "Handelt es sich um eine Wiederholung einer bestehenden Überweisung?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Ihre Überweisung wurde ausgestellt und liegt zur Abholung in der Praxis bereit.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Die von Ihnen angefragte Überweisung wurde nicht ausgestellt.",
+    },
+  },
+
+  // ---- REFERRAL SPECIFIC EXPLANATIONS ----
+
+  REF_DOCTOR_CONTACT_REQUIRED: {
+    id: "REF_DOCTOR_CONTACT_REQUIRED",
+    label: "Ärztlicher Kontakt erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_DOCTOR_CONTACT_REQUIRED-Q1", text: "Handelt es sich um neue oder unklare Beschwerden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei neuen oder unklaren Beschwerden ist vor einer Überweisung eine ärztliche Einschätzung in der Sprechstunde erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_ORIGINAL_VS_PDF: {
+    id: "REF_ORIGINAL_VS_PDF",
+    label: "Digitale vs. Original-Überweisung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_ORIGINAL_VS_PDF-Q1", text: "Geht es um die Nutzung einer digitalen Überweisung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Überweisung kann digital für die Terminvereinbarung genutzt werden; für die Vorstellung in der Facharztpraxis wird häufig das Original benötigt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_PSYCHOTHERAPY_FIRST_STEP: {
+    id: "REF_PSYCHOTHERAPY_FIRST_STEP",
+    label: "Psychotherapie – Erstvorstellung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_PSYCHOTHERAPY_FIRST_STEP-Q1", text: "Geht es um eine Erstvorstellung zur Psychotherapie?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_SPECIALTY_REQUIRED: {
+    id: "REF_SPECIALTY_REQUIRED",
+    label: "Fachrichtung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung oder der Facharzt bekannt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung einer Überweisung muss die gewünschte Fachrichtung angegeben werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  REF_BOOKING_CODE_PROCESS: {
+    id: "REF_BOOKING_CODE_PROCESS",
+    label: "Vermittlungs- / Buchungscode",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_BOOKING_CODE_PROCESS-Q1", text: "Geht es um die Terminbuchung mit Vermittlungs- oder Buchungscode?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 };

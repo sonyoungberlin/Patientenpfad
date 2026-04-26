@@ -26,6 +26,7 @@ function toM3Section(inquiryId: string): M3SectionData | null {
     label: profile.label,
     decisionCheckpointId: profile.decisionCheckpointId,
     decisionLabel: decisionCp.label,
+    decisionQuestions: decisionCp.questions ?? [],
     specificCheckpoints: specificCps.map((cp) => ({
       id: cp.id,
       label: cp.label,
