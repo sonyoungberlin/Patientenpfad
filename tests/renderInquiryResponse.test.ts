@@ -1439,12 +1439,19 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile).toBeDefined();
   });
 
-  it("LAB-Profil bindet alle vier Specific Checkpoints", () => {
-    expect(labProfile.specificCheckpointIds).toContain("LAB_MEDICAL_INDICATION");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_ELIGIBLE");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_VALUES_DEFINED");
+  it("LAB-Profil bindet alle fünf Specific Checkpoints", () => {
+    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_RULES");
     expect(labProfile.specificCheckpointIds).toContain("LAB_FASTING_REQUIRED");
-    expect(labProfile.specificCheckpointIds).toHaveLength(4);
+    expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_DISCUSSION_PROCESS_CODE");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
+    expect(labProfile.specificCheckpointIds).toHaveLength(5);
+  });
+
+  it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_MEDICAL_INDICATION");
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_CHECKUP_ELIGIBLE");
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_VALUES_DEFINED");
   });
 
   it("LAB-Profil bindet alle fünf Global Checkpoints", () => {
@@ -1462,27 +1469,40 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     }
   });
 
-  it("LAB_FASTING_REQUIRED ist PREPARATION/ATTACHED im Katalog", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
-    expect(cp).toBeDefined();
-    expect(cp.kind).toBe(InquiryCheckpointKind.PREPARATION);
-    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
-    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+  it("LAB_DECISION hat genau 2 questions", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.questions).toHaveLength(2);
+    expect(cp.questions![0].text).toBe("Liegt eine externe Anordnung oder Überweisung vor?");
+    expect(cp.questions![1].text).toBe("Liegt eine ärztliche Anordnung aus unserer Praxis vor?");
   });
 
-  it("SPECIFIC Checkpoints LAB_MEDICAL_INDICATION / LAB_CHECKUP_ELIGIBLE / LAB_VALUES_DEFINED haben questions", () => {
-    for (const id of ["LAB_MEDICAL_INDICATION", "LAB_CHECKUP_ELIGIBLE", "LAB_VALUES_DEFINED"]) {
+  it("Alle fünf neuen SPECIFIC Checkpoints sind EXPLANATION/SPECIFIC/ATTACHED im Katalog", () => {
+    for (const id of [
+      "LAB_CHECKUP_RULES",
+      "LAB_FASTING_REQUIRED",
+      "LAB_SELF_PAYER_IGEL",
+      "LAB_DISCUSSION_PROCESS_CODE",
+      "LAB_MPU_EXCLUSION",
+    ]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
-      expect(cp.questions).toBeDefined();
-      expect((cp.questions ?? []).length).toBeGreaterThan(0);
+      expect(cp).toBeDefined();
+      expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+      expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+      expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
     }
   });
 
-  it("questions der LAB-Checkpoints lösen keine automatische Entscheidung aus (kein DecisionStatus in textByStatus)", () => {
-    for (const id of ["LAB_MEDICAL_INDICATION", "LAB_CHECKUP_ELIGIBLE", "LAB_VALUES_DEFINED"]) {
+  it("Alle fünf neuen SPECIFIC Checkpoints haben questions", () => {
+    for (const id of [
+      "LAB_CHECKUP_RULES",
+      "LAB_FASTING_REQUIRED",
+      "LAB_SELF_PAYER_IGEL",
+      "LAB_DISCUSSION_PROCESS_CODE",
+      "LAB_MPU_EXCLUSION",
+    ]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
-      expect(cp.textByStatus).not.toHaveProperty(DecisionStatus.POSSIBLE);
-      expect(cp.textByStatus).not.toHaveProperty(DecisionStatus.NOT_POSSIBLE);
+      expect(cp.questions).toBeDefined();
+      expect((cp.questions ?? []).length).toBeGreaterThan(0);
     }
   });
 });
@@ -1529,51 +1549,100 @@ describe("LAB-Profil – globalHints", () => {
 // ---------------------------------------------------------------------------
 
 describe("LAB-Profil – SPECIFIC Checkpoints", () => {
-  it("LAB_MEDICAL_INDICATION NO → kein Text in attachedParagraphs (SPECIFIC EXPLANATION, nur YES erzeugt Output)", () => {
+  it("LAB_CHECKUP_RULES NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_MEDICAL_INDICATION: ExplanationStatus.NO },
+        checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_CHECKUP_ELIGIBLE NO → kein Text in attachedParagraphs (SPECIFIC EXPLANATION, nur YES erzeugt Output)", () => {
+  it("LAB_CHECKUP_RULES YES → Output in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_CHECKUP_ELIGIBLE: ExplanationStatus.NO },
+        checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain("Labor-Hinweis: Check-up-Regelung.");
+  });
+
+  it("LAB_FASTING_REQUIRED NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_VALUES_DEFINED NO → kein Text in attachedParagraphs (SPECIFIC EXPLANATION, nur YES erzeugt Output)", () => {
+  it("LAB_FASTING_REQUIRED YES → Hinweis in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_VALUES_DEFINED: ExplanationStatus.NO },
+        checkpointStatuses: { LAB_FASTING_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Labor-Hinweis: nüchtern zur Blutentnahme erscheinen.",
+    );
+  });
+
+  it("LAB_SELF_PAYER_IGEL NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_FASTING_REQUIRED ACTIVE → Vorbereitungshinweis in attachedParagraphs", () => {
+  it("LAB_SELF_PAYER_IGEL YES → Output in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.ACTIVE },
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("nüchtern")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toContain("Labor-Hinweis: Selbstzahlerleistung.");
   });
 
-  it("LAB_FASTING_REQUIRED INACTIVE → kein Text in attachedParagraphs", () => {
+  it("LAB_DISCUSSION_PROCESS_CODE NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.INACTIVE },
+        checkpointStatuses: { LAB_DISCUSSION_PROCESS_CODE: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("LAB_DISCUSSION_PROCESS_CODE YES → Output in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_DISCUSSION_PROCESS_CODE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Labor-Hinweis: Befundbesprechung nach Laboreingang.",
+    );
+  });
+
+  it("LAB_MPU_EXCLUSION NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("LAB_MPU_EXCLUSION YES → Output in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Labor-Hinweis: MPU-/forensisches Screening nicht möglich.",
+    );
   });
 });
 
@@ -1652,7 +1721,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
       makeLabSection({
         checkpointStatuses: {
           IS_NEW_PATIENT: ExplanationStatus.YES,
-          LAB_MEDICAL_INDICATION: ExplanationStatus.YES,
+          LAB_CHECKUP_RULES: ExplanationStatus.YES,
         },
       }),
       makePrescriptionSection({
@@ -1663,7 +1732,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
       }),
     ]);
     // SPECIFIC docs: both inquiries (YES → output produced)
-    expect(result.documentation.some((d) => d.includes("Anlass für Laboruntersuchung"))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Check-up-Regelung"))).toBe(true);
     expect(result.documentation.some((d) => d.includes("Kontrolltermin"))).toBe(true);
     // GLOBAL doc: exactly once
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));

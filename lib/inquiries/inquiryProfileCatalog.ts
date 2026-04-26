@@ -106,10 +106,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Labor",
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
-      "LAB_MEDICAL_INDICATION",
-      "LAB_CHECKUP_ELIGIBLE",
-      "LAB_VALUES_DEFINED",
+      "LAB_CHECKUP_RULES",
       "LAB_FASTING_REQUIRED",
+      "LAB_SELF_PAYER_IGEL",
+      "LAB_DISCUSSION_PROCESS_CODE",
+      "LAB_MPU_EXCLUSION",
     ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",

@@ -455,6 +455,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_DECISION-Q1", text: "Liegt eine externe Anordnung oder Überweisung vor?" },
+      { id: "LAB_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+    ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
@@ -462,6 +466,83 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- LAB SPECIFIC CHECKPOINTS ----
+
+  LAB_CHECKUP_RULES: {
+    id: "LAB_CHECKUP_RULES",
+    label: "Check-up-Regelung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_CHECKUP_RULES-Q1", text: "Geht es um eine Laborkontrolle im Rahmen eines gesetzlichen Check-ups?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Check-up-Regelung.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_FASTING_REQUIRED: {
+    id: "LAB_FASTING_REQUIRED",
+    label: "Nüchternabnahme erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_FASTING_REQUIRED-Q1", text: "Erfordern die angefragten Laborwerte eine nüchterne Blutentnahme?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: nüchtern zur Blutentnahme erscheinen.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_SELF_PAYER_IGEL: {
+    id: "LAB_SELF_PAYER_IGEL",
+    label: "Selbstzahlerleistung / IGeL",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_SELF_PAYER_IGEL-Q1", text: "Handelt es sich um gewünschte Laborwerte ohne Kassenleistung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Selbstzahlerleistung.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_DISCUSSION_PROCESS_CODE: {
+    id: "LAB_DISCUSSION_PROCESS_CODE",
+    label: "Befundbesprechung nach Laboreingang",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_DISCUSSION_PROCESS_CODE-Q1", text: "Geht es um den Ablauf der Befundbesprechung nach der Blutentnahme?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: Befundbesprechung nach Laboreingang.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_MPU_EXCLUSION: {
+    id: "LAB_MPU_EXCLUSION",
+    label: "MPU / forensisches Screening",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "LAB_MPU_EXCLUSION-Q1", text: "Wird ein forensisches Labor oder MPU-Screening angefragt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Labor-Hinweis: MPU-/forensisches Screening nicht möglich.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  // ---- LAB SPECIFIC CHECKPOINTS (legacy, ungebunden) ----
 
   // Labor-Anlass / Indikation: klärt den Grund / Kontext für die Laboranforderung.
   // Dieser Checkpoint beschreibt, warum Labor gewünscht oder sinnvoll sein könnte
@@ -516,20 +597,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Labor-Hinweis: Gewünschte Laborwerte sind benannt.",
       [ExplanationStatus.NO]: "Labor-Hinweis: Laborwerte bitte konkret angeben.",
-    },
-  },
-
-  LAB_FASTING_REQUIRED: {
-    id: "LAB_FASTING_REQUIRED",
-    label: "Nüchternabnahme erforderlich",
-    kind: InquiryCheckpointKind.PREPARATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    questions: [
-      { id: "LAB_FASTING_REQUIRED-Q1", text: "Sind nüchterne Werte erforderlich?" },
-    ],
-    textByStatus: {
-      [ActionStatus.ACTIVE]: "Labor-Hinweis: Bitte nüchtern zur Blutentnahme erscheinen (mind. 8 Std. ohne Essen).",
     },
   },
 
