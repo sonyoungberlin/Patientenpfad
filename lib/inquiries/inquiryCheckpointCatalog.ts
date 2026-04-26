@@ -1104,7 +1104,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
       { id: "REFERRAL_DECISION-Q1", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
-      { id: "REFERRAL_DECISION-Q2", text: "Handelt es sich um eine Wiederholung einer bestehenden Überweisung?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]:

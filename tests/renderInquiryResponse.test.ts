@@ -1641,48 +1641,41 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
 // ---------------------------------------------------------------------------
 
 describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () => {
-  it("IS_NEW_PATIENT YES in AU + REFERRAL → M5-Doku enthält den Label genau einmal", () => {
+  it("IS_NEW_PATIENT YES in AU + REFERRAL → kein M5-Eintrag (kein Profil bindet IS_NEW_PATIENT mehr)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
-    expect(entries).toHaveLength(1);
+    expect(entries).toHaveLength(0);
   });
 
-  it("IS_NEW_PATIENT YES in AU + REFERRAL + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
+  it("IS_NEW_PATIENT YES in AU + REFERRAL + PRESCRIPTION → kein M5-Eintrag (kein Profil bindet IS_NEW_PATIENT mehr)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
-    expect(entries).toHaveLength(1);
+    expect(entries).toHaveLength(0);
   });
 
-  it("IS_NEW_PATIENT YES → M5-Marker ist checkpoint.label (kurzer Text, kein Hint-Text)", () => {
+  it("IS_NEW_PATIENT YES → kein M5-Marker (nicht mehr an ein Profil gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    const referralGlobalHint = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"].globalHints?.["IS_NEW_PATIENT"] ?? "";
-    // Der Hint-Text darf NICHT als Doku-Marker erscheinen
-    expect(result.documentation).not.toContain(referralGlobalHint);
-    // Nur der kurze Label (checkpoint.label) erscheint
     const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].label;
-    expect(result.documentation).toContain(cpLabel);
+    expect(result.documentation).not.toContain(cpLabel);
   });
 
-  it("IS_NEW_PATIENT YES → M4 attachedParagraphs erscheinen nur in gebundenen Profilen (anliegenspezifisch)", () => {
+  it("IS_NEW_PATIENT YES → kein M4-Hint in gebundenen Profilen (IS_NEW_PATIENT ist ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    // AU bindet IS_NEW_PATIENT nicht → kein Hint in Section 0
+    // Kein Profil bindet IS_NEW_PATIENT mehr → kein Hint in beiden Sections
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-    // REFERRAL-spezifischer Hint in Section 1
-    expect(result.sections[1].attachedParagraphs).toContain(
-      "Bei Erstpatienten erfolgt die Ausstellung einer Überweisung in der Regel nach persönlicher Vorstellung.",
-    );
+    expect(result.sections[1].attachedParagraphs).toHaveLength(0);
   });
 
   it("GLOBAL NO in einem Anliegen → kein M5-Eintrag und kein M4-Hint", () => {
@@ -1706,24 +1699,25 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
 
   it("SPECIFIC Checkpoints werden unverändert pro Anliegen dokumentiert (kein Verlust durch GLOBAL-Dedup)", () => {
     const result = renderInquiryResponseFromSections([
-      makeReferralSection({
+      makeAuSection({
         checkpointStatuses: {
-          IS_NEW_PATIENT: ExplanationStatus.YES,
-          REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.YES,
+          PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES,
+          AU_BACKDATE_LIMIT: ExplanationStatus.YES,
         },
       }),
       makePrescriptionSection({
         checkpointStatuses: {
-          IS_NEW_PATIENT: ExplanationStatus.YES,
+          PATIENT_NOT_IN_GERMANY: ExplanationStatus.YES,
           PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: ExplanationStatus.YES,
         },
       }),
     ]);
-    // SPECIFIC docs: both inquiries (YES → output produced)
-    expect(result.documentation.some((d) => d.includes("Ärztlicher Kontakt erforderlich"))).toBe(true);
+    // SPECIFIC docs: beide Anliegen (YES → Output erzeugt)
+    expect(result.documentation.some((d) => d.includes("Rückdatierungsgrenze"))).toBe(true);
     expect(result.documentation.some((d) => d.includes("Facharztbericht"))).toBe(true);
-    // GLOBAL doc: exactly once (only REFERRAL binds IS_NEW_PATIENT)
-    const entries = result.documentation.filter((d) => d.includes("Neupatient"));
+    // GLOBAL doc: PATIENT_NOT_IN_GERMANY genau einmal (nur PRESCRIPTION bindet es)
+    const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["PATIENT_NOT_IN_GERMANY"].label;
+    const entries = result.documentation.filter((d) => d === cpLabel);
     expect(entries).toHaveLength(1);
   });
 });
@@ -1978,13 +1972,13 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(profile.label).toBe("Überweisung");
   });
 
-  it("REFERRAL_DECISION hat genau 2 questions", () => {
+  it("REFERRAL_DECISION hat genau 1 question", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["REFERRAL_DECISION"];
     expect(cp).toBeDefined();
-    expect(cp.questions).toHaveLength(2);
+    expect(cp.questions).toHaveLength(1);
   });
 
-  it("alle 5 SPECIFIC Checkpoints sind im Katalog und an REFERRAL gebunden", () => {
+  it("5 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
@@ -1993,28 +1987,22 @@ describe("REFERRAL-Profil – Struktur", () => {
       "REF_SPECIALTY_REQUIRED",
       "REF_BOOKING_CODE_PROCESS",
     ];
+    expect(profile.specificCheckpointIds).toHaveLength(0);
     for (const id of ids) {
-      expect(profile.specificCheckpointIds).toContain(id);
+      expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
     }
   });
 
-  it("REFERRAL hat genau 1 boundGlobalCheckpointId", () => {
+  it("REFERRAL hat keine boundGlobalCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
-    expect(profile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(profile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(profile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
   });
 
-  it("REFERRAL.globalHints enthält genau die gebundenen Global-Keys", () => {
+  it("REFERRAL hat keine globalHints", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
-    expect(profile.globalHints).toBeDefined();
-    const keys = Object.keys(profile.globalHints!);
-    expect(keys).toHaveLength(1);
-    expect(keys).toContain("IS_NEW_PATIENT");
-    expect(keys).not.toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(keys).not.toContain("DATA_INCOMPLETE");
+    expect(profile.globalHints).toBeUndefined();
   });
 
   it("REFERRAL hat die erwarteten availableActionIds", () => {
@@ -2042,60 +2030,50 @@ describe("REFERRAL-Profil – Decision", () => {
   });
 });
 
-describe("REFERRAL-Profil – SPECIFIC Checkpoints YES → Output", () => {
-  it("REF_DOCTOR_CONTACT_REQUIRED YES → Text in attachedParagraphs", () => {
+describe("REFERRAL-Profil – SPECIFIC Checkpoints YES → kein Output (ungebunden)", () => {
+  it("REF_DOCTOR_CONTACT_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei neuen oder unklaren Beschwerden ist vor einer Überweisung eine ärztliche Einschätzung in der Sprechstunde erforderlich.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_ORIGINAL_VS_PDF YES → Text in attachedParagraphs", () => {
+  it("REF_ORIGINAL_VS_PDF YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_ORIGINAL_VS_PDF: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Überweisung kann digital für die Terminvereinbarung genutzt werden; für die Vorstellung in der Facharztpraxis wird häufig das Original benötigt.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_PSYCHOTHERAPY_FIRST_STEP YES → Text in attachedParagraphs", () => {
+  it("REF_PSYCHOTHERAPY_FIRST_STEP YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_SPECIALTY_REQUIRED YES → Text in attachedParagraphs", () => {
+  it("REF_SPECIALTY_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_SPECIALTY_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Für die Ausstellung einer Überweisung muss die gewünschte Fachrichtung angegeben werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_BOOKING_CODE_PROCESS YES → Text in attachedParagraphs", () => {
+  it("REF_BOOKING_CODE_PROCESS YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { REF_BOOKING_CODE_PROCESS: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -2147,15 +2125,13 @@ describe("REFERRAL-Profil – SPECIFIC Checkpoints NO → kein Output", () => {
 });
 
 describe("REFERRAL-Profil – GlobalHints", () => {
-  it("IS_NEW_PATIENT YES → überweisungs-spezifischer Hint in attachedParagraphs", () => {
+  it("IS_NEW_PATIENT YES → kein Hint in REFERRAL (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Erstpatienten erfolgt die Ausstellung einer Überweisung in der Regel nach persönlicher Vorstellung.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("DOCTOR_REVIEW_REQUIRED YES → kein Hint in REFERRAL (nicht mehr gebunden)", () => {

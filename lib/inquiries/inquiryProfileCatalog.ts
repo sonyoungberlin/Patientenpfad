@@ -148,24 +148,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     id: "REFERRAL",
     label: "Überweisung",
     decisionCheckpointId: "REFERRAL_DECISION",
-    specificCheckpointIds: [
-      "REF_DOCTOR_CONTACT_REQUIRED",
-      "REF_ORIGINAL_VS_PDF",
-      "REF_PSYCHOTHERAPY_FIRST_STEP",
-      "REF_SPECIALTY_REQUIRED",
-      "REF_BOOKING_CODE_PROCESS",
-    ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-    ],
+    specificCheckpointIds: [],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Bei Erstpatienten erfolgt die Ausstellung einer Überweisung in der Regel nach persönlicher Vorstellung.",
-    },
   },
 };
