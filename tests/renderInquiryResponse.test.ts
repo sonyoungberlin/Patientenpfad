@@ -1132,6 +1132,16 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toHaveLength(5);
   });
 
+  it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
+    expect(prescriptionProfile.specificCheckpointIds).toEqual([
+      "PRESCRIPTION_STATUTORY_POSSIBLE",
+      "PRESCRIPTION_BTM_ADHS_RULES",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+      "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_NO_POSTAL_DELIVERY",
+    ]);
+  });
+
   it("Alte Checkpoints sind nicht mehr in PRESCRIPTION.specificCheckpointIds", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_KNOWN_MEDICATION");

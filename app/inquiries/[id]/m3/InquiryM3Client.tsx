@@ -132,7 +132,6 @@ function OutputView({
 
       {output.sections.map((sec) => (
         <section key={sec.inquiryId}>
-          <h3 style={{ marginBottom: "0.5rem" }}>{sec.label}</h3>
           {sec.mainDecision && (
             <p style={{ fontWeight: 600, margin: "0 0 0.5rem" }}>{sec.mainDecision}</p>
           )}
@@ -146,7 +145,6 @@ function OutputView({
 
       {output.sharedBottom.length > 0 && (
         <section>
-          <h3 style={{ marginBottom: "0.5rem" }}>Allgemeine Hinweise</h3>
           {output.sharedBottom.map((p, i) => (
             <p key={i} style={{ margin: "0.25rem 0" }}>
               {p}
