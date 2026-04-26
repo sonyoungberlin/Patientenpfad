@@ -1132,7 +1132,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PRIVATE_ONLY");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
     expect(prescriptionProfile.specificCheckpointIds).toHaveLength(6);
@@ -1142,6 +1142,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_KNOWN_MEDICATION");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_FOLLOW_UP");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_SPECIAL_TYPE");
+    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_PRIVATE_ONLY");
   });
 
   it("PRESCRIPTION-Profil bindet alle fünf Global Checkpoints", () => {
@@ -1187,6 +1188,20 @@ describe("PRESCRIPTION_DECISION – questions als Klärungshilfe", () => {
     expect(texts.some((t) => t.includes("indiziert") || t.includes("medizinisch nachvollziehbar"))).toBe(true);
     expect(texts.some((t) => t.includes("wiederverordnung") || t.includes("dauermedikation"))).toBe(true);
     expect(texts.some((t) => t.includes("anordnung"))).toBe(true);
+  });
+
+  it("PRESCRIPTION_DECISION POSSIBLE → mainDecision ist 'Ihr Rezept wurde ausgestellt.'", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toBe("Ihr Rezept wurde ausgestellt.");
+  });
+
+  it("PRESCRIPTION_DECISION NOT_POSSIBLE → mainDecision enthält 'nicht ausgestellt'", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("nicht ausgestellt");
   });
 });
 
@@ -1304,10 +1319,21 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("PRESCRIPTION_PRIVATE_ONLY YES → Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES → eRezept-Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
-        checkpointStatuses: { PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.YES },
+        checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("eRezept") || t.includes("Gesundheitskarte")),
+    ).toBe(true);
+  });
+
+  it("PRESCRIPTION_STATUTORY_POSSIBLE NO → Privatrezept-Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO },
       }),
     ]);
     expect(
@@ -1315,10 +1341,10 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     ).toBe(true);
   });
 
-  it("PRESCRIPTION_PRIVATE_ONLY NO → kein Output in attachedParagraphs", () => {
+  it("PRESCRIPTION_PRIVATE_ONLY YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
-        checkpointStatuses: { PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.NO },
+        checkpointStatuses: { PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2328,7 +2354,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Planbare oder organisatorische Anliegen gehören nicht in diesen Bereich.",
+      "Für planbare oder organisatorische Anliegen ist eine reguläre Sprechstunde erforderlich.",
     );
   });
 
@@ -2361,7 +2387,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Es kann zu Wartezeiten kommen.",
+      "Je nach Auslastung kann es zu Wartezeiten kommen.",
     );
   });
 

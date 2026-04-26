@@ -292,7 +292,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "PRESCRIPTION_DECISION-Q3", text: "Liegt eine ärztliche Anordnung vor?" },
     ],
     textByStatus: {
-      [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt und kann mit Ihrer Gesundheitskarte in der Apotheke eingelöst werden.",
+      [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]: "Das von Ihnen angefragte Rezept wurde nicht ausgestellt.",
     },
   },
@@ -392,6 +392,25 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Ein Postversand von Rezepten erfolgt nicht; die Bereitstellung erfolgt als eRezept oder über eine Apotheke.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_STATUTORY_POSSIBLE: {
+    id: "PRESCRIPTION_STATUTORY_POSSIBLE",
+    label: "Kassenrezept möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "CONTEXT_SPECIFIC",
+    questions: [
+      { id: "PRESCRIPTION_STATUTORY_POSSIBLE-Q1", text: "Ist das Rezept als Kassenrezept möglich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Das eRezept wurde auf Ihrer Gesundheitskarte gespeichert und kann in der Apotheke eingelöst werden. Alternativ erhalten Sie einen QR-Code als PDF oder in Papierform.",
+      // NO: bewusst NICHT still – NO bedeutet fachlich „Privatrezept ausgestellt"
+      [ExplanationStatus.NO]:
+        "Das Medikament wurde als Privatrezept ausgestellt. Die Kosten werden nicht von der gesetzlichen Krankenkasse übernommen und müssen selbst bezahlt werden.",
     },
   },
 

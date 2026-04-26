@@ -207,11 +207,13 @@ export function renderInquiryResponseFromSections(
       if (status === ActionStatus.INACTIVE) continue;
 
       // For SPECIFIC EXPLANATION checkpoints: only YES produces M4 output.
-      // NO means "keine Erklärung erforderlich" and is silent in the output.
+      // NO is silent by default – unless the checkpoint explicitly defines a NO text
+      // (e.g. PRESCRIPTION_STATUTORY_POSSIBLE, where NO means "Privatrezept ausgestellt").
       if (
         checkpoint.kind === InquiryCheckpointKind.EXPLANATION &&
         checkpoint.scope === InquiryCheckpointScope.SPECIFIC &&
-        status !== ExplanationStatus.YES
+        status !== ExplanationStatus.YES &&
+        !(status === ExplanationStatus.NO && checkpoint.textByStatus[ExplanationStatus.NO])
       ) continue;
 
       const text = checkpoint.textByStatus[status];
