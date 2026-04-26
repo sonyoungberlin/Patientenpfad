@@ -1473,13 +1473,9 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile).toBeDefined();
   });
 
-  it("LAB-Profil bindet alle fünf Specific Checkpoints", () => {
-    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_RULES");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_FASTING_REQUIRED");
+  it("LAB-Profil bindet genau einen Specific Checkpoint", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_DISCUSSION_PROCESS_CODE");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
-    expect(labProfile.specificCheckpointIds).toHaveLength(5);
+    expect(labProfile.specificCheckpointIds).toHaveLength(1);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1488,13 +1484,13 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_VALUES_DEFINED");
   });
 
-  it("LAB-Profil bindet genau zwei Global Checkpoints", () => {
-    expect(labProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
+  it("LAB-Profil bindet keine Global Checkpoints", () => {
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
-    expect(labProfile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
-    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(2);
+    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(0);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im LAB-Profil", () => {
@@ -1503,41 +1499,24 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     }
   });
 
-  it("LAB_DECISION hat genau 2 questions", () => {
+  it("LAB_DECISION hat genau 1 question", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
-    expect(cp.questions).toHaveLength(2);
-    expect(cp.questions![0].text).toBe("Liegt eine externe Anordnung oder Überweisung vor?");
-    expect(cp.questions![1].text).toBe("Liegt eine ärztliche Anordnung aus unserer Praxis vor?");
+    expect(cp.questions).toHaveLength(1);
+    expect(cp.questions![0].text).toBe("Liegt eine gültige Laboranforderung vor?");
   });
 
-  it("Alle fünf neuen SPECIFIC Checkpoints sind EXPLANATION/SPECIFIC/ATTACHED im Katalog", () => {
-    for (const id of [
-      "LAB_CHECKUP_RULES",
-      "LAB_FASTING_REQUIRED",
-      "LAB_SELF_PAYER_IGEL",
-      "LAB_DISCUSSION_PROCESS_CODE",
-      "LAB_MPU_EXCLUSION",
-    ]) {
-      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
-      expect(cp).toBeDefined();
-      expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
-      expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
-      expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
-    }
+  it("LAB_SELF_PAYER_IGEL ist EXPLANATION/SPECIFIC/ATTACHED im Katalog", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_IGEL"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
   });
 
-  it("Alle fünf neuen SPECIFIC Checkpoints haben questions", () => {
-    for (const id of [
-      "LAB_CHECKUP_RULES",
-      "LAB_FASTING_REQUIRED",
-      "LAB_SELF_PAYER_IGEL",
-      "LAB_DISCUSSION_PROCESS_CODE",
-      "LAB_MPU_EXCLUSION",
-    ]) {
-      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
-      expect(cp.questions).toBeDefined();
-      expect((cp.questions ?? []).length).toBeGreaterThan(0);
-    }
+  it("LAB_SELF_PAYER_IGEL hat questions", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_IGEL"];
+    expect(cp.questions).toBeDefined();
+    expect((cp.questions ?? []).length).toBeGreaterThan(0);
   });
 });
 
@@ -1555,26 +1534,22 @@ function makeLabSection(overrides: Partial<InquirySection> = {}): InquirySection
 }
 
 describe("LAB-Profil – globalHints", () => {
-  it("IS_NEW_PATIENT YES → Labor-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("IS_NEW_PATIENT YES → kein Labor-Hint in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("IS_CHRONIC_PATIENT YES → Labor-spezifischer Hint erscheint in attachedParagraphs", () => {
+  it("IS_CHRONIC_PATIENT YES → kein Labor-Hint in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei chronischen Erkrankungen sind regelmäßige Verlaufskontrollen vorgesehen.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -1583,42 +1558,22 @@ describe("LAB-Profil – globalHints", () => {
 // ---------------------------------------------------------------------------
 
 describe("LAB-Profil – SPECIFIC Checkpoints", () => {
-  it("LAB_CHECKUP_RULES NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("LAB_CHECKUP_RULES YES → Output in attachedParagraphs", () => {
+  it("LAB_CHECKUP_RULES YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain("Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.");
-  });
-
-  it("LAB_FASTING_REQUIRED NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_FASTING_REQUIRED: ExplanationStatus.NO },
-      }),
-    ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_FASTING_REQUIRED YES → Hinweis in attachedParagraphs", () => {
+  it("LAB_FASTING_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_FASTING_REQUIRED: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bitte kommen Sie nüchtern zur Blutentnahme (mindestens 8 Stunden vorher nichts essen, kein Kaffee; Wasser ist erlaubt).",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("LAB_SELF_PAYER_IGEL NO → kein Text in attachedParagraphs", () => {
@@ -1639,44 +1594,22 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toContain("Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.");
   });
 
-  it("LAB_DISCUSSION_PROCESS_CODE NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_DISCUSSION_PROCESS_CODE: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("LAB_DISCUSSION_PROCESS_CODE YES → Output in attachedParagraphs", () => {
+  it("LAB_DISCUSSION_PROCESS_CODE YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_DISCUSSION_PROCESS_CODE: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Der Buchungscode für die Befundbesprechung wird automatisch versendet, sobald alle Laborergebnisse vorliegen.",
-    );
-  });
-
-  it("LAB_MPU_EXCLUSION NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeLabSection({
-        checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.NO },
-      }),
-    ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_MPU_EXCLUSION YES → Output in attachedParagraphs", () => {
+  it("LAB_MPU_EXCLUSION YES → kein Output in attachedParagraphs (ungebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
@@ -1685,19 +1618,19 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
 // ---------------------------------------------------------------------------
 
 describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () => {
-  it("IS_NEW_PATIENT YES in LAB + REFERRAL → M5-Doku enthält den Label genau einmal", () => {
+  it("IS_NEW_PATIENT YES in AU + REFERRAL → M5-Doku enthält den Label genau einmal", () => {
     const result = renderInquiryResponseFromSections([
-      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
     expect(entries).toHaveLength(1);
   });
 
-  it("IS_NEW_PATIENT YES in AU + LAB + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
+  it("IS_NEW_PATIENT YES in AU + REFERRAL + PRESCRIPTION → M5-Doku enthält den Label genau einmal", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
-      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makePrescriptionSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
@@ -1706,25 +1639,23 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
 
   it("IS_NEW_PATIENT YES → M5-Marker ist checkpoint.label (kurzer Text, kein Hint-Text)", () => {
     const result = renderInquiryResponseFromSections([
-      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    const labGlobalHint = INQUIRY_PROFILE_CATALOG_V2["LAB"].globalHints?.["IS_NEW_PATIENT"] ?? "";
+    const referralGlobalHint = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"].globalHints?.["IS_NEW_PATIENT"] ?? "";
     // Der Hint-Text darf NICHT als Doku-Marker erscheinen
-    expect(result.documentation).not.toContain(labGlobalHint);
+    expect(result.documentation).not.toContain(referralGlobalHint);
     // Nur der kurze Label (checkpoint.label) erscheint
     const cpLabel = INQUIRY_CHECKPOINT_CATALOG_V2["IS_NEW_PATIENT"].label;
     expect(result.documentation).toContain(cpLabel);
   });
 
-  it("IS_NEW_PATIENT YES → M4 attachedParagraphs erscheinen pro Anliegen separat (anliegenspezifisch)", () => {
+  it("IS_NEW_PATIENT YES → M4 attachedParagraphs erscheinen nur in gebundenen Profilen (anliegenspezifisch)", () => {
     const result = renderInquiryResponseFromSections([
-      makeLabSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
+      makeAuSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
       makeReferralSection({ checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES } }),
     ]);
-    // LAB-spezifischer Hint in Section 0
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
-    );
+    // AU bindet IS_NEW_PATIENT nicht → kein Hint in Section 0
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
     // REFERRAL-spezifischer Hint in Section 1
     expect(result.sections[1].attachedParagraphs).toContain(
       "Bei Erstpatienten erfolgt die Ausstellung einer Überweisung in der Regel nach persönlicher Vorstellung.",
@@ -1752,10 +1683,10 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
 
   it("SPECIFIC Checkpoints werden unverändert pro Anliegen dokumentiert (kein Verlust durch GLOBAL-Dedup)", () => {
     const result = renderInquiryResponseFromSections([
-      makeLabSection({
+      makeReferralSection({
         checkpointStatuses: {
           IS_NEW_PATIENT: ExplanationStatus.YES,
-          LAB_CHECKUP_RULES: ExplanationStatus.YES,
+          REF_DOCTOR_CONTACT_REQUIRED: ExplanationStatus.YES,
         },
       }),
       makePrescriptionSection({
@@ -1766,9 +1697,9 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
       }),
     ]);
     // SPECIFIC docs: both inquiries (YES → output produced)
-    expect(result.documentation.some((d) => d.includes("Check-up-Regelung"))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Ärztlicher Kontakt erforderlich"))).toBe(true);
     expect(result.documentation.some((d) => d.includes("Facharztbericht"))).toBe(true);
-    // GLOBAL doc: exactly once
+    // GLOBAL doc: exactly once (only REFERRAL binds IS_NEW_PATIENT)
     const entries = result.documentation.filter((d) => d.includes("Neupatient"));
     expect(entries).toHaveLength(1);
   });
@@ -1994,11 +1925,11 @@ describe("SAMPLE_COLLECTION-Profil – GLOBALs entfernt", () => {
   it("LAB-Profil bleibt durch SAMPLE_COLLECTION unberührt", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Der gesetzliche Gesundheits-Check-up ist ab 35 Jahren alle drei Jahre sowie einmalig zwischen 18 und 34 Jahren möglich. Häufigere Kontrollen ohne medizinischen Anlass sind keine Kassenleistung.",
+      "Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.",
     );
   });
 });

@@ -476,8 +476,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [
-      { id: "LAB_DECISION-Q1", text: "Liegt eine externe Anordnung oder Überweisung vor?" },
-      { id: "LAB_DECISION-Q2", text: "Liegt eine ärztliche Anordnung aus unserer Praxis vor?" },
+      { id: "LAB_DECISION-Q1", text: "Liegt eine gültige Laboranforderung vor?" },
     ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
@@ -487,6 +486,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- LAB SPECIFIC CHECKPOINTS ----
 
+  /** @deprecated ungebunden – nicht mehr in LAB.specificCheckpointIds */
   LAB_CHECKUP_RULES: {
     id: "LAB_CHECKUP_RULES",
     label: "Check-up-Regelung",
@@ -502,6 +502,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated ungebunden – nicht mehr in LAB.specificCheckpointIds */
   LAB_FASTING_REQUIRED: {
     id: "LAB_FASTING_REQUIRED",
     label: "Nüchternabnahme erforderlich",
@@ -532,6 +533,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated ungebunden – nicht mehr in LAB.specificCheckpointIds */
   LAB_DISCUSSION_PROCESS_CODE: {
     id: "LAB_DISCUSSION_PROCESS_CODE",
     label: "Befundbesprechung nach Laboreingang",

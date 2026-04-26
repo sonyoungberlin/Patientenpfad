@@ -86,26 +86,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Labor",
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
-      "LAB_CHECKUP_RULES",
-      "LAB_FASTING_REQUIRED",
       "LAB_SELF_PAYER_IGEL",
-      "LAB_DISCUSSION_PROCESS_CODE",
-      "LAB_MPU_EXCLUSION",
     ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "IS_CHRONIC_PATIENT",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
       "URINE_SAMPLE_ONSITE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
-      IS_CHRONIC_PATIENT: "Bei chronischen Erkrankungen sind regelmäßige Verlaufskontrollen vorgesehen.",
-    },
   },
 
   SAMPLE_COLLECTION: {
