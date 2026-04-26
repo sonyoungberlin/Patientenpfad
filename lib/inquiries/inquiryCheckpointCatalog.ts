@@ -283,6 +283,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    // Klärungsfragen zur Rezept-Entscheidung (erscheinen in M2 als Fragenblock und in M3 als Kontext).
+    // Nur echte Entscheidungsgrundlagen – kein Thema, das eine eigene Patientenerklärung braucht.
+    // Sonderfälle (BtM, Privatrezept, Pille) werden über SPECIFIC Explanation Checkpoints abgebildet.
+    questions: [
+      { id: "PRESCRIPTION_DECISION-Q1", text: "Ist die Verordnung medizinisch nachvollziehbar / indiziert?" },
+      { id: "PRESCRIPTION_DECISION-Q2", text: "Handelt es sich um eine Wiederverordnung von Dauermedikation?" },
+      { id: "PRESCRIPTION_DECISION-Q3", text: "Liegt eine ärztliche Anordnung vor?" },
+    ],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ein Rezept kann ausgestellt werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Ein Rezept kann nicht ausgestellt werden.",
@@ -290,6 +298,106 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- PRESCRIPTION SPECIFIC EXPLANATIONS ----
+
+  PRESCRIPTION_CONTROL_OVERDUE: {
+    id: "PRESCRIPTION_CONTROL_OVERDUE",
+    label: "Kontrollintervall überfällig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_CONTROL_OVERDUE-Q1", text: "Ist das erforderliche Kontrollintervall für die Medikation überschritten?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Kontrolltermin erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: {
+    id: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+    label: "Facharztbericht erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED-Q1", text: "Fehlt ein aktueller Facharztbericht für die angefragte Medikation?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: aktueller Facharztbericht erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_BTM_ADHS_RULES: {
+    id: "PRESCRIPTION_BTM_ADHS_RULES",
+    label: "BtM / ADHS / Facharztpflicht",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_BTM_ADHS_RULES-Q1", text: "Geht es um ein BtM- oder ADHS-Medikament mit fachärztlicher Zuständigkeit?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: fachärztliche Zuständigkeit bei BtM/ADHS.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_PRIVATE_ONLY: {
+    id: "PRESCRIPTION_PRIVATE_ONLY",
+    label: "Privatrezept / Selbstzahler",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_PRIVATE_ONLY-Q1", text: "Handelt es sich um ein Präparat, das nur privat verordnet werden kann?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: nur als Privatrezept möglich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_GYN_EXCLUSIVITY: {
+    id: "PRESCRIPTION_GYN_EXCLUSIVITY",
+    label: "Gynäkologische Verordnung / Pille",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_GYN_EXCLUSIVITY-Q1", text: "Handelt es sich um eine gynäkologische Verordnung, z. B. die Pille?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: gynäkologische Zuständigkeit.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_NO_POSTAL_DELIVERY: {
+    id: "PRESCRIPTION_NO_POSTAL_DELIVERY",
+    label: "Kein Postversand",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "PRESCRIPTION_NO_POSTAL_DELIVERY-Q1", text: "Wurde ein Postversand des Rezepts angefragt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezept-Hinweis: Postversand nicht möglich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- PRESCRIPTION SPECIFIC EXPLANATIONS (ungebunden / veraltet) ----
+  // Diese Checkpoints werden nicht mehr im PRESCRIPTION-Profil gebunden.
+  // Sie verbleiben vorerst im Katalog, bis alle Referenzen bereinigt sind.
 
   PRESCRIPTION_KNOWN_MEDICATION: {
     id: "PRESCRIPTION_KNOWN_MEDICATION",
@@ -324,18 +432,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]:
         "Rezept-Hinweis: Fachärztliche Mitbehandlung / Bericht erforderlich.",
-    },
-  },
-
-  PRESCRIPTION_CONTROL_OVERDUE: {
-    id: "PRESCRIPTION_CONTROL_OVERDUE",
-    label: "Kontrolle überfällig",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Rezept-Hinweis: Notwendige Kontrolle überfällig.",
     },
   },
 
@@ -560,6 +656,42 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Hinweis: Aktuell liegt eine technische Störung vor. Der Systemzugriff ist eingeschränkt.",
+    },
+  },
+
+  E_RECIPE_USE: {
+    id: "E_RECIPE_USE",
+    label: "eRezept nutzen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Das Rezept wird als eRezept ausgestellt und kann mit der elektronischen Gesundheitskarte (eGK) in der Apotheke eingelöst werden.",
+    },
+  },
+
+  PHARMACY_INFORMATION: {
+    id: "PHARMACY_INFORMATION",
+    label: "Apotheke / Direktübermittlung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte geben Sie Ihre bevorzugte Apotheke an, damit das Rezept direkt übermittelt werden kann.",
+    },
+  },
+
+  DOCUMENT_UPLOAD: {
+    id: "DOCUMENT_UPLOAD",
+    label: "Unterlagen hochladen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte laden Sie relevante Unterlagen (z. B. Facharztbericht, Medikamentenplan) über die digitale Anfrage hoch.",
     },
   },
 };

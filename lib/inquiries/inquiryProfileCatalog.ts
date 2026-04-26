@@ -67,11 +67,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Rezept",
     decisionCheckpointId: "PRESCRIPTION_DECISION",
     specificCheckpointIds: [
-      "PRESCRIPTION_KNOWN_MEDICATION",
-      "PRESCRIPTION_FOLLOW_UP",
-      "PRESCRIPTION_SPECIALIST_REQUIRED",
       "PRESCRIPTION_CONTROL_OVERDUE",
-      "PRESCRIPTION_SPECIAL_TYPE",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+      "PRESCRIPTION_BTM_ADHS_RULES",
+      "PRESCRIPTION_PRIVATE_ONLY",
+      "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_NO_POSTAL_DELIVERY",
     ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",
@@ -85,6 +86,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
+      "E_RECIPE_USE",
+      "PHARMACY_INFORMATION",
+      "DOCUMENT_UPLOAD",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
     ],
     globalHints: {
       IS_NEW_PATIENT: "Rezept-Hinweis: Neupatient, Termin erforderlich.",
