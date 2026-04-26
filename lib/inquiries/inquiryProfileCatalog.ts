@@ -164,6 +164,35 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     },
   },
 
+  ACUTE_CARE: {
+    id: "ACUTE_CARE",
+    label: "Akuttermin / offene Sprechstunde",
+    decisionCheckpointId: "ACUTE_CARE_DECISION",
+    specificCheckpointIds: [
+      "ACUTE_ONLY_LIMIT",
+      "ACUTE_APPOINTMENT_INFO",
+      "OPEN_CONSULTATION_INFO",
+      "NO_FIXED_TIME",
+      "CAPACITY_LIMIT",
+    ],
+    boundGlobalCheckpointIds: [
+      "IS_NEW_PATIENT",
+      "DOCTOR_REVIEW_REQUIRED",
+      "DATA_INCOMPLETE",
+    ],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "OPEN_CONSULTATION",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    globalHints: {
+      IS_NEW_PATIENT: "Akut-Hinweis: Auch im Akutfall ist für Neupatienten eine persönliche Vorstellung erforderlich.",
+      DOCTOR_REVIEW_REQUIRED: "Akut-Hinweis: Die Behandlung erfolgt nach ärztlicher Einschätzung vor Ort.",
+      DATA_INCOMPLETE: "Akut-Hinweis: Bitte bringen Sie Ihre Versichertenkarte zur Behandlung mit.",
+    },
+  },
+
   REFERRAL: {
     id: "REFERRAL",
     label: "Überweisung",

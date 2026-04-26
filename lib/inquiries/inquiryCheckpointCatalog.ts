@@ -855,6 +855,107 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- ACUTE_CARE DECISION ----
+
+  ACUTE_CARE_DECISION: {
+    id: "ACUTE_CARE_DECISION",
+    label: "Akuttermin-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "ACUTE_CARE_DECISION-Q1", text: "Geht es um akute Beschwerden?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Sie können sich mit Ihrem Anliegen im Rahmen eines Akuttermins oder der offenen Sprechstunde vorstellen.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Für Ihr Anliegen ist die Akutsprechstunde nicht geeignet.",
+    },
+  },
+
+  // ---- ACUTE_CARE SPECIFIC EXPLANATIONS ----
+
+  ACUTE_ONLY_LIMIT: {
+    id: "ACUTE_ONLY_LIMIT",
+    label: "Nur für akute Beschwerden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "ACUTE_ONLY_LIMIT-Q1", text: "Geht es um ein planbares oder organisatorisches Anliegen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Akutsprechstunde ist ausschließlich für akute Beschwerden vorgesehen und nicht für planbare oder organisatorische Anliegen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ACUTE_APPOINTMENT_INFO: {
+    id: "ACUTE_APPOINTMENT_INFO",
+    label: "Akuttermin – Buchungshinweis",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "ACUTE_APPOINTMENT_INFO-Q1", text: "Geht es um die Buchung eines Akuttermins?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde verfügbar.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  OPEN_CONSULTATION_INFO: {
+    id: "OPEN_CONSULTATION_INFO",
+    label: "Offene Sprechstunde – Ablauf",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "OPEN_CONSULTATION_INFO-Q1", text: "Geht es um die offene Sprechstunde?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die offene Sprechstunde findet täglich morgens statt; es ist keine Terminbuchung und keine Arztwahl möglich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  NO_FIXED_TIME: {
+    id: "NO_FIXED_TIME",
+    label: "Keine festen Uhrzeiten / Wartezeiten",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "NO_FIXED_TIME-Q1", text: "Geht es um feste Uhrzeiten oder Wartezeiten?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "In der offenen Sprechstunde erfolgt die Behandlung ohne feste Termine; es kann zu Wartezeiten kommen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  CAPACITY_LIMIT: {
+    id: "CAPACITY_LIMIT",
+    label: "Kapazitätsgrenze / Überfüllung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "CAPACITY_LIMIT-Q1", text: "Geht es um die Verfügbarkeit oder mögliche Überfüllung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei hoher Auslastung kann es vorkommen, dass an einem Tag keine weiteren Patienten aufgenommen werden können.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- REFERRAL DECISION ----
 
   REFERRAL_DECISION: {
