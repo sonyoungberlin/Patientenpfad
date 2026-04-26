@@ -2265,12 +2265,13 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat genau 3 boundGlobalCheckpointIds", () => {
+  it("ACUTE_CARE hat genau 4 boundGlobalCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(3);
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(4);
     expect(profile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
     expect(profile.boundGlobalCheckpointIds).toContain("DOCTOR_REVIEW_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).toContain("DATA_INCOMPLETE");
+    expect(profile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
   });
 
   it("ACUTE_CARE.globalHints enthält Einträge für alle gebundenen Globals", () => {
@@ -2450,5 +2451,16 @@ describe("ACUTE_CARE-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("IS_CHRONIC_PATIENT YES → akut-spezifischer Hint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAcuteCareSection({
+        checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
+    );
   });
 });
