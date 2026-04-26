@@ -147,16 +147,20 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ACUTE_APPOINTMENT_INFO",
       "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
+    ],
+    boundGlobalCheckpointIds: [
       "INFECTIOUS_PROTOCOL",
     ],
-    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {},
+    globalHints: {
+      INFECTIOUS_PROTOCOL:
+        "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
+    },
   },
 
   REFERRAL: {

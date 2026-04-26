@@ -1081,7 +1081,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     id: "INFECTIOUS_PROTOCOL",
     label: "Infektionsschutz – Hinweis",
     kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
+    scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
     questions: [

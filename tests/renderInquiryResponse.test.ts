@@ -2263,12 +2263,12 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("ACUTE_CARE hat genau 6 specificCheckpointIds", () => {
+  it("ACUTE_CARE hat genau 5 specificCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.specificCheckpointIds).toHaveLength(6);
+    expect(profile.specificCheckpointIds).toHaveLength(5);
   });
 
-  it("alle 6 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+  it("alle 5 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     const ids = [
       "ACUTE_PURPOSE",
@@ -2276,7 +2276,6 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
       "ACUTE_APPOINTMENT_INFO",
       "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
-      "INFECTIOUS_PROTOCOL",
     ];
     for (const id of ids) {
       expect(profile.specificCheckpointIds).toContain(id);
@@ -2284,14 +2283,13 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("alle 6 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
+  it("alle 5 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
     for (const id of [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "ACUTE_APPOINTMENT_INFO",
       "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
-      "INFECTIOUS_PROTOCOL",
     ]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
@@ -2300,13 +2298,14 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat keine boundGlobalCheckpointIds", () => {
+  it("ACUTE_CARE hat 1 boundGlobalCheckpointId: INFECTIOUS_PROTOCOL", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
+    expect(profile.boundGlobalCheckpointIds).toContain("INFECTIOUS_PROTOCOL");
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
   });
 
-  it("ACUTE_CARE.globalHints hat keine Einträge", () => {
+  it("ACUTE_CARE.globalHints enthält Eintrag für INFECTIOUS_PROTOCOL", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     for (const id of profile.boundGlobalCheckpointIds) {
       expect(profile.globalHints).toHaveProperty(id);
@@ -2536,5 +2535,9 @@ describe("Checkpoint-Klassifizierung – MODULAR", () => {
 
   it("INFECTIOUS_PROTOCOL hat classification MODULAR", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["INFECTIOUS_PROTOCOL"].classification).toBe("MODULAR");
+  });
+
+  it("INFECTIOUS_PROTOCOL hat scope GLOBAL", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["INFECTIOUS_PROTOCOL"].scope).toBe(InquiryCheckpointScope.GLOBAL);
   });
 });
