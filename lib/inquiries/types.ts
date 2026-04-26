@@ -206,7 +206,19 @@ export enum DecisionStatus {
   DISABLED = "DISABLED",
 }
 
-/** Status für EXPLANATION-Checkpoints. */
+/**
+ * factStatus für EXPLANATION-Checkpoints (M2).
+ *
+ * M2 speichert ausschließlich den Sachverhalt – nicht die Ausgabe-Entscheidung:
+ *   YES       – Sachverhalt liegt vor.
+ *   NO        – Bewusst geprüft; Sachverhalt liegt nicht vor.
+ *   undefined – Nicht geprüft / nicht relevant (Checkpoint erscheint nicht in M3).
+ *
+ * Die Ausgabe-Entscheidung (SHOW / HIDE) trifft M3 separat (outputStatus).
+ * M4 erzeugt Erklärungstext nur bei outputStatus = SHOW.
+ *
+ * Vollständige Regel: docs/architecture/anfrage-assistent.md §18
+ */
 export enum ExplanationStatus {
   YES = "YES",
   NO = "NO",
@@ -254,6 +266,16 @@ export type InquiryCheckpoint = {
   kind: InquiryCheckpointKind;
   scope: InquiryCheckpointScope;
   placement: InquiryCheckpointPlacement;
+  /**
+   * Optionale Feinklassifikation eines Checkpoints.
+   *
+   * OUTCOME kennzeichnet Checkpoints, die das Ergebnis einer positiven Hauptentscheidung
+   * beschreiben. Sie folgen nicht der factStatus/outputStatus-Regel (§18), sondern werden
+   * nur gerendert, wenn section.decisionStatus === POSSIBLE (OUTCOME-Guard im Renderer).
+   * Beispiel: PRESCRIPTION_STATUTORY_POSSIBLE.
+   *
+   * Vollständige Abgrenzung EXPLANATION vs. OUTCOME: docs/architecture/anfrage-assistent.md §19
+   */
   classification?: "GLOBAL_STATE" | "MODULAR" | "CONTEXT_SPECIFIC" | "OUTCOME";
   /**
    * Einmalige M2-Frage für GLOBAL-Checkpoints (reiner Schalter: ja / nein).

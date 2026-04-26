@@ -207,12 +207,17 @@ export function renderInquiryResponseFromSections(
       if (status === undefined) continue;
       if (status === ActionStatus.INACTIVE) continue;
 
-      // OUTCOME-Checkpoints dürfen nur Output erzeugen, wenn die Hauptentscheidung POSSIBLE ist.
+      // OUTCOME-Guard: OUTCOME-Checkpoints beschreiben das Ergebnis einer positiven
+      // Hauptentscheidung und dürfen nur gerendert werden, wenn decisionStatus = POSSIBLE.
+      // → docs/architecture/anfrage-assistent.md §19
       if (checkpoint.classification === "OUTCOME" && section.decisionStatus !== DecisionStatus.POSSIBLE) continue;
 
-      // For SPECIFIC EXPLANATION checkpoints: only YES produces M4 output.
-      // NO is silent by default – unless the checkpoint explicitly defines a NO text
-      // (e.g. PRESCRIPTION_STATUTORY_POSSIBLE, where NO means "Privatrezept ausgestellt").
+      // EXPLANATION-Regel (factStatus / outputStatus):
+      // M2 speichert den Sachverhalt (factStatus). M3 entscheidet über die Ausgabe (outputStatus).
+      // Standard-Default: YES → SHOW (Text ausgeben), NO → HIDE (kein Text).
+      // Ausnahme: Hat der Checkpoint einen expliziten NO-Text in textByStatus, ist NO sichtbar
+      // (z. B. OUTCOME-Checkpoints mit aktiver NO-Bedeutung wie PRESCRIPTION_STATUTORY_POSSIBLE).
+      // → docs/architecture/anfrage-assistent.md §18
       if (
         checkpoint.kind === InquiryCheckpointKind.EXPLANATION &&
         checkpoint.scope === InquiryCheckpointScope.SPECIFIC &&

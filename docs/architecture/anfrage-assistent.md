@@ -279,30 +279,51 @@ falls relevant – eine neutrale Erklärung im Antworttext erzeugt.
 - Darf keine automatische Entscheidung auslösen
 - Unterstützt nur den menschlichen Entscheidungsprozess
 
-#### 3. M2 (Denken / Sammlung)
-- Wird in M2 abgefragt
-- Wird dort aktiv gesetzt (z. B. Ja/Nein)
-- Ist Teil des Sammel- und Denkprozesses
+#### 3. M2 – factStatus (Sachverhalt)
+M2 speichert **ausschließlich den Sachverhalt** (`factStatus`):
 
-#### 4. M3 (Entscheidung)
-- Wird als vorausgefüllter Status angezeigt (Prefill)
-- Kann dort bei Bedarf geändert werden
-- Ist kein primärer Entscheidungs-Checkpoint
+| Wert | Bedeutung |
+|---|---|
+| `YES` | Sachverhalt liegt vor |
+| `NO` | Bewusst geprüft – Sachverhalt liegt nicht vor |
+| `undefined` | Nicht geprüft / nicht relevant |
 
-#### 5. M4 (Antwort)
-- Kann eine neutrale Erklärung ausgeben
-- Erklärung darf keine Rechtfertigung oder Argumentation enthalten
-- Keine Formulierungen wie „trotzdem", „deshalb", „weil du …"
-- Muss unabhängig von der Hauptentscheidung funktionieren
+M2 trifft **keine Aussage** darüber, ob dem Patienten eine Erklärung angezeigt werden soll.
+Das ist Aufgabe von M3.
+
+#### 4. M3 – outputStatus (Ausgabe)
+M3 entscheidet **separat** über die Ausgabe (`outputStatus`):
+
+| Wert | Bedeutung |
+|---|---|
+| `SHOW` | Erklärung anzeigen |
+| `HIDE` | Erklärung nicht anzeigen |
+| `undefined` | Keine Ausgabe |
+
+**Defaults (Vorauswahl in M3):**
+- `factStatus = YES` → `outputStatus = SHOW` vorausgewählt
+- `factStatus = NO` → `outputStatus = HIDE` vorausgewählt; Hinweis „keine Erklärung erforderlich" wird angezeigt
+- `factStatus = undefined` → Checkpoint erscheint **nicht** in M3
+
+Der Arzt kann die Vorauswahl in M3 bei Bedarf überschreiben.
+
+#### 5. M4 – Erklärungstext
+- Nur `outputStatus = SHOW` erzeugt Erklärungstext in M4.
+- `outputStatus = HIDE` oder `undefined` erzeugt keinen Text.
+- Die Erklärung darf keine Rechtfertigung oder Argumentation enthalten.
+- Keine Formulierungen wie „trotzdem", „deshalb", „weil du …".
+- Muss unabhängig von der Hauptentscheidung funktionieren.
 
 #### 6. M5 (Dokumentation)
-- Liefert eine kurze Dokumentation, wenn der Checkpoint relevant ist
+- Liefert eine kurze Dokumentation, wenn der Checkpoint relevant ist.
 
 #### 7. Bewusst stille Zustände
 - Jeder Status muss bewusst definiert sein:
   - entweder mit Erklärung
   - oder explizit „keine Erklärung notwendig"
-- Stille darf nicht durch fehlende Texte entstehen
+- Stille darf nicht durch fehlende Einträge in `textByStatus` entstehen.
+- `NO`-Stille ist der Normalfall: `textByStatus` enthält keinen `NO`-Eintrag.
+- Braucht ein `NO`-Zustand doch einen Text (Ausnahme, s. u.), muss er explizit eingetragen werden.
 
 ### Merksatz
 - **Decision-Checkpoint** entscheidet
@@ -321,7 +342,60 @@ Beispiel: `AU_DECISION` trägt die Fragen zu Rückdatierung, Dauer und Wiederhol
 ohne eigenständigen Status oder M4-Output.
 
 Ein SPECIFIC Explanation Checkpoint ist nur dann angemessen, wenn er:
-- einen eigenen fachlichen Status hat (YES / NO / UNKNOWN), der bewusst gesetzt wird, **und**
+- einen eigenen fachlichen Status hat (YES / NO), der bewusst gesetzt wird, **und**
 - einen eigenen, anliegenspezifischen Ausgabetext in M4 erzeugen kann.
 
 → Zur Implementierung: `InquiryCheckpoint` in `lib/inquiries/types.ts`
+
+---
+
+## 19. OUTCOME-Checkpoints
+
+### Definition
+
+Ein **OUTCOME-Checkpoint** beschreibt das **Ergebnis** einer positiven Hauptentscheidung.
+Er erklärt nicht eine Ursache oder Bedingung (wie ein EXPLANATION-Checkpoint), sondern
+teilt dem Patienten mit, was konkret passiert ist oder bereitgestellt wurde.
+
+### Abgrenzung zu EXPLANATION-Checkpoints
+
+| Merkmal | EXPLANATION | OUTCOME |
+|---|---|---|
+| Bedeutung | „Warum / warum nicht?" | „Was ist das Ergebnis?" |
+| Aktiv wenn | immer (unabhängig von Hauptentscheidung) | nur bei `decisionStatus = POSSIBLE` |
+| M2 → M3 Defaults | factStatus → outputStatus (SHOW/HIDE) | nicht anwendbar |
+| M4-Ausgabe | nur bei `outputStatus = SHOW` | direkt aus `textByStatus`, kein SHOW/HIDE |
+
+### Render-Regel
+
+OUTCOME-Checkpoints folgen **nicht** der factStatus/outputStatus-Regel aus Abschnitt 18.
+
+**Ein OUTCOME-Checkpoint wird nur gerendert, wenn `section.decisionStatus === POSSIBLE`.**
+
+Bei `decisionStatus = NOT_POSSIBLE` oder `DISABLED` wird der OUTCOME-Checkpoint vollständig
+übersprungen, auch wenn ein Status gesetzt ist.
+
+### Beispiel: `PRESCRIPTION_STATUTORY_POSSIBLE`
+
+Dieser Checkpoint beschreibt das Ergebnis der Rezeptausstellung:
+- `YES` → Kassenrezept / eRezept wurde ausgestellt → eRezept-Information anzeigen
+- `NO` → Privatrezept wurde ausgestellt → Privatrezept-Hinweis anzeigen
+
+Das `NO` bedeutet hier **nicht** „Sachverhalt liegt nicht vor", sondern „ein Privatrezept
+wurde ausgestellt" – ein positives Ereignis, das dem Patienten mitgeteilt werden muss.
+Deshalb ist der `NO`-Text in `textByStatus` explizit befüllt (Ausnahme zur üblichen NO-Stille).
+
+Die `classification: "OUTCOME"` im Checkpoint-Katalog kennzeichnet diesen Checkpoint
+als OUTCOME und aktiviert den OUTCOME-Guard im Renderer.
+
+### Technische Kennzeichnung
+
+```ts
+{
+  id: "PRESCRIPTION_STATUTORY_POSSIBLE",
+  classification: "OUTCOME",
+  // ...
+}
+```
+
+→ Zur Implementierung: Guard in `lib/inquiries/renderInquiryResponse.ts` (Abschnitt B)
