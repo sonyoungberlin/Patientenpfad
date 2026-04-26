@@ -1492,13 +1492,13 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_VALUES_DEFINED");
   });
 
-  it("LAB-Profil bindet alle drei Global Checkpoints", () => {
+  it("LAB-Profil bindet genau zwei Global Checkpoints", () => {
     expect(labProfile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(labProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
+    expect(labProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
     expect(labProfile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
-    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(3);
+    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(2);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im LAB-Profil", () => {

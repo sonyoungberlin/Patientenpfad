@@ -103,7 +103,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "IS_NEW_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
       "IS_CHRONIC_PATIENT",
     ],
     availableActionIds: [
@@ -114,7 +113,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     globalHints: {
       IS_NEW_PATIENT: "Bei Neupatienten erfolgt die Labordiagnostik in der Regel nach einer Erstvorstellung.",
-      PATIENT_NOT_IN_GERMANY: "Die Besprechung von Laborbefunden per Videosprechstunde ist bei Aufenthalt außerhalb Deutschlands nicht möglich.",
       IS_CHRONIC_PATIENT: "Bei chronischen Erkrankungen sind regelmäßige Verlaufskontrollen vorgesehen.",
     },
   },
