@@ -1319,7 +1319,7 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("PRESCRIPTION_STATUTORY_POSSIBLE YES → eRezept-Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES (POSSIBLE) → eRezept-Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES },
@@ -1330,7 +1330,7 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     ).toBe(true);
   });
 
-  it("PRESCRIPTION_STATUTORY_POSSIBLE NO → Privatrezept-Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE NO (POSSIBLE) → Privatrezept-Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO },
@@ -1339,6 +1339,18 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     expect(
       result.sections[0].attachedParagraphs.some((t) => t.includes("Privatrezept")),
     ).toBe(true);
+  });
+
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES (NOT_POSSIBLE) → kein eRezept-Text (OUTCOME-Guard)", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("eRezept") || t.includes("Gesundheitskarte")),
+    ).toBe(false);
   });
 
   it("PRESCRIPTION_PRIVATE_ONLY YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {

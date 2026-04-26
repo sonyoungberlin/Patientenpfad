@@ -401,7 +401,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    classification: "CONTEXT_SPECIFIC",
+    classification: "OUTCOME",
     questions: [
       { id: "PRESCRIPTION_STATUTORY_POSSIBLE-Q1", text: "Ist das Rezept als Kassenrezept möglich?" },
     ],

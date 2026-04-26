@@ -5,6 +5,7 @@ import {
   InquiryCheckpointPlacement,
   ActionStatus,
   ExplanationStatus,
+  DecisionStatus,
   ResponseKind,
   type ConfirmedInquiryCheckpoint,
   type InquiryOutput,
@@ -205,6 +206,9 @@ export function renderInquiryResponseFromSections(
       const status = section.checkpointStatuses[checkpointId];
       if (status === undefined) continue;
       if (status === ActionStatus.INACTIVE) continue;
+
+      // OUTCOME-Checkpoints dürfen nur Output erzeugen, wenn die Hauptentscheidung POSSIBLE ist.
+      if (checkpoint.classification === "OUTCOME" && section.decisionStatus !== DecisionStatus.POSSIBLE) continue;
 
       // For SPECIFIC EXPLANATION checkpoints: only YES produces M4 output.
       // NO is silent by default – unless the checkpoint explicitly defines a NO text

@@ -254,7 +254,7 @@ export type InquiryCheckpoint = {
   kind: InquiryCheckpointKind;
   scope: InquiryCheckpointScope;
   placement: InquiryCheckpointPlacement;
-  classification?: "GLOBAL_STATE" | "MODULAR" | "CONTEXT_SPECIFIC";
+  classification?: "GLOBAL_STATE" | "MODULAR" | "CONTEXT_SPECIFIC" | "OUTCOME";
   /**
    * Einmalige M2-Frage für GLOBAL-Checkpoints (reiner Schalter: ja / nein).
    * Bei SPECIFIC-Checkpoints nicht gesetzt.
