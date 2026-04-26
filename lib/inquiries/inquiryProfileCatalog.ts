@@ -54,7 +54,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     globalHints: {
       IS_NEW_PATIENT: "Bei Neupatienten können Arbeitsunfähigkeitsbescheinigungen über eine digitale Anfrage für maximal drei Tage ausgestellt werden; bei bereits bekannten Patienten sind bis zu fünf Tage möglich.",
-      PATIENT_NOT_IN_GERMANY: "AU-Hinweis: Aufenthalt in Deutschland relevant.",
+      PATIENT_NOT_IN_GERMANY: "Eine AU-Bescheinigung setzt in der Regel einen Aufenthalt in Deutschland voraus.",
     },
   },
 
@@ -113,9 +113,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "URINE_SAMPLE_ONSITE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
-      PATIENT_NOT_IN_GERMANY: "Labor-Hinweis: Videosprechstunde / Besprechung bei Aufenthalt außerhalb Deutschlands nicht möglich.",
-      IS_CHRONIC_PATIENT: "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
+      IS_NEW_PATIENT: "Bei Neupatienten ist vor der Labordiagnostik eine Erstvorstellung erforderlich.",
+      PATIENT_NOT_IN_GERMANY: "Die Besprechung von Laborbefunden per Videosprechstunde ist bei Aufenthalt außerhalb Deutschlands eingeschränkt.",
+      IS_CHRONIC_PATIENT: "Bei chronischen Erkrankungen sind regelmäßige Verlaufskontrollen vorgesehen.",
     },
   },
 
@@ -129,20 +129,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "SAMPLE_HANDOVER",
       "LAB_RESULT_TIME",
     ],
-    boundGlobalCheckpointIds: [
-      "IS_NEW_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      IS_NEW_PATIENT: "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
-      PATIENT_NOT_IN_GERMANY: "Proben-Hinweis: Die Probenabgabe ist nur vor Ort in der Praxis möglich.",
-    },
+    globalHints: {},
   },
 
   ACUTE_CARE: {
@@ -159,18 +153,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "CHRONIC_EXCLUSION",
       "INFECTIOUS_PROTOCOL",
     ],
-    boundGlobalCheckpointIds: [
-      "IS_CHRONIC_PATIENT",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      IS_CHRONIC_PATIENT: "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
-    },
+    globalHints: {},
   },
 
   REFERRAL: {
@@ -194,7 +184,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     globalHints: {
-      IS_NEW_PATIENT: "Überweisungs-Hinweis: Bei Neupatienten ist vor der Ausstellung in der Regel ein persönlicher Erstkontakt erforderlich.",
+      IS_NEW_PATIENT: "Bei Erstpatienten ist vor Ausstellung einer Überweisung eine persönliche Vorstellung erforderlich.",
     },
   },
 };

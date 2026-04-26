@@ -757,7 +757,7 @@ describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints",
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "AU-Hinweis: Aufenthalt in Deutschland relevant.",
+      "Eine AU-Bescheinigung setzt in der Regel einen Aufenthalt in Deutschland voraus.",
     );
   });
 
@@ -1566,7 +1566,7 @@ describe("LAB-Profil – globalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
+      "Bei Neupatienten ist vor der Labordiagnostik eine Erstvorstellung erforderlich.",
     );
   });
 
@@ -1577,7 +1577,7 @@ describe("LAB-Profil – globalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Labor-Hinweis: regelmäßige Verlaufskontrolle relevant.",
+      "Bei chronischen Erkrankungen sind regelmäßige Verlaufskontrollen vorgesehen.",
     );
   });
 });
@@ -1731,7 +1731,7 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
     );
     // LAB-spezifischer Hint in Section 1
     expect(result.sections[1].attachedParagraphs).toContain(
-      "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",
+      "Bei Neupatienten ist vor der Labordiagnostik eine Erstvorstellung erforderlich.",
     );
   });
 
@@ -1851,13 +1851,13 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     }
   });
 
-  it("SAMPLE_COLLECTION hat die erwarteten boundGlobalCheckpointIds", () => {
+  it("SAMPLE_COLLECTION hat keine boundGlobalCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
-    expect(profile.boundGlobalCheckpointIds).toContain("IS_NEW_PATIENT");
-    expect(profile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(profile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(2);
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
   });
 
   it("SAMPLE_COLLECTION hat die erwarteten availableActionIds", () => {
@@ -1967,16 +1967,14 @@ describe("SAMPLE_COLLECTION-Profil – SPECIFIC Checkpoints", () => {
   });
 });
 
-describe("SAMPLE_COLLECTION-Profil – GLOBALs unverändert", () => {
-  it("IS_NEW_PATIENT YES → proben-spezifischer Hint in attachedParagraphs", () => {
+describe("SAMPLE_COLLECTION-Profil – GLOBALs entfernt", () => {
+  it("IS_NEW_PATIENT YES → kein proben-spezifischer Hint (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
         checkpointStatuses: { IS_NEW_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Proben-Hinweis: Bitte melden Sie sich vorab in unserer Praxis an.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("PROCESSING_DELAY ACTIVE → Text in sharedBottom (SAMPLE_COLLECTION-Section)", () => {
@@ -2206,7 +2204,7 @@ describe("REFERRAL-Profil – GlobalHints", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Überweisungs-Hinweis: Bei Neupatienten ist vor der Ausstellung in der Regel ein persönlicher Erstkontakt erforderlich.",
+      "Bei Erstpatienten ist vor Ausstellung einer Überweisung eine persönliche Vorstellung erforderlich.",
     );
   });
 
@@ -2306,13 +2304,13 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat genau 1 boundGlobalCheckpointId", () => {
+  it("ACUTE_CARE hat keine boundGlobalCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
-    expect(profile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
   });
 
-  it("ACUTE_CARE.globalHints enthält Einträge für alle gebundenen Globals", () => {
+  it("ACUTE_CARE.globalHints hat keine Einträge", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     for (const id of profile.boundGlobalCheckpointIds) {
       expect(profile.globalHints).toHaveProperty(id);
@@ -2509,15 +2507,13 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints NO → kein Output", () => 
 });
 
 describe("ACUTE_CARE-Profil – GlobalHints", () => {
-  it("IS_CHRONIC_PATIENT YES → akut-spezifischer Hint in attachedParagraphs", () => {
+  it("IS_CHRONIC_PATIENT YES → kein Hint in attachedParagraphs (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
         checkpointStatuses: { IS_CHRONIC_PATIENT: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Auch bei Dauermedikation oder chronischer Erkrankung sind planbare Anliegen rechtzeitig anzufragen. Die Akutsprechstunde ist für akute Beschwerden vorgesehen.",
-    );
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 
