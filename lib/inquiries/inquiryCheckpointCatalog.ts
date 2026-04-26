@@ -882,6 +882,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- ACUTE_CARE SPECIFIC EXPLANATIONS ----
 
+  /** @deprecated Ersetzt durch ACUTE_PURPOSE + ACUTE_EXCLUSION */
   ACUTE_ONLY_LIMIT: {
     id: "ACUTE_ONLY_LIMIT",
     label: "Nur für akute Beschwerden",
@@ -933,6 +934,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Ersetzt durch OPEN_CONSULTATION_INFO + WAITING_TIME */
   NO_FIXED_TIME: {
     id: "NO_FIXED_TIME",
     label: "Keine festen Uhrzeiten / Wartezeiten",
@@ -998,7 +1000,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Planbare oder organisatorische Anliegen gehören nicht in diesen Bereich.",
+        "Für planbare oder organisatorische Anliegen ist eine reguläre Sprechstunde erforderlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1015,7 +1017,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Es kann zu Wartezeiten kommen.",
+        "Je nach Auslastung kann es zu Wartezeiten kommen.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
