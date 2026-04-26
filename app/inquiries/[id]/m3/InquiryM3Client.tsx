@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   DecisionStatus,
   ExplanationOutputStatus,
@@ -65,6 +65,25 @@ const OUTPUT_OPTIONS = [
 const ACTION_OPTIONS = [
   { value: "ACTIVE", label: "Aktiv" },
   { value: "INACTIVE", label: "Inaktiv" },
+];
+
+const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
+  {
+    label: "Kontakt & Anfrage",
+    ids: ["DIGITAL_REQUEST", "ONLINE_ANAMNESIS"],
+  },
+  {
+    label: "Termin & Behandlung",
+    ids: ["BOOK_APPOINTMENT", "OPEN_CONSULTATION"],
+  },
+  {
+    label: "Rezept & Einlösung",
+    ids: ["E_RECIPE_USE", "PHARMACY_INFORMATION"],
+  },
+  {
+    label: "Organisation & Hinweise",
+    ids: ["DOCUMENT_UPLOAD", "PROCESSING_DELAY", "TECHNICAL_ISSUE"],
+  },
 ];
 
 function optionsForKind(kind: InquiryCheckpointKind) {
@@ -464,21 +483,70 @@ export default function InquiryM3Client({
                   {actionsOpen ? "Weniger ▲" : "Mehr ▼"}
                 </button>
               </div>
-              {actionsOpen && actionCheckpoints.map((cp) => (
-                <div
-                  key={cp.id}
-                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                >
-                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                  <StatusButtons
-                    checkpointId={cp.id}
-                    options={ACTION_OPTIONS}
-                    value={statuses[cp.id]}
-                    onChange={setStatus}
-                    disabled={false}
-                  />
-                </div>
-              ))}
+              {actionsOpen && (() => {
+                const cpById = Object.fromEntries(actionCheckpoints.map((cp) => [cp.id, cp]));
+                const renderedIds = new Set<string>();
+                const groupElements: ReactNode[] = [];
+
+                for (const group of ACTION_GROUPS) {
+                  const groupCps = group.ids
+                    .map((id) => cpById[id])
+                    .filter((cp): cp is M3ActionData => !!cp);
+                  if (groupCps.length === 0) continue;
+                  groupCps.forEach((cp) => renderedIds.add(cp.id));
+                  groupElements.push(
+                    <div key={group.label} style={{ marginTop: "0.75rem" }}>
+                      <div
+                        className="text-muted text-small"
+                        style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
+                      >
+                        {group.label}
+                      </div>
+                      {groupCps.map((cp) => (
+                        <div
+                          key={cp.id}
+                          style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                        >
+                          <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                          <StatusButtons
+                            checkpointId={cp.id}
+                            options={ACTION_OPTIONS}
+                            value={statuses[cp.id]}
+                            onChange={setStatus}
+                            disabled={false}
+                          />
+                        </div>
+                      ))}
+                    </div>,
+                  );
+                }
+
+                // Ungrouped fallback: actions not covered by any group
+                const ungrouped = actionCheckpoints.filter((cp) => !renderedIds.has(cp.id));
+                if (ungrouped.length > 0) {
+                  groupElements.push(
+                    <div key="__ungrouped__" style={{ marginTop: "0.75rem" }}>
+                      {ungrouped.map((cp) => (
+                        <div
+                          key={cp.id}
+                          style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                        >
+                          <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                          <StatusButtons
+                            checkpointId={cp.id}
+                            options={ACTION_OPTIONS}
+                            value={statuses[cp.id]}
+                            onChange={setStatus}
+                            disabled={false}
+                          />
+                        </div>
+                      ))}
+                    </div>,
+                  );
+                }
+
+                return groupElements;
+              })()}
             </section>
           )}
 
