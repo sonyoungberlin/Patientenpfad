@@ -1739,3 +1739,40 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
     expect(entries).toHaveLength(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// URINE_SAMPLE_ONSITE – GLOBAL ACTION / SHARED_BOTTOM
+// ---------------------------------------------------------------------------
+
+describe("URINE_SAMPLE_ONSITE – GLOBAL SHARED_BOTTOM", () => {
+  it("URINE_SAMPLE_ONSITE ist im Katalog als ACTION / GLOBAL / SHARED_BOTTOM definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["URINE_SAMPLE_ONSITE"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+  });
+
+  it("URINE_SAMPLE_ONSITE ist in LAB.availableActionIds enthalten", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["LAB"];
+    expect(profile.availableActionIds).toContain("URINE_SAMPLE_ONSITE");
+  });
+
+  it("URINE_SAMPLE_ONSITE ACTIVE → Text erscheint in sharedBottom (LAB-Section)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { URINE_SAMPLE_ONSITE: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom.some((t) => t.includes("Urinprobe"))).toBe(true);
+  });
+
+  it("URINE_SAMPLE_ONSITE INACTIVE → kein Eintrag in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeLabSection({
+        checkpointStatuses: { URINE_SAMPLE_ONSITE: ActionStatus.INACTIVE },
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+});

@@ -123,6 +123,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "OPEN_CONSULTATION",
+      "URINE_SAMPLE_ONSITE",
     ],
     globalHints: {
       IS_NEW_PATIENT: "Labor-Hinweis: Erstvorstellung vor Labordiagnostik erforderlich.",

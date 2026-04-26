@@ -761,4 +761,16 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Bitte laden Sie relevante Unterlagen (z. B. Facharztbericht, Medikamentenplan) über die digitale Anfrage hoch.",
     },
   },
+
+  URINE_SAMPLE_ONSITE: {
+    id: "URINE_SAMPLE_ONSITE",
+    label: "Urinprobe vor Ort",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Eine Urinprobe kann vor Ort in der Praxis abgegeben werden.",
+    },
+  },
 };
