@@ -724,6 +724,86 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       INFECTIOUS_PROTOCOL:
         "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
     },
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_ACUTE_INITIAL",
+        label: "Akuttermin / offene Sprechstunde anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      {
+        id: "REQ_ACUTE_CLARIFICATION",
+        label: "Rückfrage zu Akutsprechstunde / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_ACUTE_OFFERED",
+        label: "Akuttermin / offene Sprechstunde angeboten",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Akuttermin möglich / angeboten",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Andere Terminart / anderer Weg erforderlich",
+        relevantSpecificRoles: ["CHANNEL_NOT_SUITABLE", "EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf Akutsprechstunde / offene Sprechstunde erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
   },
 
   REFERRAL: {
