@@ -192,8 +192,12 @@ export async function createInquirySession(
  * bestätigt ist. Wirft InquirySessionError("session_not_found"), wenn die
  * Session nicht existiert.
  *
- * Es findet kein partielles Merge statt: der übergebene Stand ersetzt den
- * vollständigen bisherigen JSON-Blob.
+ * Verhalten:
+ * - checkpointStatuses, actionStatuses, explanationOutputStatuses werden als
+ *   vollständige Blobs ersetzt (kein Merge), da der Client den gesamten Stand kennt.
+ * - communicationReasonSelection und responseGoalSelection werden shallow-gemergt:
+ *   bestehende Keys bleiben erhalten; nur die übergebenen Keys werden überschrieben.
+ *   Wird das Feld nicht übergeben (undefined), bleibt der DB-Wert unverändert.
  */
 export async function updateInquiryCheckpointStatuses(
   input: UpdateCheckpointStatusesInput,
@@ -201,7 +205,12 @@ export async function updateInquiryCheckpointStatuses(
 ): Promise<InquirySession> {
   const session = await client.inquirySession.findUnique({
     where: { id: input.sessionId },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      communication_reason_selection: true,
+      response_goal_selection: true,
+    },
   });
 
   if (!session) {
@@ -218,17 +227,40 @@ export async function updateInquiryCheckpointStatuses(
     );
   }
 
+  // Shallow-Merge für communicationReasonSelection: bestehende Keys bleiben
+  // erhalten, nur die übergebenen Keys werden überschrieben.
+  const mergedCommunicationReasonSelection: Prisma.InputJsonValue | undefined =
+    input.communicationReasonSelection !== undefined
+      ? toJsonInput({
+          ...(isStringRecord(session.communication_reason_selection)
+            ? session.communication_reason_selection
+            : {}),
+          ...input.communicationReasonSelection,
+        })
+      : undefined;
+
+  // Shallow-Merge für responseGoalSelection: selbes Prinzip.
+  const mergedResponseGoalSelection: Prisma.InputJsonValue | undefined =
+    input.responseGoalSelection !== undefined
+      ? toJsonInput({
+          ...(isStringRecord(session.response_goal_selection)
+            ? session.response_goal_selection
+            : {}),
+          ...input.responseGoalSelection,
+        })
+      : undefined;
+
   return client.inquirySession.update({
     where: { id: input.sessionId },
     data: {
       checkpoint_statuses: toJsonInput(input.checkpointStatuses),
       action_statuses: toJsonInput(input.actionStatuses ?? {}),
       explanation_output_statuses: toJsonInput(input.explanationOutputStatuses ?? {}),
-      ...(input.communicationReasonSelection !== undefined && {
-        communication_reason_selection: toJsonInput(input.communicationReasonSelection),
+      ...(mergedCommunicationReasonSelection !== undefined && {
+        communication_reason_selection: mergedCommunicationReasonSelection,
       }),
-      ...(input.responseGoalSelection !== undefined && {
-        response_goal_selection: toJsonInput(input.responseGoalSelection),
+      ...(mergedResponseGoalSelection !== undefined && {
+        response_goal_selection: mergedResponseGoalSelection,
       }),
     },
   });
@@ -276,28 +308,18 @@ export async function confirmInquirySession(
       : [];
 
     const checkpointStatuses: Record<string, string> =
-      session.checkpoint_statuses !== null &&
-      typeof session.checkpoint_statuses === "object" &&
-      !Array.isArray(session.checkpoint_statuses)
-        ? (session.checkpoint_statuses as Record<string, string>)
-        : {};
+      isStringRecord(session.checkpoint_statuses) ? session.checkpoint_statuses : {};
 
     const actionStatuses: Record<string, string> =
-      session.action_statuses !== null &&
-      typeof session.action_statuses === "object" &&
-      !Array.isArray(session.action_statuses)
-        ? (session.action_statuses as Record<string, string>)
-        : {};
+      isStringRecord(session.action_statuses) ? session.action_statuses : {};
 
     // explanationOutputStatuses: gesetzt von M3 – nur SHOW erzeugt M4-Output.
     // Ist der Blob null/leer (ältere Sessions), bleibt explanationOutputStatuses undefined
     // damit der Renderer die Übergangsableitung aus factStatus nutzt.
     const explanationOutputStatusesRaw: Record<string, string> | undefined =
-      session.explanation_output_statuses !== null &&
-      typeof session.explanation_output_statuses === "object" &&
-      !Array.isArray(session.explanation_output_statuses) &&
-      Object.keys(session.explanation_output_statuses as object).length > 0
-        ? (session.explanation_output_statuses as Record<string, string>)
+      isStringRecord(session.explanation_output_statuses) &&
+      Object.keys(session.explanation_output_statuses).length > 0
+        ? session.explanation_output_statuses
         : undefined;
 
     // Alle Statuses zu einer flachen Map zusammenführen.
@@ -363,6 +385,20 @@ export async function getInquirySessionWithOutput(
 // ---------------------------------------------------------------------------
 // Interne Hilfsfunktionen
 // ---------------------------------------------------------------------------
+
+/**
+ * Typ-Guard: Gibt true zurück, wenn `x` ein nicht-null-Objekt ist, kein Array,
+ * und alle eigenen Werte Strings sind.
+ *
+ * Exportiert, damit Route-Handler und Server-Seiten dieselbe Validierung nutzen
+ * können, ohne die Logik zu duplizieren.
+ */
+export function isStringRecord(x: unknown): x is Record<string, string> {
+  if (x === null || typeof x !== "object" || Array.isArray(x)) return false;
+  return Object.values(x as Record<string, unknown>).every(
+    (v) => typeof v === "string",
+  );
+}
 
 function isDecisionStatus(value: unknown): value is DecisionStatus {
   return (

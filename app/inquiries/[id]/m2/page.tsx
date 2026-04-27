@@ -8,6 +8,7 @@ import {
   InquiryCheckpointKind,
   type InquiryCheckpoint,
 } from "@/lib/inquiries/types";
+import { isStringRecord } from "@/lib/inquiries/inquirySessionService";
 import InquiryM2Client, {
   type PlainCheckpoint,
   type M2SectionData,
@@ -109,24 +110,14 @@ export default async function InquiryM2Page({
     .map(toPlain);
 
   const checkpointStatuses: Record<string, string> =
-    session.checkpoint_statuses !== null &&
-    typeof session.checkpoint_statuses === "object" &&
-    !Array.isArray(session.checkpoint_statuses)
-      ? (session.checkpoint_statuses as Record<string, string>)
-      : {};
+    isStringRecord(session.checkpoint_statuses) ? session.checkpoint_statuses : {};
 
   const actionStatuses: Record<string, string> =
-    session.action_statuses !== null &&
-    typeof session.action_statuses === "object" &&
-    !Array.isArray(session.action_statuses)
-      ? (session.action_statuses as Record<string, string>)
-      : {};
+    isStringRecord(session.action_statuses) ? session.action_statuses : {};
 
   const communicationReasonSelection: Record<string, string> =
-    session.communication_reason_selection !== null &&
-    typeof session.communication_reason_selection === "object" &&
-    !Array.isArray(session.communication_reason_selection)
-      ? (session.communication_reason_selection as Record<string, string>)
+    isStringRecord(session.communication_reason_selection)
+      ? session.communication_reason_selection
       : {};
 
   return (

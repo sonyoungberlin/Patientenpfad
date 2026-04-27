@@ -3,6 +3,7 @@ import { getSessionAccount } from "@/lib/auth";
 import {
   getInquirySessionWithOutput,
   updateInquiryCheckpointStatuses,
+  isStringRecord,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
 
@@ -77,33 +78,21 @@ export async function PATCH(
     }
 
     const checkpointStatuses = body.checkpointStatuses as Record<string, string>;
-    const actionStatuses =
-      body?.actionStatuses &&
-      typeof body.actionStatuses === "object" &&
-      !Array.isArray(body.actionStatuses)
-        ? (body.actionStatuses as Record<string, string>)
-        : undefined;
+    const actionStatuses = isStringRecord(body?.actionStatuses)
+      ? body.actionStatuses
+      : undefined;
 
-    const explanationOutputStatuses =
-      body?.explanationOutputStatuses &&
-      typeof body.explanationOutputStatuses === "object" &&
-      !Array.isArray(body.explanationOutputStatuses)
-        ? (body.explanationOutputStatuses as Record<string, string>)
-        : undefined;
+    const explanationOutputStatuses = isStringRecord(body?.explanationOutputStatuses)
+      ? body.explanationOutputStatuses
+      : undefined;
 
-    const communicationReasonSelection =
-      body?.communicationReasonSelection &&
-      typeof body.communicationReasonSelection === "object" &&
-      !Array.isArray(body.communicationReasonSelection)
-        ? (body.communicationReasonSelection as Record<string, string>)
-        : undefined;
+    const communicationReasonSelection = isStringRecord(body?.communicationReasonSelection)
+      ? body.communicationReasonSelection
+      : undefined;
 
-    const responseGoalSelection =
-      body?.responseGoalSelection &&
-      typeof body.responseGoalSelection === "object" &&
-      !Array.isArray(body.responseGoalSelection)
-        ? (body.responseGoalSelection as Record<string, string>)
-        : undefined;
+    const responseGoalSelection = isStringRecord(body?.responseGoalSelection)
+      ? body.responseGoalSelection
+      : undefined;
 
     await updateInquiryCheckpointStatuses({
       sessionId: id,
