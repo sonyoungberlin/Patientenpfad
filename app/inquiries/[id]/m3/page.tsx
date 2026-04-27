@@ -71,6 +71,7 @@ export default async function InquiryM3Page({
       checkpoint_statuses: true,
       action_statuses: true,
       explanation_output_statuses: true,
+      response_goal_selection: true,
       generated_output: true,
     },
   });
@@ -130,6 +131,13 @@ export default async function InquiryM3Page({
       ? (session.explanation_output_statuses as Record<string, string>)
       : {};
 
+  const responseGoalSelection: Record<string, string> =
+    session.response_goal_selection !== null &&
+    typeof session.response_goal_selection === "object" &&
+    !Array.isArray(session.response_goal_selection)
+      ? (session.response_goal_selection as Record<string, string>)
+      : {};
+
   const generatedOutput: InquiryResponseV2Output | null =
     session.generated_output !== null &&
     typeof session.generated_output === "object" &&
@@ -149,6 +157,7 @@ export default async function InquiryM3Page({
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
         initialExplanationOutputStatuses={explanationOutputStatuses}
+        initialResponseGoalSelection={responseGoalSelection}
         actionIds={Array.from(actionIds)}
         initialGeneratedOutput={generatedOutput}
         isConfirmed={isConfirmed}

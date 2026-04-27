@@ -30,6 +30,8 @@ type Props = {
   globalCheckpoints: PlainCheckpoint[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
+  /** M1B – Kommunikationsanlass-Auswahl pro Profil (menschliche Auswahl). Record<inquiryId, communicationReasonId> */
+  initialCommunicationReasonSelection: Record<string, string>;
   actionIds: string[];
 };
 
@@ -364,6 +366,7 @@ export default function InquiryM2Client({
   globalCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
+  initialCommunicationReasonSelection,
   actionIds,
 }: Props) {
   const router = useRouter();
@@ -373,6 +376,9 @@ export default function InquiryM2Client({
     ...initialCheckpointStatuses,
     ...initialActionStatuses,
   });
+  const [communicationReasonSelection, setCommunicationReasonSelection] = useState<Record<string, string>>(
+    initialCommunicationReasonSelection,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -396,7 +402,7 @@ export default function InquiryM2Client({
       const res = await fetch(`/api/inquiries/${sessionId}/checkpoints`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkpointStatuses, actionStatuses }),
+        body: JSON.stringify({ checkpointStatuses, actionStatuses, communicationReasonSelection }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);

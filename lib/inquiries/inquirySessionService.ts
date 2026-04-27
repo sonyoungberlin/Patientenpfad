@@ -63,6 +63,16 @@ export type UpdateCheckpointStatusesInput = {
    * Record<checkpointId, "SHOW" | "HIDE"> – nur SHOW erzeugt M4-Output.
    */
   explanationOutputStatuses?: Record<string, string>;
+  /**
+   * M1B – Kommunikationsanlass-Auswahl pro Profil (menschliche Auswahl).
+   * Record<inquiryId, communicationReasonId>
+   */
+  communicationReasonSelection?: Record<string, string>;
+  /**
+   * M3 – Antwortziel-Auswahl pro Profil (menschliche Auswahl).
+   * Record<inquiryId, responseGoalId>
+   */
+  responseGoalSelection?: Record<string, string>;
 };
 
 // ---------------------------------------------------------------------------
@@ -214,6 +224,12 @@ export async function updateInquiryCheckpointStatuses(
       checkpoint_statuses: toJsonInput(input.checkpointStatuses),
       action_statuses: toJsonInput(input.actionStatuses ?? {}),
       explanation_output_statuses: toJsonInput(input.explanationOutputStatuses ?? {}),
+      ...(input.communicationReasonSelection !== undefined && {
+        communication_reason_selection: toJsonInput(input.communicationReasonSelection),
+      }),
+      ...(input.responseGoalSelection !== undefined && {
+        response_goal_selection: toJsonInput(input.responseGoalSelection),
+      }),
     },
   });
 }

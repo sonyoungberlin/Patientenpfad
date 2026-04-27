@@ -48,6 +48,7 @@ export default async function InquiryM2Page({
       selected_inquiry_ids: true,
       checkpoint_statuses: true,
       action_statuses: true,
+      communication_reason_selection: true,
     },
   });
 
@@ -121,6 +122,13 @@ export default async function InquiryM2Page({
       ? (session.action_statuses as Record<string, string>)
       : {};
 
+  const communicationReasonSelection: Record<string, string> =
+    session.communication_reason_selection !== null &&
+    typeof session.communication_reason_selection === "object" &&
+    !Array.isArray(session.communication_reason_selection)
+      ? (session.communication_reason_selection as Record<string, string>)
+      : {};
+
   return (
     <main>
       <h1>Klärpunkte</h1>
@@ -130,6 +138,7 @@ export default async function InquiryM2Page({
         globalCheckpoints={globalCheckpoints}
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
+        initialCommunicationReasonSelection={communicationReasonSelection}
         actionIds={Array.from(actionIds)}
       />
     </main>

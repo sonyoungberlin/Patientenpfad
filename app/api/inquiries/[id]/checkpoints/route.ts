@@ -91,11 +91,27 @@ export async function PATCH(
         ? (body.explanationOutputStatuses as Record<string, string>)
         : undefined;
 
+    const communicationReasonSelection =
+      body?.communicationReasonSelection &&
+      typeof body.communicationReasonSelection === "object" &&
+      !Array.isArray(body.communicationReasonSelection)
+        ? (body.communicationReasonSelection as Record<string, string>)
+        : undefined;
+
+    const responseGoalSelection =
+      body?.responseGoalSelection &&
+      typeof body.responseGoalSelection === "object" &&
+      !Array.isArray(body.responseGoalSelection)
+        ? (body.responseGoalSelection as Record<string, string>)
+        : undefined;
+
     await updateInquiryCheckpointStatuses({
       sessionId: id,
       checkpointStatuses,
       actionStatuses,
       explanationOutputStatuses,
+      communicationReasonSelection,
+      responseGoalSelection,
     });
 
     return NextResponse.json({ ok: true });
