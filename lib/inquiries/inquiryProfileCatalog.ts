@@ -1,4 +1,10 @@
-import { InquiryType, type InquiryProfile, type InquiryProfileV2 } from "@/lib/inquiries/types";
+import {
+  InquiryType,
+  DecisionStatus,
+  ExplanationStatus,
+  type InquiryProfile,
+  type InquiryProfileV2,
+} from "@/lib/inquiries/types";
 
 /**
  * Statischer Profil-Katalog für den Anfrage-Assistenten.
@@ -79,6 +85,67 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       PATIENT_NOT_IN_GERMANY: "Rezepte können in deutschen Apotheken zuverlässig eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
       IS_CHRONIC_PATIENT: "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
     },
+    actionGuidanceRules: [
+      // 1. DOCUMENT_UPLOAD empfehlen, wenn Facharztbericht erforderlich
+      {
+        id: "PRESCRIPTION_DOCUMENT_UPLOAD_RECOMMENDED",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "PRESCRIPTION",
+        when: {
+          allOf: [
+            { checkpointId: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 2. E_RECIPE_USE empfehlen, wenn Entscheidung POSSIBLE und Kassenrezept möglich
+      {
+        id: "PRESCRIPTION_E_RECIPE_USE_RECOMMENDED",
+        checkpointId: "E_RECIPE_USE",
+        profileId: "PRESCRIPTION",
+        when: {
+          decisionStatus: DecisionStatus.POSSIBLE,
+          allOf: [
+            { checkpointId: "PRESCRIPTION_STATUTORY_POSSIBLE", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 3. E_RECIPE_USE standardmäßig ausblenden, wenn Entscheidung NOT_POSSIBLE
+      {
+        id: "PRESCRIPTION_E_RECIPE_USE_HIDDEN",
+        checkpointId: "E_RECIPE_USE",
+        profileId: "PRESCRIPTION",
+        when: {
+          decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        },
+        hint: "hiddenByDefault",
+      },
+      // 4. PHARMACY_INFORMATION empfehlen, wenn Entscheidung POSSIBLE
+      {
+        id: "PRESCRIPTION_PHARMACY_INFORMATION_RECOMMENDED",
+        checkpointId: "PHARMACY_INFORMATION",
+        profileId: "PRESCRIPTION",
+        when: {
+          decisionStatus: DecisionStatus.POSSIBLE,
+        },
+        hint: "recommended",
+      },
+      // 5. BOOK_APPOINTMENT mit Vorsichtshinweis bei BTM/ADHS-Regeln oder gynäkologischer Exklusivität
+      {
+        id: "PRESCRIPTION_BOOK_APPOINTMENT_CAUTION",
+        checkpointId: "BOOK_APPOINTMENT",
+        profileId: "PRESCRIPTION",
+        when: {
+          anyOf: [
+            { checkpointId: "PRESCRIPTION_BTM_ADHS_RULES", status: ExplanationStatus.YES },
+            { checkpointId: "PRESCRIPTION_GYN_EXCLUSIVITY", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "caution",
+        hintText: "Dieses Anliegen liegt möglicherweise im Zuständigkeitsbereich eines Spezialisten. Ein Termin in der Hausarztpraxis hilft ggf. nicht weiter.",
+      },
+    ],
   },
 
   LAB: {

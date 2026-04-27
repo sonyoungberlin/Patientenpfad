@@ -324,6 +324,76 @@ export type InquiryCheckpoint = {
   docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
 };
 
+// ---------------------------------------------------------------------------
+// ActionGuidanceRule – UI-only Guidance-System
+// ---------------------------------------------------------------------------
+
+/**
+ * UI-Darstellungshinweis für eine Action.
+ * Steuert ausschließlich Sichtbarkeit und Hervorhebung – kein Einfluss auf
+ * DecisionStatus oder ActionStatus.
+ *
+ * recommended     – empfohlene Aktion; wird visuell hervorgehoben.
+ * visible         – Aktion wird angezeigt (Standard-Sichtbarkeit).
+ * hiddenByDefault – Aktion wird standardmäßig ausgeblendet.
+ * caution         – Aktion wird mit einem Warnhinweis versehen.
+ */
+export type UIGuidanceHint = "recommended" | "visible" | "hiddenByDefault" | "caution";
+
+/**
+ * Einzelne Checkpoint-Bedingung innerhalb einer when-Klausel.
+ * Referenziert einen beliebigen Checkpoint aus checkpointStatuses der Session.
+ */
+export type GuidanceCondition = {
+  checkpointId: string;
+  status: CheckpointStatusValue;
+};
+
+/**
+ * Kontextbedingung einer Guidance-Regel.
+ *
+ * Alle gesetzten Felder werden per AND verknüpft.
+ * Innerhalb von allOf / anyOf / noneOf gelten die üblichen Mengenregeln.
+ *
+ * decisionStatus – DecisionStatus der Section (POSSIBLE / NOT_POSSIBLE / DISABLED).
+ *                  undefined = gilt für alle DecisionStatus-Werte.
+ * allOf          – alle genannten Checkpoint-Bedingungen müssen erfüllt sein.
+ * anyOf          – mindestens eine der genannten Bedingungen muss erfüllt sein.
+ * noneOf         – keine der genannten Bedingungen darf erfüllt sein.
+ *
+ * Leere Arrays ([]) gelten als erfüllt (vacuous truth).
+ * Fehlende Einträge in checkpointStatuses gelten als nicht erfüllt.
+ */
+export type GuidanceWhen = {
+  decisionStatus?: DecisionStatus;
+  allOf?: GuidanceCondition[];
+  anyOf?: GuidanceCondition[];
+  noneOf?: GuidanceCondition[];
+};
+
+/**
+ * Regel zur UI-Steuerung einer Action.
+ *
+ * Invarianten:
+ * - Guidance setzt keine DecisionStatus-Werte.
+ * - Guidance aktiviert keine Action automatisch (ActionStatus bleibt unberührt).
+ * - Guidance beeinflusst ausschließlich die UI-Darstellung.
+ *
+ * checkpointId – die Action, deren UI-Hinweis bewertet wird.
+ * profileId    – Einschränkung auf ein Profil (undefined = profilübergreifend).
+ * when         – Kontextbedingung; fehlt = Regel gilt immer.
+ * hint         – Darstellungshinweis.
+ * hintText     – optionaler Erklärungstext, nur sinnvoll bei hint = "caution".
+ */
+export type ActionGuidanceRule = {
+  id: string;
+  checkpointId: string;
+  profileId?: string;
+  when?: GuidanceWhen;
+  hint: UIGuidanceHint;
+  hintText?: string;
+};
+
 /**
  * Anfrageprofil nach der neuen Architektur.
  *
@@ -361,6 +431,14 @@ export type InquiryProfileV2 = {
    * für dieses Anliegen in M4 erscheint.
    */
   globalHints?: Record<string, string>;
+  /**
+   * UI-only Guidance-Regeln für Actions dieses Profils.
+   *
+   * Steuern ausschließlich die Darstellung von Actions in der UI.
+   * Kein Einfluss auf DecisionStatus, ActionStatus oder den Renderer.
+   * Ausgewertet durch evaluateActionGuidance (lib/inquiries/evaluateActionGuidance.ts).
+   */
+  actionGuidanceRules?: ActionGuidanceRule[];
 };
 
 /**
