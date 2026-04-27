@@ -912,4 +912,107 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
     ] satisfies ResponseGoal[],
   },
+
+  IMMUNIZATION: {
+    id: "IMMUNIZATION",
+    label: "Impfung",
+    decisionCheckpointId: "IMMUNIZATION_DECISION",
+    specificCheckpointIds: [
+      "MEDICAL_CONSULTATION_REQUIRED",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "ONLINE_ANAMNESIS",
+      "DIGITAL_REQUEST",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_IMMUNIZATION_INITIAL",
+        label: "Impfung anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_IMMUNIZATION_CLARIFICATION",
+        label: "Rückfrage zu Impfung / Impfstatus / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_IMMUNIZATION_OFFERED",
+        label: "Impfung möglich / Termin anbieten",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Impfung möglich / wird durchgeführt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Externe / andere Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben / Impfstatus unklar",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Vorbereitung / Impfung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
 };
