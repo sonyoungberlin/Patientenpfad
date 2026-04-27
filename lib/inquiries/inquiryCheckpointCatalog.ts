@@ -1394,4 +1394,91 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // NO: bewusst still – keine Erklärung nötig
     },
   },
+
+  // ---- BILLING SPECIFIC EXPLANATIONS ----
+
+  BILLING_COST_NOT_COVERED: {
+    id: "BILLING_COST_NOT_COVERED",
+    label: "Leistung keine Kassenleistung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "BILLING_COST_NOT_COVERED-Q1", text: "Ist die angefragte Leistung keine Kassenleistung (z. B. IGeL, Selbstzahlerleistung)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen und ist selbst zu zahlen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_PROCESS_EXTERNAL: {
+    id: "BILLING_PROCESS_EXTERNAL",
+    label: "Rechnung über externen Dienstleister",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_PROCESS_EXTERNAL-Q1", text: "Läuft die Abrechnung über ein externes Labor oder einen Dienstleister?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Rechnung für diese Leistung wird direkt durch das beauftragte Labor oder den externen Dienstleister gestellt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_DATA_MISSING: {
+    id: "BILLING_DATA_MISSING",
+    label: "Abrechnungsdaten unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "BILLING_DATA_MISSING-Q1", text: "Fehlen Angaben wie Adresse oder Versicherungsstatus für die Abrechnung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Abrechnung benötigen wir noch vollständige Angaben (z. B. aktuelle Adresse oder Versicherungsstatus).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_DOCUMENT_MISSING: {
+    id: "BILLING_DOCUMENT_MISSING",
+    label: "Abrechnungsdokument fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "BILLING_DOCUMENT_MISSING-Q1", text: "Fehlen notwendige Dokumente für die Abrechnung (z. B. eGK, Privatärztlicher Abrechnungsschein, Nachweise)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Abrechnung werden noch Unterlagen benötigt (z. B. Versichertenkarte, Abrechnungsschein oder weitere Nachweise).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_EXTERNAL_RESPONSIBILITY: {
+    id: "BILLING_EXTERNAL_RESPONSIBILITY",
+    label: "Externe Zuständigkeit für Abrechnung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "BILLING_EXTERNAL_RESPONSIBILITY-Q1", text: "Liegt die Zuständigkeit für die Abrechnung bei der Krankenkasse oder einem anderen externen Stellen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 };

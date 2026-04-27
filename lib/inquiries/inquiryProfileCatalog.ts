@@ -1144,4 +1144,103 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
     ] satisfies ResponseGoal[],
   },
+
+  BILLING: {
+    id: "BILLING",
+    label: "Abrechnung",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "BILLING_COST_NOT_COVERED",
+      "BILLING_PROCESS_EXTERNAL",
+      "BILLING_DATA_MISSING",
+      "BILLING_DOCUMENT_MISSING",
+      "BILLING_EXTERNAL_RESPONSIBILITY",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "DIGITAL_REQUEST",
+      "ONLINE_ANAMNESIS",
+      "BOOK_APPOINTMENT",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_BILLING_INITIAL",
+        label: "Frage zu Kosten / Abrechnung / Privatleistung",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_BILLING_CLARIFICATION",
+        label: "Rückfrage zu Rechnung / Kosten / Versicherungsstatus",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_BILLING_INFO",
+        label: "Praxis erklärt Abrechnung / Kosten / Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Externe Zuständigkeit (Krankenkasse, Labor)",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Daten / Dokumente fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Medizinische Indikation muss geprüft werden",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Abrechnung / Kosten / Ablauf erklären",
+        relevantSpecificRoles: ["PROCESS_INFO", "RULE_COST_COVERAGE"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
 };
