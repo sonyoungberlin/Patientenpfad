@@ -1986,26 +1986,26 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("5 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
+  it("4 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
-      "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_SPECIALTY_REQUIRED",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(1);
+    expect(profile.specificCheckpointIds).toHaveLength(2);
     expect(profile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
     }
   });
 
-  it("3 migrierte Action-Checkpoints sind in boundActionCheckpointIds mit kind ACTION und actionCategory", () => {
+  it("2 migrierte Action-Checkpoints sind in boundActionCheckpointIds mit kind ACTION und actionCategory", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
-    const actionIds = ["REF_BOOKING_CODE_PROCESS", "REF_ORIGINAL_VS_PDF", "REF_PSYCHOTHERAPY_FIRST_STEP"];
+    const actionIds = ["REF_BOOKING_CODE_PROCESS", "REF_ORIGINAL_VS_PDF"];
     expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(actionIds));
     for (const id of actionIds) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -2109,20 +2109,20 @@ describe("REFERRAL-Profil – migrierte Action-Checkpoints (boundActionCheckpoin
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_PSYCHOTHERAPY_FIRST_STEP ACTIVE → Text erscheint in attachedParagraphs", () => {
+  it("REF_PSYCHOTHERAPY_FIRST_STEP YES → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.ACTIVE },
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(1);
     expect(result.sections[0].attachedParagraphs[0]).toContain("psychotherapeutischen");
   });
 
-  it("REF_PSYCHOTHERAPY_FIRST_STEP INACTIVE → kein Text in attachedParagraphs", () => {
+  it("REF_PSYCHOTHERAPY_FIRST_STEP NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.INACTIVE },
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);

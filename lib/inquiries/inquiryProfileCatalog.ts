@@ -154,12 +154,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
+      "REF_PSYCHOTHERAPY_FIRST_STEP",
     ],
     boundGlobalCheckpointIds: [],
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
-      "REF_PSYCHOTHERAPY_FIRST_STEP",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",

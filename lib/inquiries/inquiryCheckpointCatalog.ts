@@ -774,7 +774,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
-    actionCategory: "PROCESS",
+    actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Das Rezept wird als eRezept ausgestellt und kann mit der elektronischen Gesundheitskarte (eGK) in der Apotheke eingelöst werden.",
@@ -1170,15 +1170,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   REF_PSYCHOTHERAPY_FIRST_STEP: {
     id: "REF_PSYCHOTHERAPY_FIRST_STEP",
     label: "Psychotherapie – Erstvorstellung",
-    kind: InquiryCheckpointKind.ACTION,
+    kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    actionCategory: "NEXT_STEP",
     questions: [
       { id: "REF_PSYCHOTHERAPY_FIRST_STEP-Q1", text: "Geht es um eine Erstvorstellung zur Psychotherapie?" },
     ],
     textByStatus: {
-      [ActionStatus.ACTIVE]:
+      [ExplanationStatus.YES]:
         "Die Überweisung ist der erste Schritt zur psychotherapeutischen Sprechstunde; dort erfolgt die weitere Einordnung und Planung der Behandlung.",
     },
   },
