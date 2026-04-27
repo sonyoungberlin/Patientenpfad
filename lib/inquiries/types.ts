@@ -288,11 +288,11 @@ export type SpecificRole =
   | "OUTCOME_INFO";
 
 // ---------------------------------------------------------------------------
-// M1B – Kommunikationsanlass (Pilot: PRESCRIPTION)
+// M1B – Kommunikationsanlass
 // ---------------------------------------------------------------------------
 
 /**
- * M1B-Identifier: Warum entsteht die Nachricht?
+ * Bekannte M1B-Identifier des PRESCRIPTION-Profils (zur Dokumentation).
  *
  * Eingehende Anfragen (Patient → Praxis):
  *   REQ_RENEWAL           – Wiederverordnung Dauermedikation
@@ -306,6 +306,8 @@ export type SpecificRole =
  *   OUT_SPECIALIST_RESPONSIBILITY – Praxis verweist auf fachärztliche Zuständigkeit
  *   OUT_PRACTICE_CLARIFICATION   – Praxis klärt organisatorisch nach
  *
+ * Jedes Profil kann eigene IDs definieren. Der Feldtyp ist bewusst `string`,
+ * damit AU und spätere Profile keine Erweiterung dieser Union benötigen.
  * Reine Metadaten – keine Auswirkung auf Decision, Action oder Renderer.
  */
 export type CommunicationReasonId =
@@ -326,21 +328,24 @@ export type CommunicationReasonDirection = "INCOMING" | "OUTGOING";
  *
  * suggestedResponseGoalIds – Vorschläge, nicht Zwang.
  *   Der Nutzer kann jedes responseGoal unabhängig vom M1B wählen.
+ *
+ * `id` und `suggestedResponseGoalIds` sind bewusst als `string` typisiert,
+ * damit jedes Profil eigene IDs definieren kann.
  */
 export type CommunicationReason = {
-  id: CommunicationReasonId;
+  id: string;
   label: string;
   direction: CommunicationReasonDirection;
   /** Typische M3-Antwortziele für diesen Anlass (Vorschläge). */
-  suggestedResponseGoalIds: ResponseGoalId[];
+  suggestedResponseGoalIds: string[];
 };
 
 // ---------------------------------------------------------------------------
-// M3 – Antwortziel (Pilot: PRESCRIPTION)
+// M3 – Antwortziel
 // ---------------------------------------------------------------------------
 
 /**
- * M3-Identifier: Was wollen wir dem Patienten sagen?
+ * Bekannte M3-Identifier des PRESCRIPTION-Profils (zur Dokumentation).
  *
  *   ISSUE_CONFIRMED             – Rezept wurde ausgestellt
  *   ISSUE_BLOCKED_EXTERNAL      – Fachärztliche / externe Zuständigkeit
@@ -349,6 +354,7 @@ export type CommunicationReason = {
  *   DELIVERY_FORMAT_EXPLAINED   – eRezept / Apotheke / Zustellweg erklären
  *   MEDICAL_REVIEW_NEEDED       – ärztliche Einschätzung erforderlich
  *
+ * Jedes Profil kann eigene IDs definieren. Der Feldtyp ist bewusst `string`.
  * Reine Metadaten – keine Auswirkung auf Decision, Action oder Renderer.
  */
 export type ResponseGoalId =
@@ -364,9 +370,11 @@ export type ResponseGoalId =
  *
  * relevantSpecificRoles    – specificRoles, die typisch für dieses Ziel sind (Metadaten).
  * relevantActionGuidanceIds – IDs bestehender ActionGuidanceRules, die zu diesem Ziel passen.
+ *
+ * `id` ist bewusst als `string` typisiert, damit jedes Profil eigene IDs definieren kann.
  */
 export type ResponseGoal = {
-  id: ResponseGoalId;
+  id: string;
   label: string;
   /** Typische specificRoles für dieses Antwortziel. */
   relevantSpecificRoles: SpecificRole[];

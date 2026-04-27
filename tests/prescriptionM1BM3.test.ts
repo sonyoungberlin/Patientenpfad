@@ -13,7 +13,6 @@ import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiry
 import {
   DecisionStatus,
   ExplanationStatus,
-  type ResponseGoalId,
   type SpecificRole,
   type ExplanationOutputStatus,
 } from "@/lib/inquiries/types";
@@ -209,7 +208,7 @@ describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss 
     }
 
     // M3-IDs dürfen nicht im Output erscheinen
-    const m3ids: ResponseGoalId[] = [
+    const m3ids: string[] = [
       "ISSUE_CONFIRMED",
       "ISSUE_BLOCKED_EXTERNAL",
       "ISSUE_BLOCKED_MISSING_DOC",
