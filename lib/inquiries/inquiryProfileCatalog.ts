@@ -1147,6 +1147,82 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ] satisfies ResponseGoal[],
   },
 
+  TECH_SUPPORT: {
+    id: "TECH_SUPPORT",
+    label: "Technische Probleme / Digitale Infrastruktur",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "TECH_VIDEO_NOT_WORKING",
+      "TECH_UPLOAD_FAILED",
+      "TECH_LOGIN_PROBLEM",
+      "TECH_PROCESS_INSTRUCTION",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "DIGITAL_REQUEST",
+      "BOOK_APPOINTMENT",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_TECH_SUPPORT_INITIAL",
+        label: "Technisches Problem / Zugang funktioniert nicht",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      {
+        id: "REQ_TECH_SUPPORT_CLARIFICATION",
+        label: "Rückfrage zu Nutzung / Technik",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_TECH_INSTRUCTION",
+        label: "Praxis erklärt technischen Ablauf",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_TECH_LIMITATION",
+        label: "Technische Nutzung nicht möglich / eingeschränkt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Anleitung / Nutzung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Technik nicht nutzbar / alternativer Weg notwendig",
+        relevantSpecificRoles: ["CHANNEL_NOT_SUITABLE"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
   ONBOARDING: {
     id: "ONBOARDING",
     label: "Patientenaufnahme / Registrierung",

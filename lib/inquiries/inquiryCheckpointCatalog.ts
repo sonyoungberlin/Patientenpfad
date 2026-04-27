@@ -1499,6 +1499,76 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- TECH_SUPPORT SPECIFIC EXPLANATIONS ----
+
+  TECH_VIDEO_NOT_WORKING: {
+    id: "TECH_VIDEO_NOT_WORKING",
+    label: "Videosprechstunde technisch nicht möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "TECH_VIDEO_NOT_WORKING-Q1", text: "Funktioniert die Videosprechstunde technisch nicht (z. B. kein Ton, kein Bild, Verbindungsabbruch)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Videosprechstunde ist leider aktuell technisch nicht nutzbar. Bitte kontaktieren Sie uns telefonisch oder kommen Sie persönlich in die Praxis.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  TECH_UPLOAD_FAILED: {
+    id: "TECH_UPLOAD_FAILED",
+    label: "Dokumenten-Upload nicht möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "TECH_UPLOAD_FAILED-Q1", text: "Können Dokumente nicht hochgeladen werden (z. B. Datei zu groß, falsches Format, Fehler beim Upload)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Der Dokumenten-Upload ist leider nicht möglich. Bitte senden Sie die Unterlagen per Post, Fax oder bringen Sie sie beim nächsten Besuch mit.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  TECH_LOGIN_PROBLEM: {
+    id: "TECH_LOGIN_PROBLEM",
+    label: "Login / Zugang unklar oder fehlgeschlagen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "TECH_LOGIN_PROBLEM-Q1", text: "Hat der Patient Probleme beim Login oder Zugang zum Patientenportal (z. B. Passwort vergessen, Konto gesperrt)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für den Zugang zum Patientenportal: Bitte nutzen Sie die Funktion 'Passwort vergessen' auf der Anmeldeseite. Falls das Problem weiterhin besteht, kontaktieren Sie uns direkt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  TECH_PROCESS_INSTRUCTION: {
+    id: "TECH_PROCESS_INSTRUCTION",
+    label: "Allgemeine technische Anleitung (App, QR-Code, Schritte)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "TECH_PROCESS_INSTRUCTION-Q1", text: "Benötigt der Patient eine Anleitung zur Nutzung der digitalen Dienste (z. B. App-Installation, QR-Code scannen, Schritte zur Anmeldung)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "So nutzen Sie unsere digitalen Dienste: 1. Laden Sie die App herunter oder öffnen Sie das Portal im Browser. 2. Registrieren Sie sich mit Ihrer E-Mail-Adresse. 3. Scannen Sie den QR-Code aus Ihrer Einladung oder geben Sie den Code manuell ein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- ONBOARDING SPECIFIC EXPLANATIONS ----
 
   ONBOARDING_DATA_INCOMPLETE: {
