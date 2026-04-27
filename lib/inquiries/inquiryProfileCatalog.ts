@@ -55,6 +55,132 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_AU_INITIAL",
+        label: "AU erstmalig anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_AU_EXTENSION",
+        label: "AU verlängern",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_AU_BACKDATE",
+        label: "Rückwirkende AU anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_TIME_LIMIT",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_AU_CLARIFICATION",
+        label: "Rückfrage zu AU",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_AU_ISSUED",
+        label: "AU wurde ausgestellt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_AU_DECLINED",
+        label: "AU kann nicht ausgestellt werden",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_TIME_LIMIT",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "AU ausgestellt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_TIME_LIMIT",
+        label: "Rückdatierung / Fristgrenze",
+        relevantSpecificRoles: ["RULE_TIME_LIMIT"],
+        relevantActionGuidanceIds: ["AU_BOOK_APPOINTMENT_VISIBLE"],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Externe Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: ["AU_BOOK_APPOINTMENT_VISIBLE"],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION"],
+        relevantActionGuidanceIds: ["AU_DIGITAL_REQUEST_VISIBLE"],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [
+          "AU_BOOK_APPOINTMENT_VISIBLE",
+          "AU_DIGITAL_REQUEST_VISIBLE",
+        ],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / digitale AU erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: ["AU_DIGITAL_REQUEST_VISIBLE"],
+      },
+    ] satisfies ResponseGoal[],
   },
 
   PRESCRIPTION: {
