@@ -149,6 +149,18 @@ export function renderInquiryResponse(
 // Neue Architektur – renderInquiryResponseFromSections
 // ---------------------------------------------------------------------------
 
+/** Sortierreihenfolge für actionCategory. Einträge ohne Kategorie landen am Ende. */
+const ACTION_CATEGORY_ORDER: Record<string, number> = {
+  NEXT_STEP: 0,
+  PREPARATION: 1,
+  PROCESS: 2,
+  INFO: 3,
+};
+
+function actionCategoryRank(category?: string): number {
+  return category !== undefined ? (ACTION_CATEGORY_ORDER[category] ?? 4) : 4;
+}
+
 /**
  * Erzeugt deterministisch den strukturierten Antworttext und die Dokumentation
  * aus einem oder mehreren Anliegen-Abschnitten (Sections) nach der neuen Architektur.
@@ -174,7 +186,7 @@ export function renderInquiryResponseFromSections(
   sections: InquirySection[],
 ): InquiryResponseV2Output {
   const sectionOutputs: InquirySectionOutput[] = [];
-  const sharedBottomTexts: string[] = [];
+  const sharedBottomEntries: Array<{ text: string; category?: string }> = [];
   const sharedBottomSeen = new Set<string>();
   const allDocumentation: string[] = [];
   // Track which GLOBAL checkpoints have already contributed a M5 doc entry.
@@ -281,11 +293,12 @@ export function renderInquiryResponseFromSections(
 
       if (!sharedBottomSeen.has(actionId)) {
         sharedBottomSeen.add(actionId);
-        sharedBottomTexts.push(text);
+        sharedBottomEntries.push({ text, category: checkpoint.actionCategory });
       }
     }
 
     // ---- E) Profil-spezifische ACTION-Checkpoints (boundActionCheckpointIds) ----
+    const attachedActionEntries: Array<{ text: string; docText: string; label: string; category?: string }> = [];
     for (const actionId of profile.boundActionCheckpointIds ?? []) {
       const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
       if (!checkpoint) continue;
@@ -300,13 +313,17 @@ export function renderInquiryResponseFromSections(
       if (checkpoint.placement === InquiryCheckpointPlacement.SHARED_BOTTOM) {
         if (!sharedBottomSeen.has(actionId)) {
           sharedBottomSeen.add(actionId);
-          sharedBottomTexts.push(text);
+          sharedBottomEntries.push({ text, category: checkpoint.actionCategory });
         }
       } else {
         const docText = checkpoint.docByStatus?.[status] ?? text;
-        attachedParagraphs.push(text);
-        sectionDocumentation.push(`${checkpoint.label}: ${docText}`);
+        attachedActionEntries.push({ text, docText, label: checkpoint.label, category: checkpoint.actionCategory });
       }
+    }
+    attachedActionEntries.sort((a, b) => actionCategoryRank(a.category) - actionCategoryRank(b.category));
+    for (const entry of attachedActionEntries) {
+      attachedParagraphs.push(entry.text);
+      sectionDocumentation.push(`${entry.label}: ${entry.docText}`);
     }
 
     sectionOutputs.push({
@@ -322,7 +339,9 @@ export function renderInquiryResponseFromSections(
 
   return {
     sections: sectionOutputs,
-    sharedBottom: sharedBottomTexts,
+    sharedBottom: sharedBottomEntries
+      .sort((a, b) => actionCategoryRank(a.category) - actionCategoryRank(b.category))
+      .map((e) => e.text),
     documentation: allDocumentation,
   };
 }
