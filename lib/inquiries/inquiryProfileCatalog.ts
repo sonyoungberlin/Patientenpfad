@@ -145,6 +145,46 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         hint: "caution",
         hintText: "Dieses Anliegen liegt möglicherweise im Zuständigkeitsbereich eines Spezialisten. Ein Termin in der Hausarztpraxis hilft ggf. nicht weiter.",
       },
+      // 6. DIGITAL_REQUEST sichtbar schalten wenn Entscheidung NOT_POSSIBLE
+      {
+        id: "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
+        checkpointId: "DIGITAL_REQUEST",
+        profileId: "PRESCRIPTION",
+        when: {
+          decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        },
+        hint: "visible",
+      },
+      // 7. BOOK_APPOINTMENT sichtbar schalten wenn Entscheidung NOT_POSSIBLE
+      {
+        id: "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
+        checkpointId: "BOOK_APPOINTMENT",
+        profileId: "PRESCRIPTION",
+        when: {
+          decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        },
+        hint: "visible",
+      },
+      // 8. PROCESSING_DELAY sichtbar schalten wenn Entscheidung NOT_POSSIBLE
+      {
+        id: "PRESCRIPTION_PROCESSING_DELAY_VISIBLE",
+        checkpointId: "PROCESSING_DELAY",
+        profileId: "PRESCRIPTION",
+        when: {
+          decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        },
+        hint: "visible",
+      },
+      // 9. TECHNICAL_ISSUE sichtbar schalten wenn Entscheidung NOT_POSSIBLE
+      {
+        id: "PRESCRIPTION_TECHNICAL_ISSUE_VISIBLE",
+        checkpointId: "TECHNICAL_ISSUE",
+        profileId: "PRESCRIPTION",
+        when: {
+          decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        },
+        hint: "visible",
+      },
     ],
   },
 

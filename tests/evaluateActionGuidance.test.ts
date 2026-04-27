@@ -527,7 +527,7 @@ describe("PRESCRIPTION Pilotregeln – inhaltliches Verhalten", () => {
     expect(result?.hint).toBe("caution");
   });
 
-  it("BOOK_APPOINTMENT: kein Hinweis wenn beide Bedingungen NO", () => {
+  it("BOOK_APPOINTMENT: kein Hinweis wenn beide Bedingungen NO und Decision POSSIBLE", () => {
     const result = evaluateActionGuidance(
       rules,
       "BOOK_APPOINTMENT",
@@ -537,6 +537,94 @@ describe("PRESCRIPTION Pilotregeln – inhaltliches Verhalten", () => {
         PRESCRIPTION_BTM_ADHS_RULES: ExplanationStatus.NO,
         PRESCRIPTION_GYN_EXCLUSIVITY: ExplanationStatus.NO,
       },
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it("DIGITAL_REQUEST: visible wenn NOT_POSSIBLE", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "DIGITAL_REQUEST",
+      "PRESCRIPTION",
+      NOT_POSSIBLE,
+      NO_STATUSES,
+    );
+    expect(result?.hint).toBe("visible");
+  });
+
+  it("DIGITAL_REQUEST: kein Hinweis wenn POSSIBLE", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "DIGITAL_REQUEST",
+      "PRESCRIPTION",
+      POSSIBLE,
+      NO_STATUSES,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it("BOOK_APPOINTMENT: visible wenn NOT_POSSIBLE (keine BTM/GYN-Bedingungen)", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "BOOK_APPOINTMENT",
+      "PRESCRIPTION",
+      NOT_POSSIBLE,
+      NO_STATUSES,
+    );
+    expect(result?.hint).toBe("visible");
+  });
+
+  it("BOOK_APPOINTMENT: visible-Regel (Score 6) gewinnt gegen caution-Regel (Score 5) bei NOT_POSSIBLE + BTM_ADHS=YES", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "BOOK_APPOINTMENT",
+      "PRESCRIPTION",
+      NOT_POSSIBLE,
+      { PRESCRIPTION_BTM_ADHS_RULES: ExplanationStatus.YES },
+    );
+    expect(result?.hint).toBe("visible");
+  });
+
+  it("PROCESSING_DELAY: visible wenn NOT_POSSIBLE", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "PROCESSING_DELAY",
+      "PRESCRIPTION",
+      NOT_POSSIBLE,
+      NO_STATUSES,
+    );
+    expect(result?.hint).toBe("visible");
+  });
+
+  it("PROCESSING_DELAY: kein Hinweis wenn POSSIBLE", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "PROCESSING_DELAY",
+      "PRESCRIPTION",
+      POSSIBLE,
+      NO_STATUSES,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it("TECHNICAL_ISSUE: visible wenn NOT_POSSIBLE", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "TECHNICAL_ISSUE",
+      "PRESCRIPTION",
+      NOT_POSSIBLE,
+      NO_STATUSES,
+    );
+    expect(result?.hint).toBe("visible");
+  });
+
+  it("TECHNICAL_ISSUE: kein Hinweis wenn POSSIBLE", () => {
+    const result = evaluateActionGuidance(
+      rules,
+      "TECHNICAL_ISSUE",
+      "PRESCRIPTION",
+      POSSIBLE,
+      NO_STATUSES,
     );
     expect(result).toBeUndefined();
   });
