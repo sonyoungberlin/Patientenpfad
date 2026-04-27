@@ -366,6 +366,34 @@ export type ResponseGoalId =
   | "MEDICAL_REVIEW_NEEDED";
 
 /**
+ * ## M3 – 4er-Core-Struktur der ResponseGoals (Architektur-Regel)
+ *
+ * Jedes Profil soll seine ResponseGoals gegen die folgenden vier Kern-Kategorien
+ * prüfen, bevor neue IDs eingeführt werden:
+ *
+ *   ISSUE_CONFIRMED      – Anliegen positiv abgeschlossen (z. B. Rezept ausgestellt).
+ *                          Pflicht-SpecificRole: OUTCOME_INFO.
+ *                          Darf NUR bei diesem Goal-Typ vorkommen.
+ *
+ *   ISSUE_BLOCKED_*      – Anliegen blockiert (z. B. fehlende Unterlagen, Kostenklärung,
+ *                          externe Zuständigkeit). Profilspezifische Suffixe erlaubt
+ *                          (z. B. ISSUE_BLOCKED_MISSING_DOC).
+ *                          SpecificRole: MISSING_DOCUMENT, MISSING_INFORMATION,
+ *                          EXTERNAL_RESPONSIBILITY, RULE_TIME_LIMIT, RULE_COST_COVERAGE.
+ *                          Verboten: OUTCOME_INFO.
+ *
+ *   MEDICAL_REVIEW_NEEDED – Ärztliche Einschätzung / Rücksprache erforderlich.
+ *                          Pflicht-SpecificRole: MEDICAL_REVIEW_REQUIRED.
+ *
+ *   PROCESS_EXPLAINED    – Ablauf-, Kanal- oder Formathinweis (z. B. eRezept, Zustellweg).
+ *                          Pflicht-SpecificRole: PROCESS_INFO.
+ *                          Verboten: profilspezifische Ersatz-IDs wie DELIVERY_FORMAT_EXPLAINED.
+ *
+ * Neue ResponseGoals nur einführen, wenn ein Anliegen semantisch in keine dieser vier
+ * Kategorien passt und eine eigene ID inhaltlich notwendig ist.
+ */
+
+/**
  * M3-Eintrag: ein Antwortziel mit relevanten specificRoles und Action-Guidance-Hinweisen.
  *
  * relevantSpecificRoles    – specificRoles, die typisch für dieses Ziel sind (Metadaten).
