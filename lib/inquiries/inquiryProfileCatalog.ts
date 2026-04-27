@@ -1019,4 +1019,129 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
     ] satisfies ResponseGoal[],
   },
+
+  APPOINTMENT: {
+    id: "APPOINTMENT",
+    label: "Termin",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "APPOINTMENT_WRONG_TYPE",
+      "APPOINTMENT_PROCESS_MULTI_STEP",
+      "APPOINTMENT_PREPARATION_REQUIRED",
+      "APPOINTMENT_DATA_INCOMPLETE",
+      "APPOINTMENT_DOCUMENT_MISSING",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "ONLINE_ANAMNESIS",
+      "DIGITAL_REQUEST",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_APPOINTMENT_INITIAL",
+        label: "Termin anfragen / Terminart unklar",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_APPOINTMENT_CLARIFICATION",
+        label: "Rückfrage zu Termin / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_WRONG_APPOINTMENT",
+        label: "Falscher Termin gebucht / unsicher",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_APPOINTMENT_OFFERED",
+        label: "Passender Termin vorgeschlagen",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_APPOINTMENT_RESCHEDULE",
+        label: "Termin muss geändert werden",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Termin passt / wird bestätigt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Falscher Termintyp / falsche Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY", "CHANNEL_NOT_SUITABLE"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen / Daten unvollständig",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Arzt muss Terminart oder Ablauf entscheiden",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Vorbereitung / Terminart erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
 };

@@ -1307,4 +1307,91 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // NO: bewusst still – keine Erklärung nötig
     },
   },
+
+  // ---- APPOINTMENT SPECIFIC EXPLANATIONS ----
+
+  APPOINTMENT_WRONG_TYPE: {
+    id: "APPOINTMENT_WRONG_TYPE",
+    label: "Falscher Termintyp",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_WRONG_TYPE-Q1", text: "Wurde ein falscher Termintyp gebucht?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Der gebuchte Termintyp passt nicht zum Anliegen. Bitte buchen Sie einen passenden Termin.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_PROCESS_MULTI_STEP: {
+    id: "APPOINTMENT_PROCESS_MULTI_STEP",
+    label: "Mehrstufiger Ablauf erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_PROCESS_MULTI_STEP-Q1", text: "Ist ein mehrstufiger Ablauf erforderlich (z. B. Labor → Arzttermin)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Ihr Anliegen sind mehrere Schritte erforderlich – bitte beachten Sie die jeweilige Reihenfolge.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_PREPARATION_REQUIRED: {
+    id: "APPOINTMENT_PREPARATION_REQUIRED",
+    label: "Vorbereitung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_PREPARATION_REQUIRED-Q1", text: "Ist eine Vorbereitung erforderlich (z. B. nüchtern erscheinen, Unterlagen mitbringen)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bitte beachten Sie die Vorbereitungshinweise für Ihren Termin (z. B. nüchtern erscheinen oder relevante Unterlagen mitbringen).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_DATA_INCOMPLETE: {
+    id: "APPOINTMENT_DATA_INCOMPLETE",
+    label: "Angaben unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_DATA_INCOMPLETE-Q1", text: "Sind das Anliegen oder notwendige Angaben unklar oder unvollständig?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Terminvereinbarung benötigen wir weitere Angaben zu Ihrem Anliegen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_DOCUMENT_MISSING: {
+    id: "APPOINTMENT_DOCUMENT_MISSING",
+    label: "Dokument fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_DOCUMENT_MISSING-Q1", text: "Fehlen notwendige Dokumente (z. B. eGK, Befunde, Impfpass)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bitte bringen Sie zum Termin die erforderlichen Unterlagen mit (z. B. Versichertenkarte, Befunde oder Impfpass).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 };
