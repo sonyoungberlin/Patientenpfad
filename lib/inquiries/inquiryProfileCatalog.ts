@@ -1147,6 +1147,98 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ] satisfies ResponseGoal[],
   },
 
+  ONBOARDING: {
+    id: "ONBOARDING",
+    label: "Patientenaufnahme / Registrierung",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "ONBOARDING_DATA_INCOMPLETE",
+      "ONBOARDING_DOCUMENT_MISSING",
+      "ONBOARDING_IDENTITY_MISMATCH",
+      "ONBOARDING_PROCESS_REQUIRED",
+      "ONBOARDING_WRONG_PRACTICE",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "DIGITAL_REQUEST",
+      "ONLINE_ANAMNESIS",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_ONBOARDING_INITIAL",
+        label: "Neupatient / Aufnahme / Registrierung",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      {
+        id: "REQ_ONBOARDING_CLARIFICATION",
+        label: "Rückfrage zu Daten / Registrierung / Status",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_ONBOARDING_REQUIRED",
+        label: "Praxis fordert Registrierung / Vervollständigung an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Daten / Dokumente fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Falsche Praxis / falscher Account",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf Registrierung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
   BILLING: {
     id: "BILLING",
     label: "Abrechnung",

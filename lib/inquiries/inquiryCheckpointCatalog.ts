@@ -1499,6 +1499,93 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- ONBOARDING SPECIFIC EXPLANATIONS ----
+
+  ONBOARDING_DATA_INCOMPLETE: {
+    id: "ONBOARDING_DATA_INCOMPLETE",
+    label: "Patientendaten unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_DATA_INCOMPLETE-Q1", text: "Fehlen grundlegende Angaben zur Registrierung (z. B. Name, Geburtsdatum, Kontodaten)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Aufnahme als Patient benötigen wir noch vollständige Angaben (z. B. vollständiger Name, Geburtsdatum oder Kontaktdaten). Bitte ergänzen Sie die fehlenden Informationen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_DOCUMENT_MISSING: {
+    id: "ONBOARDING_DOCUMENT_MISSING",
+    label: "Identitäts- oder Versicherungsnachweis fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_DOCUMENT_MISSING-Q1", text: "Fehlen notwendige Dokumente zur Patientenaufnahme (z. B. eGK, Identitätsnachweis, Versicherungsnachweis)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Ihre Registrierung benötigen wir noch fehlende Dokumente (z. B. Versichertenkarte, Lichtbildausweis oder Versicherungsnachweis). Bitte legen Sie diese beim nächsten Kontakt vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_IDENTITY_MISMATCH: {
+    id: "ONBOARDING_IDENTITY_MISMATCH",
+    label: "Patient nicht eindeutig zuordenbar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_IDENTITY_MISMATCH-Q1", text: "Kann der Patient anhand der vorliegenden Daten nicht eindeutig zugeordnet werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Angaben lassen keine eindeutige Zuordnung zu einem bestehenden Patientenprofil zu. Bitte klären Sie Ihre Identität über ein gültiges Ausweisdokument oder nehmen Sie persönlich Kontakt auf.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_PROCESS_REQUIRED: {
+    id: "ONBOARDING_PROCESS_REQUIRED",
+    label: "Registrierungsablauf erklären",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_PROCESS_REQUIRED-Q1", text: "Muss der Registrierungsablauf erläutert werden (z. B. erforderliche Schritte, benötigte Dokumente, Ablauf der Aufnahme)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Aufnahme als Neupatient sind folgende Schritte erforderlich: Registrierung über unser Patientenportal, Vorlage der Versichertenkarte sowie ggf. Ausfüllen eines Anamnesebogens. Bitte kommen Sie für den Ersttermin etwas früher.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_WRONG_PRACTICE: {
+    id: "ONBOARDING_WRONG_PRACTICE",
+    label: "Patient nicht dieser Praxis zugehörig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_WRONG_PRACTICE-Q1", text: "Gehört der Patient nicht zu dieser Praxis (z. B. falsche Praxis kontaktiert, außerhalb des Einzugsgebiets)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Leider können wir Sie in unserer Praxis nicht aufnehmen, da Sie nicht in unserem Einzugsgebiet wohnen oder bereits bei einer anderen Praxis registriert sind. Bitte wenden Sie sich an eine Praxis in Ihrer Nähe.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   BILLING_EXTERNAL_RESPONSIBILITY: {
     id: "BILLING_EXTERNAL_RESPONSIBILITY",
     label: "Externe Zuständigkeit für Abrechnung",
