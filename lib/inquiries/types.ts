@@ -297,7 +297,7 @@ export type SpecificRole =
  * Eingehende Anfragen (Patient → Praxis):
  *   REQ_RENEWAL           – Wiederverordnung Dauermedikation
  *   REQ_NEW_PRESCRIPTION  – Neuverordnung / erstmaliges Präparat
- *   REQ_CLARIFICATION     – Rückfrage zu ausgestelltem oder abgelehntem Rezept
+ *   REQ_PRESCRIPTION_CLARIFICATION – Rückfrage zu ausgestelltem oder abgelehntem Rezept
  *   REQ_DELIVERY_FORMAT   – Frage zu eRezept / Apotheke / Zustellweg
  *
  * Ausgehende Praxisnachrichten (Praxis → Patient):
@@ -313,7 +313,7 @@ export type SpecificRole =
 export type CommunicationReasonId =
   | "REQ_RENEWAL"
   | "REQ_NEW_PRESCRIPTION"
-  | "REQ_CLARIFICATION"
+  | "REQ_PRESCRIPTION_CLARIFICATION"
   | "REQ_DELIVERY_FORMAT"
   | "OUT_RECIPE_READY_INFO"
   | "OUT_MISSING_REQUIREMENT"

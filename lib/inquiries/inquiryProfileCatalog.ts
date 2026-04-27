@@ -344,7 +344,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         ],
       },
       {
-        id: "REQ_CLARIFICATION",
+        id: "REQ_PRESCRIPTION_CLARIFICATION",
         label: "Rückfrage zu ausgestelltem oder abgelehntem Rezept",
         direction: "INCOMING",
         suggestedResponseGoalIds: [
@@ -377,6 +377,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
         direction: "OUTGOING",
         suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
           "ISSUE_BLOCKED_MISSING_DOC",
           "MEDICAL_REVIEW_NEEDED",
         ],
@@ -457,6 +458,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
           "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
         ],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION"],
+        relevantActionGuidanceIds: [],
       },
     ] satisfies ResponseGoal[],
   },
@@ -668,7 +675,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       {
         id: "ISSUE_BLOCKED_MISSING_INFO",
-        label: "Angaben / Anordnung fehlen",
+        label: "Angaben fehlen",
         relevantSpecificRoles: ["MISSING_INFORMATION"],
         relevantActionGuidanceIds: [],
       },

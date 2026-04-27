@@ -37,7 +37,7 @@ describe("PRESCRIPTION – M1B communicationReasons", () => {
     const ids = PRESCRIPTION.communicationReasons!.map((r) => r.id);
     expect(ids).toContain("REQ_RENEWAL");
     expect(ids).toContain("REQ_NEW_PRESCRIPTION");
-    expect(ids).toContain("REQ_CLARIFICATION");
+    expect(ids).toContain("REQ_PRESCRIPTION_CLARIFICATION");
     expect(ids).toContain("REQ_DELIVERY_FORMAT");
   });
 
@@ -91,6 +91,7 @@ describe("PRESCRIPTION – M3 responseGoals", () => {
     expect(ids).toContain("ISSUE_CONFIRMED");
     expect(ids).toContain("ISSUE_BLOCKED_EXTERNAL");
     expect(ids).toContain("ISSUE_BLOCKED_MISSING_DOC");
+    expect(ids).toContain("ISSUE_BLOCKED_MISSING_INFO");
     expect(ids).toContain("ISSUE_BLOCKED_COST_COVERAGE");
     expect(ids).toContain("PROCESS_EXPLAINED");
     expect(ids).toContain("MEDICAL_REVIEW_NEEDED");
@@ -196,7 +197,7 @@ describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss 
     const m1bIds: string[] = [
       "REQ_RENEWAL",
       "REQ_NEW_PRESCRIPTION",
-      "REQ_CLARIFICATION",
+      "REQ_PRESCRIPTION_CLARIFICATION",
       "REQ_DELIVERY_FORMAT",
       "OUT_RECIPE_READY_INFO",
       "OUT_MISSING_REQUIREMENT",
@@ -212,6 +213,7 @@ describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss 
       "ISSUE_CONFIRMED",
       "ISSUE_BLOCKED_EXTERNAL",
       "ISSUE_BLOCKED_MISSING_DOC",
+      "ISSUE_BLOCKED_MISSING_INFO",
       "ISSUE_BLOCKED_COST_COVERAGE",
       "PROCESS_EXPLAINED",
       "MEDICAL_REVIEW_NEEDED",
