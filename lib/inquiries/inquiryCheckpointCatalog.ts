@@ -1395,6 +1395,40 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_VIDEO_LIMITATIONS: {
+    id: "APPOINTMENT_VIDEO_LIMITATIONS",
+    label: "Videosprechstunde nicht geeignet",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_VIDEO_LIMITATIONS-Q1", text: "Ist die Videosprechstunde für dieses Anliegen ungeeignet (z. B. körperliche Untersuchung, akute oder schwere Beschwerden, unbekannte Patienten)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für dieses Anliegen ist eine Videosprechstunde leider nicht geeignet – bitte buchen Sie einen Termin in der Praxis (z. B. bei körperlichen Untersuchungen, akuten oder schweren Beschwerden).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_VIDEO_REQUIREMENTS: {
+    id: "APPOINTMENT_VIDEO_REQUIREMENTS",
+    label: "Voraussetzungen Videosprechstunde",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_VIDEO_REQUIREMENTS-Q1", text: "Müssen Voraussetzungen für die Videosprechstunde erläutert werden (z. B. Technik, Wohnort, Ablauf)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Videosprechstunde benötigen Sie eine stabile Internetverbindung sowie ein Gerät mit Kamera und Mikrofon. Bitte wählen Sie sich rechtzeitig über den zugesandten Link ein. Beachten Sie ggf. regionale Einschränkungen (z. B. Wohnsitz im Einzugsgebiet).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- BILLING SPECIFIC EXPLANATIONS ----
 
   BILLING_COST_NOT_COVERED: {

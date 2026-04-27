@@ -1030,6 +1030,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_PREPARATION_REQUIRED",
       "APPOINTMENT_DATA_INCOMPLETE",
       "APPOINTMENT_DOCUMENT_MISSING",
+      "APPOINTMENT_VIDEO_LIMITATIONS",
+      "APPOINTMENT_VIDEO_REQUIREMENTS",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [

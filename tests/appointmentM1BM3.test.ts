@@ -57,6 +57,8 @@ const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "APPOINTMENT_PREPARATION_REQUIRED",
   "APPOINTMENT_DATA_INCOMPLETE",
   "APPOINTMENT_DOCUMENT_MISSING",
+  "APPOINTMENT_VIDEO_LIMITATIONS",
+  "APPOINTMENT_VIDEO_REQUIREMENTS",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -321,7 +323,15 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_DOCUMENT_MISSING"].specificRole).toBe("MISSING_DOCUMENT");
   });
 
-  it("APPOINTMENT-Profil referenziert alle fünf Specific-Checkpoints", () => {
+  it("APPOINTMENT_VIDEO_LIMITATIONS hat specificRole CHANNEL_NOT_SUITABLE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_VIDEO_LIMITATIONS"].specificRole).toBe("CHANNEL_NOT_SUITABLE");
+  });
+
+  it("APPOINTMENT_VIDEO_REQUIREMENTS hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_VIDEO_REQUIREMENTS"].specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("APPOINTMENT-Profil referenziert alle sieben Specific-Checkpoints", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(APPOINTMENT.specificCheckpointIds).toContain(id);
     }
@@ -409,5 +419,44 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).not.toContain("gebuchte Termintyp");
+  });
+
+  it("APPOINTMENT_VIDEO_LIMITATIONS YES + SHOW → Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_VIDEO_LIMITATIONS: ExplanationStatus.YES },
+        explanationOutputStatuses: { APPOINTMENT_VIDEO_LIMITATIONS: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Videosprechstunde");
+  });
+
+  it("APPOINTMENT_VIDEO_REQUIREMENTS YES + SHOW → Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_VIDEO_REQUIREMENTS: ExplanationStatus.YES },
+        explanationOutputStatuses: { APPOINTMENT_VIDEO_REQUIREMENTS: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Internetverbindung");
+  });
+
+  it("APPOINTMENT_VIDEO_LIMITATIONS HIDE → kein Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_VIDEO_LIMITATIONS: ExplanationStatus.YES },
+        explanationOutputStatuses: { APPOINTMENT_VIDEO_LIMITATIONS: ExplanationOutputStatus.HIDE } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("Videosprechstunde");
   });
 });
