@@ -9,11 +9,15 @@
  */
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
   DecisionStatus,
+  ExplanationStatus,
+  ExplanationOutputStatus,
+  InquiryCheckpointKind,
+  InquiryCheckpointScope,
   type SpecificRole,
-  type ExplanationOutputStatus,
 } from "@/lib/inquiries/types";
 
 const IMMUNIZATION = INQUIRY_PROFILE_CATALOG_V2["IMMUNIZATION"];
@@ -268,5 +272,185 @@ describe("IMMUNIZATION Renderer – communicationReasons/responseGoals haben kei
     expect(result).not.toHaveProperty("responseGoals");
     expect(result.sections[0]).not.toHaveProperty("communicationReasons");
     expect(result.sections[0]).not.toHaveProperty("responseGoals");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. IMMUNIZATION_DECISION Checkpoint
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION_DECISION Checkpoint", () => {
+  it("IMMUNIZATION_DECISION existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_DECISION"]).toBeDefined();
+  });
+
+  it("IMMUNIZATION_DECISION hat kind DECISION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_DECISION"].kind).toBe(InquiryCheckpointKind.DECISION);
+  });
+
+  it("IMMUNIZATION_DECISION hat scope SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_DECISION"].scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("IMMUNIZATION-Profil referenziert IMMUNIZATION_DECISION als decisionCheckpointId", () => {
+    expect(IMMUNIZATION.decisionCheckpointId).toBe("IMMUNIZATION_DECISION");
+  });
+
+  it("IMMUNIZATION_DECISION hat textByStatus für POSSIBLE", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).toBeTruthy();
+  });
+
+  it("IMMUNIZATION_DECISION hat textByStatus für NOT_POSSIBLE", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.NOT_POSSIBLE]).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7. Neue Specific-Checkpoints
+// ---------------------------------------------------------------------------
+
+const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
+  "IMMUNIZATION_STATUS_UNCLEAR",
+  "IMMUNIZATION_PASS_MISSING",
+  "IMMUNIZATION_TRAVEL_MEDICINE",
+  "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+] as const;
+
+describe("IMMUNIZATION Specific-Checkpoints – Existenz und Struktur", () => {
+  for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
+    it(`${id} existiert im Katalog`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    });
+
+    it(`${id} hat kind EXPLANATION`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    });
+
+    it(`${id} hat scope SPECIFIC`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    });
+  }
+
+  it("IMMUNIZATION_STATUS_UNCLEAR hat specificRole MISSING_INFORMATION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_STATUS_UNCLEAR"].specificRole).toBe("MISSING_INFORMATION");
+  });
+
+  it("IMMUNIZATION_PASS_MISSING hat specificRole MISSING_DOCUMENT", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_PASS_MISSING"].specificRole).toBe("MISSING_DOCUMENT");
+  });
+
+  it("IMMUNIZATION_TRAVEL_MEDICINE hat specificRole EXTERNAL_RESPONSIBILITY", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_TRAVEL_MEDICINE"].specificRole).toBe("EXTERNAL_RESPONSIBILITY");
+  });
+
+  it("IMMUNIZATION_RISK_REVIEW_REQUIRED hat specificRole MEDICAL_REVIEW_REQUIRED", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_RISK_REVIEW_REQUIRED"].specificRole).toBe("MEDICAL_REVIEW_REQUIRED");
+  });
+
+  it("IMMUNIZATION-Profil referenziert alle vier neuen Specific-Checkpoints", () => {
+    for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
+      expect(IMMUNIZATION.specificCheckpointIds).toContain(id);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. Renderer – mainDecision und Specific-Texte
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION Renderer – mainDecision", () => {
+  it("Renderer erzeugt mainDecision-Text bei decisionStatus POSSIBLE", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {},
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    expect(result.sections[0].mainDecision).toBeTruthy();
+    expect(result.sections[0].mainDecision).toContain("durchgeführt");
+  });
+
+  it("Renderer erzeugt mainDecision-Text bei decisionStatus NOT_POSSIBLE", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        checkpointStatuses: {},
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    expect(result.sections[0].mainDecision).toBeTruthy();
+    expect(result.sections[0].mainDecision).toContain("nicht durchgeführt");
+  });
+});
+
+describe("IMMUNIZATION Renderer – Specific-Checkpoint-Texte", () => {
+  it("IMMUNIZATION_STATUS_UNCLEAR YES + SHOW → Impfstatus-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { IMMUNIZATION_STATUS_UNCLEAR: ExplanationStatus.YES },
+        explanationOutputStatuses: { IMMUNIZATION_STATUS_UNCLEAR: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("bisher durchgeführten Impfungen");
+  });
+
+  it("IMMUNIZATION_PASS_MISSING YES + SHOW → Impfpass-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { IMMUNIZATION_PASS_MISSING: ExplanationStatus.YES },
+        explanationOutputStatuses: { IMMUNIZATION_PASS_MISSING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Impfpass");
+  });
+
+  it("IMMUNIZATION_TRAVEL_MEDICINE YES + SHOW → Reiseimpfung-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.NOT_POSSIBLE,
+        checkpointStatuses: { IMMUNIZATION_TRAVEL_MEDICINE: ExplanationStatus.YES },
+        explanationOutputStatuses: { IMMUNIZATION_TRAVEL_MEDICINE: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("reisemedizinisch");
+  });
+
+  it("IMMUNIZATION_RISK_REVIEW_REQUIRED YES + SHOW → Risikoabwägungs-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { IMMUNIZATION_RISK_REVIEW_REQUIRED: ExplanationStatus.YES },
+        explanationOutputStatuses: { IMMUNIZATION_RISK_REVIEW_REQUIRED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("ärztliche Einschätzung");
+  });
+
+  it("IMMUNIZATION_STATUS_UNCLEAR HIDE → kein Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { IMMUNIZATION_STATUS_UNCLEAR: ExplanationStatus.YES },
+        explanationOutputStatuses: { IMMUNIZATION_STATUS_UNCLEAR: ExplanationOutputStatus.HIDE } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("bisher durchgeführten Impfungen");
   });
 });

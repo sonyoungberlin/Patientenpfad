@@ -1218,4 +1218,93 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
     },
   },
+
+  // ---- IMMUNIZATION DECISION ----
+
+  IMMUNIZATION_DECISION: {
+    id: "IMMUNIZATION_DECISION",
+    label: "Impf-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "IMMUNIZATION_DECISION-Q1", text: "Kann die Impfung durchgeführt oder angeboten werden?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Die angefragte Impfung kann durchgeführt werden.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Die angefragte Impfung kann derzeit nicht durchgeführt werden.",
+    },
+  },
+
+  // ---- IMMUNIZATION SPECIFIC EXPLANATIONS ----
+
+  IMMUNIZATION_STATUS_UNCLEAR: {
+    id: "IMMUNIZATION_STATUS_UNCLEAR",
+    label: "Impfstatus unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_STATUS_UNCLEAR-Q1", text: "Ist der Impfstatus unklar?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Beurteilung benötigen wir Angaben zu den bisher durchgeführten Impfungen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  IMMUNIZATION_PASS_MISSING: {
+    id: "IMMUNIZATION_PASS_MISSING",
+    label: "Impfpass fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_PASS_MISSING-Q1", text: "Liegt kein Impfpass oder kein Impfnachweis vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Prüfung des Impfstatus ist ein Impfpass oder ein anderer Impfnachweis hilfreich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  IMMUNIZATION_TRAVEL_MEDICINE: {
+    id: "IMMUNIZATION_TRAVEL_MEDICINE",
+    label: "Reiseimpfung / reisemedizinische Beratung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_TRAVEL_MEDICINE-Q1", text: "Geht es um eine Reiseimpfung oder reisemedizinische Beratung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Reiseimpfungen und reisemedizinische Beratungen wenden Sie sich bitte an eine reisemedizinisch spezialisierte Stelle.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  IMMUNIZATION_RISK_REVIEW_REQUIRED: {
+    id: "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+    label: "Ärztliche Risikoabwägung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_RISK_REVIEW_REQUIRED-Q1", text: "Ist wegen Vorerkrankungen, Medikamenten oder Unsicherheiten eine ärztliche Einschätzung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Vor der Impfung ist eine ärztliche Einschätzung sinnvoll, um mögliche Risiken oder Gegenanzeigen zu prüfen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 };
