@@ -92,7 +92,7 @@ describe("PRESCRIPTION – M3 responseGoals", () => {
     expect(ids).toContain("ISSUE_BLOCKED_EXTERNAL");
     expect(ids).toContain("ISSUE_BLOCKED_MISSING_DOC");
     expect(ids).toContain("ISSUE_BLOCKED_COST_COVERAGE");
-    expect(ids).toContain("DELIVERY_FORMAT_EXPLAINED");
+    expect(ids).toContain("PROCESS_EXPLAINED");
     expect(ids).toContain("MEDICAL_REVIEW_NEEDED");
   });
 
@@ -213,7 +213,7 @@ describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss 
       "ISSUE_BLOCKED_EXTERNAL",
       "ISSUE_BLOCKED_MISSING_DOC",
       "ISSUE_BLOCKED_COST_COVERAGE",
-      "DELIVERY_FORMAT_EXPLAINED",
+      "PROCESS_EXPLAINED",
       "MEDICAL_REVIEW_NEEDED",
     ];
     for (const id of m3ids) {

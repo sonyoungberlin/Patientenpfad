@@ -351,7 +351,7 @@ export type CommunicationReason = {
  *   ISSUE_BLOCKED_EXTERNAL      – Externe / andere Zuständigkeit
  *   ISSUE_BLOCKED_MISSING_DOC   – Unterlagen oder Nachweis fehlen
  *   ISSUE_BLOCKED_COST_COVERAGE – Kassenleistung / Privatrezept / Kostenklärung
- *   DELIVERY_FORMAT_EXPLAINED   – eRezept / Apotheke / Zustellweg erklären
+ *   PROCESS_EXPLAINED           – eRezept / Apotheke / Zustellweg erklären
  *   MEDICAL_REVIEW_NEEDED       – ärztliche Einschätzung erforderlich
  *
  * Jedes Profil kann eigene IDs definieren. Der Feldtyp ist bewusst `string`.
@@ -362,7 +362,7 @@ export type ResponseGoalId =
   | "ISSUE_BLOCKED_EXTERNAL"
   | "ISSUE_BLOCKED_MISSING_DOC"
   | "ISSUE_BLOCKED_COST_COVERAGE"
-  | "DELIVERY_FORMAT_EXPLAINED"
+  | "PROCESS_EXPLAINED"
   | "MEDICAL_REVIEW_NEEDED";
 
 /**

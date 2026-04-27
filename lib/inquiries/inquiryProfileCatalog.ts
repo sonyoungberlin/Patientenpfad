@@ -352,7 +352,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           "ISSUE_BLOCKED_EXTERNAL",
           "ISSUE_BLOCKED_MISSING_DOC",
           "ISSUE_BLOCKED_COST_COVERAGE",
-          "DELIVERY_FORMAT_EXPLAINED",
+          "PROCESS_EXPLAINED",
           "MEDICAL_REVIEW_NEEDED",
         ],
       },
@@ -360,7 +360,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "REQ_DELIVERY_FORMAT",
         label: "Frage zu eRezept / Apotheke / Zustellweg",
         direction: "INCOMING",
-        suggestedResponseGoalIds: ["DELIVERY_FORMAT_EXPLAINED"],
+        suggestedResponseGoalIds: ["PROCESS_EXPLAINED"],
       },
       // Ausgehende Praxisnachrichten (Praxis → Patient)
       {
@@ -369,7 +369,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         direction: "OUTGOING",
         suggestedResponseGoalIds: [
           "ISSUE_CONFIRMED",
-          "DELIVERY_FORMAT_EXPLAINED",
+          "PROCESS_EXPLAINED",
         ],
       },
       {
@@ -394,7 +394,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         suggestedResponseGoalIds: [
           "ISSUE_BLOCKED_MISSING_DOC",
           "ISSUE_BLOCKED_COST_COVERAGE",
-          "DELIVERY_FORMAT_EXPLAINED",
+          "PROCESS_EXPLAINED",
         ],
       },
     ] satisfies CommunicationReason[],
@@ -434,14 +434,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       {
         id: "ISSUE_BLOCKED_COST_COVERAGE",
         label: "Kassenleistung / Privatrezept / Kostenklärung",
-        relevantSpecificRoles: ["RULE_COST_COVERAGE", "OUTCOME_INFO"],
+        relevantSpecificRoles: ["RULE_COST_COVERAGE"],
         relevantActionGuidanceIds: [
           "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
           "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
         ],
       },
       {
-        id: "DELIVERY_FORMAT_EXPLAINED",
+        id: "PROCESS_EXPLAINED",
         label: "eRezept / Apotheke / Zustellweg erklären",
         relevantSpecificRoles: ["PROCESS_INFO"],
         relevantActionGuidanceIds: [
