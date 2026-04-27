@@ -257,6 +257,37 @@ export type CheckpointStatusValue =
   | ActionStatus;
 
 /**
+ * Wiederverwendbare Kommunikationsfunktion eines SPECIFIC EXPLANATION-Checkpoints.
+ *
+ * Dient der strukturellen Klassifikation für Analyse, Guidance und zukünftige
+ * M1B/M3-Steuerung. Hat keinen Einfluss auf den Renderer, factStatus oder
+ * die Decision-Logik.
+ *
+ * Nur relevant für kind = EXPLANATION, scope = SPECIFIC.
+ * Bei anderen kind/scope-Kombinationen wird das Feld ignoriert.
+ *
+ * MISSING_DOCUMENT       – fehlende Voraussetzung: Dokument / Nachweis fehlt.
+ * MISSING_INFORMATION    – fehlende Voraussetzung: Angabe / Information fehlt.
+ * CHANNEL_NOT_SUITABLE   – Kanaleignung nicht gegeben; Weiterleitung auf regulären Weg.
+ * EXTERNAL_RESPONSIBILITY – Anliegen liegt bei anderer Stelle / Fachrichtung.
+ * RULE_TIME_LIMIT        – zeitliche Regelgrenze (Rückdatierung, Fristen).
+ * RULE_COST_COVERAGE     – Kostenübernahme / Kassenleistungsgrenze.
+ * MEDICAL_REVIEW_REQUIRED – ärztliche Einschätzung / Konsultation erforderlich.
+ * PROCESS_INFO           – Ablauf-, Kanal- oder Formathinweis.
+ * OUTCOME_INFO           – Ergebnis-/Outcome-Information nach positiver Entscheidung.
+ */
+export type SpecificRole =
+  | "MISSING_DOCUMENT"
+  | "MISSING_INFORMATION"
+  | "CHANNEL_NOT_SUITABLE"
+  | "EXTERNAL_RESPONSIBILITY"
+  | "RULE_TIME_LIMIT"
+  | "RULE_COST_COVERAGE"
+  | "MEDICAL_REVIEW_REQUIRED"
+  | "PROCESS_INFO"
+  | "OUTCOME_INFO";
+
+/**
  * Checkpoint-Definition nach der neuen Architektur.
  *
  * Für GLOBAL-Checkpoints:
@@ -309,6 +340,14 @@ export type InquiryCheckpoint = {
    * INFO        – Allgemeine Sachinformationen (z. B. Befunddauer).
    */
   actionCategory?: "PREPARATION" | "PROCESS" | "NEXT_STEP" | "INFO";
+  /**
+   * Wiederverwendbare Kommunikationsfunktion dieses Checkpoints.
+   *
+   * Nur relevant für kind = EXPLANATION, scope = SPECIFIC.
+   * Optional – beeinflusst weder Renderer noch factStatus noch Decision-Logik.
+   * Bei anderen kind/scope-Kombinationen wird das Feld ignoriert.
+   */
+  specificRole?: SpecificRole;
   /**
    * Einmalige M2-Frage für GLOBAL-Checkpoints (reiner Schalter: ja / nein).
    * Bei SPECIFIC-Checkpoints nicht gesetzt.
