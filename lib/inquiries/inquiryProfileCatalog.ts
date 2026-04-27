@@ -1421,4 +1421,116 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
     ] satisfies ResponseGoal[],
   },
+
+  MEDICAL_DOCUMENTS: {
+    id: "MEDICAL_DOCUMENTS",
+    label: "Atteste / Bescheinigungen",
+    decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
+    specificCheckpointIds: [
+      "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
+      "MEDICAL_DOCUMENT_INFO_MISSING",
+      "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
+      "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
+      "MEDICAL_DOCUMENT_PROCESS_INFO",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "DIGITAL_REQUEST",
+      "ONLINE_ANAMNESIS",
+      "DOCUMENT_UPLOAD",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_DOCUMENT_INITIAL",
+        label: "Attest / Bescheinigung anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "REQ_DOCUMENT_CLARIFICATION",
+        label: "Rückfrage zu Attest / Bescheinigung / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_DOCUMENT_READY",
+        label: "Attest / Bescheinigung wurde erstellt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_BILLING_INFO",
+        label: "Praxis erklärt Kosten / Selbstzahlerleistung",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Attest / Bescheinigung erstellt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben / Voraussetzung fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_COST_COVERAGE",
+        label: "Selbstzahlerleistung / Kostenhinweis",
+        relevantSpecificRoles: ["RULE_COST_COVERAGE"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Erstellung / Abholung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
 };

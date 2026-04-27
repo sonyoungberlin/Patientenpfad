@@ -1672,4 +1672,110 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // NO: bewusst still – keine Erklärung nötig
     },
   },
+
+  // ---- MEDICAL_DOCUMENTS DECISION ----
+
+  MEDICAL_DOCUMENTS_DECISION: {
+    id: "MEDICAL_DOCUMENTS_DECISION",
+    label: "Attest-/Bescheinigungs-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "MEDICAL_DOCUMENTS_DECISION-Q1", text: "Kann das angefragte Attest oder die angefragte Bescheinigung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Das angefragte Attest / die angefragte Bescheinigung kann erstellt werden.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Das angefragte Attest / die angefragte Bescheinigung kann derzeit nicht erstellt werden.",
+    },
+  },
+
+  // ---- MEDICAL_DOCUMENTS SPECIFIC EXPLANATIONS ----
+
+  MEDICAL_DOCUMENT_REVIEW_REQUIRED: {
+    id: "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
+    label: "Ärztliche Einschätzung für Attest erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_REVIEW_REQUIRED-Q1", text: "Ist für das Attest oder die Bescheinigung eine ärztliche Einschätzung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für ein Attest oder eine Bescheinigung ist eine ärztliche Einschätzung erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_INFO_MISSING: {
+    id: "MEDICAL_DOCUMENT_INFO_MISSING",
+    label: "Angaben zum Verwendungszweck fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_INFO_MISSING-Q1", text: "Fehlen genaue Angaben dazu, wofür das Attest oder die Bescheinigung benötigt wird?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung benötigen wir genaue Angaben dazu, wofür das Attest benötigt wird.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_DOCUMENTATION_MISSING: {
+    id: "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
+    label: "Vorhandene Befunde / Nachweise fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING-Q1", text: "Fehlen für die Beurteilung relevante Befunde oder Nachweise?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Beurteilung können vorhandene Befunde oder Nachweise erforderlich sein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_PRIVATE_SERVICE: {
+    id: "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
+    label: "Attest / Bescheinigung als Selbstzahlerleistung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_PRIVATE_SERVICE-Q1", text: "Handelt es sich um eine Bescheinigung, die nicht im Leistungsumfang der gesetzlichen Krankenversicherung enthalten ist?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Atteste und Bescheinigungen können je nach Anlass eine Selbstzahlerleistung sein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_PROCESS_INFO: {
+    id: "MEDICAL_DOCUMENT_PROCESS_INFO",
+    label: "Ablauf der Attest-/Bescheinigungserstellung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_PROCESS_INFO-Q1", text: "Muss der Ablauf der Erstellung, Abholung oder Übermittlung des Dokuments erläutert werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Nach ärztlicher Prüfung informieren wir Sie über Erstellung, Abholung oder Übermittlung des Dokuments.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 };
