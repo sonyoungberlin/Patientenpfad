@@ -1198,6 +1198,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "OUT_TECH_LIMITATION",
         label: "Technische Nutzung nicht möglich / eingeschränkt",
         direction: "OUTGOING",
+        // Hinweis: ISSUE_BLOCKED_EXTERNAL bedeutet hier nicht "externe Zuständigkeit",
+        // sondern "digitaler Kanal technisch nicht nutzbar / alternativer Weg nötig"
+        // (→ CHANNEL_NOT_SUITABLE). Bewusste pragmatische Nutzung des Core-Goals.
         suggestedResponseGoalIds: [
           "ISSUE_BLOCKED_EXTERNAL",
         ],
@@ -1214,6 +1217,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         relevantSpecificRoles: ["PROCESS_INFO"],
         relevantActionGuidanceIds: [],
       },
+      // Hinweis: ISSUE_BLOCKED_EXTERNAL wird hier semantisch als "digitaler Kanal
+      // technisch nicht nutzbar / alternativer Weg nötig" genutzt (SpecificRole:
+      // CHANNEL_NOT_SUITABLE) – nicht als "externe Zuständigkeit" wie in medizinischen
+      // Profilen. Dies ist eine bewusste pragmatische Nutzung des Core-Goals, da kein
+      // neues Goal eingeführt werden soll.
       {
         id: "ISSUE_BLOCKED_EXTERNAL",
         label: "Technik nicht nutzbar / alternativer Weg notwendig",
