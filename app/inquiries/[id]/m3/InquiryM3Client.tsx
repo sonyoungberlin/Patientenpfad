@@ -83,7 +83,7 @@ const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
   },
   {
     label: "Termin & Behandlung",
-    ids: ["BOOK_APPOINTMENT", "OPEN_CONSULTATION"],
+    ids: ["BOOK_APPOINTMENT"],
   },
   {
     label: "Rezept & Einlösung",

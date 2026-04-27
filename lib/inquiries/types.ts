@@ -257,6 +257,132 @@ export type CheckpointStatusValue =
   | ActionStatus;
 
 /**
+ * Wiederverwendbare Kommunikationsfunktion eines SPECIFIC EXPLANATION-Checkpoints.
+ *
+ * Dient der strukturellen Klassifikation für Analyse, Guidance und zukünftige
+ * M1B/M3-Steuerung. Hat keinen Einfluss auf den Renderer, factStatus oder
+ * die Decision-Logik.
+ *
+ * Nur relevant für kind = EXPLANATION, scope = SPECIFIC.
+ * Bei anderen kind/scope-Kombinationen wird das Feld ignoriert.
+ *
+ * MISSING_DOCUMENT       – fehlende Voraussetzung: Dokument / Nachweis fehlt.
+ * MISSING_INFORMATION    – fehlende Voraussetzung: Angabe / Information fehlt.
+ * CHANNEL_NOT_SUITABLE   – Kanaleignung nicht gegeben; Weiterleitung auf regulären Weg.
+ * EXTERNAL_RESPONSIBILITY – Anliegen liegt bei anderer Stelle / Fachrichtung.
+ * RULE_TIME_LIMIT        – zeitliche Regelgrenze (Rückdatierung, Fristen).
+ * RULE_COST_COVERAGE     – Kostenübernahme / Kassenleistungsgrenze.
+ * MEDICAL_REVIEW_REQUIRED – ärztliche Einschätzung / Konsultation erforderlich.
+ * PROCESS_INFO           – Ablauf-, Kanal- oder Formathinweis.
+ * OUTCOME_INFO           – Ergebnis-/Outcome-Information nach positiver Entscheidung.
+ */
+export type SpecificRole =
+  | "MISSING_DOCUMENT"
+  | "MISSING_INFORMATION"
+  | "CHANNEL_NOT_SUITABLE"
+  | "EXTERNAL_RESPONSIBILITY"
+  | "RULE_TIME_LIMIT"
+  | "RULE_COST_COVERAGE"
+  | "MEDICAL_REVIEW_REQUIRED"
+  | "PROCESS_INFO"
+  | "OUTCOME_INFO";
+
+// ---------------------------------------------------------------------------
+// M1B – Kommunikationsanlass
+// ---------------------------------------------------------------------------
+
+/**
+ * Bekannte M1B-Identifier des PRESCRIPTION-Profils (zur Dokumentation).
+ *
+ * Eingehende Anfragen (Patient → Praxis):
+ *   REQ_RENEWAL           – Wiederverordnung Dauermedikation
+ *   REQ_NEW_PRESCRIPTION  – Neuverordnung / erstmaliges Präparat
+ *   REQ_CLARIFICATION     – Rückfrage zu ausgestelltem oder abgelehntem Rezept
+ *   REQ_DELIVERY_FORMAT   – Frage zu eRezept / Apotheke / Zustellweg
+ *
+ * Ausgehende Praxisnachrichten (Praxis → Patient):
+ *   OUT_RECIPE_READY_INFO        – Praxis informiert: Rezept liegt bereit / wurde ausgestellt
+ *   OUT_MISSING_REQUIREMENT      – Praxis fordert fehlende Angaben / Voraussetzungen an
+ *   OUT_SPECIALIST_RESPONSIBILITY – Praxis verweist auf andere Zuständigkeit
+ *   OUT_PRACTICE_CLARIFICATION   – Praxis klärt organisatorisch nach
+ *
+ * Jedes Profil kann eigene IDs definieren. Der Feldtyp ist bewusst `string`,
+ * damit AU und spätere Profile keine Erweiterung dieser Union benötigen.
+ * Reine Metadaten – keine Auswirkung auf Decision, Action oder Renderer.
+ */
+export type CommunicationReasonId =
+  | "REQ_RENEWAL"
+  | "REQ_NEW_PRESCRIPTION"
+  | "REQ_CLARIFICATION"
+  | "REQ_DELIVERY_FORMAT"
+  | "OUT_RECIPE_READY_INFO"
+  | "OUT_MISSING_REQUIREMENT"
+  | "OUT_SPECIALIST_RESPONSIBILITY"
+  | "OUT_PRACTICE_CLARIFICATION";
+
+/** Richtung des Kommunikationsanlasses. */
+export type CommunicationReasonDirection = "INCOMING" | "OUTGOING";
+
+/**
+ * M1B-Eintrag: ein Kommunikationsanlass mit typischen M3-Antwortzielen.
+ *
+ * suggestedResponseGoalIds – Vorschläge, nicht Zwang.
+ *   Der Nutzer kann jedes responseGoal unabhängig vom M1B wählen.
+ *
+ * `id` und `suggestedResponseGoalIds` sind bewusst als `string` typisiert,
+ * damit jedes Profil eigene IDs definieren kann.
+ */
+export type CommunicationReason = {
+  id: string;
+  label: string;
+  direction: CommunicationReasonDirection;
+  /** Typische M3-Antwortziele für diesen Anlass (Vorschläge). */
+  suggestedResponseGoalIds: string[];
+};
+
+// ---------------------------------------------------------------------------
+// M3 – Antwortziel
+// ---------------------------------------------------------------------------
+
+/**
+ * Bekannte M3-Identifier des PRESCRIPTION-Profils (zur Dokumentation).
+ *
+ *   ISSUE_CONFIRMED             – Rezept wurde ausgestellt
+ *   ISSUE_BLOCKED_EXTERNAL      – Externe / andere Zuständigkeit
+ *   ISSUE_BLOCKED_MISSING_DOC   – Unterlagen oder Nachweis fehlen
+ *   ISSUE_BLOCKED_COST_COVERAGE – Kassenleistung / Privatrezept / Kostenklärung
+ *   DELIVERY_FORMAT_EXPLAINED   – eRezept / Apotheke / Zustellweg erklären
+ *   MEDICAL_REVIEW_NEEDED       – ärztliche Einschätzung erforderlich
+ *
+ * Jedes Profil kann eigene IDs definieren. Der Feldtyp ist bewusst `string`.
+ * Reine Metadaten – keine Auswirkung auf Decision, Action oder Renderer.
+ */
+export type ResponseGoalId =
+  | "ISSUE_CONFIRMED"
+  | "ISSUE_BLOCKED_EXTERNAL"
+  | "ISSUE_BLOCKED_MISSING_DOC"
+  | "ISSUE_BLOCKED_COST_COVERAGE"
+  | "DELIVERY_FORMAT_EXPLAINED"
+  | "MEDICAL_REVIEW_NEEDED";
+
+/**
+ * M3-Eintrag: ein Antwortziel mit relevanten specificRoles und Action-Guidance-Hinweisen.
+ *
+ * relevantSpecificRoles    – specificRoles, die typisch für dieses Ziel sind (Metadaten).
+ * relevantActionGuidanceIds – IDs bestehender ActionGuidanceRules, die zu diesem Ziel passen.
+ *
+ * `id` ist bewusst als `string` typisiert, damit jedes Profil eigene IDs definieren kann.
+ */
+export type ResponseGoal = {
+  id: string;
+  label: string;
+  /** Typische specificRoles für dieses Antwortziel. */
+  relevantSpecificRoles: SpecificRole[];
+  /** IDs bestehender ActionGuidanceRules, die zu diesem Antwortziel passen. */
+  relevantActionGuidanceIds: string[];
+};
+
+/**
  * Checkpoint-Definition nach der neuen Architektur.
  *
  * Für GLOBAL-Checkpoints:
@@ -310,6 +436,14 @@ export type InquiryCheckpoint = {
    */
   actionCategory?: "PREPARATION" | "PROCESS" | "NEXT_STEP" | "INFO";
   /**
+   * Wiederverwendbare Kommunikationsfunktion dieses Checkpoints.
+   *
+   * Nur relevant für kind = EXPLANATION, scope = SPECIFIC.
+   * Optional – beeinflusst weder Renderer noch factStatus noch Decision-Logik.
+   * Bei anderen kind/scope-Kombinationen wird das Feld ignoriert.
+   */
+  specificRole?: SpecificRole;
+  /**
    * Einmalige M2-Frage für GLOBAL-Checkpoints (reiner Schalter: ja / nein).
    * Bei SPECIFIC-Checkpoints nicht gesetzt.
    */
@@ -322,6 +456,76 @@ export type InquiryCheckpoint = {
   questions?: InquiryQuestion[];
   textByStatus: Partial<Record<CheckpointStatusValue, string>>;
   docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
+};
+
+// ---------------------------------------------------------------------------
+// ActionGuidanceRule – UI-only Guidance-System
+// ---------------------------------------------------------------------------
+
+/**
+ * UI-Darstellungshinweis für eine Action.
+ * Steuert ausschließlich Sichtbarkeit und Hervorhebung – kein Einfluss auf
+ * DecisionStatus oder ActionStatus.
+ *
+ * recommended     – empfohlene Aktion; wird visuell hervorgehoben.
+ * visible         – Aktion wird angezeigt (Standard-Sichtbarkeit).
+ * hiddenByDefault – Aktion wird standardmäßig ausgeblendet.
+ * caution         – Aktion wird mit einem Warnhinweis versehen.
+ */
+export type UIGuidanceHint = "recommended" | "visible" | "hiddenByDefault" | "caution";
+
+/**
+ * Einzelne Checkpoint-Bedingung innerhalb einer when-Klausel.
+ * Referenziert einen beliebigen Checkpoint aus checkpointStatuses der Session.
+ */
+export type GuidanceCondition = {
+  checkpointId: string;
+  status: CheckpointStatusValue;
+};
+
+/**
+ * Kontextbedingung einer Guidance-Regel.
+ *
+ * Alle gesetzten Felder werden per AND verknüpft.
+ * Innerhalb von allOf / anyOf / noneOf gelten die üblichen Mengenregeln.
+ *
+ * decisionStatus – DecisionStatus der Section (POSSIBLE / NOT_POSSIBLE / DISABLED).
+ *                  undefined = gilt für alle DecisionStatus-Werte.
+ * allOf          – alle genannten Checkpoint-Bedingungen müssen erfüllt sein.
+ * anyOf          – mindestens eine der genannten Bedingungen muss erfüllt sein.
+ * noneOf         – keine der genannten Bedingungen darf erfüllt sein.
+ *
+ * Leere Arrays ([]) gelten als erfüllt (vacuous truth).
+ * Fehlende Einträge in checkpointStatuses gelten als nicht erfüllt.
+ */
+export type GuidanceWhen = {
+  decisionStatus?: DecisionStatus;
+  allOf?: GuidanceCondition[];
+  anyOf?: GuidanceCondition[];
+  noneOf?: GuidanceCondition[];
+};
+
+/**
+ * Regel zur UI-Steuerung einer Action.
+ *
+ * Invarianten:
+ * - Guidance setzt keine DecisionStatus-Werte.
+ * - Guidance aktiviert keine Action automatisch (ActionStatus bleibt unberührt).
+ * - Guidance beeinflusst ausschließlich die UI-Darstellung.
+ *
+ * checkpointId – die Action, deren UI-Hinweis bewertet wird.
+ * profileId    – Einschränkung auf ein Profil (undefined = profilübergreifend).
+ * when         – Kontextbedingung; fehlt = Regel gilt immer.
+ * hint         – Darstellungshinweis.
+ * hintText     – optionaler Erklärungstext, nur sinnvoll bei hint = "caution".
+ */
+export type ActionGuidanceRule = {
+  id: string;
+  checkpointId: string;
+  profileId?: string;
+  when?: GuidanceWhen;
+  hint: UIGuidanceHint;
+  hintText?: string;
 };
 
 /**
@@ -361,6 +565,28 @@ export type InquiryProfileV2 = {
    * für dieses Anliegen in M4 erscheint.
    */
   globalHints?: Record<string, string>;
+  /**
+   * UI-only Guidance-Regeln für Actions dieses Profils.
+   *
+   * Steuern ausschließlich die Darstellung von Actions in der UI.
+   * Kein Einfluss auf DecisionStatus, ActionStatus oder den Renderer.
+   * Ausgewertet durch evaluateActionGuidance (lib/inquiries/evaluateActionGuidance.ts).
+   */
+  actionGuidanceRules?: ActionGuidanceRule[];
+  /**
+   * M1B – Kommunikationsanlässe dieses Profils (Pilot: PRESCRIPTION).
+   *
+   * Reine Metadaten zur UI-Führung. Keine Auswirkung auf Decision, Action oder Renderer.
+   * Nur in Profilen gesetzt, für die der M1B/M3-Pilot aktiv ist.
+   */
+  communicationReasons?: CommunicationReason[];
+  /**
+   * M3 – Antwortziele dieses Profils (Pilot: PRESCRIPTION).
+   *
+   * Reine Metadaten zur UI-Führung. Keine Auswirkung auf Decision, Action oder Renderer.
+   * Nur in Profilen gesetzt, für die der M1B/M3-Pilot aktiv ist.
+   */
+  responseGoals?: ResponseGoal[];
 };
 
 /**

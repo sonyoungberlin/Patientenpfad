@@ -844,17 +844,18 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat genau drei Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(3);
+  it("AU-Profil hat genau vier Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(4);
   });
 
-  it("AU-Profil bindet genau drei AU SPECIFIC Explanation Checkpoints", () => {
+  it("AU-Profil bindet genau drei AU SPECIFIC Explanation Checkpoints und MEDICAL_CONSULTATION_REQUIRED", () => {
     expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_LIMIT");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_DURATION_LIMIT");
     expect(auProfile.specificCheckpointIds).toContain("AU_WORK_ACCIDENT");
     expect(auProfile.specificCheckpointIds).toContain("AU_CHILD_SICK");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_CONTINUITY_REQUIRED");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_RETURN_TO_WORK");
+    expect(auProfile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 
   it("AU-Profil hat keine gebundenen Global Checkpoints", () => {
@@ -1118,14 +1119,15 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle fünf Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet alle sechs Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(5);
+    expect(prescriptionProfile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(6);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1135,6 +1137,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
+      "MEDICAL_CONSULTATION_REQUIRED",
     ]);
   });
 
@@ -1473,9 +1476,10 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile).toBeDefined();
   });
 
-  it("LAB-Profil bindet genau einen Specific Checkpoint", () => {
+  it("LAB-Profil bindet genau zwei Specific Checkpoints", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
-    expect(labProfile.specificCheckpointIds).toHaveLength(1);
+    expect(labProfile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(labProfile.specificCheckpointIds).toHaveLength(2);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1519,11 +1523,11 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect((cp.questions ?? []).length).toBeGreaterThan(0);
   });
 
-  it("LAB_FASTING_REQUIRED ist ACTION/GLOBAL/SHARED_BOTTOM im Katalog mit actionCategory PREPARATION", () => {
+  it("LAB_FASTING_REQUIRED ist ACTION/SPECIFIC/SHARED_BOTTOM im Katalog mit actionCategory PREPARATION", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
     expect(cp).toBeDefined();
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
-    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
     expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
     expect(cp.actionCategory).toBe("PREPARATION");
   });
@@ -1791,7 +1795,8 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
   it("alle 4 Action-Checkpoints sind als ACTION/PREPARATION|PROCESS|INFO im Katalog und in boundActionCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER", "LAB_RESULT_TIME"];
-    expect(profile.specificCheckpointIds).toHaveLength(0);
+    expect(profile.specificCheckpointIds).toHaveLength(1);
+    expect(profile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
     for (const id of ids) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp).toBeDefined();
@@ -1813,9 +1818,10 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
   it("SAMPLE_COLLECTION hat die erwarteten availableActionIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
-    expect(profile.availableActionIds).toContain("OPEN_CONSULTATION");
+    expect(profile.availableActionIds).not.toContain("OPEN_CONSULTATION");
     expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
     expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(profile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 });
 
@@ -1980,25 +1986,26 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("5 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
+  it("4 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
-      "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_SPECIALTY_REQUIRED",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(0);
+    expect(profile.specificCheckpointIds).toHaveLength(2);
+    expect(profile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
     }
   });
 
-  it("3 migrierte Action-Checkpoints sind in boundActionCheckpointIds mit kind ACTION und actionCategory", () => {
+  it("2 migrierte Action-Checkpoints sind in boundActionCheckpointIds mit kind ACTION und actionCategory", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
-    const actionIds = ["REF_BOOKING_CODE_PROCESS", "REF_ORIGINAL_VS_PDF", "REF_PSYCHOTHERAPY_FIRST_STEP"];
+    const actionIds = ["REF_BOOKING_CODE_PROCESS", "REF_ORIGINAL_VS_PDF"];
     expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(actionIds));
     for (const id of actionIds) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -2021,9 +2028,10 @@ describe("REFERRAL-Profil – Struktur", () => {
   it("REFERRAL hat die erwarteten availableActionIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
-    expect(profile.availableActionIds).toContain("OPEN_CONSULTATION");
+    expect(profile.availableActionIds).not.toContain("OPEN_CONSULTATION");
     expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
     expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(profile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 });
 
@@ -2101,20 +2109,20 @@ describe("REFERRAL-Profil – migrierte Action-Checkpoints (boundActionCheckpoin
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_PSYCHOTHERAPY_FIRST_STEP ACTIVE → Text erscheint in attachedParagraphs", () => {
+  it("REF_PSYCHOTHERAPY_FIRST_STEP YES → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.ACTIVE },
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(1);
     expect(result.sections[0].attachedParagraphs[0]).toContain("psychotherapeutischen");
   });
 
-  it("REF_PSYCHOTHERAPY_FIRST_STEP INACTIVE → kein Text in attachedParagraphs", () => {
+  it("REF_PSYCHOTHERAPY_FIRST_STEP NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
-        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ActionStatus.INACTIVE },
+        checkpointStatuses: { REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
@@ -2205,12 +2213,12 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("ACUTE_CARE hat genau 5 specificCheckpointIds", () => {
+  it("ACUTE_CARE hat genau 6 specificCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.specificCheckpointIds).toHaveLength(5);
+    expect(profile.specificCheckpointIds).toHaveLength(6);
   });
 
-  it("alle 5 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+  it("alle 6 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     const ids = [
       "ACUTE_PURPOSE",
@@ -2218,6 +2226,7 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
       "ACUTE_APPOINTMENT_INFO",
       "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
+      "MEDICAL_CONSULTATION_REQUIRED",
     ];
     for (const id of ids) {
       expect(profile.specificCheckpointIds).toContain(id);
@@ -2225,7 +2234,7 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("alle 5 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
+  it("alle 5 original SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
     for (const id of [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
@@ -2257,9 +2266,10 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
   it("ACUTE_CARE hat die erwarteten availableActionIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
-    expect(profile.availableActionIds).toContain("OPEN_CONSULTATION");
+    expect(profile.availableActionIds).not.toContain("OPEN_CONSULTATION");
     expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
     expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(profile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 });
 
