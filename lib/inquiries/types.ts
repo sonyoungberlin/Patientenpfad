@@ -287,6 +287,93 @@ export type SpecificRole =
   | "PROCESS_INFO"
   | "OUTCOME_INFO";
 
+// ---------------------------------------------------------------------------
+// M1B – Kommunikationsanlass (Pilot: PRESCRIPTION)
+// ---------------------------------------------------------------------------
+
+/**
+ * M1B-Identifier: Warum entsteht die Nachricht?
+ *
+ * Eingehende Anfragen (Patient → Praxis):
+ *   REQ_RENEWAL           – Wiederverordnung Dauermedikation
+ *   REQ_NEW_PRESCRIPTION  – Neuverordnung / erstmaliges Präparat
+ *   REQ_CLARIFICATION     – Rückfrage zu ausgestelltem oder abgelehntem Rezept
+ *   REQ_DELIVERY_FORMAT   – Frage zu eRezept / Apotheke / Zustellweg
+ *
+ * Ausgehende Praxisnachrichten (Praxis → Patient):
+ *   OUT_RECIPE_READY_INFO        – Praxis informiert: Rezept liegt bereit / wurde ausgestellt
+ *   OUT_MISSING_REQUIREMENT      – Praxis fordert fehlende Voraussetzung an
+ *   OUT_SPECIALIST_RESPONSIBILITY – Praxis verweist auf fachärztliche Zuständigkeit
+ *   OUT_PRACTICE_CLARIFICATION   – Praxis klärt organisatorisch nach
+ *
+ * Reine Metadaten – keine Auswirkung auf Decision, Action oder Renderer.
+ */
+export type CommunicationReasonId =
+  | "REQ_RENEWAL"
+  | "REQ_NEW_PRESCRIPTION"
+  | "REQ_CLARIFICATION"
+  | "REQ_DELIVERY_FORMAT"
+  | "OUT_RECIPE_READY_INFO"
+  | "OUT_MISSING_REQUIREMENT"
+  | "OUT_SPECIALIST_RESPONSIBILITY"
+  | "OUT_PRACTICE_CLARIFICATION";
+
+/** Richtung des Kommunikationsanlasses. */
+export type CommunicationReasonDirection = "INCOMING" | "OUTGOING";
+
+/**
+ * M1B-Eintrag: ein Kommunikationsanlass mit typischen M3-Antwortzielen.
+ *
+ * suggestedResponseGoalIds – Vorschläge, nicht Zwang.
+ *   Der Nutzer kann jedes responseGoal unabhängig vom M1B wählen.
+ */
+export type CommunicationReason = {
+  id: CommunicationReasonId;
+  label: string;
+  direction: CommunicationReasonDirection;
+  /** Typische M3-Antwortziele für diesen Anlass (Vorschläge). */
+  suggestedResponseGoalIds: ResponseGoalId[];
+};
+
+// ---------------------------------------------------------------------------
+// M3 – Antwortziel (Pilot: PRESCRIPTION)
+// ---------------------------------------------------------------------------
+
+/**
+ * M3-Identifier: Was wollen wir dem Patienten sagen?
+ *
+ *   ISSUE_CONFIRMED             – Rezept wurde ausgestellt
+ *   ISSUE_BLOCKED_EXTERNAL      – Fachärztliche / externe Zuständigkeit
+ *   ISSUE_BLOCKED_MISSING_DOC   – Unterlagen oder Nachweis fehlen
+ *   ISSUE_BLOCKED_COST_COVERAGE – Kassenleistung / Privatrezept / Kostenklärung
+ *   DELIVERY_FORMAT_EXPLAINED   – eRezept / Apotheke / Zustellweg erklären
+ *   MEDICAL_REVIEW_NEEDED       – ärztliche Einschätzung erforderlich
+ *
+ * Reine Metadaten – keine Auswirkung auf Decision, Action oder Renderer.
+ */
+export type ResponseGoalId =
+  | "ISSUE_CONFIRMED"
+  | "ISSUE_BLOCKED_EXTERNAL"
+  | "ISSUE_BLOCKED_MISSING_DOC"
+  | "ISSUE_BLOCKED_COST_COVERAGE"
+  | "DELIVERY_FORMAT_EXPLAINED"
+  | "MEDICAL_REVIEW_NEEDED";
+
+/**
+ * M3-Eintrag: ein Antwortziel mit relevanten specificRoles und Action-Guidance-Hinweisen.
+ *
+ * relevantSpecificRoles    – specificRoles, die typisch für dieses Ziel sind (Metadaten).
+ * relevantActionGuidanceIds – IDs bestehender ActionGuidanceRules, die zu diesem Ziel passen.
+ */
+export type ResponseGoal = {
+  id: ResponseGoalId;
+  label: string;
+  /** Typische specificRoles für dieses Antwortziel. */
+  relevantSpecificRoles: SpecificRole[];
+  /** IDs bestehender ActionGuidanceRules, die zu diesem Antwortziel passen. */
+  relevantActionGuidanceIds: string[];
+};
+
 /**
  * Checkpoint-Definition nach der neuen Architektur.
  *
@@ -478,6 +565,20 @@ export type InquiryProfileV2 = {
    * Ausgewertet durch evaluateActionGuidance (lib/inquiries/evaluateActionGuidance.ts).
    */
   actionGuidanceRules?: ActionGuidanceRule[];
+  /**
+   * M1B – Kommunikationsanlässe dieses Profils (Pilot: PRESCRIPTION).
+   *
+   * Reine Metadaten zur UI-Führung. Keine Auswirkung auf Decision, Action oder Renderer.
+   * Nur in Profilen gesetzt, für die der M1B/M3-Pilot aktiv ist.
+   */
+  communicationReasons?: CommunicationReason[];
+  /**
+   * M3 – Antwortziele dieses Profils (Pilot: PRESCRIPTION).
+   *
+   * Reine Metadaten zur UI-Führung. Keine Auswirkung auf Decision, Action oder Renderer.
+   * Nur in Profilen gesetzt, für die der M1B/M3-Pilot aktiv ist.
+   */
+  responseGoals?: ResponseGoal[];
 };
 
 /**

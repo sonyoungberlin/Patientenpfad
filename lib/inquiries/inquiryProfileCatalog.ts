@@ -4,6 +4,8 @@ import {
   ExplanationStatus,
   type InquiryProfile,
   type InquiryProfileV2,
+  type CommunicationReason,
+  type ResponseGoal,
 } from "@/lib/inquiries/types";
 
 /**
@@ -186,6 +188,151 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         hint: "visible",
       },
     ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_RENEWAL",
+        label: "Wiederverordnung Dauermedikation",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_NEW_PRESCRIPTION",
+        label: "Neuverordnung / erstmaliges Präparat",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_DOC",
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_CLARIFICATION",
+        label: "Rückfrage zu ausgestelltem oder abgelehntem Rezept",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_DOC",
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "DELIVERY_FORMAT_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_DELIVERY_FORMAT",
+        label: "Frage zu eRezept / Apotheke / Zustellweg",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: ["DELIVERY_FORMAT_EXPLAINED"],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_RECIPE_READY_INFO",
+        label: "Rezept liegt bereit / wurde ausgestellt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "DELIVERY_FORMAT_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Voraussetzung an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_DOC",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf fachärztliche Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+      {
+        id: "OUT_PRACTICE_CLARIFICATION",
+        label: "Praxis klärt organisatorisch nach",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_DOC",
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "DELIVERY_FORMAT_EXPLAINED",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Rezept ausgestellt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [
+          "PRESCRIPTION_E_RECIPE_USE_RECOMMENDED",
+          "PRESCRIPTION_PHARMACY_INFORMATION_RECOMMENDED",
+        ],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Fachärztliche / externe Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [
+          "PRESCRIPTION_BOOK_APPOINTMENT_CAUTION",
+          "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
+          "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
+        ],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_DOC",
+        label: "Unterlagen oder Nachweis fehlen",
+        relevantSpecificRoles: ["MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [
+          "PRESCRIPTION_DOCUMENT_UPLOAD_RECOMMENDED",
+          "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
+        ],
+      },
+      {
+        id: "ISSUE_BLOCKED_COST_COVERAGE",
+        label: "Kassenleistung / Privatrezept / Kostenklärung",
+        relevantSpecificRoles: ["RULE_COST_COVERAGE", "OUTCOME_INFO"],
+        relevantActionGuidanceIds: [
+          "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
+          "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
+        ],
+      },
+      {
+        id: "DELIVERY_FORMAT_EXPLAINED",
+        label: "eRezept / Apotheke / Zustellweg erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [
+          "PRESCRIPTION_E_RECIPE_USE_RECOMMENDED",
+          "PRESCRIPTION_PHARMACY_INFORMATION_RECOMMENDED",
+        ],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [
+          "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
+          "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
+        ],
+      },
+    ] satisfies ResponseGoal[],
   },
 
   LAB: {
