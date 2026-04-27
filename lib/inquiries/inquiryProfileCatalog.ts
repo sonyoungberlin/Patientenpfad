@@ -761,7 +761,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       {
         id: "OUT_MISSING_REQUIREMENT",
-        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        label: "Praxis benötigt weitere Informationen zu den Beschwerden",
         direction: "OUTGOING",
         suggestedResponseGoalIds: [
           "MEDICAL_REVIEW_NEEDED",
