@@ -302,8 +302,8 @@ export type SpecificRole =
  *
  * Ausgehende Praxisnachrichten (Praxis → Patient):
  *   OUT_RECIPE_READY_INFO        – Praxis informiert: Rezept liegt bereit / wurde ausgestellt
- *   OUT_MISSING_REQUIREMENT      – Praxis fordert fehlende Voraussetzung an
- *   OUT_SPECIALIST_RESPONSIBILITY – Praxis verweist auf fachärztliche Zuständigkeit
+ *   OUT_MISSING_REQUIREMENT      – Praxis fordert fehlende Angaben / Voraussetzungen an
+ *   OUT_SPECIALIST_RESPONSIBILITY – Praxis verweist auf andere Zuständigkeit
  *   OUT_PRACTICE_CLARIFICATION   – Praxis klärt organisatorisch nach
  *
  * Jedes Profil kann eigene IDs definieren. Der Feldtyp ist bewusst `string`,
@@ -348,7 +348,7 @@ export type CommunicationReason = {
  * Bekannte M3-Identifier des PRESCRIPTION-Profils (zur Dokumentation).
  *
  *   ISSUE_CONFIRMED             – Rezept wurde ausgestellt
- *   ISSUE_BLOCKED_EXTERNAL      – Fachärztliche / externe Zuständigkeit
+ *   ISSUE_BLOCKED_EXTERNAL      – Externe / andere Zuständigkeit
  *   ISSUE_BLOCKED_MISSING_DOC   – Unterlagen oder Nachweis fehlen
  *   ISSUE_BLOCKED_COST_COVERAGE – Kassenleistung / Privatrezept / Kostenklärung
  *   DELIVERY_FORMAT_EXPLAINED   – eRezept / Apotheke / Zustellweg erklären

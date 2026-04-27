@@ -122,7 +122,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       {
         id: "OUT_MISSING_REQUIREMENT",
-        label: "Praxis fordert fehlende Angaben an",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
         direction: "OUTGOING",
         suggestedResponseGoalIds: [
           "ISSUE_BLOCKED_MISSING_INFO",
@@ -155,7 +155,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       {
         id: "ISSUE_BLOCKED_EXTERNAL",
-        label: "Externe Zuständigkeit",
+        label: "Externe / andere Zuständigkeit",
         relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
         relevantActionGuidanceIds: ["AU_BOOK_APPOINTMENT_VISIBLE"],
       },
@@ -374,7 +374,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       {
         id: "OUT_MISSING_REQUIREMENT",
-        label: "Praxis fordert fehlende Voraussetzung an",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
         direction: "OUTGOING",
         suggestedResponseGoalIds: [
           "ISSUE_BLOCKED_MISSING_DOC",
@@ -383,7 +383,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       {
         id: "OUT_SPECIALIST_RESPONSIBILITY",
-        label: "Praxis verweist auf fachärztliche Zuständigkeit",
+        label: "Praxis verweist auf andere Zuständigkeit",
         direction: "OUTGOING",
         suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
       },
@@ -414,7 +414,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       {
         id: "ISSUE_BLOCKED_EXTERNAL",
-        label: "Fachärztliche / externe Zuständigkeit",
+        label: "Externe / andere Zuständigkeit",
         relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
         relevantActionGuidanceIds: [
           "PRESCRIPTION_BOOK_APPOINTMENT_CAUTION",
