@@ -676,8 +676,21 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  MEDICAL_CONSULTATION_REQUIRED: {
+    id: "MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
   // ---- GLOBAL ACTIONS ----
 
+  /** @deprecated Ersetzt durch MEDICAL_CONSULTATION_REQUIRED (EXPLANATION/SPECIFIC/ATTACHED) */
   OPEN_CONSULTATION: {
     id: "OPEN_CONSULTATION",
     label: "Ärztliche Konsultation",

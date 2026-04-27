@@ -37,13 +37,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_BACKDATE_LIMIT",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
+      "MEDICAL_CONSULTATION_REQUIRED",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
-      "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
@@ -59,6 +59,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
+      "MEDICAL_CONSULTATION_REQUIRED",
     ],
     boundGlobalCheckpointIds: [
       "IS_CHRONIC_PATIENT",
@@ -68,7 +69,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
-      "OPEN_CONSULTATION",
       "E_RECIPE_USE",
       "PHARMACY_INFORMATION",
       "DOCUMENT_UPLOAD",
@@ -87,6 +87,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
       "LAB_SELF_PAYER_IGEL",
+      "MEDICAL_CONSULTATION_REQUIRED",
     ],
     boundGlobalCheckpointIds: [],
     boundActionCheckpointIds: [
@@ -95,7 +96,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
-      "OPEN_CONSULTATION",
       "URINE_SAMPLE_ONSITE",
     ],
   },
@@ -104,7 +104,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     id: "SAMPLE_COLLECTION",
     label: "Urin- und Stuhlprobe",
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
-    specificCheckpointIds: [],
+    specificCheckpointIds: [
+      "MEDICAL_CONSULTATION_REQUIRED",
+    ],
     boundGlobalCheckpointIds: [],
     boundActionCheckpointIds: [
       "URINE_SAMPLE_INSTRUCTIONS",
@@ -114,7 +116,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
-      "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
@@ -131,13 +132,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ACUTE_APPOINTMENT_INFO",
       "ACUTE_OPEN_CONSULTATION_INFO",
       "CHRONIC_EXCLUSION",
+      "MEDICAL_CONSULTATION_REQUIRED",
     ],
     boundGlobalCheckpointIds: [
       "INFECTIOUS_PROTOCOL",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
-      "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
@@ -151,7 +152,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     id: "REFERRAL",
     label: "Überweisung",
     decisionCheckpointId: "REFERRAL_DECISION",
-    specificCheckpointIds: [],
+    specificCheckpointIds: [
+      "MEDICAL_CONSULTATION_REQUIRED",
+    ],
     boundGlobalCheckpointIds: [],
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
@@ -160,7 +163,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
-      "OPEN_CONSULTATION",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
