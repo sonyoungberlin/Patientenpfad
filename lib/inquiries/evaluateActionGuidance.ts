@@ -53,7 +53,9 @@ export function evaluateActionGuidance(
 
   // 4. Spezifitäts-Score berechnen und höchsten auswählen
   const scored = matching.map((r) => ({ rule: r, score: specificityScore(r) }));
-  scored.sort((a, b) => b.score - a.score); // höchster Score zuerst; stabil bei Gleichstand
+  // Höchster Score zuerst. Array.sort() ist seit ECMAScript 2019 / Node ≥ 10 stabil;
+  // bei Gleichstand bleibt die ursprüngliche Array-Reihenfolge erhalten (erste Regel gewinnt).
+  scored.sort((a, b) => b.score - a.score);
 
   const winner = scored[0].rule;
   return { hint: winner.hint, hintText: winner.hintText };

@@ -550,7 +550,7 @@ describe("renderInquiryResponseFromSections – Renderer-Isolation", () => {
   // Stellt sicher, dass actionGuidanceRules die gerenderte Ausgabe NICHT verändert.
   // Die Regeln sind nur für die UI-Schicht gedacht; der Renderer ignoriert sie vollständig.
 
-  it("PRESCRIPTION mit actionGuidanceRules erzeugt denselben Output wie ohne das Feld", async () => {
+  it("PRESCRIPTION mit actionGuidanceRules: kein guidance-Text landet in attachedParagraphs oder sharedBottom", async () => {
     const { renderInquiryResponseFromSections } = await import("@/lib/inquiries/renderInquiryResponse");
 
     const section = {
@@ -578,13 +578,17 @@ describe("renderInquiryResponseFromSections – Renderer-Isolation", () => {
 
     const output = renderInquiryResponseFromSections([section]);
 
-    // Guidance-Hinweise beeinflussen weder sections noch sharedBottom noch documentation
+    // Der Renderer darf guidance-Hinweistexte (hintText) nicht in die Ausgabe einfließen lassen.
+    // Guidance steuert ausschließlich die UI-Darstellung – der Renderer bleibt unverändert.
     expect(output.sections).toHaveLength(1);
     expect(output.sections[0].inquiryId).toBe("PRESCRIPTION");
-    // Die actionGuidanceRules dürfen nichts zu attachedParagraphs oder sharedBottom beitragen
     for (const rule of INQUIRY_PROFILE_CATALOG_V2["PRESCRIPTION"].actionGuidanceRules!) {
-      expect(output.sections[0].attachedParagraphs).not.toContain(rule.hintText);
-      expect(output.sharedBottom).not.toContain(rule.hintText);
+      if (rule.hintText) {
+        expect(output.sections[0].attachedParagraphs).not.toContain(rule.hintText);
+        expect(output.sharedBottom).not.toContain(rule.hintText);
+      }
     }
+    // Renderer erzeugt keinen Output für INACTIVE actions
+    expect(output.sharedBottom).toHaveLength(0);
   });
 });
