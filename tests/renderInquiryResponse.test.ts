@@ -1523,11 +1523,11 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect((cp.questions ?? []).length).toBeGreaterThan(0);
   });
 
-  it("LAB_FASTING_REQUIRED ist ACTION/GLOBAL/SHARED_BOTTOM im Katalog mit actionCategory PREPARATION", () => {
+  it("LAB_FASTING_REQUIRED ist ACTION/SPECIFIC/SHARED_BOTTOM im Katalog mit actionCategory PREPARATION", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
     expect(cp).toBeDefined();
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
-    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
     expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
     expect(cp.actionCategory).toBe("PREPARATION");
   });

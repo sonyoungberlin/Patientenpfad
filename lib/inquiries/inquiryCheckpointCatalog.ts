@@ -506,7 +506,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     id: "LAB_FASTING_REQUIRED",
     label: "Vorbereitung: nüchtern erscheinen",
     kind: InquiryCheckpointKind.ACTION,
-    scope: InquiryCheckpointScope.GLOBAL,
+    scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "PREPARATION",
     textByStatus: {
@@ -690,19 +690,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- GLOBAL ACTIONS ----
 
-  /** @deprecated Ersetzt durch MEDICAL_CONSULTATION_REQUIRED (EXPLANATION/SPECIFIC/ATTACHED) */
-  OPEN_CONSULTATION: {
-    id: "OPEN_CONSULTATION",
-    label: "Ärztliche Konsultation",
-    kind: InquiryCheckpointKind.ACTION,
-    scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
-  },
-
   DIGITAL_REQUEST: {
     id: "DIGITAL_REQUEST",
     label: "Digitale Anfrage",
@@ -813,6 +800,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Eine Urinprobe kann vor Ort in der Praxis abgegeben werden.",
