@@ -731,6 +731,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "CHRONIC_EXCLUSION",
+      "ACUTE_APPOINTMENT_INFO",
     ],
     boundGlobalCheckpointIds: [
       "INFECTIOUS_PROTOCOL",
@@ -1068,7 +1069,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_INFO",
-      "TERMIN_PREPARATION_REQUIRED",
     ],
     globalHints: {
       ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
@@ -1197,6 +1197,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECH_VIDEO_NOT_WORKING",
       "TECH_UPLOAD_FAILED",
       "TECH_LOGIN_PROBLEM",
+      "TECH_PROCESS_INSTRUCTION",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -1409,6 +1410,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_ADDRESS_MISSING",
       "BILLING_DOCUMENT_MISSING",
       "BILLING_EXTERNAL_RESPONSIBILITY",
+      "BILLING_INVOICE_TIMING",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [

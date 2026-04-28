@@ -46,7 +46,7 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bekannte Specific-Checkpoint-IDs (BILLING_PROCESS_EXTERNAL, BILLING_DATA_MISSING, BILLING_INVOICE_TIMING und BILLING_ONSITE_PAYMENT sind @deprecated und entfernt)
+// Bekannte Specific-Checkpoint-IDs (BILLING_PROCESS_EXTERNAL, BILLING_DATA_MISSING und BILLING_ONSITE_PAYMENT sind @deprecated und entfernt)
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "BILLING_COST_NOT_COVERED",
@@ -54,6 +54,7 @@ const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "BILLING_ADDRESS_MISSING",
   "BILLING_DOCUMENT_MISSING",
   "BILLING_EXTERNAL_RESPONSIBILITY",
+  "BILLING_INVOICE_TIMING",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -331,13 +332,12 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_DATA_MISSING"]).toBeDefined();
   });
 
-  it("BILLING-Profil referenziert genau fünf Specific-Checkpoints (PROCESS_EXTERNAL, DATA_MISSING, INVOICE_TIMING + ONSITE_PAYMENT sind @deprecated und entfernt)", () => {
+  it("BILLING-Profil referenziert genau sechs Specific-Checkpoints (PROCESS_EXTERNAL, DATA_MISSING und ONSITE_PAYMENT sind @deprecated und entfernt)", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(BILLING.specificCheckpointIds).toContain(id);
     }
     expect(BILLING.specificCheckpointIds).not.toContain("BILLING_PROCESS_EXTERNAL");
     expect(BILLING.specificCheckpointIds).not.toContain("BILLING_DATA_MISSING");
-    expect(BILLING.specificCheckpointIds).not.toContain("BILLING_INVOICE_TIMING");
     expect(BILLING.specificCheckpointIds).not.toContain("BILLING_ONSITE_PAYMENT");
   });
 });
@@ -426,7 +426,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Krankenkasse");
   });
 
-  it("BILLING_INVOICE_TIMING YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
+  it("BILLING_INVOICE_TIMING YES + SHOW → Text erscheint (wiederhergestellt)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -436,7 +436,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("quartalsweise");
+    expect(paragraphs).toContain("quartalsweise");
   });
 
   it("BILLING_ONSITE_PAYMENT YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {

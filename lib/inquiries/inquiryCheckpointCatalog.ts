@@ -1101,7 +1101,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  /** @deprecated Ablauf-Buchungshinweis ohne Entscheidungsbezug – Buchungsinfo gehört in GLOBAL oder ACTION, nicht in SPECIFIC. Nicht mehr in ACUTE_CARE.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   ACUTE_APPOINTMENT_INFO: {
     id: "ACUTE_APPOINTMENT_INFO",
     label: "Akuttermin – Buchungshinweis",
@@ -1618,7 +1617,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen (z. B. keine medizinische Indikation, individuelle Gesundheitsleistung / IGeL). Die Abrechnung erfolgt privat nach der GOÄ.",
+        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen (z. B. keine medizinische Indikation, individuelle Gesundheitsleistung / IGeL). Die Abrechnung erfolgt privat nach der GOÄ. Selbstzahlerleistungen können vor Ort per Karte bezahlt werden.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1722,7 +1721,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  /** @deprecated Reiner Ablauf-Hinweis (quartalsweise Abrechnung) ohne Entscheidungsbezug – kein echter Specific-Inhalt. Nicht mehr in BILLING.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   BILLING_INVOICE_TIMING: {
     id: "BILLING_INVOICE_TIMING",
     label: "Zeitpunkt der Rechnungsstellung",
@@ -1817,7 +1815,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  /** @deprecated Technische Schritt-für-Schritt-Anleitung ohne Entscheidungsbezug – Anleitungsinhalt gehört in ACTION oder GLOBAL, nicht in SPECIFIC. Nicht mehr in TECH_SUPPORT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   TECH_PROCESS_INSTRUCTION: {
     id: "TECH_PROCESS_INSTRUCTION",
     label: "Allgemeine technische Anleitung (App, QR-Code, Schritte)",

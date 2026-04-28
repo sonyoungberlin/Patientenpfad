@@ -2492,17 +2492,18 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("ACUTE_CARE hat genau 3 specificCheckpointIds (ACUTE_APPOINTMENT_INFO ist @deprecated und entfernt)", () => {
+  it("ACUTE_CARE hat genau 4 specificCheckpointIds (inkl. ACUTE_APPOINTMENT_INFO, wiederhergestellt)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.specificCheckpointIds).toHaveLength(3);
+    expect(profile.specificCheckpointIds).toHaveLength(4);
   });
 
-  it("alle 3 verbleibenden SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+  it("alle 4 verbleibenden SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     const ids = [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "CHRONIC_EXCLUSION",
+      "ACUTE_APPOINTMENT_INFO",
     ];
     for (const id of ids) {
       expect(profile.specificCheckpointIds).toContain(id);
@@ -2510,7 +2511,6 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
     expect(profile.specificCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(profile.specificCheckpointIds).not.toContain("ACUTE_APPOINTMENT_INFO");
   });
 
   it("alle 3 verbleibenden SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
@@ -2591,13 +2591,13 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
     );
   });
 
-  it("ACUTE_APPOINTMENT_INFO YES → kein Text in attachedParagraphs (deprecated, nicht mehr im Profil)", () => {
+  it("ACUTE_APPOINTMENT_INFO YES → Text in attachedParagraphs (wiederhergestellt)", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
         checkpointStatuses: { ACUTE_APPOINTMENT_INFO: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).not.toContain(
+    expect(result.sections[0].attachedParagraphs).toContain(
       "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde möglich.",
     );
   });
