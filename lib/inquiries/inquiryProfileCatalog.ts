@@ -730,7 +730,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
-      "ACUTE_APPOINTMENT_INFO",
       "CHRONIC_EXCLUSION",
     ],
     boundGlobalCheckpointIds: [
@@ -1066,7 +1065,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_DATA_INCOMPLETE",
-      "APPOINTMENT_PREPARATION_REQUIRED",
     ],
     boundGlobalCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_INFO",
@@ -1199,7 +1197,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECH_VIDEO_NOT_WORKING",
       "TECH_UPLOAD_FAILED",
       "TECH_LOGIN_PROBLEM",
-      "TECH_PROCESS_INSTRUCTION",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -1412,8 +1409,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_ADDRESS_MISSING",
       "BILLING_DOCUMENT_MISSING",
       "BILLING_EXTERNAL_RESPONSIBILITY",
-      "BILLING_INVOICE_TIMING",
-      "BILLING_ONSITE_PAYMENT",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -1528,7 +1523,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "MEDICAL_DOCUMENT_INFO_MISSING",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
-      "MEDICAL_DOCUMENT_PROCESS_INFO",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",

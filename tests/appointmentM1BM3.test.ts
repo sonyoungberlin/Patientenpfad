@@ -49,12 +49,11 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bekannte Specific-Checkpoint-IDs (nach Termin-Brille-Cleanup: 3 statt 7)
+// Bekannte Specific-Checkpoint-IDs (nach Cleanup: 2 statt 3; APPOINTMENT_PREPARATION_REQUIRED ist @deprecated und entfernt)
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "APPOINTMENT_WRONG_TYPE",
   "APPOINTMENT_DATA_INCOMPLETE",
-  "APPOINTMENT_PREPARATION_REQUIRED",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -303,22 +302,18 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_WRONG_TYPE"].specificRole).toBe("CHANNEL_NOT_SUITABLE");
   });
 
-  it("APPOINTMENT_PREPARATION_REQUIRED hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_PREPARATION_REQUIRED"].specificRole).toBe("PROCESS_INFO");
-  });
-
   it("APPOINTMENT_DATA_INCOMPLETE hat specificRole MISSING_INFORMATION", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_DATA_INCOMPLETE"].specificRole).toBe("MISSING_INFORMATION");
   });
 
-  it("APPOINTMENT-Profil referenziert alle drei Specific-Checkpoints", () => {
+  it("APPOINTMENT-Profil referenziert beide verbleibenden Specific-Checkpoints", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(APPOINTMENT.specificCheckpointIds).toContain(id);
     }
   });
 
-  it("APPOINTMENT-Profil hat genau drei Specific-Checkpoints (Termin-Brille-Cleanup)", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(3);
+  it("APPOINTMENT-Profil hat genau zwei Specific-Checkpoints (APPOINTMENT_PREPARATION_REQUIRED ist @deprecated und entfernt)", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(2);
   });
 });
 
@@ -353,7 +348,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("mehrere Schritte");
   });
 
-  it("APPOINTMENT_PREPARATION_REQUIRED YES + SHOW → Text erscheint", () => {
+  it("APPOINTMENT_PREPARATION_REQUIRED YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -363,7 +358,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Vorbereitungshinweise");
+    expect(paragraphs).not.toContain("Vorbereitungshinweise");
   });
 
   it("APPOINTMENT_DATA_INCOMPLETE YES + SHOW → Text erscheint", () => {
@@ -456,10 +451,11 @@ describe("APPOINTMENT – @deprecated Checkpoints (Termin-Brille-Cleanup)", () =
     "APPOINTMENT_DOCUMENT_MISSING",
     "APPOINTMENT_VIDEO_LIMITATIONS",
     "APPOINTMENT_VIDEO_REQUIREMENTS",
+    "APPOINTMENT_PREPARATION_REQUIRED",
   ] as const;
 
   for (const id of DEPRECATED_IDS) {
-    it(`${id} existiert noch im Katalog (kein Löschung, nur Deprecation)`, () => {
+    it(`${id} existiert noch im Katalog (kein Löschen, nur Deprecation)`, () => {
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
     });
 

@@ -1101,6 +1101,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Ablauf-Buchungshinweis ohne Entscheidungsbezug – Buchungsinfo gehört in GLOBAL oder ACTION, nicht in SPECIFIC. Nicht mehr in ACUTE_CARE.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   ACUTE_APPOINTMENT_INFO: {
     id: "ACUTE_APPOINTMENT_INFO",
     label: "Akuttermin – Buchungshinweis",
@@ -1514,6 +1515,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Generischer Vorbereitungshinweis – wird jetzt über TERMIN_PREPARATION_REQUIRED (GLOBAL) + globalHints abgebildet. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_PREPARATION_REQUIRED: {
     id: "APPOINTMENT_PREPARATION_REQUIRED",
     label: "Vorbereitung erforderlich",
@@ -1720,6 +1722,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Reiner Ablauf-Hinweis (quartalsweise Abrechnung) ohne Entscheidungsbezug – kein echter Specific-Inhalt. Nicht mehr in BILLING.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   BILLING_INVOICE_TIMING: {
     id: "BILLING_INVOICE_TIMING",
     label: "Zeitpunkt der Rechnungsstellung",
@@ -1740,6 +1743,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Reiner Prozesshinweis (Kartenzahlung vor Ort) ohne Entscheidungsbezug – kein echter Specific-Inhalt. Nicht mehr in BILLING.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   BILLING_ONSITE_PAYMENT: {
     id: "BILLING_ONSITE_PAYMENT",
     label: "Selbstzahler-Zahlung vor Ort",
@@ -1813,6 +1817,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Technische Schritt-für-Schritt-Anleitung ohne Entscheidungsbezug – Anleitungsinhalt gehört in ACTION oder GLOBAL, nicht in SPECIFIC. Nicht mehr in TECH_SUPPORT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   TECH_PROCESS_INSTRUCTION: {
     id: "TECH_PROCESS_INSTRUCTION",
     label: "Allgemeine technische Anleitung (App, QR-Code, Schritte)",
@@ -2086,6 +2091,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Generischer Ablaufhinweis (Erstellung/Abholung/Übermittlung) ohne Entscheidungsbezug – beschreibt nur den Prozess, keine echte Begründung. Nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   MEDICAL_DOCUMENT_PROCESS_INFO: {
     id: "MEDICAL_DOCUMENT_PROCESS_INFO",
     label: "Ablauf der Attest-/Bescheinigungserstellung",

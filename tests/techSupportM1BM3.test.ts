@@ -49,7 +49,6 @@ const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "TECH_VIDEO_NOT_WORKING",
   "TECH_UPLOAD_FAILED",
   "TECH_LOGIN_PROBLEM",
-  "TECH_PROCESS_INSTRUCTION",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -294,14 +293,15 @@ describe("TECH_SUPPORT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["TECH_LOGIN_PROBLEM"].specificRole).toBe("PROCESS_INFO");
   });
 
-  it("TECH_PROCESS_INSTRUCTION hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TECH_PROCESS_INSTRUCTION"].specificRole).toBe("PROCESS_INFO");
+  it("TECH_PROCESS_INSTRUCTION ist im Katalog noch vorhanden (@deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TECH_PROCESS_INSTRUCTION"]).toBeDefined();
   });
 
-  it("TECH_SUPPORT-Profil referenziert alle vier Specific-Checkpoints", () => {
+  it("TECH_SUPPORT-Profil referenziert alle drei verbleibenden Specific-Checkpoints (TECH_PROCESS_INSTRUCTION ist @deprecated und entfernt)", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(TECH_SUPPORT.specificCheckpointIds).toContain(id);
     }
+    expect(TECH_SUPPORT.specificCheckpointIds).not.toContain("TECH_PROCESS_INSTRUCTION");
   });
 });
 
@@ -349,7 +349,7 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Passwort vergessen");
   });
 
-  it("TECH_PROCESS_INSTRUCTION YES + SHOW → Text erscheint", () => {
+  it("TECH_PROCESS_INSTRUCTION YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "TECH_SUPPORT",
@@ -359,7 +359,7 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("QR-Code");
+    expect(paragraphs).not.toContain("QR-Code");
   });
 
   it("TECH_VIDEO_NOT_WORKING HIDE → kein Text erscheint", () => {
