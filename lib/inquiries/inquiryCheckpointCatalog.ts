@@ -1016,6 +1016,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  LAB_EXTERNAL_BILLING: {
+    id: "LAB_EXTERNAL_BILLING",
+    label: "Laborabrechnung über Partnerlabor",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_EXTERNAL_BILLING-Q1", text: "Fragt der Patient nach der Laborrechnung oder deren Herkunft?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Abrechnung der Laborleistungen erfolgt direkt über unser Partnerlabor. Sie erhalten die Rechnung unabhängig von uns vom Labor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient über externe Laborabrechnung informiert.",
+    },
+  },
+
   // ---- ACUTE_CARE DECISION ----
 
   ACUTE_CARE_DECISION: {
@@ -1573,8 +1593,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen und ist selbst zu zahlen.",
       // NO: bewusst still – keine Erklärung nötig
     },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Leistung ist keine Kassenleistung (Selbstzahler).",
+    },
   },
 
+  /** @deprecated Ersetzt durch BILLING_EXTERNAL_PROVIDER. Nicht mehr in BILLING.specificCheckpointIds. */
   BILLING_PROCESS_EXTERNAL: {
     id: "BILLING_PROCESS_EXTERNAL",
     label: "Rechnung über externen Dienstleister",
@@ -1592,6 +1616,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Ersetzt durch BILLING_ADDRESS_MISSING. Nicht mehr in BILLING.specificCheckpointIds. */
   BILLING_DATA_MISSING: {
     id: "BILLING_DATA_MISSING",
     label: "Abrechnungsdaten unvollständig",
@@ -1621,8 +1646,91 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung werden noch Unterlagen benötigt (z. B. Versichertenkarte, Abrechnungsschein oder weitere Nachweise).",
+        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Versichertenkarte oder Abrechnungsunterlagen). Bitte reichen Sie diese ein.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Abrechnungsunterlagen angefordert.",
+    },
+  },
+
+  BILLING_EXTERNAL_PROVIDER: {
+    id: "BILLING_EXTERNAL_PROVIDER",
+    label: "Abrechnung über externen Dienstleister",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_EXTERNAL_PROVIDER-Q1", text: "Läuft die Abrechnung über einen externen Abrechnungsdienstleister (PAS)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister. Sie erhalten die Rechnung direkt von dort.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient über externe Abrechnung informiert.",
+    },
+  },
+
+  BILLING_ADDRESS_MISSING: {
+    id: "BILLING_ADDRESS_MISSING",
+    label: "Adresse für Rechnungszustellung fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "BILLING_ADDRESS_MISSING-Q1", text: "Konnte eine Rechnung nicht zugestellt werden, weil die Adresse fehlt oder veraltet ist?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Uns wurde mitgeteilt, dass Ihre Rechnung nicht zugestellt werden konnte. Bitte teilen Sie uns Ihre aktuelle Postadresse mit, damit wir diese weitergeben können.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Adresse für Rechnungszustellung angefordert.",
+    },
+  },
+
+  BILLING_INVOICE_TIMING: {
+    id: "BILLING_INVOICE_TIMING",
+    label: "Zeitpunkt der Rechnungsstellung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_INVOICE_TIMING-Q1", text: "Fragt der Patient nach dem Zeitpunkt oder Ablauf der Rechnungsstellung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Abrechnung erfolgt in der Regel quartalsweise über unsere Buchhaltung. Sie erhalten Ihre Rechnung anschließend automatisch vom Abrechnungsdienstleister.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient über quartalsweise Abrechnung informiert.",
+    },
+  },
+
+  BILLING_ONSITE_PAYMENT: {
+    id: "BILLING_ONSITE_PAYMENT",
+    label: "Selbstzahler-Zahlung vor Ort",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_ONSITE_PAYMENT-Q1", text: "Soll auf die Möglichkeit der Kartenzahlung vor Ort hingewiesen werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Selbstzahlerleistungen können vor Ort in der Praxis per Karte bezahlt werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Hinweis auf Vor-Ort-Zahlung gegeben.",
     },
   },
 
@@ -1810,6 +1918,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient an externe Stelle (Krankenkasse) verwiesen.",
     },
   },
 
