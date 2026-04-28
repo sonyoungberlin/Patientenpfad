@@ -384,32 +384,34 @@ export default function InquiryM3Client({
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
 
-              {/* Decision */}
-              <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
-                <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
-                {section.decisionQuestions.length > 0 && (
-                  <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
-                    {section.decisionQuestions
-                      .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
-                      .map((q) => {
-                        const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
-                        return (
-                          <div key={q.id}>
-                            {q.text}
-                            <span style={{ fontWeight: 500 }}> — {answer}</span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
-                <StatusButtons
-                  checkpointId={section.decisionCheckpointId}
-                  options={DECISION_OPTIONS}
-                  value={statuses[section.decisionCheckpointId]}
-                  onChange={setStatus}
-                  disabled={false}
-                />
-              </div>
+              {/* Decision – nur bei Profilen mit Decision-Checkpoint */}
+              {section.decisionCheckpointId && (
+                <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
+                  <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
+                  {section.decisionQuestions.length > 0 && (
+                    <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                      {section.decisionQuestions
+                        .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
+                        .map((q) => {
+                          const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
+                          return (
+                            <div key={q.id}>
+                              {q.text}
+                              <span style={{ fontWeight: 500 }}> — {answer}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                  <StatusButtons
+                    checkpointId={section.decisionCheckpointId}
+                    options={DECISION_OPTIONS}
+                    value={statuses[section.decisionCheckpointId]}
+                    onChange={setStatus}
+                    disabled={false}
+                  />
+                </div>
+              )}
 
               {/* SPECIFIC Checkpoints */}
               {section.specificCheckpoints

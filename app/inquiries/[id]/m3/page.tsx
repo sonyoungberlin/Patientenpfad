@@ -18,8 +18,12 @@ import InquiryM3Client, {
 function toM3Section(inquiryId: string): M3SectionData | null {
   const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
   if (!profile) return null;
-  const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
-  if (!decisionCp) return null;
+  // Profiles without a decision checkpoint (e.g. APPOINTMENT, TECH_SUPPORT, ONBOARDING,
+  // BILLING) have decisionCheckpointId: "". They must still appear in M3 so the user
+  // can set SHOW/HIDE on their specific checkpoints.
+  const decisionCp = profile.decisionCheckpointId
+    ? INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId]
+    : undefined;
   const specificCps = profile.specificCheckpointIds
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
     .filter((cp): cp is InquiryCheckpoint => !!cp);
@@ -36,8 +40,8 @@ function toM3Section(inquiryId: string): M3SectionData | null {
     inquiryId,
     label: profile.label,
     decisionCheckpointId: profile.decisionCheckpointId,
-    decisionLabel: decisionCp.label,
-    decisionQuestions: decisionCp.questions ?? [],
+    decisionLabel: decisionCp?.label ?? "",
+    decisionQuestions: decisionCp?.questions ?? [],
     specificCheckpoints: specificCps.map((cp) => ({
       id: cp.id,
       label: cp.label,
