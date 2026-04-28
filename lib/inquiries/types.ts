@@ -623,6 +623,13 @@ export type InquiryProfileV2 = {
    * Nur in Profilen gesetzt, für die der M1B/M3-Pilot aktiv ist.
    */
   responseGoals?: ResponseGoal[];
+  /**
+   * Anzeigereihenfolge in der M1-Profilauswahl (Neue Anfrage).
+   *
+   * Niedrigere Zahl = weiter oben. Profile ohne dieses Feld erscheinen am Ende.
+   * Hat keinen Einfluss auf Renderer, Resolver, M2, M3 oder M5.
+   */
+  displayOrder?: number;
 };
 
 /**

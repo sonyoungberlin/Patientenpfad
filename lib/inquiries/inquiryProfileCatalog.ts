@@ -40,6 +40,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   AU: {
     id: "AU",
     label: "AU / Arbeitsunfähigkeitsbescheinigung",
+    displayOrder: 30,
     decisionCheckpointId: "AU_DECISION",
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
@@ -194,6 +195,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   PRESCRIPTION: {
     id: "PRESCRIPTION",
     label: "Rezept",
+    displayOrder: 40,
     decisionCheckpointId: "PRESCRIPTION_DECISION",
     specificCheckpointIds: [
       "PRESCRIPTION_STATUTORY_POSSIBLE",
@@ -480,6 +482,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   LAB: {
     id: "LAB",
     label: "Labor",
+    displayOrder: 80,
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
       "LAB_INTERNAL_ORDER",
@@ -614,6 +617,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   SAMPLE_COLLECTION: {
     id: "SAMPLE_COLLECTION",
     label: "Urin- und Stuhlprobe",
+    displayOrder: 90,
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
     specificCheckpointIds: [],
     boundGlobalCheckpointIds: [
@@ -726,6 +730,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   ACUTE_CARE: {
     id: "ACUTE_CARE",
     label: "Akuttermin / offene Sprechstunde",
+    displayOrder: 10,
     decisionCheckpointId: "ACUTE_CARE_DECISION",
     specificCheckpointIds: [
       "ACUTE_PURPOSE",
@@ -834,6 +839,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   REFERRAL: {
     id: "REFERRAL",
     label: "Überweisung",
+    displayOrder: 60,
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [
       "REF_PSYCHOTHERAPY_FIRST_STEP",
@@ -948,6 +954,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   IMMUNIZATION: {
     id: "IMMUNIZATION",
     label: "Impfung",
+    displayOrder: 70,
     decisionCheckpointId: "IMMUNIZATION_DECISION",
     specificCheckpointIds: [
       "IMMUNIZATION_STATUS_UNCLEAR",
@@ -1062,6 +1069,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   APPOINTMENT: {
     id: "APPOINTMENT",
     label: "Termin",
+    displayOrder: 20,
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "APPOINTMENT_WRONG_TYPE",
@@ -1198,6 +1206,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   TECH_SUPPORT: {
     id: "TECH_SUPPORT",
     label: "Technische Probleme / Digitale Infrastruktur",
+    displayOrder: 120,
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "TECH_VIDEO_NOT_WORKING",
@@ -1283,6 +1292,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   ONBOARDING: {
     id: "ONBOARDING",
     label: "Patientenaufnahme / Registrierung",
+    displayOrder: 100,
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "ONBOARDING_DATA_INCOMPLETE",
@@ -1376,6 +1386,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   BILLING: {
     id: "BILLING",
     label: "Abrechnung",
+    displayOrder: 110,
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "BILLING_COST_NOT_COVERED",
@@ -1478,6 +1489,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
   MEDICAL_DOCUMENTS: {
     id: "MEDICAL_DOCUMENTS",
     label: "Atteste / Bescheinigungen",
+    displayOrder: 50,
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
     specificCheckpointIds: [
       "MEDICAL_DOCUMENT_INFO_MISSING",

@@ -13,10 +13,12 @@ export default async function InquiryNewPage() {
     redirect("/");
   }
 
-  const profiles = Object.values(INQUIRY_PROFILE_CATALOG_V2).map((p) => ({
-    id: p.id,
-    label: p.label,
-  }));
+  const profiles = Object.values(INQUIRY_PROFILE_CATALOG_V2)
+    .sort((a, b) => (a.displayOrder ?? Infinity) - (b.displayOrder ?? Infinity))
+    .map((p) => ({
+      id: p.id,
+      label: p.label,
+    }));
 
   return (
     <main>
