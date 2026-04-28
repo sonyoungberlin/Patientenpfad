@@ -486,6 +486,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_EXTERNAL_REFERRAL",
       "LAB_EXTERNAL_DOCUMENT_PRESENT",
       "LAB_SELF_PAYER_IGEL",
+      "LAB_MPU_EXCLUSION",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
@@ -836,6 +837,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [
       "REF_PSYCHOTHERAPY_FIRST_STEP",
+      "REF_SPECIALTY_REQUIRED",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",

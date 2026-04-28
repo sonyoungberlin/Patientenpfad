@@ -1650,8 +1650,9 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(labProfile.specificCheckpointIds).toHaveLength(4);
+    expect(labProfile.specificCheckpointIds).toHaveLength(5);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1804,13 +1805,14 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_MPU_EXCLUSION YES → kein Output in attachedParagraphs (ungebunden)", () => {
+  it("LAB_MPU_EXCLUSION YES → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("MPU");
   });
 });
 
@@ -2160,17 +2162,17 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("4 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
+  it("3 ehemals gebundene SPECIFIC Checkpoints sind im Katalog, aber nicht mehr an REFERRAL specificCheckpointIds gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
-      "REF_SPECIALTY_REQUIRED",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(1);
+    expect(profile.specificCheckpointIds).toHaveLength(2);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
+    expect(profile.specificCheckpointIds).toContain("REF_SPECIALTY_REQUIRED");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
@@ -2239,15 +2241,6 @@ describe("REFERRAL-Profil – nicht migrierte SPECIFIC Checkpoints → kein Outp
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("REF_SPECIALTY_REQUIRED YES → kein Output in attachedParagraphs (ungebunden)", () => {
-    const result = renderInquiryResponseFromSections([
-      makeReferralSection({
-        checkpointStatuses: { REF_SPECIALTY_REQUIRED: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
   it("REF_DOCTOR_CONTACT_REQUIRED NO → kein Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeReferralSection({
@@ -2255,6 +2248,18 @@ describe("REFERRAL-Profil – nicht migrierte SPECIFIC Checkpoints → kein Outp
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("REFERRAL-Profil – gebundene SPECIFIC Checkpoints", () => {
+  it("REF_SPECIALTY_REQUIRED YES → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_SPECIALTY_REQUIRED: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Fachrichtung");
   });
 
   it("REF_SPECIALTY_REQUIRED NO → kein Text in attachedParagraphs", () => {
