@@ -487,7 +487,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "LAB_INTERNAL_ORDER",
       "LAB_EXTERNAL_REFERRAL",
-      "LAB_EXTERNAL_DOCUMENT_PRESENT",
       "LAB_MPU_EXCLUSION",
     ],
     boundGlobalCheckpointIds: [

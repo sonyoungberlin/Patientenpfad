@@ -648,11 +648,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_EXTERNAL_REFERRAL-Q1", text: "Liegt eine Überweisung eines Facharztes vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\n\nBringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit, damit die angeforderten Werte korrekt durchgeführt werden können.",
-      [ExplanationStatus.NO]: "",
+      [ExplanationStatus.YES]: "Eine Überweisung Ihres Facharztes liegt vor.\n\nBitte buchen Sie einen Termin für individuelle Laborwerte.\nBringen Sie die Überweisung im Original zum Termin mit – nur mit gültiger Originalüberweisung entfällt eine Selbstzahlerleistung.",
+      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung auf Basis einer Facharzt-Überweisung benötigen wir das Original-Dokument zum Termin.\n\nLiegt keine gültige Überweisung vor, wird die Leistung als Selbstzahler abgerechnet.",
     },
   },
 
+  /** @deprecated Konsolidiert in LAB_EXTERNAL_REFERRAL. Nicht mehr in LAB.specificCheckpointIds. */
   LAB_EXTERNAL_DOCUMENT_PRESENT: {
     id: "LAB_EXTERNAL_DOCUMENT_PRESENT",
     label: "Überweisungsdokument vorhanden",
@@ -1668,7 +1669,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister oder ein Partnerlabor. Sie erhalten die Rechnung direkt von dort.",
+        "Die Rechnung erhalten Sie von einem externen Abrechnungsdienstleister oder einem Partnerlabor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {

@@ -1746,13 +1746,13 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
   it("LAB-Profil bindet die erwarteten Specific Checkpoints", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER");
     expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_REFERRAL");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAYER_IGEL");
     expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_BILLING");
-    expect(labProfile.specificCheckpointIds).toHaveLength(4);
+    expect(labProfile.specificCheckpointIds).toHaveLength(3);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {

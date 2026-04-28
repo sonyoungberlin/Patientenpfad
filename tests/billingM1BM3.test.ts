@@ -373,7 +373,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Abrechnungsdienstleister");
   });
 
-  it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text enthält 'externen Abrechnungsdienstleister oder ein Partnerlabor'", () => {
+  it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text enthält 'Rechnung erhalten Sie'", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -383,7 +383,8 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("externen Abrechnungsdienstleister oder ein Partnerlabor");
+    expect(paragraphs).toContain("Rechnung erhalten Sie");
+    expect(paragraphs).not.toContain("Abrechnung erfolgt");
   });
 
   it("BILLING_ADDRESS_MISSING YES + SHOW → Text erscheint", () => {
