@@ -949,7 +949,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "IMMUNIZATION_DECISION",
     specificCheckpointIds: [
       "IMMUNIZATION_STATUS_UNCLEAR",
-      "IMMUNIZATION_PASS_MISSING",
       "IMMUNIZATION_TRAVEL_MEDICINE",
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
     ],
@@ -1521,7 +1520,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
     specificCheckpointIds: [
       "MEDICAL_DOCUMENT_INFO_MISSING",
-      "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
       "MEDICAL_DOCUMENT_PROCESS_INFO",
     ],

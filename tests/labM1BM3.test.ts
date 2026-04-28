@@ -387,6 +387,40 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
     expect(allText).toContain("Selbstzahlerleistung");
   });
 
+  it("LAB_EXTERNAL_REFERRAL: YES + SHOW enthält Terminbuchen-Hinweis", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_EXTERNAL_REFERRAL: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_EXTERNAL_REFERRAL: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).toContain("Bitte buchen Sie einen Termin für individuelle Laborwerte");
+  });
+
+  it("LAB_EXTERNAL_REFERRAL: YES-Text enthält nicht mehr den Bestätigungssatz 'Eine Überweisung Ihres Facharztes liegt vor'", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_EXTERNAL_REFERRAL: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_EXTERNAL_REFERRAL: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).not.toContain("Eine Überweisung Ihres Facharztes liegt vor");
+  });
+
   it("LAB_EXTERNAL_REFERRAL: NO + SHOW enthält Original-Dokument-Anforderung und Selbstzahler-Hinweis", () => {
     const result = renderInquiryResponseFromSections([
       {

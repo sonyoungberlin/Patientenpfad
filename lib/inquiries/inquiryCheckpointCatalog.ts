@@ -648,7 +648,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_EXTERNAL_REFERRAL-Q1", text: "Liegt eine Überweisung eines Facharztes vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Eine Überweisung Ihres Facharztes liegt vor.\n\nBitte buchen Sie einen Termin für individuelle Laborwerte.\nBringen Sie die Überweisung im Original zum Termin mit – nur mit gültiger Originalüberweisung entfällt eine Selbstzahlerleistung.",
+      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\nBringen Sie die Überweisung im Original zum Termin mit – nur mit gültiger Originalüberweisung entfällt eine Selbstzahlerleistung.",
       [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung auf Basis einer Facharzt-Überweisung benötigen wir das Original-Dokument zum Termin.\n\nLiegt keine gültige Überweisung vor, wird die Leistung als Selbstzahler abgerechnet.",
     },
   },
@@ -1407,6 +1407,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Vorbereitender Impfpass-Hinweis – nicht mehr in IMMUNIZATION.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   IMMUNIZATION_PASS_MISSING: {
     id: "IMMUNIZATION_PASS_MISSING",
     label: "Impfpass fehlt",
@@ -2032,6 +2033,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Text zu unscharf – nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   MEDICAL_DOCUMENT_DOCUMENTATION_MISSING: {
     id: "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
     label: "Vorhandene Befunde / Nachweise fehlen",

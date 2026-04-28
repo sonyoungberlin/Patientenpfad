@@ -313,7 +313,6 @@ describe("IMMUNIZATION_DECISION Checkpoint", () => {
 
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "IMMUNIZATION_STATUS_UNCLEAR",
-  "IMMUNIZATION_PASS_MISSING",
   "IMMUNIZATION_TRAVEL_MEDICINE",
   "IMMUNIZATION_RISK_REVIEW_REQUIRED",
 ] as const;
@@ -349,10 +348,18 @@ describe("IMMUNIZATION Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_RISK_REVIEW_REQUIRED"].specificRole).toBe("MEDICAL_REVIEW_REQUIRED");
   });
 
-  it("IMMUNIZATION-Profil referenziert alle vier neuen Specific-Checkpoints", () => {
+  it("IMMUNIZATION-Profil referenziert alle drei aktiven Specific-Checkpoints", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(IMMUNIZATION.specificCheckpointIds).toContain(id);
     }
+  });
+
+  it("IMMUNIZATION_PASS_MISSING ist nicht mehr in specificCheckpointIds des Profils (deprecated)", () => {
+    expect(IMMUNIZATION.specificCheckpointIds).not.toContain("IMMUNIZATION_PASS_MISSING");
+  });
+
+  it("IMMUNIZATION_PASS_MISSING ist im Katalog noch vorhanden (deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_PASS_MISSING"]).toBeDefined();
   });
 });
 
@@ -402,7 +409,7 @@ describe("IMMUNIZATION Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("bisher durchgeführten Impfungen");
   });
 
-  it("IMMUNIZATION_PASS_MISSING YES + SHOW → Impfpass-Text erscheint", () => {
+  it("IMMUNIZATION_PASS_MISSING YES + SHOW → kein Text (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "IMMUNIZATION",
@@ -412,7 +419,8 @@ describe("IMMUNIZATION Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Impfpass");
+    // Checkpoint ist @deprecated und nicht mehr im Profil → kein Output
+    expect(paragraphs).not.toContain("Impfpass oder ein anderer Impfnachweis");
   });
 
   it("IMMUNIZATION_TRAVEL_MEDICINE YES + SHOW → Reiseimpfung-Text erscheint", () => {

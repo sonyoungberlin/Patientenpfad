@@ -330,7 +330,6 @@ describe("MEDICAL_DOCUMENTS_DECISION Checkpoint", () => {
 
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "MEDICAL_DOCUMENT_INFO_MISSING",
-  "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
   "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
   "MEDICAL_DOCUMENT_PROCESS_INFO",
 ] as const;
@@ -388,10 +387,18 @@ describe("MEDICAL_DOCUMENTS Specific-Checkpoints – Existenz und Struktur", () 
     );
   });
 
-  it("MEDICAL_DOCUMENTS-Profil referenziert alle vier verbleibenden Specific-Checkpoints", () => {
+  it("MEDICAL_DOCUMENTS-Profil referenziert alle drei verbleibenden Specific-Checkpoints", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(MEDICAL_DOCUMENTS.specificCheckpointIds).toContain(id);
     }
+  });
+
+  it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING ist nicht mehr in specificCheckpointIds des Profils (deprecated)", () => {
+    expect(MEDICAL_DOCUMENTS.specificCheckpointIds).not.toContain("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING");
+  });
+
+  it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING ist im Katalog noch vorhanden (deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_DOCUMENTATION_MISSING"]).toBeDefined();
   });
 });
 
@@ -473,7 +480,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("wofür das Attest benötigt wird");
   });
 
-  it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING YES + SHOW → Befunde-fehlen-Text erscheint", () => {
+  it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING YES + SHOW → kein Text (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "MEDICAL_DOCUMENTS",
@@ -485,7 +492,8 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Befunde oder Nachweise");
+    // Checkpoint ist @deprecated und nicht mehr im Profil → kein Output
+    expect(paragraphs).not.toContain("Befunde oder Nachweise");
   });
 
   it("MEDICAL_DOCUMENT_PRIVATE_SERVICE YES + SHOW → Selbstzahler-Text erscheint", () => {
