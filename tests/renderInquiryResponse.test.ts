@@ -1748,11 +1748,11 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_REFERRAL");
     expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAYER_IGEL");
     expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_BILLING");
-    expect(labProfile.specificCheckpointIds).toHaveLength(5);
+    expect(labProfile.specificCheckpointIds).toHaveLength(4);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1887,13 +1887,13 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_SELF_PAYER_IGEL YES → Output in attachedParagraphs", () => {
+  it("LAB_SELF_PAYER_IGEL YES → kein Output in attachedParagraphs (@deprecated, nicht mehr in LAB.specificCheckpointIds)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain("Blutuntersuchungen ohne konkreten medizinischen Anlass oder außerhalb der gesetzlichen Vorsorgefristen sind Selbstzahlerleistungen (IGeL). Die Abrechnung dieser Werte erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ); Sie erhalten die Rechnung hierfür direkt von unserem Partnerlabor.");
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
   it("LAB_DISCUSSION_PROCESS_CODE YES → kein Output in attachedParagraphs (ungebunden)", () => {
@@ -2226,11 +2226,11 @@ describe("SAMPLE_COLLECTION-Profil – GLOBALs entfernt", () => {
   it("LAB-Profil bleibt durch SAMPLE_COLLECTION unberührt", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
-        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
+        checkpointStatuses: { LAB_MPU_EXCLUSION: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Blutuntersuchungen ohne konkreten medizinischen Anlass oder außerhalb der gesetzlichen Vorsorgefristen sind Selbstzahlerleistungen (IGeL). Die Abrechnung dieser Werte erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ); Sie erhalten die Rechnung hierfür direkt von unserem Partnerlabor.",
+      "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
     );
   });
 });
