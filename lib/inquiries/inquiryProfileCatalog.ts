@@ -1290,6 +1290,32 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DOCUMENT_UPLOAD",
       "TECHNICAL_ISSUE",
     ],
+    actionGuidanceRules: [
+      // DOCUMENT_UPLOAD empfehlen, wenn GKV-Versicherungsnachweis fehlt
+      {
+        id: "ONBOARDING_GKV_DOCUMENT_UPLOAD_RECOMMENDED",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "ONBOARDING",
+        when: {
+          allOf: [
+            { checkpointId: "ONBOARDING_GKV_DOCUMENT_MISSING", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // DOCUMENT_UPLOAD empfehlen, wenn PKV-Unterlagen (Identitätsnachweis/PAS-Formular) fehlen
+      {
+        id: "ONBOARDING_PKV_DOCUMENT_UPLOAD_RECOMMENDED",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "ONBOARDING",
+        when: {
+          allOf: [
+            { checkpointId: "ONBOARDING_PKV_PAS_MISSING", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+    ],
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -1349,7 +1375,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "ISSUE_BLOCKED_MISSING_INFO",
         label: "Daten / Dokumente fehlen",
         relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: [
+          "ONBOARDING_GKV_DOCUMENT_UPLOAD_RECOMMENDED",
+          "ONBOARDING_PKV_DOCUMENT_UPLOAD_RECOMMENDED",
+        ],
       },
       {
         id: "ISSUE_BLOCKED_EXTERNAL",
@@ -1388,6 +1417,20 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
       "DOCUMENT_UPLOAD",
+    ],
+    actionGuidanceRules: [
+      // DOCUMENT_UPLOAD empfehlen, wenn Abrechnungsunterlagen fehlen
+      {
+        id: "BILLING_DOCUMENT_UPLOAD_RECOMMENDED",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "BILLING",
+        when: {
+          allOf: [
+            { checkpointId: "BILLING_DOCUMENT_MISSING", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
     ],
 
     // -----------------------------------------------------------------------
@@ -1454,7 +1497,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "ISSUE_BLOCKED_MISSING_INFO",
         label: "Daten / Dokumente fehlen",
         relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: ["BILLING_DOCUMENT_UPLOAD_RECOMMENDED"],
       },
       {
         id: "MEDICAL_REVIEW_NEEDED",

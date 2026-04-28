@@ -1653,7 +1653,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Versichertenkarte oder Abrechnungsunterlagen). Bitte reichen Sie diese ein.",
+        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Gesundheitskarte oder Privatärztlichen Abrechnungsschein).",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1866,7 +1866,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis. Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse zu.",
+        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis, z. B. Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
