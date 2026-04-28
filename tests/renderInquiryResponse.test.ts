@@ -993,6 +993,65 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// PRESCRIPTION – GLOBAL_STATE nicht durch SHOW/HIDE-Gate blockiert (Renderer-Bug-Fix)
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION – GLOBAL_STATE wird durch explanationOutputStatuses nicht blockiert", () => {
+  /** Minimale PRESCRIPTION-Section mit IS_CHRONIC_PATIENT und MCR auf YES. */
+  function makePrescriptionSection(overrides: Partial<InquirySection> = {}): InquirySection {
+    return {
+      inquiryId: "PRESCRIPTION",
+      decisionStatus: DecisionStatus.POSSIBLE,
+      checkpointStatuses: {
+        IS_CHRONIC_PATIENT: ExplanationStatus.YES,
+        MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+      },
+      ...overrides,
+    };
+  }
+
+  it("IS_CHRONIC YES + MCR YES + MCR SHOW → IS_CHRONIC-Hinweis UND MCR-Hinweis erscheinen", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        explanationOutputStatuses: {
+          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const texts = result.sections[0].attachedParagraphs;
+    expect(texts.some((t) => t.includes("Dauermedikation"))).toBe(true);
+    expect(texts.some((t) => t.includes("ärztliche Konsultation"))).toBe(true);
+  });
+
+  it("IS_CHRONIC YES + MCR YES + MCR HIDE → IS_CHRONIC-Hinweis erscheint, MCR nicht", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        explanationOutputStatuses: {
+          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const texts = result.sections[0].attachedParagraphs;
+    expect(texts.some((t) => t.includes("Dauermedikation"))).toBe(true);
+    expect(texts.some((t) => t.includes("ärztliche Konsultation"))).toBe(false);
+  });
+
+  it("GLOBAL MODULAR ohne SHOW bleibt verborgen, wenn explanationOutputStatuses vorhanden ist", () => {
+    // explanationOutputStatuses ist gesetzt, enthält MCR aber nicht → MCR darf nicht erscheinen
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: {
+          MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const texts = result.sections[0].attachedParagraphs;
+    expect(texts.some((t) => t.includes("ärztliche Konsultation"))).toBe(false);
+  });
+});
+
 describe("AU_DECISION – questions als Klärungshilfe", () => {
   it("AU_DECISION hat genau zwei questions (Beschwerden/Diagnose und Langzeit-AU)", () => {
     const auDecision = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DECISION"];

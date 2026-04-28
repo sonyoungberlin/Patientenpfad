@@ -265,9 +265,11 @@ export function renderInquiryResponseFromSections(
       const status = section.checkpointStatuses[checkpointId];
       if (status !== ExplanationStatus.YES) continue;
 
-      // M3 SHOW/HIDE-Gate: wenn explanationOutputStatuses vorhanden, nur bei SHOW ausgeben.
-      // Ohne gespeicherte outputStatuses gilt Backward-Compat: YES → Ausgabe.
-      if (section.explanationOutputStatuses) {
+      // M3 SHOW/HIDE-Gate: nur für MODULAR-Checkpoints anwenden.
+      // GLOBAL_STATE-Checkpoints erscheinen nie in M3 und haben daher keinen SHOW/HIDE-Status.
+      // Sie werden ausschließlich durch M2 YES gesteuert und dürfen nicht durch ein fehlendes
+      // explanationOutputStatuses-Entry blockiert werden.
+      if (checkpoint.classification === "MODULAR" && section.explanationOutputStatuses) {
         if (section.explanationOutputStatuses[checkpointId] !== ExplanationOutputStatus.SHOW) continue;
       }
 
