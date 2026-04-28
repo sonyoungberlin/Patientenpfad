@@ -790,13 +790,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     id: "MEDICAL_CONSULTATION_REQUIRED",
     label: "Ärztliche Konsultation erforderlich",
     kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
+    scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    classification: "MODULAR",
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {},
   },
 
   // ---- GLOBAL ACTIONS ----
@@ -1169,18 +1167,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     id: "ACUTE_OPEN_CONSULTATION_INFO",
     label: "Offene Sprechstunde – Info",
     kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
+    scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
-    specificRole: "PROCESS_INFO" as SpecificRole,
-    questions: [
-      { id: "ACUTE_OPEN_CONSULTATION_INFO-Q1", text: "Soll ein Hinweis zur offenen Sprechstunde angezeigt werden?" },
-    ],
-    textByStatus: {
-      [ExplanationStatus.YES]:
-        "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
-      // NO: bewusst still – keine Erklärung nötig
-    },
+    question: "Soll ein Hinweis zur offenen Sprechstunde angezeigt werden?",
+    textByStatus: {},
   },
 
   CHRONIC_EXCLUSION: {

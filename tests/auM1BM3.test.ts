@@ -325,8 +325,8 @@ describe("ACUTE_OPEN_CONSULTATION_INFO – im AU-Profil referenziert", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
   });
 
-  it("ist in AU.specificCheckpointIds referenziert", () => {
-    expect(AU.specificCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  it("ist in AU.boundGlobalCheckpointIds referenziert", () => {
+    expect(AU.boundGlobalCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
   });
 });
 
