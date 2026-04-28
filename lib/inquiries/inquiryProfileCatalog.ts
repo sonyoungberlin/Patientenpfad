@@ -1298,7 +1298,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONBOARDING_DATA_INCOMPLETE",
       "ONBOARDING_DOCUMENT_MISSING",
       "ONBOARDING_IDENTITY_MISMATCH",
-      "ONBOARDING_PROCESS_REQUIRED",
       "ONBOARDING_WRONG_PRACTICE",
     ],
     boundGlobalCheckpointIds: [],

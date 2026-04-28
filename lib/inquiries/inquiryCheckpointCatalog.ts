@@ -1710,8 +1710,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Aufnahme als Patient benötigen wir noch vollständige Angaben (z. B. vollständiger Name, Geburtsdatum oder Kontaktdaten). Bitte ergänzen Sie die fehlenden Informationen.",
+        "Leider fehlen uns noch einige aktuelle Angaben in Ihrer Patientenakte. Um Ihr Anliegen bearbeiten zu können, bitten wir Sie, kurz unsere Online-Anamnese auszufüllen: https://mvz-kreuzberg.de/kurz-anamnese",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient zur Datenvervollständigung via Online-Anamnese aufgefordert.",
     },
   },
 
@@ -1727,8 +1730,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für Ihre Registrierung benötigen wir noch fehlende Dokumente (z. B. Versichertenkarte, Lichtbildausweis oder Versicherungsnachweis). Bitte legen Sie diese beim nächsten Kontakt vor.",
+        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch einen Versicherungsnachweis:\n\n- Gesetzlich versichert: Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.\n\n- Privat versichert: Bitte senden Sie uns einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versicherungs-/Identitätsnachweis angefordert (GKV/PKV).",
     },
   },
 
@@ -1744,11 +1750,15 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Angaben lassen keine eindeutige Zuordnung zu einem bestehenden Patientenprofil zu. Bitte klären Sie Ihre Identität über ein gültiges Ausweisdokument oder nehmen Sie persönlich Kontakt auf.",
+        "Leider konnten wir Ihre Anfrage in unserem System nicht eindeutig zuordnen. Möglicherweise gibt es eine Abweichung bei der Schreibweise Ihres Namens oder beim hinterlegten Geburtsdatum. Bitte teilen Sie uns beides noch einmal vollständig mit, damit wir Ihre Daten korrekt abgleichen können.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patientendaten nicht eindeutig zuordenbar; Abgleich angefordert.",
     },
   },
 
+  /** @deprecated Redundanter Baustein – Registrierungsablauf-Erklärung. Nicht mehr in specificCheckpointIds des ONBOARDING-Profils. Checkpoint bleibt im Katalog erhalten. */
   ONBOARDING_PROCESS_REQUIRED: {
     id: "ONBOARDING_PROCESS_REQUIRED",
     label: "Registrierungsablauf erklären",
@@ -1778,8 +1788,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Leider können wir Sie in unserer Praxis nicht aufnehmen, da Sie nicht in unserem Einzugsgebiet wohnen oder bereits bei einer anderen Praxis registriert sind. Bitte wenden Sie sich an eine Praxis in Ihrer Nähe.",
+        "Ich fürchte, hier liegt ein Missverständnis vor, da wir Sie nicht als Patient in unserem System finden können. Bitte prüfen Sie noch einmal, welche Praxis Sie kontaktieren wollten oder ob Sie eventuell bei einer Ärztin oder einem Arzt mit ähnlichem Namen in Behandlung sind.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Anfrage nicht zuordenbar; vermutlich falsche Praxis kontaktiert.",
     },
   },
 
