@@ -293,6 +293,14 @@ describe("LAB – neue Prozess-Checkpoints existieren im Catalog", () => {
   it("LAB_SELF_PAY ist nicht mehr in specificCheckpointIds des LAB-Profils (deprecated)", () => {
     expect(LAB.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
   });
+
+  it("LAB_EXTERNAL_BILLING ist im Katalog noch vorhanden (deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_EXTERNAL_BILLING"]).toBeDefined();
+  });
+
+  it("LAB_EXTERNAL_BILLING ist nicht mehr in specificCheckpointIds des LAB-Profils (deprecated)", () => {
+    expect(LAB.specificCheckpointIds).not.toContain("LAB_EXTERNAL_BILLING");
+  });
 });
 
 // ---------------------------------------------------------------------------

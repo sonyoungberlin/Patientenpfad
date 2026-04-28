@@ -1751,8 +1751,8 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
     expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_BILLING");
-    expect(labProfile.specificCheckpointIds).toHaveLength(6);
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_BILLING");
+    expect(labProfile.specificCheckpointIds).toHaveLength(5);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {

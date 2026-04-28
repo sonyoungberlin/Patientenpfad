@@ -1016,6 +1016,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Abrechnungsaussagen gehören in BILLING. Ersetzt durch BILLING_EXTERNAL_PROVIDER. Nicht mehr in LAB.specificCheckpointIds. */
   LAB_EXTERNAL_BILLING: {
     id: "LAB_EXTERNAL_BILLING",
     label: "Laborabrechnung über Partnerlabor",
@@ -1666,7 +1667,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister. Sie erhalten die Rechnung direkt von dort.",
+        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister oder ein Partnerlabor. Sie erhalten die Rechnung direkt von dort.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {

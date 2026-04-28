@@ -373,6 +373,19 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Abrechnungsdienstleister");
   });
 
+  it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text enthält 'externen Abrechnungsdienstleister oder ein Partnerlabor'", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_EXTERNAL_PROVIDER: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_EXTERNAL_PROVIDER: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("externen Abrechnungsdienstleister oder ein Partnerlabor");
+  });
+
   it("BILLING_ADDRESS_MISSING YES + SHOW → Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
