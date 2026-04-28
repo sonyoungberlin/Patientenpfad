@@ -5,6 +5,7 @@ import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalo
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import {
   InquiryCheckpointKind,
+  InquiryCheckpointScope,
   type InquiryCheckpoint,
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
@@ -36,6 +37,16 @@ function toM3Section(inquiryId: string): M3SectionData | null {
     actionCategory: cp.actionCategory,
     questions: cp.questions,
   }));
+  // GLOBAL MODULAR EXPLANATION-Checkpoints → in M3 als SHOW/HIDE-fähige Output-Bausteine
+  const boundGlobalOutputCps = (profile.boundGlobalCheckpointIds ?? [])
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter(
+      (cp): cp is InquiryCheckpoint =>
+        !!cp &&
+        cp.scope === InquiryCheckpointScope.GLOBAL &&
+        cp.kind === InquiryCheckpointKind.EXPLANATION &&
+        cp.classification === "MODULAR",
+    );
   return {
     inquiryId,
     label: profile.label,
@@ -49,6 +60,11 @@ function toM3Section(inquiryId: string): M3SectionData | null {
       questions: cp.questions,
     })),
     boundActionCheckpoints,
+    boundGlobalOutputCheckpoints: boundGlobalOutputCps.map((cp) => ({
+      id: cp.id,
+      label: cp.label,
+      kind: cp.kind,
+    })),
   };
 }
 

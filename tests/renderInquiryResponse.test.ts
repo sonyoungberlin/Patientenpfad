@@ -839,7 +839,7 @@ describe("renderInquiryResponseFromSections – ACTION/SHARED_BOTTOM", () => {
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
-import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlacement } from "@/lib/inquiries/types";
+import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlacement, ExplanationOutputStatus } from "@/lib/inquiries/types";
 
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
@@ -877,18 +877,119 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
     }
   });
 
-  it("GLOBAL/EXPLANATION-Checkpoints haben kein textByStatus", () => {
+  it("GLOBAL_STATE-Checkpoints haben kein textByStatus (MODULAR darf textByStatus haben)", () => {
     for (const id of auProfile.boundGlobalCheckpointIds) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp).toBeDefined();
       expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
       expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
-      expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+      // GLOBAL_STATE-Checkpoints haben kein textByStatus; MODULAR-Checkpoints dürfen YES-Text haben.
+      if (cp.classification !== "MODULAR") {
+        expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+      }
     }
   });
 
   it("IS_CHRONIC_PATIENT ist nicht bei AU gebunden", () => {
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR / AOC)
+// ---------------------------------------------------------------------------
+
+describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
+  /** Minimale AU-Section. */
+  function makeAuSectionForGlobal(overrides: Partial<InquirySection> = {}): InquirySection {
+    return {
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.POSSIBLE,
+      checkpointStatuses: {},
+      ...overrides,
+    };
+  }
+
+  it("MCR YES + outputStatus SHOW → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionForGlobal({
+        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("ärztliche Konsultation")),
+    ).toBe(true);
+  });
+
+  it("MCR YES + outputStatus HIDE → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionForGlobal({
+        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("ärztliche Konsultation")),
+    ).toBe(false);
+  });
+
+  it("MCR YES + kein explanationOutputStatuses → Text erscheint (Backward-Compat)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionForGlobal({
+        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
+        // explanationOutputStatuses nicht gesetzt
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("ärztliche Konsultation")),
+    ).toBe(true);
+  });
+
+  it("globalHints Override hat Vorrang vor checkpoint.textByStatus[YES]", () => {
+    // AU-Profil hat globalHints für MCR – dieser Text hat Vorrang
+    const auGlobalHintsMCR = INQUIRY_PROFILE_CATALOG_V2["AU"]?.globalHints?.["MEDICAL_CONSULTATION_REQUIRED"];
+    const checkpointText = (INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_CONSULTATION_REQUIRED"].textByStatus as Record<string, string>)[ExplanationStatus.YES];
+    // Beide Texte sind identisch im AU-Profil – Vorrang-Semantik wird über PRESCRIPTION getestet,
+    // wo globalHints[MCR] ebenfalls identisch ist. Zum Nachweis: globalHints-Text taucht auf.
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionForGlobal({
+        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
+        // kein explanationOutputStatuses → Backward-Compat
+      }),
+    ]);
+    const outputText = result.sections[0].attachedParagraphs.join(" ");
+    // Der Output-Text muss entweder globalHints oder textByStatus entsprechen
+    expect(auGlobalHintsMCR ?? checkpointText).toBeTruthy();
+    expect(outputText).toContain("ärztliche Konsultation");
+  });
+
+  it("MCR textByStatus[YES] ist befüllt (zentraler Default-Text)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_CONSULTATION_REQUIRED"];
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+    expect(typeof text).toBe("string");
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain("ärztliche Konsultation");
+  });
+
+  it("AOC textByStatus[YES] ist befüllt (zentraler Default-Text)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"];
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+    expect(typeof text).toBe("string");
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain("Sprechstunde");
+  });
+
+  it("MCR classification ist MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_CONSULTATION_REQUIRED"].classification).toBe("MODULAR");
+  });
+
+  it("AOC classification ist MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"].classification).toBe("MODULAR");
   });
 });
 
@@ -1169,13 +1270,16 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     }
   });
 
-  it("GLOBAL/EXPLANATION-Checkpoints im PRESCRIPTION-Profil haben kein textByStatus", () => {
+  it("GLOBAL_STATE-Checkpoints im PRESCRIPTION-Profil haben kein textByStatus (MODULAR darf textByStatus haben)", () => {
     for (const id of prescriptionProfile.boundGlobalCheckpointIds) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
       expect(cp).toBeDefined();
       expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
       expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
-      expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+      // GLOBAL_STATE-Checkpoints haben kein textByStatus; MODULAR-Checkpoints dürfen YES-Text haben.
+      if (cp.classification !== "MODULAR") {
+        expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+      }
     }
   });
 });

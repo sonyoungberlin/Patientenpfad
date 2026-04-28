@@ -794,7 +794,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
     question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
-    textByStatus: {},
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
   },
 
   // ---- GLOBAL ACTIONS ----
@@ -1171,7 +1174,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
     question: "Soll ein Hinweis zur offenen Sprechstunde angezeigt werden?",
-    textByStatus: {},
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
+    },
   },
 
   CHRONIC_EXCLUSION: {

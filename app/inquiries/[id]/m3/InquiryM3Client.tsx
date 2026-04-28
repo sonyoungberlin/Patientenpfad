@@ -34,6 +34,8 @@ export type M3SectionData = {
   specificCheckpoints: M3SpecificCheckpoint[];
   /** Profil-spezifische ACTION-Checkpoints (boundActionCheckpointIds) – in Aktionen/Infos. */
   boundActionCheckpoints: M3BoundActionData[];
+  /** GLOBAL MODULAR EXPLANATION-Checkpoints – in M3 als SHOW/HIDE-fähige Output-Bausteine. */
+  boundGlobalOutputCheckpoints?: M3SpecificCheckpoint[];
 };
 
 export type M3ActionData = {
@@ -226,7 +228,10 @@ export default function InquiryM3Client({
     () =>
       new Set(
         sections
-          .flatMap((s) => s.specificCheckpoints)
+          .flatMap((s) => [
+            ...s.specificCheckpoints,
+            ...(s.boundGlobalOutputCheckpoints ?? []),
+          ])
           .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
           .map((cp) => cp.id),
       ),
@@ -492,6 +497,38 @@ export default function InquiryM3Client({
                   </div>
                 );
               })}
+
+              {/* Globale Output-Bausteine (GLOBAL MODULAR EXPLANATION) */}
+              {(section.boundGlobalOutputCheckpoints ?? []).length > 0 && (
+                <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
+                  <div className="text-muted text-small" style={{ marginBottom: "0.35rem", fontStyle: "italic" }}>
+                    Globale Bausteine
+                  </div>
+                  {(section.boundGlobalOutputCheckpoints ?? []).map((cp) => (
+                    <div
+                      key={cp.id}
+                      style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                    >
+                      <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                      <StatusButtons
+                        checkpointId={cp.id}
+                        options={OUTPUT_OPTIONS}
+                        value={outputStatuses[cp.id]}
+                        onChange={setOutputStatus}
+                        disabled={false}
+                      />
+                      {outputStatuses[cp.id] === ExplanationOutputStatus.HIDE && (
+                        <div
+                          className="text-muted text-small"
+                          style={{ marginTop: "0.25rem", fontStyle: "italic" }}
+                        >
+                          keine Erklärung erforderlich
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           ))}
 
