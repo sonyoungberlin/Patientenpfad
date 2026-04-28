@@ -1479,7 +1479,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Atteste / Bescheinigungen",
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
     specificCheckpointIds: [
-      "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
       "MEDICAL_DOCUMENT_INFO_MISSING",
       "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",

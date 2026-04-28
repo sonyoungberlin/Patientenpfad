@@ -1791,6 +1791,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- MEDICAL_DOCUMENTS SPECIFIC EXPLANATIONS ----
 
+  /** @deprecated Nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Fachlich durch globales MEDICAL_CONSULTATION_REQUIRED ersetzt. */
   MEDICAL_DOCUMENT_REVIEW_REQUIRED: {
     id: "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
     label: "Ärztliche Einschätzung für Attest erforderlich",
