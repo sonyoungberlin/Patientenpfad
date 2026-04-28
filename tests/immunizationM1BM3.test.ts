@@ -462,3 +462,30 @@ describe("IMMUNIZATION Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("bisher durchgeführten Impfungen");
   });
 });
+
+// ---------------------------------------------------------------------------
+// IMMUNIZATION – TERMIN_PREPARATION_REQUIRED (neuer GLOBAL MODULAR Checkpoint)
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION – TERMIN_PREPARATION_REQUIRED", () => {
+  it("TERMIN_PREPARATION_REQUIRED ist in IMMUNIZATION.boundGlobalCheckpointIds enthalten", () => {
+    expect(IMMUNIZATION.boundGlobalCheckpointIds).toContain("TERMIN_PREPARATION_REQUIRED");
+  });
+
+  it("IMMUNIZATION.globalHints enthält Hinweis 'Impfpass' für TERMIN_PREPARATION_REQUIRED", () => {
+    expect(IMMUNIZATION.globalHints["TERMIN_PREPARATION_REQUIRED"]).toContain("Impfpass");
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"]).toBeDefined();
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED hat scope GLOBAL", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"].scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED hat leeres textByStatus – kein Text aus Checkpoint selbst", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"];
+    expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+  });
+});

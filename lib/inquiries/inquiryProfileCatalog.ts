@@ -489,9 +489,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
+      "TERMIN_PREPARATION_REQUIRED",
     ],
     globalHints: {
       MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+      TERMIN_PREPARATION_REQUIRED: "Bitte erscheinen Sie nüchtern zur Blutentnahme.",
     },
     boundActionCheckpointIds: [
       "LAB_FASTING_REQUIRED",
@@ -952,8 +954,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "IMMUNIZATION_TRAVEL_MEDICINE",
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
     ],
-    boundGlobalCheckpointIds: [],
-    globalHints: {},
+    boundGlobalCheckpointIds: [
+      "TERMIN_PREPARATION_REQUIRED",
+    ],
+    globalHints: {
+      TERMIN_PREPARATION_REQUIRED: "Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.",
+    },
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "ONLINE_ANAMNESIS",
@@ -1064,6 +1070,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_INFO",
+      "TERMIN_PREPARATION_REQUIRED",
     ],
     globalHints: {
       ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",

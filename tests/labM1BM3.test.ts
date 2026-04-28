@@ -496,3 +496,34 @@ describe("LAB – boundActionCheckpointIds", () => {
     expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
   });
 });
+
+// ---------------------------------------------------------------------------
+// LAB – TERMIN_PREPARATION_REQUIRED (neuer GLOBAL MODULAR Checkpoint)
+// ---------------------------------------------------------------------------
+
+describe("LAB – TERMIN_PREPARATION_REQUIRED", () => {
+  it("TERMIN_PREPARATION_REQUIRED ist in LAB.boundGlobalCheckpointIds enthalten", () => {
+    expect(LAB.boundGlobalCheckpointIds).toContain("TERMIN_PREPARATION_REQUIRED");
+  });
+
+  it("LAB.globalHints enthält Hinweis 'nüchtern' für TERMIN_PREPARATION_REQUIRED", () => {
+    expect(LAB.globalHints["TERMIN_PREPARATION_REQUIRED"]).toContain("nüchtern");
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"]).toBeDefined();
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED hat classification MODULAR", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"].classification).toBe("MODULAR");
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED hat scope GLOBAL", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"].scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED hat leeres textByStatus (kein eigener Text)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"];
+    expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+  });
+});

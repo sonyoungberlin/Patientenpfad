@@ -1763,7 +1763,8 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
     expect(labProfile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(1);
+    expect(labProfile.boundGlobalCheckpointIds).toContain("TERMIN_PREPARATION_REQUIRED");
+    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(2);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im LAB-Profil", () => {

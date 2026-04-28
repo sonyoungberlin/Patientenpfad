@@ -816,6 +816,24 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  TERMIN_PREPARATION_REQUIRED: {
+    id: "TERMIN_PREPARATION_REQUIRED",
+    label: "Terminvorbereitung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      {
+        id: "TERMIN_PREPARATION_REQUIRED-Q1",
+        text: "Gibt es für diesen Termin besondere Vorbereitungshinweise?",
+      },
+    ],
+    textByStatus: {
+      // bewusst leer – Inhalte kommen ausschließlich über globalHints
+    },
+  },
+
   // ---- GLOBAL ACTIONS ----
 
   DIGITAL_REQUEST: {
