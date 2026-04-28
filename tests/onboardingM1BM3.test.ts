@@ -45,11 +45,12 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bekannte Specific-Checkpoint-IDs (ONBOARDING_PROCESS_REQUIRED wurde als @deprecated entfernt)
+// Bekannte Specific-Checkpoint-IDs (ONBOARDING_PROCESS_REQUIRED und ONBOARDING_DOCUMENT_MISSING sind @deprecated und entfernt)
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "ONBOARDING_DATA_INCOMPLETE",
-  "ONBOARDING_DOCUMENT_MISSING",
+  "ONBOARDING_GKV_DOCUMENT_MISSING",
+  "ONBOARDING_PKV_PAS_MISSING",
   "ONBOARDING_IDENTITY_MISMATCH",
   "ONBOARDING_WRONG_PRACTICE",
 ] as const;
@@ -300,6 +301,14 @@ describe("ONBOARDING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DOCUMENT_MISSING"].specificRole).toBe("MISSING_DOCUMENT");
   });
 
+  it("ONBOARDING_GKV_DOCUMENT_MISSING hat specificRole MISSING_DOCUMENT", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_GKV_DOCUMENT_MISSING"].specificRole).toBe("MISSING_DOCUMENT");
+  });
+
+  it("ONBOARDING_PKV_PAS_MISSING hat specificRole MISSING_DOCUMENT", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_PKV_PAS_MISSING"].specificRole).toBe("MISSING_DOCUMENT");
+  });
+
   it("ONBOARDING_IDENTITY_MISMATCH hat specificRole MISSING_INFORMATION", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"].specificRole).toBe("MISSING_INFORMATION");
   });
@@ -312,11 +321,12 @@ describe("ONBOARDING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"].specificRole).toBe("EXTERNAL_RESPONSIBILITY");
   });
 
-  it("ONBOARDING-Profil referenziert genau vier Specific-Checkpoints (PROCESS_REQUIRED ist @deprecated und entfernt)", () => {
+  it("ONBOARDING-Profil referenziert genau fünf Specific-Checkpoints (PROCESS_REQUIRED und DOCUMENT_MISSING sind @deprecated und entfernt)", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(ONBOARDING.specificCheckpointIds).toContain(id);
     }
     expect(ONBOARDING.specificCheckpointIds).not.toContain("ONBOARDING_PROCESS_REQUIRED");
+    expect(ONBOARDING.specificCheckpointIds).not.toContain("ONBOARDING_DOCUMENT_MISSING");
   });
 });
 
@@ -338,13 +348,39 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Online-Anamnese");
   });
 
-  it("ONBOARDING_DOCUMENT_MISSING YES + SHOW → Text erscheint", () => {
+  it("ONBOARDING_DOCUMENT_MISSING ist @deprecated und nicht mehr im Profil – kein Renderer-Output", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "ONBOARDING",
         decisionStatus: DecisionStatus.DISABLED,
         checkpointStatuses: { ONBOARDING_DOCUMENT_MISSING: ExplanationStatus.YES },
         explanationOutputStatuses: { ONBOARDING_DOCUMENT_MISSING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("PAS-Formular");
+  });
+
+  it("ONBOARDING_GKV_DOCUMENT_MISSING YES + SHOW → Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "ONBOARDING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { ONBOARDING_GKV_DOCUMENT_MISSING: ExplanationStatus.YES },
+        explanationOutputStatuses: { ONBOARDING_GKV_DOCUMENT_MISSING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Gesundheitskarte");
+  });
+
+  it("ONBOARDING_PKV_PAS_MISSING YES + SHOW → Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "ONBOARDING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { ONBOARDING_PKV_PAS_MISSING: ExplanationStatus.YES },
+        explanationOutputStatuses: { ONBOARDING_PKV_PAS_MISSING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
@@ -440,22 +476,58 @@ describe("ONBOARDING Specific-Checkpoints – docByStatus", () => {
     expect(cp.docByStatus![ExplanationStatus.YES]).toContain("Online-Anamnese");
   });
 
-  it("ONBOARDING_DOCUMENT_MISSING hat docByStatus[YES] befüllt", () => {
+  it("ONBOARDING_DOCUMENT_MISSING (@deprecated) hat docByStatus[YES] befüllt", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DOCUMENT_MISSING"];
     expect(cp.docByStatus).toBeDefined();
     expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
   });
 
-  it("ONBOARDING_DOCUMENT_MISSING docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
+  it("ONBOARDING_DOCUMENT_MISSING (@deprecated) docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DOCUMENT_MISSING"];
     expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
       cp.textByStatus[ExplanationStatus.YES]!.length,
     );
   });
 
-  it("ONBOARDING_DOCUMENT_MISSING docByStatus[YES] enthält 'GKV/PKV'", () => {
+  it("ONBOARDING_DOCUMENT_MISSING (@deprecated) docByStatus[YES] enthält 'GKV/PKV'", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DOCUMENT_MISSING"];
     expect(cp.docByStatus![ExplanationStatus.YES]).toContain("GKV/PKV");
+  });
+
+  it("ONBOARDING_GKV_DOCUMENT_MISSING hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_GKV_DOCUMENT_MISSING"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("ONBOARDING_GKV_DOCUMENT_MISSING docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_GKV_DOCUMENT_MISSING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
+      cp.textByStatus[ExplanationStatus.YES]!.length,
+    );
+  });
+
+  it("ONBOARDING_GKV_DOCUMENT_MISSING docByStatus[YES] enthält 'GKV'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_GKV_DOCUMENT_MISSING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]).toContain("GKV");
+  });
+
+  it("ONBOARDING_PKV_PAS_MISSING hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_PKV_PAS_MISSING"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("ONBOARDING_PKV_PAS_MISSING docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_PKV_PAS_MISSING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
+      cp.textByStatus[ExplanationStatus.YES]!.length,
+    );
+  });
+
+  it("ONBOARDING_PKV_PAS_MISSING docByStatus[YES] enthält 'PAS-Formular'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_PKV_PAS_MISSING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]).toContain("PAS-Formular");
   });
 
   it("ONBOARDING_IDENTITY_MISMATCH hat docByStatus[YES] befüllt", () => {

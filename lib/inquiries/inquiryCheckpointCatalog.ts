@@ -1826,6 +1826,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Kombinierter GKV/PKV-Nachweis-Baustein – abgelöst durch ONBOARDING_GKV_DOCUMENT_MISSING und ONBOARDING_PKV_PAS_MISSING. Nicht mehr in specificCheckpointIds des ONBOARDING-Profils. Checkpoint bleibt im Katalog erhalten. */
   ONBOARDING_DOCUMENT_MISSING: {
     id: "ONBOARDING_DOCUMENT_MISSING",
     label: "Identitäts- oder Versicherungsnachweis fehlt",
@@ -1843,6 +1844,46 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Versicherungs-/Identitätsnachweis angefordert (GKV/PKV).",
+    },
+  },
+
+  ONBOARDING_GKV_DOCUMENT_MISSING: {
+    id: "ONBOARDING_GKV_DOCUMENT_MISSING",
+    label: "Versicherungsnachweis GKV fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_GKV_DOCUMENT_MISSING-Q1", text: "Fehlt bei gesetzlich Versicherten ein gültiger Versicherungsnachweis?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis. Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse zu.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versicherungsnachweis GKV angefordert.",
+    },
+  },
+
+  ONBOARDING_PKV_PAS_MISSING: {
+    id: "ONBOARDING_PKV_PAS_MISSING",
+    label: "Unterlagen Privatpatient fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_PKV_PAS_MISSING-Q1", text: "Fehlen bei privat Versicherten Identitätsnachweis oder PAS-Formular?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Als privat versicherte Patientin oder privat versicherter Patient benötigen wir für die korrekte Abrechnung einmalig einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Identitätsnachweis/PAS-Formular für Privatabrechnung angefordert.",
     },
   },
 

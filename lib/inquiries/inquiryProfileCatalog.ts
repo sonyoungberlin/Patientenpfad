@@ -1297,7 +1297,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "ONBOARDING_DATA_INCOMPLETE",
-      "ONBOARDING_DOCUMENT_MISSING",
+      "ONBOARDING_GKV_DOCUMENT_MISSING",
+      "ONBOARDING_PKV_PAS_MISSING",
       "ONBOARDING_IDENTITY_MISMATCH",
       "ONBOARDING_WRONG_PRACTICE",
     ],
