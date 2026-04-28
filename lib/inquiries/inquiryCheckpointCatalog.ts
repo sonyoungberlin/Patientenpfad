@@ -1477,6 +1477,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Fachprozesswissen (z. B. Labor → Arzttermin) gehört ins jeweilige Fachprofil, nicht in APPOINTMENT. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_PROCESS_MULTI_STEP: {
     id: "APPOINTMENT_PROCESS_MULTI_STEP",
     label: "Mehrstufiger Ablauf erforderlich",
@@ -1528,6 +1529,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Dokumentenlogik gehört in das jeweilige Fachprofil (eGK → ONBOARDING; Befunde → MEDICAL_DOCUMENTS; Impfpass → IMMUNIZATION). Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_DOCUMENT_MISSING: {
     id: "APPOINTMENT_DOCUMENT_MISSING",
     label: "Dokument fehlt",
@@ -1545,6 +1547,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Fachliches Kanal-Urteil (körperliche Untersuchung, akute Beschwerden) ist abhängig vom konkreten Anliegen und gehört ins Fachprofil, nicht in APPOINTMENT. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_VIDEO_LIMITATIONS: {
     id: "APPOINTMENT_VIDEO_LIMITATIONS",
     label: "Videosprechstunde nicht geeignet",
@@ -1562,6 +1565,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Technische Voraussetzungen der Videosprechstunde (Kamera, Mikrofon, Link, Region) sind Technik-Infrastruktur und gehören in TECH_SUPPORT. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_VIDEO_REQUIREMENTS: {
     id: "APPOINTMENT_VIDEO_REQUIREMENTS",
     label: "Voraussetzungen Videosprechstunde",

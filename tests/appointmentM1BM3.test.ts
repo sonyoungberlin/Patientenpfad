@@ -49,16 +49,12 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bekannte Specific-Checkpoint-IDs
+// Bekannte Specific-Checkpoint-IDs (nach Termin-Brille-Cleanup: 3 statt 7)
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "APPOINTMENT_WRONG_TYPE",
-  "APPOINTMENT_PROCESS_MULTI_STEP",
-  "APPOINTMENT_PREPARATION_REQUIRED",
   "APPOINTMENT_DATA_INCOMPLETE",
-  "APPOINTMENT_DOCUMENT_MISSING",
-  "APPOINTMENT_VIDEO_LIMITATIONS",
-  "APPOINTMENT_VIDEO_REQUIREMENTS",
+  "APPOINTMENT_PREPARATION_REQUIRED",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -307,10 +303,6 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_WRONG_TYPE"].specificRole).toBe("CHANNEL_NOT_SUITABLE");
   });
 
-  it("APPOINTMENT_PROCESS_MULTI_STEP hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_PROCESS_MULTI_STEP"].specificRole).toBe("PROCESS_INFO");
-  });
-
   it("APPOINTMENT_PREPARATION_REQUIRED hat specificRole PROCESS_INFO", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_PREPARATION_REQUIRED"].specificRole).toBe("PROCESS_INFO");
   });
@@ -319,22 +311,14 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_DATA_INCOMPLETE"].specificRole).toBe("MISSING_INFORMATION");
   });
 
-  it("APPOINTMENT_DOCUMENT_MISSING hat specificRole MISSING_DOCUMENT", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_DOCUMENT_MISSING"].specificRole).toBe("MISSING_DOCUMENT");
-  });
-
-  it("APPOINTMENT_VIDEO_LIMITATIONS hat specificRole CHANNEL_NOT_SUITABLE", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_VIDEO_LIMITATIONS"].specificRole).toBe("CHANNEL_NOT_SUITABLE");
-  });
-
-  it("APPOINTMENT_VIDEO_REQUIREMENTS hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_VIDEO_REQUIREMENTS"].specificRole).toBe("PROCESS_INFO");
-  });
-
-  it("APPOINTMENT-Profil referenziert alle sieben Specific-Checkpoints", () => {
+  it("APPOINTMENT-Profil referenziert alle drei Specific-Checkpoints", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(APPOINTMENT.specificCheckpointIds).toContain(id);
     }
+  });
+
+  it("APPOINTMENT-Profil hat genau drei Specific-Checkpoints (Termin-Brille-Cleanup)", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(3);
   });
 });
 
@@ -356,7 +340,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("gebuchte Termintyp");
   });
 
-  it("APPOINTMENT_PROCESS_MULTI_STEP YES + SHOW → Text erscheint", () => {
+  it("APPOINTMENT_PROCESS_MULTI_STEP YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -366,7 +350,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("mehrere Schritte");
+    expect(paragraphs).not.toContain("mehrere Schritte");
   });
 
   it("APPOINTMENT_PREPARATION_REQUIRED YES + SHOW → Text erscheint", () => {
@@ -395,7 +379,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("weitere Angaben");
   });
 
-  it("APPOINTMENT_DOCUMENT_MISSING YES + SHOW → Text erscheint", () => {
+  it("APPOINTMENT_DOCUMENT_MISSING YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -405,7 +389,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("erforderlichen Unterlagen");
+    expect(paragraphs).not.toContain("erforderlichen Unterlagen");
   });
 
   it("APPOINTMENT_WRONG_TYPE HIDE → kein Text erscheint", () => {
@@ -421,7 +405,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("gebuchte Termintyp");
   });
 
-  it("APPOINTMENT_VIDEO_LIMITATIONS YES + SHOW → Text erscheint", () => {
+  it("APPOINTMENT_VIDEO_LIMITATIONS YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -431,10 +415,10 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Videosprechstunde");
+    expect(paragraphs).not.toContain("Videosprechstunde");
   });
 
-  it("APPOINTMENT_VIDEO_REQUIREMENTS YES + SHOW → Text erscheint", () => {
+  it("APPOINTMENT_VIDEO_REQUIREMENTS YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -444,7 +428,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Internetverbindung");
+    expect(paragraphs).not.toContain("Internetverbindung");
   });
 
   it("APPOINTMENT_VIDEO_LIMITATIONS HIDE → kein Text erscheint", () => {
@@ -459,4 +443,28 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).not.toContain("Videosprechstunde");
   });
+});
+
+// ---------------------------------------------------------------------------
+// 8. Deprecated Specific-Checkpoints (Termin-Brille-Cleanup)
+//    – existieren weiterhin im Katalog, sind aber NICHT mehr im Profil.
+// ---------------------------------------------------------------------------
+
+describe("APPOINTMENT – @deprecated Checkpoints (Termin-Brille-Cleanup)", () => {
+  const DEPRECATED_IDS = [
+    "APPOINTMENT_PROCESS_MULTI_STEP",
+    "APPOINTMENT_DOCUMENT_MISSING",
+    "APPOINTMENT_VIDEO_LIMITATIONS",
+    "APPOINTMENT_VIDEO_REQUIREMENTS",
+  ] as const;
+
+  for (const id of DEPRECATED_IDS) {
+    it(`${id} existiert noch im Katalog (kein Löschung, nur Deprecation)`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    });
+
+    it(`${id} ist NICHT mehr in APPOINTMENT.specificCheckpointIds`, () => {
+      expect(APPOINTMENT.specificCheckpointIds).not.toContain(id);
+    });
+  }
 });
