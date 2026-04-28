@@ -373,6 +373,19 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Abrechnungsdienstleister");
   });
 
+  it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text enthält 'externen Abrechnungsdienstleister oder ein Partnerlabor'", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_EXTERNAL_PROVIDER: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_EXTERNAL_PROVIDER: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("externen Abrechnungsdienstleister oder ein Partnerlabor");
+  });
+
   it("BILLING_ADDRESS_MISSING YES + SHOW → Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
@@ -581,3 +594,82 @@ describe("BILLING Specific-Checkpoints – docByStatus", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// 9. Labor-Selbstzahler: BILLING_COST_NOT_COVERED enthält IGeL/GOÄ-Aussagen
+// ---------------------------------------------------------------------------
+
+describe("BILLING_COST_NOT_COVERED – IGeL/GOÄ-Abdeckung (Ablösung von LAB_SELF_PAYER_IGEL)", () => {
+  it("BILLING_COST_NOT_COVERED YES + SHOW → Text enthält 'IGeL'", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_COST_NOT_COVERED: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_COST_NOT_COVERED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("IGeL");
+  });
+
+  it("BILLING_COST_NOT_COVERED YES + SHOW → Text enthält 'GOÄ'", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_COST_NOT_COVERED: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_COST_NOT_COVERED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("GOÄ");
+  });
+
+  it("BILLING_COST_NOT_COVERED docByStatus[YES] enthält 'IGeL'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_COST_NOT_COVERED"];
+    expect(cp.docByStatus![ExplanationStatus.YES]).toContain("IGeL");
+  });
+
+  it("Labor-Selbstzahler-Kombination (BILLING_COST_NOT_COVERED + BILLING_EXTERNAL_PROVIDER) → keine doppelte Kostenaussage", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          BILLING_COST_NOT_COVERED: ExplanationStatus.YES,
+          BILLING_EXTERNAL_PROVIDER: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          BILLING_COST_NOT_COVERED: ExplanationOutputStatus.SHOW,
+          BILLING_EXTERNAL_PROVIDER: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    const costParagraphs = paragraphs.filter(
+      (p) => p.includes("Krankenkasse") || p.includes("GOÄ"),
+    );
+    expect(costParagraphs).toHaveLength(1);
+  });
+
+  it("Labor-Selbstzahler-Kombination → enthält Partnerlabor-Hinweis (über BILLING_EXTERNAL_PROVIDER)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          BILLING_COST_NOT_COVERED: ExplanationStatus.YES,
+          BILLING_EXTERNAL_PROVIDER: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          BILLING_COST_NOT_COVERED: ExplanationOutputStatus.SHOW,
+          BILLING_EXTERNAL_PROVIDER: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections[0].attachedParagraphs.join(" ");
+    expect(allText).toContain("Partnerlabor");
+  });
+});
+

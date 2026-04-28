@@ -570,6 +570,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Abrechnungsaussagen gehören in BILLING. Ersetzt durch BILLING_COST_NOT_COVERED + BILLING_EXTERNAL_PROVIDER. Nicht mehr in LAB.specificCheckpointIds. */
   LAB_SELF_PAYER_IGEL: {
     id: "LAB_SELF_PAYER_IGEL",
     label: "Selbstzahlerleistung / IGeL",
@@ -1016,6 +1017,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Abrechnungsaussagen gehören in BILLING. Ersetzt durch BILLING_EXTERNAL_PROVIDER. Nicht mehr in LAB.specificCheckpointIds. */
   LAB_EXTERNAL_BILLING: {
     id: "LAB_EXTERNAL_BILLING",
     label: "Laborabrechnung über Partnerlabor",
@@ -1590,11 +1592,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen und ist selbst zu zahlen.",
+        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen (z. B. keine medizinische Indikation, individuelle Gesundheitsleistung / IGeL). Die Abrechnung erfolgt privat nach der GOÄ.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
-      [ExplanationStatus.YES]: "Leistung ist keine Kassenleistung (Selbstzahler).",
+      [ExplanationStatus.YES]: "Leistung ist keine Kassenleistung (Selbstzahler/IGeL).",
     },
   },
 
@@ -1666,7 +1668,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister. Sie erhalten die Rechnung direkt von dort.",
+        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister oder ein Partnerlabor. Sie erhalten die Rechnung direkt von dort.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {

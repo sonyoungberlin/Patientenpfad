@@ -488,9 +488,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_INTERNAL_ORDER",
       "LAB_EXTERNAL_REFERRAL",
       "LAB_EXTERNAL_DOCUMENT_PRESENT",
-      "LAB_SELF_PAYER_IGEL",
       "LAB_MPU_EXCLUSION",
-      "LAB_EXTERNAL_BILLING",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",

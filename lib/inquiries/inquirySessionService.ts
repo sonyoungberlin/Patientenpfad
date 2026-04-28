@@ -123,6 +123,11 @@ export function buildInitialInquirySectionSnapshot(
 ): InquirySection[] {
   return inquiryIds
     .filter((id) => id in INQUIRY_PROFILE_CATALOG_V2)
+    .sort(
+      (a, b) =>
+        (INQUIRY_PROFILE_CATALOG_V2[a].displayOrder ?? Infinity) -
+        (INQUIRY_PROFILE_CATALOG_V2[b].displayOrder ?? Infinity),
+    )
     .map((id) => ({
       inquiryId: id,
       decisionStatus: DecisionStatus.DISABLED,
