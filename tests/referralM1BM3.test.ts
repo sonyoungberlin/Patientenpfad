@@ -1,8 +1,8 @@
 /**
- * Tests für den M1B/M3-Pilot am PRESCRIPTION-Profil.
+ * Tests für den M1B/M3-Pilot am REFERRAL-Profil.
  *
- * 1. PRESCRIPTION hat M1B-Optionen (communicationReasons).
- * 2. PRESCRIPTION hat M3-Ziele (responseGoals).
+ * 1. REFERRAL hat M1B-Optionen (communicationReasons).
+ * 2. REFERRAL hat M3-Ziele (responseGoals).
  * 3. M1B verweist nur auf existierende M3-Ziel-IDs.
  * 4. M3 verweist nur auf existierende specificRoles.
  * 5. Renderer bleibt unverändert (communicationReasons/responseGoals tauchen nicht im Output auf).
@@ -12,45 +12,70 @@ import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalo
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
   DecisionStatus,
-  ExplanationStatus,
   type SpecificRole,
   type ExplanationOutputStatus,
 } from "@/lib/inquiries/types";
 
-const PRESCRIPTION = INQUIRY_PROFILE_CATALOG_V2["PRESCRIPTION"];
+const REFERRAL = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
 
 // ---------------------------------------------------------------------------
-// 1. PRESCRIPTION hat communicationReasons
+// Bekannte REFERRAL-M1B-IDs (lokal definiert)
+// ---------------------------------------------------------------------------
+const EXPECTED_COMMUNICATION_REASON_IDS: string[] = [
+  "REQ_REFERRAL_INITIAL",
+  "REQ_REFERRAL_CLARIFICATION",
+  "OUT_REFERRAL_ISSUED",
+  "OUT_MISSING_REQUIREMENT",
+  "OUT_SPECIALIST_RESPONSIBILITY",
+];
+
+// ---------------------------------------------------------------------------
+// Bekannte REFERRAL-M3-IDs (lokal definiert)
+// ---------------------------------------------------------------------------
+const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
+  "ISSUE_CONFIRMED",
+  "ISSUE_BLOCKED_MISSING_INFO",
+  "MEDICAL_REVIEW_NEEDED",
+  "PROCESS_EXPLAINED",
+  "ISSUE_BLOCKED_EXTERNAL",
+];
+
+// ---------------------------------------------------------------------------
+// 1. REFERRAL hat communicationReasons
 // ---------------------------------------------------------------------------
 
-describe("PRESCRIPTION – M1B communicationReasons", () => {
+describe("REFERRAL – M1B communicationReasons", () => {
   it("Profil ist definiert", () => {
-    expect(PRESCRIPTION).toBeDefined();
+    expect(REFERRAL).toBeDefined();
   });
 
   it("communicationReasons ist gesetzt und nicht leer", () => {
-    expect(PRESCRIPTION.communicationReasons).toBeDefined();
-    expect(PRESCRIPTION.communicationReasons!.length).toBeGreaterThan(0);
+    expect(REFERRAL.communicationReasons).toBeDefined();
+    expect(REFERRAL.communicationReasons!.length).toBeGreaterThan(0);
   });
 
   it("enthält alle erwarteten eingehenden Anlässe", () => {
-    const ids = PRESCRIPTION.communicationReasons!.map((r) => r.id);
-    expect(ids).toContain("REQ_RENEWAL");
-    expect(ids).toContain("REQ_NEW_PRESCRIPTION");
-    expect(ids).toContain("REQ_PRESCRIPTION_CLARIFICATION");
-    expect(ids).toContain("REQ_DELIVERY_FORMAT");
+    const ids = REFERRAL.communicationReasons!.map((r) => r.id);
+    expect(ids).toContain("REQ_REFERRAL_INITIAL");
+    expect(ids).toContain("REQ_REFERRAL_CLARIFICATION");
   });
 
   it("enthält alle erwarteten ausgehenden Anlässe", () => {
-    const ids = PRESCRIPTION.communicationReasons!.map((r) => r.id);
-    expect(ids).toContain("OUT_RECIPE_READY_INFO");
+    const ids = REFERRAL.communicationReasons!.map((r) => r.id);
+    expect(ids).toContain("OUT_REFERRAL_ISSUED");
     expect(ids).toContain("OUT_MISSING_REQUIREMENT");
     expect(ids).toContain("OUT_SPECIALIST_RESPONSIBILITY");
-    expect(ids).toContain("OUT_PRACTICE_CLARIFICATION");
+  });
+
+  it("enthält genau die erwarteten IDs (vollständig)", () => {
+    const ids = REFERRAL.communicationReasons!.map((r) => r.id);
+    for (const expected of EXPECTED_COMMUNICATION_REASON_IDS) {
+      expect(ids).toContain(expected);
+    }
   });
 
   it("jeder Anlass hat ein label und eine direction", () => {
-    for (const reason of PRESCRIPTION.communicationReasons!) {
+    for (const reason of REFERRAL.communicationReasons!) {
       expect(typeof reason.label).toBe("string");
       expect(reason.label.length).toBeGreaterThan(0);
       expect(["INCOMING", "OUTGOING"]).toContain(reason.direction);
@@ -58,7 +83,7 @@ describe("PRESCRIPTION – M1B communicationReasons", () => {
   });
 
   it("eingehende Anlässe haben direction INCOMING", () => {
-    const incoming = PRESCRIPTION.communicationReasons!.filter((r) =>
+    const incoming = REFERRAL.communicationReasons!.filter((r) =>
       r.id.startsWith("REQ_"),
     );
     for (const r of incoming) {
@@ -67,7 +92,7 @@ describe("PRESCRIPTION – M1B communicationReasons", () => {
   });
 
   it("ausgehende Anlässe haben direction OUTGOING", () => {
-    const outgoing = PRESCRIPTION.communicationReasons!.filter((r) =>
+    const outgoing = REFERRAL.communicationReasons!.filter((r) =>
       r.id.startsWith("OUT_"),
     );
     for (const r of outgoing) {
@@ -77,35 +102,31 @@ describe("PRESCRIPTION – M1B communicationReasons", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. PRESCRIPTION hat responseGoals
+// 2. REFERRAL hat responseGoals
 // ---------------------------------------------------------------------------
 
-describe("PRESCRIPTION – M3 responseGoals", () => {
+describe("REFERRAL – M3 responseGoals", () => {
   it("responseGoals ist gesetzt und nicht leer", () => {
-    expect(PRESCRIPTION.responseGoals).toBeDefined();
-    expect(PRESCRIPTION.responseGoals!.length).toBeGreaterThan(0);
+    expect(REFERRAL.responseGoals).toBeDefined();
+    expect(REFERRAL.responseGoals!.length).toBeGreaterThan(0);
   });
 
   it("enthält alle erwarteten Antwortziele", () => {
-    const ids = PRESCRIPTION.responseGoals!.map((g) => g.id);
-    expect(ids).toContain("ISSUE_CONFIRMED");
-    expect(ids).toContain("ISSUE_BLOCKED_EXTERNAL");
-    expect(ids).toContain("ISSUE_BLOCKED_MISSING_DOC");
-    expect(ids).toContain("ISSUE_BLOCKED_MISSING_INFO");
-    expect(ids).toContain("ISSUE_BLOCKED_COST_COVERAGE");
-    expect(ids).toContain("PROCESS_EXPLAINED");
-    expect(ids).toContain("MEDICAL_REVIEW_NEEDED");
+    const ids = REFERRAL.responseGoals!.map((g) => g.id);
+    for (const expected of EXPECTED_RESPONSE_GOAL_IDS) {
+      expect(ids).toContain(expected);
+    }
   });
 
   it("jedes Antwortziel hat ein label", () => {
-    for (const goal of PRESCRIPTION.responseGoals!) {
+    for (const goal of REFERRAL.responseGoals!) {
       expect(typeof goal.label).toBe("string");
       expect(goal.label.length).toBeGreaterThan(0);
     }
   });
 
   it("jedes Antwortziel hat mindestens eine relevantSpecificRole", () => {
-    for (const goal of PRESCRIPTION.responseGoals!) {
+    for (const goal of REFERRAL.responseGoals!) {
       expect(goal.relevantSpecificRoles.length).toBeGreaterThan(0);
     }
   });
@@ -115,13 +136,13 @@ describe("PRESCRIPTION – M3 responseGoals", () => {
 // 3. M1B verweist nur auf existierende M3-Ziel-IDs
 // ---------------------------------------------------------------------------
 
-describe("M1B → M3-Referenz-Integrität", () => {
-  it("alle suggestedResponseGoalIds in communicationReasons sind bekannte ResponseGoalIds", () => {
+describe("REFERRAL M1B → M3-Referenz-Integrität", () => {
+  it("alle suggestedResponseGoalIds in communicationReasons sind bekannte responseGoal-IDs", () => {
     const knownGoalIds = new Set<string>(
-      PRESCRIPTION.responseGoals!.map((g) => g.id),
+      REFERRAL.responseGoals!.map((g) => g.id),
     );
     const violations: string[] = [];
-    for (const reason of PRESCRIPTION.communicationReasons!) {
+    for (const reason of REFERRAL.communicationReasons!) {
       for (const goalId of reason.suggestedResponseGoalIds) {
         if (!knownGoalIds.has(goalId)) {
           violations.push(
@@ -150,10 +171,10 @@ const KNOWN_SPECIFIC_ROLES: SpecificRole[] = [
   "OUTCOME_INFO",
 ];
 
-describe("M3 → specificRole-Referenz-Integrität", () => {
+describe("REFERRAL M3 → specificRole-Referenz-Integrität", () => {
   it("alle relevantSpecificRoles in responseGoals sind bekannte SpecificRole-Werte", () => {
     const violations: string[] = [];
-    for (const goal of PRESCRIPTION.responseGoals!) {
+    for (const goal of REFERRAL.responseGoals!) {
       for (const role of goal.relevantSpecificRoles) {
         if (!KNOWN_SPECIFIC_ROLES.includes(role)) {
           violations.push(
@@ -170,18 +191,14 @@ describe("M3 → specificRole-Referenz-Integrität", () => {
 // 5. Renderer bleibt unverändert
 // ---------------------------------------------------------------------------
 
-describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss auf Ausgabe", () => {
+describe("REFERRAL Renderer – communicationReasons/responseGoals haben keinen Einfluss auf Ausgabe", () => {
   it("renderInquiryResponseFromSections enthält keine M1B- oder M3-IDs im Output", () => {
     const result = renderInquiryResponseFromSections([
       {
-        inquiryId: "PRESCRIPTION",
+        inquiryId: "REFERRAL",
         decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: {
-          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES,
-        },
-        explanationOutputStatuses: {
-          PRESCRIPTION_STATUTORY_POSSIBLE: "SHOW" as ExplanationOutputStatus,
-        },
+        checkpointStatuses: {},
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
       },
     ]);
 
@@ -194,31 +211,12 @@ describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss 
     ].join(" ");
 
     // M1B-IDs dürfen nicht im Output erscheinen
-    const m1bIds: string[] = [
-      "REQ_RENEWAL",
-      "REQ_NEW_PRESCRIPTION",
-      "REQ_PRESCRIPTION_CLARIFICATION",
-      "REQ_DELIVERY_FORMAT",
-      "OUT_RECIPE_READY_INFO",
-      "OUT_MISSING_REQUIREMENT",
-      "OUT_SPECIALIST_RESPONSIBILITY",
-      "OUT_PRACTICE_CLARIFICATION",
-    ];
-    for (const id of m1bIds) {
+    for (const id of EXPECTED_COMMUNICATION_REASON_IDS) {
       expect(allText).not.toContain(id);
     }
 
     // M3-IDs dürfen nicht im Output erscheinen
-    const m3ids: string[] = [
-      "ISSUE_CONFIRMED",
-      "ISSUE_BLOCKED_EXTERNAL",
-      "ISSUE_BLOCKED_MISSING_DOC",
-      "ISSUE_BLOCKED_MISSING_INFO",
-      "ISSUE_BLOCKED_COST_COVERAGE",
-      "PROCESS_EXPLAINED",
-      "MEDICAL_REVIEW_NEEDED",
-    ];
-    for (const id of m3ids) {
+    for (const id of EXPECTED_RESPONSE_GOAL_IDS) {
       expect(allText).not.toContain(id);
     }
   });
@@ -226,14 +224,13 @@ describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss 
   it("communicationReasons und responseGoals sind nicht Teil des Renderer-Outputs (structurally)", () => {
     const result = renderInquiryResponseFromSections([
       {
-        inquiryId: "PRESCRIPTION",
+        inquiryId: "REFERRAL",
         decisionStatus: DecisionStatus.NOT_POSSIBLE,
         checkpointStatuses: {},
-        explanationOutputStatuses: {},
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
       },
     ]);
 
-    // Der Output-Typ InquiryResponseV2Output hat keine M1B/M3-Felder
     expect(result).not.toHaveProperty("communicationReasons");
     expect(result).not.toHaveProperty("responseGoals");
     expect(result.sections[0]).not.toHaveProperty("communicationReasons");

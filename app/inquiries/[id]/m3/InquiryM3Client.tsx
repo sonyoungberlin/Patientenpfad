@@ -49,6 +49,8 @@ type Props = {
   initialActionStatuses: Record<string, string>;
   /** Gespeicherte outputStatus-Entscheidungen aus M3 (SHOW / HIDE pro EXPLANATION-Checkpoint). */
   initialExplanationOutputStatuses: Record<string, string>;
+  /** M3 – Antwortziel-Auswahl pro Profil (menschliche Auswahl). Record<inquiryId, responseGoalId> */
+  initialResponseGoalSelection: Record<string, string>;
   actionIds: string[];
   initialGeneratedOutput: InquiryResponseV2Output | null;
   isConfirmed: boolean;
@@ -212,6 +214,7 @@ export default function InquiryM3Client({
   initialCheckpointStatuses,
   initialActionStatuses,
   initialExplanationOutputStatuses,
+  initialResponseGoalSelection,
   actionIds,
   initialGeneratedOutput,
   isConfirmed,
@@ -250,6 +253,10 @@ export default function InquiryM3Client({
     }
     return result;
   });
+
+  const [responseGoalSelection, setResponseGoalSelection] = useState<Record<string, string>>(
+    initialResponseGoalSelection,
+  );
 
   const [actionsOpen, setActionsOpen] = useState(() => {
     // Automatisch aufklappen, wenn bereits ein Action-Status gesetzt ist
@@ -323,7 +330,7 @@ export default function InquiryM3Client({
       const patchRes = await fetch(`/api/inquiries/${sessionId}/checkpoints`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkpointStatuses, actionStatuses, explanationOutputStatuses }),
+        body: JSON.stringify({ checkpointStatuses, actionStatuses, explanationOutputStatuses, responseGoalSelection }),
       });
       if (!patchRes.ok) {
         const data = await patchRes.json().catch(() => null);

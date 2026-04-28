@@ -1218,4 +1218,564 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
     },
   },
+
+  // ---- IMMUNIZATION DECISION ----
+
+  IMMUNIZATION_DECISION: {
+    id: "IMMUNIZATION_DECISION",
+    label: "Impf-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "IMMUNIZATION_DECISION-Q1", text: "Kann die Impfung durchgeführt oder angeboten werden?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Die angefragte Impfung kann durchgeführt werden.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Die angefragte Impfung kann derzeit nicht durchgeführt werden.",
+    },
+  },
+
+  // ---- IMMUNIZATION SPECIFIC EXPLANATIONS ----
+
+  IMMUNIZATION_STATUS_UNCLEAR: {
+    id: "IMMUNIZATION_STATUS_UNCLEAR",
+    label: "Impfstatus unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_STATUS_UNCLEAR-Q1", text: "Ist der Impfstatus unklar?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Beurteilung benötigen wir Angaben zu den bisher durchgeführten Impfungen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  IMMUNIZATION_PASS_MISSING: {
+    id: "IMMUNIZATION_PASS_MISSING",
+    label: "Impfpass fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_PASS_MISSING-Q1", text: "Liegt kein Impfpass oder kein Impfnachweis vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Prüfung des Impfstatus ist ein Impfpass oder ein anderer Impfnachweis hilfreich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  IMMUNIZATION_TRAVEL_MEDICINE: {
+    id: "IMMUNIZATION_TRAVEL_MEDICINE",
+    label: "Reiseimpfung / reisemedizinische Beratung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_TRAVEL_MEDICINE-Q1", text: "Geht es um eine Reiseimpfung oder reisemedizinische Beratung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Reiseimpfungen und reisemedizinische Beratungen wenden Sie sich bitte an eine reisemedizinisch spezialisierte Stelle.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  IMMUNIZATION_RISK_REVIEW_REQUIRED: {
+    id: "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+    label: "Ärztliche Risikoabwägung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_RISK_REVIEW_REQUIRED-Q1", text: "Ist wegen Vorerkrankungen, Medikamenten oder Unsicherheiten eine ärztliche Einschätzung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Vor der Impfung ist eine ärztliche Einschätzung sinnvoll, um mögliche Risiken oder Gegenanzeigen zu prüfen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- APPOINTMENT SPECIFIC EXPLANATIONS ----
+
+  APPOINTMENT_WRONG_TYPE: {
+    id: "APPOINTMENT_WRONG_TYPE",
+    label: "Falscher Termintyp",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_WRONG_TYPE-Q1", text: "Wurde ein falscher Termintyp gebucht?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Der gebuchte Termintyp passt nicht zum Anliegen. Bitte buchen Sie einen passenden Termin.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_PROCESS_MULTI_STEP: {
+    id: "APPOINTMENT_PROCESS_MULTI_STEP",
+    label: "Mehrstufiger Ablauf erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_PROCESS_MULTI_STEP-Q1", text: "Ist ein mehrstufiger Ablauf erforderlich (z. B. Labor → Arzttermin)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Ihr Anliegen sind mehrere Schritte erforderlich – bitte beachten Sie die jeweilige Reihenfolge.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_PREPARATION_REQUIRED: {
+    id: "APPOINTMENT_PREPARATION_REQUIRED",
+    label: "Vorbereitung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_PREPARATION_REQUIRED-Q1", text: "Ist eine Vorbereitung erforderlich (z. B. nüchtern erscheinen, Unterlagen mitbringen)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bitte beachten Sie die Vorbereitungshinweise für Ihren Termin (z. B. nüchtern erscheinen oder relevante Unterlagen mitbringen).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_DATA_INCOMPLETE: {
+    id: "APPOINTMENT_DATA_INCOMPLETE",
+    label: "Angaben unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_DATA_INCOMPLETE-Q1", text: "Sind das Anliegen oder notwendige Angaben unklar oder unvollständig?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Terminvereinbarung benötigen wir weitere Angaben zu Ihrem Anliegen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_DOCUMENT_MISSING: {
+    id: "APPOINTMENT_DOCUMENT_MISSING",
+    label: "Dokument fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_DOCUMENT_MISSING-Q1", text: "Fehlen notwendige Dokumente (z. B. eGK, Befunde, Impfpass)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bitte bringen Sie zum Termin die erforderlichen Unterlagen mit (z. B. Versichertenkarte, Befunde oder Impfpass).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_VIDEO_LIMITATIONS: {
+    id: "APPOINTMENT_VIDEO_LIMITATIONS",
+    label: "Videosprechstunde nicht geeignet",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_VIDEO_LIMITATIONS-Q1", text: "Ist die Videosprechstunde für dieses Anliegen ungeeignet (z. B. körperliche Untersuchung, akute oder schwere Beschwerden, unbekannte Patienten)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für dieses Anliegen ist eine Videosprechstunde leider nicht geeignet – bitte buchen Sie einen Termin in der Praxis (z. B. bei körperlichen Untersuchungen, akuten oder schweren Beschwerden).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_VIDEO_REQUIREMENTS: {
+    id: "APPOINTMENT_VIDEO_REQUIREMENTS",
+    label: "Voraussetzungen Videosprechstunde",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_VIDEO_REQUIREMENTS-Q1", text: "Müssen Voraussetzungen für die Videosprechstunde erläutert werden (z. B. Technik, Wohnort, Ablauf)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Videosprechstunde benötigen Sie eine stabile Internetverbindung sowie ein Gerät mit Kamera und Mikrofon. Bitte wählen Sie sich rechtzeitig über den zugesandten Link ein. Beachten Sie ggf. regionale Einschränkungen (z. B. Wohnsitz im Einzugsgebiet).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- BILLING SPECIFIC EXPLANATIONS ----
+
+  BILLING_COST_NOT_COVERED: {
+    id: "BILLING_COST_NOT_COVERED",
+    label: "Leistung keine Kassenleistung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "BILLING_COST_NOT_COVERED-Q1", text: "Ist die angefragte Leistung keine Kassenleistung (z. B. IGeL, Selbstzahlerleistung)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen und ist selbst zu zahlen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_PROCESS_EXTERNAL: {
+    id: "BILLING_PROCESS_EXTERNAL",
+    label: "Rechnung über externen Dienstleister",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_PROCESS_EXTERNAL-Q1", text: "Läuft die Abrechnung über ein externes Labor oder einen Dienstleister?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Rechnung für diese Leistung wird direkt durch das beauftragte Labor oder den externen Dienstleister gestellt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_DATA_MISSING: {
+    id: "BILLING_DATA_MISSING",
+    label: "Abrechnungsdaten unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "BILLING_DATA_MISSING-Q1", text: "Fehlen Angaben wie Adresse oder Versicherungsstatus für die Abrechnung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Abrechnung benötigen wir noch vollständige Angaben (z. B. aktuelle Adresse oder Versicherungsstatus).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_DOCUMENT_MISSING: {
+    id: "BILLING_DOCUMENT_MISSING",
+    label: "Abrechnungsdokument fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "BILLING_DOCUMENT_MISSING-Q1", text: "Fehlen notwendige Dokumente für die Abrechnung (z. B. eGK, Privatärztlicher Abrechnungsschein, Nachweise)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Abrechnung werden noch Unterlagen benötigt (z. B. Versichertenkarte, Abrechnungsschein oder weitere Nachweise).",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- TECH_SUPPORT SPECIFIC EXPLANATIONS ----
+
+  TECH_VIDEO_NOT_WORKING: {
+    id: "TECH_VIDEO_NOT_WORKING",
+    label: "Videosprechstunde technisch nicht möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "TECH_VIDEO_NOT_WORKING-Q1", text: "Funktioniert die Videosprechstunde technisch nicht (z. B. kein Ton, kein Bild, Verbindungsabbruch)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Videosprechstunde ist leider aktuell technisch nicht nutzbar. Bitte kontaktieren Sie uns telefonisch oder kommen Sie persönlich in die Praxis.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  TECH_UPLOAD_FAILED: {
+    id: "TECH_UPLOAD_FAILED",
+    label: "Dokumenten-Upload nicht möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "TECH_UPLOAD_FAILED-Q1", text: "Können Dokumente nicht hochgeladen werden (z. B. Datei zu groß, falsches Format, Fehler beim Upload)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Der Dokumenten-Upload ist leider nicht möglich. Bitte senden Sie die Unterlagen per Post, Fax oder bringen Sie sie beim nächsten Besuch mit.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  TECH_LOGIN_PROBLEM: {
+    id: "TECH_LOGIN_PROBLEM",
+    label: "Login / Zugang unklar oder fehlgeschlagen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "TECH_LOGIN_PROBLEM-Q1", text: "Hat der Patient Probleme beim Login oder Zugang zum Patientenportal (z. B. Passwort vergessen, Konto gesperrt)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für den Zugang zum Patientenportal: Bitte nutzen Sie die Funktion 'Passwort vergessen' auf der Anmeldeseite. Falls das Problem weiterhin besteht, kontaktieren Sie uns direkt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  TECH_PROCESS_INSTRUCTION: {
+    id: "TECH_PROCESS_INSTRUCTION",
+    label: "Allgemeine technische Anleitung (App, QR-Code, Schritte)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "TECH_PROCESS_INSTRUCTION-Q1", text: "Benötigt der Patient eine Anleitung zur Nutzung der digitalen Dienste (z. B. App-Installation, QR-Code scannen, Schritte zur Anmeldung)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "So nutzen Sie unsere digitalen Dienste: 1. Laden Sie die App herunter oder öffnen Sie das Portal im Browser. 2. Registrieren Sie sich mit Ihrer E-Mail-Adresse. 3. Scannen Sie den QR-Code aus Ihrer Einladung oder geben Sie den Code manuell ein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- ONBOARDING SPECIFIC EXPLANATIONS ----
+
+  ONBOARDING_DATA_INCOMPLETE: {
+    id: "ONBOARDING_DATA_INCOMPLETE",
+    label: "Patientendaten unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_DATA_INCOMPLETE-Q1", text: "Fehlen grundlegende Angaben zur Registrierung (z. B. Name, Geburtsdatum, Kontodaten)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Aufnahme als Patient benötigen wir noch vollständige Angaben (z. B. vollständiger Name, Geburtsdatum oder Kontaktdaten). Bitte ergänzen Sie die fehlenden Informationen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_DOCUMENT_MISSING: {
+    id: "ONBOARDING_DOCUMENT_MISSING",
+    label: "Identitäts- oder Versicherungsnachweis fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_DOCUMENT_MISSING-Q1", text: "Fehlen notwendige Dokumente zur Patientenaufnahme (z. B. eGK, Identitätsnachweis, Versicherungsnachweis)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Ihre Registrierung benötigen wir noch fehlende Dokumente (z. B. Versichertenkarte, Lichtbildausweis oder Versicherungsnachweis). Bitte legen Sie diese beim nächsten Kontakt vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_IDENTITY_MISMATCH: {
+    id: "ONBOARDING_IDENTITY_MISMATCH",
+    label: "Patient nicht eindeutig zuordenbar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_IDENTITY_MISMATCH-Q1", text: "Kann der Patient anhand der vorliegenden Daten nicht eindeutig zugeordnet werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Angaben lassen keine eindeutige Zuordnung zu einem bestehenden Patientenprofil zu. Bitte klären Sie Ihre Identität über ein gültiges Ausweisdokument oder nehmen Sie persönlich Kontakt auf.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_PROCESS_REQUIRED: {
+    id: "ONBOARDING_PROCESS_REQUIRED",
+    label: "Registrierungsablauf erklären",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_PROCESS_REQUIRED-Q1", text: "Muss der Registrierungsablauf erläutert werden (z. B. erforderliche Schritte, benötigte Dokumente, Ablauf der Aufnahme)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Aufnahme als Neupatient sind folgende Schritte erforderlich: Registrierung über unser Patientenportal, Vorlage der Versichertenkarte sowie ggf. Ausfüllen eines Anamnesebogens. Bitte kommen Sie für den Ersttermin etwas früher.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ONBOARDING_WRONG_PRACTICE: {
+    id: "ONBOARDING_WRONG_PRACTICE",
+    label: "Patient nicht dieser Praxis zugehörig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_WRONG_PRACTICE-Q1", text: "Gehört der Patient nicht zu dieser Praxis (z. B. falsche Praxis kontaktiert, außerhalb des Einzugsgebiets)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Leider können wir Sie in unserer Praxis nicht aufnehmen, da Sie nicht in unserem Einzugsgebiet wohnen oder bereits bei einer anderen Praxis registriert sind. Bitte wenden Sie sich an eine Praxis in Ihrer Nähe.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  BILLING_EXTERNAL_RESPONSIBILITY: {
+    id: "BILLING_EXTERNAL_RESPONSIBILITY",
+    label: "Externe Zuständigkeit für Abrechnung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "BILLING_EXTERNAL_RESPONSIBILITY-Q1", text: "Liegt die Zuständigkeit für die Abrechnung bei der Krankenkasse oder einem anderen externen Stellen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- MEDICAL_DOCUMENTS DECISION ----
+
+  MEDICAL_DOCUMENTS_DECISION: {
+    id: "MEDICAL_DOCUMENTS_DECISION",
+    label: "Attest-/Bescheinigungs-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "MEDICAL_DOCUMENTS_DECISION-Q1", text: "Kann das angefragte Attest oder die angefragte Bescheinigung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]:
+        "Das angefragte Attest / die angefragte Bescheinigung kann erstellt werden.",
+      [DecisionStatus.NOT_POSSIBLE]:
+        "Das angefragte Attest / die angefragte Bescheinigung kann derzeit nicht erstellt werden.",
+    },
+  },
+
+  // ---- MEDICAL_DOCUMENTS SPECIFIC EXPLANATIONS ----
+
+  MEDICAL_DOCUMENT_REVIEW_REQUIRED: {
+    id: "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
+    label: "Ärztliche Einschätzung für Attest erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_REVIEW_REQUIRED-Q1", text: "Ist für das Attest oder die Bescheinigung eine ärztliche Einschätzung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für ein Attest oder eine Bescheinigung ist eine ärztliche Einschätzung erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_INFO_MISSING: {
+    id: "MEDICAL_DOCUMENT_INFO_MISSING",
+    label: "Angaben zum Verwendungszweck fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_INFO_MISSING-Q1", text: "Fehlen genaue Angaben dazu, wofür das Attest oder die Bescheinigung benötigt wird?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung benötigen wir genaue Angaben dazu, wofür das Attest benötigt wird.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_DOCUMENTATION_MISSING: {
+    id: "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
+    label: "Vorhandene Befunde / Nachweise fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING-Q1", text: "Fehlen für die Beurteilung relevante Befunde oder Nachweise?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Beurteilung können vorhandene Befunde oder Nachweise erforderlich sein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_PRIVATE_SERVICE: {
+    id: "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
+    label: "Attest / Bescheinigung als Selbstzahlerleistung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_PRIVATE_SERVICE-Q1", text: "Handelt es sich um eine Bescheinigung, die nicht im Leistungsumfang der gesetzlichen Krankenversicherung enthalten ist?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Atteste und Bescheinigungen können je nach Anlass eine Selbstzahlerleistung sein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_PROCESS_INFO: {
+    id: "MEDICAL_DOCUMENT_PROCESS_INFO",
+    label: "Ablauf der Attest-/Bescheinigungserstellung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_PROCESS_INFO-Q1", text: "Muss der Ablauf der Erstellung, Abholung oder Übermittlung des Dokuments erläutert werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Nach ärztlicher Prüfung informieren wir Sie über Erstellung, Abholung oder Übermittlung des Dokuments.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 };

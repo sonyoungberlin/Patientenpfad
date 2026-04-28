@@ -344,7 +344,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         ],
       },
       {
-        id: "REQ_CLARIFICATION",
+        id: "REQ_PRESCRIPTION_CLARIFICATION",
         label: "Rückfrage zu ausgestelltem oder abgelehntem Rezept",
         direction: "INCOMING",
         suggestedResponseGoalIds: [
@@ -352,7 +352,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           "ISSUE_BLOCKED_EXTERNAL",
           "ISSUE_BLOCKED_MISSING_DOC",
           "ISSUE_BLOCKED_COST_COVERAGE",
-          "DELIVERY_FORMAT_EXPLAINED",
+          "PROCESS_EXPLAINED",
           "MEDICAL_REVIEW_NEEDED",
         ],
       },
@@ -360,7 +360,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "REQ_DELIVERY_FORMAT",
         label: "Frage zu eRezept / Apotheke / Zustellweg",
         direction: "INCOMING",
-        suggestedResponseGoalIds: ["DELIVERY_FORMAT_EXPLAINED"],
+        suggestedResponseGoalIds: ["PROCESS_EXPLAINED"],
       },
       // Ausgehende Praxisnachrichten (Praxis → Patient)
       {
@@ -369,7 +369,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         direction: "OUTGOING",
         suggestedResponseGoalIds: [
           "ISSUE_CONFIRMED",
-          "DELIVERY_FORMAT_EXPLAINED",
+          "PROCESS_EXPLAINED",
         ],
       },
       {
@@ -377,6 +377,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
         direction: "OUTGOING",
         suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
           "ISSUE_BLOCKED_MISSING_DOC",
           "MEDICAL_REVIEW_NEEDED",
         ],
@@ -394,7 +395,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         suggestedResponseGoalIds: [
           "ISSUE_BLOCKED_MISSING_DOC",
           "ISSUE_BLOCKED_COST_COVERAGE",
-          "DELIVERY_FORMAT_EXPLAINED",
+          "PROCESS_EXPLAINED",
         ],
       },
     ] satisfies CommunicationReason[],
@@ -434,14 +435,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       {
         id: "ISSUE_BLOCKED_COST_COVERAGE",
         label: "Kassenleistung / Privatrezept / Kostenklärung",
-        relevantSpecificRoles: ["RULE_COST_COVERAGE", "OUTCOME_INFO"],
+        relevantSpecificRoles: ["RULE_COST_COVERAGE"],
         relevantActionGuidanceIds: [
           "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
           "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
         ],
       },
       {
-        id: "DELIVERY_FORMAT_EXPLAINED",
+        id: "PROCESS_EXPLAINED",
         label: "eRezept / Apotheke / Zustellweg erklären",
         relevantSpecificRoles: ["PROCESS_INFO"],
         relevantActionGuidanceIds: [
@@ -457,6 +458,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           "PRESCRIPTION_BOOK_APPOINTMENT_VISIBLE",
           "PRESCRIPTION_DIGITAL_REQUEST_VISIBLE",
         ],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION"],
+        relevantActionGuidanceIds: [],
       },
     ] satisfies ResponseGoal[],
   },
@@ -604,6 +611,93 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     globalHints: {},
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_SAMPLE_INITIAL",
+        label: "Probenabgabe anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_SAMPLE_CLARIFICATION",
+        label: "Rückfrage zu Ablauf / Vorbereitung / Befund",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_SAMPLE_ORDERED",
+        label: "Probe wurde veranlasst / Abgabe bestätigt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Probe veranlasst / Abgabe bestätigt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Vorbereitung / Probe erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Externe / andere Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
   },
 
   ACUTE_CARE: {
@@ -630,6 +724,86 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       INFECTIOUS_PROTOCOL:
         "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
     },
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_ACUTE_INITIAL",
+        label: "Akuttermin / offene Sprechstunde anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      {
+        id: "REQ_ACUTE_CLARIFICATION",
+        label: "Rückfrage zu Akutsprechstunde / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_ACUTE_OFFERED",
+        label: "Akuttermin / offene Sprechstunde angeboten",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis benötigt weitere Informationen zu den Beschwerden",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Akuttermin möglich / angeboten",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Andere Terminart / anderer Weg erforderlich",
+        relevantSpecificRoles: ["CHANNEL_NOT_SUITABLE", "EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf Akutsprechstunde / offene Sprechstunde erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
   },
 
   REFERRAL: {
@@ -650,5 +824,713 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_REFERRAL_INITIAL",
+        label: "Überweisung anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_REFERRAL_CLARIFICATION",
+        label: "Rückfrage zu Überweisung / Prozess / Befund",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_REFERRAL_ISSUED",
+        label: "Überweisung wurde ausgestellt / liegt bereit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Überweisung ausgestellt / liegt bereit",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Buchungscode / digital vs. Original / Psychotherapie erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Externe / andere Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
+  IMMUNIZATION: {
+    id: "IMMUNIZATION",
+    label: "Impfung",
+    decisionCheckpointId: "IMMUNIZATION_DECISION",
+    specificCheckpointIds: [
+      "IMMUNIZATION_STATUS_UNCLEAR",
+      "IMMUNIZATION_PASS_MISSING",
+      "IMMUNIZATION_TRAVEL_MEDICINE",
+      "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+      "MEDICAL_CONSULTATION_REQUIRED",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "ONLINE_ANAMNESIS",
+      "DIGITAL_REQUEST",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_IMMUNIZATION_INITIAL",
+        label: "Impfung anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_IMMUNIZATION_CLARIFICATION",
+        label: "Rückfrage zu Impfung / Impfstatus / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_IMMUNIZATION_OFFERED",
+        label: "Impfung möglich / Termin anbieten",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Impfung möglich / wird durchgeführt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Externe / andere Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben / Impfstatus unklar",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Vorbereitung / Impfung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
+  APPOINTMENT: {
+    id: "APPOINTMENT",
+    label: "Termin",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "APPOINTMENT_WRONG_TYPE",
+      "APPOINTMENT_PROCESS_MULTI_STEP",
+      "APPOINTMENT_PREPARATION_REQUIRED",
+      "APPOINTMENT_DATA_INCOMPLETE",
+      "APPOINTMENT_DOCUMENT_MISSING",
+      "APPOINTMENT_VIDEO_LIMITATIONS",
+      "APPOINTMENT_VIDEO_REQUIREMENTS",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "ONLINE_ANAMNESIS",
+      "DIGITAL_REQUEST",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_APPOINTMENT_INITIAL",
+        label: "Termin anfragen / Terminart unklar",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_APPOINTMENT_CLARIFICATION",
+        label: "Rückfrage zu Termin / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_WRONG_APPOINTMENT",
+        label: "Falscher Termin gebucht / unsicher",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_APPOINTMENT_OFFERED",
+        label: "Passender Termin vorgeschlagen",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_APPOINTMENT_RESCHEDULE",
+        label: "Termin muss geändert werden",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Termin passt / wird bestätigt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Falscher Termintyp / falsche Zuständigkeit",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY", "CHANNEL_NOT_SUITABLE"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen / Daten unvollständig",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Arzt muss Terminart oder Ablauf entscheiden",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Vorbereitung / Terminart erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
+  TECH_SUPPORT: {
+    id: "TECH_SUPPORT",
+    label: "Technische Probleme / Digitale Infrastruktur",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "TECH_VIDEO_NOT_WORKING",
+      "TECH_UPLOAD_FAILED",
+      "TECH_LOGIN_PROBLEM",
+      "TECH_PROCESS_INSTRUCTION",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "DIGITAL_REQUEST",
+      "BOOK_APPOINTMENT",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_TECH_SUPPORT_INITIAL",
+        label: "Technisches Problem / Zugang funktioniert nicht",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      {
+        id: "REQ_TECH_SUPPORT_CLARIFICATION",
+        label: "Rückfrage zu Nutzung / Technik",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_TECH_INSTRUCTION",
+        label: "Praxis erklärt technischen Ablauf",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_TECH_LIMITATION",
+        label: "Technische Nutzung nicht möglich / eingeschränkt",
+        direction: "OUTGOING",
+        // Hinweis: ISSUE_BLOCKED_EXTERNAL bedeutet hier nicht "externe Zuständigkeit",
+        // sondern "digitaler Kanal technisch nicht nutzbar / alternativer Weg nötig"
+        // (→ CHANNEL_NOT_SUITABLE). Bewusste pragmatische Nutzung des Core-Goals.
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Anleitung / Nutzung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      // Hinweis: ISSUE_BLOCKED_EXTERNAL wird hier semantisch als "digitaler Kanal
+      // technisch nicht nutzbar / alternativer Weg nötig" genutzt (SpecificRole:
+      // CHANNEL_NOT_SUITABLE) – nicht als "externe Zuständigkeit" wie in medizinischen
+      // Profilen. Dies ist eine bewusste pragmatische Nutzung des Core-Goals, da kein
+      // neues Goal eingeführt werden soll.
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Technik nicht nutzbar / alternativer Weg notwendig",
+        relevantSpecificRoles: ["CHANNEL_NOT_SUITABLE"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
+  ONBOARDING: {
+    id: "ONBOARDING",
+    label: "Patientenaufnahme / Registrierung",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "ONBOARDING_DATA_INCOMPLETE",
+      "ONBOARDING_DOCUMENT_MISSING",
+      "ONBOARDING_IDENTITY_MISMATCH",
+      "ONBOARDING_PROCESS_REQUIRED",
+      "ONBOARDING_WRONG_PRACTICE",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "DIGITAL_REQUEST",
+      "ONLINE_ANAMNESIS",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_ONBOARDING_INITIAL",
+        label: "Neupatient / Aufnahme / Registrierung",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      {
+        id: "REQ_ONBOARDING_CLARIFICATION",
+        label: "Rückfrage zu Daten / Registrierung / Status",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_ONBOARDING_REQUIRED",
+        label: "Praxis fordert Registrierung / Vervollständigung an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Daten / Dokumente fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Falsche Praxis / falscher Account",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf Registrierung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
+  BILLING: {
+    id: "BILLING",
+    label: "Abrechnung",
+    decisionCheckpointId: "",
+    specificCheckpointIds: [
+      "BILLING_COST_NOT_COVERED",
+      "BILLING_PROCESS_EXTERNAL",
+      "BILLING_DATA_MISSING",
+      "BILLING_DOCUMENT_MISSING",
+      "BILLING_EXTERNAL_RESPONSIBILITY",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "DIGITAL_REQUEST",
+      "ONLINE_ANAMNESIS",
+      "BOOK_APPOINTMENT",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_BILLING_INITIAL",
+        label: "Frage zu Kosten / Abrechnung / Privatleistung",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "REQ_BILLING_CLARIFICATION",
+        label: "Rückfrage zu Rechnung / Kosten / Versicherungsstatus",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "ISSUE_BLOCKED_EXTERNAL",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_BILLING_INFO",
+        label: "Praxis erklärt Abrechnung / Kosten / Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "OUT_SPECIALIST_RESPONSIBILITY",
+        label: "Praxis verweist auf andere Zuständigkeit",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: ["ISSUE_BLOCKED_EXTERNAL"],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_BLOCKED_EXTERNAL",
+        label: "Externe Zuständigkeit (Krankenkasse, Labor)",
+        relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Daten / Dokumente fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Medizinische Indikation muss geprüft werden",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Abrechnung / Kosten / Ablauf erklären",
+        relevantSpecificRoles: ["PROCESS_INFO", "RULE_COST_COVERAGE"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
+  MEDICAL_DOCUMENTS: {
+    id: "MEDICAL_DOCUMENTS",
+    label: "Atteste / Bescheinigungen",
+    decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
+    specificCheckpointIds: [
+      "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
+      "MEDICAL_DOCUMENT_INFO_MISSING",
+      "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
+      "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
+      "MEDICAL_DOCUMENT_PROCESS_INFO",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "DIGITAL_REQUEST",
+      "ONLINE_ANAMNESIS",
+      "DOCUMENT_UPLOAD",
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_DOCUMENT_INITIAL",
+        label: "Attest / Bescheinigung anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "REQ_DOCUMENT_CLARIFICATION",
+        label: "Rückfrage zu Attest / Bescheinigung / Ablauf",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_DOCUMENT_READY",
+        label: "Attest / Bescheinigung wurde erstellt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben / Voraussetzungen an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      {
+        id: "OUT_BILLING_INFO",
+        label: "Praxis erklärt Kosten / Selbstzahlerleistung",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_COST_COVERAGE",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Attest / Bescheinigung erstellt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben / Voraussetzung fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_COST_COVERAGE",
+        label: "Selbstzahlerleistung / Kostenhinweis",
+        relevantSpecificRoles: ["RULE_COST_COVERAGE"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Einschätzung erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Erstellung / Abholung erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
   },
 };

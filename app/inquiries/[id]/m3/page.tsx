@@ -8,6 +8,7 @@ import {
   type InquiryCheckpoint,
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
+import { isStringRecord } from "@/lib/inquiries/inquirySessionService";
 import InquiryM3Client, {
   type M3SectionData,
   type M3ActionData,
@@ -71,6 +72,7 @@ export default async function InquiryM3Page({
       checkpoint_statuses: true,
       action_statuses: true,
       explanation_output_statuses: true,
+      response_goal_selection: true,
       generated_output: true,
     },
   });
@@ -110,25 +112,18 @@ export default async function InquiryM3Page({
   // NOTE: per architecture spec, GLOBAL checkpoints must NOT appear in M3 at all.
 
   const checkpointStatuses: Record<string, string> =
-    session.checkpoint_statuses !== null &&
-    typeof session.checkpoint_statuses === "object" &&
-    !Array.isArray(session.checkpoint_statuses)
-      ? (session.checkpoint_statuses as Record<string, string>)
-      : {};
+    isStringRecord(session.checkpoint_statuses) ? session.checkpoint_statuses : {};
 
   const actionStatuses: Record<string, string> =
-    session.action_statuses !== null &&
-    typeof session.action_statuses === "object" &&
-    !Array.isArray(session.action_statuses)
-      ? (session.action_statuses as Record<string, string>)
-      : {};
+    isStringRecord(session.action_statuses) ? session.action_statuses : {};
 
   const explanationOutputStatuses: Record<string, string> =
-    session.explanation_output_statuses !== null &&
-    typeof session.explanation_output_statuses === "object" &&
-    !Array.isArray(session.explanation_output_statuses)
-      ? (session.explanation_output_statuses as Record<string, string>)
+    isStringRecord(session.explanation_output_statuses)
+      ? session.explanation_output_statuses
       : {};
+
+  const responseGoalSelection: Record<string, string> =
+    isStringRecord(session.response_goal_selection) ? session.response_goal_selection : {};
 
   const generatedOutput: InquiryResponseV2Output | null =
     session.generated_output !== null &&
@@ -149,6 +144,7 @@ export default async function InquiryM3Page({
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
         initialExplanationOutputStatuses={explanationOutputStatuses}
+        initialResponseGoalSelection={responseGoalSelection}
         actionIds={Array.from(actionIds)}
         initialGeneratedOutput={generatedOutput}
         isConfirmed={isConfirmed}

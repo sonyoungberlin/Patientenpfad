@@ -197,6 +197,14 @@ model InquirySession {
   /// Record<checkpointId, "SHOW" | "HIDE"> – Ausgabe nur bei SHOW.
   explanation_output_statuses Json?
 
+  /// M1B – Kommunikationsanlass-Auswahl pro Profil (menschliche Auswahl).
+  /// Record<inquiryId, communicationReasonId>
+  communication_reason_selection Json?
+
+  /// M3 – Antwortziel-Auswahl pro Profil (menschliche Auswahl).
+  /// Record<inquiryId, responseGoalId>
+  response_goal_selection Json?
+
   generated_output Json?
 
   /// Zeitpunkt der Bestätigung (gesetzt zusammen mit status = CONFIRMED).
