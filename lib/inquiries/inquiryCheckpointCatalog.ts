@@ -520,9 +520,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    questions: [
-      { id: "LAB_DECISION-Q1", text: "Liegt eine gültige Laboranforderung vor?" },
-    ],
+    questions: [],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",

@@ -1479,10 +1479,14 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile).toBeDefined();
   });
 
-  it("LAB-Profil bindet genau zwei Specific Checkpoints", () => {
+  it("LAB-Profil bindet die erwarteten Specific Checkpoints", () => {
+    expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_REFERRAL");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAY");
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
     expect(labProfile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(labProfile.specificCheckpointIds).toHaveLength(2);
+    expect(labProfile.specificCheckpointIds).toHaveLength(6);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1506,10 +1510,9 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     }
   });
 
-  it("LAB_DECISION hat genau 1 question", () => {
+  it("LAB_DECISION hat keine questions (M2-Oberfrage entfernt)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
-    expect(cp.questions).toHaveLength(1);
-    expect(cp.questions![0].text).toBe("Liegt eine gültige Laboranforderung vor?");
+    expect(cp.questions).toHaveLength(0);
   });
 
   it("LAB_SELF_PAYER_IGEL ist EXPLANATION/SPECIFIC/ATTACHED im Katalog", () => {
