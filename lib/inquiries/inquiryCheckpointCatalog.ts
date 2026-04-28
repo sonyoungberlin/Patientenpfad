@@ -175,6 +175,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
     },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "AU ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "AU nicht ausgestellt.",
+    },
   },
 
   // ---- AU SPECIFIC EXPLANATIONS ----
@@ -281,6 +285,42 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- AU NEW SPECIFIC CHECKPOINTS ----
+
+  AU_NEW_PATIENT_LIMIT: {
+    id: "AU_NEW_PATIENT_LIMIT",
+    label: "Neupatient – AU-Höchstdauer",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_TIME_LIMIT" as SpecificRole,
+    questions: [
+      { id: "AU_NEW_PATIENT_LIMIT-Q1", text: "Handelt es sich um einen Neupatienten?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei Neupatienten können wir eine Arbeitsunfähigkeitsbescheinigung zunächst für maximal 3 Tage ausstellen.\n\nFür eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_DIGITAL_AU_PROCESS: {
+    id: "AU_DIGITAL_AU_PROCESS",
+    label: "Digitaler AU-Anfrageprozess",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "AU_DIGITAL_AU_PROCESS-Q1", text: "Soll der digitale AU-Anfrageprozess erklärt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Wenn Sie eine Arbeitsunfähigkeitsbescheinigung digital anfragen möchten, benötigen wir die dafür notwendigen Angaben.\n\nBitte füllen Sie dazu beide Formulare aus:\n\n1. Kurz-Anamnese\nhttps://mvz-kreuzberg.de/kurz-anamnese\n\n2. Digitale Anfrage für die Arbeitsunfähigkeitsbescheinigung\nhttps://mvz-kreuzberg.de/digitaleanfrage\n\nBitte beachten Sie, dass die Bearbeitung je nach Auslastung 8–12 Stunden dauern kann. Wir bitten Sie, in dieser Zeit von Nachfragen zum Bearbeitungsstand abzusehen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- PRESCRIPTION DECISION ----
 
   PRESCRIPTION_DECISION: {
@@ -299,6 +339,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]: "Das von Ihnen angefragte Rezept wurde nicht ausgestellt.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Rezept ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Rezept nicht ausgestellt.",
     },
   },
 
@@ -484,12 +528,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    questions: [
-      { id: "LAB_DECISION-Q1", text: "Liegt eine gültige Laboranforderung vor?" },
-    ],
+    questions: [],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Laboruntersuchung veranlasst.",
+      [DecisionStatus.NOT_POSSIBLE]: "Laboruntersuchung nicht veranlasst.",
     },
   },
 
@@ -535,7 +581,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_SELF_PAYER_IGEL-Q1", text: "Handelt es sich um gewünschte Laborwerte ohne Kassenleistung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.",
+      [ExplanationStatus.YES]:
+        "Blutuntersuchungen ohne konkreten medizinischen Anlass oder außerhalb der gesetzlichen Vorsorgefristen sind Selbstzahlerleistungen (IGeL). Die Abrechnung dieser Werte erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ); Sie erhalten die Rechnung hierfür direkt von unserem Partnerlabor.",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -567,6 +614,73 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]: "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  // ---- LAB SPECIFIC CHECKPOINTS (neue Prozesslogik) ----
+
+  LAB_INTERNAL_ORDER: {
+    id: "LAB_INTERNAL_ORDER",
+    label: "Interne ärztliche Anordnung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_INTERNAL_ORDER-Q1", text: "Liegt eine interne ärztliche Laboranordnung vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_EXTERNAL_REFERRAL: {
+    id: "LAB_EXTERNAL_REFERRAL",
+    label: "Externe Überweisung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "LAB_EXTERNAL_REFERRAL-Q1", text: "Liegt eine Überweisung eines Facharztes vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\n\nBringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit, damit die angeforderten Werte korrekt durchgeführt werden können.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_EXTERNAL_DOCUMENT_PRESENT: {
+    id: "LAB_EXTERNAL_DOCUMENT_PRESENT",
+    label: "Überweisungsdokument vorhanden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "LAB_EXTERNAL_DOCUMENT_PRESENT-Q1", text: "Liegt die Überweisung des behandelnden Facharztes im Original vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "",
+      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung benötigen wir die Überweisung Ihres behandelnden Facharztes im Original.\n\nBitte bringen Sie das Dokument zum Termin mit.",
+    },
+  },
+
+  /** @deprecated Konsolidiert in LAB_SELF_PAYER_IGEL. Nicht mehr in LAB.specificCheckpointIds. */
+  LAB_SELF_PAY: {
+    id: "LAB_SELF_PAY",
+    label: "Selbstzahler / IGeL",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "LAB_SELF_PAY-Q1", text: "Handelt es sich um Laborwerte als individuelle Gesundheitsleistung (IGeL)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die gewünschten Laborwerte können als individuelle Gesundheitsleistung durchgeführt werden.\n\nDie Abrechnung erfolgt in diesem Fall privat. Sie erhalten die Rechnung direkt vom Labor.",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -690,9 +804,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     id: "MEDICAL_CONSULTATION_REQUIRED",
     label: "Ärztliche Konsultation erforderlich",
     kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
+    scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    classification: "MODULAR",
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
     textByStatus: {
       [ExplanationStatus.YES]:
         "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
@@ -833,6 +948,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.POSSIBLE]: "Die Probenabgabe kann wie besprochen durchgeführt werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Die angefragte Probenabgabe wurde nicht berücksichtigt.",
     },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Probenabgabe angenommen.",
+      [DecisionStatus.NOT_POSSIBLE]: "Probenabgabe nicht möglich.",
+    },
   },
 
   // ---- SAMPLE_COLLECTION SPECIFIC CHECKPOINTS ----
@@ -897,6 +1016,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  LAB_EXTERNAL_BILLING: {
+    id: "LAB_EXTERNAL_BILLING",
+    label: "Laborabrechnung über Partnerlabor",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_EXTERNAL_BILLING-Q1", text: "Fragt der Patient nach der Laborrechnung oder deren Herkunft?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Abrechnung der Laborleistungen erfolgt direkt über unser Partnerlabor. Sie erhalten die Rechnung unabhängig von uns vom Labor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient über externe Laborabrechnung informiert.",
+    },
+  },
+
   // ---- ACUTE_CARE DECISION ----
 
   ACUTE_CARE_DECISION: {
@@ -914,6 +1053,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Sie können sich mit Ihrem Anliegen im Rahmen eines Akuttermins oder der offenen Sprechstunde vorstellen.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Für Ihr Anliegen ist diese Terminart nicht geeignet.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Akutvorstellung empfohlen.",
+      [DecisionStatus.NOT_POSSIBLE]: "Akutvorstellung nicht empfohlen.",
     },
   },
 
@@ -1069,17 +1212,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     id: "ACUTE_OPEN_CONSULTATION_INFO",
     label: "Offene Sprechstunde – Info",
     kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
+    scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
-    specificRole: "PROCESS_INFO" as SpecificRole,
-    questions: [
-      { id: "ACUTE_OPEN_CONSULTATION_INFO-Q1", text: "Soll ein Hinweis zur offenen Sprechstunde angezeigt werden?" },
-    ],
+    question: "Soll ein Hinweis zur offenen Sprechstunde angezeigt werden?",
     textByStatus: {
       [ExplanationStatus.YES]:
         "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
-      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
@@ -1134,6 +1273,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Ihre Überweisung wurde ausgestellt und liegt zur Abholung in der Praxis bereit.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Überweisung wurde nicht ausgestellt.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Überweisung ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Überweisung nicht ausgestellt.",
     },
   },
 
@@ -1235,6 +1378,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Die angefragte Impfung kann durchgeführt werden.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Die angefragte Impfung kann derzeit nicht durchgeführt werden.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Impfung empfohlen/angeboten.",
+      [DecisionStatus.NOT_POSSIBLE]: "Impfung nicht durchgeführt.",
     },
   },
 
@@ -1446,8 +1593,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen und ist selbst zu zahlen.",
       // NO: bewusst still – keine Erklärung nötig
     },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Leistung ist keine Kassenleistung (Selbstzahler).",
+    },
   },
 
+  /** @deprecated Ersetzt durch BILLING_EXTERNAL_PROVIDER. Nicht mehr in BILLING.specificCheckpointIds. */
   BILLING_PROCESS_EXTERNAL: {
     id: "BILLING_PROCESS_EXTERNAL",
     label: "Rechnung über externen Dienstleister",
@@ -1465,6 +1616,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Ersetzt durch BILLING_ADDRESS_MISSING. Nicht mehr in BILLING.specificCheckpointIds. */
   BILLING_DATA_MISSING: {
     id: "BILLING_DATA_MISSING",
     label: "Abrechnungsdaten unvollständig",
@@ -1494,8 +1646,91 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung werden noch Unterlagen benötigt (z. B. Versichertenkarte, Abrechnungsschein oder weitere Nachweise).",
+        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Versichertenkarte oder Abrechnungsunterlagen). Bitte reichen Sie diese ein.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Abrechnungsunterlagen angefordert.",
+    },
+  },
+
+  BILLING_EXTERNAL_PROVIDER: {
+    id: "BILLING_EXTERNAL_PROVIDER",
+    label: "Abrechnung über externen Dienstleister",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_EXTERNAL_PROVIDER-Q1", text: "Läuft die Abrechnung über einen externen Abrechnungsdienstleister (PAS)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister. Sie erhalten die Rechnung direkt von dort.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient über externe Abrechnung informiert.",
+    },
+  },
+
+  BILLING_ADDRESS_MISSING: {
+    id: "BILLING_ADDRESS_MISSING",
+    label: "Adresse für Rechnungszustellung fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "BILLING_ADDRESS_MISSING-Q1", text: "Konnte eine Rechnung nicht zugestellt werden, weil die Adresse fehlt oder veraltet ist?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Uns wurde mitgeteilt, dass Ihre Rechnung nicht zugestellt werden konnte. Bitte teilen Sie uns Ihre aktuelle Postadresse mit, damit wir diese weitergeben können.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Adresse für Rechnungszustellung angefordert.",
+    },
+  },
+
+  BILLING_INVOICE_TIMING: {
+    id: "BILLING_INVOICE_TIMING",
+    label: "Zeitpunkt der Rechnungsstellung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_INVOICE_TIMING-Q1", text: "Fragt der Patient nach dem Zeitpunkt oder Ablauf der Rechnungsstellung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Abrechnung erfolgt in der Regel quartalsweise über unsere Buchhaltung. Sie erhalten Ihre Rechnung anschließend automatisch vom Abrechnungsdienstleister.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient über quartalsweise Abrechnung informiert.",
+    },
+  },
+
+  BILLING_ONSITE_PAYMENT: {
+    id: "BILLING_ONSITE_PAYMENT",
+    label: "Selbstzahler-Zahlung vor Ort",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "BILLING_ONSITE_PAYMENT-Q1", text: "Soll auf die Möglichkeit der Kartenzahlung vor Ort hingewiesen werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Selbstzahlerleistungen können vor Ort in der Praxis per Karte bezahlt werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Hinweis auf Vor-Ort-Zahlung gegeben.",
     },
   },
 
@@ -1583,11 +1818,15 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Aufnahme als Patient benötigen wir noch vollständige Angaben (z. B. vollständiger Name, Geburtsdatum oder Kontaktdaten). Bitte ergänzen Sie die fehlenden Informationen.",
+        "Leider fehlen uns noch einige aktuelle Angaben in Ihrer Patientenakte. Um Ihr Anliegen bearbeiten zu können, bitten wir Sie, kurz unsere Online-Anamnese auszufüllen: https://mvz-kreuzberg.de/kurz-anamnese",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient zur Datenvervollständigung via Online-Anamnese aufgefordert.",
     },
   },
 
+  /** @deprecated Kombinierter GKV/PKV-Nachweis-Baustein – abgelöst durch ONBOARDING_GKV_DOCUMENT_MISSING und ONBOARDING_PKV_PAS_MISSING. Nicht mehr in specificCheckpointIds des ONBOARDING-Profils. Checkpoint bleibt im Katalog erhalten. */
   ONBOARDING_DOCUMENT_MISSING: {
     id: "ONBOARDING_DOCUMENT_MISSING",
     label: "Identitäts- oder Versicherungsnachweis fehlt",
@@ -1600,8 +1839,51 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für Ihre Registrierung benötigen wir noch fehlende Dokumente (z. B. Versichertenkarte, Lichtbildausweis oder Versicherungsnachweis). Bitte legen Sie diese beim nächsten Kontakt vor.",
+        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch einen Versicherungsnachweis:\n\n- Gesetzlich versichert: Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.\n\n- Privat versichert: Bitte senden Sie uns einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versicherungs-/Identitätsnachweis angefordert (GKV/PKV).",
+    },
+  },
+
+  ONBOARDING_GKV_DOCUMENT_MISSING: {
+    id: "ONBOARDING_GKV_DOCUMENT_MISSING",
+    label: "Versicherungsnachweis GKV fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_GKV_DOCUMENT_MISSING-Q1", text: "Fehlt bei gesetzlich Versicherten ein gültiger Versicherungsnachweis?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis. Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse zu.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versicherungsnachweis GKV angefordert.",
+    },
+  },
+
+  ONBOARDING_PKV_PAS_MISSING: {
+    id: "ONBOARDING_PKV_PAS_MISSING",
+    label: "Unterlagen Privatpatient fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_PKV_PAS_MISSING-Q1", text: "Fehlen bei privat Versicherten Identitätsnachweis oder PAS-Formular?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Als privat versicherte Patientin oder privat versicherter Patient benötigen wir für die korrekte Abrechnung einmalig einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Identitätsnachweis/PAS-Formular für Privatabrechnung angefordert.",
     },
   },
 
@@ -1617,11 +1899,15 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Angaben lassen keine eindeutige Zuordnung zu einem bestehenden Patientenprofil zu. Bitte klären Sie Ihre Identität über ein gültiges Ausweisdokument oder nehmen Sie persönlich Kontakt auf.",
+        "Leider konnten wir Ihre Anfrage in unserem System nicht eindeutig zuordnen. Möglicherweise gibt es eine Abweichung bei der Schreibweise Ihres Namens oder beim hinterlegten Geburtsdatum. Bitte teilen Sie uns beides noch einmal vollständig mit, damit wir Ihre Daten korrekt abgleichen können.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patientendaten nicht eindeutig zuordenbar; Abgleich angefordert.",
     },
   },
 
+  /** @deprecated Redundanter Baustein – Registrierungsablauf-Erklärung. Nicht mehr in specificCheckpointIds des ONBOARDING-Profils. Checkpoint bleibt im Katalog erhalten. */
   ONBOARDING_PROCESS_REQUIRED: {
     id: "ONBOARDING_PROCESS_REQUIRED",
     label: "Registrierungsablauf erklären",
@@ -1651,8 +1937,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Leider können wir Sie in unserer Praxis nicht aufnehmen, da Sie nicht in unserem Einzugsgebiet wohnen oder bereits bei einer anderen Praxis registriert sind. Bitte wenden Sie sich an eine Praxis in Ihrer Nähe.",
+        "Ich fürchte, hier liegt ein Missverständnis vor, da wir Sie nicht als Patient in unserem System finden können. Bitte prüfen Sie noch einmal, welche Praxis Sie kontaktieren wollten oder ob Sie eventuell bei einer Ärztin oder einem Arzt mit ähnlichem Namen in Behandlung sind.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Anfrage nicht zuordenbar; vermutlich falsche Praxis kontaktiert.",
     },
   },
 
@@ -1670,6 +1959,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Patient an externe Stelle (Krankenkasse) verwiesen.",
     },
   },
 
@@ -1690,10 +1982,15 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.NOT_POSSIBLE]:
         "Das angefragte Attest / die angefragte Bescheinigung kann derzeit nicht erstellt werden.",
     },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Bescheinigung/Attest ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Bescheinigung/Attest nicht ausgestellt.",
+    },
   },
 
   // ---- MEDICAL_DOCUMENTS SPECIFIC EXPLANATIONS ----
 
+  /** @deprecated Nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Fachlich durch globales MEDICAL_CONSULTATION_REQUIRED ersetzt. */
   MEDICAL_DOCUMENT_REVIEW_REQUIRED: {
     id: "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
     label: "Ärztliche Einschätzung für Attest erforderlich",

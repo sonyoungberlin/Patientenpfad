@@ -34,6 +34,8 @@ export type M3SectionData = {
   specificCheckpoints: M3SpecificCheckpoint[];
   /** Profil-spezifische ACTION-Checkpoints (boundActionCheckpointIds) – in Aktionen/Infos. */
   boundActionCheckpoints: M3BoundActionData[];
+  /** GLOBAL MODULAR EXPLANATION-Checkpoints – in M3 als SHOW/HIDE-fähige Output-Bausteine. */
+  boundGlobalOutputCheckpoints?: M3SpecificCheckpoint[];
 };
 
 export type M3ActionData = {
@@ -226,7 +228,10 @@ export default function InquiryM3Client({
     () =>
       new Set(
         sections
-          .flatMap((s) => s.specificCheckpoints)
+          .flatMap((s) => [
+            ...s.specificCheckpoints,
+            ...(s.boundGlobalOutputCheckpoints ?? []),
+          ])
           .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
           .map((cp) => cp.id),
       ),
@@ -384,32 +389,34 @@ export default function InquiryM3Client({
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
 
-              {/* Decision */}
-              <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
-                <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
-                {section.decisionQuestions.length > 0 && (
-                  <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
-                    {section.decisionQuestions
-                      .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
-                      .map((q) => {
-                        const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
-                        return (
-                          <div key={q.id}>
-                            {q.text}
-                            <span style={{ fontWeight: 500 }}> — {answer}</span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
-                <StatusButtons
-                  checkpointId={section.decisionCheckpointId}
-                  options={DECISION_OPTIONS}
-                  value={statuses[section.decisionCheckpointId]}
-                  onChange={setStatus}
-                  disabled={false}
-                />
-              </div>
+              {/* Decision – nur bei Profilen mit Decision-Checkpoint */}
+              {section.decisionCheckpointId && (
+                <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
+                  <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
+                  {section.decisionQuestions.length > 0 && (
+                    <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                      {section.decisionQuestions
+                        .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
+                        .map((q) => {
+                          const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
+                          return (
+                            <div key={q.id}>
+                              {q.text}
+                              <span style={{ fontWeight: 500 }}> — {answer}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                  <StatusButtons
+                    checkpointId={section.decisionCheckpointId}
+                    options={DECISION_OPTIONS}
+                    value={statuses[section.decisionCheckpointId]}
+                    onChange={setStatus}
+                    disabled={false}
+                  />
+                </div>
+              )}
 
               {/* SPECIFIC Checkpoints */}
               {section.specificCheckpoints
@@ -490,6 +497,38 @@ export default function InquiryM3Client({
                   </div>
                 );
               })}
+
+              {/* Globale Output-Bausteine (GLOBAL MODULAR EXPLANATION) */}
+              {(section.boundGlobalOutputCheckpoints ?? []).length > 0 && (
+                <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
+                  <div className="text-muted text-small" style={{ marginBottom: "0.35rem", fontStyle: "italic" }}>
+                    Globale Bausteine
+                  </div>
+                  {(section.boundGlobalOutputCheckpoints ?? []).map((cp) => (
+                    <div
+                      key={cp.id}
+                      style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                    >
+                      <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                      <StatusButtons
+                        checkpointId={cp.id}
+                        options={OUTPUT_OPTIONS}
+                        value={outputStatuses[cp.id]}
+                        onChange={setOutputStatus}
+                        disabled={false}
+                      />
+                      {outputStatuses[cp.id] === ExplanationOutputStatus.HIDE && (
+                        <div
+                          className="text-muted text-small"
+                          style={{ marginTop: "0.25rem", fontStyle: "italic" }}
+                        >
+                          keine Erklärung erforderlich
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           ))}
 

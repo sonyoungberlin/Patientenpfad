@@ -6,14 +6,20 @@
  * 3. M1B verweist nur auf existierende M3-Ziel-IDs.
  * 4. M3 verweist nur auf existierende specificRoles.
  * 5. Renderer bleibt unverändert (communicationReasons/responseGoals tauchen nicht im Output auf).
+ * 6. Neue Prozess-Checkpoints (LAB_INTERNAL_ORDER, LAB_EXTERNAL_REFERRAL,
+ *    LAB_EXTERNAL_DOCUMENT_PRESENT, LAB_SELF_PAY) sind korrekt definiert und im Profil referenziert.
  */
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
   DecisionStatus,
+  ExplanationStatus,
+  ExplanationOutputStatus,
+  InquiryCheckpointKind,
+  InquiryCheckpointScope,
   type SpecificRole,
-  type ExplanationOutputStatus,
 } from "@/lib/inquiries/types";
 
 const LAB = INQUIRY_PROFILE_CATALOG_V2["LAB"];
@@ -238,5 +244,228 @@ describe("LAB Renderer – communicationReasons/responseGoals haben keinen Einfl
     expect(result).not.toHaveProperty("responseGoals");
     expect(result.sections[0]).not.toHaveProperty("communicationReasons");
     expect(result.sections[0]).not.toHaveProperty("responseGoals");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. Neue LAB-Prozess-Checkpoints: Struktur
+// ---------------------------------------------------------------------------
+
+const NEW_LAB_CHECKPOINT_IDS = [
+  "LAB_INTERNAL_ORDER",
+  "LAB_EXTERNAL_REFERRAL",
+  "LAB_EXTERNAL_DOCUMENT_PRESENT",
+] as const;
+
+describe("LAB – neue Prozess-Checkpoints existieren im Catalog", () => {
+  it.each(NEW_LAB_CHECKPOINT_IDS)("%s ist im Catalog definiert", (id) => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+  });
+
+  it.each(NEW_LAB_CHECKPOINT_IDS)("%s hat kind = EXPLANATION", (id) => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]!.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+  });
+
+  it.each(NEW_LAB_CHECKPOINT_IDS)("%s hat scope = SPECIFIC", (id) => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]!.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("LAB_INTERNAL_ORDER hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_INTERNAL_ORDER"]!.specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("LAB_EXTERNAL_REFERRAL hat specificRole EXTERNAL_RESPONSIBILITY", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_EXTERNAL_REFERRAL"]!.specificRole).toBe("EXTERNAL_RESPONSIBILITY");
+  });
+
+  it("LAB_EXTERNAL_DOCUMENT_PRESENT hat specificRole MISSING_DOCUMENT", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_EXTERNAL_DOCUMENT_PRESENT"]!.specificRole).toBe("MISSING_DOCUMENT");
+  });
+
+  it("LAB_SELF_PAYER_IGEL hat specificRole RULE_COST_COVERAGE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_IGEL"]!.specificRole).toBe("RULE_COST_COVERAGE");
+  });
+
+  it("LAB_SELF_PAY ist im Katalog noch vorhanden (deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAY"]).toBeDefined();
+  });
+
+  it("LAB_SELF_PAY ist nicht mehr in specificCheckpointIds des LAB-Profils (deprecated)", () => {
+    expect(LAB.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7. Neue Checkpoints sind im LAB-Profil referenziert
+// ---------------------------------------------------------------------------
+
+describe("LAB – neue Checkpoints sind in specificCheckpointIds enthalten", () => {
+  it.each(NEW_LAB_CHECKPOINT_IDS)("%s ist in LAB.specificCheckpointIds", (id) => {
+    expect(LAB.specificCheckpointIds).toContain(id);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. Renderer-Verhalten für neue Checkpoints (YES+SHOW → Text, NO/HIDE → kein Text)
+// ---------------------------------------------------------------------------
+
+describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => {
+  it("LAB_INTERNAL_ORDER: YES + SHOW liefert Buchungsanleitung mit Code LKBP25", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_INTERNAL_ORDER: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_INTERNAL_ORDER: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).toContain("LKBP25");
+    expect(allText).toContain("ärztlicher Anordnung");
+  });
+
+  it("LAB_INTERNAL_ORDER: YES + HIDE liefert keinen Text", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_INTERNAL_ORDER: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_INTERNAL_ORDER: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).not.toContain("LKBP25");
+  });
+
+  it("LAB_EXTERNAL_REFERRAL: YES + SHOW enthält Hinweis zur Überweisung", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_EXTERNAL_REFERRAL: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_EXTERNAL_REFERRAL: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).toContain("Überweisung");
+    expect(allText).toContain("Facharztes im Original");
+  });
+
+  it("LAB_EXTERNAL_DOCUMENT_PRESENT: NO + SHOW enthält fehlende-Dokument-Aufforderung", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_EXTERNAL_DOCUMENT_PRESENT: ExplanationStatus.NO },
+        explanationOutputStatuses: {
+          LAB_EXTERNAL_DOCUMENT_PRESENT: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).toContain("Überweisung Ihres behandelnden Facharztes im Original");
+  });
+
+  it("LAB_EXTERNAL_DOCUMENT_PRESENT: YES + SHOW liefert keinen Text (leerer textByStatus.YES)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_EXTERNAL_DOCUMENT_PRESENT: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_EXTERNAL_DOCUMENT_PRESENT: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ")
+      .trim();
+    // textByStatus.YES is "" so no paragraph should appear for this checkpoint
+    expect(allText).not.toContain("Überweisung Ihres behandelnden Facharztes");
+  });
+
+  it("LAB_SELF_PAYER_IGEL: YES + SHOW enthält kombinierten IGeL/GOÄ-Hinweis", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).toContain("Selbstzahlerleistungen (IGeL)");
+    expect(allText).toContain("Gebührenordnung für Ärzte (GOÄ)");
+    expect(allText).toContain("Partnerlabor");
+  });
+
+  it("LAB_SELF_PAYER_IGEL: YES + HIDE liefert keinen Text", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).not.toContain("Selbstzahlerleistungen (IGeL)");
+  });
+
+  it("LAB_SELF_PAYER_IGEL: NO + SHOW liefert keinen Text (leerer textByStatus.NO)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.NO },
+        explanationOutputStatuses: {
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ")
+      .trim();
+    expect(allText).not.toContain("Selbstzahlerleistungen (IGeL)");
+  });
+
+  it("Kein doppelter Kostenhinweis: LAB_SELF_PAYER_IGEL YES + SHOW → nur ein Kosten-Abschnitt", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    const costParagraphs = paragraphs.filter((p) => p.includes("Selbstzahler") || p.includes("GOÄ"));
+    expect(costParagraphs).toHaveLength(1);
   });
 });

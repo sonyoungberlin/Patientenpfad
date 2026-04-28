@@ -329,7 +329,6 @@ describe("MEDICAL_DOCUMENTS_DECISION Checkpoint", () => {
 // ---------------------------------------------------------------------------
 
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
-  "MEDICAL_DOCUMENT_REVIEW_REQUIRED",
   "MEDICAL_DOCUMENT_INFO_MISSING",
   "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
   "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
@@ -351,10 +350,18 @@ describe("MEDICAL_DOCUMENTS Specific-Checkpoints – Existenz und Struktur", () 
     });
   }
 
+  it("MEDICAL_DOCUMENT_REVIEW_REQUIRED ist im Katalog noch vorhanden (deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_REVIEW_REQUIRED"]).toBeDefined();
+  });
+
   it("MEDICAL_DOCUMENT_REVIEW_REQUIRED hat specificRole MEDICAL_REVIEW_REQUIRED", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_REVIEW_REQUIRED"].specificRole).toBe(
       "MEDICAL_REVIEW_REQUIRED",
     );
+  });
+
+  it("MEDICAL_DOCUMENT_REVIEW_REQUIRED ist nicht mehr in specificCheckpointIds des Profils (deprecated)", () => {
+    expect(MEDICAL_DOCUMENTS.specificCheckpointIds).not.toContain("MEDICAL_DOCUMENT_REVIEW_REQUIRED");
   });
 
   it("MEDICAL_DOCUMENT_INFO_MISSING hat specificRole MISSING_INFORMATION", () => {
@@ -381,7 +388,7 @@ describe("MEDICAL_DOCUMENTS Specific-Checkpoints – Existenz und Struktur", () 
     );
   });
 
-  it("MEDICAL_DOCUMENTS-Profil referenziert alle fünf neuen Specific-Checkpoints", () => {
+  it("MEDICAL_DOCUMENTS-Profil referenziert alle vier verbleibenden Specific-Checkpoints", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(MEDICAL_DOCUMENTS.specificCheckpointIds).toContain(id);
     }
@@ -421,19 +428,34 @@ describe("MEDICAL_DOCUMENTS Renderer – mainDecision", () => {
 });
 
 describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
-  it("MEDICAL_DOCUMENT_REVIEW_REQUIRED YES + SHOW → Arzt-Einschätzungs-Text erscheint", () => {
+  it("MEDICAL_CONSULTATION_REQUIRED YES + SHOW → Konsultations-Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "MEDICAL_DOCUMENTS",
         decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { MEDICAL_DOCUMENT_REVIEW_REQUIRED: ExplanationStatus.YES },
+        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
         explanationOutputStatuses: {
-          MEDICAL_DOCUMENT_REVIEW_REQUIRED: ExplanationOutputStatus.SHOW,
+          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.SHOW,
         } as Record<string, ExplanationOutputStatusType>,
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("ärztliche Einschätzung");
+    expect(paragraphs).toContain("ärztliche Konsultation");
+  });
+
+  it("MEDICAL_CONSULTATION_REQUIRED YES + HIDE → kein Konsultations-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatusType>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("ärztliche Konsultation");
   });
 
   it("MEDICAL_DOCUMENT_INFO_MISSING YES + SHOW → Angaben-fehlen-Text erscheint", () => {
@@ -494,20 +516,5 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).toContain("Erstellung, Abholung");
-  });
-
-  it("MEDICAL_DOCUMENT_REVIEW_REQUIRED HIDE → kein Text erscheint", () => {
-    const result = renderInquiryResponseFromSections([
-      {
-        inquiryId: "MEDICAL_DOCUMENTS",
-        decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { MEDICAL_DOCUMENT_REVIEW_REQUIRED: ExplanationStatus.YES },
-        explanationOutputStatuses: {
-          MEDICAL_DOCUMENT_REVIEW_REQUIRED: ExplanationOutputStatus.HIDE,
-        } as Record<string, ExplanationOutputStatusType>,
-      },
-    ]);
-    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("ärztliche Einschätzung erforderlich");
   });
 });

@@ -255,7 +255,7 @@ export function renderInquiryResponseFromSections(
       sectionDocumentation.push(`${checkpoint.label}: ${docText}`);
     }
 
-    // ---- C) Global EXPLANATION Checkpoints → nur YES → globalHints ----
+    // ---- C) Global EXPLANATION Checkpoints → YES + SHOW → globalHints oder textByStatus[YES] ----
     for (const checkpointId of profile.boundGlobalCheckpointIds) {
       const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
       if (!checkpoint) continue;
@@ -265,11 +265,20 @@ export function renderInquiryResponseFromSections(
       const status = section.checkpointStatuses[checkpointId];
       if (status !== ExplanationStatus.YES) continue;
 
-      const hintText = profile.globalHints?.[checkpointId];
-      if (!hintText) continue;
+      // M3 SHOW/HIDE-Gate: nur für MODULAR-Checkpoints anwenden.
+      // GLOBAL_STATE-Checkpoints erscheinen nie in M3 und haben daher keinen SHOW/HIDE-Status.
+      // Sie werden ausschließlich durch M2 YES gesteuert und dürfen nicht durch ein fehlendes
+      // explanationOutputStatuses-Entry blockiert werden.
+      if (checkpoint.classification === "MODULAR" && section.explanationOutputStatuses) {
+        if (section.explanationOutputStatuses[checkpointId] !== ExplanationOutputStatus.SHOW) continue;
+      }
+
+      // Texthierarchie: profilspezifischer Override hat Vorrang, sonst zentraler Checkpoint-Text.
+      const text = profile.globalHints?.[checkpointId] ?? checkpoint.textByStatus[status];
+      if (!text) continue;
 
       // M4: anliegenspezifischer Hinweistext erscheint pro Anliegen in attachedParagraphs.
-      attachedParagraphs.push(hintText);
+      attachedParagraphs.push(text);
 
       // M5: Dokumentationsmarke erscheint genau einmal über alle Anliegen hinweg.
       if (!globalDocSeen.has(checkpointId)) {

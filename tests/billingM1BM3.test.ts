@@ -46,14 +46,16 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bekannte Specific-Checkpoint-IDs
+// Bekannte Specific-Checkpoint-IDs (BILLING_PROCESS_EXTERNAL und BILLING_DATA_MISSING sind @deprecated und entfernt)
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "BILLING_COST_NOT_COVERED",
-  "BILLING_PROCESS_EXTERNAL",
-  "BILLING_DATA_MISSING",
+  "BILLING_EXTERNAL_PROVIDER",
+  "BILLING_ADDRESS_MISSING",
   "BILLING_DOCUMENT_MISSING",
   "BILLING_EXTERNAL_RESPONSIBILITY",
+  "BILLING_INVOICE_TIMING",
+  "BILLING_ONSITE_PAYMENT",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -299,12 +301,12 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_COST_NOT_COVERED"].specificRole).toBe("RULE_COST_COVERAGE");
   });
 
-  it("BILLING_PROCESS_EXTERNAL hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_PROCESS_EXTERNAL"].specificRole).toBe("PROCESS_INFO");
+  it("BILLING_EXTERNAL_PROVIDER hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_EXTERNAL_PROVIDER"].specificRole).toBe("PROCESS_INFO");
   });
 
-  it("BILLING_DATA_MISSING hat specificRole MISSING_INFORMATION", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_DATA_MISSING"].specificRole).toBe("MISSING_INFORMATION");
+  it("BILLING_ADDRESS_MISSING hat specificRole MISSING_INFORMATION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_MISSING"].specificRole).toBe("MISSING_INFORMATION");
   });
 
   it("BILLING_DOCUMENT_MISSING hat specificRole MISSING_DOCUMENT", () => {
@@ -315,10 +317,28 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_EXTERNAL_RESPONSIBILITY"].specificRole).toBe("EXTERNAL_RESPONSIBILITY");
   });
 
-  it("BILLING-Profil referenziert alle fünf Specific-Checkpoints", () => {
+  it("BILLING_INVOICE_TIMING hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"].specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("BILLING_ONSITE_PAYMENT hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"].specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("BILLING_PROCESS_EXTERNAL ist im Katalog noch vorhanden (@deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_PROCESS_EXTERNAL"]).toBeDefined();
+  });
+
+  it("BILLING_DATA_MISSING ist im Katalog noch vorhanden (@deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_DATA_MISSING"]).toBeDefined();
+  });
+
+  it("BILLING-Profil referenziert genau sieben Specific-Checkpoints (PROCESS_EXTERNAL + DATA_MISSING sind @deprecated und entfernt)", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(BILLING.specificCheckpointIds).toContain(id);
     }
+    expect(BILLING.specificCheckpointIds).not.toContain("BILLING_PROCESS_EXTERNAL");
+    expect(BILLING.specificCheckpointIds).not.toContain("BILLING_DATA_MISSING");
   });
 });
 
@@ -340,30 +360,30 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("gesetzlichen Krankenkasse");
   });
 
-  it("BILLING_PROCESS_EXTERNAL YES + SHOW → Text erscheint", () => {
+  it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
         decisionStatus: DecisionStatus.DISABLED,
-        checkpointStatuses: { BILLING_PROCESS_EXTERNAL: ExplanationStatus.YES },
-        explanationOutputStatuses: { BILLING_PROCESS_EXTERNAL: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+        checkpointStatuses: { BILLING_EXTERNAL_PROVIDER: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_EXTERNAL_PROVIDER: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("externen Dienstleister");
+    expect(paragraphs).toContain("Abrechnungsdienstleister");
   });
 
-  it("BILLING_DATA_MISSING YES + SHOW → Text erscheint", () => {
+  it("BILLING_ADDRESS_MISSING YES + SHOW → Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
         decisionStatus: DecisionStatus.DISABLED,
-        checkpointStatuses: { BILLING_DATA_MISSING: ExplanationStatus.YES },
-        explanationOutputStatuses: { BILLING_DATA_MISSING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+        checkpointStatuses: { BILLING_ADDRESS_MISSING: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_ADDRESS_MISSING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("vollständige Angaben");
+    expect(paragraphs).toContain("Postadresse");
   });
 
   it("BILLING_DOCUMENT_MISSING YES + SHOW → Text erscheint", () => {
@@ -376,7 +396,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Unterlagen benötigt");
+    expect(paragraphs).toContain("fehlende Unterlagen");
   });
 
   it("BILLING_EXTERNAL_RESPONSIBILITY YES + SHOW → Text erscheint", () => {
@@ -392,6 +412,32 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Krankenkasse");
   });
 
+  it("BILLING_INVOICE_TIMING YES + SHOW → Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_INVOICE_TIMING: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_INVOICE_TIMING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("quartalsweise");
+  });
+
+  it("BILLING_ONSITE_PAYMENT YES + SHOW → Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_ONSITE_PAYMENT: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_ONSITE_PAYMENT: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("per Karte");
+  });
+
   it("BILLING_COST_NOT_COVERED HIDE → kein Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
@@ -403,5 +449,135 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).not.toContain("gesetzlichen Krankenkasse");
+  });
+
+  it("BILLING_PROCESS_EXTERNAL ist @deprecated und nicht mehr im Profil – kein Renderer-Output", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_PROCESS_EXTERNAL: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_PROCESS_EXTERNAL: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    // BILLING_PROCESS_EXTERNAL not in profile → renderer ignores it
+    expect(paragraphs).not.toContain("beauftragte Labor");
+  });
+
+  it("BILLING_DATA_MISSING ist @deprecated und nicht mehr im Profil – kein Renderer-Output", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BILLING_DATA_MISSING: ExplanationStatus.YES },
+        explanationOutputStatuses: { BILLING_DATA_MISSING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    // BILLING_DATA_MISSING not in profile → renderer ignores it
+    expect(paragraphs).not.toContain("vollständige Angaben");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. docByStatus – interne Aktennotizen für BILLING-Checkpoints
+// ---------------------------------------------------------------------------
+
+describe("BILLING Specific-Checkpoints – docByStatus", () => {
+  it("BILLING_EXTERNAL_PROVIDER hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_EXTERNAL_PROVIDER"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("BILLING_EXTERNAL_PROVIDER docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_EXTERNAL_PROVIDER"];
+    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
+      cp.textByStatus[ExplanationStatus.YES]!.length,
+    );
+  });
+
+  it("BILLING_EXTERNAL_PROVIDER docByStatus[YES] enthält 'externe Abrechnung'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_EXTERNAL_PROVIDER"];
+    expect(cp.docByStatus![ExplanationStatus.YES]).toContain("externe Abrechnung");
+  });
+
+  it("BILLING_ADDRESS_MISSING hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_MISSING"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("BILLING_ADDRESS_MISSING docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_MISSING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
+      cp.textByStatus[ExplanationStatus.YES]!.length,
+    );
+  });
+
+  it("BILLING_ADDRESS_MISSING docByStatus[YES] enthält 'Adresse'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_MISSING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]).toContain("Adresse");
+  });
+
+  it("BILLING_INVOICE_TIMING hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("BILLING_INVOICE_TIMING docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
+      cp.textByStatus[ExplanationStatus.YES]!.length,
+    );
+  });
+
+  it("BILLING_INVOICE_TIMING docByStatus[YES] enthält 'quartalsweise'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"];
+    expect(cp.docByStatus![ExplanationStatus.YES]).toContain("quartalsweise");
+  });
+
+  it("BILLING_COST_NOT_COVERED hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_COST_NOT_COVERED"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("BILLING_DOCUMENT_MISSING hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_DOCUMENT_MISSING"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("BILLING_EXTERNAL_RESPONSIBILITY hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_EXTERNAL_RESPONSIBILITY"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("BILLING_ONSITE_PAYMENT hat docByStatus[YES] befüllt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"];
+    expect(cp.docByStatus).toBeDefined();
+    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
+  });
+
+  it("docByStatus-Texte sind kürzer als Patiententexte (kein langer Text in Dokumentation)", () => {
+    const idsToCheck = [
+      "BILLING_COST_NOT_COVERED",
+      "BILLING_EXTERNAL_PROVIDER",
+      "BILLING_ADDRESS_MISSING",
+      "BILLING_DOCUMENT_MISSING",
+      "BILLING_EXTERNAL_RESPONSIBILITY",
+      "BILLING_INVOICE_TIMING",
+      "BILLING_ONSITE_PAYMENT",
+    ] as const;
+    for (const id of idsToCheck) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
+        cp.textByStatus[ExplanationStatus.YES]!.length,
+      );
+    }
   });
 });

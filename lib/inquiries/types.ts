@@ -413,10 +413,18 @@ export type ResponseGoal = {
 /**
  * Checkpoint-Definition nach der neuen Architektur.
  *
- * Für GLOBAL-Checkpoints:
+ * Für GLOBAL GLOBAL_STATE-Checkpoints:
  * - `question` enthält die einmalige M2-Frage (reiner Schalter: ja / nein).
- * - `textByStatus` darf bei GLOBAL-Checkpoints nicht befüllt werden;
- *   der Antworttext wird aus `InquiryProfileV2.globalHints` bezogen.
+ * - `textByStatus` muss leer bleiben; kein patientensichtbarer Output.
+ *   Diese Checkpoints steuern intern den Kontext (z. B. IS_CHRONIC_PATIENT).
+ *
+ * Für GLOBAL MODULAR EXPLANATION-Checkpoints:
+ * - `question` enthält die einmalige M2-Frage.
+ * - `textByStatus[YES]` enthält den zentralen, profilübergreifenden Default-Text.
+ * - Profile können den Text via `InquiryProfileV2.globalHints[id]` überschreiben.
+ * - Diese Checkpoints erscheinen in M3 als SHOW/HIDE-fähige Output-Bausteine.
+ * - Der Renderer gibt sie nur aus, wenn M2-Status YES und M3-outputStatus SHOW gesetzt ist.
+ *   Ohne gespeicherte explanationOutputStatuses gilt Backward-Compat: YES → Ausgabe.
  *
  * Für SPECIFIC-Checkpoints:
  * - `questions` enthält Klärungsfragen als Entscheidungshilfe / Prefill für M3.
@@ -615,6 +623,13 @@ export type InquiryProfileV2 = {
    * Nur in Profilen gesetzt, für die der M1B/M3-Pilot aktiv ist.
    */
   responseGoals?: ResponseGoal[];
+  /**
+   * Anzeigereihenfolge in der M1-Profilauswahl (Neue Anfrage).
+   *
+   * Niedrigere Zahl = weiter oben. Profile ohne dieses Feld erscheinen am Ende.
+   * Hat keinen Einfluss auf Renderer, Resolver, M2, M3 oder M5.
+   */
+  displayOrder?: number;
 };
 
 /**
