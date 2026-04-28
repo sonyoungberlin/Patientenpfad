@@ -569,7 +569,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_SELF_PAYER_IGEL-Q1", text: "Handelt es sich um gewünschte Laborwerte ohne Kassenleistung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.",
+      [ExplanationStatus.YES]:
+        "Blutuntersuchungen ohne konkreten medizinischen Anlass oder außerhalb der gesetzlichen Vorsorgefristen sind Selbstzahlerleistungen (IGeL). Die Abrechnung dieser Werte erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ); Sie erhalten die Rechnung hierfür direkt von unserem Partnerlabor.",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -655,6 +656,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Konsolidiert in LAB_SELF_PAYER_IGEL. Nicht mehr in LAB.specificCheckpointIds. */
   LAB_SELF_PAY: {
     id: "LAB_SELF_PAY",
     label: "Selbstzahler / IGeL",

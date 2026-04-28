@@ -1648,10 +1648,10 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER");
     expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_REFERRAL");
     expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAY");
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_IGEL");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(labProfile.specificCheckpointIds).toHaveLength(5);
+    expect(labProfile.specificCheckpointIds).toHaveLength(4);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1792,7 +1792,7 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
         checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toContain("Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.");
+    expect(result.sections[0].attachedParagraphs).toContain("Blutuntersuchungen ohne konkreten medizinischen Anlass oder außerhalb der gesetzlichen Vorsorgefristen sind Selbstzahlerleistungen (IGeL). Die Abrechnung dieser Werte erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ); Sie erhalten die Rechnung hierfür direkt von unserem Partnerlabor.");
   });
 
   it("LAB_DISCUSSION_PROCESS_CODE YES → kein Output in attachedParagraphs (ungebunden)", () => {
@@ -2128,7 +2128,7 @@ describe("SAMPLE_COLLECTION-Profil – GLOBALs entfernt", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Blutuntersuchungen ohne medizinische Indikation oder außerhalb der Vorsorgefristen werden als Selbstzahlerleistung durchgeführt.",
+      "Blutuntersuchungen ohne konkreten medizinischen Anlass oder außerhalb der gesetzlichen Vorsorgefristen sind Selbstzahlerleistungen (IGeL). Die Abrechnung dieser Werte erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ); Sie erhalten die Rechnung hierfür direkt von unserem Partnerlabor.",
     );
   });
 });

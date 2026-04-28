@@ -255,7 +255,6 @@ const NEW_LAB_CHECKPOINT_IDS = [
   "LAB_INTERNAL_ORDER",
   "LAB_EXTERNAL_REFERRAL",
   "LAB_EXTERNAL_DOCUMENT_PRESENT",
-  "LAB_SELF_PAY",
 ] as const;
 
 describe("LAB – neue Prozess-Checkpoints existieren im Catalog", () => {
@@ -283,8 +282,16 @@ describe("LAB – neue Prozess-Checkpoints existieren im Catalog", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_EXTERNAL_DOCUMENT_PRESENT"]!.specificRole).toBe("MISSING_DOCUMENT");
   });
 
-  it("LAB_SELF_PAY hat specificRole RULE_COST_COVERAGE", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAY"]!.specificRole).toBe("RULE_COST_COVERAGE");
+  it("LAB_SELF_PAYER_IGEL hat specificRole RULE_COST_COVERAGE", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_IGEL"]!.specificRole).toBe("RULE_COST_COVERAGE");
+  });
+
+  it("LAB_SELF_PAY ist im Katalog noch vorhanden (deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAY"]).toBeDefined();
+  });
+
+  it("LAB_SELF_PAY ist nicht mehr in specificCheckpointIds des LAB-Profils (deprecated)", () => {
+    expect(LAB.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
   });
 });
 
@@ -392,32 +399,50 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
     expect(allText).not.toContain("Überweisung Ihres behandelnden Facharztes");
   });
 
-  it("LAB_SELF_PAY: YES + SHOW enthält IGeL-Hinweis", () => {
+  it("LAB_SELF_PAYER_IGEL: YES + SHOW enthält kombinierten IGeL/GOÄ-Hinweis", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "LAB",
         decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { LAB_SELF_PAY: ExplanationStatus.YES },
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
         explanationOutputStatuses: {
-          LAB_SELF_PAY: ExplanationOutputStatus.SHOW,
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.SHOW,
         } as Record<string, ExplanationOutputStatus>,
       },
     ]);
     const allText = result.sections
       .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
       .join(" ");
-    expect(allText).toContain("individuelle Gesundheitsleistung");
-    expect(allText).toContain("privat");
+    expect(allText).toContain("Selbstzahlerleistungen (IGeL)");
+    expect(allText).toContain("Gebührenordnung für Ärzte (GOÄ)");
+    expect(allText).toContain("Partnerlabor");
   });
 
-  it("LAB_SELF_PAY: NO + SHOW liefert keinen Text (leerer textByStatus.NO)", () => {
+  it("LAB_SELF_PAYER_IGEL: YES + HIDE liefert keinen Text", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "LAB",
         decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { LAB_SELF_PAY: ExplanationStatus.NO },
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
         explanationOutputStatuses: {
-          LAB_SELF_PAY: ExplanationOutputStatus.SHOW,
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).not.toContain("Selbstzahlerleistungen (IGeL)");
+  });
+
+  it("LAB_SELF_PAYER_IGEL: NO + SHOW liefert keinen Text (leerer textByStatus.NO)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.NO },
+        explanationOutputStatuses: {
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.SHOW,
         } as Record<string, ExplanationOutputStatus>,
       },
     ]);
@@ -425,6 +450,22 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
       .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
       .join(" ")
       .trim();
-    expect(allText).not.toContain("individuelle Gesundheitsleistung");
+    expect(allText).not.toContain("Selbstzahlerleistungen (IGeL)");
+  });
+
+  it("Kein doppelter Kostenhinweis: LAB_SELF_PAYER_IGEL YES + SHOW → nur ein Kosten-Abschnitt", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_SELF_PAYER_IGEL: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          LAB_SELF_PAYER_IGEL: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    const costParagraphs = paragraphs.filter((p) => p.includes("Selbstzahler") || p.includes("GOÄ"));
+    expect(costParagraphs).toHaveLength(1);
   });
 });
