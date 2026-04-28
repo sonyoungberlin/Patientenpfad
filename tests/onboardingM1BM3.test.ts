@@ -580,3 +580,24 @@ describe("ONBOARDING Specific-Checkpoints – docByStatus", () => {
     expect(wrong.textByStatus[ExplanationStatus.YES]).toContain("Missverständnis");
   });
 });
+
+// ---------------------------------------------------------------------------
+// ONBOARDING – Action-Verfügbarkeit
+// ---------------------------------------------------------------------------
+
+describe("ONBOARDING – availableActionIds", () => {
+  it("TECHNICAL_ISSUE ist in ONBOARDING.availableActionIds enthalten", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
+    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+  });
+
+  it("DIGITAL_REQUEST ist in ONBOARDING.availableActionIds enthalten", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
+    expect(profile.availableActionIds).toContain("DIGITAL_REQUEST");
+  });
+
+  it("DOCUMENT_UPLOAD ist in ONBOARDING.availableActionIds enthalten", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
+    expect(profile.availableActionIds).toContain("DOCUMENT_UPLOAD");
+  });
+});

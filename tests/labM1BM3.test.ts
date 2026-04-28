@@ -441,3 +441,24 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
     expect(allText).not.toContain("Selbstzahlerleistungen (IGeL)");
   });
 });
+
+// ---------------------------------------------------------------------------
+// LAB – boundActionCheckpointIds
+// ---------------------------------------------------------------------------
+
+describe("LAB – boundActionCheckpointIds", () => {
+  it("LAB_RESULT_TIME ist in LAB.boundActionCheckpointIds enthalten", () => {
+    expect(LAB.boundActionCheckpointIds).toContain("LAB_RESULT_TIME");
+  });
+
+  it("LAB_FASTING_REQUIRED ist weiterhin in LAB.boundActionCheckpointIds enthalten", () => {
+    expect(LAB.boundActionCheckpointIds).toContain("LAB_FASTING_REQUIRED");
+  });
+
+  it("LAB_RESULT_TIME ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_RESULT_TIME"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+});

@@ -495,6 +495,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     },
     boundActionCheckpointIds: [
       "LAB_FASTING_REQUIRED",
+      "LAB_RESULT_TIME",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -1198,6 +1199,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
+      "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
 
@@ -1286,6 +1288,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "DOCUMENT_UPLOAD",
+      "TECHNICAL_ISSUE",
     ],
 
     // -----------------------------------------------------------------------

@@ -388,3 +388,21 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("Upload");
   });
 });
+
+// ---------------------------------------------------------------------------
+// TECH_SUPPORT – Action-Verfügbarkeit
+// ---------------------------------------------------------------------------
+
+describe("TECH_SUPPORT – availableActionIds", () => {
+  it("PROCESSING_DELAY ist in TECH_SUPPORT.availableActionIds enthalten", () => {
+    expect(TECH_SUPPORT.availableActionIds).toContain("PROCESSING_DELAY");
+  });
+
+  it("TECHNICAL_ISSUE ist in TECH_SUPPORT.availableActionIds enthalten", () => {
+    expect(TECH_SUPPORT.availableActionIds).toContain("TECHNICAL_ISSUE");
+  });
+
+  it("DIGITAL_REQUEST ist in TECH_SUPPORT.availableActionIds enthalten", () => {
+    expect(TECH_SUPPORT.availableActionIds).toContain("DIGITAL_REQUEST");
+  });
+});
