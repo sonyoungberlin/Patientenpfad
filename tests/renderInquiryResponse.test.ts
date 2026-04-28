@@ -749,6 +749,105 @@ describe("renderInquiryResponseFromSections – Decision", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Phase 1: docByStatus auf DECISION-Checkpoints – kurze interne Dokumentation
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponseFromSections – DECISION docByStatus (Phase 1)", () => {
+  it("AU_DECISION POSSIBLE → documentation enthält kurzen doc-Text, nicht Patienten-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.documentation.some((d) => d.includes("AU ausgestellt."))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Arbeitsunfähigkeitsbescheinigung"))).toBe(false);
+  });
+
+  it("AU_DECISION NOT_POSSIBLE → documentation enthält kurzen doc-Text, nicht Patienten-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.documentation.some((d) => d.includes("AU nicht ausgestellt."))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("angefragte Arbeitsunfähigkeitsbescheinigung"))).toBe(false);
+  });
+
+  it("AU_DECISION POSSIBLE → mainDecision bleibt unverändert (Patienten-Text)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toBe("Ihre Arbeitsunfähigkeitsbescheinigung wurde ausgestellt.");
+  });
+
+  it("AU_DECISION NOT_POSSIBLE → mainDecision bleibt unverändert (Patienten-Text)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toContain("angefragte Arbeitsunfähigkeitsbescheinigung");
+  });
+
+  it("PRESCRIPTION_DECISION POSSIBLE → documentation enthält kurzen doc-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.documentation.some((d) => d.includes("Rezept ausgestellt."))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Ihr Rezept"))).toBe(false);
+  });
+
+  it("PRESCRIPTION_DECISION NOT_POSSIBLE → documentation enthält kurzen doc-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
+    ]);
+    expect(result.documentation.some((d) => d.includes("Rezept nicht ausgestellt."))).toBe(true);
+    expect(result.documentation.some((d) => d.includes("Das von Ihnen angefragte Rezept"))).toBe(false);
+  });
+
+  it("PRESCRIPTION_DECISION POSSIBLE → mainDecision bleibt unverändert (Patienten-Text)", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({ decisionStatus: DecisionStatus.POSSIBLE }),
+    ]);
+    expect(result.sections[0].mainDecision).toBe("Ihr Rezept wurde ausgestellt.");
+  });
+
+  it("alle DECISION-Checkpoints haben docByStatus mit POSSIBLE und NOT_POSSIBLE befüllt", () => {
+    const decisionIds = [
+      "AU_DECISION",
+      "PRESCRIPTION_DECISION",
+      "LAB_DECISION",
+      "SAMPLE_COLLECTION_DECISION",
+      "ACUTE_CARE_DECISION",
+      "REFERRAL_DECISION",
+      "IMMUNIZATION_DECISION",
+      "MEDICAL_DOCUMENTS_DECISION",
+    ] as const;
+    for (const id of decisionIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.docByStatus).toBeDefined();
+      expect(cp.docByStatus![DecisionStatus.POSSIBLE]).toBeTruthy();
+      expect(cp.docByStatus![DecisionStatus.NOT_POSSIBLE]).toBeTruthy();
+    }
+  });
+
+  it("docByStatus-Texte sind kürzer als textByStatus-Texte (interne Aktennotiz)", () => {
+    const decisionIds = [
+      "AU_DECISION",
+      "PRESCRIPTION_DECISION",
+      "LAB_DECISION",
+      "SAMPLE_COLLECTION_DECISION",
+      "ACUTE_CARE_DECISION",
+      "REFERRAL_DECISION",
+      "IMMUNIZATION_DECISION",
+      "MEDICAL_DOCUMENTS_DECISION",
+    ] as const;
+    for (const id of decisionIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      for (const status of [DecisionStatus.POSSIBLE, DecisionStatus.NOT_POSSIBLE]) {
+        const docText = cp.docByStatus![status]!;
+        const patientText = cp.textByStatus[status]!;
+        expect(docText.length).toBeLessThan(patientText.length);
+      }
+    }
+  });
+});
+
 describe("renderInquiryResponseFromSections – Global EXPLANATION Checkpoints", () => {
   it("PATIENT_NOT_IN_GERMANY YES → kein Hinweis in attachedParagraphs (nicht mehr an AU gebunden)", () => {
     const result = renderInquiryResponseFromSections([

@@ -175,6 +175,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
     },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "AU ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "AU nicht ausgestellt.",
+    },
   },
 
   // ---- AU SPECIFIC EXPLANATIONS ----
@@ -335,6 +339,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]: "Das von Ihnen angefragte Rezept wurde nicht ausgestellt.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Rezept ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Rezept nicht ausgestellt.",
     },
   },
 
@@ -524,6 +532,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Laboruntersuchung veranlasst.",
+      [DecisionStatus.NOT_POSSIBLE]: "Laboruntersuchung nicht veranlasst.",
     },
   },
 
@@ -936,6 +948,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.POSSIBLE]: "Die Probenabgabe kann wie besprochen durchgeführt werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Die angefragte Probenabgabe wurde nicht berücksichtigt.",
     },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Probenabgabe angenommen.",
+      [DecisionStatus.NOT_POSSIBLE]: "Probenabgabe nicht möglich.",
+    },
   },
 
   // ---- SAMPLE_COLLECTION SPECIFIC CHECKPOINTS ----
@@ -1017,6 +1033,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Sie können sich mit Ihrem Anliegen im Rahmen eines Akuttermins oder der offenen Sprechstunde vorstellen.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Für Ihr Anliegen ist diese Terminart nicht geeignet.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Akutvorstellung empfohlen.",
+      [DecisionStatus.NOT_POSSIBLE]: "Akutvorstellung nicht empfohlen.",
     },
   },
 
@@ -1234,6 +1254,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Überweisung wurde nicht ausgestellt.",
     },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Überweisung ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Überweisung nicht ausgestellt.",
+    },
   },
 
   // ---- REFERRAL SPECIFIC EXPLANATIONS ----
@@ -1334,6 +1358,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Die angefragte Impfung kann durchgeführt werden.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Die angefragte Impfung kann derzeit nicht durchgeführt werden.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Impfung empfohlen/angeboten.",
+      [DecisionStatus.NOT_POSSIBLE]: "Impfung nicht durchgeführt.",
     },
   },
 
@@ -1788,6 +1816,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Das angefragte Attest / die angefragte Bescheinigung kann erstellt werden.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Das angefragte Attest / die angefragte Bescheinigung kann derzeit nicht erstellt werden.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Bescheinigung/Attest ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Bescheinigung/Attest nicht ausgestellt.",
     },
   },
 
