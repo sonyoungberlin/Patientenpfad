@@ -473,6 +473,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Labor",
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
+      "LAB_INTERNAL_ORDER",
+      "LAB_EXTERNAL_REFERRAL",
+      "LAB_EXTERNAL_DOCUMENT_PRESENT",
+      "LAB_SELF_PAY",
       "LAB_SELF_PAYER_IGEL",
       "MEDICAL_CONSULTATION_REQUIRED",
     ],

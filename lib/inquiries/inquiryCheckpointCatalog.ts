@@ -571,6 +571,72 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- LAB SPECIFIC CHECKPOINTS (neue Prozesslogik) ----
+
+  LAB_INTERNAL_ORDER: {
+    id: "LAB_INTERNAL_ORDER",
+    label: "Interne ärztliche Anordnung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_INTERNAL_ORDER-Q1", text: "Liegt eine interne ärztliche Laboranordnung vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_EXTERNAL_REFERRAL: {
+    id: "LAB_EXTERNAL_REFERRAL",
+    label: "Externe Überweisung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "LAB_EXTERNAL_REFERRAL-Q1", text: "Liegt eine Überweisung eines Facharztes vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\n\nBringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit, damit die angeforderten Werte korrekt durchgeführt werden können.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  LAB_EXTERNAL_DOCUMENT_PRESENT: {
+    id: "LAB_EXTERNAL_DOCUMENT_PRESENT",
+    label: "Überweisungsdokument vorhanden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "LAB_EXTERNAL_DOCUMENT_PRESENT-Q1", text: "Liegt die Überweisung des behandelnden Facharztes im Original vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "",
+      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung benötigen wir die Überweisung Ihres behandelnden Facharztes im Original.\n\nBitte bringen Sie das Dokument zum Termin mit.",
+    },
+  },
+
+  LAB_SELF_PAY: {
+    id: "LAB_SELF_PAY",
+    label: "Selbstzahler / IGeL",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "LAB_SELF_PAY-Q1", text: "Handelt es sich um Laborwerte als individuelle Gesundheitsleistung (IGeL)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die gewünschten Laborwerte können als individuelle Gesundheitsleistung durchgeführt werden.\n\nDie Abrechnung erfolgt in diesem Fall privat. Sie erhalten die Rechnung direkt vom Labor.",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
   // ---- LAB SPECIFIC CHECKPOINTS (legacy, ungebunden) ----
 
   // Labor-Anlass / Indikation: klärt den Grund / Kontext für die Laboranforderung.
