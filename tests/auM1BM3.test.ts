@@ -6,14 +6,20 @@
  * 3. M1B verweist nur auf existierende M3-Ziel-IDs.
  * 4. M3 verweist nur auf existierende specificRoles.
  * 5. Renderer bleibt unverändert (communicationReasons/responseGoals tauchen nicht im Output auf).
+ * 6. Neue AU-Checkpoints (AU_NEW_PATIENT_LIMIT, AU_DIGITAL_AU_PROCESS) und
+ *    ACUTE_OPEN_CONSULTATION_INFO sind korrekt definiert und im AU-Profil referenziert.
  */
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
   DecisionStatus,
+  ExplanationStatus,
+  ExplanationOutputStatus,
+  InquiryCheckpointKind,
+  InquiryCheckpointScope,
   type SpecificRole,
-  type ExplanationOutputStatus,
 } from "@/lib/inquiries/types";
 
 const AU = INQUIRY_PROFILE_CATALOG_V2["AU"];
@@ -242,5 +248,163 @@ describe("AU Renderer – communicationReasons/responseGoals haben keinen Einflu
     expect(result).not.toHaveProperty("responseGoals");
     expect(result.sections[0]).not.toHaveProperty("communicationReasons");
     expect(result.sections[0]).not.toHaveProperty("responseGoals");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. Neue AU-Checkpoints – Struktur und Profil-Referenz
+// ---------------------------------------------------------------------------
+
+describe("AU_NEW_PATIENT_LIMIT – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_NEW_PATIENT_LIMIT"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind EXPLANATION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat specificRole RULE_TIME_LIMIT", () => {
+    expect((cp as any).specificRole).toBe("RULE_TIME_LIMIT");
+  });
+
+  it("hat YES-Text", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+    expect(typeof text).toBe("string");
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain("3 Tage");
+    expect(text).toContain("Folgebescheinigung");
+  });
+
+  it("ist in AU.specificCheckpointIds referenziert", () => {
+    expect(AU.specificCheckpointIds).toContain("AU_NEW_PATIENT_LIMIT");
+  });
+});
+
+describe("AU_DIGITAL_AU_PROCESS – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_DIGITAL_AU_PROCESS"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind EXPLANATION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat specificRole PROCESS_INFO", () => {
+    expect((cp as any).specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("hat YES-Text mit URLs und Bearbeitungszeit", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+    expect(typeof text).toBe("string");
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain("kurz-anamnese");
+    expect(text).toContain("digitaleanfrage");
+    expect(text).toContain("8–12 Stunden");
+  });
+
+  it("ist in AU.specificCheckpointIds referenziert", () => {
+    expect(AU.specificCheckpointIds).toContain("AU_DIGITAL_AU_PROCESS");
+  });
+});
+
+describe("ACUTE_OPEN_CONSULTATION_INFO – im AU-Profil referenziert", () => {
+  it("ACUTE_OPEN_CONSULTATION_INFO existiert im Checkpoint-Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
+  });
+
+  it("ist in AU.specificCheckpointIds referenziert", () => {
+    expect(AU.specificCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7. Renderer – neue Checkpoints erscheinen korrekt im Output
+// ---------------------------------------------------------------------------
+
+describe("AU Renderer – neue AU-Checkpoints", () => {
+  it("AU_NEW_PATIENT_LIMIT YES + SHOW liefert Text im Output", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          AU_NEW_PATIENT_LIMIT: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          AU_NEW_PATIENT_LIMIT: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).toContain("3 Tage");
+  });
+
+  it("AU_NEW_PATIENT_LIMIT HIDE liefert keinen Text", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          AU_NEW_PATIENT_LIMIT: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          AU_NEW_PATIENT_LIMIT: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).not.toContain("3 Tage");
+  });
+
+  it("AU_DIGITAL_AU_PROCESS YES + SHOW liefert Text mit URLs im Output", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          AU_DIGITAL_AU_PROCESS: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          AU_DIGITAL_AU_PROCESS: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).toContain("kurz-anamnese");
+    expect(allText).toContain("8–12 Stunden");
+  });
+
+  it("AU_DIGITAL_AU_PROCESS HIDE liefert keinen Text", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "AU",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          AU_DIGITAL_AU_PROCESS: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          AU_DIGITAL_AU_PROCESS: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).not.toContain("kurz-anamnese");
   });
 });

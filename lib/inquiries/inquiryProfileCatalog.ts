@@ -46,6 +46,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
       "MEDICAL_CONSULTATION_REQUIRED",
+      "AU_NEW_PATIENT_LIMIT",
+      "AU_DIGITAL_AU_PROCESS",
+      "ACUTE_OPEN_CONSULTATION_INFO",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [

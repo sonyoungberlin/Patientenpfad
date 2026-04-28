@@ -844,11 +844,11 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat genau vier Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(4);
+  it("AU-Profil hat genau sieben Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(7);
   });
 
-  it("AU-Profil bindet genau drei AU SPECIFIC Explanation Checkpoints und MEDICAL_CONSULTATION_REQUIRED", () => {
+  it("AU-Profil bindet die erwarteten AU SPECIFIC Explanation Checkpoints", () => {
     expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_LIMIT");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_DURATION_LIMIT");
     expect(auProfile.specificCheckpointIds).toContain("AU_WORK_ACCIDENT");
@@ -856,6 +856,9 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
     expect(auProfile.specificCheckpointIds).not.toContain("AU_CONTINUITY_REQUIRED");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_RETURN_TO_WORK");
     expect(auProfile.specificCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(auProfile.specificCheckpointIds).toContain("AU_NEW_PATIENT_LIMIT");
+    expect(auProfile.specificCheckpointIds).toContain("AU_DIGITAL_AU_PROCESS");
+    expect(auProfile.specificCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
   });
 
   it("AU-Profil hat keine gebundenen Global Checkpoints", () => {

@@ -281,6 +281,42 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- AU NEW SPECIFIC CHECKPOINTS ----
+
+  AU_NEW_PATIENT_LIMIT: {
+    id: "AU_NEW_PATIENT_LIMIT",
+    label: "Neupatient – AU-Höchstdauer",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_TIME_LIMIT" as SpecificRole,
+    questions: [
+      { id: "AU_NEW_PATIENT_LIMIT-Q1", text: "Handelt es sich um einen Neupatienten?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei Neupatienten können wir eine Arbeitsunfähigkeitsbescheinigung zunächst für maximal 3 Tage ausstellen.\n\nFür eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_DIGITAL_AU_PROCESS: {
+    id: "AU_DIGITAL_AU_PROCESS",
+    label: "Digitaler AU-Anfrageprozess",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "AU_DIGITAL_AU_PROCESS-Q1", text: "Soll der digitale AU-Anfrageprozess erklärt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Wenn Sie eine Arbeitsunfähigkeitsbescheinigung digital anfragen möchten, benötigen wir die dafür notwendigen Angaben.\n\nBitte füllen Sie dazu beide Formulare aus:\n\n1. Kurz-Anamnese\nhttps://mvz-kreuzberg.de/kurz-anamnese\n\n2. Digitale Anfrage für die Arbeitsunfähigkeitsbescheinigung\nhttps://mvz-kreuzberg.de/digitaleanfrage\n\nBitte beachten Sie, dass die Bearbeitung je nach Auslastung 8–12 Stunden dauern kann. Wir bitten Sie, in dieser Zeit von Nachfragen zum Bearbeitungsstand abzusehen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- PRESCRIPTION DECISION ----
 
   PRESCRIPTION_DECISION: {
