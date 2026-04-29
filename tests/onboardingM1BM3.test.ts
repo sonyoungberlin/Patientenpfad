@@ -548,13 +548,13 @@ describe("ONBOARDING Specific-Checkpoints – docByStatus", () => {
 
   it("textByStatus[YES] der drei M2-Schalter ist leer (reiner Schalter)", () => {
     const data = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_INCOMPLETE"];
-    expect(!data.textByStatus[ExplanationStatus.YES] || data.textByStatus[ExplanationStatus.YES]!.length === 0).toBe(true);
+    expect(data.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
 
     const identity = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"];
-    expect(!identity.textByStatus[ExplanationStatus.YES] || identity.textByStatus[ExplanationStatus.YES]!.length === 0).toBe(true);
+    expect(identity.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
 
     const wrong = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"];
-    expect(!wrong.textByStatus[ExplanationStatus.YES] || wrong.textByStatus[ExplanationStatus.YES]!.length === 0).toBe(true);
+    expect(wrong.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
   });
 
   it("ONBOARDING_DOCUMENT_MISSING (@deprecated) textByStatus[YES] bleibt unverändert", () => {
@@ -763,19 +763,16 @@ describe("ONBOARDING – ONLINE_ANAMNESIS via boundActionConditions", () => {
 describe("ONBOARDING M2-Schalter – kein textByStatus.YES", () => {
   it("ONBOARDING_DATA_INCOMPLETE hat keinen YES-Text (reiner M2-Schalter)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_INCOMPLETE"];
-    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-    expect(!text || text.length === 0).toBe(true);
+    expect(cp.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
   });
 
   it("ONBOARDING_IDENTITY_MISMATCH hat keinen YES-Text (reiner M2-Schalter)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"];
-    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-    expect(!text || text.length === 0).toBe(true);
+    expect(cp.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
   });
 
   it("ONBOARDING_WRONG_PRACTICE hat keinen YES-Text (reiner M2-Schalter)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"];
-    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-    expect(!text || text.length === 0).toBe(true);
+    expect(cp.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
   });
 });
