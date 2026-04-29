@@ -154,3 +154,67 @@ describe("M2 boundActionCheckpointIds filter", () => {
     expect(buildM2ActionCps(profileId)).toEqual(expected);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Helpers – mirror the M3 page.tsx logic for building actionCheckpoints
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors the page.tsx logic after the fix:
+ * actionCheckpoints is built from displayActionIds (availableActionIds only),
+ * NOT from the full actionIds set that also includes boundActionCheckpointIds.
+ */
+function buildM3ActionCheckpoints(selectedIds: string[]): string[] {
+  const displayActionIds = new Set<string>();
+  for (const inquiryId of selectedIds) {
+    const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
+    if (!profile) continue;
+    profile.availableActionIds.forEach((cpId) => displayActionIds.add(cpId));
+    // boundActionCheckpointIds are intentionally NOT added here
+  }
+  return Array.from(displayActionIds)
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter((cp) => !!cp && cp.kind === InquiryCheckpointKind.ACTION)
+    .map((cp) => cp!.id);
+}
+
+// ---------------------------------------------------------------------------
+// Tests – M3 global actionCheckpoints must not contain boundActionCheckpointIds
+// ---------------------------------------------------------------------------
+
+describe("M3 actionCheckpoints – keine boundActionCheckpointIds in der globalen Liste", () => {
+  it("LAB: boundActionCheckpointIds erscheinen nicht in actionCheckpoints", () => {
+    const actionCheckpointIds = buildM3ActionCheckpoints(["LAB"]);
+    const LAB = INQUIRY_PROFILE_CATALOG_V2["LAB"];
+    expect(LAB).toBeDefined();
+    for (const cpId of LAB!.boundActionCheckpointIds ?? []) {
+      expect(actionCheckpointIds).not.toContain(cpId);
+    }
+  });
+
+  it("LAB: availableActionIds erscheinen weiterhin in actionCheckpoints", () => {
+    const actionCheckpointIds = buildM3ActionCheckpoints(["LAB"]);
+    const LAB = INQUIRY_PROFILE_CATALOG_V2["LAB"];
+    expect(LAB).toBeDefined();
+    for (const cpId of LAB!.availableActionIds) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[cpId];
+      if (cp && cp.kind === InquiryCheckpointKind.ACTION) {
+        expect(actionCheckpointIds).toContain(cpId);
+      }
+    }
+  });
+
+  it("kein Profil fügt boundActionCheckpointIds in die globale M3-Actionliste ein", () => {
+    const violations: string[] = [];
+    for (const [profileId, profile] of Object.entries(INQUIRY_PROFILE_CATALOG_V2)) {
+      if (!profile) continue;
+      const actionCheckpointIds = new Set(buildM3ActionCheckpoints([profileId]));
+      for (const cpId of profile.boundActionCheckpointIds ?? []) {
+        if (actionCheckpointIds.has(cpId)) {
+          violations.push(`Profil ${profileId}: boundActionCheckpointId "${cpId}" ist fälschlich in actionCheckpoints`);
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
