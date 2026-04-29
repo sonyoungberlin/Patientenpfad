@@ -28,6 +28,8 @@ type Props = {
   sessionId: string;
   sections: M2SectionData[];
   globalCheckpoints: PlainCheckpoint[];
+  /** Verfügbare Actions aus den gewählten Profilen (dedupliziert, ohne boundActionCheckpointIds). */
+  profileActionCheckpoints: PlainCheckpoint[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   /** M1B – Kommunikationsanlass-Auswahl pro Profil (menschliche Auswahl). Record<inquiryId, communicationReasonId> */
@@ -395,6 +397,7 @@ export default function InquiryM2Client({
   sessionId,
   sections,
   globalCheckpoints,
+  profileActionCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
   initialCommunicationReasonSelection,
@@ -488,6 +491,34 @@ export default function InquiryM2Client({
           onChange={setStatus}
         />
       ))}
+
+      {/* 4. Weitere passende Hinweise – availableActionIds der gewählten Profile */}
+      {profileActionCheckpoints.length > 0 && (
+        <section
+          style={{
+            marginBottom: "2rem",
+            background: "#f9f9f9",
+            border: "1px solid #e0e0e0",
+            borderRadius: "var(--radius)",
+            padding: "1rem",
+          }}
+        >
+          <div
+            className="text-muted text-small"
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
+          >
+            <span aria-hidden="true">→ </span>Weitere passende Hinweise
+          </div>
+          {profileActionCheckpoints.map((cp) => (
+            <BoundActionRow
+              key={cp.id}
+              checkpoint={cp}
+              value={statuses[cp.id]}
+              onChange={setStatus}
+            />
+          ))}
+        </section>
+      )}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>

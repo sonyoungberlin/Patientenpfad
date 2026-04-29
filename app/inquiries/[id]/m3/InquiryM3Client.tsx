@@ -534,12 +534,12 @@ export default function InquiryM3Client({
               })}
 
               {/* Globale Output-Bausteine (GLOBAL MODULAR EXPLANATION) */}
-              {(section.boundGlobalOutputCheckpoints ?? []).length > 0 && (
+              {(section.boundGlobalOutputCheckpoints ?? []).filter((cp) => statuses[cp.id] === "YES").length > 0 && (
                 <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
                   <div className="text-muted text-small" style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}>
                     <span aria-hidden="true">ⓘ </span>Globale Bausteine
                   </div>
-                  {(section.boundGlobalOutputCheckpoints ?? []).map((cp) => (
+                  {(section.boundGlobalOutputCheckpoints ?? []).filter((cp) => statuses[cp.id] === "YES").map((cp) => (
                     <div
                       key={cp.id}
                       style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
@@ -569,7 +569,7 @@ export default function InquiryM3Client({
           })}
 
           {/* Action checkpoints (globale availableActionIds + profilgebundene boundActionCheckpointIds) */}
-          {(actionCheckpoints.length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
+          {(actionCheckpoints.filter((cp) => statuses[cp.id] === "ACTIVE").length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
             <section style={{ marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: actionsOpen ? "0.5rem" : 0 }}>
                 <h2 style={{ margin: 0 }}><span aria-hidden="true">→ </span>Aktionen / Infos</h2>
@@ -594,7 +594,10 @@ export default function InquiryM3Client({
 
                 // --- Globale availableActionIds (gruppiert nach ACTION_GROUPS) ---
                 if (actionCheckpoints.length > 0) {
-                  const cpById = Object.fromEntries(actionCheckpoints.map((cp) => [cp.id, cp]));
+                  const activeActionCheckpoints = actionCheckpoints.filter(
+                    (cp) => statuses[cp.id] === "ACTIVE",
+                  );
+                  const cpById = Object.fromEntries(activeActionCheckpoints.map((cp) => [cp.id, cp]));
                   const renderedIds = new Set<string>();
 
                   for (const group of ACTION_GROUPS) {
@@ -631,7 +634,7 @@ export default function InquiryM3Client({
                   }
 
                   // Ungrouped fallback
-                  const ungrouped = actionCheckpoints.filter((cp) => !renderedIds.has(cp.id));
+                  const ungrouped = activeActionCheckpoints.filter((cp) => !renderedIds.has(cp.id));
                   if (ungrouped.length > 0) {
                     groupElements.push(
                       <div key="__ungrouped__" style={{ marginTop: "0.75rem" }}>
