@@ -2605,10 +2605,35 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
     );
   });
 
-  it("ACUTE_APPOINTMENT_INFO YES → Text in attachedParagraphs (wiederhergestellt)", () => {
+  it("ACUTE_APPOINTMENT_INFO.textByStatus hat keinen YES-Eintrag (Text liegt in ACUTE_BOOKING_INFO)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_APPOINTMENT_INFO"];
+    expect(cp.textByStatus[ExplanationStatus.YES]).toBeUndefined();
+  });
+
+  it("ACUTE_BOOKING_INFO enthält den ausgelagerten Buchungshinweis-Text unter ACTIVE", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_BOOKING_INFO"];
+    expect(cp).toBeDefined();
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain(
+      "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden",
+    );
+  });
+
+  it("ACUTE_BOOKING_INFO ist in ACUTE_CARE.boundActionCheckpointIds enthalten", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    expect(profile.boundActionCheckpointIds).toContain("ACUTE_BOOKING_INFO");
+  });
+
+  it("ACUTE_BOOKING_INFO.boundActionConditions: showWhenAny [{ ACUTE_APPOINTMENT_INFO: 'YES' }]", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
+    const condition = profile.boundActionConditions?.["ACUTE_BOOKING_INFO"];
+    expect(condition).toBeDefined();
+    expect(condition!.showWhenAny).toEqual([{ ACUTE_APPOINTMENT_INFO: "YES" }]);
+  });
+
+  it("ACUTE_BOOKING_INFO ACTIVE → Text erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
-        checkpointStatuses: { ACUTE_APPOINTMENT_INFO: ExplanationStatus.YES },
+        checkpointStatuses: { ACUTE_BOOKING_INFO: ActionStatus.ACTIVE },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
