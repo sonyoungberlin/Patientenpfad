@@ -44,9 +44,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "AU_DECISION",
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
+      "AU_NEW_PATIENT_LIMIT",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
-      "AU_NEW_PATIENT_LIMIT",
       "AU_DIGITAL_AU_PROCESS",
     ],
     boundGlobalCheckpointIds: [
@@ -198,11 +198,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 40,
     decisionCheckpointId: "PRESCRIPTION_DECISION",
     specificCheckpointIds: [
-      "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_BTM_ADHS_RULES",
-      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
+      "PRESCRIPTION_STATUTORY_POSSIBLE",
     ],
     boundGlobalCheckpointIds: [
       "IS_CHRONIC_PATIENT",
@@ -483,9 +483,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 80,
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
-      "LAB_INTERNAL_ORDER",
-      "LAB_EXTERNAL_REFERRAL",
       "LAB_MPU_EXCLUSION",
+      "LAB_EXTERNAL_REFERRAL",
+      "LAB_INTERNAL_ORDER",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
@@ -728,9 +728,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 10,
     decisionCheckpointId: "ACUTE_CARE_DECISION",
     specificCheckpointIds: [
-      "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "CHRONIC_EXCLUSION",
+      "ACUTE_PURPOSE",
       "ACUTE_APPOINTMENT_INFO",
     ],
     boundGlobalCheckpointIds: [
@@ -835,8 +835,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 60,
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [
-      "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_SPECIALTY_REQUIRED",
+      "REF_PSYCHOTHERAPY_FIRST_STEP",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
@@ -950,9 +950,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 70,
     decisionCheckpointId: "IMMUNIZATION_DECISION",
     specificCheckpointIds: [
-      "IMMUNIZATION_STATUS_UNCLEAR",
       "IMMUNIZATION_TRAVEL_MEDICINE",
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+      "IMMUNIZATION_STATUS_UNCLEAR",
     ],
     boundGlobalCheckpointIds: [
       "TERMIN_PREPARATION_REQUIRED",
@@ -1281,11 +1281,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 100,
     decisionCheckpointId: "",
     specificCheckpointIds: [
+      "ONBOARDING_WRONG_PRACTICE",
       "ONBOARDING_DATA_INCOMPLETE",
+      "ONBOARDING_IDENTITY_MISMATCH",
       "ONBOARDING_GKV_DOCUMENT_MISSING",
       "ONBOARDING_PKV_PAS_MISSING",
-      "ONBOARDING_IDENTITY_MISMATCH",
-      "ONBOARDING_WRONG_PRACTICE",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -1406,10 +1406,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "BILLING_COST_NOT_COVERED",
-      "BILLING_EXTERNAL_PROVIDER",
+      "BILLING_EXTERNAL_RESPONSIBILITY",
       "BILLING_ADDRESS_MISSING",
       "BILLING_DOCUMENT_MISSING",
-      "BILLING_EXTERNAL_RESPONSIBILITY",
+      "BILLING_EXTERNAL_PROVIDER",
       "BILLING_INVOICE_TIMING",
     ],
     boundGlobalCheckpointIds: [],
@@ -1523,8 +1523,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 50,
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
     specificCheckpointIds: [
-      "MEDICAL_DOCUMENT_INFO_MISSING",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
+      "MEDICAL_DOCUMENT_INFO_MISSING",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",

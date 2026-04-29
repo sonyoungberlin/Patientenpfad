@@ -1391,11 +1391,11 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
     expect(prescriptionProfile.specificCheckpointIds).toEqual([
-      "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_BTM_ADHS_RULES",
-      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
+      "PRESCRIPTION_STATUTORY_POSSIBLE",
     ]);
   });
 
