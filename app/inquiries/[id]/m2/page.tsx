@@ -75,6 +75,7 @@ export default async function InquiryM2Page({
         .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
         .filter((cp): cp is InquiryCheckpoint => !!cp);
       const actionCps = (profile.boundActionCheckpointIds ?? [])
+        .filter((cpId) => !profile.boundActionConditions?.[cpId])
         .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
         .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
       return {

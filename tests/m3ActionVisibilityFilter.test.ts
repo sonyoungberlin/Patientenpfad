@@ -3,10 +3,12 @@
  *
  * 1. Global actions (availableActionIds) are only shown in M3 when ACTIVE in M2.
  * 2. boundGlobalOutputCheckpoints are only shown in M3 when the global checkpoint was YES in M2.
+ * 3. M2 action filter: condition-controlled boundActionCheckpointIds are excluded from M2 action rows.
  */
 
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
-import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
+import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { InquiryCheckpointKind } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
 // Helpers – mirror the filter logic used in InquiryM3Client.tsx
@@ -87,5 +89,66 @@ describe("M3 boundGlobalOutputCheckpoint visibility", () => {
     const result = filterYesGlobalOutputCheckpoints(GLOBAL_OUTPUT_FIXTURES, statuses);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(MEDICAL_CONSULTATION_CP.id);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers – mirror the M2 page filter logic for boundActionCheckpointIds
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors the filter applied in app/inquiries/[id]/m2/page.tsx:
+ * Only include ACTION checkpoints from boundActionCheckpointIds that do NOT have
+ * an entry in profile.boundActionConditions (condition-controlled items go directly
+ * to M3 and must not appear as manual M2 switches).
+ */
+function buildM2ActionCps(profileId: string): string[] {
+  const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
+  if (!profile) return [];
+  return (profile.boundActionCheckpointIds ?? [])
+    .filter((cpId) => !profile.boundActionConditions?.[cpId])
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter((cp) => !!cp && cp.kind === InquiryCheckpointKind.ACTION)
+    .map((cp) => cp!.id);
+}
+
+// ---------------------------------------------------------------------------
+// Tests – M2 action filter (condition-controlled checkpoints excluded)
+// ---------------------------------------------------------------------------
+
+describe("M2 boundActionCheckpointIds filter", () => {
+  it("excludes condition-controlled checkpoints from LAB M2 action rows", () => {
+    const m2ActionIds = buildM2ActionCps("LAB");
+    // These four have boundActionConditions and must NOT appear in M2
+    expect(m2ActionIds).not.toContain("LAB_APPOINTMENT_INTERNAL");
+    expect(m2ActionIds).not.toContain("LAB_APPOINTMENT_INDIVIDUAL");
+    expect(m2ActionIds).not.toContain("LAB_APPOINTMENT_DOCTOR");
+    expect(m2ActionIds).not.toContain("LAB_BRING_REFERRAL");
+  });
+
+  it("keeps genuine M2 switches (no boundActionConditions entry) in LAB", () => {
+    const m2ActionIds = buildM2ActionCps("LAB");
+    // These two have no conditions and must remain as manual M2 switches
+    expect(m2ActionIds).toContain("LAB_FASTING_REQUIRED");
+    expect(m2ActionIds).toContain("LAB_RESULT_TIME");
+  });
+
+  it("returns all action checkpoints unchanged for a profile with no boundActionConditions", () => {
+    // Find a profile that has boundActionCheckpointIds but no boundActionConditions
+    const profileId = Object.keys(INQUIRY_PROFILE_CATALOG_V2).find((id) => {
+      const p = INQUIRY_PROFILE_CATALOG_V2[id];
+      return (
+        p &&
+        (p.boundActionCheckpointIds?.length ?? 0) > 0 &&
+        (!p.boundActionConditions || Object.keys(p.boundActionConditions).length === 0)
+      );
+    });
+    if (!profileId) return; // skip if no such profile exists
+    const profile = INQUIRY_PROFILE_CATALOG_V2[profileId]!;
+    const expected = (profile.boundActionCheckpointIds ?? [])
+      .map((id) => INQUIRY_CHECKPOINT_CATALOG_V2[id])
+      .filter((cp) => !!cp && cp.kind === InquiryCheckpointKind.ACTION)
+      .map((cp) => cp!.id);
+    expect(buildM2ActionCps(profileId)).toEqual(expected);
   });
 });
