@@ -498,19 +498,19 @@ describe("LAB – boundActionCheckpointIds", () => {
 });
 
 // ---------------------------------------------------------------------------
-// LAB – TERMIN_PREPARATION_REQUIRED (neuer GLOBAL MODULAR Checkpoint)
+// LAB – TERMIN_PREPARATION_REQUIRED (aus LAB entfernt, Duplikat mit LAB_FASTING_REQUIRED)
 // ---------------------------------------------------------------------------
 
 describe("LAB – TERMIN_PREPARATION_REQUIRED", () => {
-  it("TERMIN_PREPARATION_REQUIRED ist in LAB.boundGlobalCheckpointIds enthalten", () => {
-    expect(LAB.boundGlobalCheckpointIds).toContain("TERMIN_PREPARATION_REQUIRED");
+  it("TERMIN_PREPARATION_REQUIRED ist NICHT mehr in LAB.boundGlobalCheckpointIds (Dopplung beseitigt)", () => {
+    expect(LAB.boundGlobalCheckpointIds).not.toContain("TERMIN_PREPARATION_REQUIRED");
   });
 
-  it("LAB.globalHints enthält Hinweis 'nüchtern' für TERMIN_PREPARATION_REQUIRED", () => {
-    expect(LAB.globalHints["TERMIN_PREPARATION_REQUIRED"]).toContain("nüchtern");
+  it("LAB.globalHints enthält keinen TERMIN_PREPARATION_REQUIRED-Eintrag mehr", () => {
+    expect(LAB.globalHints["TERMIN_PREPARATION_REQUIRED"]).toBeUndefined();
   });
 
-  it("TERMIN_PREPARATION_REQUIRED existiert im Katalog", () => {
+  it("TERMIN_PREPARATION_REQUIRED existiert weiterhin im Katalog (für andere Profile)", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"]).toBeDefined();
   });
 
@@ -525,5 +525,21 @@ describe("LAB – TERMIN_PREPARATION_REQUIRED", () => {
   it("TERMIN_PREPARATION_REQUIRED hat leeres textByStatus (kein eigener Text)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"];
     expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB – LAB_DECISION POSSIBLE-Text
+// ---------------------------------------------------------------------------
+
+describe("LAB – LAB_DECISION POSSIBLE-Text", () => {
+  it("LAB_DECISION POSSIBLE enthält 'Kontrolle der Blutwerte kann bei uns durchgeführt werden'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).toContain("Kontrolle der Blutwerte kann bei uns durchgeführt werden");
+  });
+
+  it("LAB_DECISION POSSIBLE enthält nicht mehr den alten Text 'Eine Laboruntersuchung kann veranlasst werden'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).not.toContain("Eine Laboruntersuchung kann veranlasst werden");
   });
 });

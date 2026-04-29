@@ -530,7 +530,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [],
     textByStatus: {
-      [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
+      [DecisionStatus.POSSIBLE]: "Die Kontrolle der Blutwerte kann bei uns durchgeführt werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
     },
     docByStatus: {

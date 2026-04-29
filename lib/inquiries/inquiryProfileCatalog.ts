@@ -489,11 +489,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
-      "TERMIN_PREPARATION_REQUIRED",
     ],
     globalHints: {
       MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-      TERMIN_PREPARATION_REQUIRED: "Bitte erscheinen Sie nüchtern zur Blutentnahme.",
     },
     boundActionCheckpointIds: [
       "LAB_FASTING_REQUIRED",
