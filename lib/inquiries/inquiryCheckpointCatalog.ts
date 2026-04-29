@@ -965,7 +965,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte füllen Sie dafür unsere Online-Anamnese aus: https://mvz-kreuzberg.de/kurz-anamnese",
+        "Bitte füllen Sie unsere Online-Anamnese aus: https://mvz-kreuzberg.de/kurz-anamnese",
     },
   },
 
