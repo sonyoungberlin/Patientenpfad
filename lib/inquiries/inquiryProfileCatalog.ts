@@ -811,6 +811,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
       ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     },
+    boundActionCheckpointIds: [
+      "ACUTE_BOOKING_INFO",
+    ],
+    boundActionConditions: {
+      ACUTE_BOOKING_INFO: {
+        showWhenAny: [{ ACUTE_APPOINTMENT_INFO: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)

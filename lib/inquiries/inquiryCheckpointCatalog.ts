@@ -1249,8 +1249,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ACUTE_APPOINTMENT_INFO-Q1", text: "Geht es um die Buchung eines Akuttermins?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde möglich.",
+      // YES: Text ausgelagert in ACTION-Baustein ACUTE_BOOKING_INFO (Buchungshandlung + zwei Aussagen)
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1407,6 +1406,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Auch bei chronischen Erkrankungen gehören planbare Anliegen in die reguläre Sprechstunde und nicht in diesen Bereich.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ACUTE_BOOKING_INFO: {
+    id: "ACUTE_BOOKING_INFO",
+    label: "Akuttermin – Buchung online / Videosprechstunde",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde möglich.",
     },
   },
 

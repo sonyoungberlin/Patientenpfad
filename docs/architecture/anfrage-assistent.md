@@ -399,3 +399,48 @@ als OUTCOME und aktiviert den OUTCOME-Guard im Renderer.
 ```
 
 → Zur Implementierung: Guard in `lib/inquiries/renderInquiryResponse.ts` (Abschnitt B)
+
+---
+
+## 20. textByStatus in SPECIFIC Explanation Checkpoints
+
+### Grundregel
+
+Spezifische Explanation-Checkpoints (`scope: SPECIFIC`) sind primär **Steuerungselemente** in M2.
+`YES` dient als Schalter, der M3-Bausteine aktiviert. `NO` schaltet nichts frei.
+
+`textByStatus` soll idealerweise leer bleiben; Inhalte gehören in ACTION- oder
+EXPLANATION-Bausteine in M3 (`boundActionCheckpointIds` + `boundActionConditions`).
+
+### Wann darf textByStatus.YES befüllt bleiben?
+
+Ein Specific-Text **darf bestehen bleiben**, wenn beide Bedingungen erfüllt sind:
+
+1. Er enthält **genau eine einfache Kontextaussage** (keine Aufzählung, keine kombinierten Inhalte).
+2. Kein eigenständig wiederverwendbarer M3-Baustein würde daraus entstehen.
+
+### Wann muss textByStatus.YES ausgelagert werden?
+
+Eine Auslagerung in einen M3-Baustein ist **zwingend**, wenn mindestens eines zutrifft:
+
+- Der Text beschreibt eine **Handlung** (z. B. „buchen", „ausfüllen", „beantragen").
+- Der Text enthält **Links** oder technische Verweise.
+- Der Text **kombiniert mehrere Aussagen** in einem Eintrag.
+- Der Text wäre in **mehreren Profilen wiederverwendbar**.
+
+### Auslagerungsschritt
+
+Bei Auslagerung:
+- `textByStatus.YES` im Specific auf leer setzen (kein Eintrag).
+- Neuen `kind: ACTION`-Baustein im Checkpoint-Katalog anlegen
+  (`actionCategory: "INFO"` oder `"NEXT_STEP"` je nach Inhalt).
+- Den neuen Baustein im Profil unter `boundActionCheckpointIds` registrieren.
+- In `boundActionConditions` den Trigger setzen: `showWhenAny: [{ <SpecificId>: "YES" }]`.
+
+### Beispiel
+
+`ACUTE_APPOINTMENT_INFO` enthielt: „Akuttermine können in der Regel 24 Stunden im Voraus
+online gebucht werden und sind auch als Videosprechstunde möglich."
+
+→ Zwei Aussagen + Buchungshandlung → ausgelagert in ACTION-Baustein `ACUTE_BOOKING_INFO`.
+→ ACUTE_CARE-Profil bindet den Baustein mit Condition `ACUTE_APPOINTMENT_INFO = YES`.
