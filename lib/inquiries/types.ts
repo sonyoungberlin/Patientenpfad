@@ -596,6 +596,27 @@ export type InquiryProfileV2 = {
    */
   boundActionCheckpointIds?: string[];
   /**
+   * M3 Anzeige-Filter für boundActionCheckpoints.
+   *
+   * Key = actionCheckpointId. Value = Bedingungsobjekt mit optionalen show- und hide-Regeln.
+   * Ist kein Eintrag definiert, wird die Action nur angezeigt, wenn sie in M2 auf ACTIVE/INACTIVE gesetzt wurde.
+   *
+   * showWhenAny – Liste von Bedingungsmengen (OR-Verknüpfung). Jede Menge ist AND-verknüpft.
+   *              Action wird angezeigt, wenn mindestens eine Menge vollständig erfüllt ist.
+   * hideWhenAny – Liste von Bedingungsmengen (OR-Verknüpfung). Jede Menge ist AND-verknüpft.
+   *              Action wird ausgeblendet, wenn mindestens eine Menge vollständig erfüllt ist.
+   *              hideWhenAny hat Vorrang vor showWhenAny.
+   *
+   * Kein Einfluss auf ActionStatus, Decision oder Renderer.
+   */
+  boundActionConditions?: Record<
+    string,
+    {
+      showWhenAny?: Array<Record<string, string>>;
+      hideWhenAny?: Array<Record<string, string>>;
+    }
+  >;
+  /**
    * Anliegenspezifische Hinweistexte aus globalen Checkpoints.
    * Key = globalCheckpointId; Value = Hinweistext, der bei Status „ja"
    * für dieses Anliegen in M4 erscheint.

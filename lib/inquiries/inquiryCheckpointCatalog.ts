@@ -524,14 +524,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   LAB_DECISION: {
     id: "LAB_DECISION",
-    label: "Labor-Entscheidung",
+    label: "Kann der Termin für die Blutentnahme direkt vereinbart werden?",
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [],
     textByStatus: {
-      [DecisionStatus.POSSIBLE]: "Die Kontrolle der Blutwerte kann bei uns durchgeführt werden.",
-      [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
+      [DecisionStatus.POSSIBLE]: "Ein Termin für die Blutentnahme kann direkt vereinbart werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Vor der Blutentnahme ist zunächst eine ärztliche Abklärung erforderlich. Alternativ kann die Untersuchung als Selbstzahlerleistung erfolgen.",
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Laboruntersuchung veranlasst.",
@@ -650,6 +650,56 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\nBringen Sie die Überweisung im Original zum Termin mit – nur mit gültiger Originalüberweisung entfällt eine Selbstzahlerleistung.",
       [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung auf Basis einer Facharzt-Überweisung benötigen wir das Original-Dokument zum Termin.\n\nLiegt keine gültige Überweisung vor, wird die Leistung als Selbstzahler abgerechnet.",
+    },
+  },
+
+  // ---- LAB ACTION CHECKPOINTS (Terminplanung, basierend auf Specific-Checkpoint-Status) ----
+
+  LAB_APPOINTMENT_INTERNAL: {
+    id: "LAB_APPOINTMENT_INTERNAL",
+    label: "Termin intern buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Ein Termin für die Blutentnahme kann direkt vereinbart werden.",
+    },
+  },
+
+  LAB_APPOINTMENT_INDIVIDUAL: {
+    id: "LAB_APPOINTMENT_INDIVIDUAL",
+    label: "Termin für individuelle Laborwerte buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Bitte vereinbaren Sie einen Termin für individuelle Laborwerte.",
+    },
+  },
+
+  LAB_APPOINTMENT_DOCTOR: {
+    id: "LAB_APPOINTMENT_DOCTOR",
+    label: "Ärztliche Abklärung erforderlich",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Für die Laboruntersuchung ist zunächst eine ärztliche Abklärung erforderlich.",
+    },
+  },
+
+  LAB_BRING_REFERRAL: {
+    id: "LAB_BRING_REFERRAL",
+    label: "Überweisung mitbringen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PREPARATION",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Bitte bringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit.",
     },
   },
 

@@ -23,6 +23,17 @@ export type M3BoundActionData = {
   label: string;
   actionCategory?: string;
   questions?: Array<{ id: string; text: string }>;
+  /**
+   * M3 Anzeige-Filter: Action wird angezeigt, wenn mindestens eine Bedingungsmenge erfüllt ist.
+   * Jede Menge ist AND-verknüpft; die Liste ist OR-verknüpft.
+   * Fehlt das Feld, greift der Standard (ACTIVE/INACTIVE-Filter aus M2).
+   */
+  showWhenAny?: Array<Record<string, string>>;
+  /**
+   * M3 Anzeige-Filter: Action wird ausgeblendet, wenn mindestens eine Bedingungsmenge erfüllt ist.
+   * Hat Vorrang vor showWhenAny.
+   */
+  hideWhenAny?: Array<Record<string, string>>;
 };
 
 export type M3SectionData = {
@@ -644,12 +655,24 @@ export default function InquiryM3Client({
                   }
                 }
 
-                // --- Profil-spezifische boundActionCheckpoints (nur wenn M2-Status gesetzt) ---
+                // --- Profil-spezifische boundActionCheckpoints ---
                 for (const sec of sections) {
-                  // Filtere auf Checkpoints, die in M2 gesetzt wurden (ACTIVE oder INACTIVE).
-                  const setCps = sec.boundActionCheckpoints.filter(
-                    (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
-                  );
+                  // Filtere Checkpoints nach Sichtbarkeitsregeln:
+                  // – Hat der Checkpoint showWhenAny oder hideWhenAny, gelten die Bedingungen.
+                  // – Andernfalls wird er nur angezeigt, wenn er in M2 auf ACTIVE/INACTIVE gesetzt wurde.
+                  const setCps = sec.boundActionCheckpoints.filter((cp) => {
+                    const hasConditions = cp.showWhenAny !== undefined || cp.hideWhenAny !== undefined;
+                    if (!hasConditions) {
+                      return statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE";
+                    }
+                    const matchesConditionSet = (condSet: Record<string, string>) =>
+                      Object.entries(condSet).every(([k, v]) => statuses[k] === v);
+                    if (cp.hideWhenAny?.some(matchesConditionSet)) return false;
+                    if (cp.showWhenAny && cp.showWhenAny.length > 0) {
+                      return cp.showWhenAny.some(matchesConditionSet);
+                    }
+                    return true;
+                  });
                   if (setCps.length === 0) continue;
 
                   // Gruppiere nach actionCategory.

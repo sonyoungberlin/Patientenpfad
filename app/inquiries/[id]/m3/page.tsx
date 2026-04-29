@@ -31,12 +31,17 @@ function toM3Section(inquiryId: string): M3SectionData | null {
   const boundActionCps = (profile.boundActionCheckpointIds ?? [])
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
     .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
-  const boundActionCheckpoints: M3BoundActionData[] = boundActionCps.map((cp) => ({
-    id: cp.id,
-    label: cp.label,
-    actionCategory: cp.actionCategory,
-    questions: cp.questions,
-  }));
+  const boundActionCheckpoints: M3BoundActionData[] = boundActionCps.map((cp) => {
+    const conditions = profile.boundActionConditions?.[cp.id];
+    return {
+      id: cp.id,
+      label: cp.label,
+      actionCategory: cp.actionCategory,
+      questions: cp.questions,
+      showWhenAny: conditions?.showWhenAny,
+      hideWhenAny: conditions?.hideWhenAny,
+    };
+  });
   // GLOBAL MODULAR EXPLANATION-Checkpoints → in M3 als SHOW/HIDE-fähige Output-Bausteine
   const boundGlobalOutputCps = (profile.boundGlobalCheckpointIds ?? [])
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])

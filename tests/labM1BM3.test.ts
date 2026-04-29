@@ -533,13 +533,23 @@ describe("LAB – TERMIN_PREPARATION_REQUIRED", () => {
 // ---------------------------------------------------------------------------
 
 describe("LAB – LAB_DECISION POSSIBLE-Text", () => {
-  it("LAB_DECISION POSSIBLE enthält 'Kontrolle der Blutwerte kann bei uns durchgeführt werden'", () => {
+  it("LAB_DECISION POSSIBLE enthält 'Ein Termin für die Blutentnahme kann direkt vereinbart werden'", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
-    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).toContain("Kontrolle der Blutwerte kann bei uns durchgeführt werden");
+    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).toContain("Ein Termin für die Blutentnahme kann direkt vereinbart werden");
   });
 
-  it("LAB_DECISION POSSIBLE enthält nicht mehr den alten Text 'Eine Laboruntersuchung kann veranlasst werden'", () => {
+  it("LAB_DECISION POSSIBLE enthält nicht mehr den alten Text 'Kontrolle der Blutwerte kann bei uns durchgeführt werden'", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
-    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).not.toContain("Eine Laboruntersuchung kann veranlasst werden");
+    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).not.toContain("Kontrolle der Blutwerte kann bei uns durchgeführt werden");
+  });
+
+  it("LAB_DECISION NOT_POSSIBLE enthält 'ärztliche Abklärung erforderlich'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.NOT_POSSIBLE]).toContain("ärztliche Abklärung erforderlich");
+  });
+
+  it("LAB_DECISION label enthält die neue Frage zur Terminvereinbarung", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.label).toContain("Blutentnahme");
   });
 });

@@ -494,9 +494,33 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
     },
     boundActionCheckpointIds: [
+      "LAB_APPOINTMENT_INTERNAL",
+      "LAB_APPOINTMENT_INDIVIDUAL",
+      "LAB_APPOINTMENT_DOCTOR",
+      "LAB_BRING_REFERRAL",
       "LAB_FASTING_REQUIRED",
       "LAB_RESULT_TIME",
     ],
+    boundActionConditions: {
+      LAB_APPOINTMENT_INTERNAL: {
+        showWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
+      },
+      LAB_APPOINTMENT_INDIVIDUAL: {
+        hideWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
+      },
+      LAB_APPOINTMENT_DOCTOR: {
+        hideWhenAny: [
+          { LAB_INTERNAL_ORDER: "YES" },
+          { LAB_EXTERNAL_REFERRAL: "YES" },
+        ],
+      },
+      LAB_BRING_REFERRAL: {
+        showWhenAny: [
+          { LAB_INTERNAL_ORDER: "YES" },
+          { LAB_EXTERNAL_REFERRAL: "YES" },
+        ],
+      },
+    },
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
