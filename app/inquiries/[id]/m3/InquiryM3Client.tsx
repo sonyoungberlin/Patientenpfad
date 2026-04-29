@@ -660,13 +660,16 @@ export default function InquiryM3Client({
                   // Filtere Checkpoints nach Sichtbarkeitsregeln:
                   // – Hat der Checkpoint showWhenAny oder hideWhenAny, gelten die Bedingungen.
                   // – Andernfalls wird er nur angezeigt, wenn er in M2 auf ACTIVE/INACTIVE gesetzt wurde.
+                  const SET_STATUSES = ["ACTIVE", "INACTIVE"] as const;
                   const setCps = sec.boundActionCheckpoints.filter((cp) => {
                     const hasConditions = cp.showWhenAny !== undefined || cp.hideWhenAny !== undefined;
                     if (!hasConditions) {
-                      return statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE";
+                      return (SET_STATUSES as readonly string[]).includes(statuses[cp.id]);
                     }
                     const matchesConditionSet = (condSet: Record<string, string>) =>
-                      Object.entries(condSet).every(([k, v]) => statuses[k] === v);
+                      Object.entries(condSet).every(
+                        ([checkpointId, expectedStatus]) => statuses[checkpointId] === expectedStatus,
+                      );
                     if (cp.hideWhenAny?.some(matchesConditionSet)) return false;
                     if (cp.showWhenAny && cp.showWhenAny.length > 0) {
                       return cp.showWhenAny.some(matchesConditionSet);
