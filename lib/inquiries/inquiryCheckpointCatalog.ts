@@ -951,7 +951,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte stellen Sie Ihre Anfrage über das digitale Anfrageformular: https://mvz-kreuzberg.de/digitaleanfrage",
+        "Die digitale Anfrage können Sie über dieses Formular stellen: https://mvz-kreuzberg.de/digitaleanfrage",
     },
   },
 
