@@ -632,7 +632,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_INTERNAL_ORDER-Q1", text: "Liegt eine interne ärztliche Laboranordnung vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
+      // Schalter-only: YES markiert nur die Situation.
+      // Der Buchungsweg wird als M3-Baustein in LAB_APPOINTMENT_INTERNAL gerendert.
+      [ExplanationStatus.YES]: "",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -648,8 +650,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_EXTERNAL_REFERRAL-Q1", text: "Liegt eine Überweisung eines Facharztes vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\nBringen Sie die Überweisung im Original zum Termin mit – nur mit gültiger Originalüberweisung entfällt eine Selbstzahlerleistung.",
-      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung auf Basis einer Facharzt-Überweisung benötigen wir das Original-Dokument zum Termin.\n\nLiegt keine gültige Überweisung vor, wird die Leistung als Selbstzahler abgerechnet.",
+      // Schalter-only: YES/NO markiert nur die Situation.
+      // Buchungshinweis, Überweisungsmitnahme und Kostenhinweis
+      // werden als M3-Bausteine gerendert (LAB_APPOINTMENT_INDIVIDUAL,
+      // LAB_BRING_REFERRAL, LAB_COST_COVERED_BY_REFERRAL).
+      [ExplanationStatus.YES]: "",
+      [ExplanationStatus.NO]: "",
     },
   },
 
@@ -663,7 +669,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "NEXT_STEP",
     textByStatus: {
-      [ActionStatus.ACTIVE]: "Ein Termin für die Blutentnahme kann direkt vereinbart werden.",
+      [ActionStatus.ACTIVE]:
+        "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
     },
   },
 
@@ -700,6 +707,32 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "PREPARATION",
     textByStatus: {
       [ActionStatus.ACTIVE]: "Bitte bringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit.",
+    },
+  },
+
+  LAB_COST_COVERED_BY_REFERRAL: {
+    id: "LAB_COST_COVERED_BY_REFERRAL",
+    label: "Kostenhinweis: Abrechnung über Überweisung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Mit einer gültigen Originalüberweisung kann die Laborleistung über die Überweisung abgerechnet werden; es fällt dafür keine Selbstzahlerleistung an.",
+    },
+  },
+
+  LAB_SELF_PAYER_NOTE: {
+    id: "LAB_SELF_PAYER_NOTE",
+    label: "Hinweis: Selbstzahlerleistung / Wunschwerte",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Laborwerte ohne ärztliche Anordnung oder gültige Überweisung sind als Selbstzahlerleistung möglich. Die Abrechnung erfolgt direkt über das Labor.",
     },
   },
 

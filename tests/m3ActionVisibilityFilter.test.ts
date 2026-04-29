@@ -119,11 +119,13 @@ function buildM2ActionCps(profileId: string): string[] {
 describe("M2 boundActionCheckpointIds filter", () => {
   it("excludes condition-controlled checkpoints from LAB M2 action rows", () => {
     const m2ActionIds = buildM2ActionCps("LAB");
-    // These four have boundActionConditions and must NOT appear in M2
+    // These have boundActionConditions and must NOT appear in M2
     expect(m2ActionIds).not.toContain("LAB_APPOINTMENT_INTERNAL");
     expect(m2ActionIds).not.toContain("LAB_APPOINTMENT_INDIVIDUAL");
     expect(m2ActionIds).not.toContain("LAB_APPOINTMENT_DOCTOR");
     expect(m2ActionIds).not.toContain("LAB_BRING_REFERRAL");
+    expect(m2ActionIds).not.toContain("LAB_COST_COVERED_BY_REFERRAL");
+    expect(m2ActionIds).not.toContain("LAB_SELF_PAYER_NOTE");
   });
 
   it("keeps genuine M2 switches (no boundActionConditions entry) in LAB", () => {

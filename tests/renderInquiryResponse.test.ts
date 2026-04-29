@@ -2062,9 +2062,9 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("alle 4 Action-Checkpoints sind als ACTION/PREPARATION|PROCESS|INFO im Katalog und in boundActionCheckpointIds", () => {
+  it("alle 3 Action-Checkpoints sind als ACTION/PREPARATION|PROCESS|INFO im Katalog und in boundActionCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
-    const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER", "LAB_RESULT_TIME"];
+    const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER"];
     expect(profile.specificCheckpointIds).toHaveLength(0);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     for (const id of ids) {
@@ -2074,6 +2074,8 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
       expect(cp.actionCategory).toBeDefined();
     }
     expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(ids));
+    // LAB_RESULT_TIME wurde aus SAMPLE_COLLECTION entfernt (Deduplizierung – bleibt in LAB)
+    expect(profile.boundActionCheckpointIds).not.toContain("LAB_RESULT_TIME");
   });
 
   it("SAMPLE_COLLECTION hat keine boundGlobalCheckpointIds", () => {
@@ -2171,17 +2173,12 @@ describe("SAMPLE_COLLECTION-Profil – Action-Checkpoints (boundActionCheckpoint
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("LAB_RESULT_TIME ACTIVE → Text erscheint in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeSampleCollectionSection({
-        checkpointStatuses: { LAB_RESULT_TIME: ActionStatus.ACTIVE },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
-    expect(result.sections[0].attachedParagraphs[0]).toContain("Auswertung");
+  it("LAB_RESULT_TIME ist nicht mehr in SAMPLE_COLLECTION (Deduplizierung – bleibt in LAB)", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    expect(profile.boundActionCheckpointIds).not.toContain("LAB_RESULT_TIME");
   });
 
-  it("LAB_RESULT_TIME INACTIVE → kein Text in attachedParagraphs", () => {
+  it("LAB_RESULT_TIME INACTIVE → kein Text in attachedParagraphs (Checkpoint nicht im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       makeSampleCollectionSection({
         checkpointStatuses: { LAB_RESULT_TIME: ActionStatus.INACTIVE },

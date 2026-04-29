@@ -498,6 +498,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_APPOINTMENT_INDIVIDUAL",
       "LAB_APPOINTMENT_DOCTOR",
       "LAB_BRING_REFERRAL",
+      "LAB_COST_COVERED_BY_REFERRAL",
+      "LAB_SELF_PAYER_NOTE",
       "LAB_FASTING_REQUIRED",
       "LAB_RESULT_TIME",
     ],
@@ -515,7 +517,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         ],
       },
       LAB_BRING_REFERRAL: {
-        showWhenAny: [
+        showWhenAny: [{ LAB_EXTERNAL_REFERRAL: "YES" }],
+      },
+      LAB_COST_COVERED_BY_REFERRAL: {
+        showWhenAny: [{ LAB_EXTERNAL_REFERRAL: "YES" }],
+      },
+      LAB_SELF_PAYER_NOTE: {
+        hideWhenAny: [
           { LAB_INTERNAL_ORDER: "YES" },
           { LAB_EXTERNAL_REFERRAL: "YES" },
         ],
@@ -647,7 +655,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "URINE_SAMPLE_INSTRUCTIONS",
       "STOOL_SAMPLE_INSTRUCTIONS",
       "SAMPLE_HANDOVER",
-      "LAB_RESULT_TIME",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
