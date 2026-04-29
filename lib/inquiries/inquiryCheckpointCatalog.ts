@@ -298,9 +298,33 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "AU_NEW_PATIENT_LIMIT-Q1", text: "Handelt es sich um einen Neupatienten?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Bei Neupatienten können wir eine Arbeitsunfähigkeitsbescheinigung zunächst für maximal 3 Tage ausstellen.\n\nFür eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
-      // NO: bewusst still – keine Erklärung nötig
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+    },
+  },
+
+  AU_NEW_PATIENT_3DAY_LIMIT: {
+    id: "AU_NEW_PATIENT_3DAY_LIMIT",
+    label: "Neupatient – 3-Tage-Limit",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bei Neupatienten kann eine Arbeitsunfähigkeitsbescheinigung zunächst für maximal 3 Tage ausgestellt werden.",
+    },
+  },
+
+  AU_FOLLOWUP_REQUIRES_VISIT: {
+    id: "AU_FOLLOWUP_REQUIRES_VISIT",
+    label: "Folgebescheinigung – persönliche Vorstellung erforderlich",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
     },
   },
 

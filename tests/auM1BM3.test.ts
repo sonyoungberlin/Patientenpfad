@@ -274,16 +274,78 @@ describe("AU_NEW_PATIENT_LIMIT – Checkpoint-Struktur", () => {
     expect((cp as any).specificRole).toBe("RULE_TIME_LIMIT");
   });
 
-  it("hat YES-Text", () => {
+  it("hat keinen YES-Text (reiner M2-Schalter)", () => {
     const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-    expect(typeof text).toBe("string");
-    expect(text.length).toBeGreaterThan(0);
-    expect(text).toContain("3 Tage");
-    expect(text).toContain("Folgebescheinigung");
+    expect(!text || text.length === 0).toBe(true);
   });
 
   it("ist in AU.specificCheckpointIds referenziert", () => {
     expect(AU.specificCheckpointIds).toContain("AU_NEW_PATIENT_LIMIT");
+  });
+});
+
+describe("AU_NEW_PATIENT_3DAY_LIMIT – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_NEW_PATIENT_3DAY_LIMIT"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat ACTIVE-Text mit 3-Tage-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("3 Tage");
+  });
+
+  it("ist in AU.boundActionCheckpointIds referenziert", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("AU_NEW_PATIENT_3DAY_LIMIT");
+  });
+
+  it("wird bei AU_NEW_PATIENT_LIMIT = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.AU_NEW_PATIENT_3DAY_LIMIT?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NEW_PATIENT_LIMIT: "YES" }])
+    );
+  });
+});
+
+describe("AU_FOLLOWUP_REQUIRES_VISIT – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_FOLLOWUP_REQUIRES_VISIT"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat ACTIVE-Text mit Folgebescheinigung-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("Folgebescheinigung");
+    expect(text).toContain("persönliche Vorstellung");
+  });
+
+  it("ist in AU.boundActionCheckpointIds referenziert", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("AU_FOLLOWUP_REQUIRES_VISIT");
+  });
+
+  it("wird bei AU_NEW_PATIENT_LIMIT = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.AU_FOLLOWUP_REQUIRES_VISIT?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NEW_PATIENT_LIMIT: "YES" }])
+    );
   });
 });
 
@@ -335,7 +397,7 @@ describe("ACUTE_OPEN_CONSULTATION_INFO – im AU-Profil referenziert", () => {
 // ---------------------------------------------------------------------------
 
 describe("AU Renderer – neue AU-Checkpoints", () => {
-  it("AU_NEW_PATIENT_LIMIT YES + SHOW liefert Text im Output", () => {
+  it("AU_NEW_PATIENT_LIMIT YES + SHOW liefert keinen Text mehr (reiner Schalter)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "AU",
@@ -350,7 +412,8 @@ describe("AU Renderer – neue AU-Checkpoints", () => {
     ]);
 
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
-    expect(allText).toContain("3 Tage");
+    expect(allText).not.toContain("3 Tage");
+    expect(allText).not.toContain("Folgebescheinigung");
   });
 
   it("AU_NEW_PATIENT_LIMIT HIDE liefert keinen Text", () => {
@@ -369,6 +432,7 @@ describe("AU Renderer – neue AU-Checkpoints", () => {
 
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
     expect(allText).not.toContain("3 Tage");
+    expect(allText).not.toContain("Folgebescheinigung");
   });
 
   it("AU_DIGITAL_AU_PROCESS YES + SHOW liefert Text mit URLs im Output", () => {

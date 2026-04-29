@@ -64,6 +64,18 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "AU_NEW_PATIENT_3DAY_LIMIT",
+      "AU_FOLLOWUP_REQUIRES_VISIT",
+    ],
+    boundActionConditions: {
+      AU_NEW_PATIENT_3DAY_LIMIT: {
+        showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
+      },
+      AU_FOLLOWUP_REQUIRES_VISIT: {
+        showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
