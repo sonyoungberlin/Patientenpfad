@@ -9,8 +9,10 @@
  */
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
+  ActionStatus,
   DecisionStatus,
   ExplanationStatus,
   type SpecificRole,
@@ -238,5 +240,105 @@ describe("Renderer – communicationReasons/responseGoals haben keinen Einfluss 
     expect(result).not.toHaveProperty("responseGoals");
     expect(result.sections[0]).not.toHaveProperty("communicationReasons");
     expect(result.sections[0]).not.toHaveProperty("responseGoals");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. M2/M3-Bereinigung: PRESCRIPTION_STATUTORY_POSSIBLE YES-Text geleert
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION_STATUTORY_POSSIBLE – M2/M3-Bereinigung", () => {
+  it("textByStatus.YES ist leer (Prozessdetail wird über E_RECIPE_USE transportiert)", () => {
+    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_STATUTORY_POSSIBLE"];
+    expect(checkpoint).toBeDefined();
+    expect((checkpoint.textByStatus as Record<string, string | undefined>)[ExplanationStatus.YES]).toBeUndefined();
+  });
+
+  it("textByStatus.NO enthält Privatrezept-Hinweis", () => {
+    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_STATUTORY_POSSIBLE"];
+    const noText = (checkpoint.textByStatus as Record<string, string | undefined>)[ExplanationStatus.NO];
+    expect(typeof noText).toBe("string");
+    expect(noText).toContain("Privatrezept");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7. M2/M3-Bereinigung: E_RECIPE_USE in boundActionCheckpointIds
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION – E_RECIPE_USE als boundAction", () => {
+  it("E_RECIPE_USE ist NICHT in availableActionIds", () => {
+    expect(PRESCRIPTION.availableActionIds).not.toContain("E_RECIPE_USE");
+  });
+
+  it("E_RECIPE_USE ist in boundActionCheckpointIds", () => {
+    expect(PRESCRIPTION.boundActionCheckpointIds).toBeDefined();
+    expect(PRESCRIPTION.boundActionCheckpointIds).toContain("E_RECIPE_USE");
+  });
+
+  it("boundActionConditions.E_RECIPE_USE zeigt bei PRESCRIPTION_STATUTORY_POSSIBLE=YES", () => {
+    const condition = PRESCRIPTION.boundActionConditions?.["E_RECIPE_USE"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toEqual([{ PRESCRIPTION_STATUTORY_POSSIBLE: "YES" }]);
+  });
+
+  it("E_RECIPE_USE-Text enthält QR-Code/PDF-Hinweis", () => {
+    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2["E_RECIPE_USE"];
+    const text = (checkpoint.textByStatus as Record<string, string | undefined>)[ActionStatus.ACTIVE];
+    expect(typeof text).toBe("string");
+    expect(text).toContain("eGK");
+    expect(text).toContain("QR-Code");
+    expect(text).toContain("PDF");
+  });
+
+  it("Renderer gibt E_RECIPE_USE-Text in sharedBottom aus, wenn ACTIVE gesetzt", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "PRESCRIPTION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES,
+          E_RECIPE_USE: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: "SHOW" as ExplanationOutputStatus,
+        },
+      },
+    ]);
+    const sharedBottomText = result.sharedBottom.join(" ");
+    expect(sharedBottomText).toContain("eRezept");
+    expect(sharedBottomText).toContain("QR-Code");
+  });
+
+  it("Renderer gibt E_RECIPE_USE NICHT aus, wenn checkpointStatus fehlt", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "PRESCRIPTION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: "SHOW" as ExplanationOutputStatus,
+        },
+      },
+    ]);
+    const allText = [...result.sharedBottom, ...result.sections.flatMap((s) => s.attachedParagraphs)].join(" ");
+    expect(allText).not.toContain("QR-Code");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. M2/M3-Bereinigung: PRESCRIPTION_NO_POSTAL_DELIVERY YES-Text gekürzt
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION_NO_POSTAL_DELIVERY – gekürzter Text", () => {
+  it("YES-Text enthält nur den Ablehnungshinweis, keine eRezept/Apotheke-Prozessinfo", () => {
+    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_NO_POSTAL_DELIVERY"];
+    const yesText = (checkpoint.textByStatus as Record<string, string | undefined>)[ExplanationStatus.YES];
+    expect(typeof yesText).toBe("string");
+    expect(yesText).toBe("Ein Postversand von Rezepten erfolgt nicht.");
+    expect(yesText).not.toContain("eRezept");
+    expect(yesText).not.toContain("Apotheke");
   });
 });

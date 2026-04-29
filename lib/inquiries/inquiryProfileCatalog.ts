@@ -241,12 +241,19 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
-      "E_RECIPE_USE",
       "PHARMACY_INFORMATION",
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "E_RECIPE_USE",
+    ],
+    boundActionConditions: {
+      E_RECIPE_USE: {
+        showWhenAny: [{ PRESCRIPTION_STATUTORY_POSSIBLE: "YES" }],
+      },
+    },
     globalHints: {
       PATIENT_NOT_IN_GERMANY: "Rezepte können in deutschen Apotheken zuverlässig eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
       IS_CHRONIC_PATIENT: "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",

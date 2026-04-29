@@ -1581,15 +1581,29 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
-  it("PRESCRIPTION_STATUTORY_POSSIBLE YES (POSSIBLE) → eRezept-Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES (POSSIBLE) → kein eRezept-Text in attachedParagraphs (YES leer, Prozessdetail via E_RECIPE_USE)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES },
       }),
     ]);
+    // YES-Text ist bewusst geleert – kein eRezept/Gesundheitskarte in attachedParagraphs
     expect(
       result.sections[0].attachedParagraphs.some((t) => t.includes("eRezept") || t.includes("Gesundheitskarte")),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES + E_RECIPE_USE ACTIVE → eRezept-Text in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.YES,
+          E_RECIPE_USE: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    expect(result.sharedBottom.some((t) => t.includes("eRezept"))).toBe(true);
+    expect(result.sharedBottom.some((t) => t.includes("QR-Code"))).toBe(true);
   });
 
   it("PRESCRIPTION_STATUTORY_POSSIBLE NO (POSSIBLE) → Privatrezept-Text in attachedParagraphs", () => {

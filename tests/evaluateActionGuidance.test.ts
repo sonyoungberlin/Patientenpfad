@@ -398,9 +398,13 @@ describe("PRESCRIPTION actionGuidanceRules – Katalogstruktur", () => {
     expect(prescriptionProfile.actionGuidanceRules!.length).toBeGreaterThan(0);
   });
 
-  it("jede checkpointId in actionGuidanceRules (Regel selbst) existiert in availableActionIds des Profils", () => {
+  it("jede checkpointId in actionGuidanceRules (Regel selbst) existiert in availableActionIds oder boundActionCheckpointIds des Profils", () => {
+    const allActionIds = [
+      ...prescriptionProfile.availableActionIds,
+      ...(prescriptionProfile.boundActionCheckpointIds ?? []),
+    ];
     for (const rule of prescriptionProfile.actionGuidanceRules!) {
-      expect(prescriptionProfile.availableActionIds).toContain(rule.checkpointId);
+      expect(allActionIds).toContain(rule.checkpointId);
     }
   });
 
