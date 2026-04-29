@@ -239,7 +239,7 @@ describe("M3 actionCheckpoints – keine boundActionCheckpointIds in der globale
 });
 
 // ---------------------------------------------------------------------------
-// Tests – BILLING boundActionCheckpointIds M2-Filter
+// Tests – M2 boundActionCheckpointIds filter – BILLING
 // ---------------------------------------------------------------------------
 
 describe("M2 boundActionCheckpointIds filter – BILLING", () => {
@@ -258,3 +258,187 @@ describe("M2 boundActionCheckpointIds filter – BILLING", () => {
     expect(m2ActionIds).not.toContain("BILLING_ONSITE_PAYMENT");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Tests – M3 visibleSpecificCps – leere textByStatus werden ausgefiltert
+// ---------------------------------------------------------------------------
+
+/**
+ * Spiegelt die Filter-Logik für visibleSpecificCps in InquiryM3Client.tsx:
+ * EXPLANATION-Checkpoints dürfen nur erscheinen, wenn textByStatus[status] nicht leer ist.
+ */
+function isVisibleSpecificCp(
+  cp: { kind: InquiryCheckpointKind; textByStatus: Partial<Record<string, string>> },
+  status: string | undefined,
+): boolean {
+  if (cp.kind !== InquiryCheckpointKind.EXPLANATION) return true;
+  if (status !== "YES" && status !== "NO") return false;
+  const text = cp.textByStatus[status];
+  return !!text;
+}
+
+describe("M3 visibleSpecificCps – Leertext-Filter", () => {
+  it("EXPLANATION-Checkpoint mit nicht-leerem YES-Text und Status YES wird angezeigt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_GKV_DOCUMENT_MISSING"];
+    expect(cp).toBeDefined();
+    const text = cp!.textByStatus["YES"];
+    expect(text).toBeTruthy(); // hat echten Text
+    expect(isVisibleSpecificCp(cp!, "YES")).toBe(true);
+  });
+
+  it("ONBOARDING_IDENTITY_MISMATCH mit Status YES wird NICHT angezeigt (textByStatus.YES leer)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"];
+    expect(cp).toBeDefined();
+    const text = cp!.textByStatus["YES"] ?? "";
+    expect(text).toBe(""); // leer nach Refactoring
+    expect(isVisibleSpecificCp(cp!, "YES")).toBe(false);
+  });
+
+  it("ONBOARDING_DATA_INCOMPLETE mit Status YES wird NICHT angezeigt (textByStatus.YES leer)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_INCOMPLETE"];
+    expect(cp).toBeDefined();
+    const text = cp!.textByStatus["YES"] ?? "";
+    expect(text).toBe(""); // leer nach Refactoring
+    expect(isVisibleSpecificCp(cp!, "YES")).toBe(false);
+  });
+
+  it("ONBOARDING_WRONG_PRACTICE mit Status YES wird NICHT angezeigt (textByStatus.YES leer)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"];
+    expect(cp).toBeDefined();
+    const text = cp!.textByStatus["YES"] ?? "";
+    expect(text).toBe(""); // leer nach Refactoring
+    expect(isVisibleSpecificCp(cp!, "YES")).toBe(false);
+  });
+
+  it("Checkpoint ohne Status (undefined) wird NICHT angezeigt", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"]!;
+    expect(isVisibleSpecificCp(cp, undefined)).toBe(false);
+  });
+
+  it("Checkpoint mit Status NO wird NICHT angezeigt (textByStatus.NO leer/undefiniert)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"]!;
+    // NO ist immer leer (keine Erklärung bei NO)
+    expect(isVisibleSpecificCp(cp, "NO")).toBe(false);
+  });
+
+  it("Kein EXPLANATION-Checkpoint mit leerem textByStatus würde in M3 als Zusatzinfo erscheinen", () => {
+    const violations: string[] = [];
+    for (const [id, cp] of Object.entries(INQUIRY_CHECKPOINT_CATALOG_V2)) {
+      if (!cp || cp.kind !== InquiryCheckpointKind.EXPLANATION) continue;
+      for (const status of ["YES", "NO"] as const) {
+        const text = cp.textByStatus[status] ?? "";
+        if (text === "") {
+          // Mit dem neuen Filter sollte isVisibleSpecificCp false zurückgeben → ok
+          if (isVisibleSpecificCp(cp, status)) {
+            violations.push(`${id} status=${status}: leerer Text wäre sichtbar`);
+          }
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests – actionsOpen – Auto-Öffnen wenn showWhenAny-Bedingungen erfüllt
+// ---------------------------------------------------------------------------
+
+/**
+ * Spiegelt die actionsOpen-Initialisierungslogik aus InquiryM3Client.tsx:
+ * actionsOpen=true wenn showWhenAny-Bedingungen eines boundActionCheckpoints erfüllt sind.
+ */
+function computeActionsOpen(
+  sections: Array<{
+    boundActionCheckpoints: Array<{
+      showWhenAny?: Record<string, string>[];
+    }>;
+  }>,
+  initialCheckpointStatuses: Record<string, string>,
+  initialActionStatuses: Record<string, string>,
+  actionIds: string[],
+): boolean {
+  const allBoundActionIds = sections.flatMap((s) =>
+    s.boundActionCheckpoints.map((_, i) => `bound-${i}`),
+  );
+  const hasExplicitActionStatus =
+    actionIds.some(
+      (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
+    ) ||
+    allBoundActionIds.some(
+      (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
+    );
+  if (hasExplicitActionStatus) return true;
+
+  const allStatuses = { ...initialCheckpointStatuses, ...initialActionStatuses };
+  const matchesConditionSet = (condSet: Record<string, string>) =>
+    Object.entries(condSet).every(([id, expected]) => allStatuses[id] === expected);
+
+  return sections.some((s) =>
+    s.boundActionCheckpoints.some(
+      (cp) => cp.showWhenAny && cp.showWhenAny.some(matchesConditionSet),
+    ),
+  );
+}
+
+describe("actionsOpen – Auto-Öffnen via showWhenAny", () => {
+  it("bleibt geschlossen wenn kein Status gesetzt und keine Conditions erfüllt", () => {
+    const open = computeActionsOpen(
+      [{ boundActionCheckpoints: [{ showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }] }] }],
+      {},
+      {},
+      [],
+    );
+    expect(open).toBe(false);
+  });
+
+  it("öffnet sich wenn ONBOARDING_IDENTITY_MISMATCH=YES und showWhenAny-Condition matcht", () => {
+    const open = computeActionsOpen(
+      [{ boundActionCheckpoints: [{ showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }] }] }],
+      { ONBOARDING_IDENTITY_MISMATCH: "YES" },
+      {},
+      [],
+    );
+    expect(open).toBe(true);
+  });
+
+  it("öffnet sich wenn ONBOARDING_DATA_INCOMPLETE=YES und showWhenAny-Condition matcht", () => {
+    const open = computeActionsOpen(
+      [{ boundActionCheckpoints: [{ showWhenAny: [{ ONBOARDING_DATA_INCOMPLETE: "YES" }] }] }],
+      { ONBOARDING_DATA_INCOMPLETE: "YES" },
+      {},
+      [],
+    );
+    expect(open).toBe(true);
+  });
+
+  it("öffnet sich wenn ONBOARDING_WRONG_PRACTICE=YES und showWhenAny-Condition matcht", () => {
+    const open = computeActionsOpen(
+      [{ boundActionCheckpoints: [{ showWhenAny: [{ ONBOARDING_WRONG_PRACTICE: "YES" }] }] }],
+      { ONBOARDING_WRONG_PRACTICE: "YES" },
+      {},
+      [],
+    );
+    expect(open).toBe(true);
+  });
+
+  it("öffnet sich wenn expliziter Action-Status ACTIVE gesetzt ist", () => {
+    const open = computeActionsOpen(
+      [{ boundActionCheckpoints: [] }],
+      {},
+      { SOME_ACTION: "ACTIVE" },
+      ["SOME_ACTION"],
+    );
+    expect(open).toBe(true);
+  });
+
+  it("bleibt geschlossen wenn Condition mit Status NO nicht matcht", () => {
+    const open = computeActionsOpen(
+      [{ boundActionCheckpoints: [{ showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }] }] }],
+      { ONBOARDING_IDENTITY_MISMATCH: "NO" },
+      {},
+      [],
+    );
+    expect(open).toBe(false);
+  });
+});
+

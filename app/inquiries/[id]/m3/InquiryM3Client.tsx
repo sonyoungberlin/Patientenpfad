@@ -285,13 +285,23 @@ export default function InquiryM3Client({
     // Automatisch aufklappen, wenn bereits ein Action-Status gesetzt ist
     // (globale Actions oder boundActionCheckpointIds).
     const allBoundActionIds = sections.flatMap((s) => s.boundActionCheckpoints.map((cp) => cp.id));
-    return (
+    const hasExplicitActionStatus =
       actionIds.some(
         (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
       ) ||
       allBoundActionIds.some(
         (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
-      )
+      );
+    if (hasExplicitActionStatus) return true;
+    // Automatisch aufklappen, wenn showWhenAny-Bedingungen bereits erfüllt sind
+    // (z.B. M2-Schalter mit YES → condition-gesteuerte Actions sind sofort sichtbar).
+    const allStatuses = { ...initialCheckpointStatuses, ...initialActionStatuses };
+    const matchesConditionSet = (condSet: Record<string, string>) =>
+      Object.entries(condSet).every(([id, expected]) => allStatuses[id] === expected);
+    return sections.some((s) =>
+      s.boundActionCheckpoints.some(
+        (cp) => cp.showWhenAny && cp.showWhenAny.some(matchesConditionSet),
+      ),
     );
   });
 
@@ -404,11 +414,15 @@ export default function InquiryM3Client({
         <>
           {/* Decision + SPECIFIC Checkpoints per inquiry */}
           {sections.map((section) => {
-            const visibleSpecificCps = section.specificCheckpoints.filter((cp) =>
-              cp.kind !== InquiryCheckpointKind.EXPLANATION ||
-              statuses[cp.id] === "YES" ||
-              statuses[cp.id] === "NO",
-            );
+            const visibleSpecificCps = section.specificCheckpoints.filter((cp) => {
+              if (cp.kind !== InquiryCheckpointKind.EXPLANATION) return true;
+              const status = statuses[cp.id];
+              if (status !== "YES" && status !== "NO") return false;
+              // Nur anzeigen wenn für den gesetzten Status tatsächlich ein nicht-leerer Text vorhanden ist.
+              // Reine M2-Schalter (textByStatus.YES = "") dürfen nicht als Zusatzinfo in M3 erscheinen.
+              const text = cp.textByStatus[status as keyof typeof cp.textByStatus];
+              return !!text;
+            });
             return (
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
