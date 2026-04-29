@@ -63,6 +63,7 @@ function toM3Section(inquiryId: string): M3SectionData | null {
       label: cp.label,
       kind: cp.kind,
       questions: cp.questions,
+      textByStatus: cp.textByStatus,
     })),
     boundActionCheckpoints,
     boundGlobalOutputCheckpoints: boundGlobalOutputCps.map((cp) => ({

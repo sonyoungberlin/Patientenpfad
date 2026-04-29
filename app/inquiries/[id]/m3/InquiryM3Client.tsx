@@ -16,6 +16,7 @@ export type M3SpecificCheckpoint = {
   label: string;
   kind: InquiryCheckpointKind;
   questions?: Array<{ id: string; text: string }>;
+  textByStatus?: Partial<Record<string, string>>;
 };
 
 export type M3BoundActionData = {
@@ -420,7 +421,7 @@ export default function InquiryM3Client({
               if (status !== "YES" && status !== "NO") return false;
               // Nur anzeigen wenn für den gesetzten Status tatsächlich ein nicht-leerer Text vorhanden ist.
               // Reine M2-Schalter (textByStatus.YES = "") dürfen nicht als Zusatzinfo in M3 erscheinen.
-              const text = cp.textByStatus[status as keyof typeof cp.textByStatus];
+              const text = cp.textByStatus?.[status];
               return !!text;
             });
             return (
