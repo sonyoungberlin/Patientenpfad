@@ -1348,7 +1348,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "ONLINE_ANAMNESIS",
       "DOCUMENT_UPLOAD",
       "TECHNICAL_ISSUE",
     ],
@@ -1378,6 +1377,31 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         hint: "recommended",
       },
     ],
+
+    boundActionCheckpointIds: [
+      "ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED",
+      "ONBOARDING_PROVIDE_IDENTITY_DATA",
+      "ONBOARDING_DATA_MISSING_CONTEXT",
+      "ONLINE_ANAMNESIS",
+      "ONBOARDING_WRONG_PRACTICE_NOTICE",
+    ],
+    boundActionConditions: {
+      ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED: {
+        showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }],
+      },
+      ONBOARDING_PROVIDE_IDENTITY_DATA: {
+        showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }],
+      },
+      ONBOARDING_DATA_MISSING_CONTEXT: {
+        showWhenAny: [{ ONBOARDING_DATA_INCOMPLETE: "YES" }],
+      },
+      ONLINE_ANAMNESIS: {
+        showWhenAny: [{ ONBOARDING_DATA_INCOMPLETE: "YES" }],
+      },
+      ONBOARDING_WRONG_PRACTICE_NOTICE: {
+        showWhenAny: [{ ONBOARDING_WRONG_PRACTICE: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)

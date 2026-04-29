@@ -965,7 +965,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Fehlende Angaben können über die Online-Anamnese ergänzt werden.",
+        "Bitte füllen Sie dafür unsere Online-Anamnese aus: https://mvz-kreuzberg.de/kurz-anamnese",
     },
   },
 
@@ -1985,8 +1985,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ONBOARDING_DATA_INCOMPLETE-Q1", text: "Fehlen grundlegende Angaben zur Registrierung (z. B. Name, Geburtsdatum, Kontodaten)?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Leider fehlen uns noch einige aktuelle Angaben in Ihrer Patientenakte. Um Ihr Anliegen bearbeiten zu können, bitten wir Sie, kurz unsere Online-Anamnese auszufüllen: https://mvz-kreuzberg.de/kurz-anamnese",
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2066,8 +2066,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ONBOARDING_IDENTITY_MISMATCH-Q1", text: "Kann der Patient anhand der vorliegenden Daten nicht eindeutig zugeordnet werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Leider konnten wir Ihre Anfrage in unserem System nicht eindeutig zuordnen. Möglicherweise gibt es eine Abweichung bei der Schreibweise Ihres Namens oder beim hinterlegten Geburtsdatum. Bitte teilen Sie uns beides noch einmal vollständig mit, damit wir Ihre Daten korrekt abgleichen können.",
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2104,12 +2104,68 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ONBOARDING_WRONG_PRACTICE-Q1", text: "Gehört der Patient nicht zu dieser Praxis (z. B. falsche Praxis kontaktiert, außerhalb des Einzugsgebiets)?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Ich fürchte, hier liegt ein Missverständnis vor, da wir Sie nicht als Patient in unserem System finden können. Bitte prüfen Sie noch einmal, welche Praxis Sie kontaktieren wollten oder ob Sie eventuell bei einer Ärztin oder einem Arzt mit ähnlichem Namen in Behandlung sind.",
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Anfrage nicht zuordenbar; vermutlich falsche Praxis kontaktiert.",
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // ONBOARDING – M3 ACTION-Bausteine (freigeschaltet über boundActionConditions)
+  // ---------------------------------------------------------------------------
+
+  ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED: {
+    id: "ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED",
+    label: "Identitätsabgleich – Kontext",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Leider konnten wir Ihre Anfrage nicht eindeutig zuordnen.",
+    },
+  },
+
+  ONBOARDING_PROVIDE_IDENTITY_DATA: {
+    id: "ONBOARDING_PROVIDE_IDENTITY_DATA",
+    label: "Identitätsabgleich – Aktion",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte teilen Sie uns Ihren vollständigen Namen und Ihr Geburtsdatum mit, damit wir Ihre Daten korrekt abgleichen können.",
+    },
+  },
+
+  ONBOARDING_DATA_MISSING_CONTEXT: {
+    id: "ONBOARDING_DATA_MISSING_CONTEXT",
+    label: "Datenvervollständigung – Kontext",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Leider fehlen uns noch aktuelle Angaben, um Ihr Anliegen bearbeiten zu können.",
+    },
+  },
+
+  ONBOARDING_WRONG_PRACTICE_NOTICE: {
+    id: "ONBOARDING_WRONG_PRACTICE_NOTICE",
+    label: "Falsche Praxis – Hinweis",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Leider konnten wir Sie nicht als Patient in unserem System finden.",
     },
   },
 
