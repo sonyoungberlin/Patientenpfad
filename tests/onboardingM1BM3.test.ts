@@ -19,6 +19,7 @@ import {
   ExplanationOutputStatus,
   InquiryCheckpointKind,
   InquiryCheckpointScope,
+  ActionStatus,
   type SpecificRole,
 } from "@/lib/inquiries/types";
 
@@ -335,7 +336,7 @@ describe("ONBOARDING Specific-Checkpoints – Existenz und Struktur", () => {
 // ---------------------------------------------------------------------------
 
 describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
-  it("ONBOARDING_DATA_INCOMPLETE YES + SHOW → Text erscheint", () => {
+  it("ONBOARDING_DATA_INCOMPLETE YES + SHOW → reiner M2-Schalter, kein Checkpoint-Text", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "ONBOARDING",
@@ -345,7 +346,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Online-Anamnese");
+    expect(paragraphs).not.toContain("Online-Anamnese");
   });
 
   it("ONBOARDING_DOCUMENT_MISSING ist @deprecated und nicht mehr im Profil – kein Renderer-Output", () => {
@@ -387,7 +388,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("PAS-Formular");
   });
 
-  it("ONBOARDING_IDENTITY_MISMATCH YES + SHOW → Text erscheint", () => {
+  it("ONBOARDING_IDENTITY_MISMATCH YES + SHOW → reiner M2-Schalter, kein Checkpoint-Text", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "ONBOARDING",
@@ -397,7 +398,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Schreibweise");
+    expect(paragraphs).not.toContain("Schreibweise");
   });
 
   it("ONBOARDING_PROCESS_REQUIRED ist @deprecated und nicht mehr im Profil – kein Renderer-Output", () => {
@@ -413,7 +414,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("Neupatient");
   });
 
-  it("ONBOARDING_WRONG_PRACTICE YES + SHOW → Text erscheint", () => {
+  it("ONBOARDING_WRONG_PRACTICE YES + SHOW → reiner M2-Schalter, kein Checkpoint-Text", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "ONBOARDING",
@@ -423,7 +424,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Missverständnis");
+    expect(paragraphs).not.toContain("Missverständnis");
   });
 
   it("ONBOARDING_DATA_INCOMPLETE HIDE → kein Text erscheint", () => {
@@ -462,13 +463,6 @@ describe("ONBOARDING Specific-Checkpoints – docByStatus", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_INCOMPLETE"];
     expect(cp.docByStatus).toBeDefined();
     expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
-  });
-
-  it("ONBOARDING_DATA_INCOMPLETE docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_INCOMPLETE"];
-    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
-      cp.textByStatus[ExplanationStatus.YES]!.length,
-    );
   });
 
   it("ONBOARDING_DATA_INCOMPLETE docByStatus[YES] enthält 'Online-Anamnese'", () => {
@@ -536,13 +530,6 @@ describe("ONBOARDING Specific-Checkpoints – docByStatus", () => {
     expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
   });
 
-  it("ONBOARDING_IDENTITY_MISMATCH docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"];
-    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
-      cp.textByStatus[ExplanationStatus.YES]!.length,
-    );
-  });
-
   it("ONBOARDING_IDENTITY_MISMATCH docByStatus[YES] enthält 'Abgleich'", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"];
     expect(cp.docByStatus![ExplanationStatus.YES]).toContain("Abgleich");
@@ -554,30 +541,25 @@ describe("ONBOARDING Specific-Checkpoints – docByStatus", () => {
     expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
   });
 
-  it("ONBOARDING_WRONG_PRACTICE docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"];
-    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
-      cp.textByStatus[ExplanationStatus.YES]!.length,
-    );
-  });
-
   it("ONBOARDING_WRONG_PRACTICE docByStatus[YES] enthält 'falsche Praxis'", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"];
     expect(cp.docByStatus![ExplanationStatus.YES]).toContain("falsche Praxis");
   });
 
-  it("textByStatus[YES]-Texte bleiben unverändert (Patiententext wird nicht durch docByStatus ersetzt)", () => {
+  it("textByStatus[YES] der drei M2-Schalter ist leer (reiner Schalter)", () => {
     const data = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_INCOMPLETE"];
-    expect(data.textByStatus[ExplanationStatus.YES]).toContain("Online-Anamnese auszufüllen");
-
-    const doc = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DOCUMENT_MISSING"];
-    expect(doc.textByStatus[ExplanationStatus.YES]).toContain("PAS-Formular");
+    expect(data.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
 
     const identity = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"];
-    expect(identity.textByStatus[ExplanationStatus.YES]).toContain("Schreibweise");
+    expect(identity.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
 
     const wrong = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"];
-    expect(wrong.textByStatus[ExplanationStatus.YES]).toContain("Missverständnis");
+    expect(wrong.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
+  });
+
+  it("ONBOARDING_DOCUMENT_MISSING (@deprecated) textByStatus[YES] bleibt unverändert", () => {
+    const doc = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DOCUMENT_MISSING"];
+    expect(doc.textByStatus[ExplanationStatus.YES]).toContain("PAS-Formular");
   });
 });
 
@@ -599,5 +581,198 @@ describe("ONBOARDING – availableActionIds", () => {
   it("DOCUMENT_UPLOAD ist in ONBOARDING.availableActionIds enthalten", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
     expect(profile.availableActionIds).toContain("DOCUMENT_UPLOAD");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. Neue ONBOARDING-ACTION-Checkpoints – Kontext und Aktion (M3-Bausteine)
+// ---------------------------------------------------------------------------
+
+describe("ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat actionCategory INFO", () => {
+    expect((cp as any).actionCategory).toBe("INFO");
+  });
+
+  it("hat ACTIVE-Text mit Kontext-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ActionStatus.ACTIVE];
+    expect(text).toContain("nicht eindeutig zuordnen");
+  });
+
+  it("ist in ONBOARDING.boundActionCheckpointIds referenziert", () => {
+    expect(ONBOARDING.boundActionCheckpointIds).toContain("ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED");
+  });
+
+  it("wird bei ONBOARDING_IDENTITY_MISMATCH = YES freigeschaltet", () => {
+    const conditions = ONBOARDING.boundActionConditions;
+    expect(conditions?.ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED?.showWhenAny).toEqual(
+      expect.arrayContaining([{ ONBOARDING_IDENTITY_MISMATCH: "YES" }])
+    );
+  });
+});
+
+describe("ONBOARDING_PROVIDE_IDENTITY_DATA – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_PROVIDE_IDENTITY_DATA"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat actionCategory INFO", () => {
+    expect((cp as any).actionCategory).toBe("INFO");
+  });
+
+  it("hat ACTIVE-Text mit Aktionsaufforderung", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ActionStatus.ACTIVE];
+    expect(text).toContain("vollständigen Namen");
+    expect(text).toContain("Geburtsdatum");
+  });
+
+  it("ist in ONBOARDING.boundActionCheckpointIds referenziert", () => {
+    expect(ONBOARDING.boundActionCheckpointIds).toContain("ONBOARDING_PROVIDE_IDENTITY_DATA");
+  });
+
+  it("wird bei ONBOARDING_IDENTITY_MISMATCH = YES freigeschaltet", () => {
+    const conditions = ONBOARDING.boundActionConditions;
+    expect(conditions?.ONBOARDING_PROVIDE_IDENTITY_DATA?.showWhenAny).toEqual(
+      expect.arrayContaining([{ ONBOARDING_IDENTITY_MISMATCH: "YES" }])
+    );
+  });
+});
+
+describe("ONBOARDING_DATA_MISSING_CONTEXT – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_MISSING_CONTEXT"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat actionCategory INFO", () => {
+    expect((cp as any).actionCategory).toBe("INFO");
+  });
+
+  it("hat ACTIVE-Text mit Kontext-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ActionStatus.ACTIVE];
+    expect(text).toContain("aktuelle Angaben");
+  });
+
+  it("ist in ONBOARDING.boundActionCheckpointIds referenziert", () => {
+    expect(ONBOARDING.boundActionCheckpointIds).toContain("ONBOARDING_DATA_MISSING_CONTEXT");
+  });
+
+  it("wird bei ONBOARDING_DATA_INCOMPLETE = YES freigeschaltet", () => {
+    const conditions = ONBOARDING.boundActionConditions;
+    expect(conditions?.ONBOARDING_DATA_MISSING_CONTEXT?.showWhenAny).toEqual(
+      expect.arrayContaining([{ ONBOARDING_DATA_INCOMPLETE: "YES" }])
+    );
+  });
+});
+
+describe("ONBOARDING_WRONG_PRACTICE_NOTICE – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE_NOTICE"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat actionCategory INFO", () => {
+    expect((cp as any).actionCategory).toBe("INFO");
+  });
+
+  it("hat ACTIVE-Text mit Hinweis-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ActionStatus.ACTIVE];
+    expect(text).toContain("nicht als Patient");
+  });
+
+  it("ist in ONBOARDING.boundActionCheckpointIds referenziert", () => {
+    expect(ONBOARDING.boundActionCheckpointIds).toContain("ONBOARDING_WRONG_PRACTICE_NOTICE");
+  });
+
+  it("wird bei ONBOARDING_WRONG_PRACTICE = YES freigeschaltet", () => {
+    const conditions = ONBOARDING.boundActionConditions;
+    expect(conditions?.ONBOARDING_WRONG_PRACTICE_NOTICE?.showWhenAny).toEqual(
+      expect.arrayContaining([{ ONBOARDING_WRONG_PRACTICE: "YES" }])
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. ONBOARDING – ONLINE_ANAMNESIS in boundActionCheckpointIds/-Conditions
+// ---------------------------------------------------------------------------
+
+describe("ONBOARDING – ONLINE_ANAMNESIS via boundActionConditions", () => {
+  it("ONLINE_ANAMNESIS ist in ONBOARDING.boundActionCheckpointIds enthalten", () => {
+    expect(ONBOARDING.boundActionCheckpointIds).toContain("ONLINE_ANAMNESIS");
+  });
+
+  it("ONLINE_ANAMNESIS wird bei ONBOARDING_DATA_INCOMPLETE = YES freigeschaltet", () => {
+    const conditions = ONBOARDING.boundActionConditions;
+    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
+      expect.arrayContaining([{ ONBOARDING_DATA_INCOMPLETE: "YES" }])
+    );
+  });
+
+  it("ONLINE_ANAMNESIS hat ACTIVE-Text mit Link", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONLINE_ANAMNESIS"];
+    const text = (cp.textByStatus as Record<string, string>)[ActionStatus.ACTIVE];
+    expect(text).toContain("kurz-anamnese");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. Drei M2-Schalter haben keinen YES-Text (reiner Schalter)
+// ---------------------------------------------------------------------------
+
+describe("ONBOARDING M2-Schalter – kein textByStatus.YES", () => {
+  it("ONBOARDING_DATA_INCOMPLETE hat keinen YES-Text (reiner M2-Schalter)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_DATA_INCOMPLETE"];
+    expect(cp.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
+  });
+
+  it("ONBOARDING_IDENTITY_MISMATCH hat keinen YES-Text (reiner M2-Schalter)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_IDENTITY_MISMATCH"];
+    expect(cp.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
+  });
+
+  it("ONBOARDING_WRONG_PRACTICE hat keinen YES-Text (reiner M2-Schalter)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONBOARDING_WRONG_PRACTICE"];
+    expect(cp.textByStatus[ExplanationStatus.YES] ?? "").toBe("");
   });
 });

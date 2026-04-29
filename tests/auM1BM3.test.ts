@@ -274,16 +274,78 @@ describe("AU_NEW_PATIENT_LIMIT – Checkpoint-Struktur", () => {
     expect((cp as any).specificRole).toBe("RULE_TIME_LIMIT");
   });
 
-  it("hat YES-Text", () => {
+  it("hat keinen YES-Text (reiner M2-Schalter)", () => {
     const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-    expect(typeof text).toBe("string");
-    expect(text.length).toBeGreaterThan(0);
-    expect(text).toContain("3 Tage");
-    expect(text).toContain("Folgebescheinigung");
+    expect(!text || text.length === 0).toBe(true);
   });
 
   it("ist in AU.specificCheckpointIds referenziert", () => {
     expect(AU.specificCheckpointIds).toContain("AU_NEW_PATIENT_LIMIT");
+  });
+});
+
+describe("AU_NEW_PATIENT_3DAY_LIMIT – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_NEW_PATIENT_3DAY_LIMIT"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat ACTIVE-Text mit 3-Tage-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("3 Tage");
+  });
+
+  it("ist in AU.boundActionCheckpointIds referenziert", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("AU_NEW_PATIENT_3DAY_LIMIT");
+  });
+
+  it("wird bei AU_NEW_PATIENT_LIMIT = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.AU_NEW_PATIENT_3DAY_LIMIT?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NEW_PATIENT_LIMIT: "YES" }])
+    );
+  });
+});
+
+describe("AU_FOLLOWUP_REQUIRES_VISIT – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_FOLLOWUP_REQUIRES_VISIT"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat ACTIVE-Text mit Folgebescheinigung-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("Folgebescheinigung");
+    expect(text).toContain("persönliche Vorstellung");
+  });
+
+  it("ist in AU.boundActionCheckpointIds referenziert", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("AU_FOLLOWUP_REQUIRES_VISIT");
+  });
+
+  it("wird bei AU_NEW_PATIENT_LIMIT = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.AU_FOLLOWUP_REQUIRES_VISIT?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NEW_PATIENT_LIMIT: "YES" }])
+    );
   });
 });
 
@@ -306,13 +368,9 @@ describe("AU_DIGITAL_AU_PROCESS – Checkpoint-Struktur", () => {
     expect((cp as any).specificRole).toBe("PROCESS_INFO");
   });
 
-  it("hat YES-Text mit URLs und Bearbeitungszeit", () => {
+  it("hat keinen YES-Text (reiner M2-Schalter, Inhalte kommen über boundActionCheckpointIds)", () => {
     const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-    expect(typeof text).toBe("string");
-    expect(text.length).toBeGreaterThan(0);
-    expect(text).toContain("kurz-anamnese");
-    expect(text).toContain("digitaleanfrage");
-    expect(text).toContain("8–12 Stunden");
+    expect(!text || text.length === 0).toBe(true);
   });
 
   it("ist in AU.specificCheckpointIds referenziert", () => {
@@ -320,13 +378,156 @@ describe("AU_DIGITAL_AU_PROCESS – Checkpoint-Struktur", () => {
   });
 });
 
-describe("ACUTE_OPEN_CONSULTATION_INFO – im AU-Profil referenziert", () => {
+describe("ACUTE_OPEN_CONSULTATION_INFO – weiterhin im Katalog vorhanden (für andere Profile)", () => {
   it("ACUTE_OPEN_CONSULTATION_INFO existiert im Checkpoint-Katalog", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
   });
 
-  it("ist in AU.boundGlobalCheckpointIds referenziert", () => {
-    expect(AU.boundGlobalCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  it("ist NICHT mehr in AU.boundGlobalCheckpointIds (wurde durch ACUTE_OPEN_CONSULTATION_ACTION abgelöst)", () => {
+    expect(AU.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("ist NICHT in AU.boundActionCheckpointIds (wurde durch ACUTE_OPEN_CONSULTATION_ACTION abgelöst)", () => {
+    expect((AU as any).boundActionCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+});
+
+describe("ACUTE_OPEN_CONSULTATION_ACTION – neuer ACTION-Baustein", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_ACTION"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope GLOBAL", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+
+  it("hat actionCategory INFO", () => {
+    expect((cp as any).actionCategory).toBe("INFO");
+  });
+
+  it("hat ACTIVE-Text mit Sprechstunden-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("offene Sprechstunde");
+    expect(text).toContain("9–10 Uhr");
+  });
+
+  it("ist in AU.boundActionCheckpointIds referenziert", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_ACTION");
+  });
+
+  it("wird bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_ACTION?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. AU_NO_APPOINTMENT_ACUTE – Checkpoint-Struktur und Profil-Referenz
+// ---------------------------------------------------------------------------
+
+describe("AU_NO_APPOINTMENT_ACUTE – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_NO_APPOINTMENT_ACUTE"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind EXPLANATION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat eine Frage", () => {
+    expect(cp.questions?.length).toBeGreaterThan(0);
+    expect(cp.questions?.[0].text).toContain("akute Beschwerden");
+  });
+
+  it("hat keinen YES-Text (reiner M2-Schalter)", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+    expect(!text || text.length === 0).toBe(true);
+  });
+
+  it("hat keinen NO-Text (reiner M2-Schalter)", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.NO];
+    expect(!text || text.length === 0).toBe(true);
+  });
+
+  it("ist in AU.specificCheckpointIds referenziert", () => {
+    expect(AU.specificCheckpointIds).toContain("AU_NO_APPOINTMENT_ACUTE");
+  });
+
+  it("ist NICHT in AU.boundGlobalCheckpointIds", () => {
+    expect(AU.boundGlobalCheckpointIds).not.toContain("AU_NO_APPOINTMENT_ACUTE");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. AU – AU_NO_APPOINTMENT_ACUTE Triggerweg über boundActionCheckpointIds
+// ---------------------------------------------------------------------------
+
+describe("AU – AU_NO_APPOINTMENT_ACUTE Triggerweg", () => {
+  it("ONLINE_ANAMNESIS wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST_PROCESSING_TIME wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST_PROCESSING_TIME?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_ACTION ist in AU.boundActionCheckpointIds", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_ACTION");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_ACTION hat Condition auf AU_NO_APPOINTMENT_ACUTE = YES", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_ACTION?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("ONLINE_ANAMNESIS behält weiterhin AU_DIGITAL_AU_PROCESS = YES als Trigger", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST behält weiterhin AU_DIGITAL_AU_PROCESS = YES als Trigger", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST_PROCESSING_TIME behält weiterhin AU_DIGITAL_AU_PROCESS = YES als Trigger", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST_PROCESSING_TIME?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
   });
 });
 
@@ -335,7 +536,7 @@ describe("ACUTE_OPEN_CONSULTATION_INFO – im AU-Profil referenziert", () => {
 // ---------------------------------------------------------------------------
 
 describe("AU Renderer – neue AU-Checkpoints", () => {
-  it("AU_NEW_PATIENT_LIMIT YES + SHOW liefert Text im Output", () => {
+  it("AU_NEW_PATIENT_LIMIT YES + SHOW liefert keinen Text mehr (reiner Schalter)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "AU",
@@ -350,7 +551,8 @@ describe("AU Renderer – neue AU-Checkpoints", () => {
     ]);
 
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
-    expect(allText).toContain("3 Tage");
+    expect(allText).not.toContain("3 Tage");
+    expect(allText).not.toContain("Folgebescheinigung");
   });
 
   it("AU_NEW_PATIENT_LIMIT HIDE liefert keinen Text", () => {
@@ -369,9 +571,10 @@ describe("AU Renderer – neue AU-Checkpoints", () => {
 
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
     expect(allText).not.toContain("3 Tage");
+    expect(allText).not.toContain("Folgebescheinigung");
   });
 
-  it("AU_DIGITAL_AU_PROCESS YES + SHOW liefert Text mit URLs im Output", () => {
+  it("AU_DIGITAL_AU_PROCESS YES + SHOW liefert keinen Text mehr (reiner M2-Schalter)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "AU",
@@ -386,8 +589,10 @@ describe("AU Renderer – neue AU-Checkpoints", () => {
     ]);
 
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
-    expect(allText).toContain("kurz-anamnese");
-    expect(allText).toContain("8–12 Stunden");
+    // Nach Refactoring: kein Text mehr im Checkpoint selbst
+    expect(allText).not.toContain("kurz-anamnese");
+    expect(allText).not.toContain("8–12 Stunden");
+    expect(allText).not.toContain("digitaleanfrage");
   });
 
   it("AU_DIGITAL_AU_PROCESS HIDE liefert keinen Text", () => {
@@ -406,5 +611,103 @@ describe("AU Renderer – neue AU-Checkpoints", () => {
 
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
     expect(allText).not.toContain("kurz-anamnese");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. DIGITAL_REQUEST – aktualisierter Text mit URL
+// ---------------------------------------------------------------------------
+
+describe("DIGITAL_REQUEST – aktualisierter Text mit URL", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["DIGITAL_REQUEST"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat ACTIVE-Text mit mvz-kreuzberg.de/digitaleanfrage", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("https://mvz-kreuzberg.de/digitaleanfrage");
+  });
+
+  it("hat scope GLOBAL", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. DIGITAL_REQUEST_PROCESSING_TIME – neuer globaler Baustein
+// ---------------------------------------------------------------------------
+
+describe("DIGITAL_REQUEST_PROCESSING_TIME – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["DIGITAL_REQUEST_PROCESSING_TIME"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope GLOBAL", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+
+  it("hat actionCategory INFO", () => {
+    expect((cp as any).actionCategory).toBe("INFO");
+  });
+
+  it("hat ACTIVE-Text mit 8–12 Stunden und Nachfragen-Hinweis", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("8–12 Stunden");
+    expect(text).toContain("Nachfragen");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. AU-Profil – AU_DIGITAL_AU_PROCESS Triggerweg über boundActionCheckpointIds
+// ---------------------------------------------------------------------------
+
+describe("AU – AU_DIGITAL_AU_PROCESS Triggerweg", () => {
+  it("ONLINE_ANAMNESIS ist in AU.boundActionCheckpointIds", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("ONLINE_ANAMNESIS");
+  });
+
+  it("DIGITAL_REQUEST ist in AU.boundActionCheckpointIds", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("DIGITAL_REQUEST");
+  });
+
+  it("DIGITAL_REQUEST_PROCESSING_TIME ist in AU.boundActionCheckpointIds", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("DIGITAL_REQUEST_PROCESSING_TIME");
+  });
+
+  it("ONLINE_ANAMNESIS wird bei AU_DIGITAL_AU_PROCESS = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST wird bei AU_DIGITAL_AU_PROCESS = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST_PROCESSING_TIME wird bei AU_DIGITAL_AU_PROCESS = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST_PROCESSING_TIME?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
+  });
+
+  it("ONLINE_ANAMNESIS ist nicht mehr in AU.availableActionIds (kein Duplikat)", () => {
+    expect(AU.availableActionIds).not.toContain("ONLINE_ANAMNESIS");
+  });
+
+  it("DIGITAL_REQUEST ist nicht mehr in AU.availableActionIds (kein Duplikat)", () => {
+    expect(AU.availableActionIds).not.toContain("DIGITAL_REQUEST");
   });
 });

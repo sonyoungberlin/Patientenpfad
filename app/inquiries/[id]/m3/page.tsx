@@ -31,12 +31,17 @@ function toM3Section(inquiryId: string): M3SectionData | null {
   const boundActionCps = (profile.boundActionCheckpointIds ?? [])
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
     .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
-  const boundActionCheckpoints: M3BoundActionData[] = boundActionCps.map((cp) => ({
-    id: cp.id,
-    label: cp.label,
-    actionCategory: cp.actionCategory,
-    questions: cp.questions,
-  }));
+  const boundActionCheckpoints: M3BoundActionData[] = boundActionCps.map((cp) => {
+    const conditions = profile.boundActionConditions?.[cp.id];
+    return {
+      id: cp.id,
+      label: cp.label,
+      actionCategory: cp.actionCategory,
+      questions: cp.questions,
+      showWhenAny: conditions?.showWhenAny,
+      hideWhenAny: conditions?.hideWhenAny,
+    };
+  });
   // GLOBAL MODULAR EXPLANATION-Checkpoints → in M3 als SHOW/HIDE-fähige Output-Bausteine
   const boundGlobalOutputCps = (profile.boundGlobalCheckpointIds ?? [])
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
@@ -58,6 +63,7 @@ function toM3Section(inquiryId: string): M3SectionData | null {
       label: cp.label,
       kind: cp.kind,
       questions: cp.questions,
+      textByStatus: cp.textByStatus,
     })),
     boundActionCheckpoints,
     boundGlobalOutputCheckpoints: boundGlobalOutputCps.map((cp) => ({
@@ -110,17 +116,25 @@ export default async function InquiryM3Page({
     .map(toM3Section)
     .filter((s): s is M3SectionData => s !== null);
 
-  // Deduplicated ACTION checkpoints across all selected inquiries
+  // Deduplicated ACTION IDs across all selected inquiries.
+  // actionIds is the full set used for status storage (includes boundActionCheckpointIds).
+  // displayActionIds is the subset used for the ungrouped global action list in M3
+  // (availableActionIds only – boundActionCheckpointIds are rendered via sections[].boundActionCheckpoints).
   const actionIds = new Set<string>();
+  const displayActionIds = new Set<string>();
   for (const inquiryId of selectedIds) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
     if (!profile) continue;
-    profile.availableActionIds.forEach((cpId) => actionIds.add(cpId));
-    // boundActionCheckpointIds must also be routed to actionStatuses
+    profile.availableActionIds.forEach((cpId) => {
+      actionIds.add(cpId);
+      displayActionIds.add(cpId);
+    });
+    // boundActionCheckpointIds must be routed to actionStatuses but must NOT
+    // appear in the ungrouped global list – they are shown via boundActionCheckpoints.
     (profile.boundActionCheckpointIds ?? []).forEach((cpId) => actionIds.add(cpId));
   }
 
-  const actionCheckpoints: M3ActionData[] = Array.from(actionIds)
+  const actionCheckpoints: M3ActionData[] = Array.from(displayActionIds)
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
     .filter(
       (cp): cp is InquiryCheckpoint =>

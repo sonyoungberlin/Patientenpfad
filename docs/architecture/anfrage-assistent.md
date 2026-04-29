@@ -399,3 +399,77 @@ als OUTCOME und aktiviert den OUTCOME-Guard im Renderer.
 ```
 
 → Zur Implementierung: Guard in `lib/inquiries/renderInquiryResponse.ts` (Abschnitt B)
+
+---
+
+## 20. textByStatus in SPECIFIC Explanation Checkpoints
+
+### Grundregel
+
+Spezifische Explanation-Checkpoints (`scope: SPECIFIC`) sind primär **Steuerungselemente** in M2.
+`YES` dient als Schalter, der M3-Bausteine aktiviert. `NO` schaltet nichts frei.
+
+`textByStatus` soll idealerweise leer bleiben; Inhalte gehören in ACTION- oder
+EXPLANATION-Bausteine in M3 (`boundActionCheckpointIds` + `boundActionConditions`).
+
+### Wann darf textByStatus.YES befüllt bleiben?
+
+Ein Specific-Text **darf bestehen bleiben**, wenn beide Bedingungen erfüllt sind:
+
+1. Er enthält **genau eine einfache Kontextaussage** (keine Aufzählung, keine kombinierten Inhalte).
+2. Kein eigenständig wiederverwendbarer M3-Baustein würde daraus entstehen.
+
+**Präzisierung zu „einfache Kontextaussage":**
+Eine Aussage gilt nicht als „einfach", wenn sie eine implizite Handlung enthält.
+Formulierungen wie „kann gebucht werden", „ist einzureichen" oder „muss angefordert werden"
+beschreiben eine Handlung des Patienten und müssen ausgelagert werden – auch wenn der Satz
+grammatisch kurz wirkt.
+
+Zulässige einfache Kontextaussagen sind reine Sachaussagen ohne Handlungsrichtung,
+z. B. „Dieses Anliegen gehört in die reguläre Sprechstunde."
+
+### Wann muss textByStatus.YES ausgelagert werden?
+
+Eine Auslagerung in einen M3-Baustein ist **zwingend**, wenn mindestens eines zutrifft:
+
+- Der Text beschreibt eine **Handlung** – explizit (z. B. „buchen", „ausfüllen") oder implizit
+  (z. B. „kann gebucht werden", „ist einzureichen").
+- Der Text enthält **Links** oder technische Verweise.
+- Der Text **kombiniert mehrere Aussagen** in einem Eintrag.
+- Der Text wäre in **mehreren Profilen wiederverwendbar**.
+
+### Auslagerungsschritt
+
+Bei Auslagerung:
+- `textByStatus.YES` im Specific auf leer setzen (kein Eintrag).
+- Neuen `kind: ACTION`-Baustein im Checkpoint-Katalog anlegen
+  (`actionCategory: "INFO"` oder `"NEXT_STEP"` je nach Inhalt).
+- Den neuen Baustein im Profil unter `boundActionCheckpointIds` registrieren.
+- In `boundActionConditions` den Trigger setzen: `showWhenAny: [{ <SpecificId>: "YES" }]`.
+
+**Präzisierung zur Granularität von ACTION-Bausteinen:**
+Mehrere Aussagen dürfen **in einem einzigen ACTION-Baustein kombiniert** bleiben, wenn sie
+denselben Handlungsweg beschreiben. Eine Aufteilung in Einzelbausteine ist nur sinnvoll,
+wenn die Aussagen unabhängig voneinander ein- oder ausgeblendet werden müssen.
+
+Beispiel: Terminbuchung (online, 24h im Voraus) und Videosprechstunde-Option beschreiben
+denselben Buchungsweg → ein Baustein `ACUTE_BOOKING_INFO` ist korrekt.
+
+### Entscheidung: ACUTE_BOOKING_INFO als ein Baustein
+
+`ACUTE_BOOKING_INFO` enthält: „Akuttermine können in der Regel 24 Stunden im Voraus online
+gebucht werden und sind auch als Videosprechstunde möglich."
+
+**Entscheidung: bleibt ein Baustein.** Begründung:
+- Beide Aussagen (Online-Buchung + Videosprechstunde) betreffen denselben Buchungsweg.
+- Es gibt keinen fachlichen Grund, die Videosprechstunde separat ein-/auszublenden.
+- Eine Aufteilung würde keinen eigenständig steuerbaren Mehrwert erzeugen.
+- Die Zusammenfassung entspricht der Präzisierung zur Granularität oben.
+
+### Beispiel: ACUTE_APPOINTMENT_INFO → ACUTE_BOOKING_INFO
+
+`ACUTE_APPOINTMENT_INFO` enthielt: „Akuttermine können in der Regel 24 Stunden im Voraus
+online gebucht werden und sind auch als Videosprechstunde möglich."
+
+→ Implizite Buchungshandlung + zwei kombinierte Aussagen → ausgelagert in `ACUTE_BOOKING_INFO`.
+→ ACUTE_CARE-Profil bindet den Baustein mit Condition `ACUTE_APPOINTMENT_INFO = YES`.

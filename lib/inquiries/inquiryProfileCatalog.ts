@@ -48,22 +48,51 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
       "AU_DIGITAL_AU_PROCESS",
+      "AU_NO_APPOINTMENT_ACUTE",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
-      "ACUTE_OPEN_CONSULTATION_INFO",
     ],
     globalHints: {
       MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-      ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     },
     availableActionIds: [
-      "DIGITAL_REQUEST",
-      "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "AU_NEW_PATIENT_3DAY_LIMIT",
+      "AU_FOLLOWUP_REQUIRES_VISIT",
+      "ONLINE_ANAMNESIS",
+      "DIGITAL_REQUEST",
+      "DIGITAL_REQUEST_PROCESSING_TIME",
+      "ACUTE_OPEN_CONSULTATION_ACTION",
+      "CARE_CHANNEL_CHOICE",
+    ],
+    boundActionConditions: {
+      AU_NEW_PATIENT_3DAY_LIMIT: {
+        showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
+      },
+      AU_FOLLOWUP_REQUIRES_VISIT: {
+        showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
+      },
+      ONLINE_ANAMNESIS: {
+        showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
+      },
+      DIGITAL_REQUEST: {
+        showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
+      },
+      DIGITAL_REQUEST_PROCESSING_TIME: {
+        showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
+      },
+      ACUTE_OPEN_CONSULTATION_ACTION: {
+        showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
+      },
+      CARE_CHANNEL_CHOICE: {
+        hideWhenAny: [],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -212,12 +241,19 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
-      "E_RECIPE_USE",
       "PHARMACY_INFORMATION",
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "E_RECIPE_USE",
+    ],
+    boundActionConditions: {
+      E_RECIPE_USE: {
+        showWhenAny: [{ PRESCRIPTION_STATUTORY_POSSIBLE: "YES" }],
+      },
+    },
     globalHints: {
       PATIENT_NOT_IN_GERMANY: "Rezepte können in deutschen Apotheken zuverlässig eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
       IS_CHRONIC_PATIENT: "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
@@ -489,16 +525,56 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
-      "TERMIN_PREPARATION_REQUIRED",
     ],
     globalHints: {
       MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-      TERMIN_PREPARATION_REQUIRED: "Bitte erscheinen Sie nüchtern zur Blutentnahme.",
     },
     boundActionCheckpointIds: [
+      "LAB_APPOINTMENT_INTERNAL",
+      "LAB_APPOINTMENT_INDIVIDUAL",
+      "LAB_APPOINTMENT_DOCTOR",
+      "LAB_BRING_REFERRAL",
+      "LAB_COST_COVERED_BY_REFERRAL",
+      "LAB_SELF_PAYER_NOTE",
       "LAB_FASTING_REQUIRED",
       "LAB_RESULT_TIME",
     ],
+    boundActionConditions: {
+      LAB_APPOINTMENT_INTERNAL: {
+        showWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
+      },
+      LAB_APPOINTMENT_INDIVIDUAL: {
+        hideWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
+      },
+      LAB_APPOINTMENT_DOCTOR: {
+        hideWhenAny: [
+          { LAB_INTERNAL_ORDER: "YES" },
+          { LAB_EXTERNAL_REFERRAL: "YES" },
+        ],
+      },
+      LAB_BRING_REFERRAL: {
+        showWhenAny: [{ LAB_EXTERNAL_REFERRAL: "YES" }],
+      },
+      LAB_COST_COVERED_BY_REFERRAL: {
+        showWhenAny: [{ LAB_EXTERNAL_REFERRAL: "YES" }],
+      },
+      LAB_SELF_PAYER_NOTE: {
+        hideWhenAny: [
+          { LAB_INTERNAL_ORDER: "YES" },
+          { LAB_EXTERNAL_REFERRAL: "YES" },
+        ],
+      },
+      // LAB_FASTING_REQUIRED: immer in M3 anzeigen, ohne M2-Schalter.
+      // hideWhenAny: [] bedeutet "niemals ausblenden" → immer sichtbar.
+      LAB_FASTING_REQUIRED: {
+        hideWhenAny: [],
+      },
+      // LAB_RESULT_TIME: immer in M3 anzeigen, ohne M2-Schalter.
+      // Befundübermittlung / Auswertungsdauer ist profiltypisch und nicht fallabhängig.
+      LAB_RESULT_TIME: {
+        hideWhenAny: [],
+      },
+    },
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
@@ -625,7 +701,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "URINE_SAMPLE_INSTRUCTIONS",
       "STOOL_SAMPLE_INSTRUCTIONS",
       "SAMPLE_HANDOVER",
-      "LAB_RESULT_TIME",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -735,7 +810,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "INFECTIOUS_PROTOCOL",
-      "ACUTE_OPEN_CONSULTATION_INFO",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -745,7 +819,22 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {
       INFECTIOUS_PROTOCOL:
         "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
-      ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
+    },
+    boundActionCheckpointIds: [
+      "ACUTE_OPEN_CONSULTATION_ACTION",
+      "ACUTE_BOOKING_INFO",
+      "CARE_CHANNEL_CHOICE",
+    ],
+    boundActionConditions: {
+      ACUTE_OPEN_CONSULTATION_ACTION: {
+        hideWhenAny: [],
+      },
+      ACUTE_BOOKING_INFO: {
+        showWhenAny: [{ ACUTE_APPOINTMENT_INFO: "YES" }],
+      },
+      CARE_CHANNEL_CHOICE: {
+        hideWhenAny: [],
+      },
     },
 
     // -----------------------------------------------------------------------
@@ -837,6 +926,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "REF_SPECIALTY_REQUIRED",
       "REF_PSYCHOTHERAPY_FIRST_STEP",
+      "REF_HAV_CASE",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
@@ -848,6 +938,17 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
     ],
+    boundActionConditions: {
+      // REF_ORIGINAL_VS_PDF: immer in M3 anzeigen, ohne M2-Schalter.
+      // Hinweis zu digitaler vs. Original-Überweisung gilt für jede ausgestellte Überweisung.
+      REF_ORIGINAL_VS_PDF: {
+        hideWhenAny: [],
+      },
+      // REF_BOOKING_CODE_PROCESS: nur anzeigen, wenn Hausarztvermittlungsfall (mit Buchungscode).
+      REF_BOOKING_CODE_PROCESS: {
+        showWhenAny: [{ REF_HAV_CASE: "YES" }],
+      },
+    },
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
@@ -1067,12 +1168,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_DATA_INCOMPLETE",
     ],
-    boundGlobalCheckpointIds: [
-      "ACUTE_OPEN_CONSULTATION_INFO",
-    ],
-    globalHints: {
-      ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
-    },
+    boundGlobalCheckpointIds: [],
+    globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "ONLINE_ANAMNESIS",
@@ -1080,6 +1177,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "ACUTE_OPEN_CONSULTATION_ACTION",
+    ],
+    boundActionConditions: {
+      ACUTE_OPEN_CONSULTATION_ACTION: {
+        hideWhenAny: [],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -1290,7 +1395,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "ONLINE_ANAMNESIS",
       "DOCUMENT_UPLOAD",
       "TECHNICAL_ISSUE",
     ],
@@ -1320,6 +1424,31 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         hint: "recommended",
       },
     ],
+
+    boundActionCheckpointIds: [
+      "ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED",
+      "ONBOARDING_PROVIDE_IDENTITY_DATA",
+      "ONBOARDING_DATA_MISSING_CONTEXT",
+      "ONLINE_ANAMNESIS",
+      "ONBOARDING_WRONG_PRACTICE_NOTICE",
+    ],
+    boundActionConditions: {
+      ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED: {
+        showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }],
+      },
+      ONBOARDING_PROVIDE_IDENTITY_DATA: {
+        showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }],
+      },
+      ONBOARDING_DATA_MISSING_CONTEXT: {
+        showWhenAny: [{ ONBOARDING_DATA_INCOMPLETE: "YES" }],
+      },
+      ONLINE_ANAMNESIS: {
+        showWhenAny: [{ ONBOARDING_DATA_INCOMPLETE: "YES" }],
+      },
+      ONBOARDING_WRONG_PRACTICE_NOTICE: {
+        showWhenAny: [{ ONBOARDING_WRONG_PRACTICE: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -1413,6 +1542,23 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_INVOICE_TIMING",
     ],
     boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
+      "BILLING_NOT_COVERED_BY_STATUTORY",
+      "BILLING_GOA_BILLING",
+      "BILLING_ONSITE_PAYMENT",
+    ],
+    boundActionConditions: {
+      // Alle drei Bausteine nur anzeigen, wenn die Leistung keine Kassenleistung ist.
+      BILLING_NOT_COVERED_BY_STATUTORY: {
+        showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+      BILLING_GOA_BILLING: {
+        showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+      BILLING_ONSITE_PAYMENT: {
+        showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+    },
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",

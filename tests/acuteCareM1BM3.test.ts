@@ -260,3 +260,45 @@ describe("ACUTE_CARE Renderer – communicationReasons/responseGoals haben keine
     expect(result.sections[0]).not.toHaveProperty("responseGoals");
   });
 });
+
+// ---------------------------------------------------------------------------
+// ACUTE_OPEN_CONSULTATION_ACTION – immer sichtbarer ACTION-Baustein in ACUTE_CARE
+// ---------------------------------------------------------------------------
+
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
+
+describe("ACUTE_CARE – ACUTE_OPEN_CONSULTATION_ACTION (ersetzt INFO)", () => {
+  it("ACUTE_OPEN_CONSULTATION_ACTION ist in boundActionCheckpointIds", () => {
+    expect((ACUTE_CARE as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_ACTION");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_ACTION hat hideWhenAny: [] (immer sichtbar)", () => {
+    const conditions = (ACUTE_CARE as any).boundActionConditions;
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_ACTION?.hideWhenAny).toEqual([]);
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO ist NICHT mehr in boundGlobalCheckpointIds", () => {
+    expect(ACUTE_CARE.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO ist NICHT in boundActionCheckpointIds", () => {
+    expect((ACUTE_CARE as any).boundActionCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_ACTION Checkpoint existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_ACTION"]).toBeDefined();
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_ACTION ist kind ACTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_ACTION"].kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_ACTION ist scope GLOBAL", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_ACTION"].scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO bleibt im Katalog (Legacy)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
+  });
+});

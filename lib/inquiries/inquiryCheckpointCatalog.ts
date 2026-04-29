@@ -298,9 +298,33 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "AU_NEW_PATIENT_LIMIT-Q1", text: "Handelt es sich um einen Neupatienten?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Bei Neupatienten können wir eine Arbeitsunfähigkeitsbescheinigung zunächst für maximal 3 Tage ausstellen.\n\nFür eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
-      // NO: bewusst still – keine Erklärung nötig
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+    },
+  },
+
+  AU_NEW_PATIENT_3DAY_LIMIT: {
+    id: "AU_NEW_PATIENT_3DAY_LIMIT",
+    label: "Neupatient – 3-Tage-Limit",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bei Neupatienten kann eine Arbeitsunfähigkeitsbescheinigung zunächst für maximal 3 Tage ausgestellt werden.",
+    },
+  },
+
+  AU_FOLLOWUP_REQUIRES_VISIT: {
+    id: "AU_FOLLOWUP_REQUIRES_VISIT",
+    label: "Folgebescheinigung – persönliche Vorstellung erforderlich",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
     },
   },
 
@@ -315,9 +339,25 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "AU_DIGITAL_AU_PROCESS-Q1", text: "Soll der digitale AU-Anfrageprozess erklärt werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Wenn Sie eine Arbeitsunfähigkeitsbescheinigung digital anfragen möchten, benötigen wir die dafür notwendigen Angaben.\n\nBitte füllen Sie dazu beide Formulare aus:\n\n1. Kurz-Anamnese\nhttps://mvz-kreuzberg.de/kurz-anamnese\n\n2. Digitale Anfrage für die Arbeitsunfähigkeitsbescheinigung\nhttps://mvz-kreuzberg.de/digitaleanfrage\n\nBitte beachten Sie, dass die Bearbeitung je nach Auslastung 8–12 Stunden dauern kann. Wir bitten Sie, in dieser Zeit von Nachfragen zum Bearbeitungsstand abzusehen.",
+      // YES: bewusst leer – reiner M2-Schalter, Inhalte kommen über boundActionCheckpointIds
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  AU_NO_APPOINTMENT_ACUTE: {
+    id: "AU_NO_APPOINTMENT_ACUTE",
+    label: "Akute Beschwerden – kein kurzfristiger Termin",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_NO_APPOINTMENT_ACUTE-Q1", text: "Hat der Patient akute Beschwerden und keinen kurzfristigen Termin erhalten?" },
+    ],
+    textByStatus: {
+      // YES: bewusst leer – reiner M2-Schalter, Inhalte erscheinen über konditionell angezeigte
+      //      ACTION-Checkpoints (ACUTE_OPEN_CONSULTATION_INFO, DIGITAL_REQUEST, ONLINE_ANAMNESIS)
+      //      via boundActionConditions → showWhenAny [{ AU_NO_APPOINTMENT_ACUTE: "YES" }]
+      // NO: bewusst still – keine Aktion erforderlich
     },
   },
 
@@ -443,7 +483,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Ein Postversand von Rezepten erfolgt nicht; die Bereitstellung erfolgt als eRezept oder über eine Apotheke.",
+        "Ein Postversand von Rezepten erfolgt nicht.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -460,8 +500,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "PRESCRIPTION_STATUTORY_POSSIBLE-Q1", text: "Ist das Rezept als Kassenrezept möglich?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Das eRezept wurde auf Ihrer Gesundheitskarte gespeichert und kann in der Apotheke eingelöst werden. Alternativ erhalten Sie einen QR-Code als PDF oder in Papierform.",
+      // YES: bewusst still – Prozessdetail wird über E_RECIPE_USE (boundAction) transportiert
       // NO: bewusst NICHT still – NO bedeutet fachlich „Privatrezept ausgestellt"
       [ExplanationStatus.NO]:
         "Das Medikament wurde als Privatrezept ausgestellt. Die Kosten werden nicht von der gesetzlichen Krankenkasse übernommen und müssen selbst bezahlt werden.",
@@ -524,14 +563,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   LAB_DECISION: {
     id: "LAB_DECISION",
-    label: "Labor-Entscheidung",
+    label: "Kann der Termin für die Blutentnahme direkt vereinbart werden?",
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     questions: [],
     textByStatus: {
-      [DecisionStatus.POSSIBLE]: "Eine Laboruntersuchung kann veranlasst werden.",
-      [DecisionStatus.NOT_POSSIBLE]: "Eine Laboruntersuchung kann derzeit nicht veranlasst werden.",
+      [DecisionStatus.POSSIBLE]: "Ein Termin für die Blutentnahme kann direkt vereinbart werden.",
+      [DecisionStatus.NOT_POSSIBLE]: "Vor der Blutentnahme ist zunächst eine ärztliche Abklärung erforderlich. Alternativ kann die Untersuchung als Selbstzahlerleistung erfolgen.",
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Laboruntersuchung veranlasst.",
@@ -632,7 +671,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_INTERNAL_ORDER-Q1", text: "Liegt eine interne ärztliche Laboranordnung vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
+      // Schalter-only: YES markiert nur die Situation.
+      // Der Buchungsweg wird als M3-Baustein in LAB_APPOINTMENT_INTERNAL gerendert.
+      [ExplanationStatus.YES]: "",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -648,8 +689,89 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_EXTERNAL_REFERRAL-Q1", text: "Liegt eine Überweisung eines Facharztes vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\nBringen Sie die Überweisung im Original zum Termin mit – nur mit gültiger Originalüberweisung entfällt eine Selbstzahlerleistung.",
-      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung auf Basis einer Facharzt-Überweisung benötigen wir das Original-Dokument zum Termin.\n\nLiegt keine gültige Überweisung vor, wird die Leistung als Selbstzahler abgerechnet.",
+      // Schalter-only: YES/NO markiert nur die Situation.
+      // Buchungshinweis, Überweisungsmitnahme und Kostenhinweis
+      // werden als M3-Bausteine gerendert (LAB_APPOINTMENT_INDIVIDUAL,
+      // LAB_BRING_REFERRAL, LAB_COST_COVERED_BY_REFERRAL).
+      [ExplanationStatus.YES]: "",
+      [ExplanationStatus.NO]: "",
+    },
+  },
+
+  // ---- LAB ACTION CHECKPOINTS (Terminplanung, basierend auf Specific-Checkpoint-Status) ----
+
+  LAB_APPOINTMENT_INTERNAL: {
+    id: "LAB_APPOINTMENT_INTERNAL",
+    label: "Termin intern buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
+    },
+  },
+
+  LAB_APPOINTMENT_INDIVIDUAL: {
+    id: "LAB_APPOINTMENT_INDIVIDUAL",
+    label: "Termin für individuelle Laborwerte buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Bitte vereinbaren Sie einen Termin für individuelle Laborwerte.",
+    },
+  },
+
+  LAB_APPOINTMENT_DOCTOR: {
+    id: "LAB_APPOINTMENT_DOCTOR",
+    label: "Ärztliche Abklärung erforderlich",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Für die Laboruntersuchung ist zunächst eine ärztliche Abklärung erforderlich.",
+    },
+  },
+
+  LAB_BRING_REFERRAL: {
+    id: "LAB_BRING_REFERRAL",
+    label: "Überweisung mitbringen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PREPARATION",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "Bitte bringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit.",
+    },
+  },
+
+  LAB_COST_COVERED_BY_REFERRAL: {
+    id: "LAB_COST_COVERED_BY_REFERRAL",
+    label: "Kostenhinweis: Abrechnung über Überweisung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Mit einer gültigen Originalüberweisung kann die Laborleistung über die Überweisung abgerechnet werden; es fällt dafür keine Selbstzahlerleistung an.",
+    },
+  },
+
+  LAB_SELF_PAYER_NOTE: {
+    id: "LAB_SELF_PAYER_NOTE",
+    label: "Hinweis: Selbstzahlerleistung / Wunschwerte",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Laborwerte ohne ärztliche Anordnung oder gültige Überweisung sind als Selbstzahlerleistung möglich. Die Abrechnung erfolgt direkt über das Labor.",
     },
   },
 
@@ -845,7 +967,20 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Die Anfrage kann über die digitale Anfrage gestellt werden.",
+        "Die digitale Anfrage können Sie über dieses Formular stellen: https://mvz-kreuzberg.de/digitaleanfrage",
+    },
+  },
+
+  DIGITAL_REQUEST_PROCESSING_TIME: {
+    id: "DIGITAL_REQUEST_PROCESSING_TIME",
+    label: "Bearbeitungszeit digitale Anfrage",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Bearbeitung digitaler Anfragen dauert je nach Auslastung 8–12 Stunden. Bitte sehen Sie in dieser Zeit von Nachfragen zum Bearbeitungsstand ab.",
     },
   },
 
@@ -858,7 +993,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Fehlende Angaben können über die Online-Anamnese ergänzt werden.",
+        "Bitte füllen Sie unsere Online-Anamnese aus: https://mvz-kreuzberg.de/kurz-anamnese",
     },
   },
 
@@ -910,7 +1045,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Das Rezept wird als eRezept ausgestellt und kann mit der elektronischen Gesundheitskarte (eGK) in der Apotheke eingelöst werden.",
+        "Das Rezept wird als eRezept ausgestellt und kann mit der elektronischen Gesundheitskarte (eGK) in der Apotheke eingelöst werden. Alternativ erhalten Sie einen QR-Code als PDF oder in Papierform.",
     },
   },
 
@@ -950,6 +1085,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Eine Urinprobe kann vor Ort in der Praxis abgegeben werden.",
+    },
+  },
+
+  CARE_CHANNEL_CHOICE: {
+    id: "CARE_CHANNEL_CHOICE",
+    label: "Versorgungsweg – persönlich oder digital",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für eine persönliche Vorstellung können Sie einen Akuttermin buchen oder die offene Sprechstunde nutzen. Alternativ können Sie eine digitale Anfrage stellen.",
     },
   },
 
@@ -1113,8 +1261,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ACUTE_APPOINTMENT_INFO-Q1", text: "Geht es um die Buchung eines Akuttermins?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde möglich.",
+      // YES: Text ausgelagert in ACTION-Baustein ACUTE_BOOKING_INFO (Buchungshandlung + zwei Aussagen)
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1229,6 +1376,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Bitte ACUTE_OPEN_CONSULTATION_ACTION verwenden. */
   ACUTE_OPEN_CONSULTATION_INFO: {
     id: "ACUTE_OPEN_CONSULTATION_INFO",
     label: "Offene Sprechstunde – Info",
@@ -1239,6 +1387,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     question: "Soll ein Hinweis zur offenen Sprechstunde angezeigt werden?",
     textByStatus: {
       [ExplanationStatus.YES]:
+        "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
+    },
+  },
+
+  ACUTE_OPEN_CONSULTATION_ACTION: {
+    id: "ACUTE_OPEN_CONSULTATION_ACTION",
+    label: "Offene Sprechstunde – Hinweis",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
         "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     },
   },
@@ -1258,6 +1419,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Auch bei chronischen Erkrankungen gehören planbare Anliegen in die reguläre Sprechstunde und nicht in diesen Bereich.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  ACUTE_BOOKING_INFO: {
+    id: "ACUTE_BOOKING_INFO",
+    label: "Akuttermin – Buchung online / Videosprechstunde",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Akuttermine können in der Regel 24 Stunden im Voraus online gebucht werden und sind auch als Videosprechstunde möglich.",
     },
   },
 
@@ -1381,6 +1555,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Mit dem Vermittlungs- oder Buchungscode kann ein Termin über die Terminservicestelle (z. B. 116117) vereinbart werden.",
     },
+  },
+
+  REF_HAV_CASE: {
+    id: "REF_HAV_CASE",
+    label: "Hausarztvermittlungsfall (mit Buchungscode)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_HAV_CASE-Q1", text: "Handelt es sich um einen Hausarztvermittlungsfall (mit Buchungscode)?" },
+    ],
+    // Reiner M2-Schalter – kein eigener Ausgabetext.
+    textByStatus: {},
   },
 
   // ---- IMMUNIZATION DECISION ----
@@ -1616,8 +1803,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "BILLING_COST_NOT_COVERED-Q1", text: "Ist die angefragte Leistung keine Kassenleistung (z. B. IGeL, Selbstzahlerleistung)?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen (z. B. keine medizinische Indikation, individuelle Gesundheitsleistung / IGeL). Die Abrechnung erfolgt privat nach der GOÄ. Selbstzahlerleistungen können vor Ort per Karte bezahlt werden.",
+      // M2-Schalter: kein eigener Patiententext – YES schaltet M3-Bausteine frei.
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1741,24 +1928,57 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  /** @deprecated Reiner Prozesshinweis (Kartenzahlung vor Ort) ohne Entscheidungsbezug – kein echter Specific-Inhalt. Nicht mehr in BILLING.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
+  // ---- BILLING ACTION CHECKPOINTS (freigeschaltet durch BILLING_COST_NOT_COVERED = YES) ----
+
+  /**
+   * Hinweis: Leistung nicht von der gesetzlichen Krankenkasse übernommen.
+   * Wird in M3 angezeigt, wenn BILLING_COST_NOT_COVERED = YES gesetzt ist.
+   */
+  BILLING_NOT_COVERED_BY_STATUTORY: {
+    id: "BILLING_NOT_COVERED_BY_STATUTORY",
+    label: "Hinweis: Keine Kassenleistung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen.",
+    },
+  },
+
+  /**
+   * Hinweis: Abrechnung erfolgt privat nach GOÄ.
+   * Wird in M3 angezeigt, wenn BILLING_COST_NOT_COVERED = YES gesetzt ist.
+   */
+  BILLING_GOA_BILLING: {
+    id: "BILLING_GOA_BILLING",
+    label: "Hinweis: Abrechnung nach GOÄ",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Abrechnung erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ).",
+    },
+  },
+
+  /**
+   * Hinweis: Kartenzahlung vor Ort möglich.
+   * Reaktiviert als ACTION-Baustein (war @deprecated als EXPLANATION-Schalter).
+   * Wird in M3 angezeigt, wenn BILLING_COST_NOT_COVERED = YES gesetzt ist.
+   */
   BILLING_ONSITE_PAYMENT: {
     id: "BILLING_ONSITE_PAYMENT",
     label: "Selbstzahler-Zahlung vor Ort",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    specificRole: "PROCESS_INFO" as SpecificRole,
-    questions: [
-      { id: "BILLING_ONSITE_PAYMENT-Q1", text: "Soll auf die Möglichkeit der Kartenzahlung vor Ort hingewiesen werden?" },
-    ],
+    actionCategory: "INFO",
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Selbstzahlerleistungen können vor Ort in der Praxis per Karte bezahlt werden.",
-      // NO: bewusst still – keine Erklärung nötig
-    },
-    docByStatus: {
-      [ExplanationStatus.YES]: "Hinweis auf Vor-Ort-Zahlung gegeben.",
     },
   },
 
@@ -1845,8 +2065,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ONBOARDING_DATA_INCOMPLETE-Q1", text: "Fehlen grundlegende Angaben zur Registrierung (z. B. Name, Geburtsdatum, Kontodaten)?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Leider fehlen uns noch einige aktuelle Angaben in Ihrer Patientenakte. Um Ihr Anliegen bearbeiten zu können, bitten wir Sie, kurz unsere Online-Anamnese auszufüllen: https://mvz-kreuzberg.de/kurz-anamnese",
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1926,8 +2146,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ONBOARDING_IDENTITY_MISMATCH-Q1", text: "Kann der Patient anhand der vorliegenden Daten nicht eindeutig zugeordnet werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Leider konnten wir Ihre Anfrage in unserem System nicht eindeutig zuordnen. Möglicherweise gibt es eine Abweichung bei der Schreibweise Ihres Namens oder beim hinterlegten Geburtsdatum. Bitte teilen Sie uns beides noch einmal vollständig mit, damit wir Ihre Daten korrekt abgleichen können.",
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1964,12 +2184,68 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "ONBOARDING_WRONG_PRACTICE-Q1", text: "Gehört der Patient nicht zu dieser Praxis (z. B. falsche Praxis kontaktiert, außerhalb des Einzugsgebiets)?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Ich fürchte, hier liegt ein Missverständnis vor, da wir Sie nicht als Patient in unserem System finden können. Bitte prüfen Sie noch einmal, welche Praxis Sie kontaktieren wollten oder ob Sie eventuell bei einer Ärztin oder einem Arzt mit ähnlichem Namen in Behandlung sind.",
+      // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Anfrage nicht zuordenbar; vermutlich falsche Praxis kontaktiert.",
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // ONBOARDING – M3 ACTION-Bausteine (freigeschaltet über boundActionConditions)
+  // ---------------------------------------------------------------------------
+
+  ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED: {
+    id: "ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED",
+    label: "Identitätsabgleich – Kontext",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Leider konnten wir Ihre Anfrage nicht eindeutig zuordnen.",
+    },
+  },
+
+  ONBOARDING_PROVIDE_IDENTITY_DATA: {
+    id: "ONBOARDING_PROVIDE_IDENTITY_DATA",
+    label: "Identitätsabgleich – Aktion",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte teilen Sie uns Ihren vollständigen Namen und Ihr Geburtsdatum mit, damit wir Ihre Daten korrekt abgleichen können.",
+    },
+  },
+
+  ONBOARDING_DATA_MISSING_CONTEXT: {
+    id: "ONBOARDING_DATA_MISSING_CONTEXT",
+    label: "Datenvervollständigung – Kontext",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Leider fehlen uns noch aktuelle Angaben, um Ihr Anliegen bearbeiten zu können.",
+    },
+  },
+
+  ONBOARDING_WRONG_PRACTICE_NOTICE: {
+    id: "ONBOARDING_WRONG_PRACTICE_NOTICE",
+    label: "Falsche Praxis – Hinweis",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Leider konnten wir Sie nicht als Patient in unserem System finden.",
     },
   },
 

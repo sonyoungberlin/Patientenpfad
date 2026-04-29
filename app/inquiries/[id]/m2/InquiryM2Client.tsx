@@ -28,6 +28,8 @@ type Props = {
   sessionId: string;
   sections: M2SectionData[];
   globalCheckpoints: PlainCheckpoint[];
+  /** Verfügbare Actions aus den gewählten Profilen (dedupliziert, ohne boundActionCheckpointIds). */
+  profileActionCheckpoints: PlainCheckpoint[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   /** M1B – Kommunikationsanlass-Auswahl pro Profil (menschliche Auswahl). Record<inquiryId, communicationReasonId> */
@@ -391,10 +393,74 @@ function SpecificSection({
   );
 }
 
+/** Section „Weitere passende Hinweise" – standardmäßig eingeklappt. */
+function WeitereHinweiseSection({
+  profileActionCheckpoints,
+  statuses,
+  onChange,
+}: {
+  profileActionCheckpoints: PlainCheckpoint[];
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
+  const hasAnswered = profileActionCheckpoints.some(
+    (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
+  );
+  const [isExpanded, setIsExpanded] = useState(hasAnswered);
+  return (
+    <section
+      style={{
+        marginBottom: "2rem",
+        background: "#f9f9f9",
+        border: "1px solid #e0e0e0",
+        borderRadius: "var(--radius)",
+        padding: "1rem",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+          className="text-muted text-small"
+          style={{ ...GROUP_BADGE_STYLE }}
+        >
+          <span aria-hidden="true">→ </span>Weitere passende Hinweise
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          style={{
+            padding: "0.2rem 0.6rem",
+            borderRadius: "var(--radius)",
+            border: "1px solid var(--border)",
+            background: "var(--background)",
+            color: "var(--foreground)",
+            cursor: "pointer",
+            fontSize: "0.8rem",
+          }}
+        >
+          {isExpanded ? "Weniger" : "Mehr"}
+        </button>
+      </div>
+      {isExpanded && (
+        <div style={{ marginTop: "0.5rem" }}>
+          {profileActionCheckpoints.map((cp) => (
+            <BoundActionRow
+              key={cp.id}
+              checkpoint={cp}
+              value={statuses[cp.id]}
+              onChange={onChange}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function InquiryM2Client({
   sessionId,
   sections,
   globalCheckpoints,
+  profileActionCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
   initialCommunicationReasonSelection,
@@ -488,6 +554,15 @@ export default function InquiryM2Client({
           onChange={setStatus}
         />
       ))}
+
+      {/* 4. Weitere passende Hinweise – availableActionIds der gewählten Profile */}
+      {profileActionCheckpoints.length > 0 && (
+        <WeitereHinweiseSection
+          profileActionCheckpoints={profileActionCheckpoints}
+          statuses={statuses}
+          onChange={setStatus}
+        />
+      )}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>

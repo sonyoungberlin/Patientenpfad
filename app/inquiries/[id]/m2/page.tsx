@@ -75,6 +75,7 @@ export default async function InquiryM2Page({
         .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
         .filter((cp): cp is InquiryCheckpoint => !!cp);
       const actionCps = (profile.boundActionCheckpointIds ?? [])
+        .filter((cpId) => !profile.boundActionConditions?.[cpId])
         .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
         .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
       return {
@@ -90,11 +91,23 @@ export default async function InquiryM2Page({
   // Deduplicate global EXPLANATION checkpoints across all selected inquiries
   const globalIds = new Set<string>();
   const actionIds = new Set<string>();
+  // Collect all boundActionCheckpointIds across selected profiles for deduplication
+  const boundActionIds = new Set<string>();
+  for (const inquiryId of selectedIds) {
+    const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
+    if (!profile) continue;
+    (profile.boundActionCheckpointIds ?? []).forEach((cpId) => boundActionIds.add(cpId));
+  }
+  // availableActionIds from selected profiles (deduplicated, excluding boundActionCheckpointIds)
+  const profileAvailableActionIds = new Set<string>();
   for (const inquiryId of selectedIds) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
     if (!profile) continue;
     profile.boundGlobalCheckpointIds.forEach((cpId) => globalIds.add(cpId));
-    profile.availableActionIds.forEach((cpId) => actionIds.add(cpId));
+    profile.availableActionIds.forEach((cpId) => {
+      actionIds.add(cpId);
+      if (!boundActionIds.has(cpId)) profileAvailableActionIds.add(cpId);
+    });
     // boundActionCheckpointIds must also be saved as actionStatuses
     (profile.boundActionCheckpointIds ?? []).forEach((cpId) => actionIds.add(cpId));
   }
@@ -107,6 +120,12 @@ export default async function InquiryM2Page({
         cp.scope === InquiryCheckpointScope.GLOBAL &&
         cp.kind === InquiryCheckpointKind.EXPLANATION,
     )
+    .map(toPlain);
+
+  // Profile-scoped available actions (deduplicated, excluding boundActionCheckpointIds)
+  const profileActionCheckpoints: PlainCheckpoint[] = Array.from(profileAvailableActionIds)
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION)
     .map(toPlain);
 
   const checkpointStatuses: Record<string, string> =
@@ -127,6 +146,7 @@ export default async function InquiryM2Page({
         sessionId={id}
         sections={sections}
         globalCheckpoints={globalCheckpoints}
+        profileActionCheckpoints={profileActionCheckpoints}
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
         initialCommunicationReasonSelection={communicationReasonSelection}

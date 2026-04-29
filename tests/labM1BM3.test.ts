@@ -18,6 +18,7 @@ import {
   DecisionStatus,
   ExplanationStatus,
   ExplanationOutputStatus,
+  ActionStatus,
   InquiryCheckpointKind,
   InquiryCheckpointScope,
   type SpecificRole,
@@ -334,7 +335,7 @@ describe("LAB – neue Checkpoints sind in specificCheckpointIds enthalten", () 
 // ---------------------------------------------------------------------------
 
 describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => {
-  it("LAB_INTERNAL_ORDER: YES + SHOW liefert Buchungsanleitung mit Code LKBP25", () => {
+  it("LAB_INTERNAL_ORDER: YES + SHOW liefert keinen eigenen Text (Schalter-only)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "LAB",
@@ -345,11 +346,21 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
         } as Record<string, ExplanationOutputStatus>,
       },
     ]);
+    // Checkpoint ist jetzt ein reiner Schalter → kein attachedParagraph aus dem Checkpoint
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
     const allText = result.sections
       .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
       .join(" ");
-    expect(allText).toContain("LKBP25");
-    expect(allText).toContain("ärztlicher Anordnung");
+    expect(allText).not.toContain("LKBP25");
+    expect(allText).not.toContain("Ärztliche Anordnung");
+  });
+
+  it("LAB_APPOINTMENT_INTERNAL enthält Buchungsanleitung mit Code LKBP25", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_APPOINTMENT_INTERNAL"];
+    expect(cp).toBeDefined();
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("LKBP25");
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Ärztliche Anordnung");
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Blutwerte");
   });
 
   it("LAB_INTERNAL_ORDER: YES + HIDE liefert keinen Text", () => {
@@ -369,7 +380,7 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
     expect(allText).not.toContain("LKBP25");
   });
 
-  it("LAB_EXTERNAL_REFERRAL: YES + SHOW enthält Hinweis zur Überweisung und Selbstzahler-Info", () => {
+  it("LAB_EXTERNAL_REFERRAL: YES + SHOW liefert keinen eigenen Text (Schalter-only)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "LAB",
@@ -380,28 +391,33 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
         } as Record<string, ExplanationOutputStatus>,
       },
     ]);
+    // Checkpoint ist jetzt ein reiner Schalter → kein attachedParagraph aus dem Checkpoint
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
     const allText = result.sections
       .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
       .join(" ");
-    expect(allText).toContain("Überweisung im Original");
-    expect(allText).toContain("Selbstzahlerleistung");
+    expect(allText).not.toContain("Überweisung im Original");
+    expect(allText).not.toContain("Bitte buchen Sie einen Termin für individuelle Laborwerte");
   });
 
-  it("LAB_EXTERNAL_REFERRAL: YES + SHOW enthält Terminbuchen-Hinweis", () => {
+  it("LAB_EXTERNAL_REFERRAL: NO + SHOW liefert keinen eigenen Text (Schalter-only)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "LAB",
         decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { LAB_EXTERNAL_REFERRAL: ExplanationStatus.YES },
+        checkpointStatuses: { LAB_EXTERNAL_REFERRAL: ExplanationStatus.NO },
         explanationOutputStatuses: {
           LAB_EXTERNAL_REFERRAL: ExplanationOutputStatus.SHOW,
         } as Record<string, ExplanationOutputStatus>,
       },
     ]);
+    // NO ist silent – kein attachedParagraph
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
     const allText = result.sections
       .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
       .join(" ");
-    expect(allText).toContain("Bitte buchen Sie einen Termin für individuelle Laborwerte");
+    expect(allText).not.toContain("Original-Dokument zum Termin");
+    expect(allText).not.toContain("Selbstzahler abgerechnet");
   });
 
   it("LAB_EXTERNAL_REFERRAL: YES-Text enthält nicht mehr den Bestätigungssatz 'Eine Überweisung Ihres Facharztes liegt vor'", () => {
@@ -419,24 +435,6 @@ describe("LAB – Renderer gibt Texte der neuen Checkpoints korrekt aus", () => 
       .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
       .join(" ");
     expect(allText).not.toContain("Eine Überweisung Ihres Facharztes liegt vor");
-  });
-
-  it("LAB_EXTERNAL_REFERRAL: NO + SHOW enthält Original-Dokument-Anforderung und Selbstzahler-Hinweis", () => {
-    const result = renderInquiryResponseFromSections([
-      {
-        inquiryId: "LAB",
-        decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { LAB_EXTERNAL_REFERRAL: ExplanationStatus.NO },
-        explanationOutputStatuses: {
-          LAB_EXTERNAL_REFERRAL: ExplanationOutputStatus.SHOW,
-        } as Record<string, ExplanationOutputStatus>,
-      },
-    ]);
-    const allText = result.sections
-      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
-      .join(" ");
-    expect(allText).toContain("Original-Dokument zum Termin");
-    expect(allText).toContain("Selbstzahler abgerechnet");
   });
 
   it("LAB_EXTERNAL_DOCUMENT_PRESENT (@deprecated): Renderer ignoriert den Checkpoint, da er nicht mehr in LAB.specificCheckpointIds ist", () => {
@@ -495,22 +493,130 @@ describe("LAB – boundActionCheckpointIds", () => {
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
     expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
   });
+
+  it("LAB_COST_COVERED_BY_REFERRAL ist in LAB.boundActionCheckpointIds enthalten", () => {
+    expect(LAB.boundActionCheckpointIds).toContain("LAB_COST_COVERED_BY_REFERRAL");
+  });
+
+  it("LAB_SELF_PAYER_NOTE ist in LAB.boundActionCheckpointIds enthalten", () => {
+    expect(LAB.boundActionCheckpointIds).toContain("LAB_SELF_PAYER_NOTE");
+  });
 });
 
 // ---------------------------------------------------------------------------
-// LAB – TERMIN_PREPARATION_REQUIRED (neuer GLOBAL MODULAR Checkpoint)
+// LAB – neue M3-Bausteine
+// ---------------------------------------------------------------------------
+
+describe("LAB – neue M3-Bausteine (LAB_COST_COVERED_BY_REFERRAL, LAB_SELF_PAYER_NOTE)", () => {
+  it("LAB_COST_COVERED_BY_REFERRAL ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_COST_COVERED_BY_REFERRAL"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("LAB_COST_COVERED_BY_REFERRAL enthält Kostenhinweis-Text", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_COST_COVERED_BY_REFERRAL"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Originalüberweisung");
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Selbstzahlerleistung");
+  });
+
+  it("LAB_COST_COVERED_BY_REFERRAL: showWhenAny nur bei LAB_EXTERNAL_REFERRAL = YES", () => {
+    const condition = LAB.boundActionConditions?.["LAB_COST_COVERED_BY_REFERRAL"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toEqual([{ LAB_EXTERNAL_REFERRAL: "YES" }]);
+    expect(condition?.hideWhenAny).toBeUndefined();
+  });
+
+  it("LAB_SELF_PAYER_NOTE ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_NOTE"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("LAB_SELF_PAYER_NOTE enthält Selbstzahler/Wunschwert-Text", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_SELF_PAYER_NOTE"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Selbstzahlerleistung");
+  });
+
+  it("LAB_SELF_PAYER_NOTE: hideWhenAny bei LAB_INTERNAL_ORDER=YES oder LAB_EXTERNAL_REFERRAL=YES", () => {
+    const condition = LAB.boundActionConditions?.["LAB_SELF_PAYER_NOTE"];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toContainEqual({ LAB_INTERNAL_ORDER: "YES" });
+    expect(condition?.hideWhenAny).toContainEqual({ LAB_EXTERNAL_REFERRAL: "YES" });
+    expect(condition?.showWhenAny).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB – boundActionConditions (Sichtbarkeitslogik)
+// ---------------------------------------------------------------------------
+
+describe("LAB – boundActionConditions", () => {
+  it("LAB_BRING_REFERRAL: showWhenAny nur noch bei LAB_EXTERNAL_REFERRAL = YES (nicht mehr bei LAB_INTERNAL_ORDER)", () => {
+    const condition = LAB.boundActionConditions?.["LAB_BRING_REFERRAL"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toEqual([{ LAB_EXTERNAL_REFERRAL: "YES" }]);
+    // LAB_INTERNAL_ORDER darf nicht mehr in der Condition stehen
+    const hasInternalOrder = condition?.showWhenAny?.some((c) => "LAB_INTERNAL_ORDER" in c);
+    expect(hasInternalOrder).toBe(false);
+  });
+
+  it("LAB_APPOINTMENT_INTERNAL: showWhenAny bei LAB_INTERNAL_ORDER = YES", () => {
+    const condition = LAB.boundActionConditions?.["LAB_APPOINTMENT_INTERNAL"];
+    expect(condition?.showWhenAny).toEqual([{ LAB_INTERNAL_ORDER: "YES" }]);
+  });
+
+  it("LAB_APPOINTMENT_INDIVIDUAL: hideWhenAny bei LAB_INTERNAL_ORDER = YES", () => {
+    const condition = LAB.boundActionConditions?.["LAB_APPOINTMENT_INDIVIDUAL"];
+    expect(condition?.hideWhenAny).toContainEqual({ LAB_INTERNAL_ORDER: "YES" });
+  });
+
+  it("LAB_FASTING_REQUIRED: hat boundActionConditions-Eintrag mit hideWhenAny: [] (immer in M3 anzeigen)", () => {
+    const condition = LAB.boundActionConditions?.["LAB_FASTING_REQUIRED"];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toEqual([]);
+    expect(condition?.showWhenAny).toBeUndefined();
+  });
+
+  it("LAB_RESULT_TIME: hat boundActionConditions-Eintrag mit hideWhenAny: [] (immer in M3 anzeigen)", () => {
+    const condition = LAB.boundActionConditions?.["LAB_RESULT_TIME"];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toEqual([]);
+    expect(condition?.showWhenAny).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB – LAB_RESULT_TIME Deduplizierung
+// ---------------------------------------------------------------------------
+
+describe("LAB – LAB_RESULT_TIME nicht mehr in SAMPLE_COLLECTION", () => {
+  it("SAMPLE_COLLECTION enthält LAB_RESULT_TIME nicht mehr in boundActionCheckpointIds", () => {
+    const sampleCollection = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    expect(sampleCollection?.boundActionCheckpointIds).not.toContain("LAB_RESULT_TIME");
+  });
+
+  it("LAB_RESULT_TIME ist weiterhin in LAB.boundActionCheckpointIds enthalten", () => {
+    expect(LAB.boundActionCheckpointIds).toContain("LAB_RESULT_TIME");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB – TERMIN_PREPARATION_REQUIRED (aus LAB entfernt, Duplikat mit LAB_FASTING_REQUIRED)
 // ---------------------------------------------------------------------------
 
 describe("LAB – TERMIN_PREPARATION_REQUIRED", () => {
-  it("TERMIN_PREPARATION_REQUIRED ist in LAB.boundGlobalCheckpointIds enthalten", () => {
-    expect(LAB.boundGlobalCheckpointIds).toContain("TERMIN_PREPARATION_REQUIRED");
+  it("TERMIN_PREPARATION_REQUIRED ist NICHT mehr in LAB.boundGlobalCheckpointIds (Dopplung beseitigt)", () => {
+    expect(LAB.boundGlobalCheckpointIds).not.toContain("TERMIN_PREPARATION_REQUIRED");
   });
 
-  it("LAB.globalHints enthält Hinweis 'nüchtern' für TERMIN_PREPARATION_REQUIRED", () => {
-    expect(LAB.globalHints["TERMIN_PREPARATION_REQUIRED"]).toContain("nüchtern");
+  it("LAB.globalHints enthält keinen TERMIN_PREPARATION_REQUIRED-Eintrag mehr", () => {
+    expect(LAB.globalHints["TERMIN_PREPARATION_REQUIRED"]).toBeUndefined();
   });
 
-  it("TERMIN_PREPARATION_REQUIRED existiert im Katalog", () => {
+  it("TERMIN_PREPARATION_REQUIRED existiert weiterhin im Katalog (für andere Profile)", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"]).toBeDefined();
   });
 
@@ -525,5 +631,31 @@ describe("LAB – TERMIN_PREPARATION_REQUIRED", () => {
   it("TERMIN_PREPARATION_REQUIRED hat leeres textByStatus (kein eigener Text)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"];
     expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// LAB – LAB_DECISION POSSIBLE-Text
+// ---------------------------------------------------------------------------
+
+describe("LAB – LAB_DECISION POSSIBLE-Text", () => {
+  it("LAB_DECISION POSSIBLE enthält 'Ein Termin für die Blutentnahme kann direkt vereinbart werden'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).toContain("Ein Termin für die Blutentnahme kann direkt vereinbart werden");
+  });
+
+  it("LAB_DECISION POSSIBLE enthält nicht mehr den alten Text 'Kontrolle der Blutwerte kann bei uns durchgeführt werden'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.POSSIBLE]).not.toContain("Kontrolle der Blutwerte kann bei uns durchgeführt werden");
+  });
+
+  it("LAB_DECISION NOT_POSSIBLE enthält 'ärztliche Abklärung erforderlich'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.textByStatus[DecisionStatus.NOT_POSSIBLE]).toContain("ärztliche Abklärung erforderlich");
+  });
+
+  it("LAB_DECISION label enthält die neue Frage zur Terminvereinbarung", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
+    expect(cp.label).toContain("Blutentnahme");
   });
 });

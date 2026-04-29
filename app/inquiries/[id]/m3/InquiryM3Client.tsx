@@ -16,6 +16,7 @@ export type M3SpecificCheckpoint = {
   label: string;
   kind: InquiryCheckpointKind;
   questions?: Array<{ id: string; text: string }>;
+  textByStatus?: Partial<Record<string, string>>;
 };
 
 export type M3BoundActionData = {
@@ -23,6 +24,17 @@ export type M3BoundActionData = {
   label: string;
   actionCategory?: string;
   questions?: Array<{ id: string; text: string }>;
+  /**
+   * M3 Anzeige-Filter: Action wird angezeigt, wenn mindestens eine Bedingungsmenge erfüllt ist.
+   * Jede Menge ist AND-verknüpft; die Liste ist OR-verknüpft.
+   * Fehlt das Feld, greift der Standard (ACTIVE/INACTIVE-Filter aus M2).
+   */
+  showWhenAny?: Array<Record<string, string>>;
+  /**
+   * M3 Anzeige-Filter: Action wird ausgeblendet, wenn mindestens eine Bedingungsmenge erfüllt ist.
+   * Hat Vorrang vor showWhenAny.
+   */
+  hideWhenAny?: Array<Record<string, string>>;
 };
 
 export type M3SectionData = {
@@ -274,13 +286,23 @@ export default function InquiryM3Client({
     // Automatisch aufklappen, wenn bereits ein Action-Status gesetzt ist
     // (globale Actions oder boundActionCheckpointIds).
     const allBoundActionIds = sections.flatMap((s) => s.boundActionCheckpoints.map((cp) => cp.id));
-    return (
+    const hasExplicitActionStatus =
       actionIds.some(
         (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
       ) ||
       allBoundActionIds.some(
         (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
-      )
+      );
+    if (hasExplicitActionStatus) return true;
+    // Automatisch aufklappen, wenn showWhenAny-Bedingungen bereits erfüllt sind
+    // (z.B. M2-Schalter mit YES → condition-gesteuerte Actions sind sofort sichtbar).
+    const allStatuses = { ...initialCheckpointStatuses, ...initialActionStatuses };
+    const matchesConditionSet = (condSet: Record<string, string>) =>
+      Object.entries(condSet).every(([id, expected]) => allStatuses[id] === expected);
+    return sections.some((s) =>
+      s.boundActionCheckpoints.some(
+        (cp) => cp.showWhenAny && cp.showWhenAny.some(matchesConditionSet),
+      ),
     );
   });
 
@@ -393,11 +415,15 @@ export default function InquiryM3Client({
         <>
           {/* Decision + SPECIFIC Checkpoints per inquiry */}
           {sections.map((section) => {
-            const visibleSpecificCps = section.specificCheckpoints.filter((cp) =>
-              cp.kind !== InquiryCheckpointKind.EXPLANATION ||
-              statuses[cp.id] === "YES" ||
-              statuses[cp.id] === "NO",
-            );
+            const visibleSpecificCps = section.specificCheckpoints.filter((cp) => {
+              if (cp.kind !== InquiryCheckpointKind.EXPLANATION) return true;
+              const status = statuses[cp.id];
+              if (status !== "YES" && status !== "NO") return false;
+              // Nur anzeigen wenn für den gesetzten Status tatsächlich ein nicht-leerer Text vorhanden ist.
+              // Reine M2-Schalter (textByStatus.YES = "") dürfen nicht als Zusatzinfo in M3 erscheinen.
+              const text = cp.textByStatus?.[status];
+              return !!text;
+            });
             return (
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
@@ -523,12 +549,12 @@ export default function InquiryM3Client({
               })}
 
               {/* Globale Output-Bausteine (GLOBAL MODULAR EXPLANATION) */}
-              {(section.boundGlobalOutputCheckpoints ?? []).length > 0 && (
+              {(section.boundGlobalOutputCheckpoints ?? []).filter((cp) => statuses[cp.id] === "YES").length > 0 && (
                 <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
                   <div className="text-muted text-small" style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}>
                     <span aria-hidden="true">ⓘ </span>Globale Bausteine
                   </div>
-                  {(section.boundGlobalOutputCheckpoints ?? []).map((cp) => (
+                  {(section.boundGlobalOutputCheckpoints ?? []).filter((cp) => statuses[cp.id] === "YES").map((cp) => (
                     <div
                       key={cp.id}
                       style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
@@ -558,7 +584,7 @@ export default function InquiryM3Client({
           })}
 
           {/* Action checkpoints (globale availableActionIds + profilgebundene boundActionCheckpointIds) */}
-          {(actionCheckpoints.length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
+          {(actionCheckpoints.filter((cp) => statuses[cp.id] === "ACTIVE").length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
             <section style={{ marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: actionsOpen ? "0.5rem" : 0 }}>
                 <h2 style={{ margin: 0 }}><span aria-hidden="true">→ </span>Aktionen / Infos</h2>
@@ -583,7 +609,10 @@ export default function InquiryM3Client({
 
                 // --- Globale availableActionIds (gruppiert nach ACTION_GROUPS) ---
                 if (actionCheckpoints.length > 0) {
-                  const cpById = Object.fromEntries(actionCheckpoints.map((cp) => [cp.id, cp]));
+                  const activeActionCheckpoints = actionCheckpoints.filter(
+                    (cp) => statuses[cp.id] === "ACTIVE",
+                  );
+                  const cpById = Object.fromEntries(activeActionCheckpoints.map((cp) => [cp.id, cp]));
                   const renderedIds = new Set<string>();
 
                   for (const group of ACTION_GROUPS) {
@@ -620,7 +649,7 @@ export default function InquiryM3Client({
                   }
 
                   // Ungrouped fallback
-                  const ungrouped = actionCheckpoints.filter((cp) => !renderedIds.has(cp.id));
+                  const ungrouped = activeActionCheckpoints.filter((cp) => !renderedIds.has(cp.id));
                   if (ungrouped.length > 0) {
                     groupElements.push(
                       <div key="__ungrouped__" style={{ marginTop: "0.75rem" }}>
@@ -644,12 +673,27 @@ export default function InquiryM3Client({
                   }
                 }
 
-                // --- Profil-spezifische boundActionCheckpoints (nur wenn M2-Status gesetzt) ---
+                // --- Profil-spezifische boundActionCheckpoints ---
                 for (const sec of sections) {
-                  // Filtere auf Checkpoints, die in M2 gesetzt wurden (ACTIVE oder INACTIVE).
-                  const setCps = sec.boundActionCheckpoints.filter(
-                    (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
-                  );
+                  // Filtere Checkpoints nach Sichtbarkeitsregeln:
+                  // – Hat der Checkpoint showWhenAny oder hideWhenAny, gelten die Bedingungen.
+                  // – Andernfalls wird er nur angezeigt, wenn er in M2 auf ACTIVE/INACTIVE gesetzt wurde.
+                  const SET_STATUSES = ["ACTIVE", "INACTIVE"] as const;
+                  const setCps = sec.boundActionCheckpoints.filter((cp) => {
+                    const hasConditions = cp.showWhenAny !== undefined || cp.hideWhenAny !== undefined;
+                    if (!hasConditions) {
+                      return (SET_STATUSES as readonly string[]).includes(statuses[cp.id]);
+                    }
+                    const matchesConditionSet = (condSet: Record<string, string>) =>
+                      Object.entries(condSet).every(
+                        ([checkpointId, expectedStatus]) => statuses[checkpointId] === expectedStatus,
+                      );
+                    if (cp.hideWhenAny?.some(matchesConditionSet)) return false;
+                    if (cp.showWhenAny && cp.showWhenAny.length > 0) {
+                      return cp.showWhenAny.some(matchesConditionSet);
+                    }
+                    return true;
+                  });
                   if (setCps.length === 0) continue;
 
                   // Gruppiere nach actionCategory.
