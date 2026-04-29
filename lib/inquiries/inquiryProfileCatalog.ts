@@ -1459,6 +1459,23 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_INVOICE_TIMING",
     ],
     boundGlobalCheckpointIds: [],
+    boundActionCheckpointIds: [
+      "BILLING_NOT_COVERED_BY_STATUTORY",
+      "BILLING_GOA_BILLING",
+      "BILLING_ONSITE_PAYMENT",
+    ],
+    boundActionConditions: {
+      // Alle drei Bausteine nur anzeigen, wenn die Leistung keine Kassenleistung ist.
+      BILLING_NOT_COVERED_BY_STATUTORY: {
+        showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+      BILLING_GOA_BILLING: {
+        showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+      BILLING_ONSITE_PAYMENT: {
+        showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+    },
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",

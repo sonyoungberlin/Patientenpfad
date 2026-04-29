@@ -237,3 +237,24 @@ describe("M3 actionCheckpoints – keine boundActionCheckpointIds in der globale
     expect(violations).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Tests – BILLING boundActionCheckpointIds M2-Filter
+// ---------------------------------------------------------------------------
+
+describe("M2 boundActionCheckpointIds filter – BILLING", () => {
+  it("BILLING_NOT_COVERED_BY_STATUTORY ist condition-controlled und erscheint nicht in M2-Rows", () => {
+    const m2ActionIds = buildM2ActionCps("BILLING");
+    expect(m2ActionIds).not.toContain("BILLING_NOT_COVERED_BY_STATUTORY");
+  });
+
+  it("BILLING_GOA_BILLING ist condition-controlled und erscheint nicht in M2-Rows", () => {
+    const m2ActionIds = buildM2ActionCps("BILLING");
+    expect(m2ActionIds).not.toContain("BILLING_GOA_BILLING");
+  });
+
+  it("BILLING_ONSITE_PAYMENT ist condition-controlled und erscheint nicht in M2-Rows", () => {
+    const m2ActionIds = buildM2ActionCps("BILLING");
+    expect(m2ActionIds).not.toContain("BILLING_ONSITE_PAYMENT");
+  });
+});

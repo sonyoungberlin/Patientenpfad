@@ -1699,8 +1699,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "BILLING_COST_NOT_COVERED-Q1", text: "Ist die angefragte Leistung keine Kassenleistung (z. B. IGeL, Selbstzahlerleistung)?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen (z. B. keine medizinische Indikation, individuelle Gesundheitsleistung / IGeL). Die Abrechnung erfolgt privat nach der GOÄ. Selbstzahlerleistungen können vor Ort per Karte bezahlt werden.",
+      // M2-Schalter: kein eigener Patiententext – YES schaltet M3-Bausteine frei.
+      [ExplanationStatus.YES]: "",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1824,24 +1824,57 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
-  /** @deprecated Reiner Prozesshinweis (Kartenzahlung vor Ort) ohne Entscheidungsbezug – kein echter Specific-Inhalt. Nicht mehr in BILLING.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
+  // ---- BILLING ACTION CHECKPOINTS (freigeschaltet durch BILLING_COST_NOT_COVERED = YES) ----
+
+  /**
+   * Hinweis: Leistung nicht von der gesetzlichen Krankenkasse übernommen.
+   * Wird in M3 angezeigt, wenn BILLING_COST_NOT_COVERED = YES gesetzt ist.
+   */
+  BILLING_NOT_COVERED_BY_STATUTORY: {
+    id: "BILLING_NOT_COVERED_BY_STATUTORY",
+    label: "Hinweis: Keine Kassenleistung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen.",
+    },
+  },
+
+  /**
+   * Hinweis: Abrechnung erfolgt privat nach GOÄ.
+   * Wird in M3 angezeigt, wenn BILLING_COST_NOT_COVERED = YES gesetzt ist.
+   */
+  BILLING_GOA_BILLING: {
+    id: "BILLING_GOA_BILLING",
+    label: "Hinweis: Abrechnung nach GOÄ",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Abrechnung erfolgt privat nach der Gebührenordnung für Ärzte (GOÄ).",
+    },
+  },
+
+  /**
+   * Hinweis: Kartenzahlung vor Ort möglich.
+   * Reaktiviert als ACTION-Baustein (war @deprecated als EXPLANATION-Schalter).
+   * Wird in M3 angezeigt, wenn BILLING_COST_NOT_COVERED = YES gesetzt ist.
+   */
   BILLING_ONSITE_PAYMENT: {
     id: "BILLING_ONSITE_PAYMENT",
     label: "Selbstzahler-Zahlung vor Ort",
-    kind: InquiryCheckpointKind.EXPLANATION,
+    kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    specificRole: "PROCESS_INFO" as SpecificRole,
-    questions: [
-      { id: "BILLING_ONSITE_PAYMENT-Q1", text: "Soll auf die Möglichkeit der Kartenzahlung vor Ort hingewiesen werden?" },
-    ],
+    actionCategory: "INFO",
     textByStatus: {
-      [ExplanationStatus.YES]:
+      [ActionStatus.ACTIVE]:
         "Selbstzahlerleistungen können vor Ort in der Praxis per Karte bezahlt werden.",
-      // NO: bewusst still – keine Erklärung nötig
-    },
-    docByStatus: {
-      [ExplanationStatus.YES]: "Hinweis auf Vor-Ort-Zahlung gegeben.",
     },
   },
 

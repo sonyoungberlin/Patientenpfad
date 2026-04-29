@@ -17,6 +17,7 @@ import {
   DecisionStatus,
   ExplanationStatus,
   ExplanationOutputStatus,
+  ActionStatus,
   InquiryCheckpointKind,
   InquiryCheckpointScope,
   type SpecificRole,
@@ -320,7 +321,7 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"]).toBeDefined();
   });
 
-  it("BILLING_ONSITE_PAYMENT ist im Katalog noch vorhanden (@deprecated, aber nicht gelöscht)", () => {
+  it("BILLING_ONSITE_PAYMENT ist im Katalog vorhanden (reaktiviert als ACTION-Baustein, nicht mehr in specificCheckpointIds)", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"]).toBeDefined();
   });
 
@@ -332,7 +333,7 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_DATA_MISSING"]).toBeDefined();
   });
 
-  it("BILLING-Profil referenziert genau sechs Specific-Checkpoints (PROCESS_EXTERNAL, DATA_MISSING und ONSITE_PAYMENT sind @deprecated und entfernt)", () => {
+  it("BILLING-Profil referenziert genau sechs Specific-Checkpoints (PROCESS_EXTERNAL, DATA_MISSING und ONSITE_PAYMENT nicht in specificCheckpointIds)", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(BILLING.specificCheckpointIds).toContain(id);
     }
@@ -347,7 +348,7 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
 // ---------------------------------------------------------------------------
 
 describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
-  it("BILLING_COST_NOT_COVERED YES + SHOW → Text erscheint", () => {
+  it("BILLING_COST_NOT_COVERED YES + SHOW → M2-Schalter hat keinen eigenen Patiententext (leer)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -357,7 +358,9 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("gesetzlichen Krankenkasse");
+    // textByStatus.YES ist leer – der M2-Schalter trägt keinen Patiententext.
+    // Der Inhalt wird stattdessen über ACTION-Bausteine (BILLING_NOT_COVERED_BY_STATUTORY etc.) geliefert.
+    expect(paragraphs).not.toContain("gesetzlichen Krankenkasse");
   });
 
   it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text erscheint", () => {
@@ -439,7 +442,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("quartalsweise");
   });
 
-  it("BILLING_ONSITE_PAYMENT YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
+  it("BILLING_ONSITE_PAYMENT als ACTION nicht über Renderer sichtbar (nicht in specificCheckpointIds)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -449,6 +452,8 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    // BILLING_ONSITE_PAYMENT ist kein EXPLANATION-Checkpoint mehr und nicht in specificCheckpointIds →
+    // der Renderer ignoriert es. Anzeige erfolgt nur über boundActionConditions in M3.
     expect(paragraphs).not.toContain("per Karte");
   });
 
@@ -554,8 +559,9 @@ describe("BILLING Specific-Checkpoints – docByStatus", () => {
   });
 
   it("docByStatus-Texte sind kürzer als Patiententexte (kein langer Text in Dokumentation)", () => {
+    // BILLING_COST_NOT_COVERED ausgenommen: textByStatus.YES ist leer (M2-Schalter),
+    // docByStatus.YES enthält aber weiterhin eine interne Aktennotiz.
     const idsToCheck = [
-      "BILLING_COST_NOT_COVERED",
       "BILLING_EXTERNAL_PROVIDER",
       "BILLING_ADDRESS_MISSING",
       "BILLING_DOCUMENT_MISSING",
@@ -571,61 +577,18 @@ describe("BILLING Specific-Checkpoints – docByStatus", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. Labor-Selbstzahler: BILLING_COST_NOT_COVERED enthält IGeL/GOÄ-Aussagen
+// 9. BILLING_COST_NOT_COVERED – M2-Schalter ohne Patiententext (Inhalt in ACTION-Bausteinen)
 // ---------------------------------------------------------------------------
 
-describe("BILLING_COST_NOT_COVERED – IGeL/GOÄ-Abdeckung (Ablösung von LAB_SELF_PAYER_IGEL)", () => {
-  it("BILLING_COST_NOT_COVERED YES + SHOW → Text enthält 'IGeL'", () => {
-    const result = renderInquiryResponseFromSections([
-      {
-        inquiryId: "BILLING",
-        decisionStatus: DecisionStatus.DISABLED,
-        checkpointStatuses: { BILLING_COST_NOT_COVERED: ExplanationStatus.YES },
-        explanationOutputStatuses: { BILLING_COST_NOT_COVERED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
-      },
-    ]);
-    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("IGeL");
+describe("BILLING_COST_NOT_COVERED – M2-Schalter ohne eigenen Patiententext", () => {
+  it("BILLING_COST_NOT_COVERED textByStatus.YES ist leer (kein Patiententext im M2-Schalter)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_COST_NOT_COVERED"];
+    expect(cp.textByStatus[ExplanationStatus.YES]).toBe("");
   });
 
-  it("BILLING_COST_NOT_COVERED YES + SHOW → Text enthält 'GOÄ'", () => {
-    const result = renderInquiryResponseFromSections([
-      {
-        inquiryId: "BILLING",
-        decisionStatus: DecisionStatus.DISABLED,
-        checkpointStatuses: { BILLING_COST_NOT_COVERED: ExplanationStatus.YES },
-        explanationOutputStatuses: { BILLING_COST_NOT_COVERED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
-      },
-    ]);
-    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("GOÄ");
-  });
-
-  it("BILLING_COST_NOT_COVERED docByStatus[YES] enthält 'IGeL'", () => {
+  it("BILLING_COST_NOT_COVERED docByStatus[YES] enthält 'IGeL' (interne Aktennotiz bleibt erhalten)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_COST_NOT_COVERED"];
     expect(cp.docByStatus![ExplanationStatus.YES]).toContain("IGeL");
-  });
-
-  it("Labor-Selbstzahler-Kombination (BILLING_COST_NOT_COVERED + BILLING_EXTERNAL_PROVIDER) → keine doppelte Kostenaussage", () => {
-    const result = renderInquiryResponseFromSections([
-      {
-        inquiryId: "BILLING",
-        decisionStatus: DecisionStatus.DISABLED,
-        checkpointStatuses: {
-          BILLING_COST_NOT_COVERED: ExplanationStatus.YES,
-          BILLING_EXTERNAL_PROVIDER: ExplanationStatus.YES,
-        },
-        explanationOutputStatuses: {
-          BILLING_COST_NOT_COVERED: ExplanationOutputStatus.SHOW,
-          BILLING_EXTERNAL_PROVIDER: ExplanationOutputStatus.SHOW,
-        } as Record<string, ExplanationOutputStatus>,
-      },
-    ]);
-    const paragraphs = result.sections[0].attachedParagraphs;
-    const costParagraphs = paragraphs.filter(
-      (p) => p.includes("Krankenkasse") || p.includes("GOÄ"),
-    );
-    expect(costParagraphs).toHaveLength(1);
   });
 
   it("Labor-Selbstzahler-Kombination → enthält Partnerlabor-Hinweis (über BILLING_EXTERNAL_PROVIDER)", () => {
@@ -645,6 +608,104 @@ describe("BILLING_COST_NOT_COVERED – IGeL/GOÄ-Abdeckung (Ablösung von LAB_SE
     ]);
     const allText = result.sections[0].attachedParagraphs.join(" ");
     expect(allText).toContain("Partnerlabor");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. BILLING boundActionCheckpointIds und boundActionConditions
+// ---------------------------------------------------------------------------
+
+describe("BILLING – boundActionCheckpointIds", () => {
+  it("BILLING hat ein boundActionCheckpointIds-Array", () => {
+    expect(BILLING.boundActionCheckpointIds).toBeDefined();
+    expect(Array.isArray(BILLING.boundActionCheckpointIds)).toBe(true);
+  });
+
+  it("enthält BILLING_NOT_COVERED_BY_STATUTORY", () => {
+    expect(BILLING.boundActionCheckpointIds).toContain("BILLING_NOT_COVERED_BY_STATUTORY");
+  });
+
+  it("enthält BILLING_GOA_BILLING", () => {
+    expect(BILLING.boundActionCheckpointIds).toContain("BILLING_GOA_BILLING");
+  });
+
+  it("enthält BILLING_ONSITE_PAYMENT", () => {
+    expect(BILLING.boundActionCheckpointIds).toContain("BILLING_ONSITE_PAYMENT");
+  });
+});
+
+describe("BILLING – boundActionConditions showWhenAny für BILLING_COST_NOT_COVERED", () => {
+  it("BILLING hat boundActionConditions definiert", () => {
+    expect(BILLING.boundActionConditions).toBeDefined();
+  });
+
+  it("BILLING_NOT_COVERED_BY_STATUTORY: showWhenAny enthält { BILLING_COST_NOT_COVERED: 'YES' }", () => {
+    const condition = BILLING.boundActionConditions?.["BILLING_NOT_COVERED_BY_STATUTORY"];
+    expect(condition).toBeDefined();
+    expect(condition!.showWhenAny).toBeDefined();
+    expect(condition!.showWhenAny).toContainEqual({ BILLING_COST_NOT_COVERED: "YES" });
+    expect(condition!.hideWhenAny).toBeUndefined();
+  });
+
+  it("BILLING_GOA_BILLING: showWhenAny enthält { BILLING_COST_NOT_COVERED: 'YES' }", () => {
+    const condition = BILLING.boundActionConditions?.["BILLING_GOA_BILLING"];
+    expect(condition).toBeDefined();
+    expect(condition!.showWhenAny).toBeDefined();
+    expect(condition!.showWhenAny).toContainEqual({ BILLING_COST_NOT_COVERED: "YES" });
+    expect(condition!.hideWhenAny).toBeUndefined();
+  });
+
+  it("BILLING_ONSITE_PAYMENT: showWhenAny enthält { BILLING_COST_NOT_COVERED: 'YES' }", () => {
+    const condition = BILLING.boundActionConditions?.["BILLING_ONSITE_PAYMENT"];
+    expect(condition).toBeDefined();
+    expect(condition!.showWhenAny).toBeDefined();
+    expect(condition!.showWhenAny).toContainEqual({ BILLING_COST_NOT_COVERED: "YES" });
+    expect(condition!.hideWhenAny).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. Neue ACTION-Checkpoints im Katalog
+// ---------------------------------------------------------------------------
+
+describe("BILLING – neue ACTION-Checkpoints im Katalog", () => {
+  it("BILLING_NOT_COVERED_BY_STATUTORY existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_NOT_COVERED_BY_STATUTORY"]).toBeDefined();
+  });
+
+  it("BILLING_NOT_COVERED_BY_STATUTORY hat kind ACTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_NOT_COVERED_BY_STATUTORY"].kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("BILLING_NOT_COVERED_BY_STATUTORY hat scope SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_NOT_COVERED_BY_STATUTORY"].scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("BILLING_NOT_COVERED_BY_STATUTORY Text enthält 'gesetzlichen Krankenkasse'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_NOT_COVERED_BY_STATUTORY"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("gesetzlichen Krankenkasse");
+  });
+
+  it("BILLING_GOA_BILLING existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_GOA_BILLING"]).toBeDefined();
+  });
+
+  it("BILLING_GOA_BILLING hat kind ACTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_GOA_BILLING"].kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("BILLING_GOA_BILLING Text enthält 'GOÄ'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_GOA_BILLING"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("GOÄ");
+  });
+
+  it("BILLING_ONSITE_PAYMENT hat jetzt kind ACTION (reaktiviert)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"].kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("BILLING_ONSITE_PAYMENT Text enthält 'per Karte'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("per Karte");
   });
 });
 
