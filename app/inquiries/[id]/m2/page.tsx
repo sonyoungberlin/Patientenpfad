@@ -104,9 +104,9 @@ export default async function InquiryM2Page({
     if (!profile) continue;
     profile.boundGlobalCheckpointIds.forEach((cpId) => globalIds.add(cpId));
     profile.availableActionIds.forEach((cpId) => {
+      actionIds.add(cpId);
       if (!boundActionIds.has(cpId)) profileAvailableActionIds.add(cpId);
     });
-    profile.availableActionIds.forEach((cpId) => actionIds.add(cpId));
     // boundActionCheckpointIds must also be saved as actionStatuses
     (profile.boundActionCheckpointIds ?? []).forEach((cpId) => actionIds.add(cpId));
   }
