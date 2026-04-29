@@ -533,6 +533,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       LAB_FASTING_REQUIRED: {
         hideWhenAny: [],
       },
+      // LAB_RESULT_TIME: immer in M3 anzeigen, ohne M2-Schalter.
+      // Befundübermittlung / Auswertungsdauer ist profiltypisch und nicht fallabhängig.
+      LAB_RESULT_TIME: {
+        hideWhenAny: [],
+      },
     },
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -882,6 +887,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
     ],
+    boundActionConditions: {
+      // REF_ORIGINAL_VS_PDF: immer in M3 anzeigen, ohne M2-Schalter.
+      // Hinweis zu digitaler vs. Original-Überweisung gilt für jede ausgestellte Überweisung.
+      REF_ORIGINAL_VS_PDF: {
+        hideWhenAny: [],
+      },
+    },
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",

@@ -579,6 +579,13 @@ describe("LAB – boundActionConditions", () => {
     expect(condition?.hideWhenAny).toEqual([]);
     expect(condition?.showWhenAny).toBeUndefined();
   });
+
+  it("LAB_RESULT_TIME: hat boundActionConditions-Eintrag mit hideWhenAny: [] (immer in M3 anzeigen)", () => {
+    const condition = LAB.boundActionConditions?.["LAB_RESULT_TIME"];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toEqual([]);
+    expect(condition?.showWhenAny).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------

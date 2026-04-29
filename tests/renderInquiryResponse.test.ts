@@ -2424,6 +2424,22 @@ describe("REFERRAL-Profil – migrierte Action-Checkpoints (boundActionCheckpoin
   });
 });
 
+describe("REFERRAL-Profil – boundActionConditions (REF_ORIGINAL_VS_PDF immer in M3)", () => {
+  it("REF_ORIGINAL_VS_PDF hat boundActionConditions-Eintrag mit hideWhenAny: []", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    const condition = profile?.boundActionConditions?.["REF_ORIGINAL_VS_PDF"];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toEqual([]);
+    expect(condition?.showWhenAny).toBeUndefined();
+  });
+
+  it("REF_BOOKING_CODE_PROCESS hat keinen boundActionConditions-Eintrag (bleibt M2-Schalter)", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    const condition = profile?.boundActionConditions?.["REF_BOOKING_CODE_PROCESS"];
+    expect(condition).toBeUndefined();
+  });
+});
+
 describe("REFERRAL-Profil – GlobalHints", () => {
   it("IS_NEW_PATIENT YES → kein Hint in REFERRAL (nicht mehr gebunden)", () => {
     const result = renderInquiryResponseFromSections([

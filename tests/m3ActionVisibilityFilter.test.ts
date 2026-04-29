@@ -132,10 +132,26 @@ describe("M2 boundActionCheckpointIds filter", () => {
 
   it("keeps genuine M2 switches (no boundActionConditions entry) in LAB", () => {
     const m2ActionIds = buildM2ActionCps("LAB");
-    // LAB_RESULT_TIME has no conditions and must remain as manual M2 switch
-    expect(m2ActionIds).toContain("LAB_RESULT_TIME");
+    // LAB_RESULT_TIME now has hideWhenAny: [] → condition-controlled, no longer a M2 switch
+    expect(m2ActionIds).not.toContain("LAB_RESULT_TIME");
     // LAB_FASTING_REQUIRED is no longer a M2 switch (has hideWhenAny: [] → always-visible M3 item)
     expect(m2ActionIds).not.toContain("LAB_FASTING_REQUIRED");
+  });
+
+  it("LAB_RESULT_TIME now has hideWhenAny: [] → excluded from LAB M2 action rows", () => {
+    const m2ActionIds = buildM2ActionCps("LAB");
+    expect(m2ActionIds).not.toContain("LAB_RESULT_TIME");
+  });
+
+  it("excludes condition-controlled REF_ORIGINAL_VS_PDF from REFERRAL M2 action rows", () => {
+    const m2ActionIds = buildM2ActionCps("REFERRAL");
+    // REF_ORIGINAL_VS_PDF now has hideWhenAny: [] → always-visible M3 item, not a M2 switch
+    expect(m2ActionIds).not.toContain("REF_ORIGINAL_VS_PDF");
+  });
+
+  it("keeps REF_BOOKING_CODE_PROCESS (no boundActionConditions entry) as M2 switch in REFERRAL", () => {
+    const m2ActionIds = buildM2ActionCps("REFERRAL");
+    expect(m2ActionIds).toContain("REF_BOOKING_CODE_PROCESS");
   });
 
   it("returns all action checkpoints unchanged for a profile with no boundActionConditions", () => {
