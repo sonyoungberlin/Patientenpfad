@@ -926,6 +926,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "REF_SPECIALTY_REQUIRED",
       "REF_PSYCHOTHERAPY_FIRST_STEP",
+      "REF_HAV_CASE",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
@@ -942,6 +943,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // Hinweis zu digitaler vs. Original-Überweisung gilt für jede ausgestellte Überweisung.
       REF_ORIGINAL_VS_PDF: {
         hideWhenAny: [],
+      },
+      // REF_BOOKING_CODE_PROCESS: nur anzeigen, wenn Hausarztvermittlungsfall (mit Buchungscode).
+      REF_BOOKING_CODE_PROCESS: {
+        showWhenAny: [{ REF_HAV_CASE: "YES" }],
       },
     },
     availableActionIds: [

@@ -149,9 +149,10 @@ describe("M2 boundActionCheckpointIds filter", () => {
     expect(m2ActionIds).not.toContain("REF_ORIGINAL_VS_PDF");
   });
 
-  it("keeps REF_BOOKING_CODE_PROCESS (no boundActionConditions entry) as M2 switch in REFERRAL", () => {
+  it("excludes REF_BOOKING_CODE_PROCESS from REFERRAL M2 action rows (has showWhenAny condition via REF_HAV_CASE)", () => {
     const m2ActionIds = buildM2ActionCps("REFERRAL");
-    expect(m2ActionIds).toContain("REF_BOOKING_CODE_PROCESS");
+    // REF_BOOKING_CODE_PROCESS now has showWhenAny: [{ REF_HAV_CASE: "YES" }] → M3-visible, not a plain M2 switch
+    expect(m2ActionIds).not.toContain("REF_BOOKING_CODE_PROCESS");
   });
 
   it("returns all action checkpoints unchanged for a profile with no boundActionConditions", () => {

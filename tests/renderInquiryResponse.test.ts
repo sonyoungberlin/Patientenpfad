@@ -2277,10 +2277,11 @@ describe("REFERRAL-Profil – Struktur", () => {
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(2);
+    expect(profile.specificCheckpointIds).toHaveLength(3);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     expect(profile.specificCheckpointIds).toContain("REF_SPECIALTY_REQUIRED");
+    expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
@@ -2448,10 +2449,86 @@ describe("REFERRAL-Profil – boundActionConditions (REF_ORIGINAL_VS_PDF immer i
     expect(condition?.showWhenAny).toBeUndefined();
   });
 
-  it("REF_BOOKING_CODE_PROCESS hat keinen boundActionConditions-Eintrag (bleibt M2-Schalter)", () => {
+  it("REF_BOOKING_CODE_PROCESS hat boundActionConditions-Eintrag mit showWhenAny: REF_HAV_CASE=YES", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const condition = profile?.boundActionConditions?.["REF_BOOKING_CODE_PROCESS"];
-    expect(condition).toBeUndefined();
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toEqual([{ REF_HAV_CASE: "YES" }]);
+    expect(condition?.hideWhenAny).toBeUndefined();
+  });
+});
+
+describe("REFERRAL-Profil – REF_HAV_CASE (reiner M2-Schalter)", () => {
+  it("REF_HAV_CASE ist im Katalog registriert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["REF_HAV_CASE"];
+    expect(cp).toBeDefined();
+    expect(cp.id).toBe("REF_HAV_CASE");
+  });
+
+  it("REF_HAV_CASE hat kind EXPLANATION", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["REF_HAV_CASE"];
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+  });
+
+  it("REF_HAV_CASE hat leeres textByStatus (reiner Schalter, kein eigener Text)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["REF_HAV_CASE"];
+    expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+  });
+
+  it("REF_HAV_CASE ist in specificCheckpointIds des REFERRAL-Profils", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
+  });
+
+  it("REF_HAV_CASE YES → kein Text in attachedParagraphs (leeres textByStatus)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_HAV_CASE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+
+  it("REF_HAV_CASE NO → kein Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: { REF_HAV_CASE: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("REFERRAL-Profil – REF_BOOKING_CODE_PROCESS via REF_HAV_CASE-Trigger", () => {
+  it("boundActionConditions für REF_BOOKING_CODE_PROCESS hat showWhenAny: [{ REF_HAV_CASE: 'YES' }]", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
+    const condition = profile?.boundActionConditions?.["REF_BOOKING_CODE_PROCESS"];
+    expect(condition?.showWhenAny).toEqual([{ REF_HAV_CASE: "YES" }]);
+  });
+
+  it("REF_HAV_CASE=YES + REF_BOOKING_CODE_PROCESS ACTIVE → Buchungscode-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: {
+          REF_HAV_CASE: ExplanationStatus.YES,
+          REF_BOOKING_CODE_PROCESS: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Buchungscode");
+  });
+
+  it("REF_BOOKING_CODE_PROCESS INACTIVE (unabhängig von REF_HAV_CASE) → kein Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: {
+          REF_HAV_CASE: ExplanationStatus.YES,
+          REF_BOOKING_CODE_PROCESS: ActionStatus.INACTIVE,
+        },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 });
 

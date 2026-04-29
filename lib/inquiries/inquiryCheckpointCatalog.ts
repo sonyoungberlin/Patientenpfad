@@ -1557,6 +1557,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  REF_HAV_CASE: {
+    id: "REF_HAV_CASE",
+    label: "Hausarztvermittlungsfall (mit Buchungscode)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "REF_HAV_CASE-Q1", text: "Handelt es sich um einen Hausarztvermittlungsfall (mit Buchungscode)?" },
+    ],
+    // Reiner M2-Schalter – kein eigener Ausgabetext.
+    textByStatus: {},
+  },
+
   // ---- IMMUNIZATION DECISION ----
 
   IMMUNIZATION_DECISION: {
