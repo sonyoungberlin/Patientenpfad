@@ -1377,6 +1377,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Bitte ACUTE_OPEN_CONSULTATION_ACTION verwenden. */
   ACUTE_OPEN_CONSULTATION_INFO: {
     id: "ACUTE_OPEN_CONSULTATION_INFO",
     label: "Offene Sprechstunde – Info",

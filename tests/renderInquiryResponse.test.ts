@@ -2540,11 +2540,11 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat 2 boundGlobalCheckpointIds: INFECTIOUS_PROTOCOL, ACUTE_OPEN_CONSULTATION_INFO", () => {
+  it("ACUTE_CARE hat 1 boundGlobalCheckpointId: INFECTIOUS_PROTOCOL (ACUTE_OPEN_CONSULTATION_INFO abgelöst durch ACTION-Baustein)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(2);
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
     expect(profile.boundGlobalCheckpointIds).toContain("INFECTIOUS_PROTOCOL");
-    expect(profile.boundGlobalCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
   });
@@ -2616,17 +2616,6 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
     );
   });
 
-  it("ACUTE_OPEN_CONSULTATION_INFO YES → Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { ACUTE_OPEN_CONSULTATION_INFO: ExplanationStatus.YES },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toContain(
-      "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
-    );
-  });
-
   it("CHRONIC_EXCLUSION YES → Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
@@ -2673,15 +2662,6 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints NO → kein Output", () => 
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
         checkpointStatuses: { ACUTE_APPOINTMENT_INFO: ExplanationStatus.NO },
-      }),
-    ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
-  });
-
-  it("ACUTE_OPEN_CONSULTATION_INFO NO → kein Text in attachedParagraphs", () => {
-    const result = renderInquiryResponseFromSections([
-      makeAcuteCareSection({
-        checkpointStatuses: { ACUTE_OPEN_CONSULTATION_INFO: ExplanationStatus.NO },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);

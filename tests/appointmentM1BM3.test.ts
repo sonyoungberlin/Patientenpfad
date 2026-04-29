@@ -464,3 +464,30 @@ describe("APPOINTMENT – @deprecated Checkpoints (Termin-Brille-Cleanup)", () =
     });
   }
 });
+
+// ---------------------------------------------------------------------------
+// ACUTE_OPEN_CONSULTATION_ACTION – immer sichtbarer ACTION-Baustein in APPOINTMENT
+// ---------------------------------------------------------------------------
+
+describe("APPOINTMENT – ACUTE_OPEN_CONSULTATION_ACTION (ersetzt INFO)", () => {
+  it("ACUTE_OPEN_CONSULTATION_ACTION ist in boundActionCheckpointIds", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_ACTION");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_ACTION hat hideWhenAny: [] (immer sichtbar)", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_ACTION?.hideWhenAny).toEqual([]);
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO ist NICHT mehr in boundGlobalCheckpointIds", () => {
+    expect(APPOINTMENT.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO ist NICHT in boundActionCheckpointIds", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO bleibt im Katalog (Legacy)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
+  });
+});

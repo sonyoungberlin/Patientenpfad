@@ -803,7 +803,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "INFECTIOUS_PROTOCOL",
-      "ACUTE_OPEN_CONSULTATION_INFO",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -813,13 +812,16 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {
       INFECTIOUS_PROTOCOL:
         "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
-      ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     },
     boundActionCheckpointIds: [
+      "ACUTE_OPEN_CONSULTATION_ACTION",
       "ACUTE_BOOKING_INFO",
       "CARE_CHANNEL_CHOICE",
     ],
     boundActionConditions: {
+      ACUTE_OPEN_CONSULTATION_ACTION: {
+        hideWhenAny: [],
+      },
       ACUTE_BOOKING_INFO: {
         showWhenAny: [{ ACUTE_APPOINTMENT_INFO: "YES" }],
       },
@@ -1154,12 +1156,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_DATA_INCOMPLETE",
     ],
-    boundGlobalCheckpointIds: [
-      "ACUTE_OPEN_CONSULTATION_INFO",
-    ],
-    globalHints: {
-      ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
-    },
+    boundGlobalCheckpointIds: [],
+    globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "ONLINE_ANAMNESIS",
@@ -1167,6 +1165,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "ACUTE_OPEN_CONSULTATION_ACTION",
+    ],
+    boundActionConditions: {
+      ACUTE_OPEN_CONSULTATION_ACTION: {
+        hideWhenAny: [],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
