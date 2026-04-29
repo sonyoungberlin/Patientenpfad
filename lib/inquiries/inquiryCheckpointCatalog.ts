@@ -339,8 +339,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "AU_DIGITAL_AU_PROCESS-Q1", text: "Soll der digitale AU-Anfrageprozess erklärt werden?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]:
-        "Wenn Sie eine Arbeitsunfähigkeitsbescheinigung digital anfragen möchten, benötigen wir die dafür notwendigen Angaben.\n\nBitte füllen Sie dazu beide Formulare aus:\n\n1. Kurz-Anamnese\nhttps://mvz-kreuzberg.de/kurz-anamnese\n\n2. Digitale Anfrage für die Arbeitsunfähigkeitsbescheinigung\nhttps://mvz-kreuzberg.de/digitaleanfrage\n\nBitte beachten Sie, dass die Bearbeitung je nach Auslastung 8–12 Stunden dauern kann. Wir bitten Sie, in dieser Zeit von Nachfragen zum Bearbeitungsstand abzusehen.",
+      // YES: bewusst leer – reiner M2-Schalter, Inhalte kommen über boundActionCheckpointIds
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -952,7 +951,20 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Die Anfrage kann über die digitale Anfrage gestellt werden.",
+        "Bitte stellen Sie Ihre Anfrage über das digitale Anfrageformular: https://mvz-kreuzberg.de/digitaleanfrage",
+    },
+  },
+
+  DIGITAL_REQUEST_PROCESSING_TIME: {
+    id: "DIGITAL_REQUEST_PROCESSING_TIME",
+    label: "Bearbeitungszeit digitale Anfrage",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Bearbeitung digitaler Anfragen dauert je nach Auslastung 8–12 Stunden. Bitte sehen Sie in dieser Zeit von Nachfragen zum Bearbeitungsstand ab.",
     },
   },
 

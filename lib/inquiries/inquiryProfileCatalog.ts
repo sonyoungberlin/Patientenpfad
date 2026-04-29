@@ -58,8 +58,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     },
     availableActionIds: [
-      "DIGITAL_REQUEST",
-      "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
@@ -67,6 +65,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
       "AU_FOLLOWUP_REQUIRES_VISIT",
+      "ONLINE_ANAMNESIS",
+      "DIGITAL_REQUEST",
+      "DIGITAL_REQUEST_PROCESSING_TIME",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -74,6 +75,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       AU_FOLLOWUP_REQUIRES_VISIT: {
         showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
+      },
+      ONLINE_ANAMNESIS: {
+        showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }],
+      },
+      DIGITAL_REQUEST: {
+        showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }],
+      },
+      DIGITAL_REQUEST_PROCESSING_TIME: {
+        showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }],
       },
     },
 
