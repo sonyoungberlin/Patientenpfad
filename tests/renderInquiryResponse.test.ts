@@ -943,8 +943,8 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat genau fünf Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(5);
+  it("AU-Profil hat genau sechs Specific Checkpoints", () => {
+    expect(auProfile.specificCheckpointIds).toHaveLength(6);
   });
 
   it("AU-Profil bindet die erwarteten AU SPECIFIC Explanation Checkpoints", () => {
@@ -960,14 +960,15 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
     expect(auProfile.specificCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
   });
 
-  it("AU-Profil hat zwei gebundene Global Checkpoints", () => {
+  it("AU-Profil hat genau einen gebundenen Global Checkpoint", () => {
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
     expect(auProfile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(auProfile.boundGlobalCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
-    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(2);
+    // ACUTE_OPEN_CONSULTATION_INFO ist jetzt über boundActionConditions (konditionell) eingebunden
+    expect(auProfile.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(1);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im AU-Profil", () => {

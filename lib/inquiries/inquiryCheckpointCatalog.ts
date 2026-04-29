@@ -344,6 +344,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  AU_NO_APPOINTMENT_ACUTE: {
+    id: "AU_NO_APPOINTMENT_ACUTE",
+    label: "Akute Beschwerden – kein kurzfristiger Termin",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "AU_NO_APPOINTMENT_ACUTE-Q1", text: "Hat der Patient akute Beschwerden und keinen kurzfristigen Termin erhalten?" },
+    ],
+    textByStatus: {
+      // YES: bewusst leer – reiner M2-Schalter, Inhalte erscheinen über konditionell angezeigte
+      //      ACTION-Checkpoints (ACUTE_OPEN_CONSULTATION_INFO, DIGITAL_REQUEST, ONLINE_ANAMNESIS)
+      //      via boundActionConditions → showWhenAny [{ AU_NO_APPOINTMENT_ACUTE: "YES" }]
+      // NO: bewusst still – keine Aktion erforderlich
+    },
+  },
+
   // ---- PRESCRIPTION DECISION ----
 
   PRESCRIPTION_DECISION: {

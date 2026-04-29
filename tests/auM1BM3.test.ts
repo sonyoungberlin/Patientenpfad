@@ -383,8 +383,121 @@ describe("ACUTE_OPEN_CONSULTATION_INFO – im AU-Profil referenziert", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
   });
 
-  it("ist in AU.boundGlobalCheckpointIds referenziert", () => {
-    expect(AU.boundGlobalCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  it("ist NICHT mehr in AU.boundGlobalCheckpointIds (wurde in boundActionCheckpointIds verschoben)", () => {
+    expect(AU.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("ist in AU.boundActionCheckpointIds referenziert", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("wird bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_INFO?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. AU_NO_APPOINTMENT_ACUTE – Checkpoint-Struktur und Profil-Referenz
+// ---------------------------------------------------------------------------
+
+describe("AU_NO_APPOINTMENT_ACUTE – Checkpoint-Struktur", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_NO_APPOINTMENT_ACUTE"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind EXPLANATION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat eine Frage", () => {
+    expect(cp.questions?.length).toBeGreaterThan(0);
+    expect(cp.questions?.[0].text).toContain("akute Beschwerden");
+  });
+
+  it("hat keinen YES-Text (reiner M2-Schalter)", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+    expect(!text || text.length === 0).toBe(true);
+  });
+
+  it("hat keinen NO-Text (reiner M2-Schalter)", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.NO];
+    expect(!text || text.length === 0).toBe(true);
+  });
+
+  it("ist in AU.specificCheckpointIds referenziert", () => {
+    expect(AU.specificCheckpointIds).toContain("AU_NO_APPOINTMENT_ACUTE");
+  });
+
+  it("ist NICHT in AU.boundGlobalCheckpointIds", () => {
+    expect(AU.boundGlobalCheckpointIds).not.toContain("AU_NO_APPOINTMENT_ACUTE");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. AU – AU_NO_APPOINTMENT_ACUTE Triggerweg über boundActionCheckpointIds
+// ---------------------------------------------------------------------------
+
+describe("AU – AU_NO_APPOINTMENT_ACUTE Triggerweg", () => {
+  it("ONLINE_ANAMNESIS wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST_PROCESSING_TIME wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST_PROCESSING_TIME?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO ist in AU.boundActionCheckpointIds", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+
+  it("ACUTE_OPEN_CONSULTATION_INFO hat Condition auf AU_NO_APPOINTMENT_ACUTE = YES", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_INFO?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
+    );
+  });
+
+  it("ONLINE_ANAMNESIS behält weiterhin AU_DIGITAL_AU_PROCESS = YES als Trigger", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST behält weiterhin AU_DIGITAL_AU_PROCESS = YES als Trigger", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
+  });
+
+  it("DIGITAL_REQUEST_PROCESSING_TIME behält weiterhin AU_DIGITAL_AU_PROCESS = YES als Trigger", () => {
+    const conditions = (AU as any).boundActionConditions;
+    expect(conditions?.DIGITAL_REQUEST_PROCESSING_TIME?.showWhenAny).toEqual(
+      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
+    );
   });
 });
 
