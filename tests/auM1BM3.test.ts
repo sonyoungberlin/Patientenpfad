@@ -378,22 +378,52 @@ describe("AU_DIGITAL_AU_PROCESS – Checkpoint-Struktur", () => {
   });
 });
 
-describe("ACUTE_OPEN_CONSULTATION_INFO – im AU-Profil referenziert", () => {
+describe("ACUTE_OPEN_CONSULTATION_INFO – weiterhin im Katalog vorhanden (für andere Profile)", () => {
   it("ACUTE_OPEN_CONSULTATION_INFO existiert im Checkpoint-Katalog", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
   });
 
-  it("ist NICHT mehr in AU.boundGlobalCheckpointIds (wurde in boundActionCheckpointIds verschoben)", () => {
+  it("ist NICHT mehr in AU.boundGlobalCheckpointIds (wurde durch ACUTE_OPEN_CONSULTATION_ACTION abgelöst)", () => {
     expect(AU.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
   });
 
+  it("ist NICHT in AU.boundActionCheckpointIds (wurde durch ACUTE_OPEN_CONSULTATION_ACTION abgelöst)", () => {
+    expect((AU as any).boundActionCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  });
+});
+
+describe("ACUTE_OPEN_CONSULTATION_ACTION – neuer ACTION-Baustein", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_ACTION"];
+
+  it("ist definiert", () => {
+    expect(cp).toBeDefined();
+  });
+
+  it("hat kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("hat scope GLOBAL", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+
+  it("hat actionCategory INFO", () => {
+    expect((cp as any).actionCategory).toBe("INFO");
+  });
+
+  it("hat ACTIVE-Text mit Sprechstunden-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).toContain("offene Sprechstunde");
+    expect(text).toContain("9–10 Uhr");
+  });
+
   it("ist in AU.boundActionCheckpointIds referenziert", () => {
-    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_ACTION");
   });
 
   it("wird bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
     const conditions = (AU as any).boundActionConditions;
-    expect(conditions?.ACUTE_OPEN_CONSULTATION_INFO?.showWhenAny).toEqual(
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_ACTION?.showWhenAny).toEqual(
       expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
     );
   });
@@ -468,13 +498,13 @@ describe("AU – AU_NO_APPOINTMENT_ACUTE Triggerweg", () => {
     );
   });
 
-  it("ACUTE_OPEN_CONSULTATION_INFO ist in AU.boundActionCheckpointIds", () => {
-    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
+  it("ACUTE_OPEN_CONSULTATION_ACTION ist in AU.boundActionCheckpointIds", () => {
+    expect((AU as any).boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_ACTION");
   });
 
-  it("ACUTE_OPEN_CONSULTATION_INFO hat Condition auf AU_NO_APPOINTMENT_ACUTE = YES", () => {
+  it("ACUTE_OPEN_CONSULTATION_ACTION hat Condition auf AU_NO_APPOINTMENT_ACUTE = YES", () => {
     const conditions = (AU as any).boundActionConditions;
-    expect(conditions?.ACUTE_OPEN_CONSULTATION_INFO?.showWhenAny).toEqual(
+    expect(conditions?.ACUTE_OPEN_CONSULTATION_ACTION?.showWhenAny).toEqual(
       expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
     );
   });

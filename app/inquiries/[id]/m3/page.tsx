@@ -30,12 +30,7 @@ function toM3Section(inquiryId: string): M3SectionData | null {
     .filter((cp): cp is InquiryCheckpoint => !!cp);
   const boundActionCps = (profile.boundActionCheckpointIds ?? [])
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
-    .filter((cp): cp is InquiryCheckpoint =>
-      !!cp &&
-      (cp.kind === InquiryCheckpointKind.ACTION ||
-        // EXPLANATION-Checkpoints mit Condition werden als konditionelle Infos in M3 angezeigt
-        (cp.kind === InquiryCheckpointKind.EXPLANATION && !!profile.boundActionConditions?.[cp.id]))
-    );
+    .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
   const boundActionCheckpoints: M3BoundActionData[] = boundActionCps.map((cp) => {
     const conditions = profile.boundActionConditions?.[cp.id];
     return {

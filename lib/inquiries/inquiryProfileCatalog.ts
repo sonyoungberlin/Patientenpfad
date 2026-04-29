@@ -67,7 +67,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "DIGITAL_REQUEST",
       "DIGITAL_REQUEST_PROCESSING_TIME",
-      "ACUTE_OPEN_CONSULTATION_INFO",
+      "ACUTE_OPEN_CONSULTATION_ACTION",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -85,7 +85,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       DIGITAL_REQUEST_PROCESSING_TIME: {
         showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
       },
-      ACUTE_OPEN_CONSULTATION_INFO: {
+      ACUTE_OPEN_CONSULTATION_ACTION: {
         showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
       },
     },

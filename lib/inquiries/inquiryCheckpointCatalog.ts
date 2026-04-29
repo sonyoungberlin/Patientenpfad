@@ -1379,6 +1379,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  ACUTE_OPEN_CONSULTATION_ACTION: {
+    id: "ACUTE_OPEN_CONSULTATION_ACTION",
+    label: "Offene Sprechstunde – Hinweis",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
+    },
+  },
+
   CHRONIC_EXCLUSION: {
     id: "CHRONIC_EXCLUSION",
     label: "Chronische Erkrankung – Ausschluss planbarer Anliegen",
