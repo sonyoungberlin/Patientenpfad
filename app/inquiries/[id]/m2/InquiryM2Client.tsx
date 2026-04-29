@@ -294,6 +294,14 @@ function SpecificSection({
       ) : (
         <>
           {/* Decision-Questions – immer sichtbar */}
+          {section.decisionQuestions.length > 0 && (
+            <div
+              className="text-muted text-small"
+              style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.25rem" }}
+            >
+              <span aria-hidden="true">? </span>Klärungsfragen
+            </div>
+          )}
           <DecisionQuestionBlock questions={section.decisionQuestions} statuses={statuses} onChange={onChange} />
 
           {/* SPECIFIC EXPLANATION + ACTION Checkpoints – hinter Toggle */}
@@ -317,6 +325,14 @@ function SpecificSection({
               </button>
               {isExpanded && (
                 <div style={{ marginTop: "0.5rem" }}>
+                  {section.specificCheckpoints.length > 0 && (
+                    <div
+                      className="text-muted text-small"
+                      style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.25rem" }}
+                    >
+                      <span aria-hidden="true">+ </span>Zusatzfragen
+                    </div>
+                  )}
                   {/* SPECIFIC EXPLANATION Checkpoints */}
                   {section.specificCheckpoints.map((cp) =>
                     cp.kind === InquiryCheckpointKind.EXPLANATION ? (
@@ -326,6 +342,14 @@ function SpecificSection({
                     ),
                   )}
 
+                  {actionGroups.length > 0 && (
+                    <div
+                      className="text-muted text-small"
+                      style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", margin: "0.75rem 0 0.25rem" }}
+                    >
+                      <span aria-hidden="true">→ </span>Aktionen
+                    </div>
+                  )}
                   {/* Bound ACTION Checkpoints – nach Kategorie gruppiert */}
                   {actionGroups.map(({ cat, cps }) => (
                     <div key={cat} style={{ marginTop: "0.75rem" }}>
@@ -430,6 +454,12 @@ export default function InquiryM2Client({
             padding: "1rem",
           }}
         >
+          <div
+            className="text-muted text-small"
+            style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.35rem" }}
+          >
+            <span aria-hidden="true">ⓘ </span>Globale Hinweise
+          </div>
           <h2 style={{ marginBottom: "0.5rem" }}>Basisinformationen</h2>
           {globalCheckpoints.map((cp) => (
             <SwitchRow
