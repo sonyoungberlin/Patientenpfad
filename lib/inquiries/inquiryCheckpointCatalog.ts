@@ -1089,6 +1089,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  CARE_CHANNEL_CHOICE: {
+    id: "CARE_CHANNEL_CHOICE",
+    label: "Versorgungsweg – persönlich oder digital",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für eine persönliche Vorstellung können Sie einen Akuttermin buchen oder die offene Sprechstunde nutzen. Alternativ können Sie eine digitale Anfrage stellen.",
+    },
+  },
+
   // ---- SAMPLE_COLLECTION DECISION ----
 
   SAMPLE_COLLECTION_DECISION: {

@@ -68,6 +68,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "DIGITAL_REQUEST_PROCESSING_TIME",
       "ACUTE_OPEN_CONSULTATION_ACTION",
+      "CARE_CHANNEL_CHOICE",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -87,6 +88,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       ACUTE_OPEN_CONSULTATION_ACTION: {
         showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
+      },
+      CARE_CHANNEL_CHOICE: {
+        hideWhenAny: [],
       },
     },
 
@@ -813,10 +817,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     },
     boundActionCheckpointIds: [
       "ACUTE_BOOKING_INFO",
+      "CARE_CHANNEL_CHOICE",
     ],
     boundActionConditions: {
       ACUTE_BOOKING_INFO: {
         showWhenAny: [{ ACUTE_APPOINTMENT_INFO: "YES" }],
+      },
+      CARE_CHANNEL_CHOICE: {
+        hideWhenAny: [],
       },
     },
 
