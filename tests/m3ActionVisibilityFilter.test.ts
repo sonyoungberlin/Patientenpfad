@@ -126,13 +126,16 @@ describe("M2 boundActionCheckpointIds filter", () => {
     expect(m2ActionIds).not.toContain("LAB_BRING_REFERRAL");
     expect(m2ActionIds).not.toContain("LAB_COST_COVERED_BY_REFERRAL");
     expect(m2ActionIds).not.toContain("LAB_SELF_PAYER_NOTE");
+    // LAB_FASTING_REQUIRED now has hideWhenAny: [] → condition-controlled, no longer a M2 switch
+    expect(m2ActionIds).not.toContain("LAB_FASTING_REQUIRED");
   });
 
   it("keeps genuine M2 switches (no boundActionConditions entry) in LAB", () => {
     const m2ActionIds = buildM2ActionCps("LAB");
-    // These two have no conditions and must remain as manual M2 switches
-    expect(m2ActionIds).toContain("LAB_FASTING_REQUIRED");
+    // LAB_RESULT_TIME has no conditions and must remain as manual M2 switch
     expect(m2ActionIds).toContain("LAB_RESULT_TIME");
+    // LAB_FASTING_REQUIRED is no longer a M2 switch (has hideWhenAny: [] → always-visible M3 item)
+    expect(m2ActionIds).not.toContain("LAB_FASTING_REQUIRED");
   });
 
   it("returns all action checkpoints unchanged for a profile with no boundActionConditions", () => {

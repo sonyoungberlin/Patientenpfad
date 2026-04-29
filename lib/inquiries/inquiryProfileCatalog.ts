@@ -528,6 +528,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           { LAB_EXTERNAL_REFERRAL: "YES" },
         ],
       },
+      // LAB_FASTING_REQUIRED: immer in M3 anzeigen, ohne M2-Schalter.
+      // hideWhenAny: [] bedeutet "niemals ausblenden" → immer sichtbar.
+      LAB_FASTING_REQUIRED: {
+        hideWhenAny: [],
+      },
     },
     availableActionIds: [
       "DIGITAL_REQUEST",

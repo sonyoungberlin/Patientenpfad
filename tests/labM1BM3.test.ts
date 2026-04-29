@@ -572,6 +572,13 @@ describe("LAB – boundActionConditions", () => {
     const condition = LAB.boundActionConditions?.["LAB_APPOINTMENT_INDIVIDUAL"];
     expect(condition?.hideWhenAny).toContainEqual({ LAB_INTERNAL_ORDER: "YES" });
   });
+
+  it("LAB_FASTING_REQUIRED: hat boundActionConditions-Eintrag mit hideWhenAny: [] (immer in M3 anzeigen)", () => {
+    const condition = LAB.boundActionConditions?.["LAB_FASTING_REQUIRED"];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toEqual([]);
+    expect(condition?.showWhenAny).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
