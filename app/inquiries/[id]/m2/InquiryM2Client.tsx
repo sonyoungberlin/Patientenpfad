@@ -55,6 +55,13 @@ const ACTION_CATEGORY_LABELS: Record<string, string> = {
   INFO: "Information",
 };
 
+/** Gemeinsamer Stil für dezente Gruppen-Badges (immer kombiniert mit className="text-muted text-small"). */
+const GROUP_BADGE_STYLE = {
+  fontWeight: 600 as const,
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.04em",
+};
+
 function YesNoButtons({
   checkpointId,
   value,
@@ -297,7 +304,7 @@ function SpecificSection({
           {section.decisionQuestions.length > 0 && (
             <div
               className="text-muted text-small"
-              style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.25rem" }}
+              style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
             >
               <span aria-hidden="true">? </span>Klärungsfragen
             </div>
@@ -328,7 +335,7 @@ function SpecificSection({
                   {section.specificCheckpoints.length > 0 && (
                     <div
                       className="text-muted text-small"
-                      style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.25rem" }}
+                      style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
                     >
                       <span aria-hidden="true">+ </span>Zusatzfragen
                     </div>
@@ -345,7 +352,7 @@ function SpecificSection({
                   {actionGroups.length > 0 && (
                     <div
                       className="text-muted text-small"
-                      style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", margin: "0.75rem 0 0.25rem" }}
+                      style={{ ...GROUP_BADGE_STYLE, margin: "0.75rem 0 0.25rem" }}
                     >
                       <span aria-hidden="true">→ </span>Aktionen
                     </div>
@@ -456,7 +463,7 @@ export default function InquiryM2Client({
         >
           <div
             className="text-muted text-small"
-            style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.35rem" }}
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
           >
             <span aria-hidden="true">ⓘ </span>Globale Hinweise
           </div>

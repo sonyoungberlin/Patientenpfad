@@ -107,6 +107,13 @@ const ACTION_CATEGORY_LABELS: Record<string, string> = {
   INFO: "Information",
 };
 
+/** Gemeinsamer Stil für dezente Gruppen-Badges (immer kombiniert mit className="text-muted text-small"). */
+const GROUP_BADGE_STYLE = {
+  fontWeight: 600 as const,
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.04em",
+};
+
 function optionsForKind(kind: InquiryCheckpointKind) {
   switch (kind) {
     case InquiryCheckpointKind.PREPARATION:
@@ -400,7 +407,7 @@ export default function InquiryM3Client({
                 <>
                   <div
                     className="text-muted text-small"
-                    style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.25rem" }}
+                    style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
                   >
                     <span aria-hidden="true">? </span>Entscheidung
                   </div>
@@ -436,7 +443,7 @@ export default function InquiryM3Client({
               {visibleSpecificCps.length > 0 && (
                 <div
                   className="text-muted text-small"
-                  style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", margin: "0.5rem 0 0.25rem" }}
+                  style={{ ...GROUP_BADGE_STYLE, margin: "0.5rem 0 0.25rem" }}
                 >
                   <span aria-hidden="true">+ </span>Zusatzinfos
                 </div>
@@ -518,7 +525,7 @@ export default function InquiryM3Client({
               {/* Globale Output-Bausteine (GLOBAL MODULAR EXPLANATION) */}
               {(section.boundGlobalOutputCheckpoints ?? []).length > 0 && (
                 <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
-                  <div className="text-muted text-small" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.35rem" }}>
+                  <div className="text-muted text-small" style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}>
                     <span aria-hidden="true">ⓘ </span>Globale Bausteine
                   </div>
                   {(section.boundGlobalOutputCheckpoints ?? []).map((cp) => (
