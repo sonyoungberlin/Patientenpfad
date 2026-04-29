@@ -46,7 +46,7 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bekannte Specific-Checkpoint-IDs (BILLING_PROCESS_EXTERNAL und BILLING_DATA_MISSING sind @deprecated und entfernt)
+// Bekannte Specific-Checkpoint-IDs (BILLING_PROCESS_EXTERNAL, BILLING_DATA_MISSING und BILLING_ONSITE_PAYMENT sind @deprecated und entfernt)
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "BILLING_COST_NOT_COVERED",
@@ -55,7 +55,6 @@ const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "BILLING_DOCUMENT_MISSING",
   "BILLING_EXTERNAL_RESPONSIBILITY",
   "BILLING_INVOICE_TIMING",
-  "BILLING_ONSITE_PAYMENT",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -317,12 +316,12 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_EXTERNAL_RESPONSIBILITY"].specificRole).toBe("EXTERNAL_RESPONSIBILITY");
   });
 
-  it("BILLING_INVOICE_TIMING hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"].specificRole).toBe("PROCESS_INFO");
+  it("BILLING_INVOICE_TIMING ist im Katalog noch vorhanden (@deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"]).toBeDefined();
   });
 
-  it("BILLING_ONSITE_PAYMENT hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"].specificRole).toBe("PROCESS_INFO");
+  it("BILLING_ONSITE_PAYMENT ist im Katalog noch vorhanden (@deprecated, aber nicht gelöscht)", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"]).toBeDefined();
   });
 
   it("BILLING_PROCESS_EXTERNAL ist im Katalog noch vorhanden (@deprecated, aber nicht gelöscht)", () => {
@@ -333,12 +332,13 @@ describe("BILLING Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_DATA_MISSING"]).toBeDefined();
   });
 
-  it("BILLING-Profil referenziert genau sieben Specific-Checkpoints (PROCESS_EXTERNAL + DATA_MISSING sind @deprecated und entfernt)", () => {
+  it("BILLING-Profil referenziert genau sechs Specific-Checkpoints (PROCESS_EXTERNAL, DATA_MISSING und ONSITE_PAYMENT sind @deprecated und entfernt)", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(BILLING.specificCheckpointIds).toContain(id);
     }
     expect(BILLING.specificCheckpointIds).not.toContain("BILLING_PROCESS_EXTERNAL");
     expect(BILLING.specificCheckpointIds).not.toContain("BILLING_DATA_MISSING");
+    expect(BILLING.specificCheckpointIds).not.toContain("BILLING_ONSITE_PAYMENT");
   });
 });
 
@@ -373,7 +373,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Abrechnungsdienstleister");
   });
 
-  it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text enthält 'externen Abrechnungsdienstleister oder ein Partnerlabor'", () => {
+  it("BILLING_EXTERNAL_PROVIDER YES + SHOW → Text enthält 'Rechnung erhalten Sie'", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -383,7 +383,8 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("externen Abrechnungsdienstleister oder ein Partnerlabor");
+    expect(paragraphs).toContain("Rechnung erhalten Sie");
+    expect(paragraphs).not.toContain("Abrechnung erfolgt");
   });
 
   it("BILLING_ADDRESS_MISSING YES + SHOW → Text erscheint", () => {
@@ -425,7 +426,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Krankenkasse");
   });
 
-  it("BILLING_INVOICE_TIMING YES + SHOW → Text erscheint", () => {
+  it("BILLING_INVOICE_TIMING YES + SHOW → Text erscheint (wiederhergestellt)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -438,7 +439,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("quartalsweise");
   });
 
-  it("BILLING_ONSITE_PAYMENT YES + SHOW → Text erscheint", () => {
+  it("BILLING_ONSITE_PAYMENT YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -448,7 +449,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("per Karte");
+    expect(paragraphs).not.toContain("per Karte");
   });
 
   it("BILLING_COST_NOT_COVERED HIDE → kein Text erscheint", () => {
@@ -534,24 +535,6 @@ describe("BILLING Specific-Checkpoints – docByStatus", () => {
     expect(cp.docByStatus![ExplanationStatus.YES]).toContain("Adresse");
   });
 
-  it("BILLING_INVOICE_TIMING hat docByStatus[YES] befüllt", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"];
-    expect(cp.docByStatus).toBeDefined();
-    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
-  });
-
-  it("BILLING_INVOICE_TIMING docByStatus[YES] ist kürzer als textByStatus[YES]", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"];
-    expect(cp.docByStatus![ExplanationStatus.YES]!.length).toBeLessThan(
-      cp.textByStatus[ExplanationStatus.YES]!.length,
-    );
-  });
-
-  it("BILLING_INVOICE_TIMING docByStatus[YES] enthält 'quartalsweise'", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_INVOICE_TIMING"];
-    expect(cp.docByStatus![ExplanationStatus.YES]).toContain("quartalsweise");
-  });
-
   it("BILLING_COST_NOT_COVERED hat docByStatus[YES] befüllt", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_COST_NOT_COVERED"];
     expect(cp.docByStatus).toBeDefined();
@@ -570,12 +553,6 @@ describe("BILLING Specific-Checkpoints – docByStatus", () => {
     expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
   });
 
-  it("BILLING_ONSITE_PAYMENT hat docByStatus[YES] befüllt", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ONSITE_PAYMENT"];
-    expect(cp.docByStatus).toBeDefined();
-    expect(cp.docByStatus![ExplanationStatus.YES]).toBeTruthy();
-  });
-
   it("docByStatus-Texte sind kürzer als Patiententexte (kein langer Text in Dokumentation)", () => {
     const idsToCheck = [
       "BILLING_COST_NOT_COVERED",
@@ -583,8 +560,6 @@ describe("BILLING Specific-Checkpoints – docByStatus", () => {
       "BILLING_ADDRESS_MISSING",
       "BILLING_DOCUMENT_MISSING",
       "BILLING_EXTERNAL_RESPONSIBILITY",
-      "BILLING_INVOICE_TIMING",
-      "BILLING_ONSITE_PAYMENT",
     ] as const;
     for (const id of idsToCheck) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];

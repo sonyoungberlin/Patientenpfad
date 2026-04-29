@@ -55,6 +55,13 @@ const ACTION_CATEGORY_LABELS: Record<string, string> = {
   INFO: "Information",
 };
 
+/** Gemeinsamer Stil für dezente Gruppen-Badges (immer kombiniert mit className="text-muted text-small"). */
+const GROUP_BADGE_STYLE = {
+  fontWeight: 600 as const,
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.04em",
+};
+
 function YesNoButtons({
   checkpointId,
   value,
@@ -294,6 +301,14 @@ function SpecificSection({
       ) : (
         <>
           {/* Decision-Questions – immer sichtbar */}
+          {section.decisionQuestions.length > 0 && (
+            <div
+              className="text-muted text-small"
+              style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+            >
+              <span aria-hidden="true">? </span>Klärungsfragen
+            </div>
+          )}
           <DecisionQuestionBlock questions={section.decisionQuestions} statuses={statuses} onChange={onChange} />
 
           {/* SPECIFIC EXPLANATION + ACTION Checkpoints – hinter Toggle */}
@@ -317,6 +332,14 @@ function SpecificSection({
               </button>
               {isExpanded && (
                 <div style={{ marginTop: "0.5rem" }}>
+                  {section.specificCheckpoints.length > 0 && (
+                    <div
+                      className="text-muted text-small"
+                      style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+                    >
+                      <span aria-hidden="true">+ </span>Zusatzfragen
+                    </div>
+                  )}
                   {/* SPECIFIC EXPLANATION Checkpoints */}
                   {section.specificCheckpoints.map((cp) =>
                     cp.kind === InquiryCheckpointKind.EXPLANATION ? (
@@ -326,6 +349,14 @@ function SpecificSection({
                     ),
                   )}
 
+                  {actionGroups.length > 0 && (
+                    <div
+                      className="text-muted text-small"
+                      style={{ ...GROUP_BADGE_STYLE, margin: "0.75rem 0 0.25rem" }}
+                    >
+                      <span aria-hidden="true">→ </span>Aktionen
+                    </div>
+                  )}
                   {/* Bound ACTION Checkpoints – nach Kategorie gruppiert */}
                   {actionGroups.map(({ cat, cps }) => (
                     <div key={cat} style={{ marginTop: "0.75rem" }}>
@@ -430,6 +461,12 @@ export default function InquiryM2Client({
             padding: "1rem",
           }}
         >
+          <div
+            className="text-muted text-small"
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
+          >
+            <span aria-hidden="true">ⓘ </span>Globale Hinweise
+          </div>
           <h2 style={{ marginBottom: "0.5rem" }}>Basisinformationen</h2>
           {globalCheckpoints.map((cp) => (
             <SwitchRow

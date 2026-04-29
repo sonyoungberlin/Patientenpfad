@@ -648,11 +648,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_EXTERNAL_REFERRAL-Q1", text: "Liegt eine Überweisung eines Facharztes vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\n\nBringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit, damit die angeforderten Werte korrekt durchgeführt werden können.",
-      [ExplanationStatus.NO]: "",
+      [ExplanationStatus.YES]: "Bitte buchen Sie einen Termin für individuelle Laborwerte.\nBringen Sie die Überweisung im Original zum Termin mit – nur mit gültiger Originalüberweisung entfällt eine Selbstzahlerleistung.",
+      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung auf Basis einer Facharzt-Überweisung benötigen wir das Original-Dokument zum Termin.\n\nLiegt keine gültige Überweisung vor, wird die Leistung als Selbstzahler abgerechnet.",
     },
   },
 
+  /** @deprecated Konsolidiert in LAB_EXTERNAL_REFERRAL. Nicht mehr in LAB.specificCheckpointIds. */
   LAB_EXTERNAL_DOCUMENT_PRESENT: {
     id: "LAB_EXTERNAL_DOCUMENT_PRESENT",
     label: "Überweisungsdokument vorhanden",
@@ -815,6 +816,24 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  TERMIN_PREPARATION_REQUIRED: {
+    id: "TERMIN_PREPARATION_REQUIRED",
+    label: "Terminvorbereitung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      {
+        id: "TERMIN_PREPARATION_REQUIRED-Q1",
+        text: "Gibt es für diesen Termin besondere Vorbereitungshinweise?",
+      },
+    ],
+    textByStatus: {
+      // bewusst leer – Inhalte kommen ausschließlich über globalHints
+    },
+  },
+
   // ---- GLOBAL ACTIONS ----
 
   DIGITAL_REQUEST: {
@@ -917,7 +936,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte laden Sie relevante Unterlagen (z. B. Facharztbericht, Medikamentenplan) über die digitale Anfrage hoch.",
+        "Bitte laden Sie relevante Unterlagen über Ihren Doctolib Account hoch.",
     },
   },
 
@@ -1406,6 +1425,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Vorbereitender Impfpass-Hinweis – nicht mehr in IMMUNIZATION.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   IMMUNIZATION_PASS_MISSING: {
     id: "IMMUNIZATION_PASS_MISSING",
     label: "Impfpass fehlt",
@@ -1476,6 +1496,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Fachprozesswissen (z. B. Labor → Arzttermin) gehört ins jeweilige Fachprofil, nicht in APPOINTMENT. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_PROCESS_MULTI_STEP: {
     id: "APPOINTMENT_PROCESS_MULTI_STEP",
     label: "Mehrstufiger Ablauf erforderlich",
@@ -1493,6 +1514,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Generischer Vorbereitungshinweis – wird jetzt über TERMIN_PREPARATION_REQUIRED (GLOBAL) + globalHints abgebildet. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_PREPARATION_REQUIRED: {
     id: "APPOINTMENT_PREPARATION_REQUIRED",
     label: "Vorbereitung erforderlich",
@@ -1527,6 +1549,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Dokumentenlogik gehört in das jeweilige Fachprofil (eGK → ONBOARDING; Befunde → MEDICAL_DOCUMENTS; Impfpass → IMMUNIZATION). Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_DOCUMENT_MISSING: {
     id: "APPOINTMENT_DOCUMENT_MISSING",
     label: "Dokument fehlt",
@@ -1544,6 +1567,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Fachliches Kanal-Urteil (körperliche Untersuchung, akute Beschwerden) ist abhängig vom konkreten Anliegen und gehört ins Fachprofil, nicht in APPOINTMENT. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_VIDEO_LIMITATIONS: {
     id: "APPOINTMENT_VIDEO_LIMITATIONS",
     label: "Videosprechstunde nicht geeignet",
@@ -1561,6 +1585,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Technische Voraussetzungen der Videosprechstunde (Kamera, Mikrofon, Link, Region) sind Technik-Infrastruktur und gehören in TECH_SUPPORT. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_VIDEO_REQUIREMENTS: {
     id: "APPOINTMENT_VIDEO_REQUIREMENTS",
     label: "Voraussetzungen Videosprechstunde",
@@ -1592,7 +1617,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen (z. B. keine medizinische Indikation, individuelle Gesundheitsleistung / IGeL). Die Abrechnung erfolgt privat nach der GOÄ.",
+        "Die angefragte Leistung wird nicht von der gesetzlichen Krankenkasse übernommen (z. B. keine medizinische Indikation, individuelle Gesundheitsleistung / IGeL). Die Abrechnung erfolgt privat nach der GOÄ. Selbstzahlerleistungen können vor Ort per Karte bezahlt werden.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1648,7 +1673,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Versichertenkarte oder Abrechnungsunterlagen). Bitte reichen Sie diese ein.",
+        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Gesundheitskarte oder Privatärztlichen Abrechnungsschein).",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1668,7 +1693,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Abrechnung erfolgt über einen externen Abrechnungsdienstleister oder ein Partnerlabor. Sie erhalten die Rechnung direkt von dort.",
+        "Die Rechnung erhalten Sie von einem externen Abrechnungsdienstleister oder einem Partnerlabor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1716,6 +1741,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Reiner Prozesshinweis (Kartenzahlung vor Ort) ohne Entscheidungsbezug – kein echter Specific-Inhalt. Nicht mehr in BILLING.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   BILLING_ONSITE_PAYMENT: {
     id: "BILLING_ONSITE_PAYMENT",
     label: "Selbstzahler-Zahlung vor Ort",
@@ -1861,7 +1887,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis. Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse zu.",
+        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis, z. B. Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2027,6 +2053,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Text zu unscharf – nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   MEDICAL_DOCUMENT_DOCUMENTATION_MISSING: {
     id: "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
     label: "Vorhandene Befunde / Nachweise fehlen",
@@ -2061,6 +2088,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Generischer Ablaufhinweis (Erstellung/Abholung/Übermittlung) ohne Entscheidungsbezug – beschreibt nur den Prozess, keine echte Begründung. Nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   MEDICAL_DOCUMENT_PROCESS_INFO: {
     id: "MEDICAL_DOCUMENT_PROCESS_INFO",
     label: "Ablauf der Attest-/Bescheinigungserstellung",

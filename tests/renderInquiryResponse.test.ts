@@ -1097,38 +1097,32 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
 // ---------------------------------------------------------------------------
 
 describe("PRESCRIPTION – GLOBAL_STATE wird durch explanationOutputStatuses nicht blockiert", () => {
-  /** Minimale PRESCRIPTION-Section mit IS_CHRONIC_PATIENT und MCR auf YES. */
+  /** Minimale PRESCRIPTION-Section mit IS_CHRONIC_PATIENT auf YES. */
   function makePrescriptionSection(overrides: Partial<InquirySection> = {}): InquirySection {
     return {
       inquiryId: "PRESCRIPTION",
       decisionStatus: DecisionStatus.POSSIBLE,
       checkpointStatuses: {
         IS_CHRONIC_PATIENT: ExplanationStatus.YES,
-        MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
       },
       ...overrides,
     };
   }
 
-  it("IS_CHRONIC YES + MCR YES + MCR SHOW → IS_CHRONIC-Hinweis UND MCR-Hinweis erscheinen", () => {
+  it("IS_CHRONIC YES + explanationOutputStatuses gesetzt → IS_CHRONIC-Hinweis erscheint", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
-        explanationOutputStatuses: {
-          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.SHOW,
-        } as Record<string, ExplanationOutputStatus>,
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
       }),
     ]);
     const texts = result.sections[0].attachedParagraphs;
     expect(texts.some((t) => t.includes("Dauermedikation"))).toBe(true);
-    expect(texts.some((t) => t.includes("ärztliche Konsultation"))).toBe(true);
   });
 
-  it("IS_CHRONIC YES + MCR YES + MCR HIDE → IS_CHRONIC-Hinweis erscheint, MCR nicht", () => {
+  it("IS_CHRONIC YES + explanationOutputStatuses gesetzt → MCR erscheint nicht (nicht gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
-        explanationOutputStatuses: {
-          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.HIDE,
-        } as Record<string, ExplanationOutputStatus>,
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
       }),
     ]);
     const texts = result.sections[0].attachedParagraphs;
@@ -1137,10 +1131,11 @@ describe("PRESCRIPTION – GLOBAL_STATE wird durch explanationOutputStatuses nic
   });
 
   it("GLOBAL MODULAR ohne SHOW bleibt verborgen, wenn explanationOutputStatuses vorhanden ist", () => {
-    // explanationOutputStatuses ist gesetzt, enthält MCR aber nicht → MCR darf nicht erscheinen
+    // MCR ist nicht mehr in PRESCRIPTION gebunden – erscheint auch bei explizitem YES nicht
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: {
+          IS_CHRONIC_PATIENT: ExplanationStatus.YES,
           MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
         },
         explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
@@ -1396,11 +1391,11 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
     expect(prescriptionProfile.specificCheckpointIds).toEqual([
-      "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_BTM_ADHS_RULES",
-      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
+      "PRESCRIPTION_STATUTORY_POSSIBLE",
     ]);
   });
 
@@ -1412,14 +1407,14 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_PRIVATE_ONLY");
   });
 
-  it("PRESCRIPTION-Profil bindet genau drei Global Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet genau zwei Global Checkpoints", () => {
     expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("IS_CHRONIC_PATIENT");
     expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("PATIENT_NOT_IN_GERMANY");
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toHaveLength(3);
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toHaveLength(2);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im PRESCRIPTION-Profil", () => {
@@ -1746,13 +1741,13 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
   it("LAB-Profil bindet die erwarteten Specific Checkpoints", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER");
     expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_REFERRAL");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
+    expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_DOCUMENT_PRESENT");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAY");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_SELF_PAYER_IGEL");
     expect(labProfile.specificCheckpointIds).toContain("LAB_MPU_EXCLUSION");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_BILLING");
-    expect(labProfile.specificCheckpointIds).toHaveLength(4);
+    expect(labProfile.specificCheckpointIds).toHaveLength(3);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -1768,7 +1763,8 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
     expect(labProfile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(1);
+    expect(labProfile.boundGlobalCheckpointIds).toContain("TERMIN_PREPARATION_REQUIRED");
+    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(2);
   });
 
   it("Alle gebundenen Global Checkpoints haben globalHints im LAB-Profil", () => {
@@ -2080,14 +2076,14 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(profile.boundActionCheckpointIds).toEqual(expect.arrayContaining(ids));
   });
 
-  it("SAMPLE_COLLECTION hat einen boundGlobalCheckpointId: MEDICAL_CONSULTATION_REQUIRED", () => {
+  it("SAMPLE_COLLECTION hat keine boundGlobalCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
     expect(profile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(profile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
-    expect(profile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
+    expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
   });
 
   it("SAMPLE_COLLECTION hat die erwarteten availableActionIds", () => {
@@ -2097,7 +2093,7 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
     expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
     expect(profile.availableActionIds).toContain("DIGITAL_REQUEST");
-    expect(profile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 });
 
@@ -2496,18 +2492,18 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("ACUTE_CARE hat genau 4 specificCheckpointIds", () => {
+  it("ACUTE_CARE hat genau 4 specificCheckpointIds (inkl. ACUTE_APPOINTMENT_INFO, wiederhergestellt)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     expect(profile.specificCheckpointIds).toHaveLength(4);
   });
 
-  it("alle 4 SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+  it("alle 4 verbleibenden SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     const ids = [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
-      "ACUTE_APPOINTMENT_INFO",
       "CHRONIC_EXCLUSION",
+      "ACUTE_APPOINTMENT_INFO",
     ];
     for (const id of ids) {
       expect(profile.specificCheckpointIds).toContain(id);
@@ -2517,11 +2513,10 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 
-  it("alle 4 SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
+  it("alle 3 verbleibenden SPECIFIC Checkpoints sind EXPLANATION / SPECIFIC / ATTACHED", () => {
     for (const id of [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
-      "ACUTE_APPOINTMENT_INFO",
       "CHRONIC_EXCLUSION",
     ]) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -2531,12 +2526,12 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat 3 boundGlobalCheckpointIds: INFECTIOUS_PROTOCOL, ACUTE_OPEN_CONSULTATION_INFO, MEDICAL_CONSULTATION_REQUIRED", () => {
+  it("ACUTE_CARE hat 2 boundGlobalCheckpointIds: INFECTIOUS_PROTOCOL, ACUTE_OPEN_CONSULTATION_INFO", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(3);
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(2);
     expect(profile.boundGlobalCheckpointIds).toContain("INFECTIOUS_PROTOCOL");
     expect(profile.boundGlobalCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_INFO");
-    expect(profile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
   });
 
@@ -2553,7 +2548,7 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(profile.availableActionIds).not.toContain("OPEN_CONSULTATION");
     expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
     expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
-    expect(profile.boundGlobalCheckpointIds).toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 });
 
@@ -2596,7 +2591,7 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
     );
   });
 
-  it("ACUTE_APPOINTMENT_INFO YES → Text in attachedParagraphs", () => {
+  it("ACUTE_APPOINTMENT_INFO YES → Text in attachedParagraphs (wiederhergestellt)", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
         checkpointStatuses: { ACUTE_APPOINTMENT_INFO: ExplanationStatus.YES },

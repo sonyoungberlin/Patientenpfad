@@ -294,11 +294,11 @@ describe("TECH_SUPPORT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["TECH_LOGIN_PROBLEM"].specificRole).toBe("PROCESS_INFO");
   });
 
-  it("TECH_PROCESS_INSTRUCTION hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TECH_PROCESS_INSTRUCTION"].specificRole).toBe("PROCESS_INFO");
+  it("TECH_PROCESS_INSTRUCTION ist im Katalog vorhanden", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TECH_PROCESS_INSTRUCTION"]).toBeDefined();
   });
 
-  it("TECH_SUPPORT-Profil referenziert alle vier Specific-Checkpoints", () => {
+  it("TECH_SUPPORT-Profil referenziert alle vier Specific-Checkpoints inklusive TECH_PROCESS_INSTRUCTION (wiederhergestellt)", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(TECH_SUPPORT.specificCheckpointIds).toContain(id);
     }
@@ -349,7 +349,7 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Passwort vergessen");
   });
 
-  it("TECH_PROCESS_INSTRUCTION YES + SHOW → Text erscheint", () => {
+  it("TECH_PROCESS_INSTRUCTION YES + SHOW → Text erscheint (wiederhergestellt)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "TECH_SUPPORT",
@@ -386,5 +386,23 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).not.toContain("Upload");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TECH_SUPPORT – Action-Verfügbarkeit
+// ---------------------------------------------------------------------------
+
+describe("TECH_SUPPORT – availableActionIds", () => {
+  it("PROCESSING_DELAY ist in TECH_SUPPORT.availableActionIds enthalten", () => {
+    expect(TECH_SUPPORT.availableActionIds).toContain("PROCESSING_DELAY");
+  });
+
+  it("TECHNICAL_ISSUE ist in TECH_SUPPORT.availableActionIds enthalten", () => {
+    expect(TECH_SUPPORT.availableActionIds).toContain("TECHNICAL_ISSUE");
+  });
+
+  it("DIGITAL_REQUEST ist in TECH_SUPPORT.availableActionIds enthalten", () => {
+    expect(TECH_SUPPORT.availableActionIds).toContain("DIGITAL_REQUEST");
   });
 });

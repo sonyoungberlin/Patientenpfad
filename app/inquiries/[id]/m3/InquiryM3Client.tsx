@@ -107,6 +107,13 @@ const ACTION_CATEGORY_LABELS: Record<string, string> = {
   INFO: "Information",
 };
 
+/** Gemeinsamer Stil für dezente Gruppen-Badges (immer kombiniert mit className="text-muted text-small"). */
+const GROUP_BADGE_STYLE = {
+  fontWeight: 600 as const,
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.04em",
+};
+
 function optionsForKind(kind: InquiryCheckpointKind) {
   switch (kind) {
     case InquiryCheckpointKind.PREPARATION:
@@ -385,13 +392,26 @@ export default function InquiryM3Client({
       ) : (
         <>
           {/* Decision + SPECIFIC Checkpoints per inquiry */}
-          {sections.map((section) => (
+          {sections.map((section) => {
+            const visibleSpecificCps = section.specificCheckpoints.filter((cp) =>
+              cp.kind !== InquiryCheckpointKind.EXPLANATION ||
+              statuses[cp.id] === "YES" ||
+              statuses[cp.id] === "NO",
+            );
+            return (
             <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
 
               {/* Decision – nur bei Profilen mit Decision-Checkpoint */}
               {section.decisionCheckpointId && (
-                <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
+                <>
+                  <div
+                    className="text-muted text-small"
+                    style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+                  >
+                    <span aria-hidden="true">? </span>Entscheidung
+                  </div>
+                  <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
                   <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
                   {section.decisionQuestions.length > 0 && (
                     <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
@@ -416,15 +436,19 @@ export default function InquiryM3Client({
                     disabled={false}
                   />
                 </div>
+                </>
               )}
 
               {/* SPECIFIC Checkpoints */}
-              {section.specificCheckpoints
-                .filter((cp) =>
-                  cp.kind !== InquiryCheckpointKind.EXPLANATION ||
-                  statuses[cp.id] === "YES" ||
-                  statuses[cp.id] === "NO",
-                )
+              {visibleSpecificCps.length > 0 && (
+                <div
+                  className="text-muted text-small"
+                  style={{ ...GROUP_BADGE_STYLE, margin: "0.5rem 0 0.25rem" }}
+                >
+                  <span aria-hidden="true">+ </span>Zusatzinfos
+                </div>
+              )}
+              {visibleSpecificCps
                 .map((cp) => {
                 const m2Status = statuses[cp.id];
                 const m2Label =
@@ -501,8 +525,8 @@ export default function InquiryM3Client({
               {/* Globale Output-Bausteine (GLOBAL MODULAR EXPLANATION) */}
               {(section.boundGlobalOutputCheckpoints ?? []).length > 0 && (
                 <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
-                  <div className="text-muted text-small" style={{ marginBottom: "0.35rem", fontStyle: "italic" }}>
-                    Globale Bausteine
+                  <div className="text-muted text-small" style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}>
+                    <span aria-hidden="true">ⓘ </span>Globale Bausteine
                   </div>
                   {(section.boundGlobalOutputCheckpoints ?? []).map((cp) => (
                     <div
@@ -530,13 +554,14 @@ export default function InquiryM3Client({
                 </div>
               )}
             </section>
-          ))}
+            );
+          })}
 
           {/* Action checkpoints (globale availableActionIds + profilgebundene boundActionCheckpointIds) */}
           {(actionCheckpoints.length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
             <section style={{ marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: actionsOpen ? "0.5rem" : 0 }}>
-                <h2 style={{ margin: 0 }}>Aktionen / Infos</h2>
+                <h2 style={{ margin: 0 }}><span aria-hidden="true">→ </span>Aktionen / Infos</h2>
                 <button
                   type="button"
                   onClick={() => setActionsOpen((o) => !o)}

@@ -44,9 +44,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "AU_DECISION",
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
+      "AU_NEW_PATIENT_LIMIT",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
-      "AU_NEW_PATIENT_LIMIT",
       "AU_DIGITAL_AU_PROCESS",
     ],
     boundGlobalCheckpointIds: [
@@ -198,16 +198,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 40,
     decisionCheckpointId: "PRESCRIPTION_DECISION",
     specificCheckpointIds: [
-      "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_BTM_ADHS_RULES",
-      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
+      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
+      "PRESCRIPTION_STATUTORY_POSSIBLE",
     ],
     boundGlobalCheckpointIds: [
       "IS_CHRONIC_PATIENT",
       "PATIENT_NOT_IN_GERMANY",
-      "MEDICAL_CONSULTATION_REQUIRED",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -222,7 +221,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {
       PATIENT_NOT_IN_GERMANY: "Rezepte können in deutschen Apotheken zuverlässig eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
       IS_CHRONIC_PATIENT: "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
     },
     actionGuidanceRules: [
       // 1. DOCUMENT_UPLOAD empfehlen, wenn Facharztbericht erforderlich
@@ -485,19 +483,21 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 80,
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
-      "LAB_INTERNAL_ORDER",
-      "LAB_EXTERNAL_REFERRAL",
-      "LAB_EXTERNAL_DOCUMENT_PRESENT",
       "LAB_MPU_EXCLUSION",
+      "LAB_EXTERNAL_REFERRAL",
+      "LAB_INTERNAL_ORDER",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
+      "TERMIN_PREPARATION_REQUIRED",
     ],
     globalHints: {
       MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+      TERMIN_PREPARATION_REQUIRED: "Bitte erscheinen Sie nüchtern zur Blutentnahme.",
     },
     boundActionCheckpointIds: [
       "LAB_FASTING_REQUIRED",
+      "LAB_RESULT_TIME",
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -619,12 +619,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 90,
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
     specificCheckpointIds: [],
-    boundGlobalCheckpointIds: [
-      "MEDICAL_CONSULTATION_REQUIRED",
-    ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    boundGlobalCheckpointIds: [],
+    globalHints: {},
     boundActionCheckpointIds: [
       "URINE_SAMPLE_INSTRUCTIONS",
       "STOOL_SAMPLE_INSTRUCTIONS",
@@ -732,15 +728,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 10,
     decisionCheckpointId: "ACUTE_CARE_DECISION",
     specificCheckpointIds: [
-      "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
-      "ACUTE_APPOINTMENT_INFO",
       "CHRONIC_EXCLUSION",
+      "ACUTE_PURPOSE",
+      "ACUTE_APPOINTMENT_INFO",
     ],
     boundGlobalCheckpointIds: [
       "INFECTIOUS_PROTOCOL",
       "ACUTE_OPEN_CONSULTATION_INFO",
-      "MEDICAL_CONSULTATION_REQUIRED",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -751,7 +746,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       INFECTIOUS_PROTOCOL:
         "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
       ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
     },
 
     // -----------------------------------------------------------------------
@@ -841,8 +835,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 60,
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [
-      "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_SPECIALTY_REQUIRED",
+      "REF_PSYCHOTHERAPY_FIRST_STEP",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
@@ -956,16 +950,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 70,
     decisionCheckpointId: "IMMUNIZATION_DECISION",
     specificCheckpointIds: [
-      "IMMUNIZATION_STATUS_UNCLEAR",
-      "IMMUNIZATION_PASS_MISSING",
       "IMMUNIZATION_TRAVEL_MEDICINE",
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+      "IMMUNIZATION_STATUS_UNCLEAR",
     ],
     boundGlobalCheckpointIds: [
-      "MEDICAL_CONSULTATION_REQUIRED",
+      "TERMIN_PREPARATION_REQUIRED",
     ],
     globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+      TERMIN_PREPARATION_REQUIRED: "Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.",
     },
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -1072,19 +1065,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "APPOINTMENT_WRONG_TYPE",
-      "APPOINTMENT_PROCESS_MULTI_STEP",
-      "APPOINTMENT_PREPARATION_REQUIRED",
       "APPOINTMENT_DATA_INCOMPLETE",
-      "APPOINTMENT_DOCUMENT_MISSING",
-      "APPOINTMENT_VIDEO_LIMITATIONS",
-      "APPOINTMENT_VIDEO_REQUIREMENTS",
     ],
     boundGlobalCheckpointIds: [
-      "MEDICAL_CONSULTATION_REQUIRED",
       "ACUTE_OPEN_CONSULTATION_INFO",
     ],
     globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
       ACUTE_OPEN_CONSULTATION_INFO: "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
     },
     availableActionIds: [
@@ -1217,6 +1203,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
+      "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
 
@@ -1294,17 +1281,44 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 100,
     decisionCheckpointId: "",
     specificCheckpointIds: [
+      "ONBOARDING_WRONG_PRACTICE",
       "ONBOARDING_DATA_INCOMPLETE",
+      "ONBOARDING_IDENTITY_MISMATCH",
       "ONBOARDING_GKV_DOCUMENT_MISSING",
       "ONBOARDING_PKV_PAS_MISSING",
-      "ONBOARDING_IDENTITY_MISMATCH",
-      "ONBOARDING_WRONG_PRACTICE",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "DOCUMENT_UPLOAD",
+      "TECHNICAL_ISSUE",
+    ],
+    actionGuidanceRules: [
+      // DOCUMENT_UPLOAD empfehlen, wenn GKV-Versicherungsnachweis fehlt
+      {
+        id: "ONBOARDING_GKV_DOCUMENT_UPLOAD_RECOMMENDED",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "ONBOARDING",
+        when: {
+          allOf: [
+            { checkpointId: "ONBOARDING_GKV_DOCUMENT_MISSING", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // DOCUMENT_UPLOAD empfehlen, wenn PKV-Unterlagen (Identitätsnachweis/PAS-Formular) fehlen
+      {
+        id: "ONBOARDING_PKV_DOCUMENT_UPLOAD_RECOMMENDED",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "ONBOARDING",
+        when: {
+          allOf: [
+            { checkpointId: "ONBOARDING_PKV_PAS_MISSING", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
     ],
 
     // -----------------------------------------------------------------------
@@ -1365,7 +1379,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "ISSUE_BLOCKED_MISSING_INFO",
         label: "Daten / Dokumente fehlen",
         relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: [
+          "ONBOARDING_GKV_DOCUMENT_UPLOAD_RECOMMENDED",
+          "ONBOARDING_PKV_DOCUMENT_UPLOAD_RECOMMENDED",
+        ],
       },
       {
         id: "ISSUE_BLOCKED_EXTERNAL",
@@ -1389,12 +1406,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "BILLING_COST_NOT_COVERED",
-      "BILLING_EXTERNAL_PROVIDER",
+      "BILLING_EXTERNAL_RESPONSIBILITY",
       "BILLING_ADDRESS_MISSING",
       "BILLING_DOCUMENT_MISSING",
-      "BILLING_EXTERNAL_RESPONSIBILITY",
+      "BILLING_EXTERNAL_PROVIDER",
       "BILLING_INVOICE_TIMING",
-      "BILLING_ONSITE_PAYMENT",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -1404,6 +1420,20 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
       "DOCUMENT_UPLOAD",
+    ],
+    actionGuidanceRules: [
+      // DOCUMENT_UPLOAD empfehlen, wenn Abrechnungsunterlagen fehlen
+      {
+        id: "BILLING_DOCUMENT_UPLOAD_RECOMMENDED",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "BILLING",
+        when: {
+          allOf: [
+            { checkpointId: "BILLING_DOCUMENT_MISSING", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
     ],
 
     // -----------------------------------------------------------------------
@@ -1470,7 +1500,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "ISSUE_BLOCKED_MISSING_INFO",
         label: "Daten / Dokumente fehlen",
         relevantSpecificRoles: ["MISSING_INFORMATION", "MISSING_DOCUMENT"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: ["BILLING_DOCUMENT_UPLOAD_RECOMMENDED"],
       },
       {
         id: "MEDICAL_REVIEW_NEEDED",
@@ -1493,10 +1523,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 50,
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
     specificCheckpointIds: [
-      "MEDICAL_DOCUMENT_INFO_MISSING",
-      "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
-      "MEDICAL_DOCUMENT_PROCESS_INFO",
+      "MEDICAL_DOCUMENT_INFO_MISSING",
     ],
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
