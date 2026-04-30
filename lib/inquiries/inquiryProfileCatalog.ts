@@ -824,14 +824,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      INFECTIOUS_PROTOCOL:
-        "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
-    },
+    globalHints: {},
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "ACUTE_BOOKING_INFO",
       "CARE_CHANNEL_CHOICE",
+      "INFECTIOUS_CONTACT_DIGITALLY",
+      "INFECTIOUS_VIDEO_CONSULTATION",
+      "INFECTIOUS_DO_NOT_ENTER_UNANNOUNCED",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
@@ -842,6 +842,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       CARE_CHANNEL_CHOICE: {
         hideWhenAny: [],
+      },
+      INFECTIOUS_CONTACT_DIGITALLY: {
+        showWhenAny: [{ INFECTIOUS_PROTOCOL: "YES" }],
+      },
+      INFECTIOUS_VIDEO_CONSULTATION: {
+        showWhenAny: [{ INFECTIOUS_PROTOCOL: "YES" }],
+      },
+      INFECTIOUS_DO_NOT_ENTER_UNANNOUNCED: {
+        showWhenAny: [{ INFECTIOUS_PROTOCOL: "YES" }],
       },
     },
 

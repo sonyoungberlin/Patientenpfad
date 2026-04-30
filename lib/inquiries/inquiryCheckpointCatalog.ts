@@ -1461,8 +1461,47 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
+        "Es besteht der Verdacht auf eine ansteckende Erkrankung.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  INFECTIOUS_CONTACT_DIGITALLY: {
+    id: "INFECTIOUS_CONTACT_DIGITALLY",
+    label: "Infektionsschutz – vorab digital melden",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte melden Sie sich vorab digital bei uns.",
+    },
+  },
+
+  INFECTIOUS_VIDEO_CONSULTATION: {
+    id: "INFECTIOUS_VIDEO_CONSULTATION",
+    label: "Infektionsschutz – Videosprechstunde",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Alternativ können Sie eine Videosprechstunde wählen.",
+    },
+  },
+
+  INFECTIOUS_DO_NOT_ENTER_UNANNOUNCED: {
+    id: "INFECTIOUS_DO_NOT_ENTER_UNANNOUNCED",
+    label: "Infektionsschutz – nicht unangemeldet erscheinen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte kommen Sie bei Verdacht auf eine ansteckende Erkrankung nicht unangemeldet in die Praxis.",
     },
   },
 

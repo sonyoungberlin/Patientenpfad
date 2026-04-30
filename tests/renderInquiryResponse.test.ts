@@ -2640,11 +2640,9 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
   });
 
-  it("ACUTE_CARE.globalHints enthält Eintrag für INFECTIOUS_PROTOCOL", () => {
+  it("ACUTE_CARE.globalHints ist leer (INFECTIOUS_PROTOCOL-Redundanz wurde entfernt)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    for (const id of profile.boundGlobalCheckpointIds) {
-      expect(profile.globalHints).toHaveProperty(id);
-    }
+    expect(profile.globalHints).toEqual({});
   });
 
   it("ACUTE_CARE hat die erwarteten availableActionIds", () => {
@@ -2743,14 +2741,14 @@ describe("ACUTE_CARE-Profil – SPECIFIC Checkpoints YES → Output", () => {
     );
   });
 
-  it("INFECTIOUS_PROTOCOL YES → Text in attachedParagraphs", () => {
+  it("INFECTIOUS_PROTOCOL YES → reiner Kontext-Text in attachedParagraphs (keine Handlungsaufforderung)", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({
         checkpointStatuses: { INFECTIOUS_PROTOCOL: ExplanationStatus.YES },
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
+      "Es besteht der Verdacht auf eine ansteckende Erkrankung.",
     );
   });
 });
