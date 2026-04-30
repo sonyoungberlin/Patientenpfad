@@ -971,9 +971,19 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
     expect(auProfile.boundGlobalCheckpointIds).toHaveLength(1);
   });
 
-  it("Alle gebundenen Global Checkpoints haben globalHints im AU-Profil", () => {
+  it("MODULAR-gebundene Global Checkpoints liefern Text über textByStatus – kein globalHints-Override erforderlich", () => {
     for (const id of auProfile.boundGlobalCheckpointIds) {
-      expect(auProfile.globalHints).toHaveProperty(id);
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      if (cp.classification === "MODULAR") {
+        // MODULAR-Checkpoints liefern Text über textByStatus im Katalog; globalHints ist optional.
+        const catalogText = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+        const hintText = auProfile.globalHints[id];
+        expect(catalogText || hintText).toBeTruthy();
+      } else {
+        // GLOBAL_STATE-Checkpoints ohne eigenen Text benötigen globalHints.
+        expect(auProfile.globalHints).toHaveProperty(id);
+      }
     }
   });
 
@@ -1050,12 +1060,11 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
     ).toBe(true);
   });
 
-  it("globalHints Override hat Vorrang vor checkpoint.textByStatus[YES]", () => {
-    // AU-Profil hat globalHints für MCR – dieser Text hat Vorrang
-    const auGlobalHintsMCR = INQUIRY_PROFILE_CATALOG_V2["AU"]?.globalHints?.["MEDICAL_CONSULTATION_REQUIRED"];
+  it("MCR Text kommt aus textByStatus – kein redundantes globalHints-Override im AU-Profil", () => {
+    // AU-Profil hat kein globalHints für MCR mehr – Katalogtext (textByStatus.YES) greift direkt.
+    expect(INQUIRY_PROFILE_CATALOG_V2["AU"]?.globalHints?.["MEDICAL_CONSULTATION_REQUIRED"]).toBeUndefined();
     const checkpointText = (INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_CONSULTATION_REQUIRED"].textByStatus as Record<string, string>)[ExplanationStatus.YES];
-    // Beide Texte sind identisch im AU-Profil – Vorrang-Semantik wird über PRESCRIPTION getestet,
-    // wo globalHints[MCR] ebenfalls identisch ist. Zum Nachweis: globalHints-Text taucht auf.
+    expect(checkpointText).toBeTruthy();
     const result = renderInquiryResponseFromSections([
       makeAuSectionForGlobal({
         checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
@@ -1063,8 +1072,7 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
       }),
     ]);
     const outputText = result.sections[0].attachedParagraphs.join(" ");
-    // Der Output-Text muss entweder globalHints oder textByStatus entsprechen
-    expect(auGlobalHintsMCR ?? checkpointText).toBeTruthy();
+    // Text kommt unverändert aus dem Katalog
     expect(outputText).toContain("ärztliche Konsultation");
   });
 
@@ -1782,9 +1790,18 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.boundGlobalCheckpointIds).toHaveLength(1);
   });
 
-  it("Alle gebundenen Global Checkpoints haben globalHints im LAB-Profil", () => {
+  it("MODULAR-gebundene Global Checkpoints liefern Text über textByStatus – kein globalHints-Override erforderlich", () => {
     for (const id of labProfile.boundGlobalCheckpointIds) {
-      expect(labProfile.globalHints).toHaveProperty(id);
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      if (cp.classification === "MODULAR") {
+        // MODULAR-Checkpoints liefern Text über textByStatus; globalHints ist optional.
+        const catalogText = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+        const hintText = labProfile.globalHints[id];
+        expect(catalogText || hintText).toBeTruthy();
+      } else {
+        expect(labProfile.globalHints).toHaveProperty(id);
+      }
     }
   });
 
@@ -2306,10 +2323,10 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
   });
 
-  it("REFERRAL hat globalHints für MEDICAL_CONSULTATION_REQUIRED", () => {
+  it("REFERRAL hat kein redundantes globalHints für MEDICAL_CONSULTATION_REQUIRED (Katalogtext greift automatisch)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     expect(profile.globalHints).toBeDefined();
-    expect(profile.globalHints).toHaveProperty("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.globalHints).not.toHaveProperty("MEDICAL_CONSULTATION_REQUIRED");
   });
 
   it("REFERRAL hat die erwarteten availableActionIds", () => {

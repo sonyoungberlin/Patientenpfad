@@ -870,6 +870,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- GLOBAL EXPLANATIONS ----
 
+  /**
+   * @deprecated Wurde durch profilspezifische Checkpoints ersetzt.
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   IS_NEW_PATIENT: {
     id: "IS_NEW_PATIENT",
     label: "Neupatient",
@@ -892,6 +896,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Wurde durch profilspezifische Checkpoints ersetzt.
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   DOCTOR_REVIEW_REQUIRED: {
     id: "DOCTOR_REVIEW_REQUIRED",
     label: "Ärztliche Einschätzung erforderlich",
@@ -903,6 +911,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Wurde durch profilspezifische Checkpoints ersetzt.
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   DATA_INCOMPLETE: {
     id: "DATA_INCOMPLETE",
     label: "Angaben unvollständig",

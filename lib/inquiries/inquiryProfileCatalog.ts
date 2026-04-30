@@ -53,9 +53,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
@@ -534,9 +533,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    globalHints: {},
     boundActionCheckpointIds: [
       "LAB_APPOINTMENT_INTERNAL",
       "LAB_APPOINTMENT_INDIVIDUAL",
@@ -948,9 +946,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    globalHints: {},
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
