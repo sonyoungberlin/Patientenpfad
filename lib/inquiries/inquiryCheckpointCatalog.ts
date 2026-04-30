@@ -2609,7 +2609,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Ihre Nachricht ist bei uns eingegangen. Für die weitere Bearbeitung benötigen wir noch strukturierte Angaben.",
+        "Ihre Nachricht ist bei uns eingegangen.",
     },
   },
 
@@ -2622,7 +2622,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Vielen Dank für das Ausfüllen des Fragebogens. Wir haben Ihre Angaben geprüft.",
+        "Vielen Dank für das Ausfüllen des Fragebogens.",
     },
   },
 
@@ -2635,7 +2635,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bei der Durchsicht Ihrer Unterlagen ist uns aufgefallen, dass noch Angaben fehlen.",
+        "Bei der Durchsicht Ihrer Unterlagen ist uns etwas aufgefallen.",
     },
   },
 
@@ -2648,7 +2648,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch folgende Angaben.",
+        "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch folgende Angaben:",
     },
   },
 };
