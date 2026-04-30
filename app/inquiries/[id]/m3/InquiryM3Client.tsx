@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   DecisionStatus,
   ExplanationOutputStatus,
@@ -181,10 +181,12 @@ function OutputView({
   output,
   heading,
   m5Lines,
+  questionnaireLink,
 }: {
   output: InquiryResponseV2Output;
   heading: string;
   m5Lines: string[];
+  questionnaireLink?: string | null;
 }) {
   return (
     <div
@@ -216,6 +218,34 @@ function OutputView({
         </section>
       )}
 
+      {questionnaireLink && (
+        <section
+          data-q-output-link-section
+          style={{
+            paddingTop: "0.75rem",
+            borderTop: "1px dashed var(--border)",
+          }}
+        >
+          <p style={{ margin: "0 0 0.25rem", fontWeight: 500, fontSize: "0.9rem" }}>
+            <span aria-hidden="true">🔗 </span>Fragebogen-Link
+          </p>
+          <code
+            data-q-generated-link
+            style={{
+              display: "block",
+              wordBreak: "break-all",
+              background: "var(--input-background)",
+              padding: "0.4rem 0.6rem",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              fontSize: "0.85rem",
+            }}
+          >
+            {questionnaireLink}
+          </code>
+        </section>
+      )}
+
       {m5Lines.length > 0 && (
         <section>
           <h3 style={{ marginBottom: "0.5rem" }}>Dokumentation</h3>
@@ -236,46 +266,20 @@ function OutputView({
 // Fragebogen-Anforderungsbereich (vollständig isoliert von InquirySession-Logik)
 // ---------------------------------------------------------------------------
 
-const QUESTIONNAIRE_MESSAGE_INTRO =
-  "Liebe Patientin, lieber Patient,\n" +
-  "für Ihre weitere Versorgung bitten wir Sie, den folgenden Fragebogen auszufüllen:";
-
-export function buildQuestionnaireMessageText(generatedLink: string, signature: string): string {
-  const parts = [QUESTIONNAIRE_MESSAGE_INTRO, generatedLink];
-  if (signature.trim()) parts.push(signature.trim());
-  return parts.join("\n\n");
-}
-
-function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: string }) {
+function QuestionnaireRequestSection({
+  inquirySessionId,
+  onLinkGenerated,
+}: {
+  inquirySessionId: string;
+  onLinkGenerated: (link: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [patientRef, setPatientRef] = useState("");
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
-  const [messageText, setMessageText] = useState<string>("");
-  const [signature, setSignature] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  const [copiedMessage, setCopiedMessage] = useState(false);
   const [reqError, setReqError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/account/signature")
-      .then((r) => r.json())
-      .then((data: { ok?: boolean; signature?: string }) => {
-        if (data.ok) {
-          setSignature(data.signature ?? "");
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // Rebuild message whenever link or signature changes so a late-loading
-  // signature is always included in the draft.
-  useEffect(() => {
-    if (link) {
-      setMessageText(buildQuestionnaireMessageText(link, signature));
-    }
-  }, [link, signature]);
 
   function toggleBlock(blockId: string) {
     setSelectedBlocks((prev) => ({ ...prev, [blockId]: !prev[blockId] }));
@@ -287,9 +291,7 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
     setLoading(true);
     setReqError(null);
     setCopied(false);
-    setCopiedMessage(false);
     setLink(null);
-    setMessageText("");
 
     const blockIds = BLOCK_IDS_SORTED.filter((id) => selectedBlocks[id]);
     try {
@@ -308,6 +310,7 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
         return;
       }
       setLink(data.link);
+      onLinkGenerated(data.link);
     } catch {
       setReqError("Netzwerkfehler. Bitte erneut versuchen.");
     } finally {
@@ -322,16 +325,6 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
       setCopied(true);
     } catch {
       setReqError("Link konnte nicht in die Zwischenablage kopiert werden.");
-    }
-  }
-
-  async function copyMessage() {
-    if (!messageText) return;
-    try {
-      await navigator.clipboard.writeText(messageText);
-      setCopiedMessage(true);
-    } catch {
-      setReqError("Nachricht konnte nicht in die Zwischenablage kopiert werden.");
     }
   }
 
@@ -458,43 +451,17 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
 
           {link && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <code
-                data-q-generated-link
-                style={{
-                  display: "block",
-                  wordBreak: "break-all",
-                  background: "var(--input-background)",
-                  padding: "0.5rem 0.75rem",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius)",
-                  fontSize: "0.85rem",
-                }}
+              <p className="text-muted text-small" style={{ margin: 0 }}>
+                Link erzeugt – er erscheint auch in der Nachrichtenvorschau oben.
+              </p>
+              <button
+                type="button"
+                data-q-copy-link
+                onClick={() => void copyLink()}
+                style={{ alignSelf: "flex-start" }}
               >
-                {link}
-              </code>
-              <textarea
-                data-q-message-preview
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                rows={6}
-                style={{ width: "100%", resize: "vertical" }}
-              />
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                <button
-                  type="button"
-                  data-q-copy-link
-                  onClick={() => void copyLink()}
-                >
-                  {copied ? "Kopiert ✓" : "Link kopieren"}
-                </button>
-                <button
-                  type="button"
-                  data-q-copy-message
-                  onClick={() => void copyMessage()}
-                >
-                  {copiedMessage ? "Kopiert ✓" : "Nachricht kopieren"}
-                </button>
-              </div>
+                {copied ? "Kopiert ✓" : "Link kopieren"}
+              </button>
             </div>
           )}
         </div>
@@ -600,6 +567,7 @@ export default function InquiryM3Client({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [questionnaireLink, setQuestionnaireLink] = useState<string | null>(null);
 
   // Live preview: computed from current statuses on every render before confirm.
   // renderInquiryResponseFromSections is a pure function (no network, no side effects).
@@ -724,7 +692,7 @@ export default function InquiryM3Client({
             ✓ Anfrage bestätigt – Ansicht ist schreibgeschützt.
           </div>
           {frozenOutput && (
-            <OutputView output={frozenOutput} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
+            <OutputView output={frozenOutput} heading="Bestätigter Output" m5Lines={frozenM5Lines} questionnaireLink={questionnaireLink} />
           )}
         </>
       ) : (
@@ -1075,7 +1043,7 @@ export default function InquiryM3Client({
 
           {/* Live preview */}
           {livePreview && (
-            <OutputView output={livePreview} heading="Vorschau" m5Lines={liveM5Lines} />
+            <OutputView output={livePreview} heading="Vorschau" m5Lines={liveM5Lines} questionnaireLink={questionnaireLink} />
           )}
 
           {error && (
@@ -1083,7 +1051,7 @@ export default function InquiryM3Client({
           )}
 
           {/* Fragebogen anfordern – isolierter Bereich, keine Änderung an InquirySession */}
-          <QuestionnaireRequestSection inquirySessionId={sessionId} />
+          <QuestionnaireRequestSection inquirySessionId={sessionId} onLinkGenerated={setQuestionnaireLink} />
 
           <div style={{ marginTop: "1.5rem" }}>
             <button

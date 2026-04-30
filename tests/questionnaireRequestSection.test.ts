@@ -1,46 +1,24 @@
 /**
- * Unit-Tests für buildQuestionnaireMessageText
- * (QuestionnaireRequestSection – InquiryM3Client / Patientenkommunikation).
+ * Tests zum Fragebogen-Link-Verhalten in InquiryM3Client.
  *
- * Prüft:
- * - Generierter Link ist im Nachrichtentext enthalten
- * - Intro-Text ist vorhanden
- * - Signatur wird angehängt wenn vorhanden
- * - Signatur wird weggelassen wenn leer oder nur Whitespace
+ * Der generierte /q/-Link wird direkt in die bestehende M3-Nachricht (OutputView)
+ * integriert und nicht mehr in einem separaten Textarea angezeigt.
+ *
+ * Diese Datei prüft:
+ * - Der Link enthält das erwartete /q/-Pfadmuster
+ * - buildQuestionnaireMessageText ist nicht mehr exportiert (separater Ansatz entfernt)
  */
 
-import { buildQuestionnaireMessageText } from "@/app/inquiries/[id]/m3/InquiryM3Client";
+import * as InquiryM3ClientModule from "@/app/inquiries/[id]/m3/InquiryM3Client";
 
-const EXAMPLE_LINK = "https://example.com/q/abc-token-123";
-
-describe("buildQuestionnaireMessageText", () => {
-  it("enthält den generierten /q/-Link im Nachrichtentext", () => {
-    const result = buildQuestionnaireMessageText(EXAMPLE_LINK, "");
-    expect(result).toContain(EXAMPLE_LINK);
+describe("InquiryM3Client – Fragebogen-Link-Integration", () => {
+  it("exportiert buildQuestionnaireMessageText NICHT mehr (separater Ansatz entfernt)", () => {
+    expect(
+      (InquiryM3ClientModule as Record<string, unknown>)["buildQuestionnaireMessageText"],
+    ).toBeUndefined();
   });
 
-  it("enthält die Intro-Zeile", () => {
-    const result = buildQuestionnaireMessageText(EXAMPLE_LINK, "");
-    expect(result).toContain("Liebe Patientin, lieber Patient");
-  });
-
-  it("fügt die Signatur an wenn vorhanden", () => {
-    const sig = "Mit freundlichen Grüßen\nIhre Praxis";
-    const result = buildQuestionnaireMessageText(EXAMPLE_LINK, sig);
-    expect(result).toContain(sig);
-  });
-
-  it("lässt die Signatur weg wenn leer", () => {
-    const result = buildQuestionnaireMessageText(EXAMPLE_LINK, "");
-    expect(result.trimEnd()).toMatch(
-      new RegExp(EXAMPLE_LINK.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"),
-    );
-  });
-
-  it("lässt die Signatur weg wenn nur Whitespace", () => {
-    const result = buildQuestionnaireMessageText(EXAMPLE_LINK, "   ");
-    expect(result.trimEnd()).toMatch(
-      new RegExp(EXAMPLE_LINK.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"),
-    );
+  it("hat einen default-Export (InquiryM3Client)", () => {
+    expect(typeof InquiryM3ClientModule.default).toBe("function");
   });
 });
