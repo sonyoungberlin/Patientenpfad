@@ -2238,7 +2238,7 @@ describe("SAMPLE_COLLECTION-Profil – GLOBALs entfernt", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
+      "Untersuchungen für eine MPU werden hier nicht durchgeführt.",
     );
   });
 });

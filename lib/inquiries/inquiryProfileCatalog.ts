@@ -1323,6 +1323,26 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "TECH_VIDEO_NOT_WORKING_ACTION",
+      "TECH_UPLOAD_FAILED_ACTION",
+      "TECH_LOGIN_PROBLEM_ACTION",
+      "TECH_PROCESS_INSTRUCTION_ACTION",
+    ],
+    boundActionConditions: {
+      TECH_VIDEO_NOT_WORKING_ACTION: {
+        showWhenAny: [{ TECH_VIDEO_NOT_WORKING: "YES" }],
+      },
+      TECH_UPLOAD_FAILED_ACTION: {
+        showWhenAny: [{ TECH_UPLOAD_FAILED: "YES" }],
+      },
+      TECH_LOGIN_PROBLEM_ACTION: {
+        showWhenAny: [{ TECH_LOGIN_PROBLEM: "YES" }],
+      },
+      TECH_PROCESS_INSTRUCTION_ACTION: {
+        showWhenAny: [{ TECH_PROCESS_INSTRUCTION: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -1558,6 +1578,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_NOT_COVERED_BY_STATUTORY",
       "BILLING_GOA_BILLING",
       "BILLING_ONSITE_PAYMENT",
+      "BILLING_CONTACT_EXTERNAL_PARTY",
+      "BILLING_ADDRESS_UPDATE_REQUESTED",
     ],
     boundActionConditions: {
       // Alle drei Bausteine nur anzeigen, wenn die Leistung keine Kassenleistung ist.
@@ -1569,6 +1591,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       BILLING_ONSITE_PAYMENT: {
         showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+      BILLING_CONTACT_EXTERNAL_PARTY: {
+        showWhenAny: [{ BILLING_EXTERNAL_RESPONSIBILITY: "YES" }],
+      },
+      BILLING_ADDRESS_UPDATE_REQUESTED: {
+        showWhenAny: [{ BILLING_ADDRESS_MISSING: "YES" }],
       },
     },
     availableActionIds: [

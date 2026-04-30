@@ -653,7 +653,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_MPU_EXCLUSION-Q1", text: "Wird ein forensisches Labor oder MPU-Screening angefragt?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Untersuchungen für eine MPU werden hier nicht durchgeführt. Bitte wenden Sie sich an ein entsprechend zertifiziertes Institut.",
+      // M2-Schalter: reine Ausschlussaussage – keine Handlungsaufforderung.
+      [ExplanationStatus.YES]: "Untersuchungen für eine MPU werden hier nicht durchgeführt.",
       [ExplanationStatus.NO]: "",
     },
   },
@@ -1654,8 +1655,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "IMMUNIZATION_TRAVEL_MEDICINE-Q1", text: "Geht es um eine Reiseimpfung oder reisemedizinische Beratung?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Zuständigkeitsaussage – keine Handlungsaufforderung.
       [ExplanationStatus.YES]:
-        "Für Reiseimpfungen und reisemedizinische Beratungen wenden Sie sich bitte an eine reisemedizinisch spezialisierte Stelle.",
+        "Reiseimpfungen liegen im Zuständigkeitsbereich reisemedizinisch spezialisierter Stellen.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1690,8 +1692,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "APPOINTMENT_WRONG_TYPE-Q1", text: "Wurde ein falscher Termintyp gebucht?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Kontextaussage – Buchungsaufforderung ist in BOOK_APPOINTMENT (M3).
       [ExplanationStatus.YES]:
-        "Der gebuchte Termintyp passt nicht zum Anliegen. Bitte buchen Sie einen passenden Termin.",
+        "Der gebuchte Termintyp passt nicht zum Anliegen.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1912,8 +1915,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "BILLING_ADDRESS_MISSING-Q1", text: "Konnte eine Rechnung nicht zugestellt werden, weil die Adresse fehlt oder veraltet ist?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Zustandsaussage – Adressanforderung in BILLING_ADDRESS_UPDATE_REQUESTED (M3).
       [ExplanationStatus.YES]:
-        "Uns wurde mitgeteilt, dass Ihre Rechnung nicht zugestellt werden konnte. Bitte teilen Sie uns Ihre aktuelle Postadresse mit, damit wir diese weitergeben können.",
+        "Die aktuelle Postadresse für die Rechnungszustellung konnte nicht ermittelt werden.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2008,8 +2012,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TECH_VIDEO_NOT_WORKING-Q1", text: "Funktioniert die Videosprechstunde technisch nicht (z. B. kein Ton, kein Bild, Verbindungsabbruch)?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Zustandsaussage – Alternativkanal-Hinweis in TECH_VIDEO_NOT_WORKING_ACTION (M3).
       [ExplanationStatus.YES]:
-        "Die Videosprechstunde ist leider aktuell technisch nicht nutzbar. Bitte kontaktieren Sie uns telefonisch oder kommen Sie persönlich in die Praxis.",
+        "Die Videosprechstunde ist technisch nicht nutzbar.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2025,8 +2030,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TECH_UPLOAD_FAILED-Q1", text: "Können Dokumente nicht hochgeladen werden (z. B. Datei zu groß, falsches Format, Fehler beim Upload)?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Zustandsaussage – Alternativkanal-Hinweise in TECH_UPLOAD_FAILED_ACTION (M3).
       [ExplanationStatus.YES]:
-        "Der Dokumenten-Upload ist leider nicht möglich. Bitte senden Sie die Unterlagen per Post, Fax oder bringen Sie sie beim nächsten Besuch mit.",
+        "Der Dokumenten-Upload ist technisch nicht möglich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2042,8 +2048,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TECH_LOGIN_PROBLEM-Q1", text: "Hat der Patient Probleme beim Login oder Zugang zum Patientenportal (z. B. Passwort vergessen, Konto gesperrt)?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Zustandsaussage – Prozessanleitung in TECH_LOGIN_PROBLEM_ACTION (M3).
       [ExplanationStatus.YES]:
-        "Für den Zugang zum Patientenportal: Bitte nutzen Sie die Funktion 'Passwort vergessen' auf der Anmeldeseite. Falls das Problem weiterhin besteht, kontaktieren Sie uns direkt.",
+        "Zugangs- oder Anmeldeproblem beim Patientenportal wurde festgestellt.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2059,9 +2066,80 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TECH_PROCESS_INSTRUCTION-Q1", text: "Benötigt der Patient eine Anleitung zur Nutzung der digitalen Dienste (z. B. App-Installation, QR-Code scannen, Schritte zur Anmeldung)?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Zustandsaussage – Bedienungsanleitung in TECH_PROCESS_INSTRUCTION_ACTION (M3).
       [ExplanationStatus.YES]:
-        "So nutzen Sie unsere digitalen Dienste: 1. Laden Sie die App herunter oder öffnen Sie das Portal im Browser. 2. Registrieren Sie sich mit Ihrer E-Mail-Adresse. 3. Scannen Sie den QR-Code aus Ihrer Einladung oder geben Sie den Code manuell ein.",
+        "Anleitung zur Nutzung der digitalen Dienste wurde angefragt.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- TECH_SUPPORT ACTION-Bausteine (freigeschaltet über boundActionConditions) ----
+
+  /**
+   * Schritt-für-Schritt-Anleitung zur Nutzung der digitalen Dienste.
+   * Wird in M3 angezeigt, wenn TECH_PROCESS_INSTRUCTION = YES gesetzt ist.
+   */
+  TECH_PROCESS_INSTRUCTION_ACTION: {
+    id: "TECH_PROCESS_INSTRUCTION_ACTION",
+    label: "Anleitung: Nutzung der digitalen Dienste",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "So nutzen Sie unsere digitalen Dienste: 1. Laden Sie die App herunter oder öffnen Sie das Portal im Browser. 2. Registrieren Sie sich mit Ihrer E-Mail-Adresse. 3. Scannen Sie den QR-Code aus Ihrer Einladung oder geben Sie den Code manuell ein.",
+    },
+  },
+
+  /**
+   * Prozessanleitung bei Login-/Zugangsproblemen.
+   * Wird in M3 angezeigt, wenn TECH_LOGIN_PROBLEM = YES gesetzt ist.
+   */
+  TECH_LOGIN_PROBLEM_ACTION: {
+    id: "TECH_LOGIN_PROBLEM_ACTION",
+    label: "Anleitung: Login / Passwortzurücksetzen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für den Zugang zum Patientenportal: Bitte nutzen Sie die Funktion 'Passwort vergessen' auf der Anmeldeseite. Falls das Problem weiterhin besteht, kontaktieren Sie uns direkt.",
+    },
+  },
+
+  /**
+   * Alternativkanal-Hinweis bei nicht möglichem Dokumenten-Upload.
+   * Wird in M3 angezeigt, wenn TECH_UPLOAD_FAILED = YES gesetzt ist.
+   */
+  TECH_UPLOAD_FAILED_ACTION: {
+    id: "TECH_UPLOAD_FAILED_ACTION",
+    label: "Hinweis: Alternativer Übermittlungsweg für Dokumente",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte senden Sie die Unterlagen per Post, Fax oder bringen Sie sie beim nächsten Besuch mit.",
+    },
+  },
+
+  /**
+   * Alternativkanal-Hinweis bei technisch nicht nutzbarer Videosprechstunde.
+   * Wird in M3 angezeigt, wenn TECH_VIDEO_NOT_WORKING = YES gesetzt ist.
+   */
+  TECH_VIDEO_NOT_WORKING_ACTION: {
+    id: "TECH_VIDEO_NOT_WORKING_ACTION",
+    label: "Hinweis: Alternativer Kanal statt Videosprechstunde",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte kontaktieren Sie uns telefonisch oder kommen Sie persönlich in die Praxis.",
     },
   },
 
@@ -2273,12 +2351,49 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "BILLING_EXTERNAL_RESPONSIBILITY-Q1", text: "Liegt die Zuständigkeit für die Abrechnung bei der Krankenkasse oder einem anderen externen Stellen?" },
     ],
     textByStatus: {
+      // M2-Schalter: reine Zuständigkeitsaussage – Weiterleitungshinweis in BILLING_CONTACT_EXTERNAL_PARTY (M3).
       [ExplanationStatus.YES]:
-        "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
+        "Die Zuständigkeit für diese Anfrage liegt bei der Krankenkasse oder einer anderen externen Stelle.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Patient an externe Stelle (Krankenkasse) verwiesen.",
+    },
+  },
+
+  // ---- BILLING ACTION-Bausteine (freigeschaltet über boundActionConditions) ----
+
+  /**
+   * Weiterleitungshinweis bei externer Abrechnungszuständigkeit.
+   * Wird in M3 angezeigt, wenn BILLING_EXTERNAL_RESPONSIBILITY = YES gesetzt ist.
+   */
+  BILLING_CONTACT_EXTERNAL_PARTY: {
+    id: "BILLING_CONTACT_EXTERNAL_PARTY",
+    label: "Hinweis: Krankenkasse / externe Stelle kontaktieren",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
+    },
+  },
+
+  /**
+   * Adressanforderung bei fehlender oder veralteter Rechnungsadresse.
+   * Wird in M3 angezeigt, wenn BILLING_ADDRESS_MISSING = YES gesetzt ist.
+   */
+  BILLING_ADDRESS_UPDATE_REQUESTED: {
+    id: "BILLING_ADDRESS_UPDATE_REQUESTED",
+    label: "Aktion: Aktuelle Postadresse anfordern",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte teilen Sie uns Ihre aktuelle Postadresse mit, damit wir diese weitergeben können.",
     },
   },
 
