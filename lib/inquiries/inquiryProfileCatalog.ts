@@ -49,11 +49,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_CHILD_SICK",
       "AU_DIGITAL_AU_PROCESS",
       "AU_NO_APPOINTMENT_ACUTE",
+      "AU_MEDICAL_CONSULTATION_REQUIRED",
     ],
-    boundGlobalCheckpointIds: [
-      "MEDICAL_CONSULTATION_REQUIRED",
-    ],
-    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    boundGlobalCheckpointIds: [],
+    // Kein globalHints-Override nötig.
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -231,11 +230,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
+      "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
+      "PRESCRIPTION_CHRONIC_PATIENT",
     ],
-    boundGlobalCheckpointIds: [
-      "IS_CHRONIC_PATIENT",
-      "PATIENT_NOT_IN_GERMANY",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
@@ -256,10 +254,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         hideWhenAny: [],
       },
     },
-    globalHints: {
-      PATIENT_NOT_IN_GERMANY: "Rezepte können in deutschen Apotheken zuverlässig eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
-      IS_CHRONIC_PATIENT: "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
-    },
+    globalHints: {},
     actionGuidanceRules: [
       // 1. DOCUMENT_UPLOAD empfehlen, wenn Facharztbericht erforderlich
       {
@@ -524,11 +519,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_MPU_EXCLUSION",
       "LAB_EXTERNAL_REFERRAL",
       "LAB_INTERNAL_ORDER",
+      "LAB_MEDICAL_CONSULTATION_REQUIRED",
     ],
-    boundGlobalCheckpointIds: [
-      "MEDICAL_CONSULTATION_REQUIRED",
-    ],
-    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    boundGlobalCheckpointIds: [],
+    // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
       "LAB_APPOINTMENT_INTERNAL",
@@ -936,11 +930,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "REF_SPECIALTY_REQUIRED",
       "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_HAV_CASE",
+      "REF_MEDICAL_CONSULTATION_REQUIRED",
     ],
-    boundGlobalCheckpointIds: [
-      "MEDICAL_CONSULTATION_REQUIRED",
-    ],
-    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    boundGlobalCheckpointIds: [],
+    // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
@@ -1711,10 +1704,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
       "MEDICAL_DOCUMENT_INFO_MISSING",
+      "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
     ],
-    boundGlobalCheckpointIds: [
-      "MEDICAL_CONSULTATION_REQUIRED",
-    ],
+    boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
       "DOCUMENT_UPLOAD",
@@ -1734,7 +1726,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [{ MEDICAL_DOCUMENT_INFO_MISSING: "YES" }],
       },
       BOOK_APPOINTMENT: {
-        showWhenAny: [{ MEDICAL_CONSULTATION_REQUIRED: "YES" }],
+        showWhenAny: [{ MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: "YES" }],
       },
     },
 

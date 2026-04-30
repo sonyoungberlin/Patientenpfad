@@ -886,6 +886,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Durch profilspezifischen SpecificCheckpoint PRESCRIPTION_PATIENT_NOT_IN_GERMANY ersetzt.
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   PATIENT_NOT_IN_GERMANY: {
     id: "PATIENT_NOT_IN_GERMANY",
     label: "Aufenthaltsort außerhalb Deutschland",
@@ -927,6 +931,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Durch profilspezifischen SpecificCheckpoint PRESCRIPTION_CHRONIC_PATIENT ersetzt.
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   IS_CHRONIC_PATIENT: {
     id: "IS_CHRONIC_PATIENT",
     label: "Chronische Erkrankung",
@@ -938,6 +946,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Durch profilspezifische SpecificCheckpoints ersetzt
+   * (AU_MEDICAL_CONSULTATION_REQUIRED, LAB_MEDICAL_CONSULTATION_REQUIRED,
+   * REF_MEDICAL_CONSULTATION_REQUIRED, MEDICAL_DOCUMENT_CONSULTATION_REQUIRED).
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   MEDICAL_CONSULTATION_REQUIRED: {
     id: "MEDICAL_CONSULTATION_REQUIRED",
     label: "Ärztliche Konsultation erforderlich",
@@ -2649,6 +2663,97 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch folgende Angaben:",
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Profilspezifische Konsultations- / Zustandshinweise
+  // (migriert von Global-Checkpoints)
+  // ---------------------------------------------------------------------------
+
+  AU_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "AU_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (AU)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  LAB_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "LAB_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (Labor)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  REF_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "REF_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (Überweisung)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: {
+    id: "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (Atteste)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  PRESCRIPTION_PATIENT_NOT_IN_GERMANY: {
+    id: "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
+    label: "Aufenthaltsort außerhalb Deutschland (Rezept)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Befindet sich der Patient aktuell NICHT in Deutschland?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezepte können in deutschen Apotheken eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
+    },
+  },
+
+  PRESCRIPTION_CHRONIC_PATIENT: {
+    id: "PRESCRIPTION_CHRONIC_PATIENT",
+    label: "Chronische Erkrankung (Rezept)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Liegt eine chronische oder dauerhaft behandlungsbedürftige Erkrankung vor?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
     },
   },
 };
