@@ -115,7 +115,7 @@ describe("buildMedicalRecordNote – Überweisung-Block", () => {
     });
     const lines = result.split("\n");
     expect(lines).toContain("Fachrichtung: Orthopädie");
-    expect(lines).toContain("Termin vereinbart: Ja");
+    expect(lines).toContain("Termin vorhanden: Ja");
   });
 
   it("lässt Termin weg wenn leer", () => {
@@ -124,7 +124,7 @@ describe("buildMedicalRecordNote – Überweisung-Block", () => {
       selected_block_ids: ["UEBERWEISUNG"],
     });
     const lines = result.split("\n");
-    expect(lines.some((l) => l.startsWith("Termin vereinbart:"))).toBe(false);
+    expect(lines.some((l) => l.startsWith("Termin vorhanden:"))).toBe(false);
   });
 });
 

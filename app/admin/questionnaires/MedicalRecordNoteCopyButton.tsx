@@ -16,15 +16,18 @@ export default function MedicalRecordNoteCopyButton({ noteText, sessionId }: Pro
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select text in textarea
-      const el = document.querySelector<HTMLTextAreaElement>(
-        `[data-q-note="${sessionId}"]`,
-      );
+      // Fallback: select text content inside the pre element
+      const el = document.querySelector(`[data-q-note="${sessionId}"]`);
       if (el) {
-        el.select();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
         // Legacy fallback for browsers without Clipboard API support
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         document.execCommand("copy");
+        selection?.removeAllRanges();
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }

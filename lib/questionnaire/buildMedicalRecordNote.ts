@@ -85,7 +85,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     addLine(lines, "Fachrichtung", val(answers, "REF_SPECIALTY"));
     addLine(lines, "Facharzt", val(answers, "REF_DOCTOR_NAME"));
     addLine(lines, "Adresse Facharzt", val(answers, "REF_ADDRESS"));
-    addLine(lines, "Termin vereinbart", val(answers, "REF_APPOINTMENT_EXISTS"));
+    addLine(lines, "Termin vorhanden", val(answers, "REF_APPOINTMENT_EXISTS"));
     addLine(lines, "Termin", val(answers, "REF_APPOINTMENT_DATE"));
     addLine(lines, "Grund", val(answers, "REF_REASON"));
   }
