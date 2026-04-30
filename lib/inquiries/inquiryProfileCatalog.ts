@@ -1183,7 +1183,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
-      "BOOK_APPOINTMENT",
       "ONLINE_ANAMNESIS",
       "DIGITAL_REQUEST",
       "PROCESSING_DELAY",
@@ -1191,10 +1190,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
+      "BOOK_APPOINTMENT",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
         hideWhenAny: [],
+      },
+      BOOK_APPOINTMENT: {
+        showWhenAny: [{ APPOINTMENT_WRONG_TYPE: "YES" }],
       },
     },
 

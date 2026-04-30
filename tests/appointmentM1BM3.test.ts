@@ -17,6 +17,7 @@ import {
   DecisionStatus,
   ExplanationStatus,
   ExplanationOutputStatus,
+  ActionStatus,
   InquiryCheckpointKind,
   InquiryCheckpointScope,
   type SpecificRole,
@@ -491,3 +492,85 @@ describe("APPOINTMENT – ACUTE_OPEN_CONSULTATION_ACTION (ersetzt INFO)", () => 
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["ACUTE_OPEN_CONSULTATION_INFO"]).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// BOOK_APPOINTMENT – an APPOINTMENT_WRONG_TYPE gebunden (M2/M3-Binding)
+// ---------------------------------------------------------------------------
+
+describe("APPOINTMENT – BOOK_APPOINTMENT an APPOINTMENT_WRONG_TYPE gebunden", () => {
+  it("BOOK_APPOINTMENT ist in boundActionCheckpointIds des APPOINTMENT-Profils", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("BOOK_APPOINTMENT");
+  });
+
+  it("BOOK_APPOINTMENT hat showWhenAny [APPOINTMENT_WRONG_TYPE=YES] in boundActionConditions", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.BOOK_APPOINTMENT?.showWhenAny).toEqual([{ APPOINTMENT_WRONG_TYPE: "YES" }]);
+  });
+
+  it("BOOK_APPOINTMENT bleibt auch in availableActionIds (manuell aktivierbar)", () => {
+    // BOOK_APPOINTMENT ist über boundActionCheckpointIds (condition-controlled) eingebunden.
+    // Es ist NICHT mehr in availableActionIds, da beide Listen sich laut Architekturregel ausschließen.
+    expect(APPOINTMENT.availableActionIds).not.toContain("BOOK_APPOINTMENT");
+  });
+
+  it("BOOK_APPOINTMENT ist weiterhin im Katalog als ACTION definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BOOK_APPOINTMENT"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("Renderer: APPOINTMENT_WRONG_TYPE YES + SHOW, BOOK_APPOINTMENT ACTIVE → Terminbuchungstext in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_WRONG_TYPE: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_WRONG_TYPE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    // BOOK_APPOINTMENT ist SHARED_BOTTOM → erscheint in sharedBottom, nicht in attachedParagraphs
+    expect(result.sharedBottom.join(" ")).toContain("Online-Kalender");
+  });
+
+  it("Renderer: BOOK_APPOINTMENT erscheint nur einmal, auch wenn in availableActionIds und boundActionCheckpointIds (Deduplication)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_WRONG_TYPE: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_WRONG_TYPE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sharedBottom;
+    const bookAppointmentCount = allText.filter((t) => t.includes("Online-Kalender")).length;
+    expect(bookAppointmentCount).toBe(1);
+  });
+
+  it("Renderer: BOOK_APPOINTMENT INACTIVE → kein Terminbuchungstext in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_WRONG_TYPE: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.INACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_WRONG_TYPE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    expect(result.sharedBottom.join(" ")).not.toContain("Online-Kalender");
+  });
+});
+
