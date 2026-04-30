@@ -5,6 +5,8 @@ import { getSessionAccount } from "@/lib/auth";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
 
+const IS_DEV = process.env.NODE_ENV === "development";
+
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 export async function POST(req: NextRequest) {
@@ -91,7 +93,40 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, link });
   } catch (err) {
-    console.error("[api/questionnaire]", err);
+    // Always log the full error server-side for observability.
+    console.error("[api/questionnaire] Unerwarteter Fehler:", err);
+
+    // In development expose Prisma error details to speed up debugging
+    // (e.g. P2021 = table not found → migration not applied).
+    if (IS_DEV) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Prisma ${err.code}: ${err.message}`,
+            prismaCode: err.code,
+          },
+          { status: 500 },
+        );
+      }
+      if (err instanceof Prisma.PrismaClientInitializationError) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Prisma init error: ${err.message}`,
+            prismaCode: err.errorCode,
+          },
+          { status: 500 },
+        );
+      }
+      if (err instanceof Error) {
+        return NextResponse.json(
+          { ok: false, error: err.message },
+          { status: 500 },
+        );
+      }
+    }
+
     return NextResponse.json(
       { ok: false, error: "Fragebogen konnte nicht erstellt werden." },
       { status: 500 },
