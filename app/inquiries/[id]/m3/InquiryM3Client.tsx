@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import {
   DecisionStatus,
   ExplanationOutputStatus,
@@ -236,14 +236,46 @@ function OutputView({
 // Fragebogen-Anforderungsbereich (vollständig isoliert von InquirySession-Logik)
 // ---------------------------------------------------------------------------
 
+const QUESTIONNAIRE_MESSAGE_INTRO =
+  "Liebe Patientin, lieber Patient,\n" +
+  "für Ihre weitere Versorgung bitten wir Sie, den folgenden Fragebogen auszufüllen:";
+
+export function buildQuestionnaireMessageText(generatedLink: string, signature: string): string {
+  const parts = [QUESTIONNAIRE_MESSAGE_INTRO, generatedLink];
+  if (signature.trim()) parts.push(signature.trim());
+  return parts.join("\n\n");
+}
+
 function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: string }) {
   const [open, setOpen] = useState(false);
   const [patientRef, setPatientRef] = useState("");
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState<string>("");
+  const [signature, setSignature] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState(false);
   const [reqError, setReqError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/account/signature")
+      .then((r) => r.json())
+      .then((data: { ok?: boolean; signature?: string }) => {
+        if (data.ok) {
+          setSignature(data.signature ?? "");
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Rebuild message whenever link or signature changes so a late-loading
+  // signature is always included in the draft.
+  useEffect(() => {
+    if (link) {
+      setMessageText(buildQuestionnaireMessageText(link, signature));
+    }
+  }, [link, signature]);
 
   function toggleBlock(blockId: string) {
     setSelectedBlocks((prev) => ({ ...prev, [blockId]: !prev[blockId] }));
@@ -255,7 +287,9 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
     setLoading(true);
     setReqError(null);
     setCopied(false);
+    setCopiedMessage(false);
     setLink(null);
+    setMessageText("");
 
     const blockIds = BLOCK_IDS_SORTED.filter((id) => selectedBlocks[id]);
     try {
@@ -288,6 +322,16 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
       setCopied(true);
     } catch {
       setReqError("Link konnte nicht in die Zwischenablage kopiert werden.");
+    }
+  }
+
+  async function copyMessage() {
+    if (!messageText) return;
+    try {
+      await navigator.clipboard.writeText(messageText);
+      setCopiedMessage(true);
+    } catch {
+      setReqError("Nachricht konnte nicht in die Zwischenablage kopiert werden.");
     }
   }
 
@@ -428,14 +472,29 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
               >
                 {link}
               </code>
-              <button
-                type="button"
-                data-q-copy-link
-                onClick={() => void copyLink()}
-                style={{ alignSelf: "flex-start" }}
-              >
-                {copied ? "Kopiert ✓" : "Link kopieren"}
-              </button>
+              <textarea
+                data-q-message-preview
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                rows={6}
+                style={{ width: "100%", resize: "vertical" }}
+              />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  data-q-copy-link
+                  onClick={() => void copyLink()}
+                >
+                  {copied ? "Kopiert ✓" : "Link kopieren"}
+                </button>
+                <button
+                  type="button"
+                  data-q-copy-message
+                  onClick={() => void copyMessage()}
+                >
+                  {copiedMessage ? "Kopiert ✓" : "Nachricht kopieren"}
+                </button>
+              </div>
             </div>
           )}
         </div>
