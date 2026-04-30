@@ -5,6 +5,7 @@ import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
+import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Ausstehend",
@@ -211,6 +212,9 @@ export default async function QuestionnairesPage() {
                     </ul>
                   </details>
                 )}
+
+                {/* Delete */}
+                <QuestionnaireDeleteButton sessionId={s.id} />
               </div>
             );
           })}

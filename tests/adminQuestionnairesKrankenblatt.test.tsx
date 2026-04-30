@@ -49,6 +49,19 @@ jest.mock(
     },
 );
 
+// QuestionnaireDeleteButton is a client component; mock it for SSR tests
+jest.mock(
+  "@/app/admin/questionnaires/QuestionnaireDeleteButton",
+  () =>
+    function MockDeleteButton({ sessionId }: { sessionId: string }) {
+      return (
+        <button type="button" data-q-delete={sessionId}>
+          Löschen
+        </button>
+      );
+    },
+);
+
 import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
@@ -144,5 +157,57 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
 
     const markup = renderToStaticMarkup(await QuestionnairesPage());
     expect(markup).not.toContain("Krankenblatt-Text kopieren");
+  });
+});
+
+describe("QuestionnairesPage – Löschen-Button", () => {
+  beforeEach(() => {
+    prismaMock.patientQuestionnaireSession.findMany.mockReset();
+  });
+
+  it("zeigt Löschen-Button bei completed Session", async () => {
+    prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
+      COMPLETED_SESSION,
+    ]);
+
+    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    expect(markup).toContain("Löschen");
+    expect(markup).toContain(`data-q-delete="session-completed-1"`);
+  });
+
+  it("zeigt Löschen-Button bei pending Session", async () => {
+    prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
+      PENDING_SESSION,
+    ]);
+
+    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    expect(markup).toContain("Löschen");
+    expect(markup).toContain(`data-q-delete="session-pending-1"`);
+  });
+
+  it("zeigt Löschen-Button bei abgelaufener Session", async () => {
+    const expiredSession = {
+      ...PENDING_SESSION,
+      id: "session-expired-2",
+      token_expires_at: new Date(Date.now() - 60 * 60 * 1000),
+    };
+    prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
+      expiredSession,
+    ]);
+
+    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    expect(markup).toContain("Löschen");
+    expect(markup).toContain(`data-q-delete="session-expired-2"`);
+  });
+
+  it("zeigt pro Session genau einen Löschen-Button", async () => {
+    prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
+      COMPLETED_SESSION,
+      PENDING_SESSION,
+    ]);
+
+    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    expect(markup).toContain(`data-q-delete="session-completed-1"`);
+    expect(markup).toContain(`data-q-delete="session-pending-1"`);
   });
 });
