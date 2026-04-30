@@ -452,7 +452,7 @@ function QuestionnaireRequestSection({
           {link && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <p className="text-muted text-small" style={{ margin: 0 }}>
-                Link erzeugt – er erscheint auch in der Nachrichtenvorschau oben.
+                Link erzeugt – er ist jetzt in der Nachricht oben integriert.
               </p>
               <button
                 type="button"
