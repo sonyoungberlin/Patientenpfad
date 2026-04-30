@@ -65,7 +65,7 @@ const COMPLETED_SESSION = {
   token_expires_at: new Date("2024-01-17T10:00:00Z"),
   submitted_at: new Date("2024-01-11T08:00:00Z"),
   deduplicated_questions: [
-    { id: "AU_SYMPTOMS", text: "Welche Beschwerden haben Sie?", type: "multi_select", required: true },
+    { id: "AU_SYMPTOMS", text: "Welche Beschwerden haben Sie?", type: "textarea", required: true },
   ],
   answers: {
     AU_SYMPTOMS: "Husten",

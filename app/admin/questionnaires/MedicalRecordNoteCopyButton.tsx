@@ -22,6 +22,8 @@ export default function MedicalRecordNoteCopyButton({ noteText, sessionId }: Pro
       );
       if (el) {
         el.select();
+        // Legacy fallback for browsers without Clipboard API support
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         document.execCommand("copy");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
