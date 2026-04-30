@@ -10,6 +10,7 @@ import {
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
+import { buildInquiryM5Summary } from "@/lib/inquiries/buildInquiryM5Summary";
 
 export type M3SpecificCheckpoint = {
   id: string;
@@ -178,9 +179,11 @@ function StatusButtons({
 function OutputView({
   output,
   heading,
+  m5Lines,
 }: {
   output: InquiryResponseV2Output;
   heading: string;
+  m5Lines: string[];
 }) {
   return (
     <div
@@ -212,13 +215,13 @@ function OutputView({
         </section>
       )}
 
-      {output.documentation.length > 0 && (
+      {m5Lines.length > 0 && (
         <section>
           <h3 style={{ marginBottom: "0.5rem" }}>Dokumentation</h3>
           <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-            {output.documentation.map((d, i) => (
-              <li key={i} className="text-small">
-                {d}
+            {m5Lines.map((line, i) => (
+              <li key={line} className="text-small" style={{ fontFamily: "monospace" }}>
+                {line}
               </li>
             ))}
           </ul>
@@ -310,6 +313,19 @@ export default function InquiryM3Client({
   const [frozenOutput, setFrozenOutput] = useState<InquiryResponseV2Output | null>(
     initialGeneratedOutput,
   );
+  const [frozenM5Lines, setFrozenM5Lines] = useState<string[]>(() => {
+    if (!initialGeneratedOutput) return [];
+    // Compute M5 summary for the initially-loaded confirmed output using initial statuses.
+    const inquirySections: InquirySection[] = sections.map((sec) => ({
+      inquiryId: sec.inquiryId,
+      decisionStatus:
+        ((initialCheckpointStatuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
+        DecisionStatus.DISABLED),
+      checkpointStatuses: initialCheckpointStatuses as Record<string, CheckpointStatusValue>,
+      explanationOutputStatuses: initialExplanationOutputStatuses as Record<string, ExplanationOutputStatus>,
+    }));
+    return buildInquiryM5Summary(inquirySections);
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -329,6 +345,24 @@ export default function InquiryM3Client({
       return renderInquiryResponseFromSections(inquirySections);
     } catch {
       return null;
+    }
+  }, [confirmed, statuses, outputStatuses, sections]);
+
+  // M5 compact summary for live preview – computed from same sections as livePreview.
+  const liveM5Lines = useMemo((): string[] => {
+    if (confirmed) return [];
+    try {
+      const inquirySections: InquirySection[] = sections.map((sec) => ({
+        inquiryId: sec.inquiryId,
+        decisionStatus:
+          (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
+          DecisionStatus.DISABLED,
+        checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
+        explanationOutputStatuses: outputStatuses as Record<string, ExplanationOutputStatus>,
+      }));
+      return buildInquiryM5Summary(inquirySections);
+    } catch {
+      return [];
     }
   }, [confirmed, statuses, outputStatuses, sections]);
 
@@ -383,6 +417,16 @@ export default function InquiryM3Client({
       }
 
       setFrozenOutput(confirmData.output as InquiryResponseV2Output);
+      // Compute M5 compact summary from the confirmed sections.
+      const confirmedSections: InquirySection[] = sections.map((sec) => ({
+        inquiryId: sec.inquiryId,
+        decisionStatus:
+          (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
+          DecisionStatus.DISABLED,
+        checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
+        explanationOutputStatuses: outputStatuses as Record<string, ExplanationOutputStatus>,
+      }));
+      setFrozenM5Lines(buildInquiryM5Summary(confirmedSections));
       setConfirmed(true);
     } catch {
       setError("Netzwerkfehler. Bitte erneut versuchen.");
@@ -408,7 +452,7 @@ export default function InquiryM3Client({
             ✓ Anfrage bestätigt – Ansicht ist schreibgeschützt.
           </div>
           {frozenOutput && (
-            <OutputView output={frozenOutput} heading="Bestätigter Output" />
+            <OutputView output={frozenOutput} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
           )}
         </>
       ) : (
@@ -759,7 +803,7 @@ export default function InquiryM3Client({
 
           {/* Live preview */}
           {livePreview && (
-            <OutputView output={livePreview} heading="Vorschau" />
+            <OutputView output={livePreview} heading="Vorschau" m5Lines={liveM5Lines} />
           )}
 
           {error && (

@@ -319,3 +319,68 @@ describe("buildInquiryM5Summary – mehrere Sections", () => {
     expect(result[1]).toBe("LAB | REJECTED | COST");
   });
 });
+
+// ---------------------------------------------------------------------------
+// UI-Integration: Spezifische Ausschlüsse nach Problemstellung
+// ---------------------------------------------------------------------------
+
+describe("buildInquiryM5Summary – UI-Integration Ausschlüsse", () => {
+  it("CARE_CHANNEL_CHOICE (ACTION) erscheint nicht in M5-Dokumentation", () => {
+    // CARE_CHANNEL_CHOICE ist ein ACTION-Checkpoint – darf nicht in M5 erscheinen
+    const section = makeSection("AU", DecisionStatus.POSSIBLE, {
+      CARE_CHANNEL_CHOICE: ActionStatus.ACTIVE,
+    });
+    const result = buildInquiryM5SectionSummary(section);
+    expect(result).toBe("AU | OK");
+    expect(result).not.toContain("CARE_CHANNEL_CHOICE");
+  });
+
+  it("DIGITAL_REQUEST (ACTION) erscheint nicht in M5-Dokumentation", () => {
+    const section = makeSection("AU", DecisionStatus.DISABLED, {
+      DIGITAL_REQUEST: ActionStatus.ACTIVE,
+    });
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | OPEN");
+  });
+
+  it("MEDICAL_CONSULTATION_REQUIRED erscheint nur als NEED_VISIT", () => {
+    const section = makeSection("REFERRAL", DecisionStatus.DISABLED, {
+      MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+    });
+    const result = buildInquiryM5SectionSummary(section);
+    expect(result).toBe("REF | OPEN | NEED_VISIT");
+    // Kein langer Text
+    expect(result).not.toMatch(/ärztliche/i);
+    expect(result).not.toMatch(/Konsultation/i);
+  });
+
+  it("Compact summary enthält keine langen Sätze (max 20 Zeichen pro Token)", () => {
+    const section = makeSection("REFERRAL", DecisionStatus.NOT_POSSIBLE, {
+      REF_SPECIALTY_REQUIRED: ExplanationStatus.YES,
+      MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+    });
+    const result = buildInquiryM5SectionSummary(section);
+    // Jedes Token ist maximal 20 Zeichen lang
+    for (const token of result.split(" | ")) {
+      expect(token.length).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it("Vorschau-Output: mehrere Profile erzeugen je eine Zeile", () => {
+    const sections = [
+      makeSection("AU", DecisionStatus.NOT_POSSIBLE, {
+        AU_BACKDATE_LIMIT: ExplanationStatus.YES,
+      }),
+      makeSection("REFERRAL", DecisionStatus.DISABLED, {
+        REF_SPECIALTY_REQUIRED: ExplanationStatus.YES,
+      }),
+      makeSection("MEDICAL_DOCUMENTS", DecisionStatus.DISABLED, {
+        MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+      }),
+    ];
+    const result = buildInquiryM5Summary(sections);
+    expect(result).toHaveLength(3);
+    expect(result[0]).toBe("AU | REJECTED | TIME_LIMIT");
+    expect(result[1]).toBe("REF | OPEN | NO_SPECIALTY");
+    expect(result[2]).toBe("DOC | OPEN | NEED_VISIT");
+  });
+});
