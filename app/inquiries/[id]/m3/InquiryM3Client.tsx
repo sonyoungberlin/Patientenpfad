@@ -241,7 +241,9 @@ export function appendQuestionnaireLinkToOutput(
   link: string | null,
 ): InquiryResponseV2Output {
   if (!link) return output;
-  return { ...output, sharedBottom: [...output.sharedBottom, link] };
+  const paragraph =
+    `Bitte füllen Sie den folgenden Fragebogen aus.\nKopieren Sie den Link in Ihren Browser:\n${link}`;
+  return { ...output, sharedBottom: [...output.sharedBottom, paragraph] };
 }
 
 // ---------------------------------------------------------------------------

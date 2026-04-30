@@ -24,16 +24,38 @@ function makeOutput(sharedBottom: string[] = []): InquiryResponseV2Output {
   return { sections: [], sharedBottom };
 }
 
+const EXPECTED_PREFIX =
+  "Bitte füllen Sie den folgenden Fragebogen aus.\nKopieren Sie den Link in Ihren Browser:\n";
+const EXPECTED_PARAGRAPH = `${EXPECTED_PREFIX}${EXAMPLE_LINK}`;
+
 describe("appendQuestionnaireLinkToOutput", () => {
-  it("hängt den Link als letzten sharedBottom-Eintrag an", () => {
+  it("hängt einen zusammenhängenden Absatz mit erklärendem Text und Link an sharedBottom an", () => {
     const result = appendQuestionnaireLinkToOutput(makeOutput(), EXAMPLE_LINK);
-    expect(result.sharedBottom).toEqual([EXAMPLE_LINK]);
+    expect(result.sharedBottom).toEqual([EXPECTED_PARAGRAPH]);
+  });
+
+  it("der Absatz enthält den erklärenden Einleitungstext", () => {
+    const result = appendQuestionnaireLinkToOutput(makeOutput(), EXAMPLE_LINK);
+    expect(result.sharedBottom[0]).toContain("Bitte füllen Sie den folgenden Fragebogen aus.");
+    expect(result.sharedBottom[0]).toContain("Kopieren Sie den Link in Ihren Browser:");
+  });
+
+  it("der Absatz enthält den Link", () => {
+    const result = appendQuestionnaireLinkToOutput(makeOutput(), EXAMPLE_LINK);
+    expect(result.sharedBottom[0]).toContain(EXAMPLE_LINK);
+  });
+
+  it("es wird genau ein Eintrag in sharedBottom hinzugefügt (kein Split in mehrere Einträge)", () => {
+    const result = appendQuestionnaireLinkToOutput(makeOutput(), EXAMPLE_LINK);
+    expect(result.sharedBottom).toHaveLength(1);
   });
 
   it("erhält bestehende sharedBottom-Einträge", () => {
     const existing = ["Vorhandener Hinweis"];
     const result = appendQuestionnaireLinkToOutput(makeOutput(existing), EXAMPLE_LINK);
-    expect(result.sharedBottom).toEqual(["Vorhandener Hinweis", EXAMPLE_LINK]);
+    expect(result.sharedBottom).toHaveLength(2);
+    expect(result.sharedBottom[0]).toBe("Vorhandener Hinweis");
+    expect(result.sharedBottom[1]).toBe(EXPECTED_PARAGRAPH);
   });
 
   it("gibt das unveränderte Output-Objekt zurück wenn kein Link übergeben wird (null)", () => {
@@ -46,11 +68,6 @@ describe("appendQuestionnaireLinkToOutput", () => {
     const output = makeOutput(["Hinweis"]);
     appendQuestionnaireLinkToOutput(output, EXAMPLE_LINK);
     expect(output.sharedBottom).toEqual(["Hinweis"]);
-  });
-
-  it("Link ist im generierten sharedBottom-Text enthalten", () => {
-    const result = appendQuestionnaireLinkToOutput(makeOutput(), EXAMPLE_LINK);
-    expect(result.sharedBottom.join("\n")).toContain(EXAMPLE_LINK);
   });
 });
 
