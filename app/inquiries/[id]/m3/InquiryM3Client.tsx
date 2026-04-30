@@ -181,12 +181,10 @@ function OutputView({
   output,
   heading,
   m5Lines,
-  questionnaireLink,
 }: {
   output: InquiryResponseV2Output;
   heading: string;
   m5Lines: string[];
-  questionnaireLink?: string | null;
 }) {
   return (
     <div
@@ -218,34 +216,6 @@ function OutputView({
         </section>
       )}
 
-      {questionnaireLink && (
-        <section
-          data-q-output-link-section
-          style={{
-            paddingTop: "0.75rem",
-            borderTop: "1px dashed var(--border)",
-          }}
-        >
-          <p style={{ margin: "0 0 0.25rem", fontWeight: 500, fontSize: "0.9rem" }}>
-            <span aria-hidden="true">🔗 </span>Fragebogen-Link
-          </p>
-          <code
-            data-q-generated-link
-            style={{
-              display: "block",
-              wordBreak: "break-all",
-              background: "var(--input-background)",
-              padding: "0.4rem 0.6rem",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              fontSize: "0.85rem",
-            }}
-          >
-            {questionnaireLink}
-          </code>
-        </section>
-      )}
-
       {m5Lines.length > 0 && (
         <section>
           <h3 style={{ marginBottom: "0.5rem" }}>Dokumentation</h3>
@@ -263,7 +233,17 @@ function OutputView({
 }
 
 // ---------------------------------------------------------------------------
-// Fragebogen-Anforderungsbereich (vollständig isoliert von InquirySession-Logik)
+// Helper: Fragebogen-Link als Nachrichteninhalt in sharedBottom integrieren
+// ---------------------------------------------------------------------------
+
+export function appendQuestionnaireLinkToOutput(
+  output: InquiryResponseV2Output,
+  link: string | null,
+): InquiryResponseV2Output {
+  if (!link) return output;
+  return { ...output, sharedBottom: [...output.sharedBottom, link] };
+}
+
 // ---------------------------------------------------------------------------
 
 function QuestionnaireRequestSection({
@@ -606,6 +586,16 @@ export default function InquiryM3Client({
     }
   }, [confirmed, statuses, outputStatuses, sections]);
 
+  // Fragebogen-Link als Nachrichteninhalt: Link wird in sharedBottom der Ausgabe integriert.
+  const livePreviewWithLink = useMemo(
+    () => (livePreview ? appendQuestionnaireLinkToOutput(livePreview, questionnaireLink) : null),
+    [livePreview, questionnaireLink],
+  );
+  const frozenOutputWithLink = useMemo(
+    () => (frozenOutput ? appendQuestionnaireLinkToOutput(frozenOutput, questionnaireLink) : null),
+    [frozenOutput, questionnaireLink],
+  );
+
   function setStatus(checkpointId: string, value: string) {
     setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
   }
@@ -691,8 +681,8 @@ export default function InquiryM3Client({
           >
             ✓ Anfrage bestätigt – Ansicht ist schreibgeschützt.
           </div>
-          {frozenOutput && (
-            <OutputView output={frozenOutput} heading="Bestätigter Output" m5Lines={frozenM5Lines} questionnaireLink={questionnaireLink} />
+          {frozenOutputWithLink && (
+            <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
           )}
         </>
       ) : (
@@ -1042,8 +1032,8 @@ export default function InquiryM3Client({
           )}
 
           {/* Live preview */}
-          {livePreview && (
-            <OutputView output={livePreview} heading="Vorschau" m5Lines={liveM5Lines} questionnaireLink={questionnaireLink} />
+          {livePreviewWithLink && (
+            <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5Lines} />
           )}
 
           {error && (
