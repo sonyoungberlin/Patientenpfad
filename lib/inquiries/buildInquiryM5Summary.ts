@@ -2,18 +2,18 @@
  * Kompakter M5-Summary-Builder für den Anfrage-Assistenten.
  *
  * Erzeugt pro Anliegen eine kurze Krankenblatt-Notiz im Format:
- *   PROFILCODE | ENTSCHEIDUNGSCODE | GRUNDCODE_1 | GRUNDCODE_2
+ *   Profil | Entscheidung | Grund | optionaler zweiter Grund
  *
  * Beispiele:
- *   AU: REJECTED | TIME_LIMIT
- *   RX: OK | E_RECIPE         (falls E_RECIPE als m5Code hinterlegt)
- *   REF: OPEN | NO_SPECIALTY
- *   TECH: OPEN | TECH
+ *   AU | abgelehnt | Frist überschritten
+ *   Rezept | möglich
+ *   Überweisung | offen | Fachrichtung fehlt
+ *   Technik | offen | technisches Problem
  *
  * Regeln:
  * - Keine Fließtexte, keine ganzen Sätze.
  * - Keine ACTION-Texte, keine Links, keine Öffnungszeiten.
- * - Maximal 2 Grund-Codes pro Eintrag (die wichtigsten zuerst).
+ * - Maximal 2 Grund-Segmente pro Eintrag (die wichtigsten zuerst).
  * - M4/Patientenantwort bleibt unverändert.
  * - Keine Änderung an DecisionStatus, Session oder Renderer.
  */
@@ -30,32 +30,51 @@ import {
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 
 // ---------------------------------------------------------------------------
-// Profil-Kurzbezeichnungen (reine Darstellung / M5)
+// Profil-Bezeichnungen (deutsch, lesbar / M5)
 // ---------------------------------------------------------------------------
 
 export const M5_PROFILE_CODES: Record<string, string> = {
   AU: "AU",
-  PRESCRIPTION: "RX",
-  REFERRAL: "REF",
-  MEDICAL_DOCUMENTS: "DOC",
-  APPOINTMENT: "APPT",
-  ACUTE_CARE: "ACUTE",
-  LAB: "LAB",
-  SAMPLE_COLLECTION: "SAMPLE",
-  IMMUNIZATION: "IMM",
-  BILLING: "BILL",
-  TECH_SUPPORT: "TECH",
-  ONBOARDING: "ONB",
+  PRESCRIPTION: "Rezept",
+  REFERRAL: "Überweisung",
+  MEDICAL_DOCUMENTS: "Attest",
+  APPOINTMENT: "Termin",
+  ACUTE_CARE: "Akut",
+  LAB: "Labor",
+  SAMPLE_COLLECTION: "Probe",
+  IMMUNIZATION: "Impfung",
+  BILLING: "Abrechnung",
+  TECH_SUPPORT: "Technik",
+  ONBOARDING: "Anmeldung",
 };
 
 // ---------------------------------------------------------------------------
-// Decision-Status → kompakter Code
+// Decision-Status → lesbarer deutscher Text
 // ---------------------------------------------------------------------------
 
 export const M5_DECISION_CODES: Record<DecisionStatus, string> = {
-  [DecisionStatus.POSSIBLE]: "OK",
-  [DecisionStatus.NOT_POSSIBLE]: "REJECTED",
-  [DecisionStatus.DISABLED]: "OPEN",
+  [DecisionStatus.POSSIBLE]: "möglich",
+  [DecisionStatus.NOT_POSSIBLE]: "abgelehnt",
+  [DecisionStatus.DISABLED]: "offen",
+};
+
+// ---------------------------------------------------------------------------
+// Grund-Codes → lesbarer deutscher Kurztext
+// ---------------------------------------------------------------------------
+
+export const M5_REASON_LABELS: Record<M5ReasonCode, string> = {
+  NO_DATA: "fehlende Angaben",
+  NO_DOC: "fehlende Unterlagen",
+  NO_SPECIALTY: "Fachrichtung fehlt",
+  NO_REPORT: "Facharztbericht fehlt",
+  NEED_VISIT: "Arztkontakt nötig",
+  EXTERNAL: "externe Zuständigkeit",
+  COST: "Selbstzahlerleistung",
+  TIME_LIMIT: "Frist überschritten",
+  INFECTIOUS: "Infekt-Verdacht",
+  WRONG_CHANNEL: "falscher Weg",
+  TECH: "technisches Problem",
+  HAV: "Hausarztvermittlungsfall",
 };
 
 // ---------------------------------------------------------------------------
@@ -101,7 +120,7 @@ function resolveM5ReasonCode(checkpointId: string): M5ReasonCode | undefined {
 /**
  * Erzeugt eine einzelne M5-Kurznotiz für eine Section.
  *
- * Format: `PROFILCODE | ENTSCHEIDUNGSCODE | GRUNDCODE_1 | GRUNDCODE_2`
+ * Format: `Profil | Entscheidung | Grund | optionaler zweiter Grund`
  *
  * Ausschlüsse:
  * - ACTION-Checkpoints (next steps, nicht Entscheidungsgründe)
@@ -111,7 +130,7 @@ function resolveM5ReasonCode(checkpointId: string): M5ReasonCode | undefined {
  */
 export function buildInquiryM5SectionSummary(section: InquirySection): string {
   const profileCode = M5_PROFILE_CODES[section.inquiryId] ?? section.inquiryId;
-  const decisionCode = M5_DECISION_CODES[section.decisionStatus] ?? "OPEN";
+  const decisionCode = M5_DECISION_CODES[section.decisionStatus] ?? "offen";
 
   const reasonCodes: M5ReasonCode[] = [];
 
@@ -137,9 +156,9 @@ export function buildInquiryM5SectionSummary(section: InquirySection): string {
     reasonCodes.push(m5Code);
   }
 
-  // Maximal 2 Grund-Codes
-  const limited = reasonCodes.slice(0, 2);
-  const parts = [profileCode, decisionCode, ...limited];
+  // Maximal 2 Grund-Segmente – als lesbare deutsche Kurztexte ausgeben
+  const reasonLabels = reasonCodes.slice(0, 2).map((code) => M5_REASON_LABELS[code]);
+  const parts = [profileCode, decisionCode, ...reasonLabels];
   return parts.join(" | ");
 }
 

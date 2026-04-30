@@ -2,11 +2,11 @@
  * Tests für buildInquiryM5Summary – kompakte M5-Kurznotiz.
  *
  * Prüft:
- * - Korrekte Profilcodes
- * - Korrekte Entscheidungscodes (POSSIBLE→OK, NOT_POSSIBLE→REJECTED, DISABLED→OPEN)
- * - Ableitbare Grundcodes aus specificRole
- * - Explizite m5Codes (NO_SPECIALTY, HAV, TECH, INFECTIOUS)
- * - Maximal 2 Grundcodes
+ * - Korrekte Profilbezeichnungen (deutsch)
+ * - Korrekte Entscheidungstexte (möglich/abgelehnt/offen)
+ * - Ableitbare Grundtexte aus specificRole
+ * - Explizite m5Codes (Fachrichtung fehlt, Hausarztvermittlungsfall, technisches Problem, Infekt-Verdacht)
+ * - Maximal 2 Grundsegmente
  * - Ausschlüsse (ACTION-Texte, Links, lange Sätze)
  * - Mehrere Sections
  */
@@ -16,9 +16,10 @@ import {
   buildInquiryM5Summary,
   M5_PROFILE_CODES,
   M5_DECISION_CODES,
+  M5_REASON_LABELS,
 } from "@/lib/inquiries/buildInquiryM5Summary";
 import { DecisionStatus, ExplanationStatus, ActionStatus } from "@/lib/inquiries/types";
-import type { InquirySection } from "@/lib/inquiries/types";
+import type { InquirySection, M5ReasonCode } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
@@ -37,11 +38,11 @@ function makeSection(
 }
 
 // ---------------------------------------------------------------------------
-// Profilcodes
+// Profilbezeichnungen
 // ---------------------------------------------------------------------------
 
 describe("M5_PROFILE_CODES", () => {
-  it("alle 12 Profile haben einen Kurzcode", () => {
+  it("alle 12 Profile haben eine Bezeichnung", () => {
     const profileIds = [
       "AU", "PRESCRIPTION", "REFERRAL", "MEDICAL_DOCUMENTS",
       "APPOINTMENT", "ACUTE_CARE", "LAB", "SAMPLE_COLLECTION",
@@ -50,12 +51,15 @@ describe("M5_PROFILE_CODES", () => {
     for (const id of profileIds) {
       expect(M5_PROFILE_CODES[id]).toBeDefined();
       expect(typeof M5_PROFILE_CODES[id]).toBe("string");
+      expect(M5_PROFILE_CODES[id].length).toBeGreaterThan(0);
     }
   });
 
-  it("Kurzcode ist kürzer als Profil-ID", () => {
-    for (const [id, code] of Object.entries(M5_PROFILE_CODES)) {
-      expect(code.length).toBeLessThanOrEqual(id.length);
+  it("Profilbezeichnungen enthalten keine englischen Großbuchstaben-Codes", () => {
+    // Außer AU (Abkürzung im Deutschen)
+    const codeValues = Object.entries(M5_PROFILE_CODES).filter(([id]) => id !== "AU");
+    for (const [, label] of codeValues) {
+      expect(label).not.toMatch(/^[A-Z]+$/);
     }
   });
 });
@@ -65,16 +69,41 @@ describe("M5_PROFILE_CODES", () => {
 // ---------------------------------------------------------------------------
 
 describe("M5_DECISION_CODES", () => {
-  it("POSSIBLE → OK", () => {
-    expect(M5_DECISION_CODES[DecisionStatus.POSSIBLE]).toBe("OK");
+  it("POSSIBLE → möglich", () => {
+    expect(M5_DECISION_CODES[DecisionStatus.POSSIBLE]).toBe("möglich");
   });
 
-  it("NOT_POSSIBLE → REJECTED", () => {
-    expect(M5_DECISION_CODES[DecisionStatus.NOT_POSSIBLE]).toBe("REJECTED");
+  it("NOT_POSSIBLE → abgelehnt", () => {
+    expect(M5_DECISION_CODES[DecisionStatus.NOT_POSSIBLE]).toBe("abgelehnt");
   });
 
-  it("DISABLED → OPEN", () => {
-    expect(M5_DECISION_CODES[DecisionStatus.DISABLED]).toBe("OPEN");
+  it("DISABLED → offen", () => {
+    expect(M5_DECISION_CODES[DecisionStatus.DISABLED]).toBe("offen");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reason-Labels
+// ---------------------------------------------------------------------------
+
+describe("M5_REASON_LABELS", () => {
+  const allCodes: M5ReasonCode[] = [
+    "NO_DATA", "NO_DOC", "NO_SPECIALTY", "NO_REPORT",
+    "NEED_VISIT", "EXTERNAL", "COST", "TIME_LIMIT",
+    "INFECTIOUS", "WRONG_CHANNEL", "TECH", "HAV",
+  ];
+
+  it("alle 12 Grund-Codes haben ein deutsches Label", () => {
+    for (const code of allCodes) {
+      expect(M5_REASON_LABELS[code]).toBeDefined();
+      expect(M5_REASON_LABELS[code].length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keine englischen Großbuchstaben-Codes als Label-Werte", () => {
+    for (const code of allCodes) {
+      expect(M5_REASON_LABELS[code]).not.toMatch(/^[A-Z_]+$/);
+    }
   });
 });
 
@@ -83,80 +112,80 @@ describe("M5_DECISION_CODES", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildInquiryM5SectionSummary – Grundstruktur", () => {
-  it("AU POSSIBLE ohne Checkpoints → 'AU | OK'", () => {
+  it("AU POSSIBLE ohne Checkpoints → 'AU | möglich'", () => {
     const section = makeSection("AU", DecisionStatus.POSSIBLE);
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | OK");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | möglich");
   });
 
-  it("AU NOT_POSSIBLE ohne Checkpoints → 'AU | REJECTED'", () => {
+  it("AU NOT_POSSIBLE ohne Checkpoints → 'AU | abgelehnt'", () => {
     const section = makeSection("AU", DecisionStatus.NOT_POSSIBLE);
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | REJECTED");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | abgelehnt");
   });
 
-  it("AU DISABLED ohne Checkpoints → 'AU | OPEN'", () => {
+  it("AU DISABLED ohne Checkpoints → 'AU | offen'", () => {
     const section = makeSection("AU", DecisionStatus.DISABLED);
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | OPEN");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | offen");
   });
 
-  it("PRESCRIPTION → Kurzcode RX", () => {
+  it("PRESCRIPTION → Bezeichnung 'Rezept'", () => {
     const section = makeSection("PRESCRIPTION", DecisionStatus.POSSIBLE);
-    expect(buildInquiryM5SectionSummary(section)).toMatch(/^RX \|/);
+    expect(buildInquiryM5SectionSummary(section)).toMatch(/^Rezept \|/);
   });
 
-  it("REFERRAL → Kurzcode REF", () => {
+  it("REFERRAL → Bezeichnung 'Überweisung'", () => {
     const section = makeSection("REFERRAL", DecisionStatus.POSSIBLE);
-    expect(buildInquiryM5SectionSummary(section)).toMatch(/^REF \|/);
+    expect(buildInquiryM5SectionSummary(section)).toMatch(/^Überweisung \|/);
   });
 
-  it("MEDICAL_DOCUMENTS → Kurzcode DOC", () => {
+  it("MEDICAL_DOCUMENTS → Bezeichnung 'Attest'", () => {
     const section = makeSection("MEDICAL_DOCUMENTS", DecisionStatus.POSSIBLE);
-    expect(buildInquiryM5SectionSummary(section)).toMatch(/^DOC \|/);
+    expect(buildInquiryM5SectionSummary(section)).toMatch(/^Attest \|/);
   });
 
   it("unbekanntes Profil → nutzt Profil-ID als Fallback", () => {
     const section = makeSection("UNKNOWN_PROFILE", DecisionStatus.DISABLED);
-    expect(buildInquiryM5SectionSummary(section)).toBe("UNKNOWN_PROFILE | OPEN");
+    expect(buildInquiryM5SectionSummary(section)).toBe("UNKNOWN_PROFILE | offen");
   });
 });
 
 // ---------------------------------------------------------------------------
-// Grundcodes aus specificRole
+// Grundtexte aus specificRole
 // ---------------------------------------------------------------------------
 
-describe("buildInquiryM5SectionSummary – specificRole → Grundcode", () => {
-  it("AU_BACKDATE_LIMIT (RULE_TIME_LIMIT) → TIME_LIMIT", () => {
+describe("buildInquiryM5SectionSummary – specificRole → Grundtext", () => {
+  it("AU_BACKDATE_LIMIT (RULE_TIME_LIMIT) → 'Frist überschritten'", () => {
     const section = makeSection("AU", DecisionStatus.NOT_POSSIBLE, {
       AU_BACKDATE_LIMIT: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | REJECTED | TIME_LIMIT");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | abgelehnt | Frist überschritten");
   });
 
-  it("AU_WORK_ACCIDENT (EXTERNAL_RESPONSIBILITY) → EXTERNAL", () => {
+  it("AU_WORK_ACCIDENT (EXTERNAL_RESPONSIBILITY) → 'externe Zuständigkeit'", () => {
     const section = makeSection("AU", DecisionStatus.NOT_POSSIBLE, {
       AU_WORK_ACCIDENT: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | REJECTED | EXTERNAL");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | abgelehnt | externe Zuständigkeit");
   });
 
-  it("BILLING_COST_NOT_COVERED (RULE_COST_COVERAGE) → COST via BILLING profile", () => {
+  it("BILLING_COST_NOT_COVERED (RULE_COST_COVERAGE) → 'Selbstzahlerleistung' via BILLING-Profil", () => {
     const section = makeSection("BILLING", DecisionStatus.NOT_POSSIBLE, {
       BILLING_COST_NOT_COVERED: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("BILL | REJECTED | COST");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Abrechnung | abgelehnt | Selbstzahlerleistung");
   });
 
-  it("MEDICAL_CONSULTATION_REQUIRED → NEED_VISIT", () => {
+  it("MEDICAL_CONSULTATION_REQUIRED → 'Arztkontakt nötig'", () => {
     const section = makeSection("REFERRAL", DecisionStatus.DISABLED, {
       MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("REF | OPEN | NEED_VISIT");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Überweisung | offen | Arztkontakt nötig");
   });
 
-  it("NO-Status → kein Grundcode", () => {
+  it("NO-Status → kein Grundtext", () => {
     const section = makeSection("AU", DecisionStatus.NOT_POSSIBLE, {
       AU_BACKDATE_LIMIT: ExplanationStatus.NO,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | REJECTED");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | abgelehnt");
   });
 });
 
@@ -165,76 +194,76 @@ describe("buildInquiryM5SectionSummary – specificRole → Grundcode", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildInquiryM5SectionSummary – explizite m5Codes", () => {
-  it("REF_SPECIALTY_REQUIRED → NO_SPECIALTY", () => {
+  it("REF_SPECIALTY_REQUIRED → 'Fachrichtung fehlt'", () => {
     const section = makeSection("REFERRAL", DecisionStatus.NOT_POSSIBLE, {
       REF_SPECIALTY_REQUIRED: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("REF | REJECTED | NO_SPECIALTY");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Überweisung | abgelehnt | Fachrichtung fehlt");
   });
 
-  it("REF_HAV_CASE → HAV (als Kontextcode bei POSSIBLE)", () => {
+  it("REF_HAV_CASE → 'Hausarztvermittlungsfall' (als Kontextcode bei möglich)", () => {
     const section = makeSection("REFERRAL", DecisionStatus.POSSIBLE, {
       REF_HAV_CASE: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("REF | OK | HAV");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Überweisung | möglich | Hausarztvermittlungsfall");
   });
 
-  it("INFECTIOUS_PROTOCOL → INFECTIOUS", () => {
+  it("INFECTIOUS_PROTOCOL → 'Infekt-Verdacht'", () => {
     const section = makeSection("APPOINTMENT", DecisionStatus.DISABLED, {
       INFECTIOUS_PROTOCOL: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("APPT | OPEN | INFECTIOUS");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Termin | offen | Infekt-Verdacht");
   });
 
-  it("TECH_VIDEO_NOT_WORKING → TECH (nicht WRONG_CHANNEL)", () => {
+  it("TECH_VIDEO_NOT_WORKING → 'technisches Problem'", () => {
     const section = makeSection("TECH_SUPPORT", DecisionStatus.DISABLED, {
       TECH_VIDEO_NOT_WORKING: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("TECH | OPEN | TECH");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Technik | offen | technisches Problem");
   });
 
-  it("TECH_UPLOAD_FAILED → TECH", () => {
+  it("TECH_UPLOAD_FAILED → 'technisches Problem'", () => {
     const section = makeSection("TECH_SUPPORT", DecisionStatus.DISABLED, {
       TECH_UPLOAD_FAILED: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("TECH | OPEN | TECH");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Technik | offen | technisches Problem");
   });
 
-  it("TECH_LOGIN_PROBLEM → TECH", () => {
+  it("TECH_LOGIN_PROBLEM → 'technisches Problem'", () => {
     const section = makeSection("TECH_SUPPORT", DecisionStatus.DISABLED, {
       TECH_LOGIN_PROBLEM: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("TECH | OPEN | TECH");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Technik | offen | technisches Problem");
   });
 });
 
 // ---------------------------------------------------------------------------
-// Maximal 2 Grundcodes
+// Maximal 2 Grundsegmente
 // ---------------------------------------------------------------------------
 
-describe("buildInquiryM5SectionSummary – Begrenzung auf 2 Grundcodes", () => {
-  it("3 aktive Checkpoints → nur 2 Grundcodes in Ausgabe", () => {
+describe("buildInquiryM5SectionSummary – Begrenzung auf 2 Grundsegmente", () => {
+  it("3 aktive Checkpoints → nur 2 Grundsegmente in Ausgabe", () => {
     const section = makeSection("AU", DecisionStatus.NOT_POSSIBLE, {
-      AU_BACKDATE_LIMIT: ExplanationStatus.YES,   // TIME_LIMIT
-      AU_WORK_ACCIDENT: ExplanationStatus.YES,     // EXTERNAL
-      AU_NEW_PATIENT_LIMIT: ExplanationStatus.YES, // TIME_LIMIT (Duplikat → 2 unique)
+      AU_BACKDATE_LIMIT: ExplanationStatus.YES,   // Frist überschritten
+      AU_WORK_ACCIDENT: ExplanationStatus.YES,     // externe Zuständigkeit
+      AU_NEW_PATIENT_LIMIT: ExplanationStatus.YES, // Frist überschritten (Duplikat → 2 unique)
     });
     const result = buildInquiryM5SectionSummary(section);
     const parts = result.split(" | ");
-    // PROFILCODE | DECISIONCODE | max 2 Grundcodes = max 4 Teile
+    // Profil | Entscheidung | max 2 Grundsegmente = max 4 Teile
     expect(parts.length).toBeLessThanOrEqual(4);
     expect(parts[0]).toBe("AU");
-    expect(parts[1]).toBe("REJECTED");
+    expect(parts[1]).toBe("abgelehnt");
   });
 
   it("Duplikate aus verschiedenen Checkpoints erscheinen nur einmal", () => {
     const section = makeSection("AU", DecisionStatus.NOT_POSSIBLE, {
-      AU_BACKDATE_LIMIT: ExplanationStatus.YES,    // TIME_LIMIT
-      AU_NEW_PATIENT_LIMIT: ExplanationStatus.YES, // TIME_LIMIT (Duplikat)
+      AU_BACKDATE_LIMIT: ExplanationStatus.YES,    // Frist überschritten
+      AU_NEW_PATIENT_LIMIT: ExplanationStatus.YES, // Frist überschritten (Duplikat)
     });
     const result = buildInquiryM5SectionSummary(section);
     const parts = result.split(" | ");
-    const timeLimitCount = parts.filter((p) => p === "TIME_LIMIT").length;
+    const timeLimitCount = parts.filter((p) => p === "Frist überschritten").length;
     expect(timeLimitCount).toBe(1);
   });
 });
@@ -244,12 +273,12 @@ describe("buildInquiryM5SectionSummary – Begrenzung auf 2 Grundcodes", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildInquiryM5SectionSummary – Ausschlüsse", () => {
-  it("ACTION-Checkpoints erzeugen keine Grundcodes", () => {
+  it("ACTION-Checkpoints erzeugen keine Grundsegmente", () => {
     // BOOK_APPOINTMENT ist eine ACTION – darf nicht in M5 erscheinen
     const section = makeSection("AU", DecisionStatus.POSSIBLE, {
       BOOK_APPOINTMENT: ActionStatus.ACTIVE,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | OK");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | möglich");
   });
 
   it("Ausgabe enthält keine URLs", () => {
@@ -260,31 +289,32 @@ describe("buildInquiryM5SectionSummary – Ausschlüsse", () => {
     expect(result).not.toMatch(/https?:\/\//);
   });
 
-  it("Ausgabe enthält keine langen Sätze (max 50 Zeichen)", () => {
+  it("Ausgabe enthält keine englischen Großbuchstaben-Codes", () => {
     const section = makeSection("AU", DecisionStatus.NOT_POSSIBLE, {
       AU_BACKDATE_LIMIT: ExplanationStatus.YES,
       AU_WORK_ACCIDENT: ExplanationStatus.YES,
     });
     const result = buildInquiryM5SectionSummary(section);
-    expect(result.length).toBeLessThan(50);
+    // Keine reinen englischen Codes wie REJECTED, TIME_LIMIT etc.
+    expect(result).not.toMatch(/\b(OK|REJECTED|OPEN|TIME_LIMIT|EXTERNAL|NO_DATA|COST)\b/);
   });
 
-  it("Ausgabe enthält maximal 4 Token (geteilt durch ' | ')", () => {
+  it("Ausgabe enthält maximal 4 Segmente (geteilt durch ' | ')", () => {
     const section = makeSection("BILLING", DecisionStatus.NOT_POSSIBLE, {
       BILLING_COST_NOT_COVERED: ExplanationStatus.YES,
     });
     const result = buildInquiryM5SectionSummary(section);
     const tokenCount = result.split(" | ").length;
-    // Profilcode + Entscheidungscode + max 2 Grundcodes = max 4
+    // Profil + Entscheidung + max 2 Grundsegmente = max 4
     expect(tokenCount).toBeLessThanOrEqual(4);
   });
 
-  it("PROCESS_INFO specificRole erzeugt keinen Grundcode", () => {
-    // REF_PSYCHOTHERAPY_FIRST_STEP hat specificRole=PROCESS_INFO → kein Grundcode
+  it("PROCESS_INFO specificRole erzeugt kein Grundsegment", () => {
+    // REF_PSYCHOTHERAPY_FIRST_STEP hat specificRole=PROCESS_INFO → kein Grundsegment
     const section = makeSection("REFERRAL", DecisionStatus.POSSIBLE, {
       REF_PSYCHOTHERAPY_FIRST_STEP: ExplanationStatus.YES,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("REF | OK");
+    expect(buildInquiryM5SectionSummary(section)).toBe("Überweisung | möglich");
   });
 });
 
@@ -307,7 +337,7 @@ describe("buildInquiryM5Summary – mehrere Sections", () => {
     expect(buildInquiryM5Summary([])).toEqual([]);
   });
 
-  it("kombiniertes Szenario: AU OK, LAB REJECTED mit COST", () => {
+  it("kombiniertes Szenario: AU möglich, LAB abgelehnt mit Selbstzahlerleistung", () => {
     const sections = [
       makeSection("AU", DecisionStatus.POSSIBLE),
       makeSection("LAB", DecisionStatus.NOT_POSSIBLE, {
@@ -315,8 +345,8 @@ describe("buildInquiryM5Summary – mehrere Sections", () => {
       }),
     ];
     const result = buildInquiryM5Summary(sections);
-    expect(result[0]).toBe("AU | OK");
-    expect(result[1]).toBe("LAB | REJECTED | COST");
+    expect(result[0]).toBe("AU | möglich");
+    expect(result[1]).toBe("Labor | abgelehnt | Selbstzahlerleistung");
   });
 });
 
@@ -331,7 +361,7 @@ describe("buildInquiryM5Summary – UI-Integration Ausschlüsse", () => {
       CARE_CHANNEL_CHOICE: ActionStatus.ACTIVE,
     });
     const result = buildInquiryM5SectionSummary(section);
-    expect(result).toBe("AU | OK");
+    expect(result).toBe("AU | möglich");
     expect(result).not.toContain("CARE_CHANNEL_CHOICE");
   });
 
@@ -339,29 +369,29 @@ describe("buildInquiryM5Summary – UI-Integration Ausschlüsse", () => {
     const section = makeSection("AU", DecisionStatus.DISABLED, {
       DIGITAL_REQUEST: ActionStatus.ACTIVE,
     });
-    expect(buildInquiryM5SectionSummary(section)).toBe("AU | OPEN");
+    expect(buildInquiryM5SectionSummary(section)).toBe("AU | offen");
   });
 
-  it("MEDICAL_CONSULTATION_REQUIRED erscheint nur als NEED_VISIT", () => {
+  it("MEDICAL_CONSULTATION_REQUIRED erscheint nur als 'Arztkontakt nötig'", () => {
     const section = makeSection("REFERRAL", DecisionStatus.DISABLED, {
       MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
     });
     const result = buildInquiryM5SectionSummary(section);
-    expect(result).toBe("REF | OPEN | NEED_VISIT");
+    expect(result).toBe("Überweisung | offen | Arztkontakt nötig");
     // Kein langer Text
     expect(result).not.toMatch(/ärztliche/i);
     expect(result).not.toMatch(/Konsultation/i);
   });
 
-  it("Compact summary enthält keine langen Sätze (max 20 Zeichen pro Token)", () => {
+  it("Compact summary enthält keine langen Sätze (max 25 Zeichen pro Segment)", () => {
     const section = makeSection("REFERRAL", DecisionStatus.NOT_POSSIBLE, {
       REF_SPECIALTY_REQUIRED: ExplanationStatus.YES,
       MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
     });
     const result = buildInquiryM5SectionSummary(section);
-    // Jedes Token ist maximal 20 Zeichen lang
+    // Jedes Segment ist maximal 25 Zeichen lang
     for (const token of result.split(" | ")) {
-      expect(token.length).toBeLessThanOrEqual(20);
+      expect(token.length).toBeLessThanOrEqual(25);
     }
   });
 
@@ -379,8 +409,8 @@ describe("buildInquiryM5Summary – UI-Integration Ausschlüsse", () => {
     ];
     const result = buildInquiryM5Summary(sections);
     expect(result).toHaveLength(3);
-    expect(result[0]).toBe("AU | REJECTED | TIME_LIMIT");
-    expect(result[1]).toBe("REF | OPEN | NO_SPECIALTY");
-    expect(result[2]).toBe("DOC | OPEN | NEED_VISIT");
+    expect(result[0]).toBe("AU | abgelehnt | Frist überschritten");
+    expect(result[1]).toBe("Überweisung | offen | Fachrichtung fehlt");
+    expect(result[2]).toBe("Attest | offen | Arztkontakt nötig");
   });
 });
