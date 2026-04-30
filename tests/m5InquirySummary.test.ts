@@ -174,9 +174,9 @@ describe("buildInquiryM5SectionSummary – specificRole → Grundtext", () => {
     expect(buildInquiryM5SectionSummary(section)).toBe("Abrechnung | abgelehnt | Selbstzahlerleistung");
   });
 
-  it("MEDICAL_CONSULTATION_REQUIRED → 'Arztkontakt nötig'", () => {
+  it("REF_MEDICAL_CONSULTATION_REQUIRED → 'Arztkontakt nötig'", () => {
     const section = makeSection("REFERRAL", DecisionStatus.DISABLED, {
-      MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+      REF_MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
     });
     expect(buildInquiryM5SectionSummary(section)).toBe("Überweisung | offen | Arztkontakt nötig");
   });
@@ -372,9 +372,9 @@ describe("buildInquiryM5Summary – UI-Integration Ausschlüsse", () => {
     expect(buildInquiryM5SectionSummary(section)).toBe("AU | offen");
   });
 
-  it("MEDICAL_CONSULTATION_REQUIRED erscheint nur als 'Arztkontakt nötig'", () => {
+  it("REF_MEDICAL_CONSULTATION_REQUIRED erscheint nur als 'Arztkontakt nötig'", () => {
     const section = makeSection("REFERRAL", DecisionStatus.DISABLED, {
-      MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+      REF_MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
     });
     const result = buildInquiryM5SectionSummary(section);
     expect(result).toBe("Überweisung | offen | Arztkontakt nötig");
@@ -386,7 +386,7 @@ describe("buildInquiryM5Summary – UI-Integration Ausschlüsse", () => {
   it("Compact summary enthält keine langen Sätze (max 25 Zeichen pro Segment)", () => {
     const section = makeSection("REFERRAL", DecisionStatus.NOT_POSSIBLE, {
       REF_SPECIALTY_REQUIRED: ExplanationStatus.YES,
-      MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+      REF_MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
     });
     const result = buildInquiryM5SectionSummary(section);
     // Jedes Segment ist maximal 25 Zeichen lang
@@ -404,7 +404,7 @@ describe("buildInquiryM5Summary – UI-Integration Ausschlüsse", () => {
         REF_SPECIALTY_REQUIRED: ExplanationStatus.YES,
       }),
       makeSection("MEDICAL_DOCUMENTS", DecisionStatus.DISABLED, {
-        MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+        MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: ExplanationStatus.YES,
       }),
     ];
     const result = buildInquiryM5Summary(sections);
