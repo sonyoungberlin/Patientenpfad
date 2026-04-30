@@ -31,9 +31,10 @@ model Account {
   /// Muss explizit durch Admin aktiviert werden; Standard: false.
   inquiry_assistant_enabled Boolean @default(false)
 
-  cases             CaseSession[]
-  sessions          Session[]
-  inquiry_sessions  InquirySession[]
+  cases                        CaseSession[]
+  sessions                     Session[]
+  inquiry_sessions             InquirySession[]
+  patient_questionnaire_sessions PatientQuestionnaireSession[]
 }
 
 model Session {
@@ -165,6 +166,49 @@ enum InquirySessionStatus {
   DRAFT
   CONFIRMED
   ARCHIVED
+}
+
+/// Modulare Fragebogen-Sitzung für einen Patienten.
+/// Vollständig isoliert von CaseSession und InquirySession.
+/// Wird über einen einmaligen, zeitlich begrenzten Token zugänglich gemacht.
+model PatientQuestionnaireSession {
+  id               String    @id @default(cuid())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  /// Einmaliger Token für den Patientenlink (wird nach Einreichung auf null gesetzt)
+  token            String?   @unique
+
+  /// Ablaufzeitpunkt des Tokens
+  token_expires_at DateTime?
+
+  /// Ersteller (Praxis-Account, optional)
+  owner_account_id String?
+  owner_account    Account?  @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
+
+  /// Interne Patientenreferenz (wird nie in den Link kodiert)
+  patient_reference String?
+
+  /// Optionale Verknüpfung zur auslösenden InquirySession
+  inquiry_session_id String?
+
+  /// Gewählte Block-IDs: z.B. ["KONTAKT", "AU"]
+  selected_block_ids Json
+
+  /// Deduplizierte Fragen (eingefroren beim Anlegen)
+  deduplicated_questions Json
+
+  /// Patientenantworten: Record<questionId, string> (nach Einreichung)
+  answers Json?
+
+  /// "pending" | "completed" | "expired"
+  status String @default("pending")
+
+  /// Zeitpunkt der Einreichung durch den Patienten
+  submitted_at DateTime?
+
+  /// Optionaler Verifikations-Hash (SHA-256 des Geburtsdatums, nie Klartext)
+  birth_date_hash String?
 }
 
 /// Sitzung des Anfrage-Assistenten.
