@@ -984,6 +984,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  DIGITAL_REQUEST_REQUIRED: {
+    id: "DIGITAL_REQUEST_REQUIRED",
+    label: "Digitale Anfrage zur Prüfung erforderlich",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für die Prüfung Ihres Anliegens benötigen wir eine digitale Anfrage.",
+    },
+  },
+
   ONLINE_ANAMNESIS: {
     id: "ONLINE_ANAMNESIS",
     label: "Online-Anamnese",
