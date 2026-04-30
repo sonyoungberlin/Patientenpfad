@@ -11,6 +11,7 @@ import {
 } from "@/lib/inquiries/types";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { buildInquiryM5Summary } from "@/lib/inquiries/buildInquiryM5Summary";
+import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
 
 export type M3SpecificCheckpoint = {
   id: string;
@@ -228,6 +229,218 @@ function OutputView({
         </section>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fragebogen-Anforderungsbereich (vollständig isoliert von InquirySession-Logik)
+// ---------------------------------------------------------------------------
+
+function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: string }) {
+  const [open, setOpen] = useState(false);
+  const [patientRef, setPatientRef] = useState("");
+  const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [reqError, setReqError] = useState<string | null>(null);
+
+  function toggleBlock(blockId: string) {
+    setSelectedBlocks((prev) => ({ ...prev, [blockId]: !prev[blockId] }));
+  }
+
+  const anyBlockSelected = BLOCK_IDS_SORTED.some((id) => selectedBlocks[id]);
+
+  async function handleCreate() {
+    setLoading(true);
+    setReqError(null);
+    setCopied(false);
+    setLink(null);
+
+    const blockIds = BLOCK_IDS_SORTED.filter((id) => selectedBlocks[id]);
+    try {
+      const res = await fetch("/api/questionnaire", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_reference: patientRef.trim() || undefined,
+          selected_block_ids: blockIds,
+          inquiry_session_id: inquirySessionId,
+        }),
+      });
+      const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
+      if (!res.ok || !data.ok || !data.link) {
+        setReqError(data.error ?? "Fragebogen konnte nicht erstellt werden.");
+        return;
+      }
+      setLink(data.link);
+    } catch {
+      setReqError("Netzwerkfehler. Bitte erneut versuchen.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+    } catch {
+      setReqError("Link konnte nicht in die Zwischenablage kopiert werden.");
+    }
+  }
+
+  return (
+    <section
+      data-questionnaire-request
+      style={{
+        marginTop: "2rem",
+        paddingTop: "1.5rem",
+        borderTop: "1px solid var(--border)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: open ? "1rem" : 0 }}>
+        <h2 style={{ margin: 0, fontSize: "1rem" }}>
+          <span aria-hidden="true">✉ </span>Fragebogen anfordern
+        </h2>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          style={{
+            padding: "0.15rem 0.6rem",
+            borderRadius: "var(--radius)",
+            border: "1px solid var(--border)",
+            background: "var(--background)",
+            color: "var(--foreground)",
+            fontSize: "0.8rem",
+            cursor: "pointer",
+          }}
+        >
+          {open ? "Schließen ▲" : "Öffnen ▼"}
+        </button>
+      </div>
+
+      {open && (
+        <div style={{ display: "grid", gap: "1rem" }}>
+          {/* Patient reference */}
+          <div>
+            <label
+              htmlFor="q-patient-ref"
+              style={{ display: "block", fontWeight: 500, marginBottom: "0.3rem", fontSize: "0.9rem" }}
+            >
+              Patientennummer / Referenz (optional)
+            </label>
+            <input
+              id="q-patient-ref"
+              type="text"
+              value={patientRef}
+              onChange={(e) => setPatientRef(e.target.value)}
+              disabled={loading || !!link}
+              placeholder="z.B. PAT-12345"
+              style={{
+                padding: "0.4rem 0.6rem",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius)",
+                background: "var(--input-background)",
+                fontSize: "0.9rem",
+                width: "100%",
+                maxWidth: "20rem",
+                fontFamily: "inherit",
+                color: "var(--foreground)",
+              }}
+            />
+          </div>
+
+          {/* Block selection */}
+          <div>
+            <div style={{ fontWeight: 500, marginBottom: "0.4rem", fontSize: "0.9rem" }}>
+              Fragebogen-Blöcke auswählen
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              {BLOCK_IDS_SORTED.map((blockId) => {
+                const block = BLOCK_CATALOG[blockId];
+                const checked = !!selectedBlocks[blockId];
+                return (
+                  <label
+                    key={blockId}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                      padding: "0.25rem 0.6rem",
+                      border: `1px solid ${checked ? "var(--primary, #2563eb)" : "var(--border)"}`,
+                      borderRadius: "var(--radius)",
+                      background: checked ? "var(--primary-subtle, #eff6ff)" : "var(--background)",
+                      cursor: loading || !!link ? "not-allowed" : "pointer",
+                      fontSize: "0.85rem",
+                      opacity: loading || !!link ? 0.6 : 1,
+                    }}
+                    data-q-block-label={blockId}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleBlock(blockId)}
+                      disabled={loading || !!link}
+                      data-q-block={blockId}
+                      style={{ accentColor: "var(--primary, #2563eb)" }}
+                    />
+                    {block.label}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {reqError && (
+            <p className="text-error" role="alert" aria-live="polite" style={{ margin: 0 }}>
+              {reqError}
+            </p>
+          )}
+
+          {!link && (
+            <div>
+              <button
+                type="button"
+                onClick={() => void handleCreate()}
+                disabled={loading || !anyBlockSelected}
+                data-q-create-link
+              >
+                {loading ? "Wird erzeugt…" : "Link erzeugen"}
+              </button>
+            </div>
+          )}
+
+          {link && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <code
+                data-q-generated-link
+                style={{
+                  display: "block",
+                  wordBreak: "break-all",
+                  background: "var(--input-background)",
+                  padding: "0.5rem 0.75rem",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)",
+                  fontSize: "0.85rem",
+                }}
+              >
+                {link}
+              </code>
+              <button
+                type="button"
+                data-q-copy-link
+                onClick={() => void copyLink()}
+                style={{ alignSelf: "flex-start" }}
+              >
+                {copied ? "Kopiert ✓" : "Link kopieren"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -809,6 +1022,9 @@ export default function InquiryM3Client({
           {error && (
             <p style={{ color: "var(--destructive)", margin: "1rem 0 0.5rem" }}>{error}</p>
           )}
+
+          {/* Fragebogen anfordern – isolierter Bereich, keine Änderung an InquirySession */}
+          <QuestionnaireRequestSection inquirySessionId={sessionId} />
 
           <div style={{ marginTop: "1.5rem" }}>
             <button
