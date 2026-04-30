@@ -366,6 +366,43 @@ export async function confirmInquirySession(
 }
 
 /**
+ * Löscht eine InquirySession vollständig aus der DB.
+ *
+ * Wirft InquirySessionError("session_not_found"), wenn die Session nicht
+ * existiert oder einem anderen Account gehört (Owner-Guard).
+ *
+ * @param sessionId – ID der zu löschenden Session.
+ * @param ownerAccountId – Optionaler Owner-Guard: Schlägt fehl, wenn die
+ *   Session einem anderen Account gehört.
+ */
+export async function deleteInquirySession(
+  sessionId: string,
+  ownerAccountId?: string,
+  client: PrismaLike = defaultPrisma,
+): Promise<void> {
+  const session = await client.inquirySession.findUnique({
+    where: { id: sessionId },
+    select: { id: true, owner_account_id: true },
+  });
+
+  if (!session) {
+    throw new InquirySessionError(
+      "session_not_found",
+      `InquirySession ${sessionId} nicht gefunden.`,
+    );
+  }
+
+  if (ownerAccountId && session.owner_account_id !== ownerAccountId) {
+    throw new InquirySessionError(
+      "session_not_found",
+      `InquirySession ${sessionId} nicht gefunden.`,
+    );
+  }
+
+  await client.inquirySession.delete({ where: { id: sessionId } });
+}
+
+/**
  * Liest eine InquirySession inkl. generiertem Output aus der DB.
  *
  * Gibt null zurück, wenn die Session nicht existiert.
