@@ -26,6 +26,58 @@ function QuestionField({
   };
 
   switch (question.type as QuestionType) {
+    case "multi_select":
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }}>
+          {(question.options ?? []).map((opt) => {
+            const selected = value.split(",").map((s) => s.trim()).filter(Boolean).includes(opt);
+            return (
+              <button
+                key={opt}
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                  const current = value.split(",").map((s) => s.trim()).filter(Boolean);
+                  const next = selected
+                    ? current.filter((s) => s !== opt)
+                    : [...current, opt];
+                  onChange(question.id, next.join(", "));
+                }}
+                style={{
+                  padding: "0.25rem 0.75rem",
+                  borderRadius: "var(--radius)",
+                  border: "1px solid var(--border)",
+                  background: selected ? "var(--primary, #2563eb)" : "var(--background)",
+                  color: selected ? "#fff" : "var(--foreground)",
+                  fontWeight: selected ? 600 : 400,
+                  cursor: disabled ? "not-allowed" : "pointer",
+                  opacity: disabled ? 0.6 : 1,
+                  fontSize: "0.9rem",
+                }}
+                data-q-multiselect={`${question.id}:${opt}`}
+              >
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      );
+    case "select":
+      return (
+        <select
+          id={question.id}
+          value={value}
+          onChange={(e) => onChange(question.id, e.target.value)}
+          disabled={disabled}
+          required={question.required}
+          style={{ ...baseStyle }}
+        >
+          <option value="">— bitte wählen —</option>
+          {(question.options ?? []).map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      );
     case "textarea":
       return (
         <textarea
@@ -185,6 +237,14 @@ export function QuestionnaireFormClient({
                 onChange={handleChange}
                 disabled={saving}
               />
+              {q.helperText && (
+                <p
+                  style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", color: "var(--muted-foreground, #6b7280)" }}
+                  data-q-helper={q.id}
+                >
+                  {q.helperText}
+                </p>
+              )}
             </li>
           ))}
         </ul>

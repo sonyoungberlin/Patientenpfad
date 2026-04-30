@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import M2Page from "@/app/cases/[id]/m2/page";
+import { buildMessageText } from "@/app/cases/[id]/m2/M2LinkGeneratorClient";
 
 jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
@@ -55,5 +56,37 @@ describe("M2-Seite – M2-Link-Generator", () => {
     );
 
     expect(markup).toContain("data-m2-link-generator");
+  });
+});
+
+describe("buildMessageText", () => {
+  const EXAMPLE_LINK = "https://example.com/m2-link/abc-123";
+
+  it("enthält den generierten Link im Nachrichtentext", () => {
+    const result = buildMessageText(EXAMPLE_LINK, "");
+    expect(result).toContain(EXAMPLE_LINK);
+  });
+
+  it("enthält die Intro-Zeile", () => {
+    const result = buildMessageText(EXAMPLE_LINK, "");
+    expect(result).toContain("Liebe Patientin, lieber Patient");
+  });
+
+  it("fügt die Signatur an wenn vorhanden", () => {
+    const sig = "Mit freundlichen Grüßen\nIhre Praxis";
+    const result = buildMessageText(EXAMPLE_LINK, sig);
+    expect(result).toContain(sig);
+  });
+
+  it("lässt die Signatur weg wenn leer", () => {
+    const result = buildMessageText(EXAMPLE_LINK, "");
+    const lines = result.split("\n");
+    // last meaningful content should be the link, not an empty signature block
+    expect(result.trimEnd()).toMatch(new RegExp(EXAMPLE_LINK.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"));
+  });
+
+  it("lässt die Signatur weg wenn nur Whitespace", () => {
+    const result = buildMessageText(EXAMPLE_LINK, "   ");
+    expect(result.trimEnd()).toMatch(new RegExp(EXAMPLE_LINK.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"));
   });
 });

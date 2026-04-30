@@ -6,6 +6,7 @@
  * - die Reihenfolge nach displayOrder korrekt ist
  * - unbekannte Block-IDs ignoriert werden
  * - leere Eingabe ein leeres Ergebnis liefert
+ * - alle neuen Blöcke (ADRESSE, KURZANAMNESE, ARBEITSUNFAEHIGKEIT, REZEPT, UEBERWEISUNG) die erwarteten Fragen enthalten
  */
 
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
@@ -20,83 +21,129 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     expect(result).toEqual([]);
   });
 
-  it("AU + REZEPT: CONTACT_PHONE erscheint nur einmal", () => {
-    const result = buildQuestionnaireQuestions(["AU", "REZEPT"]);
+  it("ARBEITSUNFAEHIGKEIT + REZEPT: CONTACT_PHONE erscheint nur einmal wenn KONTAKT dabei", () => {
+    const result = buildQuestionnaireQuestions(["KONTAKT", "ARBEITSUNFAEHIGKEIT", "REZEPT"]);
     const phoneCount = result.filter((q) => q.id === "CONTACT_PHONE").length;
     expect(phoneCount).toBe(1);
   });
 
-  it("AU + REZEPT: CONTACT_EMAIL erscheint nur einmal", () => {
-    const result = buildQuestionnaireQuestions(["AU", "REZEPT"]);
-    const emailCount = result.filter((q) => q.id === "CONTACT_EMAIL").length;
-    expect(emailCount).toBe(1);
+  it("ARBEITSUNFAEHIGKEIT + REZEPT: keine doppelten questionIds insgesamt", () => {
+    const result = buildQuestionnaireQuestions(["ARBEITSUNFAEHIGKEIT", "REZEPT"]);
+    const ids = result.map((q) => q.id);
+    const unique = new Set(ids);
+    expect(ids.length).toBe(unique.size);
   });
 
-  it("AU + REZEPT: DOB erscheint nur einmal", () => {
-    const result = buildQuestionnaireQuestions(["AU", "REZEPT"]);
-    const dobCount = result.filter((q) => q.id === "DOB").length;
-    expect(dobCount).toBe(1);
-  });
-
-  it("AU + REZEPT: enthält AU-spezifische Fragen", () => {
-    const result = buildQuestionnaireQuestions(["AU", "REZEPT"]);
+  it("ARBEITSUNFAEHIGKEIT: enthält AU-spezifische Fragen", () => {
+    const result = buildQuestionnaireQuestions(["ARBEITSUNFAEHIGKEIT"]);
     const ids = result.map((q) => q.id);
     expect(ids).toContain("AU_SYMPTOMS");
     expect(ids).toContain("AU_START_DATE");
     expect(ids).toContain("AU_END_DATE");
   });
 
-  it("AU + REZEPT: enthält REZEPT-spezifische Fragen", () => {
-    const result = buildQuestionnaireQuestions(["AU", "REZEPT"]);
+  it("REZEPT: enthält Rezept-spezifische Fragen", () => {
+    const result = buildQuestionnaireQuestions(["REZEPT"]);
     const ids = result.map((q) => q.id);
+    expect(ids).toContain("PRESCRIPTION_TYPE");
     expect(ids).toContain("PRESCRIPTION_MEDICATION");
-    expect(ids).toContain("PRESCRIPTION_IS_REPEAT");
-  });
-
-  it("AU + REZEPT: keine doppelten questionIds insgesamt", () => {
-    const result = buildQuestionnaireQuestions(["AU", "REZEPT"]);
-    const ids = result.map((q) => q.id);
-    const unique = new Set(ids);
-    expect(ids.length).toBe(unique.size);
-  });
-
-  it("Reihenfolge: AU (order=30) kommt vor REZEPT (order=40)", () => {
-    const result = buildQuestionnaireQuestions(["REZEPT", "AU"]);
-    // Auch wenn REZEPT zuerst übergeben, soll AU (displayOrder 30) zuerst kommen.
-    const auSymptomIdx = result.findIndex((q) => q.id === "AU_SYMPTOMS");
-    const prescriptionIdx = result.findIndex((q) => q.id === "PRESCRIPTION_MEDICATION");
-    expect(auSymptomIdx).toBeGreaterThanOrEqual(0);
-    expect(prescriptionIdx).toBeGreaterThanOrEqual(0);
-    expect(auSymptomIdx).toBeLessThan(prescriptionIdx);
-  });
-
-  it("KONTAKT (order=10): CONTACT_PHONE kommt zuerst bei KONTAKT + AU", () => {
-    const result = buildQuestionnaireQuestions(["AU", "KONTAKT"]);
-    // KONTAKT hat displayOrder 10, also kommt CONTACT_PHONE von KONTAKT
-    expect(result[0].id).toBe("CONTACT_PHONE");
-  });
-
-  it("FEHLENDE_INFO: enthält MISSING_INFO_FREETEXT", () => {
-    const result = buildQuestionnaireQuestions(["FEHLENDE_INFO"]);
-    const ids = result.map((q) => q.id);
-    expect(ids).toContain("MISSING_INFO_FREETEXT");
-    expect(ids).toContain("CONTACT_PHONE");
+    expect(ids).toContain("PRESCRIPTION_REPEAT_KNOWN");
   });
 
   it("UEBERWEISUNG: enthält alle Überweisungs-Fragen", () => {
     const result = buildQuestionnaireQuestions(["UEBERWEISUNG"]);
     const ids = result.map((q) => q.id);
     expect(ids).toContain("REF_SPECIALTY");
+    expect(ids).toContain("REF_DOCTOR_NAME");
+    expect(ids).toContain("REF_ADDRESS");
     expect(ids).toContain("REF_APPOINTMENT_EXISTS");
     expect(ids).toContain("REF_APPOINTMENT_DATE");
+    expect(ids).toContain("REF_REASON");
+  });
+
+  it("KURZANAMNESE: enthält alle Anamnesefragen", () => {
+    const result = buildQuestionnaireQuestions(["KURZANAMNESE"]);
+    const ids = result.map((q) => q.id);
+    expect(ids).toContain("ANAMNESE_GP");
+    expect(ids).toContain("ANAMNESE_HEIGHT");
+    expect(ids).toContain("ANAMNESE_WEIGHT");
+    expect(ids).toContain("ANAMNESE_CHRONIC");
+    expect(ids).toContain("ANAMNESE_HEREDITARY");
+    expect(ids).toContain("ANAMNESE_ALLERGIES");
+    expect(ids).toContain("ANAMNESE_MEDICATIONS");
+    expect(ids).toContain("ANAMNESE_SMOKING");
+    expect(ids).toContain("ANAMNESE_ALCOHOL");
+    expect(ids).toContain("ANAMNESE_SUBSTANCES");
+    expect(ids).toContain("ANAMNESE_VACCINATION");
+  });
+
+  it("ADRESSE: enthält ADDRESS_POSTAL mit helperText", () => {
+    const result = buildQuestionnaireQuestions(["ADRESSE"]);
+    const postal = result.find((q) => q.id === "ADDRESS_POSTAL");
+    expect(postal).toBeDefined();
+    expect(postal?.helperText).toBe("Wird für Abrechnung und Dokumente benötigt.");
+  });
+
+  it("ADDRESS_POSTAL erscheint nur einmal wenn ADRESSE + andere Blöcke kombiniert", () => {
+    const result = buildQuestionnaireQuestions(["ADRESSE", "KURZANAMNESE", "REZEPT"]);
+    const count = result.filter((q) => q.id === "ADDRESS_POSTAL").length;
+    expect(count).toBe(1);
+  });
+
+  it("KONTAKT (order=10): kommt vor ADRESSE (order=20) kommt vor KURZANAMNESE (order=30)", () => {
+    const result = buildQuestionnaireQuestions(["KURZANAMNESE", "ADRESSE", "KONTAKT"]);
+    const phoneIdx = result.findIndex((q) => q.id === "CONTACT_PHONE");
+    const postalIdx = result.findIndex((q) => q.id === "ADDRESS_POSTAL");
+    const gpIdx = result.findIndex((q) => q.id === "ANAMNESE_GP");
+    expect(phoneIdx).toBeLessThan(postalIdx);
+    expect(postalIdx).toBeLessThan(gpIdx);
+  });
+
+  it("Reihenfolge: ARBEITSUNFAEHIGKEIT (order=40) kommt vor REZEPT (order=50)", () => {
+    const result = buildQuestionnaireQuestions(["REZEPT", "ARBEITSUNFAEHIGKEIT"]);
+    const auIdx = result.findIndex((q) => q.id === "AU_SYMPTOMS");
+    const rxIdx = result.findIndex((q) => q.id === "PRESCRIPTION_TYPE");
+    expect(auIdx).toBeGreaterThanOrEqual(0);
+    expect(rxIdx).toBeGreaterThanOrEqual(0);
+    expect(auIdx).toBeLessThan(rxIdx);
   });
 
   it("alle 6 Blöcke kombiniert: CONTACT_PHONE erscheint genau einmal", () => {
     const result = buildQuestionnaireQuestions([
-      "KONTAKT", "KURZANAMNESE", "AU", "REZEPT", "UEBERWEISUNG", "FEHLENDE_INFO",
+      "KONTAKT", "ADRESSE", "KURZANAMNESE", "ARBEITSUNFAEHIGKEIT", "REZEPT", "UEBERWEISUNG",
     ]);
     const phoneCount = result.filter((q) => q.id === "CONTACT_PHONE").length;
     expect(phoneCount).toBe(1);
+  });
+
+  it("alle 6 Blöcke kombiniert: keine doppelten questionIds", () => {
+    const result = buildQuestionnaireQuestions([
+      "KONTAKT", "ADRESSE", "KURZANAMNESE", "ARBEITSUNFAEHIGKEIT", "REZEPT", "UEBERWEISUNG",
+    ]);
+    const ids = result.map((q) => q.id);
+    expect(ids.length).toBe(new Set(ids).size);
+  });
+
+  it("FEHLENDE_INFO ist kein gültiger Block mehr – wird ignoriert", () => {
+    const result = buildQuestionnaireQuestions(["FEHLENDE_INFO"]);
+    expect(result).toEqual([]);
+  });
+
+  it("AU_SYMPTOMS ist vom Typ multi_select und hat Optionen", () => {
+    const result = buildQuestionnaireQuestions(["ARBEITSUNFAEHIGKEIT"]);
+    const symptoms = result.find((q) => q.id === "AU_SYMPTOMS");
+    expect(symptoms?.type).toBe("multi_select");
+    expect(Array.isArray(symptoms?.options)).toBe(true);
+    expect((symptoms?.options ?? []).length).toBeGreaterThan(0);
+    expect(symptoms?.options).toContain("Sonstiges");
+  });
+
+  it("PRESCRIPTION_TYPE ist vom Typ select mit Optionen Dauermedikation und Einzelmedikament", () => {
+    const result = buildQuestionnaireQuestions(["REZEPT"]);
+    const pt = result.find((q) => q.id === "PRESCRIPTION_TYPE");
+    expect(pt?.type).toBe("select");
+    expect(pt?.options).toContain("Dauermedikation");
+    expect(pt?.options).toContain("Einzelmedikament");
   });
 
   it("gibt QuestionDefinition-Objekte mit id, text, type, required zurück", () => {

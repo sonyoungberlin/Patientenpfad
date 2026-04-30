@@ -1,20 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
+
+const MESSAGE_INTRO =
+  "Liebe Patientin, lieber Patient,\n" +
+  "für die Vorbereitung Ihres nächsten Termins bitten wir Sie, den folgenden Fragebogen auszufüllen:";
+
+export function buildMessageText(generatedLink: string, signature: string): string {
+  const parts = [MESSAGE_INTRO, generatedLink];
+  if (signature.trim()) parts.push(signature.trim());
+  return parts.join("\n\n");
+}
 
 export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
   const router = useRouter();
   const [link, setLink] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState<string>("");
+  const [signature, setSignature] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/account/signature")
+      .then((r) => r.json())
+      .then((data: { ok?: boolean; signature?: string }) => {
+        if (data.ok) {
+          setSignature(data.signature ?? "");
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Rebuild message whenever the link or signature changes so that a
+  // late-loading signature is always included in the draft.
+  useEffect(() => {
+    if (link) {
+      setMessageText(buildMessageText(link, signature));
+    }
+  }, [link, signature]);
 
   async function generateLink() {
     setLoading(true);
     setError(null);
     setCopied(false);
+    setCopiedMessage(false);
 
     try {
       const response = await fetch(`/api/cases/${caseId}/m2-link`, {
@@ -22,17 +55,19 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       });
       const data = (await response.json()) as { link?: string };
 
-      const link = typeof data.link === "string" ? data.link : "";
+      const generatedLink = typeof data.link === "string" ? data.link : "";
 
-      if (!response.ok || !link) {
+      if (!response.ok || !generatedLink) {
         setLink(null);
+        setMessageText("");
         setError("Link konnte nicht erzeugt werden.");
         return;
       }
 
-      setLink(link);
+      setLink(generatedLink);
     } catch {
       setLink(null);
+      setMessageText("");
       setError("Link konnte nicht erzeugt werden.");
     } finally {
       setLoading(false);
@@ -46,6 +81,16 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       setCopied(true);
     } catch {
       setError("Link konnte nicht in die Zwischenablage kopiert werden.");
+    }
+  }
+
+  async function copyMessage() {
+    if (!messageText) return;
+    try {
+      await navigator.clipboard.writeText(messageText);
+      setCopiedMessage(true);
+    } catch {
+      setError("Nachricht konnte nicht in die Zwischenablage kopiert werden.");
     }
   }
 
@@ -89,9 +134,19 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
           >
             {link}
           </code>
+          <textarea
+            data-m2-message-preview
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            rows={6}
+            style={{ width: "100%", resize: "vertical" }}
+          />
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <button type="button" data-copy-m2-link onClick={() => void copyLink()}>
               {copied ? "Kopiert ✓" : "Link kopieren"}
+            </button>
+            <button type="button" data-copy-m2-message onClick={() => void copyMessage()}>
+              {copiedMessage ? "Kopiert ✓" : "Nachricht kopieren"}
             </button>
             <button
               type="button"

@@ -58,7 +58,7 @@ describe("POST /api/questionnaire", () => {
     getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
     prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
 
-    const req = makeRequest({ selected_block_ids: ["AU", "REZEPT"] });
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "REZEPT"] });
     const res = await POST(req);
     const json = await res.json();
 
@@ -73,7 +73,7 @@ describe("POST /api/questionnaire", () => {
     prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
 
     const req = makeRequest({
-      selected_block_ids: ["AU"],
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
       patient_reference: "PAT-001",
       inquiry_session_id: "inquiry-abc",
     });
@@ -93,7 +93,7 @@ describe("POST /api/questionnaire", () => {
   it("gibt 401 zurück wenn nicht angemeldet", async () => {
     getSessionAccountMock.mockResolvedValue(null);
 
-    const req = makeRequest({ selected_block_ids: ["AU"] });
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
     const res = await POST(req);
     expect(res.status).toBe(401);
   });
@@ -101,7 +101,7 @@ describe("POST /api/questionnaire", () => {
   it("gibt 403 zurück wenn Account nicht freigeschaltet", async () => {
     getSessionAccountMock.mockResolvedValue({ ...APPROVED_ACCOUNT, is_approved: false });
 
-    const req = makeRequest({ selected_block_ids: ["AU"] });
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
     const res = await POST(req);
     expect(res.status).toBe(403);
   });
@@ -117,7 +117,7 @@ describe("POST /api/questionnaire", () => {
   it("gibt 400 zurück wenn selected_block_ids kein Array ist", async () => {
     getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
 
-    const req = makeRequest({ selected_block_ids: "AU" });
+    const req = makeRequest({ selected_block_ids: "ARBEITSUNFAEHIGKEIT" });
     const res = await POST(req);
     expect(res.status).toBe(400);
   });
@@ -134,12 +134,12 @@ describe("POST /api/questionnaire", () => {
     getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
     prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
 
-    const req = makeRequest({ selected_block_ids: ["AU", "INVALID_BLOCK"] });
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "INVALID_BLOCK"] });
     const res = await POST(req);
     expect(res.status).toBe(200);
 
     const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
-    expect(createCall.data.selected_block_ids).toEqual(["AU"]);
+    expect(createCall.data.selected_block_ids).toEqual(["ARBEITSUNFAEHIGKEIT"]);
   });
 
   it("Token-Ablaufzeit ist ~48 Stunden in der Zukunft", async () => {
@@ -147,7 +147,7 @@ describe("POST /api/questionnaire", () => {
     prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
 
     const before = Date.now();
-    const req = makeRequest({ selected_block_ids: ["AU"] });
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
     await POST(req);
     const after = Date.now();
 

@@ -233,10 +233,28 @@ function OutputView({
 }
 
 // ---------------------------------------------------------------------------
-// Fragebogen-Anforderungsbereich (vollständig isoliert von InquirySession-Logik)
+// Helper: Fragebogen-Link als Nachrichteninhalt in sharedBottom integrieren
 // ---------------------------------------------------------------------------
 
-function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: string }) {
+export function appendQuestionnaireLinkToOutput(
+  output: InquiryResponseV2Output,
+  link: string | null,
+): InquiryResponseV2Output {
+  if (!link) return output;
+  const paragraph =
+    `Bitte füllen Sie den folgenden Fragebogen aus.\nKopieren Sie den Link in Ihren Browser:\n${link}`;
+  return { ...output, sharedBottom: [...output.sharedBottom, paragraph] };
+}
+
+// ---------------------------------------------------------------------------
+
+function QuestionnaireRequestSection({
+  inquirySessionId,
+  onLinkGenerated,
+}: {
+  inquirySessionId: string;
+  onLinkGenerated: (link: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [patientRef, setPatientRef] = useState("");
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
@@ -274,6 +292,7 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
         return;
       }
       setLink(data.link);
+      onLinkGenerated(data.link);
     } catch {
       setReqError("Netzwerkfehler. Bitte erneut versuchen.");
     } finally {
@@ -414,20 +433,9 @@ function QuestionnaireRequestSection({ inquirySessionId }: { inquirySessionId: s
 
           {link && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <code
-                data-q-generated-link
-                style={{
-                  display: "block",
-                  wordBreak: "break-all",
-                  background: "var(--input-background)",
-                  padding: "0.5rem 0.75rem",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius)",
-                  fontSize: "0.85rem",
-                }}
-              >
-                {link}
-              </code>
+              <p className="text-muted text-small" style={{ margin: 0 }}>
+                Link erzeugt – er ist jetzt in der Nachricht oben integriert.
+              </p>
               <button
                 type="button"
                 data-q-copy-link
@@ -541,6 +549,7 @@ export default function InquiryM3Client({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [questionnaireLink, setQuestionnaireLink] = useState<string | null>(null);
 
   // Live preview: computed from current statuses on every render before confirm.
   // renderInquiryResponseFromSections is a pure function (no network, no side effects).
@@ -578,6 +587,16 @@ export default function InquiryM3Client({
       return [];
     }
   }, [confirmed, statuses, outputStatuses, sections]);
+
+  // Fragebogen-Link als Nachrichteninhalt: Link wird in sharedBottom der Ausgabe integriert.
+  const livePreviewWithLink = useMemo(
+    () => (livePreview ? appendQuestionnaireLinkToOutput(livePreview, questionnaireLink) : null),
+    [livePreview, questionnaireLink],
+  );
+  const frozenOutputWithLink = useMemo(
+    () => (frozenOutput ? appendQuestionnaireLinkToOutput(frozenOutput, questionnaireLink) : null),
+    [frozenOutput, questionnaireLink],
+  );
 
   function setStatus(checkpointId: string, value: string) {
     setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
@@ -664,8 +683,8 @@ export default function InquiryM3Client({
           >
             ✓ Anfrage bestätigt – Ansicht ist schreibgeschützt.
           </div>
-          {frozenOutput && (
-            <OutputView output={frozenOutput} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
+          {frozenOutputWithLink && (
+            <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
           )}
         </>
       ) : (
@@ -1015,8 +1034,8 @@ export default function InquiryM3Client({
           )}
 
           {/* Live preview */}
-          {livePreview && (
-            <OutputView output={livePreview} heading="Vorschau" m5Lines={liveM5Lines} />
+          {livePreviewWithLink && (
+            <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5Lines} />
           )}
 
           {error && (
@@ -1024,7 +1043,7 @@ export default function InquiryM3Client({
           )}
 
           {/* Fragebogen anfordern – isolierter Bereich, keine Änderung an InquirySession */}
-          <QuestionnaireRequestSection inquirySessionId={sessionId} />
+          <QuestionnaireRequestSection inquirySessionId={sessionId} onLinkGenerated={setQuestionnaireLink} />
 
           <div style={{ marginTop: "1.5rem" }}>
             <button
