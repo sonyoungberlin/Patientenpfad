@@ -148,6 +148,20 @@ export default async function QuestionnairesPage() {
                   </div>
                 )}
 
+                {/* PDF download */}
+                {displayStatus === "completed" && (
+                  <a
+                    href={`/api/questionnaire/${s.id}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary text-small"
+                    data-q-pdf={s.id}
+                    style={{ display: "inline-block", marginTop: "0.25rem" }}
+                  >
+                    PDF herunterladen
+                  </a>
+                )}
+
                 {/* Answers */}
                 {answers && questions.length > 0 && (
                   <details style={{ marginTop: "0.5rem" }}>
