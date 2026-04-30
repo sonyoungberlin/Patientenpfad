@@ -464,28 +464,108 @@ describe("IMMUNIZATION Renderer – Specific-Checkpoint-Texte", () => {
 });
 
 // ---------------------------------------------------------------------------
-// IMMUNIZATION – TERMIN_PREPARATION_REQUIRED (neuer GLOBAL MODULAR Checkpoint)
+// IMMUNIZATION – IMMUNIZATION_BRING_VACCINATION_RECORD (neuer ACTION-Checkpoint)
 // ---------------------------------------------------------------------------
 
-describe("IMMUNIZATION – TERMIN_PREPARATION_REQUIRED", () => {
-  it("TERMIN_PREPARATION_REQUIRED ist in IMMUNIZATION.boundGlobalCheckpointIds enthalten", () => {
-    expect(IMMUNIZATION.boundGlobalCheckpointIds).toContain("TERMIN_PREPARATION_REQUIRED");
+import { ActionStatus, InquiryCheckpointPlacement } from "@/lib/inquiries/types";
+
+describe("IMMUNIZATION – IMMUNIZATION_BRING_VACCINATION_RECORD (neuer ACTION-Baustein)", () => {
+  const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_BRING_VACCINATION_RECORD"];
+
+  it("existiert im Katalog", () => {
+    expect(cp).toBeDefined();
   });
 
-  it("IMMUNIZATION.globalHints enthält Hinweis 'Impfpass' für TERMIN_PREPARATION_REQUIRED", () => {
-    expect(IMMUNIZATION.globalHints["TERMIN_PREPARATION_REQUIRED"]).toContain("Impfpass");
+  it("ist kind ACTION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
   });
 
-  it("TERMIN_PREPARATION_REQUIRED existiert im Katalog", () => {
+  it("ist scope SPECIFIC (nur für Impftermine sinnvoll)", () => {
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("hat actionCategory PREPARATION", () => {
+    expect((cp as any).actionCategory).toBe("PREPARATION");
+  });
+
+  it("hat korrekten ACTIVE-Text mit Impfpass", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ActionStatus.ACTIVE];
+    expect(text).toBe("Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.");
+  });
+
+  it("hat placement ATTACHED", () => {
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+  });
+});
+
+describe("IMMUNIZATION – IMMUNIZATION_BRING_VACCINATION_RECORD in Profil eingebunden", () => {
+  it("IMMUNIZATION_BRING_VACCINATION_RECORD ist in boundActionCheckpointIds", () => {
+    expect((IMMUNIZATION as any).boundActionCheckpointIds).toContain("IMMUNIZATION_BRING_VACCINATION_RECORD");
+  });
+
+  it("IMMUNIZATION_BRING_VACCINATION_RECORD hat hideWhenAny: [] (immer sichtbar)", () => {
+    const conditions = (IMMUNIZATION as any).boundActionConditions;
+    expect(conditions?.IMMUNIZATION_BRING_VACCINATION_RECORD?.hideWhenAny).toEqual([]);
+  });
+});
+
+describe("IMMUNIZATION – TERMIN_PREPARATION_REQUIRED nicht mehr aktiv gebunden", () => {
+  it("TERMIN_PREPARATION_REQUIRED ist NICHT mehr in boundGlobalCheckpointIds", () => {
+    expect(IMMUNIZATION.boundGlobalCheckpointIds).not.toContain("TERMIN_PREPARATION_REQUIRED");
+  });
+
+  it("globalHints enthält keinen Impfpass-Hinweis mehr", () => {
+    const hints = IMMUNIZATION.globalHints ?? {};
+    const allHintText = Object.values(hints).join(" ");
+    expect(allHintText).not.toContain("Impfpass");
+  });
+
+  it("TERMIN_PREPARATION_REQUIRED existiert noch im Katalog (deprecated, nicht gelöscht)", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"]).toBeDefined();
   });
+});
 
-  it("TERMIN_PREPARATION_REQUIRED hat scope GLOBAL", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"].scope).toBe(InquiryCheckpointScope.GLOBAL);
+describe("IMMUNIZATION Renderer – IMMUNIZATION_BRING_VACCINATION_RECORD erscheint bei ACTIVE", () => {
+  it("ACTIVE → Impfpass-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          IMMUNIZATION_BRING_VACCINATION_RECORD: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).toContain("Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.");
   });
 
-  it("TERMIN_PREPARATION_REQUIRED hat leeres textByStatus – kein Text aus Checkpoint selbst", () => {
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TERMIN_PREPARATION_REQUIRED"];
-    expect(Object.keys(cp.textByStatus)).toHaveLength(0);
+  it("INACTIVE → kein Impfpass-Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          IMMUNIZATION_BRING_VACCINATION_RECORD: ActionStatus.INACTIVE,
+        },
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).not.toContain("Impfpass");
+  });
+
+  it("kein Status gesetzt → kein Impfpass-Text in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {},
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).not.toContain("Impfpass");
   });
 });

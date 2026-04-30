@@ -1076,12 +1076,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
       "IMMUNIZATION_STATUS_UNCLEAR",
     ],
-    boundGlobalCheckpointIds: [
-      "TERMIN_PREPARATION_REQUIRED",
-    ],
-    globalHints: {
-      TERMIN_PREPARATION_REQUIRED: "Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.",
-    },
+    boundGlobalCheckpointIds: [],
+    globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "ONLINE_ANAMNESIS",
@@ -1090,6 +1086,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
       "DOCUMENT_UPLOAD",
     ],
+    boundActionCheckpointIds: [
+      "IMMUNIZATION_BRING_VACCINATION_RECORD",
+    ],
+    boundActionConditions: {
+      IMMUNIZATION_BRING_VACCINATION_RECORD: {
+        hideWhenAny: [],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)

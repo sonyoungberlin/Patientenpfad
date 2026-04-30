@@ -939,6 +939,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Generischer Vorbereitungsschalter – handlungsbezogene Vorbereitungshinweise werden als ACTION-Checkpoints modelliert. Nicht mehr aktiv in Profilen gebunden. */
   TERMIN_PREPARATION_REQUIRED: {
     id: "TERMIN_PREPARATION_REQUIRED",
     label: "Terminvorbereitung erforderlich",
@@ -954,6 +955,21 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       // bewusst leer – Inhalte kommen ausschließlich über globalHints
+    },
+  },
+
+  IMMUNIZATION_BRING_VACCINATION_RECORD: {
+    id: "IMMUNIZATION_BRING_VACCINATION_RECORD",
+    label: "Impfpass / Impfnachweis mitbringen",
+    kind: InquiryCheckpointKind.ACTION,
+    // SPECIFIC: Der Hinweis bezieht sich ausschließlich auf Impftermine und ist
+    // nicht sinnvoll auf andere Anliegen übertragbar.
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "PREPARATION",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.",
     },
   },
 
