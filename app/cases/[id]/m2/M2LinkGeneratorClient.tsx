@@ -35,6 +35,14 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       .catch(() => {});
   }, []);
 
+  // Rebuild message whenever the link or signature changes so that a
+  // late-loading signature is always included in the draft.
+  useEffect(() => {
+    if (link) {
+      setMessageText(buildMessageText(link, signature));
+    }
+  }, [link, signature]);
+
   async function generateLink() {
     setLoading(true);
     setError(null);
@@ -57,7 +65,6 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
       }
 
       setLink(generatedLink);
-      setMessageText(buildMessageText(generatedLink, signature));
     } catch {
       setLink(null);
       setMessageText("");
