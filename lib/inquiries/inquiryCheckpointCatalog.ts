@@ -10,6 +10,7 @@ import {
   type InquiryCheckpointTemplate,
   type InquiryCheckpoint,
   type SpecificRole,
+  type M5ReasonCode,
 } from "@/lib/inquiries/types";
 
 /**
@@ -944,6 +945,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
+    m5Code: "NEED_VISIT" as M5ReasonCode,
     question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -1484,6 +1486,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.ATTACHED,
     classification: "MODULAR",
+    m5Code: "INFECTIOUS" as M5ReasonCode,
     questions: [
       { id: "INFECTIOUS_PROTOCOL-Q1", text: "Besteht Verdacht auf eine ansteckende Erkrankung?" },
     ],
@@ -1612,6 +1615,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    m5Code: "NO_SPECIALTY" as M5ReasonCode,
     questions: [
       { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung oder der Facharzt bekannt?" },
     ],
@@ -1644,6 +1648,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    m5Code: "HAV" as M5ReasonCode,
     questions: [
       { id: "REF_HAV_CASE-Q1", text: "Handelt es sich um einen Hausarztvermittlungsfall (mit Buchungscode)?" },
     ],
@@ -2075,6 +2080,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    m5Code: "TECH" as M5ReasonCode,
     questions: [
       { id: "TECH_VIDEO_NOT_WORKING-Q1", text: "Funktioniert die Videosprechstunde technisch nicht (z. B. kein Ton, kein Bild, Verbindungsabbruch)?" },
     ],
@@ -2093,6 +2099,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    m5Code: "TECH" as M5ReasonCode,
     questions: [
       { id: "TECH_UPLOAD_FAILED-Q1", text: "Können Dokumente nicht hochgeladen werden (z. B. Datei zu groß, falsches Format, Fehler beim Upload)?" },
     ],
@@ -2111,6 +2118,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "PROCESS_INFO" as SpecificRole,
+    m5Code: "TECH" as M5ReasonCode,
     questions: [
       { id: "TECH_LOGIN_PROBLEM-Q1", text: "Hat der Patient Probleme beim Login oder Zugang zum Patientenportal (z. B. Passwort vergessen, Konto gesperrt)?" },
     ],

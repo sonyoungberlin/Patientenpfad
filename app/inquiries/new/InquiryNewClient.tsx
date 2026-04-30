@@ -22,15 +22,6 @@ export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] })
     return initial;
   });
 
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
   function toggleGroup(label: string) {
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -40,8 +31,8 @@ export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] })
     });
   }
 
-  // Wenn eine Gruppe zugeklappt wird, aber ein Profil darin gewählt ist → Gruppe öffnen
-  function ensureGroupOpenForSelected(nextSelected: Set<string>) {
+  // Wenn ein Profil ausgewählt wird, dessen Gruppe zugeklappt ist → Gruppe öffnen
+  function openGroupsWithSelectedProfiles(nextSelected: Set<string>) {
     setOpenGroups((prev) => {
       const next = new Set(prev);
       for (const g of groups) {
@@ -58,7 +49,7 @@ export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] })
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      ensureGroupOpenForSelected(next);
+      openGroupsWithSelectedProfiles(next);
       return next;
     });
   }
