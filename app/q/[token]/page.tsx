@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { QuestionnaireFormClient } from "./QuestionnaireFormClient";
 
+// Always render per-request so the page reads fresh token state from the DB
+// and is never served from the Full Route Cache (would expose stale form HTML
+// after a token has already been consumed or expired).
+export const dynamic = "force-dynamic";
+
 const EXPIRED_MESSAGE =
   "Dieser Link ist nicht mehr gültig. Bitte wenden Sie sich an die Praxis.";
 
