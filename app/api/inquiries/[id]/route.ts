@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionAccount } from "@/lib/auth";
-import { getInquirySessionWithOutput } from "@/lib/inquiries/inquirySessionService";
+import {
+  getInquirySessionWithOutput,
+  deleteInquirySession,
+  InquirySessionError,
+} from "@/lib/inquiries/inquirySessionService";
 
 /**
  * GET /api/inquiries/[id]
@@ -67,6 +71,63 @@ export async function GET(
     }
     return NextResponse.json(
       { ok: false, error: "Session konnte nicht geladen werden." },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * DELETE /api/inquiries/[id]
+ *
+ * Löscht eine InquirySession vollständig.
+ *
+ * Response 200: { ok: true }
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const account = await getSessionAccount(req);
+
+    if (!account) {
+      return NextResponse.json(
+        { ok: false, error: "Nicht angemeldet." },
+        { status: 401 },
+      );
+    }
+    if (!account.is_approved) {
+      return NextResponse.json(
+        { ok: false, error: "Account nicht freigeschaltet." },
+        { status: 403 },
+      );
+    }
+    if (!account.inquiry_assistant_enabled && !account.is_admin) {
+      return NextResponse.json(
+        { ok: false, error: "Kein Zugriff auf den Anfrage-Assistenten." },
+        { status: 403 },
+      );
+    }
+
+    const { id } = await params;
+
+    await deleteInquirySession(id, account.id);
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (err instanceof InquirySessionError && err.code === "session_not_found") {
+      return NextResponse.json(
+        { ok: false, error: "Session nicht gefunden." },
+        { status: 404 },
+      );
+    }
+    if (err instanceof Error) {
+      console.error("[DELETE inquiries/[id]]", { name: err.name, message: err.message });
+    } else {
+      console.error("[DELETE inquiries/[id]]", "UnknownError");
+    }
+    return NextResponse.json(
+      { ok: false, error: "Session konnte nicht gelöscht werden." },
       { status: 500 },
     );
   }
