@@ -492,7 +492,50 @@ export type InquiryCheckpoint = {
   questions?: InquiryQuestion[];
   textByStatus: Partial<Record<CheckpointStatusValue, string>>;
   docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
+  /**
+   * Kompakter M5-Grundcode für das Kurzprotokoll.
+   *
+   * Wird von `buildInquiryM5Summary` ausgewertet, wenn kein Code aus `specificRole`
+   * ableitbar ist oder der Code abweichen soll (z. B. TECH statt WRONG_CHANNEL).
+   *
+   * Hat keinen Einfluss auf Renderer, factStatus, Decision-Logik oder M4.
+   */
+  m5Code?: M5ReasonCode;
 };
+
+// ---------------------------------------------------------------------------
+// M5ReasonCode – Kompakt-Codes für das Kurzprotokoll
+// ---------------------------------------------------------------------------
+
+/**
+ * Einstellige Grund-Codes für die M5-Kurznotiz.
+ *
+ * NO_DATA       – fehlende Angaben / Information.
+ * NO_DOC        – fehlende Dokumente / Nachweise.
+ * NO_SPECIALTY  – Fachrichtung oder Facharzt nicht angegeben.
+ * NO_REPORT     – Facharztbericht fehlt.
+ * NEED_VISIT    – ärztliche Konsultation / persönliche Vorstellung erforderlich.
+ * EXTERNAL      – externe Zuständigkeit / andere Stelle.
+ * COST          – Kostenübernahme / Kassenleistungsgrenze.
+ * TIME_LIMIT    – zeitliche Regelgrenze (Rückdatierung, Fristen).
+ * INFECTIOUS    – Infektionsschutz-Protokoll aktiv.
+ * WRONG_CHANNEL – Kanaleignung nicht gegeben / Weiterleitung auf anderen Weg.
+ * TECH          – technische Störung / Login / Upload-Problem.
+ * HAV           – Hausarztvermittlungsfall (mit Buchungscode).
+ */
+export type M5ReasonCode =
+  | "NO_DATA"
+  | "NO_DOC"
+  | "NO_SPECIALTY"
+  | "NO_REPORT"
+  | "NEED_VISIT"
+  | "EXTERNAL"
+  | "COST"
+  | "TIME_LIMIT"
+  | "INFECTIOUS"
+  | "WRONG_CHANNEL"
+  | "TECH"
+  | "HAV";
 
 // ---------------------------------------------------------------------------
 // ActionGuidanceRule – UI-only Guidance-System

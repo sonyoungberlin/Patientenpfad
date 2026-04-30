@@ -17,6 +17,7 @@ import {
   DecisionStatus,
   ExplanationStatus,
   ExplanationOutputStatus,
+  ActionStatus,
   InquiryCheckpointKind,
   InquiryCheckpointScope,
   type SpecificRole,
@@ -50,6 +51,16 @@ const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "TECH_UPLOAD_FAILED",
   "TECH_LOGIN_PROBLEM",
   "TECH_PROCESS_INSTRUCTION",
+] as const;
+
+// ---------------------------------------------------------------------------
+// Bekannte boundAction-Checkpoint-IDs (4 neue ACTION-Bausteine)
+// ---------------------------------------------------------------------------
+const EXPECTED_BOUND_ACTION_IDS = [
+  "TECH_VIDEO_NOT_WORKING_ACTION",
+  "TECH_UPLOAD_FAILED_ACTION",
+  "TECH_LOGIN_PROBLEM_ACTION",
+  "TECH_PROCESS_INSTRUCTION_ACTION",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -336,7 +347,7 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Upload");
   });
 
-  it("TECH_LOGIN_PROBLEM YES + SHOW → Text erscheint", () => {
+  it("TECH_LOGIN_PROBLEM YES + SHOW → Zustandstext erscheint (kein 'Passwort vergessen' mehr)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "TECH_SUPPORT",
@@ -346,10 +357,12 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Passwort vergessen");
+    expect(paragraphs).toContain("Anmeldeproblem");
+    // 'Passwort vergessen' ist jetzt in TECH_LOGIN_PROBLEM_ACTION (M3), nicht im EXPLANATION-Text.
+    expect(paragraphs).not.toContain("Passwort vergessen");
   });
 
-  it("TECH_PROCESS_INSTRUCTION YES + SHOW → Text erscheint (wiederhergestellt)", () => {
+  it("TECH_PROCESS_INSTRUCTION YES + SHOW → Zustandstext erscheint (kein 'QR-Code' mehr)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "TECH_SUPPORT",
@@ -359,7 +372,9 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("QR-Code");
+    expect(paragraphs).toContain("Anleitung");
+    // 'QR-Code' ist jetzt in TECH_PROCESS_INSTRUCTION_ACTION (M3), nicht im EXPLANATION-Text.
+    expect(paragraphs).not.toContain("QR-Code");
   });
 
   it("TECH_VIDEO_NOT_WORKING HIDE → kein Text erscheint", () => {
@@ -404,5 +419,188 @@ describe("TECH_SUPPORT – availableActionIds", () => {
 
   it("DIGITAL_REQUEST ist in TECH_SUPPORT.availableActionIds enthalten", () => {
     expect(TECH_SUPPORT.availableActionIds).toContain("DIGITAL_REQUEST");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TECH_SUPPORT – neue boundActionCheckpointIds (M2/M3-Bereinigung)
+// ---------------------------------------------------------------------------
+
+describe("TECH_SUPPORT – boundActionCheckpointIds (neue ACTION-Bausteine)", () => {
+  it("TECH_SUPPORT hat boundActionCheckpointIds", () => {
+    expect((TECH_SUPPORT as any).boundActionCheckpointIds).toBeDefined();
+    expect((TECH_SUPPORT as any).boundActionCheckpointIds.length).toBeGreaterThan(0);
+  });
+
+  for (const id of EXPECTED_BOUND_ACTION_IDS) {
+    it(`${id} ist in TECH_SUPPORT.boundActionCheckpointIds enthalten`, () => {
+      expect((TECH_SUPPORT as any).boundActionCheckpointIds).toContain(id);
+    });
+  }
+
+  it("TECH_VIDEO_NOT_WORKING_ACTION hat showWhenAny [TECH_VIDEO_NOT_WORKING=YES]", () => {
+    const conditions = (TECH_SUPPORT as any).boundActionConditions;
+    expect(conditions?.TECH_VIDEO_NOT_WORKING_ACTION?.showWhenAny).toEqual([{ TECH_VIDEO_NOT_WORKING: "YES" }]);
+  });
+
+  it("TECH_UPLOAD_FAILED_ACTION hat showWhenAny [TECH_UPLOAD_FAILED=YES]", () => {
+    const conditions = (TECH_SUPPORT as any).boundActionConditions;
+    expect(conditions?.TECH_UPLOAD_FAILED_ACTION?.showWhenAny).toEqual([{ TECH_UPLOAD_FAILED: "YES" }]);
+  });
+
+  it("TECH_LOGIN_PROBLEM_ACTION hat showWhenAny [TECH_LOGIN_PROBLEM=YES]", () => {
+    const conditions = (TECH_SUPPORT as any).boundActionConditions;
+    expect(conditions?.TECH_LOGIN_PROBLEM_ACTION?.showWhenAny).toEqual([{ TECH_LOGIN_PROBLEM: "YES" }]);
+  });
+
+  it("TECH_PROCESS_INSTRUCTION_ACTION hat showWhenAny [TECH_PROCESS_INSTRUCTION=YES]", () => {
+    const conditions = (TECH_SUPPORT as any).boundActionConditions;
+    expect(conditions?.TECH_PROCESS_INSTRUCTION_ACTION?.showWhenAny).toEqual([{ TECH_PROCESS_INSTRUCTION: "YES" }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Neue ACTION-Checkpoints – Existenz und Struktur
+// ---------------------------------------------------------------------------
+
+describe("TECH_SUPPORT – neue ACTION-Bausteine (Katalog-Existenz)", () => {
+  for (const id of EXPECTED_BOUND_ACTION_IDS) {
+    it(`${id} existiert im Katalog`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    });
+
+    it(`${id} hat kind ACTION`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].kind).toBe(InquiryCheckpointKind.ACTION);
+    });
+
+    it(`${id} hat scope SPECIFIC`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    });
+
+    it(`${id} hat actionCategory NEXT_STEP`, () => {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].actionCategory).toBe("NEXT_STEP");
+    });
+  }
+
+  it("TECH_PROCESS_INSTRUCTION_ACTION hat ACTIVE-Text mit 'QR-Code'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TECH_PROCESS_INSTRUCTION_ACTION"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("QR-Code");
+  });
+
+  it("TECH_LOGIN_PROBLEM_ACTION hat ACTIVE-Text mit 'Passwort vergessen'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TECH_LOGIN_PROBLEM_ACTION"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Passwort vergessen");
+  });
+
+  it("TECH_UPLOAD_FAILED_ACTION hat ACTIVE-Text mit 'Post, Fax'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TECH_UPLOAD_FAILED_ACTION"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Post");
+  });
+
+  it("TECH_VIDEO_NOT_WORKING_ACTION hat ACTIVE-Text mit 'telefonisch'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["TECH_VIDEO_NOT_WORKING_ACTION"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("telefonisch");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Renderer – neue ACTION-Bausteine erscheinen bei ACTIVE, nicht bei INACTIVE
+// ---------------------------------------------------------------------------
+
+describe("TECH_SUPPORT Renderer – neue ACTION-Bausteine", () => {
+  it("TECH_PROCESS_INSTRUCTION_ACTION ACTIVE → QR-Code-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "TECH_SUPPORT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          TECH_PROCESS_INSTRUCTION: ExplanationStatus.YES,
+          TECH_PROCESS_INSTRUCTION_ACTION: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: { TECH_PROCESS_INSTRUCTION: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("QR-Code");
+  });
+
+  it("TECH_LOGIN_PROBLEM_ACTION ACTIVE → 'Passwort vergessen' erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "TECH_SUPPORT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          TECH_LOGIN_PROBLEM: ExplanationStatus.YES,
+          TECH_LOGIN_PROBLEM_ACTION: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: { TECH_LOGIN_PROBLEM: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Passwort vergessen");
+  });
+
+  it("TECH_UPLOAD_FAILED_ACTION ACTIVE → Alternativkanal-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "TECH_SUPPORT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          TECH_UPLOAD_FAILED: ExplanationStatus.YES,
+          TECH_UPLOAD_FAILED_ACTION: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: { TECH_UPLOAD_FAILED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Post");
+  });
+
+  it("TECH_VIDEO_NOT_WORKING_ACTION ACTIVE → Alternativkanal-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "TECH_SUPPORT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          TECH_VIDEO_NOT_WORKING: ExplanationStatus.YES,
+          TECH_VIDEO_NOT_WORKING_ACTION: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: { TECH_VIDEO_NOT_WORKING: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("telefonisch");
+  });
+
+  it("TECH_LOGIN_PROBLEM_ACTION INACTIVE → 'Passwort vergessen' erscheint NICHT", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "TECH_SUPPORT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          TECH_LOGIN_PROBLEM: ExplanationStatus.YES,
+          TECH_LOGIN_PROBLEM_ACTION: ActionStatus.INACTIVE,
+        },
+        explanationOutputStatuses: { TECH_LOGIN_PROBLEM: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("Passwort vergessen");
+  });
+
+  it("TECH_PROCESS_INSTRUCTION YES + EXPLANATION aktiv, ACTION nicht aktiviert → kein QR-Code, aber Zustandstext vorhanden", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "TECH_SUPPORT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { TECH_PROCESS_INSTRUCTION: ExplanationStatus.YES },
+        explanationOutputStatuses: { TECH_PROCESS_INSTRUCTION: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    // Zustandstext des EXPLANATION-Checkpoints erscheint …
+    expect(paragraphs).toContain("Anleitung");
+    // … aber ACTION nicht aktiviert → QR-Code darf nicht erscheinen
+    expect(paragraphs).not.toContain("QR-Code");
   });
 });

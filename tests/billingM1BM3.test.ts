@@ -709,3 +709,151 @@ describe("BILLING – neue ACTION-Checkpoints im Katalog", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// 12. Neue ACTION-Bausteine BILLING_CONTACT_EXTERNAL_PARTY + BILLING_ADDRESS_UPDATE_REQUESTED
+//     (M2/M3-Bereinigung – ehemals Handlungstext in EXPLANATION-Checkpoints)
+// ---------------------------------------------------------------------------
+
+describe("BILLING – neue ACTION-Bausteine BILLING_CONTACT_EXTERNAL_PARTY und BILLING_ADDRESS_UPDATE_REQUESTED", () => {
+  it("BILLING_CONTACT_EXTERNAL_PARTY existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_CONTACT_EXTERNAL_PARTY"]).toBeDefined();
+  });
+
+  it("BILLING_CONTACT_EXTERNAL_PARTY hat kind ACTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_CONTACT_EXTERNAL_PARTY"].kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("BILLING_CONTACT_EXTERNAL_PARTY hat scope SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_CONTACT_EXTERNAL_PARTY"].scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("BILLING_CONTACT_EXTERNAL_PARTY ACTIVE-Text enthält 'Krankenkasse'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_CONTACT_EXTERNAL_PARTY"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Krankenkasse");
+  });
+
+  it("BILLING_CONTACT_EXTERNAL_PARTY hat actionCategory NEXT_STEP", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_CONTACT_EXTERNAL_PARTY"].actionCategory).toBe("NEXT_STEP");
+  });
+
+  it("BILLING_CONTACT_EXTERNAL_PARTY ist in boundActionCheckpointIds des BILLING-Profils", () => {
+    expect(BILLING.boundActionCheckpointIds).toContain("BILLING_CONTACT_EXTERNAL_PARTY");
+  });
+
+  it("BILLING_CONTACT_EXTERNAL_PARTY hat showWhenAny [BILLING_EXTERNAL_RESPONSIBILITY=YES]", () => {
+    const condition = BILLING.boundActionConditions?.["BILLING_CONTACT_EXTERNAL_PARTY"];
+    expect(condition).toBeDefined();
+    expect(condition!.showWhenAny).toEqual([{ BILLING_EXTERNAL_RESPONSIBILITY: "YES" }]);
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_UPDATE_REQUESTED"]).toBeDefined();
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED hat kind ACTION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_UPDATE_REQUESTED"].kind).toBe(InquiryCheckpointKind.ACTION);
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED hat scope SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_UPDATE_REQUESTED"].scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED ACTIVE-Text enthält 'Postadresse'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_UPDATE_REQUESTED"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Postadresse");
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED hat actionCategory NEXT_STEP", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_ADDRESS_UPDATE_REQUESTED"].actionCategory).toBe("NEXT_STEP");
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED ist in boundActionCheckpointIds des BILLING-Profils", () => {
+    expect(BILLING.boundActionCheckpointIds).toContain("BILLING_ADDRESS_UPDATE_REQUESTED");
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED hat showWhenAny [BILLING_ADDRESS_MISSING=YES]", () => {
+    const condition = BILLING.boundActionConditions?.["BILLING_ADDRESS_UPDATE_REQUESTED"];
+    expect(condition).toBeDefined();
+    expect(condition!.showWhenAny).toEqual([{ BILLING_ADDRESS_MISSING: "YES" }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 13. Renderer – neue BILLING ACTION-Bausteine erscheinen bei ACTIVE
+// ---------------------------------------------------------------------------
+
+describe("BILLING Renderer – neue ACTION-Bausteine ACTIVE/INACTIVE", () => {
+  it("BILLING_CONTACT_EXTERNAL_PARTY ACTIVE → 'Krankenkasse'-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          BILLING_EXTERNAL_RESPONSIBILITY: ExplanationStatus.YES,
+          BILLING_CONTACT_EXTERNAL_PARTY: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          BILLING_EXTERNAL_RESPONSIBILITY: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Krankenkasse");
+    expect(paragraphs).toContain("wenden Sie sich");
+  });
+
+  it("BILLING_CONTACT_EXTERNAL_PARTY INACTIVE → Weiterleitungstext erscheint NICHT", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          BILLING_EXTERNAL_RESPONSIBILITY: ExplanationStatus.YES,
+          BILLING_CONTACT_EXTERNAL_PARTY: ActionStatus.INACTIVE,
+        },
+        explanationOutputStatuses: {
+          BILLING_EXTERNAL_RESPONSIBILITY: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("wenden Sie sich");
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED ACTIVE → 'Postadresse'-Aufforderungstext erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          BILLING_ADDRESS_MISSING: ExplanationStatus.YES,
+          BILLING_ADDRESS_UPDATE_REQUESTED: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          BILLING_ADDRESS_MISSING: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Postadresse");
+    expect(paragraphs).toContain("Bitte teilen Sie uns");
+  });
+
+  it("BILLING_ADDRESS_UPDATE_REQUESTED INACTIVE → Adressaufforderung erscheint NICHT", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "BILLING",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          BILLING_ADDRESS_MISSING: ExplanationStatus.YES,
+          BILLING_ADDRESS_UPDATE_REQUESTED: ActionStatus.INACTIVE,
+        },
+        explanationOutputStatuses: {
+          BILLING_ADDRESS_MISSING: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("Bitte teilen Sie uns");
+  });
+});

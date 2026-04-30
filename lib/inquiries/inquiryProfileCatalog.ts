@@ -53,9 +53,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
@@ -67,6 +66,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONLINE_ANAMNESIS",
       "DIGITAL_REQUEST",
       "DIGITAL_REQUEST_PROCESSING_TIME",
+      "DIGITAL_REQUEST_REQUIRED",
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "CARE_CHANNEL_CHOICE",
     ],
@@ -85,6 +85,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       DIGITAL_REQUEST_PROCESSING_TIME: {
         showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
+      },
+      DIGITAL_REQUEST_REQUIRED: {
+        hideWhenAny: [],
       },
       ACUTE_OPEN_CONSULTATION_ACTION: {
         showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
@@ -248,10 +251,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
+      "DIGITAL_REQUEST_REQUIRED",
     ],
     boundActionConditions: {
       E_RECIPE_USE: {
         showWhenAny: [{ PRESCRIPTION_STATUTORY_POSSIBLE: "YES" }],
+      },
+      DIGITAL_REQUEST_REQUIRED: {
+        hideWhenAny: [],
       },
     },
     globalHints: {
@@ -526,9 +533,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    globalHints: {},
     boundActionCheckpointIds: [
       "LAB_APPOINTMENT_INTERNAL",
       "LAB_APPOINTMENT_INDIVIDUAL",
@@ -816,14 +822,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    globalHints: {
-      INFECTIOUS_PROTOCOL:
-        "Bei Verdacht auf eine ansteckende Erkrankung melden Sie sich bitte vorab digital oder wählen Sie eine Videosprechstunde und kommen nicht unangemeldet in die Praxis.",
-    },
+    globalHints: {},
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "ACUTE_BOOKING_INFO",
       "CARE_CHANNEL_CHOICE",
+      "INFECTIOUS_CONTACT_DIGITALLY",
+      "INFECTIOUS_VIDEO_CONSULTATION",
+      "INFECTIOUS_DO_NOT_ENTER_UNANNOUNCED",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
@@ -834,6 +840,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       CARE_CHANNEL_CHOICE: {
         hideWhenAny: [],
+      },
+      INFECTIOUS_CONTACT_DIGITALLY: {
+        showWhenAny: [{ INFECTIOUS_PROTOCOL: "YES" }],
+      },
+      INFECTIOUS_VIDEO_CONSULTATION: {
+        showWhenAny: [{ INFECTIOUS_PROTOCOL: "YES" }],
+      },
+      INFECTIOUS_DO_NOT_ENTER_UNANNOUNCED: {
+        showWhenAny: [{ INFECTIOUS_PROTOCOL: "YES" }],
       },
     },
 
@@ -931,12 +946,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    // Kein globalHints-Override nötig – Katalogtext (textByStatus.YES) ist identisch und greift automatisch.
+    globalHints: {},
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
+      "DIGITAL_REQUEST_REQUIRED",
     ],
     boundActionConditions: {
       // REF_ORIGINAL_VS_PDF: immer in M3 anzeigen, ohne M2-Schalter.
@@ -947,6 +962,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // REF_BOOKING_CODE_PROCESS: nur anzeigen, wenn Hausarztvermittlungsfall (mit Buchungscode).
       REF_BOOKING_CODE_PROCESS: {
         showWhenAny: [{ REF_HAV_CASE: "YES" }],
+      },
+      DIGITAL_REQUEST_REQUIRED: {
+        hideWhenAny: [],
       },
     },
     availableActionIds: [
@@ -1055,12 +1073,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
       "IMMUNIZATION_STATUS_UNCLEAR",
     ],
-    boundGlobalCheckpointIds: [
-      "TERMIN_PREPARATION_REQUIRED",
-    ],
-    globalHints: {
-      TERMIN_PREPARATION_REQUIRED: "Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.",
-    },
+    boundGlobalCheckpointIds: [],
+    globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "ONLINE_ANAMNESIS",
@@ -1069,6 +1083,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
       "DOCUMENT_UPLOAD",
     ],
+    boundActionCheckpointIds: [
+      "IMMUNIZATION_BRING_VACCINATION_RECORD",
+    ],
+    boundActionConditions: {
+      IMMUNIZATION_BRING_VACCINATION_RECORD: {
+        hideWhenAny: [],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -1171,7 +1193,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
-      "BOOK_APPOINTMENT",
       "ONLINE_ANAMNESIS",
       "DIGITAL_REQUEST",
       "PROCESSING_DELAY",
@@ -1179,10 +1200,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
+      "BOOK_APPOINTMENT",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
         hideWhenAny: [],
+      },
+      BOOK_APPOINTMENT: {
+        showWhenAny: [{ APPOINTMENT_WRONG_TYPE: "YES" }],
       },
     },
 
@@ -1311,6 +1336,26 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "TECH_VIDEO_NOT_WORKING_ACTION",
+      "TECH_UPLOAD_FAILED_ACTION",
+      "TECH_LOGIN_PROBLEM_ACTION",
+      "TECH_PROCESS_INSTRUCTION_ACTION",
+    ],
+    boundActionConditions: {
+      TECH_VIDEO_NOT_WORKING_ACTION: {
+        showWhenAny: [{ TECH_VIDEO_NOT_WORKING: "YES" }],
+      },
+      TECH_UPLOAD_FAILED_ACTION: {
+        showWhenAny: [{ TECH_UPLOAD_FAILED: "YES" }],
+      },
+      TECH_LOGIN_PROBLEM_ACTION: {
+        showWhenAny: [{ TECH_LOGIN_PROBLEM: "YES" }],
+      },
+      TECH_PROCESS_INSTRUCTION_ACTION: {
+        showWhenAny: [{ TECH_PROCESS_INSTRUCTION: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -1546,6 +1591,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_NOT_COVERED_BY_STATUTORY",
       "BILLING_GOA_BILLING",
       "BILLING_ONSITE_PAYMENT",
+      "BILLING_CONTACT_EXTERNAL_PARTY",
+      "BILLING_ADDRESS_UPDATE_REQUESTED",
     ],
     boundActionConditions: {
       // Alle drei Bausteine nur anzeigen, wenn die Leistung keine Kassenleistung ist.
@@ -1557,6 +1604,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       BILLING_ONSITE_PAYMENT: {
         showWhenAny: [{ BILLING_COST_NOT_COVERED: "YES" }],
+      },
+      BILLING_CONTACT_EXTERNAL_PARTY: {
+        showWhenAny: [{ BILLING_EXTERNAL_RESPONSIBILITY: "YES" }],
+      },
+      BILLING_ADDRESS_UPDATE_REQUESTED: {
+        showWhenAny: [{ BILLING_ADDRESS_MISSING: "YES" }],
       },
     },
     availableActionIds: [
@@ -1675,17 +1728,29 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    globalHints: {},
     availableActionIds: [
-      "BOOK_APPOINTMENT",
-      "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "DIGITAL_REQUEST_REQUIRED",
+      "DIGITAL_REQUEST",
+      "BOOK_APPOINTMENT",
+    ],
+    boundActionConditions: {
+      DIGITAL_REQUEST_REQUIRED: {
+        hideWhenAny: [],
+      },
+      DIGITAL_REQUEST: {
+        showWhenAny: [{ MEDICAL_DOCUMENT_INFO_MISSING: "YES" }],
+      },
+      BOOK_APPOINTMENT: {
+        showWhenAny: [{ MEDICAL_CONSULTATION_REQUIRED: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)

@@ -4,18 +4,52 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Profile = { id: string; label: string };
+type ProfileGroup = { label: string; profiles: Profile[] };
 
-export default function InquiryNewClient({ profiles }: { profiles: Profile[] }) {
+export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function toggle(id: string) {
+  // Gruppen, die ein ausgewähltes Profil enthalten, werden beim ersten Render geöffnet
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    // Alle Gruppen standardmäßig geöffnet
+    for (const g of groups) {
+      initial.add(g.label);
+    }
+    return initial;
+  });
+
+  function toggleGroup(label: string) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  }
+
+  // Wenn ein Profil ausgewählt wird, dessen Gruppe zugeklappt ist → Gruppe öffnen
+  function openGroupsWithSelectedProfiles(nextSelected: Set<string>) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      for (const g of groups) {
+        if (g.profiles.some((p) => nextSelected.has(p.id))) {
+          next.add(g.label);
+        }
+      }
+      return next;
+    });
+  }
+
+  function handleToggleProfile(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      openGroupsWithSelectedProfiles(next);
       return next;
     });
   }
@@ -49,20 +83,78 @@ export default function InquiryNewClient({ profiles }: { profiles: Profile[] }) 
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem", maxWidth: "30rem" }}>
-      {profiles.map((p) => (
-        <label
-          key={p.id}
-          className="card"
-          style={{ display: "flex", gap: "0.75rem", alignItems: "center", cursor: "pointer" }}
-        >
-          <input
-            type="checkbox"
-            checked={selected.has(p.id)}
-            onChange={() => toggle(p.id)}
-          />
-          <span style={{ fontWeight: 500 }}>{p.label}</span>
-        </label>
-      ))}
+      {groups.map((group) => {
+        const isOpen = openGroups.has(group.label);
+        const hasSelected = group.profiles.some((p) => selected.has(p.id));
+        return (
+          <div
+            key={group.label}
+            className="card"
+            data-group={group.label}
+            style={{ padding: 0, overflow: "hidden" }}
+          >
+            <button
+              type="button"
+              data-group-toggle={group.label}
+              aria-expanded={isOpen}
+              onClick={() => toggleGroup(group.label)}
+              style={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "0.75rem 1rem",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 600,
+                textAlign: "left",
+              }}
+            >
+              <span>
+                {group.label}
+                {hasSelected && !isOpen && (
+                  <span
+                    data-group-selection-indicator={group.label}
+                    style={{
+                      marginLeft: "0.5rem",
+                      fontSize: "0.75rem",
+                      color: "var(--primary, #0070f3)",
+                      fontWeight: 400,
+                    }}
+                  >
+                    (Auswahl aktiv)
+                  </span>
+                )}
+              </span>
+              <span aria-hidden="true" style={{ fontSize: "0.8rem" }}>
+                {isOpen ? "▲" : "▼"}
+              </span>
+            </button>
+
+            {isOpen && (
+              <ul
+                style={{ listStyle: "none", padding: "0 1rem 1rem", margin: 0, display: "grid", gap: "0.5rem" }}
+              >
+                {group.profiles.map((p) => (
+                  <li key={p.id}>
+                    <label
+                      style={{ display: "flex", gap: "0.75rem", alignItems: "center", cursor: "pointer" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected.has(p.id)}
+                        onChange={() => handleToggleProfile(p.id)}
+                      />
+                      <span style={{ fontWeight: 500 }}>{p.label}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: 0 }}>{error}</p>
