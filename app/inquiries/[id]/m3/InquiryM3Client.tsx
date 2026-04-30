@@ -11,6 +11,7 @@ import {
 } from "@/lib/inquiries/types";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { buildInquiryM5Summary } from "@/lib/inquiries/buildInquiryM5Summary";
+import { applyIntroToggle } from "@/lib/inquiries/introToggle";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
 
 export type M3SpecificCheckpoint = {
@@ -710,21 +711,39 @@ export default function InquiryM3Client({
               >
                 Optional: Einstiegssatz vor der Entscheidung. Maximal einen auswählen.
               </div>
-              {introCheckpoints.map((cp) => (
-                <div
-                  key={cp.id}
-                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                >
-                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                  <StatusButtons
-                    checkpointId={cp.id}
-                    options={ACTION_OPTIONS}
-                    value={statuses[cp.id]}
-                    onChange={setStatus}
-                    disabled={false}
-                  />
-                </div>
-              ))}
+              {introCheckpoints.map((cp) => {
+                const isActive = statuses[cp.id] === "ACTIVE";
+                return (
+                  <div
+                    key={cp.id}
+                    style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                  >
+                    <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                    <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setStatuses((prev) =>
+                            applyIntroToggle(prev, cp.id, introCheckpoints.map((c) => c.id)),
+                          )
+                        }
+                        style={{
+                          padding: "0.25rem 0.75rem",
+                          borderRadius: "var(--radius)",
+                          border: "1px solid var(--border)",
+                          background: isActive ? "var(--primary, #2563eb)" : "var(--background)",
+                          color: isActive ? "#fff" : "var(--foreground)",
+                          fontWeight: isActive ? 600 : 400,
+                          cursor: "pointer",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {isActive ? "Aktiv" : "Inaktiv"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </section>
           )}
 
