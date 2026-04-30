@@ -6,15 +6,29 @@
  * Jede QuestionDefinition hat eine stabile, globale questionId, die
  * über alle Blöcke hinweg eindeutig ist. Die Deduplizierung in
  * buildQuestionnaireQuestions() nutzt diese IDs, sodass z.B.
- * CONTACT_PHONE auch dann nur einmal erscheint, wenn AU + REZEPT
+ * CONTACT_PHONE auch dann nur einmal erscheint, wenn mehrere Blöcke
  * gemeinsam gewählt werden.
+ *
+ * Blöcke (in Anzeigereihenfolge):
+ *   10 KONTAKT          – Telefon, E-Mail, Doctolib
+ *   20 ADRESSE          – Postanschrift
+ *   30 KURZANAMNESE     – Allgemeine Gesundheitsangaben
+ *   40 ARBEITSUNFAEHIGKEIT – AU-Bescheinigung
+ *   50 REZEPT           – Medikamentenrezept
+ *   60 UEBERWEISUNG     – Facharztüberweisung
  */
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type QuestionType = "text" | "date" | "yes_no" | "select" | "textarea";
+export type QuestionType =
+  | "text"
+  | "date"
+  | "yes_no"
+  | "select"
+  | "multi_select"
+  | "textarea";
 
 export type QuestionDefinition = {
   /** Globale, stabile ID – darf nie geändert werden. */
@@ -25,6 +39,10 @@ export type QuestionDefinition = {
   type: QuestionType;
   /** Ob das Feld Pflichtfeld ist. */
   required: boolean;
+  /** Auswahloptionen für select / multi_select. */
+  options?: string[];
+  /** Erläuternder Hilfetext unterhalb des Feldes. */
+  helperText?: string;
 };
 
 export type QuestionnaireBlock = {
@@ -32,6 +50,10 @@ export type QuestionnaireBlock = {
   id: string;
   /** Anzeigename für die UI. */
   label: string;
+  /** Kurze Beschreibung des Blocks (optional). */
+  description?: string;
+  /** Hinweistext, der unterhalb des Blocks angezeigt wird (optional, keine Logik). */
+  hint?: string;
   /** Reihenfolge beim Kombinieren (niedrig = zuerst). */
   displayOrder: number;
   /** Geordnete Fragen-IDs aus QUESTION_CATALOG. */
@@ -45,15 +67,15 @@ export type QuestionnaireBlock = {
 /**
  * Globaler Fragenkatalog mit stabilen IDs.
  *
- * CONTACT_*  – Kontaktdaten (können in mehreren Blöcken vorkommen)
- * ADDRESS_*  – Adressdaten
- * DOB        – Geburtsdatum
- * AU_*       – Fragen spezifisch für Arbeitsunfähigkeitsbescheinigung
- * PRESCRIPTION_* – Fragen spezifisch für Rezept
- * REF_*      – Fragen spezifisch für Überweisung
- * MISSING_*  – Fragen für fehlende Informationen
+ * CONTACT_*      – Kontaktdaten
+ * ADDRESS_*      – Adressdaten
+ * ANAMNESE_*     – Kurzanamnese
+ * AU_*           – Arbeitsunfähigkeitsbescheinigung
+ * PRESCRIPTION_* – Rezept
+ * REF_*          – Überweisung
  */
 export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
+  // --- Kontakt ---
   CONTACT_PHONE: {
     id: "CONTACT_PHONE",
     text: "Wie lautet Ihre Telefonnummer (Mobil oder Festnetz)?",
@@ -66,23 +88,108 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "text",
     required: false,
   },
+  CONTACT_DOCTOLIB: {
+    id: "CONTACT_DOCTOLIB",
+    text: "Haben Sie einen Doctolib-Account?",
+    type: "yes_no",
+    required: false,
+  },
+
+  // --- Adresse ---
   ADDRESS_POSTAL: {
     id: "ADDRESS_POSTAL",
-    text: "Wie lautet Ihre aktuelle Postanschrift (Straße, PLZ, Ort)?",
+    text: "Wie lautet Ihre Postanschrift (Straße, PLZ, Ort)?",
+    type: "textarea",
+    required: true,
+    helperText: "Wird für Abrechnung und Dokumente benötigt.",
+  },
+
+  // --- Kurzanamnese ---
+  ANAMNESE_GP: {
+    id: "ANAMNESE_GP",
+    text: "Haben Sie einen Hausarzt?",
+    type: "yes_no",
+    required: false,
+  },
+  ANAMNESE_HEIGHT: {
+    id: "ANAMNESE_HEIGHT",
+    text: "Wie groß sind Sie? (z.B. 175 cm)",
+    type: "text",
+    required: false,
+  },
+  ANAMNESE_WEIGHT: {
+    id: "ANAMNESE_WEIGHT",
+    text: "Wie viel wiegen Sie? (z.B. 70 kg)",
+    type: "text",
+    required: false,
+  },
+  ANAMNESE_CHRONIC: {
+    id: "ANAMNESE_CHRONIC",
+    text: "Leiden Sie an chronischen Erkrankungen? Falls ja, welchen?",
     type: "textarea",
     required: false,
   },
-  DOB: {
-    id: "DOB",
-    text: "Wie lautet Ihr Geburtsdatum?",
-    type: "date",
-    required: true,
+  ANAMNESE_HEREDITARY: {
+    id: "ANAMNESE_HEREDITARY",
+    text: "Gibt es bekannte Erbkrankheiten in Ihrer Familie?",
+    type: "textarea",
+    required: false,
   },
+  ANAMNESE_ALLERGIES: {
+    id: "ANAMNESE_ALLERGIES",
+    text: "Haben Sie Allergien oder Unverträglichkeiten?",
+    type: "textarea",
+    required: false,
+  },
+  ANAMNESE_MEDICATIONS: {
+    id: "ANAMNESE_MEDICATIONS",
+    text: "Nehmen Sie regelmäßig Medikamente? Falls ja, welche?",
+    type: "textarea",
+    required: false,
+  },
+  ANAMNESE_SMOKING: {
+    id: "ANAMNESE_SMOKING",
+    text: "Rauchen Sie?",
+    type: "yes_no",
+    required: false,
+  },
+  ANAMNESE_ALCOHOL: {
+    id: "ANAMNESE_ALCOHOL",
+    text: "Trinken Sie Alkohol?",
+    type: "yes_no",
+    required: false,
+  },
+  ANAMNESE_SUBSTANCES: {
+    id: "ANAMNESE_SUBSTANCES",
+    text: "Nehmen Sie sonstige Substanzen?",
+    type: "textarea",
+    required: false,
+  },
+  ANAMNESE_VACCINATION: {
+    id: "ANAMNESE_VACCINATION",
+    text: "Ist Ihr Impfstatus bekannt?",
+    type: "yes_no",
+    required: false,
+  },
+
+  // --- Arbeitsunfähigkeit ---
   AU_SYMPTOMS: {
     id: "AU_SYMPTOMS",
-    text: "Welche Beschwerden haben Sie? (Bitte kurz beschreiben)",
-    type: "textarea",
+    text: "Welche Beschwerden haben Sie?",
+    type: "multi_select",
     required: true,
+    options: [
+      "Husten",
+      "Schnupfen",
+      "Fieber",
+      "Kopfschmerzen",
+      "Rückenschmerzen",
+      "Bauchschmerzen",
+      "Schwindel",
+      "Übelkeit",
+      "Erschöpfung",
+      "Sonstiges",
+    ],
   },
   AU_START_DATE: {
     id: "AU_START_DATE",
@@ -92,45 +199,68 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   },
   AU_END_DATE: {
     id: "AU_END_DATE",
-    text: "Bis wann sind Sie voraussichtlich arbeitsunfähig?",
+    text: "Bis wann sind Sie voraussichtlich arbeitsunfähig? (optional)",
     type: "date",
     required: false,
   },
+
+  // --- Rezept ---
+  PRESCRIPTION_TYPE: {
+    id: "PRESCRIPTION_TYPE",
+    text: "Welche Art von Rezept benötigen Sie?",
+    type: "select",
+    required: true,
+    options: ["Dauermedikation", "Einzelmedikament"],
+  },
   PRESCRIPTION_MEDICATION: {
     id: "PRESCRIPTION_MEDICATION",
-    text: "Für welches Medikament benötigen Sie ein Rezept? (Bitte Name und Dosierung angeben)",
+    text: "Für welches Medikament benötigen Sie ein Rezept? (Name und Dosierung, falls bekannt)",
     type: "textarea",
-    required: true,
+    required: false,
   },
-  PRESCRIPTION_IS_REPEAT: {
-    id: "PRESCRIPTION_IS_REPEAT",
-    text: "Handelt es sich um eine Folge-/Dauerverordnung?",
+  PRESCRIPTION_REPEAT_KNOWN: {
+    id: "PRESCRIPTION_REPEAT_KNOWN",
+    text: "Ich benötige meine bekannten Dauermedikamente.",
     type: "yes_no",
-    required: true,
+    required: false,
   },
+
+  // --- Überweisung ---
   REF_SPECIALTY: {
     id: "REF_SPECIALTY",
     text: "Zu welcher Fachrichtung benötigen Sie eine Überweisung?",
     type: "text",
     required: true,
   },
+  REF_DOCTOR_NAME: {
+    id: "REF_DOCTOR_NAME",
+    text: "Name des Arztes (falls bereits bekannt)",
+    type: "text",
+    required: false,
+  },
+  REF_ADDRESS: {
+    id: "REF_ADDRESS",
+    text: "Adresse der Praxis (falls bereits bekannt)",
+    type: "text",
+    required: false,
+  },
   REF_APPOINTMENT_EXISTS: {
     id: "REF_APPOINTMENT_EXISTS",
     text: "Haben Sie bereits einen Termin beim Facharzt vereinbart?",
     type: "yes_no",
-    required: true,
+    required: false,
   },
   REF_APPOINTMENT_DATE: {
     id: "REF_APPOINTMENT_DATE",
-    text: "Für welches Datum benötigen Sie die Überweisung?",
+    text: "Datum des Termins",
     type: "date",
     required: false,
   },
-  MISSING_INFO_FREETEXT: {
-    id: "MISSING_INFO_FREETEXT",
-    text: "Welche Information möchten Sie uns mitteilen oder nachreichen?",
+  REF_REASON: {
+    id: "REF_REASON",
+    text: "Grund der Überweisung",
     type: "textarea",
-    required: true,
+    required: false,
   },
 };
 
@@ -141,66 +271,71 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
 /**
  * Statischer Block-Katalog.
  *
- * Die Reihenfolge innerhalb eines Blocks entspricht der Anzeigereihenfolge
- * im Patientenformular. Die Reihenfolge beim Kombinieren mehrerer Blöcke
- * steuert displayOrder.
+ * Telefonnummer, E-Mail und Adresse erscheinen nur in KONTAKT bzw. ADRESSE
+ * und werden durch buildQuestionnaireQuestions() dedupliziert.
+ * Die Blöcke KONTAKT (10) und ADRESSE (20) haben den niedrigsten displayOrder,
+ * damit Kontaktfelder immer zuerst erscheinen.
  */
 export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   KONTAKT: {
     id: "KONTAKT",
     label: "Kontaktdaten",
     displayOrder: 10,
-    questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "ADDRESS_POSTAL"],
+    questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "CONTACT_DOCTOLIB"],
+  },
+  ADRESSE: {
+    id: "ADRESSE",
+    label: "Adresse",
+    displayOrder: 20,
+    questionIds: ["ADDRESS_POSTAL"],
   },
   KURZANAMNESE: {
     id: "KURZANAMNESE",
     label: "Kurzanamnese",
-    displayOrder: 20,
-    questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "DOB", "ADDRESS_POSTAL"],
-  },
-  AU: {
-    id: "AU",
-    label: "Arbeitsunfähigkeitsbescheinigung (AU)",
     displayOrder: 30,
     questionIds: [
-      "CONTACT_PHONE",
-      "CONTACT_EMAIL",
-      "DOB",
-      "AU_SYMPTOMS",
-      "AU_START_DATE",
-      "AU_END_DATE",
+      "ANAMNESE_GP",
+      "ANAMNESE_HEIGHT",
+      "ANAMNESE_WEIGHT",
+      "ANAMNESE_CHRONIC",
+      "ANAMNESE_HEREDITARY",
+      "ANAMNESE_ALLERGIES",
+      "ANAMNESE_MEDICATIONS",
+      "ANAMNESE_SMOKING",
+      "ANAMNESE_ALCOHOL",
+      "ANAMNESE_SUBSTANCES",
+      "ANAMNESE_VACCINATION",
     ],
+  },
+  ARBEITSUNFAEHIGKEIT: {
+    id: "ARBEITSUNFAEHIGKEIT",
+    label: "Arbeitsunfähigkeitsbescheinigung",
+    displayOrder: 40,
+    hint: "Bitte beachten Sie: Die maximale rückwirkende Ausstellungsdauer ist gesetzlich begrenzt.",
+    questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE"],
   },
   REZEPT: {
     id: "REZEPT",
     label: "Rezept",
-    displayOrder: 40,
+    displayOrder: 50,
     questionIds: [
-      "CONTACT_PHONE",
-      "CONTACT_EMAIL",
-      "DOB",
+      "PRESCRIPTION_TYPE",
       "PRESCRIPTION_MEDICATION",
-      "PRESCRIPTION_IS_REPEAT",
+      "PRESCRIPTION_REPEAT_KNOWN",
     ],
   },
   UEBERWEISUNG: {
     id: "UEBERWEISUNG",
     label: "Überweisung",
-    displayOrder: 50,
+    displayOrder: 60,
     questionIds: [
-      "CONTACT_PHONE",
-      "CONTACT_EMAIL",
-      "DOB",
       "REF_SPECIALTY",
+      "REF_DOCTOR_NAME",
+      "REF_ADDRESS",
       "REF_APPOINTMENT_EXISTS",
       "REF_APPOINTMENT_DATE",
+      "REF_REASON",
     ],
-  },
-  FEHLENDE_INFO: {
-    id: "FEHLENDE_INFO",
-    label: "Fehlende Informationen",
-    displayOrder: 60,
-    questionIds: ["CONTACT_PHONE", "MISSING_INFO_FREETEXT"],
   },
 };
 
