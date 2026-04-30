@@ -51,7 +51,9 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const hasAU = blockIds.has("ARBEITSUNFAEHIGKEIT");
   const hasRezept = blockIds.has("REZEPT");
   const hasUeberweisung = blockIds.has("UEBERWEISUNG");
+  const hasKurzanamnese = blockIds.has("KURZANAMNESE");
   const hasKontakt = blockIds.has("KONTAKT");
+  const hasAdresse = blockIds.has("ADRESSE");
 
   // --- Titel ---
   let title: string;
@@ -67,40 +69,62 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
   // --- AU ---
   if (hasAU) {
-    const symptoms = val(answers, "AU_SYMPTOMS");
-    if (symptoms !== "") {
-      lines.push(`Beschwerden: ${truncate(symptoms)}`);
-    }
-    if (present(answers, "AU_START_DATE")) {
-      lines.push(`Beginn: ${val(answers, "AU_START_DATE")}`);
-    }
+    addLine(lines, "Beschwerden", val(answers, "AU_SYMPTOMS"));
+    addLine(lines, "Beginn", val(answers, "AU_START_DATE"));
+    addLine(lines, "AU bis", val(answers, "AU_END_DATE"));
   }
 
   // --- Rezept ---
   if (hasRezept) {
-    if (present(answers, "PRESCRIPTION_TYPE")) {
-      lines.push(`Rezeptart: ${val(answers, "PRESCRIPTION_TYPE")}`);
-    }
-    const med = val(answers, "PRESCRIPTION_MEDICATION");
-    if (med !== "") {
-      addLine(lines, "Medikament", med);
-    }
+    addLine(lines, "Rezeptart", val(answers, "PRESCRIPTION_TYPE"));
+    addLine(lines, "Medikament", val(answers, "PRESCRIPTION_MEDICATION"));
   }
 
   // --- Überweisung ---
   if (hasUeberweisung) {
-    if (present(answers, "REF_SPECIALTY")) {
-      lines.push(`Fachrichtung: ${val(answers, "REF_SPECIALTY")}`);
+    addLine(lines, "Fachrichtung", val(answers, "REF_SPECIALTY"));
+    addLine(lines, "Facharzt", val(answers, "REF_DOCTOR_NAME"));
+    addLine(lines, "Adresse Facharzt", val(answers, "REF_ADDRESS"));
+    addLine(lines, "Termin vereinbart", val(answers, "REF_APPOINTMENT_EXISTS"));
+    addLine(lines, "Termin", val(answers, "REF_APPOINTMENT_DATE"));
+    addLine(lines, "Grund", val(answers, "REF_REASON"));
+  }
+
+  // --- Kurzanamnese ---
+  if (hasKurzanamnese) {
+    const kurzLines: string[] = [];
+    addLine(kurzLines, "Hausarzt", val(answers, "ANAMNESE_GP"));
+    const height = val(answers, "ANAMNESE_HEIGHT");
+    const weight = val(answers, "ANAMNESE_WEIGHT");
+    if (height && weight) {
+      kurzLines.push(`Größe/Gewicht: ${height} / ${weight}`);
+    } else if (height) {
+      kurzLines.push(`Größe: ${height}`);
+    } else if (weight) {
+      kurzLines.push(`Gewicht: ${weight}`);
     }
-    const appt = val(answers, "REF_APPOINTMENT_EXISTS");
-    if (appt !== "") {
-      lines.push(`Termin vereinbart: ${appt}`);
+    addLine(kurzLines, "Chronische Erkrankungen", val(answers, "ANAMNESE_CHRONIC"));
+    addLine(kurzLines, "Allergien", val(answers, "ANAMNESE_ALLERGIES"));
+    addLine(kurzLines, "Medikamente", val(answers, "ANAMNESE_MEDICATIONS"));
+    if (kurzLines.length > 0) {
+      lines.push("Kurzanamnese");
+      lines.push(...kurzLines);
     }
   }
 
-  // --- Kontakt ---
-  if (hasKontakt && present(answers, "CONTACT_PHONE")) {
-    lines.push(`Tel.: ${val(answers, "CONTACT_PHONE")}`);
+  // --- Kontakt / Adresse ---
+  const contactLines: string[] = [];
+  if (hasKontakt) {
+    addLine(contactLines, "Tel.", val(answers, "CONTACT_PHONE"));
+    addLine(contactLines, "E-Mail", val(answers, "CONTACT_EMAIL"));
+    addLine(contactLines, "Doctolib", val(answers, "CONTACT_DOCTOLIB"));
+  }
+  if (hasAdresse) {
+    addLine(contactLines, "Adresse", val(answers, "ADDRESS_POSTAL"));
+  }
+  if (contactLines.length > 0) {
+    lines.push("Kontakt/Adresse");
+    lines.push(...contactLines);
   }
 
   return lines.join("\n");

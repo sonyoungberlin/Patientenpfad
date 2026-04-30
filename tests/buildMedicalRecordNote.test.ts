@@ -230,3 +230,191 @@ describe("buildMedicalRecordNote – Zeilenanzahl", () => {
     expect(lines.length).toBeLessThanOrEqual(10);
   });
 });
+
+describe("buildMedicalRecordNote – AU_END_DATE (AU bis)", () => {
+  it("enthält AU-bis-Datum wenn vorhanden", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        AU_SYMPTOMS: "Husten",
+        AU_START_DATE: "2024-01-08",
+        AU_END_DATE: "2024-01-15",
+      },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("AU bis: 2024-01-15");
+  });
+
+  it("lässt AU-bis-Datum weg wenn nicht ausgefüllt", () => {
+    const result = buildMedicalRecordNote({
+      answers: { AU_START_DATE: "2024-01-08" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    const lines = result.split("\n");
+    expect(lines.some((l) => l.startsWith("AU bis:"))).toBe(false);
+  });
+});
+
+describe("buildMedicalRecordNote – Überweisung erweiterte Felder", () => {
+  it("enthält Facharzt-Name, Adresse, Termin-Datum und Grund wenn vorhanden", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        REF_SPECIALTY: "Kardiologie",
+        REF_DOCTOR_NAME: "Dr. Müller",
+        REF_ADDRESS: "Musterstr. 1, 10115 Berlin",
+        REF_APPOINTMENT_EXISTS: "Ja",
+        REF_APPOINTMENT_DATE: "2024-03-20",
+        REF_REASON: "Herzcheck",
+      },
+      selected_block_ids: ["UEBERWEISUNG"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("Facharzt: Dr. Müller");
+    expect(lines).toContain("Adresse Facharzt: Musterstr. 1, 10115 Berlin");
+    expect(lines).toContain("Termin: 2024-03-20");
+    expect(lines).toContain("Grund: Herzcheck");
+  });
+
+  it("lässt optionale Überweisung-Felder weg wenn leer", () => {
+    const result = buildMedicalRecordNote({
+      answers: { REF_SPECIALTY: "Kardiologie" },
+      selected_block_ids: ["UEBERWEISUNG"],
+    });
+    const lines = result.split("\n");
+    expect(lines.some((l) => l.startsWith("Facharzt:"))).toBe(false);
+    expect(lines.some((l) => l.startsWith("Termin:"))).toBe(false);
+    expect(lines.some((l) => l.startsWith("Grund:"))).toBe(false);
+  });
+});
+
+describe("buildMedicalRecordNote – Kurzanamnese-Block", () => {
+  it("enthält Kurzanamnese-Header und relevante Felder", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        ANAMNESE_GP: "Ja",
+        ANAMNESE_HEIGHT: "175 cm",
+        ANAMNESE_WEIGHT: "70 kg",
+        ANAMNESE_CHRONIC: "Diabetes",
+        ANAMNESE_ALLERGIES: "Pollen",
+        ANAMNESE_MEDICATIONS: "Metformin",
+      },
+      selected_block_ids: ["KURZANAMNESE"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("Kurzanamnese");
+    expect(lines).toContain("Hausarzt: Ja");
+    expect(lines).toContain("Größe/Gewicht: 175 cm / 70 kg");
+    expect(lines).toContain("Chronische Erkrankungen: Diabetes");
+    expect(lines).toContain("Allergien: Pollen");
+    expect(lines).toContain("Medikamente: Metformin");
+  });
+
+  it("zeigt Größe allein wenn Gewicht fehlt", () => {
+    const result = buildMedicalRecordNote({
+      answers: { ANAMNESE_HEIGHT: "175 cm" },
+      selected_block_ids: ["KURZANAMNESE"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("Größe: 175 cm");
+    expect(lines.some((l) => l.startsWith("Gewicht:"))).toBe(false);
+  });
+
+  it("zeigt kein Kurzanamnese-Header wenn keine Felder ausgefüllt", () => {
+    const result = buildMedicalRecordNote({
+      answers: {},
+      selected_block_ids: ["KURZANAMNESE"],
+    });
+    expect(result).not.toContain("Kurzanamnese");
+  });
+
+  it("zeigt keinen Kurzanamnese-Abschnitt wenn Block nicht gewählt", () => {
+    const result = buildMedicalRecordNote({
+      answers: { ANAMNESE_GP: "Ja" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    expect(result).not.toContain("Kurzanamnese");
+    expect(result).not.toContain("Hausarzt");
+  });
+});
+
+describe("buildMedicalRecordNote – Kontakt/Adresse erweiterter Block", () => {
+  it("enthält Kontakt/Adresse-Header und E-Mail sowie Doctolib wenn vorhanden", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        CONTACT_PHONE: "0170 1234567",
+        CONTACT_EMAIL: "patient@example.com",
+        CONTACT_DOCTOLIB: "Ja",
+      },
+      selected_block_ids: ["KONTAKT"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("Kontakt/Adresse");
+    expect(lines).toContain("Tel.: 0170 1234567");
+    expect(lines).toContain("E-Mail: patient@example.com");
+    expect(lines).toContain("Doctolib: Ja");
+  });
+
+  it("enthält Adresse wenn ADRESSE-Block gewählt", () => {
+    const result = buildMedicalRecordNote({
+      answers: { ADDRESS_POSTAL: "Musterstraße 1, 10115 Berlin" },
+      selected_block_ids: ["ADRESSE"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("Kontakt/Adresse");
+    expect(lines).toContain("Adresse: Musterstraße 1, 10115 Berlin");
+  });
+
+  it("zeigt keinen Kontakt/Adresse-Header wenn alle Kontaktfelder leer", () => {
+    const result = buildMedicalRecordNote({
+      answers: {},
+      selected_block_ids: ["KONTAKT"],
+    });
+    expect(result).not.toContain("Kontakt/Adresse");
+  });
+});
+
+describe("buildMedicalRecordNote – Kontakt-Deduplizierung bei AU + REZEPT", () => {
+  it("zeigt Tel. nur einmal wenn AU + REZEPT + KONTAKT kombiniert", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        AU_SYMPTOMS: "Husten",
+        AU_START_DATE: "2024-01-08",
+        PRESCRIPTION_TYPE: "Dauermedikation",
+        CONTACT_PHONE: "0170 9999999",
+      },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "REZEPT", "KONTAKT"],
+    });
+    const lines = result.split("\n");
+    const telLines = lines.filter((l) => l.startsWith("Tel.:"));
+    expect(telLines).toHaveLength(1);
+  });
+
+  it("zeigt Kontakt/Adresse-Header nur einmal", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        CONTACT_PHONE: "0170 9999999",
+        ADDRESS_POSTAL: "Musterstr. 1",
+      },
+      selected_block_ids: ["KONTAKT", "ADRESSE", "ARBEITSUNFAEHIGKEIT"],
+    });
+    const lines = result.split("\n");
+    const headerCount = lines.filter((l) => l === "Kontakt/Adresse").length;
+    expect(headerCount).toBe(1);
+  });
+});
+
+describe("buildMedicalRecordNote – keine Frageformulierungen", () => {
+  it("enthält keine vollständigen Frageformulierungen im Kurztext", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        AU_SYMPTOMS: "Husten",
+        AU_START_DATE: "2024-01-08",
+        CONTACT_PHONE: "0170 123456",
+      },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "KONTAKT"],
+    });
+    expect(result).not.toContain("Welche Beschwerden haben Sie?");
+    expect(result).not.toContain("Seit wann bestehen die Beschwerden?");
+    expect(result).not.toContain("Wie lautet Ihre Telefonnummer");
+  });
+});
