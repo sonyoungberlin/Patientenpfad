@@ -571,7 +571,7 @@ describe("MEDICAL_DOCUMENTS – boundActionConditions Struktur", () => {
 const DIGITAL_REQUEST_REQUIRED_TEXT =
   "Für die Prüfung Ihres Anliegens benötigen wir eine digitale Anfrage.";
 const DIGITAL_REQUEST_TEXT =
-  "Die digitale Anfrage können Sie über dieses Formular stellen: https://mvz-kreuzberg.de/digitaleanfrage";
+  "Bitte stellen Sie eine digitale Anfrage.";
 const BOOK_APPOINTMENT_TEXT = "Termine können über den Online-Kalender vereinbart werden.";
 
 describe("MEDICAL_DOCUMENTS Renderer – DIGITAL_REQUEST_REQUIRED ACTIVE", () => {

@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
+import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
+import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Ausstehend",
@@ -148,18 +151,27 @@ export default async function QuestionnairesPage() {
                   </div>
                 )}
 
-                {/* PDF download */}
+                {/* PDF download + Krankenblatt-Text */}
                 {displayStatus === "completed" && (
-                  <a
-                    href={`/api/questionnaire/${s.id}/pdf`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-secondary text-small"
-                    data-q-pdf={s.id}
-                    style={{ display: "inline-block", marginTop: "0.25rem" }}
-                  >
-                    PDF herunterladen
-                  </a>
+                  <>
+                    <a
+                      href={`/api/questionnaire/${s.id}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary text-small"
+                      data-q-pdf={s.id}
+                      style={{ display: "inline-block", marginTop: "0.25rem" }}
+                    >
+                      PDF herunterladen
+                    </a>
+                    <MedicalRecordNoteCopyButton
+                      sessionId={s.id}
+                      noteText={buildMedicalRecordNote({
+                        answers,
+                        selected_block_ids: blockIds,
+                      })}
+                    />
+                  </>
                 )}
 
                 {/* Answers */}
@@ -200,6 +212,9 @@ export default async function QuestionnairesPage() {
                     </ul>
                   </details>
                 )}
+
+                {/* Delete */}
+                <QuestionnaireDeleteButton sessionId={s.id} />
               </div>
             );
           })}

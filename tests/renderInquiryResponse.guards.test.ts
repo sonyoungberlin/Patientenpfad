@@ -74,6 +74,7 @@ jest.mock("@/lib/inquiries/inquiryCheckpointCatalog", () => ({
     GLOBAL_EXPL: GLOBAL_EXPLANATION_CHECKPOINT,
     NON_ACTION: NON_ACTION_CHECKPOINT,
   },
+  INTRO_CHECKPOINT_IDS: [],
 }));
 
 jest.mock("@/lib/inquiries/inquiryProfileCatalog", () => ({

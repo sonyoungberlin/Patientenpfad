@@ -15,7 +15,7 @@ import {
   type InquirySectionOutput,
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
-import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 
 /**
@@ -346,7 +346,25 @@ export function renderInquiryResponseFromSections(
     allDocumentation.push(...sectionDocumentation);
   }
 
+  // ---- F) Intro-Baustein – erster aktiver INTRO-Checkpoint → output.intro ----
+  // Intro-Checkpoints sind keine profile-gebundenen Actions. Sie werden separat
+  // aus den checkpointStatuses der ersten Section (alle Sections teilen dieselbe
+  // Statuses-Map) in der definierten INTRO_CHECKPOINT_IDS-Reihenfolge gesucht.
+  // Nur der erste aktive Intro wird verwendet; weitere aktive INTROs werden ignoriert.
+  // Intro-Texte erscheinen NICHT in sharedBottom.
+  let intro: string | undefined;
+  const firstSectionStatuses = sections[0]?.checkpointStatuses ?? {};
+  for (const introId of INTRO_CHECKPOINT_IDS) {
+    const status = firstSectionStatuses[introId];
+    if (status !== ActionStatus.ACTIVE) continue;
+    const introCp = INQUIRY_CHECKPOINT_CATALOG_V2[introId];
+    if (!introCp) continue;
+    const text = introCp.textByStatus[ActionStatus.ACTIVE];
+    if (text) { intro = text; break; }
+  }
+
   return {
+    ...(intro !== undefined ? { intro } : {}),
     sections: sectionOutputs,
     sharedBottom: sharedBottomEntries
       .sort((a, b) => actionCategoryRank(a.category) - actionCategoryRank(b.category))
