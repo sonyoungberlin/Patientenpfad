@@ -19,6 +19,7 @@ import {
   DecisionStatus,
   ExplanationStatus,
   ExplanationOutputStatus,
+  ActionStatus,
   InquiryCheckpointKind,
   InquiryCheckpointScope,
   type SpecificRole,
@@ -475,7 +476,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("wofür das Attest benötigt wird");
+    expect(paragraphs).toContain("Verwendungszweck");
   });
 
   it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING YES + SHOW → kein Text (deprecated, nicht mehr im Profil)", () => {
@@ -522,5 +523,143 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).not.toContain("Erstellung, Abholung");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. MEDICAL_DOCUMENTS – boundActionCheckpointIds und boundActionConditions
+// ---------------------------------------------------------------------------
+
+describe("MEDICAL_DOCUMENTS – boundActionCheckpointIds Struktur", () => {
+  it("enthält DIGITAL_REQUEST_REQUIRED", () => {
+    expect(MEDICAL_DOCUMENTS.boundActionCheckpointIds).toContain("DIGITAL_REQUEST_REQUIRED");
+  });
+
+  it("enthält DIGITAL_REQUEST", () => {
+    expect(MEDICAL_DOCUMENTS.boundActionCheckpointIds).toContain("DIGITAL_REQUEST");
+  });
+
+  it("enthält BOOK_APPOINTMENT", () => {
+    expect(MEDICAL_DOCUMENTS.boundActionCheckpointIds).toContain("BOOK_APPOINTMENT");
+  });
+});
+
+describe("MEDICAL_DOCUMENTS – boundActionConditions Struktur", () => {
+  it("DIGITAL_REQUEST_REQUIRED hat hideWhenAny: [] (immer sichtbar)", () => {
+    const condition = MEDICAL_DOCUMENTS.boundActionConditions?.["DIGITAL_REQUEST_REQUIRED"];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toEqual([]);
+  });
+
+  it("DIGITAL_REQUEST hat showWhenAny mit MEDICAL_DOCUMENT_INFO_MISSING = YES", () => {
+    const condition = MEDICAL_DOCUMENTS.boundActionConditions?.["DIGITAL_REQUEST"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toContainEqual({ MEDICAL_DOCUMENT_INFO_MISSING: "YES" });
+  });
+
+  it("BOOK_APPOINTMENT hat showWhenAny mit MEDICAL_CONSULTATION_REQUIRED = YES", () => {
+    const condition = MEDICAL_DOCUMENTS.boundActionConditions?.["BOOK_APPOINTMENT"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toContainEqual({ MEDICAL_CONSULTATION_REQUIRED: "YES" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. MEDICAL_DOCUMENTS – Renderer: M3 bound-action OUTPUT
+// ---------------------------------------------------------------------------
+
+const DIGITAL_REQUEST_REQUIRED_TEXT =
+  "Für die Prüfung Ihres Anliegens benötigen wir eine digitale Anfrage.";
+const DIGITAL_REQUEST_TEXT =
+  "Die digitale Anfrage können Sie über dieses Formular stellen: https://mvz-kreuzberg.de/digitaleanfrage";
+const BOOK_APPOINTMENT_TEXT = "Termine können über den Online-Kalender vereinbart werden.";
+
+describe("MEDICAL_DOCUMENTS Renderer – DIGITAL_REQUEST_REQUIRED ACTIVE", () => {
+  it("Text erscheint in attachedParagraphs (ATTACHED placement)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { DIGITAL_REQUEST_REQUIRED: ActionStatus.ACTIVE },
+        explanationOutputStatuses: {},
+      },
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(DIGITAL_REQUEST_REQUIRED_TEXT);
+  });
+
+  it("Text erscheint nicht in sharedBottom (ist ATTACHED, nicht SHARED_BOTTOM)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { DIGITAL_REQUEST_REQUIRED: ActionStatus.ACTIVE },
+        explanationOutputStatuses: {},
+      },
+    ]);
+    expect(result.sharedBottom).not.toContain(DIGITAL_REQUEST_REQUIRED_TEXT);
+  });
+
+  it("INACTIVE → kein Text im Output", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { DIGITAL_REQUEST_REQUIRED: ActionStatus.INACTIVE },
+        explanationOutputStatuses: {},
+      },
+    ]);
+    const allText = [
+      ...result.sections.flatMap((s) => s.attachedParagraphs),
+      ...result.sharedBottom,
+    ].join(" ");
+    expect(allText).not.toContain(DIGITAL_REQUEST_REQUIRED_TEXT);
+  });
+});
+
+describe("MEDICAL_DOCUMENTS Renderer – DIGITAL_REQUEST ACTIVE", () => {
+  it("Text erscheint in sharedBottom (SHARED_BOTTOM placement)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { DIGITAL_REQUEST: ActionStatus.ACTIVE },
+        explanationOutputStatuses: {},
+      },
+    ]);
+    expect(result.sharedBottom).toContain(DIGITAL_REQUEST_TEXT);
+  });
+});
+
+describe("MEDICAL_DOCUMENTS Renderer – BOOK_APPOINTMENT ACTIVE", () => {
+  it("Text erscheint in sharedBottom (SHARED_BOTTOM placement)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { BOOK_APPOINTMENT: ActionStatus.ACTIVE },
+        explanationOutputStatuses: {},
+      },
+    ]);
+    expect(result.sharedBottom).toContain(BOOK_APPOINTMENT_TEXT);
+  });
+});
+
+describe("MEDICAL_DOCUMENTS Renderer – DIGITAL_REQUEST_REQUIRED + DIGITAL_REQUEST kombiniert", () => {
+  it("beide Texte erscheinen gleichzeitig in ihren jeweiligen Buckets", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          DIGITAL_REQUEST_REQUIRED: ActionStatus.ACTIVE,
+          DIGITAL_REQUEST: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {},
+      },
+    ]);
+    // DIGITAL_REQUEST_REQUIRED → ATTACHED → attachedParagraphs
+    expect(result.sections[0].attachedParagraphs).toContain(DIGITAL_REQUEST_REQUIRED_TEXT);
+    // DIGITAL_REQUEST → SHARED_BOTTOM → sharedBottom
+    expect(result.sharedBottom).toContain(DIGITAL_REQUEST_TEXT);
   });
 });

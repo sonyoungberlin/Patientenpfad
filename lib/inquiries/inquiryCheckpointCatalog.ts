@@ -2337,7 +2337,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Ausstellung benötigen wir genaue Angaben dazu, wofür das Attest benötigt wird.",
+        "Genaue Angaben zum Verwendungszweck liegen noch nicht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },

@@ -1687,17 +1687,29 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [
       "MEDICAL_CONSULTATION_REQUIRED",
     ],
-    globalHints: {
-      MEDICAL_CONSULTATION_REQUIRED: "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
-    },
+    globalHints: {},
     availableActionIds: [
-      "BOOK_APPOINTMENT",
-      "DIGITAL_REQUEST",
       "ONLINE_ANAMNESIS",
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
+    boundActionCheckpointIds: [
+      "DIGITAL_REQUEST_REQUIRED",
+      "DIGITAL_REQUEST",
+      "BOOK_APPOINTMENT",
+    ],
+    boundActionConditions: {
+      DIGITAL_REQUEST_REQUIRED: {
+        hideWhenAny: [],
+      },
+      DIGITAL_REQUEST: {
+        showWhenAny: [{ MEDICAL_DOCUMENT_INFO_MISSING: "YES" }],
+      },
+      BOOK_APPOINTMENT: {
+        showWhenAny: [{ MEDICAL_CONSULTATION_REQUIRED: "YES" }],
+      },
+    },
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
