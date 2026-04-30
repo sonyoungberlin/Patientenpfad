@@ -10,6 +10,7 @@ import {
   ActionStatus,
   type ConfirmedInquiryCheckpoint,
   type InquirySection,
+  type CheckpointStatusValue,
 } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
@@ -937,7 +938,7 @@ describe("renderInquiryResponseFromSections – ACTION/SHARED_BOTTOM", () => {
 // ---------------------------------------------------------------------------
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlacement, ExplanationOutputStatus } from "@/lib/inquiries/types";
 
 describe("AU-Profil – Checkpoint-Bindungen", () => {
@@ -2895,5 +2896,148 @@ describe("Checkpoint-Klassifizierung – MODULAR", () => {
 
   it("INFECTIOUS_PROTOCOL hat scope GLOBAL", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["INFECTIOUS_PROTOCOL"].scope).toBe(InquiryCheckpointScope.GLOBAL);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Intro-Bausteine (renderInquiryResponseFromSections)
+// ---------------------------------------------------------------------------
+
+describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
+  /** AU-Section ohne Intro. */
+  function makeAuSectionIntro(introStatuses: Record<string, string> = {}): InquirySection {
+    return {
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.POSSIBLE,
+      checkpointStatuses: introStatuses as Record<string, CheckpointStatusValue>,
+    };
+  }
+
+  it("kein aktiver Intro → output.intro ist undefined", () => {
+    const result = renderInquiryResponseFromSections([makeAuSectionIntro()]);
+    expect(result.intro).toBeUndefined();
+  });
+
+  it("MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED ACTIVE → output.intro enthält den Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE }),
+    ]);
+    expect(result.intro).toBeDefined();
+    expect(result.intro).toContain("Ihre Nachricht ist bei uns eingegangen");
+  });
+
+  it("MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED ACTIVE → output.intro enthält den Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: ActionStatus.ACTIVE }),
+    ]);
+    expect(result.intro).toContain("Vielen Dank für das Ausfüllen des Fragebogens");
+  });
+
+  it("MESSAGE_INTRO_PRACTICE_FOLLOWUP ACTIVE → output.intro enthält den Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE }),
+    ]);
+    expect(result.intro).toContain("Durchsicht Ihrer Unterlagen");
+  });
+
+  it("MESSAGE_INTRO_MISSING_INFO ACTIVE → output.intro enthält den Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_MISSING_INFO: ActionStatus.ACTIVE }),
+    ]);
+    expect(result.intro).toContain("Zur weiteren Bearbeitung Ihres Anliegens");
+  });
+
+  it("Intro erscheint NICHT in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE }),
+    ]);
+    const introText = result.intro ?? "";
+    expect(result.sharedBottom).not.toContain(introText);
+  });
+
+  it("mehrere aktive Intros → nur der erste (nach INTRO_CHECKPOINT_IDS-Reihenfolge) wird verwendet", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionIntro({
+        MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE,
+        MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toContain("Ihre Nachricht ist bei uns eingegangen");
+    expect(result.intro).not.toContain("Vielen Dank");
+  });
+
+  it("Intro INACTIVE → output.intro ist undefined", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.INACTIVE }),
+    ]);
+    expect(result.intro).toBeUndefined();
+  });
+
+  it("Intro beeinflusst nicht mainDecision", () => {
+    const withIntro = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE }),
+    ]);
+    const withoutIntro = renderInquiryResponseFromSections([makeAuSectionIntro()]);
+    expect(withIntro.sections[0].mainDecision).toBe(withoutIntro.sections[0].mainDecision);
+  });
+
+  it("Intro beeinflusst nicht sharedBottom (keine anderen Actions aktiv)", () => {
+    const withIntro = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE }),
+    ]);
+    const withoutIntro = renderInquiryResponseFromSections([makeAuSectionIntro()]);
+    expect(withIntro.sharedBottom).toEqual(withoutIntro.sharedBottom);
+  });
+
+  it("Fragebogen-Link bleibt am Ende (output.intro bleibt unverändert durch sharedBottom-Append)", () => {
+    const base = renderInquiryResponseFromSections([
+      makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE }),
+    ]);
+    // Simuliere appendQuestionnaireLinkToOutput: Link wird ans Ende von sharedBottom angehängt.
+    const linkText = "Bitte füllen Sie den folgenden Fragebogen aus.\nKopieren Sie den Link in Ihren Browser:\nhttps://example.com/q/test";
+    const withLink = { ...base, sharedBottom: [...base.sharedBottom, linkText] };
+    const lastEntry = withLink.sharedBottom[withLink.sharedBottom.length - 1];
+    expect(lastEntry).toContain("https://example.com/q/test");
+    expect(withLink.intro).toBe(base.intro);
+  });
+});
+
+describe("INTRO_CHECKPOINT_IDS – Katalog-Vollständigkeit", () => {
+  it("alle INTRO_CHECKPOINT_IDS sind im Katalog vorhanden", () => {
+    for (const id of INTRO_CHECKPOINT_IDS) {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
+    }
+  });
+
+  it("alle INTRO-Checkpoints haben actionCategory 'INTRO'", () => {
+    for (const id of INTRO_CHECKPOINT_IDS) {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].actionCategory).toBe("INTRO");
+    }
+  });
+
+  it("alle INTRO-Checkpoints haben kind ACTION", () => {
+    for (const id of INTRO_CHECKPOINT_IDS) {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].kind).toBe(InquiryCheckpointKind.ACTION);
+    }
+  });
+
+  it("alle INTRO-Checkpoints haben scope GLOBAL", () => {
+    for (const id of INTRO_CHECKPOINT_IDS) {
+      expect(INQUIRY_CHECKPOINT_CATALOG_V2[id].scope).toBe(InquiryCheckpointScope.GLOBAL);
+    }
+  });
+
+  it("alle INTRO-Checkpoints haben einen nicht-leeren ACTIVE-Text", () => {
+    for (const id of INTRO_CHECKPOINT_IDS) {
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp.textByStatus[ActionStatus.ACTIVE]).toBeTruthy();
+    }
+  });
+
+  it("INTRO-Texte enthalten keine URL", () => {
+    for (const id of INTRO_CHECKPOINT_IDS) {
+      const text = INQUIRY_CHECKPOINT_CATALOG_V2[id].textByStatus[ActionStatus.ACTIVE] ?? "";
+      expect(text).not.toMatch(/https?:\/\//);
+    }
   });
 });

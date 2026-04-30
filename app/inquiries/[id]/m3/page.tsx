@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import {
   InquiryCheckpointKind,
   InquiryCheckpointScope,
@@ -142,6 +142,20 @@ export default async function InquiryM3Page({
     )
     .map((cp) => ({ id: cp.id, label: cp.label }));
 
+  // Intro-Bausteine (Nachrichteneinstieg): profilübergreifend, immer verfügbar.
+  // Die IDs werden zu actionIds hinzugefügt, damit ihre Statuses in actionStatuses gespeichert werden.
+  // Sie erscheinen NICHT in actionCheckpoints (dafür gibt es introCheckpoints).
+  for (const cpId of INTRO_CHECKPOINT_IDS) {
+    actionIds.add(cpId);
+  }
+  const introCheckpoints: M3ActionData[] = INTRO_CHECKPOINT_IDS
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter(
+      (cp): cp is InquiryCheckpoint =>
+        !!cp && cp.kind === InquiryCheckpointKind.ACTION,
+    )
+    .map((cp) => ({ id: cp.id, label: cp.label }));
+
   // Global context checkpoints (read-only in M3, set in M2)
   // NOTE: per architecture spec, GLOBAL checkpoints must NOT appear in M3 at all.
 
@@ -175,6 +189,7 @@ export default async function InquiryM3Page({
         sessionId={id}
         sections={sections}
         actionCheckpoints={actionCheckpoints}
+        introCheckpoints={introCheckpoints}
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
         initialExplanationOutputStatuses={explanationOutputStatuses}

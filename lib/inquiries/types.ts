@@ -465,12 +465,14 @@ export type InquiryCheckpoint = {
    * Dient der Gruppierung und Darstellung in M2/M3 (z. B. Vorbereitungshinweise,
    * Prozessinfos, nächste Schritte). Hat keinen Einfluss auf die Decision-Logik.
    *
+   * INTRO       – Einstiegssatz (Nachrichteneinstieg) vor der Entscheidung.
+   *               Maximal ein INTRO erscheint in output.intro; kein sharedBottom-Eintrag.
    * PREPARATION – Patientenhinweise vor dem Termin (z. B. nüchtern, Probe vorbereiten).
    * PROCESS     – Ablaufhinweise (z. B. Probenabgabe).
    * NEXT_STEP   – Hinweise auf nächste Handlungsschritte (z. B. Buchungscode nutzen).
    * INFO        – Allgemeine Sachinformationen (z. B. Befunddauer).
    */
-  actionCategory?: "PREPARATION" | "PROCESS" | "NEXT_STEP" | "INFO";
+  actionCategory?: "INTRO" | "PREPARATION" | "PROCESS" | "NEXT_STEP" | "INFO";
   /**
    * Wiederverwendbare Kommunikationsfunktion dieses Checkpoints.
    *
@@ -737,11 +739,15 @@ export type InquirySectionOutput = {
 /**
  * Gesamtergebnis von renderInquiryResponseFromSections.
  *
+ * intro        – optionaler Einstiegssatz (Kommunikationskontext), steht vor allen Abschnitten.
+ *                Wird befüllt, wenn genau ein ACTION-Checkpoint mit actionCategory "INTRO" aktiv ist.
+ *                Enthält keine medizinische Bewertung, keine Entscheidung, keine Links.
  * sections     – ein Abschnitt pro Anliegen mit ATTACHED-Bausteinen.
  * sharedBottom – deduplizierte SHARED_BOTTOM-Bausteine (Wege, Sammelhinweise).
  * documentation – alle Dokumentationszeilen aller Abschnitte.
  */
 export type InquiryResponseV2Output = {
+  intro?: string;
   sections: InquirySectionOutput[];
   sharedBottom: string[];
   documentation: string[];

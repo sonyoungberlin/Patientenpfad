@@ -61,6 +61,8 @@ type Props = {
   sessionId: string;
   sections: M3SectionData[];
   actionCheckpoints: M3ActionData[];
+  /** Intro-Bausteine (Nachrichteneinstieg) – profilübergreifend, immer sichtbar. */
+  introCheckpoints: M3ActionData[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   /** Gespeicherte outputStatus-Entscheidungen aus M3 (SHOW / HIDE pro EXPLANATION-Checkpoint). */
@@ -192,6 +194,12 @@ function OutputView({
       style={{ marginTop: "2rem", display: "grid", gap: "1rem" }}
     >
       <h2 style={{ marginTop: 0 }}>{heading}</h2>
+
+      {output.intro && (
+        <p style={{ margin: "0 0 0.5rem", fontStyle: "italic", color: "var(--muted-foreground)" }}>
+          {output.intro}
+        </p>
+      )}
 
       {output.sections.map((sec) => (
         <section key={sec.inquiryId}>
@@ -456,6 +464,7 @@ export default function InquiryM3Client({
   sessionId,
   sections,
   actionCheckpoints,
+  introCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
   initialExplanationOutputStatuses,
@@ -689,6 +698,36 @@ export default function InquiryM3Client({
         </>
       ) : (
         <>
+          {/* Nachrichteneinstieg – Intro-Bausteine (profilübergreifend) */}
+          {introCheckpoints.length > 0 && (
+            <section style={{ marginBottom: "1.5rem" }}>
+              <h2 style={{ marginBottom: "0.5rem" }}>
+                <span aria-hidden="true">✉ </span>Nachrichteneinstieg
+              </h2>
+              <div
+                className="text-muted text-small"
+                style={{ marginBottom: "0.5rem" }}
+              >
+                Optional: Einstiegssatz vor der Entscheidung. Maximal einen auswählen.
+              </div>
+              {introCheckpoints.map((cp) => (
+                <div
+                  key={cp.id}
+                  style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                >
+                  <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                  <StatusButtons
+                    checkpointId={cp.id}
+                    options={ACTION_OPTIONS}
+                    value={statuses[cp.id]}
+                    onChange={setStatus}
+                    disabled={false}
+                  />
+                </div>
+              ))}
+            </section>
+          )}
+
           {/* Decision + SPECIFIC Checkpoints per inquiry */}
           {sections.map((section) => {
             const visibleSpecificCps = section.specificCheckpoints.filter((cp) => {

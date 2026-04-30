@@ -2583,4 +2583,87 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // NO: bewusst still – keine Erklärung nötig
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Intro-Bausteine (Nachrichteneinstieg)
+  //
+  // Optionale Einstiegssätze für Praxis-Antworten. Sie erklären nur den
+  // Kommunikationskontext – keine medizinische Bewertung, keine Entscheidung,
+  // keine Links, keine Handlungsdetails.
+  //
+  // Architektur:
+  //   - kind: ACTION, scope: GLOBAL, actionCategory: "INTRO"
+  //   - Werden NICHT in sharedBottom geschrieben.
+  //   - Der Renderer befüllt stattdessen output.intro mit dem Text des ersten
+  //     aktiven INTRO-Checkpoints (weitere aktive INTROs werden ignoriert).
+  //   - Maximal ein Intro erscheint im Output.
+  //   - Keine M2-Schalter, keine Decision-Logik.
+  // ---------------------------------------------------------------------------
+
+  MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: {
+    id: "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED",
+    label: "Nachricht eingegangen – Fragebogen anfordern",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Ihre Nachricht ist bei uns eingegangen. Für die weitere Bearbeitung benötigen wir noch strukturierte Angaben.",
+    },
+  },
+
+  MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: {
+    id: "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
+    label: "Fragebogen eingegangen – Angaben geprüft",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Vielen Dank für das Ausfüllen des Fragebogens. Wir haben Ihre Angaben geprüft.",
+    },
+  },
+
+  MESSAGE_INTRO_PRACTICE_FOLLOWUP: {
+    id: "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
+    label: "Praxis schreibt aktiv – Angaben fehlen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bei der Durchsicht Ihrer Unterlagen ist uns aufgefallen, dass noch Angaben fehlen.",
+    },
+  },
+
+  MESSAGE_INTRO_MISSING_INFO: {
+    id: "MESSAGE_INTRO_MISSING_INFO",
+    label: "Zusatzangaben benötigt",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch folgende Angaben.",
+    },
+  },
 };
+
+/**
+ * Geordnete Liste der Intro-Checkpoint-IDs.
+ *
+ * Der Renderer verwendet diese Reihenfolge, um bei mehreren aktiven
+ * Intro-Checkpoints deterministisch den ersten zu wählen.
+ * Nur der erste aktive Intro erscheint in output.intro – alle weiteren
+ * werden ignoriert.
+ */
+export const INTRO_CHECKPOINT_IDS: readonly string[] = [
+  "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED",
+  "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
+  "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
+  "MESSAGE_INTRO_MISSING_INFO",
+] as const;

@@ -50,6 +50,7 @@ jest.mock("@/lib/inquiries/inquiryCheckpointCatalog", () => ({
       textByStatus: { YES: "OUTCOME ja.", NO: "OUTCOME nein." },
     },
   },
+  INTRO_CHECKPOINT_IDS: [],
 }));
 
 jest.mock("@/lib/inquiries/inquiryProfileCatalog", () => ({
