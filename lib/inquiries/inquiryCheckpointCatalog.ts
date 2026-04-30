@@ -998,7 +998,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Die digitale Anfrage können Sie über dieses Formular stellen: https://mvz-kreuzberg.de/digitaleanfrage",
+        "Bitte stellen Sie eine digitale Anfrage.",
     },
   },
 
@@ -1036,8 +1036,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Bitte füllen Sie unsere Online-Anamnese aus: https://mvz-kreuzberg.de/kurz-anamnese",
+      [ActionStatus.ACTIVE]: "",
     },
   },
 

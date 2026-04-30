@@ -477,11 +477,9 @@ describe("AU_NO_APPOINTMENT_ACUTE – Checkpoint-Struktur", () => {
 // ---------------------------------------------------------------------------
 
 describe("AU – AU_NO_APPOINTMENT_ACUTE Triggerweg", () => {
-  it("ONLINE_ANAMNESIS wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
+  it("ONLINE_ANAMNESIS ist nicht in AU.boundActionConditions", () => {
     const conditions = (AU as any).boundActionConditions;
-    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
-      expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
-    );
+    expect(conditions?.ONLINE_ANAMNESIS).toBeUndefined();
   });
 
   it("DIGITAL_REQUEST wird auch bei AU_NO_APPOINTMENT_ACUTE = YES freigeschaltet", () => {
@@ -506,13 +504,6 @@ describe("AU – AU_NO_APPOINTMENT_ACUTE Triggerweg", () => {
     const conditions = (AU as any).boundActionConditions;
     expect(conditions?.ACUTE_OPEN_CONSULTATION_ACTION?.showWhenAny).toEqual(
       expect.arrayContaining([{ AU_NO_APPOINTMENT_ACUTE: "YES" }])
-    );
-  });
-
-  it("ONLINE_ANAMNESIS behält weiterhin AU_DIGITAL_AU_PROCESS = YES als Trigger", () => {
-    const conditions = (AU as any).boundActionConditions;
-    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
-      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
     );
   });
 
@@ -618,16 +609,22 @@ describe("AU Renderer – neue AU-Checkpoints", () => {
 // 8. DIGITAL_REQUEST – aktualisierter Text mit URL
 // ---------------------------------------------------------------------------
 
-describe("DIGITAL_REQUEST – aktualisierter Text mit URL", () => {
+describe("DIGITAL_REQUEST – aktualisierter Text ohne URL", () => {
   const cp = INQUIRY_CHECKPOINT_CATALOG_V2["DIGITAL_REQUEST"];
 
   it("ist definiert", () => {
     expect(cp).toBeDefined();
   });
 
-  it("hat ACTIVE-Text mit mvz-kreuzberg.de/digitaleanfrage", () => {
+  it("hat ACTIVE-Text 'Bitte stellen Sie eine digitale Anfrage.'", () => {
     const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
-    expect(text).toContain("https://mvz-kreuzberg.de/digitaleanfrage");
+    expect(text).toBe("Bitte stellen Sie eine digitale Anfrage.");
+  });
+
+  it("enthält keinen Link mehr", () => {
+    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+    expect(text).not.toContain("http");
+    expect(text).not.toContain("Formular");
   });
 
   it("hat scope GLOBAL", () => {
@@ -670,8 +667,8 @@ describe("DIGITAL_REQUEST_PROCESSING_TIME – Checkpoint-Struktur", () => {
 // ---------------------------------------------------------------------------
 
 describe("AU – AU_DIGITAL_AU_PROCESS Triggerweg", () => {
-  it("ONLINE_ANAMNESIS ist in AU.boundActionCheckpointIds", () => {
-    expect((AU as any).boundActionCheckpointIds).toContain("ONLINE_ANAMNESIS");
+  it("ONLINE_ANAMNESIS ist nicht in AU.boundActionCheckpointIds", () => {
+    expect((AU as any).boundActionCheckpointIds).not.toContain("ONLINE_ANAMNESIS");
   });
 
   it("DIGITAL_REQUEST ist in AU.boundActionCheckpointIds", () => {
@@ -680,13 +677,6 @@ describe("AU – AU_DIGITAL_AU_PROCESS Triggerweg", () => {
 
   it("DIGITAL_REQUEST_PROCESSING_TIME ist in AU.boundActionCheckpointIds", () => {
     expect((AU as any).boundActionCheckpointIds).toContain("DIGITAL_REQUEST_PROCESSING_TIME");
-  });
-
-  it("ONLINE_ANAMNESIS wird bei AU_DIGITAL_AU_PROCESS = YES freigeschaltet", () => {
-    const conditions = (AU as any).boundActionConditions;
-    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
-      expect.arrayContaining([{ AU_DIGITAL_AU_PROCESS: "YES" }])
-    );
   });
 
   it("DIGITAL_REQUEST wird bei AU_DIGITAL_AU_PROCESS = YES freigeschaltet", () => {

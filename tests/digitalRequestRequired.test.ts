@@ -183,7 +183,7 @@ describe(
   "DIGITAL_REQUEST_REQUIRED + DIGITAL_REQUEST – gemeinsamer Output",
   () => {
     const DIGITAL_REQUEST_TEXT =
-      "Die digitale Anfrage können Sie über dieses Formular stellen: https://mvz-kreuzberg.de/digitaleanfrage";
+      "Bitte stellen Sie eine digitale Anfrage.";
 
     it("AU: beide Texte erscheinen bei gleichzeitiger Aktivierung", () => {
       const result = renderInquiryResponseFromSections([

@@ -97,7 +97,7 @@ const ACTION_OPTIONS = [
 const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
   {
     label: "Kontakt & Anfrage",
-    ids: ["DIGITAL_REQUEST", "ONLINE_ANAMNESIS"],
+    ids: ["DIGITAL_REQUEST"],
   },
   {
     label: "Termin & Behandlung",

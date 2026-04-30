@@ -738,21 +738,20 @@ describe("ONBOARDING_WRONG_PRACTICE_NOTICE – Checkpoint-Struktur", () => {
 // ---------------------------------------------------------------------------
 
 describe("ONBOARDING – ONLINE_ANAMNESIS via boundActionConditions", () => {
-  it("ONLINE_ANAMNESIS ist in ONBOARDING.boundActionCheckpointIds enthalten", () => {
-    expect(ONBOARDING.boundActionCheckpointIds).toContain("ONLINE_ANAMNESIS");
+  it("ONLINE_ANAMNESIS ist nicht in ONBOARDING.boundActionCheckpointIds", () => {
+    expect(ONBOARDING.boundActionCheckpointIds).not.toContain("ONLINE_ANAMNESIS");
   });
 
-  it("ONLINE_ANAMNESIS wird bei ONBOARDING_DATA_INCOMPLETE = YES freigeschaltet", () => {
+  it("ONLINE_ANAMNESIS ist nicht in ONBOARDING.boundActionConditions", () => {
     const conditions = ONBOARDING.boundActionConditions;
-    expect(conditions?.ONLINE_ANAMNESIS?.showWhenAny).toEqual(
-      expect.arrayContaining([{ ONBOARDING_DATA_INCOMPLETE: "YES" }])
-    );
+    expect(conditions?.ONLINE_ANAMNESIS).toBeUndefined();
   });
 
-  it("ONLINE_ANAMNESIS hat ACTIVE-Text mit Link", () => {
+  it("ONLINE_ANAMNESIS hat keinen URL-Text mehr", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["ONLINE_ANAMNESIS"];
     const text = (cp.textByStatus as Record<string, string>)[ActionStatus.ACTIVE];
-    expect(text).toContain("kurz-anamnese");
+    expect(text).not.toContain("kurz-anamnese");
+    expect(text).not.toContain("http");
   });
 });
 

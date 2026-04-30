@@ -63,7 +63,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
       "AU_FOLLOWUP_REQUIRES_VISIT",
-      "ONLINE_ANAMNESIS",
       "DIGITAL_REQUEST",
       "DIGITAL_REQUEST_PROCESSING_TIME",
       "DIGITAL_REQUEST_REQUIRED",
@@ -76,9 +75,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       AU_FOLLOWUP_REQUIRES_VISIT: {
         showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
-      },
-      ONLINE_ANAMNESIS: {
-        showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
       },
       DIGITAL_REQUEST: {
         showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
@@ -242,7 +238,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "PHARMACY_INFORMATION",
       "DOCUMENT_UPLOAD",
@@ -583,7 +578,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     },
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "URINE_SAMPLE_ONSITE",
       "PROCESSING_DELAY",
@@ -1077,7 +1071,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
-      "ONLINE_ANAMNESIS",
       "DIGITAL_REQUEST",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
@@ -1193,7 +1186,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
-      "ONLINE_ANAMNESIS",
       "DIGITAL_REQUEST",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
@@ -1474,7 +1466,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED",
       "ONBOARDING_PROVIDE_IDENTITY_DATA",
       "ONBOARDING_DATA_MISSING_CONTEXT",
-      "ONLINE_ANAMNESIS",
       "ONBOARDING_WRONG_PRACTICE_NOTICE",
     ],
     boundActionConditions: {
@@ -1485,9 +1476,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [{ ONBOARDING_IDENTITY_MISMATCH: "YES" }],
       },
       ONBOARDING_DATA_MISSING_CONTEXT: {
-        showWhenAny: [{ ONBOARDING_DATA_INCOMPLETE: "YES" }],
-      },
-      ONLINE_ANAMNESIS: {
         showWhenAny: [{ ONBOARDING_DATA_INCOMPLETE: "YES" }],
       },
       ONBOARDING_WRONG_PRACTICE_NOTICE: {
@@ -1614,7 +1602,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     },
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "ONLINE_ANAMNESIS",
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
@@ -1730,7 +1717,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     globalHints: {},
     availableActionIds: [
-      "ONLINE_ANAMNESIS",
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
