@@ -412,6 +412,25 @@ const PRESCRIPTION_SHORT_LABELS: Record<string, string> = {
   PRESCRIPTION_CHRONIC_PATIENT: "Dauermedikation / Kontrolle",
 };
 
+/**
+ * IDs, die sich gegenseitig ausschließen: Nur eine dieser „Haupt-Erklärungen"
+ * darf gleichzeitig aktiv (YES / ACTIVE) sein.
+ * Beim Aktivieren einer ID werden alle anderen automatisch deaktiviert.
+ *
+ * [PROTOTYP – nur PRESCRIPTION, reversibel: Konstante + Wrapper entfernen, onChange direkt übergeben]
+ */
+const EXPLANATION_EXCLUSIVE_IDS = new Set([
+  "E_RECIPE_USE",
+  "PHARMACY_INFORMATION",
+  "PRESCRIPTION_NO_POSTAL_DELIVERY",
+  "PRESCRIPTION_STATUTORY_POSSIBLE",
+]);
+
+/** Gibt zurück, ob ein Status-Wert als „aktiviert" gilt. */
+function isActivating(val: string): boolean {
+  return val === "YES" || val === "ACTIVE";
+}
+
 type PrescriptionGroup = {
   id: string;
   label: string;
@@ -525,6 +544,7 @@ function PrescriptionGroupAccordion({
   actions,
   statuses,
   onChange,
+  exclusiveIds,
 }: {
   group: PrescriptionGroup;
   checkpoints: PlainCheckpoint[];
@@ -532,6 +552,8 @@ function PrescriptionGroupAccordion({
   actions: PlainCheckpoint[];
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  /** IDs der exklusiven Erklärungsgruppe – für visuelle Markierung. */
+  exclusiveIds: ReadonlySet<string>;
 }) {
   const hasAnsweredCheckpoint = checkpoints.some(
     (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
@@ -591,12 +613,21 @@ function PrescriptionGroupAccordion({
 
           {/* Checkpoints (Warum / Kontext) */}
           {checkpoints.map((cp) => (
-            <ExplanationQuestionRow
-              key={cp.id}
-              checkpoint={{ ...cp, label: PRESCRIPTION_SHORT_LABELS[cp.id] ?? cp.label }}
-              value={statuses[cp.id]}
-              onChange={onChange}
-            />
+            <div key={cp.id}>
+              {exclusiveIds.has(cp.id) && (
+                <div
+                  className="text-muted text-small"
+                  style={{ fontSize: "0.72rem", marginTop: "0.4rem", marginBottom: "0.1rem" }}
+                >
+                  ① Haupterklärung auswählen
+                </div>
+              )}
+              <ExplanationQuestionRow
+                checkpoint={{ ...cp, label: PRESCRIPTION_SHORT_LABELS[cp.id] ?? cp.label }}
+                value={statuses[cp.id]}
+                onChange={onChange}
+              />
+            </div>
           ))}
 
           {/* Actions (Was jetzt tun) – nur wenn vorhanden */}
@@ -616,12 +647,21 @@ function PrescriptionGroupAccordion({
                 <span aria-hidden="true">→ </span>Nächster Schritt
               </div>
               {actions.map((a) => (
-                <BoundActionRow
-                  key={a.id}
-                  checkpoint={a}
-                  value={statuses[a.id]}
-                  onChange={onChange}
-                />
+                <div key={a.id}>
+                  {exclusiveIds.has(a.id) && (
+                    <div
+                      className="text-muted text-small"
+                      style={{ fontSize: "0.72rem", marginTop: "0.4rem", marginBottom: "0.1rem" }}
+                    >
+                      ① Haupterklärung auswählen
+                    </div>
+                  )}
+                  <BoundActionRow
+                    checkpoint={a}
+                    value={statuses[a.id]}
+                    onChange={onChange}
+                  />
+                </div>
               ))}
             </>
           )}
@@ -660,6 +700,27 @@ function PrescriptionSpecificSection({
     profileActionCheckpoints.map((a) => [a.id, a]),
   );
 
+  /**
+   * Exklusiv-Wrapper: Wenn ein Element der Erklärungsgruppe aktiviert wird,
+   * werden alle anderen in der Gruppe automatisch deaktiviert.
+   * Checkpoints erhalten "NO", Actions erhalten "INACTIVE".
+   *
+   * [PROTOTYP – nur PRESCRIPTION. Zum Entfernen: Diese Funktion löschen,
+   *  unten onChange statt handlePrescriptionChange übergeben.]
+   */
+  function handlePrescriptionChange(id: string, val: string) {
+    onChange(id, val);
+    if (EXPLANATION_EXCLUSIVE_IDS.has(id) && isActivating(val)) {
+      for (const otherId of EXPLANATION_EXCLUSIVE_IDS) {
+        if (otherId !== id) {
+          // Deaktivierungs-Wert je nach Typ: Checkpoint → "NO", Action → "INACTIVE"
+          const deactivated = cpById.has(otherId) ? "NO" : "INACTIVE";
+          onChange(otherId, deactivated);
+        }
+      }
+    }
+  }
+
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
@@ -679,7 +740,7 @@ function PrescriptionSpecificSection({
           <DecisionQuestionBlock
             questions={section.decisionQuestions}
             statuses={statuses}
-            onChange={onChange}
+            onChange={handlePrescriptionChange}
           />
         </div>
       )}
@@ -704,7 +765,8 @@ function PrescriptionSpecificSection({
               checkpoints={groupCheckpoints}
               actions={groupActions}
               statuses={statuses}
-              onChange={onChange}
+              onChange={handlePrescriptionChange}
+              exclusiveIds={EXPLANATION_EXCLUSIVE_IDS}
             />
           );
         })}
@@ -726,7 +788,7 @@ function PrescriptionSpecificSection({
               key={cp.id}
               checkpoint={cp}
               value={statuses[cp.id]}
-              onChange={onChange}
+              onChange={handlePrescriptionChange}
             />
           ))}
         </div>
