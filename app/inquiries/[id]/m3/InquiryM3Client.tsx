@@ -1228,8 +1228,10 @@ export default function InquiryM3Client({
               {actionsOpen && (() => {
                 const groupElements: ReactNode[] = [];
 
-                // Pre-compute which action IDs will be rendered by the PRESCRIPTION trigger block
-                // so the global ACTION_GROUPS can exclude them and avoid duplicates.
+                // Pre-compute which PRESCRIPTION action IDs are currently visible (trigger-based).
+                // This is used as a visibility gate for PRESCRIPTION actions in the unified
+                // placement pipeline (single-origin → under PRESCRIPTION, multi-origin → global).
+                // It does NOT directly drive rendering anymore.
                 const prescriptionRenderedActionIds = new Set<string>();
                 if (sections.some((s) => s.inquiryId === PRESCRIPTION_INQUIRY_ID)) {
                   for (const group of PRESCRIPTION_M3_TRIGGER_GROUPS) {
@@ -1247,28 +1249,32 @@ export default function InquiryM3Client({
                   }
                 }
 
-                // Actions with exactly one selected-profile origin (excluding PRESCRIPTION, which has its
-                // own trigger-based block). These are rendered under their profile section instead of
-                // the global ACTION_GROUPS so the MFA sees them in context.
+                // Actions with exactly one selected-profile origin are rendered under their profile
+                // section instead of the global ACTION_GROUPS block, giving the MFA contextual placement.
+                // This now includes PRESCRIPTION-only actions (visibility still controlled by
+                // prescriptionRenderedActionIds computed above).
                 const singleOriginActionIds = new Set(
                   Object.entries(actionOrigins)
-                    .filter(([, origins]) => origins.length === 1 && origins[0] !== PRESCRIPTION_INQUIRY_ID)
+                    .filter(([, origins]) => origins.length === 1)
                     .map(([id]) => id),
                 );
 
                 // --- Globale availableActionIds (gruppiert nach ACTION_GROUPS) ---
                 if (actionCheckpoints.length > 0) {
-                  const activeActionCheckpoints = actionCheckpoints.filter(
-                    (cp) => statuses[cp.id] === "ACTIVE" && !singleOriginActionIds.has(cp.id),
-                  );
+                  const activeActionCheckpoints = actionCheckpoints.filter((cp) => {
+                    if (singleOriginActionIds.has(cp.id)) return false;
+                    // Multi-origin: visible if PRESCRIPTION trigger includes it OR status is ACTIVE.
+                    const origins = actionOrigins[cp.id] ?? [];
+                    if (origins.includes(PRESCRIPTION_INQUIRY_ID) && prescriptionRenderedActionIds.has(cp.id)) return true;
+                    return statuses[cp.id] === "ACTIVE";
+                  });
                   const cpById = Object.fromEntries(activeActionCheckpoints.map((cp) => [cp.id, cp]));
                   const renderedIds = new Set<string>();
 
                   for (const group of ACTION_GROUPS) {
                     const groupCps = group.ids
                       .map((id) => cpById[id])
-                      // Exclude IDs already rendered (or to be rendered) by the PRESCRIPTION trigger block.
-                      .filter((cp): cp is M3ActionData => !!cp && !prescriptionRenderedActionIds.has(cp.id));
+                      .filter((cp): cp is M3ActionData => !!cp);
                     if (groupCps.length === 0) continue;
                     groupCps.forEach((cp) => renderedIds.add(cp.id));
                     groupElements.push(
@@ -1300,7 +1306,7 @@ export default function InquiryM3Client({
 
                   // Ungrouped fallback
                   const ungrouped = activeActionCheckpoints.filter(
-                    (cp) => !renderedIds.has(cp.id) && !prescriptionRenderedActionIds.has(cp.id),
+                    (cp) => !renderedIds.has(cp.id),
                   );
                   if (ungrouped.length > 0) {
                     groupElements.push(
@@ -1325,98 +1331,9 @@ export default function InquiryM3Client({
                   }
                 }
 
-                // --- Profil-spezifische boundActionCheckpoints ---
+                // --- Profil-spezifische boundActionCheckpoints + single-origin globale Actions ---
                 for (const sec of sections) {
-                  // ── PRESCRIPTION: Trigger-basierte Aktionsanzeige ──────────────────────────
-                  if (sec.inquiryId === PRESCRIPTION_INQUIRY_ID) {
-                    // Unified action lookup: global available + profile-specific bound actions.
-                    // Bound action data overrides global (richer: questions etc.).
-                    type PrescriptionActionEntry = { id: string; label: string; questions?: Array<{ id: string; text: string }> };
-                    const prescriptionActionById = new Map<string, PrescriptionActionEntry>();
-                    for (const cp of actionCheckpoints) {
-                      prescriptionActionById.set(cp.id, { id: cp.id, label: cp.label });
-                    }
-                    for (const cp of sec.boundActionCheckpoints) {
-                      prescriptionActionById.set(cp.id, { id: cp.id, label: cp.label, questions: cp.questions });
-                    }
-
-                    // Compute triggered action IDs (deduplicated, stable priority order).
-                    const seenTriggered = new Set<string>();
-                    const triggeredIds: string[] = [];
-                    for (const group of PRESCRIPTION_M3_TRIGGER_GROUPS) {
-                      if (group.triggers.some((t) => t.values.includes(statuses[t.id] ?? ""))) {
-                        for (const id of group.actionIds) {
-                          if (!seenTriggered.has(id) && prescriptionActionById.has(id)) {
-                            seenTriggered.add(id);
-                            triggeredIds.push(id);
-                          }
-                        }
-                      }
-                    }
-                    // Re-sort triggered IDs by priority list for stable rendering.
-                    const priorityOrder = PRESCRIPTION_ALL_ACTION_IDS;
-                    const sortedTriggeredIds = [
-                      ...priorityOrder.filter((id) => triggeredIds.includes(id)),
-                      ...triggeredIds.filter((id) => !(priorityOrder as readonly string[]).includes(id)),
-                    ];
-
-                    // Fallback: show all PRESCRIPTION actions when no trigger is active.
-                    const isFallback = sortedTriggeredIds.length === 0;
-                    const idsToShow = isFallback
-                      ? PRESCRIPTION_ALL_ACTION_IDS.filter((id) => prescriptionActionById.has(id))
-                      : sortedTriggeredIds;
-
-                    if (idsToShow.length > 0) {
-                      groupElements.push(
-                        <div key="prescription-actions" style={{ marginTop: "0.75rem" }}>
-                          <div
-                            className="text-muted text-small"
-                            style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
-                          >
-                            {sec.label} – Aktionen
-                          </div>
-                          {isFallback && (
-                            <div
-                              className="text-muted text-small"
-                              style={{ marginBottom: "0.35rem", fontStyle: "italic" }}
-                            >
-                              Keine Situation in M2 gewählt – alle verfügbaren Aktionen werden angezeigt.
-                            </div>
-                          )}
-                          {idsToShow.map((id) => {
-                            const cp = prescriptionActionById.get(id)!;
-                            return (
-                              <div
-                                key={id}
-                                style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                              >
-                                <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                                {cp.questions && cp.questions.length > 0 && (
-                                  <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
-                                    {cp.questions.map((q) => (
-                                      <div key={q.id}>{q.text}</div>
-                                    ))}
-                                  </div>
-                                )}
-                                <StatusButtons
-                                  checkpointId={id}
-                                  options={ACTION_OPTIONS}
-                                  value={statuses[id]}
-                                  onChange={setStatus}
-                                  disabled={false}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>,
-                      );
-                    }
-                    // PRESCRIPTION uses the trigger-based block above exclusively;
-                    // skip the standard bound-action rendering for this section.
-                    continue;
-                  }
-
-                  // ── Alle anderen Profile: Standard-Bound-Action-Rendering ─────────────────
+                  // ── Alle Profile: gemeinsames Rendering ──────────────────────────────────────
                   // Filtere Checkpoints nach Sichtbarkeitsregeln:
                   // – Hat der Checkpoint showWhenAny oder hideWhenAny, gelten die Bedingungen.
                   // – Andernfalls wird er nur angezeigt, wenn er in M2 auf ACTIVE/INACTIVE gesetzt wurde.
@@ -1439,15 +1356,16 @@ export default function InquiryM3Client({
                     return true;
                   });
 
-                  // Globale Actions mit genau dieser Profil-Herkunft, die ACTIVE sind.
-                  // Sie werden hier statt im globalen ACTION_GROUPS-Block angezeigt.
-                  const singleOriginCpsHere = actionCheckpoints.filter(
-                    (cp) =>
-                      singleOriginActionIds.has(cp.id) &&
-                      actionOrigins[cp.id]?.[0] === sec.inquiryId &&
-                      statuses[cp.id] === "ACTIVE" &&
-                      !M3_HIDDEN_BOUND_ACTION_IDS.has(cp.id),
-                  );
+                  // Globale Actions mit genau dieser Profil-Herkunft.
+                  // Für PRESCRIPTION gilt die Trigger-Sichtbarkeit (prescriptionRenderedActionIds),
+                  // für alle anderen Profile der Status ACTIVE.
+                  const singleOriginCpsHere = actionCheckpoints.filter((cp) => {
+                    if (!singleOriginActionIds.has(cp.id)) return false;
+                    if (actionOrigins[cp.id]?.[0] !== sec.inquiryId) return false;
+                    if (M3_HIDDEN_BOUND_ACTION_IDS.has(cp.id)) return false;
+                    if (sec.inquiryId === PRESCRIPTION_INQUIRY_ID) return prescriptionRenderedActionIds.has(cp.id);
+                    return statuses[cp.id] === "ACTIVE";
+                  });
 
                   if (setCps.length === 0 && singleOriginCpsHere.length === 0) continue;
 
