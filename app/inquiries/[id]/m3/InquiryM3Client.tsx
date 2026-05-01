@@ -5,6 +5,7 @@ import {
   DecisionStatus,
   ExplanationOutputStatus,
   InquiryCheckpointKind,
+  type Audience,
   type CheckpointStatusValue,
   type InquirySection,
   type InquiryResponseV2Output,
@@ -170,6 +171,53 @@ function StatusButtons({
             fontWeight: value === opt.value ? 600 : 400,
             cursor: disabled ? "not-allowed" : "pointer",
             opacity: disabled ? 0.6 : 1,
+            fontSize: "0.85rem",
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const AUDIENCE_OPTIONS: Array<{ value: Audience; label: string }> = [
+  { value: "patient", label: "Patient" },
+  { value: "contact_person", label: "Kontaktperson" },
+];
+
+function AudienceToggle({
+  value,
+  onChange,
+}: {
+  value: Audience;
+  onChange: (v: Audience) => void;
+}) {
+  return (
+    <div
+      style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}
+      data-audience-toggle
+    >
+      <span
+        className="text-muted text-small"
+        style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}
+      >
+        Adressat:
+      </span>
+      {AUDIENCE_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          data-audience={opt.value}
+          onClick={() => onChange(opt.value)}
+          style={{
+            padding: "0.2rem 0.65rem",
+            borderRadius: "var(--radius)",
+            border: "1px solid var(--border)",
+            background: value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
+            color: value === opt.value ? "#fff" : "var(--foreground)",
+            fontWeight: value === opt.value ? 600 : 400,
+            cursor: "pointer",
             fontSize: "0.85rem",
           }}
         >
@@ -560,52 +608,69 @@ export default function InquiryM3Client({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questionnaireLink, setQuestionnaireLink] = useState<string | null>(null);
+  const [audience, setAudience] = useState<Audience>("patient");
+
+  /**
+   * Baut die InquirySection-Liste aus den aktuellen statuses und outputStatuses.
+   * Wiederverwendet von livePreview, liveM5Lines und frozenOutputByAudience.
+   */
+  const buildInquirySections = useMemo(
+    (): InquirySection[] =>
+      sections.map((sec) => ({
+        inquiryId: sec.inquiryId,
+        decisionStatus:
+          (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
+          DecisionStatus.DISABLED,
+        checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
+        explanationOutputStatuses: outputStatuses as Record<string, ExplanationOutputStatus>,
+      })),
+    [sections, statuses, outputStatuses],
+  );
 
   // Live preview: computed from current statuses on every render before confirm.
   // renderInquiryResponseFromSections is a pure function (no network, no side effects).
   const livePreview = useMemo((): InquiryResponseV2Output | null => {
     if (confirmed) return null;
     try {
-      const inquirySections: InquirySection[] = sections.map((sec) => ({
-        inquiryId: sec.inquiryId,
-        decisionStatus:
-          (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
-          DecisionStatus.DISABLED,
-        checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
-        explanationOutputStatuses: outputStatuses as Record<string, ExplanationOutputStatus>,
-      }));
-      return renderInquiryResponseFromSections(inquirySections);
+      return renderInquiryResponseFromSections(buildInquirySections, { audience });
     } catch {
       return null;
     }
-  }, [confirmed, statuses, outputStatuses, sections]);
+  }, [confirmed, buildInquirySections, audience]);
 
   // M5 compact summary for live preview – computed from same sections as livePreview.
   const liveM5Lines = useMemo((): string[] => {
     if (confirmed) return [];
     try {
-      const inquirySections: InquirySection[] = sections.map((sec) => ({
-        inquiryId: sec.inquiryId,
-        decisionStatus:
-          (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
-          DecisionStatus.DISABLED,
-        checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
-        explanationOutputStatuses: outputStatuses as Record<string, ExplanationOutputStatus>,
-      }));
-      return buildInquiryM5Summary(inquirySections);
+      return buildInquiryM5Summary(buildInquirySections);
     } catch {
       return [];
     }
-  }, [confirmed, statuses, outputStatuses, sections]);
+  }, [confirmed, buildInquirySections]);
 
   // Fragebogen-Link als Nachrichteninhalt: Link wird in sharedBottom der Ausgabe integriert.
   const livePreviewWithLink = useMemo(
     () => (livePreview ? appendQuestionnaireLinkToOutput(livePreview, questionnaireLink) : null),
     [livePreview, questionnaireLink],
   );
+
+  // Audience-bewusster Confirmed-Output: re-rendert die bestätigten Sections mit dem
+  // aktuell gewählten audience-Wert. Setzt frozenOutput für die Anzeige außer Kraft.
+  const frozenOutputByAudience = useMemo((): InquiryResponseV2Output | null => {
+    if (!confirmed) return null;
+    try {
+      return renderInquiryResponseFromSections(buildInquirySections, { audience });
+    } catch {
+      return frozenOutput;
+    }
+  }, [confirmed, buildInquirySections, audience, frozenOutput]);
+
   const frozenOutputWithLink = useMemo(
-    () => (frozenOutput ? appendQuestionnaireLinkToOutput(frozenOutput, questionnaireLink) : null),
-    [frozenOutput, questionnaireLink],
+    () => {
+      const base = frozenOutputByAudience ?? frozenOutput;
+      return base ? appendQuestionnaireLinkToOutput(base, questionnaireLink) : null;
+    },
+    [frozenOutputByAudience, frozenOutput, questionnaireLink],
   );
 
   function setStatus(checkpointId: string, value: string) {
@@ -660,15 +725,7 @@ export default function InquiryM3Client({
 
       setFrozenOutput(confirmData.output as InquiryResponseV2Output);
       // Compute M5 compact summary from the confirmed sections.
-      const confirmedSections: InquirySection[] = sections.map((sec) => ({
-        inquiryId: sec.inquiryId,
-        decisionStatus:
-          (statuses[sec.decisionCheckpointId] as DecisionStatus | undefined) ??
-          DecisionStatus.DISABLED,
-        checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
-        explanationOutputStatuses: outputStatuses as Record<string, ExplanationOutputStatus>,
-      }));
-      setFrozenM5Lines(buildInquiryM5Summary(confirmedSections));
+      setFrozenM5Lines(buildInquiryM5Summary(buildInquirySections));
       setConfirmed(true);
     } catch {
       setError("Netzwerkfehler. Bitte erneut versuchen.");
@@ -694,7 +751,10 @@ export default function InquiryM3Client({
             ✓ Anfrage bestätigt – Ansicht ist schreibgeschützt.
           </div>
           {frozenOutputWithLink && (
-            <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
+            <>
+              <AudienceToggle value={audience} onChange={setAudience} />
+              <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
+            </>
           )}
         </>
       ) : (
@@ -1093,7 +1153,10 @@ export default function InquiryM3Client({
 
           {/* Live preview */}
           {livePreviewWithLink && (
-            <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5Lines} />
+            <>
+              <AudienceToggle value={audience} onChange={setAudience} />
+              <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5Lines} />
+            </>
           )}
 
           {error && (
