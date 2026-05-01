@@ -117,6 +117,33 @@ const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PRESCRIPTION – M3 Antwortweg-Konfliktgruppe
+// [PROTOTYP – nur für PRESCRIPTION, reversibel]
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * InquiryId des PRESCRIPTION-Profils – verwendet, um die Antwortweg-Gruppe nur
+ * für diese Section einzublenden.
+ */
+const PRESCRIPTION_INQUIRY_ID = "PRESCRIPTION";
+
+/**
+ * IDs der mutuell exklusiven Antwortweg-Actions in M3.
+ * Wird eine auf ACTIVE gesetzt, wird die andere automatisch INACTIVE.
+ * Beim Laden bereits gespeicherter Status wird kein auto-fix durchgeführt
+ * – nur der nächste Klick bereinigt.
+ */
+const PRESCRIPTION_ANTWORTWEG_IDS = ["E_RECIPE_USE", "DIGITAL_REQUEST_REQUIRED"] as const;
+
+/**
+ * Gegenseitige Ausschlusstabelle: key → konkurrierender Partner.
+ */
+const PRESCRIPTION_ANTWORTWEG_CONFLICTS: Record<string, string> = {
+  E_RECIPE_USE: "DIGITAL_REQUEST_REQUIRED",
+  DIGITAL_REQUEST_REQUIRED: "E_RECIPE_USE",
+};
+
 /** Menschenlesbare Bezeichnung für actionCategory. */
 const ACTION_CATEGORY_LABELS: Record<string, string> = {
   PREPARATION: "Vorbereitung",
@@ -581,10 +608,16 @@ export default function InquiryM3Client({
     const allStatuses = { ...initialCheckpointStatuses, ...initialActionStatuses };
     const matchesConditionSet = (condSet: Record<string, string>) =>
       Object.entries(condSet).every(([id, expected]) => allStatuses[id] === expected);
-    return sections.some((s) =>
+    if (sections.some((s) =>
       s.boundActionCheckpoints.some(
         (cp) => cp.showWhenAny && cp.showWhenAny.some(matchesConditionSet),
       ),
+    )) return true;
+    // Automatisch aufklappen, wenn PRESCRIPTION-Antwortweg-Gruppe vorhanden ist.
+    return sections.some(
+      (s) =>
+        s.inquiryId === PRESCRIPTION_INQUIRY_ID &&
+        PRESCRIPTION_ANTWORTWEG_IDS.some((id) => s.boundActionCheckpoints.some((cp) => cp.id === id)),
     );
   });
 
@@ -674,7 +707,12 @@ export default function InquiryM3Client({
   );
 
   function setStatus(checkpointId: string, value: string) {
-    setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
+    if (value === "ACTIVE" && PRESCRIPTION_ANTWORTWEG_CONFLICTS[checkpointId]) {
+      const conflicting = PRESCRIPTION_ANTWORTWEG_CONFLICTS[checkpointId];
+      setStatuses((prev) => ({ ...prev, [checkpointId]: value, [conflicting]: "INACTIVE" }));
+    } else {
+      setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
+    }
   }
 
   function setOutputStatus(checkpointId: string, value: string) {
@@ -1069,11 +1107,66 @@ export default function InquiryM3Client({
 
                 // --- Profil-spezifische boundActionCheckpoints ---
                 for (const sec of sections) {
+                  // IDs der Antwortweg-Gruppe – nur für PRESCRIPTION; aus dem Normalfilter ausschließen.
+                  const antwortWegIdsForSec: Set<string> =
+                    sec.inquiryId === PRESCRIPTION_INQUIRY_ID
+                      ? new Set(PRESCRIPTION_ANTWORTWEG_IDS)
+                      : new Set();
+
+                  // PRESCRIPTION Antwortweg-Gruppe: immer sichtbar, direkt nebeneinander.
+                  if (sec.inquiryId === PRESCRIPTION_INQUIRY_ID) {
+                    const antwortWegCps = PRESCRIPTION_ANTWORTWEG_IDS
+                      .map((id) => sec.boundActionCheckpoints.find((cp) => cp.id === id))
+                      .filter((cp): cp is M3BoundActionData => cp !== undefined);
+                    if (antwortWegCps.length > 0) {
+                      groupElements.push(
+                        <div key="prescription-antwortweg" style={{ marginTop: "0.75rem" }}>
+                          <div
+                            className="text-muted text-small"
+                            style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
+                          >
+                            {sec.label} – Antwortweg
+                          </div>
+                          <div
+                            className="text-muted text-small"
+                            style={{ marginBottom: "0.35rem", fontStyle: "italic" }}
+                          >
+                            Alternative Antwortwege – nur einer aktiv
+                          </div>
+                          {antwortWegCps.map((cp) => (
+                            <div
+                              key={cp.id}
+                              style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                            >
+                              <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                              {cp.questions && cp.questions.length > 0 && (
+                                <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                                  {cp.questions.map((q) => (
+                                    <div key={q.id}>{q.text}</div>
+                                  ))}
+                                </div>
+                              )}
+                              <StatusButtons
+                                checkpointId={cp.id}
+                                options={ACTION_OPTIONS}
+                                value={statuses[cp.id]}
+                                onChange={setStatus}
+                                disabled={false}
+                              />
+                            </div>
+                          ))}
+                        </div>,
+                      );
+                    }
+                  }
+
                   // Filtere Checkpoints nach Sichtbarkeitsregeln:
                   // – Hat der Checkpoint showWhenAny oder hideWhenAny, gelten die Bedingungen.
                   // – Andernfalls wird er nur angezeigt, wenn er in M2 auf ACTIVE/INACTIVE gesetzt wurde.
+                  // – Antwortweg-IDs werden bereits oben separat gerendert → hier ausschließen.
                   const SET_STATUSES = ["ACTIVE", "INACTIVE"] as const;
                   const setCps = sec.boundActionCheckpoints.filter((cp) => {
+                    if (antwortWegIdsForSec.has(cp.id)) return false;
                     const hasConditions = cp.showWhenAny !== undefined || cp.hideWhenAny !== undefined;
                     if (!hasConditions) {
                       return (SET_STATUSES as readonly string[]).includes(statuses[cp.id]);

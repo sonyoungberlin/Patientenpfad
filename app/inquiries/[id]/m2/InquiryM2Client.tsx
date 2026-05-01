@@ -597,7 +597,6 @@ function PrescriptionGroupAccordion({
   actions,
   statuses,
   onChange,
-  conflictHints,
 }: {
   group: PrescriptionGroup;
   checkpoints: PlainCheckpoint[];
@@ -605,8 +604,6 @@ function PrescriptionGroupAccordion({
   actions: PlainCheckpoint[];
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
-  /** Optionale Konflikt-Hinweise pro Action-ID. */
-  conflictHints?: Record<string, string>;
 }) {
   const hasAnsweredCheckpoint = checkpoints.some(
     (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
@@ -696,7 +693,6 @@ function PrescriptionGroupAccordion({
                   checkpoint={a}
                   value={statuses[a.id]}
                   onChange={onChange}
-                  conflictHint={conflictHints?.[a.id]}
                 />
               ))}
             </>
@@ -708,22 +704,9 @@ function PrescriptionGroupAccordion({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRESCRIPTION – Action-Konfliktgruppe
-// [PROTOTYP – nur für PRESCRIPTION, reversibel]
+// PRESCRIPTION – M2-Gruppen-Prototyp (Accordion)
+// [PROTOTYP – hartcodiert, nur für PRESCRIPTION, reversibel]
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Gegenseitige Ausschlusstabelle für PRESCRIPTION-Actions.
- * Wenn eine Action auf ACTIVE gesetzt wird, wird die jeweils andere auf INACTIVE gesetzt.
- * Beide Actions bleiben sichtbar und können bewusst umgeschaltet werden.
- */
-const PRESCRIPTION_ACTION_CONFLICTS: Record<string, string> = {
-  E_RECIPE_USE: "DIGITAL_REQUEST_REQUIRED",
-  DIGITAL_REQUEST_REQUIRED: "E_RECIPE_USE",
-};
-
-/** Hinweistext, der bei allen Actions der Konfliktgruppe dezent angezeigt wird. */
-const PRESCRIPTION_CONFLICT_HINT = "Alternative Antwortwege – nur einer aktiv";
 
 /**
  * Ersetzt SpecificSection für das PRESCRIPTION-Profil mit antwortzielbasierten
@@ -761,24 +744,6 @@ function PrescriptionSpecificSection({
     combinedActions.map((a) => [a.id, a]),
   );
 
-  /**
-   * Wrapper um onChange: Wenn eine Action der Konfliktgruppe auf ACTIVE gesetzt wird,
-   * wird die konkurrierende Action automatisch auf INACTIVE gesetzt.
-   * Alte gespeicherte Statuses werden beim nächsten Klick korrigiert (nicht vorab).
-   */
-  function handleChange(id: string, val: string) {
-    onChange(id, val);
-    if (val === "ACTIVE") {
-      const conflicting = PRESCRIPTION_ACTION_CONFLICTS[id];
-      if (conflicting) onChange(conflicting, "INACTIVE");
-    }
-  }
-
-  // Konflikt-Hinweise: wird an alle BoundActionRow-Aufrufe für Konflikt-IDs übergeben.
-  const conflictHints: Record<string, string> = Object.fromEntries(
-    Object.keys(PRESCRIPTION_ACTION_CONFLICTS).map((id) => [id, PRESCRIPTION_CONFLICT_HINT]),
-  );
-
   // IDs aller bound actions, die bereits in Accordion-Gruppen erscheinen.
   // Remaining = allBoundActions, die in KEINER Gruppe erscheinen → in "Profil-Aktionen" zeigen.
   const groupActionIds = new Set(PRESCRIPTION_GROUPS.flatMap((g) => g.actionIds));
@@ -803,7 +768,7 @@ function PrescriptionSpecificSection({
           <DecisionQuestionBlock
             questions={section.decisionQuestions}
             statuses={statuses}
-            onChange={handleChange}
+            onChange={onChange}
           />
         </div>
       )}
@@ -828,16 +793,13 @@ function PrescriptionSpecificSection({
               checkpoints={groupCheckpoints}
               actions={groupActions}
               statuses={statuses}
-              onChange={handleChange}
-              conflictHints={conflictHints}
+              onChange={onChange}
             />
           );
         })}
       </div>
 
-      {/* Bound Action Checkpoints, die nicht in einer Accordion-Gruppe erscheinen.
-          Hier landen z. B. DIGITAL_REQUEST_REQUIRED (kein Gruppenplatz, aber in boundActionCheckpointIds).
-          Conflict-Hints werden gezeigt, damit die MFA die Alternativrolle erkennt. */}
+      {/* Bound Action Checkpoints, die nicht in einer Accordion-Gruppe erscheinen. */}
       {remainingBoundActions.length > 0 && (
         <div style={{ marginTop: "0.5rem" }}>
           <div
@@ -851,8 +813,7 @@ function PrescriptionSpecificSection({
               key={cp.id}
               checkpoint={cp}
               value={statuses[cp.id]}
-              onChange={handleChange}
-              conflictHint={conflictHints[cp.id]}
+              onChange={onChange}
             />
           ))}
         </div>
