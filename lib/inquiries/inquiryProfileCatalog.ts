@@ -367,6 +367,18 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         },
         hint: "visible",
       },
+      // 10. CONTROL_APPOINTMENT_RECOMMENDED empfehlen, wenn chronische Erkrankung / Dauermedikation
+      {
+        id: "PRESCRIPTION_CONTROL_APPOINTMENT_RECOMMENDED",
+        checkpointId: "CONTROL_APPOINTMENT_RECOMMENDED",
+        profileId: "PRESCRIPTION",
+        when: {
+          allOf: [
+            { checkpointId: "PRESCRIPTION_CHRONIC_PATIENT", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
     ],
 
     // -----------------------------------------------------------------------

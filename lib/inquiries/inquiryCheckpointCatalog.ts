@@ -1335,7 +1335,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Kontrolltermin empfohlen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
