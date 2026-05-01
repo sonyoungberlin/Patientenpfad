@@ -2806,7 +2806,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: {
     id: "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED",
-    label: "Nachricht eingegangen – Fragebogen anfordern",
+    label: "Nachricht eingegangen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
