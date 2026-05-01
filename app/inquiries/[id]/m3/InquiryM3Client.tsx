@@ -118,28 +118,90 @@ const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRESCRIPTION – M3 Antwortweg-Konfliktgruppe
+// PRESCRIPTION – M3 Trigger-basierte Aktionsgruppen
 // [PROTOTYP – nur für PRESCRIPTION, reversibel]
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * InquiryId des PRESCRIPTION-Profils – verwendet, um die Antwortweg-Gruppe nur
- * für diese Section einzublenden.
+ * InquiryId des PRESCRIPTION-Profils – verwendet, um PRESCRIPTION-spezifische Logik
+ * nur für diese Section einzublenden.
  */
 const PRESCRIPTION_INQUIRY_ID = "PRESCRIPTION";
 
 /**
- * IDs der mutuell exklusiven Antwortweg-Actions in M3.
- * Wird eine auf ACTIVE gesetzt, wird die andere automatisch INACTIVE.
- * Beim Laden bereits gespeicherter Status wird kein auto-fix durchgeführt
- * – nur der nächste Klick bereinigt.
+ * Trigger-Gruppen: Welche M2-Checkpoint-Statuses schalten welche Actions in M3 frei.
+ * Eine Gruppe ist aktiv, wenn mindestens ein Trigger-Checkpoint den geforderten Wert hat.
+ * Actions werden dedupliziert; Reihenfolge folgt PRESCRIPTION_ALL_ACTION_IDS.
  */
-const PRESCRIPTION_ANTWORTWEG_IDS = ["E_RECIPE_USE", "DIGITAL_REQUEST_REQUIRED"] as const;
+const PRESCRIPTION_M3_TRIGGER_GROUPS: Array<{
+  triggers: Array<{ id: string; values: string[] }>;
+  actionIds: string[];
+}> = [
+  {
+    // Gruppe "Rezept wird ausgestellt"
+    triggers: [{ id: "PRESCRIPTION_STATUTORY_POSSIBLE", values: ["YES", "NO"] }],
+    actionIds: ["E_RECIPE_USE", "PHARMACY_INFORMATION"],
+  },
+  {
+    // Gruppe "Es fehlt noch etwas"
+    triggers: [
+      { id: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED", values: ["YES"] },
+      { id: "HOSPITAL_DISCHARGE_REPORT_MISSING", values: ["YES"] },
+    ],
+    actionIds: ["DOCUMENT_UPLOAD", "DIGITAL_REQUEST"],
+  },
+  {
+    // Gruppe "Termin / ärztliche Prüfung erforderlich"
+    triggers: [{ id: "PRESCRIPTION_CHRONIC_PATIENT", values: ["YES"] }],
+    actionIds: ["BOOK_APPOINTMENT", "DIGITAL_REQUEST", "PROCESSING_DELAY"],
+  },
+  {
+    // Gruppe "Zuständigkeit / Sonderfall"
+    triggers: [
+      { id: "PRESCRIPTION_BTM_ADHS_RULES", values: ["YES"] },
+      { id: "PRESCRIPTION_GYN_EXCLUSIVITY", values: ["YES"] },
+    ],
+    actionIds: ["BOOK_APPOINTMENT", "DOCUMENT_UPLOAD"],
+  },
+  {
+    // Gruppe "Erklärung / Rückfrage beantworten"
+    triggers: [
+      { id: "PRESCRIPTION_STATUTORY_POSSIBLE", values: ["YES", "NO"] },
+      { id: "PRESCRIPTION_NO_POSTAL_DELIVERY", values: ["YES"] },
+      { id: "PRESCRIPTION_PATIENT_NOT_IN_GERMANY", values: ["YES"] },
+    ],
+    actionIds: ["E_RECIPE_USE", "PHARMACY_INFORMATION"],
+  },
+  {
+    // Gruppe "Problem nach Ausstellung"
+    triggers: [
+      { id: "PRESCRIPTION_PATIENT_NOT_IN_GERMANY", values: ["YES"] },
+      { id: "PRESCRIPTION_NO_POSTAL_DELIVERY", values: ["YES"] },
+    ],
+    actionIds: ["TECHNICAL_ISSUE", "PHARMACY_INFORMATION", "DIGITAL_REQUEST"],
+  },
+];
 
 /**
- * Gegenseitige Ausschlusstabelle: key → konkurrierender Partner.
+ * Definierte Prioritäts- und Reihenfolge aller PRESCRIPTION-relevanten Actions.
+ * Wird für Deduplizierung und Fallback-Anzeige verwendet.
  */
-const PRESCRIPTION_ANTWORTWEG_CONFLICTS: Record<string, string> = {
+const PRESCRIPTION_ALL_ACTION_IDS = [
+  "E_RECIPE_USE",
+  "DIGITAL_REQUEST_REQUIRED",
+  "PHARMACY_INFORMATION",
+  "DOCUMENT_UPLOAD",
+  "DIGITAL_REQUEST",
+  "BOOK_APPOINTMENT",
+  "PROCESSING_DELAY",
+  "TECHNICAL_ISSUE",
+] as const;
+
+/**
+ * Gegenseitige Ausschlusstabelle für PRESCRIPTION-Actions in M3.
+ * Wird eine auf ACTIVE gesetzt, wird die andere automatisch INACTIVE.
+ */
+const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
   E_RECIPE_USE: "DIGITAL_REQUEST_REQUIRED",
   DIGITAL_REQUEST_REQUIRED: "E_RECIPE_USE",
 };
@@ -613,11 +675,18 @@ export default function InquiryM3Client({
         (cp) => cp.showWhenAny && cp.showWhenAny.some(matchesConditionSet),
       ),
     )) return true;
-    // Automatisch aufklappen, wenn PRESCRIPTION-Antwortweg-Gruppe vorhanden ist.
+    // Automatisch aufklappen, wenn PRESCRIPTION-Trigger bereits aktiv sind.
+    if (sections.some((s) => s.inquiryId === PRESCRIPTION_INQUIRY_ID)) {
+      const hasPrescriptionTrigger = PRESCRIPTION_M3_TRIGGER_GROUPS.some((group) =>
+        group.triggers.some((t) => t.values.includes(allStatuses[t.id] ?? "")),
+      );
+      if (hasPrescriptionTrigger) return true;
+    }
+    // Automatisch aufklappen, wenn PRESCRIPTION-Section gebundene Actions hat (Fallback immer sichtbar).
     return sections.some(
       (s) =>
         s.inquiryId === PRESCRIPTION_INQUIRY_ID &&
-        PRESCRIPTION_ANTWORTWEG_IDS.some((id) => s.boundActionCheckpoints.some((cp) => cp.id === id)),
+        s.boundActionCheckpoints.length > 0,
     );
   });
 
@@ -707,8 +776,8 @@ export default function InquiryM3Client({
   );
 
   function setStatus(checkpointId: string, value: string) {
-    if (value === "ACTIVE" && PRESCRIPTION_ANTWORTWEG_CONFLICTS[checkpointId]) {
-      const conflicting = PRESCRIPTION_ANTWORTWEG_CONFLICTS[checkpointId];
+    if (value === "ACTIVE" && PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId]) {
+      const conflicting = PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId];
       setStatuses((prev) => ({ ...prev, [checkpointId]: value, [conflicting]: "INACTIVE" }));
     } else {
       setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
@@ -1107,66 +1176,101 @@ export default function InquiryM3Client({
 
                 // --- Profil-spezifische boundActionCheckpoints ---
                 for (const sec of sections) {
-                  // IDs der Antwortweg-Gruppe – nur für PRESCRIPTION; aus dem Normalfilter ausschließen.
-                  const antwortWegIdsForSec: Set<string> =
-                    sec.inquiryId === PRESCRIPTION_INQUIRY_ID
-                      ? new Set(PRESCRIPTION_ANTWORTWEG_IDS)
-                      : new Set();
-
-                  // PRESCRIPTION Antwortweg-Gruppe: immer sichtbar, direkt nebeneinander.
+                  // ── PRESCRIPTION: Trigger-basierte Aktionsanzeige ──────────────────────────
                   if (sec.inquiryId === PRESCRIPTION_INQUIRY_ID) {
-                    const antwortWegCps = PRESCRIPTION_ANTWORTWEG_IDS
-                      .map((id) => sec.boundActionCheckpoints.find((cp) => cp.id === id))
-                      .filter((cp): cp is M3BoundActionData => cp !== undefined);
-                    if (antwortWegCps.length > 0) {
+                    // Unified action lookup: global available + profile-specific bound actions.
+                    // Bound action data overrides global (richer: questions etc.).
+                    type PrescriptionActionEntry = { id: string; label: string; questions?: Array<{ id: string; text: string }> };
+                    const prescriptionActionById = new Map<string, PrescriptionActionEntry>();
+                    for (const cp of actionCheckpoints) {
+                      prescriptionActionById.set(cp.id, { id: cp.id, label: cp.label });
+                    }
+                    for (const cp of sec.boundActionCheckpoints) {
+                      prescriptionActionById.set(cp.id, { id: cp.id, label: cp.label, questions: cp.questions });
+                    }
+
+                    // Compute triggered action IDs (deduplicated, stable priority order).
+                    const seenTriggered = new Set<string>();
+                    const triggeredIds: string[] = [];
+                    for (const group of PRESCRIPTION_M3_TRIGGER_GROUPS) {
+                      if (group.triggers.some((t) => t.values.includes(statuses[t.id] ?? ""))) {
+                        for (const id of group.actionIds) {
+                          if (!seenTriggered.has(id) && prescriptionActionById.has(id)) {
+                            seenTriggered.add(id);
+                            triggeredIds.push(id);
+                          }
+                        }
+                      }
+                    }
+                    // Re-sort triggered IDs by priority list for stable rendering.
+                    const priorityOrder = PRESCRIPTION_ALL_ACTION_IDS;
+                    const sortedTriggeredIds = [
+                      ...priorityOrder.filter((id) => triggeredIds.includes(id)),
+                      ...triggeredIds.filter((id) => !(priorityOrder as readonly string[]).includes(id)),
+                    ];
+
+                    // Fallback: show all PRESCRIPTION actions when no trigger is active.
+                    const isFallback = sortedTriggeredIds.length === 0;
+                    const idsToShow = isFallback
+                      ? PRESCRIPTION_ALL_ACTION_IDS.filter((id) => prescriptionActionById.has(id))
+                      : sortedTriggeredIds;
+
+                    if (idsToShow.length > 0) {
                       groupElements.push(
-                        <div key="prescription-antwortweg" style={{ marginTop: "0.75rem" }}>
+                        <div key="prescription-actions" style={{ marginTop: "0.75rem" }}>
                           <div
                             className="text-muted text-small"
                             style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
                           >
-                            {sec.label} – Antwortweg
+                            {sec.label} – Aktionen
                           </div>
-                          <div
-                            className="text-muted text-small"
-                            style={{ marginBottom: "0.35rem", fontStyle: "italic" }}
-                          >
-                            Alternative Antwortwege – nur einer aktiv
-                          </div>
-                          {antwortWegCps.map((cp) => (
+                          {isFallback && (
                             <div
-                              key={cp.id}
-                              style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                              className="text-muted text-small"
+                              style={{ marginBottom: "0.35rem", fontStyle: "italic" }}
                             >
-                              <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                              {cp.questions && cp.questions.length > 0 && (
-                                <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
-                                  {cp.questions.map((q) => (
-                                    <div key={q.id}>{q.text}</div>
-                                  ))}
-                                </div>
-                              )}
-                              <StatusButtons
-                                checkpointId={cp.id}
-                                options={ACTION_OPTIONS}
-                                value={statuses[cp.id]}
-                                onChange={setStatus}
-                                disabled={false}
-                              />
+                              Keine Situation in M2 gewählt – alle verfügbaren Aktionen werden angezeigt.
                             </div>
-                          ))}
+                          )}
+                          {idsToShow.map((id) => {
+                            const cp = prescriptionActionById.get(id)!;
+                            return (
+                              <div
+                                key={id}
+                                style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                              >
+                                <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                                {cp.questions && cp.questions.length > 0 && (
+                                  <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                                    {cp.questions.map((q) => (
+                                      <div key={q.id}>{q.text}</div>
+                                    ))}
+                                  </div>
+                                )}
+                                <StatusButtons
+                                  checkpointId={id}
+                                  options={ACTION_OPTIONS}
+                                  value={statuses[id]}
+                                  onChange={setStatus}
+                                  disabled={false}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>,
                       );
                     }
+                    // PRESCRIPTION uses the trigger-based block above exclusively;
+                    // skip the standard bound-action rendering for this section.
+                    continue;
                   }
 
+                  // ── Alle anderen Profile: Standard-Bound-Action-Rendering ─────────────────
                   // Filtere Checkpoints nach Sichtbarkeitsregeln:
                   // – Hat der Checkpoint showWhenAny oder hideWhenAny, gelten die Bedingungen.
                   // – Andernfalls wird er nur angezeigt, wenn er in M2 auf ACTIVE/INACTIVE gesetzt wurde.
-                  // – Antwortweg-IDs werden bereits oben separat gerendert → hier ausschließen.
                   const SET_STATUSES = ["ACTIVE", "INACTIVE"] as const;
                   const setCps = sec.boundActionCheckpoints.filter((cp) => {
-                    if (antwortWegIdsForSec.has(cp.id)) return false;
                     const hasConditions = cp.showWhenAny !== undefined || cp.hideWhenAny !== undefined;
                     if (!hasConditions) {
                       return (SET_STATUSES as readonly string[]).includes(statuses[cp.id]);

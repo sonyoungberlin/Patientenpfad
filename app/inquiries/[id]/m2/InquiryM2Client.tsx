@@ -431,18 +431,22 @@ const PRESCRIPTION_SHORT_LABELS: Record<string, string> = {
   PRESCRIPTION_CHRONIC_PATIENT: "Kontrolltermin / Dauermedikation?",
 };
 
+/**
+ * Decision-Klärungsfragen, die in PRESCRIPTION-M2 nicht angezeigt werden sollen.
+ * Diese Fragen erzeugen keinen eigenen Patientenoutput und verwirren in M2.
+ * Die Decision selbst in M3 bleibt unverändert.
+ */
+const PRESCRIPTION_HIDDEN_DECISION_QUESTION_IDS = new Set([
+  "PRESCRIPTION_DECISION-Q2", // "Handelt es sich um eine Wiederverordnung von Dauermedikation?"
+  "PRESCRIPTION_DECISION-Q4", // "Handelt es sich um einen Neupatienten?"
+]);
+
 type PrescriptionGroup = {
   id: string;
   label: string;
   description: string;
   /** Geordnete Liste der Checkpoint-IDs in dieser Gruppe. */
   checkpointIds: string[];
-  /**
-   * Action-IDs (aus profileActionCheckpoints), die in dieser Gruppe als
-   * „Nächster Schritt" angezeigt werden sollen.
-   * Eine Action kann in mehreren Gruppen erscheinen – Status bleibt global synchron.
-   */
-  actionIds: string[];
   defaultOpen: boolean;
 };
 
@@ -466,17 +470,8 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     label: "Rezept wird ausgestellt",
     description: "Wenn bereits klar ist, dass ein Rezept ausgestellt wird.",
     checkpointIds: [
-      // Kasse/Privat-Unterscheidung: YES = Kassenrezept (E_RECIPE_USE liefert Detail),
-      // NO = Privatrezept (Text: "Kosten selbst zahlen")
+      // Kasse/Privat-Unterscheidung: YES = Kassenrezept, NO = Privatrezept
       "PRESCRIPTION_STATUTORY_POSSIBLE",
-    ],
-    actionIds: [
-      // E_RECIPE_USE: boundAction, sichtbar nur bei STATUTORY_POSSIBLE=YES (boundActionCondition)
-      "E_RECIPE_USE",
-      // PHARMACY_INFORMATION: Apotheke angeben für Direktübermittlung
-      "PHARMACY_INFORMATION",
-      // Kein DIGITAL_REQUEST_REQUIRED hier: wenn Rezept ausgestellt wird,
-      // ist "digitale Anfrage zur Prüfung erforderlich" widersprüchlich.
     ],
     defaultOpen: true,
   },
@@ -487,17 +482,10 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     label: "Es fehlt noch etwas",
     description: "Wenn die Praxis vor Entscheidung oder Weitergabe noch Unterlagen oder Angaben braucht.",
     checkpointIds: [
-      // Facharztbericht fehlt → DOCUMENT_UPLOAD empfehlen
+      // Facharztbericht fehlt
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
-      // Krankenhaus-/Entlassbericht fehlt (neu im Katalog ergänzt)
+      // Krankenhaus-/Entlassbericht fehlt
       "HOSPITAL_DISCHARGE_REPORT_MISSING",
-      // TODO: Checkpoints für Medikamentenplan fehlt,
-      // Patient nicht sicher zuordenbar existieren im aktuellen Katalog NICHT.
-      // Bewusst nicht neu erfunden.
-    ],
-    actionIds: [
-      "DOCUMENT_UPLOAD",
-      "DIGITAL_REQUEST",
     ],
     defaultOpen: false,
   },
@@ -508,17 +496,8 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     label: "Termin / ärztliche Prüfung erforderlich",
     description: "Wenn ärztliche Prüfung oder Termin notwendig ist, bevor ein Rezept ausgestellt werden kann.",
     checkpointIds: [
-      // PRESCRIPTION_CHRONIC_PATIENT: "Dauermedikation → regelmäßige Kontrolltermine"
-      // Passt hier besser als in Gruppe 1. Text ist kontextuell korrekt.
-      // TODO: Besser wäre ein Checkpoint "Patient bekannt / unbekannt" oder
-      // "Kontrolltermin fällig" – existiert im Katalog aktuell nicht.
+      // Dauermedikation → regelmäßige Kontrolltermine
       "PRESCRIPTION_CHRONIC_PATIENT",
-    ],
-    actionIds: [
-      "BOOK_APPOINTMENT",
-      "DIGITAL_REQUEST",
-      // PROCESSING_DELAY nur nachrangig (informativer Hinweis)
-      "PROCESSING_DELAY",
     ],
     defaultOpen: false,
   },
@@ -529,16 +508,10 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     label: "Zuständigkeit / Sonderfall",
     description: "Wenn ein Facharzt, Gynäkologie oder Sonderzuständigkeit relevant ist.",
     checkpointIds: [
-      // BtM/ADHS: Fachärztliche Zuständigkeit, Hausarzt nur Folgerezepte bei Mitbehandlung
+      // BtM/ADHS: Fachärztliche Zuständigkeit
       "PRESCRIPTION_BTM_ADHS_RULES",
       // Gynäkologische Verordnungen: Zuständigkeit der Gynäkologie
       "PRESCRIPTION_GYN_EXCLUSIVITY",
-    ],
-    actionIds: [
-      // BOOK_APPOINTMENT mit caution-Hinweis laut actionGuidanceRule bei BTM/GYN
-      "BOOK_APPOINTMENT",
-      // DOCUMENT_UPLOAD: bestehende actionGuidanceRule passt bei fehlenden Unterlagen
-      "DOCUMENT_UPLOAD",
     ],
     defaultOpen: false,
   },
@@ -549,18 +522,12 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     label: "Erklärung / Rückfrage beantworten",
     description: "Wenn der Patient eine Rückfrage stellt, z. B. warum Privatrezept, warum kein Postversand.",
     checkpointIds: [
-      // Kasse/Privat-Unterscheidung: NO liefert Privatrezept-Text
+      // Kasse/Privat-Unterscheidung
       "PRESCRIPTION_STATUTORY_POSSIBLE",
-      // Kein Postversand – spezifischer Ablehnungshinweis (kein Gegenstück zu Kasse/Privat)
+      // Kein Postversand – spezifischer Ablehnungshinweis
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
       // Auslandsaufenthalt: Einlösung nur in deutschen Apotheken möglich
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
-    ],
-    actionIds: [
-      // eRezept-Einlösungsweg erklären (komplementär zu PHARMACY_INFORMATION, kein Gegenstück)
-      "E_RECIPE_USE",
-      // Apotheke / Direktübermittlung anbieten
-      "PHARMACY_INFORMATION",
     ],
     defaultOpen: false,
   },
@@ -575,16 +542,6 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       // Postversand angefragt (als Kontext bei Einlösungsproblemen)
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
-      // TODO: Checkpoints für folgende Szenarien existieren im Katalog NICHT:
-      // – Rezept verloren / nicht auffindbar
-      // – Dosierung nicht lieferbar
-      // – Rezept zu früh / eigentlich noch vorhanden
-      // Bewusst nicht neu erfunden.
-    ],
-    actionIds: [
-      "TECHNICAL_ISSUE",
-      "PHARMACY_INFORMATION",
-      "DIGITAL_REQUEST",
     ],
     defaultOpen: false,
   },
@@ -594,26 +551,18 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
 function PrescriptionGroupAccordion({
   group,
   checkpoints,
-  actions,
   statuses,
   onChange,
 }: {
   group: PrescriptionGroup;
   checkpoints: PlainCheckpoint[];
-  /** Actions (aus dem kombinierten Action-Pool), die dieser Gruppe zugeordnet sind. */
-  actions: PlainCheckpoint[];
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
 }) {
   const hasAnsweredCheckpoint = checkpoints.some(
     (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
   );
-  const hasAnsweredAction = actions.some(
-    (a) => statuses[a.id] === "ACTIVE" || statuses[a.id] === "INACTIVE",
-  );
-  const [isOpen, setIsOpen] = useState(group.defaultOpen || hasAnsweredCheckpoint || hasAnsweredAction);
-
-  if (checkpoints.length === 0 && actions.length === 0) return null;
+  const [isOpen, setIsOpen] = useState(group.defaultOpen || hasAnsweredCheckpoint);
 
   return (
     <div
@@ -661,41 +610,22 @@ function PrescriptionGroupAccordion({
             {group.description}
           </div>
 
-          {/* Checkpoints (Prüfen / Einordnen) */}
-          {checkpoints.map((cp) => (
-            <ExplanationQuestionRow
-              key={cp.id}
-              checkpoint={{ ...cp, label: PRESCRIPTION_SHORT_LABELS[cp.id] ?? cp.label }}
-              value={statuses[cp.id]}
-              onChange={onChange}
-            />
-          ))}
-
-          {/* Actions (Nächster Schritt / Baustein) – nur wenn vorhanden */}
-          {actions.length > 0 && (
-            <>
-              {/* Visueller Trenner */}
-              <div
-                style={{
-                  margin: "0.75rem 0 0.5rem",
-                  borderTop: "1px solid var(--border)",
-                }}
+          {checkpoints.length > 0 ? (
+            checkpoints.map((cp) => (
+              <ExplanationQuestionRow
+                key={cp.id}
+                checkpoint={{ ...cp, label: PRESCRIPTION_SHORT_LABELS[cp.id] ?? cp.label }}
+                value={statuses[cp.id]}
+                onChange={onChange}
               />
-              <div
-                className="text-muted text-small"
-                style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
-              >
-                <span aria-hidden="true">→ </span>Nächster Schritt
-              </div>
-              {actions.map((a) => (
-                <BoundActionRow
-                  key={a.id}
-                  checkpoint={a}
-                  value={statuses[a.id]}
-                  onChange={onChange}
-                />
-              ))}
-            </>
+            ))
+          ) : (
+            <div
+              className="text-muted text-small"
+              style={{ fontStyle: "italic", marginTop: "0.25rem" }}
+            >
+              Noch keine passenden Situations-Checkpoints vorhanden
+            </div>
           )}
         </div>
       )}
@@ -709,21 +639,20 @@ function PrescriptionGroupAccordion({
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Ersetzt SpecificSection für das PRESCRIPTION-Profil mit antwortzielbasierten
+ * Ersetzt SpecificSection für das PRESCRIPTION-Profil mit situationsbasierten
  * Accordion-Gruppen. Alle anderen Profile nutzen weiterhin SpecificSection.
  *
- * [PROTOTYP – hartcodiert, reversibel. Zum Rückgängigmachen: Render-Loop in
- *  InquiryM2Client wiederherstellen, diese Komponente und die Konstanten entfernen.]
+ * M2 bleibt reine Klär-/Orientierungsebene: nur Checkpoints / Situationsmerkmale,
+ * keine Action-Toggles. Actions werden in M3 durch Trigger-Logik freigeschaltet.
+ *
+ * [PROTOTYP – hartcodiert, reversibel.]
  */
 function PrescriptionSpecificSection({
   section,
-  profileActionCheckpoints,
   statuses,
   onChange,
 }: {
   section: M2SectionData;
-  /** Verfügbare globale Actions aus dem PRESCRIPTION-Profil (dedupliziert). */
-  profileActionCheckpoints: PlainCheckpoint[];
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
 }) {
@@ -732,32 +661,21 @@ function PrescriptionSpecificSection({
     section.specificCheckpoints.map((cp) => [cp.id, cp]),
   );
 
-  // Kombinierter Action-Pool: profileActionCheckpoints (available actions ohne Conditions-Filter)
-  // + allBoundActionCheckpoints (gebundene Actions inkl. konditionaler, z. B. E_RECIPE_USE).
-  // Nur PRESCRIPTION nutzt allBoundActionCheckpoints; andere Profile ignorieren dieses Feld.
-  const allBoundActions = section.allBoundActionCheckpoints ?? [];
-  const combinedActions: PlainCheckpoint[] = [
-    ...profileActionCheckpoints,
-    ...allBoundActions.filter((a) => !profileActionCheckpoints.some((p) => p.id === a.id)),
-  ];
-  const actionById = new Map<string, PlainCheckpoint>(
-    combinedActions.map((a) => [a.id, a]),
+  // Klärungsfragen des Decision-Checkpoints filtern:
+  // Q2/Q4 erscheinen nicht in M2 – kein eigener Patientenoutput, verwirren in M2.
+  const filteredDecisionQuestions = section.decisionQuestions.filter(
+    (q) => !PRESCRIPTION_HIDDEN_DECISION_QUESTION_IDS.has(q.id),
   );
-
-  // IDs aller bound actions, die bereits in Accordion-Gruppen erscheinen.
-  // Remaining = allBoundActions, die in KEINER Gruppe erscheinen → in "Profil-Aktionen" zeigen.
-  const groupActionIds = new Set(PRESCRIPTION_GROUPS.flatMap((g) => g.actionIds));
-  const remainingBoundActions = allBoundActions.filter((a) => !groupActionIds.has(a.id));
 
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welches Antwortziel am besten passt:
+        Wähle aus, welche Situation am besten passt:
       </p>
 
-      {/* Decision-Klärungsfragen – immer sichtbar, unverändert */}
-      {section.decisionQuestions.length > 0 && (
+      {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
+      {filteredDecisionQuestions.length > 0 && (
         <div style={{ marginBottom: "1rem" }}>
           <div
             className="text-muted text-small"
@@ -766,58 +684,31 @@ function PrescriptionSpecificSection({
             <span aria-hidden="true">? </span>Klärungsfragen
           </div>
           <DecisionQuestionBlock
-            questions={section.decisionQuestions}
+            questions={filteredDecisionQuestions}
             statuses={statuses}
             onChange={onChange}
           />
         </div>
       )}
 
-      {/* Accordion-Gruppen – je mit Checkpoints und zugeordneten Actions */}
+      {/* Accordion-Gruppen – je nur Situationsmerkmale/Checkpoints, keine Actions */}
       <div style={{ marginBottom: "0.75rem" }}>
         {PRESCRIPTION_GROUPS.map((group) => {
-          // Nur Checkpoints einbeziehen, die im Profil tatsächlich vorhanden sind
           const groupCheckpoints = group.checkpointIds
             .map((id) => cpById.get(id))
             .filter((cp): cp is PlainCheckpoint => cp !== undefined);
-
-          // Actions aus dem kombinierten Pool (profileActions + allBoundActions)
-          const groupActions = group.actionIds
-            .map((id) => actionById.get(id))
-            .filter((a): a is PlainCheckpoint => a !== undefined);
 
           return (
             <PrescriptionGroupAccordion
               key={group.id}
               group={group}
               checkpoints={groupCheckpoints}
-              actions={groupActions}
               statuses={statuses}
               onChange={onChange}
             />
           );
         })}
       </div>
-
-      {/* Bound Action Checkpoints, die nicht in einer Accordion-Gruppe erscheinen. */}
-      {remainingBoundActions.length > 0 && (
-        <div style={{ marginTop: "0.5rem" }}>
-          <div
-            className="text-muted text-small"
-            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
-          >
-            <span aria-hidden="true">→ </span>Profil-Aktionen
-          </div>
-          {remainingBoundActions.map((cp) => (
-            <BoundActionRow
-              key={cp.id}
-              checkpoint={cp}
-              value={statuses[cp.id]}
-              onChange={onChange}
-            />
-          ))}
-        </div>
-      )}
     </section>
   );
 }
@@ -985,7 +876,6 @@ export default function InquiryM2Client({
           <PrescriptionSpecificSection
             key={section.inquiryId}
             section={section}
-            profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}
             onChange={setStatus}
           />
