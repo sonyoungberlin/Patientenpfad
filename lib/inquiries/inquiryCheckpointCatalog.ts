@@ -2625,6 +2625,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Ihre Nachricht ist bei uns eingegangen.",
     },
+    textByAudience: {
+      contact_person:
+        "Die Nachricht für Ihre Angehörige / Ihren Angehörigen ist bei uns eingegangen.",
+    },
   },
 
   MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: {
@@ -2637,6 +2641,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Vielen Dank für das Ausfüllen des Fragebogens.",
+    },
+    textByAudience: {
+      contact_person:
+        "Vielen Dank für das Ausfüllen des Fragebogens für Ihre Angehörige / Ihren Angehörigen.",
     },
   },
 
@@ -2651,6 +2659,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bei der Durchsicht Ihrer Unterlagen ist uns etwas aufgefallen.",
     },
+    textByAudience: {
+      contact_person:
+        "Bei der Durchsicht der Unterlagen Ihrer Angehörigen / Ihres Angehörigen ist uns etwas aufgefallen.",
+    },
   },
 
   MESSAGE_INTRO_MISSING_INFO: {
@@ -2663,6 +2675,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch folgende Angaben:",
+    },
+    textByAudience: {
+      contact_person:
+        "Zur weiteren Bearbeitung des Anliegens Ihrer Angehörigen / Ihres Angehörigen benötigen wir noch folgende Angaben:",
     },
   },
 

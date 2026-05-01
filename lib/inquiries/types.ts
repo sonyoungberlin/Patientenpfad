@@ -159,6 +159,21 @@ export type InquiryProfile = {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// Audience – Zielgruppe der Textausgabe
+// ---------------------------------------------------------------------------
+
+/**
+ * Zielgruppe der Textausgabe.
+ *
+ * patient        – Der Patient selbst liest die Nachricht.
+ * contact_person – Eine Kontaktperson (z. B. Pflegeperson, Elternteil) liest die Nachricht.
+ *
+ * Beeinflusst ausschließlich die Textausgabe (textByAudience).
+ * Kein Einfluss auf Decision, Action, Conditions oder Checkpoint-Logik.
+ */
+export type Audience = "patient" | "contact_person";
+
+// ---------------------------------------------------------------------------
 // Neue Architektur – Checkpoint-Arten, Scope, Placement, Statusmodelle
 // ---------------------------------------------------------------------------
 
@@ -493,6 +508,16 @@ export type InquiryCheckpoint = {
    */
   questions?: InquiryQuestion[];
   textByStatus: Partial<Record<CheckpointStatusValue, string>>;
+  /**
+   * Zielgruppenspezifische Texte, die `textByStatus` überschreiben.
+   *
+   * text = textByAudience?.[audience] ?? textByStatus[status] ?? ""
+   *
+   * Nur das benötigte Audience-Feld muss gesetzt werden; fehlendes Feld
+   * fällt auf `textByStatus` zurück.
+   * Keinen Einfluss auf Decision, Action oder Checkpoint-Logik.
+   */
+  textByAudience?: { patient?: string; contact_person?: string };
   docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
   /**
    * Kompakter M5-Grundcode für das Kurzprotokoll.
