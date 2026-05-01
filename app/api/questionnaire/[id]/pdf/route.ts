@@ -33,6 +33,7 @@ export async function GET(
       status: true,
       patient_reference: true,
       submitted_at: true,
+      submitted_by: true,
       selected_block_ids: true,
       deduplicated_questions: true,
       answers: true,
@@ -175,6 +176,14 @@ export async function GET(
   // Title
   drawText("Fragebogen – Patientenangaben", { size: 16, bold: true });
   y -= 4;
+
+  // Kontexthinweis bei Einreichung durch Kontaktperson
+  if (session.submitted_by === "contact_person") {
+    drawText(
+      "Die Angaben wurden durch eine Kontaktperson im Namen der Patientin / des Patienten übermittelt.",
+      { size: 9, color: [0.3, 0.3, 0.3] },
+    );
+  }
 
   // Metadata
   const submittedStr = session.submitted_at
