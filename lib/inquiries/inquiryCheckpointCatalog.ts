@@ -436,6 +436,39 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * Fehlender Krankenhaus- oder Entlassbericht.
+   *
+   * SPECIFIC-Scope: erscheint im Profil-Abschnitt (section.specificCheckpoints) und ist
+   * damit im PRESCRIPTION-Accordion nutzbar. Durch die Aufnahme in specificCheckpointIds
+   * anderer Profile (AU, REFERRAL, ACUTE_CARE etc.) später profilübergreifend wiederverwendbar.
+   *
+   * ATTACHED-Placement: Der Text soll direkt im Kontext des Anliegens erscheinen (kein
+   * profilübergreifendes Footer-Element). SHARED_BOTTOM wäre nur korrekt, wenn derselbe
+   * Hinweis am Ende aller Profilabschnitte erscheinen soll.
+   *
+   * specificRole MISSING_DOCUMENT: korrekt für fehlende Dokumente/Nachweise.
+   */
+  HOSPITAL_DISCHARGE_REPORT_MISSING: {
+    id: "HOSPITAL_DISCHARGE_REPORT_MISSING",
+    label: "Krankenhaus-/Entlassbericht fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_DISCHARGE_REPORT_MISSING-Q1", text: "Fehlt der Krankenhaus- oder Entlassbericht?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die weitere Bearbeitung benötigen wir den Krankenhaus- oder Entlassbericht.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenhaus-/Entlassbericht fehlt",
+    },
+  },
+
   PRESCRIPTION_BTM_ADHS_RULES: {
     id: "PRESCRIPTION_BTM_ADHS_RULES",
     label: "BtM / ADHS / Facharztpflicht",

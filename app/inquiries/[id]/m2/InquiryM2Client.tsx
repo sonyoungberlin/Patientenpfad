@@ -405,6 +405,7 @@ function SpecificSection({
 const PRESCRIPTION_SHORT_LABELS: Record<string, string> = {
   PRESCRIPTION_STATUTORY_POSSIBLE: "Kassenrezept / Privatrezept",
   PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: "Facharztbericht fehlt",
+  HOSPITAL_DISCHARGE_REPORT_MISSING: "Krankenhaus-/Entlassbericht fehlt",
   PRESCRIPTION_BTM_ADHS_RULES: "BtM / ADHS",
   PRESCRIPTION_GYN_EXCLUSIVITY: "Pille / Gynäkologie",
   PRESCRIPTION_NO_POSTAL_DELIVERY: "Postversand angefragt",
@@ -456,8 +457,8 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "E_RECIPE_USE",
       // PHARMACY_INFORMATION: Apotheke angeben für Direktübermittlung
       "PHARMACY_INFORMATION",
-      // DIGITAL_REQUEST_REQUIRED: optional – nur wenn im Profil vorhanden
-      "DIGITAL_REQUEST_REQUIRED",
+      // Kein DIGITAL_REQUEST_REQUIRED hier: wenn Rezept ausgestellt wird,
+      // ist "digitale Anfrage zur Prüfung erforderlich" widersprüchlich.
     ],
     defaultOpen: true,
   },
@@ -470,7 +471,9 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     checkpointIds: [
       // Facharztbericht fehlt → DOCUMENT_UPLOAD empfehlen
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
-      // TODO: Checkpoints für Krankenhausbericht fehlt, Medikamentenplan fehlt,
+      // Krankenhaus-/Entlassbericht fehlt (neu im Katalog ergänzt)
+      "HOSPITAL_DISCHARGE_REPORT_MISSING",
+      // TODO: Checkpoints für Medikamentenplan fehlt,
       // Patient nicht sicher zuordenbar existieren im aktuellen Katalog NICHT.
       // Bewusst nicht neu erfunden.
     ],
