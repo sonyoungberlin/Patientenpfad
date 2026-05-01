@@ -418,6 +418,12 @@ type PrescriptionGroup = {
   description: string;
   /** Geordnete Liste der Checkpoint-IDs in dieser Gruppe. */
   checkpointIds: string[];
+  /**
+   * Action-IDs (aus profileActionCheckpoints), die in dieser Gruppe als
+   * „Nächster Schritt" angezeigt werden sollen.
+   * Eine Action kann in mehreren Gruppen erscheinen – Status bleibt global synchron.
+   */
+  actionIds: string[];
   defaultOpen: boolean;
 };
 
@@ -435,6 +441,11 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
     ],
+    actionIds: [
+      "E_RECIPE_USE",
+      "PHARMACY_INFORMATION",
+      "DIGITAL_REQUEST_REQUIRED", // optional
+    ],
     defaultOpen: true,
   },
   {
@@ -447,6 +458,12 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_CHRONIC_PATIENT",
     ],
+    actionIds: [
+      "BOOK_APPOINTMENT",
+      "DIGITAL_REQUEST",
+      "DOCUMENT_UPLOAD",
+      "PROCESSING_DELAY", // optional
+    ],
     defaultOpen: false,
   },
   {
@@ -457,6 +474,10 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       // TODO: Weitere Checkpoints für fehlende Angaben/Unterlagen sind im aktuellen
       // PRESCRIPTION-Katalog nicht vorhanden und wurden bewusst nicht neu erfunden.
+    ],
+    actionIds: [
+      "DOCUMENT_UPLOAD",
+      "DIGITAL_REQUEST",
     ],
     defaultOpen: false,
   },
@@ -471,6 +492,10 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
     ],
+    actionIds: [
+      "PHARMACY_INFORMATION",
+      "TECHNICAL_ISSUE", // optional
+    ],
     defaultOpen: false,
   },
   {
@@ -484,6 +509,11 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       // TODO: Checkpoints für Probleme mit Apotheke, Dosierung oder nicht auffindbares
       // Rezept existieren im aktuellen Katalog nicht – bewusst nicht neu erfunden.
     ],
+    actionIds: [
+      "PHARMACY_INFORMATION",
+      "DIGITAL_REQUEST",
+      "TECHNICAL_ISSUE",
+    ],
     defaultOpen: false,
   },
 ];
@@ -492,20 +522,26 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
 function PrescriptionGroupAccordion({
   group,
   checkpoints,
+  actions,
   statuses,
   onChange,
 }: {
   group: PrescriptionGroup;
   checkpoints: PlainCheckpoint[];
+  /** Actions (aus profileActionCheckpoints), die dieser Gruppe zugeordnet sind. */
+  actions: PlainCheckpoint[];
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
 }) {
-  const hasAnswered = checkpoints.some(
+  const hasAnsweredCheckpoint = checkpoints.some(
     (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
   );
-  const [isOpen, setIsOpen] = useState(group.defaultOpen || hasAnswered);
+  const hasAnsweredAction = actions.some(
+    (a) => statuses[a.id] === "ACTIVE" || statuses[a.id] === "INACTIVE",
+  );
+  const [isOpen, setIsOpen] = useState(group.defaultOpen || hasAnsweredCheckpoint || hasAnsweredAction);
 
-  if (checkpoints.length === 0) return null;
+  if (checkpoints.length === 0 && actions.length === 0) return null;
 
   return (
     <div
@@ -552,6 +588,8 @@ function PrescriptionGroupAccordion({
           <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
             {group.description}
           </div>
+
+          {/* Checkpoints (Warum / Kontext) */}
           {checkpoints.map((cp) => (
             <ExplanationQuestionRow
               key={cp.id}
@@ -560,6 +598,33 @@ function PrescriptionGroupAccordion({
               onChange={onChange}
             />
           ))}
+
+          {/* Actions (Was jetzt tun) – nur wenn vorhanden */}
+          {actions.length > 0 && (
+            <>
+              {/* Visueller Trenner */}
+              <div
+                style={{
+                  margin: "0.75rem 0 0.5rem",
+                  borderTop: "1px solid var(--border)",
+                }}
+              />
+              <div
+                className="text-muted text-small"
+                style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+              >
+                <span aria-hidden="true">→ </span>Nächster Schritt
+              </div>
+              {actions.map((a) => (
+                <BoundActionRow
+                  key={a.id}
+                  checkpoint={a}
+                  value={statuses[a.id]}
+                  onChange={onChange}
+                />
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -575,10 +640,13 @@ function PrescriptionGroupAccordion({
  */
 function PrescriptionSpecificSection({
   section,
+  profileActionCheckpoints,
   statuses,
   onChange,
 }: {
   section: M2SectionData;
+  /** Verfügbare globale Actions aus dem PRESCRIPTION-Profil (dedupliziert). */
+  profileActionCheckpoints: PlainCheckpoint[];
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
 }) {
@@ -587,10 +655,10 @@ function PrescriptionSpecificSection({
     section.specificCheckpoints.map((cp) => [cp.id, cp]),
   );
 
-  const hasAnsweredAction = section.actionCheckpoints.some(
-    (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
+  // Schneller Lookup: Action-ID → PlainCheckpoint (nur verfügbare Actions)
+  const actionById = new Map<string, PlainCheckpoint>(
+    profileActionCheckpoints.map((a) => [a.id, a]),
   );
-  const [showActions, setShowActions] = useState(hasAnsweredAction);
 
   return (
     <section style={{ marginBottom: "2rem" }}>
@@ -616,18 +684,25 @@ function PrescriptionSpecificSection({
         </div>
       )}
 
-      {/* Accordion-Gruppen */}
+      {/* Accordion-Gruppen – je mit Checkpoints und zugeordneten Actions */}
       <div style={{ marginBottom: "0.75rem" }}>
         {PRESCRIPTION_GROUPS.map((group) => {
           // Nur Checkpoints einbeziehen, die im Profil tatsächlich vorhanden sind
           const groupCheckpoints = group.checkpointIds
             .map((id) => cpById.get(id))
             .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+
+          // Nur Actions einbeziehen, die im Profil verfügbar sind (profileActionCheckpoints)
+          const groupActions = group.actionIds
+            .map((id) => actionById.get(id))
+            .filter((a): a is PlainCheckpoint => a !== undefined);
+
           return (
             <PrescriptionGroupAccordion
               key={group.id}
               group={group}
               checkpoints={groupCheckpoints}
+              actions={groupActions}
               statuses={statuses}
               onChange={onChange}
             />
@@ -635,44 +710,26 @@ function PrescriptionSpecificSection({
         })}
       </div>
 
-      {/* Bound Action Checkpoints (E_RECIPE_USE, DIGITAL_REQUEST_REQUIRED etc.) */}
+      {/* Bound Action Checkpoints (section.actionCheckpoints / boundActionCheckpointIds).
+          Diese werden weiterhin am Ende der Sektion angezeigt, falls vorhanden.
+          Sie sind profilspezifisch gebunden und nicht Teil der globalen profileActions. */}
       {section.actionCheckpoints.length > 0 && (
-        <>
-          <button
-            type="button"
-            onClick={() => setShowActions((prev) => !prev)}
-            style={{
-              marginTop: "0.5rem",
-              padding: "0.3rem 0.8rem",
-              borderRadius: "var(--radius)",
-              border: "1px solid var(--border)",
-              background: "var(--background)",
-              color: "var(--foreground)",
-              cursor: "pointer",
-              fontSize: "0.85rem",
-            }}
+        <div style={{ marginTop: "0.5rem" }}>
+          <div
+            className="text-muted text-small"
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
           >
-            {showActions ? "Aktionen ausblenden" : "Aktionen einblenden"}
-          </button>
-          {showActions && (
-            <div style={{ marginTop: "0.5rem" }}>
-              <div
-                className="text-muted text-small"
-                style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
-              >
-                <span aria-hidden="true">→ </span>Aktionen
-              </div>
-              {section.actionCheckpoints.map((cp) => (
-                <BoundActionRow
-                  key={cp.id}
-                  checkpoint={cp}
-                  value={statuses[cp.id]}
-                  onChange={onChange}
-                />
-              ))}
-            </div>
-          )}
-        </>
+            <span aria-hidden="true">→ </span>Profil-Aktionen
+          </div>
+          {section.actionCheckpoints.map((cp) => (
+            <BoundActionRow
+              key={cp.id}
+              checkpoint={cp}
+              value={statuses[cp.id]}
+              onChange={onChange}
+            />
+          ))}
+        </div>
       )}
     </section>
   );
@@ -841,6 +898,7 @@ export default function InquiryM2Client({
           <PrescriptionSpecificSection
             key={section.inquiryId}
             section={section}
+            profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}
             onChange={setStatus}
           />
@@ -854,14 +912,16 @@ export default function InquiryM2Client({
         ),
       )}
 
-      {/* 4. Weitere passende Hinweise – availableActionIds der gewählten Profile */}
-      {profileActionCheckpoints.length > 0 && (
-        <WeitereHinweiseSection
-          profileActionCheckpoints={profileActionCheckpoints}
-          statuses={statuses}
-          onChange={setStatus}
-        />
-      )}
+      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION.
+           Für PRESCRIPTION sind die Actions bereits in die Accordion-Gruppen integriert. */}
+      {profileActionCheckpoints.length > 0 &&
+        !sections.some((s) => s.inquiryId === "PRESCRIPTION") && (
+          <WeitereHinweiseSection
+            profileActionCheckpoints={profileActionCheckpoints}
+            statuses={statuses}
+            onChange={setStatus}
+          />
+        )}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>
