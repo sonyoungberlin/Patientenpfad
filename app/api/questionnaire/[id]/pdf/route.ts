@@ -37,6 +37,8 @@ export async function GET(
       selected_block_ids: true,
       deduplicated_questions: true,
       answers: true,
+      identity_gate_completed_at: true,
+      identity_gate_method: true,
     },
   });
 
@@ -194,6 +196,23 @@ export async function GET(
     size: 9,
     color: [0.3, 0.3, 0.3],
   });
+
+  // Identitätsabfrage
+  if (session.identity_gate_completed_at) {
+    const gateStr = session.identity_gate_completed_at.toLocaleString("de-DE", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+    drawText(
+      `Identitätsabfrage: erfolgt (Geburtsdatum + erste 3 Buchstaben Nachname) – ${gateStr}`,
+      { size: 9, color: [0.3, 0.3, 0.3] },
+    );
+  } else {
+    drawText(
+      "Identitätsabfrage: erfolgt (Geburtsdatum + erste 3 Buchstaben Nachname)",
+      { size: 9, color: [0.3, 0.3, 0.3] },
+    );
+  }
 
   y -= sectionGap;
 
