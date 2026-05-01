@@ -757,19 +757,41 @@ const AU_SHORT_LABELS: Record<string, string> = {
 };
 
 /**
+ * Decision-Klärungsfragen, die in AU-M2 nicht angezeigt werden sollen.
+ *
+ * Analog zu PRESCRIPTION_HIDDEN_DECISION_QUESTION_IDS:
+ * M2 = Situation / Kontext; M3 = Entscheidung.
+ * Die Decision selbst in M3 bleibt unverändert.
+ */
+const AU_HIDDEN_DECISION_QUESTION_IDS = new Set([
+  "AU_DECISION-Q1", // "Sind Beschwerden oder eine Diagnose nachvollziehbar angegeben?"
+  "AU_DECISION-Q3", // "Bei Langzeit-AU: Liegt eine ärztliche Freigabe vor?"
+]);
+
+/**
  * Situationsbasierte Akkordeon-Gruppen für den AU M2 Prototyp.
  *
  * Ein Checkpoint kann in mehreren Gruppen erscheinen – der Status bleibt global
  * synchron (ein einziger Record-Eintrag). IDs ohne Profil-Eintrag werden robust
- * übersprungen. TODO-Kommentare markieren Checkpoints, die noch nicht im Katalog
- * existieren.
+ * übersprungen.
  *
  * [PROTOTYP – hartcodiert, reversibel. Zum Rückgängigmachen: Render-Loop in
  *  InquiryM2Client wiederherstellen, diese Konstante und die zugehörigen
  *  Komponenten entfernen.]
  */
 const AU_GROUPS: PrescriptionGroup[] = [
-  // ── 1. Es fehlen noch Angaben ─────────────────────────────────────────────
+  // ── 1. AU kann ausgestellt werden ────────────────────────────────────────
+  {
+    id: "au_moeglich",
+    label: "AU kann ausgestellt werden",
+    description: "Wenn die AU grundsätzlich digital oder organisatorisch bearbeitet werden kann.",
+    checkpointIds: [
+      "AU_DIGITAL_AU_PROCESS", // Digitaler AU-Anfrageprozess
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 2. Es fehlen noch Angaben ─────────────────────────────────────────────
   {
     id: "fehlende_angaben",
     label: "Es fehlen noch Angaben",
@@ -781,7 +803,7 @@ const AU_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 2. Untersuchung erforderlich ──────────────────────────────────────────
+  // ── 3. Untersuchung erforderlich ──────────────────────────────────────────
   {
     id: "untersuchung",
     label: "Untersuchung erforderlich",
@@ -793,19 +815,19 @@ const AU_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 3. Regel / Grenze ─────────────────────────────────────────────────────
+  // ── 4. Regel / Grenze ─────────────────────────────────────────────────────
   {
     id: "regel_grenze",
     label: "Regel / Grenze",
     description: "Gesetzliche oder praxisinterne Einschränkung ist relevant.",
     checkpointIds: [
-      "AU_BACKDATE_LIMIT",   // Rückdatierungsgrenze (≤ 2 Tage)
+      "AU_BACKDATE_LIMIT",    // Rückdatierungsgrenze (≤ 2 Tage)
       "AU_NEW_PATIENT_LIMIT", // Neupatient – AU-Höchstdauer
     ],
     defaultOpen: false,
   },
 
-  // ── 4. Zuständigkeit ──────────────────────────────────────────────────────
+  // ── 5. Zuständigkeit ──────────────────────────────────────────────────────
   {
     id: "zustaendigkeit",
     label: "Zuständigkeit",
@@ -817,7 +839,7 @@ const AU_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 5. Verlauf / Sonderfall ───────────────────────────────────────────────
+  // ── 6. Verlauf / Sonderfall ───────────────────────────────────────────────
   {
     id: "verlauf_sonderfall",
     label: "Verlauf / Sonderfall",
@@ -828,13 +850,13 @@ const AU_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 6. Erklärung / Rückfrage ──────────────────────────────────────────────
+  // ── 7. Erklärung / Rückfrage ──────────────────────────────────────────────
   {
     id: "erklaeren",
     label: "Erklärung / Rückfrage",
     description: "Kommunikative Ergänzungen – z. B. digitaler Prozess oder Terminhinweis.",
     checkpointIds: [
-      "AU_DIGITAL_AU_PROCESS",  // Digitaler AU-Anfrageprozess erklären
+      "AU_DIGITAL_AU_PROCESS",   // Digitaler AU-Anfrageprozess erklären (Duplikat erlaubt)
       "AU_NO_APPOINTMENT_ACUTE", // Akute Beschwerden – kann in mehreren Gruppen erscheinen
       "AU_BACKDATE_LIMIT",       // Rückdatierungsgrenze – Duplikat für Erklärungskontext
     ],
@@ -876,22 +898,27 @@ function AUSpecificSection({
         Wähle aus, welche Situation am besten passt:
       </p>
 
-      {/* Decision-Klärungsfragen – immer sichtbar */}
-      {section.decisionQuestions.length > 0 && (
-        <div style={{ marginBottom: "1rem" }}>
-          <div
-            className="text-muted text-small"
-            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
-          >
-            <span aria-hidden="true">? </span>Klärungsfragen
+      {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
+      {(() => {
+        const filteredDecisionQuestions = section.decisionQuestions.filter(
+          (q) => !AU_HIDDEN_DECISION_QUESTION_IDS.has(q.id),
+        );
+        return filteredDecisionQuestions.length > 0 ? (
+          <div style={{ marginBottom: "1rem" }}>
+            <div
+              className="text-muted text-small"
+              style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+            >
+              <span aria-hidden="true">? </span>Klärungsfragen
+            </div>
+            <DecisionQuestionBlock
+              questions={filteredDecisionQuestions}
+              statuses={statuses}
+              onChange={onChange}
+            />
           </div>
-          <DecisionQuestionBlock
-            questions={section.decisionQuestions}
-            statuses={statuses}
-            onChange={onChange}
-          />
-        </div>
-      )}
+        ) : null;
+      })()}
 
       {/* Accordion-Gruppen – je nur EXPLANATION-Checkpoints / Situationsmerkmale */}
       <div style={{ marginBottom: "0.75rem" }}>

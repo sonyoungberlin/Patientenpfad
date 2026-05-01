@@ -384,7 +384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Ausstellung der AU benötigen wir Ihre Versichertendaten. Bitte kommen Sie kurz in die Praxis oder senden Sie uns ein Foto Ihrer Gesundheitskarte.",
+        "Für die Ausstellung der AU benötigen wir Ihre Versichertendaten. Bitte senden Sie uns über Doctolib entweder ein Foto Ihrer Gesundheitskarte von Vorder- und Rückseite oder eine elektronische Ersatzbescheinigung Ihrer Krankenkasse. Alternativ können Sie die Versichertendaten über die App Ihrer Krankenkasse digital übermitteln. Die Gesundheitskarte muss im laufenden Quartal nachgereicht bzw. eingelesen werden.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
