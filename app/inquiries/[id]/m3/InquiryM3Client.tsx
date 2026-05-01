@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   DecisionStatus,
+  ExplanationStatus,
   ExplanationOutputStatus,
   InquiryCheckpointKind,
   type Audience,
@@ -205,6 +206,22 @@ const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
   E_RECIPE_USE: "DIGITAL_REQUEST_REQUIRED",
   DIGITAL_REQUEST_REQUIRED: "E_RECIPE_USE",
 };
+
+/**
+ * Explanation-Checkpoints der Konfliktgruppe „Begründung / Rezeptart", die in M3
+ * automatisch sichtbar werden, wenn PRESCRIPTION_STATUTORY_POSSIBLE = NO gesetzt ist.
+ *
+ * Sichtbarkeitsregel: Diese Checkpoints erscheinen in M3 als auswählbare Zusatzinfos,
+ * auch wenn sie in M2 nicht explizit gesetzt wurden.
+ * Sie werden NICHT automatisch auf SHOW gesetzt – die MFA wählt aktiv eine Begründung aus.
+ * Wählt die MFA eine davon auf SHOW, wird der factStatus für diese auf YES gesetzt,
+ * damit der Renderer den zugehörigen Text ausgeben kann.
+ */
+const PRESCRIPTION_STATUTORY_NO_EXPLANATION_IDS = [
+  "PRESCRIPTION_PRIVATE_ONLY",
+  "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+  "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
+] as const;
 
 /**
  * Explanation-Konfliktgruppen für PRESCRIPTION in M3 [PROTOTYP].
@@ -825,6 +842,15 @@ export default function InquiryM3Client({
         }
         return next;
       });
+      // Lazy factStatus-Initialisierung: wenn die Begründung über den STATUTORY_POSSIBLE=NO-Pfad
+      // eingeblendet wurde (kein M2-Status gesetzt), factStatus auf YES setzen,
+      // damit der Renderer den zugehörigen Text ausgeben kann.
+      if (
+        (PRESCRIPTION_STATUTORY_NO_EXPLANATION_IDS as readonly string[]).includes(checkpointId) &&
+        !statuses[checkpointId]
+      ) {
+        setStatuses((prev) => ({ ...prev, [checkpointId]: ExplanationStatus.YES }));
+      }
     } else {
       setOutputStatuses((prev) => ({ ...prev, [checkpointId]: value }));
     }
@@ -961,6 +987,17 @@ export default function InquiryM3Client({
             const visibleSpecificCps = section.specificCheckpoints.filter((cp) => {
               if (cp.kind !== InquiryCheckpointKind.EXPLANATION) return true;
               const status = statuses[cp.id];
+              // PRESCRIPTION: Begründungs-Checkpoints (Konfliktgruppe „Rezeptart") auch ohne
+              // gesetzten M2-Status anzeigen, wenn STATUTORY_POSSIBLE = NO – damit die MFA
+              // eine Begründung auswählen kann (Denkpfad: „Kassenrezept nicht möglich").
+              // Keine automatische Ausgabe (outputStatus bleibt ungesetzt bis MFA klickt).
+              if (
+                section.inquiryId === PRESCRIPTION_INQUIRY_ID &&
+                (PRESCRIPTION_STATUTORY_NO_EXPLANATION_IDS as readonly string[]).includes(cp.id) &&
+                statuses["PRESCRIPTION_STATUTORY_POSSIBLE"] === "NO"
+              ) {
+                return true;
+              }
               if (status !== "YES" && status !== "NO") return false;
               // Nur anzeigen wenn für den gesetzten Status tatsächlich ein nicht-leerer Text vorhanden ist.
               // Reine M2-Schalter (textByStatus.YES = "") dürfen nicht als Zusatzinfo in M3 erscheinen.

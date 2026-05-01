@@ -473,8 +473,13 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     label: "Rezept wird ausgestellt",
     description: "Wenn bereits klar ist, dass ein Rezept ausgestellt wird.",
     checkpointIds: [
-      // Kasse/Privat-Unterscheidung: YES = Kassenrezept, NO = Privatrezept
+      // Kasse/Privat-Unterscheidung: YES = Kassenrezept, NO = kein Kassenrezept
       "PRESCRIPTION_STATUTORY_POSSIBLE",
+      // Begründung, wenn kein Kassenrezept (nur relevant bei STATUTORY_POSSIBLE = NO)
+      // Denkpfad: „Rezept wird ausgestellt, aber nicht als Kassenrezept"
+      "PRESCRIPTION_PRIVATE_ONLY",
+      "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+      "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
     ],
     defaultOpen: true,
   },

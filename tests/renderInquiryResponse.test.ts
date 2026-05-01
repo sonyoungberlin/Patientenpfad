@@ -1805,6 +1805,117 @@ describe("PRESCRIPTION_SPECIALIST_RESPONSIBLE – Checkpoint", () => {
 });
 
 // ---------------------------------------------------------------------------
+// PRESCRIPTION-Profil – STATUTORY_POSSIBLE=NO Begründungspfad (Renderer-Ebene)
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION – STATUTORY_POSSIBLE=NO Begründungspfad (Renderer)", () => {
+  it("STATUTORY_POSSIBLE=NO + PRIVATE_ONLY YES + SHOW → Privatrezept-Text erscheint (lazy factStatus)", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO,
+          PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          PRESCRIPTION_PRIVATE_ONLY: "SHOW" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Privatrezept")),
+    ).toBe(true);
+    // Sachaussage kein Kassenrezept bleibt unabhängig
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("nicht als Kassenrezept")),
+    ).toBe(true);
+  });
+
+  it("STATUTORY_POSSIBLE=NO + NO_PRESCRIPTION_REQUIRED YES + SHOW → Apotheke-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO,
+          PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "SHOW" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("kein Rezept")),
+    ).toBe(true);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("nicht als Kassenrezept")),
+    ).toBe(true);
+  });
+
+  it("STATUTORY_POSSIBLE=NO + SPECIALIST_RESPONSIBLE YES + SHOW → Facharztpraxis-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO,
+          PRESCRIPTION_SPECIALIST_RESPONSIBLE: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          PRESCRIPTION_SPECIALIST_RESPONSIBLE: "SHOW" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Facharztpraxis")),
+    ).toBe(true);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("nicht als Kassenrezept")),
+    ).toBe(true);
+  });
+
+  it("STATUTORY_POSSIBLE=NO + keine Begründung gewählt → kein Begründungstext, Sachaussage erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO,
+        },
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    // Sachaussage kein Kassenrezept erscheint
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("nicht als Kassenrezept")),
+    ).toBe(true);
+    // Keine Begründungstext, da keine Begründung gewählt
+    expect(
+      result.sections[0].attachedParagraphs.some((t) =>
+        t.includes("Privatrezept") || t.includes("kein Rezept erforderlich") || t.includes("Facharztpraxis"),
+      ),
+    ).toBe(false);
+  });
+
+  it("STATUTORY_POSSIBLE=NO + zwei Begründungen SHOW → Konfliktgruppe stellt sicher, dass nur eine gezeigt wird", () => {
+    // Nur PRIVATE_ONLY=SHOW, SPECIALIST_RESPONSIBLE=HIDE → nur Privatrezept
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: {
+          PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO,
+          PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.YES,
+          PRESCRIPTION_SPECIALIST_RESPONSIBLE: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          PRESCRIPTION_PRIVATE_ONLY: "SHOW" as ExplanationOutputStatus,
+          PRESCRIPTION_SPECIALIST_RESPONSIBLE: "HIDE" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Privatrezept")),
+    ).toBe(true);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Facharztpraxis")),
+    ).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // PRESCRIPTION-Profil – neue Actions
 // ---------------------------------------------------------------------------
 
