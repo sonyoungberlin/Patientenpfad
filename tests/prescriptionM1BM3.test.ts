@@ -254,11 +254,12 @@ describe("PRESCRIPTION_STATUTORY_POSSIBLE – M2/M3-Bereinigung", () => {
     expect((checkpoint.textByStatus as Record<string, string | undefined>)[ExplanationStatus.YES]).toBeUndefined();
   });
 
-  it("textByStatus.NO enthält Privatrezept-Hinweis", () => {
+  it("textByStatus.NO enthält Hinweis auf kein Kassenrezept (kein Privatrezept-Text mehr)", () => {
     const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_STATUTORY_POSSIBLE"];
     const noText = (checkpoint.textByStatus as Record<string, string | undefined>)[ExplanationStatus.NO];
     expect(typeof noText).toBe("string");
-    expect(noText).toContain("Privatrezept");
+    expect(noText).toContain("nicht als Kassenrezept ausgestellt");
+    expect(noText).not.toContain("Privatrezept");
   });
 });
 

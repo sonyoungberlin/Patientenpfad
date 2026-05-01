@@ -206,6 +206,30 @@ const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
   DIGITAL_REQUEST_REQUIRED: "E_RECIPE_USE",
 };
 
+/**
+ * Explanation-Konfliktgruppen für PRESCRIPTION in M3 [PROTOTYP].
+ *
+ * Innerhalb einer Gruppe darf maximal eine Explanation den outputStatus SHOW tragen.
+ * Wird eine Explanation auf SHOW gesetzt, werden alle anderen der Gruppe auf HIDE gesetzt.
+ * Toggle (HIDE auf aktiver Explanation) hebt die Einschränkung auf.
+ *
+ * Nur EXPLANATION-Checkpoints dürfen in diesen Gruppen erscheinen.
+ * Decision-Checkpoints (PRESCRIPTION_DECISION, PRESCRIPTION_STATUTORY_POSSIBLE) sind bewusst
+ * NICHT in Konfliktgruppen – sie deaktivieren sich nie gegenseitig.
+ *
+ * TODO (noch kein Checkpoint vorhanden):
+ *   - "kein Rezept erforderlich / frei verkäuflich"
+ *   - "Lifestyle / keine Kassenleistung"
+ *   - "Medikament nicht indiziert / Rezept nicht notwendig"
+ *   - "Facharzt zuständig" (ggf. PRESCRIPTION_BTM_ADHS_RULES / PRESCRIPTION_GYN_EXCLUSIVITY prüfen)
+ */
+const PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS: readonly (readonly string[])[] = [
+  // Gruppe "Begründung / Rezeptart": erklärt, warum kein Kassenrezept ausgestellt wurde.
+  // Bewusst NICHT in dieser Gruppe: PRESCRIPTION_NO_POSTAL_DELIVERY (Prozesshinweis, kein Rezeptartgrund),
+  // PRESCRIPTION_PATIENT_NOT_IN_GERMANY (Einlöseproblem, kein Rezeptartgrund).
+  ["PRESCRIPTION_PRIVATE_ONLY"],
+];
+
 /** Menschenlesbare Bezeichnung für actionCategory. */
 const ACTION_CATEGORY_LABELS: Record<string, string> = {
   PREPARATION: "Vorbereitung",
@@ -785,7 +809,22 @@ export default function InquiryM3Client({
   }
 
   function setOutputStatus(checkpointId: string, value: string) {
-    setOutputStatuses((prev) => ({ ...prev, [checkpointId]: value }));
+    // Apply conflict group exclusivity for PRESCRIPTION explanations:
+    // wenn eine Explanation auf SHOW gesetzt wird, werden alle anderen in derselben Gruppe auf HIDE gesetzt.
+    const conflictGroup = PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS.find((g) =>
+      (g as readonly string[]).includes(checkpointId),
+    );
+    if (conflictGroup && value === ExplanationOutputStatus.SHOW) {
+      setOutputStatuses((prev) => {
+        const next = { ...prev, [checkpointId]: value };
+        for (const id of conflictGroup) {
+          if (id !== checkpointId) next[id] = ExplanationOutputStatus.HIDE;
+        }
+        return next;
+      });
+    } else {
+      setOutputStatuses((prev) => ({ ...prev, [checkpointId]: value }));
+    }
   }
 
   async function handleConfirm() {

@@ -545,13 +545,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     classification: "OUTCOME",
     specificRole: "OUTCOME_INFO" as SpecificRole,
     questions: [
-      { id: "PRESCRIPTION_STATUTORY_POSSIBLE-Q1", text: "Ist das Rezept als Kassenrezept möglich?" },
+      { id: "PRESCRIPTION_STATUTORY_POSSIBLE-Q1", text: "Wird das Rezept als Kassenrezept ausgestellt?" },
     ],
     textByStatus: {
       // YES: bewusst still – Prozessdetail wird über E_RECIPE_USE (boundAction) transportiert
-      // NO: bewusst NICHT still – NO bedeutet fachlich „Privatrezept ausgestellt"
-      [ExplanationStatus.NO]:
-        "Das Medikament wurde als Privatrezept ausgestellt. Die Kosten werden nicht von der gesetzlichen Krankenkasse übernommen und müssen selbst bezahlt werden.",
+      // NO: nur Sachaussage – kein Kassenrezept ausgestellt.
+      //     Ob Privatrezept oder anderer Grund: wird über PRESCRIPTION_PRIVATE_ONLY o.ä. erklärt.
+      [ExplanationStatus.NO]: "Das Rezept wurde nicht als Kassenrezept ausgestellt.",
     },
   },
 

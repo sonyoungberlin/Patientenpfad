@@ -1393,18 +1393,19 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle sieben Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet alle neun Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PRIVATE_ONLY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(8);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(9);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1415,6 +1416,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "HOSPITAL_DISCHARGE_REPORT_MISSING",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
+      "PRESCRIPTION_PRIVATE_ONLY",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
     ]);
@@ -1425,7 +1427,6 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_KNOWN_MEDICATION");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_FOLLOW_UP");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_SPECIAL_TYPE");
-    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_PRIVATE_ONLY");
   });
 
   it("PRESCRIPTION-Profil hat keine gebundenen Global Checkpoints mehr (IS_CHRONIC_PATIENT, PATIENT_NOT_IN_GERMANY → profilspezifische Specifics)", () => {
@@ -1629,15 +1630,18 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sharedBottom.some((t) => t.includes("QR-Code"))).toBe(true);
   });
 
-  it("PRESCRIPTION_STATUTORY_POSSIBLE NO (POSSIBLE) → Privatrezept-Text in attachedParagraphs", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE NO (POSSIBLE) → Sachaussage kein Kassenrezept in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_STATUTORY_POSSIBLE: ExplanationStatus.NO },
       }),
     ]);
     expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("Privatrezept")),
+      result.sections[0].attachedParagraphs.some((t) => t.includes("nicht als Kassenrezept ausgestellt")),
     ).toBe(true);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Privatrezept")),
+    ).toBe(false);
   });
 
   it("PRESCRIPTION_STATUTORY_POSSIBLE YES (NOT_POSSIBLE) → kein eRezept-Text (OUTCOME-Guard)", () => {
@@ -1652,13 +1656,16 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     ).toBe(false);
   });
 
-  it("PRESCRIPTION_PRIVATE_ONLY YES → kein Output in attachedParagraphs (nicht mehr gebunden)", () => {
+  it("PRESCRIPTION_PRIVATE_ONLY YES → Privatrezept-Text in attachedParagraphs (jetzt gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_PRIVATE_ONLY: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    // Backward-Compat: kein explanationOutputStatuses → factStatus YES wirkt wie SHOW.
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Privatrezept")),
+    ).toBe(true);
   });
 
   it("PRESCRIPTION_GYN_EXCLUSIVITY YES → Text in attachedParagraphs", () => {
