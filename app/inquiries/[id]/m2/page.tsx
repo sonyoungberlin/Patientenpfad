@@ -66,33 +66,32 @@ export default async function InquiryM2Page({
     : [];
 
   // Build per-inquiry sections (SPECIFIC checkpoints + decision questions for M2)
-  const sections: M2SectionData[] = selectedIds
-    .map((inquiryId) => {
-      const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
-      if (!profile) return null;
-      const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
-      const specificCps = profile.specificCheckpointIds
-        .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
-        .filter((cp): cp is InquiryCheckpoint => !!cp);
-      const actionCps = (profile.boundActionCheckpointIds ?? [])
-        .filter((cpId) => !profile.boundActionConditions?.[cpId])
-        .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
-        .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
-      // Alle bound actions inkl. konditionaler – nur für den PRESCRIPTION-M2-Prototyp genutzt.
-      // Andere Profile ignorieren allBoundActionCheckpoints in SpecificSection.
-      const allBoundActionCps = (profile.boundActionCheckpointIds ?? [])
-        .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
-        .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
-      return {
-        inquiryId,
-        label: profile.label,
-        decisionQuestions: decisionCp?.questions ?? [],
-        specificCheckpoints: specificCps.map(toPlain),
-        actionCheckpoints: actionCps.map(toPlain),
-        allBoundActionCheckpoints: allBoundActionCps.map(toPlain),
-      };
-    })
-    .filter((s): s is M2SectionData => s !== null);
+  const sections: M2SectionData[] = [];
+  for (const inquiryId of selectedIds) {
+    const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
+    if (!profile) continue;
+    const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
+    const specificCps = profile.specificCheckpointIds
+      .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+      .filter((cp): cp is InquiryCheckpoint => !!cp);
+    const actionCps = (profile.boundActionCheckpointIds ?? [])
+      .filter((cpId) => !profile.boundActionConditions?.[cpId])
+      .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+      .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
+    // Alle bound actions inkl. konditionaler – nur für den PRESCRIPTION-M2-Prototyp genutzt.
+    // Andere Profile ignorieren allBoundActionCheckpoints in SpecificSection.
+    const allBoundActionCps = (profile.boundActionCheckpointIds ?? [])
+      .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+      .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
+    sections.push({
+      inquiryId,
+      label: profile.label,
+      decisionQuestions: decisionCp?.questions ?? [],
+      specificCheckpoints: specificCps.map(toPlain),
+      actionCheckpoints: actionCps.map(toPlain),
+      allBoundActionCheckpoints: allBoundActionCps.map(toPlain),
+    });
+  }
 
   // Deduplicate global EXPLANATION checkpoints across all selected inquiries
   const globalIds = new Set<string>();
