@@ -423,6 +423,8 @@ function SpecificSection({
 const PRESCRIPTION_SHORT_LABELS: Record<string, string> = {
   PRESCRIPTION_STATUTORY_POSSIBLE: "Kassenrezept / Privatrezept",
   PRESCRIPTION_PRIVATE_ONLY: "Privatrezept",
+  PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "Kein Rezept erforderlich",
+  PRESCRIPTION_SPECIALIST_RESPONSIBLE: "Facharzt zuständig",
   PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: "Facharztbericht fehlt",
   HOSPITAL_DISCHARGE_REPORT_MISSING: "Krankenhaus-/Entlassbericht fehlt",
   PRESCRIPTION_BTM_ADHS_RULES: "BtM / ADHS",
@@ -527,6 +529,10 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "PRESCRIPTION_STATUTORY_POSSIBLE",
       // Privatrezept-Begründung: YES = Präparat nur privat verordnungsfähig
       "PRESCRIPTION_PRIVATE_ONLY",
+      // Kein Rezept erforderlich / frei verkäuflich
+      "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+      // Facharzt zuständig für diese Verordnung
+      "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       // Kein Postversand – spezifischer Ablehnungshinweis
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
       // Auslandsaufenthalt: Einlösung nur in deutschen Apotheken möglich

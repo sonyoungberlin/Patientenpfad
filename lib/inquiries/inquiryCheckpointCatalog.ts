@@ -502,6 +502,46 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: {
+    id: "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+    label: "Kein Rezept erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "OUTCOME_INFO" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED-Q1", text: "Ist für das angefragte Präparat kein Rezept erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für dieses Präparat ist kein Rezept erforderlich. Sie können es direkt in der Apotheke erwerben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "kein Rezept erforderlich / frei verkäuflich",
+    },
+  },
+
+  PRESCRIPTION_SPECIALIST_RESPONSIBLE: {
+    id: "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
+    label: "Facharzt zuständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_SPECIALIST_RESPONSIBLE-Q1", text: "Soll die Verordnung über die zuständige Facharztpraxis erfolgen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bitte wenden Sie sich für diese Verordnung an die zuständige Facharztpraxis.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Verordnung über Facharztpraxis",
+    },
+  },
+
   PRESCRIPTION_GYN_EXCLUSIVITY: {
     id: "PRESCRIPTION_GYN_EXCLUSIVITY",
     label: "Gynäkologische Verordnung / Pille",

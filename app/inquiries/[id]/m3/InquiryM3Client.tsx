@@ -218,16 +218,19 @@ const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
  * NICHT in Konfliktgruppen – sie deaktivieren sich nie gegenseitig.
  *
  * TODO (noch kein Checkpoint vorhanden):
- *   - "kein Rezept erforderlich / frei verkäuflich"
  *   - "Lifestyle / keine Kassenleistung"
  *   - "Medikament nicht indiziert / Rezept nicht notwendig"
- *   - "Facharzt zuständig" (ggf. PRESCRIPTION_BTM_ADHS_RULES / PRESCRIPTION_GYN_EXCLUSIVITY prüfen)
  */
 const PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS: readonly (readonly string[])[] = [
-  // Gruppe "Begründung / Rezeptart": erklärt, warum kein Kassenrezept ausgestellt wurde.
+  // Gruppe "Begründung / Rezeptart": erklärt, warum kein Kassenrezept ausgestellt wurde,
+  // oder warum kein Rezept ausgestellt wird.
   // Bewusst NICHT in dieser Gruppe: PRESCRIPTION_NO_POSTAL_DELIVERY (Prozesshinweis, kein Rezeptartgrund),
   // PRESCRIPTION_PATIENT_NOT_IN_GERMANY (Einlöseproblem, kein Rezeptartgrund).
-  ["PRESCRIPTION_PRIVATE_ONLY"],
+  [
+    "PRESCRIPTION_PRIVATE_ONLY",
+    "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+    "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
+  ],
 ];
 
 /** Menschenlesbare Bezeichnung für actionCategory. */

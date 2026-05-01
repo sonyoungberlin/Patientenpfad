@@ -1393,19 +1393,21 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle neun Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet alle elf Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PRIVATE_ONLY");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_PRESCRIPTION_REQUIRED");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_RESPONSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(9);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(11);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1417,6 +1419,8 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_PRIVATE_ONLY",
+      "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+      "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
     ]);
@@ -1703,6 +1707,97 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PRESCRIPTION_NO_POSTAL_DELIVERY: ExplanationStatus.NO },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PRESCRIPTION-Profil – neue Explanation-Checkpoints (kein Rezept, Facharzt)
+// ---------------------------------------------------------------------------
+
+describe("PRESCRIPTION_NO_PRESCRIPTION_REQUIRED – Checkpoint", () => {
+  it("ist im Katalog als EXPLANATION / SPECIFIC / ATTACHED definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_NO_PRESCRIPTION_REQUIRED"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+  });
+
+  it("YES-Text enthält 'kein Rezept' und 'Apotheke'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_NO_PRESCRIPTION_REQUIRED"];
+    const text = (cp.textByStatus as Record<string, string | undefined>)[ExplanationStatus.YES];
+    expect(typeof text).toBe("string");
+    expect(text).toContain("kein Rezept");
+    expect(text).toContain("Apotheke");
+  });
+
+  it("YES + SHOW → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "SHOW" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("kein Rezept")),
+    ).toBe(true);
+  });
+
+  it("YES + HIDE → kein Output in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "HIDE" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("PRESCRIPTION_SPECIALIST_RESPONSIBLE – Checkpoint", () => {
+  it("ist im Katalog als EXPLANATION / SPECIFIC / ATTACHED definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_SPECIALIST_RESPONSIBLE"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+  });
+
+  it("YES-Text enthält 'Facharztpraxis'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["PRESCRIPTION_SPECIALIST_RESPONSIBLE"];
+    const text = (cp.textByStatus as Record<string, string | undefined>)[ExplanationStatus.YES];
+    expect(typeof text).toBe("string");
+    expect(text).toContain("Facharztpraxis");
+  });
+
+  it("YES + SHOW → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_SPECIALIST_RESPONSIBLE: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          PRESCRIPTION_SPECIALIST_RESPONSIBLE: "SHOW" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Facharztpraxis")),
+    ).toBe(true);
+  });
+
+  it("YES + HIDE → kein Output in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: { PRESCRIPTION_SPECIALIST_RESPONSIBLE: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          PRESCRIPTION_SPECIALIST_RESPONSIBLE: "HIDE" as ExplanationOutputStatus,
+        } as Record<string, ExplanationOutputStatus>,
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
