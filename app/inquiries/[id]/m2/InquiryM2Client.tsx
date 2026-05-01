@@ -561,17 +561,20 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
   },
 ];
 
-/** Eine einzelne aufklappbare Accordion-Gruppe im PRESCRIPTION M2 Prototyp. */
+/** Eine einzelne aufklappbare Accordion-Gruppe im M2 Prototyp (PRESCRIPTION / AU). */
 function PrescriptionGroupAccordion({
   group,
   checkpoints,
   statuses,
   onChange,
+  shortLabels = PRESCRIPTION_SHORT_LABELS,
 }: {
   group: PrescriptionGroup;
   checkpoints: PlainCheckpoint[];
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  /** Optionale kurze UI-Labels pro Checkpoint-ID. Defaults auf PRESCRIPTION_SHORT_LABELS. */
+  shortLabels?: Record<string, string>;
 }) {
   const hasAnsweredCheckpoint = checkpoints.some(
     (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
@@ -628,7 +631,7 @@ function PrescriptionGroupAccordion({
             checkpoints.map((cp) => (
               <ExplanationQuestionRow
                 key={cp.id}
-                checkpoint={{ ...cp, label: PRESCRIPTION_SHORT_LABELS[cp.id] ?? cp.label }}
+                checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
                 value={statuses[cp.id]}
                 onChange={onChange}
               />
@@ -729,6 +732,198 @@ function PrescriptionSpecificSection({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Ende PRESCRIPTION M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AU M2 Gruppen-Prototyp
+// [PROTOTYP – hartcodiert, nur für AU, reversibel]
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Kurze UI-Labels für AU Checkpoints.
+ * Lokale Überschreibung nur für den M2-Gruppenprototyp – Katalog bleibt unverändert.
+ */
+const AU_SHORT_LABELS: Record<string, string> = {
+  AU_BACKDATE_LIMIT: "Rückdatierungsgrenze",
+  AU_DURATION_LIMIT: "AU-Dauer",
+  AU_NEW_PATIENT_LIMIT: "Neupatient",
+  AU_WORK_ACCIDENT: "Arbeitsunfall / D-Arzt",
+  AU_CHILD_SICK: "Kind krank / Kinderarzt",
+  AU_DIGITAL_AU_PROCESS: "Digitaler AU-Prozess",
+  AU_NO_APPOINTMENT_ACUTE: "Akute Beschwerden",
+  AU_MEDICAL_CONSULTATION_REQUIRED: "Ärztliche Konsultation",
+  AU_CONTINUITY_REQUIRED: "Folge-AU / Lücke",
+  AU_RETURN_TO_WORK: "Gesundschreibung",
+};
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den AU M2 Prototyp.
+ *
+ * Ein Checkpoint kann in mehreren Gruppen erscheinen – der Status bleibt global
+ * synchron (ein einziger Record-Eintrag). IDs ohne Profil-Eintrag werden robust
+ * übersprungen. TODO-Kommentare markieren Checkpoints, die noch nicht im Katalog
+ * existieren.
+ *
+ * [PROTOTYP – hartcodiert, reversibel. Zum Rückgängigmachen: Render-Loop in
+ *  InquiryM2Client wiederherstellen, diese Konstante und die zugehörigen
+ *  Komponenten entfernen.]
+ */
+const AU_GROUPS: PrescriptionGroup[] = [
+  // ── 1. Es fehlen noch Angaben ─────────────────────────────────────────────
+  {
+    id: "fehlende_angaben",
+    label: "Es fehlen noch Angaben",
+    description: "Prozess ist blockiert, weil notwendige Daten oder Unterlagen fehlen.",
+    checkpointIds: [
+      // TODO: AU_MISSING_EGK – Checkpoint existiert noch nicht im Katalog
+      "AU_NEW_PATIENT_LIMIT", // Neupatient – AU-Höchstdauer
+      // TODO: AU_MISSING_QUESTIONNAIRE – Checkpoint existiert noch nicht im Katalog
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 2. Untersuchung erforderlich ──────────────────────────────────────────
+  {
+    id: "untersuchung",
+    label: "Untersuchung erforderlich",
+    description: "Persönliche ärztliche Abklärung ist notwendig, bevor eine Entscheidung getroffen werden kann.",
+    checkpointIds: [
+      "AU_NO_APPOINTMENT_ACUTE",           // Akute Beschwerden – kein kurzfristiger Termin
+      "AU_MEDICAL_CONSULTATION_REQUIRED",  // Ärztliche Konsultation erforderlich
+      // TODO: AU_EXAM_REQUIRED – Checkpoint existiert noch nicht im Katalog
+      // TODO: AU_FOLLOWUP_EXAM_REQUIRED – Checkpoint existiert noch nicht im Katalog
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 3. Regel / Grenze ─────────────────────────────────────────────────────
+  {
+    id: "regel_grenze",
+    label: "Regel / Grenze",
+    description: "Gesetzliche oder praxisinterne Einschränkung ist relevant.",
+    checkpointIds: [
+      "AU_BACKDATE_LIMIT",  // Rückdatierungsgrenze (≤ 2 Tage)
+      "AU_DURATION_LIMIT",  // AU-Dauer überschreitet Rahmen (@deprecated – wird angezeigt, falls im Profil)
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 4. Zuständigkeit ──────────────────────────────────────────────────────
+  {
+    id: "zustaendigkeit",
+    label: "Zuständigkeit",
+    description: "Eine andere Praxis oder ein anderer Arzt ist für diesen Fall zuständig.",
+    checkpointIds: [
+      "AU_WORK_ACCIDENT",  // Arbeitsunfall / Wegeunfall → D-Arzt zuständig
+      "AU_CHILD_SICK",     // Kind krank → Kinderarzt zuständig
+      // TODO: AU_D_ARZT_REQUIRED – Checkpoint existiert noch nicht im Katalog
+      // TODO: AU_CHILD_DOCTOR_REQUIRED – Checkpoint existiert noch nicht im Katalog
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 5. Verlauf / Sonderfall ───────────────────────────────────────────────
+  {
+    id: "verlauf_sonderfall",
+    label: "Verlauf / Sonderfall",
+    description: "Besonderer Kontext zur bestehenden AU – z. B. Folge-AU oder Gesundschreibung.",
+    checkpointIds: [
+      // TODO: AU_FOLLOWUP – Checkpoint existiert noch nicht im Katalog
+      "AU_CONTINUITY_REQUIRED",  // Folge-AU / Lückenlosigkeit (@deprecated – falls im Profil)
+      "AU_RETURN_TO_WORK",       // Vorzeitige Arbeitsaufnahme / Gesundschreibung (@deprecated – falls im Profil)
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 6. Erklärung / Rückfrage ──────────────────────────────────────────────
+  {
+    id: "erklaeren",
+    label: "Erklärung / Rückfrage",
+    description: "Kommunikative Ergänzungen – z. B. digitaler Prozess oder Terminhinweis.",
+    checkpointIds: [
+      "AU_DIGITAL_AU_PROCESS",  // Digitaler AU-Anfrageprozess erklären
+      "AU_NO_APPOINTMENT_ACUTE", // Akute Beschwerden – kann in mehreren Gruppen erscheinen
+    ],
+    defaultOpen: false,
+  },
+];
+
+/**
+ * Ersetzt SpecificSection für das AU-Profil mit situationsbasierten
+ * Accordion-Gruppen. Alle anderen Profile nutzen weiterhin SpecificSection.
+ *
+ * M2 bleibt reine Klär-/Orientierungsebene: nur EXPLANATION-Checkpoints /
+ * Situationsmerkmale, keine ACTION-Toggles. Actions werden in M3 durch
+ * Trigger-Logik freigeschaltet.
+ *
+ * [PROTOTYP – hartcodiert, reversibel.]
+ */
+function AUSpecificSection({
+  section,
+  statuses,
+  onChange,
+}: {
+  section: M2SectionData;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
+  // Schneller Lookup: Checkpoint-ID → PlainCheckpoint
+  // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht angezeigt.
+  const cpById = new Map<string, PlainCheckpoint>(
+    section.specificCheckpoints
+      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
+      .map((cp) => [cp.id, cp]),
+  );
+
+  return (
+    <section style={{ marginBottom: "2rem" }}>
+      <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
+      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
+        Wähle aus, welche Situation am besten passt:
+      </p>
+
+      {/* Decision-Klärungsfragen – immer sichtbar */}
+      {section.decisionQuestions.length > 0 && (
+        <div style={{ marginBottom: "1rem" }}>
+          <div
+            className="text-muted text-small"
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+          >
+            <span aria-hidden="true">? </span>Klärungsfragen
+          </div>
+          <DecisionQuestionBlock
+            questions={section.decisionQuestions}
+            statuses={statuses}
+            onChange={onChange}
+          />
+        </div>
+      )}
+
+      {/* Accordion-Gruppen – je nur EXPLANATION-Checkpoints / Situationsmerkmale */}
+      <div style={{ marginBottom: "0.75rem" }}>
+        {AU_GROUPS.map((group) => {
+          const groupCheckpoints = group.checkpointIds
+            .map((id) => cpById.get(id))
+            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+
+          return (
+            <PrescriptionGroupAccordion
+              key={group.id}
+              group={group}
+              checkpoints={groupCheckpoints}
+              statuses={statuses}
+              onChange={onChange}
+              shortLabels={AU_SHORT_LABELS}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ende AU M2 Gruppen-Prototyp
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Section „Weitere passende Hinweise" – standardmäßig eingeklappt. */
@@ -884,10 +1079,17 @@ export default function InquiryM2Client({
       )}
 
       {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen.
-           PRESCRIPTION nutzt den Gruppen-Prototyp, alle anderen Profile SpecificSection. */}
+           PRESCRIPTION nutzt den Gruppen-Prototyp, AU ebenso, alle anderen Profile SpecificSection. */}
       {sections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
+            key={section.inquiryId}
+            section={section}
+            statuses={statuses}
+            onChange={setStatus}
+          />
+        ) : section.inquiryId === "AU" ? (
+          <AUSpecificSection
             key={section.inquiryId}
             section={section}
             statuses={statuses}
@@ -903,10 +1105,10 @@ export default function InquiryM2Client({
         ),
       )}
 
-      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION.
-           Für PRESCRIPTION sind die Actions bereits in die Accordion-Gruppen integriert. */}
+      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU.
+           Für PRESCRIPTION und AU werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
       {profileActionCheckpoints.length > 0 &&
-        !sections.some((s) => s.inquiryId === "PRESCRIPTION") && (
+        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU") && (
           <WeitereHinweiseSection
             profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}
