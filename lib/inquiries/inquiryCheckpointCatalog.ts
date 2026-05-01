@@ -1199,7 +1199,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Das Rezept wird als eRezept ausgestellt und kann mit der elektronischen Gesundheitskarte (eGK) in der Apotheke eingelöst werden. Alternativ erhalten Sie einen QR-Code als PDF oder in Papierform.",
+        "Sie können das eRezept mit Ihrer elektronischen Gesundheitskarte (eGK) in der Apotheke einlösen. Alternativ erhalten Sie einen QR-Code als PDF oder in Papierform.",
     },
   },
 
