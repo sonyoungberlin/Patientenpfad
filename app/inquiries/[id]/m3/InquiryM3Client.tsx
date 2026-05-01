@@ -189,7 +189,6 @@ const PRESCRIPTION_M3_TRIGGER_GROUPS: Array<{
  */
 const PRESCRIPTION_ALL_ACTION_IDS = [
   "E_RECIPE_USE",
-  "DIGITAL_REQUEST_REQUIRED",
   "PHARMACY_INFORMATION",
   "DOCUMENT_UPLOAD",
   "DIGITAL_REQUEST",
@@ -204,8 +203,15 @@ const PRESCRIPTION_ALL_ACTION_IDS = [
  */
 const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
   E_RECIPE_USE: "DIGITAL_REQUEST_REQUIRED",
-  DIGITAL_REQUEST_REQUIRED: "E_RECIPE_USE",
 };
+
+/**
+ * Bound-Action-IDs, die in M3 nicht als Toggle erscheinen dürfen.
+ * Diese Actions werden aus allen Render-Pfaden (Trigger-basiert und Standard)
+ * herausgefiltert. Sie können weiterhin als interne Status-Trigger wirken,
+ * sind aber für die MFA unsichtbar.
+ */
+const M3_HIDDEN_BOUND_ACTION_IDS = new Set(["DIGITAL_REQUEST_REQUIRED"]);
 
 /**
  * Explanation-Checkpoints der Konfliktgruppe „Begründung / Rezeptart", die in M3
@@ -1370,8 +1376,10 @@ export default function InquiryM3Client({
                   // Filtere Checkpoints nach Sichtbarkeitsregeln:
                   // – Hat der Checkpoint showWhenAny oder hideWhenAny, gelten die Bedingungen.
                   // – Andernfalls wird er nur angezeigt, wenn er in M2 auf ACTIVE/INACTIVE gesetzt wurde.
+                  // – Checkpoints in M3_HIDDEN_BOUND_ACTION_IDS werden nie angezeigt.
                   const SET_STATUSES = ["ACTIVE", "INACTIVE"] as const;
                   const setCps = sec.boundActionCheckpoints.filter((cp) => {
+                    if (M3_HIDDEN_BOUND_ACTION_IDS.has(cp.id)) return false;
                     const hasConditions = cp.showWhenAny !== undefined || cp.hideWhenAny !== undefined;
                     if (!hasConditions) {
                       return (SET_STATUSES as readonly string[]).includes(statuses[cp.id]);
