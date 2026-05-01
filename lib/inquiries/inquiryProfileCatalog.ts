@@ -45,11 +45,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
       "AU_NEW_PATIENT_LIMIT",
+      "AU_MISSING_EGK",
+      "AU_MISSING_QUESTIONNAIRE",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
       "AU_DIGITAL_AU_PROCESS",
       "AU_NO_APPOINTMENT_ACUTE",
       "AU_MEDICAL_CONSULTATION_REQUIRED",
+      "AU_FOLLOWUP",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.

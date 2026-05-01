@@ -745,15 +745,15 @@ function PrescriptionSpecificSection({
  */
 const AU_SHORT_LABELS: Record<string, string> = {
   AU_BACKDATE_LIMIT: "Rückdatierungsgrenze",
-  AU_DURATION_LIMIT: "AU-Dauer",
   AU_NEW_PATIENT_LIMIT: "Neupatient",
+  AU_MISSING_EGK: "Versichertendaten (eGK)",
+  AU_MISSING_QUESTIONNAIRE: "Angaben Erkrankung",
   AU_WORK_ACCIDENT: "Arbeitsunfall / D-Arzt",
   AU_CHILD_SICK: "Kind krank / Kinderarzt",
   AU_DIGITAL_AU_PROCESS: "Digitaler AU-Prozess",
   AU_NO_APPOINTMENT_ACUTE: "Akute Beschwerden",
   AU_MEDICAL_CONSULTATION_REQUIRED: "Ärztliche Konsultation",
-  AU_CONTINUITY_REQUIRED: "Folge-AU / Lücke",
-  AU_RETURN_TO_WORK: "Gesundschreibung",
+  AU_FOLLOWUP: "Folge-AU / Verlängerung",
 };
 
 /**
@@ -775,9 +775,8 @@ const AU_GROUPS: PrescriptionGroup[] = [
     label: "Es fehlen noch Angaben",
     description: "Prozess ist blockiert, weil notwendige Daten oder Unterlagen fehlen.",
     checkpointIds: [
-      // TODO: AU_MISSING_EGK – Checkpoint existiert noch nicht im Katalog
-      "AU_NEW_PATIENT_LIMIT", // Neupatient – AU-Höchstdauer
-      // TODO: AU_MISSING_QUESTIONNAIRE – Checkpoint existiert noch nicht im Katalog
+      "AU_MISSING_EGK",           // Versichertendaten (eGK) fehlen
+      "AU_MISSING_QUESTIONNAIRE", // Angaben zur Erkrankung fehlen
     ],
     defaultOpen: false,
   },
@@ -788,10 +787,8 @@ const AU_GROUPS: PrescriptionGroup[] = [
     label: "Untersuchung erforderlich",
     description: "Persönliche ärztliche Abklärung ist notwendig, bevor eine Entscheidung getroffen werden kann.",
     checkpointIds: [
-      "AU_NO_APPOINTMENT_ACUTE",           // Akute Beschwerden – kein kurzfristiger Termin
-      "AU_MEDICAL_CONSULTATION_REQUIRED",  // Ärztliche Konsultation erforderlich
-      // TODO: AU_EXAM_REQUIRED – Checkpoint existiert noch nicht im Katalog
-      // TODO: AU_FOLLOWUP_EXAM_REQUIRED – Checkpoint existiert noch nicht im Katalog
+      "AU_NO_APPOINTMENT_ACUTE",          // Akute Beschwerden – kein kurzfristiger Termin
+      "AU_MEDICAL_CONSULTATION_REQUIRED", // Ärztliche Konsultation erforderlich
     ],
     defaultOpen: false,
   },
@@ -802,8 +799,8 @@ const AU_GROUPS: PrescriptionGroup[] = [
     label: "Regel / Grenze",
     description: "Gesetzliche oder praxisinterne Einschränkung ist relevant.",
     checkpointIds: [
-      "AU_BACKDATE_LIMIT",  // Rückdatierungsgrenze (≤ 2 Tage)
-      "AU_DURATION_LIMIT",  // AU-Dauer überschreitet Rahmen (@deprecated – wird angezeigt, falls im Profil)
+      "AU_BACKDATE_LIMIT",   // Rückdatierungsgrenze (≤ 2 Tage)
+      "AU_NEW_PATIENT_LIMIT", // Neupatient – AU-Höchstdauer
     ],
     defaultOpen: false,
   },
@@ -814,10 +811,8 @@ const AU_GROUPS: PrescriptionGroup[] = [
     label: "Zuständigkeit",
     description: "Eine andere Praxis oder ein anderer Arzt ist für diesen Fall zuständig.",
     checkpointIds: [
-      "AU_WORK_ACCIDENT",  // Arbeitsunfall / Wegeunfall → D-Arzt zuständig
-      "AU_CHILD_SICK",     // Kind krank → Kinderarzt zuständig
-      // TODO: AU_D_ARZT_REQUIRED – Checkpoint existiert noch nicht im Katalog
-      // TODO: AU_CHILD_DOCTOR_REQUIRED – Checkpoint existiert noch nicht im Katalog
+      "AU_WORK_ACCIDENT", // Arbeitsunfall / Wegeunfall → D-Arzt zuständig
+      "AU_CHILD_SICK",    // Kind krank → Kinderarzt zuständig
     ],
     defaultOpen: false,
   },
@@ -826,11 +821,9 @@ const AU_GROUPS: PrescriptionGroup[] = [
   {
     id: "verlauf_sonderfall",
     label: "Verlauf / Sonderfall",
-    description: "Besonderer Kontext zur bestehenden AU – z. B. Folge-AU oder Gesundschreibung.",
+    description: "Besonderer Kontext zur bestehenden AU – z. B. Folge-AU.",
     checkpointIds: [
-      // TODO: AU_FOLLOWUP – Checkpoint existiert noch nicht im Katalog
-      "AU_CONTINUITY_REQUIRED",  // Folge-AU / Lückenlosigkeit (@deprecated – falls im Profil)
-      "AU_RETURN_TO_WORK",       // Vorzeitige Arbeitsaufnahme / Gesundschreibung (@deprecated – falls im Profil)
+      "AU_FOLLOWUP", // Folge-AU / Verlängerung
     ],
     defaultOpen: false,
   },
@@ -843,6 +836,7 @@ const AU_GROUPS: PrescriptionGroup[] = [
     checkpointIds: [
       "AU_DIGITAL_AU_PROCESS",  // Digitaler AU-Anfrageprozess erklären
       "AU_NO_APPOINTMENT_ACUTE", // Akute Beschwerden – kann in mehreren Gruppen erscheinen
+      "AU_BACKDATE_LIMIT",       // Rückdatierungsgrenze – Duplikat für Erklärungskontext
     ],
     defaultOpen: false,
   },

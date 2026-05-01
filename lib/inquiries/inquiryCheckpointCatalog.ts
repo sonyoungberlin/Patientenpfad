@@ -370,6 +370,68 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- AU MISSING INFO CHECKPOINTS ----
+
+  AU_MISSING_EGK: {
+    id: "AU_MISSING_EGK",
+    label: "Versichertendaten fehlen (eGK)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "AU_MISSING_EGK-Q1", text: "Die Versichertendaten (eGK) liegen nicht vor." },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung der AU benötigen wir Ihre Versichertendaten. Bitte kommen Sie kurz in die Praxis oder senden Sie uns ein Foto Ihrer Gesundheitskarte.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versichertendaten fehlen (eGK)",
+    },
+  },
+
+  AU_MISSING_QUESTIONNAIRE: {
+    id: "AU_MISSING_QUESTIONNAIRE",
+    label: "Angaben zur Erkrankung fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "AU_MISSING_QUESTIONNAIRE-Q1", text: "Es fehlen noch Angaben zur aktuellen Erkrankung." },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bitte füllen Sie die Kurz-Anamnese aus, damit wir Ihre Anfrage bearbeiten können.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Angaben zur Erkrankung fehlen",
+    },
+  },
+
+  AU_FOLLOWUP: {
+    id: "AU_FOLLOWUP",
+    label: "Folge-AU / Verlängerung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "AU_FOLLOWUP-Q1", text: "Es handelt sich um eine Folge-AU." },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine lückenlose Krankschreibung muss die Folgebescheinigung rechtzeitig erfolgen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Folge-AU / Verlängerung",
+    },
+  },
+
   // ---- PRESCRIPTION DECISION ----
 
   PRESCRIPTION_DECISION: {
