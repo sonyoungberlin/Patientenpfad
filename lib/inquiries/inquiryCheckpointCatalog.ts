@@ -404,7 +404,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte füllen Sie die Kurz-Anamnese aus, damit wir Ihre Anfrage bearbeiten können.",
+        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch Angaben zu Ihren aktuellen Beschwerden.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
