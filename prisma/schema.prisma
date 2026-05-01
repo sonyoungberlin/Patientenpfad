@@ -207,6 +207,9 @@ model PatientQuestionnaireSession {
   /// Zeitpunkt der Einreichung durch den Patienten
   submitted_at DateTime?
 
+  /// Wer den Fragebogen eingereicht hat: "patient" | "contact_person"
+  submitted_by String @default("patient")
+
   /// Optionaler Verifikations-Hash (SHA-256 des Geburtsdatums, nie Klartext)
   birth_date_hash String?
 }

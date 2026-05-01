@@ -176,6 +176,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
     },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]:
+          "Die Arbeitsunfähigkeitsbescheinigung wurde ausgestellt.",
+        [DecisionStatus.NOT_POSSIBLE]:
+          "Die angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
+      },
+    },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "AU ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]: "AU nicht ausgestellt.",
@@ -380,6 +388,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]: "Das von Ihnen angefragte Rezept wurde nicht ausgestellt.",
+    },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]: "Das Rezept wurde ausgestellt.",
+        [DecisionStatus.NOT_POSSIBLE]: "Das angefragte Rezept wurde nicht ausgestellt.",
+      },
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Rezept ausgestellt.",
@@ -608,6 +622,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte kommen Sie nüchtern zur Blutentnahme. Essen Sie mindestens acht Stunden vorher nichts; Wasser ist erlaubt, Kaffee bitte nicht.",
     },
+    textByAudience: {
+      contact_person:
+        "Zur Blutentnahme nüchtern erscheinen (mindestens 8 Stunden vorher nichts essen; Wasser ist erlaubt, Kaffee nicht).",
+    },
   },
 
   /** @deprecated Abrechnungsaussagen gehören in BILLING. Ersetzt durch BILLING_COST_NOT_COVERED + BILLING_EXTERNAL_PROVIDER. Nicht mehr in LAB.specificCheckpointIds. */
@@ -749,6 +767,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]: "Bitte bringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit.",
     },
+    textByAudience: {
+      contact_person:
+        "Bitte die Überweisung im Original zum Termin mitbringen.",
+    },
   },
 
   LAB_COST_COVERED_BY_REFERRAL: {
@@ -886,6 +908,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Durch profilspezifischen SpecificCheckpoint PRESCRIPTION_PATIENT_NOT_IN_GERMANY ersetzt.
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   PATIENT_NOT_IN_GERMANY: {
     id: "PATIENT_NOT_IN_GERMANY",
     label: "Aufenthaltsort außerhalb Deutschland",
@@ -927,6 +953,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Durch profilspezifischen SpecificCheckpoint PRESCRIPTION_CHRONIC_PATIENT ersetzt.
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   IS_CHRONIC_PATIENT: {
     id: "IS_CHRONIC_PATIENT",
     label: "Chronische Erkrankung",
@@ -938,6 +968,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  /**
+   * @deprecated Durch profilspezifische SpecificCheckpoints ersetzt
+   * (AU_MEDICAL_CONSULTATION_REQUIRED, LAB_MEDICAL_CONSULTATION_REQUIRED,
+   * REF_MEDICAL_CONSULTATION_REQUIRED, MEDICAL_DOCUMENT_CONSULTATION_REQUIRED).
+   * Nicht mehr aktiv in Profilen gebunden.
+   */
   MEDICAL_CONSULTATION_REQUIRED: {
     id: "MEDICAL_CONSULTATION_REQUIRED",
     label: "Ärztliche Konsultation erforderlich",
@@ -985,9 +1021,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.",
     },
+    textByAudience: {
+      contact_person:
+        "Bitte den Impfpass oder vorhandene Impfnachweise zum Termin mitbringen.",
+    },
   },
-
-  // ---- GLOBAL ACTIONS ----
 
   DIGITAL_REQUEST: {
     id: "DIGITAL_REQUEST",
@@ -1115,6 +1153,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Bitte laden Sie relevante Unterlagen über Ihren Doctolib Account hoch.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte relevante Unterlagen über den Doctolib-Account hochladen.",
     },
   },
 
@@ -1265,6 +1307,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Sie können sich mit Ihrem Anliegen im Rahmen eines Akuttermins oder der offenen Sprechstunde vorstellen.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Für Ihr Anliegen ist diese Terminart nicht geeignet.",
+    },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]:
+          "Für das Anliegen ist eine persönliche Vorstellung im Rahmen eines Akuttermins oder der offenen Sprechstunde möglich.",
+        // NOT_POSSIBLE fällt auf textByStatus zurück
+      },
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Akutvorstellung empfohlen.",
@@ -1551,6 +1600,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Ihre Überweisung wurde ausgestellt und liegt zur Abholung in der Praxis bereit.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Überweisung wurde nicht ausgestellt.",
+    },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]:
+          "Die Überweisung wurde ausgestellt und liegt zur Abholung in der Praxis bereit.",
+        [DecisionStatus.NOT_POSSIBLE]:
+          "Die angefragte Überweisung wurde nicht ausgestellt.",
+      },
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Überweisung ausgestellt.",
@@ -2386,6 +2443,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte teilen Sie uns Ihren vollständigen Namen und Ihr Geburtsdatum mit, damit wir Ihre Daten korrekt abgleichen können.",
     },
+    textByAudience: {
+      contact_person:
+        "Bitte teilen Sie uns den vollständigen Namen und das Geburtsdatum der Patientin / des Patienten mit, damit wir die Daten korrekt abgleichen können.",
+    },
   },
 
   ONBOARDING_DATA_MISSING_CONTEXT: {
@@ -2411,6 +2472,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Leider konnten wir Sie nicht als Patient in unserem System finden.",
+    },
+    textByAudience: {
+      contact_person:
+        "Die angegebene Person konnte nicht in unserem System gefunden werden.",
     },
   },
 
@@ -2451,6 +2516,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
+    },
+    textByAudience: {
+      contact_person:
+        "Für Fragen zur Kostenübernahme oder Abrechnung bitte direkt an die zuständige Krankenkasse oder externe Stelle wenden.",
     },
   },
 
@@ -2609,7 +2678,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Ihre Nachricht ist bei uns eingegangen. Für die weitere Bearbeitung benötigen wir noch strukturierte Angaben.",
+        "Ihre Nachricht ist bei uns eingegangen.",
+    },
+    textByAudience: {
+      contact_person:
+        "Die Nachricht für Ihre Angehörige / Ihren Angehörigen ist bei uns eingegangen.",
     },
   },
 
@@ -2622,7 +2695,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Vielen Dank für das Ausfüllen des Fragebogens. Wir haben Ihre Angaben geprüft.",
+        "Vielen Dank für das Ausfüllen des Fragebogens.",
+    },
+    textByAudience: {
+      contact_person:
+        "Vielen Dank für das Ausfüllen des Fragebogens für Ihre Angehörige / Ihren Angehörigen.",
     },
   },
 
@@ -2635,7 +2712,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bei der Durchsicht Ihrer Unterlagen ist uns aufgefallen, dass noch Angaben fehlen.",
+        "Bei der Durchsicht Ihrer Unterlagen ist uns etwas aufgefallen.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bei der Durchsicht der Unterlagen Ihrer Angehörigen / Ihres Angehörigen ist uns etwas aufgefallen.",
     },
   },
 
@@ -2648,7 +2729,102 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch folgende Angaben.",
+        "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch folgende Angaben:",
+    },
+    textByAudience: {
+      contact_person:
+        "Zur weiteren Bearbeitung des Anliegens Ihrer Angehörigen / Ihres Angehörigen benötigen wir noch folgende Angaben:",
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Profilspezifische Konsultations- / Zustandshinweise
+  // (migriert von Global-Checkpoints)
+  // ---------------------------------------------------------------------------
+
+  AU_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "AU_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (AU)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  LAB_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "LAB_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (Labor)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  REF_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "REF_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (Überweisung)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: {
+    id: "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich (Atteste)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+    },
+  },
+
+  PRESCRIPTION_PATIENT_NOT_IN_GERMANY: {
+    id: "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
+    label: "Aufenthaltsort außerhalb Deutschland (Rezept)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Befindet sich der Patient aktuell NICHT in Deutschland?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Rezepte können in deutschen Apotheken eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
+    },
+  },
+
+  PRESCRIPTION_CHRONIC_PATIENT: {
+    id: "PRESCRIPTION_CHRONIC_PATIENT",
+    label: "Chronische Erkrankung (Rezept)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    question: "Liegt eine chronische oder dauerhaft behandlungsbedürftige Erkrankung vor?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
     },
   },
 };

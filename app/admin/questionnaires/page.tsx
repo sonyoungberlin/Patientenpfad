@@ -46,6 +46,7 @@ export default async function QuestionnairesPage() {
       status: true,
       token_expires_at: true,
       submitted_at: true,
+      submitted_by: true,
       deduplicated_questions: true,
       answers: true,
     },
@@ -172,6 +173,21 @@ export default async function QuestionnairesPage() {
                       })}
                     />
                   </>
+                )}
+
+                {/* Kontexthinweis bei Einreichung durch Kontaktperson */}
+                {s.submitted_by === "contact_person" && (
+                  <div
+                    className="text-small"
+                    style={{
+                      padding: "0.35rem 0.6rem",
+                      background: "var(--muted, #f1f5f9)",
+                      borderRadius: "var(--radius)",
+                      color: "var(--muted-fg, #475569)",
+                    }}
+                  >
+                    Die Angaben wurden durch eine Kontaktperson im Namen der Patientin / des Patienten übermittelt.
+                  </div>
                 )}
 
                 {/* Answers */}

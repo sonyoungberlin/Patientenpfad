@@ -159,6 +159,31 @@ export type InquiryProfile = {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// Audience – Zielgruppe der Textausgabe
+// ---------------------------------------------------------------------------
+
+/**
+ * Zielgruppe der Textausgabe.
+ *
+ * patient        – Der Patient selbst liest die Nachricht.
+ * contact_person – Eine Kontaktperson (z. B. Pflegeperson, Elternteil) liest die Nachricht.
+ *
+ * Beeinflusst ausschließlich die Textausgabe (textByAudience).
+ * Kein Einfluss auf Decision, Action, Conditions oder Checkpoint-Logik.
+ */
+export type Audience = "patient" | "contact_person";
+
+/**
+ * Audience-spezifischer Textüberschreibungswert.
+ *
+ * string                    → gilt einheitlich für alle Statuses (wie bisher).
+ * Partial<Record<…, string>> → status-spezifisch; z. B. für DECISION-Checkpoints mit
+ *                              POSSIBLE / NOT_POSSIBLE. Fehlende Status-Einträge fallen
+ *                              automatisch auf textByStatus[status] zurück.
+ */
+export type AudienceText = string | Partial<Record<string, string>>;
+
+// ---------------------------------------------------------------------------
 // Neue Architektur – Checkpoint-Arten, Scope, Placement, Statusmodelle
 // ---------------------------------------------------------------------------
 
@@ -493,6 +518,20 @@ export type InquiryCheckpoint = {
    */
   questions?: InquiryQuestion[];
   textByStatus: Partial<Record<CheckpointStatusValue, string>>;
+  /**
+   * Zielgruppenspezifische Texte, die `textByStatus` überschreiben.
+   *
+   * Auflösung:
+   *   audienceOverride = textByAudience?.[audience]
+   *   if string  → gilt für alle Statuses (ersetzt textByStatus[status])
+   *   if Record  → audienceOverride[status] ?? textByStatus[status]
+   *   if missing → textByStatus[status]
+   *
+   * Nur das benötigte Audience-Feld muss gesetzt werden; fehlendes Feld
+   * fällt auf `textByStatus` zurück.
+   * Keinen Einfluss auf Decision, Action oder Checkpoint-Logik.
+   */
+  textByAudience?: { patient?: AudienceText; contact_person?: AudienceText };
   docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
   /**
    * Kompakter M5-Grundcode für das Kurzprotokoll.

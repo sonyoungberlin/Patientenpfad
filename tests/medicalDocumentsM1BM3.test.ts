@@ -434,14 +434,14 @@ describe("MEDICAL_DOCUMENTS Renderer – mainDecision", () => {
 });
 
 describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
-  it("MEDICAL_CONSULTATION_REQUIRED YES + SHOW → Konsultations-Text erscheint", () => {
+  it("MEDICAL_DOCUMENT_CONSULTATION_REQUIRED YES + SHOW → Konsultations-Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "MEDICAL_DOCUMENTS",
         decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
+        checkpointStatuses: { MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: ExplanationStatus.YES },
         explanationOutputStatuses: {
-          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.SHOW,
+          MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: ExplanationOutputStatus.SHOW,
         } as Record<string, ExplanationOutputStatusType>,
       },
     ]);
@@ -449,14 +449,14 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("ärztliche Konsultation");
   });
 
-  it("MEDICAL_CONSULTATION_REQUIRED YES + HIDE → kein Konsultations-Text erscheint", () => {
+  it("MEDICAL_DOCUMENT_CONSULTATION_REQUIRED YES + HIDE → kein Konsultations-Text erscheint", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "MEDICAL_DOCUMENTS",
         decisionStatus: DecisionStatus.POSSIBLE,
-        checkpointStatuses: { MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES },
+        checkpointStatuses: { MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: ExplanationStatus.YES },
         explanationOutputStatuses: {
-          MEDICAL_CONSULTATION_REQUIRED: ExplanationOutputStatus.HIDE,
+          MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: ExplanationOutputStatus.HIDE,
         } as Record<string, ExplanationOutputStatusType>,
       },
     ]);
@@ -557,10 +557,10 @@ describe("MEDICAL_DOCUMENTS – boundActionConditions Struktur", () => {
     expect(condition?.showWhenAny).toContainEqual({ MEDICAL_DOCUMENT_INFO_MISSING: "YES" });
   });
 
-  it("BOOK_APPOINTMENT hat showWhenAny mit MEDICAL_CONSULTATION_REQUIRED = YES", () => {
+  it("BOOK_APPOINTMENT hat showWhenAny mit MEDICAL_DOCUMENT_CONSULTATION_REQUIRED = YES", () => {
     const condition = MEDICAL_DOCUMENTS.boundActionConditions?.["BOOK_APPOINTMENT"];
     expect(condition).toBeDefined();
-    expect(condition?.showWhenAny).toContainEqual({ MEDICAL_CONSULTATION_REQUIRED: "YES" });
+    expect(condition?.showWhenAny).toContainEqual({ MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: "YES" });
   });
 });
 

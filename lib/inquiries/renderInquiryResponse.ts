@@ -8,7 +8,10 @@ import {
   ExplanationOutputStatus,
   DecisionStatus,
   ResponseKind,
+  type Audience,
+  type AudienceText,
   type ConfirmedInquiryCheckpoint,
+  type InquiryCheckpoint,
   type InquiryOutput,
   type InquiryProfile,
   type InquirySection,
@@ -162,6 +165,47 @@ function actionCategoryRank(category?: string): number {
 }
 
 /**
+ * Optionen für renderInquiryResponseFromSections.
+ *
+ * audience – Zielgruppe der Textausgabe.
+ *            Beeinflusst die Textauflösung: textByAudience?.[audience] ?? textByStatus[status].
+ *            Default: "patient".
+ */
+export type RenderOptions = {
+  audience?: Audience;
+};
+
+/**
+ * Löst den Ausgabetext eines Checkpoints für einen Status auf.
+ *
+ * Fallback-Kette:
+ *   audienceOverride = textByAudience?.[audience]
+ *   string  → gilt für alle Statuses (ersetzt textByStatus[status])
+ *   Record  → audienceOverride[status] ?? textByStatus[status]
+ *   missing → textByStatus[status]
+ *
+ * @param checkpoint - Checkpoint-Definition aus dem Katalog.
+ * @param status     - Aktueller Statuswert.
+ * @param audience   - Zielgruppe ("patient" | "contact_person"). Default: "patient".
+ */
+function resolveCheckpointText(
+  checkpoint: InquiryCheckpoint,
+  status: string,
+  audience: Audience,
+): string | undefined {
+  const statusText = checkpoint.textByStatus[status as keyof typeof checkpoint.textByStatus];
+  const override: AudienceText | undefined = checkpoint.textByAudience?.[audience];
+  if (override === undefined) {
+    return statusText;
+  }
+  if (typeof override === "string") {
+    return override;
+  }
+  // Per-status Record: fehlende Einträge fallen auf textByStatus zurück.
+  return override[status] ?? statusText;
+}
+
+/**
  * Erzeugt deterministisch den strukturierten Antworttext und die Dokumentation
  * aus einem oder mehreren Anliegen-Abschnitten (Sections) nach der neuen Architektur.
  *
@@ -184,7 +228,9 @@ function actionCategoryRank(category?: string): number {
  */
 export function renderInquiryResponseFromSections(
   sections: InquirySection[],
+  options?: RenderOptions,
 ): InquiryResponseV2Output {
+  const audience: Audience = options?.audience ?? "patient";
   const sectionOutputs: InquirySectionOutput[] = [];
   const sharedBottomEntries: Array<{ text: string; category?: string }> = [];
   const sharedBottomSeen = new Set<string>();
@@ -208,7 +254,7 @@ export function renderInquiryResponseFromSections(
     let mainDecision: string | null = null;
     const decisionCheckpoint = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
     if (decisionCheckpoint) {
-      const text = decisionCheckpoint.textByStatus[section.decisionStatus] ?? null;
+      const text = resolveCheckpointText(decisionCheckpoint, section.decisionStatus, audience) ?? null;
       mainDecision = text;
       if (text) {
         const docText = decisionCheckpoint.docByStatus?.[section.decisionStatus] ?? text;
@@ -247,7 +293,7 @@ export function renderInquiryResponseFromSections(
         }
       }
 
-      const text = checkpoint.textByStatus[status];
+      const text = resolveCheckpointText(checkpoint, status, audience);
       if (!text) continue;
 
       const docText = checkpoint.docByStatus?.[status] ?? text;
@@ -273,8 +319,10 @@ export function renderInquiryResponseFromSections(
         if (section.explanationOutputStatuses[checkpointId] !== ExplanationOutputStatus.SHOW) continue;
       }
 
-      // Texthierarchie: profilspezifischer Override hat Vorrang, sonst zentraler Checkpoint-Text.
-      const text = profile.globalHints?.[checkpointId] ?? checkpoint.textByStatus[status];
+      // Texthierarchie: profilspezifischer Override hat Vorrang, dann zielgruppenspezifischer
+      // Checkpoint-Text, schließlich textByStatus.
+      const text =
+        profile.globalHints?.[checkpointId] ?? resolveCheckpointText(checkpoint, status, audience);
       if (!text) continue;
 
       // M4: anliegenspezifischer Hinweistext erscheint pro Anliegen in attachedParagraphs.
@@ -297,7 +345,7 @@ export function renderInquiryResponseFromSections(
       const status = section.checkpointStatuses[actionId];
       if (status === undefined || status === ActionStatus.INACTIVE) continue;
 
-      const text = checkpoint.textByStatus[status];
+      const text = resolveCheckpointText(checkpoint, status, audience);
       if (!text) continue;
 
       if (!sharedBottomSeen.has(actionId)) {
@@ -316,7 +364,7 @@ export function renderInquiryResponseFromSections(
       const status = section.checkpointStatuses[actionId];
       if (status === undefined || status === ActionStatus.INACTIVE) continue;
 
-      const text = checkpoint.textByStatus[status];
+      const text = resolveCheckpointText(checkpoint, status, audience);
       if (!text) continue;
 
       if (checkpoint.placement === InquiryCheckpointPlacement.SHARED_BOTTOM) {
@@ -359,7 +407,7 @@ export function renderInquiryResponseFromSections(
     if (status !== ActionStatus.ACTIVE) continue;
     const introCp = INQUIRY_CHECKPOINT_CATALOG_V2[introId];
     if (!introCp) continue;
-    const text = introCp.textByStatus[ActionStatus.ACTIVE];
+    const text = resolveCheckpointText(introCp, ActionStatus.ACTIVE, audience);
     if (text) { intro = text; break; }
   }
 
