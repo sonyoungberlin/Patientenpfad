@@ -140,7 +140,20 @@ export default async function InquiryM3Page({
       (cp): cp is InquiryCheckpoint =>
         !!cp && cp.kind === InquiryCheckpointKind.ACTION,
     )
-    .map((cp) => ({ id: cp.id, label: cp.label }));
+    .map((cp) => ({ id: cp.id, label: cp.label, actionCategory: cp.actionCategory }));
+
+  // Herkunfts-Map: actionId → Liste der selectedProfileIds, die diese Action in availableActionIds haben.
+  // Wird in M3 genutzt, um Actions mit genau einer Profil-Herkunft unter dem Profil-Abschnitt zu rendern.
+  const actionOrigins: Record<string, string[]> = {};
+  for (const inquiryId of selectedIds) {
+    const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
+    if (!profile) continue;
+    for (const cpId of profile.availableActionIds) {
+      if (!displayActionIds.has(cpId)) continue;
+      if (!actionOrigins[cpId]) actionOrigins[cpId] = [];
+      actionOrigins[cpId].push(inquiryId);
+    }
+  }
 
   // Intro-Bausteine (Nachrichteneinstieg): profilübergreifend, immer verfügbar.
   // Die IDs werden zu actionIds hinzugefügt, damit ihre Statuses in actionStatuses gespeichert werden.
@@ -195,6 +208,7 @@ export default async function InquiryM3Page({
         initialExplanationOutputStatuses={explanationOutputStatuses}
         initialResponseGoalSelection={responseGoalSelection}
         actionIds={Array.from(actionIds)}
+        actionOrigins={actionOrigins}
         initialGeneratedOutput={generatedOutput}
         isConfirmed={isConfirmed}
       />

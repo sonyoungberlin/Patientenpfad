@@ -49,6 +49,7 @@ export default async function QuestionnairesPage() {
       submitted_by: true,
       deduplicated_questions: true,
       answers: true,
+      identity_gate_completed_at: true,
     },
   });
 
@@ -152,6 +153,16 @@ export default async function QuestionnairesPage() {
                   </div>
                 )}
 
+                {s.identity_gate_completed_at && (
+                  <div
+                    className="text-small"
+                    data-q-identity-gate={s.id}
+                    style={{ color: "var(--muted-fg, #475569)" }}
+                  >
+                    Identitätsabfrage: erfolgt
+                  </div>
+                )}
+
                 {/* PDF download + Krankenblatt-Text */}
                 {displayStatus === "completed" && (
                   <>
@@ -170,6 +181,7 @@ export default async function QuestionnairesPage() {
                       noteText={buildMedicalRecordNote({
                         answers,
                         selected_block_ids: blockIds,
+                        identity_gate_completed_at: s.identity_gate_completed_at,
                       })}
                     />
                   </>

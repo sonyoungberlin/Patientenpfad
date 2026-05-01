@@ -212,6 +212,12 @@ model PatientQuestionnaireSession {
 
   /// Optionaler Verifikations-Hash (SHA-256 des Geburtsdatums, nie Klartext)
   birth_date_hash String?
+
+  /// Zeitpunkt des erfolgreichen IdentityGate-Durchlaufs (nur Zeitstempel, keine Eingabewerte)
+  identity_gate_completed_at DateTime?
+
+  /// Methode der Identitätsabfrage (Audit-Merkmal, keine personenbezogenen Daten)
+  identity_gate_method String? @default("dob_lastname3")
 }
 
 /// Sitzung des Anfrage-Assistenten.

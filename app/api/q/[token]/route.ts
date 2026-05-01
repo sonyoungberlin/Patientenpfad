@@ -86,6 +86,8 @@ export async function POST(
         submitted_at: new Date(),
         token: null,
         token_expires_at: null,
+        identity_gate_completed_at: new Date(),
+        identity_gate_method: "dob_lastname3",
       },
     });
 

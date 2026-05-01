@@ -370,6 +370,68 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- AU MISSING INFO CHECKPOINTS ----
+
+  AU_MISSING_EGK: {
+    id: "AU_MISSING_EGK",
+    label: "Versichertendaten fehlen (eGK)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "AU_MISSING_EGK-Q1", text: "Die Versichertendaten (eGK) liegen nicht vor." },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung der AU benötigen wir Ihre Versichertendaten. Bitte senden Sie uns über Doctolib entweder ein Foto Ihrer Gesundheitskarte von Vorder- und Rückseite oder eine elektronische Ersatzbescheinigung Ihrer Krankenkasse. Alternativ können Sie die Versichertendaten über die App Ihrer Krankenkasse digital übermitteln. Die Gesundheitskarte muss im laufenden Quartal nachgereicht bzw. eingelesen werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versichertendaten fehlen (eGK)",
+    },
+  },
+
+  AU_MISSING_QUESTIONNAIRE: {
+    id: "AU_MISSING_QUESTIONNAIRE",
+    label: "Angaben zur Erkrankung fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "AU_MISSING_QUESTIONNAIRE-Q1", text: "Es fehlen noch Angaben zur aktuellen Erkrankung." },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch Angaben zu Ihren aktuellen Beschwerden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Angaben zur Erkrankung fehlen",
+    },
+  },
+
+  AU_FOLLOWUP: {
+    id: "AU_FOLLOWUP",
+    label: "Folge-AU / Verlängerung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "AU_FOLLOWUP-Q1", text: "Es handelt sich um eine Folge-AU." },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine lückenlose Krankschreibung muss die Folgebescheinigung rechtzeitig erfolgen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Folge-AU / Verlängerung",
+    },
+  },
+
   // ---- PRESCRIPTION DECISION ----
 
   PRESCRIPTION_DECISION: {
@@ -436,6 +498,39 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * Fehlender Krankenhaus- oder Entlassbericht.
+   *
+   * SPECIFIC-Scope: erscheint im Profil-Abschnitt (section.specificCheckpoints) und ist
+   * damit im PRESCRIPTION-Accordion nutzbar. Durch die Aufnahme in specificCheckpointIds
+   * anderer Profile (AU, REFERRAL, ACUTE_CARE etc.) später profilübergreifend wiederverwendbar.
+   *
+   * ATTACHED-Placement: Der Text soll direkt im Kontext des Anliegens erscheinen (kein
+   * profilübergreifendes Footer-Element). SHARED_BOTTOM wäre nur korrekt, wenn derselbe
+   * Hinweis am Ende aller Profilabschnitte erscheinen soll.
+   *
+   * specificRole MISSING_DOCUMENT: korrekt für fehlende Dokumente/Nachweise.
+   */
+  HOSPITAL_DISCHARGE_REPORT_MISSING: {
+    id: "HOSPITAL_DISCHARGE_REPORT_MISSING",
+    label: "Krankenhaus-/Entlassbericht fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_DISCHARGE_REPORT_MISSING-Q1", text: "Fehlt der Krankenhaus- oder Entlassbericht?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die weitere Bearbeitung benötigen wir den Krankenhaus- oder Entlassbericht.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenhaus-/Entlassbericht fehlt",
+    },
+  },
+
   PRESCRIPTION_BTM_ADHS_RULES: {
     id: "PRESCRIPTION_BTM_ADHS_RULES",
     label: "BtM / ADHS / Facharztpflicht",
@@ -466,6 +561,46 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Dieses Präparat ist keine Leistung der gesetzlichen Krankenkasse und wird als Privatrezept verordnet.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: {
+    id: "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+    label: "Kein Rezept erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "OUTCOME_INFO" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED-Q1", text: "Ist für das angefragte Präparat kein Rezept erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für dieses Präparat ist kein Rezept erforderlich. Sie können es direkt in der Apotheke erwerben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "kein Rezept erforderlich / frei verkäuflich",
+    },
+  },
+
+  PRESCRIPTION_SPECIALIST_RESPONSIBLE: {
+    id: "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
+    label: "Facharzt zuständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_SPECIALIST_RESPONSIBLE-Q1", text: "Soll die Verordnung über die zuständige Facharztpraxis erfolgen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bitte wenden Sie sich für diese Verordnung an die zuständige Facharztpraxis.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Verordnung über Facharztpraxis",
     },
   },
 
@@ -512,13 +647,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     classification: "OUTCOME",
     specificRole: "OUTCOME_INFO" as SpecificRole,
     questions: [
-      { id: "PRESCRIPTION_STATUTORY_POSSIBLE-Q1", text: "Ist das Rezept als Kassenrezept möglich?" },
+      { id: "PRESCRIPTION_STATUTORY_POSSIBLE-Q1", text: "Wird das Rezept als Kassenrezept ausgestellt?" },
     ],
     textByStatus: {
       // YES: bewusst still – Prozessdetail wird über E_RECIPE_USE (boundAction) transportiert
-      // NO: bewusst NICHT still – NO bedeutet fachlich „Privatrezept ausgestellt"
-      [ExplanationStatus.NO]:
-        "Das Medikament wurde als Privatrezept ausgestellt. Die Kosten werden nicht von der gesetzlichen Krankenkasse übernommen und müssen selbst bezahlt werden.",
+      // NO: nur Sachaussage – kein Kassenrezept ausgestellt.
+      //     Ob Privatrezept oder anderer Grund: wird über PRESCRIPTION_PRIVATE_ONLY o.ä. erklärt.
+      [ExplanationStatus.NO]: "Das Rezept wurde nicht als Kassenrezept ausgestellt.",
     },
   },
 
@@ -1126,7 +1261,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Das Rezept wird als eRezept ausgestellt und kann mit der elektronischen Gesundheitskarte (eGK) in der Apotheke eingelöst werden. Alternativ erhalten Sie einen QR-Code als PDF oder in Papierform.",
+        "Sie können das eRezept mit Ihrer elektronischen Gesundheitskarte (eGK) in der Apotheke einlösen. Alternativ erhalten Sie einen QR-Code als PDF oder in Papierform.",
     },
   },
 
@@ -1183,6 +1318,31 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Für eine persönliche Vorstellung können Sie einen Akuttermin buchen oder die offene Sprechstunde nutzen. Alternativ können Sie eine digitale Anfrage stellen.",
+    },
+  },
+
+  /**
+   * Globaler Versorgungsweg-Baustein: demnächst Kontrolltermin / persönliche Vorstellung.
+   *
+   * Scope GLOBAL + Placement ATTACHED: erscheint gebunden an das jeweilige Profil,
+   * ist aber profilübergreifend wiederverwendbar (AU, PRESCRIPTION, ggf. weitere).
+   *
+   * Wird in der VERSORGUNGSWEG_CONFLICT_GROUP mit ACUTE_OPEN_CONSULTATION_ACTION
+   * und CARE_CHANNEL_CHOICE geführt: nur eine Option kann gleichzeitig ACTIVE sein.
+   */
+  CONTROL_APPOINTMENT_RECOMMENDED: {
+    id: "CONTROL_APPOINTMENT_RECOMMENDED",
+    label: "Kontrolltermin empfohlen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie demnächst einen Termin zur Kontrolle bzw. persönlichen Vorstellung in der Praxis.",
+    },
+    docByStatus: {
+      [ActionStatus.ACTIVE]: "Kontrolltermin / persönliche Vorstellung empfohlen",
     },
   },
 
@@ -2671,7 +2831,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: {
     id: "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED",
-    label: "Nachricht eingegangen – Fragebogen anfordern",
+    label: "Nachricht eingegangen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,

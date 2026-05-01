@@ -13,6 +13,7 @@
 export type MedicalRecordNoteInput = {
   answers: Record<string, string> | null | undefined;
   selected_block_ids: string[];
+  identity_gate_completed_at?: Date | null;
 };
 
 const MAX_FREETEXT_LENGTH = 80;
@@ -125,6 +126,10 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   if (contactLines.length > 0) {
     lines.push("Kontakt/Adresse");
     lines.push(...contactLines);
+  }
+
+  if (input.identity_gate_completed_at) {
+    lines.push("Identitätsabfrage erfolgt");
   }
 
   return lines.join("\n");

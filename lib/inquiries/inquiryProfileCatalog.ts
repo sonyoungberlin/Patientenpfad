@@ -45,11 +45,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
       "AU_NEW_PATIENT_LIMIT",
+      "AU_MISSING_EGK",
+      "AU_MISSING_QUESTIONNAIRE",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
       "AU_DIGITAL_AU_PROCESS",
       "AU_NO_APPOINTMENT_ACUTE",
       "AU_MEDICAL_CONSULTATION_REQUIRED",
+      "AU_FOLLOWUP",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
@@ -67,6 +70,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST_REQUIRED",
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "CARE_CHANNEL_CHOICE",
+      "CONTROL_APPOINTMENT_RECOMMENDED",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -88,6 +92,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
       },
       CARE_CHANNEL_CHOICE: {
+        hideWhenAny: [],
+      },
+      CONTROL_APPOINTMENT_RECOMMENDED: {
         hideWhenAny: [],
       },
     },
@@ -228,8 +235,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+      "HOSPITAL_DISCHARGE_REPORT_MISSING",
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
+      "PRESCRIPTION_PRIVATE_ONLY",
+      "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+      "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
     ],
@@ -241,6 +252,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
+      "CONTROL_APPOINTMENT_RECOMMENDED",
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
@@ -354,6 +366,18 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           decisionStatus: DecisionStatus.NOT_POSSIBLE,
         },
         hint: "visible",
+      },
+      // 10. CONTROL_APPOINTMENT_RECOMMENDED empfehlen, wenn chronische Erkrankung / Dauermedikation
+      {
+        id: "PRESCRIPTION_CONTROL_APPOINTMENT_RECOMMENDED",
+        checkpointId: "CONTROL_APPOINTMENT_RECOMMENDED",
+        profileId: "PRESCRIPTION",
+        when: {
+          allOf: [
+            { checkpointId: "PRESCRIPTION_CHRONIC_PATIENT", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
       },
     ],
 
