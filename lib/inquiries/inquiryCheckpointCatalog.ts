@@ -1321,6 +1321,31 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * Globaler Versorgungsweg-Baustein: demnächst Kontrolltermin / persönliche Vorstellung.
+   *
+   * Scope GLOBAL + Placement ATTACHED: erscheint gebunden an das jeweilige Profil,
+   * ist aber profilübergreifend wiederverwendbar (AU, PRESCRIPTION, ggf. weitere).
+   *
+   * Wird in der VERSORGUNGSWEG_CONFLICT_GROUP mit ACUTE_OPEN_CONSULTATION_ACTION
+   * und CARE_CHANNEL_CHOICE geführt: nur eine Option kann gleichzeitig ACTIVE sein.
+   */
+  CONTROL_APPOINTMENT_RECOMMENDED: {
+    id: "CONTROL_APPOINTMENT_RECOMMENDED",
+    label: "Kontrolltermin empfohlen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie demnächst einen Termin zur Kontrolle bzw. persönlichen Vorstellung in der Praxis.",
+    },
+    docByStatus: {
+      [ActionStatus.ACTIVE]: "Kontrolltermin / persönliche Vorstellung empfohlen",
+    },
+  },
+
   // ---- SAMPLE_COLLECTION DECISION ----
 
   SAMPLE_COLLECTION_DECISION: {

@@ -206,14 +206,23 @@ const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
 };
 
 /**
- * Gegenseitige Ausschlusstabelle für AU-Versorgungsweg-Actions in M3.
- * Wenn eine der beiden auf ACTIVE gesetzt wird, wird die andere automatisch INACTIVE.
- * Beide Actions bleiben sichtbar – keine automatische Vorauswahl beim Laden.
+ * Versorgungsweg-Konfliktgruppe in M3 (AU und weitere Profile).
+ * Wird eine Option auf ACTIVE gesetzt, werden alle anderen Mitglieder der Gruppe
+ * automatisch auf INACTIVE gesetzt. Keine automatische Vorauswahl beim Laden.
+ *
+ * Mitglieder:
+ *   - ACUTE_OPEN_CONSULTATION_ACTION  → Offene Sprechstunde / direkt kommen
+ *   - CARE_CHANNEL_CHOICE             → Wahl persönlich oder digital
+ *   - CONTROL_APPOINTMENT_RECOMMENDED → Kontrolltermin / persönliche Vorstellung
+ *
+ * BOOK_APPOINTMENT ist bewusst nicht Teil dieser Gruppe: Es repräsentiert den
+ * Buchungsweg / Terminlink und ist keine fachliche Aussage zum Versorgungsweg.
  */
-const AU_VERSORGUNGSWEG_EXCLUSIVE_ACTIONS: Record<string, string> = {
-  ACUTE_OPEN_CONSULTATION_ACTION: "CARE_CHANNEL_CHOICE",
-  CARE_CHANNEL_CHOICE: "ACUTE_OPEN_CONSULTATION_ACTION",
-};
+const VERSORGUNGSWEG_CONFLICT_GROUP: ReadonlySet<string> = new Set([
+  "ACUTE_OPEN_CONSULTATION_ACTION",
+  "CARE_CHANNEL_CHOICE",
+  "CONTROL_APPOINTMENT_RECOMMENDED",
+]);
 
 /**
  * Bound-Action-IDs, die in M3 nicht als Toggle erscheinen dürfen.
@@ -839,9 +848,14 @@ export default function InquiryM3Client({
     if (value === "ACTIVE" && PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId]) {
       const conflicting = PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId];
       setStatuses((prev) => ({ ...prev, [checkpointId]: value, [conflicting]: "INACTIVE" }));
-    } else if (value === "ACTIVE" && AU_VERSORGUNGSWEG_EXCLUSIVE_ACTIONS[checkpointId]) {
-      const conflicting = AU_VERSORGUNGSWEG_EXCLUSIVE_ACTIONS[checkpointId];
-      setStatuses((prev) => ({ ...prev, [checkpointId]: value, [conflicting]: "INACTIVE" }));
+    } else if (value === "ACTIVE" && VERSORGUNGSWEG_CONFLICT_GROUP.has(checkpointId)) {
+      setStatuses((prev) => {
+        const next: Record<string, string> = { ...prev, [checkpointId]: value };
+        for (const id of VERSORGUNGSWEG_CONFLICT_GROUP) {
+          if (id !== checkpointId) next[id] = "INACTIVE";
+        }
+        return next;
+      });
     } else {
       setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
     }

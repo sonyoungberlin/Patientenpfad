@@ -70,6 +70,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST_REQUIRED",
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "CARE_CHANNEL_CHOICE",
+      "CONTROL_APPOINTMENT_RECOMMENDED",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -91,6 +92,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
       },
       CARE_CHANNEL_CHOICE: {
+        hideWhenAny: [],
+      },
+      CONTROL_APPOINTMENT_RECOMMENDED: {
         hideWhenAny: [],
       },
     },
@@ -248,6 +252,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
+      "CONTROL_APPOINTMENT_RECOMMENDED",
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
