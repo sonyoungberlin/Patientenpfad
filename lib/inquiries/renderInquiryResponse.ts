@@ -193,18 +193,16 @@ function resolveCheckpointText(
   status: string,
   audience: Audience,
 ): string | undefined {
+  const statusText = checkpoint.textByStatus[status as keyof typeof checkpoint.textByStatus];
   const override: AudienceText | undefined = checkpoint.textByAudience?.[audience];
   if (override === undefined) {
-    return checkpoint.textByStatus[status as keyof typeof checkpoint.textByStatus];
+    return statusText;
   }
   if (typeof override === "string") {
     return override;
   }
   // Per-status Record: fehlende Einträge fallen auf textByStatus zurück.
-  return (
-    override[status] ??
-    checkpoint.textByStatus[status as keyof typeof checkpoint.textByStatus]
-  );
+  return override[status] ?? statusText;
 }
 
 /**
