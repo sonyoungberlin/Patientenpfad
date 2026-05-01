@@ -206,6 +206,16 @@ const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
 };
 
 /**
+ * Gegenseitige Ausschlusstabelle für AU-Versorgungsweg-Actions in M3.
+ * Wenn eine der beiden auf ACTIVE gesetzt wird, wird die andere automatisch INACTIVE.
+ * Beide Actions bleiben sichtbar – keine automatische Vorauswahl beim Laden.
+ */
+const AU_VERSORGUNGSWEG_EXCLUSIVE_ACTIONS: Record<string, string> = {
+  ACUTE_OPEN_CONSULTATION_ACTION: "CARE_CHANNEL_CHOICE",
+  CARE_CHANNEL_CHOICE: "ACUTE_OPEN_CONSULTATION_ACTION",
+};
+
+/**
  * Bound-Action-IDs, die in M3 nicht als Toggle erscheinen dürfen.
  * Diese Actions werden aus allen Render-Pfaden (Trigger-basiert und Standard)
  * herausgefiltert. Sie können weiterhin als interne Status-Trigger wirken,
@@ -828,6 +838,9 @@ export default function InquiryM3Client({
   function setStatus(checkpointId: string, value: string) {
     if (value === "ACTIVE" && PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId]) {
       const conflicting = PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId];
+      setStatuses((prev) => ({ ...prev, [checkpointId]: value, [conflicting]: "INACTIVE" }));
+    } else if (value === "ACTIVE" && AU_VERSORGUNGSWEG_EXCLUSIVE_ACTIONS[checkpointId]) {
+      const conflicting = AU_VERSORGUNGSWEG_EXCLUSIVE_ACTIONS[checkpointId];
       setStatuses((prev) => ({ ...prev, [checkpointId]: value, [conflicting]: "INACTIVE" }));
     } else {
       setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
