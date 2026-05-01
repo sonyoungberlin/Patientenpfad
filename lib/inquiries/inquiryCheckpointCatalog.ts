@@ -176,6 +176,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
     },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]:
+          "Die Arbeitsunfähigkeitsbescheinigung wurde ausgestellt.",
+        [DecisionStatus.NOT_POSSIBLE]:
+          "Die angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
+      },
+    },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "AU ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]: "AU nicht ausgestellt.",
@@ -380,6 +388,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ihr Rezept wurde ausgestellt.",
       [DecisionStatus.NOT_POSSIBLE]: "Das von Ihnen angefragte Rezept wurde nicht ausgestellt.",
+    },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]: "Das Rezept wurde ausgestellt.",
+        [DecisionStatus.NOT_POSSIBLE]: "Das angefragte Rezept wurde nicht ausgestellt.",
+      },
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Rezept ausgestellt.",
@@ -608,6 +622,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte kommen Sie nüchtern zur Blutentnahme. Essen Sie mindestens acht Stunden vorher nichts; Wasser ist erlaubt, Kaffee bitte nicht.",
     },
+    textByAudience: {
+      contact_person:
+        "Zur Blutentnahme nüchtern erscheinen (mindestens 8 Stunden vorher nichts essen; Wasser ist erlaubt, Kaffee nicht).",
+    },
   },
 
   /** @deprecated Abrechnungsaussagen gehören in BILLING. Ersetzt durch BILLING_COST_NOT_COVERED + BILLING_EXTERNAL_PROVIDER. Nicht mehr in LAB.specificCheckpointIds. */
@@ -748,6 +766,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "PREPARATION",
     textByStatus: {
       [ActionStatus.ACTIVE]: "Bitte bringen Sie die Überweisung Ihres Facharztes im Original zum Termin mit.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte die Überweisung im Original zum Termin mitbringen.",
     },
   },
 
@@ -999,9 +1021,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte bringen Sie Ihren Impfpass oder vorhandene Impfnachweise zum Termin mit.",
     },
+    textByAudience: {
+      contact_person:
+        "Bitte den Impfpass oder vorhandene Impfnachweise zum Termin mitbringen.",
+    },
   },
-
-  // ---- GLOBAL ACTIONS ----
 
   DIGITAL_REQUEST: {
     id: "DIGITAL_REQUEST",
@@ -1129,6 +1153,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Bitte laden Sie relevante Unterlagen über Ihren Doctolib Account hoch.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte relevante Unterlagen über den Doctolib-Account hochladen.",
     },
   },
 
@@ -1279,6 +1307,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Sie können sich mit Ihrem Anliegen im Rahmen eines Akuttermins oder der offenen Sprechstunde vorstellen.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Für Ihr Anliegen ist diese Terminart nicht geeignet.",
+    },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]:
+          "Für das Anliegen ist eine persönliche Vorstellung im Rahmen eines Akuttermins oder der offenen Sprechstunde möglich.",
+        // NOT_POSSIBLE fällt auf textByStatus zurück
+      },
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Akutvorstellung empfohlen.",
@@ -1565,6 +1600,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Ihre Überweisung wurde ausgestellt und liegt zur Abholung in der Praxis bereit.",
       [DecisionStatus.NOT_POSSIBLE]:
         "Die von Ihnen angefragte Überweisung wurde nicht ausgestellt.",
+    },
+    textByAudience: {
+      contact_person: {
+        [DecisionStatus.POSSIBLE]:
+          "Die Überweisung wurde ausgestellt und liegt zur Abholung in der Praxis bereit.",
+        [DecisionStatus.NOT_POSSIBLE]:
+          "Die angefragte Überweisung wurde nicht ausgestellt.",
+      },
     },
     docByStatus: {
       [DecisionStatus.POSSIBLE]: "Überweisung ausgestellt.",
@@ -2400,6 +2443,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte teilen Sie uns Ihren vollständigen Namen und Ihr Geburtsdatum mit, damit wir Ihre Daten korrekt abgleichen können.",
     },
+    textByAudience: {
+      contact_person:
+        "Bitte teilen Sie uns den vollständigen Namen und das Geburtsdatum der Patientin / des Patienten mit, damit wir die Daten korrekt abgleichen können.",
+    },
   },
 
   ONBOARDING_DATA_MISSING_CONTEXT: {
@@ -2425,6 +2472,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Leider konnten wir Sie nicht als Patient in unserem System finden.",
+    },
+    textByAudience: {
+      contact_person:
+        "Die angegebene Person konnte nicht in unserem System gefunden werden.",
     },
   },
 
@@ -2465,6 +2516,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Für Fragen zur Kostenübernahme oder Abrechnung wenden Sie sich bitte direkt an Ihre Krankenkasse oder die zuständige Stelle.",
+    },
+    textByAudience: {
+      contact_person:
+        "Für Fragen zur Kostenübernahme oder Abrechnung bitte direkt an die zuständige Krankenkasse oder externe Stelle wenden.",
     },
   },
 

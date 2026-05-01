@@ -9,6 +9,7 @@ import {
   DecisionStatus,
   ResponseKind,
   type Audience,
+  type AudienceText,
   type ConfirmedInquiryCheckpoint,
   type InquiryCheckpoint,
   type InquiryOutput,
@@ -177,7 +178,11 @@ export type RenderOptions = {
 /**
  * Löst den Ausgabetext eines Checkpoints für einen Status auf.
  *
- * Fallback-Kette: textByAudience?.[audience] → textByStatus[status] → undefined.
+ * Fallback-Kette:
+ *   audienceOverride = textByAudience?.[audience]
+ *   string  → gilt für alle Statuses (ersetzt textByStatus[status])
+ *   Record  → audienceOverride[status] ?? textByStatus[status]
+ *   missing → textByStatus[status]
  *
  * @param checkpoint - Checkpoint-Definition aus dem Katalog.
  * @param status     - Aktueller Statuswert.
@@ -188,8 +193,16 @@ function resolveCheckpointText(
   status: string,
   audience: Audience,
 ): string | undefined {
+  const override: AudienceText | undefined = checkpoint.textByAudience?.[audience];
+  if (override === undefined) {
+    return checkpoint.textByStatus[status as keyof typeof checkpoint.textByStatus];
+  }
+  if (typeof override === "string") {
+    return override;
+  }
+  // Per-status Record: fehlende Einträge fallen auf textByStatus zurück.
   return (
-    checkpoint.textByAudience?.[audience] ??
+    override[status] ??
     checkpoint.textByStatus[status as keyof typeof checkpoint.textByStatus]
   );
 }

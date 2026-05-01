@@ -12,7 +12,7 @@
 
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
-import { DecisionStatus, ActionStatus } from "@/lib/inquiries/types";
+import { DecisionStatus, ActionStatus, ExplanationStatus } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -95,46 +95,67 @@ describe("M3 Audience-Toggle – Umschalten auf contact_person", () => {
 // ---------------------------------------------------------------------------
 
 describe("M3 Audience-Toggle – Fallback auf textByStatus", () => {
-  it("AU Decision-Checkpoint: contact_person ohne textByAudience → gleicher Text wie patient", () => {
+  it("Checkpoint ohne textByAudience → Umschalten ändert den Text nicht", () => {
+    // AU_BACKDATE_LIMIT hat kein textByAudience – muss auf textByStatus zurückfallen.
+    const section = {
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: { AU_BACKDATE_LIMIT: ExplanationStatus.YES },
+    };
+    const withPatient = renderInquiryResponseFromSections([section], { audience: "patient" });
+    const withContact = renderInquiryResponseFromSections([section], { audience: "contact_person" });
+
+    // Ohne textByAudience müssen beide denselben Text liefern
+    expect(withPatient.sections[0].attachedParagraphs).toEqual(
+      withContact.sections[0].attachedParagraphs,
+    );
+  });
+
+  it("AU_BACKDATE_LIMIT hat kein textByAudience definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["AU_BACKDATE_LIMIT"];
+    expect(cp?.textByAudience).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AU_DECISION hat jetzt textByAudience.contact_person (per-status)
+// ---------------------------------------------------------------------------
+
+describe("M3 Audience-Toggle – AU_DECISION mit textByAudience", () => {
+  it("AU_DECISION POSSIBLE: contact_person → neutraler Text ohne 'Ihre'", () => {
+    const section = {
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.POSSIBLE,
+      checkpointStatuses: {},
+    };
+    const withContact = renderInquiryResponseFromSections([section], { audience: "contact_person" });
+    expect(withContact.sections[0].mainDecision).toBe(
+      "Die Arbeitsunfähigkeitsbescheinigung wurde ausgestellt.",
+    );
+  });
+
+  it("AU_DECISION NOT_POSSIBLE: contact_person → neutraler Text ohne 'Ihnen'", () => {
+    const section = {
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.NOT_POSSIBLE,
+      checkpointStatuses: {},
+    };
+    const withContact = renderInquiryResponseFromSections([section], { audience: "contact_person" });
+    expect(withContact.sections[0].mainDecision).toBe(
+      "Die angefragte Arbeitsunfähigkeitsbescheinigung wurde nicht ausgestellt.",
+    );
+  });
+
+  it("AU_DECISION POSSIBLE: patient → weiterhin ursprünglicher Text", () => {
     const section = {
       inquiryId: "AU",
       decisionStatus: DecisionStatus.POSSIBLE,
       checkpointStatuses: {},
     };
     const withPatient = renderInquiryResponseFromSections([section], { audience: "patient" });
-    const withContact = renderInquiryResponseFromSections([section], { audience: "contact_person" });
-
-    // Ohne textByAudience müssen beide den gleichen Text liefern
-    expect(withPatient.sections[0].mainDecision).toBe(withContact.sections[0].mainDecision);
-    expect(withPatient.sections[0].mainDecision).not.toBeNull();
-  });
-
-  it("AU NOT_POSSIBLE: contact_person ohne textByAudience → Fallback auf textByStatus", () => {
-    const section = {
-      inquiryId: "AU",
-      decisionStatus: DecisionStatus.NOT_POSSIBLE,
-      checkpointStatuses: {},
-    };
-    const withPatient = renderInquiryResponseFromSections([section], { audience: "patient" });
-    const withContact = renderInquiryResponseFromSections([section], { audience: "contact_person" });
-
-    expect(withPatient.sections[0].mainDecision).toBe(withContact.sections[0].mainDecision);
-  });
-
-  it("Checkpoint ohne textByAudience → Umschalten ändert den Text nicht", () => {
-    // Verify the fallback invariant: if no textByAudience is set,
-    // switching audience produces identical output.
-    const INTRO_ID = "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED";
-    const cp = INQUIRY_CHECKPOINT_CATALOG_V2[INTRO_ID];
-
-    // Sanity check: this checkpoint HAS a textByAudience.contact_person
-    expect(cp.textByAudience?.contact_person).toBeDefined();
-
-    // A checkpoint without textByAudience (AU decision)
-    const auDecisionId = "AU_POSSIBLE";
-    const cpAu = INQUIRY_CHECKPOINT_CATALOG_V2[auDecisionId];
-    // Should not have textByAudience defined
-    expect(cpAu?.textByAudience).toBeUndefined();
+    expect(withPatient.sections[0].mainDecision).toBe(
+      "Ihre Arbeitsunfähigkeitsbescheinigung wurde ausgestellt.",
+    );
   });
 });
 

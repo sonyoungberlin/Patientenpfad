@@ -173,6 +173,16 @@ export type InquiryProfile = {
  */
 export type Audience = "patient" | "contact_person";
 
+/**
+ * Audience-spezifischer Textüberschreibungswert.
+ *
+ * string                    → gilt einheitlich für alle Statuses (wie bisher).
+ * Partial<Record<…, string>> → status-spezifisch; z. B. für DECISION-Checkpoints mit
+ *                              POSSIBLE / NOT_POSSIBLE. Fehlende Status-Einträge fallen
+ *                              automatisch auf textByStatus[status] zurück.
+ */
+export type AudienceText = string | Partial<Record<string, string>>;
+
 // ---------------------------------------------------------------------------
 // Neue Architektur – Checkpoint-Arten, Scope, Placement, Statusmodelle
 // ---------------------------------------------------------------------------
@@ -511,13 +521,17 @@ export type InquiryCheckpoint = {
   /**
    * Zielgruppenspezifische Texte, die `textByStatus` überschreiben.
    *
-   * text = textByAudience?.[audience] ?? textByStatus[status] ?? ""
+   * Auflösung:
+   *   audienceOverride = textByAudience?.[audience]
+   *   if string  → gilt für alle Statuses (ersetzt textByStatus[status])
+   *   if Record  → audienceOverride[status] ?? textByStatus[status]
+   *   if missing → textByStatus[status]
    *
    * Nur das benötigte Audience-Feld muss gesetzt werden; fehlendes Feld
    * fällt auf `textByStatus` zurück.
    * Keinen Einfluss auf Decision, Action oder Checkpoint-Logik.
    */
-  textByAudience?: { patient?: string; contact_person?: string };
+  textByAudience?: { patient?: AudienceText; contact_person?: AudienceText };
   docByStatus?: Partial<Record<CheckpointStatusValue, string>>;
   /**
    * Kompakter M5-Grundcode für das Kurzprotokoll.

@@ -97,18 +97,19 @@ describe("Audience – MESSAGE_INTRO_MISSING_INFO", () => {
 // ---------------------------------------------------------------------------
 
 describe("Audience – Fallback auf textByStatus wenn kein textByAudience definiert", () => {
-  it("AU-Profil: contact_person ohne textByAudience gibt textByStatus-Text aus", () => {
-    // AU_POSSIBLE hat kein textByAudience – muss auf textByStatus zurückfallen.
+  it("AU_BACKDATE_LIMIT: contact_person ohne textByAudience gibt textByStatus-Text aus", () => {
+    // AU_BACKDATE_LIMIT hat kein textByAudience – muss auf textByStatus zurückfallen.
     const section = {
       inquiryId: "AU",
       decisionStatus: DecisionStatus.POSSIBLE,
-      checkpointStatuses: {},
+      checkpointStatuses: { AU_BACKDATE_LIMIT: ExplanationStatus.YES },
     };
     const withPatient = renderInquiryResponseFromSections([section], { audience: "patient" });
     const withContact = renderInquiryResponseFromSections([section], { audience: "contact_person" });
     // Beide müssen denselben Text liefern (kein textByAudience-Override)
-    expect(withPatient.sections[0].mainDecision).toBe(withContact.sections[0].mainDecision);
-    expect(withPatient.sections[0].mainDecision).not.toBeNull();
+    expect(withPatient.sections[0].attachedParagraphs).toEqual(
+      withContact.sections[0].attachedParagraphs,
+    );
   });
 });
 
