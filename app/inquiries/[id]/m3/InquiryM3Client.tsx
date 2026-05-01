@@ -1108,6 +1108,25 @@ export default function InquiryM3Client({
               {actionsOpen && (() => {
                 const groupElements: ReactNode[] = [];
 
+                // Pre-compute which action IDs will be rendered by the PRESCRIPTION trigger block
+                // so the global ACTION_GROUPS can exclude them and avoid duplicates.
+                const prescriptionRenderedActionIds = new Set<string>();
+                if (sections.some((s) => s.inquiryId === PRESCRIPTION_INQUIRY_ID)) {
+                  for (const group of PRESCRIPTION_M3_TRIGGER_GROUPS) {
+                    if (group.triggers.some((t) => t.values.includes(statuses[t.id] ?? ""))) {
+                      for (const id of group.actionIds) {
+                        prescriptionRenderedActionIds.add(id);
+                      }
+                    }
+                  }
+                  // If no trigger active, fallback shows all PRESCRIPTION_ALL_ACTION_IDS — exclude those too.
+                  if (prescriptionRenderedActionIds.size === 0) {
+                    for (const id of PRESCRIPTION_ALL_ACTION_IDS) {
+                      prescriptionRenderedActionIds.add(id);
+                    }
+                  }
+                }
+
                 // --- Globale availableActionIds (gruppiert nach ACTION_GROUPS) ---
                 if (actionCheckpoints.length > 0) {
                   const activeActionCheckpoints = actionCheckpoints.filter(
@@ -1119,7 +1138,8 @@ export default function InquiryM3Client({
                   for (const group of ACTION_GROUPS) {
                     const groupCps = group.ids
                       .map((id) => cpById[id])
-                      .filter((cp): cp is M3ActionData => !!cp);
+                      // Exclude IDs already rendered (or to be rendered) by the PRESCRIPTION trigger block.
+                      .filter((cp): cp is M3ActionData => !!cp && !prescriptionRenderedActionIds.has(cp.id));
                     if (groupCps.length === 0) continue;
                     groupCps.forEach((cp) => renderedIds.add(cp.id));
                     groupElements.push(
@@ -1150,7 +1170,9 @@ export default function InquiryM3Client({
                   }
 
                   // Ungrouped fallback
-                  const ungrouped = activeActionCheckpoints.filter((cp) => !renderedIds.has(cp.id));
+                  const ungrouped = activeActionCheckpoints.filter(
+                    (cp) => !renderedIds.has(cp.id) && !prescriptionRenderedActionIds.has(cp.id),
+                  );
                   if (ungrouped.length > 0) {
                     groupElements.push(
                       <div key="__ungrouped__" style={{ marginTop: "0.75rem" }}>
