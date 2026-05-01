@@ -58,6 +58,7 @@ export type M3SectionData = {
 export type M3ActionData = {
   id: string;
   label: string;
+  actionCategory?: string;
 };
 
 type Props = {
@@ -73,6 +74,12 @@ type Props = {
   /** M3 – Antwortziel-Auswahl pro Profil (menschliche Auswahl). Record<inquiryId, responseGoalId> */
   initialResponseGoalSelection: Record<string, string>;
   actionIds: string[];
+  /**
+   * Herkunfts-Map: actionId → Liste der selectedProfileIds, die diese Action beitragen.
+   * Wird genutzt, um Actions mit genau einer Profil-Herkunft unter dem Profil-Abschnitt
+   * statt im globalen ACTION_GROUPS-Block zu rendern.
+   */
+  actionOrigins: Record<string, string[]>;
   initialGeneratedOutput: InquiryResponseV2Output | null;
   isConfirmed: boolean;
 };
@@ -677,6 +684,7 @@ export default function InquiryM3Client({
   initialExplanationOutputStatuses,
   initialResponseGoalSelection,
   actionIds,
+  actionOrigins,
   initialGeneratedOutput,
   isConfirmed,
 }: Props) {
@@ -1239,10 +1247,19 @@ export default function InquiryM3Client({
                   }
                 }
 
+                // Actions with exactly one selected-profile origin (excluding PRESCRIPTION, which has its
+                // own trigger-based block). These are rendered under their profile section instead of
+                // the global ACTION_GROUPS so the MFA sees them in context.
+                const singleOriginActionIds = new Set(
+                  Object.entries(actionOrigins)
+                    .filter(([, origins]) => origins.length === 1 && origins[0] !== PRESCRIPTION_INQUIRY_ID)
+                    .map(([id]) => id),
+                );
+
                 // --- Globale availableActionIds (gruppiert nach ACTION_GROUPS) ---
                 if (actionCheckpoints.length > 0) {
                   const activeActionCheckpoints = actionCheckpoints.filter(
-                    (cp) => statuses[cp.id] === "ACTIVE",
+                    (cp) => statuses[cp.id] === "ACTIVE" && !singleOriginActionIds.has(cp.id),
                   );
                   const cpById = Object.fromEntries(activeActionCheckpoints.map((cp) => [cp.id, cp]));
                   const renderedIds = new Set<string>();
@@ -1421,7 +1438,18 @@ export default function InquiryM3Client({
                     }
                     return true;
                   });
-                  if (setCps.length === 0) continue;
+
+                  // Globale Actions mit genau dieser Profil-Herkunft, die ACTIVE sind.
+                  // Sie werden hier statt im globalen ACTION_GROUPS-Block angezeigt.
+                  const singleOriginCpsHere = actionCheckpoints.filter(
+                    (cp) =>
+                      singleOriginActionIds.has(cp.id) &&
+                      actionOrigins[cp.id]?.[0] === sec.inquiryId &&
+                      statuses[cp.id] === "ACTIVE" &&
+                      !M3_HIDDEN_BOUND_ACTION_IDS.has(cp.id),
+                  );
+
+                  if (setCps.length === 0 && singleOriginCpsHere.length === 0) continue;
 
                   // Gruppiere nach actionCategory.
                   const order = ["PREPARATION", "PROCESS", "NEXT_STEP", "INFO"] as const;
@@ -1475,6 +1503,43 @@ export default function InquiryM3Client({
                           ))}
                         </div>
                       ))}
+                      {singleOriginCpsHere.length > 0 && (() => {
+                        // Gruppiere single-origin globale Actions nach actionCategory.
+                        const byCat = new Map<string, M3ActionData[]>();
+                        for (const cp of singleOriginCpsHere) {
+                          const cat = cp.actionCategory ?? "INFO";
+                          if (!byCat.has(cat)) byCat.set(cat, []);
+                          byCat.get(cat)!.push(cp);
+                        }
+                        const singleOriginCatGroups = (["PREPARATION", "PROCESS", "NEXT_STEP", "INFO"] as const)
+                          .map((cat) => ({ cat, cps: byCat.get(cat) ?? [] }))
+                          .filter(({ cps }) => cps.length > 0);
+                        return singleOriginCatGroups.map(({ cat, cps }) => (
+                          <div key={`singleorigin-${cat}`}>
+                            <div
+                              className="text-muted text-small"
+                              style={{ marginTop: "0.5rem", marginBottom: "0.15rem", fontStyle: "italic" }}
+                            >
+                              {ACTION_CATEGORY_LABELS[cat] ?? cat}
+                            </div>
+                            {cps.map((cp) => (
+                              <div
+                                key={cp.id}
+                                style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                              >
+                                <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                                <StatusButtons
+                                  checkpointId={cp.id}
+                                  options={ACTION_OPTIONS}
+                                  value={statuses[cp.id]}
+                                  onChange={setStatus}
+                                  disabled={false}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        ));
+                      })()}
                     </div>,
                   );
                 }
