@@ -42,10 +42,6 @@ export default async function M2TokenPage({
   return (
     <main>
       <h1>Patientenbefragung</h1>
-      <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
-        Bitte beantworten Sie die folgenden Fragen und senden Sie das Formular
-        ab. Ihre Angaben werden vertraulich behandelt.
-      </p>
       <M2TokenFormClient token={token} checkpoints={checkpoints} />
     </main>
   );

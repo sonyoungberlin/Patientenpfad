@@ -60,10 +60,6 @@ export default async function QuestionnairePage({
   return (
     <main>
       <h1>Fragebogen</h1>
-      <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
-        Bitte beantworten Sie die folgenden Fragen und senden Sie das Formular
-        ab. Ihre Angaben werden vertraulich behandelt.
-      </p>
       <QuestionnaireFormClient token={token} questions={questions} />
     </main>
   );

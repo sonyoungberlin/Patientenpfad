@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
+import { IdentityGate } from "@/components/IdentityGate";
 
 function QuestionField({
   question,
@@ -208,8 +209,9 @@ export function QuestionnaireFormClient({
   }
 
   return (
-    <div>
-      {questions.length === 0 ? (
+    <IdentityGate>
+      <div>
+        {questions.length === 0 ? (
         <p>Keine Fragen vorhanden.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -265,5 +267,6 @@ export function QuestionnaireFormClient({
         {saving ? "Wird übermittelt…" : "Absenden"}
       </button>
     </div>
+    </IdentityGate>
   );
 }

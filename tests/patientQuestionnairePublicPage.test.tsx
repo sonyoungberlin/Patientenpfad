@@ -65,7 +65,7 @@ describe("/q/[token] Seite", () => {
     expect(markup).not.toContain("bereits ausgefüllt");
   });
 
-  it("rendert die Fragen bei gültigem Token", async () => {
+  it("zeigt Gate und Datenschutzhinweis bei gültigem Token statt direkter Fragen", async () => {
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
       token_expires_at: futureDate(48),
       status: "pending",
@@ -76,10 +76,13 @@ describe("/q/[token] Seite", () => {
       await QuestionnairePage({ params: Promise.resolve({ token: "valid-token" }) }),
     );
 
-    expect(markup).toContain('data-q-question="CONTACT_PHONE"');
-    expect(markup).toContain('data-q-question="AU_SYMPTOMS"');
-    expect(markup).toContain("Telefonnummer?");
-    expect(markup).toContain("Beschwerden?");
+    // Gate und Datenschutzhinweis sind sichtbar
+    expect(markup).toContain("data-identity-gate");
+    expect(markup).toContain("data-identity-gate-notice");
+    expect(markup).toContain("verschlüsselt");
+    // Fragen sind initial hinter dem Gate versteckt
+    expect(markup).not.toContain('data-q-question="CONTACT_PHONE"');
+    expect(markup).not.toContain('data-q-question="AU_SYMPTOMS"');
   });
 
   it("zeigt abgelaufen-Hinweis bei abgelaufenem Token", async () => {
