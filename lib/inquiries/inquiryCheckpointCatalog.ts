@@ -2002,6 +2002,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  IMMUNIZATION_VACCINATION_RECORD_MISSING: {
+    id: "IMMUNIZATION_VACCINATION_RECORD_MISSING",
+    label: "Impfpass fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_VACCINATION_RECORD_MISSING-Q1", text: "Liegt kein Impfpass oder Impfnachweis vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Beurteilung Ihres Impfstatus benötigen wir einen Impfpass oder einen anderen Impfnachweis. Falls kein Impfpass vorliegt, können Sie diesen auch bei uns in der Praxis erwerben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   /** @deprecated Vorbereitender Impfpass-Hinweis – nicht mehr in IMMUNIZATION.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   IMMUNIZATION_PASS_MISSING: {
     id: "IMMUNIZATION_PASS_MISSING",

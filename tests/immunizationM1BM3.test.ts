@@ -688,6 +688,7 @@ const IMMUNIZATION_M2_GROUP_CHECKPOINT_IDS: string[] = [
   "IMMUNIZATION_STANDARD_AVAILABLE",
   "IMMUNIZATION_RISK_REVIEW_REQUIRED",
   "IMMUNIZATION_STATUS_UNCLEAR",
+  "IMMUNIZATION_VACCINATION_RECORD_MISSING",
   "IMMUNIZATION_TRAVEL_MEDICINE",
 ];
 
@@ -702,5 +703,57 @@ describe("IMMUNIZATION – M2-Gruppen enthalten alle IMMUNIZATION-Checkpoints", 
     for (const cpId of IMMUNIZATION_M2_GROUP_CHECKPOINT_IDS) {
       expect(IMMUNIZATION.specificCheckpointIds).toContain(cpId);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 14. IMMUNIZATION_VACCINATION_RECORD_MISSING Checkpoint
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION_VACCINATION_RECORD_MISSING – Checkpoint und Profil-Einbindung", () => {
+  it("ist im Katalog als EXPLANATION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_VACCINATION_RECORD_MISSING"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+    expect(cp.specificRole).toBe("MISSING_DOCUMENT");
+  });
+
+  it("hat den erwarteten YES-Text und keinen NO-Text", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_VACCINATION_RECORD_MISSING"];
+    expect(cp.textByStatus[ExplanationStatus.YES]).toContain(
+      "Impfpass oder einen anderen Impfnachweis",
+    );
+    expect(cp.textByStatus[ExplanationStatus.YES]).toContain(
+      "in der Praxis erwerben",
+    );
+    expect(cp.textByStatus[ExplanationStatus.NO]).toBeUndefined();
+  });
+
+  it("ist in IMMUNIZATION.specificCheckpointIds enthalten (nach IMMUNIZATION_STATUS_UNCLEAR)", () => {
+    const ids = IMMUNIZATION.specificCheckpointIds;
+    expect(ids).toContain("IMMUNIZATION_VACCINATION_RECORD_MISSING");
+    const idxStatus = ids.indexOf("IMMUNIZATION_STATUS_UNCLEAR");
+    const idxMissing = ids.indexOf("IMMUNIZATION_VACCINATION_RECORD_MISSING");
+    expect(idxStatus).toBeGreaterThanOrEqual(0);
+    expect(idxMissing).toBe(idxStatus + 1);
+  });
+
+  it("YES → Erklärungstext erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "IMMUNIZATION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          IMMUNIZATION_VACCINATION_RECORD_MISSING: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          IMMUNIZATION_VACCINATION_RECORD_MISSING: ExplanationOutputStatus.SHOW,
+        },
+      },
+    ]);
+    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    expect(allText).toContain("Impfpass oder einen anderen Impfnachweis");
   });
 });

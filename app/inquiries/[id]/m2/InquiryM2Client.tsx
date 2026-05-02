@@ -1440,6 +1440,7 @@ const IMMUNIZATION_SHORT_LABELS: Record<string, string> = {
   IMMUNIZATION_STANDARD_AVAILABLE: "Grippe / COVID",
   IMMUNIZATION_RISK_REVIEW_REQUIRED: "Beratung nötig",
   IMMUNIZATION_STATUS_UNCLEAR: "Impfstatus unklar",
+  IMMUNIZATION_VACCINATION_RECORD_MISSING: "Impfpass fehlt",
   IMMUNIZATION_TRAVEL_MEDICINE: "Reiseimpfung",
 };
 
@@ -1473,6 +1474,7 @@ const IMMUNIZATION_GROUPS: PrescriptionGroup[] = [
     description: "Wenn Impfstatus oder Impfnachweise unklar sind.",
     checkpointIds: [
       "IMMUNIZATION_STATUS_UNCLEAR",
+      "IMMUNIZATION_VACCINATION_RECORD_MISSING",
     ],
     defaultOpen: false,
   },
