@@ -1966,6 +1966,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 50,
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
     specificCheckpointIds: [
+      "MEDICAL_DOCUMENT_POSSIBLE",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
       "MEDICAL_DOCUMENT_INFO_MISSING",
       "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
@@ -1973,7 +1974,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
-      "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
@@ -1981,6 +1981,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST_REQUIRED",
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
+      "DOCUMENT_UPLOAD",
     ],
     boundActionConditions: {
       DIGITAL_REQUEST_REQUIRED: {
@@ -1991,6 +1992,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       BOOK_APPOINTMENT: {
         showWhenAny: [{ MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [{ MEDICAL_DOCUMENT_INFO_MISSING: "YES" }],
       },
     },
 

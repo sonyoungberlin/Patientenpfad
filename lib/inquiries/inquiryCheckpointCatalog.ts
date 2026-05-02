@@ -2957,6 +2957,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- MEDICAL_DOCUMENTS SPECIFIC EXPLANATIONS ----
 
+  MEDICAL_DOCUMENT_POSSIBLE: {
+    id: "MEDICAL_DOCUMENT_POSSIBLE",
+    label: "Attest / Bescheinigung möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_POSSIBLE-Q1", text: "Kann für dieses Anliegen grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+      // NO: bewusst still – kein Text
+    },
+  },
+
   /** @deprecated Nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Fachlich durch globales MEDICAL_CONSULTATION_REQUIRED ersetzt. */
   MEDICAL_DOCUMENT_REVIEW_REQUIRED: {
     id: "MEDICAL_DOCUMENT_REVIEW_REQUIRED",

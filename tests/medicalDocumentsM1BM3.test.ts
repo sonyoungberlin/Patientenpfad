@@ -663,3 +663,140 @@ describe("MEDICAL_DOCUMENTS Renderer – DIGITAL_REQUEST_REQUIRED + DIGITAL_REQU
     expect(result.sharedBottom).toContain(DIGITAL_REQUEST_TEXT);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 11. MEDICAL_DOCUMENT_POSSIBLE – neuer positiver Einstiegs-Checkpoint
+// ---------------------------------------------------------------------------
+
+describe("MEDICAL_DOCUMENT_POSSIBLE – Existenz und Struktur", () => {
+  it("existiert im Katalog", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_POSSIBLE"]).toBeDefined();
+  });
+
+  it("hat kind EXPLANATION", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_POSSIBLE"].kind).toBe(
+      InquiryCheckpointKind.EXPLANATION,
+    );
+  });
+
+  it("hat scope SPECIFIC", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_POSSIBLE"].scope).toBe(
+      InquiryCheckpointScope.SPECIFIC,
+    );
+  });
+
+  it("hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_POSSIBLE"].specificRole).toBe(
+      "PROCESS_INFO",
+    );
+  });
+
+  it("hat textByStatus YES mit positivem Hinweis", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_POSSIBLE"];
+    expect(cp.textByStatus[ExplanationStatus.YES]).toBe(
+      "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+    );
+  });
+
+  it("hat keinen Text für NO (bewusst still)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_POSSIBLE"];
+    expect(cp.textByStatus[ExplanationStatus.NO]).toBeUndefined();
+  });
+});
+
+describe("MEDICAL_DOCUMENT_POSSIBLE – Profil-Einbindung", () => {
+  it("ist in MEDICAL_DOCUMENTS.specificCheckpointIds enthalten", () => {
+    expect(MEDICAL_DOCUMENTS.specificCheckpointIds).toContain("MEDICAL_DOCUMENT_POSSIBLE");
+  });
+
+  it("steht an Position 1 (erster Eintrag) der specificCheckpointIds", () => {
+    expect(MEDICAL_DOCUMENTS.specificCheckpointIds[0]).toBe("MEDICAL_DOCUMENT_POSSIBLE");
+  });
+});
+
+describe("MEDICAL_DOCUMENT_POSSIBLE Renderer – YES + SHOW erzeugt positiven Text", () => {
+  it("YES + SHOW → positiver Einstiegs-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { MEDICAL_DOCUMENT_POSSIBLE: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          MEDICAL_DOCUMENT_POSSIBLE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatusType>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain(
+      "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+    );
+  });
+
+  it("NO → kein Text erscheint (bewusst still)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { MEDICAL_DOCUMENT_POSSIBLE: ExplanationStatus.NO },
+        explanationOutputStatuses: {
+          MEDICAL_DOCUMENT_POSSIBLE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatusType>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain(
+      "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. DOCUMENT_UPLOAD – konditionelle Anbindung an MEDICAL_DOCUMENT_INFO_MISSING
+// ---------------------------------------------------------------------------
+
+describe("MEDICAL_DOCUMENTS – DOCUMENT_UPLOAD logische Anbindung", () => {
+  it("DOCUMENT_UPLOAD ist in boundActionCheckpointIds enthalten", () => {
+    expect(MEDICAL_DOCUMENTS.boundActionCheckpointIds).toContain("DOCUMENT_UPLOAD");
+  });
+
+  it("DOCUMENT_UPLOAD hat boundActionConditions mit showWhenAny MEDICAL_DOCUMENT_INFO_MISSING=YES", () => {
+    const condition = MEDICAL_DOCUMENTS.boundActionConditions?.["DOCUMENT_UPLOAD"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toContainEqual({ MEDICAL_DOCUMENT_INFO_MISSING: "YES" });
+  });
+
+  it("DOCUMENT_UPLOAD ist nicht mehr in availableActionIds (statt dessen konditionell gebunden)", () => {
+    expect(MEDICAL_DOCUMENTS.availableActionIds).not.toContain("DOCUMENT_UPLOAD");
+  });
+});
+
+describe("MEDICAL_DOCUMENTS Renderer – DOCUMENT_UPLOAD ACTIVE", () => {
+  const DOCUMENT_UPLOAD_TEXT =
+    "Bitte laden Sie relevante Unterlagen über Ihren Doctolib Account hoch.";
+
+  it("DOCUMENT_UPLOAD ACTIVE → Text erscheint in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {
+          DOCUMENT_UPLOAD: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {},
+      },
+    ]);
+    expect(result.sharedBottom).toContain(DOCUMENT_UPLOAD_TEXT);
+  });
+
+  it("DOCUMENT_UPLOAD INACTIVE / unset → Text erscheint nicht", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "MEDICAL_DOCUMENTS",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: {},
+        explanationOutputStatuses: {},
+      },
+    ]);
+    expect(result.sharedBottom).not.toContain(DOCUMENT_UPLOAD_TEXT);
+  });
+});
