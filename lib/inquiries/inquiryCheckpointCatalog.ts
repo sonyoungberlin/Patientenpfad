@@ -2668,6 +2668,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- ONBOARDING SPECIFIC EXPLANATIONS ----
 
+  ONBOARDING_DOCTOLIB_INFO: {
+    id: "ONBOARDING_DOCTOLIB_INFO",
+    label: "Doctolib – Nutzung und Kommunikation",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_DOCTOLIB_INFO-Q1", text: "Ist unklar, wie die Kommunikation oder Terminbuchung über Doctolib funktioniert?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Kommunikation mit unserer Praxis nutzen wir Doctolib.\n\nSie können dort Termine online buchen und verwalten sowie Rezepte oder Bescheinigungen digital anfragen.\n\nBitte nutzen Sie dafür Ihren Doctolib-Account.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   ONBOARDING_DATA_INCOMPLETE: {
     id: "ONBOARDING_DATA_INCOMPLETE",
     label: "Patientendaten unvollständig",

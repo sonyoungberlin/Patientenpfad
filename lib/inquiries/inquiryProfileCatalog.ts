@@ -1680,6 +1680,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 100,
     decisionCheckpointId: "",
     specificCheckpointIds: [
+      "ONBOARDING_DOCTOLIB_INFO",
       "ONBOARDING_WRONG_PRACTICE",
       "ONBOARDING_DATA_INCOMPLETE",
       "ONBOARDING_IDENTITY_MISMATCH",
