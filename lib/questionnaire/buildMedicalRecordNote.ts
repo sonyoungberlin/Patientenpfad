@@ -104,10 +104,6 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     addLine(hospLines, "Anlass", val(answers, "HOSP_ADMISSION_REASON"));
     addLine(hospLines, "Kontrolltermin", val(answers, "HOSP_ADMISSION_IS_CONTROL"));
     addLine(hospLines, "Termin", val(answers, "HOSP_ADMISSION_DATE"));
-    addLine(hospLines, "Krankentransport", val(answers, "HOSP_TRANSPORT_NEEDED"));
-    if (present(answers, "HOSP_TRANSPORT_REASON")) {
-      addLine(hospLines, "Transport-Grund", val(answers, "HOSP_TRANSPORT_REASON"));
-    }
     if (hospLines.length > 0) {
       lines.push("Krankenhauseinweisung");
       lines.push(...hospLines);

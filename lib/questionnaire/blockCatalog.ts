@@ -429,17 +429,10 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     id: "HOSPITAL_ADMISSION",
     label: "Krankenhauseinweisung",
     displayOrder: 70,
-    // HOSP_TRANSPORT_REASON wird direkt nach HOSP_TRANSPORT_NEEDED angezeigt.
-    // Conditional visibility (nur anzeigen wenn HOSP_TRANSPORT_NEEDED = ja) wird
-    // vom aktuellen Fragebogen-System nicht unterstützt – das Feld ist daher immer
-    // sichtbar. Praxis-seitig kann HOSP_TRANSPORT_REASON ignoriert werden, wenn
-    // HOSP_TRANSPORT_NEEDED = nein.
     questionIds: [
       "HOSP_ADMISSION_REASON",
       "HOSP_ADMISSION_IS_CONTROL",
       "HOSP_ADMISSION_DATE",
-      "HOSP_TRANSPORT_NEEDED",
-      "HOSP_TRANSPORT_REASON",
     ],
   },
   TRANSPORT: {
