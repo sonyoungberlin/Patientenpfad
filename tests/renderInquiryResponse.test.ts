@@ -1393,7 +1393,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle elf Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet alle zwölf Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
@@ -1406,8 +1406,9 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(11);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(12);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1423,6 +1424,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
+      "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
     ]);
   });
 

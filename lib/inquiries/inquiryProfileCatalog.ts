@@ -243,6 +243,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
+      "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [

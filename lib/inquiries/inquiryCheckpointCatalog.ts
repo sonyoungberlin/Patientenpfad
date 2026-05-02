@@ -2990,6 +2990,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
     },
   },
+
+  PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK: {
+    id: "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+    label: "Rezept geändert nach Apothekenrückmeldung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    question: "Wurde das Rezept nach Rückmeldung der Apotheke geändert?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Das Rezept wurde entsprechend angepasst.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Rezept nach Apothekenrückmeldung angepasst",
+    },
+  },
 };
 
 /**

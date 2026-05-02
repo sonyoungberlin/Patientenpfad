@@ -432,6 +432,7 @@ const PRESCRIPTION_SHORT_LABELS: Record<string, string> = {
   PRESCRIPTION_NO_POSTAL_DELIVERY: "Postversand angefragt",
   PRESCRIPTION_PATIENT_NOT_IN_GERMANY: "Patient im Ausland",
   PRESCRIPTION_CHRONIC_PATIENT: "Kontrolltermin / Dauermedikation?",
+  PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK: "Rezept nach Apothekenrückmeldung geändert",
 };
 
 /**
@@ -542,6 +543,8 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
       // Auslandsaufenthalt: Einlösung nur in deutschen Apotheken möglich
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
+      // Rezept nachträglich auf Basis der Apothekenrückmeldung angepasst
+      "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
     ],
     defaultOpen: false,
   },
@@ -552,10 +555,12 @@ const PRESCRIPTION_GROUPS: PrescriptionGroup[] = [
     label: "Problem nach Ausstellung",
     description: "Wenn ein Rezept bereits ausgestellt wurde, aber danach ein Problem entsteht.",
     checkpointIds: [
-      // Patient im Ausland: Einlösung eingeschränkt
+      // Auslandsaufenthalt: Einlösung nur in deutschen Apotheken möglich
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       // Postversand angefragt (als Kontext bei Einlösungsproblemen)
       "PRESCRIPTION_NO_POSTAL_DELIVERY",
+      // Rezept nach Ausstellung auf Basis der Apothekenrückmeldung angepasst
+      "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
     ],
     defaultOpen: false,
   },
