@@ -2081,6 +2081,25 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_BOOK_GENERAL: {
+    id: "APPOINTMENT_BOOK_GENERAL",
+    label: "Termin über Online-Kalender buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie Ihren Termin über unseren Online-Buchungskalender.\n\nWählen Sie:\n1. Hausarzt / Allgemeinmedizin\n2. passende Terminart\n\nFalls Sie unsicher sind, welcher Termin für Ihr Anliegen passt, geben Sie uns bitte kurz eine Rückmeldung.",
+    },
+    textByAudience: {
+      contact_person: {
+        [ActionStatus.ACTIVE]:
+          "Termin bitte über Online-Kalender buchen (Hausarzt / Allgemeinmedizin → passende Terminart). Bei Unsicherheit kurze Rückmeldung einholen.",
+      },
+    },
+  },
+
   APPOINTMENT_BOOKING_CODE_REQUIRED: {
     id: "APPOINTMENT_BOOKING_CODE_REQUIRED",
     label: "Buchungscode erforderlich",

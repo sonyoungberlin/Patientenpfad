@@ -700,6 +700,18 @@ describe("APPOINTMENT – terminartspezifische Buchungs-Actions im Katalog", () 
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_CHRONIC_CONTROL"];
     expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("CHKT25");
   });
+
+  it("APPOINTMENT_BOOK_GENERAL ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_GENERAL"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("APPOINTMENT_BOOK_GENERAL ACTIVE-Text enthält 'Online-Buchungskalender'", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_GENERAL"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Online-Buchungskalender");
+  });
 });
 
 describe("APPOINTMENT – terminartspezifische Buchungs-Actions in boundActionCheckpointIds", () => {
@@ -713,6 +725,15 @@ describe("APPOINTMENT – terminartspezifische Buchungs-Actions in boundActionCh
 
   it("APPOINTMENT_BOOK_CHRONIC_CONTROL ist in boundActionCheckpointIds", () => {
     expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("APPOINTMENT_BOOK_CHRONIC_CONTROL");
+  });
+
+  it("APPOINTMENT_BOOK_GENERAL ist in boundActionCheckpointIds", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("APPOINTMENT_BOOK_GENERAL");
+  });
+
+  it("APPOINTMENT_BOOK_GENERAL hat kein boundActionCondition-Eintrag", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.APPOINTMENT_BOOK_GENERAL).toBeUndefined();
   });
 
   it("APPOINTMENT_BOOK_FINDINGS_REVIEW hat showWhenAny [APPOINTMENT_BOOKING_CODE_REQUIRED=YES] in boundActionConditions", () => {
@@ -807,5 +828,19 @@ describe("APPOINTMENT – Renderer: terminartspezifische Buchungs-Actions", () =
     expect(allText).not.toContain("CHECK25");
     expect(allText).not.toContain("CHKT25");
   });
-});
 
+  it("APPOINTMENT_BOOK_GENERAL ACTIVE → 'Online-Buchungskalender' erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_BOOK_GENERAL: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections[0].attachedParagraphs.join(" ");
+    expect(allText).toContain("Online-Buchungskalender");
+  });
+});
