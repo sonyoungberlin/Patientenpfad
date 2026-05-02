@@ -722,7 +722,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Urin- und Stuhlprobe",
     displayOrder: 90,
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
-    specificCheckpointIds: [],
+    specificCheckpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
     boundGlobalCheckpointIds: [],
     globalHints: {},
     boundActionCheckpointIds: [
@@ -1294,9 +1294,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 70,
     decisionCheckpointId: "IMMUNIZATION_DECISION",
     specificCheckpointIds: [
-      "IMMUNIZATION_TRAVEL_MEDICINE",
+      "IMMUNIZATION_STANDARD_AVAILABLE",
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
       "IMMUNIZATION_STATUS_UNCLEAR",
+      "IMMUNIZATION_VACCINATION_RECORD_MISSING",
+      "IMMUNIZATION_TRAVEL_MEDICINE",
     ],
     boundGlobalCheckpointIds: [],
     globalHints: {},
@@ -1308,11 +1310,19 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DOCUMENT_UPLOAD",
     ],
     boundActionCheckpointIds: [
+      "IMMUNIZATION_BOOK_VACCINATION",
+      "IMMUNIZATION_BOOK_COUNSELING",
       "IMMUNIZATION_BRING_VACCINATION_RECORD",
     ],
     boundActionConditions: {
+      IMMUNIZATION_BOOK_VACCINATION: {
+        showWhenAny: [{ IMMUNIZATION_STANDARD_AVAILABLE: "YES" }],
+      },
+      IMMUNIZATION_BOOK_COUNSELING: {
+        showWhenAny: [{ IMMUNIZATION_RISK_REVIEW_REQUIRED: "YES" }],
+      },
       IMMUNIZATION_BRING_VACCINATION_RECORD: {
-        hideWhenAny: [],
+        hideWhenAny: [{ IMMUNIZATION_TRAVEL_MEDICINE: "YES" }],
       },
     },
 
@@ -1670,6 +1680,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 100,
     decisionCheckpointId: "",
     specificCheckpointIds: [
+      "ONBOARDING_DOCTOLIB_INFO",
       "ONBOARDING_WRONG_PRACTICE",
       "ONBOARDING_DATA_INCOMPLETE",
       "ONBOARDING_IDENTITY_MISMATCH",
@@ -1956,6 +1967,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 50,
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
     specificCheckpointIds: [
+      "MEDICAL_DOCUMENT_POSSIBLE",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
       "MEDICAL_DOCUMENT_INFO_MISSING",
       "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
@@ -1963,7 +1975,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
-      "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
@@ -1971,6 +1982,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST_REQUIRED",
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
+      "DOCUMENT_UPLOAD",
     ],
     boundActionConditions: {
       DIGITAL_REQUEST_REQUIRED: {
@@ -1981,6 +1993,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       BOOK_APPOINTMENT: {
         showWhenAny: [{ MEDICAL_DOCUMENT_CONSULTATION_REQUIRED: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [{ MEDICAL_DOCUMENT_INFO_MISSING: "YES" }],
       },
     },
 
