@@ -3193,6 +3193,24 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]: "Angaben zur Krankenbeförderung fehlen",
     },
   },
+
+  // ---- TRANSPORT ACTION CHECKPOINTS ----
+
+  TRANSPORT_QUESTIONNAIRE_REQUEST: {
+    id: "TRANSPORT_QUESTIONNAIRE_REQUEST",
+    label: "Fragebogen Krankentransport ausfüllen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte beantworten Sie die Fragen zum Krankentransport, damit wir die Verordnung prüfen können.",
+    },
+    docByStatus: {
+      [ActionStatus.ACTIVE]: "Fragebogen Krankentransport ausfüllen",
+    },
+  },
 };
 
 /**

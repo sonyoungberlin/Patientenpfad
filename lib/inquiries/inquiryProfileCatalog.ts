@@ -1126,12 +1126,16 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "DIGITAL_REQUEST_REQUIRED",
       "CONTROL_APPOINTMENT_RECOMMENDED",
+      "TRANSPORT_QUESTIONNAIRE_REQUEST",
     ],
     boundActionConditions: {
       DIGITAL_REQUEST_REQUIRED: {
         hideWhenAny: [],
       },
       CONTROL_APPOINTMENT_RECOMMENDED: {
+        hideWhenAny: [],
+      },
+      TRANSPORT_QUESTIONNAIRE_REQUEST: {
         hideWhenAny: [],
       },
     },
@@ -1181,6 +1185,18 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         when: {
           allOf: [
             { checkpointId: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 5. TRANSPORT_QUESTIONNAIRE_REQUEST empfehlen, wenn Krankentransport erforderlich
+      {
+        id: "HOSP_TRANSPORT_QUESTIONNAIRE_RECOMMENDED",
+        checkpointId: "TRANSPORT_QUESTIONNAIRE_REQUEST",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_TRANSPORT_REQUIRED", status: ExplanationStatus.YES },
           ],
         },
         hint: "recommended",
