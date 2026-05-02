@@ -1488,7 +1488,7 @@ const IMMUNIZATION_GROUPS: PrescriptionGroup[] = [
 ];
 
 /**
- * Situationsbasierte Akkordeon-Gruppen für den IMMUNIZATION M2 Prototyp.
+ * Render-Section für den IMMUNIZATION M2 Prototyp.
  * Analog zu LabSpecificSection – keine Actions in M2.
  *
  * [PROTOTYP – hartcodiert, reversibel.]
