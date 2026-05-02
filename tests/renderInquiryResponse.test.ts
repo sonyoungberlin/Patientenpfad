@@ -2328,7 +2328,8 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
   it("alle 3 Action-Checkpoints sind als ACTION/PREPARATION|PROCESS|INFO im Katalog und in boundActionCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER"];
-    expect(profile.specificCheckpointIds).toHaveLength(0);
+    expect(profile.specificCheckpointIds).toHaveLength(1);
+    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_AVAILABLE");
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     for (const id of ids) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -2448,6 +2449,37 @@ describe("SAMPLE_COLLECTION-Profil – Action-Checkpoints (boundActionCheckpoint
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+  });
+});
+
+describe("SAMPLE_COLLECTION-Profil – SAMPLE_COLLECTION_ORDER_AVAILABLE (EXPLANATION)", () => {
+  it("Checkpoint ist im Katalog als EXPLANATION/SPECIFIC/ATTACHED mit specificRole PROCESS_INFO definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["SAMPLE_COLLECTION_ORDER_AVAILABLE"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+    expect(cp.specificRole).toBe("PROCESS_INFO");
+    expect(cp.questions).toHaveLength(1);
+    expect(cp.questions?.[0].id).toBe("SAMPLE_COLLECTION_ORDER_AVAILABLE-Q1");
+  });
+
+  it("Checkpoint ist in SAMPLE_COLLECTION.specificCheckpointIds enthalten", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_AVAILABLE");
+  });
+
+  it("YES → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { SAMPLE_COLLECTION_ORDER_AVAILABLE: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          SAMPLE_COLLECTION_ORDER_AVAILABLE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const allText = result.sections[0].attachedParagraphs.join(" ");
+    expect(allText).toContain("Für die Probenabgabe liegt eine entsprechende Anordnung vor.");
   });
 });
 

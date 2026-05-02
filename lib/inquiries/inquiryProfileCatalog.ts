@@ -722,7 +722,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Urin- und Stuhlprobe",
     displayOrder: 90,
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
-    specificCheckpointIds: [],
+    specificCheckpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
     boundGlobalCheckpointIds: [],
     globalHints: {},
     boundActionCheckpointIds: [

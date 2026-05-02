@@ -1421,6 +1421,22 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- SAMPLE_COLLECTION SPECIFIC CHECKPOINTS ----
 
+  SAMPLE_COLLECTION_ORDER_AVAILABLE: {
+    id: "SAMPLE_COLLECTION_ORDER_AVAILABLE",
+    label: "Probenanordnung liegt vor",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "SAMPLE_COLLECTION_ORDER_AVAILABLE-Q1", text: "Liegt eine ärztliche Anordnung für die Probenabgabe vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Für die Probenabgabe liegt eine entsprechende Anordnung vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   URINE_SAMPLE_INSTRUCTIONS: {
     id: "URINE_SAMPLE_INSTRUCTIONS",
     label: "Urinprobe – Hinweis",
