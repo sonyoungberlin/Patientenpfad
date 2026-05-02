@@ -2127,8 +2127,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "BILLING_COST_NOT_COVERED-Q1", text: "Ist die angefragte Leistung keine Kassenleistung (z. B. IGeL, Selbstzahlerleistung)?" },
     ],
     textByStatus: {
-      // M2-Schalter: kein eigener Patiententext – YES schaltet M3-Bausteine frei.
-      [ExplanationStatus.YES]: "",
+      [ExplanationStatus.YES]:
+        "Die angefragte Laboruntersuchung erfolgt ohne klare medizinische Indikation oder außerhalb der vorgesehenen Vorsorgeintervalle und ist daher keine Kassenleistung. Die Durchführung ist als Selbstzahlerleistung möglich.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
