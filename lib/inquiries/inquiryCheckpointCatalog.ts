@@ -523,7 +523,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die weitere Bearbeitung benötigen wir den Krankenhaus- oder Entlassbericht.",
+        "Es liegt kein aktueller Krankenhaus- oder Entlassbericht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -596,7 +596,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte wenden Sie sich für diese Verordnung an die zuständige Facharztpraxis.",
+        "Die Verordnung erfolgt über die zuständige Facharztpraxis.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2971,7 +2971,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     question: "Befindet sich der Patient aktuell NICHT in Deutschland?",
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezepte können in deutschen Apotheken eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
+        "Rezepte können in deutschen Apotheken eingelöst werden. Im Ausland ist die Einlösung eingeschränkt.",
     },
   },
 
