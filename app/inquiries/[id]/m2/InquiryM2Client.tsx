@@ -1431,6 +1431,116 @@ function LabSpecificSection({
 // Ende LAB M2 Gruppen-Prototyp
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// APPOINTMENT M2 Gruppen-Prototyp
+// [PROTOTYP – hartcodiert, nur für APPOINTMENT, reversibel]
+// ─────────────────────────────────────────────────────────────────────────────
+
+const APPOINTMENT_SHORT_LABELS: Record<string, string> = {
+  APPOINTMENT_WRONG_TYPE: "Falscher Termintyp",
+  APPOINTMENT_BOOKING_CODE_REQUIRED: "Buchungscode fehlt",
+  APPOINTMENT_DATA_INCOMPLETE: "Angaben fehlen",
+};
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den APPOINTMENT M2 Prototyp.
+ *
+ * [PROTOTYP – hartcodiert, reversibel. Zum Rückgängigmachen: Render-Loop in
+ *  InquiryM2Client wiederherstellen, diese Konstante und die zugehörigen
+ *  Komponenten entfernen.]
+ */
+const APPOINTMENT_GROUPS: PrescriptionGroup[] = [
+  {
+    id: "appt_type",
+    label: "Terminart / Buchung",
+    checkpointIds: [
+      "APPOINTMENT_WRONG_TYPE",
+      "APPOINTMENT_BOOKING_CODE_REQUIRED",
+    ],
+    defaultOpen: true,
+  },
+  {
+    id: "appt_missing",
+    label: "Angaben fehlen",
+    checkpointIds: [
+      "APPOINTMENT_DATA_INCOMPLETE",
+    ],
+    defaultOpen: false,
+  },
+];
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den APPOINTMENT M2 Prototyp.
+ * Analog zu LabSpecificSection – keine Actions in M2.
+ *
+ * [PROTOTYP – hartcodiert, reversibel.]
+ */
+function AppointmentSpecificSection({
+  section,
+  statuses,
+  onChange,
+}: {
+  section: M2SectionData;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
+  const cpById = new Map<string, PlainCheckpoint>(
+    section.specificCheckpoints
+      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
+      .map((cp) => [cp.id, cp]),
+  );
+
+  return (
+    <section style={{ marginBottom: "2rem" }}>
+      <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
+      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
+        Wähle aus, welche Situation am besten passt:
+      </p>
+
+      {/* Decision-Klärungsfragen – immer sichtbar */}
+      {section.decisionQuestions.length > 0 && (
+        <div style={{ marginBottom: "1rem" }}>
+          <div
+            className="text-muted text-small"
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+          >
+            <span aria-hidden="true">? </span>Klärungsfragen
+          </div>
+          <DecisionQuestionBlock
+            questions={section.decisionQuestions}
+            statuses={statuses}
+            onChange={onChange}
+          />
+        </div>
+      )}
+
+      {/* Accordion-Gruppen */}
+      <div style={{ marginBottom: "0.75rem" }}>
+        {APPOINTMENT_GROUPS.map((group) => {
+          const groupCheckpoints = group.checkpointIds
+            .map((id) => cpById.get(id))
+            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+
+          return (
+            <PrescriptionGroupAccordion
+              key={group.id}
+              group={group}
+              checkpoints={groupCheckpoints}
+              statuses={statuses}
+              onChange={onChange}
+              shortLabels={APPOINTMENT_SHORT_LABELS}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ende APPOINTMENT M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
 /** Section „Weitere passende Hinweise" – standardmäßig eingeklappt. */
 function WeitereHinweiseSection({
   profileActionCheckpoints,
@@ -1621,6 +1731,13 @@ export default function InquiryM2Client({
             statuses={statuses}
             onChange={setStatus}
           />
+        ) : section.inquiryId === "APPOINTMENT" ? (
+          <AppointmentSpecificSection
+            key={section.inquiryId}
+            section={section}
+            statuses={statuses}
+            onChange={setStatus}
+          />
         ) : (
           <SpecificSection
             key={section.inquiryId}
@@ -1634,7 +1751,7 @@ export default function InquiryM2Client({
       {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION / LAB.
            Für diese Profile werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
       {profileActionCheckpoints.length > 0 &&
-        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB") && (
+        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB" || s.inquiryId === "APPOINTMENT") && (
           <WeitereHinweiseSection
             profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}
