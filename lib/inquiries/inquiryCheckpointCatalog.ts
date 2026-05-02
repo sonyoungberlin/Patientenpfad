@@ -465,6 +465,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- PRESCRIPTION SPECIFIC EXPLANATIONS ----
 
+  /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Inhalt wird aktuell über Termin-/Kontrollhinweise im M3 abgebildet. */
   PRESCRIPTION_CONTROL_OVERDUE: {
     id: "PRESCRIPTION_CONTROL_OVERDUE",
     label: "Kontrollintervall überfällig",
@@ -662,6 +663,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   // Diese Checkpoints werden nicht mehr im PRESCRIPTION-Profil gebunden.
   // Sie verbleiben vorerst im Katalog, bis alle Referenzen bereinigt sind.
 
+  /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Legacy-Baustein aus früherer Rezept-Triage. */
   PRESCRIPTION_KNOWN_MEDICATION: {
     id: "PRESCRIPTION_KNOWN_MEDICATION",
     label: "Medikament bekannt",
@@ -674,6 +676,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Legacy-Baustein; Wiederverordnung wird heute über die aktive Rezept-Logik abgebildet. */
   PRESCRIPTION_FOLLOW_UP: {
     id: "PRESCRIPTION_FOLLOW_UP",
     label: "Folgerezept / Dauermedikation",
@@ -686,6 +689,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Inhaltlich durch PRESCRIPTION_SPECIALIST_RESPONSIBLE abgelöst. */
   PRESCRIPTION_SPECIALIST_REQUIRED: {
     id: "PRESCRIPTION_SPECIALIST_REQUIRED",
     label: "Fachärztliche Mitbehandlung erforderlich",
@@ -698,6 +702,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Legacy-Baustein aus früherer Sonderformen-Triage. */
   PRESCRIPTION_SPECIAL_TYPE: {
     id: "PRESCRIPTION_SPECIAL_TYPE",
     label: "Sonderfall",
@@ -718,7 +723,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.DECISION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    questions: [],
     textByStatus: {
       [DecisionStatus.POSSIBLE]: "Ein Termin für die Blutentnahme kann direkt vereinbart werden.",
       [DecisionStatus.NOT_POSSIBLE]: "Vor der Blutentnahme ist zunächst eine ärztliche Abklärung erforderlich. Alternativ kann die Untersuchung als Selbstzahlerleistung erfolgen.",
@@ -731,7 +735,6 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- LAB SPECIFIC CHECKPOINTS ----
 
-  /** @deprecated ungebunden – nicht mehr in LAB.specificCheckpointIds */
   LAB_CHECKUP_RULES: {
     id: "LAB_CHECKUP_RULES",
     label: "Check-up-Regelung",
@@ -1002,6 +1005,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   // Entscheidung aus. Abgrenzung zu DOCTOR_REVIEW_REQUIRED (GLOBAL):
   // DOCTOR_REVIEW_REQUIRED bedeutet, dass vor Weiterbearbeitung erst eine ärztliche
   // Klärung/Freigabe stattfinden muss – unabhängig davon, ob ein Anlass vorliegt.
+  /** @deprecated Nicht mehr in LAB.specificCheckpointIds gebunden. Labor-Anlass wird heute über spezifischere LAB-Checkpoints und Termin-/Kostenlogik abgebildet. */
   LAB_MEDICAL_INDICATION: {
     id: "LAB_MEDICAL_INDICATION",
     label: "Labor-Anlass / Indikation",
@@ -1019,6 +1023,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr in LAB.specificCheckpointIds gebunden. Ersetzt durch LAB_CHECKUP_RULES. */
   LAB_CHECKUP_ELIGIBLE: {
     id: "LAB_CHECKUP_ELIGIBLE",
     label: "Check-up / Vorsorge",
@@ -1035,6 +1040,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /** @deprecated Nicht mehr in LAB.specificCheckpointIds gebunden. Legacy-Baustein zur früheren Laborwerte-Triage. */
   LAB_VALUES_DEFINED: {
     id: "LAB_VALUES_DEFINED",
     label: "Laborwerte definiert",
@@ -1852,6 +1858,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- REFERRAL SPECIFIC EXPLANATIONS ----
 
+  /** @deprecated Nicht mehr in REFERRAL.specificCheckpointIds gebunden. Ersetzt durch REF_MEDICAL_CONSULTATION_REQUIRED. */
   REF_DOCTOR_CONTACT_REQUIRED: {
     id: "REF_DOCTOR_CONTACT_REQUIRED",
     label: "Ärztlicher Kontakt erforderlich",
