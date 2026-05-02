@@ -1393,7 +1393,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle elf Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet alle zwölf Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
@@ -1406,8 +1406,9 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(11);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(12);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1423,6 +1424,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
+      "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
     ]);
   });
 
@@ -1999,7 +2001,10 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_MEDICAL_CONSULTATION_REQUIRED");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_BILLING");
-    expect(labProfile.specificCheckpointIds).toHaveLength(4);
+    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_RULES");
+    expect(labProfile.specificCheckpointIds).toContain("BILLING_COST_NOT_COVERED");
+    expect(labProfile.specificCheckpointIds).toContain("APPOINTMENT_DATA_INCOMPLETE");
+    expect(labProfile.specificCheckpointIds).toHaveLength(7);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -2107,13 +2112,13 @@ describe("LAB-Profil – globalHints", () => {
 // ---------------------------------------------------------------------------
 
 describe("LAB-Profil – SPECIFIC Checkpoints", () => {
-  it("LAB_CHECKUP_RULES YES → kein Output in attachedParagraphs (ungebunden)", () => {
+  it("LAB_CHECKUP_RULES YES → Output erscheint in attachedParagraphs (gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
   });
 
   it("LAB_FASTING_REQUIRED ACTIVE → Nüchtern-Hinweis erscheint in sharedBottom", () => {
@@ -2513,15 +2518,16 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("4 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED)", () => {
+  it("5 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(4);
+    expect(profile.specificCheckpointIds).toHaveLength(5);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     expect(profile.specificCheckpointIds).toContain("REF_SPECIALTY_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
@@ -2875,10 +2881,13 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat 1 boundGlobalCheckpointId: INFECTIOUS_PROTOCOL (ACUTE_OPEN_CONSULTATION_INFO abgelöst durch ACTION-Baustein)", () => {
+  it("ACUTE_CARE hat 1 boundGlobalCheckpointId: INFECTIOUS_PROTOCOL (Transport-Status-Checkpoints sind nicht aktiv angebunden)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
     expect(profile.boundGlobalCheckpointIds).toContain("INFECTIOUS_PROTOCOL");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("TRANSPORT_APPROVED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("TRANSPORT_NOT_APPROVED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("TRANSPORT_INFO_MISSING");
     expect(profile.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");

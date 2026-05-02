@@ -424,7 +424,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine lückenlose Krankschreibung muss die Folgebescheinigung rechtzeitig erfolgen.",
+        "Die aktuelle Anfrage betrifft eine Folgebescheinigung.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -523,7 +523,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die weitere Bearbeitung benötigen wir den Krankenhaus- oder Entlassbericht.",
+        "Es liegt kein aktueller Krankenhaus- oder Entlassbericht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -554,6 +554,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
     questions: [
       { id: "PRESCRIPTION_PRIVATE_ONLY-Q1", text: "Handelt es sich um ein Präparat, das nur privat verordnet werden kann?" },
     ],
@@ -596,7 +597,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte wenden Sie sich für diese Verordnung an die zuständige Facharztpraxis.",
+        "Die Verordnung erfolgt über die zuständige Facharztpraxis.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -865,6 +866,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
+    },
+  },
+
+  LAB_APPOINTMENT_CHECKUP: {
+    id: "LAB_APPOINTMENT_CHECKUP",
+    label: "Termin Check-up-Labor buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte vereinbaren Sie im Online-Buchungskalender den Termin \u201ECheck-Up - 1. Termin (Basiswerte Labor)\u201C. F\u00FCr diesen Termin ist kein Code erforderlich.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte im Online-Buchungskalender den Termin \u201ECheck-Up - 1. Termin (Basiswerte Labor)\u201C vereinbaren. F\u00FCr diesen Termin ist kein Code erforderlich.",
     },
   },
 
@@ -1831,13 +1849,14 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
     m5Code: "NO_SPECIALTY" as M5ReasonCode,
     questions: [
-      { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung oder der Facharzt bekannt?" },
+      { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung noch nicht angegeben?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Ausstellung einer Überweisung muss die gewünschte Fachrichtung angegeben werden.",
+        "Die Fachrichtung für die Überweisung ist noch nicht angegeben.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1870,6 +1889,24 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     // Reiner M2-Schalter – kein eigener Ausgabetext.
     textByStatus: {},
+  },
+
+  REFERRAL_CAN_BE_ISSUED: {
+    id: "REFERRAL_CAN_BE_ISSUED",
+    label: "Überweisung kann ausgestellt werden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "OUTCOME_INFO" as SpecificRole,
+    questions: [
+      { id: "REFERRAL_CAN_BE_ISSUED-Q1", text: "Kann die Überweisung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Überweisung kann ausgestellt werden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Überweisung kann ausgestellt werden",
+    },
   },
 
   // ---- IMMUNIZATION DECISION ----
@@ -1968,6 +2005,117 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- APPOINTMENT SPECIFIC EXPLANATIONS ----
+
+  APPOINTMENT_CAN_BE_BOOKED: {
+    id: "APPOINTMENT_CAN_BE_BOOKED",
+    label: "Termin kann gebucht werden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_CAN_BE_BOOKED-Q1", text: "Kann für dieses Anliegen grundsätzlich ein Termin gebucht werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Ihr Anliegen kann grundsätzlich ein Termin vereinbart werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_CANCEL_OR_RESCHEDULE: {
+    id: "APPOINTMENT_CANCEL_OR_RESCHEDULE",
+    label: "Termin absagen oder verschieben",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_CANCEL_OR_RESCHEDULE-Q1", text: "Möchte der Patient einen bestehenden Termin absagen oder verschieben?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Sie können Ihren Termin jederzeit über den Online-Kalender absagen oder verschieben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- APPOINTMENT ACTION CHECKPOINTS (terminartspezifische Buchungsanleitungen) ----
+
+  APPOINTMENT_BOOK_FINDINGS_REVIEW: {
+    id: "APPOINTMENT_BOOK_FINDINGS_REVIEW",
+    label: "Befundbesprechung buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie im Online-Buchungskalender eine Befundbesprechung. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode BFSP25.",
+    },
+  },
+
+  APPOINTMENT_BOOK_CHECKUP_SECOND: {
+    id: "APPOINTMENT_BOOK_CHECKUP_SECOND",
+    label: "Check-Up 2. Termin buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie im Online-Buchungskalender den Termin \u201ECheck-Up - 2. Termin\u201C. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung ben\u00F6tigen Sie den Buchungscode CHECK25. Bitte bringen Sie Ihren Impfpass mit.",
+    },
+  },
+
+  APPOINTMENT_BOOK_CHRONIC_CONTROL: {
+    id: "APPOINTMENT_BOOK_CHRONIC_CONTROL",
+    label: "Chroniker-Kontrolltermin buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie im Online-Buchungskalender einen Chroniker-Kontrolltermin. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode CHKT25.",
+    },
+  },
+
+  APPOINTMENT_BOOK_GENERAL: {
+    id: "APPOINTMENT_BOOK_GENERAL",
+    label: "Termin über Online-Kalender buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie Ihren Termin über unseren Online-Buchungskalender.\n\nWählen Sie:\n1. Hausarzt / Allgemeinmedizin\n2. passende Terminart\n\nFalls Sie unsicher sind, welcher Termin für Ihr Anliegen passt, geben Sie uns bitte kurz eine Rückmeldung.",
+    },
+    textByAudience: {
+      contact_person: {
+        [ActionStatus.ACTIVE]:
+          "Termin bitte über Online-Kalender buchen (Hausarzt / Allgemeinmedizin → passende Terminart). Bei Unsicherheit kurze Rückmeldung einholen.",
+      },
+    },
+  },
+
+  APPOINTMENT_BOOKING_CODE_REQUIRED: {
+    id: "APPOINTMENT_BOOKING_CODE_REQUIRED",
+    label: "Buchungscode erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_BOOKING_CODE_REQUIRED-Q1", text: "Ist für die gewünschte Terminart ein Buchungscode erforderlich oder fehlt dieser?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die gewünschte Terminart ist ein Buchungscode erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 
   APPOINTMENT_WRONG_TYPE: {
     id: "APPOINTMENT_WRONG_TYPE",
@@ -2107,8 +2255,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "BILLING_COST_NOT_COVERED-Q1", text: "Ist die angefragte Leistung keine Kassenleistung (z. B. IGeL, Selbstzahlerleistung)?" },
     ],
     textByStatus: {
-      // M2-Schalter: kein eigener Patiententext – YES schaltet M3-Bausteine frei.
-      [ExplanationStatus.YES]: "",
+      [ExplanationStatus.YES]:
+        "Die angefragte Laboruntersuchung erfolgt ohne klare medizinische Indikation oder außerhalb der vorgesehenen Vorsorgeintervalle und ist daher keine Kassenleistung. Die Durchführung ist als Selbstzahlerleistung möglich.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2968,10 +3116,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
     question: "Befindet sich der Patient aktuell NICHT in Deutschland?",
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Rezepte können in deutschen Apotheken eingelöst werden. Im Ausland kann die Einlösung eingeschränkt sein.",
+        "Rezepte können in deutschen Apotheken eingelöst werden. Im Ausland ist die Einlösung eingeschränkt.",
     },
   },
 
@@ -2981,10 +3130,213 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
     question: "Liegt eine chronische oder dauerhaft behandlungsbedürftige Erkrankung vor?",
     textByStatus: {
       [ExplanationStatus.YES]:
         "Bei Dauermedikation sind regelmäßige Kontrolltermine vorgesehen.",
+    },
+  },
+
+  PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK: {
+    id: "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+    label: "Rezept geändert nach Apothekenrückmeldung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    question: "Wurde das Rezept nach Rückmeldung der Apotheke geändert?",
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Das Rezept wurde entsprechend angepasst.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Rezept nach Apothekenrückmeldung angepasst",
+    },
+  },
+
+  // ---- HOSPITAL_ADMISSION DECISION ----
+
+  HOSPITAL_ADMISSION_DECISION: {
+    id: "HOSPITAL_ADMISSION_DECISION",
+    label: "Krankenhauseinweisung-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_DECISION-Q1", text: "Kann die Krankenhauseinweisung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Die Krankenhauseinweisung wurde ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Die angefragte Krankenhauseinweisung wurde nicht ausgestellt.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Krankenhauseinweisung ausgestellt",
+      [DecisionStatus.NOT_POSSIBLE]: "Krankenhauseinweisung nicht ausgestellt",
+    },
+  },
+
+  // ---- HOSPITAL_ADMISSION SPECIFIC EXPLANATIONS ----
+
+  HOSPITAL_ADMISSION_MISSING_INFO: {
+    id: "HOSPITAL_ADMISSION_MISSING_INFO",
+    label: "Angaben zur Einweisung fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_MISSING_INFO-Q1", text: "Fehlen noch Angaben zur geplanten Krankenhauseinweisung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Bearbeitung der Krankenhauseinweisung fehlen noch Angaben.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Angaben zur Krankenhauseinweisung fehlen",
+    },
+  },
+
+  HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED-Q1", text: "Ist vor Ausstellung eine ärztliche Konsultation erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Vor Ausstellung der Krankenhauseinweisung ist eine ärztliche Konsultation erforderlich.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "ärztliche Konsultation vor Krankenhauseinweisung erforderlich",
+    },
+  },
+
+  HOSPITAL_ADMISSION_CAN_BE_ISSUED: {
+    id: "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
+    label: "Krankenhauseinweisung kann ausgestellt werden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "OUTCOME_INFO" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_CAN_BE_ISSUED-Q1", text: "Kann die Krankenhauseinweisung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Krankenhauseinweisung kann ausgestellt werden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenhauseinweisung kann ausgestellt werden",
+    },
+  },
+
+  HOSPITAL_TRANSPORT_REQUIRED: {
+    id: "HOSPITAL_TRANSPORT_REQUIRED",
+    label: "Krankentransport erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_TRANSPORT_REQUIRED-Q1", text: "Wird ein Krankentransport benötigt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die stationäre Aufnahme wird ein Krankentransport benötigt.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankentransport erforderlich",
+    },
+  },
+
+  // ---- GLOBAL TRANSPORT STATUS (Konfliktgruppe: TRANSPORT_STATUS) ----
+  //
+  // Diese drei Checkpoints bilden eine Exklusivgruppe: In M3 darf maximal einer
+  // davon auf SHOW gesetzt werden. Die Invariante wird serverseitig durch
+  // `applyExclusiveGroupConstraints` in inquirySessionService durchgesetzt:
+  // Wenn einer auf SHOW gesetzt wird, setzen die anderen automatisch auf HIDE.
+  //
+  // Scope GLOBAL + classification "MODULAR": wiederverwendbar in mehreren
+  // Profilen (HOSPITAL_ADMISSION, APPOINTMENT, ACUTE_CARE). Gebunden via
+  // boundGlobalCheckpointIds. specificRole entfällt bei GLOBAL scope.
+
+  TRANSPORT_APPROVED: {
+    id: "TRANSPORT_APPROVED",
+    label: "Krankenbeförderung zugesagt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    exclusiveGroupId: "TRANSPORT_STATUS",
+    questions: [
+      { id: "TRANSPORT_APPROVED-Q1", text: "Wurde eine Krankenbeförderung zugesagt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Krankenbeförderung wurde veranlasst.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenbeförderung veranlasst",
+    },
+  },
+
+  TRANSPORT_NOT_APPROVED: {
+    id: "TRANSPORT_NOT_APPROVED",
+    label: "Krankenbeförderung nicht zugesagt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    exclusiveGroupId: "TRANSPORT_STATUS",
+    questions: [
+      { id: "TRANSPORT_NOT_APPROVED-Q1", text: "Wurde die Krankenbeförderung nicht zugesagt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Eine Krankenbeförderung kann derzeit nicht veranlasst werden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenbeförderung nicht veranlasst",
+    },
+  },
+
+  TRANSPORT_INFO_MISSING: {
+    id: "TRANSPORT_INFO_MISSING",
+    label: "Angaben zur Krankenbeförderung fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    exclusiveGroupId: "TRANSPORT_STATUS",
+    m5Code: "NO_DATA" as M5ReasonCode,
+    questions: [
+      { id: "TRANSPORT_INFO_MISSING-Q1", text: "Fehlen Angaben zur benötigten Krankenbeförderung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Für die Prüfung der Krankenbeförderung fehlen noch Angaben.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Angaben zur Krankenbeförderung fehlen",
+    },
+  },
+
+  // ---- TRANSPORT ACTION CHECKPOINTS ----
+
+  TRANSPORT_QUESTIONNAIRE_REQUEST: {
+    id: "TRANSPORT_QUESTIONNAIRE_REQUEST",
+    label: "Fragebogen Krankentransport ausfüllen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte beantworten Sie die Fragen zum Krankentransport, damit wir die Verordnung prüfen können.",
+    },
+    docByStatus: {
+      [ActionStatus.ACTIVE]: "Fragebogen Krankentransport ausfüllen",
     },
   },
 };
@@ -3002,4 +3354,22 @@ export const INTRO_CHECKPOINT_IDS: readonly string[] = [
   "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
   "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
   "MESSAGE_INTRO_MISSING_INFO",
+] as const;
+
+/**
+ * Exklusivgruppe Krankenbeförderungsstatus.
+ *
+ * In M3 darf maximal einer dieser drei Checkpoints auf SHOW gesetzt werden.
+ * Datenseitig ist die Gruppe vollständig deklariert (exclusiveGroupId = "TRANSPORT_STATUS").
+ * Die Durchsetzung erfolgt serverseitig in `applyExclusiveGroupConstraints`
+ * (lib/inquiries/inquirySessionService.ts): Wird einer auf SHOW gesetzt, werden
+ * alle anderen Mitglieder automatisch auf HIDE gesetzt.
+ *
+ * Angebundene Profile (über boundGlobalCheckpointIds):
+ *   HOSPITAL_ADMISSION, APPOINTMENT, ACUTE_CARE
+ */
+export const TRANSPORT_STATUS_CONFLICT_GROUP: readonly string[] = [
+  "TRANSPORT_APPROVED",
+  "TRANSPORT_NOT_APPROVED",
+  "TRANSPORT_INFO_MISSING",
 ] as const;

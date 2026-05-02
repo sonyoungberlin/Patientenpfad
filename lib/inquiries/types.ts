@@ -542,6 +542,18 @@ export type InquiryCheckpoint = {
    * Hat keinen Einfluss auf Renderer, factStatus, Decision-Logik oder M4.
    */
   m5Code?: M5ReasonCode;
+  /**
+   * Optionale Zuordnung zu einer Exklusivgruppe.
+   *
+   * Checkpoints derselben Gruppe dürfen in M3 nicht gleichzeitig auf SHOW stehen –
+   * maximal einer darf aktiv sein. Die Invariante wird serverseitig in
+   * `applyExclusiveGroupConstraints` (inquirySessionService) durchgesetzt:
+   * Wenn ein Checkpoint auf SHOW gesetzt wird, werden alle anderen Mitglieder
+   * der Gruppe automatisch auf HIDE gesetzt.
+   *
+   * Bekannte Gruppen: "TRANSPORT_STATUS"
+   */
+  exclusiveGroupId?: string;
 };
 
 // ---------------------------------------------------------------------------

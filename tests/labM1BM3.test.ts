@@ -568,6 +568,70 @@ describe("LAB – boundActionConditions", () => {
     expect(condition?.showWhenAny).toEqual([{ LAB_INTERNAL_ORDER: "YES" }]);
   });
 
+  it("LAB_APPOINTMENT_INTERNAL: hideWhenAny bei LAB_CHECKUP_RULES = YES", () => {
+    const condition = LAB.boundActionConditions?.["LAB_APPOINTMENT_INTERNAL"];
+    expect(condition?.hideWhenAny).toContainEqual({ LAB_CHECKUP_RULES: "YES" });
+  });
+
+  it("LAB_APPOINTMENT_CHECKUP ist in LAB.boundActionCheckpointIds enthalten", () => {
+    expect(LAB.boundActionCheckpointIds).toContain("LAB_APPOINTMENT_CHECKUP");
+  });
+
+  it("LAB_APPOINTMENT_CHECKUP: showWhenAny bei LAB_CHECKUP_RULES = YES", () => {
+    const condition = LAB.boundActionConditions?.["LAB_APPOINTMENT_CHECKUP"];
+    expect(condition?.showWhenAny).toContainEqual({ LAB_CHECKUP_RULES: "YES" });
+  });
+
+  it("LAB_APPOINTMENT_CHECKUP ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_APPOINTMENT_CHECKUP"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("LAB_APPOINTMENT_CHECKUP enthält Check-up-Text und keinen Code", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_APPOINTMENT_CHECKUP"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("Check-Up - 1. Termin (Basiswerte Labor)");
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).not.toContain("LKBP25");
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("kein Code erforderlich");
+  });
+
+  it("LAB_APPOINTMENT_CHECKUP ACTIVE → enthält Check-Up Text und kein LKBP25", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_APPOINTMENT_CHECKUP: ActionStatus.ACTIVE },
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).toContain("Check-Up - 1. Termin (Basiswerte Labor)");
+    expect(allText).not.toContain("LKBP25");
+  });
+
+  it("LAB_APPOINTMENT_INTERNAL ACTIVE → enthält weiterhin Code LKBP25", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "LAB",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { LAB_APPOINTMENT_INTERNAL: ActionStatus.ACTIVE },
+        explanationOutputStatuses: {} as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections
+      .flatMap((s) => [s.mainDecision ?? "", ...s.attachedParagraphs])
+      .join(" ");
+    expect(allText).toContain("LKBP25");
+  });
+
+  it("LAB_APPOINTMENT_INTERNAL hat hideWhenAny für LAB_CHECKUP_RULES=YES (Check-up hat Vorrang, UI-Logik)", () => {
+    const condition = LAB.boundActionConditions?.["LAB_APPOINTMENT_INTERNAL"];
+    expect(condition?.hideWhenAny).toContainEqual({ LAB_CHECKUP_RULES: "YES" });
+  });
+
   it("LAB_APPOINTMENT_INDIVIDUAL: hideWhenAny bei LAB_INTERNAL_ORDER = YES", () => {
     const condition = LAB.boundActionConditions?.["LAB_APPOINTMENT_INDIVIDUAL"];
     expect(condition?.hideWhenAny).toContainEqual({ LAB_INTERNAL_ORDER: "YES" });

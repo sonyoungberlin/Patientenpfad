@@ -243,6 +243,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
+      "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -544,12 +545,16 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_EXTERNAL_REFERRAL",
       "LAB_INTERNAL_ORDER",
       "LAB_MEDICAL_CONSULTATION_REQUIRED",
+      "LAB_CHECKUP_RULES",
+      "BILLING_COST_NOT_COVERED",
+      "APPOINTMENT_DATA_INCOMPLETE",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
       "LAB_APPOINTMENT_INTERNAL",
+      "LAB_APPOINTMENT_CHECKUP",
       "LAB_APPOINTMENT_INDIVIDUAL",
       "LAB_APPOINTMENT_DOCTOR",
       "LAB_BRING_REFERRAL",
@@ -561,6 +566,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionConditions: {
       LAB_APPOINTMENT_INTERNAL: {
         showWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
+        hideWhenAny: [{ LAB_CHECKUP_RULES: "YES" }],
+      },
+      LAB_APPOINTMENT_CHECKUP: {
+        showWhenAny: [{ LAB_CHECKUP_RULES: "YES" }],
       },
       LAB_APPOINTMENT_INDIVIDUAL: {
         hideWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
@@ -584,14 +593,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         ],
       },
       // LAB_FASTING_REQUIRED: immer in M3 anzeigen, ohne M2-Schalter.
-      // hideWhenAny: [] bedeutet "niemals ausblenden" → immer sichtbar.
+      // Ausnahme: bei MPU/forensischem Ausschluss nicht anzeigen.
       LAB_FASTING_REQUIRED: {
-        hideWhenAny: [],
+        hideWhenAny: [{ LAB_MPU_EXCLUSION: "YES" }],
       },
       // LAB_RESULT_TIME: immer in M3 anzeigen, ohne M2-Schalter.
       // Befundübermittlung / Auswertungsdauer ist profiltypisch und nicht fallabhängig.
+      // Ausnahme: bei MPU/forensischem Ausschluss nicht anzeigen.
       LAB_RESULT_TIME: {
-        hideWhenAny: [],
+        hideWhenAny: [{ LAB_MPU_EXCLUSION: "YES" }],
       },
     },
     availableActionIds: [
@@ -951,6 +961,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 60,
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [
+      "REFERRAL_CAN_BE_ISSUED",
       "REF_SPECIALTY_REQUIRED",
       "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_HAV_CASE",
@@ -984,6 +995,33 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
       "DOCUMENT_UPLOAD",
       "DIGITAL_REQUEST",
+    ],
+
+    actionGuidanceRules: [
+      // 1. DIGITAL_REQUEST empfehlen, wenn Angaben fehlen (Fachrichtung nicht angegeben)
+      {
+        id: "REF_DIGITAL_REQUEST_RECOMMENDED",
+        checkpointId: "DIGITAL_REQUEST",
+        profileId: "REFERRAL",
+        when: {
+          allOf: [
+            { checkpointId: "REF_SPECIALTY_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 2. BOOK_APPOINTMENT sichtbar schalten, wenn ärztliche Einschätzung erforderlich
+      {
+        id: "REF_BOOK_APPOINTMENT_VISIBLE",
+        checkpointId: "BOOK_APPOINTMENT",
+        profileId: "REFERRAL",
+        when: {
+          allOf: [
+            { checkpointId: "REF_MEDICAL_CONSULTATION_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "visible",
+      },
     ],
 
     // -----------------------------------------------------------------------
@@ -1051,13 +1089,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "ISSUE_BLOCKED_MISSING_INFO",
         label: "Angaben fehlen",
         relevantSpecificRoles: ["MISSING_INFORMATION"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: ["REF_DIGITAL_REQUEST_RECOMMENDED"],
       },
       {
         id: "MEDICAL_REVIEW_NEEDED",
         label: "Ärztliche Einschätzung erforderlich",
         relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: ["REF_BOOK_APPOINTMENT_VISIBLE"],
       },
       {
         id: "PROCESS_EXPLAINED",
@@ -1069,6 +1107,182 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "ISSUE_BLOCKED_EXTERNAL",
         label: "Externe / andere Zuständigkeit",
         relevantSpecificRoles: ["EXTERNAL_RESPONSIBILITY"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
+  HOSPITAL_ADMISSION: {
+    id: "HOSPITAL_ADMISSION",
+    label: "Krankenhauseinweisung",
+    displayOrder: 65,
+    decisionCheckpointId: "HOSPITAL_ADMISSION_DECISION",
+    specificCheckpointIds: [
+      "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
+      "HOSPITAL_ADMISSION_MISSING_INFO",
+      "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+      "HOSPITAL_TRANSPORT_REQUIRED",
+    ],
+    boundGlobalCheckpointIds: [],
+    globalHints: {},
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "DIGITAL_REQUEST",
+      "DOCUMENT_UPLOAD",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    boundActionCheckpointIds: [
+      "DIGITAL_REQUEST_REQUIRED",
+      "CONTROL_APPOINTMENT_RECOMMENDED",
+      "TRANSPORT_QUESTIONNAIRE_REQUEST",
+    ],
+    boundActionConditions: {
+      DIGITAL_REQUEST_REQUIRED: {
+        hideWhenAny: [],
+      },
+      CONTROL_APPOINTMENT_RECOMMENDED: {
+        hideWhenAny: [],
+      },
+      TRANSPORT_QUESTIONNAIRE_REQUEST: {
+        hideWhenAny: [],
+      },
+    },
+
+    actionGuidanceRules: [
+      // 1. DIGITAL_REQUEST empfehlen, wenn Angaben zur Einweisung fehlen
+      {
+        id: "HOSP_DIGITAL_REQUEST_RECOMMENDED",
+        checkpointId: "DIGITAL_REQUEST",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MISSING_INFO", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 2. DOCUMENT_UPLOAD sichtbar schalten, wenn Angaben fehlen
+      {
+        id: "HOSP_DOCUMENT_UPLOAD_VISIBLE",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MISSING_INFO", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "visible",
+      },
+      // 3. BOOK_APPOINTMENT sichtbar schalten, wenn ärztliche Konsultation erforderlich
+      {
+        id: "HOSP_BOOK_APPOINTMENT_VISIBLE",
+        checkpointId: "BOOK_APPOINTMENT",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "visible",
+      },
+      // 4. CONTROL_APPOINTMENT_RECOMMENDED empfehlen, wenn ärztliche Konsultation erforderlich
+      {
+        id: "HOSP_CONTROL_APPOINTMENT_RECOMMENDED",
+        checkpointId: "CONTROL_APPOINTMENT_RECOMMENDED",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 5. TRANSPORT_QUESTIONNAIRE_REQUEST empfehlen, wenn Krankentransport erforderlich
+      {
+        id: "HOSP_TRANSPORT_QUESTIONNAIRE_RECOMMENDED",
+        checkpointId: "TRANSPORT_QUESTIONNAIRE_REQUEST",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_TRANSPORT_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_HOSPITAL_ADMISSION_INITIAL",
+        label: "Krankenhauseinweisung anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_HOSPITAL_ADMISSION_CLARIFICATION",
+        label: "Rückfrage zur Krankenhauseinweisung / Transport",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_HOSPITAL_ADMISSION_ISSUED",
+        label: "Krankenhauseinweisung wurde ausgestellt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Krankenhauseinweisung ausgestellt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION"],
+        relevantActionGuidanceIds: ["HOSP_DIGITAL_REQUEST_RECOMMENDED", "HOSP_DOCUMENT_UPLOAD_VISIBLE"],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Konsultation erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: ["HOSP_BOOK_APPOINTMENT_VISIBLE", "HOSP_CONTROL_APPOINTMENT_RECOMMENDED"],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Transport erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
         relevantActionGuidanceIds: [],
       },
     ] satisfies ResponseGoal[],
@@ -1197,7 +1411,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 20,
     decisionCheckpointId: "",
     specificCheckpointIds: [
+      "APPOINTMENT_CAN_BE_BOOKED",
+      "APPOINTMENT_CANCEL_OR_RESCHEDULE",
       "APPOINTMENT_WRONG_TYPE",
+      "APPOINTMENT_BOOKING_CODE_REQUIRED",
       "APPOINTMENT_DATA_INCOMPLETE",
     ],
     boundGlobalCheckpointIds: [],
@@ -1210,6 +1427,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "BOOK_APPOINTMENT",
+      "APPOINTMENT_BOOK_FINDINGS_REVIEW",
+      "APPOINTMENT_BOOK_CHECKUP_SECOND",
+      "APPOINTMENT_BOOK_CHRONIC_CONTROL",
+      "APPOINTMENT_BOOK_GENERAL",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
@@ -1217,6 +1438,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       BOOK_APPOINTMENT: {
         showWhenAny: [{ APPOINTMENT_WRONG_TYPE: "YES" }],
+      },
+      APPOINTMENT_BOOK_FINDINGS_REVIEW: {
+        showWhenAny: [{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }],
+      },
+      APPOINTMENT_BOOK_CHECKUP_SECOND: {
+        showWhenAny: [{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }],
+      },
+      APPOINTMENT_BOOK_CHRONIC_CONTROL: {
+        showWhenAny: [{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }],
       },
     },
 

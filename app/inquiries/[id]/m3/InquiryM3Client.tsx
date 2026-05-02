@@ -266,12 +266,24 @@ const PRESCRIPTION_STATUTORY_NO_EXPLANATION_IDS = [
  * Decision-Checkpoints (PRESCRIPTION_DECISION, PRESCRIPTION_STATUTORY_POSSIBLE) sind bewusst
  * NICHT in Konfliktgruppen – sie deaktivieren sich nie gegenseitig.
  *
+ * Bekanntes Defizit: Die Konfliktauflösung nutzt `.find()` und findet pro Checkpoint nur die
+ * erste passende Gruppe. PRESCRIPTION_SPECIALIST_RESPONSIBLE (allgemeiner Facharzthinweis) und
+ * PRESCRIPTION_BTM_ADHS_RULES / PRESCRIPTION_GYN_EXCLUSIVITY (spezifischer Sonderfall) können
+ * daher nicht vollständig gegenseitig ausgeschlossen werden – SPECIALIST_RESPONSIBLE bleibt in
+ * Gruppe 1 verankert und würde bei SHOW nicht automatisch Gruppe 2 auflösen.
+ * Behebbar durch Erweiterung auf Multi-Gruppen-Unterstützung (alle passenden Gruppen finden).
+ *
+ * Bewusst NICHT in Konfliktgruppen:
+ *   - E_RECIPE_USE + PHARMACY_INFORMATION: ergänzend, nicht alternativ (Kanal vs. Zusatzinfo)
+ *   - CONTROL_APPOINTMENT_RECOMMENDED: CARE_CHANNEL_CHOICE und ACUTE_OPEN_CONSULTATION_ACTION
+ *     sind nicht in PRESCRIPTION.availableActionIds → VERSORGUNGSWEG_CONFLICT_GROUP ist inaktiv.
+ *
  * TODO (noch kein Checkpoint vorhanden):
  *   - "Lifestyle / keine Kassenleistung"
  *   - "Medikament nicht indiziert / Rezept nicht notwendig"
  */
 const PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS: readonly (readonly string[])[] = [
-  // Gruppe "Begründung / Rezeptart": erklärt, warum kein Kassenrezept ausgestellt wurde,
+  // Gruppe 1 – „Begründung / Rezeptart": erklärt, warum kein Kassenrezept ausgestellt wurde,
   // oder warum kein Rezept ausgestellt wird.
   // Bewusst NICHT in dieser Gruppe: PRESCRIPTION_NO_POSTAL_DELIVERY (Prozesshinweis, kein Rezeptartgrund),
   // PRESCRIPTION_PATIENT_NOT_IN_GERMANY (Einlöseproblem, kein Rezeptartgrund).
@@ -280,6 +292,29 @@ const PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS: readonly (readonly string[])[] =
     "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
     "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
   ],
+
+  // Gruppe 2 – „Externe Zuständigkeit / Sonderfall":
+  // Beide Checkpoints haben specificRole EXTERNAL_RESPONSIBILITY und beschreiben streng alternative
+  // Situationen (eine Verordnung kann nicht gleichzeitig BtM/ADHS und gynäkologisch exklusiv sein).
+  // PRESCRIPTION_SPECIALIST_RESPONSIBLE (allgemeiner Facharzthinweis) ist bewusst NICHT in dieser
+  // Gruppe – siehe Defizit-Hinweis oben.
+  [
+    "PRESCRIPTION_BTM_ADHS_RULES",
+    "PRESCRIPTION_GYN_EXCLUSIVITY",
+  ],
+];
+
+/**
+ * Konfliktgruppe für REFERRAL-Explanations: verhindert, dass mehrere alternative
+ * Hauptbegründungen gleichzeitig auf SHOW gesetzt werden.
+ *
+ * Bewusst NICHT in dieser Gruppe:
+ *   - REF_PSYCHOTHERAPY_FIRST_STEP (Prozesshinweis, keine alternative Hauptbegründung)
+ *   - REF_HAV_CASE (M2-Schalter, kein Explanation-Output)
+ */
+const REFERRAL_EXPLANATION_CONFLICT_GROUP: readonly string[] = [
+  "REF_SPECIALTY_REQUIRED",
+  "REF_MEDICAL_CONSULTATION_REQUIRED",
 ];
 
 /** Menschenlesbare Bezeichnung für actionCategory. */
@@ -870,11 +905,15 @@ export default function InquiryM3Client({
   }
 
   function setOutputStatus(checkpointId: string, value: string) {
-    // Apply conflict group exclusivity for PRESCRIPTION explanations:
+    // Apply conflict group exclusivity for explanations:
     // wenn eine Explanation auf SHOW gesetzt wird, werden alle anderen in derselben Gruppe auf HIDE gesetzt.
-    const conflictGroup = PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS.find((g) =>
-      (g as readonly string[]).includes(checkpointId),
-    );
+    const conflictGroup =
+      PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS.find((g) =>
+        (g as readonly string[]).includes(checkpointId),
+      ) ??
+      (REFERRAL_EXPLANATION_CONFLICT_GROUP.includes(checkpointId)
+        ? REFERRAL_EXPLANATION_CONFLICT_GROUP
+        : undefined);
     if (conflictGroup && value === ExplanationOutputStatus.SHOW) {
       setOutputStatuses((prev) => {
         const next = { ...prev, [checkpointId]: value };

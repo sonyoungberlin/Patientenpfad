@@ -55,6 +55,8 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const hasKurzanamnese = blockIds.has("KURZANAMNESE");
   const hasKontakt = blockIds.has("KONTAKT");
   const hasAdresse = blockIds.has("ADRESSE");
+  const hasHospitalAdmission = blockIds.has("HOSPITAL_ADMISSION");
+  const hasTransport = blockIds.has("TRANSPORT");
 
   // --- Titel ---
   let title: string;
@@ -73,6 +75,11 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     addLine(lines, "Beschwerden", val(answers, "AU_SYMPTOMS"));
     addLine(lines, "Beginn", val(answers, "AU_START_DATE"));
     addLine(lines, "AU bis", val(answers, "AU_END_DATE"));
+    const followup = val(answers, "AU_IS_FOLLOWUP");
+    if (followup !== "") {
+      const followupLabels: Record<string, string> = { ja: "Ja", nein: "Nein" };
+      addLine(lines, "Folge-AU", followupLabels[followup] ?? followup);
+    }
   }
 
   // --- Rezept ---
@@ -89,6 +96,32 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     addLine(lines, "Termin vorhanden", val(answers, "REF_APPOINTMENT_EXISTS"));
     addLine(lines, "Termin", val(answers, "REF_APPOINTMENT_DATE"));
     addLine(lines, "Grund", val(answers, "REF_REASON"));
+  }
+
+  // --- Krankenhauseinweisung ---
+  if (hasHospitalAdmission) {
+    const hospLines: string[] = [];
+    addLine(hospLines, "Anlass", val(answers, "HOSP_ADMISSION_REASON"));
+    addLine(hospLines, "Kontrolltermin", val(answers, "HOSP_ADMISSION_IS_CONTROL"));
+    addLine(hospLines, "Termin", val(answers, "HOSP_ADMISSION_DATE"));
+    if (hospLines.length > 0) {
+      lines.push("Krankenhauseinweisung");
+      lines.push(...hospLines);
+    }
+  }
+
+  // --- Krankenbeförderung ---
+  if (hasTransport) {
+    const transportLines: string[] = [];
+    addLine(transportLines, "Beförderung benötigt", val(answers, "TRANSPORT_NEEDED"));
+    addLine(transportLines, "Ziel", val(answers, "TRANSPORT_DESTINATION"));
+    addLine(transportLines, "Grund", val(answers, "TRANSPORT_REASON"));
+    addLine(transportLines, "Einschränkung", val(answers, "TRANSPORT_MOBILITY"));
+    addLine(transportLines, "Datum", val(answers, "TRANSPORT_DATE"));
+    if (transportLines.length > 0) {
+      lines.push("Krankenbeförderung");
+      lines.push(...transportLines);
+    }
   }
 
   // --- Kurzanamnese ---

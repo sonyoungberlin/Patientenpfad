@@ -580,10 +580,10 @@ describe("BILLING Specific-Checkpoints – docByStatus", () => {
 // 9. BILLING_COST_NOT_COVERED – M2-Schalter ohne Patiententext (Inhalt in ACTION-Bausteinen)
 // ---------------------------------------------------------------------------
 
-describe("BILLING_COST_NOT_COVERED – M2-Schalter ohne eigenen Patiententext", () => {
-  it("BILLING_COST_NOT_COVERED textByStatus.YES ist leer (kein Patiententext im M2-Schalter)", () => {
+describe("BILLING_COST_NOT_COVERED – Patiententext für LAB-Kontext", () => {
+  it("BILLING_COST_NOT_COVERED textByStatus.YES enthält LAB-Selbstzahler-Erklärung", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["BILLING_COST_NOT_COVERED"];
-    expect(cp.textByStatus[ExplanationStatus.YES]).toBe("");
+    expect(cp.textByStatus[ExplanationStatus.YES]).toContain("Kassenleistung");
   });
 
   it("BILLING_COST_NOT_COVERED docByStatus[YES] enthält 'IGeL' (interne Aktennotiz bleibt erhalten)", () => {

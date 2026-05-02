@@ -16,6 +16,8 @@
  *   40 ARBEITSUNFAEHIGKEIT – AU-Bescheinigung
  *   50 REZEPT           – Medikamentenrezept
  *   60 UEBERWEISUNG     – Facharztüberweisung
+ *   70 HOSPITAL_ADMISSION – Krankenhauseinweisung
+ *   80 TRANSPORT        – Krankenbeförderung / Krankentransport
  */
 
 // ---------------------------------------------------------------------------
@@ -73,6 +75,8 @@ export type QuestionnaireBlock = {
  * AU_*           – Arbeitsunfähigkeitsbescheinigung
  * PRESCRIPTION_* – Rezept
  * REF_*          – Überweisung
+ * HOSP_*         – Krankenhauseinweisung
+ * TRANSPORT_*    – Krankenbeförderung / Krankentransport
  */
 export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   // --- Kontakt ---
@@ -203,6 +207,14 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "date",
     required: false,
   },
+  AU_IS_FOLLOWUP: {
+    id: "AU_IS_FOLLOWUP",
+    text: "Handelt es sich um eine Folge-AU (Verlängerung einer bestehenden Krankschreibung)?",
+    type: "yes_no",
+    required: false,
+    helperText:
+      "Eine Folge-AU liegt vor, wenn Sie für dieselbe Erkrankung bereits eine Krankschreibung erhalten haben.",
+  },
 
   // --- Rezept ---
   PRESCRIPTION_TYPE: {
@@ -262,6 +274,82 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "textarea",
     required: false,
   },
+
+  // --- Krankenhauseinweisung ---
+  HOSP_ADMISSION_REASON: {
+    id: "HOSP_ADMISSION_REASON",
+    text: "Wofür wird die Krankenhauseinweisung benötigt?",
+    type: "text",
+    required: true,
+    helperText: "Bitte nennen Sie den geplanten Krankenhausaufenthalt oder den konkreten Anlass.",
+  },
+  HOSP_ADMISSION_IS_CONTROL: {
+    id: "HOSP_ADMISSION_IS_CONTROL",
+    text: "Geht es um eine Kontrolluntersuchung oder einen bereits geplanten Krankenhaus-Termin?",
+    type: "yes_no",
+    required: false,
+  },
+  HOSP_ADMISSION_DATE: {
+    id: "HOSP_ADMISSION_DATE",
+    text: "Falls bereits bekannt: Wann ist der Krankenhaus-Termin?",
+    type: "date",
+    required: false,
+  },
+  HOSP_TRANSPORT_NEEDED: {
+    id: "HOSP_TRANSPORT_NEEDED",
+    text: "Wird ein Krankentransport oder eine Krankenfahrt benötigt?",
+    type: "yes_no",
+    required: false,
+  },
+  HOSP_TRANSPORT_REASON: {
+    id: "HOSP_TRANSPORT_REASON",
+    text: "Warum können Sie nicht selbstständig zur Klinik fahren?",
+    type: "text",
+    required: false,
+    helperText:
+      "Zum Beispiel: starke Mobilitätseinschränkung, Rollstuhl, liegender Transport, medizinische Überwachung während der Fahrt.",
+  },
+
+  // --- Krankenbeförderung ---
+  TRANSPORT_NEEDED: {
+    id: "TRANSPORT_NEEDED",
+    text: "Benötigen Sie eine Krankenbeförderung oder einen Krankentransport?",
+    type: "yes_no",
+    required: true,
+  },
+  TRANSPORT_DESTINATION: {
+    id: "TRANSPORT_DESTINATION",
+    text: "Wohin soll die Fahrt gehen?",
+    type: "text",
+    required: false,
+  },
+  TRANSPORT_REASON: {
+    id: "TRANSPORT_REASON",
+    text: "Warum können Sie nicht selbstständig zur Praxis oder Klinik kommen?",
+    type: "text",
+    required: true,
+    helperText: "Bitte beschreiben Sie Ihre Mobilitätseinschränkung oder den medizinischen Grund.",
+  },
+  TRANSPORT_MOBILITY: {
+    id: "TRANSPORT_MOBILITY",
+    text: "Welche Einschränkung liegt vor?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Gehen nur wenige Schritte möglich",
+      "Rollstuhl erforderlich",
+      "Liegender Transport erforderlich",
+      "Medizinische Betreuung während der Fahrt erforderlich",
+      "Starkes Übergewicht / besondere Transportanforderung",
+      "Andere Einschränkung",
+    ],
+  },
+  TRANSPORT_DATE: {
+    id: "TRANSPORT_DATE",
+    text: "Falls bekannt: Für welches Datum wird die Fahrt benötigt?",
+    type: "date",
+    required: false,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -312,7 +400,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     label: "Arbeitsunfähigkeitsbescheinigung",
     displayOrder: 40,
     hint: "Bitte beachten Sie: Die maximale rückwirkende Ausstellungsdauer ist gesetzlich begrenzt.",
-    questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE"],
+    questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE", "AU_IS_FOLLOWUP"],
   },
   REZEPT: {
     id: "REZEPT",
@@ -335,6 +423,31 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "REF_APPOINTMENT_EXISTS",
       "REF_APPOINTMENT_DATE",
       "REF_REASON",
+    ],
+  },
+  HOSPITAL_ADMISSION: {
+    id: "HOSPITAL_ADMISSION",
+    label: "Krankenhauseinweisung",
+    displayOrder: 70,
+    questionIds: [
+      "HOSP_ADMISSION_REASON",
+      "HOSP_ADMISSION_IS_CONTROL",
+      "HOSP_ADMISSION_DATE",
+    ],
+  },
+  TRANSPORT: {
+    id: "TRANSPORT",
+    label: "Krankenbeförderung / Krankentransport",
+    displayOrder: 80,
+    // Conditional visibility (TRANSPORT_DESTINATION, TRANSPORT_REASON, TRANSPORT_MOBILITY
+    // und TRANSPORT_DATE nur anzeigen wenn TRANSPORT_NEEDED = ja) wird vom aktuellen
+    // Fragebogen-System nicht unterstützt – alle Felder sind immer sichtbar.
+    questionIds: [
+      "TRANSPORT_NEEDED",
+      "TRANSPORT_DESTINATION",
+      "TRANSPORT_REASON",
+      "TRANSPORT_MOBILITY",
+      "TRANSPORT_DATE",
     ],
   },
 };
