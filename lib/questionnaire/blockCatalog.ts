@@ -16,6 +16,7 @@
  *   40 ARBEITSUNFAEHIGKEIT – AU-Bescheinigung
  *   50 REZEPT           – Medikamentenrezept
  *   60 UEBERWEISUNG     – Facharztüberweisung
+ *   70 HOSPITAL_ADMISSION – Krankenhauseinweisung
  */
 
 // ---------------------------------------------------------------------------
@@ -73,6 +74,7 @@ export type QuestionnaireBlock = {
  * AU_*           – Arbeitsunfähigkeitsbescheinigung
  * PRESCRIPTION_* – Rezept
  * REF_*          – Überweisung
+ * HOSP_*         – Krankenhauseinweisung
  */
 export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   // --- Kontakt ---
@@ -270,6 +272,41 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "textarea",
     required: false,
   },
+
+  // --- Krankenhauseinweisung ---
+  HOSP_ADMISSION_REASON: {
+    id: "HOSP_ADMISSION_REASON",
+    text: "Wofür wird die Krankenhauseinweisung benötigt?",
+    type: "text",
+    required: true,
+    helperText: "Bitte nennen Sie den geplanten Krankenhausaufenthalt oder den konkreten Anlass.",
+  },
+  HOSP_ADMISSION_IS_CONTROL: {
+    id: "HOSP_ADMISSION_IS_CONTROL",
+    text: "Geht es um eine Kontrolluntersuchung oder einen bereits geplanten Krankenhaus-Termin?",
+    type: "yes_no",
+    required: false,
+  },
+  HOSP_ADMISSION_DATE: {
+    id: "HOSP_ADMISSION_DATE",
+    text: "Falls bereits bekannt: Wann ist der Krankenhaus-Termin?",
+    type: "date",
+    required: false,
+  },
+  HOSP_TRANSPORT_NEEDED: {
+    id: "HOSP_TRANSPORT_NEEDED",
+    text: "Wird ein Krankentransport oder eine Krankenfahrt benötigt?",
+    type: "yes_no",
+    required: false,
+  },
+  HOSP_TRANSPORT_REASON: {
+    id: "HOSP_TRANSPORT_REASON",
+    text: "Warum können Sie nicht selbstständig zur Klinik fahren?",
+    type: "text",
+    required: false,
+    helperText:
+      "Zum Beispiel: starke Mobilitätseinschränkung, Rollstuhl, liegender Transport, medizinische Überwachung während der Fahrt.",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -343,6 +380,23 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "REF_APPOINTMENT_EXISTS",
       "REF_APPOINTMENT_DATE",
       "REF_REASON",
+    ],
+  },
+  HOSPITAL_ADMISSION: {
+    id: "HOSPITAL_ADMISSION",
+    label: "Krankenhauseinweisung",
+    displayOrder: 70,
+    // HOSP_TRANSPORT_REASON wird direkt nach HOSP_TRANSPORT_NEEDED angezeigt.
+    // Conditional visibility (nur anzeigen wenn HOSP_TRANSPORT_NEEDED = ja) wird
+    // vom aktuellen Fragebogen-System nicht unterstützt – das Feld ist daher immer
+    // sichtbar. Praxis-seitig kann HOSP_TRANSPORT_REASON ignoriert werden, wenn
+    // HOSP_TRANSPORT_NEEDED = nein.
+    questionIds: [
+      "HOSP_ADMISSION_REASON",
+      "HOSP_ADMISSION_IS_CONTROL",
+      "HOSP_ADMISSION_DATE",
+      "HOSP_TRANSPORT_NEEDED",
+      "HOSP_TRANSPORT_REASON",
     ],
   },
 };

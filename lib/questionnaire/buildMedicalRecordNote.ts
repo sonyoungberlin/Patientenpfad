@@ -55,6 +55,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const hasKurzanamnese = blockIds.has("KURZANAMNESE");
   const hasKontakt = blockIds.has("KONTAKT");
   const hasAdresse = blockIds.has("ADRESSE");
+  const hasHospitalAdmission = blockIds.has("HOSPITAL_ADMISSION");
 
   // --- Titel ---
   let title: string;
@@ -94,6 +95,22 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     addLine(lines, "Termin vorhanden", val(answers, "REF_APPOINTMENT_EXISTS"));
     addLine(lines, "Termin", val(answers, "REF_APPOINTMENT_DATE"));
     addLine(lines, "Grund", val(answers, "REF_REASON"));
+  }
+
+  // --- Krankenhauseinweisung ---
+  if (hasHospitalAdmission) {
+    const hospLines: string[] = [];
+    addLine(hospLines, "Anlass", val(answers, "HOSP_ADMISSION_REASON"));
+    addLine(hospLines, "Kontrolltermin", val(answers, "HOSP_ADMISSION_IS_CONTROL"));
+    addLine(hospLines, "Termin", val(answers, "HOSP_ADMISSION_DATE"));
+    addLine(hospLines, "Krankentransport", val(answers, "HOSP_TRANSPORT_NEEDED"));
+    if (present(answers, "HOSP_TRANSPORT_REASON")) {
+      addLine(hospLines, "Transport-Grund", val(answers, "HOSP_TRANSPORT_REASON"));
+    }
+    if (hospLines.length > 0) {
+      lines.push("Krankenhauseinweisung");
+      lines.push(...hospLines);
+    }
   }
 
   // --- Kurzanamnese ---
