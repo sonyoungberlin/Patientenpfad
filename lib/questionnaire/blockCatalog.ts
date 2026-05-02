@@ -203,6 +203,14 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "date",
     required: false,
   },
+  AU_IS_FOLLOWUP: {
+    id: "AU_IS_FOLLOWUP",
+    text: "Handelt es sich um eine Folge-AU (Verlängerung einer bestehenden Krankschreibung)?",
+    type: "yes_no",
+    required: false,
+    helperText:
+      "Eine Folge-AU liegt vor, wenn Sie für dieselbe Erkrankung bereits eine Krankschreibung erhalten haben.",
+  },
 
   // --- Rezept ---
   PRESCRIPTION_TYPE: {
@@ -312,7 +320,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     label: "Arbeitsunfähigkeitsbescheinigung",
     displayOrder: 40,
     hint: "Bitte beachten Sie: Die maximale rückwirkende Ausstellungsdauer ist gesetzlich begrenzt.",
-    questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE"],
+    questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE", "AU_IS_FOLLOWUP"],
   },
   REZEPT: {
     id: "REZEPT",

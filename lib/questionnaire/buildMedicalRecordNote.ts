@@ -73,6 +73,14 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     addLine(lines, "Beschwerden", val(answers, "AU_SYMPTOMS"));
     addLine(lines, "Beginn", val(answers, "AU_START_DATE"));
     addLine(lines, "AU bis", val(answers, "AU_END_DATE"));
+    const followup = val(answers, "AU_IS_FOLLOWUP");
+    if (followup !== "") {
+      addLine(
+        lines,
+        "Folge-AU",
+        followup === "yes" ? "Ja" : followup === "no" ? "Nein" : followup,
+      );
+    }
   }
 
   // --- Rezept ---
