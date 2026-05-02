@@ -2001,7 +2001,10 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_MEDICAL_CONSULTATION_REQUIRED");
     expect(labProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_EXTERNAL_BILLING");
-    expect(labProfile.specificCheckpointIds).toHaveLength(4);
+    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_RULES");
+    expect(labProfile.specificCheckpointIds).toContain("BILLING_COST_NOT_COVERED");
+    expect(labProfile.specificCheckpointIds).toContain("APPOINTMENT_DATA_INCOMPLETE");
+    expect(labProfile.specificCheckpointIds).toHaveLength(7);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -2109,13 +2112,13 @@ describe("LAB-Profil – globalHints", () => {
 // ---------------------------------------------------------------------------
 
 describe("LAB-Profil – SPECIFIC Checkpoints", () => {
-  it("LAB_CHECKUP_RULES YES → kein Output in attachedParagraphs (ungebunden)", () => {
+  it("LAB_CHECKUP_RULES YES → Output erscheint in attachedParagraphs (gebunden)", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_CHECKUP_RULES: ExplanationStatus.YES },
       }),
     ]);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
   });
 
   it("LAB_FASTING_REQUIRED ACTIVE → Nüchtern-Hinweis erscheint in sharedBottom", () => {

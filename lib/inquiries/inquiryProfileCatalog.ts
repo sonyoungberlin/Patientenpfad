@@ -545,6 +545,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_EXTERNAL_REFERRAL",
       "LAB_INTERNAL_ORDER",
       "LAB_MEDICAL_CONSULTATION_REQUIRED",
+      "LAB_CHECKUP_RULES",
+      "BILLING_COST_NOT_COVERED",
+      "APPOINTMENT_DATA_INCOMPLETE",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
