@@ -545,9 +545,11 @@ export type InquiryCheckpoint = {
   /**
    * Optionale Zuordnung zu einer Exklusivgruppe.
    *
-   * Checkpoints derselben Gruppe dürfen in M3 nicht gleichzeitig auf SHOW gesetzt werden –
-   * maximal einer darf aktiv sein. Die Daten-Deklaration ist vollständig; die Durchsetzung
-   * der Exklusivitäts-Regel im Renderer ist ein TODO (keine Renderer-Änderung in diesem PR).
+   * Checkpoints derselben Gruppe dürfen in M3 nicht gleichzeitig auf SHOW stehen –
+   * maximal einer darf aktiv sein. Die Invariante wird serverseitig in
+   * `applyExclusiveGroupConstraints` (inquirySessionService) durchgesetzt:
+   * Wenn ein Checkpoint auf SHOW gesetzt wird, werden alle anderen Mitglieder
+   * der Gruppe automatisch auf HIDE gesetzt.
    *
    * Bekannte Gruppen: "TRANSPORT_STATUS"
    */

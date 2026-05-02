@@ -28,6 +28,7 @@ import {
   type CheckpointStatusValue,
 } from "@/lib/inquiries/types";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { prisma as defaultPrisma } from "@/lib/prisma";
 
@@ -107,6 +108,53 @@ type PrismaLike = Pick<PrismaClient, "inquirySession" | "$transaction">;
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen (stateless, keine DB-Aufrufe)
 // ---------------------------------------------------------------------------
+
+/**
+ * Erzeugt eine neue `explanationOutputStatuses`-Map, bei der die
+ * Exklusivgruppen-Invariante durchgesetzt ist:
+ *
+ * Wenn ein Checkpoint mit einer `exclusiveGroupId` auf SHOW gesetzt wird,
+ * werden alle anderen Checkpoints derselben Gruppe auf HIDE gesetzt.
+ * Wenn ein Checkpoint auf HIDE gesetzt wird, bleiben die anderen Mitglieder
+ * der Gruppe unverändert.
+ *
+ * Bekannte Gruppen (über `exclusiveGroupId` im Checkpoint-Katalog):
+ *   - "TRANSPORT_STATUS": TRANSPORT_APPROVED, TRANSPORT_NOT_APPROVED, TRANSPORT_INFO_MISSING
+ *
+ * Ist rein datentransformierend – kein DB-Zugriff, keine Seiteneffekte.
+ *
+ * @param statuses – Die von M3 übergebene `explanationOutputStatuses`-Map.
+ * @returns Neue Map mit garantierter Exklusivgruppen-Invariante.
+ */
+export function applyExclusiveGroupConstraints(
+  statuses: Record<string, string>,
+): Record<string, string> {
+  // Baue eine Map exclusiveGroupId → [checkpointIds] aus dem Katalog
+  const groupMembers = new Map<string, string[]>();
+  for (const [id, cp] of Object.entries(INQUIRY_CHECKPOINT_CATALOG_V2)) {
+    const groupId = cp.exclusiveGroupId;
+    if (!groupId) continue;
+    if (!groupMembers.has(groupId)) groupMembers.set(groupId, []);
+    groupMembers.get(groupId)!.push(id);
+  }
+
+  const result = { ...statuses };
+
+  // Für jeden SHOW-Eintrag: alle anderen Mitglieder derselben Gruppe auf HIDE setzen
+  for (const [checkpointId, status] of Object.entries(statuses)) {
+    if (status !== ExplanationOutputStatus.SHOW) continue;
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
+    if (!cp?.exclusiveGroupId) continue;
+    const siblings = groupMembers.get(cp.exclusiveGroupId) ?? [];
+    for (const sibling of siblings) {
+      if (sibling !== checkpointId) {
+        result[sibling] = ExplanationOutputStatus.HIDE;
+      }
+    }
+  }
+
+  return result;
+}
 
 /**
  * Erzeugt den initialen Sections-Snapshot aus einer Liste von Anliegen-IDs.
@@ -260,7 +308,9 @@ export async function updateInquiryCheckpointStatuses(
     data: {
       checkpoint_statuses: toJsonInput(input.checkpointStatuses),
       action_statuses: toJsonInput(input.actionStatuses ?? {}),
-      explanation_output_statuses: toJsonInput(input.explanationOutputStatuses ?? {}),
+      explanation_output_statuses: toJsonInput(
+        applyExclusiveGroupConstraints(input.explanationOutputStatuses ?? {}),
+      ),
       ...(mergedCommunicationReasonSelection !== undefined && {
         communication_reason_selection: mergedCommunicationReasonSelection,
       }),

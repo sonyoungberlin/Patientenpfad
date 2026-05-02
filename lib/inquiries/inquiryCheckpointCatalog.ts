@@ -3092,9 +3092,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   // ---- GLOBAL TRANSPORT STATUS (Konfliktgruppe: TRANSPORT_STATUS) ----
   //
   // Diese drei Checkpoints bilden eine Exklusivgruppe: In M3 darf maximal einer
-  // davon auf SHOW gesetzt werden. Die Daten-Deklaration ist vollständig;
-  // die Durchsetzung der Exklusivität im Renderer ist ein TODO (keine
-  // Renderer-Änderung in diesem PR – siehe exclusiveGroupId in types.ts).
+  // davon auf SHOW gesetzt werden. Die Invariante wird serverseitig durch
+  // `applyExclusiveGroupConstraints` in inquirySessionService durchgesetzt:
+  // Wenn einer auf SHOW gesetzt wird, setzen die anderen automatisch auf HIDE.
   //
   // Scope GLOBAL + classification "MODULAR": wiederverwendbar in mehreren
   // Profilen (HOSPITAL_ADMISSION, APPOINTMENT, ACUTE_CARE). Gebunden via
@@ -3179,8 +3179,9 @@ export const INTRO_CHECKPOINT_IDS: readonly string[] = [
  *
  * In M3 darf maximal einer dieser drei Checkpoints auf SHOW gesetzt werden.
  * Datenseitig ist die Gruppe vollständig deklariert (exclusiveGroupId = "TRANSPORT_STATUS").
- * Die Durchsetzung der Exklusivität im Renderer ist ein TODO und erfordert eine
- * zukünftige Renderer-Änderung.
+ * Die Durchsetzung erfolgt serverseitig in `applyExclusiveGroupConstraints`
+ * (lib/inquiries/inquirySessionService.ts): Wird einer auf SHOW gesetzt, werden
+ * alle anderen Mitglieder automatisch auf HIDE gesetzt.
  *
  * Angebundene Profile (über boundGlobalCheckpointIds):
  *   HOSPITAL_ADMISSION, APPOINTMENT, ACUTE_CARE
