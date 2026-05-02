@@ -2006,6 +2006,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- APPOINTMENT SPECIFIC EXPLANATIONS ----
 
+  APPOINTMENT_BOOKING_CODE_REQUIRED: {
+    id: "APPOINTMENT_BOOKING_CODE_REQUIRED",
+    label: "Buchungscode erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_BOOKING_CODE_REQUIRED-Q1", text: "Ist für die gewünschte Terminart ein Buchungscode erforderlich oder fehlt dieser?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die gewünschte Terminart ist ein Buchungscode erforderlich. Dieser wird in der Regel nach Vorliegen der entsprechenden Voraussetzungen (z. B. Befunde) bereitgestellt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   APPOINTMENT_WRONG_TYPE: {
     id: "APPOINTMENT_WRONG_TYPE",
     label: "Falscher Termintyp",
