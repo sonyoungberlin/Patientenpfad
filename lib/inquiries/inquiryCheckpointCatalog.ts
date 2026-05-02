@@ -2093,7 +2093,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die gewünschte Terminart ist ein Buchungscode erforderlich. Dieser wird in der Regel nach Vorliegen der entsprechenden Voraussetzungen (z. B. Befunde) bereitgestellt.",
+        "Für die gewünschte Terminart ist ein Buchungscode erforderlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
