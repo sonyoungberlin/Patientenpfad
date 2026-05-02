@@ -593,14 +593,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         ],
       },
       // LAB_FASTING_REQUIRED: immer in M3 anzeigen, ohne M2-Schalter.
-      // hideWhenAny: [] bedeutet "niemals ausblenden" → immer sichtbar.
+      // Ausnahme: bei MPU/forensischem Ausschluss nicht anzeigen.
       LAB_FASTING_REQUIRED: {
-        hideWhenAny: [],
+        hideWhenAny: [{ LAB_MPU_EXCLUSION: "YES" }],
       },
       // LAB_RESULT_TIME: immer in M3 anzeigen, ohne M2-Schalter.
       // Befundübermittlung / Auswertungsdauer ist profiltypisch und nicht fallabhängig.
+      // Ausnahme: bei MPU/forensischem Ausschluss nicht anzeigen.
       LAB_RESULT_TIME: {
-        hideWhenAny: [],
+        hideWhenAny: [{ LAB_MPU_EXCLUSION: "YES" }],
       },
     },
     availableActionIds: [

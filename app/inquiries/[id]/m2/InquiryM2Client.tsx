@@ -1347,10 +1347,10 @@ const LAB_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 5. Sonderfälle ────────────────────────────────────────────────────────
+  // ── 5. Nicht angebotene Leistungen ───────────────────────────────────────
   {
     id: "lab_sonderfall",
-    label: "Sonderfälle",
+    label: "Nicht angebotene Leistungen",
     description: "Besonderer Prozess oder spezifische Ausschlussregel ist relevant.",
     checkpointIds: [
       "LAB_MPU_EXCLUSION",
