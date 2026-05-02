@@ -2877,13 +2877,13 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     }
   });
 
-  it("ACUTE_CARE hat 4 boundGlobalCheckpointIds: INFECTIOUS_PROTOCOL + 3 Transport-Status-Checkpoints (ACUTE_OPEN_CONSULTATION_INFO abgelöst durch ACTION-Baustein)", () => {
+  it("ACUTE_CARE hat 1 boundGlobalCheckpointId: INFECTIOUS_PROTOCOL (Transport-Status-Checkpoints sind nicht aktiv angebunden)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(4);
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
     expect(profile.boundGlobalCheckpointIds).toContain("INFECTIOUS_PROTOCOL");
-    expect(profile.boundGlobalCheckpointIds).toContain("TRANSPORT_APPROVED");
-    expect(profile.boundGlobalCheckpointIds).toContain("TRANSPORT_NOT_APPROVED");
-    expect(profile.boundGlobalCheckpointIds).toContain("TRANSPORT_INFO_MISSING");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("TRANSPORT_APPROVED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("TRANSPORT_NOT_APPROVED");
+    expect(profile.boundGlobalCheckpointIds).not.toContain("TRANSPORT_INFO_MISSING");
     expect(profile.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
