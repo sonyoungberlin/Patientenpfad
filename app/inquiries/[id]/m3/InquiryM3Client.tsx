@@ -304,6 +304,19 @@ const PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS: readonly (readonly string[])[] =
   ],
 ];
 
+/**
+ * Konfliktgruppe für REFERRAL-Explanations: verhindert, dass mehrere alternative
+ * Hauptbegründungen gleichzeitig auf SHOW gesetzt werden.
+ *
+ * Bewusst NICHT in dieser Gruppe:
+ *   - REF_PSYCHOTHERAPY_FIRST_STEP (Prozesshinweis, keine alternative Hauptbegründung)
+ *   - REF_HAV_CASE (M2-Schalter, kein Explanation-Output)
+ */
+const REFERRAL_EXPLANATION_CONFLICT_GROUP: readonly string[] = [
+  "REF_SPECIALTY_REQUIRED",
+  "REF_MEDICAL_CONSULTATION_REQUIRED",
+];
+
 /** Menschenlesbare Bezeichnung für actionCategory. */
 const ACTION_CATEGORY_LABELS: Record<string, string> = {
   PREPARATION: "Vorbereitung",
@@ -892,11 +905,15 @@ export default function InquiryM3Client({
   }
 
   function setOutputStatus(checkpointId: string, value: string) {
-    // Apply conflict group exclusivity for PRESCRIPTION explanations:
+    // Apply conflict group exclusivity for explanations:
     // wenn eine Explanation auf SHOW gesetzt wird, werden alle anderen in derselben Gruppe auf HIDE gesetzt.
-    const conflictGroup = PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS.find((g) =>
-      (g as readonly string[]).includes(checkpointId),
-    );
+    const conflictGroup =
+      PRESCRIPTION_EXPLANATION_CONFLICT_GROUPS.find((g) =>
+        (g as readonly string[]).includes(checkpointId),
+      ) ??
+      (REFERRAL_EXPLANATION_CONFLICT_GROUP.includes(checkpointId)
+        ? REFERRAL_EXPLANATION_CONFLICT_GROUP
+        : undefined);
     if (conflictGroup && value === ExplanationOutputStatus.SHOW) {
       setOutputStatuses((prev) => {
         const next = { ...prev, [checkpointId]: value };
