@@ -75,7 +75,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     addLine(lines, "AU bis", val(answers, "AU_END_DATE"));
     const followup = val(answers, "AU_IS_FOLLOWUP");
     if (followup !== "") {
-      const followupLabels: Record<string, string> = { yes: "Ja", no: "Nein" };
+      const followupLabels: Record<string, string> = { ja: "Ja", nein: "Nein" };
       addLine(lines, "Folge-AU", followupLabels[followup] ?? followup);
     }
   }

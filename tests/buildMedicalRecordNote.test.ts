@@ -231,6 +231,40 @@ describe("buildMedicalRecordNote – Zeilenanzahl", () => {
   });
 });
 
+describe("buildMedicalRecordNote – AU_IS_FOLLOWUP (Folge-AU)", () => {
+  it("enthält 'Folge-AU: Ja' wenn AU_IS_FOLLOWUP = 'ja'", () => {
+    const result = buildMedicalRecordNote({
+      answers: { AU_START_DATE: "2024-01-08", AU_IS_FOLLOWUP: "ja" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    expect(result.split("\n")).toContain("Folge-AU: Ja");
+  });
+
+  it("enthält 'Folge-AU: Nein' wenn AU_IS_FOLLOWUP = 'nein'", () => {
+    const result = buildMedicalRecordNote({
+      answers: { AU_START_DATE: "2024-01-08", AU_IS_FOLLOWUP: "nein" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    expect(result.split("\n")).toContain("Folge-AU: Nein");
+  });
+
+  it("lässt Folge-AU weg wenn nicht ausgefüllt", () => {
+    const result = buildMedicalRecordNote({
+      answers: { AU_START_DATE: "2024-01-08" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    expect(result.split("\n").some((l) => l.startsWith("Folge-AU:"))).toBe(false);
+  });
+
+  it("zeigt keinen Folge-AU-Eintrag wenn ARBEITSUNFAEHIGKEIT nicht in Block-IDs", () => {
+    const result = buildMedicalRecordNote({
+      answers: { AU_IS_FOLLOWUP: "ja" },
+      selected_block_ids: ["REZEPT"],
+    });
+    expect(result).not.toContain("Folge-AU");
+  });
+});
+
 describe("buildMedicalRecordNote – AU_END_DATE (AU bis)", () => {
   it("enthält AU-bis-Datum wenn vorhanden", () => {
     const result = buildMedicalRecordNote({
