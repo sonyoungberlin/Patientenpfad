@@ -94,21 +94,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, link });
   } catch (err) {
     // Always log the full error server-side for observability.
-    console.error("[api/questionnaire] Unerwarteter Fehler:", err);
+    console.error("questionnaire create failed", err);
 
-    // In development expose Prisma error details to speed up debugging
-    // (e.g. P2021 = table not found → migration not applied).
+    // Prisma known errors: include the error code in every environment
+    // (e.g. P2022 = column missing → migration not applied) so the issue
+    // is diagnosable from the browser console without server-log access.
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: IS_DEV
+            ? `Prisma ${err.code}: ${err.message}`
+            : "Fragebogen konnte nicht erstellt werden.",
+          prismaCode: err.code,
+        },
+        { status: 500 },
+      );
+    }
+
     if (IS_DEV) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: `Prisma ${err.code}: ${err.message}`,
-            prismaCode: err.code,
-          },
-          { status: 500 },
-        );
-      }
       if (err instanceof Prisma.PrismaClientInitializationError) {
         return NextResponse.json(
           {
