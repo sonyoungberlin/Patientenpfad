@@ -1180,6 +1180,40 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  IMMUNIZATION_BOOK_VACCINATION: {
+    id: "IMMUNIZATION_BOOK_VACCINATION",
+    label: "Impftermin buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie den Impftermin über unseren Online-Buchungskalender.\n\nWählen Sie:\n1. Labor\n2. Impfung\n3. gewünschte Impfung",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte den Impftermin über den Online-Buchungskalender buchen: Labor → Impfung → gewünschte Impfung.",
+    },
+  },
+
+  IMMUNIZATION_BOOK_COUNSELING: {
+    id: "IMMUNIZATION_BOOK_COUNSELING",
+    label: "Impfberatung buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie für eine Impfberatung einen Termin über unseren Online-Buchungskalender.\n\nWählen Sie:\n1. Hausarzt / Allgemeinmedizin\n2. Impfberatung",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte für die Impfberatung einen Termin über den Online-Buchungskalender buchen: Hausarzt / Allgemeinmedizin → Impfberatung.",
+    },
+  },
+
   DIGITAL_REQUEST: {
     id: "DIGITAL_REQUEST",
     label: "Digitale Anfrage",
@@ -1933,6 +1967,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- IMMUNIZATION SPECIFIC EXPLANATIONS ----
+
+  IMMUNIZATION_STANDARD_AVAILABLE: {
+    id: "IMMUNIZATION_STANDARD_AVAILABLE",
+    label: "Grippe / COVID-Booster möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "IMMUNIZATION_STANDARD_AVAILABLE-Q1", text: "Geht es um eine Grippeimpfung oder einen COVID-Booster?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Grippeimpfung und COVID-Booster können ohne vorherige Impfberatung direkt gebucht werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
 
   IMMUNIZATION_STATUS_UNCLEAR: {
     id: "IMMUNIZATION_STATUS_UNCLEAR",

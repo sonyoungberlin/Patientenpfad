@@ -503,9 +503,11 @@ describe("IMMUNIZATION – IMMUNIZATION_BRING_VACCINATION_RECORD in Profil einge
     expect((IMMUNIZATION as any).boundActionCheckpointIds).toContain("IMMUNIZATION_BRING_VACCINATION_RECORD");
   });
 
-  it("IMMUNIZATION_BRING_VACCINATION_RECORD hat hideWhenAny: [] (immer sichtbar)", () => {
+  it("IMMUNIZATION_BRING_VACCINATION_RECORD wird bei IMMUNIZATION_TRAVEL_MEDICINE = YES ausgeblendet", () => {
     const conditions = (IMMUNIZATION as any).boundActionConditions;
-    expect(conditions?.IMMUNIZATION_BRING_VACCINATION_RECORD?.hideWhenAny).toEqual([]);
+    expect(conditions?.IMMUNIZATION_BRING_VACCINATION_RECORD?.hideWhenAny).toContainEqual({
+      IMMUNIZATION_TRAVEL_MEDICINE: "YES",
+    });
   });
 });
 
@@ -567,5 +569,138 @@ describe("IMMUNIZATION Renderer – IMMUNIZATION_BRING_VACCINATION_RECORD ersche
     ]);
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
     expect(allText).not.toContain("Impfpass");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. IMMUNIZATION_STANDARD_AVAILABLE Checkpoint + Profil-Einbindung
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION_STANDARD_AVAILABLE – Checkpoint und Profil-Einbindung", () => {
+  it("ist im Katalog als EXPLANATION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_STANDARD_AVAILABLE"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
+    expect(cp.specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("hat den erwarteten YES-Text und keinen NO-Text", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_STANDARD_AVAILABLE"];
+    expect(cp.textByStatus[ExplanationStatus.YES]).toContain(
+      "Grippeimpfung und COVID-Booster",
+    );
+    expect(cp.textByStatus[ExplanationStatus.NO]).toBeUndefined();
+  });
+
+  it("ist in IMMUNIZATION.specificCheckpointIds enthalten", () => {
+    expect(IMMUNIZATION.specificCheckpointIds).toContain(
+      "IMMUNIZATION_STANDARD_AVAILABLE",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. IMMUNIZATION_BOOK_VACCINATION Action + Sichtbarkeit
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION_BOOK_VACCINATION – Action und Sichtbarkeit", () => {
+  it("ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_BOOK_VACCINATION"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.actionCategory).toBe("NEXT_STEP");
+  });
+
+  it("ist in IMMUNIZATION.boundActionCheckpointIds enthalten", () => {
+    expect(IMMUNIZATION.boundActionCheckpointIds).toContain(
+      "IMMUNIZATION_BOOK_VACCINATION",
+    );
+  });
+
+  it("showWhenAny: nur bei IMMUNIZATION_STANDARD_AVAILABLE = YES", () => {
+    const condition =
+      IMMUNIZATION.boundActionConditions?.["IMMUNIZATION_BOOK_VACCINATION"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toEqual([
+      { IMMUNIZATION_STANDARD_AVAILABLE: "YES" },
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. IMMUNIZATION_BOOK_COUNSELING Action + Sichtbarkeit
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION_BOOK_COUNSELING – Action und Sichtbarkeit", () => {
+  it("ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_BOOK_COUNSELING"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.actionCategory).toBe("NEXT_STEP");
+  });
+
+  it("ist in IMMUNIZATION.boundActionCheckpointIds enthalten", () => {
+    expect(IMMUNIZATION.boundActionCheckpointIds).toContain(
+      "IMMUNIZATION_BOOK_COUNSELING",
+    );
+  });
+
+  it("showWhenAny: nur bei IMMUNIZATION_RISK_REVIEW_REQUIRED = YES", () => {
+    const condition =
+      IMMUNIZATION.boundActionConditions?.["IMMUNIZATION_BOOK_COUNSELING"];
+    expect(condition).toBeDefined();
+    expect(condition?.showWhenAny).toEqual([
+      { IMMUNIZATION_RISK_REVIEW_REQUIRED: "YES" },
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. IMMUNIZATION_BRING_VACCINATION_RECORD wird bei Reiseimpfung ausgeblendet
+// ---------------------------------------------------------------------------
+
+describe("IMMUNIZATION_BRING_VACCINATION_RECORD – hideWhenAny bei Reiseimpfung", () => {
+  it("hideWhenAny enthält IMMUNIZATION_TRAVEL_MEDICINE = YES", () => {
+    const condition =
+      IMMUNIZATION.boundActionConditions?.[
+        "IMMUNIZATION_BRING_VACCINATION_RECORD"
+      ];
+    expect(condition).toBeDefined();
+    expect(condition?.hideWhenAny).toContainEqual({
+      IMMUNIZATION_TRAVEL_MEDICINE: "YES",
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 13. M2-Gruppen-Abdeckung
+// ---------------------------------------------------------------------------
+
+/**
+ * Spiegelt die in InquiryM2Client.tsx hartcodierten IMMUNIZATION_GROUPS wider.
+ * Wenn diese Liste dort geändert wird, muss sie hier nachgezogen werden.
+ */
+const IMMUNIZATION_M2_GROUP_CHECKPOINT_IDS: string[] = [
+  "IMMUNIZATION_STANDARD_AVAILABLE",
+  "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+  "IMMUNIZATION_STATUS_UNCLEAR",
+  "IMMUNIZATION_TRAVEL_MEDICINE",
+];
+
+describe("IMMUNIZATION – M2-Gruppen enthalten alle IMMUNIZATION-Checkpoints", () => {
+  it("Jeder IMMUNIZATION-specificCheckpointId ist in den M2-Gruppen vertreten", () => {
+    for (const cpId of IMMUNIZATION.specificCheckpointIds) {
+      expect(IMMUNIZATION_M2_GROUP_CHECKPOINT_IDS).toContain(cpId);
+    }
+  });
+
+  it("Jeder M2-Gruppen-Checkpoint ist im IMMUNIZATION-Profil enthalten", () => {
+    for (const cpId of IMMUNIZATION_M2_GROUP_CHECKPOINT_IDS) {
+      expect(IMMUNIZATION.specificCheckpointIds).toContain(cpId);
+    }
   });
 });

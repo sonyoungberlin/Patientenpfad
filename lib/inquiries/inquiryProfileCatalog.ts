@@ -1294,9 +1294,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 70,
     decisionCheckpointId: "IMMUNIZATION_DECISION",
     specificCheckpointIds: [
-      "IMMUNIZATION_TRAVEL_MEDICINE",
+      "IMMUNIZATION_STANDARD_AVAILABLE",
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
       "IMMUNIZATION_STATUS_UNCLEAR",
+      "IMMUNIZATION_TRAVEL_MEDICINE",
     ],
     boundGlobalCheckpointIds: [],
     globalHints: {},
@@ -1308,11 +1309,19 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DOCUMENT_UPLOAD",
     ],
     boundActionCheckpointIds: [
+      "IMMUNIZATION_BOOK_VACCINATION",
+      "IMMUNIZATION_BOOK_COUNSELING",
       "IMMUNIZATION_BRING_VACCINATION_RECORD",
     ],
     boundActionConditions: {
+      IMMUNIZATION_BOOK_VACCINATION: {
+        showWhenAny: [{ IMMUNIZATION_STANDARD_AVAILABLE: "YES" }],
+      },
+      IMMUNIZATION_BOOK_COUNSELING: {
+        showWhenAny: [{ IMMUNIZATION_RISK_REVIEW_REQUIRED: "YES" }],
+      },
       IMMUNIZATION_BRING_VACCINATION_RECORD: {
-        hideWhenAny: [],
+        hideWhenAny: [{ IMMUNIZATION_TRAVEL_MEDICINE: "YES" }],
       },
     },
 

@@ -1432,6 +1432,134 @@ function LabSpecificSection({
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
+// IMMUNIZATION M2 Gruppen-Prototyp
+// [PROTOTYP – hartcodiert, nur für IMMUNIZATION, reversibel]
+// ─────────────────────────────────────────────────────────────────────────────
+
+const IMMUNIZATION_SHORT_LABELS: Record<string, string> = {
+  IMMUNIZATION_STANDARD_AVAILABLE: "Grippe / COVID",
+  IMMUNIZATION_RISK_REVIEW_REQUIRED: "Beratung nötig",
+  IMMUNIZATION_STATUS_UNCLEAR: "Impfstatus unklar",
+  IMMUNIZATION_TRAVEL_MEDICINE: "Reiseimpfung",
+};
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den IMMUNIZATION M2 Prototyp.
+ *
+ * [PROTOTYP – hartcodiert, reversibel. Analog zu LAB_GROUPS.]
+ */
+const IMMUNIZATION_GROUPS: PrescriptionGroup[] = [
+  {
+    id: "immunization_moeglich",
+    label: "Impfung möglich",
+    description: "Grippeimpfung oder COVID-Booster ohne vorherige Impfberatung.",
+    checkpointIds: [
+      "IMMUNIZATION_STANDARD_AVAILABLE",
+    ],
+    defaultOpen: true,
+  },
+  {
+    id: "immunization_aerztliche_klaerung",
+    label: "Ärztliche Klärung / Impfberatung",
+    description: "Wenn vor der Impfung eine ärztliche Einschätzung oder Impfberatung erforderlich ist.",
+    checkpointIds: [
+      "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+    ],
+    defaultOpen: false,
+  },
+  {
+    id: "immunization_angaben_fehlen",
+    label: "Angaben / Nachweise fehlen",
+    description: "Wenn Impfstatus oder Impfnachweise unklar sind.",
+    checkpointIds: [
+      "IMMUNIZATION_STATUS_UNCLEAR",
+    ],
+    defaultOpen: false,
+  },
+  {
+    id: "immunization_nicht_angeboten",
+    label: "Nicht angebotene Leistungen",
+    description: "Leistungen, die in der Praxis nicht angeboten werden.",
+    checkpointIds: [
+      "IMMUNIZATION_TRAVEL_MEDICINE",
+    ],
+    defaultOpen: false,
+  },
+];
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den IMMUNIZATION M2 Prototyp.
+ * Analog zu LabSpecificSection – keine Actions in M2.
+ *
+ * [PROTOTYP – hartcodiert, reversibel.]
+ */
+function ImmunizationSpecificSection({
+  section,
+  statuses,
+  onChange,
+}: {
+  section: M2SectionData;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
+  const cpById = new Map<string, PlainCheckpoint>(
+    section.specificCheckpoints
+      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
+      .map((cp) => [cp.id, cp]),
+  );
+
+  return (
+    <section style={{ marginBottom: "2rem" }}>
+      <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
+      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
+        Wähle aus, welche Situation am besten passt:
+      </p>
+
+      {/* Decision-Klärungsfragen – immer sichtbar */}
+      {section.decisionQuestions.length > 0 && (
+        <div style={{ marginBottom: "1rem" }}>
+          <div
+            className="text-muted text-small"
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+          >
+            <span aria-hidden="true">? </span>Klärungsfragen
+          </div>
+          <DecisionQuestionBlock
+            questions={section.decisionQuestions}
+            statuses={statuses}
+            onChange={onChange}
+          />
+        </div>
+      )}
+
+      {/* Accordion-Gruppen */}
+      <div style={{ marginBottom: "0.75rem" }}>
+        {IMMUNIZATION_GROUPS.map((group) => {
+          const groupCheckpoints = group.checkpointIds
+            .map((id) => cpById.get(id))
+            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+
+          return (
+            <PrescriptionGroupAccordion
+              key={group.id}
+              group={group}
+              checkpoints={groupCheckpoints}
+              statuses={statuses}
+              onChange={onChange}
+              shortLabels={IMMUNIZATION_SHORT_LABELS}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ende IMMUNIZATION M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
 // APPOINTMENT M2 Gruppen-Prototyp
 // [PROTOTYP – hartcodiert, nur für APPOINTMENT, reversibel]
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1708,7 +1836,7 @@ export default function InquiryM2Client({
       )}
 
       {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen.
-           PRESCRIPTION nutzt den Gruppen-Prototyp, AU, REFERRAL, HOSPITAL_ADMISSION und LAB ebenso, alle anderen Profile SpecificSection. */}
+           PRESCRIPTION nutzt den Gruppen-Prototyp, AU, REFERRAL, HOSPITAL_ADMISSION, LAB und IMMUNIZATION ebenso, alle anderen Profile SpecificSection. */}
       {sections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
@@ -1752,6 +1880,13 @@ export default function InquiryM2Client({
             statuses={statuses}
             onChange={setStatus}
           />
+        ) : section.inquiryId === "IMMUNIZATION" ? (
+          <ImmunizationSpecificSection
+            key={section.inquiryId}
+            section={section}
+            statuses={statuses}
+            onChange={setStatus}
+          />
         ) : (
           <SpecificSection
             key={section.inquiryId}
@@ -1762,10 +1897,10 @@ export default function InquiryM2Client({
         ),
       )}
 
-      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION / LAB.
+      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION / LAB / IMMUNIZATION.
            Für diese Profile werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
       {profileActionCheckpoints.length > 0 &&
-        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB" || s.inquiryId === "APPOINTMENT") && (
+        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB" || s.inquiryId === "APPOINTMENT" || s.inquiryId === "IMMUNIZATION") && (
           <WeitereHinweiseSection
             profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}
