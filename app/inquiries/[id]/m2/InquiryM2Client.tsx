@@ -1453,6 +1453,8 @@ const APPOINTMENT_GROUPS: PrescriptionGroup[] = [
   {
     id: "appt_type",
     label: "Terminart / Buchung",
+    description:
+      "Wenn Terminart, Buchungscode oder gebuchte Terminart nicht zum Anliegen passen.",
     checkpointIds: [
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
@@ -1462,6 +1464,8 @@ const APPOINTMENT_GROUPS: PrescriptionGroup[] = [
   {
     id: "appt_missing",
     label: "Angaben fehlen",
+    description:
+      "Wenn Angaben zum Anliegen oder zur Terminvereinbarung fehlen.",
     checkpointIds: [
       "APPOINTMENT_DATA_INCOMPLETE",
     ],
