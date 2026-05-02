@@ -867,6 +867,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
     },
+    textByAudience: {
+      contact_person:
+        "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, bitte im Online-Buchungskalender wählen:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nZur Bestätigung wird der Code LKBP25 benötigt.",
+    },
   },
 
   LAB_APPOINTMENT_CHECKUP: {
@@ -895,6 +899,9 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]: "Bitte vereinbaren Sie einen Termin für individuelle Laborwerte.",
+    },
+    textByAudience: {
+      contact_person: "Bitte einen Termin für individuelle Laborwerte vereinbaren.",
     },
   },
 
@@ -2033,6 +2040,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Für die Beurteilung Ihres Impfstatus benötigen wir einen Impfpass oder einen anderen Impfnachweis. Falls kein Impfpass vorliegt, können Sie diesen auch bei uns in der Praxis erwerben.",
       // NO: bewusst still – keine Erklärung nötig
     },
+    textByAudience: {
+      contact_person: {
+        [ExplanationStatus.YES]:
+          "Für die Beurteilung des Impfstatus wird ein Impfpass oder ein anderer Impfnachweis benötigt. Falls kein Impfpass vorhanden ist, kann dieser auch in der Praxis erworben werden.",
+      },
+    },
   },
 
   /** @deprecated Vorbereitender Impfpass-Hinweis – nicht mehr in IMMUNIZATION.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
@@ -2105,6 +2118,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Für Ihr Anliegen kann grundsätzlich ein Termin vereinbart werden.",
       // NO: bewusst still – keine Erklärung nötig
     },
+    textByAudience: {
+      contact_person: {
+        [ExplanationStatus.YES]:
+          "Für das Anliegen kann grundsätzlich ein Termin vereinbart werden.",
+      },
+    },
   },
 
   APPOINTMENT_CANCEL_OR_RESCHEDULE: {
@@ -2122,6 +2141,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Sie können Ihren Termin jederzeit über den Online-Kalender absagen oder verschieben.",
       // NO: bewusst still – keine Erklärung nötig
     },
+    textByAudience: {
+      contact_person: {
+        [ExplanationStatus.YES]:
+          "Der Termin kann jederzeit über den Online-Kalender abgesagt oder verschoben werden.",
+      },
+    },
   },
 
   // ---- APPOINTMENT ACTION CHECKPOINTS (terminartspezifische Buchungsanleitungen) ----
@@ -2137,6 +2162,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte buchen Sie im Online-Buchungskalender eine Befundbesprechung. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode BFSP25.",
     },
+    textByAudience: {
+      contact_person:
+        "Bitte im Online-Buchungskalender eine Befundbesprechung buchen. Zur Best\u00E4tigung wird der Buchungscode BFSP25 ben\u00F6tigt.",
+    },
   },
 
   APPOINTMENT_BOOK_CHECKUP_SECOND: {
@@ -2150,6 +2179,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Bitte buchen Sie im Online-Buchungskalender den Termin \u201ECheck-Up - 2. Termin\u201C. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung ben\u00F6tigen Sie den Buchungscode CHECK25. Bitte bringen Sie Ihren Impfpass mit.",
     },
+    textByAudience: {
+      contact_person:
+        "Bitte im Online-Buchungskalender den Termin \u201ECheck-Up - 2. Termin\u201C buchen. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung wird der Buchungscode CHECK25 ben\u00F6tigt. Bitte den Impfpass mitbringen.",
+    },
   },
 
   APPOINTMENT_BOOK_CHRONIC_CONTROL: {
@@ -2162,6 +2195,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Bitte buchen Sie im Online-Buchungskalender einen Chroniker-Kontrolltermin. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode CHKT25.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte im Online-Buchungskalender einen Chroniker-Kontrolltermin buchen. Zur Best\u00E4tigung wird der Buchungscode CHKT25 ben\u00F6tigt.",
     },
   },
 
@@ -2683,6 +2720,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
         "Für die Kommunikation mit unserer Praxis nutzen wir Doctolib.\n\nSie können dort Termine online buchen und verwalten sowie Rezepte oder Bescheinigungen digital anfragen.\n\nBitte nutzen Sie dafür Ihren Doctolib-Account.",
       // NO: bewusst still – keine Erklärung nötig
     },
+    textByAudience: {
+      contact_person: {
+        [ExplanationStatus.YES]:
+          "Für die Kommunikation mit unserer Praxis wird Doctolib genutzt.\n\nDort können Termine online gebucht und verwaltet sowie Rezepte oder Bescheinigungen digital angefragt werden.\n\nBitte dafür den Doctolib-Account nutzen.",
+      },
+    },
   },
 
   ONBOARDING_DATA_INCOMPLETE: {
@@ -2740,6 +2783,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis, z. B. Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+    textByAudience: {
+      contact_person: {
+        [ExplanationStatus.YES]:
+          "Zur Bearbeitung wird noch ein gültiger Versicherungsnachweis benötigt, z. B. die Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung der Krankenkasse.",
+      },
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Versicherungsnachweis GKV angefordert.",
@@ -2839,6 +2888,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]:
         "Leider konnten wir Ihre Anfrage nicht eindeutig zuordnen.",
     },
+    textByAudience: {
+      contact_person:
+        "Leider konnte die Anfrage nicht eindeutig zugeordnet werden.",
+    },
   },
 
   ONBOARDING_PROVIDE_IDENTITY_DATA: {
@@ -2868,6 +2921,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {
       [ActionStatus.ACTIVE]:
         "Leider fehlen uns noch aktuelle Angaben, um Ihr Anliegen bearbeiten zu können.",
+    },
+    textByAudience: {
+      contact_person:
+        "Leider fehlen noch aktuelle Angaben, um das Anliegen bearbeiten zu können.",
     },
   },
 
@@ -2988,6 +3045,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
       // NO: bewusst still – kein Text
+    },
+    textByAudience: {
+      contact_person: {
+        [ExplanationStatus.YES]:
+          "Für das Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+      },
     },
   },
 
