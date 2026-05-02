@@ -1437,6 +1437,7 @@ function LabSpecificSection({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const APPOINTMENT_SHORT_LABELS: Record<string, string> = {
+  APPOINTMENT_CAN_BE_BOOKED: "Termin möglich",
   APPOINTMENT_WRONG_TYPE: "Falscher Termintyp",
   APPOINTMENT_BOOKING_CODE_REQUIRED: "Buchungscode fehlt",
   APPOINTMENT_DATA_INCOMPLETE: "Angaben fehlen",
@@ -1452,12 +1453,13 @@ const APPOINTMENT_SHORT_LABELS: Record<string, string> = {
 const APPOINTMENT_GROUPS: PrescriptionGroup[] = [
   {
     id: "appt_type",
-    label: "Terminart / Buchung",
+    label: "Termin buchen / klären",
     description:
-      "Wenn Terminart, Buchungscode oder gebuchte Terminart nicht zum Anliegen passen.",
+      "Termin grundsätzlich möglich, Buchungscode fehlt oder Termintyp passt nicht.",
     checkpointIds: [
-      "APPOINTMENT_WRONG_TYPE",
+      "APPOINTMENT_CAN_BE_BOOKED",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
+      "APPOINTMENT_WRONG_TYPE",
     ],
     defaultOpen: true,
   },
