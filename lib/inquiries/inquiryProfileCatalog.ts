@@ -987,6 +987,33 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
     ],
 
+    actionGuidanceRules: [
+      // 1. DIGITAL_REQUEST empfehlen, wenn Angaben fehlen (Fachrichtung nicht angegeben)
+      {
+        id: "REF_DIGITAL_REQUEST_RECOMMENDED",
+        checkpointId: "DIGITAL_REQUEST",
+        profileId: "REFERRAL",
+        when: {
+          allOf: [
+            { checkpointId: "REF_SPECIALTY_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 2. BOOK_APPOINTMENT sichtbar schalten, wenn ärztliche Einschätzung erforderlich
+      {
+        id: "REF_BOOK_APPOINTMENT_VISIBLE",
+        checkpointId: "BOOK_APPOINTMENT",
+        profileId: "REFERRAL",
+        when: {
+          allOf: [
+            { checkpointId: "REF_MEDICAL_CONSULTATION_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "visible",
+      },
+    ],
+
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
     // -----------------------------------------------------------------------
@@ -1052,13 +1079,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         id: "ISSUE_BLOCKED_MISSING_INFO",
         label: "Angaben fehlen",
         relevantSpecificRoles: ["MISSING_INFORMATION"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: ["REF_DIGITAL_REQUEST_RECOMMENDED"],
       },
       {
         id: "MEDICAL_REVIEW_NEEDED",
         label: "Ärztliche Einschätzung erforderlich",
         relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
-        relevantActionGuidanceIds: [],
+        relevantActionGuidanceIds: ["REF_BOOK_APPOINTMENT_VISIBLE"],
       },
       {
         id: "PROCESS_EXPLAINED",
