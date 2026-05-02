@@ -424,7 +424,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine lückenlose Krankschreibung muss die Folgebescheinigung rechtzeitig erfolgen.",
+        "Die aktuelle Anfrage betrifft eine Folgebescheinigung.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
