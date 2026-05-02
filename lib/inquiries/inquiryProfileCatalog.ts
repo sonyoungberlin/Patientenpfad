@@ -829,6 +829,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [
       "INFECTIOUS_PROTOCOL",
+      "TRANSPORT_APPROVED",
+      "TRANSPORT_NOT_APPROVED",
+      "TRANSPORT_INFO_MISSING",
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -1112,7 +1115,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
       "HOSPITAL_TRANSPORT_REQUIRED",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "TRANSPORT_APPROVED",
+      "TRANSPORT_NOT_APPROVED",
+      "TRANSPORT_INFO_MISSING",
+    ],
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -1387,7 +1394,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_DATA_INCOMPLETE",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "TRANSPORT_APPROVED",
+      "TRANSPORT_NOT_APPROVED",
+      "TRANSPORT_INFO_MISSING",
+    ],
     globalHints: {},
     availableActionIds: [
       "DIGITAL_REQUEST",

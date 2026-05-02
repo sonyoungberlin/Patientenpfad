@@ -3088,6 +3088,75 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]: "Krankentransport erforderlich",
     },
   },
+
+  // ---- GLOBAL TRANSPORT STATUS (Konfliktgruppe: TRANSPORT_STATUS) ----
+  //
+  // Diese drei Checkpoints bilden eine Exklusivgruppe: In M3 darf maximal einer
+  // davon auf SHOW gesetzt werden. Die Daten-Deklaration ist vollständig;
+  // die Durchsetzung der Exklusivität im Renderer ist ein TODO (keine
+  // Renderer-Änderung in diesem PR – siehe exclusiveGroupId in types.ts).
+  //
+  // Scope GLOBAL + classification "MODULAR": wiederverwendbar in mehreren
+  // Profilen (HOSPITAL_ADMISSION, APPOINTMENT, ACUTE_CARE). Gebunden via
+  // boundGlobalCheckpointIds. specificRole entfällt bei GLOBAL scope.
+
+  TRANSPORT_APPROVED: {
+    id: "TRANSPORT_APPROVED",
+    label: "Krankenbeförderung zugesagt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    exclusiveGroupId: "TRANSPORT_STATUS",
+    questions: [
+      { id: "TRANSPORT_APPROVED-Q1", text: "Wurde eine Krankenbeförderung zugesagt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Krankenbeförderung wurde veranlasst.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenbeförderung veranlasst",
+    },
+  },
+
+  TRANSPORT_NOT_APPROVED: {
+    id: "TRANSPORT_NOT_APPROVED",
+    label: "Krankenbeförderung nicht zugesagt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    exclusiveGroupId: "TRANSPORT_STATUS",
+    questions: [
+      { id: "TRANSPORT_NOT_APPROVED-Q1", text: "Wurde die Krankenbeförderung nicht zugesagt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Eine Krankenbeförderung kann derzeit nicht veranlasst werden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenbeförderung nicht veranlasst",
+    },
+  },
+
+  TRANSPORT_INFO_MISSING: {
+    id: "TRANSPORT_INFO_MISSING",
+    label: "Angaben zur Krankenbeförderung fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    exclusiveGroupId: "TRANSPORT_STATUS",
+    m5Code: "NO_DATA" as M5ReasonCode,
+    questions: [
+      { id: "TRANSPORT_INFO_MISSING-Q1", text: "Fehlen Angaben zur benötigten Krankenbeförderung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Für die Prüfung der Krankenbeförderung fehlen noch Angaben.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Angaben zur Krankenbeförderung fehlen",
+    },
+  },
 };
 
 /**
@@ -3103,4 +3172,21 @@ export const INTRO_CHECKPOINT_IDS: readonly string[] = [
   "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
   "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
   "MESSAGE_INTRO_MISSING_INFO",
+] as const;
+
+/**
+ * Exklusivgruppe Krankenbeförderungsstatus.
+ *
+ * In M3 darf maximal einer dieser drei Checkpoints auf SHOW gesetzt werden.
+ * Datenseitig ist die Gruppe vollständig deklariert (exclusiveGroupId = "TRANSPORT_STATUS").
+ * Die Durchsetzung der Exklusivität im Renderer ist ein TODO und erfordert eine
+ * zukünftige Renderer-Änderung.
+ *
+ * Angebundene Profile (über boundGlobalCheckpointIds):
+ *   HOSPITAL_ADMISSION, APPOINTMENT, ACUTE_CARE
+ */
+export const TRANSPORT_STATUS_CONFLICT_GROUP: readonly string[] = [
+  "TRANSPORT_APPROVED",
+  "TRANSPORT_NOT_APPROVED",
+  "TRANSPORT_INFO_MISSING",
 ] as const;

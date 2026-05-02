@@ -56,6 +56,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const hasKontakt = blockIds.has("KONTAKT");
   const hasAdresse = blockIds.has("ADRESSE");
   const hasHospitalAdmission = blockIds.has("HOSPITAL_ADMISSION");
+  const hasTransport = blockIds.has("TRANSPORT");
 
   // --- Titel ---
   let title: string;
@@ -110,6 +111,20 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     if (hospLines.length > 0) {
       lines.push("Krankenhauseinweisung");
       lines.push(...hospLines);
+    }
+  }
+
+  // --- Krankenbeförderung ---
+  if (hasTransport) {
+    const transportLines: string[] = [];
+    addLine(transportLines, "Beförderung benötigt", val(answers, "TRANSPORT_NEEDED"));
+    addLine(transportLines, "Ziel", val(answers, "TRANSPORT_DESTINATION"));
+    addLine(transportLines, "Grund", val(answers, "TRANSPORT_REASON"));
+    addLine(transportLines, "Einschränkung", val(answers, "TRANSPORT_MOBILITY"));
+    addLine(transportLines, "Datum", val(answers, "TRANSPORT_DATE"));
+    if (transportLines.length > 0) {
+      lines.push("Krankenbeförderung");
+      lines.push(...transportLines);
     }
   }
 
