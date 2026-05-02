@@ -2023,6 +2023,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_CANCEL_OR_RESCHEDULE: {
+    id: "APPOINTMENT_CANCEL_OR_RESCHEDULE",
+    label: "Termin absagen oder verschieben",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_CANCEL_OR_RESCHEDULE-Q1", text: "Möchte der Patient einen bestehenden Termin absagen oder verschieben?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Sie können Ihren Termin jederzeit über den Online-Kalender absagen oder verschieben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- APPOINTMENT ACTION CHECKPOINTS (terminartspezifische Buchungsanleitungen) ----
 
   APPOINTMENT_BOOK_FINDINGS_REVIEW: {

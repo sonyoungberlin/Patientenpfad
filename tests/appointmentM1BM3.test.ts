@@ -54,6 +54,7 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "APPOINTMENT_CAN_BE_BOOKED",
+  "APPOINTMENT_CANCEL_OR_RESCHEDULE",
   "APPOINTMENT_WRONG_TYPE",
   "APPOINTMENT_BOOKING_CODE_REQUIRED",
   "APPOINTMENT_DATA_INCOMPLETE",
@@ -323,8 +324,19 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau vier Specific-Checkpoints", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(4);
+  it("APPOINTMENT-Profil hat genau fünf Specific-Checkpoints", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(5);
+  });
+
+  it("APPOINTMENT_CANCEL_OR_RESCHEDULE hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_CANCEL_OR_RESCHEDULE"].specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("APPOINTMENT_CANCEL_OR_RESCHEDULE steht nach APPOINTMENT_CAN_BE_BOOKED in specificCheckpointIds", () => {
+    const ids = APPOINTMENT.specificCheckpointIds;
+    const canBeBookedIdx = ids.indexOf("APPOINTMENT_CAN_BE_BOOKED");
+    const cancelIdx = ids.indexOf("APPOINTMENT_CANCEL_OR_RESCHEDULE");
+    expect(cancelIdx).toBeGreaterThan(canBeBookedIdx);
   });
 });
 
@@ -382,6 +394,32 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).not.toContain("grundsätzlich ein Termin");
+  });
+
+  it("APPOINTMENT_CANCEL_OR_RESCHEDULE YES + SHOW → Absage-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_CANCEL_OR_RESCHEDULE: ExplanationStatus.YES },
+        explanationOutputStatuses: { APPOINTMENT_CANCEL_OR_RESCHEDULE: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Sie können Ihren Termin jederzeit über den Online-Kalender absagen oder verschieben.");
+  });
+
+  it("APPOINTMENT_CANCEL_OR_RESCHEDULE NO + SHOW → kein Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_CANCEL_OR_RESCHEDULE: ExplanationStatus.NO },
+        explanationOutputStatuses: { APPOINTMENT_CANCEL_OR_RESCHEDULE: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("absagen oder verschieben");
   });
 
   it("APPOINTMENT_PROCESS_MULTI_STEP YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {

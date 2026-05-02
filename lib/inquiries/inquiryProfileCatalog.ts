@@ -1412,6 +1412,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "",
     specificCheckpointIds: [
       "APPOINTMENT_CAN_BE_BOOKED",
+      "APPOINTMENT_CANCEL_OR_RESCHEDULE",
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
       "APPOINTMENT_DATA_INCOMPLETE",

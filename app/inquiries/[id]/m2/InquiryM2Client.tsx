@@ -1438,6 +1438,7 @@ function LabSpecificSection({
 
 const APPOINTMENT_SHORT_LABELS: Record<string, string> = {
   APPOINTMENT_CAN_BE_BOOKED: "Termin möglich",
+  APPOINTMENT_CANCEL_OR_RESCHEDULE: "Termin ändern",
   APPOINTMENT_WRONG_TYPE: "Falscher Termintyp",
   APPOINTMENT_BOOKING_CODE_REQUIRED: "Buchungscode fehlt",
   APPOINTMENT_DATA_INCOMPLETE: "Angaben fehlen",
@@ -1462,6 +1463,13 @@ const APPOINTMENT_GROUPS: PrescriptionGroup[] = [
       "APPOINTMENT_WRONG_TYPE",
     ],
     defaultOpen: true,
+  },
+  {
+    id: "appt_manage",
+    label: "Termin ändern",
+    description: "Termin absagen oder verschieben.",
+    checkpointIds: ["APPOINTMENT_CANCEL_OR_RESCHEDULE"],
+    defaultOpen: false,
   },
   {
     id: "appt_missing",
