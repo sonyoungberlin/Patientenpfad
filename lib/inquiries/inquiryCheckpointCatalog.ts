@@ -2006,6 +2006,47 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- APPOINTMENT SPECIFIC EXPLANATIONS ----
 
+  // ---- APPOINTMENT ACTION CHECKPOINTS (terminartspezifische Buchungsanleitungen) ----
+
+  APPOINTMENT_BOOK_FINDINGS_REVIEW: {
+    id: "APPOINTMENT_BOOK_FINDINGS_REVIEW",
+    label: "Befundbesprechung buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie im Online-Buchungskalender eine Befundbesprechung. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode BFSP25.",
+    },
+  },
+
+  APPOINTMENT_BOOK_CHECKUP_SECOND: {
+    id: "APPOINTMENT_BOOK_CHECKUP_SECOND",
+    label: "Check-Up 2. Termin buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie im Online-Buchungskalender den Termin \u201ECheck-Up - 2. Termin\u201C. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung ben\u00F6tigen Sie den Buchungscode CHECK25. Bitte bringen Sie Ihren Impfpass mit.",
+    },
+  },
+
+  APPOINTMENT_BOOK_CHRONIC_CONTROL: {
+    id: "APPOINTMENT_BOOK_CHRONIC_CONTROL",
+    label: "Chroniker-Kontrolltermin buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte buchen Sie im Online-Buchungskalender einen Chroniker-Kontrolltermin. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode CHKT25.",
+    },
+  },
+
   APPOINTMENT_BOOKING_CODE_REQUIRED: {
     id: "APPOINTMENT_BOOKING_CODE_REQUIRED",
     label: "Buchungscode erforderlich",

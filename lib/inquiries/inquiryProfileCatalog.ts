@@ -1425,6 +1425,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "BOOK_APPOINTMENT",
+      "APPOINTMENT_BOOK_FINDINGS_REVIEW",
+      "APPOINTMENT_BOOK_CHECKUP_SECOND",
+      "APPOINTMENT_BOOK_CHRONIC_CONTROL",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {

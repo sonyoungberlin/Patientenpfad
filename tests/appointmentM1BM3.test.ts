@@ -50,10 +50,11 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bekannte Specific-Checkpoint-IDs (nach Cleanup: 2 statt 3; APPOINTMENT_PREPARATION_REQUIRED ist @deprecated und entfernt)
+// Bekannte Specific-Checkpoint-IDs
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "APPOINTMENT_WRONG_TYPE",
+  "APPOINTMENT_BOOKING_CODE_REQUIRED",
   "APPOINTMENT_DATA_INCOMPLETE",
 ] as const;
 
@@ -307,14 +308,14 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_DATA_INCOMPLETE"].specificRole).toBe("MISSING_INFORMATION");
   });
 
-  it("APPOINTMENT-Profil referenziert beide verbleibenden Specific-Checkpoints", () => {
+  it("APPOINTMENT-Profil referenziert alle drei Specific-Checkpoints", () => {
     for (const id of EXPECTED_SPECIFIC_CHECKPOINT_IDS) {
       expect(APPOINTMENT.specificCheckpointIds).toContain(id);
     }
   });
 
-  it("APPOINTMENT-Profil hat genau zwei Specific-Checkpoints (APPOINTMENT_PREPARATION_REQUIRED ist @deprecated und entfernt)", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(2);
+  it("APPOINTMENT-Profil hat genau drei Specific-Checkpoints", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(3);
   });
 });
 
@@ -571,6 +572,147 @@ describe("APPOINTMENT – BOOK_APPOINTMENT an APPOINTMENT_WRONG_TYPE gebunden", 
       },
     ]);
     expect(result.sharedBottom.join(" ")).not.toContain("Online-Kalender");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Neue terminartspezifische Buchungs-Actions (APPOINTMENT M3 Buchungscodes)
+// ---------------------------------------------------------------------------
+
+describe("APPOINTMENT – terminartspezifische Buchungs-Actions im Katalog", () => {
+  it("APPOINTMENT_BOOK_FINDINGS_REVIEW ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_FINDINGS_REVIEW"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("APPOINTMENT_BOOK_FINDINGS_REVIEW enthält Code BFSP25 im ACTIVE-Text", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_FINDINGS_REVIEW"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("BFSP25");
+  });
+
+  it("APPOINTMENT_BOOK_CHECKUP_SECOND ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_CHECKUP_SECOND"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("APPOINTMENT_BOOK_CHECKUP_SECOND enthält Code CHECK25 im ACTIVE-Text", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_CHECKUP_SECOND"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("CHECK25");
+  });
+
+  it("APPOINTMENT_BOOK_CHRONIC_CONTROL ist im Katalog als ACTION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_CHRONIC_CONTROL"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+  });
+
+  it("APPOINTMENT_BOOK_CHRONIC_CONTROL enthält Code CHKT25 im ACTIVE-Text", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_BOOK_CHRONIC_CONTROL"];
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toContain("CHKT25");
+  });
+});
+
+describe("APPOINTMENT – terminartspezifische Buchungs-Actions in boundActionCheckpointIds", () => {
+  it("APPOINTMENT_BOOK_FINDINGS_REVIEW ist in boundActionCheckpointIds", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("APPOINTMENT_BOOK_FINDINGS_REVIEW");
+  });
+
+  it("APPOINTMENT_BOOK_CHECKUP_SECOND ist in boundActionCheckpointIds", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("APPOINTMENT_BOOK_CHECKUP_SECOND");
+  });
+
+  it("APPOINTMENT_BOOK_CHRONIC_CONTROL ist in boundActionCheckpointIds", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("APPOINTMENT_BOOK_CHRONIC_CONTROL");
+  });
+
+  it("Keine automatische Steuerung durch APPOINTMENT_BOOKING_CODE_REQUIRED – keine boundActionConditions für die neuen Actions", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions ?? {};
+    expect(conditions["APPOINTMENT_BOOK_FINDINGS_REVIEW"]).toBeUndefined();
+    expect(conditions["APPOINTMENT_BOOK_CHECKUP_SECOND"]).toBeUndefined();
+    expect(conditions["APPOINTMENT_BOOK_CHRONIC_CONTROL"]).toBeUndefined();
+  });
+});
+
+describe("APPOINTMENT – Renderer: terminartspezifische Buchungs-Actions", () => {
+  it("APPOINTMENT_BOOK_FINDINGS_REVIEW ACTIVE → BFSP25-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationStatus.YES,
+          APPOINTMENT_BOOK_FINDINGS_REVIEW: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections[0].attachedParagraphs.join(" ");
+    expect(allText).toContain("BFSP25");
+  });
+
+  it("APPOINTMENT_BOOK_CHECKUP_SECOND ACTIVE → CHECK25-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationStatus.YES,
+          APPOINTMENT_BOOK_CHECKUP_SECOND: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections[0].attachedParagraphs.join(" ");
+    expect(allText).toContain("CHECK25");
+  });
+
+  it("APPOINTMENT_BOOK_CHRONIC_CONTROL ACTIVE → CHKT25-Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationStatus.YES,
+          APPOINTMENT_BOOK_CHRONIC_CONTROL: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = result.sections[0].attachedParagraphs.join(" ");
+    expect(allText).toContain("CHKT25");
+  });
+
+  it("APPOINTMENT_BOOKING_CODE_REQUIRED YES allein → kein BFSP25/CHECK25/CHKT25 (keine Auto-Aktivierung)", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_BOOKING_CODE_REQUIRED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = [
+      ...result.sections[0].attachedParagraphs,
+      ...result.sharedBottom,
+    ].join(" ");
+    expect(allText).not.toContain("BFSP25");
+    expect(allText).not.toContain("CHECK25");
+    expect(allText).not.toContain("CHKT25");
   });
 });
 
