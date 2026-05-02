@@ -1834,11 +1834,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     m5Code: "NO_SPECIALTY" as M5ReasonCode,
     questions: [
-      { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung oder der Facharzt bekannt?" },
+      { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung noch nicht angegeben?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Ausstellung einer Überweisung muss die gewünschte Fachrichtung angegeben werden.",
+        "Die Fachrichtung für die Überweisung ist noch nicht angegeben.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
