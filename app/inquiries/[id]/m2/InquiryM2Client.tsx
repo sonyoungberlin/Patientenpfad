@@ -787,6 +787,7 @@ const AU_GROUPS: PrescriptionGroup[] = [
     description: "Wenn die AU grundsätzlich digital oder organisatorisch bearbeitet werden kann.",
     checkpointIds: [
       "AU_DIGITAL_AU_PROCESS", // Digitaler AU-Anfrageprozess
+      "AU_FOLLOWUP",           // Folge-AU / Verlängerung
     ],
     defaultOpen: false,
   },
@@ -811,6 +812,7 @@ const AU_GROUPS: PrescriptionGroup[] = [
     checkpointIds: [
       "AU_NO_APPOINTMENT_ACUTE",          // Akute Beschwerden – kein kurzfristiger Termin
       "AU_MEDICAL_CONSULTATION_REQUIRED", // Ärztliche Konsultation erforderlich
+      "AU_FOLLOWUP",                      // Folge-AU / Verlängerung
     ],
     defaultOpen: false,
   },
