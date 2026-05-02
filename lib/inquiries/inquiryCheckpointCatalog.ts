@@ -1832,6 +1832,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
     m5Code: "NO_SPECIALTY" as M5ReasonCode,
     questions: [
       { id: "REF_SPECIALTY_REQUIRED-Q1", text: "Ist die Fachrichtung noch nicht angegeben?" },

@@ -954,6 +954,184 @@ function AUSpecificSection({
 // Ende AU M2 Gruppen-Prototyp
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REFERRAL M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
+const REFERRAL_SHORT_LABELS: Record<string, string> = {
+  REF_SPECIALTY_REQUIRED: "Fachrichtung fehlt",
+  REF_MEDICAL_CONSULTATION_REQUIRED: "Ärztliche Einschätzung",
+  REF_PSYCHOTHERAPY_FIRST_STEP: "Psychotherapie Erstvorstellung",
+  REF_HAV_CASE: "Hausarztvermittlungsfall",
+};
+
+/**
+ * Decision-Klärungsfragen, die in REFERRAL-M2 nicht angezeigt werden sollen.
+ *
+ * M2 = Situation / Kontext; M3 = Entscheidung.
+ */
+const REFERRAL_HIDDEN_DECISION_QUESTION_IDS = new Set([
+  "REFERRAL_DECISION-Q1", // "Liegt eine ärztliche Anordnung aus unserer Praxis vor?"
+]);
+
+/**
+ * Kommunikationsfunktions-basierte Gruppen für den REFERRAL M2 Prototyp.
+ *
+ * Ein Checkpoint kann in mehreren Gruppen erscheinen – der Status bleibt global
+ * synchron (ein einziger Record-Eintrag). IDs ohne Profil-Eintrag werden robust
+ * übersprungen.
+ *
+ * [PROTOTYP – hartcodiert, reversibel. Zum Rückgängigmachen: Render-Loop in
+ *  InquiryM2Client wiederherstellen, diese Konstante und die zugehörigen
+ *  Komponenten entfernen.]
+ */
+const REFERRAL_GROUPS: PrescriptionGroup[] = [
+  // ── 1. Überweisung kann ausgestellt werden ────────────────────────────────
+  {
+    id: "ref_ausstellen",
+    label: "Überweisung kann ausgestellt werden",
+    description: "Wenn die Überweisung grundsätzlich ausgestellt werden kann.",
+    checkpointIds: [
+      // TODO: Checkpoint ergänzen, sobald verfügbar
+    ],
+    defaultOpen: true,
+  },
+
+  // ── 2. Es fehlen Angaben ──────────────────────────────────────────────────
+  {
+    id: "ref_fehlende_angaben",
+    label: "Es fehlen Angaben",
+    description: "Prozess ist blockiert, weil notwendige Angaben fehlen.",
+    checkpointIds: [
+      "REF_SPECIALTY_REQUIRED", // Fachrichtung nicht angegeben
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 3. Ärztliche Einschätzung erforderlich ────────────────────────────────
+  {
+    id: "ref_aerztlich",
+    label: "Ärztliche Einschätzung erforderlich",
+    description: "Persönliche ärztliche Abklärung ist notwendig, bevor eine Überweisung ausgestellt werden kann.",
+    checkpointIds: [
+      "REF_MEDICAL_CONSULTATION_REQUIRED", // Ärztliche Konsultation erforderlich
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 4. Sonderfall / Zuständigkeit ────────────────────────────────────────
+  {
+    id: "ref_sonderfall",
+    label: "Sonderfall / Zuständigkeit",
+    description: "Besonderer Prozess oder spezifische Zuständigkeit ist relevant.",
+    checkpointIds: [
+      "REF_PSYCHOTHERAPY_FIRST_STEP", // Erstvorstellung Psychotherapie
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 5. Termin / Vermittlungscode ──────────────────────────────────────────
+  {
+    id: "ref_termin",
+    label: "Termin / Vermittlungscode",
+    description: "Hausarztvermittlungsfall oder Buchungscode ist relevant.",
+    checkpointIds: [
+      "REF_HAV_CASE", // Hausarztvermittlungsfall (mit Buchungscode)
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 6. Erklärung / Rückfrage ──────────────────────────────────────────────
+  {
+    id: "ref_erklaeren",
+    label: "Erklärung / Rückfrage",
+    description: "Kommunikative Ergänzungen – z. B. Prozesshinweis oder fehlende Angabe erklären.",
+    checkpointIds: [
+      "REF_SPECIALTY_REQUIRED",        // Fachrichtung fehlt – Duplikat erlaubt
+      "REF_PSYCHOTHERAPY_FIRST_STEP",  // Erstvorstellungsregel erklären
+    ],
+    defaultOpen: false,
+  },
+];
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den REFERRAL M2 Prototyp.
+ * Analog zu AUSpecificSection – keine Actions in M2.
+ *
+ * [PROTOTYP – hartcodiert, reversibel.]
+ */
+function ReferralSpecificSection({
+  section,
+  statuses,
+  onChange,
+}: {
+  section: M2SectionData;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
+  // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht angezeigt.
+  const cpById = new Map<string, PlainCheckpoint>(
+    section.specificCheckpoints
+      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
+      .map((cp) => [cp.id, cp]),
+  );
+
+  return (
+    <section style={{ marginBottom: "2rem" }}>
+      <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
+      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
+        Wähle aus, welche Situation am besten passt:
+      </p>
+
+      {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
+      {(() => {
+        const filteredDecisionQuestions = section.decisionQuestions.filter(
+          (q) => !REFERRAL_HIDDEN_DECISION_QUESTION_IDS.has(q.id),
+        );
+        return filteredDecisionQuestions.length > 0 ? (
+          <div style={{ marginBottom: "1rem" }}>
+            <div
+              className="text-muted text-small"
+              style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+            >
+              <span aria-hidden="true">? </span>Klärungsfragen
+            </div>
+            <DecisionQuestionBlock
+              questions={filteredDecisionQuestions}
+              statuses={statuses}
+              onChange={onChange}
+            />
+          </div>
+        ) : null;
+      })()}
+
+      {/* Accordion-Gruppen – je nur EXPLANATION-Checkpoints / Situationsmerkmale */}
+      <div style={{ marginBottom: "0.75rem" }}>
+        {REFERRAL_GROUPS.map((group) => {
+          const groupCheckpoints = group.checkpointIds
+            .map((id) => cpById.get(id))
+            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+
+          return (
+            <PrescriptionGroupAccordion
+              key={group.id}
+              group={group}
+              checkpoints={groupCheckpoints}
+              statuses={statuses}
+              onChange={onChange}
+              shortLabels={REFERRAL_SHORT_LABELS}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ende REFERRAL M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
 /** Section „Weitere passende Hinweise" – standardmäßig eingeklappt. */
 function WeitereHinweiseSection({
   profileActionCheckpoints,
@@ -1107,7 +1285,7 @@ export default function InquiryM2Client({
       )}
 
       {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen.
-           PRESCRIPTION nutzt den Gruppen-Prototyp, AU ebenso, alle anderen Profile SpecificSection. */}
+           PRESCRIPTION nutzt den Gruppen-Prototyp, AU und REFERRAL ebenso, alle anderen Profile SpecificSection. */}
       {sections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
@@ -1123,6 +1301,13 @@ export default function InquiryM2Client({
             statuses={statuses}
             onChange={setStatus}
           />
+        ) : section.inquiryId === "REFERRAL" ? (
+          <ReferralSpecificSection
+            key={section.inquiryId}
+            section={section}
+            statuses={statuses}
+            onChange={setStatus}
+          />
         ) : (
           <SpecificSection
             key={section.inquiryId}
@@ -1133,10 +1318,10 @@ export default function InquiryM2Client({
         ),
       )}
 
-      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU.
-           Für PRESCRIPTION und AU werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
+      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL.
+           Für PRESCRIPTION, AU und REFERRAL werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
       {profileActionCheckpoints.length > 0 &&
-        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU") && (
+        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL") && (
           <WeitereHinweiseSection
             profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}
