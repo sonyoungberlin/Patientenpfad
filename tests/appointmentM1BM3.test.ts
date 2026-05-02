@@ -53,6 +53,7 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 // Bekannte Specific-Checkpoint-IDs
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
+  "APPOINTMENT_CAN_BE_BOOKED",
   "APPOINTMENT_WRONG_TYPE",
   "APPOINTMENT_BOOKING_CODE_REQUIRED",
   "APPOINTMENT_DATA_INCOMPLETE",
@@ -304,6 +305,14 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_WRONG_TYPE"].specificRole).toBe("CHANNEL_NOT_SUITABLE");
   });
 
+  it("APPOINTMENT_CAN_BE_BOOKED hat specificRole PROCESS_INFO", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_CAN_BE_BOOKED"].specificRole).toBe("PROCESS_INFO");
+  });
+
+  it("APPOINTMENT_CAN_BE_BOOKED steht an erster Stelle in specificCheckpointIds", () => {
+    expect(APPOINTMENT.specificCheckpointIds[0]).toBe("APPOINTMENT_CAN_BE_BOOKED");
+  });
+
   it("APPOINTMENT_DATA_INCOMPLETE hat specificRole MISSING_INFORMATION", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_DATA_INCOMPLETE"].specificRole).toBe("MISSING_INFORMATION");
   });
@@ -314,8 +323,8 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau drei Specific-Checkpoints", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(3);
+  it("APPOINTMENT-Profil hat genau vier Specific-Checkpoints", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(4);
   });
 });
 
@@ -335,6 +344,44 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).toContain("gebuchte Termintyp");
+  });
+
+  it("APPOINTMENT_CAN_BE_BOOKED YES + SHOW → Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_CAN_BE_BOOKED: ExplanationStatus.YES },
+        explanationOutputStatuses: { APPOINTMENT_CAN_BE_BOOKED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).toContain("Für Ihr Anliegen kann grundsätzlich ein Termin vereinbart werden.");
+  });
+
+  it("APPOINTMENT_CAN_BE_BOOKED YES + SHOW → keine automatische Action im sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_CAN_BE_BOOKED: ExplanationStatus.YES },
+        explanationOutputStatuses: { APPOINTMENT_CAN_BE_BOOKED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+
+  it("APPOINTMENT_CAN_BE_BOOKED NO + SHOW → kein Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: { APPOINTMENT_CAN_BE_BOOKED: ExplanationStatus.NO },
+        explanationOutputStatuses: { APPOINTMENT_CAN_BE_BOOKED: ExplanationOutputStatus.SHOW } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
+    expect(paragraphs).not.toContain("grundsätzlich ein Termin");
   });
 
   it("APPOINTMENT_PROCESS_MULTI_STEP YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {

@@ -2006,6 +2006,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- APPOINTMENT SPECIFIC EXPLANATIONS ----
 
+  APPOINTMENT_CAN_BE_BOOKED: {
+    id: "APPOINTMENT_CAN_BE_BOOKED",
+    label: "Termin kann gebucht werden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_CAN_BE_BOOKED-Q1", text: "Kann für dieses Anliegen grundsätzlich ein Termin gebucht werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für Ihr Anliegen kann grundsätzlich ein Termin vereinbart werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- APPOINTMENT ACTION CHECKPOINTS (terminartspezifische Buchungsanleitungen) ----
 
   APPOINTMENT_BOOK_FINDINGS_REVIEW: {
