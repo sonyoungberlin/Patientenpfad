@@ -869,6 +869,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  LAB_APPOINTMENT_CHECKUP: {
+    id: "LAB_APPOINTMENT_CHECKUP",
+    label: "Termin Check-up-Labor buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte vereinbaren Sie im Online-Buchungskalender den Termin \u201ECheck-Up - 1. Termin (Basiswerte Labor)\u201C. F\u00FCr diesen Termin ist kein Code erforderlich.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte im Online-Buchungskalender den Termin \u201ECheck-Up - 1. Termin (Basiswerte Labor)\u201C vereinbaren. F\u00FCr diesen Termin ist kein Code erforderlich.",
+    },
+  },
+
   LAB_APPOINTMENT_INDIVIDUAL: {
     id: "LAB_APPOINTMENT_INDIVIDUAL",
     label: "Termin für individuelle Laborwerte buchen",

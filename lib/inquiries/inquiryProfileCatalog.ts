@@ -554,6 +554,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     boundActionCheckpointIds: [
       "LAB_APPOINTMENT_INTERNAL",
+      "LAB_APPOINTMENT_CHECKUP",
       "LAB_APPOINTMENT_INDIVIDUAL",
       "LAB_APPOINTMENT_DOCTOR",
       "LAB_BRING_REFERRAL",
@@ -565,6 +566,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionConditions: {
       LAB_APPOINTMENT_INTERNAL: {
         showWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
+        hideWhenAny: [{ LAB_CHECKUP_RULES: "YES" }],
+      },
+      LAB_APPOINTMENT_CHECKUP: {
+        showWhenAny: [{ LAB_CHECKUP_RULES: "YES" }],
       },
       LAB_APPOINTMENT_INDIVIDUAL: {
         hideWhenAny: [{ LAB_INTERNAL_ORDER: "YES" }],
