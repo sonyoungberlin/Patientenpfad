@@ -36,14 +36,15 @@ describe("M1_PROFILE_GROUPS – Struktur und Vollständigkeit", () => {
     it("hat den erwarteten Titel", () => {
       expect(group.label).toBe("Dokumente & Ergebnisse");
     });
-    it("enthält AU, PRESCRIPTION, REFERRAL, MEDICAL_DOCUMENTS", () => {
+    it("enthält AU, PRESCRIPTION, REFERRAL, HOSPITAL_ADMISSION, MEDICAL_DOCUMENTS", () => {
       expect(group.profileIds).toContain("AU");
       expect(group.profileIds).toContain("PRESCRIPTION");
       expect(group.profileIds).toContain("REFERRAL");
+      expect(group.profileIds).toContain("HOSPITAL_ADMISSION");
       expect(group.profileIds).toContain("MEDICAL_DOCUMENTS");
     });
-    it("enthält genau 4 Profile", () => {
-      expect(group.profileIds).toHaveLength(4);
+    it("enthält genau 5 Profile", () => {
+      expect(group.profileIds).toHaveLength(5);
     });
   });
 

@@ -1132,6 +1132,151 @@ function ReferralSpecificSection({
 // Ende REFERRAL M2 Gruppen-Prototyp
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HOSPITAL_ADMISSION M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
+const HOSPITAL_ADMISSION_SHORT_LABELS: Record<string, string> = {
+  HOSPITAL_ADMISSION_MISSING_INFO: "Angaben fehlen",
+  HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED: "Ärztliche Konsultation",
+  HOSPITAL_TRANSPORT_REQUIRED: "Krankentransport",
+};
+
+/**
+ * Decision-Klärungsfragen, die in HOSPITAL_ADMISSION-M2 nicht angezeigt werden sollen.
+ */
+const HOSPITAL_ADMISSION_HIDDEN_DECISION_QUESTION_IDS = new Set([
+  "HOSPITAL_ADMISSION_DECISION-Q1",
+]);
+
+const HOSPITAL_ADMISSION_GROUPS: PrescriptionGroup[] = [
+  // ── 1. Einweisung kann ausgestellt werden ─────────────────────────────────
+  {
+    id: "hosp_ausstellen",
+    label: "Einweisung kann ausgestellt werden",
+    description: "Wenn die Krankenhauseinweisung grundsätzlich ausgestellt werden kann.",
+    checkpointIds: [],
+    defaultOpen: true,
+  },
+
+  // ── 2. Es fehlen Angaben ──────────────────────────────────────────────────
+  {
+    id: "hosp_fehlende_angaben",
+    label: "Es fehlen Angaben",
+    description: "Prozess ist blockiert, weil notwendige Angaben fehlen.",
+    checkpointIds: [
+      "HOSPITAL_ADMISSION_MISSING_INFO",
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 3. Ärztliche Konsultation erforderlich ────────────────────────────────
+  {
+    id: "hosp_aerztlich",
+    label: "Ärztliche Konsultation erforderlich",
+    description: "Persönliche ärztliche Abklärung ist notwendig, bevor die Einweisung ausgestellt werden kann.",
+    checkpointIds: [
+      "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 4. Krankentransport ───────────────────────────────────────────────────
+  {
+    id: "hosp_transport",
+    label: "Krankentransport",
+    description: "Ein Krankentransport zur stationären Aufnahme ist relevant.",
+    checkpointIds: [
+      "HOSPITAL_TRANSPORT_REQUIRED",
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 5. Erklärung / Rückfrage ──────────────────────────────────────────────
+  {
+    id: "hosp_erklaeren",
+    label: "Erklärung / Rückfrage",
+    description: "Kommunikative Ergänzungen – z. B. fehlende Angaben erklären oder Transporthinweis.",
+    checkpointIds: [
+      "HOSPITAL_ADMISSION_MISSING_INFO",
+      "HOSPITAL_TRANSPORT_REQUIRED",
+      "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+    ],
+    defaultOpen: false,
+  },
+];
+
+function HospitalAdmissionSpecificSection({
+  section,
+  statuses,
+  onChange,
+}: {
+  section: M2SectionData;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
+  const cpById = new Map<string, PlainCheckpoint>(
+    section.specificCheckpoints
+      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
+      .map((cp) => [cp.id, cp]),
+  );
+
+  return (
+    <section style={{ marginBottom: "2rem" }}>
+      <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
+      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
+        Wähle aus, welche Situation am besten passt:
+      </p>
+
+      {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
+      {(() => {
+        const filteredDecisionQuestions = section.decisionQuestions.filter(
+          (q) => !HOSPITAL_ADMISSION_HIDDEN_DECISION_QUESTION_IDS.has(q.id),
+        );
+        return filteredDecisionQuestions.length > 0 ? (
+          <div style={{ marginBottom: "1rem" }}>
+            <div
+              className="text-muted text-small"
+              style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+            >
+              <span aria-hidden="true">? </span>Klärungsfragen
+            </div>
+            <DecisionQuestionBlock
+              questions={filteredDecisionQuestions}
+              statuses={statuses}
+              onChange={onChange}
+            />
+          </div>
+        ) : null;
+      })()}
+
+      {/* Accordion-Gruppen */}
+      <div style={{ marginBottom: "0.75rem" }}>
+        {HOSPITAL_ADMISSION_GROUPS.map((group) => {
+          const groupCheckpoints = group.checkpointIds
+            .map((id) => cpById.get(id))
+            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+
+          return (
+            <PrescriptionGroupAccordion
+              key={group.id}
+              group={group}
+              checkpoints={groupCheckpoints}
+              statuses={statuses}
+              onChange={onChange}
+              shortLabels={HOSPITAL_ADMISSION_SHORT_LABELS}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ende HOSPITAL_ADMISSION M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
 /** Section „Weitere passende Hinweise" – standardmäßig eingeklappt. */
 function WeitereHinweiseSection({
   profileActionCheckpoints,
@@ -1285,7 +1430,7 @@ export default function InquiryM2Client({
       )}
 
       {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen.
-           PRESCRIPTION nutzt den Gruppen-Prototyp, AU und REFERRAL ebenso, alle anderen Profile SpecificSection. */}
+           PRESCRIPTION nutzt den Gruppen-Prototyp, AU, REFERRAL und HOSPITAL_ADMISSION ebenso, alle anderen Profile SpecificSection. */}
       {sections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
@@ -1308,6 +1453,13 @@ export default function InquiryM2Client({
             statuses={statuses}
             onChange={setStatus}
           />
+        ) : section.inquiryId === "HOSPITAL_ADMISSION" ? (
+          <HospitalAdmissionSpecificSection
+            key={section.inquiryId}
+            section={section}
+            statuses={statuses}
+            onChange={setStatus}
+          />
         ) : (
           <SpecificSection
             key={section.inquiryId}
@@ -1318,10 +1470,10 @@ export default function InquiryM2Client({
         ),
       )}
 
-      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL.
-           Für PRESCRIPTION, AU und REFERRAL werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
+      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION.
+           Für diese Profile werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
       {profileActionCheckpoints.length > 0 &&
-        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL") && (
+        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION") && (
           <WeitereHinweiseSection
             profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}

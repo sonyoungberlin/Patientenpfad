@@ -1102,6 +1102,165 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ] satisfies ResponseGoal[],
   },
 
+  HOSPITAL_ADMISSION: {
+    id: "HOSPITAL_ADMISSION",
+    label: "Krankenhauseinweisung",
+    displayOrder: 65,
+    decisionCheckpointId: "HOSPITAL_ADMISSION_DECISION",
+    specificCheckpointIds: [
+      "HOSPITAL_ADMISSION_MISSING_INFO",
+      "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+      "HOSPITAL_TRANSPORT_REQUIRED",
+    ],
+    boundGlobalCheckpointIds: [],
+    globalHints: {},
+    availableActionIds: [
+      "BOOK_APPOINTMENT",
+      "DIGITAL_REQUEST",
+      "DOCUMENT_UPLOAD",
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    boundActionCheckpointIds: [
+      "DIGITAL_REQUEST_REQUIRED",
+      "CONTROL_APPOINTMENT_RECOMMENDED",
+    ],
+    boundActionConditions: {
+      DIGITAL_REQUEST_REQUIRED: {
+        hideWhenAny: [],
+      },
+      CONTROL_APPOINTMENT_RECOMMENDED: {
+        hideWhenAny: [],
+      },
+    },
+
+    actionGuidanceRules: [
+      // 1. DIGITAL_REQUEST empfehlen, wenn Angaben zur Einweisung fehlen
+      {
+        id: "HOSP_DIGITAL_REQUEST_RECOMMENDED",
+        checkpointId: "DIGITAL_REQUEST",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MISSING_INFO", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+      // 2. DOCUMENT_UPLOAD sichtbar schalten, wenn Angaben fehlen
+      {
+        id: "HOSP_DOCUMENT_UPLOAD_VISIBLE",
+        checkpointId: "DOCUMENT_UPLOAD",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MISSING_INFO", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "visible",
+      },
+      // 3. BOOK_APPOINTMENT sichtbar schalten, wenn ärztliche Konsultation erforderlich
+      {
+        id: "HOSP_BOOK_APPOINTMENT_VISIBLE",
+        checkpointId: "BOOK_APPOINTMENT",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "visible",
+      },
+      // 4. CONTROL_APPOINTMENT_RECOMMENDED empfehlen, wenn ärztliche Konsultation erforderlich
+      {
+        id: "HOSP_CONTROL_APPOINTMENT_RECOMMENDED",
+        checkpointId: "CONTROL_APPOINTMENT_RECOMMENDED",
+        profileId: "HOSPITAL_ADMISSION",
+        when: {
+          allOf: [
+            { checkpointId: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED", status: ExplanationStatus.YES },
+          ],
+        },
+        hint: "recommended",
+      },
+    ],
+
+    // -----------------------------------------------------------------------
+    // M1B – Kommunikationsanlässe (Pilot)
+    // -----------------------------------------------------------------------
+    communicationReasons: [
+      // Eingehende Anfragen (Patient → Praxis)
+      {
+        id: "REQ_HOSPITAL_ADMISSION_INITIAL",
+        label: "Krankenhauseinweisung anfragen",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "MEDICAL_REVIEW_NEEDED",
+          "ISSUE_BLOCKED_MISSING_INFO",
+        ],
+      },
+      {
+        id: "REQ_HOSPITAL_ADMISSION_CLARIFICATION",
+        label: "Rückfrage zur Krankenhauseinweisung / Transport",
+        direction: "INCOMING",
+        suggestedResponseGoalIds: [
+          "PROCESS_EXPLAINED",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+      // Ausgehende Praxisnachrichten (Praxis → Patient)
+      {
+        id: "OUT_HOSPITAL_ADMISSION_ISSUED",
+        label: "Krankenhauseinweisung wurde ausgestellt",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_CONFIRMED",
+          "PROCESS_EXPLAINED",
+        ],
+      },
+      {
+        id: "OUT_MISSING_REQUIREMENT",
+        label: "Praxis fordert fehlende Angaben an",
+        direction: "OUTGOING",
+        suggestedResponseGoalIds: [
+          "ISSUE_BLOCKED_MISSING_INFO",
+          "MEDICAL_REVIEW_NEEDED",
+        ],
+      },
+    ] satisfies CommunicationReason[],
+
+    // -----------------------------------------------------------------------
+    // M3 – Antwortziele (Pilot)
+    // -----------------------------------------------------------------------
+    responseGoals: [
+      {
+        id: "ISSUE_CONFIRMED",
+        label: "Krankenhauseinweisung ausgestellt",
+        relevantSpecificRoles: ["OUTCOME_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+      {
+        id: "ISSUE_BLOCKED_MISSING_INFO",
+        label: "Angaben fehlen",
+        relevantSpecificRoles: ["MISSING_INFORMATION"],
+        relevantActionGuidanceIds: ["HOSP_DIGITAL_REQUEST_RECOMMENDED", "HOSP_DOCUMENT_UPLOAD_VISIBLE"],
+      },
+      {
+        id: "MEDICAL_REVIEW_NEEDED",
+        label: "Ärztliche Konsultation erforderlich",
+        relevantSpecificRoles: ["MEDICAL_REVIEW_REQUIRED"],
+        relevantActionGuidanceIds: ["HOSP_BOOK_APPOINTMENT_VISIBLE", "HOSP_CONTROL_APPOINTMENT_RECOMMENDED"],
+      },
+      {
+        id: "PROCESS_EXPLAINED",
+        label: "Ablauf / Transport erklären",
+        relevantSpecificRoles: ["PROCESS_INFO"],
+        relevantActionGuidanceIds: [],
+      },
+    ] satisfies ResponseGoal[],
+  },
+
   IMMUNIZATION: {
     id: "IMMUNIZATION",
     label: "Impfung",

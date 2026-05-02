@@ -27,6 +27,7 @@ describe("INQUIRY_PROFILE_CATALOG_V2 – displayOrder", () => {
       "PRESCRIPTION",
       "MEDICAL_DOCUMENTS",
       "REFERRAL",
+      "HOSPITAL_ADMISSION",
       "IMMUNIZATION",
       "LAB",
       "SAMPLE_COLLECTION",

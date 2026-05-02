@@ -3008,6 +3008,86 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]: "Rezept nach Apothekenrückmeldung angepasst",
     },
   },
+
+  // ---- HOSPITAL_ADMISSION DECISION ----
+
+  HOSPITAL_ADMISSION_DECISION: {
+    id: "HOSPITAL_ADMISSION_DECISION",
+    label: "Krankenhauseinweisung-Entscheidung",
+    kind: InquiryCheckpointKind.DECISION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_DECISION-Q1", text: "Kann die Krankenhauseinweisung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [DecisionStatus.POSSIBLE]: "Die Krankenhauseinweisung wurde ausgestellt.",
+      [DecisionStatus.NOT_POSSIBLE]: "Die angefragte Krankenhauseinweisung wurde nicht ausgestellt.",
+    },
+    docByStatus: {
+      [DecisionStatus.POSSIBLE]: "Krankenhauseinweisung ausgestellt",
+      [DecisionStatus.NOT_POSSIBLE]: "Krankenhauseinweisung nicht ausgestellt",
+    },
+  },
+
+  // ---- HOSPITAL_ADMISSION SPECIFIC EXPLANATIONS ----
+
+  HOSPITAL_ADMISSION_MISSING_INFO: {
+    id: "HOSPITAL_ADMISSION_MISSING_INFO",
+    label: "Angaben zur Einweisung fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_MISSING_INFO-Q1", text: "Fehlen noch Angaben zur geplanten Krankenhauseinweisung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Bearbeitung der Krankenhauseinweisung fehlen noch Angaben.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Angaben zur Krankenhauseinweisung fehlen",
+    },
+  },
+
+  HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED: {
+    id: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+    label: "Ärztliche Konsultation erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED-Q1", text: "Ist vor Ausstellung eine ärztliche Konsultation erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Vor Ausstellung der Krankenhauseinweisung ist eine ärztliche Konsultation erforderlich.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "ärztliche Konsultation vor Krankenhauseinweisung erforderlich",
+    },
+  },
+
+  HOSPITAL_TRANSPORT_REQUIRED: {
+    id: "HOSPITAL_TRANSPORT_REQUIRED",
+    label: "Krankentransport erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_TRANSPORT_REQUIRED-Q1", text: "Wird ein Krankentransport benötigt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die stationäre Aufnahme wird ein Krankentransport benötigt.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankentransport erforderlich",
+    },
+  },
 };
 
 /**
