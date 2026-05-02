@@ -715,11 +715,19 @@ describe("APPOINTMENT – terminartspezifische Buchungs-Actions in boundActionCh
     expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("APPOINTMENT_BOOK_CHRONIC_CONTROL");
   });
 
-  it("Keine automatische Steuerung durch APPOINTMENT_BOOKING_CODE_REQUIRED – keine boundActionConditions für die neuen Actions", () => {
-    const conditions = (APPOINTMENT as any).boundActionConditions ?? {};
-    expect(conditions["APPOINTMENT_BOOK_FINDINGS_REVIEW"]).toBeUndefined();
-    expect(conditions["APPOINTMENT_BOOK_CHECKUP_SECOND"]).toBeUndefined();
-    expect(conditions["APPOINTMENT_BOOK_CHRONIC_CONTROL"]).toBeUndefined();
+  it("APPOINTMENT_BOOK_FINDINGS_REVIEW hat showWhenAny [APPOINTMENT_BOOKING_CODE_REQUIRED=YES] in boundActionConditions", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.APPOINTMENT_BOOK_FINDINGS_REVIEW?.showWhenAny).toEqual([{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }]);
+  });
+
+  it("APPOINTMENT_BOOK_CHECKUP_SECOND hat showWhenAny [APPOINTMENT_BOOKING_CODE_REQUIRED=YES] in boundActionConditions", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.APPOINTMENT_BOOK_CHECKUP_SECOND?.showWhenAny).toEqual([{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }]);
+  });
+
+  it("APPOINTMENT_BOOK_CHRONIC_CONTROL hat showWhenAny [APPOINTMENT_BOOKING_CODE_REQUIRED=YES] in boundActionConditions", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.APPOINTMENT_BOOK_CHRONIC_CONTROL?.showWhenAny).toEqual([{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }]);
   });
 });
 

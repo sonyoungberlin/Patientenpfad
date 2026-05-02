@@ -1438,6 +1438,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       BOOK_APPOINTMENT: {
         showWhenAny: [{ APPOINTMENT_WRONG_TYPE: "YES" }],
       },
+      APPOINTMENT_BOOK_FINDINGS_REVIEW: {
+        showWhenAny: [{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }],
+      },
+      APPOINTMENT_BOOK_CHECKUP_SECOND: {
+        showWhenAny: [{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }],
+      },
+      APPOINTMENT_BOOK_CHRONIC_CONTROL: {
+        showWhenAny: [{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }],
+      },
     },
 
     // -----------------------------------------------------------------------
