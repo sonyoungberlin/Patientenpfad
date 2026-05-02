@@ -569,9 +569,9 @@ describe("MEDICAL_DOCUMENTS – boundActionConditions Struktur", () => {
 // ---------------------------------------------------------------------------
 
 const DIGITAL_REQUEST_REQUIRED_TEXT =
-  "Für die Prüfung Ihres Anliegens benötigen wir eine digitale Anfrage.";
+  "Für die Prüfung Ihres Anliegens benötigen wir noch einige Angaben.\nBitte stellen Sie dazu eine digitale Anfrage über den folgenden Link und beantworten Sie die Fragen.";
 const DIGITAL_REQUEST_TEXT =
-  "Bitte stellen Sie eine digitale Anfrage.";
+  "Bitte stellen Sie eine digitale Anfrage über den folgenden Link und beantworten Sie die Fragen.";
 const BOOK_APPOINTMENT_TEXT = "Termine können über den Online-Kalender vereinbart werden.";
 
 describe("MEDICAL_DOCUMENTS Renderer – DIGITAL_REQUEST_REQUIRED ACTIVE", () => {

@@ -1236,7 +1236,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte stellen Sie eine digitale Anfrage.",
+        "Bitte stellen Sie eine digitale Anfrage über den folgenden Link und beantworten Sie die Fragen.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte eine digitale Anfrage über den folgenden Link stellen und die Fragen beantworten.",
     },
   },
 
@@ -1262,7 +1266,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Für die Prüfung Ihres Anliegens benötigen wir eine digitale Anfrage.",
+        "Für die Prüfung Ihres Anliegens benötigen wir noch einige Angaben.\nBitte stellen Sie dazu eine digitale Anfrage über den folgenden Link und beantworten Sie die Fragen.",
+    },
+    textByAudience: {
+      contact_person:
+        "Für die Prüfung werden noch Angaben benötigt.\nBitte dazu eine digitale Anfrage über den folgenden Link stellen und die Fragen beantworten.",
     },
   },
 
