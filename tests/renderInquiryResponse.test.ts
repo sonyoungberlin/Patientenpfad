@@ -2515,15 +2515,16 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("4 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED)", () => {
+  it("5 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(4);
+    expect(profile.specificCheckpointIds).toHaveLength(5);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     expect(profile.specificCheckpointIds).toContain("REF_SPECIALTY_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");

@@ -1874,6 +1874,24 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByStatus: {},
   },
 
+  REFERRAL_CAN_BE_ISSUED: {
+    id: "REFERRAL_CAN_BE_ISSUED",
+    label: "Überweisung kann ausgestellt werden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "OUTCOME_INFO" as SpecificRole,
+    questions: [
+      { id: "REFERRAL_CAN_BE_ISSUED-Q1", text: "Kann die Überweisung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Überweisung kann ausgestellt werden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Überweisung kann ausgestellt werden",
+    },
+  },
+
   // ---- IMMUNIZATION DECISION ----
 
   IMMUNIZATION_DECISION: {
@@ -3067,6 +3085,24 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
     docByStatus: {
       [ExplanationStatus.YES]: "ärztliche Konsultation vor Krankenhauseinweisung erforderlich",
+    },
+  },
+
+  HOSPITAL_ADMISSION_CAN_BE_ISSUED: {
+    id: "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
+    label: "Krankenhauseinweisung kann ausgestellt werden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "OUTCOME_INFO" as SpecificRole,
+    questions: [
+      { id: "HOSPITAL_ADMISSION_CAN_BE_ISSUED-Q1", text: "Kann die Krankenhauseinweisung ausgestellt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]: "Die Krankenhauseinweisung kann ausgestellt werden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Krankenhauseinweisung kann ausgestellt werden",
     },
   },
 

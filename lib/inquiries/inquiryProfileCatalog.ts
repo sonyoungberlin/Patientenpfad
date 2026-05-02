@@ -952,6 +952,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 60,
     decisionCheckpointId: "REFERRAL_DECISION",
     specificCheckpointIds: [
+      "REFERRAL_CAN_BE_ISSUED",
       "REF_SPECIALTY_REQUIRED",
       "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_HAV_CASE",
@@ -1108,6 +1109,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 65,
     decisionCheckpointId: "HOSPITAL_ADMISSION_DECISION",
     specificCheckpointIds: [
+      "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
       "HOSPITAL_ADMISSION_MISSING_INFO",
       "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
       "HOSPITAL_TRANSPORT_REQUIRED",

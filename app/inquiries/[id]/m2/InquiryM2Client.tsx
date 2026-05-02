@@ -992,7 +992,7 @@ const REFERRAL_GROUPS: PrescriptionGroup[] = [
     label: "Überweisung kann ausgestellt werden",
     description: "Wenn die Überweisung grundsätzlich ausgestellt werden kann.",
     checkpointIds: [
-      // TODO: Checkpoint ergänzen, sobald verfügbar
+      "REFERRAL_CAN_BE_ISSUED",
     ],
     defaultOpen: true,
   },
@@ -1150,7 +1150,18 @@ const HOSPITAL_ADMISSION_HIDDEN_DECISION_QUESTION_IDS = new Set([
 ]);
 
 const HOSPITAL_ADMISSION_GROUPS: PrescriptionGroup[] = [
-  // ── 1. Es fehlen Angaben ──────────────────────────────────────────────────
+  // ── 1. Einweisung kann ausgestellt werden ─────────────────────────────────
+  {
+    id: "hosp_ausstellen",
+    label: "Einweisung kann ausgestellt werden",
+    description: "Wenn die Krankenhauseinweisung grundsätzlich ausgestellt werden kann.",
+    checkpointIds: [
+      "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
+    ],
+    defaultOpen: true,
+  },
+
+  // ── 2. Es fehlen Angaben ──────────────────────────────────────────────────
   {
     id: "hosp_fehlende_angaben",
     label: "Es fehlen Angaben",
@@ -1161,7 +1172,7 @@ const HOSPITAL_ADMISSION_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 2. Ärztliche Konsultation erforderlich ────────────────────────────────
+  // ── 3. Ärztliche Konsultation erforderlich ────────────────────────────────
   {
     id: "hosp_aerztlich",
     label: "Ärztliche Konsultation erforderlich",
@@ -1172,7 +1183,7 @@ const HOSPITAL_ADMISSION_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 3. Krankentransport ───────────────────────────────────────────────────
+  // ── 4. Krankentransport ───────────────────────────────────────────────────
   {
     id: "hosp_transport",
     label: "Krankentransport",
@@ -1183,7 +1194,7 @@ const HOSPITAL_ADMISSION_GROUPS: PrescriptionGroup[] = [
     defaultOpen: false,
   },
 
-  // ── 4. Erklärung / Rückfrage ──────────────────────────────────────────────
+  // ── 5. Erklärung / Rückfrage ──────────────────────────────────────────────
   {
     id: "hosp_erklaeren",
     label: "Erklärung / Rückfrage",
