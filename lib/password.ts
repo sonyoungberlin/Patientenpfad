@@ -32,8 +32,8 @@ const scrypt = promisify(scryptCallback) as (
   options: { N: number; r: number; p: number; maxmem?: number },
 ) => Promise<Buffer>;
 
-// Aktuelle Default-Parameter (OWASP-Empfehlung 2024 für scrypt).
-// `N` als Power-of-Two; bei künftigen Erhöhungen Hash bei nächstem Login neu schreiben.
+// Aktuelle Default-Parameter (entlang OWASP-Empfehlung fuer scrypt).
+// `N` als Power-of-Two; bei kuenftigen Erhoehungen Hash bei naechstem Login neu schreiben.
 const DEFAULT_N = 1 << 15; // 32768
 const DEFAULT_R = 8;
 const DEFAULT_P = 1;
