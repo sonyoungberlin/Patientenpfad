@@ -79,10 +79,7 @@ describe("validateSlug", () => {
       }
     });
 
-    it("lehnt 'p' als reserviert ab (verhindert /p/[slug]-Kollision)", () => {
-      // 'p' ist 1 Zeichen → too_short, aber 'admin', 'website-forms' etc.
-      // sind aussagekräftiger. Hier prüfen wir explizit ein realistisches
-      // reserviertes Wort.
+    it("lehnt 'admin' als reserviert ab (verhindert Routenkollision)", () => {
       const r = validateSlug("admin");
       expect(r.ok).toBe(false);
       if (!r.ok) expect(r.error).toBe("reserved");
