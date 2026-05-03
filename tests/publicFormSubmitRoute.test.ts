@@ -253,4 +253,85 @@ describe("POST /api/p/[slug]/submit", () => {
     });
     expect(blocked.status).toBe(429);
   });
+
+  describe("strukturierte Logs ([website-form/submit])", () => {
+    function logCalls(): Array<Record<string, unknown>> {
+      const all = [
+        ...consoleInfoSpy.mock.calls,
+        ...consoleErrorSpy.mock.calls,
+      ];
+      return all
+        .filter((c) => c[0] === "[website-form/submit]")
+        .map((c) => c[1] as Record<string, unknown>);
+    }
+
+    it("success-Log enthält sessionId und practiceFormId, KEINE PII (E-Mail, Hash, Token)", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+      pm.patientQuestionnaireSession.create.mockResolvedValueOnce({
+        id: "sess-xyz",
+      });
+      const res = await POST(
+        formReq({ email: "patient@example.com" }, SLUG, "8.0.0.1"),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      const success = logCalls().find((p) => p.outcome === "success");
+      expect(success).toMatchObject({
+        event: "submit",
+        outcome: "success",
+        sessionId: "sess-xyz",
+        practiceFormId: "form-1",
+        slug: SLUG,
+      });
+      const s = JSON.stringify(success);
+      expect(s).not.toContain("patient@example.com");
+      expect(s).not.toContain(hashSubmitterEmail("patient@example.com"));
+    });
+
+    it.each([
+      ["honeypot", { email: "a@b.de", company_website: "x" }, "8.0.1.1"],
+      ["invalid_email", { email: "no-at" }, "8.0.2.1"],
+    ])("Outcome %s wird geloggt", async (outcome, fields, ip) => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+      await POST(formReq(fields, SLUG, ip), {
+        params: Promise.resolve({ slug: SLUG }),
+      });
+      const found = logCalls().find((p) => p.outcome === outcome);
+      expect(found).toBeDefined();
+      expect(found?.event).toBe("submit");
+    });
+
+    it("not_found wird geloggt, ohne sessionId", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(null);
+      await POST(formReq({ email: "a@b.de" }, SLUG, "8.0.3.1"), {
+        params: Promise.resolve({ slug: SLUG }),
+      });
+      const found = logCalls().find((p) => p.outcome === "not_found");
+      expect(found).toMatchObject({ event: "submit", slug: SLUG });
+      expect(found?.sessionId).toBeUndefined();
+    });
+
+    it("mail_failed wird mit error-Level und sessionId geloggt", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+      pm.patientQuestionnaireSession.create.mockResolvedValueOnce({
+        id: "sess-mail-failed",
+      });
+      sendMailMock.mockRejectedValueOnce(new Error("smtp blew up"));
+      await POST(formReq({ email: "a@b.de" }, SLUG, "8.0.4.1"), {
+        params: Promise.resolve({ slug: SLUG }),
+      });
+      const errCall = consoleErrorSpy.mock.calls.find(
+        (c) =>
+          c[0] === "[website-form/submit]" &&
+          (c[1] as Record<string, unknown>)?.outcome === "mail_failed",
+      );
+      expect(errCall).toBeDefined();
+      expect(errCall?.[1]).toMatchObject({
+        event: "submit",
+        outcome: "mail_failed",
+        sessionId: "sess-mail-failed",
+        practiceFormId: "form-1",
+      });
+    });
+  });
 });

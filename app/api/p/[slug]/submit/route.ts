@@ -61,6 +61,33 @@ export const dynamic = "force-dynamic";
 const ipSlugLimiter = createRateLimiter(IP_SLUG_RATE_LIMIT);
 const emailHashLimiter = createRateLimiter(EMAIL_HASH_RATE_LIMIT);
 
+// Strukturierte Logs — siehe docs/website-forms-operations.md.
+// Bewusst KEINE Tokens, E-Mails, Hashes oder IPs im Payload.
+const LOG_MARKER = "[website-form/submit]";
+
+type SubmitOutcome =
+  | "success"
+  | "mail_failed"
+  | "invalid_body"
+  | "invalid_email"
+  | "honeypot"
+  | "not_found"
+  | "rate_limited_ip"
+  | "rate_limited_email"
+  | "unexpected_error";
+
+function logSubmit(
+  outcome: SubmitOutcome,
+  extra: Record<string, unknown> = {},
+): void {
+  const payload = { event: "submit", outcome, ...extra };
+  if (outcome === "mail_failed" || outcome === "unexpected_error") {
+    console.error(LOG_MARKER, payload);
+  } else {
+    console.info(LOG_MARKER, payload);
+  }
+}
+
 /** Antwort, die der Browser nach erfolgreichem Submit sieht. Auch für Honeypot-Treffer. */
 function successRedirect(req: NextRequest, slug: string): NextResponse {
   const url = new URL(`/p/${slug}/eingereicht`, req.url);
@@ -153,6 +180,7 @@ export async function POST(
     // 2. Body parsen.
     const fields = await readSubmitFields(req);
     if (!fields) {
+      logSubmit("invalid_body", { slug: slugValidation.slug });
       return new NextResponse("Bad Request", {
         status: 400,
         headers: { "content-type": "text/plain; charset=utf-8" },
@@ -161,12 +189,14 @@ export async function POST(
 
     // 3. Honeypot zuerst: bei Treffer KEINE DB-Schreibung, identische Antwort.
     if (isHoneypotTriggered(fields.honeypot)) {
+      logSubmit("honeypot", { slug: slugValidation.slug });
       return successRedirect(req, slugValidation.slug);
     }
 
     // 4. E-Mail validieren.
     const emailCheck = validateSubmitterEmail(fields.email);
     if (!emailCheck.ok) {
+      logSubmit("invalid_email", { slug: slugValidation.slug });
       return new NextResponse(submitErrorMessage(emailCheck.error), {
         status: 400,
         headers: { "content-type": "text/plain; charset=utf-8" },
@@ -176,6 +206,7 @@ export async function POST(
     // 5. Rate-Limit (IP + Slug).
     const ip = getClientIp(req.headers);
     if (!ipSlugLimiter.check(`${ip}::${slugValidation.slug}`).allowed) {
+      logSubmit("rate_limited_ip", { slug: slugValidation.slug });
       return new NextResponse("Too Many Requests", {
         status: 429,
         headers: { "content-type": "text/plain; charset=utf-8" },
@@ -208,6 +239,7 @@ export async function POST(
       !form.owner_account.patient_communication_enabled ||
       !form.owner_account.website_forms_enabled
     ) {
+      logSubmit("not_found", { slug: slugValidation.slug });
       return notFoundHtml();
     }
 
@@ -215,6 +247,7 @@ export async function POST(
     // gültigen Slug das Email-Bucket nicht beeinflussen.
     const submitterEmailHash = hashSubmitterEmail(emailCheck.email);
     if (!emailHashLimiter.check(submitterEmailHash).allowed) {
+      logSubmit("rate_limited_email", { slug: slugValidation.slug });
       return new NextResponse("Too Many Requests", {
         status: 429,
         headers: { "content-type": "text/plain; charset=utf-8" },
@@ -235,7 +268,7 @@ export async function POST(
     const token = generateConfirmToken();
 
     // 10. Session anlegen.
-    await prisma.patientQuestionnaireSession.create({
+    const createdSession = await prisma.patientQuestionnaireSession.create({
       data: {
         owner_account_id: form.owner_account_id,
         practice_form_id: form.id,
@@ -252,6 +285,7 @@ export async function POST(
         submitter_email_hash: submitterEmailHash,
         // Kein Patientenlink-Flow: token / token_expires_at bleiben null.
       },
+      select: { id: true },
     });
 
     // 11. Bestätigungs-Mail versenden. Mailfehler darf die Session NICHT
@@ -268,20 +302,32 @@ export async function POST(
       });
     } catch (mailErr) {
       const detail = mailErr instanceof Error ? mailErr.message : "unknown";
-      console.error(
-        "[api/p/[slug]/submit] Bestätigungs-Mail fehlgeschlagen — Session bleibt awaiting_email_confirmation",
-        { detail },
-      );
+      logSubmit("mail_failed", {
+        slug: slugValidation.slug,
+        sessionId: createdSession.id,
+        practiceFormId: form.id,
+        detail,
+      });
       // Antwort bleibt generisch (Erfolgs-Redirect), damit der Patient
       // weiß, dass etwas anzukommen versprochen ist; Retry-/Cleanup-
       // Mechanismus folgt später.
+      return successRedirect(req, slugValidation.slug);
     }
+
+    logSubmit("success", {
+      slug: slugValidation.slug,
+      sessionId: createdSession.id,
+      practiceFormId: form.id,
+    });
 
     // 12. Erfolgs-Redirect.
     return successRedirect(req, slugValidation.slug);
   } catch (err) {
     const detail = err instanceof Error ? err.message : "unknown";
-    console.error("[api/p/[slug]/submit]", { detail });
+    logSubmit("unexpected_error", {
+      slug: slugForRedirect ?? null,
+      detail,
+    });
     if (slugForRedirect) {
       // Generische 500-Antwort, aber kein Detail-Leak.
       return new NextResponse("Internal Server Error", {
