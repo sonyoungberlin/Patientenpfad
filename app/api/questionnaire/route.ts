@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePatientCommunicationAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
+import { getCreateOwnershipData } from "@/lib/questionnaire/practiceScope";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -68,7 +69,10 @@ export async function POST(req: NextRequest) {
       data: {
         token,
         token_expires_at: expiresAt,
-        owner_account_id: account.id,
+        // Phase P3b: Doppelschreiben — `owner_account_id` immer,
+        // `owner_practice_id` zusätzlich, falls eine `current_practice`
+        // im Session-Account vorhanden ist.
+        ...getCreateOwnershipData(account),
         patient_reference: patientReference,
         inquiry_session_id: inquirySessionId,
         selected_block_ids: selectedBlockIds as Prisma.InputJsonValue,

@@ -27,6 +27,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
+import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
 import { PublicFormView } from "./PublicFormView";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,8 @@ export default async function PublicFormPage({
   }
 
   // 2./3./4./5./6. Formular + Owner-Flags in einem Query laden.
+  // P3a: Practice-Flags überstimmen Account-Flags. Wenn das Form ein
+  // `owner_practice_id` hat, ist die Practice die Quelle der Wahrheit.
   const form = await prisma.practiceQuestionnaireForm.findUnique({
     where: { slug: validation.slug },
     select: {
@@ -53,6 +56,14 @@ export default async function PublicFormPage({
       intro_text: true,
       is_active: true,
       selected_block_ids: true,
+      owner_practice_id: true,
+      owner_practice: {
+        select: {
+          is_approved: true,
+          patient_communication_enabled: true,
+          website_forms_enabled: true,
+        },
+      },
       owner_account: {
         select: {
           is_approved: true,
@@ -71,12 +82,12 @@ export default async function PublicFormPage({
     notFound();
   }
 
-  const owner = form.owner_account;
+  const flags = getEffectivePracticeFlags(form);
   if (
-    !owner ||
-    !owner.is_approved ||
-    !owner.patient_communication_enabled ||
-    !owner.website_forms_enabled
+    !flags ||
+    !flags.is_approved ||
+    !flags.patient_communication_enabled ||
+    !flags.website_forms_enabled
   ) {
     notFound();
   }

@@ -18,15 +18,58 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { PracticeRole } from "@prisma/client";
 import {
   getSessionAccount,
   getSessionAccountFromCookies,
   type SessionAccount,
+  type SessionPractice,
 } from "./auth";
 
 export type RequireResult =
   | { account: SessionAccount; error: null }
   | { account: null; error: NextResponse };
+
+/**
+ * Phase P2: Liefert die wirksamen Feature-Flags eines Session-Accounts.
+ *
+ * Quelle der Wahrheit ist ab P2 die `current_practice` (OWNER-Membership des
+ * Logins). Existiert keine Practice — z. B. bei nicht-migrierten Edge Cases
+ * oder in Test-Doubles ohne `memberships` —, wird auf die historischen
+ * Account-Flags zurückgefallen. `resolveAccount` spiegelt diese Werte
+ * zusätzlich auf das Top-Level-Objekt, damit auch die ~25 bestehenden
+ * Inline-Checks (`!account.is_approved`, `!account.inquiry_assistant_enabled`)
+ * automatisch die Practice-Werte sehen, ohne dass die Routen angefasst werden.
+ */
+function effectiveFlags(account: SessionAccount): {
+  is_approved: boolean;
+  patient_communication_enabled: boolean;
+  website_forms_enabled: boolean;
+} {
+  const p = account.current_practice;
+  return p
+    ? {
+        is_approved: p.is_approved,
+        patient_communication_enabled: p.patient_communication_enabled,
+        website_forms_enabled: p.website_forms_enabled,
+      }
+    : {
+        is_approved: account.is_approved,
+        patient_communication_enabled: account.patient_communication_enabled,
+        website_forms_enabled: account.website_forms_enabled,
+      };
+}
+
+/**
+ * Phase P2: Reiner Selektor — gibt die aktive Practice eines Session-Accounts
+ * zurück oder `null`. Kein DB-Zugriff. Einziger Punkt für künftige
+ * Quellenwechsel (Praxis-Wechsler, Admin-Impersonation o. ä.).
+ */
+export function getCurrentPractice(
+  account: Pick<SessionAccount, "current_practice">,
+): SessionPractice | null {
+  return account.current_practice ?? null;
+}
 
 /**
  * Erwartet einen eingeloggten Admin-Account.
@@ -80,7 +123,7 @@ export async function requireApprovedAccount(
       ),
     };
   }
-  if (!account.is_approved) {
+  if (!effectiveFlags(account).is_approved) {
     return {
       account: null,
       error: NextResponse.json(
@@ -111,7 +154,7 @@ export async function requirePatientCommunicationAccess(
 ): Promise<RequireResult> {
   const result = await requireApprovedAccount(req);
   if (result.error) return result;
-  if (!result.account.patient_communication_enabled) {
+  if (!effectiveFlags(result.account).patient_communication_enabled) {
     return {
       account: null,
       error: NextResponse.json(
@@ -132,11 +175,17 @@ export async function requirePatientCommunicationAccess(
  *
  * Phase 1a: zusätzlich zu „eingeloggt + freigeschaltet" muss
  * `patient_communication_enabled` aktiv sein.
+ *
+ * Phase P2: Quelle der Wahrheit für die Flags ist `current_practice`
+ * (gespiegelt durch `resolveAccount`); historische Account-Werte greifen nur
+ * als Fallback.
  */
 export async function requirePatientCommunicationAccessFromCookies(): Promise<SessionAccount | null> {
   const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) return null;
-  if (!account.patient_communication_enabled) return null;
+  if (!account) return null;
+  const flags = effectiveFlags(account);
+  if (!flags.is_approved) return null;
+  if (!flags.patient_communication_enabled) return null;
   return account;
 }
 
@@ -162,7 +211,7 @@ export async function requireWebsiteFormsAccess(
 ): Promise<RequireResult> {
   const result = await requireApprovedAccount(req);
   if (result.error) return result;
-  if (!result.account.website_forms_enabled) {
+  if (!effectiveFlags(result.account).website_forms_enabled) {
     return {
       account: null,
       error: NextResponse.json(
@@ -185,8 +234,10 @@ export async function requireWebsiteFormsAccess(
  */
 export async function requireWebsiteFormsAccessFromCookies(): Promise<SessionAccount | null> {
   const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) return null;
-  if (!account.website_forms_enabled) return null;
+  if (!account) return null;
+  const flags = effectiveFlags(account);
+  if (!flags.is_approved) return null;
+  if (!flags.website_forms_enabled) return null;
   return account;
 }
 
@@ -215,7 +266,7 @@ export async function requireWebsiteFormsManagementAccess(
 ): Promise<RequireResult> {
   const result = await requirePatientCommunicationAccess(req);
   if (result.error) return result;
-  if (!result.account.website_forms_enabled) {
+  if (!effectiveFlags(result.account).website_forms_enabled) {
     return {
       account: null,
       error: NextResponse.json(
@@ -234,11 +285,15 @@ export async function requireWebsiteFormsManagementAccess(
  * o. ä. Es wird strikt verlangt, dass `is_approved`,
  * `patient_communication_enabled` und `website_forms_enabled` alle gesetzt
  * sind. Kein Admin-Bypass.
+ *
+ * Phase P2: Quelle der Wahrheit für die Flags ist `current_practice`
+ * (gespiegelt durch `resolveAccount`); historische Account-Werte greifen nur
+ * als Fallback.
  */
 export async function requireWebsiteFormsManagementAccessFromCookies(): Promise<SessionAccount | null> {
   const account = await requirePatientCommunicationAccessFromCookies();
   if (!account) return null;
-  if (!account.website_forms_enabled) return null;
+  if (!effectiveFlags(account).website_forms_enabled) return null;
   return account;
 }
 
@@ -258,4 +313,110 @@ export function canSeeQuestionnaire(
 ): boolean {
   // TODO(Phase 1): Admin-Bypass (`account.is_admin === true`) zulassen.
   return session.owner_account_id === account.id;
+}
+
+/**
+ * Phase P2: Erwartet einen eingeloggten Account mit einer Membership in der
+ * geprüften Practice und einer Rolle aus `allowedRoles`.
+ *
+ * Quelle der Rolle: `account.memberships` (im selben Prisma-Call wie der
+ * Account geladen, kein zusätzlicher Roundtrip).
+ *
+ * Geprüfte Practice:
+ *   - explizit über `opts.practiceId`, sonst
+ *   - implizit über `account.current_practice?.id` (OWNER-Membership des
+ *     Logins).
+ *
+ * Antworten:
+ *   - 401 `Nicht angemeldet.`        → kein gültiges Session-Cookie
+ *   - 403 `Kein Praxiszugriff.`      → keine Membership zur Practice
+ *   - 403 `Rolle nicht ausreichend.` → Rolle nicht in `allowedRoles`
+ *
+ * Es gibt **bewusst keinen Plattform-Admin-Bypass** (`account.is_admin`).
+ * Plattform-Admin und Praxis-Rolle sind orthogonal; Admin-Komfortzugriffe
+ * werden erst in einer späteren Phase und ausschließlich über explizite
+ * Impersonation modelliert.
+ *
+ * In Phase P2 hat dieser Helper noch **keine produktiven Aufrufer**; er ist
+ * die technische Grundlage für P3/P4 und wird ausschließlich durch Unit-
+ * Tests abgedeckt.
+ */
+export async function requirePracticeRole(
+  req: NextRequest,
+  allowedRoles: PracticeRole[],
+  opts?: { practiceId?: string },
+): Promise<RequireResult> {
+  const account = await getSessionAccount(req);
+  if (!account) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Nicht angemeldet." },
+        { status: 401 },
+      ),
+    };
+  }
+
+  const practiceId = opts?.practiceId ?? account.current_practice?.id ?? null;
+  if (!practiceId) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Kein Praxiszugriff." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  const membership = account.memberships.find(
+    (m) => m.practice_id === practiceId,
+  );
+  if (!membership) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Kein Praxiszugriff." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  if (!allowedRoles.includes(membership.role)) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { account, error: null };
+}
+
+/**
+ * Server-Component-Variante für `requirePracticeRole`.
+ *
+ * Liefert den Account oder `null`. Der Aufrufer entscheidet über
+ * `redirect()` o. ä. Auch hier kein Plattform-Admin-Bypass.
+ *
+ * In Phase P2 ohne produktive Aufrufer.
+ */
+export async function requirePracticeRoleFromCookies(
+  allowedRoles: PracticeRole[],
+  opts?: { practiceId?: string },
+): Promise<SessionAccount | null> {
+  const account = await getSessionAccountFromCookies();
+  if (!account) return null;
+
+  const practiceId = opts?.practiceId ?? account.current_practice?.id ?? null;
+  if (!practiceId) return null;
+
+  const membership = account.memberships.find(
+    (m) => m.practice_id === practiceId,
+  );
+  if (!membership) return null;
+  if (!allowedRoles.includes(membership.role)) return null;
+
+  return account;
 }

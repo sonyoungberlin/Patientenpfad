@@ -19,9 +19,14 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireWebsiteFormsManagementAccessFromCookies } from "@/lib/authz";
+import {
+  requirePracticeRoleFromCookies,
+  requireWebsiteFormsManagementAccessFromCookies,
+} from "@/lib/authz";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { ownsForm } from "@/lib/websiteForms/practiceScope";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 
 type SearchParams = Promise<{ error?: string | string[] }>;
@@ -38,6 +43,17 @@ export default async function WebsiteFormDetailPage({
     redirect("/");
   }
 
+  // P4a: Zusätzlich zur Feature-Flag-Prüfung wird die Praxis-Rolle gegated.
+  // Nur OWNER/ADMIN dürfen Website-Formulare verwalten; USER → notFound()
+  // (kein 403, Konvention für Praxis-Pfade). Kein Plattform-Admin-Bypass.
+  const allowed = await requirePracticeRoleFromCookies([
+    PracticeRole.OWNER,
+    PracticeRole.ADMIN,
+  ]);
+  if (!allowed) {
+    notFound();
+  }
+
   const { id } = await params;
   const sp = (await searchParams) ?? {};
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
@@ -47,6 +63,7 @@ export default async function WebsiteFormDetailPage({
     select: {
       id: true,
       owner_account_id: true,
+      owner_practice_id: true,
       createdAt: true,
       updatedAt: true,
       title: true,
@@ -57,9 +74,9 @@ export default async function WebsiteFormDetailPage({
     },
   });
 
-  // Nicht gefunden ODER nicht im Besitz des aktuellen Accounts → 404.
-  // 404 statt 403, damit IDs nicht durchsuchbar sind.
-  if (!form || form.owner_account_id !== account.id) {
+  // Nicht gefunden ODER nicht im Praxis-/Account-Scope des aktuellen
+  // Accounts → 404. 404 statt 403, damit IDs nicht enumerierbar sind.
+  if (!form || !ownsForm(account, form)) {
     notFound();
   }
 

@@ -7,20 +7,21 @@ import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
  * Reine Präsentations-Komponente (Server Component) für eine einzelne
  * Fragebogen-Karte in der Übersicht.
  *
- * In Phase 0 entspricht das gerenderte Markup 1:1 dem bisherigen Inline-Code
- * in `app/questionnaires/page.tsx`. Datenaufbereitung (Block-Labels,
- * Krankenblatt-Text, Display-Status) erfolgt weiterhin im Aufrufer und wird
- * als fertige Props übergeben, damit die Karte frei von Daten- und
- * Berechtigungslogik bleibt.
+ * Die in der Kopfzeile gerenderte `displayedAt` ist die vom Aufrufer
+ * abgeleitete Anzeigezeit (`submitted_at ?? createdAt`), damit
+ * Website-Eingänge die tatsächliche Eingangszeit nach E-Mail-Bestätigung
+ * zeigen und interne Sessions weiterhin den Erstellzeitpunkt als
+ * Fallback nutzen. Die Formatierung fixiert die Zeitzone explizit auf
+ * `Europe/Berlin`, damit die Anzeige unabhängig von der Server-TZ
+ * konsistent in lokaler Praxiszeit erfolgt.
  */
 export type QuestionnaireCardProps = {
   id: string;
-  createdAt: Date;
+  displayedAt: Date;
   patientReference: string | null;
   blockLabels: string;
   displayStatus: string;
   statusLabel: string;
-  submittedAt: Date | null;
   submittedBy: string | null;
   identityGateCompletedAt: Date | null;
   questions: QuestionDefinition[];
@@ -35,12 +36,11 @@ export type QuestionnaireCardProps = {
 
 export default function QuestionnaireCard({
   id,
-  createdAt,
+  displayedAt,
   patientReference,
   blockLabels,
   displayStatus,
   statusLabel,
-  submittedAt,
   submittedBy,
   identityGateCompletedAt,
   questions,
@@ -68,9 +68,10 @@ export default function QuestionnaireCard({
             className="text-muted text-small"
             style={{ marginLeft: "0.75rem" }}
           >
-            {createdAt.toLocaleString("de-DE", {
+            {displayedAt.toLocaleString("de-DE", {
               dateStyle: "short",
               timeStyle: "short",
+              timeZone: "Europe/Berlin",
             })}
           </span>
         </div>
@@ -80,16 +81,6 @@ export default function QuestionnaireCard({
       <div className="text-muted text-small">
         Blöcke: {blockLabels || "–"}
       </div>
-
-      {submittedAt && (
-        <div className="text-small">
-          Eingegangen:{" "}
-          {submittedAt.toLocaleString("de-DE", {
-            dateStyle: "short",
-            timeStyle: "short",
-          })}
-        </div>
-      )}
 
       {identityGateCompletedAt && (
         <div

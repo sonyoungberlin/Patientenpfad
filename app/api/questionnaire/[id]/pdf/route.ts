@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
-import { canSeeQuestionnaire, requirePatientCommunicationAccess } from "@/lib/authz";
+import { requirePatientCommunicationAccess } from "@/lib/authz";
+import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 
@@ -19,6 +20,7 @@ export async function GET(
     select: {
       id: true,
       owner_account_id: true,
+      owner_practice_id: true,
       status: true,
       patient_reference: true,
       submitted_at: true,
@@ -38,7 +40,7 @@ export async function GET(
     });
   }
 
-  if (!canSeeQuestionnaire(account, session)) {
+  if (!ownsSession(account, session)) {
     return new Response(JSON.stringify({ ok: false, error: "Keine Berechtigung." }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
@@ -178,7 +180,11 @@ export async function GET(
 
   // Metadata
   const submittedStr = session.submitted_at
-    ? session.submitted_at.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })
+    ? session.submitted_at.toLocaleString("de-DE", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "Europe/Berlin",
+      })
     : "–";
   drawText(`Datum: ${submittedStr}`, { size: 9, color: [0.3, 0.3, 0.3] });
   drawText(`Patientenreferenz: ${session.patient_reference ?? "–"}`, {
@@ -191,6 +197,7 @@ export async function GET(
     const gateStr = session.identity_gate_completed_at.toLocaleString("de-DE", {
       dateStyle: "short",
       timeStyle: "short",
+      timeZone: "Europe/Berlin",
     });
     drawText(
       `Identitätsabfrage: erfolgt (Geburtsdatum + erste 3 Buchstaben Nachname) – ${gateStr}`,

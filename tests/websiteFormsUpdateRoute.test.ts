@@ -41,6 +41,16 @@ const APPROVED = {
   inquiry_assistant_enabled: false,
   patient_communication_enabled: true,
   website_forms_enabled: true,
+  current_practice: {
+    id: "p-1",
+    slug: "p1",
+    name: "P1",
+    is_approved: true,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: true,
+    website_forms_enabled: true,
+  },
+  memberships: [{ practice_id: "p-1", role: "OWNER" }],
 };
 
 function jsonReq(body: unknown) {
@@ -72,6 +82,10 @@ describe("POST /api/website-forms/[id] — Auth + Eigentum", () => {
     getSessionAccountMock.mockResolvedValue({
       ...APPROVED,
       website_forms_enabled: false,
+      current_practice: {
+        ...APPROVED.current_practice,
+        website_forms_enabled: false,
+      },
     });
     const res = await POST(jsonReq({ action: "toggle_active" }), ctx());
     expect(res.status).toBe(403);
@@ -103,6 +117,7 @@ describe("POST /api/website-forms/[id] — Toggle", () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({
       id: "form-1",
       owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
       is_active: true,
     });
     pm.practiceQuestionnaireForm.update.mockResolvedValue({});
@@ -118,6 +133,7 @@ describe("POST /api/website-forms/[id] — Toggle", () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({
       id: "form-1",
       owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
       is_active: false,
     });
     pm.practiceQuestionnaireForm.update.mockResolvedValue({});
@@ -133,6 +149,7 @@ describe("POST /api/website-forms/[id] — Voll-Update", () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({
       id: "form-1",
       owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
       is_active: true,
     });
   });

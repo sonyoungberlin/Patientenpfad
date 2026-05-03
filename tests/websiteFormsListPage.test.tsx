@@ -51,6 +51,16 @@ const APPROVED = {
   inquiry_assistant_enabled: false,
   patient_communication_enabled: true,
   website_forms_enabled: true,
+  current_practice: {
+    id: "p-1",
+    slug: "p1",
+    name: "P1",
+    is_approved: true,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: true,
+    website_forms_enabled: true,
+  },
+  memberships: [{ practice_id: "p-1", role: "OWNER" }],
 };
 
 async function runPage(searchParams?: Record<string, string>): Promise<{
@@ -86,6 +96,10 @@ describe("/website-forms list page", () => {
     getCookies.mockResolvedValue({
       ...APPROVED,
       patient_communication_enabled: false,
+      current_practice: {
+        ...APPROVED.current_practice,
+        patient_communication_enabled: false,
+      },
     });
     const r = await runPage();
     expect(r.redirect).toBe("/");
@@ -95,6 +109,10 @@ describe("/website-forms list page", () => {
     getCookies.mockResolvedValue({
       ...APPROVED,
       website_forms_enabled: false,
+      current_practice: {
+        ...APPROVED.current_practice,
+        website_forms_enabled: false,
+      },
     });
     const r = await runPage();
     expect(r.redirect).toBe("/");
@@ -105,17 +123,21 @@ describe("/website-forms list page", () => {
       ...APPROVED,
       is_admin: true,
       website_forms_enabled: false,
+      current_practice: {
+        ...APPROVED.current_practice,
+        website_forms_enabled: false,
+      },
     });
     const r = await runPage();
     expect(r.redirect).toBe("/");
   });
 
-  it("filtert Prisma-Query auf eigenen Account (Account-Isolation)", async () => {
+  it("filtert Prisma-Query auf eigene Praxis (Practice-Isolation)", async () => {
     getCookies.mockResolvedValue(APPROVED);
     pm.practiceQuestionnaireForm.findMany.mockResolvedValue([]);
     await runPage();
     const args = pm.practiceQuestionnaireForm.findMany.mock.calls[0][0];
-    expect(args.where).toEqual({ owner_account_id: "acc-1" });
+    expect(args.where).toEqual({ owner_practice_id: "p-1" });
     expect(args.orderBy).toEqual({ createdAt: "desc" });
   });
 

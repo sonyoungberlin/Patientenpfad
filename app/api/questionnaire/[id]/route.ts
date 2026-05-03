@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { canSeeQuestionnaire, requirePatientCommunicationAccess } from "@/lib/authz";
+import { requirePatientCommunicationAccess } from "@/lib/authz";
+import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
 
 export async function DELETE(
@@ -17,6 +18,7 @@ export async function DELETE(
       where: { id },
       select: {
         owner_account_id: true,
+        owner_practice_id: true,
         source: true,
         status: true,
         confirmed_at: true,
@@ -25,7 +27,7 @@ export async function DELETE(
 
     if (
       !session ||
-      !canSeeQuestionnaire(account, session) ||
+      !ownsSession(account, session) ||
       !isQuestionnaireVisibleToPractice(session)
     ) {
       return NextResponse.json({ ok: false, error: "Fragebogen nicht gefunden." }, { status: 404 });
