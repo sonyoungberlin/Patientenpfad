@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
-import { canSeeQuestionnaire, requireApprovedAccount } from "@/lib/authz";
+import { canSeeQuestionnaire, requirePatientCommunicationAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 
@@ -11,7 +11,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const { account, error } = await requireApprovedAccount(req);
+  const { account, error } = await requirePatientCommunicationAccess(req);
   if (error) return error;
 
   const session = await prisma.patientQuestionnaireSession.findUnique({

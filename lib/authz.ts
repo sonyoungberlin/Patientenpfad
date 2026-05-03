@@ -95,19 +95,32 @@ export async function requireApprovedAccount(
 /**
  * Erwartet einen Account, der die Patientenkommunikation nutzen darf.
  *
- * Phase 0: Verhalten identisch zu {@link requireApprovedAccount}.
+ * Phase 1a: zusätzlich zu „eingeloggt + freigeschaltet" muss das Account-Feld
+ * `patient_communication_enabled` gesetzt sein. Dieses Feld wird im Admin-UI
+ * separat freigeschaltet; Bestandsaccounts mit `is_approved = true` haben es
+ * per Backfill bereits auf `true`, sodass sich das beobachtbare Verhalten
+ * nicht ändert.
  *
- * In Phase 1 wird hier zusätzlich das neue Account-Feld
- * `patient_communication_enabled` geprüft. Der Helper existiert bereits jetzt,
- * damit Aufrufstellen (DELETE/PDF/POST der Fragebogen-Routen, künftige
- * `/questionnaires`-Praxis-Route) in Phase 0 schon stabil benannt werden
- * können, ohne dass sich ihr Verhalten ändert.
+ * Antworten:
+ *  - 401 `Nicht angemeldet.`                       → kein gültiges Session-Cookie
+ *  - 403 `Account nicht freigeschaltet.`           → Account nicht freigeschaltet
+ *  - 403 `Patientenkommunikation nicht freigeschaltet.` → Feature-Gate aus
  */
 export async function requirePatientCommunicationAccess(
   req: NextRequest,
 ): Promise<RequireResult> {
-  // TODO(Phase 1): zusätzlich `account.patient_communication_enabled` prüfen.
-  return requireApprovedAccount(req);
+  const result = await requireApprovedAccount(req);
+  if (result.error) return result;
+  if (!result.account.patient_communication_enabled) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Patientenkommunikation nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+  return result;
 }
 
 /**
@@ -117,12 +130,13 @@ export async function requirePatientCommunicationAccess(
  * ob ein Redirect, eine Fehlerseite o. ä. gerendert wird – analog zum
  * bisherigen Vorgehen in `app/admin/questionnaires/page.tsx`.
  *
- * Phase 0: Verhalten identisch zu „eingeloggt UND `is_approved`".
+ * Phase 1a: zusätzlich zu „eingeloggt + freigeschaltet" muss
+ * `patient_communication_enabled` aktiv sein.
  */
 export async function requirePatientCommunicationAccessFromCookies(): Promise<SessionAccount | null> {
   const account = await getSessionAccountFromCookies();
   if (!account || !account.is_approved) return null;
-  // TODO(Phase 1): zusätzlich `account.patient_communication_enabled` prüfen.
+  if (!account.patient_communication_enabled) return null;
   return account;
 }
 

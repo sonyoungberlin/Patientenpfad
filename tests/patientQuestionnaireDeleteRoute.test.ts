@@ -42,11 +42,18 @@ function requestWithCookie(url: string) {
   });
 }
 
-function mockSession(is_approved: boolean, accountId = "acc-owner") {
+function mockSession(is_approved: boolean, accountId = "acc-owner", patient_communication_enabled = true) {
   pm.session.findUnique.mockResolvedValue({
     token: "good-token",
     expiresAt: new Date(Date.now() + 100_000),
-    account: { id: accountId, email: "owner@example.com", is_approved, is_admin: false, inquiry_assistant_enabled: false },
+    account: {
+      id: accountId,
+      email: "owner@example.com",
+      is_approved,
+      is_admin: false,
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled,
+    },
   });
 }
 
@@ -72,6 +79,16 @@ describe("DELETE /api/questionnaire/[id]", () => {
     expect(res.status).toBe(403);
     const json = await res.json();
     expect(json.ok).toBe(false);
+  });
+
+  it("403 wenn patient_communication_enabled = false", async () => {
+    mockSession(true, "acc-owner", false);
+    const req = requestWithCookie("http://localhost/api/questionnaire/q-1");
+    const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-1" }) });
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+    expect(json.error).toBe("Patientenkommunikation nicht freigeschaltet.");
   });
 
   it("404 wenn Fragebogen nicht existiert", async () => {

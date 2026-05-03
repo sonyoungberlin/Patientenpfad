@@ -31,6 +31,11 @@ model Account {
   /// Muss explizit durch Admin aktiviert werden; Standard: false.
   inquiry_assistant_enabled Boolean @default(false)
 
+  /// Freigabe für die Patientenkommunikation (Patientenfragebogen-Funktionen).
+  /// Muss explizit durch Admin aktiviert werden; Standard: false.
+  /// Backfill: Bestandsaccounts mit is_approved = true erhalten true (siehe Migration).
+  patient_communication_enabled Boolean @default(false)
+
   cases                        CaseSession[]
   sessions                     Session[]
   inquiry_sessions             InquirySession[]

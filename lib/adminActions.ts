@@ -65,6 +65,7 @@ export type AccountSummary = {
   is_approved: boolean;
   is_admin: boolean;
   inquiry_assistant_enabled: boolean;
+  patient_communication_enabled: boolean;
   createdAt: Date;
 };
 
@@ -73,7 +74,15 @@ export type AccountSummary = {
  */
 export async function listAccounts(): Promise<AccountSummary[]> {
   return prisma.account.findMany({
-    select: { id: true, email: true, is_approved: true, is_admin: true, inquiry_assistant_enabled: true, createdAt: true },
+    select: {
+      id: true,
+      email: true,
+      is_approved: true,
+      is_admin: true,
+      inquiry_assistant_enabled: true,
+      patient_communication_enabled: true,
+      createdAt: true,
+    },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -116,4 +125,45 @@ export async function disableInquiryAssistant(
     data: { inquiry_assistant_enabled: false },
   });
   return { ok: true, message: `Anfrage-Assistent für "${email}" deaktiviert.` };
+}
+
+/**
+ * Aktiviert die Patientenkommunikation (Patientenfragebogen-Funktionen)
+ * für einen Account per E-Mail.
+ */
+export async function enablePatientCommunication(
+  email: string,
+): Promise<AdminActionResult> {
+  const account = await prisma.account.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (!account) {
+    return { ok: false, message: `Kein Account mit E-Mail "${email}" gefunden.` };
+  }
+  await prisma.account.update({
+    where: { email },
+    data: { patient_communication_enabled: true },
+  });
+  return { ok: true, message: `Patientenkommunikation für "${email}" aktiviert.` };
+}
+
+/**
+ * Deaktiviert die Patientenkommunikation für einen Account per E-Mail.
+ */
+export async function disablePatientCommunication(
+  email: string,
+): Promise<AdminActionResult> {
+  const account = await prisma.account.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (!account) {
+    return { ok: false, message: `Kein Account mit E-Mail "${email}" gefunden.` };
+  }
+  await prisma.account.update({
+    where: { email },
+    data: { patient_communication_enabled: false },
+  });
+  return { ok: true, message: `Patientenkommunikation für "${email}" deaktiviert.` };
 }

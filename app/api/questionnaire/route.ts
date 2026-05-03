@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getSessionAccount } from "@/lib/auth";
+import { requirePatientCommunicationAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
 
@@ -11,19 +11,8 @@ const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 export async function POST(req: NextRequest) {
   try {
-    const account = await getSessionAccount(req);
-    if (!account) {
-      return NextResponse.json(
-        { ok: false, error: "Nicht angemeldet." },
-        { status: 401 },
-      );
-    }
-    if (!account.is_approved) {
-      return NextResponse.json(
-        { ok: false, error: "Account nicht freigeschaltet." },
-        { status: 403 },
-      );
-    }
+    const { account, error } = await requirePatientCommunicationAccess(req);
+    if (error) return error;
 
     let body: Record<string, unknown>;
     try {

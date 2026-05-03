@@ -11,6 +11,7 @@ export type SessionAccount = {
   is_approved: boolean;
   is_admin: boolean;
   inquiry_assistant_enabled: boolean;
+  patient_communication_enabled: boolean;
 };
 
 async function resolveAccount(token: string | undefined): Promise<SessionAccount | null> {
@@ -20,7 +21,14 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
     where: { token },
     include: {
       account: {
-        select: { id: true, email: true, is_approved: true, is_admin: true, inquiry_assistant_enabled: true },
+        select: {
+          id: true,
+          email: true,
+          is_approved: true,
+          is_admin: true,
+          inquiry_assistant_enabled: true,
+          patient_communication_enabled: true,
+        },
       },
     },
   });

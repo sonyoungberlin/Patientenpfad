@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { canSeeQuestionnaire, requireApprovedAccount } from "@/lib/authz";
+import { canSeeQuestionnaire, requirePatientCommunicationAccess } from "@/lib/authz";
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { account, error } = await requireApprovedAccount(req);
+    const { account, error } = await requirePatientCommunicationAccess(req);
     if (error) return error;
 
     const { id } = await params;

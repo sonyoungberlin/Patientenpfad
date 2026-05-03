@@ -16,6 +16,9 @@ jest.mock("@/lib/auth", () => ({
     id: "acc-admin",
     email: "admin@example.com",
     is_approved: true,
+    is_admin: false,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: true,
   }),
 }));
 

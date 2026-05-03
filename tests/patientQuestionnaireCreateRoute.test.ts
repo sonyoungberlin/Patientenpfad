@@ -38,6 +38,7 @@ const APPROVED_ACCOUNT = {
   is_approved: true,
   is_admin: false,
   inquiry_assistant_enabled: false,
+  patient_communication_enabled: true,
 };
 
 function makeRequest(body: unknown) {
@@ -104,6 +105,19 @@ describe("POST /api/questionnaire", () => {
     const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
     const res = await POST(req);
     expect(res.status).toBe(403);
+  });
+
+  it("gibt 403 zurück wenn patient_communication_enabled = false", async () => {
+    getSessionAccountMock.mockResolvedValue({
+      ...APPROVED_ACCOUNT,
+      patient_communication_enabled: false,
+    });
+
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toBe("Patientenkommunikation nicht freigeschaltet.");
   });
 
   it("gibt 400 zurück wenn selected_block_ids fehlt", async () => {
