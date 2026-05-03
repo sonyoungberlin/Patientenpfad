@@ -85,7 +85,7 @@ Migrationen über die Deployment-Umgebung ausrollen.
 Dazu ist in `package.json` ein eigenes Script `vercel-build` definiert:
 
 ```json
-"vercel-build": "prisma migrate deploy && next build"
+"vercel-build": "DIRECT_DATABASE_URL=\"$DATABASE_URL\" prisma migrate deploy && next build"
 ```
 
 Verhalten:
@@ -100,9 +100,14 @@ Verhalten:
   destruktiven Befehle (`migrate dev`, `migrate reset`, `db push` o. ä.).
   `migrate deploy` wendet ausstehende Migrationen idempotent an und ändert
   keine Daten außerhalb der in `prisma/migrations/` versionierten Schritte.
-- Genutzt wird automatisch `DIRECT_DATABASE_URL` (über `directUrl` in
-  `schema.prisma`). Diese Variable muss im Vercel-Projekt gesetzt sein
-  (siehe Abschnitt „Vercel" oben).
+- Der Vercel-Build-Runner kann den Neon-Direct-Host
+  (`ep-…neon.tech:5432` ohne `pooler`-Subdomain) nicht erreichen (P1001),
+  wohl aber die Pooler-URL. Da Prisma bei gesetztem `directUrl` zwingend
+  diesen Host für `migrate deploy` nutzt, überschreibt das Script
+  `DIRECT_DATABASE_URL` lokal für genau diesen Befehl mit dem Wert von
+  `DATABASE_URL` (Pooler). Die `schema.prisma` bleibt unverändert, lokale
+  `npm run migrate:deploy`-Aufrufe nutzen weiterhin die echte Direct-URL aus
+  `.env.local`.
 
 Rollout neuer Migrationen:
 
