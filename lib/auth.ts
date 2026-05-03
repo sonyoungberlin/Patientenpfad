@@ -12,6 +12,7 @@ export type SessionAccount = {
   is_admin: boolean;
   inquiry_assistant_enabled: boolean;
   patient_communication_enabled: boolean;
+  website_forms_enabled: boolean;
 };
 
 async function resolveAccount(token: string | undefined): Promise<SessionAccount | null> {
@@ -28,6 +29,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
           is_admin: true,
           inquiry_assistant_enabled: true,
           patient_communication_enabled: true,
+          website_forms_enabled: true,
         },
       },
     },

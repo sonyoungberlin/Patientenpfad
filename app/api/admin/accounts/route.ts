@@ -7,6 +7,8 @@ import {
   disableInquiryAssistant,
   enablePatientCommunication,
   disablePatientCommunication,
+  enableWebsiteForms,
+  disableWebsiteForms,
 } from "@/lib/adminActions";
 import { prisma } from "@/lib/prisma";
 
@@ -32,6 +34,7 @@ export async function GET(req: NextRequest) {
       is_admin: true,
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
+      website_forms_enabled: true,
       createdAt: true,
     },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
@@ -76,13 +79,15 @@ export async function POST(req: NextRequest) {
       action !== "enable_inquiry" &&
       action !== "disable_inquiry" &&
       action !== "enable_patient_communication" &&
-      action !== "disable_patient_communication")
+      action !== "disable_patient_communication" &&
+      action !== "enable_website_forms" &&
+      action !== "disable_website_forms")
   ) {
     return NextResponse.json(
       {
         ok: false,
         error:
-          "Ungültige Parameter. Erwartet: { email, action: 'approve' | 'revoke' | 'enable_inquiry' | 'disable_inquiry' | 'enable_patient_communication' | 'disable_patient_communication' }",
+          "Ungültige Parameter. Erwartet: { email, action: 'approve' | 'revoke' | 'enable_inquiry' | 'disable_inquiry' | 'enable_patient_communication' | 'disable_patient_communication' | 'enable_website_forms' | 'disable_website_forms' }",
       },
       { status: 400 },
     );
@@ -94,7 +99,9 @@ export async function POST(req: NextRequest) {
   else if (action === "enable_inquiry") result = await enableInquiryAssistant(email);
   else if (action === "disable_inquiry") result = await disableInquiryAssistant(email);
   else if (action === "enable_patient_communication") result = await enablePatientCommunication(email);
-  else result = await disablePatientCommunication(email);
+  else if (action === "disable_patient_communication") result = await disablePatientCommunication(email);
+  else if (action === "enable_website_forms") result = await enableWebsiteForms(email);
+  else result = await disableWebsiteForms(email);
 
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.message }, { status: 404 });

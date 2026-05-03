@@ -16,6 +16,7 @@ export default async function AdminAccountsPage() {
       is_admin: true,
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
+      website_forms_enabled: true,
       createdAt: true,
     },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
@@ -35,6 +36,7 @@ export default async function AdminAccountsPage() {
             <th>Admin</th>
             <th>Anfrage-Assistent</th>
             <th>Patientenkommunikation</th>
+            <th>Website-Formulare</th>
             <th>Angelegt</th>
             <th>Aktion</th>
           </tr>
@@ -48,6 +50,9 @@ export default async function AdminAccountsPage() {
               <td>{acc.inquiry_assistant_enabled ? "✓ aktiv" : "–"}</td>
               <td data-pc={acc.email}>
                 {acc.patient_communication_enabled ? "✓ aktiv" : "–"}
+              </td>
+              <td data-wf={acc.email}>
+                {acc.website_forms_enabled ? "✓ aktiv" : "–"}
               </td>
               <td>{acc.createdAt.toISOString().slice(0, 10)}</td>
               <td style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -90,12 +95,29 @@ export default async function AdminAccountsPage() {
                       : "Patientenkommunikation aktivieren"}
                   </button>
                 </form>
+                <form method="POST" action="/api/admin/accounts">
+                  <input type="hidden" name="email" value={acc.email} />
+                  <input
+                    type="hidden"
+                    name="action"
+                    value={
+                      acc.website_forms_enabled
+                        ? "disable_website_forms"
+                        : "enable_website_forms"
+                    }
+                  />
+                  <button type="submit" data-wf-toggle={acc.email}>
+                    {acc.website_forms_enabled
+                      ? "Website-Formulare deaktivieren"
+                      : "Website-Formulare aktivieren"}
+                  </button>
+                </form>
               </td>
             </tr>
           ))}
           {accounts.length === 0 && (
             <tr>
-              <td colSpan={7} className="text-muted">
+              <td colSpan={8} className="text-muted">
                 Keine Accounts vorhanden.
               </td>
             </tr>

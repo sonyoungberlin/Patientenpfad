@@ -144,6 +144,7 @@ describe("listAccounts", () => {
           is_admin: true,
           inquiry_assistant_enabled: true,
           patient_communication_enabled: true,
+          website_forms_enabled: true,
           createdAt: true,
         },
         orderBy: { createdAt: "desc" },
