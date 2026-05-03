@@ -53,7 +53,7 @@ describe("sendWebsiteFormConfirmationEmail (console transport)", () => {
         to: "p@example.com",
         confirmationUrl: "https://x.test/p/confirm/abc",
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toBe("console");
 
     expect(infoSpy).toHaveBeenCalledTimes(1);
     const [, payload] = infoSpy.mock.calls[0];
