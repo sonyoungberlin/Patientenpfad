@@ -191,6 +191,58 @@ export async function requireWebsiteFormsAccessFromCookies(): Promise<SessionAcc
 }
 
 /**
+ * Phase 3b: Erwartet einen Account, der die Praxis-UI für öffentliche
+ * Website-Fragebögen verwalten darf.
+ *
+ * Im Unterschied zu `requireWebsiteFormsAccess` (Phase 3a, technische
+ * Grundlage) verlangt dieser Helper **zusätzlich** das Feature-Gate
+ * `patient_communication_enabled`. Hintergrund: das Anlegen von Website-
+ * Fragebögen ist nur sinnvoll für Praxen, die auch Patientenkommunikation
+ * grundsätzlich freigeschaltet haben (gleiches Berechtigungsumfeld wie die
+ * interne Fragebogen-Liste unter `/questionnaires`).
+ *
+ * Es gibt bewusst **keinen Admin-Bypass** — auch Admins benötigen beide
+ * Flags.
+ *
+ * Antworten:
+ *  - 401 `Nicht angemeldet.`
+ *  - 403 `Account nicht freigeschaltet.`
+ *  - 403 `Patientenkommunikation nicht freigeschaltet.`
+ *  - 403 `Website-Formulare nicht freigeschaltet.`
+ */
+export async function requireWebsiteFormsManagementAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const result = await requirePatientCommunicationAccess(req);
+  if (result.error) return result;
+  if (!result.account.website_forms_enabled) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Website-Formulare nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+  return result;
+}
+
+/**
+ * Server-Component-Variante für `requireWebsiteFormsManagementAccess`.
+ *
+ * Liefert den Account oder `null`. Aufrufer entscheidet über `redirect()`
+ * o. ä. Es wird strikt verlangt, dass `is_approved`,
+ * `patient_communication_enabled` und `website_forms_enabled` alle gesetzt
+ * sind. Kein Admin-Bypass.
+ */
+export async function requireWebsiteFormsManagementAccessFromCookies(): Promise<SessionAccount | null> {
+  const account = await requirePatientCommunicationAccessFromCookies();
+  if (!account) return null;
+  if (!account.website_forms_enabled) return null;
+  return account;
+}
+
+/**
  * Darf der gegebene Account den Fragebogen sehen / bearbeiten?
  *
  * Phase 0: Genau dann, wenn der Account der Eigentümer ist. Damit ist das

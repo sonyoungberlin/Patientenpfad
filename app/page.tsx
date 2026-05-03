@@ -37,6 +37,7 @@ type AccountInfo = {
   is_admin: boolean;
   inquiry_assistant_enabled: boolean;
   patient_communication_enabled: boolean;
+  website_forms_enabled: boolean;
 };
 
 export default function HomePage() {
@@ -403,6 +404,16 @@ export default function HomePage() {
               Fragebögen
             </button>
           )}
+          {account.patient_communication_enabled &&
+            account.website_forms_enabled && (
+              <button
+                type="button"
+                onClick={() => router.push("/website-forms")}
+                style={{ fontSize: "0.875rem" }}
+              >
+                Website-Formulare
+              </button>
+            )}
           <button onClick={handleLogout}>Abmelden</button>
         </div>
       </div>
