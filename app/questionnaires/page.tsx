@@ -8,6 +8,7 @@ import {
   STATUS_LABELS,
   deriveDisplayStatus,
 } from "@/lib/questionnaire/displayStatus";
+import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 
 export default async function QuestionnairesPage() {
@@ -17,7 +18,14 @@ export default async function QuestionnairesPage() {
   }
 
   const sessions = await prisma.patientQuestionnaireSession.findMany({
-    where: { owner_account_id: account.id },
+    where: {
+      AND: [
+        { owner_account_id: account.id },
+        // Phase 3d: Website-Sessions erst sichtbar, wenn bestätigt.
+        // Interne Sessions bleiben unverändert sichtbar.
+        PRACTICE_VISIBLE_SESSION_FILTER,
+      ],
+    },
     orderBy: { createdAt: "desc" },
     take: 100,
     select: {

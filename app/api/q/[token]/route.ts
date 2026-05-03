@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 
 export async function POST(
   req: NextRequest,
@@ -66,17 +66,8 @@ export async function POST(
     const deduplicatedQuestions = Array.isArray(session.deduplicated_questions)
       ? (session.deduplicated_questions as Array<{ id: string }>)
       : [];
-    const allowedQuestionIds = new Set(deduplicatedQuestions.map((q) => q.id));
 
-    const rawAnswers = body.answers as Record<string, unknown>;
-    const sanitizedAnswers: Record<string, string> = {};
-
-    for (const [questionId, value] of Object.entries(rawAnswers)) {
-      if (!allowedQuestionIds.has(questionId)) continue;
-      if (!(questionId in QUESTION_CATALOG)) continue;
-      if (typeof value !== "string") continue;
-      sanitizedAnswers[questionId] = value.slice(0, 2000); // max 2000 chars per answer
-    }
+    const sanitizedAnswers = sanitizeAnswers(body.answers, deduplicatedQuestions);
 
     await prisma.patientQuestionnaireSession.update({
       where: { id: session.id },

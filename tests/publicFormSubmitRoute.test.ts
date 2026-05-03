@@ -1,0 +1,256 @@
+/**
+ * Phase 3d: Tests für POST /api/p/[slug]/submit.
+ *
+ * Sicherungen:
+ *   - 404 bei ungültigem/unbekanntem Slug, inaktivem Form, fehlenden
+ *     Owner-Flags. Keine Enumeration.
+ *   - 400 bei ungültiger E-Mail.
+ *   - 429 bei Rate-Limit-Überschreitung (IP+Slug bzw. E-Mail-Hash).
+ *   - Honeypot-Treffer → identische Erfolgs-Antwort, KEINE DB-Schreibung.
+ *   - Happy Path: prisma.create wird mit
+ *       status="awaiting_email_confirmation",
+ *       source="website",
+ *       gehashtem confirm_token (NICHT Klartext),
+ *       gehashter submitter_email_hash (NICHT Klartext)
+ *     aufgerufen, Mailversand erhält Klartext-Token-URL.
+ *   - Mailfehler: Session bleibt bestehen (KEIN delete), generischer
+ *     Erfolgs-Redirect.
+ */
+
+import { NextRequest } from "next/server";
+
+jest.mock("@/lib/prisma", () => ({
+  prisma: {
+    practiceQuestionnaireForm: {
+      findUnique: jest.fn(),
+    },
+    patientQuestionnaireSession: {
+      create: jest.fn(),
+      delete: jest.fn(),
+    },
+  },
+}));
+
+jest.mock("@/lib/mail/sendWebsiteFormConfirmationEmail", () => ({
+  sendWebsiteFormConfirmationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
+import { prisma } from "@/lib/prisma";
+import { sendWebsiteFormConfirmationEmail } from "@/lib/mail/sendWebsiteFormConfirmationEmail";
+import { hashConfirmToken } from "@/lib/websiteForms/confirmToken";
+import { hashSubmitterEmail } from "@/lib/websiteForms/emailHash";
+import { POST } from "@/app/api/p/[slug]/submit/route";
+
+type PrismaMock = {
+  practiceQuestionnaireForm: { findUnique: jest.Mock };
+  patientQuestionnaireSession: { create: jest.Mock; delete: jest.Mock };
+};
+const pm = prisma as unknown as PrismaMock;
+const sendMailMock = sendWebsiteFormConfirmationEmail as jest.Mock;
+
+const SLUG = "praxis-formular";
+
+const ENABLED_OWNER = {
+  is_approved: true,
+  patient_communication_enabled: true,
+  website_forms_enabled: true,
+};
+
+function makeForm(overrides: Partial<{
+  is_active: boolean;
+  selected_block_ids: string[];
+  owner_account: typeof ENABLED_OWNER | null;
+}> = {}) {
+  return {
+    id: "form-1",
+    is_active: true,
+    selected_block_ids: ["KONTAKT"],
+    owner_account_id: "acc-1",
+    owner_account: ENABLED_OWNER,
+    ...overrides,
+  };
+}
+
+function formReq(
+  fields: Record<string, string>,
+  slug = SLUG,
+  ip = "9.9.9.9",
+): NextRequest {
+  const body = new URLSearchParams(fields).toString();
+  return new NextRequest(`http://localhost/api/p/${slug}/submit`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "x-forwarded-for": ip,
+    },
+    body,
+  });
+}
+
+let consoleErrorSpy: jest.SpyInstance;
+let consoleInfoSpy: jest.SpyInstance;
+
+beforeEach(() => {
+  pm.practiceQuestionnaireForm.findUnique.mockReset();
+  pm.patientQuestionnaireSession.create.mockReset().mockResolvedValue({});
+  pm.patientQuestionnaireSession.delete.mockReset();
+  sendMailMock.mockReset().mockResolvedValue(undefined);
+  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleInfoSpy = jest.spyOn(console, "info").mockImplementation(() => {});
+  // Wichtig: jeder Test verwendet eine neue IP, damit der Modul-scope
+  // Limiter unabhängige Buckets sieht.
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
+  consoleInfoSpy.mockRestore();
+});
+
+describe("POST /api/p/[slug]/submit", () => {
+  it("404 bei ungültigem Slug ohne DB-Roundtrip", async () => {
+    const res = await POST(formReq({ email: "a@b.de" }, "BAD_SLUG"), {
+      params: Promise.resolve({ slug: "BAD_SLUG" }),
+    });
+    expect(res.status).toBe(404);
+    expect(pm.practiceQuestionnaireForm.findUnique).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+  });
+
+  it("404 bei unbekanntem Slug", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(null);
+    const res = await POST(formReq({ email: "a@b.de" }, SLUG, "1.1.1.1"), {
+      params: Promise.resolve({ slug: SLUG }),
+    });
+    expect(res.status).toBe(404);
+    expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+  });
+
+  it("404 bei inaktivem Formular", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+      makeForm({ is_active: false }),
+    );
+    const res = await POST(formReq({ email: "a@b.de" }, SLUG, "1.1.1.2"), {
+      params: Promise.resolve({ slug: SLUG }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it.each([
+    ["is_approved", { ...ENABLED_OWNER, is_approved: false }],
+    ["patient_communication_enabled", { ...ENABLED_OWNER, patient_communication_enabled: false }],
+    ["website_forms_enabled", { ...ENABLED_OWNER, website_forms_enabled: false }],
+  ])("404 wenn Owner-Flag %s false ist", async (_name, owner) => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+      makeForm({ owner_account: owner }),
+    );
+    const res = await POST(formReq({ email: "a@b.de" }, SLUG, `2.0.0.${Math.floor(Math.random() * 250)}`), {
+      params: Promise.resolve({ slug: SLUG }),
+    });
+    expect(res.status).toBe(404);
+    expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+  });
+
+  it("400 bei ungültiger E-Mail", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+    const res = await POST(formReq({ email: "not-an-email" }, SLUG, "3.0.0.1"), {
+      params: Promise.resolve({ slug: SLUG }),
+    });
+    expect(res.status).toBe(400);
+    expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+  });
+
+  it("Honeypot-Treffer: 303-Redirect auf /p/[slug]/eingereicht, KEINE DB-Schreibung, KEINE Mail", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+    const res = await POST(
+      formReq({ email: "a@b.de", company_website: "https://spam.bot" }, SLUG, "4.0.0.1"),
+      { params: Promise.resolve({ slug: SLUG }) },
+    );
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toContain(`/p/${SLUG}/eingereicht`);
+    expect(pm.practiceQuestionnaireForm.findUnique).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+    expect(sendMailMock).not.toHaveBeenCalled();
+  });
+
+  it("Happy Path: erstellt Session mit Hash-Token, Hash-Email, status=awaiting_email_confirmation", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+    const res = await POST(
+      formReq(
+        {
+          email: "Patient@Example.COM",
+          CONTACT_PHONE: "+49 30 123",
+          UNKNOWN_FIELD: "wird verworfen",
+        },
+        SLUG,
+        "5.0.0.1",
+      ),
+      { params: Promise.resolve({ slug: SLUG }) },
+    );
+
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toContain(`/p/${SLUG}/eingereicht`);
+
+    expect(pm.patientQuestionnaireSession.create).toHaveBeenCalledTimes(1);
+    const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
+    expect(call.data.status).toBe("awaiting_email_confirmation");
+    expect(call.data.source).toBe("website");
+    expect(call.data.submitted_by).toBe("patient");
+    expect(call.data.owner_account_id).toBe("acc-1");
+    expect(call.data.practice_form_id).toBe("form-1");
+    expect(call.data.submitted_at).toBeUndefined();
+
+    // E-Mail-Hash, KEIN Klartext.
+    expect(call.data.submitter_email_hash).toBe(
+      hashSubmitterEmail("Patient@Example.COM"),
+    );
+    expect(JSON.stringify(call.data)).not.toContain("Patient@Example.COM");
+    expect(JSON.stringify(call.data)).not.toContain("patient@example.com");
+
+    // confirm_token in DB ist hex-Hash, NICHT base64url-Klartext.
+    expect(call.data.confirm_token).toMatch(/^[a-f0-9]{64}$/);
+    expect(call.data.confirm_token_expires_at).toBeInstanceOf(Date);
+    expect(call.data.confirmed_at).toBeUndefined();
+
+    // Antworten: nur whitelisted questionId.
+    expect(call.data.answers).toEqual({ CONTACT_PHONE: "+49 30 123" });
+
+    // Mail wurde mit Klartext-URL und normalisierter Empfänger-Adresse aufgerufen.
+    expect(sendMailMock).toHaveBeenCalledTimes(1);
+    const mailArg = sendMailMock.mock.calls[0][0];
+    expect(mailArg.to).toBe("patient@example.com");
+    expect(mailArg.confirmationUrl).toMatch(/\/p\/confirm\/[A-Za-z0-9_-]{43}$/);
+
+    // Klartext-Token aus URL entspricht dem in der DB gespeicherten Hash.
+    const rawFromUrl = mailArg.confirmationUrl.split("/").pop()!;
+    expect(hashConfirmToken(rawFromUrl)).toBe(call.data.confirm_token);
+  });
+
+  it("Mailfehler: Session bleibt bestehen, KEIN delete, generischer Erfolgs-Redirect", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+    sendMailMock.mockRejectedValueOnce(new Error("smtp blew up"));
+    const res = await POST(formReq({ email: "a@b.de" }, SLUG, "6.0.0.1"), {
+      params: Promise.resolve({ slug: SLUG }),
+    });
+    expect(res.status).toBe(303);
+    expect(pm.patientQuestionnaireSession.create).toHaveBeenCalledTimes(1);
+    expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
+  });
+
+  it("Rate-Limit IP+Slug: greift nach mehrfachen Submits derselben IP", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
+    const ip = "7.7.7.7";
+    // 5 erlaubte Submits, der 6. soll 429 sein.
+    for (let i = 0; i < 5; i++) {
+      const res = await POST(
+        formReq({ email: `u${i}@b.de` }, SLUG, ip),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+    }
+    const blocked = await POST(formReq({ email: "u5@b.de" }, SLUG, ip), {
+      params: Promise.resolve({ slug: SLUG }),
+    });
+    expect(blocked.status).toBe(429);
+  });
+});

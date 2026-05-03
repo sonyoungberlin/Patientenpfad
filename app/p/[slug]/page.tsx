@@ -88,6 +88,7 @@ export default async function PublicFormPage({
 
   return (
     <PublicFormView
+      slug={validation.slug}
       title={form.title}
       introText={form.intro_text}
       questions={questions}

@@ -169,22 +169,26 @@ describe("/p/[slug] public form page", () => {
     // Mindestens eine Frage gerendert (KONTAKT-Block enthält CONTACT_PHONE)
     expect(m).toContain('data-q-question="CONTACT_PHONE"');
 
-    // Disabled Submit-Button mit Hinweis-Verknüpfung
-    expect(m).toMatch(/<button[^>]*type="button"[^>]*disabled/);
+    // Submit-Button (form aktiv in 3d)
+    expect(m).toMatch(/<button[^>]*type="submit"/);
     expect(m).toContain("data-q-submit");
-    expect(m).toContain('aria-describedby="public-form-preview-notice"');
+    expect(m).toContain('aria-describedby="public-form-confirm-notice"');
 
-    // Hinweistext sichtbar
-    expect(m).toContain("Vorschau-Modus");
-    expect(m).toContain("nicht übermittelt");
+    // Hinweistext zur E-Mail-Bestätigung sichtbar
+    expect(m).toContain("Bestätigungs-E-Mail");
+    expect(m).toContain("48 Stunden");
   });
 
-  it("kein Submit-Endpoint: kein <form action=...> und kein type=submit", async () => {
+  it("postet an /api/p/[slug]/submit und enthält Honeypot-Feld", async () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-    const r = await runPage();
+    const r = await runPage("praxis-formular");
     const m = r.markup!;
-    expect(m).not.toMatch(/<form\b[^>]*\baction=/);
-    expect(m).not.toMatch(/type="submit"/);
+    expect(m).toMatch(/<form\b[^>]*\bmethod="POST"/);
+    expect(m).toContain('action="/api/p/praxis-formular/submit"');
+    // Honeypot-Feld vorhanden, aber off-screen versteckt
+    expect(m).toContain('name="company_website"');
+    expect(m).toContain('aria-hidden="true"');
+    expect(m).toContain("left:-9999px");
   });
 
   it("Query filtert über owner_account-Select; selektiert keine sensiblen Felder", async () => {

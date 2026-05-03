@@ -1,11 +1,17 @@
 /**
- * Phase 3c: Präsentationale Server-Component für die öffentliche
+ * Phase 3d: Präsentationale Server-Component für die öffentliche
  * Formularseite `/p/[slug]`.
  *
- * Bewusst **kein** Client-Component und **kein** State: in Phase 3c werden
- * die Eingaben nicht verarbeitet, nicht gespeichert und nicht versendet.
- * Der Submit-Button ist `disabled` und ein deutlicher Hinweistext erklärt,
- * dass Antworten nicht übermittelt werden.
+ * Bewusst **kein** Client-Component und **kein** State: das `<form>`
+ * postet direkt an `/api/p/[slug]/submit` (HTML-Form-Submit). Der Server
+ * antwortet mit einem 303-Redirect auf `/p/[slug]/eingereicht`.
+ *
+ * Sicherheits-Details:
+ *   - Honeypot-Feld `company_website` ist sichtgeschützt positioniert
+ *     (kein `display:none`, damit auch naive Bots es nicht überspringen)
+ *     und vor Hilfstechnologien sowie Tab-Reihenfolge versteckt.
+ *   - `autoComplete="new-password"` am Honeypot, damit Browser-Autofill
+ *     keinen Wert einträgt.
  *
  * Das Markup verwendet bewusst die gleichen `data-q-*`-Selektoren wie der
  * Token-Flow in `app/q/[token]/QuestionnaireFormClient.tsx`, damit spätere
@@ -13,8 +19,9 @@
  */
 
 import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
+import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 
-const NOTICE_ID = "public-form-preview-notice";
+const NOTICE_ID = "public-form-confirm-notice";
 
 const baseInputStyle: React.CSSProperties = {
   width: "100%",
@@ -25,6 +32,16 @@ const baseInputStyle: React.CSSProperties = {
   fontSize: "1rem",
   fontFamily: "inherit",
   color: "var(--foreground)",
+};
+
+/** Off-screen, aber NICHT display:none — damit naive Bots es ausfüllen. */
+const honeypotStyle: React.CSSProperties = {
+  position: "absolute",
+  left: "-9999px",
+  top: "auto",
+  width: "1px",
+  height: "1px",
+  overflow: "hidden",
 };
 
 function PublicQuestionField({ question }: { question: QuestionDefinition }) {
@@ -134,10 +151,12 @@ function PublicQuestionField({ question }: { question: QuestionDefinition }) {
 }
 
 export function PublicFormView({
+  slug,
   title,
   introText,
   questions,
 }: {
+  slug: string;
   title: string;
   introText: string | null;
   questions: QuestionDefinition[];
@@ -148,7 +167,7 @@ export function PublicFormView({
 
       <p
         id={NOTICE_ID}
-        data-public-form-preview-notice
+        data-public-form-confirm-notice
         role="note"
         style={{
           background: "#fff8e0",
@@ -158,21 +177,40 @@ export function PublicFormView({
           marginBottom: "1rem",
         }}
       >
-        Vorschau-Modus: Diese Seite zeigt das Formular nur an. Eingaben werden in
-        dieser Phase nicht übermittelt und nicht gespeichert.
+        Nach dem Absenden erhalten Sie eine Bestätigungs-E-Mail. Erst nach
+        Klick auf den Bestätigungslink werden Ihre Angaben an die Praxis
+        übermittelt. Der Link ist 48 Stunden gültig.
       </p>
 
       {introText ? (
         <p style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}>{introText}</p>
       ) : null}
 
-      {/*
-        Bewusst KEIN <form>-Element: in Phase 3c gibt es keinen Submit-Endpoint
-        und die Felder sollen den Browser nicht zu einem Default-GET-Submit
-        bewegen, falls jemand Enter drückt. Stattdessen ein neutraler
-        Container mit deaktiviertem Submit-Button.
-      */}
-      <div data-public-form-preview style={{ display: "block" }}>
+      <form
+        method="POST"
+        action={`/api/p/${slug}/submit`}
+        data-public-form
+        style={{ display: "block" }}
+      >
+        {/*
+          Honeypot-Feld: für Menschen unsichtbar (off-screen, tabIndex=-1,
+          aria-hidden), naive Bots füllen es trotzdem aus → Submit wird
+          serverseitig still verworfen.
+        */}
+        <div aria-hidden="true" style={honeypotStyle}>
+          <label htmlFor="public-form-hp">
+            Bitte dieses Feld leer lassen.
+            <input
+              id="public-form-hp"
+              type="text"
+              name={HONEYPOT_FIELD_NAME}
+              tabIndex={-1}
+              autoComplete="new-password"
+              defaultValue=""
+            />
+          </label>
+        </div>
+
         <div className="card" style={{ marginBottom: "0.75rem" }}>
           <label
             htmlFor="public-form-email"
@@ -239,16 +277,15 @@ export function PublicFormView({
         )}
 
         <button
-          type="button"
+          type="submit"
           className="btn-primary"
           data-q-submit
-          disabled
           aria-describedby={NOTICE_ID}
           style={{ marginTop: "1rem" }}
         >
-          Absenden (in dieser Phase noch nicht aktiv)
+          Absenden
         </button>
-      </div>
+      </form>
     </main>
   );
 }
