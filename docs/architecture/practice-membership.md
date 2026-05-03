@@ -164,6 +164,19 @@ Jede Phase ist **ein** PR mit klarem Rollback-Pfad. Ziel: zu jeder Zeit lauffäh
 - Registrierung (`POST /api/auth/register`) legt zusätzlich Practice + OWNER-Membership in derselben Transaktion an.
 - Übergangs-Invariante: jeder Account hat genau **eine** Membership (1:1-Mapping aus dem Backfill).
 
+> **Umsetzungshinweise (Stand P2-Implementierung):**
+>
+> - Code-Touchpoints: ausschließlich `lib/auth.ts` und `lib/authz.ts`. Keine API-Routen, keine Server-Components, keine UI-Dateien wurden angefasst. `app/api/auth/register` und `app/api/auth/login` bleiben unverändert — die Anlage von Practice + OWNER-Membership in der Registrierung ist bewusst auf eine spätere Phase verschoben (P1-Backfill deckt alle Bestandsdaten ab; bis dahin greift in Edge Cases der Account-Flag-Fallback).
+> - `SessionAccount` wird **additiv** um `current_practice: SessionPractice | null` und `memberships: { practice_id, role }[]` erweitert. Die bestehenden Top-Level-Flags (`is_approved`, `inquiry_assistant_enabled`, `patient_communication_enabled`, `website_forms_enabled`) bleiben am Objekt und werden in `resolveAccount` aus `current_practice` **gespiegelt**, falls vorhanden — sonst bleiben sie auf den historischen Account-Werten. Damit sehen die ~25 bestehenden Inline-Checks (`!account.is_approved`, `!account.inquiry_assistant_enabled && !account.is_admin`) automatisch die Practice-Werte, ohne dass die Routen angefasst werden.
+> - `resolveAccount` lädt Memberships + Practice **im selben Prisma-Call** wie den Account (`include: { account: { select: { …, memberships: { …, practice: { … } } } } }`). Kein zusätzlicher Roundtrip pro Request.
+> - Auswahl der aktiven Practice (`pickCurrentMembership`): zuerst die OWNER-Membership (nach P1-Backfill genau eine pro Account), sonst die älteste Membership, sonst `null`. Sicherheitsnetz für nicht-migrierte Edge Cases und für Test-Doubles, die `memberships` weglassen.
+> - `getCurrentPractice(account)` ist ein reiner Selektor (kein DB-Zugriff) und der einzige Punkt, an dem künftige Quellenwechsel (Praxis-Wechsler, Plattform-Admin-Impersonation) ansetzen.
+> - `requirePracticeRole(req, allowedRoles, opts?)` und `requirePracticeRoleFromCookies(allowedRoles, opts?)` lesen die Rolle aus `account.memberships`. Geprüfte Practice ist `opts.practiceId` oder `account.current_practice?.id`. Antworten: 401 `Nicht angemeldet.`, 403 `Kein Praxiszugriff.`, 403 `Rolle nicht ausreichend.`. **Kein Plattform-Admin-Bypass** (`account.is_admin` wird nicht ausgewertet). In P2 hat dieser Helper noch keine produktiven Aufrufer; er ist die technische Grundlage für P3/P4 und ausschließlich durch Unit-Tests abgedeckt.
+> - Die bestehenden Helper `requireApprovedAccount`, `requirePatientCommunicationAccess`, `requireWebsiteFormsAccess`, `requireWebsiteFormsManagementAccess` (+ `*FromCookies`) lesen ihre Flags intern über einen privaten `effectiveFlags(account)`-Selektor (Quelle: `current_practice`, Fallback: Account). HTTP-Status, Body-Wortlaut und Rückgabetyp `RequireResult` sind bitweise unverändert.
+> - `requireAdmin` und `canSeeQuestionnaire` bleiben unverändert (Plattform-Admin-Funktion bzw. Account-ID-Vergleich, beide nicht praxisspezifisch).
+> - Datenpfade (`where: { owner_account_id: account.id }`) sind nicht angefasst; `owner_account_id` bleibt führend bis zur P3-Umstellung.
+> - **Tests:** vier neue Suites — `tests/sessionAccountCurrentPractice.test.ts`, `tests/getCurrentPractice.test.ts`, `tests/requirePracticeRole.test.ts`, `tests/authzPracticeFlagSource.test.ts` — mit insgesamt 26 Tests. Bestehende Suite (vorher 100/2181) bleibt unverändert grün; gesamt 104 Suites / 2207 Tests.
+
 ### Phase P3 — Datenpfade auf `owner_practice_id` umstellen
 
 Sub-PRs in dieser Reihenfolge, jeweils klein, jeder mit Doppelschreiben auf die alte Spalte zur Sicherheit bis P5:
