@@ -8,7 +8,7 @@ import AppShell from "@/components/AppShell";
  * Interne Startseite (Dashboard).
  *
  * Zeigt nach Login eine klare Auswahl zwischen den drei Hauptarbeitsbereichen
- * (Patientenfälle, Patientenkommunikation, Fragebögen-Posteingang) statt direkt
+ * (Fragebögen-Posteingang, Patientenkommunikation, Patientenfälle) statt direkt
  * in einen Flow zu springen.
  *
  * Auth: identisches Muster wie `app/cases/page.tsx` — nicht eingeloggte oder
@@ -49,8 +49,31 @@ export default async function DashboardPage() {
           }}
         >
           <section className="card">
+            <h2 style={{ marginTop: 0 }}>Fragebögen</h2>
+            <p>Eingegangene Fragebögen bearbeiten</p>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <Link href="/questionnaires">
+                <button type="button">Posteingang öffnen</button>
+              </Link>
+            </div>
+          </section>
+
+          <section className="card">
+            <h2 style={{ marginTop: 0 }}>Patientenkommunikation</h2>
+            <p>Nachrichten formulieren</p>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <Link href="/inquiries">
+                <button type="button">Vorlagen öffnen</button>
+              </Link>
+              <Link href="/inquiries/new">
+                <button type="button">Neue Nachricht</button>
+              </Link>
+            </div>
+          </section>
+
+          <section className="card">
             <h2 style={{ marginTop: 0 }}>Patientenfälle</h2>
-            <p>Dokumentation und Verlauf bearbeiten</p>
+            <p>Fehlende Informationen sammeln und dokumentieren</p>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               <Link href="/cases">
                 <button type="button">Fallliste öffnen</button>
@@ -61,36 +84,13 @@ export default async function DashboardPage() {
             </div>
           </section>
 
-          <section className="card">
-            <h2 style={{ marginTop: 0 }}>Patientenkommunikation</h2>
-            <p>Nachrichten schreiben und beantworten</p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Link href="/inquiries">
-                <button type="button">Kommunikation öffnen</button>
-              </Link>
-              <Link href="/inquiries/new">
-                <button type="button">Neue Nachricht</button>
-              </Link>
-            </div>
-          </section>
-
-          <section className="card">
-            <h2 style={{ marginTop: 0 }}>Fragebögen</h2>
-            <p>Eingegangene Fragebögen einsehen</p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Link href="/questionnaires">
-                <button type="button">Posteingang öffnen</button>
-              </Link>
-            </div>
-          </section>
-
           {showPracticeTile && (
             <section className="card">
               <h2 style={{ marginTop: 0 }}>Praxis</h2>
-              <p>Mitglieder und Einstellungen verwalten</p>
+              <p>Zugang und Einstellungen verwalten</p>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <Link href="/practice/members">
-                  <button type="button">Praxis verwalten</button>
+                  <button type="button">Praxis öffnen</button>
                 </Link>
               </div>
             </section>
