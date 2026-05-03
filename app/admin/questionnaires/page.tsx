@@ -1,36 +1,18 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getSessionAccountFromCookies } from "@/lib/auth";
+import { requirePatientCommunicationAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
-import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
-import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Ausstehend",
-  completed: "Eingegangen",
-  expired: "Abgelaufen",
-};
-
-function deriveDisplayStatus(session: {
-  status: string;
-  token_expires_at: Date | null;
-}): string {
-  // A pending session whose token has expired is shown as "Abgelaufen"
-  if (
-    session.status === "pending" &&
-    session.token_expires_at !== null &&
-    session.token_expires_at < new Date()
-  ) {
-    return "expired";
-  }
-  return session.status;
-}
+import {
+  STATUS_LABELS,
+  deriveDisplayStatus,
+} from "@/lib/questionnaire/displayStatus";
+import QuestionnaireCard from "./QuestionnaireCard";
 
 export default async function QuestionnairesPage() {
-  const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) {
+  const account = await requirePatientCommunicationAccessFromCookies();
+  if (!account) {
     redirect("/");
   }
 
@@ -85,165 +67,28 @@ export default async function QuestionnairesPage() {
                 ? (s.answers as Record<string, string>)
                 : null;
 
+            const noteText = buildMedicalRecordNote({
+              answers,
+              selected_block_ids: blockIds,
+              identity_gate_completed_at: s.identity_gate_completed_at,
+            });
+
             return (
-              <div
+              <QuestionnaireCard
                 key={s.id}
-                className="card"
-                data-q-session={s.id}
-                style={{ display: "grid", gap: "0.5rem" }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    flexWrap: "wrap",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <div>
-                    <span style={{ fontWeight: 500 }}>
-                      {s.patient_reference ?? "–"}
-                    </span>
-                    <span
-                      className="text-muted text-small"
-                      style={{ marginLeft: "0.75rem" }}
-                    >
-                      {s.createdAt.toLocaleString("de-DE", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </span>
-                  </div>
-                  <span
-                    style={{
-                      padding: "0.15rem 0.5rem",
-                      borderRadius: "var(--radius)",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      background:
-                        displayStatus === "completed"
-                          ? "var(--success-bg, #dcfce7)"
-                          : displayStatus === "expired"
-                            ? "var(--muted, #f1f5f9)"
-                            : "var(--warning-bg, #fef9c3)",
-                      color:
-                        displayStatus === "completed"
-                          ? "var(--success-fg, #166534)"
-                          : displayStatus === "expired"
-                            ? "var(--muted-fg, #64748b)"
-                            : "var(--warning-fg, #854d0e)",
-                    }}
-                  >
-                    {statusLabel}
-                  </span>
-                </div>
-
-                <div className="text-muted text-small">
-                  Blöcke: {blockLabels || "–"}
-                </div>
-
-                {s.submitted_at && (
-                  <div className="text-small">
-                    Eingegangen:{" "}
-                    {s.submitted_at.toLocaleString("de-DE", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
-                  </div>
-                )}
-
-                {s.identity_gate_completed_at && (
-                  <div
-                    className="text-small"
-                    data-q-identity-gate={s.id}
-                    style={{ color: "var(--muted-fg, #475569)" }}
-                  >
-                    Identitätsabfrage: erfolgt
-                  </div>
-                )}
-
-                {/* PDF download + Krankenblatt-Text */}
-                {displayStatus === "completed" && (
-                  <>
-                    <a
-                      href={`/api/questionnaire/${s.id}/pdf`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary text-small"
-                      data-q-pdf={s.id}
-                      style={{ display: "inline-block", marginTop: "0.25rem" }}
-                    >
-                      PDF herunterladen
-                    </a>
-                    <MedicalRecordNoteCopyButton
-                      sessionId={s.id}
-                      noteText={buildMedicalRecordNote({
-                        answers,
-                        selected_block_ids: blockIds,
-                        identity_gate_completed_at: s.identity_gate_completed_at,
-                      })}
-                    />
-                  </>
-                )}
-
-                {/* Kontexthinweis bei Einreichung durch Kontaktperson */}
-                {s.submitted_by === "contact_person" && (
-                  <div
-                    className="text-small"
-                    style={{
-                      padding: "0.35rem 0.6rem",
-                      background: "var(--muted, #f1f5f9)",
-                      borderRadius: "var(--radius)",
-                      color: "var(--muted-fg, #475569)",
-                    }}
-                  >
-                    Die Angaben wurden durch eine Kontaktperson im Namen der Patientin / des Patienten übermittelt.
-                  </div>
-                )}
-
-                {/* Answers */}
-                {answers && questions.length > 0 && (
-                  <details style={{ marginTop: "0.5rem" }}>
-                    <summary
-                      style={{ cursor: "pointer", fontWeight: 500, fontSize: "0.9rem" }}
-                    >
-                      Antworten anzeigen
-                    </summary>
-                    <ul
-                      style={{
-                        listStyle: "none",
-                        padding: 0,
-                        margin: "0.5rem 0 0",
-                        display: "grid",
-                        gap: "0.4rem",
-                      }}
-                    >
-                      {questions.map((q) => (
-                        <li key={q.id} data-q-answer={q.id}>
-                          <div
-                            className="text-small"
-                            style={{ fontWeight: 500 }}
-                          >
-                            {q.text}
-                          </div>
-                          <div
-                            className="text-small"
-                            style={{ marginLeft: "0.5rem" }}
-                          >
-                            {answers[q.id] !== undefined && answers[q.id] !== ""
-                              ? answers[q.id]
-                              : <span className="text-muted">–</span>}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-
-                {/* Delete */}
-                <QuestionnaireDeleteButton sessionId={s.id} />
-              </div>
+                id={s.id}
+                createdAt={s.createdAt}
+                patientReference={s.patient_reference}
+                blockLabels={blockLabels}
+                displayStatus={displayStatus}
+                statusLabel={statusLabel}
+                submittedAt={s.submitted_at}
+                submittedBy={s.submitted_by}
+                identityGateCompletedAt={s.identity_gate_completed_at}
+                questions={questions}
+                answers={answers}
+                noteText={noteText}
+              />
             );
           })}
         </div>

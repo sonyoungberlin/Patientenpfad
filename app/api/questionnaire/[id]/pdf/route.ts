@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
-import { getSessionAccount } from "@/lib/auth";
+import { canSeeQuestionnaire, requireApprovedAccount } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 
@@ -11,19 +11,8 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const account = await getSessionAccount(req);
-  if (!account) {
-    return new Response(JSON.stringify({ ok: false, error: "Nicht angemeldet." }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  if (!account.is_approved) {
-    return new Response(JSON.stringify({ ok: false, error: "Account nicht freigeschaltet." }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  const { account, error } = await requireApprovedAccount(req);
+  if (error) return error;
 
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { id },
@@ -49,7 +38,7 @@ export async function GET(
     });
   }
 
-  if (session.owner_account_id !== account.id) {
+  if (!canSeeQuestionnaire(account, session)) {
     return new Response(JSON.stringify({ ok: false, error: "Keine Berechtigung." }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
