@@ -23,7 +23,7 @@ const PRESCRIPTION = INQUIRY_PROFILE_CATALOG_V2["PRESCRIPTION"];
 const REFERRAL = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
 
 const EXPECTED_TEXT =
-  "Für die Prüfung Ihres Anliegens benötigen wir eine digitale Anfrage.";
+  "Für die Prüfung Ihres Anliegens benötigen wir noch einige Angaben.\nBitte stellen Sie dazu eine digitale Anfrage über den folgenden Link und beantworten Sie die Fragen.";
 
 // ---------------------------------------------------------------------------
 // 1. Katalogstruktur
@@ -183,7 +183,7 @@ describe(
   "DIGITAL_REQUEST_REQUIRED + DIGITAL_REQUEST – gemeinsamer Output",
   () => {
     const DIGITAL_REQUEST_TEXT =
-      "Bitte stellen Sie eine digitale Anfrage.";
+      "Bitte stellen Sie eine digitale Anfrage über den folgenden Link und beantworten Sie die Fragen.";
 
     it("AU: beide Texte erscheinen bei gleichzeitiger Aktivierung", () => {
       const result = renderInquiryResponseFromSections([

@@ -637,17 +637,17 @@ describe("LAB – boundActionConditions", () => {
     expect(condition?.hideWhenAny).toContainEqual({ LAB_INTERNAL_ORDER: "YES" });
   });
 
-  it("LAB_FASTING_REQUIRED: hat boundActionConditions-Eintrag mit hideWhenAny: [] (immer in M3 anzeigen)", () => {
+  it("LAB_FASTING_REQUIRED: wird grundsätzlich in M3 angezeigt, außer bei LAB_MPU_EXCLUSION=YES", () => {
     const condition = LAB.boundActionConditions?.["LAB_FASTING_REQUIRED"];
     expect(condition).toBeDefined();
-    expect(condition?.hideWhenAny).toEqual([]);
+    expect(condition?.hideWhenAny).toEqual([{ LAB_MPU_EXCLUSION: "YES" }]);
     expect(condition?.showWhenAny).toBeUndefined();
   });
 
-  it("LAB_RESULT_TIME: hat boundActionConditions-Eintrag mit hideWhenAny: [] (immer in M3 anzeigen)", () => {
+  it("LAB_RESULT_TIME: wird grundsätzlich in M3 angezeigt, außer bei LAB_MPU_EXCLUSION=YES", () => {
     const condition = LAB.boundActionConditions?.["LAB_RESULT_TIME"];
     expect(condition).toBeDefined();
-    expect(condition?.hideWhenAny).toEqual([]);
+    expect(condition?.hideWhenAny).toEqual([{ LAB_MPU_EXCLUSION: "YES" }]);
     expect(condition?.showWhenAny).toBeUndefined();
   });
 });

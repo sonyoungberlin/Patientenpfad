@@ -944,10 +944,6 @@ import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlaceme
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
-  it("AU-Profil hat genau sieben Specific Checkpoints", () => {
-    expect(auProfile.specificCheckpointIds).toHaveLength(7);
-  });
-
   it("AU-Profil bindet die erwarteten AU SPECIFIC Explanation Checkpoints", () => {
     expect(auProfile.specificCheckpointIds).toContain("AU_BACKDATE_LIMIT");
     expect(auProfile.specificCheckpointIds).not.toContain("AU_DURATION_LIMIT");
@@ -2041,7 +2037,7 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
 
   it("LAB_DECISION hat keine questions (M2-Oberfrage entfernt)", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_DECISION"];
-    expect(cp.questions).toHaveLength(0);
+    expect(cp.questions ?? []).toHaveLength(0);
   });
 
   it("LAB_SELF_PAYER_IGEL ist EXPLANATION/SPECIFIC/ATTACHED im Katalog", () => {

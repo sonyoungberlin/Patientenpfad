@@ -616,9 +616,11 @@ describe("DIGITAL_REQUEST – aktualisierter Text ohne URL", () => {
     expect(cp).toBeDefined();
   });
 
-  it("hat ACTIVE-Text 'Bitte stellen Sie eine digitale Anfrage.'", () => {
+  it("hat ACTIVE-Text mit Hinweis auf den Link und die Fragen", () => {
     const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
-    expect(text).toBe("Bitte stellen Sie eine digitale Anfrage.");
+    expect(text).toBe(
+      "Bitte stellen Sie eine digitale Anfrage über den folgenden Link und beantworten Sie die Fragen.",
+    );
   });
 
   it("enthält keinen Link mehr", () => {
