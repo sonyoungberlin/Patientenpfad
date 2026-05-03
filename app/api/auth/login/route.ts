@@ -2,44 +2,68 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE, SESSION_DURATION_MS } from "@/lib/auth";
+import { verifyPassword } from "@/lib/password";
+
+/**
+ * Einheitliche, neutrale Antwort fuer alle Faelle, in denen der erste
+ * Authentifizierungsfaktor (E-Mail + Passwort) fehlschlaegt:
+ *  - Account existiert nicht
+ *  - Passwort ist falsch
+ *  - Account hat (noch) kein Passwort gesetzt (`password_hash IS NULL`)
+ *
+ * Damit wird eine Account-Enumeration ueber Login-Antworten verhindert.
+ */
+function neutralAuthFailure(): NextResponse {
+  return NextResponse.json(
+    { ok: false, error: "E-Mail oder Passwort ungültig." },
+    { status: 401 },
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const raw: unknown = (body as Record<string, unknown>).email;
-    const email =
-      typeof raw === "string" ? raw.trim().toLowerCase() : null;
+    const rawEmail: unknown = (body as Record<string, unknown>).email;
+    const rawPassword: unknown = (body as Record<string, unknown>).password;
 
-    if (!email || !email.includes("@")) {
-      return NextResponse.json(
-        { ok: false, error: "Ungültige E-Mail-Adresse." },
-        { status: 400 },
-      );
+    const email =
+      typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : null;
+    const password = typeof rawPassword === "string" ? rawPassword : null;
+
+    if (!email || !email.includes("@") || !password) {
+      // Fehlende/ungueltige Eingabe: ebenfalls neutral antworten, damit
+      // Angreifer keinen "ist diese E-Mail bekannt"-Channel bekommen.
+      return neutralAuthFailure();
     }
 
-    console.log("[auth/login] looking up account", { email });
     const account = await prisma.account.findUnique({
       where: { email },
-      select: { id: true, email: true, is_approved: true },
+      select: {
+        id: true,
+        email: true,
+        is_approved: true,
+        password_hash: true,
+      },
     });
 
     if (!account) {
-      console.log("[auth/login] account not found", { email });
-      return NextResponse.json(
-        { ok: false, error: "Kein Account mit dieser E-Mail-Adresse gefunden. Bitte registrieren Sie sich zuerst." },
-        { status: 404 },
-      );
+      return neutralAuthFailure();
     }
 
+    const passwordOk = await verifyPassword(password, account.password_hash);
+    if (!passwordOk) {
+      return neutralAuthFailure();
+    }
+
+    // Erst NACH erfolgreicher Authentifizierung darf ueber den Freischaltungs-
+    // status informiert werden — das ist akzeptabel, da der Zugriff bereits
+    // bewiesen wurde.
     if (!account.is_approved) {
-      console.log("[auth/login] account not approved", { email, id: account.id });
       return NextResponse.json(
         { ok: false, error: "Ihr Account ist noch nicht freigeschaltet." },
         { status: 403 },
       );
     }
-
-    console.log("[auth/login] account approved, creating session", { email, id: account.id });
 
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
@@ -55,6 +79,7 @@ export async function POST(req: NextRequest) {
         email: account.email,
         is_approved: account.is_approved,
       },
+      redirectTo: "/dashboard",
     });
 
     response.cookies.set(SESSION_COOKIE, token, {
@@ -62,14 +87,17 @@ export async function POST(req: NextRequest) {
       sameSite: "lax",
       path: "/",
       maxAge: Math.floor(SESSION_DURATION_MS / 1000),
+      secure: process.env.NODE_ENV === "production",
     });
 
     return response;
   } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
-    console.error("[auth/login] FEHLER:", detail, err);
+    // Klartext-Passwoerter und E-Mails niemals loggen. Nur Fehlertyp/Message
+    // (ohne Body) protokollieren.
+    const detail = err instanceof Error ? err.message : "unknown";
+    console.error("[auth/login] FEHLER:", detail);
     return NextResponse.json(
-      { ok: false, error: `Login fehlgeschlagen: ${detail}` },
+      { ok: false, error: "Login fehlgeschlagen." },
       { status: 500 },
     );
   }

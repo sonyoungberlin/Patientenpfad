@@ -33,14 +33,28 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// crypto-Mock (stable token)
+// crypto-Mock (stable token fuer Session-Generierung).
+// `randomBytes` wird hier vorhersagbar gemacht; `scrypt` und `timingSafeEqual`
+// (von `lib/password.ts` benoetigt) werden auf die echten Implementierungen
+// durchgereicht.
 // ---------------------------------------------------------------------------
 
-jest.mock("crypto", () => ({
-  randomBytes: jest.fn(() => ({
-    toString: () => "test-token-hex-value",
-  })),
-}));
+jest.mock("crypto", () => {
+  const actual = jest.requireActual("crypto");
+  return {
+    ...actual,
+    randomBytes: jest.fn((n: number) => {
+      // Stable, vorhersagbares Token NUR fuer den Session-Token-Pfad
+      // (`randomBytes(32).toString("hex")` in `app/api/auth/login/route.ts`).
+      // Andere Aufrufer (z. B. `lib/password.ts`-Salt mit 16 Byte) erhalten
+      // echte Bytes, damit `scrypt`/`Buffer`-Operationen funktionieren.
+      if (n === 32) {
+        return { toString: () => "test-token-hex-value" };
+      }
+      return actual.randomBytes(n);
+    }),
+  };
+});
 
 import { prisma } from "@/lib/prisma";
 import { POST as loginHandler } from "@/app/api/auth/login/route";
@@ -50,6 +64,13 @@ import { GET as meHandler } from "@/app/api/auth/me/route";
 import { GET as casesHandler } from "@/app/api/cases/route";
 import { POST as createCaseHandler } from "@/app/api/cases/create/route";
 import { SESSION_COOKIE } from "@/lib/auth";
+import { hashPassword } from "@/lib/password";
+
+const TEST_PASSWORD = "test-password-1234";
+let TEST_PASSWORD_HASH: string;
+beforeAll(async () => {
+  TEST_PASSWORD_HASH = await hashPassword(TEST_PASSWORD);
+});
 
 type PrismaMock = {
   account: { upsert: jest.Mock; findUnique: jest.Mock; create: jest.Mock };
@@ -90,53 +111,104 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/auth/login", () => {
-  it("gibt 400 bei fehlender E-Mail zurück", async () => {
+  it("gibt 401 (neutral) bei fehlender E-Mail zurück", async () => {
     const req = new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
       body: JSON.stringify({}),
       headers: { "Content-Type": "application/json" },
     });
     const res = await loginHandler(req);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.ok).toBe(false);
+    expect(json.error).toContain("ungültig");
   });
 
-  it("gibt 400 bei ungültiger E-Mail zurück", async () => {
+  it("gibt 401 (neutral) bei ungültiger E-Mail zurück", async () => {
     const req = new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email: "kein-at-zeichen" }),
+      body: JSON.stringify({ email: "kein-at-zeichen", password: "irgendwas" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await loginHandler(req);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(401);
   });
 
-  it("gibt 404 zurück wenn Account nicht existiert", async () => {
+  it("gibt 401 (neutral) bei fehlendem Passwort zurück", async () => {
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "test@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+    expect(res.status).toBe(401);
+  });
+
+  it("gibt 401 (neutral) zurück wenn Account nicht existiert", async () => {
     pm.account.findUnique.mockResolvedValue(null);
 
     const req = new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email: "unknown@example.com" }),
+      body: JSON.stringify({ email: "unknown@example.com", password: "irgendwas-langes" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await loginHandler(req);
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.ok).toBe(false);
-    expect(json.error).toContain("registrieren");
+    // Neutraler Fehlertext — keine Account-Enumeration.
+    expect(json.error).toContain("ungültig");
   });
 
-  it("gibt 403 zurück wenn Account nicht freigeschaltet", async () => {
+  it("gibt 401 (neutral) zurück wenn Passwort falsch ist", async () => {
     pm.account.findUnique.mockResolvedValue({
       id: "acc-1",
       email: "test@example.com",
-      is_approved: false,
+      is_approved: true,
+      password_hash: TEST_PASSWORD_HASH,
     });
 
     const req = new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email: "test@example.com" }),
+      body: JSON.stringify({ email: "test@example.com", password: "falsches-passwort" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toContain("ungültig");
+    expect(pm.session.create).not.toHaveBeenCalled();
+  });
+
+  it("gibt 401 (neutral) zurück wenn Account kein Passwort gesetzt hat", async () => {
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "test@example.com",
+      is_approved: true,
+      password_hash: null,
+    });
+
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "test@example.com", password: "irgendwas-langes" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+    expect(res.status).toBe(401);
+    expect(pm.session.create).not.toHaveBeenCalled();
+  });
+
+  it("gibt 403 zurück wenn Account nicht freigeschaltet (nach erfolgreichem Passwort-Check)", async () => {
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "test@example.com",
+      is_approved: false,
+      password_hash: TEST_PASSWORD_HASH,
+    });
+
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "test@example.com", password: TEST_PASSWORD }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await loginHandler(req);
@@ -144,19 +216,21 @@ describe("POST /api/auth/login", () => {
     const json = await res.json();
     expect(json.ok).toBe(false);
     expect(json.error).toContain("nicht freigeschaltet");
+    expect(pm.session.create).not.toHaveBeenCalled();
   });
 
-  it("erstellt Session bei freigeschaltetem Account", async () => {
+  it("erstellt Session bei korrektem Passwort + freigeschaltetem Account", async () => {
     pm.account.findUnique.mockResolvedValue({
       id: "acc-1",
       email: "test@example.com",
       is_approved: true,
+      password_hash: TEST_PASSWORD_HASH,
     });
     pm.session.create.mockResolvedValue({});
 
     const req = new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email: "test@example.com" }),
+      body: JSON.stringify({ email: "test@example.com", password: TEST_PASSWORD }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await loginHandler(req);
@@ -165,9 +239,10 @@ describe("POST /api/auth/login", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
     expect(json.account.email).toBe("test@example.com");
+    expect(json.redirectTo).toBe("/dashboard");
     expect(pm.account.findUnique).toHaveBeenCalledWith({
       where: { email: "test@example.com" },
-      select: { id: true, email: true, is_approved: true },
+      select: { id: true, email: true, is_approved: true, password_hash: true },
     });
     expect(pm.session.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ token: "test-token-hex-value", account_id: "acc-1" }) }),
@@ -179,12 +254,13 @@ describe("POST /api/auth/login", () => {
       id: "acc-1",
       email: "test@example.com",
       is_approved: true,
+      password_hash: TEST_PASSWORD_HASH,
     });
     pm.session.create.mockResolvedValue({});
 
     const req = new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email: "test@example.com" }),
+      body: JSON.stringify({ email: "test@example.com", password: TEST_PASSWORD }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await loginHandler(req);
@@ -212,6 +288,28 @@ describe("POST /api/auth/register", () => {
     expect(json.ok).toBe(false);
   });
 
+  it("gibt 400 bei fehlendem Passwort zurück", async () => {
+    const req = new NextRequest("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email: "new@example.com" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await registerHandler(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toContain("Passwort");
+  });
+
+  it("gibt 400 bei zu kurzem Passwort zurück", async () => {
+    const req = new NextRequest("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email: "new@example.com", password: "kurz" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await registerHandler(req);
+    expect(res.status).toBe(400);
+  });
+
   it("gibt 409 zurück wenn E-Mail bereits existiert", async () => {
     pm.account.findUnique.mockResolvedValue({
       id: "acc-1",
@@ -220,7 +318,7 @@ describe("POST /api/auth/register", () => {
 
     const req = new NextRequest("http://localhost/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email: "test@example.com" }),
+      body: JSON.stringify({ email: "test@example.com", password: "ein-langes-passwort" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await registerHandler(req);
@@ -230,7 +328,7 @@ describe("POST /api/auth/register", () => {
     expect(json.error).toContain("bereits registriert");
   });
 
-  it("legt Account mit E-Mail an", async () => {
+  it("legt Account mit gehashtem Passwort an (kein Klartext gespeichert)", async () => {
     pm.account.findUnique.mockResolvedValue(null);
     pm.account.create.mockResolvedValue({
       id: "acc-new",
@@ -240,7 +338,7 @@ describe("POST /api/auth/register", () => {
 
     const req = new NextRequest("http://localhost/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email: "new@example.com" }),
+      body: JSON.stringify({ email: "new@example.com", password: "ein-langes-passwort" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await registerHandler(req);
@@ -249,9 +347,14 @@ describe("POST /api/auth/register", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
     expect(json.message).toContain("freigeschaltet");
-    expect(pm.account.create).toHaveBeenCalledWith({
-      data: { email: "new@example.com", is_approved: false },
-    });
+    expect(pm.account.create).toHaveBeenCalledTimes(1);
+    const createArgs = pm.account.create.mock.calls[0][0];
+    expect(createArgs.data.email).toBe("new@example.com");
+    expect(createArgs.data.is_approved).toBe(false);
+    // Hash ist gespeichert, NICHT das Klartext-Passwort
+    expect(typeof createArgs.data.password_hash).toBe("string");
+    expect(createArgs.data.password_hash).toMatch(/^scrypt\$/);
+    expect(createArgs.data.password_hash).not.toContain("ein-langes-passwort");
   });
 
   it("erstellt keine Session bei Registrierung", async () => {
@@ -264,7 +367,7 @@ describe("POST /api/auth/register", () => {
 
     const req = new NextRequest("http://localhost/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email: "new@example.com" }),
+      body: JSON.stringify({ email: "new@example.com", password: "ein-langes-passwort" }),
       headers: { "Content-Type": "application/json" },
     });
     const res = await registerHandler(req);
