@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionAccount } from "@/lib/auth";
-import { approveAccount, revokeAccount, enableInquiryAssistant, disableInquiryAssistant } from "@/lib/adminActions";
+import {
+  approveAccount,
+  revokeAccount,
+  enableInquiryAssistant,
+  disableInquiryAssistant,
+  enablePatientCommunication,
+  disablePatientCommunication,
+  enableWebsiteForms,
+  disableWebsiteForms,
+} from "@/lib/adminActions";
 import { prisma } from "@/lib/prisma";
 
 async function requireAdmin(req: NextRequest) {
@@ -18,7 +27,16 @@ export async function GET(req: NextRequest) {
   if (error) return error;
 
   const accounts = await prisma.account.findMany({
-    select: { id: true, email: true, is_approved: true, is_admin: true, inquiry_assistant_enabled: true, createdAt: true },
+    select: {
+      id: true,
+      email: true,
+      is_approved: true,
+      is_admin: true,
+      inquiry_assistant_enabled: true,
+      patient_communication_enabled: true,
+      website_forms_enabled: true,
+      createdAt: true,
+    },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
   });
 
@@ -54,9 +72,23 @@ export async function POST(req: NextRequest) {
     action = body.action;
   }
 
-  if (!email || (action !== "approve" && action !== "revoke" && action !== "enable_inquiry" && action !== "disable_inquiry")) {
+  if (
+    !email ||
+    (action !== "approve" &&
+      action !== "revoke" &&
+      action !== "enable_inquiry" &&
+      action !== "disable_inquiry" &&
+      action !== "enable_patient_communication" &&
+      action !== "disable_patient_communication" &&
+      action !== "enable_website_forms" &&
+      action !== "disable_website_forms")
+  ) {
     return NextResponse.json(
-      { ok: false, error: "Ungültige Parameter. Erwartet: { email, action: 'approve' | 'revoke' | 'enable_inquiry' | 'disable_inquiry' }" },
+      {
+        ok: false,
+        error:
+          "Ungültige Parameter. Erwartet: { email, action: 'approve' | 'revoke' | 'enable_inquiry' | 'disable_inquiry' | 'enable_patient_communication' | 'disable_patient_communication' | 'enable_website_forms' | 'disable_website_forms' }",
+      },
       { status: 400 },
     );
   }
@@ -65,7 +97,11 @@ export async function POST(req: NextRequest) {
   if (action === "approve") result = await approveAccount(email);
   else if (action === "revoke") result = await revokeAccount(email);
   else if (action === "enable_inquiry") result = await enableInquiryAssistant(email);
-  else result = await disableInquiryAssistant(email);
+  else if (action === "disable_inquiry") result = await disableInquiryAssistant(email);
+  else if (action === "enable_patient_communication") result = await enablePatientCommunication(email);
+  else if (action === "disable_patient_communication") result = await disablePatientCommunication(email);
+  else if (action === "enable_website_forms") result = await enableWebsiteForms(email);
+  else result = await disableWebsiteForms(email);
 
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.message }, { status: 404 });

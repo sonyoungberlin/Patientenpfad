@@ -1,11 +1,11 @@
 /**
- * UI-Tests für die /admin/questionnaires-Seite:
+ * UI-Tests für die /questionnaires-Seite (Praxis-Funktion):
  * Prüft dass bei completed Sessions der Krankenblatt-Text angezeigt wird
  * und bei pending/anderen Sessions nicht.
  */
 
 import { renderToStaticMarkup } from "react-dom/server";
-import QuestionnairesPage from "@/app/admin/questionnaires/page";
+import QuestionnairesPage from "@/app/questionnaires/page";
 
 jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
@@ -16,6 +16,9 @@ jest.mock("@/lib/auth", () => ({
     id: "acc-admin",
     email: "admin@example.com",
     is_approved: true,
+    is_admin: false,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: true,
   }),
 }));
 
@@ -29,7 +32,7 @@ jest.mock("@/lib/prisma", () => ({
 
 // MedicalRecordNoteCopyButton is a client component; mock it for SSR tests
 jest.mock(
-  "@/app/admin/questionnaires/MedicalRecordNoteCopyButton",
+  "@/components/questionnaire/MedicalRecordNoteCopyButton",
   () =>
     function MockCopyButton({
       noteText,
@@ -51,7 +54,7 @@ jest.mock(
 
 // QuestionnaireDeleteButton is a client component; mock it for SSR tests
 jest.mock(
-  "@/app/admin/questionnaires/QuestionnaireDeleteButton",
+  "@/components/questionnaire/QuestionnaireDeleteButton",
   () =>
     function MockDeleteButton({ sessionId }: { sessionId: string }) {
       return (

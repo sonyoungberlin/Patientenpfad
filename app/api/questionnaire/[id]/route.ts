@@ -1,28 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionAccount } from "@/lib/auth";
+import { canSeeQuestionnaire, requirePatientCommunicationAccess } from "@/lib/authz";
+import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const account = await getSessionAccount(req);
-    if (!account) {
-      return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-    }
-    if (!account.is_approved) {
-      return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-    }
+    const { account, error } = await requirePatientCommunicationAccess(req);
+    if (error) return error;
 
     const { id } = await params;
 
     const session = await prisma.patientQuestionnaireSession.findUnique({
       where: { id },
-      select: { owner_account_id: true },
+      select: {
+        owner_account_id: true,
+        source: true,
+        status: true,
+        confirmed_at: true,
+      },
     });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (
+      !session ||
+      !canSeeQuestionnaire(account, session) ||
+      !isQuestionnaireVisibleToPractice(session)
+    ) {
       return NextResponse.json({ ok: false, error: "Fragebogen nicht gefunden." }, { status: 404 });
     }
 
