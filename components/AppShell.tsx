@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 /**
  * Shared header / account bar for internal app areas.
@@ -42,6 +42,7 @@ type AppShellProps = {
 
 export default function AppShell({ account: accountProp, onLogout }: AppShellProps) {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
   const [internalAccount, setInternalAccount] = useState<AppShellAccount | null>(
     accountProp ?? null,
   );
@@ -83,45 +84,61 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
 
   const handleLogoutClick = onLogout ?? handleLogoutDefault;
 
+  // Bereich aus dem aktuellen Pfad ableiten. Exakte Übereinstimmung des
+  // Segment-Anfangs, damit z. B. /casesfoo nicht fälschlich /cases trifft.
+  const inSection = (prefix: string) =>
+    pathname === prefix || pathname.startsWith(prefix + "/");
+
+  const isCases = inSection("/cases");
+  const isCommunication =
+    inSection("/inquiries") || inSection("/questionnaires");
+  const isPractice = inSection("/practice");
+  const isWebsiteForms = inSection("/website-forms");
+
+  type NavItem = { label: string; href: string };
+  const sectionItems: NavItem[] = [];
+
+  if (isCases) {
+    sectionItems.push(
+      { label: "Fallliste", href: "/cases" },
+      { label: "Neuer Fall", href: "/" },
+    );
+  } else if (isCommunication) {
+    sectionItems.push(
+      { label: "Vorlagen", href: "/inquiries" },
+      { label: "Neue Nachricht", href: "/inquiries/new" },
+      { label: "Fragebogen-Posteingang", href: "/questionnaires" },
+    );
+  } else if (isPractice) {
+    sectionItems.push({ label: "Praxis", href: "/practice/members" });
+  } else if (isWebsiteForms && account.website_forms_enabled) {
+    sectionItems.push(
+      { label: "Fragebogen-Posteingang", href: "/questionnaires" },
+      { label: "Formularverwaltung", href: "/website-forms" },
+    );
+  }
+
   return (
     <div className="account-bar">
       <span className="account-email">{account.email}</span>
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
         <button
           type="button"
-          onClick={() => router.push("/demo/arzt")}
+          onClick={() => router.push("/dashboard")}
           style={{ fontSize: "0.875rem" }}
         >
-          Arzt-Demo ansehen
+          Hauptmenü
         </button>
-        {(account.inquiry_assistant_enabled || account.is_admin) && (
+        {sectionItems.map((item) => (
           <button
+            key={item.href}
             type="button"
-            onClick={() => router.push("/inquiries")}
+            onClick={() => router.push(item.href)}
             style={{ fontSize: "0.875rem" }}
           >
-            Praxis Kommunikation
+            {item.label}
           </button>
-        )}
-        {account.patient_communication_enabled && (
-          <button
-            type="button"
-            onClick={() => router.push("/questionnaires")}
-            style={{ fontSize: "0.875rem" }}
-          >
-            Fragebögen
-          </button>
-        )}
-        {account.patient_communication_enabled &&
-          account.website_forms_enabled && (
-            <button
-              type="button"
-              onClick={() => router.push("/website-forms")}
-              style={{ fontSize: "0.875rem" }}
-            >
-              Website-Formulare
-            </button>
-          )}
+        ))}
         <button onClick={handleLogoutClick}>Abmelden</button>
       </div>
     </div>
