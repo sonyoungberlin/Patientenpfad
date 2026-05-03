@@ -77,7 +77,7 @@ async function runPage(): Promise<{
   markup: string | null;
 }> {
   try {
-    const node = await PracticeMembersPage();
+    const node = await PracticeMembersPage({});
     return {
       redirect: null,
       notFound: false,

@@ -38,14 +38,16 @@ const ROLE_LABEL: Record<PracticeRole, string> = {
   USER: "Mitarbeiter",
 };
 
+type SearchParams = Promise<{
+  error?: string | string[];
+  added?: string | string[];
+}>;
+
 export default async function PracticeMembersPage({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    error?: string | string[];
-    added?: string | string[];
-  }>;
-} = {}) {
+  searchParams?: SearchParams;
+}) {
   // 1) Login + freigeschaltet (analog zu /admin/accounts).
   const account: SessionAccount | null = await getSessionAccountFromCookies();
   if (!account || !account.is_approved) {
