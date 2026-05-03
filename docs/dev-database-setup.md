@@ -76,6 +76,55 @@ npm run migrate:deploy
 
 ---
 
+## Migrationen über Vercel-Deploy ausführen
+
+Wenn der lokale Rechner Neon nicht erreicht (z. B. P1001 trotz korrekter
+`DATABASE_URL`), Vercel die Datenbank aber sehr wohl erreicht, lassen sich
+Migrationen über die Deployment-Umgebung ausrollen.
+
+Dazu ist in `package.json` ein eigenes Script `vercel-build` definiert:
+
+```json
+"vercel-build": "DIRECT_DATABASE_URL=\"$DATABASE_URL\" prisma migrate deploy && next build"
+```
+
+Verhalten:
+
+- Vercel bevorzugt automatisch `vercel-build` gegenüber `build`, sobald es
+  existiert. Lokales `npm run build` bleibt unverändert (`next build` ohne
+  Migrate) – Entwickler ohne DB-Zugriff können weiterhin lokal bauen.
+- Bei jedem Vercel-Deploy (Production **und** Preview) läuft `prisma migrate
+  deploy` **vor** `next build`. Schlägt die Migration fehl, bricht der Build
+  ab – es gibt kein Deployment mit halb migrierter DB.
+- Es wird ausschließlich `prisma migrate deploy` ausgeführt. **Keine**
+  destruktiven Befehle (`migrate dev`, `migrate reset`, `db push` o. ä.).
+  `migrate deploy` wendet ausstehende Migrationen idempotent an und ändert
+  keine Daten außerhalb der in `prisma/migrations/` versionierten Schritte.
+- Der Vercel-Build-Runner kann den Neon-Direct-Host
+  (`ep-…neon.tech:5432` ohne `pooler`-Subdomain) nicht erreichen (P1001),
+  wohl aber die Pooler-URL. Da Prisma bei gesetztem `directUrl` zwingend
+  diesen Host für `migrate deploy` nutzt, überschreibt das Script
+  `DIRECT_DATABASE_URL` lokal für genau diesen Befehl mit dem Wert von
+  `DATABASE_URL` (Pooler). Die `schema.prisma` bleibt unverändert, lokale
+  `npm run migrate:deploy`-Aufrufe nutzen weiterhin die echte Direct-URL aus
+  `.env.local`.
+
+Rollout neuer Migrationen:
+
+1. Migration lokal generieren bzw. manuell schreiben und in
+   `prisma/migrations/` committen.
+2. Branch nach Vercel pushen → Preview-Deploy führt `prisma migrate deploy`
+   gegen die konfigurierte DB aus.
+3. Nach Merge in den Production-Branch wendet der Production-Build dieselbe
+   Migration gegen die Production-DB an.
+
+> **Wichtig:** Production- und Preview-Environment in Vercel müssen auf die
+> gewünschte Ziel-Datenbank zeigen. Solange Pre-Pilot kein Branching nutzt
+> (siehe oben), laufen Preview-Deploys gegen dieselbe Neon-DB wie Production
+> – ein Preview-Deploy migriert also bereits die Produktions-DB.
+
+---
+
 ## Fehlercode P1001 – Was tun?
 
 `P1001: Can't reach database server` tritt bei Neon typischerweise auf, wenn:
