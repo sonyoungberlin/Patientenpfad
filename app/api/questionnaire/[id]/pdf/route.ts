@@ -178,7 +178,11 @@ export async function GET(
 
   // Metadata
   const submittedStr = session.submitted_at
-    ? session.submitted_at.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })
+    ? session.submitted_at.toLocaleString("de-DE", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "Europe/Berlin",
+      })
     : "–";
   drawText(`Datum: ${submittedStr}`, { size: 9, color: [0.3, 0.3, 0.3] });
   drawText(`Patientenreferenz: ${session.patient_reference ?? "–"}`, {
@@ -191,6 +195,7 @@ export async function GET(
     const gateStr = session.identity_gate_completed_at.toLocaleString("de-DE", {
       dateStyle: "short",
       timeStyle: "short",
+      timeZone: "Europe/Berlin",
     });
     drawText(
       `Identitätsabfrage: erfolgt (Geburtsdatum + erste 3 Buchstaben Nachname) – ${gateStr}`,
