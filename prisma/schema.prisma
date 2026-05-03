@@ -436,6 +436,25 @@ model Practice {
   /// Carry-Over aus `Account.website_forms_enabled`.
   website_forms_enabled         Boolean @default(false)
 
+  /// Praxis-spezifische SMTP-Konfiguration für Bestätigungs-E-Mails der
+  /// Website-Formulare. Alle Felder sind nullable; eine Konfiguration gilt
+  /// erst dann als „vollständig", wenn alle Pflichtfelder (Host, Port,
+  /// User, Pass, From-Email) gesetzt sind — diese Validierung erfolgt im
+  /// App-Layer (`lib/mail/practiceSmtp.ts`), nicht in der DB.
+  ///
+  /// Sicherheits-Invariante: `smtp_pass_encrypted` enthält das per
+  /// AES-256-GCM mit `MAIL_SECRET_KEY` verschlüsselte Passwort im
+  /// Format `v1:<base64(iv)>:<base64(ciphertext)>:<base64(authTag)>`.
+  /// Klartext-Passwörter werden niemals persistiert oder geloggt.
+  smtp_host           String?
+  smtp_port           Int?
+  smtp_secure         Boolean?
+  smtp_user           String?
+  smtp_pass_encrypted String?
+  smtp_from_email     String?
+  smtp_from_name      String?
+  smtp_updated_at     DateTime?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

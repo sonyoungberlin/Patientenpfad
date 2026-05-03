@@ -313,10 +313,12 @@ export async function POST(
       req.url,
     ).toString();
 
+    let resolvedTransport: string = "unknown";
     try {
-      await sendWebsiteFormConfirmationEmail({
+      resolvedTransport = await sendWebsiteFormConfirmationEmail({
         to: emailCheck.email,
         confirmationUrl,
+        practiceId: form.owner_practice_id ?? null,
       });
     } catch (mailErr) {
       const detail = mailErr instanceof Error ? mailErr.message : "unknown";
@@ -324,6 +326,7 @@ export async function POST(
         slug: slugValidation.slug,
         sessionId: createdSession.id,
         practiceFormId: form.id,
+        practiceId: form.owner_practice_id ?? null,
         detail,
       });
       // Antwort bleibt generisch (Erfolgs-Redirect), damit der Patient
@@ -336,6 +339,8 @@ export async function POST(
       slug: slugValidation.slug,
       sessionId: createdSession.id,
       practiceFormId: form.id,
+      practiceId: form.owner_practice_id ?? null,
+      mailTransport: resolvedTransport,
     });
 
     // 12. Erfolgs-Redirect.

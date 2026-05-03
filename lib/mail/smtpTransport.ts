@@ -2,10 +2,14 @@
  * SMTP-Transport für die Bestätigungs-E-Mail eines öffentlichen
  * Website-Form-Submits.
  *
- * Wird ausschließlich aufgerufen, wenn `MAIL_TRANSPORT=smtp` gesetzt ist
- * (siehe `lib/mail/sendWebsiteFormConfirmationEmail.ts`). Liest die
- * Konfiguration aus den ENV-Variablen `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
- * `SMTP_PASS`, `SMTP_FROM` (alle Pflicht) und `SMTP_SECURE` (optional).
+ * Mandantenfähigkeit (Phase Practice-SMTP):
+ *   - Es gibt KEINEN globalen Single-Transporter mehr. Pro eindeutiger
+ *     Konfiguration (Host/Port/User/From/Secure) wird genau ein
+ *     Nodemailer-Transporter in einer Map zwischengespeichert.
+ *   - Cache-Key bewusst OHNE Passwort, damit Klartext-Passwörter nirgends
+ *     auch nur indirekt in In-Memory-Strukturen referenziert werden.
+ *   - Die Map ist auf eine Höchstgröße begrenzt (LRU per Reinsertion),
+ *     um bei vielen Practices nicht unbegrenzt Verbindungen zu halten.
  *
  * Sicherheits-/Logging-Invarianten:
  *   - Es werden NIEMALS Passwort, Empfängeradresse oder Bestätigungs-URL in
@@ -24,7 +28,13 @@ export type SmtpConfig = {
   port: number;
   user: string;
   pass: string;
-  from: string;
+  /**
+   * Absender. Entweder als bereits zusammengesetzter Header-String
+   * (z. B. `"Praxis <noreply@example.com>"`) oder als strukturiertes
+   * Objekt — Letzteres bevorzugt, weil Nodemailer den Display-Name
+   * dann RFC-konform encodiert.
+   */
+  from: string | { name: string; address: string };
   secure: boolean;
 };
 
@@ -104,21 +114,38 @@ export function readSmtpConfigFromEnv(
   };
 }
 
-// Caching: Transporter pro Konfig wiederverwenden, um TCP-Handshakes
-// zwischen mehreren Submits zu sparen. Cache-Key bewusst OHNE Passwort.
-let cachedTransporter: Transporter | null = null;
-let cachedKey: string | null = null;
+// Multi-Tenant-Cache: pro Konfig-Identität (Cache-Key) genau ein
+// Transporter. LRU per Reinsertion in eine Map; obergrenze schützt vor
+// unbegrenztem Wachstum bei vielen Practices.
+const TRANSPORTER_CACHE_LIMIT = 64;
+const transporterCache = new Map<string, Transporter>();
 
-function transporterCacheKey(cfg: SmtpConfig): string {
-  return [cfg.host, cfg.port, cfg.user, cfg.from, cfg.secure ? "1" : "0"].join("|");
+function fromCacheFragment(from: SmtpConfig["from"]): string {
+  if (typeof from === "string") return from;
+  return `${from.name}<${from.address}>`;
+}
+
+export function transporterCacheKey(cfg: SmtpConfig): string {
+  // Bewusst OHNE Passwort — der Cache referenziert niemals Klartext.
+  return [
+    cfg.host,
+    cfg.port,
+    cfg.user,
+    fromCacheFragment(cfg.from),
+    cfg.secure ? "1" : "0",
+  ].join("|");
 }
 
 function getTransporter(cfg: SmtpConfig): Transporter {
   const key = transporterCacheKey(cfg);
-  if (cachedTransporter && cachedKey === key) {
-    return cachedTransporter;
+  const existing = transporterCache.get(key);
+  if (existing) {
+    // LRU-Bumping: zuletzt benutzt → ans Ende.
+    transporterCache.delete(key);
+    transporterCache.set(key, existing);
+    return existing;
   }
-  cachedTransporter = nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
     host: cfg.host,
     port: cfg.port,
     secure: cfg.secure,
@@ -130,14 +157,40 @@ function getTransporter(cfg: SmtpConfig): Transporter {
     greetingTimeout: 10_000,
     socketTimeout: 10_000,
   });
-  cachedKey = key;
-  return cachedTransporter;
+  transporterCache.set(key, transporter);
+  // Eviction wenn Limit überschritten: ältesten Eintrag entfernen.
+  while (transporterCache.size > TRANSPORTER_CACHE_LIMIT) {
+    const oldestKey = transporterCache.keys().next().value as
+      | string
+      | undefined;
+    if (!oldestKey) break;
+    const evicted = transporterCache.get(oldestKey);
+    transporterCache.delete(oldestKey);
+    // Verbindung sauber schließen, damit kein Socket-Leak entsteht.
+    try {
+      evicted?.close();
+    } catch {
+      // ignorieren
+    }
+  }
+  return transporter;
 }
 
 /** Nur für Tests: Cache leeren, damit Mocks/Configs frisch geladen werden. */
 export function __resetSmtpTransporterCacheForTests(): void {
-  cachedTransporter = null;
-  cachedKey = null;
+  for (const t of transporterCache.values()) {
+    try {
+      t.close();
+    } catch {
+      // ignorieren
+    }
+  }
+  transporterCache.clear();
+}
+
+/** Nur für Tests: aktuelle Cache-Größe inspizieren. */
+export function __smtpTransporterCacheSizeForTests(): number {
+  return transporterCache.size;
 }
 
 export type SmtpSendInput = {
