@@ -128,7 +128,7 @@ export async function requirePatientCommunicationAccess(
  *
  * Liefert den freigeschalteten Account oder `null`. Der Aufrufer entscheidet,
  * ob ein Redirect, eine Fehlerseite o. ä. gerendert wird – analog zum
- * bisherigen Vorgehen in `app/admin/questionnaires/page.tsx`.
+ * Vorgehen in `app/questionnaires/page.tsx`.
  *
  * Phase 1a: zusätzlich zu „eingeloggt + freigeschaltet" muss
  * `patient_communication_enabled` aktiv sein.

@@ -36,6 +36,7 @@ type AccountInfo = {
   is_approved: boolean;
   is_admin: boolean;
   inquiry_assistant_enabled: boolean;
+  patient_communication_enabled: boolean;
 };
 
 export default function HomePage() {
@@ -391,6 +392,15 @@ export default function HomePage() {
               style={{ fontSize: "0.875rem" }}
             >
               Praxis Kommunikation
+            </button>
+          )}
+          {account.patient_communication_enabled && (
+            <button
+              type="button"
+              onClick={() => router.push("/questionnaires")}
+              style={{ fontSize: "0.875rem" }}
+            >
+              Fragebögen
             </button>
           )}
           <button onClick={handleLogout}>Abmelden</button>

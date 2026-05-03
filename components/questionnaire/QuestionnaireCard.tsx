@@ -8,7 +8,7 @@ import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
  * Fragebogen-Karte in der Übersicht.
  *
  * In Phase 0 entspricht das gerenderte Markup 1:1 dem bisherigen Inline-Code
- * in `app/admin/questionnaires/page.tsx`. Datenaufbereitung (Block-Labels,
+ * in `app/questionnaires/page.tsx`. Datenaufbereitung (Block-Labels,
  * Krankenblatt-Text, Display-Status) erfolgt weiterhin im Aufrufer und wird
  * als fertige Props übergeben, damit die Karte frei von Daten- und
  * Berechtigungslogik bleibt.

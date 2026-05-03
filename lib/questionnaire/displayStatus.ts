@@ -3,7 +3,7 @@
  *
  * Zentralisiert die Ableitung des sichtbaren Status (inkl. „abgelaufen") und
  * die Badge-Optik. Bisher waren beide Aspekte inline in
- * `app/admin/questionnaires/page.tsx` implementiert; diese Datei extrahiert
+ * `app/questionnaires/page.tsx` implementiert; diese Datei extrahiert
  * sie 1:1, ohne Verhaltensänderung.
  */
 
@@ -37,7 +37,7 @@ export function deriveDisplayStatus(session: {
 
 /**
  * Liefert das Inline-Style-Objekt für das Status-Badge. Werte und CSS-Variablen
- * sind 1:1 aus der bisherigen Inline-Logik in `app/admin/questionnaires/page.tsx`
+ * sind 1:1 aus der bisherigen Inline-Logik in `app/questionnaires/page.tsx`
  * übernommen, damit sich das Markup nicht verändert.
  */
 export function getStatusBadgeStyle(displayStatus: string): {
