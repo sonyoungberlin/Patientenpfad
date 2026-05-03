@@ -78,7 +78,7 @@ async function main() {
 
   const email = rawEmail.trim().toLowerCase();
   if (!email.includes("@")) {
-    console.error("Fehler: Ungueltige E-Mail-Adresse.");
+    console.error("Fehler: Ungültige E-Mail-Adresse.");
     process.exit(2);
   }
 
@@ -107,7 +107,7 @@ async function main() {
     });
 
     // Bewusst keinerlei Passwort- oder Hash-Inhalt loggen.
-    console.log(`✓ Passwort fuer "${account.email}" wurde gesetzt.`);
+    console.log(`✓ Passwort für "${account.email}" wurde gesetzt.`);
   } finally {
     await prisma.$disconnect();
   }
