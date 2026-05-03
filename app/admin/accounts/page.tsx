@@ -1,6 +1,20 @@
 import { redirect } from "next/navigation";
+import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+
+type FlagKey =
+  | "is_approved"
+  | "patient_communication_enabled"
+  | "website_forms_enabled"
+  | "inquiry_assistant_enabled";
+
+const FLAG_LABEL: Record<FlagKey, string> = {
+  is_approved: "freigeschaltet",
+  patient_communication_enabled: "Patientenkommunikation",
+  website_forms_enabled: "Website-Formulare",
+  inquiry_assistant_enabled: "Anfrage-Assistent",
+};
 
 export default async function AdminAccountsPage() {
   const account = await getSessionAccountFromCookies();
@@ -18,15 +32,65 @@ export default async function AdminAccountsPage() {
       patient_communication_enabled: true,
       website_forms_enabled: true,
       createdAt: true,
+      memberships: {
+        where: { role: PracticeRole.OWNER },
+        select: {
+          practice: {
+            select: {
+              id: true,
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+        },
+      },
     },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
   });
+
+  /**
+   * Hotfix-Hinweis (PR 1): Quelle der Wahrheit für die Feature-Flags der App
+   * ist seit Phase P2 die `Practice` (OWNER-Membership des Logins). Die
+   * Toggles unten schreiben deshalb seit diesem PR zusätzlich auf alle
+   * OWNER-Practices des Accounts. Wir berechnen pro Account, ob Account-
+   * und Practice-Stand auseinanderlaufen, und zeigen das als kompakten
+   * Drift-Hinweis an — keine zusätzliche UI, nur eine sichtbare Warnung.
+   * Drift verschwindet automatisch, sobald der jeweilige Toggle erneut
+   * betätigt wurde (siehe `lib/adminActions.ts`).
+   */
+  function computeDrift(acc: (typeof accounts)[number]): FlagKey[] {
+    const drifted: FlagKey[] = [];
+    for (const m of acc.memberships) {
+      const p = m.practice;
+      const keys: FlagKey[] = [
+        "is_approved",
+        "patient_communication_enabled",
+        "website_forms_enabled",
+        "inquiry_assistant_enabled",
+      ];
+      for (const k of keys) {
+        if (acc[k] !== p[k] && !drifted.includes(k)) {
+          drifted.push(k);
+        }
+      }
+    }
+    return drifted;
+  }
+
 
   return (
     <main>
       <h1>Admin – Accounts</h1>
       <p className="text-muted">
         {accounts.length} Account{accounts.length !== 1 ? "s" : ""} gesamt
+      </p>
+      <p className="text-muted" style={{ fontSize: "0.85em" }}>
+        Hinweis: Quelle der Wahrheit für die App-Sichtbarkeit ist die Praxis
+        (OWNER-Membership). Toggles synchronisieren Account und Praxis
+        automatisch; verbleibende Abweichungen aus der Übergangsphase werden
+        unter „Drift" angezeigt und durch erneutes Toggeln behoben.
       </p>
       <table>
         <thead>
@@ -37,12 +101,15 @@ export default async function AdminAccountsPage() {
             <th>Anfrage-Assistent</th>
             <th>Patientenkommunikation</th>
             <th>Website-Formulare</th>
+            <th>Drift (Account ≠ Praxis)</th>
             <th>Angelegt</th>
             <th>Aktion</th>
           </tr>
         </thead>
         <tbody>
-          {accounts.map((acc) => (
+          {accounts.map((acc) => {
+            const drift = computeDrift(acc);
+            return (
             <tr key={acc.id}>
               <td>{acc.email}</td>
               <td>{acc.is_approved ? "✓ freigeschaltet" : "✗ gesperrt"}</td>
@@ -53,6 +120,17 @@ export default async function AdminAccountsPage() {
               </td>
               <td data-wf={acc.email}>
                 {acc.website_forms_enabled ? "✓ aktiv" : "–"}
+              </td>
+              <td data-drift={acc.email}>
+                {acc.memberships.length === 0 ? (
+                  <span className="text-muted">keine Praxis</span>
+                ) : drift.length === 0 ? (
+                  "–"
+                ) : (
+                  <span style={{ color: "#a00" }}>
+                    ⚠ {drift.map((k) => FLAG_LABEL[k]).join(", ")}
+                  </span>
+                )}
               </td>
               <td>{acc.createdAt.toISOString().slice(0, 10)}</td>
               <td style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -114,10 +192,11 @@ export default async function AdminAccountsPage() {
                 </form>
               </td>
             </tr>
-          ))}
+            );
+          })}
           {accounts.length === 0 && (
             <tr>
-              <td colSpan={8} className="text-muted">
+              <td colSpan={9} className="text-muted">
                 Keine Accounts vorhanden.
               </td>
             </tr>

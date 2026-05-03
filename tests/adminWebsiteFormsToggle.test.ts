@@ -10,6 +10,10 @@ jest.mock("@/lib/prisma", () => ({
       update: jest.fn(),
       findMany: jest.fn(),
     },
+    practice: {
+      update: jest.fn(),
+    },
+    $transaction: jest.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
   },
 }));
 
