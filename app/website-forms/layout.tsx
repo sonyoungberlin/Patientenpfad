@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import AppShell from "@/components/AppShell";
 
-export default function InquiriesLayout({ children }: { children: ReactNode }) {
+export default function WebsiteFormsLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <AppShell />

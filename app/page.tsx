@@ -11,6 +11,7 @@ import {
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
+import AppShell from "@/components/AppShell";
 import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 
 const INITIAL_SELECTION: M1Selection = {
@@ -376,47 +377,7 @@ export default function HomePage() {
       </nav>
       <main>
       {/* Account-Bar */}
-      <div className="account-bar">
-        <span className="account-email">{account.email}</span>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <button
-            type="button"
-            onClick={() => router.push("/demo/arzt")}
-            style={{ fontSize: "0.875rem" }}
-          >
-            Arzt-Demo ansehen
-          </button>
-          {(account.inquiry_assistant_enabled || account.is_admin) && (
-            <button
-              type="button"
-              onClick={() => router.push("/inquiries")}
-              style={{ fontSize: "0.875rem" }}
-            >
-              Praxis Kommunikation
-            </button>
-          )}
-          {account.patient_communication_enabled && (
-            <button
-              type="button"
-              onClick={() => router.push("/questionnaires")}
-              style={{ fontSize: "0.875rem" }}
-            >
-              Fragebögen
-            </button>
-          )}
-          {account.patient_communication_enabled &&
-            account.website_forms_enabled && (
-              <button
-                type="button"
-                onClick={() => router.push("/website-forms")}
-                style={{ fontSize: "0.875rem" }}
-              >
-                Website-Formulare
-              </button>
-            )}
-          <button onClick={handleLogout}>Abmelden</button>
-        </div>
-      </div>
+      <AppShell account={account} onLogout={handleLogout} />
       <h1>Liegt genug Information vor, damit der Arzt direkt entscheiden kann?</h1>
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         „Wissen wir genug über die Situation – nicht, ob sie gut oder schlecht ist?"
