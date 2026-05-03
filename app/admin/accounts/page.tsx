@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { SendPasswordLinkButton } from "./SendPasswordLinkButton";
 
 type FlagKey =
   | "is_approved"
@@ -204,6 +205,7 @@ export default async function AdminAccountsPage() {
                       : "Website-Formulare aktivieren"}
                   </button>
                 </form>
+                <SendPasswordLinkButton email={acc.email} />
               </td>
             </tr>
             );
