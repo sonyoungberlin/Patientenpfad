@@ -27,6 +27,7 @@ import {
   validateWebsiteFormInput,
   type RawWebsiteFormInput,
 } from "@/lib/websiteForms/validateForm";
+import { getCreateOwnershipData } from "@/lib/websiteForms/practiceScope";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
   try {
     const created = await prisma.practiceQuestionnaireForm.create({
       data: {
-        owner_account_id: account.id,
+        ...getCreateOwnershipData(account),
         title: result.value.title,
         slug: result.value.slug,
         intro_text: result.value.intro_text,

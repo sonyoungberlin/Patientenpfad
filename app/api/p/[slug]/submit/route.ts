@@ -54,6 +54,7 @@ import {
   getClientIp,
 } from "@/lib/websiteForms/submitRateLimit";
 import { sendWebsiteFormConfirmationEmail } from "@/lib/mail/sendWebsiteFormConfirmationEmail";
+import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
 
 export const dynamic = "force-dynamic";
 
@@ -214,6 +215,7 @@ export async function POST(
     }
 
     // 6. Form + Owner-Flags laden — identische Cascade wie `app/p/[slug]/page.tsx`.
+    // P3a: Practice-Flags überstimmen Account-Flags.
     const form = await prisma.practiceQuestionnaireForm.findUnique({
       where: { slug: slugValidation.slug },
       select: {
@@ -221,6 +223,14 @@ export async function POST(
         is_active: true,
         selected_block_ids: true,
         owner_account_id: true,
+        owner_practice_id: true,
+        owner_practice: {
+          select: {
+            is_approved: true,
+            patient_communication_enabled: true,
+            website_forms_enabled: true,
+          },
+        },
         owner_account: {
           select: {
             is_approved: true,
@@ -231,13 +241,14 @@ export async function POST(
       },
     });
 
+    const flags = form ? getEffectivePracticeFlags(form) : null;
     if (
       !form ||
       !form.is_active ||
-      !form.owner_account ||
-      !form.owner_account.is_approved ||
-      !form.owner_account.patient_communication_enabled ||
-      !form.owner_account.website_forms_enabled
+      !flags ||
+      !flags.is_approved ||
+      !flags.patient_communication_enabled ||
+      !flags.website_forms_enabled
     ) {
       logSubmit("not_found", { slug: slugValidation.slug });
       return notFoundHtml();
@@ -268,9 +279,16 @@ export async function POST(
     const token = generateConfirmToken();
 
     // 10. Session anlegen.
+    // P3a: Doppelschreiben — `owner_account_id` bleibt Pflichtfeld,
+    // `owner_practice_id` wird zusätzlich gespiegelt, falls die Form sie
+    // hat. Forms ohne `owner_practice_id` (Bestand vor P1) erzeugen
+    // Sessions ohne `owner_practice_id` — kein stilles Setzen.
     const createdSession = await prisma.patientQuestionnaireSession.create({
       data: {
         owner_account_id: form.owner_account_id,
+        ...(form.owner_practice_id
+          ? { owner_practice_id: form.owner_practice_id }
+          : {}),
         practice_form_id: form.id,
         source: WEBSITE_SESSION_SOURCE,
         submitted_by: "patient",

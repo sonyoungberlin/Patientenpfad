@@ -27,6 +27,7 @@ import {
   validateWebsiteFormInput,
   type RawWebsiteFormInput,
 } from "@/lib/websiteForms/validateForm";
+import { ownsForm } from "@/lib/websiteForms/practiceScope";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -86,9 +87,14 @@ export async function POST(
   // Eigentum prüfen — bei fremder/unbekannter ID 404.
   const existing = await prisma.practiceQuestionnaireForm.findUnique({
     where: { id },
-    select: { id: true, owner_account_id: true, is_active: true },
+    select: {
+      id: true,
+      owner_account_id: true,
+      owner_practice_id: true,
+      is_active: true,
+    },
   });
-  if (!existing || existing.owner_account_id !== account.id) {
+  if (!existing || !ownsForm(account, existing)) {
     return NextResponse.json(
       { ok: false, error: "Website-Formular nicht gefunden." },
       { status: 404 },

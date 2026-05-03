@@ -22,6 +22,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireWebsiteFormsManagementAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { ownsForm } from "@/lib/websiteForms/practiceScope";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 
 type SearchParams = Promise<{ error?: string | string[] }>;
@@ -47,6 +48,7 @@ export default async function WebsiteFormDetailPage({
     select: {
       id: true,
       owner_account_id: true,
+      owner_practice_id: true,
       createdAt: true,
       updatedAt: true,
       title: true,
@@ -57,9 +59,9 @@ export default async function WebsiteFormDetailPage({
     },
   });
 
-  // Nicht gefunden ODER nicht im Besitz des aktuellen Accounts → 404.
-  // 404 statt 403, damit IDs nicht durchsuchbar sind.
-  if (!form || form.owner_account_id !== account.id) {
+  // Nicht gefunden ODER nicht im Praxis-/Account-Scope des aktuellen
+  // Accounts → 404. 404 statt 403, damit IDs nicht enumerierbar sind.
+  if (!form || !ownsForm(account, form)) {
     notFound();
   }
 

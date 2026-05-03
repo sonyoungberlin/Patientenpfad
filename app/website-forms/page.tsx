@@ -22,6 +22,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireWebsiteFormsManagementAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { getOwnershipFilter } from "@/lib/websiteForms/practiceScope";
 
 type SearchParams = Promise<{ error?: string | string[] }>;
 
@@ -39,7 +40,7 @@ export default async function WebsiteFormsPage({
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
 
   const forms = await prisma.practiceQuestionnaireForm.findMany({
-    where: { owner_account_id: account.id },
+    where: getOwnershipFilter(account),
     orderBy: { createdAt: "desc" },
     take: 100,
     select: {
