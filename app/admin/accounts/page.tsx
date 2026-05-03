@@ -83,6 +83,20 @@ export default async function AdminAccountsPage() {
   return (
     <main>
       <h1>Admin – Accounts</h1>
+      <p
+        role="note"
+        style={{
+          background: "#fff7e0",
+          border: "1px solid #e0c060",
+          padding: "0.5rem 0.75rem",
+          borderRadius: "0.25rem",
+          marginBottom: "1rem",
+        }}
+      >
+        Legacy-Ansicht. Quelle der Wahrheit für Feature-Flags ist die Praxis
+        — bitte unter <a href="/admin/practices">/admin/practices</a>{" "}
+        verwalten. Diese Seite bleibt vorerst bestehen.
+      </p>
       <p className="text-muted">
         {accounts.length} Account{accounts.length !== 1 ? "s" : ""} gesamt
       </p>
