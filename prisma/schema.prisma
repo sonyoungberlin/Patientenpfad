@@ -187,9 +187,14 @@ model PatientQuestionnaireSession {
   /// Ablaufzeitpunkt des Tokens
   token_expires_at DateTime?
 
-  /// Ersteller (Praxis-Account, optional)
-  owner_account_id String?
-  owner_account    Account?  @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
+  /// Ersteller (Praxis-Account, Pflichtfeld).
+  /// Phase 2: NOT NULL, damit jede Session eindeutig einer Praxis zugeordnet bleibt.
+  /// onDelete: Restrict → Account-Löschung wird blockiert, solange Sessions existieren.
+  /// Vor einem zukünftigen Account-Lösch-Workflow müssen die Sessions explizit
+  /// gelöscht oder umgehängt werden; es gibt absichtlich kein automatisches Cascade,
+  /// damit medizinisch dokumentationspflichtige Daten nicht still verschwinden.
+  owner_account_id String
+  owner_account    Account  @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
 
   /// Interne Patientenreferenz (wird nie in den Link kodiert)
   patient_reference String?
@@ -223,6 +228,10 @@ model PatientQuestionnaireSession {
 
   /// Methode der Identitätsabfrage (Audit-Merkmal, keine personenbezogenen Daten)
   identity_gate_method String? @default("dob_lastname3")
+
+  /// Bedient die Praxis-Listenabfrage `/questionnaires`
+  /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
+  @@index([owner_account_id, createdAt])
 }
 
 /// Sitzung des Anfrage-Assistenten.

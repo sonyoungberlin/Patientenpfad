@@ -147,12 +147,12 @@ export async function requirePatientCommunicationAccessFromCookies(): Promise<Se
  * Verhalten identisch zum bisherigen Inline-Check
  * (`session.owner_account_id !== account.id`).
  *
- * In Phase 1 wird hier ein Admin-Bypass ergänzt; bewusst noch **nicht**
- * jetzt, um in Phase 0 jede fachliche Änderung auszuschließen.
+ * Phase 2: `owner_account_id` ist im Schema NOT NULL. Der Parametertyp
+ * spiegelt das wider; ein nachgelagerter Admin-Bypass bleibt bewusst aus.
  */
 export function canSeeQuestionnaire(
   account: Pick<SessionAccount, "id" | "is_admin">,
-  session: { owner_account_id: string | null },
+  session: { owner_account_id: string },
 ): boolean {
   // TODO(Phase 1): Admin-Bypass (`account.is_admin === true`) zulassen.
   return session.owner_account_id === account.id;
