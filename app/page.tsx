@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { ActiveCheckpointMultiSelect, CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
   getCreateSuccessRedirectPath,
@@ -372,9 +371,6 @@ export default function HomePage() {
 
   return (
     <>
-      <nav className="app-nav">
-        <Link href="/cases">← Zur Fallübersicht</Link>
-      </nav>
       <main>
       {/* Account-Bar */}
       <AppShell account={account} onLogout={handleLogout} />

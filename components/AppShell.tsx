@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 
 /**
@@ -89,7 +90,10 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
   const inSection = (prefix: string) =>
     pathname === prefix || pathname.startsWith(prefix + "/");
 
-  const isCases = inSection("/cases");
+  // `/` ist faktisch der „Neuer Fall"-Einstieg und gehört damit zum
+  // Patientenfälle-Bereich – auch dort sollen Hauptmenü, Fallliste und
+  // Neuer Fall in der AppShell erscheinen.
+  const isCases = pathname === "/" || inSection("/cases");
   const isCommunication =
     inSection("/inquiries") || inSection("/questionnaires");
   const isPractice = inSection("/practice");
@@ -119,28 +123,32 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
   }
 
   return (
-    <div className="account-bar">
-      <span className="account-email">{account.email}</span>
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-        <button
-          type="button"
-          onClick={() => router.push("/dashboard")}
-          style={{ fontSize: "0.875rem" }}
-        >
-          Hauptmenü
-        </button>
-        {sectionItems.map((item) => (
-          <button
-            key={item.href}
-            type="button"
-            onClick={() => router.push(item.href)}
-            style={{ fontSize: "0.875rem" }}
-          >
-            {item.label}
-          </button>
-        ))}
-        <button onClick={handleLogoutClick}>Abmelden</button>
-      </div>
-    </div>
+    <nav className="app-nav">
+      <Link href="/dashboard">Hauptmenü</Link>
+      {sectionItems.map((item) => (
+        <Link key={item.href} href={item.href}>
+          {item.label}
+        </Link>
+      ))}
+      <span className="account-email" style={{ marginLeft: "auto" }}>
+        {account.email}
+      </span>
+      <button
+        type="button"
+        onClick={handleLogoutClick}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          font: "inherit",
+          color: "var(--muted-foreground)",
+          fontSize: "0.875rem",
+          cursor: "pointer",
+          textDecoration: "underline",
+        }}
+      >
+        Abmelden
+      </button>
+    </nav>
   );
 }
