@@ -10,8 +10,9 @@
  * Phase-3b-Scope:
  *   - Bearbeiten (Titel, Slug, Intro, Block-Auswahl, Aktiv-Flag)
  *   - Aktiv-Toggle als separates Mini-Form (`action: "toggle_active"`)
- *   - Anzeige des öffentlichen Links inkl. expliziter Hinweis-Box, dass die
- *     öffentliche Seite in dieser Phase noch nicht aufrufbar ist.
+ *   - Anzeige des öffentlichen Links inkl. Hinweis-Box auf den
+ *     Vorschau-Modus (Phase 3c: Seite ist erreichbar, Absenden noch nicht
+ *     aktiv).
  *   - **Kein** Löschen.
  */
 
@@ -98,9 +99,8 @@ export default async function WebsiteFormDetailPage({
             marginBottom: "0.5rem",
           }}
         >
-          Hinweis: Die öffentliche Seite <code>/p/[slug]</code> ist in dieser
-          Phase noch nicht aufrufbar. Der Link dient zur Vorschau und sollte
-          noch nicht an Patient*innen weitergegeben werden.
+          Vorschau-Modus: Die öffentliche Formularseite ist erreichbar, das
+          Absenden ist aber noch nicht aktiv.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <input
