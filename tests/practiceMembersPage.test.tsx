@@ -178,7 +178,7 @@ describe("/practice/members read-only page", () => {
     expect(r.markup).toContain("owner@example.com");
   });
 
-  it("rendert KEINE Mutations-Forms (read-only)", async () => {
+  it("rendert das Hinzufügen-Formular ohne OWNER-Option (Mutationen begrenzt)", async () => {
     getCookies.mockResolvedValue(makeAccount("OWNER"));
     pm.practiceMembership.findMany.mockResolvedValue([
       {
@@ -189,9 +189,39 @@ describe("/practice/members read-only page", () => {
       },
     ]);
     const r = await runPage();
-    // Keine Forms (kein add/change/remove)
-    expect(r.markup).not.toMatch(/<form\b/i);
-    expect(r.markup).not.toMatch(/<button\b/i);
-    expect(r.markup).not.toMatch(/<input\b/i);
+    // Hinzufügen-Form vorhanden und POSTet an die API-Route.
+    expect(r.markup).toMatch(/<form[^>]*action="\/api\/practice\/members"[^>]*method="POST"/i);
+    expect(r.markup).toMatch(/name="email"/);
+    expect(r.markup).toMatch(/name="role"/);
+    // Rollen-Auswahl bietet ADMIN und USER, aber **nicht** OWNER.
+    expect(r.markup).toMatch(/<option[^>]*value="ADMIN"/);
+    expect(r.markup).toMatch(/<option[^>]*value="USER"/);
+    expect(r.markup).not.toMatch(/<option[^>]*value="OWNER"/);
+  });
+
+  it("zeigt ?error=… als Fehlermeldung", async () => {
+    getCookies.mockResolvedValue(makeAccount("OWNER"));
+    pm.practiceMembership.findMany.mockResolvedValue([]);
+    try {
+      const node = await PracticeMembersPage({
+        searchParams: Promise.resolve({ error: "Ungültige E-Mail." }),
+      });
+      const markup = renderToStaticMarkup(node);
+      expect(markup).toContain("Ungültige E-Mail.");
+      expect(markup).toMatch(/role="alert"/);
+    } catch (err) {
+      throw err;
+    }
+  });
+
+  it("zeigt ?added=<email> als Erfolgsmeldung", async () => {
+    getCookies.mockResolvedValue(makeAccount("ADMIN"));
+    pm.practiceMembership.findMany.mockResolvedValue([]);
+    const node = await PracticeMembersPage({
+      searchParams: Promise.resolve({ added: "neu@example.com" }),
+    });
+    const markup = renderToStaticMarkup(node);
+    expect(markup).toContain("neu@example.com");
+    expect(markup).toMatch(/role="status"/);
   });
 });
