@@ -109,6 +109,7 @@ const ACCOUNT_A1_IN_PRACTICE_A = {
   patient_communication_enabled: true,
   website_forms_enabled: true,
   current_practice: PRACTICE_A,
+  memberships: [{ practice_id: "p-A", role: "OWNER" }],
 };
 
 const ACCOUNT_A2_IN_PRACTICE_A = {
@@ -122,6 +123,7 @@ const ACCOUNT_B_IN_PRACTICE_B = {
   id: "acc-B",
   email: "b@example.com",
   current_practice: PRACTICE_B,
+  memberships: [{ practice_id: "p-B", role: "OWNER" }],
 };
 
 const ADMIN_NO_PRACTICE = {
@@ -130,6 +132,7 @@ const ADMIN_NO_PRACTICE = {
   email: "admin@example.com",
   is_admin: true,
   current_practice: null,
+  memberships: [],
 };
 
 beforeEach(() => {
@@ -330,7 +333,10 @@ describe("POST /api/website-forms/[id] — Practice-Scope", () => {
       }),
       { params: Promise.resolve({ id: "form-1" }) },
     );
-    expect(res.status).toBe(404);
+    // P4a: Rollen-Gate greift schon vor dem Eigentums-Check; der
+    // Admin-ohne-Membership wird mit 403 'Kein Praxiszugriff.' geblockt.
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("Kein Praxiszugriff.");
     expect(pm.practiceQuestionnaireForm.update).not.toHaveBeenCalled();
   });
 });
@@ -358,24 +364,24 @@ describe("POST /api/website-forms — Doppelschreiben", () => {
     expect(args.data.owner_practice_id).toBe("p-A");
   });
 
-  it("setzt owner_practice_id NICHT wenn keine current_practice (kein null)", async () => {
+  it("Plattform-Admin ohne Practice-Membership darf NICHT anlegen (Rollen-Gate)", async () => {
     getAcc.mockResolvedValue(ADMIN_NO_PRACTICE);
     pm.practiceQuestionnaireForm.create.mockResolvedValue({
       id: "form-1",
       slug: "abc-def",
     });
-    await CreateRoute(
+    const res = await CreateRoute(
       jsonReq("http://localhost/api/website-forms", {
         title: "T",
         slug: "abc-def",
         selected_block_ids: ["REZEPT"],
       }),
     );
-    const args = pm.practiceQuestionnaireForm.create.mock.calls[0][0];
-    expect(args.data.owner_account_id).toBe("acc-ADMIN");
-    expect(
-      Object.prototype.hasOwnProperty.call(args.data, "owner_practice_id"),
-    ).toBe(false);
+    // P4a: Rollen-Gate blockiert vor dem Create. Kein Plattform-Admin-
+    // Bypass, auch nicht für das Doppelschreib-Verhalten.
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("Kein Praxiszugriff.");
+    expect(pm.practiceQuestionnaireForm.create).not.toHaveBeenCalled();
   });
 });
 

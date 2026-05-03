@@ -19,8 +19,12 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireWebsiteFormsManagementAccessFromCookies } from "@/lib/authz";
+import {
+  requirePracticeRoleFromCookies,
+  requireWebsiteFormsManagementAccessFromCookies,
+} from "@/lib/authz";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
 import { ownsForm } from "@/lib/websiteForms/practiceScope";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
@@ -37,6 +41,17 @@ export default async function WebsiteFormDetailPage({
   const account = await requireWebsiteFormsManagementAccessFromCookies();
   if (!account) {
     redirect("/");
+  }
+
+  // P4a: Zusätzlich zur Feature-Flag-Prüfung wird die Praxis-Rolle gegated.
+  // Nur OWNER/ADMIN dürfen Website-Formulare verwalten; USER → notFound()
+  // (kein 403, Konvention für Praxis-Pfade). Kein Plattform-Admin-Bypass.
+  const allowed = await requirePracticeRoleFromCookies([
+    PracticeRole.OWNER,
+    PracticeRole.ADMIN,
+  ]);
+  if (!allowed) {
+    notFound();
   }
 
   const { id } = await params;

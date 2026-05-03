@@ -60,6 +60,16 @@ const APPROVED = {
   inquiry_assistant_enabled: false,
   patient_communication_enabled: true,
   website_forms_enabled: true,
+  current_practice: {
+    id: "p-1",
+    slug: "p1",
+    name: "P1",
+    is_approved: true,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: true,
+    website_forms_enabled: true,
+  },
+  memberships: [{ practice_id: "p-1", role: "OWNER" }],
 };
 
 async function runPage(id = "form-1"): Promise<{
@@ -125,6 +135,7 @@ describe("/website-forms/[id] detail page", () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({
       id: "form-1",
       owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
       createdAt: new Date("2026-01-01"),
       updatedAt: new Date("2026-01-02"),
       title: "Mein Formular",
@@ -150,6 +161,7 @@ describe("/website-forms/[id] detail page", () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({
       id: "form-1",
       owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
       createdAt: new Date(),
       updatedAt: new Date(),
       title: "Inaktiv",

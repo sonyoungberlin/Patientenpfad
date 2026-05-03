@@ -19,9 +19,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireWebsiteFormsManagementAccess } from "@/lib/authz";
+import {
+  requirePracticeRole,
+  requireWebsiteFormsManagementAccess,
+} from "@/lib/authz";
 import {
   firstFieldError,
   validateWebsiteFormInput,
@@ -67,6 +70,15 @@ async function readRawInput(req: NextRequest): Promise<RawWebsiteFormInput | nul
 export async function POST(req: NextRequest) {
   const { account, error } = await requireWebsiteFormsManagementAccess(req);
   if (error) return error;
+
+  // P4a: Zusätzlich zur Feature-Flag-Prüfung wird die Praxis-Rolle gegated.
+  // Nur OWNER/ADMIN dürfen Website-Formulare verwalten; USER bekommt 403.
+  // Kein Plattform-Admin-Bypass.
+  const role = await requirePracticeRole(req, [
+    PracticeRole.OWNER,
+    PracticeRole.ADMIN,
+  ]);
+  if (role.error) return role.error;
 
   const formMode = isFormSubmit(req);
 

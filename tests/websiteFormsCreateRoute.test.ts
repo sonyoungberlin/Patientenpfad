@@ -38,6 +38,16 @@ const APPROVED = {
   inquiry_assistant_enabled: false,
   patient_communication_enabled: true,
   website_forms_enabled: true,
+  current_practice: {
+    id: "p-1",
+    slug: "p1",
+    name: "P1",
+    is_approved: true,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: true,
+    website_forms_enabled: true,
+  },
+  memberships: [{ practice_id: "p-1", role: "OWNER" }],
 };
 
 function jsonReq(body: unknown) {
@@ -74,7 +84,11 @@ describe("POST /api/website-forms — Auth-Gate", () => {
   });
 
   it("403 wenn nicht freigeschaltet", async () => {
-    getSessionAccountMock.mockResolvedValue({ ...APPROVED, is_approved: false });
+    getSessionAccountMock.mockResolvedValue({
+      ...APPROVED,
+      is_approved: false,
+      current_practice: { ...APPROVED.current_practice, is_approved: false },
+    });
     const res = await POST(jsonReq({ title: "x", slug: "abc-def", selected_block_ids: ["REZEPT"] }));
     expect(res.status).toBe(403);
   });
@@ -83,6 +97,10 @@ describe("POST /api/website-forms — Auth-Gate", () => {
     getSessionAccountMock.mockResolvedValue({
       ...APPROVED,
       patient_communication_enabled: false,
+      current_practice: {
+        ...APPROVED.current_practice,
+        patient_communication_enabled: false,
+      },
     });
     const res = await POST(jsonReq({ title: "x", slug: "abc-def", selected_block_ids: ["REZEPT"] }));
     expect(res.status).toBe(403);
@@ -93,6 +111,10 @@ describe("POST /api/website-forms — Auth-Gate", () => {
     getSessionAccountMock.mockResolvedValue({
       ...APPROVED,
       website_forms_enabled: false,
+      current_practice: {
+        ...APPROVED.current_practice,
+        website_forms_enabled: false,
+      },
     });
     const res = await POST(jsonReq({ title: "x", slug: "abc-def", selected_block_ids: ["REZEPT"] }));
     expect(res.status).toBe(403);
@@ -104,6 +126,10 @@ describe("POST /api/website-forms — Auth-Gate", () => {
       ...APPROVED,
       is_admin: true,
       website_forms_enabled: false,
+      current_practice: {
+        ...APPROVED.current_practice,
+        website_forms_enabled: false,
+      },
     });
     const res = await POST(jsonReq({ title: "x", slug: "abc-def", selected_block_ids: ["REZEPT"] }));
     expect(res.status).toBe(403);
