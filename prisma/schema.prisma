@@ -16,13 +16,23 @@ enum StageStatus {
   CLOSED
 }
 
+/// Phase P1: Rolle einer Account-Practice-Mitgliedschaft.
+/// In P1 wird ausschließlich `OWNER` per Backfill vergeben.
+/// `ADMIN` und `USER` sind im Schema reserviert, werden aber erst in
+/// späteren Phasen (P2 / P4) verwendet.
+enum PracticeRole {
+  OWNER
+  ADMIN
+  USER
+}
+
 model Account {
-  id                String        @id @default(cuid())
-  email             String        @unique
-  is_approved       Boolean       @default(false)
-  is_admin          Boolean       @default(false)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id          String   @id @default(cuid())
+  email       String   @unique
+  is_approved Boolean  @default(false)
+  is_admin    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   /// Freitext-Signatur für Nachrichten (max. 300 Zeichen, accountbezogen)
   message_signature String?
@@ -43,11 +53,17 @@ model Account {
   /// Es gibt bewusst keinen Admin-Bypass; auch Admins müssen diesen Flag tragen.
   website_forms_enabled Boolean @default(false)
 
-  cases                        CaseSession[]
-  sessions                     Session[]
-  inquiry_sessions             InquirySession[]
+  cases                          CaseSession[]
+  sessions                       Session[]
+  inquiry_sessions               InquirySession[]
   patient_questionnaire_sessions PatientQuestionnaireSession[]
   practice_questionnaire_forms   PracticeQuestionnaireForm[]
+
+  /// Phase P1: Mitgliedschaften des Accounts in Practices.
+  /// Wird per Backfill zunächst genau einmal pro Account mit Rolle
+  /// `OWNER` befüllt. App-Logik nutzt diese Beziehung in P1 noch nicht;
+  /// `owner_account_id` bleibt führend.
+  memberships PracticeMembership[]
 }
 
 model Session {
@@ -68,111 +84,118 @@ model Session {
 /// nativ). Die Reihenfolge wird über `sequence` (1..n, lückenfrei pro Fall)
 /// abgebildet.
 model PrefillRun {
-  id                    String       @id @default(cuid())
+  id String @id @default(cuid())
 
   /// Fall, zu dem dieser Run gehört.
-  case_id               String
-  case                  CaseSession  @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  case_id String
+  case    CaseSession @relation(fields: [case_id], references: [id], onDelete: Cascade)
 
   /// Position innerhalb des Falls (1..n, monoton, lückenfrei).
-  sequence              Int
+  sequence Int
 
   /// Quelle/Modus des Runs: "mfa" | "conversation" | "patient".
   /// Kein DB-Enum, weil das Schwester-Feld `CaseSession.preparation_mode`
   /// ebenfalls als String geführt wird; Whitelist-Validierung erfolgt in
   /// der Service-Schicht.
-  source                String
+  source String
 
   /// Snapshot der zum Zeitpunkt des Runs aktiven Checkpoints
   /// (Form analog `CaseSession.active_checkpoints`). Dadurch werden
   /// eingefrorene Runs nicht durch spätere M1-Änderungen umgedeutet.
-  active_checkpoints    Json
+  active_checkpoints Json
 
   /// Antworten dieses Runs. Form analog `CaseSession.ctx_prefill`:
   /// `{ [checkpointId]: { [questionId]: "ja" | "nein" | "unklar" | "offen" } }`.
-  answers               Json
+  answers Json
 
-  created_at            DateTime     @default(now())
+  created_at DateTime @default(now())
 
   /// Zeitpunkt des Einfrierens. `NULL` = offener Run.
-  frozen_at             DateTime?
+  frozen_at DateTime?
 
   /// Account, der den Run angelegt hat. NULL bei Patientenrücklauf via Token.
   created_by_account_id String?
 
   /// Optionales Audit: Token-Wert, mit dem ein Patientenrücklauf zugeordnet
   /// wurde. NULL bei MFA-/Conversation-Runs.
-  patient_token_used    String?
+  patient_token_used String?
 
   @@unique([case_id, sequence])
   @@index([case_id, frozen_at, sequence])
 }
 
 model CaseSession {
-  id                   String      @id @default(cuid())
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// Roheingabe / Anlass der Session (neutraler Freitext)
-  query_raw            String?
+  query_raw String?
 
   /// Grober Workflow-Status
-  stage_status         StageStatus @default(INTAKE)
+  stage_status StageStatus @default(INTAKE)
 
   /// Übersicht der Block-Zustände (JSON-Anker)
-  block_status_anchor  Json?
+  block_status_anchor Json?
 
   /// Aktive Checkpoints im aktuellen Workflow-Schritt (JSON-Anker)
-  active_checkpoints   Json?
+  active_checkpoints Json?
 
   /// Prefill- / Kontextdaten für Blöcke (JSON-Anker)
-  ctx_prefill          Json?
+  ctx_prefill Json?
 
   /// Bestätigte finale Daten der Session (JSON-Anker)
-  ctx_final            Json?
+  ctx_final Json?
 
   /// Optionale Zusammenfassung / Summary (JSON-Anker)
-  summary_anchor       Json?
+  summary_anchor Json?
 
   /// Eingefrorener M1-Aktivierungsstand bei Fallanlage (unveränderlich nach Erstellung)
-  m1_snapshot_initial  Json?
+  m1_snapshot_initial Json?
 
   /// Startmodus: "guest" (kein Patientenbezug) oder "practice" (Praxiszuordnung)
-  mode                 String?   @default("guest")
+  mode String? @default("guest")
 
   /// Optionale Patientennummer / Referenz (nur bei mode = "practice")
-  patient_reference    String?
+  patient_reference String?
 
   /// Verknüpfung zum eingeloggten Account (optional, bestehende Fälle bleiben erhalten)
-  owner_account_id     String?
-  owner_account        Account?  @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
+  owner_account_id String?
+  owner_account    Account? @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
+
+  /// Phase P1 (additiv): Verknüpfung zum Mandanten (Practice). Wird per
+  /// Backfill aus der OWNER-Membership zum bisherigen `owner_account_id`
+  /// abgeleitet. App-Logik nutzt dieses Feld in P1 noch nicht; alle
+  /// Lese-/Schreibpfade laufen weiterhin über `owner_account_id`.
+  owner_practice_id String?
+  owner_practice    Practice? @relation("CaseSessionOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: SetNull)
 
   /// Einmaliges Token für den patientenseitigen M2-Link (ohne Login)
-  m2_token             String?   @unique
+  m2_token String? @unique
 
   /// Ablaufdatum des M2-Tokens (14 Tage ab Erstellung)
-  m2_token_expires_at  DateTime?
+  m2_token_expires_at DateTime?
 
   /// Status des Patientenfragebogens: none | waiting_for_patient | skipped | completed
-  m2_status            String    @default("none")
+  m2_status String @default("none")
 
   /// Vorbereitungsweg: none | mfa | patient | skipped
-  preparation_mode     String    @default("none")
+  preparation_mode String @default("none")
 
   /// Ärztliche Bestätigung: nach Klick auf „Ärztlich bestätigt" wird M3 eingefroren.
-  doctor_confirmed     Boolean   @default(false)
+  doctor_confirmed Boolean @default(false)
 
   /// Zeitpunkt der ärztlichen Bestätigung (gesetzt zusammen mit doctor_confirmed=true).
-  doctor_confirmed_at  DateTime?
+  doctor_confirmed_at DateTime?
 
   /// Ärztlicher Workflow-Zwischenstatus: none | prepared | confirmed
   /// - "prepared" : Arzt hat in M3 vorbereitet / Lücken markiert (MFA übernimmt weiter)
   /// - "confirmed": Arzt hat M3 final geprüft (fachlicher Abschluss)
-  clinical_status      String    @default("none")
+  clinical_status String @default("none")
 
   /// Vorbereitungsdurchläufe dieses Falls. Wird in Schritt 1 noch nicht von
   /// bestehenden Routen geschrieben; siehe `lib/server/prefillRuns.ts`.
-  prefill_runs         PrefillRun[]
+  prefill_runs PrefillRun[]
 }
 
 enum InquirySessionStatus {
@@ -185,12 +208,12 @@ enum InquirySessionStatus {
 /// Vollständig isoliert von CaseSession und InquirySession.
 /// Wird über einen einmaligen, zeitlich begrenzten Token zugänglich gemacht.
 model PatientQuestionnaireSession {
-  id               String    @id @default(cuid())
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// Einmaliger Token für den Patientenlink (wird nach Einreichung auf null gesetzt)
-  token            String?   @unique
+  token String? @unique
 
   /// Ablaufzeitpunkt des Tokens
   token_expires_at DateTime?
@@ -202,7 +225,13 @@ model PatientQuestionnaireSession {
   /// gelöscht oder umgehängt werden; es gibt absichtlich kein automatisches Cascade,
   /// damit medizinisch dokumentationspflichtige Daten nicht still verschwinden.
   owner_account_id String
-  owner_account    Account  @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
+  owner_account    Account @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
+
+  /// Phase P1 (additiv): Verknüpfung zum Mandanten (Practice). Nullable in
+  /// P1, damit die Migration mit Bestandsdaten bedingungslos kompatibel ist;
+  /// `NOT NULL` folgt in P5. App-Logik nutzt dieses Feld in P1 nicht.
+  owner_practice_id String?
+  owner_practice    Practice? @relation("PatientQuestionnaireSessionOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: Restrict)
 
   /// Interne Patientenreferenz (wird nie in den Link kodiert)
   patient_reference String?
@@ -256,7 +285,7 @@ model PatientQuestionnaireSession {
 
   /// Phase 3a: Einmaliger Bestätigungs-Token für die Doppel-Opt-In-Bestätigung
   /// einer Website-Einreichung (Phase 3b). NULL für interne Sessions.
-  confirm_token            String?  @unique
+  confirm_token            String?   @unique
   /// Ablaufzeitpunkt des Bestätigungs-Tokens.
   confirm_token_expires_at DateTime?
   /// Zeitpunkt der erfolgreichen Bestätigung durch den Einreichenden.
@@ -264,11 +293,15 @@ model PatientQuestionnaireSession {
 
   /// Phase 3a: SHA-256-Hash der vom Einreichenden angegebenen E-Mail-Adresse
   /// (nie Klartext; für Spam-/Doppel-Schutz und Auditierung).
-  submitter_email_hash     String?
+  submitter_email_hash String?
 
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
   @@index([owner_account_id, createdAt])
+  /// Phase P1 (additiv): Index analog zum bestehenden Owner-Index, damit
+  /// spätere Pfad-Umstellungen ohne Schema-Touch direkt performant filtern
+  /// können. Wird in P1 noch nicht genutzt.
+  @@index([owner_practice_id, createdAt])
 }
 
 /// Phase 3a: Öffentliches Website-Fragebogen-Formular einer Praxis.
@@ -278,47 +311,60 @@ model PatientQuestionnaireSession {
 /// per direkter DB-Manipulation erzeugbar; ohne Folgephasen sind sie
 /// ohne sichtbare Wirkung.
 model PracticeQuestionnaireForm {
-  id                 String   @id @default(cuid())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// Praxis-Account, der das Formular besitzt. Pflichtfeld.
   /// onDelete: Restrict — analog zu `PatientQuestionnaireSession.owner_account`.
-  owner_account_id   String
-  owner_account      Account  @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
+  owner_account_id String
+  owner_account    Account @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
+
+  /// Phase P1 (additiv): Verknüpfung zum Mandanten (Practice). Nullable in
+  /// P1, `NOT NULL` folgt in P5. App-Logik nutzt dieses Feld in P1 nicht.
+  owner_practice_id String?
+  owner_practice    Practice? @relation("PracticeQuestionnaireFormOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: Restrict)
 
   /// Global eindeutiger URL-Slug. Wird in Phase 3b für `/p/[slug]` genutzt.
-  slug               String   @unique
+  slug String @unique
 
   /// Anzeigetitel im Formular.
-  title              String
+  title String
 
   /// Gewählte Block-IDs analog `PatientQuestionnaireSession.selected_block_ids`.
   selected_block_ids Json
 
   /// Optionaler Einleitungstext, der über dem Formular angezeigt wird.
-  intro_text         String?
+  intro_text String?
 
   /// Aktiv-Flag: ein deaktiviertes Formular ist auch in Phase 3b nicht
   /// öffentlich aufrufbar (für Phase 3a verhaltensirrelevant).
-  is_active          Boolean  @default(true)
+  is_active Boolean @default(true)
 
   patient_questionnaire_sessions PatientQuestionnaireSession[]
 
   @@index([owner_account_id, createdAt])
+  /// Phase P1 (additiv): Index analog zum bestehenden Owner-Index.
+  @@index([owner_practice_id, createdAt])
 }
 
 /// Sitzung des Anfrage-Assistenten.
 /// JSON-Felder werden bewusst verwendet, da die Checkpoint-Struktur
 /// noch in der Validierungsphase ist. Keine Einzeltabellen für Checkpoints.
 model InquirySession {
-  id String @id @default(cuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   /// Optionale Verknüpfung zum eingeloggten Account.
   owner_account_id String?
   owner_account    Account? @relation(fields: [owner_account_id], references: [id], onDelete: SetNull)
+
+  /// Phase P1 (additiv): Verknüpfung zum Mandanten (Practice). Per Backfill
+  /// aus der OWNER-Membership zum bisherigen `owner_account_id` abgeleitet.
+  /// App-Logik nutzt dieses Feld in P1 noch nicht.
+  owner_practice_id String?
+  owner_practice    Practice? @relation("InquirySessionOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: SetNull)
 
   status InquirySessionStatus @default(DRAFT)
 
@@ -350,4 +396,59 @@ model InquirySession {
 
   /// Zeitpunkt der Bestätigung (gesetzt zusammen mit status = CONFIRMED).
   confirmed_at DateTime?
+}
+
+/// Phase P1: Mandant ("Praxis"). Wird in P1 ausschließlich per Backfill aus
+/// bestehenden `Account`-Datensätzen erzeugt (1:1). Die App nutzt diese
+/// Tabelle in P1 noch nicht; Lese- und Schreibpfade laufen weiterhin über
+/// `Account`. Die Feature-Flags werden vom Account 1:1 übernommen, damit
+/// in den Folgephasen ohne Sichtbarkeitsänderung umgestellt werden kann.
+model Practice {
+  id   String @id @default(cuid())
+  /// Anzeigename. Initialer Backfill-Wert: `Account.email` (manuelle
+  /// Politur vor P3-Cutover).
+  name String
+  /// Global eindeutiger, URL-tauglicher Bezeichner. Initialer Backfill-Wert:
+  /// slugifizierte E-Mail + Kurzform der Account-Id, damit Kollisionen
+  /// strukturell ausgeschlossen sind.
+  slug String @unique
+
+  /// Carry-Over aus `Account.is_approved`. Default `false` für neue Inserts.
+  is_approved                   Boolean @default(false)
+  /// Carry-Over aus `Account.inquiry_assistant_enabled`.
+  inquiry_assistant_enabled     Boolean @default(false)
+  /// Carry-Over aus `Account.patient_communication_enabled`.
+  patient_communication_enabled Boolean @default(false)
+  /// Carry-Over aus `Account.website_forms_enabled`.
+  website_forms_enabled         Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  memberships                    PracticeMembership[]
+  case_sessions                  CaseSession[]                 @relation("CaseSessionOwnerPractice")
+  inquiry_sessions               InquirySession[]              @relation("InquirySessionOwnerPractice")
+  patient_questionnaire_sessions PatientQuestionnaireSession[] @relation("PatientQuestionnaireSessionOwnerPractice")
+  practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
+}
+
+/// Phase P1: Mitgliedschaft eines Accounts in einer Practice.
+/// Backfill legt pro Account genau eine Membership mit Rolle `OWNER` an.
+/// Pro (account, practice)-Paar darf es nur eine Rolle geben.
+model PracticeMembership {
+  id String @id @default(cuid())
+
+  account_id String
+  account    Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  practice_id String
+  practice    Practice @relation(fields: [practice_id], references: [id], onDelete: Cascade)
+
+  role PracticeRole
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([account_id, practice_id])
+  @@index([practice_id, role])
 }

@@ -132,6 +132,30 @@ Jede Phase ist **ein** PR mit klarem Rollback-Pfad. Ziel: zu jeder Zeit lauffäh
   `COUNT(*) WHERE owner_account_id IS NOT NULL AND owner_practice_id IS NULL = 0` gelten. Bei Verstoß: Migration mit `RAISE EXCEPTION` abbrechen.
 - **App-Logik bleibt unverändert.** Lesepfade laufen weiter über `owner_account_id` und Account-Flags.
 
+> **Umsetzungshinweise (Stand P1-Implementierung):**
+>
+> - Migration: `prisma/migrations/20260505000000_add_practice_and_membership/migration.sql`. Reine SQL-Migration; alle Schritte (DDL, Backfill, Verifikation) laufen in einer Transaktion (Prisma fährt jede Migration transaktional aus). Kein eigenes Migrations-Script.
+> - **Idempotenz** des Backfills:
+>   - `Practice.id` wird mit der `Account.id` (cuid, global eindeutig) befüllt; der Insert ist mit `WHERE NOT EXISTS` abgesichert.
+>   - `PracticeMembership.id` ist deterministisch (`'m_' || account.id`); ebenfalls `WHERE NOT EXISTS` pro Account.
+>   - `owner_practice_id`-Updates filtern strikt `WHERE owner_practice_id IS NULL`.
+>   - Folge: die Migration darf gefahrlos mehrfach laufen (z. B. nach Teil-Lauf in Recovery-Szenarien) und produziert keine Doppelten.
+> - **Verifikations-DO-Block** prüft sieben Invarianten (1 Membership/Account, 1 OWNER/Practice, kein Account ohne Membership, vollständiger und konsistenter Owner-Remap pro Tabelle, Slug-Eindeutigkeit, Carry-Over der Flags). Verstoß → `RAISE EXCEPTION` → automatischer Rollback der gesamten Migration.
+> - **Manuelles Re-Verify (vor und nach Deploy):** `node scripts/verify-practice-backfill.mjs` führt dieselben 13 Checks (Invarianten 1–7, Tabellen-Splits 4a–d und 5a–d) lesend aus. Exit-Code `1` bei jedem Verstoß. Skript ist read-only und kann jederzeit gefahrlos auf der Pilot-DB laufen.
+> - **Slug-Format des Backfills:** `regexp_replace(lower(email), '[^a-z0-9]+', '-', 'g')` mit gestripten Kantenstrichen, gefolgt von `-` + `substr(account.id, 1, 8)`. Das Account-Id-Suffix schließt Slug-Kollisionen strukturell aus. Für die Pilot-Praxis ist der initiale Slug bewusst nicht produkt-tauglich; manuelle Politur erfolgt vor dem P3-Cutover.
+> - **App-Verhalten:** P1 fasst keinen App-, Auth- oder UI-Code an. Bestehende Owner-Filter (`where: { owner_account_id }`), Approve-Flows und Tests bleiben unverändert; die 100 Test-Suites mit 2181 Tests bleiben grün.
+> - **Notfall-Rollback** (nur bei Bedarf, Daten bleiben erhalten):
+>   ```sql
+>   ALTER TABLE "CaseSession"                  DROP COLUMN "owner_practice_id";
+>   ALTER TABLE "InquirySession"               DROP COLUMN "owner_practice_id";
+>   ALTER TABLE "PatientQuestionnaireSession"  DROP COLUMN "owner_practice_id";
+>   ALTER TABLE "PracticeQuestionnaireForm"    DROP COLUMN "owner_practice_id";
+>   DROP TABLE "PracticeMembership";
+>   DROP TABLE "Practice";
+>   DROP TYPE  "PracticeRole";
+>   ```
+>   Anschließend Eintrag in `_prisma_migrations` für `20260505000000_add_practice_and_membership` entfernen.
+
 ### Phase P2 — Auth-Layer auf Membership umstellen
 
 - `SessionAccount` um `memberships` und `current_practice` erweitern.
