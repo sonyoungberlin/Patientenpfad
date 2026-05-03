@@ -125,13 +125,21 @@ describe("/admin/practices/[id] detail page", () => {
           id: "m-1",
           role: "OWNER",
           created_at: new Date("2025-01-01"),
-          account: { id: "acc-1", email: "owner@example.com" },
+          account: {
+            id: "acc-1",
+            email: "owner@example.com",
+            default_practice_id: null,
+          },
         },
         {
           id: "m-2",
           role: "USER",
           created_at: new Date("2025-02-01"),
-          account: { id: "acc-2", email: "user@example.com" },
+          account: {
+            id: "acc-2",
+            email: "user@example.com",
+            default_practice_id: null,
+          },
         },
       ],
     });
@@ -192,5 +200,98 @@ describe("/admin/practices/[id] detail page", () => {
     });
     const markup = renderToStaticMarkup(node);
     expect(markup).toContain("Boom");
+  });
+
+  it("Standard-Praxis: zeigt Setzen-Button für Mitglied ohne Default", async () => {
+    getCookies.mockResolvedValue(adminAccount());
+    pm.practice.findUnique.mockResolvedValue({
+      id: "p-1",
+      name: "Praxis Eins",
+      slug: "p1",
+      is_approved: true,
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled: false,
+      website_forms_enabled: false,
+      created_at: new Date("2025-01-01"),
+      memberships: [
+        {
+          id: "m-1",
+          role: "USER",
+          created_at: new Date("2025-02-01"),
+          account: {
+            id: "acc-2",
+            email: "user@example.com",
+            default_practice_id: null,
+          },
+        },
+      ],
+    });
+    const r = await runPage("p-1");
+    expect(r.markup).toMatch(
+      /<form[^>]*action="\/api\/admin\/accounts\/acc-2\/default-practice"/i,
+    );
+    expect(r.markup).toMatch(/name="action"[^>]*value="set"/);
+    expect(r.markup).toMatch(/name="practice_id"[^>]*value="p-1"/);
+    expect(r.markup).toContain("Als Standard setzen");
+    expect(r.markup).toContain("nicht gesetzt");
+  });
+
+  it("Standard-Praxis: zeigt Zurücksetzen-Button wenn diese Praxis Default ist", async () => {
+    getCookies.mockResolvedValue(adminAccount());
+    pm.practice.findUnique.mockResolvedValue({
+      id: "p-1",
+      name: "Praxis Eins",
+      slug: "p1",
+      is_approved: true,
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled: false,
+      website_forms_enabled: false,
+      created_at: new Date("2025-01-01"),
+      memberships: [
+        {
+          id: "m-1",
+          role: "USER",
+          created_at: new Date("2025-02-01"),
+          account: {
+            id: "acc-2",
+            email: "user@example.com",
+            default_practice_id: "p-1",
+          },
+        },
+      ],
+    });
+    const r = await runPage("p-1");
+    expect(r.markup).toMatch(/name="action"[^>]*value="clear"/);
+    expect(r.markup).toContain("Standard zurücksetzen");
+    expect(r.markup).toContain("diese Praxis");
+  });
+
+  it("Standard-Praxis: zeigt 'andere Praxis' wenn Default auf andere Practice zeigt", async () => {
+    getCookies.mockResolvedValue(adminAccount());
+    pm.practice.findUnique.mockResolvedValue({
+      id: "p-1",
+      name: "Praxis Eins",
+      slug: "p1",
+      is_approved: true,
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled: false,
+      website_forms_enabled: false,
+      created_at: new Date("2025-01-01"),
+      memberships: [
+        {
+          id: "m-1",
+          role: "USER",
+          created_at: new Date("2025-02-01"),
+          account: {
+            id: "acc-2",
+            email: "user@example.com",
+            default_practice_id: "p-other",
+          },
+        },
+      ],
+    });
+    const r = await runPage("p-1");
+    expect(r.markup).toContain("andere Praxis");
+    expect(r.markup).toContain("Als Standard setzen");
   });
 });

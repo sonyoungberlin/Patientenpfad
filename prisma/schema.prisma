@@ -64,6 +64,20 @@ model Account {
   /// `OWNER` befüllt. App-Logik nutzt diese Beziehung in P1 noch nicht;
   /// `owner_account_id` bleibt führend.
   memberships PracticeMembership[]
+
+  /// Option C (minimal): Standard-Praxis dieses Accounts. Reine
+  /// Auswahlhilfe für `current_practice` — gewinnt in
+  /// `pickCurrentMembership` vor OWNER und vor der ältesten Membership,
+  /// **sofern** der Account dort tatsächlich Mitglied ist. Ungültige
+  /// Werte werden in der Auswahl-Logik stillschweigend ignoriert
+  /// (Fallback auf bisheriges Verhalten). Wird ausschließlich vom
+  /// Plattform-Admin via `/admin/practices/[id]` gesetzt; es gibt
+  /// keinen Nutzer-seitigen Praxis-Wechsler. `onDelete: SetNull` schützt
+  /// vor Inkonsistenzen, falls eine Practice je gelöscht wird.
+  default_practice_id String?
+  default_practice    Practice? @relation("AccountDefaultPractice", fields: [default_practice_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([default_practice_id])
 }
 
 model Session {
@@ -430,6 +444,10 @@ model Practice {
   inquiry_sessions               InquirySession[]              @relation("InquirySessionOwnerPractice")
   patient_questionnaire_sessions PatientQuestionnaireSession[] @relation("PatientQuestionnaireSessionOwnerPractice")
   practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
+
+  /// Option C (minimal): Accounts, die diese Practice als Standard-Praxis
+  /// referenzieren. Gegenseite zu `Account.default_practice`.
+  default_for_accounts Account[] @relation("AccountDefaultPractice")
 }
 
 /// Phase P1: Mitgliedschaft eines Accounts in einer Practice.

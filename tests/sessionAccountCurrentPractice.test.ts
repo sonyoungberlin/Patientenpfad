@@ -205,6 +205,179 @@ describe("getSessionAccount: current_practice", () => {
     expect(acc!.current_practice?.id).toBe("p-old");
   });
 
+  it("Option C: default_practice_id gewinnt vor OWNER", async () => {
+    pm.session.findUnique.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60_000),
+      account: {
+        ...baseAccount,
+        default_practice_id: "p-pilot",
+        memberships: [
+          {
+            practice_id: "p-owner",
+            role: PracticeRole.OWNER,
+            created_at: new Date("2024-01-01"),
+            practice: {
+              id: "p-owner",
+              slug: "owner",
+              name: "Owner",
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+          {
+            practice_id: "p-pilot",
+            role: PracticeRole.USER,
+            created_at: new Date("2025-06-01"),
+            practice: {
+              id: "p-pilot",
+              slug: "pilot",
+              name: "Pilot",
+              is_approved: true,
+              inquiry_assistant_enabled: false,
+              patient_communication_enabled: false,
+              website_forms_enabled: false,
+            },
+          },
+        ],
+      },
+    });
+
+    const acc = await getSessionAccount(reqWithCookie());
+    expect(acc!.current_practice?.id).toBe("p-pilot");
+    expect(acc!.inquiry_assistant_enabled).toBe(false);
+  });
+
+  it("Option C: default_practice_id gewinnt vor ältester Membership", async () => {
+    pm.session.findUnique.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60_000),
+      account: {
+        ...baseAccount,
+        default_practice_id: "p-new",
+        memberships: [
+          {
+            practice_id: "p-old",
+            role: PracticeRole.USER,
+            created_at: new Date("2024-01-01"),
+            practice: {
+              id: "p-old",
+              slug: "old",
+              name: "Old",
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+          {
+            practice_id: "p-new",
+            role: PracticeRole.USER,
+            created_at: new Date("2025-06-01"),
+            practice: {
+              id: "p-new",
+              slug: "new",
+              name: "New",
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+        ],
+      },
+    });
+
+    const acc = await getSessionAccount(reqWithCookie());
+    expect(acc!.current_practice?.id).toBe("p-new");
+  });
+
+  it("Option C: ungültiger default_practice_id wird ignoriert → OWNER greift", async () => {
+    pm.session.findUnique.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60_000),
+      account: {
+        ...baseAccount,
+        default_practice_id: "p-ghost", // keine passende Membership
+        memberships: [
+          {
+            practice_id: "p-owner",
+            role: PracticeRole.OWNER,
+            created_at: new Date("2024-01-01"),
+            practice: {
+              id: "p-owner",
+              slug: "owner",
+              name: "Owner",
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+          {
+            practice_id: "p-user",
+            role: PracticeRole.USER,
+            created_at: new Date("2025-06-01"),
+            practice: {
+              id: "p-user",
+              slug: "user",
+              name: "User",
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+        ],
+      },
+    });
+
+    const acc = await getSessionAccount(reqWithCookie());
+    expect(acc!.current_practice?.id).toBe("p-owner");
+  });
+
+  it("Option C: ungültiger default ohne OWNER → älteste greift", async () => {
+    pm.session.findUnique.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60_000),
+      account: {
+        ...baseAccount,
+        default_practice_id: "p-ghost",
+        memberships: [
+          {
+            practice_id: "p-new",
+            role: PracticeRole.ADMIN,
+            created_at: new Date("2025-06-01"),
+            practice: {
+              id: "p-new",
+              slug: "new",
+              name: "New",
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+          {
+            practice_id: "p-old",
+            role: PracticeRole.USER,
+            created_at: new Date("2024-01-01"),
+            practice: {
+              id: "p-old",
+              slug: "old",
+              name: "Old",
+              is_approved: true,
+              inquiry_assistant_enabled: true,
+              patient_communication_enabled: true,
+              website_forms_enabled: true,
+            },
+          },
+        ],
+      },
+    });
+
+    const acc = await getSessionAccount(reqWithCookie());
+    expect(acc!.current_practice?.id).toBe("p-old");
+  });
+
   it("abgelaufene Session liefert null und löscht den Token (Regression)", async () => {
     pm.session.findUnique.mockResolvedValue({
       expiresAt: new Date(Date.now() - 1000),
