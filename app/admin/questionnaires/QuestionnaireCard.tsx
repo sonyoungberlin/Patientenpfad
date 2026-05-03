@@ -49,7 +49,6 @@ export default function QuestionnaireCard({
 }: QuestionnaireCardProps) {
   return (
     <div
-      key={id}
       className="card"
       data-q-session={id}
       style={{ display: "grid", gap: "0.5rem" }}
