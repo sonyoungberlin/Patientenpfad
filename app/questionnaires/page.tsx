@@ -9,6 +9,7 @@ import {
   deriveDisplayStatus,
 } from "@/lib/questionnaire/displayStatus";
 import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
+import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 
 export default async function QuestionnairesPage() {
@@ -20,7 +21,11 @@ export default async function QuestionnairesPage() {
   const sessions = await prisma.patientQuestionnaireSession.findMany({
     where: {
       AND: [
-        { owner_account_id: account.id },
+        // Phase P3b: Filter über `owner_practice_id` (mit Fallback auf
+        // `owner_account_id`, wenn der Account keine `current_practice`
+        // hat). Mehrere Accounts derselben Praxis sehen damit dieselbe
+        // Liste.
+        getOwnershipFilter(account),
         // Phase 3d: Website-Sessions erst sichtbar, wenn bestätigt.
         // Interne Sessions bleiben unverändert sichtbar.
         PRACTICE_VISIBLE_SESSION_FILTER,

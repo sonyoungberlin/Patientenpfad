@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
-import { canSeeQuestionnaire, requirePatientCommunicationAccess } from "@/lib/authz";
+import { requirePatientCommunicationAccess } from "@/lib/authz";
+import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 
@@ -19,6 +20,7 @@ export async function GET(
     select: {
       id: true,
       owner_account_id: true,
+      owner_practice_id: true,
       status: true,
       patient_reference: true,
       submitted_at: true,
@@ -38,7 +40,7 @@ export async function GET(
     });
   }
 
-  if (!canSeeQuestionnaire(account, session)) {
+  if (!ownsSession(account, session)) {
     return new Response(JSON.stringify({ ok: false, error: "Keine Berechtigung." }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
