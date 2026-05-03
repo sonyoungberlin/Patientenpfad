@@ -85,9 +85,29 @@ Bei jedem Vercel-Build läuft via `vercel-build`-Script:
 prisma migrate deploy && next build
 ```
 
-Dabei wird `DIRECT_DATABASE_URL` aus `DATABASE_URL` abgeleitet (siehe
-`package.json`). Das gilt für Production **und** Preview – ausstehende
-Migrationen werden also bei jedem Deploy angewendet.
+`prisma migrate deploy` nutzt dabei **`DIRECT_DATABASE_URL`** direkt aus der
+Vercel-Environment (siehe `prisma/schema.prisma` → `directUrl`). Das gilt für
+Production **und** Preview – ausstehende Migrationen werden also bei jedem
+Deploy angewendet.
+
+#### Neon / Vercel-Postgres-Mapping (Pflicht)
+
+Neon bzw. Vercel-Postgres stellt automatisch `POSTGRES_PRISMA_URL` (pooled)
+und `POSTGRES_URL_NON_POOLING` (direct) bereit. Das Projekt erwartet aber die
+stabilen Namen aus `prisma/schema.prisma`. In den Vercel Environment Variables
+muss daher für jede Umgebung (Production, Preview, Development) gesetzt sein:
+
+- `DATABASE_URL` = Wert von `POSTGRES_PRISMA_URL` (pooled, für Runtime-Queries)
+- `DIRECT_DATABASE_URL` = Wert von `POSTGRES_URL_NON_POOLING` (direct, für
+  `prisma migrate deploy`)
+- Beide URLs sollen den Query-Parameter `connect_timeout=15` enthalten, damit
+  Neon-Compute-Instanzen nach einem Scale-to-zero genug Zeit zum Aufwachen
+  haben (verhindert `P1001`-Fehler).
+
+`vercel-build` nutzt diese Environment-Variablen direkt; `DIRECT_DATABASE_URL`
+darf **nicht** auf `DATABASE_URL` überschrieben werden – sonst läuft
+`prisma migrate deploy` über den Pooler und schlägt fehl. Die vollständige
+Doku liegt in [`.env.example`](./.env.example).
 
 ### Manuell (z. B. wenn eine Migration ohne Deploy nachgezogen werden muss)
 
