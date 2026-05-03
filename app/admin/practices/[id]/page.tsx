@@ -34,6 +34,8 @@ type SearchParams = Promise<{
   error?: string | string[];
   added?: string | string[];
   toggled?: string | string[];
+  defaultSet?: string | string[];
+  defaultCleared?: string | string[];
 }>;
 
 export default async function AdminPracticeDetailPage({
@@ -66,7 +68,13 @@ export default async function AdminPracticeDetailPage({
           id: true,
           role: true,
           created_at: true,
-          account: { select: { id: true, email: true } },
+          account: {
+            select: {
+              id: true,
+              email: true,
+              default_practice_id: true,
+            },
+          },
         },
         orderBy: [{ role: "asc" }, { created_at: "asc" }],
       },
@@ -80,6 +88,12 @@ export default async function AdminPracticeDetailPage({
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
   const addedEmail = Array.isArray(sp.added) ? sp.added[0] : sp.added;
   const toggledFlag = Array.isArray(sp.toggled) ? sp.toggled[0] : sp.toggled;
+  const defaultSetEmail = Array.isArray(sp.defaultSet)
+    ? sp.defaultSet[0]
+    : sp.defaultSet;
+  const defaultClearedEmail = Array.isArray(sp.defaultCleared)
+    ? sp.defaultCleared[0]
+    : sp.defaultCleared;
 
   const flags = [
     "is_approved",
@@ -111,6 +125,16 @@ export default async function AdminPracticeDetailPage({
       {toggledFlag && (
         <p role="status" style={{ color: "#0a6", marginBottom: "1rem" }}>
           {FLAG_LABEL[toggledFlag] ?? toggledFlag} wurde aktualisiert.
+        </p>
+      )}
+      {defaultSetEmail && (
+        <p role="status" style={{ color: "#0a6", marginBottom: "1rem" }}>
+          Standard-Praxis für {defaultSetEmail} wurde gesetzt.
+        </p>
+      )}
+      {defaultClearedEmail && (
+        <p role="status" style={{ color: "#0a6", marginBottom: "1rem" }}>
+          Standard-Praxis für {defaultClearedEmail} wurde zurückgesetzt.
         </p>
       )}
 
@@ -185,6 +209,9 @@ export default async function AdminPracticeDetailPage({
           }}
         >
           Rollenwechsel und Entfernen von Mitgliedern sind nicht möglich.
+          „Standard-Praxis“ legt fest, in welche Praxis dieser Account beim
+          Login springt — nur Practices, in denen der Account Mitglied ist,
+          sind zulässig.
         </p>
         <table>
           <thead>
@@ -192,19 +219,80 @@ export default async function AdminPracticeDetailPage({
               <th>E-Mail</th>
               <th>Rolle</th>
               <th>Beigetreten</th>
+              <th>Standard-Praxis</th>
+              <th>Aktion</th>
             </tr>
           </thead>
           <tbody>
-            {practice.memberships.map((m) => (
-              <tr key={m.id}>
-                <td>{m.account.email}</td>
-                <td>{ROLE_LABEL[m.role]}</td>
-                <td>{new Date(m.created_at).toLocaleDateString("de-DE")}</td>
-              </tr>
-            ))}
+            {practice.memberships.map((m) => {
+              const isDefault = m.account.default_practice_id === practice.id;
+              const hasOtherDefault =
+                !isDefault && Boolean(m.account.default_practice_id);
+              const setAction = `/api/admin/accounts/${m.account.id}/default-practice`;
+              return (
+                <tr key={m.id}>
+                  <td>{m.account.email}</td>
+                  <td>{ROLE_LABEL[m.role]}</td>
+                  <td>{new Date(m.created_at).toLocaleDateString("de-DE")}</td>
+                  <td data-default-practice={m.account.email}>
+                    {isDefault ? (
+                      <strong>✓ diese Praxis</strong>
+                    ) : hasOtherDefault ? (
+                      <span className="text-muted">andere Praxis</span>
+                    ) : (
+                      <span className="text-muted">nicht gesetzt</span>
+                    )}
+                  </td>
+                  <td
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {isDefault ? (
+                      <form method="POST" action={setAction}>
+                        <input type="hidden" name="action" value="clear" />
+                        <input
+                          type="hidden"
+                          name="redirect_practice_id"
+                          value={practice.id}
+                        />
+                        <button
+                          type="submit"
+                          data-default-clear={m.account.email}
+                        >
+                          Standard zurücksetzen
+                        </button>
+                      </form>
+                    ) : (
+                      <form method="POST" action={setAction}>
+                        <input type="hidden" name="action" value="set" />
+                        <input
+                          type="hidden"
+                          name="practice_id"
+                          value={practice.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="redirect_practice_id"
+                          value={practice.id}
+                        />
+                        <button
+                          type="submit"
+                          data-default-set={m.account.email}
+                        >
+                          Als Standard setzen
+                        </button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {practice.memberships.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-muted">
+                <td colSpan={5} className="text-muted">
                   Keine Mitglieder.
                 </td>
               </tr>

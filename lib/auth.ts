@@ -55,11 +55,16 @@ export type SessionAccount = {
 };
 
 /**
- * Phase P2: Wählt aus den Memberships eines Accounts die "aktuelle" Practice.
- * Strategie:
- *   1. OWNER-Membership (nach P1-Backfill genau eine pro Account).
- *   2. Falls keine OWNER existiert: erste Membership nach `created_at`.
- *   3. Falls keine Membership existiert: `null` → Top-Level-Flags fallen auf
+ * Phase P2 + Option C: Wählt aus den Memberships eines Accounts die
+ * "aktuelle" Practice.
+ * Strategie (Reihenfolge):
+ *   1. `default_practice_id` (Option C, vom Plattform-Admin gesetzt) —
+ *      **nur** wenn der Account dort tatsächlich Mitglied ist. Ungültige
+ *      Defaults (z. B. nach Membership-Korrekturen) werden stillschweigend
+ *      ignoriert; das Verhalten fällt dann auf 2./3. zurück.
+ *   2. OWNER-Membership (nach P1-Backfill genau eine pro Account).
+ *   3. Falls keine OWNER existiert: erste Membership nach `created_at`.
+ *   4. Falls keine Membership existiert: `null` → Top-Level-Flags fallen auf
  *      die Account-Werte zurück (Sicherheitsnetz für nicht-migrierte Edge
  *      Cases und für Test-Doubles, die `memberships` weglassen).
  */
@@ -80,8 +85,14 @@ type LoadedMembership = {
 
 function pickCurrentMembership(
   memberships: LoadedMembership[],
+  defaultPracticeId: string | null | undefined,
 ): LoadedMembership | null {
   if (!memberships || memberships.length === 0) return null;
+  if (defaultPracticeId) {
+    const def = memberships.find((m) => m.practice_id === defaultPracticeId);
+    if (def) return def;
+    // Ungültiger Default → ignorieren, weiter zur OWNER-/ältesten-Heuristik.
+  }
   const owner = memberships.find((m) => m.role === PracticeRole.OWNER);
   if (owner) return owner;
   const sorted = [...memberships].sort(
@@ -105,6 +116,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
           inquiry_assistant_enabled: true,
           patient_communication_enabled: true,
           website_forms_enabled: true,
+          default_practice_id: true,
           memberships: {
             select: {
               practice_id: true,
@@ -143,7 +155,11 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
     ? ((account as unknown as { memberships: LoadedMembership[] }).memberships)
     : [];
 
-  const picked = pickCurrentMembership(loadedMemberships);
+  const picked = pickCurrentMembership(
+    loadedMemberships,
+    (account as { default_practice_id?: string | null }).default_practice_id ??
+      null,
+  );
   const current_practice: SessionPractice | null = picked
     ? {
         id: picked.practice.id,
