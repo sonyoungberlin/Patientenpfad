@@ -31,6 +31,13 @@ model Account {
   email       String   @unique
   is_approved Boolean  @default(false)
   is_admin    Boolean  @default(false)
+
+  /// Passwort-Hash im kompakten Format `scrypt$N$r$p$saltBase64$hashBase64`
+  /// (siehe `lib/password.ts`). NULL bedeutet: Account hat (noch) kein
+  /// Passwort gesetzt; Login schlägt für solche Accounts neutral mit
+  /// „E-Mail oder Passwort ungültig" fehl. Klartext-Passwörter werden niemals
+  /// gespeichert oder geloggt.
+  password_hash String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

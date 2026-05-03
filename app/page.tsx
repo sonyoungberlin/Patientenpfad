@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { ActiveCheckpointMultiSelect, CaseMode, M1BlockStatus, M1Selection } from "@/lib/types";
 import {
   getCreateSuccessRedirectPath,
@@ -11,6 +10,7 @@ import {
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
+import AppShell from "@/components/AppShell";
 import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
 
 const INITIAL_SELECTION: M1Selection = {
@@ -58,10 +58,12 @@ export default function HomePage() {
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   // Registration state
   const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
   const [regSuccess, setRegSuccess] = useState(false);
@@ -80,23 +82,30 @@ export default function HomePage() {
   async function handleLogin() {
     setLoginLoading(true);
     setLoginError(null);
-    console.log("[handleLogin] start", { loginEmail });
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail }),
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       });
       const data = await res.json();
-      console.log("[handleLogin] response", { status: res.status, data });
       if (!res.ok || !data.ok) {
         setLoginError((data.error as string | undefined) ?? "Login fehlgeschlagen.");
         return;
       }
       setAccount(data.account as AccountInfo);
       setLoginEmail("");
-    } catch (err) {
-      console.error("[handleLogin] Netzwerkfehler", err);
+      setLoginPassword("");
+      // Nach erfolgreichem Login → Dashboard. `router.refresh()` aktualisiert
+      // anschliessend die Server-Components (z. B. AppShell), die den neuen
+      // Cookie sehen muessen.
+      const target =
+        typeof data.redirectTo === "string" && data.redirectTo.startsWith("/")
+          ? data.redirectTo
+          : "/dashboard";
+      router.push(target);
+      router.refresh();
+    } catch {
       setLoginError("Netzwerkfehler");
     } finally {
       setLoginLoading(false);
@@ -107,23 +116,21 @@ export default function HomePage() {
     setRegLoading(true);
     setRegError(null);
     setRegSuccess(false);
-    console.log("[handleRegister] start", { regEmail });
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: regEmail }),
+        body: JSON.stringify({ email: regEmail, password: regPassword }),
       });
       const data = await res.json();
-      console.log("[handleRegister] response", { status: res.status, data });
       if (!res.ok || !data.ok) {
         setRegError((data.error as string | undefined) ?? "Registrierung fehlgeschlagen.");
         return;
       }
       setRegSuccess(true);
       setRegEmail("");
-    } catch (err) {
-      console.error("[handleRegister] Netzwerkfehler", err);
+      setRegPassword("");
+    } catch {
       setRegError("Netzwerkfehler");
     } finally {
       setRegLoading(false);
@@ -305,6 +312,18 @@ export default function HomePage() {
                 style={{ marginTop: "0.5rem" }}
               />
             </div>
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label htmlFor="reg_password">Passwort (mind. 10 Zeichen)</label>
+              <input
+                id="reg_password"
+                type="password"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={10}
+                style={{ marginTop: "0.5rem" }}
+              />
+            </div>
             <button
               className="btn-primary"
               onClick={handleRegister}
@@ -335,6 +354,18 @@ export default function HomePage() {
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
               placeholder="name@beispiel.de"
+              autoComplete="username"
+              style={{ marginTop: "0.5rem" }}
+            />
+          </div>
+          <div style={{ marginTop: "0.5rem" }}>
+            <label htmlFor="login_password">Passwort</label>
+            <input
+              id="login_password"
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              autoComplete="current-password"
               style={{ marginTop: "0.5rem" }}
             />
           </div>
@@ -371,52 +402,9 @@ export default function HomePage() {
 
   return (
     <>
-      <nav className="app-nav">
-        <Link href="/cases">← Zur Fallübersicht</Link>
-      </nav>
       <main>
       {/* Account-Bar */}
-      <div className="account-bar">
-        <span className="account-email">{account.email}</span>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <button
-            type="button"
-            onClick={() => router.push("/demo/arzt")}
-            style={{ fontSize: "0.875rem" }}
-          >
-            Arzt-Demo ansehen
-          </button>
-          {(account.inquiry_assistant_enabled || account.is_admin) && (
-            <button
-              type="button"
-              onClick={() => router.push("/inquiries")}
-              style={{ fontSize: "0.875rem" }}
-            >
-              Praxis Kommunikation
-            </button>
-          )}
-          {account.patient_communication_enabled && (
-            <button
-              type="button"
-              onClick={() => router.push("/questionnaires")}
-              style={{ fontSize: "0.875rem" }}
-            >
-              Fragebögen
-            </button>
-          )}
-          {account.patient_communication_enabled &&
-            account.website_forms_enabled && (
-              <button
-                type="button"
-                onClick={() => router.push("/website-forms")}
-                style={{ fontSize: "0.875rem" }}
-              >
-                Website-Formulare
-              </button>
-            )}
-          <button onClick={handleLogout}>Abmelden</button>
-        </div>
-      </div>
+      <AppShell account={account} onLogout={handleLogout} />
       <h1>Liegt genug Information vor, damit der Arzt direkt entscheiden kann?</h1>
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         „Wissen wir genug über die Situation – nicht, ob sie gut oder schlecht ist?"

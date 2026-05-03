@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import AppShell from "@/components/AppShell";
 
 export default function QuestionnairesLayout({
   children,
@@ -8,10 +8,7 @@ export default function QuestionnairesLayout({
 }) {
   return (
     <>
-      <nav className="app-nav">
-        <Link href="/cases">← Zur Fallübersicht</Link>
-        <Link href="/">Neuer Fall</Link>
-      </nav>
+      <AppShell />
       {children}
     </>
   );
