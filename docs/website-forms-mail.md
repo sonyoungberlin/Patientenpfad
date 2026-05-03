@@ -1,11 +1,10 @@
 # Website-Forms — Mail-Transport (`MAIL_TRANSPORT`)
 
-Phase 3d. Diese Doku beschreibt die ENV-Variable `MAIL_TRANSPORT`, das aktuelle
-Verhalten des Mail-Layers und die Begründung, warum SMTP in dieser
-Hardening-Phase **bewusst nicht** aktiviert wird.
+Diese Doku beschreibt die ENV-Variable `MAIL_TRANSPORT`, das Verhalten des
+Mail-Layers und die SMTP-Konfiguration für den Produktivbetrieb.
 
-Source of Truth ist `lib/mail/sendWebsiteFormConfirmationEmail.ts`. Diese Doku
-darf von dort nicht abweichen.
+Source of Truth ist `lib/mail/sendWebsiteFormConfirmationEmail.ts` zusammen
+mit `lib/mail/smtpTransport.ts`. Diese Doku darf von dort nicht abweichen.
 
 ---
 
@@ -24,11 +23,27 @@ Patientin diese Bestätigungs-URL zuzustellen.
 
 | Wert      | Verhalten                                                                                                                                                                                                                                          |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `console` | Default. Es wird **keine** echte E-Mail versendet. Stattdessen schreibt der Server einen `console.info`-Eintrag mit Empfänger, Subject und Bestätigungs-URL. Geeignet für Dev, Test und Pilotbetrieb mit Log-Zugriff.                              |
-| _andere_  | Identisches Verhalten wie `console`, zusätzlich eine Warnung im Server-Log (`[mail] Unbekannter MAIL_TRANSPORT="…" – fällt auf console zurück.`). Defensives Fallback, damit ein Tippfehler oder ein nicht-gepatchter Deploy keinen Stillstand erzeugt. |
+| `console` | Default. Auch aktiv, wenn die Variable nicht gesetzt oder explizit `console` ist. Es wird **keine** echte E-Mail versendet. Stattdessen schreibt der Server einen `console.info`-Eintrag mit Empfänger, Subject und Bestätigungs-URL. Geeignet für Dev und Test. |
+| `smtp`    | Versendet eine echte E-Mail über einen SMTP-Server. Erfordert die SMTP-Variablen (siehe unten). Bei fehlender oder ungültiger Konfiguration wird **geworfen** — es gibt **keinen** stillen Fallback auf `console`.                                |
+| _andere_  | Defensives Fallback: identisches Verhalten wie `console`, zusätzlich eine Warnung im Server-Log (`[mail] Unbekannter MAIL_TRANSPORT="…" – fällt auf console zurück.`).                                                                            |
 
-Es gibt in Phase 3d **keinen** echten SMTP- oder HTTP-Transport. Siehe Abschnitt
-[„SMTP-Entscheidung"](#smtp-entscheidung).
+## SMTP-Konfiguration
+
+Wird ausschließlich gelesen, wenn `MAIL_TRANSPORT=smtp` gesetzt ist.
+
+| Variable      | Pflicht | Beschreibung                                                                |
+| ------------- | ------- | --------------------------------------------------------------------------- |
+| `SMTP_HOST`   | ja      | Hostname des SMTP-Servers (z. B. `smtp.example.com`).                       |
+| `SMTP_PORT`   | ja      | TCP-Port als Integer (typisch `465` für TLS, `587` für STARTTLS).           |
+| `SMTP_USER`   | ja      | SMTP-Login.                                                                 |
+| `SMTP_PASS`   | ja      | SMTP-Passwort. Geheim. Niemals loggen, niemals committen.                   |
+| `SMTP_FROM`   | ja      | Absenderadresse (Header `From`), idealerweise mit Display-Name.             |
+| `SMTP_SECURE` | nein    | `"true"`/`"1"`/`"yes"` → impliziertes TLS (Port 465). Default `false` → STARTTLS. |
+
+Validiert wird beim Mailversand (nicht beim App-Boot), damit der
+Console-Default unbeeinträchtigt bleibt. Fehlt eine Pflichtvariable oder ist
+`SMTP_PORT` ungültig, wird `SmtpConfigError` mit der Liste der Schlüssel
+(NICHT der Werte) geworfen.
 
 ## Daten in der Mail
 
@@ -46,11 +61,15 @@ Bewusst **nicht** in der Mail enthalten:
 - keine personenbezogenen Daten außerhalb der Empfänger-Adresse selbst.
 
 Auch im `console`-Log werden **nur** Empfänger, Subject und URL geloggt — keine
-Antworten, keine DB-IDs, keine Hashes.
+Antworten, keine DB-IDs, keine Hashes. Im strukturierten
+`[website-form/submit]`-Log des Submit-Endpoints werden **weder Empfänger
+noch Bestätigungs-URL noch SMTP-Passwort** ausgegeben.
 
 ## Operatives Verhalten bei Fehlern
 
-Wenn `sendWebsiteFormConfirmationEmail(...)` fehlschlägt, gilt:
+Wenn `sendWebsiteFormConfirmationEmail(...)` fehlschlägt — egal ob durch
+fehlende SMTP-Konfiguration, Netz-/Auth-Fehler oder unerreichbaren Server —
+gilt unverändert:
 
 - die Session bleibt in der DB als `awaiting_email_confirmation`,
 - der Submit-Endpoint loggt den Fehler strukturiert
@@ -67,49 +86,38 @@ ein erneuter Versand würde einen neuen Token + manuell mitgegebene
 Empfängeradresse benötigen und damit zwingend ein neues Feature darstellen.
 Patient:innen, die keine Mail erhalten, müssen das Formular erneut absenden.
 
-## SMTP-Entscheidung
+## Vercel-Setup
 
-Stand Phase 3d: **SMTP wird nicht aktiviert. Default `console` bleibt.**
+In Vercel → Project → Settings → Environment Variables anlegen, jeweils für
+die Environments **Production** (und ggf. **Preview**):
 
-Begründung:
+1. `MAIL_TRANSPORT` = `smtp` (Plain).
+2. `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_FROM` als Plain-Variablen.
+3. `SMTP_PASS` als **Sensitive**/Secret-Variable hinterlegen, damit der Wert
+   nach dem Speichern nicht mehr im Klartext angezeigt wird.
+4. `SMTP_SECURE` optional setzen (`true` für Port 465, sonst weglassen).
 
-- Phase 3d wurde explizit als „Mail-Layer minimal halten, console-Default"
-  geplant. Ein echter SMTP-Transport wäre ein neues Produktfeature und damit
-  außerhalb des Scopes einer reinen Review-/Hardening-Phase.
-- Echtes SMTP bringt eigene Betriebsthemen mit, die nicht nebenbei in einer
-  Hardening-Phase entschieden werden sollten:
-  - Provider-Auswahl und Vertrag (AVV nach DSGVO),
-  - Secrets-Handling (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, …),
-  - Domain-Reputation (SPF, DKIM, DMARC),
-  - Bounce-/Complaint-Handling,
-  - Logging-Sensitivität (Empfänger-Adresse darf nicht in Log-Aggregatoren
-    landen, die nicht datenschutzkonform betrieben werden).
-- Für einen kontrollierten Pilotbetrieb mit einer Testpraxis genügt
-  `MAIL_TRANSPORT=console`, sofern jemand operativ Zugriff auf die Server-Logs
-  hat und die Bestätigungs-URL bei Bedarf manuell zustellt — alternativ wird
-  der Pilotbetrieb so lange ausgesetzt, bis SMTP in einer eigenen Phase als
-  Feature eingeführt wird.
+Anschließend einmal neu deployen, damit die Variablen in der Laufzeit aktiv
+sind. Validierung im Betrieb:
 
-### Offene Punkte für eine spätere SMTP-Aktivierung
+- Ein Test-Submit auf einem aktiven Website-Form auslösen.
+- In den Vercel-Function-Logs nach `[website-form/submit]` mit
+  `outcome=success` suchen.
+- Bei `outcome=mail_failed` enthält das Log eine kurze `detail`-Message
+  (Klasse + Provider-Fehlertext, ohne Empfänger/Token/Passwort).
 
-Diese Liste ist nicht Teil von Phase 3d, sondern Vorbereitung für eine künftige
-Phase:
+Hinweise zum Produktivbetrieb:
 
-- ENV-Schema für SMTP (`MAIL_TRANSPORT=smtp`, `SMTP_HOST`, `SMTP_PORT`,
-  `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`).
-- Auswahl einer Mail-Library (z. B. `nodemailer`) und Sicherheitsprüfung
-  (Versionspinning, Vulnerability-Check).
-- Entscheidung Header-`From`/`Reply-To` (Praxis-Adresse vs. Plattform-Adresse).
-- Fehler-Klassen: temporärer Bounce vs. permanenter Bounce vs. Throttling —
-  und was davon den Submit-Endpoint sehen darf (Empfehlung: nichts, Logs
-  reichen).
-- Datenschutz-Folgenabschätzung für die Speicherung der Empfängeradresse beim
-  Provider.
-- Erst dann ggf. ein dediziertes Resend-/Retry-Verfahren.
+- Auswahl des Providers mit AVV nach DSGVO erforderlich.
+- SPF/DKIM/DMARC für die Absender-Domain einrichten, damit Bestätigungs-Mails
+  nicht im Spam landen.
+- Bei Limits/Throttling des Providers: Submit-Endpoint sieht ohnehin nur
+  „mail_failed" und behält die Session — kein Datenverlust.
 
 ## Verweise
 
 - Code: [`lib/mail/sendWebsiteFormConfirmationEmail.ts`](../lib/mail/sendWebsiteFormConfirmationEmail.ts)
+- SMTP-Transport: [`lib/mail/smtpTransport.ts`](../lib/mail/smtpTransport.ts)
 - Submit-Endpoint: [`app/api/p/[slug]/submit/route.ts`](../app/api/p/%5Bslug%5D/submit/route.ts)
 - Confirm-Route: [`app/p/confirm/[token]/page.tsx`](../app/p/confirm/%5Btoken%5D/page.tsx)
 - Cleanup-Skript: [`scripts/cleanup-unconfirmed-website-submits.mjs`](../scripts/cleanup-unconfirmed-website-submits.mjs)

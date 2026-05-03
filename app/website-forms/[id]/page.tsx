@@ -10,9 +10,9 @@
  * Phase-3b-Scope:
  *   - Bearbeiten (Titel, Slug, Intro, Block-Auswahl, Aktiv-Flag)
  *   - Aktiv-Toggle als separates Mini-Form (`action: "toggle_active"`)
- *   - Anzeige des öffentlichen Links inkl. Hinweis-Box auf den
- *     Vorschau-Modus (Phase 3c: Seite ist erreichbar, Absenden noch nicht
- *     aktiv).
+ *   - Anzeige des öffentlichen Links inkl. Hinweis-Box, dass der Patient
+ *     nach dem Absenden den Link in der Bestätigungs-E-Mail bestätigen
+ *     muss, bevor der Eingang in der Fragebogenliste erscheint.
  *   - **Kein** Löschen.
  */
 
@@ -99,8 +99,9 @@ export default async function WebsiteFormDetailPage({
             marginBottom: "0.5rem",
           }}
         >
-          Vorschau-Modus: Die öffentliche Formularseite ist erreichbar, das
-          Absenden ist aber noch nicht aktiv.
+          Öffentliche Formularseite ist aktiv. Nach dem Absenden muss der
+          Patient den Link in der Bestätigungs-E-Mail anklicken, erst dann
+          erscheint der Eingang in der Fragebogenliste.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <input

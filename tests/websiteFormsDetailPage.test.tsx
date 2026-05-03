@@ -136,8 +136,8 @@ describe("/website-forms/[id] detail page", () => {
     const r = await runPage();
     expect(r.markup).toContain("Mein Formular");
     expect(r.markup).toContain("https://praxis.example.com/p/mein-formular");
-    expect(r.markup).toContain("Vorschau-Modus");
-    expect(r.markup).toContain("Absenden ist aber noch nicht aktiv");
+    expect(r.markup).toContain("Öffentliche Formularseite ist aktiv");
+    expect(r.markup).toContain("Bestätigungs-E-Mail");
     expect(r.markup).toContain('action="/api/website-forms/form-1"');
     // Toggle-Form vorhanden
     expect(r.markup).toContain('value="toggle_active"');

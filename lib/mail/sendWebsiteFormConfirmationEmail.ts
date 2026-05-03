@@ -1,24 +1,33 @@
 /**
- * Phase 3d: Minimaler Mail-Layer für die Bestätigungs-E-Mail eines
- * öffentlichen Website-Form-Submits.
+ * Mail-Layer für die Bestätigungs-E-Mail eines öffentlichen
+ * Website-Form-Submits.
  *
  * Eine einzige öffentliche Funktion: {@link sendWebsiteFormConfirmationEmail}.
  * Transport-Auswahl per ENV `MAIL_TRANSPORT`:
  *
- *   - `console` (Default, auch in Tests): loggt Empfänger, Subject und die
- *     Bestätigungs-URL über `console.info`. So lassen sich Submit-/Confirm-
- *     Flows lokal vollständig durchspielen, ohne externen Provider.
- *   - alle anderen Werte: gleiches Verhalten wie `console`, zusätzlich eine
- *     Warnung. Ein echter SMTP-/HTTP-Transport kann später ergänzt werden,
- *     ohne dass sich die Aufrufer ändern.
+ *   - `console` (Default, auch in Tests, sowie wenn die Variable nicht
+ *     gesetzt ist): loggt Empfänger, Subject und die Bestätigungs-URL über
+ *     `console.info`. So lassen sich Submit-/Confirm-Flows lokal vollständig
+ *     durchspielen, ohne externen Provider.
+ *   - `smtp`: versendet eine echte E-Mail via Nodemailer. Konfiguration über
+ *     `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+ *     (Pflicht) und `SMTP_SECURE` (optional). Bei fehlender oder ungültiger
+ *     Konfiguration WIRD GEWORFEN — es gibt KEINEN stillen Fallback auf
+ *     `console`, damit eine fehlerhafte Produktiv-Konfiguration sichtbar
+ *     wird.
+ *   - andere Werte: defensives Fallback auf `console` mit Warnung im Log.
  *
  * Mailfehler dürfen **nicht** dazu führen, dass die bereits angelegte
  * Session gelöscht wird; der Aufrufer (Submit-Endpoint) loggt den Fehler
- * und liefert eine generische Antwort. Diese Funktion wirft daher nur in
- * tatsächlichen Implementierungs-/Programmierfehlern.
+ * und liefert eine generische Antwort.
  */
 
-export type MailTransport = "console";
+import {
+  readSmtpConfigFromEnv,
+  sendViaSmtp,
+} from "@/lib/mail/smtpTransport";
+
+export type MailTransport = "console" | "smtp";
 
 export type WebsiteFormConfirmationMailInput = {
   to: string;
@@ -29,6 +38,7 @@ export type WebsiteFormConfirmationMailInput = {
 function selectTransport(): MailTransport {
   const raw = process.env.MAIL_TRANSPORT?.trim().toLowerCase();
   if (!raw || raw === "console") return "console";
+  if (raw === "smtp") return "smtp";
   // Unbekannter Transport → defensives Fallback auf console.
   console.warn(
     `[mail] Unbekannter MAIL_TRANSPORT="${raw}" – fällt auf console zurück.`,
@@ -69,8 +79,15 @@ export async function sendWebsiteFormConfirmationEmail(
     return;
   }
 
-  // Sollte nicht erreichbar sein, da selectTransport() immer "console"
-  // zurückgibt. Verhindert nur exhaustive-Lücken bei späteren Transporten.
+  if (transport === "smtp") {
+    // readSmtpConfigFromEnv wirft bei fehlender/ungültiger Config — der
+    // Aufrufer (Submit-Endpoint) behandelt den Fehler in seinem
+    // mail_failed-Pfad. Bewusst KEIN Fallback auf console.
+    const cfg = readSmtpConfigFromEnv();
+    await sendViaSmtp(cfg, { to: input.to, subject, text });
+    return;
+  }
+
   const exhaustive: never = transport;
   throw new Error(`Unsupported MAIL_TRANSPORT: ${String(exhaustive)}`);
 }
