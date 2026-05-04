@@ -38,6 +38,16 @@ model Account {
   /// „E-Mail oder Passwort ungültig" fehl. Klartext-Passwörter werden niemals
   /// gespeichert oder geloggt.
   password_hash String?
+
+  /// Einmal-Token für „Passwort setzen per Link"-Flow.
+  /// Wird vom Endpoint `POST /api/auth/request-password-setup` erzeugt
+  /// (`crypto.randomBytes`, hex-kodiert) und vom Endpoint
+  /// `POST /api/auth/set-password` konsumiert (Token + Expiry werden nach
+  /// erfolgreichem Setzen auf NULL gesetzt). NULL bedeutet: kein offener
+  /// Setup-Link. Der Klartext-Token wird ausschließlich per Mail an die
+  /// E-Mail-Adresse des Accounts versandt — niemals geloggt.
+  password_reset_token   String?   @unique
+  password_reset_expires DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
