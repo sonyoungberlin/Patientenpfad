@@ -21,8 +21,13 @@ jest.mock("@/lib/mail/sendPasswordSetupEmail", () => ({
   sendPasswordSetupEmail: jest.fn().mockResolvedValue("console"),
 }));
 
+jest.mock("@/lib/auth", () => ({
+  getSessionAccount: jest.fn().mockResolvedValue(null),
+}));
+
 import { prisma } from "@/lib/prisma";
 import { sendPasswordSetupEmail } from "@/lib/mail/sendPasswordSetupEmail";
+import { getSessionAccount } from "@/lib/auth";
 import { POST as requestHandler } from "@/app/api/auth/request-password-setup/route";
 import { POST as setPasswordHandler } from "@/app/api/auth/set-password/route";
 import { verifyPassword, MIN_PASSWORD_LENGTH } from "@/lib/password";
@@ -35,6 +40,35 @@ type PrismaMock = {
 };
 const pm = prisma as unknown as PrismaMock;
 const mailMock = sendPasswordSetupEmail as jest.Mock;
+const sessionMock = getSessionAccount as jest.Mock;
+
+function asAdmin() {
+  sessionMock.mockResolvedValue({
+    id: "admin-1",
+    email: "admin@example.com",
+    is_admin: true,
+    is_approved: true,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: false,
+    website_forms_enabled: false,
+    current_practice: null,
+    memberships: [],
+  });
+}
+
+function asNonAdmin() {
+  sessionMock.mockResolvedValue({
+    id: "user-1",
+    email: "user@example.com",
+    is_admin: false,
+    is_approved: true,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: false,
+    website_forms_enabled: false,
+    current_practice: null,
+    memberships: [],
+  });
+}
 
 function jsonRequest(url: string, body: unknown): NextRequest {
   return new NextRequest(url, {
@@ -46,6 +80,8 @@ function jsonRequest(url: string, body: unknown): NextRequest {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Default: kein Session-Cookie / nicht-Admin-Caller (Public-Verhalten).
+  sessionMock.mockResolvedValue(null);
 });
 
 // ---------------------------------------------------------------------------
@@ -141,8 +177,128 @@ describe("POST /api/auth/request-password-setup", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
+    // Nicht-Admin-Caller: Antwort enthält weder delivery noch setupUrl.
+    expect(json.delivery).toBeUndefined();
+    expect(json.setupUrl).toBeUndefined();
     // Token wurde trotzdem persistiert; nächster Aufruf überschreibt ihn.
     expect(pm.account.update).toHaveBeenCalledTimes(1);
+  });
+
+  // -------------------------------------------------------------------------
+  // Admin-Fallback (MAIL_TRANSPORT=practice_only)
+  // -------------------------------------------------------------------------
+
+  it("Admin: Mailfehler (z. B. practice_only) → delivery 'manual' inkl. setupUrl", async () => {
+    asAdmin();
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "user@example.com",
+    });
+    pm.account.update.mockResolvedValue({});
+    mailMock.mockRejectedValueOnce(
+      new Error(
+        "MAIL_TRANSPORT=practice_only: Account-Passwort-Setup-Mail nicht möglich.",
+      ),
+    );
+
+    const res = await requestHandler(
+      jsonRequest("http://localhost/api/auth/request-password-setup", {
+        email: "user@example.com",
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(json.delivery).toBe("manual");
+    expect(typeof json.setupUrl).toBe("string");
+    expect(json.setupUrl).toContain("/account/set-password?token=");
+
+    // Token aus der DB muss in der setupUrl auftauchen — keine Eigen-Generierung
+    // im UI / per Magic-String.
+    const updateArgs = pm.account.update.mock.calls[0][0];
+    const data = updateArgs.data as { password_reset_token: string };
+    expect(json.setupUrl).toContain(data.password_reset_token);
+  });
+
+  it("Admin: erfolgreicher Mailversand → delivery 'email' ohne setupUrl", async () => {
+    asAdmin();
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "user@example.com",
+    });
+    pm.account.update.mockResolvedValue({});
+
+    const res = await requestHandler(
+      jsonRequest("http://localhost/api/auth/request-password-setup", {
+        email: "user@example.com",
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ ok: true, delivery: "email" });
+    expect(json.setupUrl).toBeUndefined();
+  });
+
+  it("Admin: nicht existierender Account → delivery 'none', kein DB-Write, kein setupUrl", async () => {
+    asAdmin();
+    pm.account.findUnique.mockResolvedValue(null);
+
+    const res = await requestHandler(
+      jsonRequest("http://localhost/api/auth/request-password-setup", {
+        email: "ghost@example.com",
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ ok: true, delivery: "none" });
+    expect(json.setupUrl).toBeUndefined();
+    expect(pm.account.update).not.toHaveBeenCalled();
+    expect(mailMock).not.toHaveBeenCalled();
+  });
+
+  it("Nicht-Admin: erhält trotz Mailfehler KEIN setupUrl und KEIN delivery (anti-enumeration)", async () => {
+    asNonAdmin();
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "user@example.com",
+    });
+    pm.account.update.mockResolvedValue({});
+    mailMock.mockRejectedValueOnce(
+      new Error(
+        "MAIL_TRANSPORT=practice_only: Account-Passwort-Setup-Mail nicht möglich.",
+      ),
+    );
+
+    const res = await requestHandler(
+      jsonRequest("http://localhost/api/auth/request-password-setup", {
+        email: "user@example.com",
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ ok: true });
+    expect(json.setupUrl).toBeUndefined();
+    expect(json.delivery).toBeUndefined();
+  });
+
+  it("Nicht-Admin: nicht existierender Account → generisches { ok: true } (keine Enumeration)", async () => {
+    asNonAdmin();
+    pm.account.findUnique.mockResolvedValue(null);
+
+    const res = await requestHandler(
+      jsonRequest("http://localhost/api/auth/request-password-setup", {
+        email: "ghost@example.com",
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    // Nicht-Admin sieht KEIN delivery-Feld — sonst wäre das ein Enumerations-Channel.
+    expect(json).toEqual({ ok: true });
   });
 });
 
