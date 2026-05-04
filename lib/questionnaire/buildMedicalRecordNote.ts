@@ -2,12 +2,28 @@
  * Erzeugt einen kompakten, kopierbaren Krankenblatt-Text für eine
  * PatientQuestionnaireSession.
  *
+ * Aufbau analog zur PDF-Struktur:
+ *   - Iteriert über `selected_block_ids` und sortiert die Blöcke nach
+ *     `BLOCK_CATALOG[id].displayOrder` (gleiche Reihenfolge wie das PDF).
+ *   - Pro Block wird `block.label` als Überschrift ausgegeben und über
+ *     `block.questionIds` iteriert.
+ *   - Doppelte questionIds werden blockübergreifend mit einem `seen`-Set
+ *     übersprungen (gleiche Regel wie `buildQuestionnaireQuestions`).
+ *   - Werte werden mit kurzen Labels aus `SHORT_LABELS` ausgegeben; für
+ *     nicht gemappte IDs wird auf `QUESTION_CATALOG[id].text` zurück­
+ *     gefallen.
+ *
  * Regeln:
- * - Maximal 5–10 Zeilen
- * - Nur Felder mit Wert werden ausgegeben
- * - Keine medizinische Bewertung, keine Empfehlung
- * - Lange Freitexte werden auf eine Zeile (max. 80 Zeichen) gekürzt
+ *   - Nur Felder mit Wert werden ausgegeben.
+ *   - Newlines in Textarea-Werten (insbesondere ADDRESS_POSTAL) bleiben
+ *     erhalten und werden als Folgezeilen unterhalb des Labels emittiert.
+ *   - Pro Zeile werden Inhalte > {@link MAX_LINE_LENGTH} Zeichen mit „…"
+ *     abgeschnitten – Mehrzeiligkeit wird dabei nicht zerstört.
+ *   - Keine medizinische Bewertung, keine Empfehlung.
+ *   - Keine HTML-Ausgabe, nur Plaintext.
  */
+
+import { BLOCK_CATALOG, QUESTION_CATALOG } from "./blockCatalog";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -16,31 +32,125 @@ export type MedicalRecordNoteInput = {
   identity_gate_completed_at?: Date | null;
 };
 
-const MAX_FREETEXT_LENGTH = 80;
+const MAX_LINE_LENGTH = 80;
 
-function truncate(value: string): string {
-  const singleLine = value.replace(/\s*\n\s*/g, " ").trim();
-  if (singleLine.length <= MAX_FREETEXT_LENGTH) return singleLine;
-  return singleLine.slice(0, MAX_FREETEXT_LENGTH - 1) + "…";
+/**
+ * Kurz-Labels für die Krankenblatt-Ausgabe. Diese sind bewusst von
+ * `QUESTION_CATALOG[id].text` (Patientenformulierung) entkoppelt, damit
+ * der Krankenblatt-Text knapp lesbar bleibt. Für IDs ohne Eintrag wird
+ * auf die lange Patientenfrage zurückgefallen.
+ */
+const SHORT_LABELS: Record<string, string> = {
+  // Identität
+  IDENTITY_FIRST_NAME: "Vorname",
+  IDENTITY_LAST_NAME: "Nachname",
+  IDENTITY_BIRTHDATE: "Geburtsdatum",
+  IDENTITY_INSURANCE_TYPE: "Versicherungsart",
+
+  // Kontakt
+  CONTACT_PHONE: "Tel.",
+  CONTACT_EMAIL: "E-Mail",
+  CONTACT_DOCTOLIB: "Doctolib",
+
+  // Adresse
+  ADDRESS_POSTAL: "Adresse",
+
+  // Kurzanamnese
+  ANAMNESE_GP: "Hausarzt",
+  ANAMNESE_HEIGHT: "Größe",
+  ANAMNESE_WEIGHT: "Gewicht",
+  ANAMNESE_CHRONIC: "Chronische Erkrankungen",
+  ANAMNESE_HEREDITARY: "Erbkrankheiten",
+  ANAMNESE_ALLERGIES: "Allergien",
+  ANAMNESE_MEDICATIONS: "Medikamente",
+  ANAMNESE_SMOKING: "Rauchen",
+  ANAMNESE_ALCOHOL: "Alkohol",
+  ANAMNESE_SUBSTANCES: "Sonstige Substanzen",
+  ANAMNESE_VACCINATION: "Impfstatus bekannt",
+
+  // Arbeitsunfähigkeit
+  AU_SYMPTOMS: "Beschwerden",
+  AU_START_DATE: "Beginn",
+  AU_END_DATE: "AU bis",
+  AU_IS_FOLLOWUP: "Folge-AU",
+
+  // Rezept
+  PRESCRIPTION_TYPE: "Rezeptart",
+  PRESCRIPTION_MEDICATION: "Medikament",
+  PRESCRIPTION_REPEAT_KNOWN: "Bekannte Dauermedikation",
+
+  // Überweisung
+  REF_SPECIALTY: "Fachrichtung",
+  REF_DOCTOR_NAME: "Facharzt",
+  REF_ADDRESS: "Adresse Facharzt",
+  REF_APPOINTMENT_EXISTS: "Termin vorhanden",
+  REF_APPOINTMENT_DATE: "Termin",
+  REF_REASON: "Grund",
+
+  // Krankenhauseinweisung
+  HOSP_ADMISSION_REASON: "Anlass",
+  HOSP_ADMISSION_IS_CONTROL: "Kontrolltermin",
+  HOSP_ADMISSION_DATE: "Termin",
+  HOSP_TRANSPORT_NEEDED: "Krankentransport benötigt",
+  HOSP_TRANSPORT_REASON: "Grund Transport",
+
+  // Krankenbeförderung
+  TRANSPORT_NEEDED: "Beförderung benötigt",
+  TRANSPORT_DESTINATION: "Ziel",
+  TRANSPORT_REASON: "Grund",
+  TRANSPORT_MOBILITY: "Einschränkung",
+  TRANSPORT_DATE: "Datum",
+};
+
+/**
+ * Werte-Transformationen pro questionId. Wird aktuell nur für die
+ * historisch erwartete Title-Case-Ausgabe von `AU_IS_FOLLOWUP`
+ * verwendet ("ja" → "Ja"). Andere Felder werden 1:1 ausgegeben –
+ * die Patientenangabe ist die Wahrheit.
+ */
+const VALUE_TRANSFORMS: Record<string, Record<string, string>> = {
+  AU_IS_FOLLOWUP: { ja: "Ja", nein: "Nein" },
+};
+
+function truncateLine(value: string): string {
+  if (value.length <= MAX_LINE_LENGTH) return value;
+  return value.slice(0, MAX_LINE_LENGTH - 1) + "…";
 }
 
-function val(answers: Record<string, string>, id: string): string {
-  return (answers[id] ?? "").trim();
+function getLabel(questionId: string): string {
+  return SHORT_LABELS[questionId] ?? QUESTION_CATALOG[questionId]?.text ?? questionId;
 }
 
-function present(answers: Record<string, string>, id: string): boolean {
-  return val(answers, id) !== "";
-}
-
-function addLine(lines: string[], label: string, value: string): void {
-  const trimmed = truncate(value);
-  if (trimmed !== "") {
-    lines.push(`${label}: ${trimmed}`);
-  }
+function transformValue(questionId: string, raw: string): string {
+  const transform = VALUE_TRANSFORMS[questionId];
+  if (transform && raw in transform) return transform[raw];
+  return raw;
 }
 
 /**
- * Erzeugt einen kompakten Krankenblatt-Notiz-Text.
+ * Zerlegt einen Antwort-Wert in eine erste „Label: …"-Zeile plus
+ * optionale Folgezeilen (für Mehrzeilen-Textarea-Felder wie
+ * ADDRESS_POSTAL). Liefert ein leeres Array, wenn nach dem Trim
+ * nichts übrigbleibt.
+ */
+function renderQuestionLines(questionId: string, rawValue: string): string[] {
+  const transformed = transformValue(questionId, rawValue);
+  const parts = transformed
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+  if (parts.length === 0) return [];
+
+  const label = getLabel(questionId);
+  const lines: string[] = [`${label}: ${truncateLine(parts[0])}`];
+  for (let i = 1; i < parts.length; i++) {
+    lines.push(truncateLine(parts[i]));
+  }
+  return lines;
+}
+
+/**
+ * Erzeugt einen blockbasierten Krankenblatt-Notiz-Text.
  *
  * @param input - answers + selected_block_ids einer PatientQuestionnaireSession
  * @returns Ein String, Zeilen getrennt mit \n
@@ -52,13 +162,9 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const hasAU = blockIds.has("ARBEITSUNFAEHIGKEIT");
   const hasRezept = blockIds.has("REZEPT");
   const hasUeberweisung = blockIds.has("UEBERWEISUNG");
-  const hasKurzanamnese = blockIds.has("KURZANAMNESE");
-  const hasKontakt = blockIds.has("KONTAKT");
-  const hasAdresse = blockIds.has("ADRESSE");
-  const hasHospitalAdmission = blockIds.has("HOSPITAL_ADMISSION");
-  const hasTransport = blockIds.has("TRANSPORT");
+  const hasIdentitaet = blockIds.has("IDENTITAET");
 
-  // --- Titel ---
+  // --- Titel (unverändert zur bisherigen Logik) ---
   let title: string;
   if (hasAU && !hasRezept && !hasUeberweisung) {
     title = "AU-Anfrage (digital)";
@@ -70,98 +176,37 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
   const lines: string[] = [title];
 
-  // --- AU ---
-  if (hasAU) {
-    addLine(lines, "Beschwerden", val(answers, "AU_SYMPTOMS"));
-    addLine(lines, "Beginn", val(answers, "AU_START_DATE"));
-    addLine(lines, "AU bis", val(answers, "AU_END_DATE"));
-    const followup = val(answers, "AU_IS_FOLLOWUP");
-    if (followup !== "") {
-      const followupLabels: Record<string, string> = { ja: "Ja", nein: "Nein" };
-      addLine(lines, "Folge-AU", followupLabels[followup] ?? followup);
+  // --- Blöcke nach displayOrder iterieren ---
+  const sortedBlocks = input.selected_block_ids
+    .filter((id, idx, arr) => arr.indexOf(id) === idx) // Block-IDs eindeutig
+    .filter((id) => id in BLOCK_CATALOG)
+    .map((id) => BLOCK_CATALOG[id])
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+
+  const seenQuestionIds = new Set<string>();
+
+  for (const block of sortedBlocks) {
+    const blockLines: string[] = [];
+    for (const questionId of block.questionIds) {
+      if (seenQuestionIds.has(questionId)) continue;
+      seenQuestionIds.add(questionId);
+      if (!(questionId in QUESTION_CATALOG)) continue;
+      const raw = (answers[questionId] ?? "").trim();
+      if (raw === "") continue;
+      blockLines.push(...renderQuestionLines(questionId, raw));
     }
+    if (blockLines.length === 0) continue;
+    // Leerzeile als optischer Block-Trenner.
+    lines.push("");
+    lines.push(block.label);
+    lines.push(...blockLines);
   }
 
-  // --- Rezept ---
-  if (hasRezept) {
-    addLine(lines, "Rezeptart", val(answers, "PRESCRIPTION_TYPE"));
-    addLine(lines, "Medikament", val(answers, "PRESCRIPTION_MEDICATION"));
-  }
-
-  // --- Überweisung ---
-  if (hasUeberweisung) {
-    addLine(lines, "Fachrichtung", val(answers, "REF_SPECIALTY"));
-    addLine(lines, "Facharzt", val(answers, "REF_DOCTOR_NAME"));
-    addLine(lines, "Adresse Facharzt", val(answers, "REF_ADDRESS"));
-    addLine(lines, "Termin vorhanden", val(answers, "REF_APPOINTMENT_EXISTS"));
-    addLine(lines, "Termin", val(answers, "REF_APPOINTMENT_DATE"));
-    addLine(lines, "Grund", val(answers, "REF_REASON"));
-  }
-
-  // --- Krankenhauseinweisung ---
-  if (hasHospitalAdmission) {
-    const hospLines: string[] = [];
-    addLine(hospLines, "Anlass", val(answers, "HOSP_ADMISSION_REASON"));
-    addLine(hospLines, "Kontrolltermin", val(answers, "HOSP_ADMISSION_IS_CONTROL"));
-    addLine(hospLines, "Termin", val(answers, "HOSP_ADMISSION_DATE"));
-    if (hospLines.length > 0) {
-      lines.push("Krankenhauseinweisung");
-      lines.push(...hospLines);
-    }
-  }
-
-  // --- Krankenbeförderung ---
-  if (hasTransport) {
-    const transportLines: string[] = [];
-    addLine(transportLines, "Beförderung benötigt", val(answers, "TRANSPORT_NEEDED"));
-    addLine(transportLines, "Ziel", val(answers, "TRANSPORT_DESTINATION"));
-    addLine(transportLines, "Grund", val(answers, "TRANSPORT_REASON"));
-    addLine(transportLines, "Einschränkung", val(answers, "TRANSPORT_MOBILITY"));
-    addLine(transportLines, "Datum", val(answers, "TRANSPORT_DATE"));
-    if (transportLines.length > 0) {
-      lines.push("Krankenbeförderung");
-      lines.push(...transportLines);
-    }
-  }
-
-  // --- Kurzanamnese ---
-  if (hasKurzanamnese) {
-    const kurzLines: string[] = [];
-    addLine(kurzLines, "Hausarzt", val(answers, "ANAMNESE_GP"));
-    const height = val(answers, "ANAMNESE_HEIGHT");
-    const weight = val(answers, "ANAMNESE_WEIGHT");
-    if (height && weight) {
-      kurzLines.push(`Größe/Gewicht: ${height} / ${weight}`);
-    } else if (height) {
-      kurzLines.push(`Größe: ${height}`);
-    } else if (weight) {
-      kurzLines.push(`Gewicht: ${weight}`);
-    }
-    addLine(kurzLines, "Chronische Erkrankungen", val(answers, "ANAMNESE_CHRONIC"));
-    addLine(kurzLines, "Allergien", val(answers, "ANAMNESE_ALLERGIES"));
-    addLine(kurzLines, "Medikamente", val(answers, "ANAMNESE_MEDICATIONS"));
-    if (kurzLines.length > 0) {
-      lines.push("Kurzanamnese");
-      lines.push(...kurzLines);
-    }
-  }
-
-  // --- Kontakt / Adresse ---
-  const contactLines: string[] = [];
-  if (hasKontakt) {
-    addLine(contactLines, "Tel.", val(answers, "CONTACT_PHONE"));
-    addLine(contactLines, "E-Mail", val(answers, "CONTACT_EMAIL"));
-    addLine(contactLines, "Doctolib", val(answers, "CONTACT_DOCTOLIB"));
-  }
-  if (hasAdresse) {
-    addLine(contactLines, "Adresse", val(answers, "ADDRESS_POSTAL"));
-  }
-  if (contactLines.length > 0) {
-    lines.push("Kontakt/Adresse");
-    lines.push(...contactLines);
-  }
-
-  if (input.identity_gate_completed_at) {
+  // Fallback-Sonderzeile: nur ausgeben, wenn der IDENTITAET-Block nicht
+  // Teil des Fragebogens war (sonst würde die Sonderzeile mit den
+  // tatsächlichen Identitätsfeldern konkurrieren).
+  if (!hasIdentitaet && input.identity_gate_completed_at) {
+    lines.push("");
     lines.push("Identitätsabfrage erfolgt");
   }
 
