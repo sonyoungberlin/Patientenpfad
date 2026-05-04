@@ -3169,11 +3169,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bei der Durchsicht Ihrer Unterlagen ist uns etwas aufgefallen.",
+        "Sie waren kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
     },
     textByAudience: {
       contact_person:
-        "Bei der Durchsicht der Unterlagen Ihrer Angehörigen / Ihres Angehörigen ist uns etwas aufgefallen.",
+        "Ihre Angehörige / Ihr Angehöriger war kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
     },
   },
 
