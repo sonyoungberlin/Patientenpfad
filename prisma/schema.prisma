@@ -472,6 +472,15 @@ model Practice {
   smtp_from_name      String?
   smtp_updated_at     DateTime?
 
+  /// Freitext-Signatur für Nachrichten (max. 300 Zeichen, praxis-bezogen).
+  /// Wird per UI im Praxis-Admin-Bereich (`/practice/signature`) bearbeitet
+  /// (Berechtigung: OWNER/ADMIN); USER der Praxis dürfen sie lesen, damit
+  /// sie in den Fall-Flows (M2/M3) automatisch an Patientennachrichten
+  /// angehängt werden kann.
+  /// Backfill: pro Practice aus `Account.message_signature` der OWNER-,
+  /// sonst ADMIN-, sonst ältesten Membership übernommen.
+  message_signature String?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

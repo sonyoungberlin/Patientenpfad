@@ -598,7 +598,7 @@ export function M3ChecklistClient({
                   className="text-muted text-small"
                   style={{ marginTop: "0.25rem", marginBottom: 0 }}
                 >
-                  Bitte hinterlegen Sie zuerst eine Signatur in der Fallübersicht.
+                  Bitte hinterlegen Sie zuerst eine Signatur unter Praxis &gt; Signatur.
                 </p>
               )}
             </div>

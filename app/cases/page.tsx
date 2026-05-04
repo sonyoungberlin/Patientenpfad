@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import SignatureSection from "./SignatureSection";
 import CaseListClient, { type CaseListItem } from "./CaseListClient";
 
 const MAX_CASES_PER_PAGE = 50;
@@ -99,7 +98,6 @@ export default async function CasesPage() {
   return (
     <main>
       <h1>Fälle</h1>
-      <SignatureSection />
       <div style={{ marginTop: "1rem", display: "grid", gap: "0.75rem" }}>
         <CaseListClient cases={cases} />
       </div>

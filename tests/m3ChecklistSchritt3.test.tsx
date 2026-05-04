@@ -22,13 +22,14 @@ jest.mock("@/lib/auth", () => ({
     id: "acc-test",
     email: "test@example.com",
     is_approved: true,
+    current_practice: { id: "prac-test" },
   }),
 }));
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     caseSession: { findUnique: jest.fn(), update: jest.fn() },
-    account: { findUnique: jest.fn() },
+    practice: { findUnique: jest.fn() },
   },
 }));
 
@@ -46,7 +47,7 @@ import { getFrozenRuns } from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: { findUnique: jest.Mock; update: jest.Mock };
-  account: { findUnique: jest.Mock };
+  practice: { findUnique: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
 const getFrozenRunsMock = getFrozenRuns as unknown as jest.Mock;
@@ -77,7 +78,7 @@ function setupCase(activeCheckpoints: ActiveCheckpoint[]) {
     doctor_confirmed: false,
     clinical_status: "none",
   });
-  pm.account.findUnique.mockResolvedValue({ message_signature: null });
+  pm.practice.findUnique.mockResolvedValue({ message_signature: null });
 }
 
 function setRuns(
@@ -106,7 +107,7 @@ function setRuns(
 describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
   beforeEach(() => {
     pm.caseSession.findUnique.mockReset();
-    pm.account.findUnique.mockReset();
+    pm.practice.findUnique.mockReset();
     getFrozenRunsMock.mockReset();
     getFrozenRunsMock.mockResolvedValue([]);
   });
@@ -203,7 +204,7 @@ describe("M3 Schritt 3 – PrefillRuns-Anzeige", () => {
       doctor_confirmed: false,
       clinical_status: "none",
     });
-    pm.account.findUnique.mockResolvedValue({ message_signature: null });
+    pm.practice.findUnique.mockResolvedValue({ message_signature: null });
     setRuns([
       {
         id: "only-run",

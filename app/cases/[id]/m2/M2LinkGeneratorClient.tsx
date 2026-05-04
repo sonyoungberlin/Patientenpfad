@@ -25,7 +25,7 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
   const [copiedMessage, setCopiedMessage] = useState(false);
 
   useEffect(() => {
-    fetch("/api/account/signature")
+    fetch("/api/practice/signature")
       .then((r) => r.json())
       .then((data: { ok?: boolean; signature?: string }) => {
         if (data.ok) {

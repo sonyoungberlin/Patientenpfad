@@ -17,6 +17,7 @@ jest.mock("@/lib/auth", () => ({
     id: "acc-test",
     email: "test@example.com",
     is_approved: true,
+    current_practice: { id: "prac-test" },
   }),
 }));
 
@@ -26,7 +27,7 @@ jest.mock("@/lib/prisma", () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
-    account: {
+    practice: {
       findUnique: jest.fn(),
     },
   },
@@ -52,7 +53,7 @@ type PrismaMock = {
     findUnique: jest.Mock;
     update: jest.Mock;
   };
-  account: {
+  practice: {
     findUnique: jest.Mock;
   };
 };
@@ -86,19 +87,19 @@ const oCheckpoint: ActiveCheckpoint = {
 describe("M3 Checkliste", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
-    prismaMock.account.findUnique.mockReset();
+    prismaMock.practice.findUnique.mockReset();
     getFrozenRunsMock.mockReset();
     getFrozenRunsMock.mockResolvedValue([]);
     getOpenRunMock.mockReset();
     getOpenRunMock.mockResolvedValue(null);
     // Default: keine Signatur hinterlegt
-    prismaMock.account.findUnique.mockResolvedValue({ message_signature: null });
+    prismaMock.practice.findUnique.mockResolvedValue({ message_signature: null });
   });
 
   function setupCase(data: { active_checkpoints?: ActiveCheckpoint[]; ctx_prefill?: unknown; m2_status?: string; preparation_mode?: string; doctor_confirmed?: boolean; clinical_status?: string }, opts?: { signature?: string }) {
     prismaMock.caseSession.findUnique.mockResolvedValue({ owner_account_id: "acc-test", ...data });
     if (opts?.signature !== undefined) {
-      prismaMock.account.findUnique.mockResolvedValue({ message_signature: opts.signature });
+      prismaMock.practice.findUnique.mockResolvedValue({ message_signature: opts.signature });
     }
   }
 
@@ -536,7 +537,7 @@ describe("M3 Checkliste", () => {
     // Button muss disabled sein
     expect(markup).toContain('disabled=""');
     expect(markup).toContain("data-signature-hint");
-    expect(markup).toContain("Bitte hinterlegen Sie zuerst eine Signatur in der Fallübersicht.");
+    expect(markup).toContain("Bitte hinterlegen Sie zuerst eine Signatur unter Praxis &gt; Signatur.");
   });
 
   it("zeigt 'Nachricht kopieren'-Button aktiv wenn Signatur vorhanden", async () => {

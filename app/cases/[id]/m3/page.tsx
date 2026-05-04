@@ -40,17 +40,24 @@ export default async function M3Page({
     redirect("/");
   }
 
-  // Signatur accountbezogen laden (für „Nachricht kopieren"-Button)
+  // Signatur praxis-bezogen laden (für „Nachricht kopieren"-Button).
+  // Quelle: `Practice.message_signature` der aktuellen Practice des
+  // eingeloggten Accounts. Vor dem Account→Practice-Cleanup-Migration
+  // (PR 2) bleibt `Account.message_signature` zwar bestehen, wird hier
+  // aber nicht mehr gelesen.
   let messageSignature = "";
-  try {
-    const acct = await prisma.account.findUnique({
-      where: { id: account.id },
-      select: { message_signature: true },
-    });
-    messageSignature = acct?.message_signature ?? "";
-  } catch {
-    // column may not exist yet if migration has not been applied
-    messageSignature = "";
+  const currentPracticeId = account.current_practice?.id;
+  if (currentPracticeId) {
+    try {
+      const pr = await prisma.practice.findUnique({
+        where: { id: currentPracticeId },
+        select: { message_signature: true },
+      });
+      messageSignature = pr?.message_signature ?? "";
+    } catch {
+      // Spalte existiert ggf. noch nicht (Migration nicht angewendet)
+      messageSignature = "";
+    }
   }
 
   const checkpoints = ensureAlwaysPresentCheckpoints(

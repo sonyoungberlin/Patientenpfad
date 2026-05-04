@@ -114,7 +114,10 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       { label: "Fragebogen-Posteingang", href: "/questionnaires" },
     );
   } else if (isPractice) {
-    sectionItems.push({ label: "Praxis", href: "/practice/members" });
+    sectionItems.push(
+      { label: "Mitglieder", href: "/practice/members" },
+      { label: "Signatur", href: "/practice/signature" },
+    );
   } else if (isWebsiteForms && account.website_forms_enabled) {
     sectionItems.push(
       { label: "Fragebogen-Posteingang", href: "/questionnaires" },
