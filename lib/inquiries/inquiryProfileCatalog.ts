@@ -68,7 +68,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_FOLLOWUP_REQUIRES_VISIT",
       "DIGITAL_REQUEST",
       "DIGITAL_REQUEST_PROCESSING_TIME",
-      "DIGITAL_REQUEST_REQUIRED",
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "CARE_CHANNEL_CHOICE",
       "CONTROL_APPOINTMENT_RECOMMENDED",
@@ -85,9 +84,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       DIGITAL_REQUEST_PROCESSING_TIME: {
         showWhenAny: [{ AU_DIGITAL_AU_PROCESS: "YES" }, { AU_NO_APPOINTMENT_ACUTE: "YES" }],
-      },
-      DIGITAL_REQUEST_REQUIRED: {
-        hideWhenAny: [],
       },
       ACUTE_OPEN_CONSULTATION_ACTION: {
         showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
@@ -258,14 +254,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
-      "DIGITAL_REQUEST_REQUIRED",
     ],
     boundActionConditions: {
       E_RECIPE_USE: {
         showWhenAny: [{ PRESCRIPTION_STATUTORY_POSSIBLE: "YES" }],
-      },
-      DIGITAL_REQUEST_REQUIRED: {
-        hideWhenAny: [],
       },
     },
     globalHints: {},
@@ -975,7 +967,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
-      "DIGITAL_REQUEST_REQUIRED",
     ],
     boundActionConditions: {
       // REF_ORIGINAL_VS_PDF: immer in M3 anzeigen, ohne M2-Schalter.
@@ -986,9 +977,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // REF_BOOKING_CODE_PROCESS: nur anzeigen, wenn Hausarztvermittlungsfall (mit Buchungscode).
       REF_BOOKING_CODE_PROCESS: {
         showWhenAny: [{ REF_HAV_CASE: "YES" }],
-      },
-      DIGITAL_REQUEST_REQUIRED: {
-        hideWhenAny: [],
       },
     },
     availableActionIds: [
@@ -1135,14 +1123,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     boundActionCheckpointIds: [
-      "DIGITAL_REQUEST_REQUIRED",
       "CONTROL_APPOINTMENT_RECOMMENDED",
       "TRANSPORT_QUESTIONNAIRE_REQUEST",
     ],
     boundActionConditions: {
-      DIGITAL_REQUEST_REQUIRED: {
-        hideWhenAny: [],
-      },
       CONTROL_APPOINTMENT_RECOMMENDED: {
         hideWhenAny: [],
       },
@@ -1969,16 +1953,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECHNICAL_ISSUE",
     ],
     boundActionCheckpointIds: [
-      "DIGITAL_REQUEST_REQUIRED",
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
       "DOCUMENT_UPLOAD",
       "PAYMENT_ONSITE_INFO",
     ],
     boundActionConditions: {
-      DIGITAL_REQUEST_REQUIRED: {
-        hideWhenAny: [],
-      },
       DIGITAL_REQUEST: {
         showWhenAny: [{ MEDICAL_DOCUMENT_INFO_MISSING: "YES" }],
       },

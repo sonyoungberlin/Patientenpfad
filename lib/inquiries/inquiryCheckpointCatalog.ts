@@ -1278,6 +1278,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * @deprecated Fachlich überholt: Fragebögen werden inzwischen direkt versendet,
+   * der Checkpoint wird nicht mehr automatisch in Profilen gebunden.
+   * Definition bleibt vorerst im Katalog, um historische Datensätze und Referenzen
+   * (z. B. PRESCRIPTION_EXCLUSIVE_ACTIONS, M3_HIDDEN_BOUND_ACTION_IDS) intakt zu halten.
+   */
   DIGITAL_REQUEST_REQUIRED: {
     id: "DIGITAL_REQUEST_REQUIRED",
     label: "Digitale Anfrage zur Prüfung erforderlich",
