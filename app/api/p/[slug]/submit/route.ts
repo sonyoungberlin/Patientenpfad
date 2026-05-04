@@ -275,6 +275,19 @@ export async function POST(
       deduplicatedQuestions,
     );
 
+    // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld spiegeln.
+    // Falls der KONTAKT-Block (oder ein anderer Block, der CONTACT_EMAIL
+    // enthält) aktiv ist, würde sonst dieselbe E-Mail-Adresse zweimal
+    // erfragt. Wir übernehmen serverseitig die bereits validierte
+    // Bestätigungs-E-Mail; eine ggf. abweichende oder leere Eingabe im
+    // unteren CONTACT_EMAIL-Feld wird damit überschrieben. Single Source
+    // of Truth ist `emailCheck.email` (normalisiert/lowercased).
+    // Hinweis: Gilt nur für den öffentlichen `/p/[slug]`-Submit; der
+    // Token-Flow `/q/[token]` bleibt unberührt.
+    if (deduplicatedQuestions.some((q) => q.id === "CONTACT_EMAIL")) {
+      sanitizedAnswers["CONTACT_EMAIL"] = emailCheck.email;
+    }
+
     // 9. Bestätigungs-Token erzeugen.
     const token = generateConfirmToken();
 
