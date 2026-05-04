@@ -1426,6 +1426,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_CANCEL_OR_RESCHEDULE",
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
+      "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
       "APPOINTMENT_DATA_INCOMPLETE",
     ],
     boundGlobalCheckpointIds: [],
@@ -1442,6 +1443,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_BOOK_CHECKUP_SECOND",
       "APPOINTMENT_BOOK_CHRONIC_CONTROL",
       "APPOINTMENT_BOOK_GENERAL",
+      "DOCUMENT_UPLOAD",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
@@ -1458,6 +1460,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       APPOINTMENT_BOOK_CHRONIC_CONTROL: {
         showWhenAny: [{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [{ APPOINTMENT_EXTERNAL_FINDING_PRESENT: "YES" }],
       },
     },
 

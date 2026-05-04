@@ -2274,6 +2274,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_EXTERNAL_FINDING_PRESENT: {
+    id: "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
+    label: "Befundbesprechung zu externem Befund",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_EXTERNAL_FINDING_PRESENT-Q1", text: "Soll die Befundbesprechung zu einem externen Befund erfolgen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Befundbesprechung soll zu einem externen Befund (z. B. Facharzt, Krankenhaus) erfolgen. Die Unterlagen müssen vor dem Termin vorliegen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   APPOINTMENT_WRONG_TYPE: {
     id: "APPOINTMENT_WRONG_TYPE",
     label: "Falscher Termintyp",

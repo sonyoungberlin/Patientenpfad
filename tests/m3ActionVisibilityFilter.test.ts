@@ -261,6 +261,45 @@ describe("M2 boundActionCheckpointIds filter – BILLING", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Tests – APPOINTMENT.DOCUMENT_UPLOAD ist condition-controlled (externer Befund)
+// ---------------------------------------------------------------------------
+
+describe("APPOINTMENT – DOCUMENT_UPLOAD nur bei externem Befund sichtbar", () => {
+  it("DOCUMENT_UPLOAD ist condition-controlled (boundActionConditions) und erscheint nicht in M2-Rows", () => {
+    const m2ActionIds = buildM2ActionCps("APPOINTMENT");
+    expect(m2ActionIds).not.toContain("DOCUMENT_UPLOAD");
+  });
+
+  it("DOCUMENT_UPLOAD ist NICHT in der globalen M3-Actionliste des APPOINTMENT-Profils", () => {
+    // Folgt der Architekturregel: boundActionCheckpointIds ⊄ availableActionIds
+    const m3ActionIds = buildM3ActionCheckpoints(["APPOINTMENT"]);
+    expect(m3ActionIds).not.toContain("DOCUMENT_UPLOAD");
+  });
+
+  it("APPOINTMENT.boundActionConditions.DOCUMENT_UPLOAD bindet exakt an APPOINTMENT_EXTERNAL_FINDING_PRESENT=YES", () => {
+    const APPOINTMENT = INQUIRY_PROFILE_CATALOG_V2["APPOINTMENT"]!;
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.DOCUMENT_UPLOAD?.showWhenAny).toEqual([
+      { APPOINTMENT_EXTERNAL_FINDING_PRESENT: "YES" },
+    ]);
+  });
+
+  it("Andere Termin-Profile (LAB, REFERRAL, HOSPITAL) referenzieren kein APPOINTMENT_EXTERNAL_FINDING_PRESENT", () => {
+    for (const profileId of ["LAB", "REFERRAL", "HOSPITAL"] as const) {
+      const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
+      if (!profile) continue;
+      expect(profile.specificCheckpointIds).not.toContain("APPOINTMENT_EXTERNAL_FINDING_PRESENT");
+      const conditions = (profile as any).boundActionConditions ?? {};
+      const referencesExternalFinding = Object.values(conditions).some((cond: any) => {
+        const sets = [...(cond?.showWhenAny ?? []), ...(cond?.hideWhenAny ?? [])];
+        return sets.some((s) => Object.prototype.hasOwnProperty.call(s, "APPOINTMENT_EXTERNAL_FINDING_PRESENT"));
+      });
+      expect(referencesExternalFinding).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Tests – M3 visibleSpecificCps – leere textByStatus werden ausgefiltert
 // ---------------------------------------------------------------------------
 
