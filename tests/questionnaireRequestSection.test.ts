@@ -82,3 +82,47 @@ describe("InquiryM3Client – Exports", () => {
     expect(typeof InquiryM3ClientModule.default).toBe("function");
   });
 });
+
+// ---------------------------------------------------------------------------
+// M5-Dokumentation: „Fragebogen gesendet" wird ergänzt, sobald ein
+// Fragebogen-Link existiert (unabhängig von Block-Auswahl).
+// ---------------------------------------------------------------------------
+
+import {
+  appendQuestionnaireSentToM5Lines,
+  QUESTIONNAIRE_SENT_M5_LINE,
+} from "@/app/inquiries/[id]/m3/InquiryM3Client";
+
+describe("appendQuestionnaireSentToM5Lines", () => {
+  it("hängt 'Fragebogen gesendet' an, wenn ein Link existiert", () => {
+    const result = appendQuestionnaireSentToM5Lines(["AU | offen"], EXAMPLE_LINK);
+    expect(result).toEqual(["AU | offen", QUESTIONNAIRE_SENT_M5_LINE]);
+  });
+
+  it("ergänzt den Eintrag auch bei leerer M5-Liste", () => {
+    const result = appendQuestionnaireSentToM5Lines([], EXAMPLE_LINK);
+    expect(result).toEqual([QUESTIONNAIRE_SENT_M5_LINE]);
+  });
+
+  it("gibt die Liste unverändert zurück, wenn kein Link existiert (null)", () => {
+    const lines = ["Rezept | möglich"];
+    const result = appendQuestionnaireSentToM5Lines(lines, null);
+    expect(result).toBe(lines);
+  });
+
+  it("dupliziert den Eintrag nicht, wenn er bereits enthalten ist", () => {
+    const lines = ["AU | offen", QUESTIONNAIRE_SENT_M5_LINE];
+    const result = appendQuestionnaireSentToM5Lines(lines, EXAMPLE_LINK);
+    expect(result).toBe(lines);
+  });
+
+  it("verändert das originale Array nicht (Immutabilität)", () => {
+    const lines = ["AU | offen"];
+    appendQuestionnaireSentToM5Lines(lines, EXAMPLE_LINK);
+    expect(lines).toEqual(["AU | offen"]);
+  });
+
+  it("verwendet exakt den Text 'Fragebogen gesendet'", () => {
+    expect(QUESTIONNAIRE_SENT_M5_LINE).toBe("Fragebogen gesendet");
+  });
+});

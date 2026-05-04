@@ -1278,6 +1278,12 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * @deprecated Fachlich überholt: Fragebögen werden inzwischen direkt versendet,
+   * der Checkpoint wird nicht mehr automatisch in Profilen gebunden.
+   * Definition bleibt vorerst im Katalog, um historische Datensätze und Referenzen
+   * (z. B. PRESCRIPTION_EXCLUSIVE_ACTIONS, M3_HIDDEN_BOUND_ACTION_IDS) intakt zu halten.
+   */
   DIGITAL_REQUEST_REQUIRED: {
     id: "DIGITAL_REQUEST_REQUIRED",
     label: "Digitale Anfrage zur Prüfung erforderlich",
@@ -3110,6 +3116,43 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Bestimmte Atteste und Bescheinigungen zählen nicht zur medizinisch notwendigen Versorgung und sind daher Selbstzahlerleistungen. Dazu gehören z. B. Atteste für Sport, Schule oder Reisen. Wir berechnen in der Regel eine Pauschale von 10 Euro. Medizinisch notwendige Nachweise wie eine Arbeitsunfähigkeitsbescheinigung sind kostenfrei.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENT_AU_DIFFERENCE: {
+    id: "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+    label: "Unterschied Attest und Arbeitsunfähigkeitsbescheinigung (AU)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_AU_DIFFERENCE-Q1", text: "Besteht Unklarheit über den Unterschied zwischen Attest und Arbeitsunfähigkeitsbescheinigung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine Arbeitsunfähigkeitsbescheinigung (AU), umgangssprachlich Krankschreibung, bestätigt, dass Sie aktuell aus gesundheitlichen Gründen nicht arbeitsfähig sind.\nEin Attest ist eine individuelle ärztliche Bescheinigung für einen bestimmten Zweck und kann kostenpflichtig sein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED: {
+    id: "MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED",
+    label: "Unterlagen übersetzen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED-Q1", text: "Unterlagen übersetzen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine sichere Behandlung benötigen wir medizinische Unterlagen auf Deutsch oder Englisch. Bitte lassen Sie vorhandene Unterlagen entsprechend übersetzen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Übersetzung medizinischer Unterlagen erforderlich.",
     },
   },
 
