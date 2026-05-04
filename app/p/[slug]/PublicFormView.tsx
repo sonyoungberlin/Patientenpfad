@@ -186,7 +186,16 @@ export function PublicFormView({
       </p>
 
       {introText ? (
-        <p style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}>{introText}</p>
+        <p
+          style={{
+            whiteSpace: "pre-wrap",
+            marginBottom: "1.25rem",
+            fontStyle: "italic",
+            color: "var(--muted-foreground, #6b7280)",
+          }}
+        >
+          {introText}
+        </p>
       ) : null}
 
       <p data-patient-intro style={{ marginBottom: "0.5rem" }}>
