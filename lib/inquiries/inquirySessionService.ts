@@ -40,12 +40,21 @@ import { prisma as defaultPrisma } from "@/lib/prisma";
  * Eingabedaten zum Anlegen einer neuen InquirySession (DRAFT).
  *
  * Alle Felder sind optional, da die Session schrittweise befüllt wird.
+ *
+ * Vorlagen:
+ *  - `asTemplate=true` markiert die Session als Vorlage (`is_template=true`).
+ *    In dem Fall ist `templateName` Pflicht (nicht-leer nach trim).
+ *  - Vorlagen erscheinen in der Übersicht; reguläre Sessions nicht.
  */
 export type CreateInquirySessionInput = {
   /** Optionale Account-ID des erstellenden Nutzers. */
   ownerAccountId?: string;
   /** Liste der vom Nutzer gewählten Anliegen-IDs (z. B. ["AU"]). */
   selectedInquiryIds?: string[];
+  /** Wenn true, wird die Session als dauerhafte Vorlage gespeichert. */
+  asTemplate?: boolean;
+  /** Pflicht bei `asTemplate=true`: vom Nutzer vergebener Vorlagenname. */
+  templateName?: string;
 };
 
 /**
@@ -83,7 +92,8 @@ export type UpdateCheckpointStatusesInput = {
 export type InquirySessionErrorCode =
   | "session_not_found"
   | "session_confirmed"
-  | "invalid_inquiry_ids";
+  | "invalid_inquiry_ids"
+  | "template_name_required";
 
 export class InquirySessionError extends Error {
   public readonly code: InquirySessionErrorCode;
@@ -224,6 +234,18 @@ export async function createInquirySession(
     );
   }
 
+  const isTemplate = input.asTemplate === true;
+  const templateName = isTemplate
+    ? (input.templateName ?? "").trim()
+    : null;
+
+  if (isTemplate && !templateName) {
+    throw new InquirySessionError(
+      "template_name_required",
+      "Vorlagenname darf nicht leer sein.",
+    );
+  }
+
   const sections = buildInitialInquirySectionSnapshot(validIds);
 
   return client.inquirySession.create({
@@ -234,6 +256,84 @@ export async function createInquirySession(
       section_snapshot: toJsonInput(sections),
       checkpoint_statuses: toJsonInput({}),
       action_statuses: toJsonInput({}),
+      is_template: isTemplate,
+      template_name: templateName,
+    },
+  });
+}
+
+/**
+ * Erzeugt aus einer bestehenden Vorlage eine neue, normale Arbeits-Session
+ * (is_template=false, status=DRAFT). Die Vorlage selbst bleibt unverändert.
+ *
+ * Kopiert sämtliche Vorauswahlen aus der Vorlage (selected_inquiry_ids,
+ * section_snapshot, checkpoint_statuses, action_statuses,
+ * explanation_output_statuses, communication_reason_selection,
+ * response_goal_selection), damit der Nutzer in der neuen Session direkt
+ * dort weiterarbeiten kann, wo die Vorlage definiert wurde.
+ *
+ * Ownership: Vorlage muss dem aufrufenden Account gehören. Andernfalls
+ * wird – analog zu allen anderen Owner-Guards – session_not_found geworfen
+ * (kein 403, um ID-Enumeration zu vermeiden).
+ *
+ * Wirft:
+ *  - InquirySessionError("session_not_found"), wenn die Vorlage nicht
+ *    existiert, einem anderen Account gehört oder keine Vorlage ist.
+ */
+export async function instantiateFromTemplate(
+  templateId: string,
+  ownerAccountId: string,
+  client: PrismaLike = defaultPrisma,
+): Promise<InquirySession> {
+  const template = await client.inquirySession.findUnique({
+    where: { id: templateId },
+  });
+
+  if (
+    !template ||
+    template.owner_account_id !== ownerAccountId ||
+    !template.is_template
+  ) {
+    throw new InquirySessionError(
+      "session_not_found",
+      `Vorlage ${templateId} nicht gefunden.`,
+    );
+  }
+
+  return client.inquirySession.create({
+    data: {
+      owner_account_id: ownerAccountId,
+      status: "DRAFT",
+      is_template: false,
+      template_name: null,
+      selected_inquiry_ids:
+        template.selected_inquiry_ids === null
+          ? Prisma.JsonNull
+          : toJsonInput(template.selected_inquiry_ids),
+      section_snapshot:
+        template.section_snapshot === null
+          ? Prisma.JsonNull
+          : toJsonInput(template.section_snapshot),
+      checkpoint_statuses:
+        template.checkpoint_statuses === null
+          ? Prisma.JsonNull
+          : toJsonInput(template.checkpoint_statuses),
+      action_statuses:
+        template.action_statuses === null
+          ? Prisma.JsonNull
+          : toJsonInput(template.action_statuses),
+      explanation_output_statuses:
+        template.explanation_output_statuses === null
+          ? Prisma.JsonNull
+          : toJsonInput(template.explanation_output_statuses),
+      communication_reason_selection:
+        template.communication_reason_selection === null
+          ? Prisma.JsonNull
+          : toJsonInput(template.communication_reason_selection),
+      response_goal_selection:
+        template.response_goal_selection === null
+          ? Prisma.JsonNull
+          : toJsonInput(template.response_goal_selection),
     },
   });
 }
@@ -261,12 +361,16 @@ export async function updateInquiryCheckpointStatuses(
     select: {
       id: true,
       status: true,
+      is_template: true,
       communication_reason_selection: true,
       response_goal_selection: true,
     },
   });
 
-  if (!session) {
+  if (!session || session.is_template) {
+    // Vorlagen werden hier wie nicht-existent behandelt: Sie sind keine
+    // Arbeits-Sessions und dürfen nicht über die Checkpoint-Route geändert
+    // werden. Bewusst kein 403, um ID-Enumeration zu vermeiden.
     throw new InquirySessionError(
       "session_not_found",
       `InquirySession ${input.sessionId} nicht gefunden.`,
@@ -344,7 +448,8 @@ export async function confirmInquirySession(
       where: { id: sessionId },
     });
 
-    if (!session) {
+    if (!session || session.is_template) {
+      // Vorlagen werden nicht bestätigt; sie sind keine Arbeits-Sessions.
       throw new InquirySessionError(
         "session_not_found",
         `InquirySession ${sessionId} nicht gefunden.`,
@@ -458,11 +563,17 @@ export async function deleteInquirySession(
  * Gibt null zurück, wenn die Session nicht existiert.
  * Optionaler Guard: Wird `ownerAccountId` übergeben, schlägt die Abfrage fehl
  * (gibt null zurück), wenn die Session einem anderen Account gehört.
+ *
+ * Vorlagen (`is_template=true`) werden standardmäßig wie nicht-existent
+ * behandelt, damit sie nicht versehentlich als Arbeits-Session
+ * geöffnet/bearbeitet werden. Über `options.includeTemplates=true` können
+ * sie explizit (z. B. für eine Vorlagen-Verwaltung) abgerufen werden.
  */
 export async function getInquirySessionWithOutput(
   sessionId: string,
   ownerAccountId?: string,
   client: PrismaLike = defaultPrisma,
+  options: { includeTemplates?: boolean } = {},
 ): Promise<InquirySession | null> {
   const session = await client.inquirySession.findUnique({
     where: { id: sessionId },
@@ -470,6 +581,7 @@ export async function getInquirySessionWithOutput(
 
   if (!session) return null;
   if (ownerAccountId && session.owner_account_id !== ownerAccountId) return null;
+  if (!options.includeTemplates && session.is_template) return null;
 
   return session;
 }

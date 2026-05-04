@@ -2000,7 +2000,8 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_RULES");
     expect(labProfile.specificCheckpointIds).toContain("BILLING_COST_NOT_COVERED");
     expect(labProfile.specificCheckpointIds).toContain("APPOINTMENT_DATA_INCOMPLETE");
-    expect(labProfile.specificCheckpointIds).toHaveLength(7);
+    expect(labProfile.specificCheckpointIds).toContain("LAB_RESULTS_PENDING");
+    expect(labProfile.specificCheckpointIds).toHaveLength(8);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {

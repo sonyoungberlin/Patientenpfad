@@ -89,9 +89,10 @@ type Props = {
   isConfirmed: boolean;
   /**
    * Praxis-Signatur (`Practice.message_signature`) – wird in der Nachrichten-
-   * Vorschau unterhalb von „Mit freundlichen Grüßen" angezeigt und an den
-   * kopierten Klartext angehängt. Reine Render-Information; State und
-   * Speicherung bleiben unverändert.
+   * Vorschau direkt unter dem Nachrichtentext angezeigt und an den
+   * kopierten Klartext angehängt. Die Grußformel kommt ausschließlich aus
+   * der Signatur, nicht aus dem Nachrichtentext. Reine Render-Information;
+   * State und Speicherung bleiben unverändert.
    */
   messageSignature?: string;
 };
@@ -450,23 +451,25 @@ function OutputView({
   heading: string;
   m5Lines: string[];
   /**
-   * Praxis-Signatur, die unter „Mit freundlichen Grüßen" angezeigt und an den
-   * kopierten Nachrichtentext angehängt wird. Leerer String → keine Signaturzeile.
+   * Praxis-Signatur, die direkt unter dem Nachrichtentext angezeigt und an
+   * den kopierten Nachrichtentext angehängt wird. Sie liefert auch die
+   * Grußformel; im Nachrichtentext selbst steht keine. Leerer String →
+   * keine Signaturzeile.
    */
   messageSignature?: string;
 }) {
-  // Anrede und Grußformel werden ausschließlich beim Rendering ergänzt
-  // (kein Eingriff in State / generated_output / Backend). Der Klartext für
-  // den „Nachricht kopieren"-Button wird aus genau denselben Bestandteilen
-  // zusammengesetzt, die hier sichtbar sind.
+  // Anrede wird ausschließlich beim Rendering ergänzt (kein Eingriff in
+  // State / generated_output / Backend). Die Grußformel kommt bewusst NICHT
+  // aus dem Code, sondern ausschließlich aus der Praxis-Signatur
+  // (`messageSignature`), damit sie nicht doppelt erscheint. Der Klartext
+  // für den „Nachricht kopieren"-Button wird aus genau denselben
+  // Bestandteilen zusammengesetzt, die hier sichtbar sind.
   const messageGreeting = "Liebe Patientin, lieber Patient,";
-  const messageClosing = "Mit freundlichen Grüßen";
   const trimmedSignature = messageSignature.trim();
   const messageBody = inquiryOutputToPlainText(output);
   const copyMessageText = [
     messageGreeting,
     messageBody,
-    messageClosing,
     trimmedSignature,
   ]
     .filter((part) => part.length > 0)
@@ -511,8 +514,6 @@ function OutputView({
               ))}
             </section>
           )}
-
-          <p style={{ margin: 0 }}>{messageClosing}</p>
 
           {trimmedSignature.length > 0 && (
             <p

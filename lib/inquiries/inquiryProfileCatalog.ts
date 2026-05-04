@@ -542,6 +542,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
       "LAB_MPU_EXCLUSION",
+      "LAB_RESULTS_PENDING",
       "LAB_EXTERNAL_REFERRAL",
       "LAB_INTERNAL_ORDER",
       "LAB_MEDICAL_CONSULTATION_REQUIRED",
@@ -1575,8 +1576,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "TECH_VIDEO_NOT_WORKING",
       "TECH_UPLOAD_FAILED",
-      "TECH_LOGIN_PROBLEM",
-      "TECH_PROCESS_INSTRUCTION",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -1585,26 +1584,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
-    boundActionCheckpointIds: [
-      "TECH_VIDEO_NOT_WORKING_ACTION",
-      "TECH_UPLOAD_FAILED_ACTION",
-      "TECH_LOGIN_PROBLEM_ACTION",
-      "TECH_PROCESS_INSTRUCTION_ACTION",
-    ],
-    boundActionConditions: {
-      TECH_VIDEO_NOT_WORKING_ACTION: {
-        showWhenAny: [{ TECH_VIDEO_NOT_WORKING: "YES" }],
-      },
-      TECH_UPLOAD_FAILED_ACTION: {
-        showWhenAny: [{ TECH_UPLOAD_FAILED: "YES" }],
-      },
-      TECH_LOGIN_PROBLEM_ACTION: {
-        showWhenAny: [{ TECH_LOGIN_PROBLEM: "YES" }],
-      },
-      TECH_PROCESS_INSTRUCTION_ACTION: {
-        showWhenAny: [{ TECH_PROCESS_INSTRUCTION: "YES" }],
-      },
-    },
+    boundActionCheckpointIds: [],
+    boundActionConditions: {},
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -1680,12 +1661,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     displayOrder: 100,
     decisionCheckpointId: "",
     specificCheckpointIds: [
-      "ONBOARDING_DOCTOLIB_INFO",
       "ONBOARDING_WRONG_PRACTICE",
-      "ONBOARDING_DATA_INCOMPLETE",
       "ONBOARDING_IDENTITY_MISMATCH",
+      "ONBOARDING_DATA_INCOMPLETE",
       "ONBOARDING_GKV_DOCUMENT_MISSING",
       "ONBOARDING_PKV_PAS_MISSING",
+      "ONBOARDING_DOCTOLIB_INFO",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [

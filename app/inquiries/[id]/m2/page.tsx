@@ -46,6 +46,7 @@ export default async function InquiryM2Page({
     select: {
       owner_account_id: true,
       status: true,
+      is_template: true,
       selected_inquiry_ids: true,
       checkpoint_statuses: true,
       action_statuses: true,
@@ -53,7 +54,7 @@ export default async function InquiryM2Page({
     },
   });
 
-  if (!session || session.owner_account_id !== account.id) {
+  if (!session || session.owner_account_id !== account.id || session.is_template) {
     redirect("/inquiries");
   }
 

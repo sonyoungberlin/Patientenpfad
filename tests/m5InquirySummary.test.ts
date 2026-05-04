@@ -228,13 +228,6 @@ describe("buildInquiryM5SectionSummary – explizite m5Codes", () => {
     });
     expect(buildInquiryM5SectionSummary(section)).toBe("Technik | offen | technisches Problem");
   });
-
-  it("TECH_LOGIN_PROBLEM → 'technisches Problem'", () => {
-    const section = makeSection("TECH_SUPPORT", DecisionStatus.DISABLED, {
-      TECH_LOGIN_PROBLEM: ExplanationStatus.YES,
-    });
-    expect(buildInquiryM5SectionSummary(section)).toBe("Technik | offen | technisches Problem");
-  });
 });
 
 // ---------------------------------------------------------------------------
