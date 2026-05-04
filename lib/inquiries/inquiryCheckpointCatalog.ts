@@ -1389,6 +1389,27 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * Generischer Hinweis auf Selbstzahler-/Privatleistungen: Zahlung vor Ort
+   * per EC- oder Kreditkarte. Bewusst profil-agnostisch formuliert (kein
+   * Bezug zu Attest, Onboarding o. ä.), damit derselbe Baustein über
+   * `boundActionConditions` in beliebigen Profilen freigeschaltet werden
+   * kann (z. B. MEDICAL_DOCUMENTS bei Selbstzahlerleistung, ONBOARDING bei
+   * fehlendem Versicherungsschutz, weitere Selbstzahlerfälle).
+   */
+  PAYMENT_ONSITE_INFO: {
+    id: "PAYMENT_ONSITE_INFO",
+    label: "Zahlung vor Ort",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Zahlung erfolgt vor Ort per EC- oder Kreditkarte.",
+    },
+  },
+
   URINE_SAMPLE_ONSITE: {
     id: "URINE_SAMPLE_ONSITE",
     label: "Urinprobe vor Ort",
