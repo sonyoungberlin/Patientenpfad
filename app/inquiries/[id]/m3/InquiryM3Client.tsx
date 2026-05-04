@@ -569,6 +569,25 @@ export function appendQuestionnaireLinkToOutput(
 }
 
 // ---------------------------------------------------------------------------
+// Helper: M5-Dokumentation um „Fragebogen gesendet" ergänzen, sobald ein
+// Fragebogen im Ablauf angefordert/versendet wurde. Auslöser ist der erzeugte
+// Fragebogen-Link (aus QuestionnaireRequestSection / /api/questionnaire).
+// Bewusst unabhängig von den ausgewählten Fragebogen-Blöcken: nur eine kurze
+// Markierung im Krankenblatt-Eintrag, keine Auflistung.
+// ---------------------------------------------------------------------------
+
+export const QUESTIONNAIRE_SENT_M5_LINE = "Fragebogen gesendet";
+
+export function appendQuestionnaireSentToM5Lines(
+  lines: string[],
+  link: string | null,
+): string[] {
+  if (!link) return lines;
+  if (lines.includes(QUESTIONNAIRE_SENT_M5_LINE)) return lines;
+  return [...lines, QUESTIONNAIRE_SENT_M5_LINE];
+}
+
+// ---------------------------------------------------------------------------
 
 function QuestionnaireRequestSection({
   inquirySessionId,
@@ -953,6 +972,18 @@ export default function InquiryM3Client({
     [frozenOutputByAudience, frozenOutput, questionnaireLink],
   );
 
+  // M5-Dokumentation um „Fragebogen gesendet" ergänzen, sobald ein Fragebogen-Link
+  // existiert (Live-Vorschau und bestätigter Output). Unabhängig von der konkreten
+  // Block-Auswahl – wir markieren nur, dass ein Fragebogen versendet wurde.
+  const liveM5LinesWithQuestionnaire = useMemo(
+    () => appendQuestionnaireSentToM5Lines(liveM5Lines, questionnaireLink),
+    [liveM5Lines, questionnaireLink],
+  );
+  const frozenM5LinesWithQuestionnaire = useMemo(
+    () => appendQuestionnaireSentToM5Lines(frozenM5Lines, questionnaireLink),
+    [frozenM5Lines, questionnaireLink],
+  );
+
   function setStatus(checkpointId: string, value: string) {
     if (value === "ACTIVE" && PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId]) {
       const conflicting = PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId];
@@ -1074,7 +1105,7 @@ export default function InquiryM3Client({
           {frozenOutputWithLink && (
             <>
               <AudienceToggle value={audience} onChange={setAudience} />
-              <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5Lines} messageSignature={messageSignature} />
+              <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5LinesWithQuestionnaire} messageSignature={messageSignature} />
             </>
           )}
         </>
@@ -1576,7 +1607,7 @@ export default function InquiryM3Client({
           {livePreviewWithLink && (
             <>
               <AudienceToggle value={audience} onChange={setAudience} />
-              <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5Lines} messageSignature={messageSignature} />
+              <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5LinesWithQuestionnaire} messageSignature={messageSignature} />
             </>
           )}
 
