@@ -3130,6 +3130,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED: {
+    id: "MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED",
+    label: "Unterlagen übersetzen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED-Q1", text: "Unterlagen übersetzen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine sichere Behandlung benötigen wir medizinische Unterlagen auf Deutsch oder Englisch. Bitte lassen Sie vorhandene Unterlagen entsprechend übersetzen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Übersetzung medizinischer Unterlagen erforderlich.",
+    },
+  },
+
   /** @deprecated Generischer Ablaufhinweis (Erstellung/Abholung/Übermittlung) ohne Entscheidungsbezug – beschreibt nur den Prozess, keine echte Begründung. Nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   MEDICAL_DOCUMENT_PROCESS_INFO: {
     id: "MEDICAL_DOCUMENT_PROCESS_INFO",
