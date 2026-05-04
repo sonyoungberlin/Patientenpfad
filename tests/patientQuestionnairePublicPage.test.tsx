@@ -145,6 +145,9 @@ describe("/q/[token] Seite", () => {
     expect(markup).toContain("nicht mehr gültig");
     expect(markup).toContain("data-q-expired");
     expect(markup).not.toContain("Fragebogen");
+    // Bei abgelaufenem Token darf weder Intro noch Praxis-Signatur erscheinen.
+    expect(markup).not.toContain("data-patient-intro");
+    expect(markup).not.toContain("data-practice-signature");
   });
 
   it("zeigt abgelaufen-Hinweis bei unbekanntem Token", async () => {
@@ -178,6 +181,9 @@ describe("/q/[token] Seite", () => {
       token_expires_at: futureDate(48),
       status: "completed",
       deduplicated_questions: SAMPLE_QUESTIONS,
+      owner_practice: {
+        message_signature: "Mit freundlichen Grüßen\nDr. Muster",
+      },
     });
 
     const markup = renderToStaticMarkup(
@@ -187,6 +193,12 @@ describe("/q/[token] Seite", () => {
     expect(markup).toContain("bereits ausgefüllt");
     expect(markup).toContain("data-q-completed");
     expect(markup).not.toContain("data-q-expired");
+    // Bei completed darf weder Intro noch Praxis-Signatur erscheinen –
+    // unabhängig davon ob die Praxis eine Signatur hinterlegt hat.
+    expect(markup).not.toContain("data-patient-intro");
+    expect(markup).not.toContain("data-practice-signature");
+    expect(markup).not.toContain("Bitte füllen Sie die folgenden Angaben");
+    expect(markup).not.toContain("Mit freundlichen Grüßen");
   });
 
   it("kein getSessionAccountFromCookies-Aufruf – Seite ist öffentlich zugänglich", async () => {

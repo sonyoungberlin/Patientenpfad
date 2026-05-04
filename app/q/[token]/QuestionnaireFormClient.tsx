@@ -148,12 +148,27 @@ function QuestionField({
   }
 }
 
+/**
+ * Client-Komponente für /q/[token].
+ *
+ * Wichtig: Patient-Intro und Praxis-Signatur werden bewusst innerhalb
+ * dieser Client-Komponente gerendert (und nicht von der Server-Page),
+ * damit sie nach erfolgreichem Absenden gemeinsam mit dem Formular
+ * verschwinden. Im `submitted`-Branch gibt die Komponente ausschließlich
+ * die Bestätigungsnachricht zurück. Status `completed`/`expired` werden
+ * bereits in der Server-Page abgefangen und rendern diese Komponente
+ * gar nicht erst.
+ */
 export function QuestionnaireFormClient({
   token,
   questions,
+  introText,
+  practiceSignature,
 }: {
   token: string;
   questions: QuestionDefinition[];
+  introText?: string | null;
+  practiceSignature?: string | null;
 }) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -209,8 +224,22 @@ export function QuestionnaireFormClient({
   }
 
   return (
-    <IdentityGate>
-      <div>
+    <>
+      {introText ? (
+        <p data-patient-intro style={{ marginBottom: "0.5rem" }}>
+          {introText}
+        </p>
+      ) : null}
+      {practiceSignature ? (
+        <p
+          data-practice-signature
+          style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}
+        >
+          {practiceSignature}
+        </p>
+      ) : null}
+      <IdentityGate>
+        <div>
         {questions.length === 0 ? (
         <p>Keine Fragen vorhanden.</p>
       ) : (
@@ -268,5 +297,6 @@ export function QuestionnaireFormClient({
       </button>
     </div>
     </IdentityGate>
+    </>
   );
 }

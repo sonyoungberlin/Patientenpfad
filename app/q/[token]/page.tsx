@@ -68,18 +68,12 @@ export default async function QuestionnairePage({
   return (
     <main>
       <h1>Fragebogen</h1>
-      <p data-patient-intro style={{ marginBottom: "0.5rem" }}>
-        {PATIENT_QUESTIONNAIRE_INTRO_TEXT}
-      </p>
-      {practiceSignature ? (
-        <p
-          data-practice-signature
-          style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}
-        >
-          {practiceSignature}
-        </p>
-      ) : null}
-      <QuestionnaireFormClient token={token} questions={questions} />
+      <QuestionnaireFormClient
+        token={token}
+        questions={questions}
+        introText={PATIENT_QUESTIONNAIRE_INTRO_TEXT}
+        practiceSignature={practiceSignature}
+      />
     </main>
   );
 }

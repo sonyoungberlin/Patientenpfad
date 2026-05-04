@@ -138,6 +138,9 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
     if (canManagePractice) {
       sectionItems.push({ label: "Mitglieder", href: "/practice/members" });
       sectionItems.push({ label: "Signatur", href: "/practice/signature" });
+      if (account.website_forms_enabled) {
+        sectionItems.push({ label: "Website-Formulare", href: "/website-forms" });
+      }
     }
   } else if (isWebsiteForms && account.website_forms_enabled) {
     sectionItems.push(

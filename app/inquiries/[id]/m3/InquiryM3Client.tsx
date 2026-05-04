@@ -14,7 +14,12 @@ import {
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { buildInquiryM5Summary } from "@/lib/inquiries/buildInquiryM5Summary";
 import { applyIntroToggle } from "@/lib/inquiries/introToggle";
+import {
+  inquiryOutputToPlainText,
+  inquiryDocumentationToPlainText,
+} from "@/lib/inquiries/formatInquiryOutput";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import CopyTextButton from "@/components/inquiries/CopyTextButton";
 
 export type M3SpecificCheckpoint = {
   id: string;
@@ -444,6 +449,12 @@ function OutputView({
     >
       <h2 style={{ marginTop: 0 }}>{heading}</h2>
 
+      <CopyTextButton
+        text={inquiryOutputToPlainText(output)}
+        label="Nachricht kopieren"
+        data-testid="copy-message"
+      />
+
       {output.intro && (
         <p style={{ margin: "0 0 0.5rem", fontStyle: "italic", color: "var(--muted-foreground)" }}>
           {output.intro}
@@ -476,7 +487,12 @@ function OutputView({
       {m5Lines.length > 0 && (
         <section>
           <h3 style={{ marginBottom: "0.5rem" }}>Dokumentation</h3>
-          <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+          <CopyTextButton
+            text={inquiryDocumentationToPlainText(m5Lines)}
+            label="Dokumentation kopieren"
+            data-testid="copy-documentation"
+          />
+          <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
             {m5Lines.map((line, i) => (
               <li key={line} className="text-small" style={{ fontFamily: "monospace" }}>
                 {line}
