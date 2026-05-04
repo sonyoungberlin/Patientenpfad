@@ -323,7 +323,7 @@ describe("POST /api/questionnaire — Doppelschreiben", () => {
     getAcc.mockResolvedValue(ACCOUNT_A1_IN_PRACTICE_A);
     pm.patientQuestionnaireSession.create.mockResolvedValue({ id: "sess-1" });
     const res = await CreateRoute(
-      createReq({ selected_block_ids: ["KONTAKT"] }),
+      createReq({ selected_block_ids: ["KONTAKT"], patient_reference: "PAT-DS-1" }),
     );
     expect(res.status).toBe(200);
     const data = pm.patientQuestionnaireSession.create.mock.calls[0][0].data;
@@ -335,7 +335,7 @@ describe("POST /api/questionnaire — Doppelschreiben", () => {
     getAcc.mockResolvedValue(ADMIN_NO_PRACTICE);
     pm.patientQuestionnaireSession.create.mockResolvedValue({ id: "sess-1" });
     const res = await CreateRoute(
-      createReq({ selected_block_ids: ["KONTAKT"] }),
+      createReq({ selected_block_ids: ["KONTAKT"], patient_reference: "PAT-DS-2" }),
     );
     expect(res.status).toBe(200);
     const data = pm.patientQuestionnaireSession.create.mock.calls[0][0].data;

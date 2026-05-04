@@ -598,6 +598,7 @@ function QuestionnaireRequestSection({
 }) {
   const [open, setOpen] = useState(false);
   const [patientRef, setPatientRef] = useState("");
+  const [patientRefTouched, setPatientRefTouched] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -609,8 +610,17 @@ function QuestionnaireRequestSection({
   }
 
   const anyBlockSelected = BLOCK_IDS_SORTED.some((id) => selectedBlocks[id]);
+  const trimmedPatientRef = patientRef.trim();
+  const hasPatientRef = trimmedPatientRef.length > 0;
 
   async function handleCreate() {
+    // Pflichtprüfung clientseitig: Ohne Patientennummer / Referenz darf
+    // kein Fragebogenlink erzeugt werden. Leerzeichen allein zählen nicht.
+    if (!hasPatientRef) {
+      setPatientRefTouched(true);
+      setReqError("Bitte Patientennummer / Referenz eintragen, bevor ein Fragebogenlink erzeugt wird.");
+      return;
+    }
     setLoading(true);
     setReqError(null);
     setCopied(false);
@@ -622,7 +632,7 @@ function QuestionnaireRequestSection({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          patient_reference: patientRef.trim() || undefined,
+          patient_reference: trimmedPatientRef,
           selected_block_ids: blockIds,
           inquiry_session_id: inquirySessionId,
         }),
@@ -689,15 +699,20 @@ function QuestionnaireRequestSection({
               htmlFor="q-patient-ref"
               style={{ display: "block", fontWeight: 500, marginBottom: "0.3rem", fontSize: "0.9rem" }}
             >
-              Patientennummer / Referenz (optional)
+              Patientennummer / Referenz <span aria-hidden="true">*</span>
+              <span className="sr-only"> (Pflichtfeld)</span>
             </label>
             <input
               id="q-patient-ref"
               type="text"
               value={patientRef}
               onChange={(e) => setPatientRef(e.target.value)}
+              onBlur={() => setPatientRefTouched(true)}
               disabled={loading || !!link}
               placeholder="z.B. PAT-12345"
+              required
+              aria-required="true"
+              aria-invalid={patientRefTouched && !hasPatientRef}
               style={{
                 padding: "0.4rem 0.6rem",
                 border: "1px solid var(--border)",
@@ -764,7 +779,12 @@ function QuestionnaireRequestSection({
               <button
                 type="button"
                 onClick={() => void handleCreate()}
-                disabled={loading || !anyBlockSelected}
+                disabled={loading || !anyBlockSelected || !hasPatientRef}
+                title={
+                  !hasPatientRef
+                    ? "Bitte Patientennummer / Referenz eintragen, bevor ein Fragebogenlink erzeugt wird."
+                    : undefined
+                }
                 data-q-create-link
               >
                 {loading ? "Wird erzeugt…" : "Link erzeugen"}

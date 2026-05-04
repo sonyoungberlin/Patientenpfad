@@ -48,11 +48,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Optional fields
+    // Patientennummer / Referenz ist verpflichtend, damit der eingehende
+    // Fragebogen später eindeutig zugeordnet werden kann. Leerzeichen allein
+    // zählen nicht (getrimmt prüfen).
     const patientReference =
       typeof body.patient_reference === "string" && body.patient_reference.trim() !== ""
         ? body.patient_reference.trim()
         : null;
+
+    if (!patientReference) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Patientennummer / Referenz ist erforderlich.",
+        },
+        { status: 400 },
+      );
+    }
 
     const inquirySessionId =
       typeof body.inquiry_session_id === "string" && body.inquiry_session_id.trim() !== ""

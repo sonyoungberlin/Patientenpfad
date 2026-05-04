@@ -59,7 +59,10 @@ describe("POST /api/questionnaire", () => {
     getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
     prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
 
-    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "REZEPT"] });
+    const req = makeRequest({
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "REZEPT"],
+      patient_reference: "PAT-001",
+    });
     const res = await POST(req);
     const json = await res.json();
 
@@ -148,7 +151,10 @@ describe("POST /api/questionnaire", () => {
     getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
     prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
 
-    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "INVALID_BLOCK"] });
+    const req = makeRequest({
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT", "INVALID_BLOCK"],
+      patient_reference: "PAT-007",
+    });
     const res = await POST(req);
     expect(res.status).toBe(200);
 
@@ -161,7 +167,10 @@ describe("POST /api/questionnaire", () => {
     prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
 
     const before = Date.now();
-    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
+    const req = makeRequest({
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      patient_reference: "PAT-TTL",
+    });
     await POST(req);
     const after = Date.now();
 
@@ -172,5 +181,46 @@ describe("POST /api/questionnaire", () => {
 
     expect(ttlMs).toBeGreaterThanOrEqual(expectedTtl - 1000);
     expect(ttlMs).toBeLessThanOrEqual(expectedTtl + (after - before) + 1000);
+  });
+
+  it("gibt 400 zurück wenn patient_reference fehlt", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+    expect(json.error).toBe("Patientennummer / Referenz ist erforderlich.");
+    expect(prismaMock.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+  });
+
+  it("gibt 400 zurück wenn patient_reference nur aus Leerzeichen besteht", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+
+    const req = makeRequest({
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      patient_reference: "   ",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("Patientennummer / Referenz ist erforderlich.");
+    expect(prismaMock.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+  });
+
+  it("trimmt patient_reference vor dem Speichern", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+    const req = makeRequest({
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      patient_reference: "  PAT-042  ",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
+    expect(createCall.data.patient_reference).toBe("PAT-042");
   });
 });
