@@ -2728,7 +2728,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "PROCESS_INFO" as SpecificRole,
     questions: [
-      { id: "ONBOARDING_DOCTOLIB_INFO-Q1", text: "Ist unklar, wie die Kommunikation oder Terminbuchung über Doctolib funktioniert?" },
+      { id: "ONBOARDING_DOCTOLIB_INFO-Q1", text: "Doctolib unklar?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -2751,7 +2751,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "MISSING_INFORMATION" as SpecificRole,
     questions: [
-      { id: "ONBOARDING_DATA_INCOMPLETE-Q1", text: "Fehlen grundlegende Angaben zur Registrierung (z. B. Name, Geburtsdatum, Kontodaten)?" },
+      { id: "ONBOARDING_DATA_INCOMPLETE-Q1", text: "Registrierungsdaten unvollständig?" },
     ],
     textByStatus: {
       // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
@@ -2792,7 +2792,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "MISSING_DOCUMENT" as SpecificRole,
     questions: [
-      { id: "ONBOARDING_GKV_DOCUMENT_MISSING-Q1", text: "Fehlt bei gesetzlich Versicherten ein gültiger Versicherungsnachweis?" },
+      { id: "ONBOARDING_GKV_DOCUMENT_MISSING-Q1", text: "Versicherungsnachweis fehlt?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -2818,7 +2818,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "MISSING_DOCUMENT" as SpecificRole,
     questions: [
-      { id: "ONBOARDING_PKV_PAS_MISSING-Q1", text: "Fehlen bei privat Versicherten Identitätsnachweis oder PAS-Formular?" },
+      { id: "ONBOARDING_PKV_PAS_MISSING-Q1", text: "Privat-Unterlagen fehlen?" },
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
@@ -2838,7 +2838,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "MISSING_INFORMATION" as SpecificRole,
     questions: [
-      { id: "ONBOARDING_IDENTITY_MISMATCH-Q1", text: "Kann der Patient anhand der vorliegenden Daten nicht eindeutig zugeordnet werden?" },
+      { id: "ONBOARDING_IDENTITY_MISMATCH-Q1", text: "Unbekannter Patient?" },
     ],
     textByStatus: {
       // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
@@ -2876,7 +2876,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
     questions: [
-      { id: "ONBOARDING_WRONG_PRACTICE-Q1", text: "Gehört der Patient nicht zu dieser Praxis (z. B. falsche Praxis kontaktiert, außerhalb des Einzugsgebiets)?" },
+      { id: "ONBOARDING_WRONG_PRACTICE-Q1", text: "Falsche Praxis?" },
     ],
     textByStatus: {
       // bewusst leer – reiner M2-Schalter; Inhalte kommen über boundActionConditions
