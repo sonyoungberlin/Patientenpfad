@@ -19,6 +19,7 @@
  */
 
 import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
+import { PATIENT_QUESTIONNAIRE_INTRO_TEXT } from "@/lib/questionnaire/patientIntro";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 
 const NOTICE_ID = "public-form-confirm-notice";
@@ -154,11 +155,13 @@ export function PublicFormView({
   slug,
   title,
   introText,
+  practiceSignature,
   questions,
 }: {
   slug: string;
   title: string;
   introText: string | null;
+  practiceSignature: string | null;
   questions: QuestionDefinition[];
 }) {
   return (
@@ -184,6 +187,19 @@ export function PublicFormView({
 
       {introText ? (
         <p style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}>{introText}</p>
+      ) : null}
+
+      <p data-patient-intro style={{ marginBottom: "0.5rem" }}>
+        {PATIENT_QUESTIONNAIRE_INTRO_TEXT}
+      </p>
+
+      {practiceSignature ? (
+        <p
+          data-practice-signature
+          style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}
+        >
+          {practiceSignature}
+        </p>
       ) : null}
 
       <form

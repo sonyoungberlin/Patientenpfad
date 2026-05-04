@@ -55,6 +55,7 @@ function makeForm(overrides: Partial<{
   is_active: boolean;
   selected_block_ids: string[];
   owner_account: typeof ENABLED_OWNER | null;
+  owner_practice: (typeof ENABLED_OWNER & { message_signature?: string | null }) | null;
 }> = {}) {
   return {
     title: "Aufnahmeformular",
@@ -62,6 +63,9 @@ function makeForm(overrides: Partial<{
     is_active: true,
     selected_block_ids: ["KONTAKT", "REZEPT"],
     owner_account: ENABLED_OWNER,
+    owner_practice: null as
+      | (typeof ENABLED_OWNER & { message_signature?: string | null })
+      | null,
     ...overrides,
   };
 }
@@ -177,6 +181,49 @@ describe("/p/[slug] public form page", () => {
     // Hinweistext zur E-Mail-Bestätigung sichtbar
     expect(m).toContain("Bestätigungs-E-Mail");
     expect(m).toContain("48 Stunden");
+
+    // Patienten-Einleitungstext oberhalb des Formulars
+    expect(m).toContain("data-patient-intro");
+    expect(m).toContain(
+      "Bitte füllen Sie die folgenden Angaben vollständig aus. Vielen Dank für Ihre Unterstützung.",
+    );
+  });
+
+  it("rendert die Praxis-Signatur unverändert oberhalb des Formulars, wenn vorhanden", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+      makeForm({
+        owner_practice: {
+          ...ENABLED_OWNER,
+          message_signature:
+            "Mit freundlichen Grüßen\nDr. Muster\nPraxis am Park",
+        },
+      }),
+    );
+    const r = await runPage();
+    expect(r.notFound).toBe(false);
+    const m = r.markup!;
+    expect(m).toContain("data-practice-signature");
+    expect(m).toContain("Mit freundlichen Grüßen");
+    expect(m).toContain("Dr. Muster");
+    expect(m).toContain("Praxis am Park");
+    // Signatur muss mit pre-wrap gerendert werden, damit Zeilenumbrüche erhalten bleiben
+    expect(m).toContain("white-space:pre-wrap");
+  });
+
+  it("rendert keinen Signaturblock, wenn Practice keine message_signature hat", async () => {
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+      makeForm({
+        owner_practice: { ...ENABLED_OWNER, message_signature: null },
+        intro_text: null,
+      }),
+    );
+    const r = await runPage();
+    expect(r.notFound).toBe(false);
+    const m = r.markup!;
+    // Intro-Text trotzdem da
+    expect(m).toContain("data-patient-intro");
+    // Aber kein Signaturblock
+    expect(m).not.toContain("data-practice-signature");
   });
 
   it("postet an /api/p/[slug]/submit und enthält Honeypot-Feld", async () => {
@@ -202,6 +249,12 @@ describe("/p/[slug] public form page", () => {
       is_approved: true,
       patient_communication_enabled: true,
       website_forms_enabled: true,
+    });
+    expect(call.select.owner_practice.select).toEqual({
+      is_approved: true,
+      patient_communication_enabled: true,
+      website_forms_enabled: true,
+      message_signature: true,
     });
     // Keine E-Mail / kein owner_account_id im Select
     expect(call.select.owner_account.select).not.toHaveProperty("email");

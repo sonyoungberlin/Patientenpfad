@@ -62,6 +62,7 @@ export default async function PublicFormPage({
           is_approved: true,
           patient_communication_enabled: true,
           website_forms_enabled: true,
+          message_signature: true,
         },
       },
       owner_account: {
@@ -97,11 +98,14 @@ export default async function PublicFormPage({
     : [];
   const questions = buildQuestionnaireQuestions(selectedBlockIds);
 
+  const practiceSignature = form.owner_practice?.message_signature ?? null;
+
   return (
     <PublicFormView
       slug={validation.slug}
       title={form.title}
       introText={form.intro_text}
+      practiceSignature={practiceSignature}
       questions={questions}
     />
   );
