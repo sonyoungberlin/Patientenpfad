@@ -2708,7 +2708,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit. Bitte aktualisieren Sie Ihre Patientendaten über den zugesendeten Fragebogen.",
+        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
