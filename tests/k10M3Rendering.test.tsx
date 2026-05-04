@@ -19,6 +19,7 @@ jest.mock("@/lib/auth", () => ({
     id: "acc-test",
     email: "test@example.com",
     is_approved: true,
+    current_practice: { id: "prac-test" },
   }),
 }));
 
@@ -28,7 +29,7 @@ jest.mock("@/lib/prisma", () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
-    account: {
+    practice: {
       findUnique: jest.fn(),
     },
   },
@@ -41,7 +42,7 @@ type PrismaMock = {
     findUnique: jest.Mock;
     update: jest.Mock;
   };
-  account: {
+  practice: {
     findUnique: jest.Mock;
   };
 };
@@ -87,8 +88,8 @@ const k10Enabled: ActiveCheckpointMultiSelect = {
 describe("M3 – K10 nicht mehr in M3 (nach Migration nach M1)", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
-    prismaMock.account.findUnique.mockReset();
-    prismaMock.account.findUnique.mockResolvedValue({ message_signature: null });
+    prismaMock.practice.findUnique.mockReset();
+    prismaMock.practice.findUnique.mockResolvedValue({ message_signature: null });
   });
 
   function setupCase(checkpoints: ActiveCheckpoint[]) {

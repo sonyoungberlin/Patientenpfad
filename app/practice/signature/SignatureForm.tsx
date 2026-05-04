@@ -4,25 +4,34 @@ import { useEffect, useState } from "react";
 
 const MAX_LENGTH = 300;
 
-export default function SignatureSection() {
-  const [value, setValue] = useState("");
-  const [saved, setSaved] = useState("");
-  const [loading, setLoading] = useState(true);
+/**
+ * Praxis-Signatur-Formular (verschoben aus `app/cases/SignatureSection.tsx`).
+ *
+ * Lädt und speichert die Signatur über `/api/practice/signature` (siehe
+ * `app/api/practice/signature/route.ts`). UX/Verhalten entsprechen der
+ * bisherigen Account-Signatur-Sektion: Textarea mit 300-Zeichen-Limit,
+ * Save-Button (disabled wenn unverändert), Lade- und Save-Feedback.
+ *
+ * Berechtigung wird vom umgebenden Server-Component-Page geprüft (nur
+ * OWNER/ADMIN). Der API-Endpunkt prüft sie zusätzlich serverseitig.
+ */
+export default function SignatureForm({
+  initialSignature,
+}: {
+  initialSignature: string;
+}) {
+  const [value, setValue] = useState(initialSignature);
+  const [saved, setSaved] = useState(initialSignature);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  // Falls die Seite mit aktualisierten Server-Daten neu rendert
+  // (Router-Refresh), nehmen wir den neuen Initialwert als Quelle der
+  // Wahrheit für „Speichern" disabled.
   useEffect(() => {
-    fetch("/api/account/signature")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok) {
-          setValue(data.signature ?? "");
-          setSaved(data.signature ?? "");
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    setValue(initialSignature);
+    setSaved(initialSignature);
+  }, [initialSignature]);
 
   const dirty = value !== saved;
 
@@ -30,7 +39,7 @@ export default function SignatureSection() {
     setSaving(true);
     setFeedback(null);
     try {
-      const res = await fetch("/api/account/signature", {
+      const res = await fetch("/api/practice/signature", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ signature: value }),
@@ -42,7 +51,11 @@ export default function SignatureSection() {
         setFeedback("Gespeichert");
         setTimeout(() => setFeedback(null), 2000);
       } else {
-        setFeedback("Fehler beim Speichern.");
+        setFeedback(
+          typeof data.error === "string"
+            ? data.error
+            : "Fehler beim Speichern.",
+        );
       }
     } catch {
       setFeedback("Fehler beim Speichern.");
@@ -51,16 +64,8 @@ export default function SignatureSection() {
     }
   }
 
-  if (loading) return null;
-
   return (
-    <section
-      className="section-divider"
-      style={{ marginTop: "2rem", paddingTop: "1.5rem" }}
-    >
-      <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
-        Nachrichtensignatur
-      </h2>
+    <section>
       <textarea
         value={value}
         onChange={(e) => {
@@ -69,9 +74,9 @@ export default function SignatureSection() {
           }
         }}
         maxLength={MAX_LENGTH}
-        rows={3}
+        rows={4}
         placeholder={"Mit freundlichen Grüßen\nIhre Hausarztpraxis Mustermann"}
-        style={{ maxWidth: "100%", resize: "vertical" }}
+        style={{ maxWidth: "100%", resize: "vertical", width: "100%" }}
       />
       <div
         className="text-muted text-small"
@@ -81,6 +86,7 @@ export default function SignatureSection() {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
         <button
+          type="button"
           onClick={handleSave}
           disabled={saving || !dirty}
           className="btn-primary"
@@ -88,7 +94,11 @@ export default function SignatureSection() {
           {saving ? "Speichern …" : "Speichern"}
         </button>
         {feedback && (
-          <span className="text-small" style={{ color: "var(--muted-foreground)" }}>
+          <span
+            className="text-small"
+            style={{ color: "var(--muted-foreground)" }}
+            role="status"
+          >
             {feedback}
           </span>
         )}
@@ -97,7 +107,7 @@ export default function SignatureSection() {
         className="text-muted text-small"
         style={{ marginTop: "0.5rem", marginBottom: 0 }}
       >
-        Wird automatisch bei „Nachricht kopieren" verwendet.
+        Wird automatisch bei „Nachricht kopieren" in den Fall-Flows verwendet.
       </p>
     </section>
   );

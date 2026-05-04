@@ -54,6 +54,7 @@ describe("/q/[token] Seite", () => {
       token_expires_at: futureDate(48),
       status: "pending",
       deduplicated_questions: SAMPLE_QUESTIONS,
+      owner_practice: null,
     });
 
     const markup = renderToStaticMarkup(
@@ -63,6 +64,51 @@ describe("/q/[token] Seite", () => {
     expect(markup).toContain("Fragebogen");
     expect(markup).not.toContain("nicht mehr gültig");
     expect(markup).not.toContain("bereits ausgefüllt");
+    // Patienten-Einleitungstext oberhalb der Fragen
+    expect(markup).toContain("data-patient-intro");
+    expect(markup).toContain(
+      "Bitte füllen Sie die folgenden Angaben vollständig aus. Vielen Dank für Ihre Unterstützung.",
+    );
+    // Ohne Practice keine Signatur
+    expect(markup).not.toContain("data-practice-signature");
+  });
+
+  it("rendert die Praxis-Signatur unverändert zwischen Überschrift und Formular, wenn vorhanden", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      token_expires_at: futureDate(48),
+      status: "pending",
+      deduplicated_questions: SAMPLE_QUESTIONS,
+      owner_practice: {
+        message_signature:
+          "Mit freundlichen Grüßen\nDr. Muster\nPraxis am Park",
+      },
+    });
+
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "valid-token" }) }),
+    );
+
+    expect(markup).toContain("data-practice-signature");
+    expect(markup).toContain("Mit freundlichen Grüßen");
+    expect(markup).toContain("Dr. Muster");
+    expect(markup).toContain("Praxis am Park");
+    expect(markup).toContain("white-space:pre-wrap");
+  });
+
+  it("Session-select fragt owner_practice.message_signature mit ab", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      token_expires_at: futureDate(48),
+      status: "pending",
+      deduplicated_questions: SAMPLE_QUESTIONS,
+      owner_practice: null,
+    });
+
+    await QuestionnairePage({ params: Promise.resolve({ token: "valid-token" }) });
+
+    const call = prismaMock.patientQuestionnaireSession.findUnique.mock.calls[0][0];
+    expect(call.select.owner_practice).toEqual({
+      select: { message_signature: true },
+    });
   });
 
   it("zeigt Gate und Datenschutzhinweis bei gültigem Token statt direkter Fragen", async () => {

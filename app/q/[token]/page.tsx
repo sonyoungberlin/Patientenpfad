@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import { PATIENT_QUESTIONNAIRE_INTRO_TEXT } from "@/lib/questionnaire/patientIntro";
 import { QuestionnaireFormClient } from "./QuestionnaireFormClient";
 
 // Always render per-request so the page reads fresh token state from the DB
@@ -26,6 +27,11 @@ export default async function QuestionnairePage({
       token_expires_at: true,
       status: true,
       deduplicated_questions: true,
+      owner_practice: {
+        select: {
+          message_signature: true,
+        },
+      },
     },
   });
 
@@ -57,9 +63,22 @@ export default async function QuestionnairePage({
     ? (session.deduplicated_questions as QuestionDefinition[])
     : [];
 
+  const practiceSignature = session.owner_practice?.message_signature ?? null;
+
   return (
     <main>
       <h1>Fragebogen</h1>
+      <p data-patient-intro style={{ marginBottom: "0.5rem" }}>
+        {PATIENT_QUESTIONNAIRE_INTRO_TEXT}
+      </p>
+      {practiceSignature ? (
+        <p
+          data-practice-signature
+          style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}
+        >
+          {practiceSignature}
+        </p>
+      ) : null}
       <QuestionnaireFormClient token={token} questions={questions} />
     </main>
   );

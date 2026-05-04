@@ -1,3 +1,12 @@
+/**
+ * @deprecated Account-bezogene Nachrichtensignatur. Wird durch
+ *   `/api/practice/signature` ersetzt (siehe
+ *   `app/api/practice/signature/route.ts`). Diese Route bleibt vorerst
+ *   bestehen, damit alte Tabs/Clients während des Roll-outs nicht ins
+ *   Leere laufen; sie wird im Cleanup-PR (PR 2) entfernt — gleichzeitig
+ *   mit dem Drop von `Account.message_signature`.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
