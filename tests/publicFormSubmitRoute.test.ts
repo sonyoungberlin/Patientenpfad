@@ -199,20 +199,29 @@ describe("POST /api/p/[slug]/submit", () => {
     expect(call.data.practice_form_id).toBe("form-1");
     expect(call.data.submitted_at).toBeUndefined();
 
-    // E-Mail-Hash, KEIN Klartext.
+    // E-Mail-Hash, KEIN Klartext (außerhalb von `answers`, wo CONTACT_EMAIL
+    // bewusst aus der Bestätigungs-E-Mail gespiegelt wird, sobald der
+    // KONTAKT-Block aktiv ist — siehe describe("CONTACT_EMAIL-Spiegelung")).
     expect(call.data.submitter_email_hash).toBe(
       hashSubmitterEmail("Patient@Example.COM"),
     );
+    // Original-Casing darf nirgends auftauchen (validateSubmitterEmail normalisiert).
     expect(JSON.stringify(call.data)).not.toContain("Patient@Example.COM");
-    expect(JSON.stringify(call.data)).not.toContain("patient@example.com");
+    // Außerhalb von `answers` darf auch die normalisierte Form nicht vorkommen.
+    const { answers: _answers, ...withoutAnswers } = call.data;
+    expect(JSON.stringify(withoutAnswers)).not.toContain("patient@example.com");
 
     // confirm_token in DB ist hex-Hash, NICHT base64url-Klartext.
     expect(call.data.confirm_token).toMatch(/^[a-f0-9]{64}$/);
     expect(call.data.confirm_token_expires_at).toBeInstanceOf(Date);
     expect(call.data.confirmed_at).toBeUndefined();
 
-    // Antworten: nur whitelisted questionId.
-    expect(call.data.answers).toEqual({ CONTACT_PHONE: "+49 30 123" });
+    // Antworten: nur whitelisted questionId; CONTACT_EMAIL wird aus der
+    // Bestätigungs-E-Mail gespiegelt, weil KONTAKT im Formular ist.
+    expect(call.data.answers).toEqual({
+      CONTACT_PHONE: "+49 30 123",
+      CONTACT_EMAIL: "patient@example.com",
+    });
 
     // Mail wurde mit Klartext-URL und normalisierter Empfänger-Adresse aufgerufen.
     expect(sendMailMock).toHaveBeenCalledTimes(1);
@@ -252,6 +261,69 @@ describe("POST /api/p/[slug]/submit", () => {
       params: Promise.resolve({ slug: SLUG }),
     });
     expect(blocked.status).toBe(429);
+  });
+
+  describe("CONTACT_EMAIL-Spiegelung", () => {
+    it("KONTAKT-Block enthalten + CONTACT_EMAIL leer → wird aus Bestätigungs-E-Mail übernommen", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"] }),
+      );
+      const res = await POST(
+        formReq({ email: "Patient1@Example.COM" }, SLUG, "9.0.0.1"),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      expect(pm.patientQuestionnaireSession.create).toHaveBeenCalledTimes(1);
+      const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
+      // normalisiert (lowercased) wie validateSubmitterEmail.
+      expect(call.data.answers.CONTACT_EMAIL).toBe("patient1@example.com");
+    });
+
+    it("KONTAKT-Block enthalten + CONTACT_EMAIL abweichend → wird von Bestätigungs-E-Mail überschrieben", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"] }),
+      );
+      const res = await POST(
+        formReq(
+          {
+            email: "patient2@example.com",
+            CONTACT_EMAIL: "abweichend@example.org",
+            CONTACT_PHONE: "+49 30 123",
+          },
+          SLUG,
+          "9.0.0.2",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(call.data.answers.CONTACT_EMAIL).toBe("patient2@example.com");
+      // Andere Antworten unverändert.
+      expect(call.data.answers.CONTACT_PHONE).toBe("+49 30 123");
+    });
+
+    it("KONTAKT-Block nicht enthalten → CONTACT_EMAIL wird NICHT gesetzt", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: [] }),
+      );
+      const res = await POST(
+        formReq(
+          {
+            email: "patient3@example.com",
+            // Patient versucht CONTACT_EMAIL einzuschmuggeln, obwohl der
+            // Block nicht ausgewählt ist — sanitizeAnswers verwirft es,
+            // und auch die Spiegelung darf es NICHT nachträglich setzen.
+            CONTACT_EMAIL: "abweichend@example.org",
+          },
+          SLUG,
+          "9.0.0.3",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(call.data.answers.CONTACT_EMAIL).toBeUndefined();
+    });
   });
 
   describe("strukturierte Logs ([website-form/submit])", () => {
