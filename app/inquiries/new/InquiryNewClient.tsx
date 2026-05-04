@@ -10,11 +10,7 @@ export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] })
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
-  const [savingTemplate, setSavingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [templateNamePromptOpen, setTemplateNamePromptOpen] = useState(false);
-  const [templateName, setTemplateName] = useState("");
-  const [templateInfo, setTemplateInfo] = useState<string | null>(null);
 
   // Gruppen, die ein ausgewähltes Profil enthalten, werden beim ersten Render geöffnet
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
@@ -66,7 +62,6 @@ export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] })
     }
     setSubmitting(true);
     setError(null);
-    setTemplateInfo(null);
     try {
       const res = await fetch("/api/inquiries/create", {
         method: "POST",
@@ -83,59 +78,6 @@ export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] })
       setError("Netzwerkfehler. Bitte erneut versuchen.");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  function openTemplateNamePrompt() {
-    if (selected.size === 0) {
-      setError("Bitte mindestens ein Anliegen auswählen.");
-      return;
-    }
-    setError(null);
-    setTemplateInfo(null);
-    setTemplateName("");
-    setTemplateNamePromptOpen(true);
-  }
-
-  function closeTemplateNamePrompt() {
-    setTemplateNamePromptOpen(false);
-  }
-
-  async function handleSaveAsTemplate(e: React.FormEvent) {
-    e.preventDefault();
-    const name = templateName.trim();
-    if (!name) {
-      setError("Bitte einen Vorlagennamen eingeben.");
-      return;
-    }
-    if (selected.size === 0) {
-      setError("Bitte mindestens ein Anliegen auswählen.");
-      return;
-    }
-    setSavingTemplate(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/inquiries/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          inquiryIds: Array.from(selected),
-          asTemplate: true,
-          templateName: name,
-        }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.ok) {
-        setError(data?.error ?? "Vorlage konnte nicht gespeichert werden.");
-        return;
-      }
-      setTemplateNamePromptOpen(false);
-      setTemplateInfo(`Vorlage „${name}" gespeichert.`);
-      router.refresh();
-    } catch {
-      setError("Netzwerkfehler. Bitte erneut versuchen.");
-    } finally {
-      setSavingTemplate(false);
     }
   }
 
@@ -218,105 +160,22 @@ export default function InquiryNewClient({ groups }: { groups: ProfileGroup[] })
         <p style={{ color: "var(--destructive)", margin: 0 }}>{error}</p>
       )}
 
-      {templateInfo && (
-        <p
-          role="status"
-          style={{ color: "var(--foreground)", margin: 0 }}
-        >
-          {templateInfo}
-        </p>
-      )}
-
+      {/*
+        Vorlagen werden bewusst NICHT mehr in M1 gespeichert. Eine Vorlage
+        bildet den fertig vorbereiteten Arbeitsstand bis M3 ab und wird
+        ausschließlich in der M3-Arbeitsansicht über den Button
+        „Aktuellen Stand als Vorlage speichern" erzeugt
+        (POST /api/inquiries/[id]/save-as-template).
+      */}
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
         <button
           type="submit"
-          disabled={submitting || savingTemplate || selected.size === 0}
+          disabled={submitting || selected.size === 0}
           style={{ maxWidth: "fit-content" }}
         >
           {submitting ? "Wird erstellt…" : "Weiter →"}
         </button>
-        <button
-          type="button"
-          onClick={openTemplateNamePrompt}
-          disabled={submitting || savingTemplate || selected.size === 0}
-          aria-haspopup="dialog"
-          style={{ maxWidth: "fit-content" }}
-        >
-          Als Vorlage speichern …
-        </button>
       </div>
-
-      {templateNamePromptOpen && (
-        <div
-          className="modal-overlay"
-          onClick={closeTemplateNamePrompt}
-          role="presentation"
-        >
-          <div
-            className="modal-box card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="inquiry-template-dialog-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p
-              id="inquiry-template-dialog-title"
-              style={{ fontWeight: 500, marginBottom: "0.5rem" }}
-            >
-              Vorlage speichern unter …
-            </p>
-            <p
-              className="text-muted text-small"
-              style={{ marginBottom: "1rem" }}
-            >
-              Vergeben Sie einen Namen, z. B. „Neupatient" oder „AU-Anfrage".
-            </p>
-            <label
-              htmlFor="inquiry-template-name"
-              style={{ display: "block", marginBottom: "0.25rem" }}
-            >
-              Vorlagenname
-            </label>
-            <input
-              id="inquiry-template-name"
-              type="text"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              maxLength={120}
-              autoFocus
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                marginBottom: "1.5rem",
-              }}
-            />
-            <div
-              style={{
-                display: "flex",
-                gap: "0.5rem",
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                type="button"
-                onClick={closeTemplateNamePrompt}
-                disabled={savingTemplate}
-              >
-                Abbrechen
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveAsTemplate}
-                disabled={savingTemplate || templateName.trim().length === 0}
-              >
-                {savingTemplate ? "Wird gespeichert…" : "Speichern"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </form>
   );
 }

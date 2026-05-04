@@ -15,6 +15,7 @@
 import {
   createInquirySession,
   instantiateFromTemplate,
+  saveSessionAsTemplate,
   getInquirySessionWithOutput,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
@@ -169,6 +170,96 @@ describe("instantiateFromTemplate", () => {
     await expect(
       instantiateFromTemplate("tpl-1", "acc-1", client as never),
     ).rejects.toBeInstanceOf(InquirySessionError);
+  });
+});
+
+describe("saveSessionAsTemplate", () => {
+  const session = {
+    id: "sess-1",
+    owner_account_id: "acc-1",
+    is_template: false,
+    template_name: null,
+    status: "DRAFT",
+    selected_inquiry_ids: ["AU"],
+    section_snapshot: [{ inquiryId: "AU", decisionStatus: "DISABLED", checkpointStatuses: {} }],
+    checkpoint_statuses: { foo: "YES" },
+    action_statuses: { act1: "ACTIVE" },
+    explanation_output_statuses: { ex: "SHOW" },
+    communication_reason_selection: { AU: "REASON_A" },
+    response_goal_selection: { AU: "GOAL_X" },
+  };
+
+  it("kopiert alle M1/M2/M3-Felder in eine neue is_template=true-Vorlage", async () => {
+    const client = makeClient();
+    client.inquirySession.findUnique.mockResolvedValue(session);
+    client.inquirySession.create.mockImplementation(({ data }) => ({
+      id: "tpl-new",
+      ...data,
+    }));
+
+    const result = await saveSessionAsTemplate(
+      "sess-1",
+      "acc-1",
+      "  Neupatient  ",
+      client as never,
+    );
+
+    expect(result.id).toBe("tpl-new");
+    const data = client.inquirySession.create.mock.calls[0][0].data;
+    expect(data.is_template).toBe(true);
+    expect(data.template_name).toBe("Neupatient");
+    expect(data.status).toBe("DRAFT");
+    expect(data.owner_account_id).toBe("acc-1");
+    expect(data.selected_inquiry_ids).toEqual(["AU"]);
+    expect(data.section_snapshot).toEqual(session.section_snapshot);
+    expect(data.checkpoint_statuses).toEqual({ foo: "YES" });
+    expect(data.action_statuses).toEqual({ act1: "ACTIVE" });
+    expect(data.explanation_output_statuses).toEqual({ ex: "SHOW" });
+    expect(data.communication_reason_selection).toEqual({ AU: "REASON_A" });
+    expect(data.response_goal_selection).toEqual({ AU: "GOAL_X" });
+  });
+
+  it("leerer/whitespace-only Vorlagenname → template_name_required", async () => {
+    const client = makeClient();
+    await expect(
+      saveSessionAsTemplate("sess-1", "acc-1", "   ", client as never),
+    ).rejects.toMatchObject({ code: "template_name_required" });
+    expect(client.inquirySession.findUnique).not.toHaveBeenCalled();
+    expect(client.inquirySession.create).not.toHaveBeenCalled();
+  });
+
+  it("fremde Session → session_not_found (kein 403)", async () => {
+    const client = makeClient();
+    client.inquirySession.findUnique.mockResolvedValue({
+      ...session,
+      owner_account_id: "acc-other",
+    });
+
+    await expect(
+      saveSessionAsTemplate("sess-1", "acc-1", "Name", client as never),
+    ).rejects.toMatchObject({ code: "session_not_found" });
+    expect(client.inquirySession.create).not.toHaveBeenCalled();
+  });
+
+  it("nicht existierende Session → session_not_found", async () => {
+    const client = makeClient();
+    client.inquirySession.findUnique.mockResolvedValue(null);
+    await expect(
+      saveSessionAsTemplate("missing", "acc-1", "Name", client as never),
+    ).rejects.toMatchObject({ code: "session_not_found" });
+  });
+
+  it("Quelle ist selbst bereits eine Vorlage → session_not_found", async () => {
+    const client = makeClient();
+    client.inquirySession.findUnique.mockResolvedValue({
+      ...session,
+      is_template: true,
+      template_name: "Existing",
+    });
+    await expect(
+      saveSessionAsTemplate("sess-1", "acc-1", "Name", client as never),
+    ).rejects.toMatchObject({ code: "session_not_found" });
+    expect(client.inquirySession.create).not.toHaveBeenCalled();
   });
 });
 

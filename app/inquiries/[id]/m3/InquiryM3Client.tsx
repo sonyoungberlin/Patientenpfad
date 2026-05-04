@@ -598,6 +598,7 @@ function QuestionnaireRequestSection({
 }) {
   const [open, setOpen] = useState(false);
   const [patientRef, setPatientRef] = useState("");
+  const [patientRefTouched, setPatientRefTouched] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -609,8 +610,17 @@ function QuestionnaireRequestSection({
   }
 
   const anyBlockSelected = BLOCK_IDS_SORTED.some((id) => selectedBlocks[id]);
+  const trimmedPatientRef = patientRef.trim();
+  const hasPatientRef = trimmedPatientRef.length > 0;
 
   async function handleCreate() {
+    // Pflichtprüfung clientseitig: Ohne Patientennummer / Referenz darf
+    // kein Fragebogenlink erzeugt werden. Leerzeichen allein zählen nicht.
+    if (!hasPatientRef) {
+      setPatientRefTouched(true);
+      setReqError("Bitte Patientennummer / Referenz eintragen, bevor ein Fragebogenlink erzeugt wird.");
+      return;
+    }
     setLoading(true);
     setReqError(null);
     setCopied(false);
@@ -622,7 +632,7 @@ function QuestionnaireRequestSection({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          patient_reference: patientRef.trim() || undefined,
+          patient_reference: trimmedPatientRef,
           selected_block_ids: blockIds,
           inquiry_session_id: inquirySessionId,
         }),
@@ -689,15 +699,20 @@ function QuestionnaireRequestSection({
               htmlFor="q-patient-ref"
               style={{ display: "block", fontWeight: 500, marginBottom: "0.3rem", fontSize: "0.9rem" }}
             >
-              Patientennummer / Referenz (optional)
+              Patientennummer / Referenz <span aria-hidden="true">*</span>
+              <span className="sr-only"> (Pflichtfeld)</span>
             </label>
             <input
               id="q-patient-ref"
               type="text"
               value={patientRef}
               onChange={(e) => setPatientRef(e.target.value)}
+              onBlur={() => setPatientRefTouched(true)}
               disabled={loading || !!link}
               placeholder="z.B. PAT-12345"
+              required
+              aria-required="true"
+              aria-invalid={patientRefTouched && !hasPatientRef}
               style={{
                 padding: "0.4rem 0.6rem",
                 border: "1px solid var(--border)",
@@ -764,7 +779,12 @@ function QuestionnaireRequestSection({
               <button
                 type="button"
                 onClick={() => void handleCreate()}
-                disabled={loading || !anyBlockSelected}
+                disabled={loading || !anyBlockSelected || !hasPatientRef}
+                title={
+                  !hasPatientRef
+                    ? "Bitte Patientennummer / Referenz eintragen, bevor ein Fragebogenlink erzeugt wird."
+                    : undefined
+                }
                 data-q-create-link
               >
                 {loading ? "Wird erzeugt…" : "Link erzeugen"}
@@ -907,6 +927,66 @@ export default function InquiryM3Client({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questionnaireLink, setQuestionnaireLink] = useState<string | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // „Aktuellen Stand als Vorlage speichern"
+  // ---------------------------------------------------------------------------
+  // Vorlagen werden ausschließlich in M3 angelegt (nicht mehr in M1), damit
+  // sie den fertig vorbereiteten Arbeitsstand inkl. M2/M3-Auswahlen abbilden.
+  // Der Server (POST /api/inquiries/[id]/save-as-template) klont die aktuelle
+  // Session in eine neue is_template=true-Vorlage; die laufende Session
+  // bleibt unverändert. Der Vorlagenname landet in `template_name` (NICHT in
+  // `patient_reference`, das bleibt Fragebogenlinks vorbehalten).
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateInfo, setTemplateInfo] = useState<string | null>(null);
+  const [templateError, setTemplateError] = useState<string | null>(null);
+
+  function openTemplateDialog() {
+    setTemplateName("");
+    setTemplateError(null);
+    setTemplateInfo(null);
+    setTemplateDialogOpen(true);
+  }
+
+  function closeTemplateDialog() {
+    if (savingTemplate) return;
+    setTemplateDialogOpen(false);
+  }
+
+  async function handleSaveAsTemplate() {
+    const name = templateName.trim();
+    if (!name) {
+      setTemplateError("Bitte einen Vorlagennamen eingeben.");
+      return;
+    }
+    setSavingTemplate(true);
+    setTemplateError(null);
+    try {
+      const res = await fetch(
+        `/api/inquiries/${sessionId}/save-as-template`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ templateName: name }),
+        },
+      );
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        setTemplateError(
+          data?.error ?? "Vorlage konnte nicht gespeichert werden.",
+        );
+        return;
+      }
+      setTemplateDialogOpen(false);
+      setTemplateInfo(`Vorlage „${name}" gespeichert.`);
+    } catch {
+      setTemplateError("Netzwerkfehler. Bitte erneut versuchen.");
+    } finally {
+      setSavingTemplate(false);
+    }
+  }
   const [audience, setAudience] = useState<Audience>("patient");
 
   /**
@@ -1618,7 +1698,27 @@ export default function InquiryM3Client({
           {/* Fragebogen anfordern – isolierter Bereich, keine Änderung an InquirySession */}
           <QuestionnaireRequestSection inquirySessionId={sessionId} onLinkGenerated={setQuestionnaireLink} />
 
-          <div style={{ marginTop: "1.5rem" }}>
+          {templateInfo && (
+            <p
+              role="status"
+              style={{
+                margin: "1rem 0 0",
+                color: "var(--success-fg, #166534)",
+                fontWeight: 500,
+              }}
+            >
+              {templateInfo}
+            </p>
+          )}
+
+          <div
+            style={{
+              marginTop: "1.5rem",
+              display: "flex",
+              gap: "0.5rem",
+              flexWrap: "wrap",
+            }}
+          >
             <button
               type="button"
               onClick={() => void handleConfirm()}
@@ -1627,7 +1727,103 @@ export default function InquiryM3Client({
             >
               {submitting ? "Wird bestätigt…" : "Anfrage bestätigen"}
             </button>
+            <button
+              type="button"
+              onClick={openTemplateDialog}
+              disabled={submitting || savingTemplate}
+              aria-haspopup="dialog"
+            >
+              Aktuellen Stand als Vorlage speichern
+            </button>
           </div>
+
+          {templateDialogOpen && (
+            <div
+              className="modal-overlay"
+              onClick={closeTemplateDialog}
+              role="presentation"
+            >
+              <div
+                className="modal-box card"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="m3-template-dialog-title"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p
+                  id="m3-template-dialog-title"
+                  style={{ fontWeight: 500, marginBottom: "0.5rem" }}
+                >
+                  Aktuellen Stand als Vorlage speichern
+                </p>
+                <p
+                  className="text-muted text-small"
+                  style={{ marginBottom: "1rem" }}
+                >
+                  Vergeben Sie einen Namen, z. B. „Neupatient" oder „AU-Anfrage".
+                </p>
+                <label
+                  htmlFor="m3-template-name"
+                  style={{ display: "block", marginBottom: "0.25rem" }}
+                >
+                  Vorlagenname
+                </label>
+                <input
+                  id="m3-template-name"
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  maxLength={120}
+                  autoFocus
+                  required
+                  aria-required="true"
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius)",
+                    marginBottom: templateError ? "0.5rem" : "1.5rem",
+                  }}
+                />
+                {templateError && (
+                  <p
+                    role="alert"
+                    style={{
+                      color: "var(--destructive)",
+                      margin: "0 0 1rem",
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    {templateError}
+                  </p>
+                )}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={closeTemplateDialog}
+                    disabled={savingTemplate}
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveAsTemplate()}
+                    disabled={
+                      savingTemplate || templateName.trim().length === 0
+                    }
+                  >
+                    {savingTemplate ? "Wird gespeichert…" : "Speichern"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

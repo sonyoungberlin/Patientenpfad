@@ -62,7 +62,14 @@ export default function InquiryListClient({
         alert(msg);
         return;
       }
-      router.push(`/inquiries/${body.inquiryId}/m2`);
+      // Vorlage = gespeicherter Zustand bis zur M3-Arbeitsansicht.
+      // Die Vorauswahlen (selected_inquiry_ids, section_snapshot,
+      // checkpoint_/action_/explanation_output_statuses,
+      // communication_reason_selection, response_goal_selection) wurden
+      // bereits in /api/inquiries/templates/[id]/instantiate kopiert,
+      // daher direkt nach M3 navigieren – M1/M2 müssen nicht erneut
+      // durchgeklickt werden, M3 bleibt voll bearbeitbar.
+      router.push(`/inquiries/${body.inquiryId}/m3`);
     } catch {
       alert("Netzwerkfehler beim Öffnen der Vorlage.");
     } finally {
