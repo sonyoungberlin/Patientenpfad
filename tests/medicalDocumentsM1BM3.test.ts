@@ -476,7 +476,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Verwendungszweck");
+    expect(paragraphs).toContain("wofür das Attest oder die Bescheinigung benötigt wird");
   });
 
   it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING YES + SHOW → kein Text (deprecated, nicht mehr im Profil)", () => {
@@ -694,7 +694,7 @@ describe("MEDICAL_DOCUMENT_POSSIBLE – Existenz und Struktur", () => {
   it("hat textByStatus YES mit positivem Hinweis", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["MEDICAL_DOCUMENT_POSSIBLE"];
     expect(cp.textByStatus[ExplanationStatus.YES]).toBe(
-      "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+      "Atteste oder Bescheinigungen können nur nach ärztlicher Beurteilung ausgestellt werden.",
     );
   });
 
@@ -728,7 +728,7 @@ describe("MEDICAL_DOCUMENT_POSSIBLE Renderer – YES + SHOW erzeugt positiven Te
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).toContain(
-      "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+      "Atteste oder Bescheinigungen können nur nach ärztlicher Beurteilung ausgestellt werden.",
     );
   });
 
@@ -745,7 +745,7 @@ describe("MEDICAL_DOCUMENT_POSSIBLE Renderer – YES + SHOW erzeugt positiven Te
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
     expect(paragraphs).not.toContain(
-      "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+      "Atteste oder Bescheinigungen können nur nach ärztlicher Beurteilung ausgestellt werden.",
     );
   });
 });

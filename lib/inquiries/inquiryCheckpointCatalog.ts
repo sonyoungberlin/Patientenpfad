@@ -3011,13 +3011,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+        "Atteste oder Bescheinigungen können nur nach ärztlicher Beurteilung ausgestellt werden.",
       // NO: bewusst still – kein Text
     },
     textByAudience: {
       contact_person: {
         [ExplanationStatus.YES]:
-          "Für das Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+          "Atteste oder Bescheinigungen können nur nach ärztlicher Beurteilung ausgestellt werden.",
       },
     },
   },
@@ -3052,7 +3052,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Genaue Angaben zum Verwendungszweck liegen noch nicht vor.",
+        "Bitte geben Sie an, wofür das Attest oder die Bescheinigung benötigt wird. Falls vorhanden, laden Sie entsprechende Unterlagen hoch.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -3087,7 +3087,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Atteste und Bescheinigungen können je nach Anlass eine Selbstzahlerleistung sein.",
+        "Bestimmte Atteste und Bescheinigungen zählen nicht zur medizinisch notwendigen Versorgung und sind daher Selbstzahlerleistungen. Dazu gehören z. B. Atteste für Sport, Schule oder Reisen. Wir berechnen in der Regel eine Pauschale von 10 Euro. Medizinisch notwendige Nachweise wie eine Arbeitsunfähigkeitsbescheinigung sind kostenfrei.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
