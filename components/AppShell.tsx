@@ -26,6 +26,8 @@ import { useRouter, usePathname } from "next/navigation";
  * (z. B. Login-Sicht) nicht betroffen.
  */
 
+export type AppShellPracticeRole = "OWNER" | "ADMIN" | "USER";
+
 export type AppShellAccount = {
   id: string;
   email: string;
@@ -34,6 +36,14 @@ export type AppShellAccount = {
   inquiry_assistant_enabled: boolean;
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
+  // Optional: aktiver Praxis-Kontext + Mitgliedschaften des Accounts.
+  // Werden vom `/api/auth/me`-Endpoint mitgeliefert (siehe lib/auth.ts
+  // `SessionAccount`) und hier benötigt, um Praxis-Nav-Items anhand der
+  // effektiven Rolle des aktuellen Praxis-Kontexts zu filtern.
+  // Defensiv optional, damit bestehende Aufrufer/Test-Doubles, die nur
+  // die alten Felder setzen, nicht brechen.
+  current_practice?: { id: string } | null;
+  memberships?: Array<{ practice_id: string; role: AppShellPracticeRole }>;
 };
 
 type AppShellProps = {
@@ -114,10 +124,21 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       { label: "Fragebogen-Posteingang", href: "/questionnaires" },
     );
   } else if (isPractice) {
-    sectionItems.push(
-      { label: "Mitglieder", href: "/practice/members" },
-      { label: "Signatur", href: "/practice/signature" },
-    );
+    // Effektive Rolle der aktiven Praxis ableiten; defensiv null, falls
+    // current_practice oder memberships fehlen (z. B. Account ohne Praxis
+    // oder älterer /api/auth/me-Mock im Test).
+    const practiceRole: AppShellPracticeRole | null =
+      account.current_practice && account.memberships
+        ? account.memberships.find(
+            (m) => m.practice_id === account.current_practice!.id,
+          )?.role ?? null
+        : null;
+    const canManagePractice =
+      practiceRole === "OWNER" || practiceRole === "ADMIN";
+    if (canManagePractice) {
+      sectionItems.push({ label: "Mitglieder", href: "/practice/members" });
+      sectionItems.push({ label: "Signatur", href: "/practice/signature" });
+    }
   } else if (isWebsiteForms && account.website_forms_enabled) {
     sectionItems.push(
       { label: "Fragebogen-Posteingang", href: "/questionnaires" },
