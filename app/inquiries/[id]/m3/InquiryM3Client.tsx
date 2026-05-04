@@ -87,6 +87,13 @@ type Props = {
   actionOrigins: Record<string, string[]>;
   initialGeneratedOutput: InquiryResponseV2Output | null;
   isConfirmed: boolean;
+  /**
+   * Praxis-Signatur (`Practice.message_signature`) – wird in der Nachrichten-
+   * Vorschau unterhalb von „Mit freundlichen Grüßen" angezeigt und an den
+   * kopierten Klartext angehängt. Reine Render-Information; State und
+   * Speicherung bleiben unverändert.
+   */
+  messageSignature?: string;
 };
 
 const DECISION_OPTIONS = [
@@ -437,69 +444,110 @@ function OutputView({
   output,
   heading,
   m5Lines,
+  messageSignature = "",
 }: {
   output: InquiryResponseV2Output;
   heading: string;
   m5Lines: string[];
+  /**
+   * Praxis-Signatur, die unter „Mit freundlichen Grüßen" angezeigt und an den
+   * kopierten Nachrichtentext angehängt wird. Leerer String → keine Signaturzeile.
+   */
+  messageSignature?: string;
 }) {
+  // Anrede und Grußformel werden ausschließlich beim Rendering ergänzt
+  // (kein Eingriff in State / generated_output / Backend). Der Klartext für
+  // den „Nachricht kopieren"-Button wird aus genau denselben Bestandteilen
+  // zusammengesetzt, die hier sichtbar sind.
+  const messageGreeting = "Liebe Patientin, lieber Patient,";
+  const messageClosing = "Mit freundlichen Grüßen";
+  const trimmedSignature = messageSignature.trim();
+  const messageBody = inquiryOutputToPlainText(output);
+  const copyMessageText = [
+    messageGreeting,
+    messageBody,
+    messageClosing,
+    trimmedSignature,
+  ]
+    .filter((part) => part.length > 0)
+    .join("\n\n");
+
   return (
-    <div
-      className="card"
-      style={{ marginTop: "2rem", display: "grid", gap: "1rem" }}
-    >
-      <h2 style={{ marginTop: 0 }}>{heading}</h2>
+    <div style={{ marginTop: "2rem", display: "grid", gap: "1.5rem" }}>
+      <h2 style={{ margin: 0 }}>{heading}</h2>
 
-      <CopyTextButton
-        text={inquiryOutputToPlainText(output)}
-        label="Nachricht kopieren"
-        data-testid="copy-message"
-      />
+      {/* Bereich 1: Nachrichten-Vorschau + „Nachricht kopieren" */}
+      <div className="card" style={{ display: "grid", gap: "1rem" }}>
+        <h3 style={{ margin: 0 }}>Nachricht</h3>
 
-      {output.intro && (
-        <p style={{ margin: "0 0 0.5rem", fontStyle: "italic", color: "var(--muted-foreground)" }}>
-          {output.intro}
-        </p>
-      )}
+        <div style={{ display: "grid", gap: "0.75rem" }}>
+          <p style={{ margin: 0 }}>{messageGreeting}</p>
 
-      {output.sections.map((sec) => (
-        <section key={sec.inquiryId}>
-          {sec.mainDecision && (
-            <p style={{ fontWeight: 600, margin: "0 0 0.5rem" }}>{sec.mainDecision}</p>
+          {output.intro && (
+            <p style={{ margin: 0, fontStyle: "italic", color: "var(--muted-foreground)" }}>
+              {output.intro}
+            </p>
           )}
-          {sec.attachedParagraphs.map((p, i) => (
-            <p key={i} style={{ margin: "0.25rem 0" }}>
-              {p}
-            </p>
-          ))}
-        </section>
-      ))}
 
-      {output.sharedBottom.length > 0 && (
-        <section>
-          {output.sharedBottom.map((p, i) => (
-            <p key={i} style={{ margin: "0.25rem 0" }}>
-              {p}
-            </p>
+          {output.sections.map((sec) => (
+            <section key={sec.inquiryId}>
+              {sec.mainDecision && (
+                <p style={{ fontWeight: 600, margin: "0 0 0.5rem" }}>{sec.mainDecision}</p>
+              )}
+              {sec.attachedParagraphs.map((p, i) => (
+                <p key={i} style={{ margin: "0.25rem 0" }}>
+                  {p}
+                </p>
+              ))}
+            </section>
           ))}
-        </section>
-      )}
 
+          {output.sharedBottom.length > 0 && (
+            <section>
+              {output.sharedBottom.map((p, i) => (
+                <p key={i} style={{ margin: "0.25rem 0" }}>
+                  {p}
+                </p>
+              ))}
+            </section>
+          )}
+
+          <p style={{ margin: 0 }}>{messageClosing}</p>
+
+          {trimmedSignature.length > 0 && (
+            <p
+              style={{ margin: 0, whiteSpace: "pre-wrap" }}
+              data-signature-hint
+            >
+              {trimmedSignature}
+            </p>
+          )}
+        </div>
+
+        <CopyTextButton
+          text={copyMessageText}
+          label="Nachricht kopieren"
+          data-testid="copy-message"
+        />
+      </div>
+
+      {/* Bereich 2: Dokumentations-Vorschau + „Dokumentation kopieren" */}
       {m5Lines.length > 0 && (
-        <section>
-          <h3 style={{ marginBottom: "0.5rem" }}>Dokumentation</h3>
-          <CopyTextButton
-            text={inquiryDocumentationToPlainText(m5Lines)}
-            label="Dokumentation kopieren"
-            data-testid="copy-documentation"
-          />
-          <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
-            {m5Lines.map((line, i) => (
+        <div className="card" style={{ display: "grid", gap: "1rem" }}>
+          <h3 style={{ margin: 0 }}>Dokumentation</h3>
+          <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+            {m5Lines.map((line) => (
               <li key={line} className="text-small" style={{ fontFamily: "monospace" }}>
                 {line}
               </li>
             ))}
           </ul>
-        </section>
+          <CopyTextButton
+            text={inquiryDocumentationToPlainText(m5Lines)}
+            label="Dokumentation kopieren"
+            data-testid="copy-documentation"
+          />
+        </div>
       )}
     </div>
   );
@@ -738,6 +786,7 @@ export default function InquiryM3Client({
   actionOrigins,
   initialGeneratedOutput,
   isConfirmed,
+  messageSignature = "",
 }: Props) {
   const actionIdSet = new Set(actionIds);
 
@@ -1024,7 +1073,7 @@ export default function InquiryM3Client({
           {frozenOutputWithLink && (
             <>
               <AudienceToggle value={audience} onChange={setAudience} />
-              <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5Lines} />
+              <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5Lines} messageSignature={messageSignature} />
             </>
           )}
         </>
@@ -1526,7 +1575,7 @@ export default function InquiryM3Client({
           {livePreviewWithLink && (
             <>
               <AudienceToggle value={audience} onChange={setAudience} />
-              <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5Lines} />
+              <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5Lines} messageSignature={messageSignature} />
             </>
           )}
 

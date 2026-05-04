@@ -107,6 +107,24 @@ export default async function InquiryM3Page({
     redirect("/inquiries");
   }
 
+  // Praxis-Signatur laden (für die Nachrichten-Vorschau / „Nachricht kopieren").
+  // Quelle: `Practice.message_signature` der aktuellen Practice des eingeloggten
+  // Accounts – analog zu `app/cases/[id]/m3/page.tsx`. Reines Lesen, keine
+  // neue Logik.
+  let messageSignature = "";
+  const currentPracticeId = account.current_practice?.id;
+  if (currentPracticeId) {
+    try {
+      const pr = await prisma.practice.findUnique({
+        where: { id: currentPracticeId },
+        select: { message_signature: true },
+      });
+      messageSignature = pr?.message_signature ?? "";
+    } catch {
+      messageSignature = "";
+    }
+  }
+
   const selectedIds: string[] = Array.isArray(session.selected_inquiry_ids)
     ? (session.selected_inquiry_ids as string[])
     : [];
@@ -211,6 +229,7 @@ export default async function InquiryM3Page({
         actionOrigins={actionOrigins}
         initialGeneratedOutput={generatedOutput}
         isConfirmed={isConfirmed}
+        messageSignature={messageSignature}
       />
     </main>
   );
