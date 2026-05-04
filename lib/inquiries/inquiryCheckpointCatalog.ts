@@ -3052,7 +3052,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte geben Sie an, wofür das Attest oder die Bescheinigung benötigt wird. Falls vorhanden, laden Sie entsprechende Unterlagen hoch.",
+        "Bitte geben Sie an, wofür das Attest oder die Bescheinigung benötigt wird.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
