@@ -2286,7 +2286,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Befundbesprechung soll zu einem externen Befund (z. B. Facharzt, Krankenhaus) erfolgen. Die Unterlagen müssen vor dem Termin vorliegen.",
+        "Die Befundbesprechung soll zu einem externen Befund (z. B. Facharzt, Krankenhaus) erfolgen.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
