@@ -817,6 +817,27 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  LAB_RESULTS_PENDING: {
+    id: "LAB_RESULTS_PENDING",
+    label: "Laborergebnisse liegen noch nicht vor",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_RESULTS_PENDING-Q1", text: "Befunde noch nicht da?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ihre Laborergebnisse sind bei uns noch nicht eingegangen. Die Auswertung im Labor kann einige Tage dauern. Sobald die Befunde bei uns vorliegen, senden wir sie Ihnen automatisch zu – eine erneute Nachfrage ist nicht erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]:
+        "Patient über ausstehende Laborergebnisse informiert; automatischer Versand bei Eingang zugesagt.",
+    },
+  },
+
   // ---- LAB SPECIFIC CHECKPOINTS (neue Prozesslogik) ----
 
   LAB_INTERNAL_ORDER: {

@@ -542,6 +542,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     decisionCheckpointId: "LAB_DECISION",
     specificCheckpointIds: [
       "LAB_MPU_EXCLUSION",
+      "LAB_RESULTS_PENDING",
       "LAB_EXTERNAL_REFERRAL",
       "LAB_INTERNAL_ORDER",
       "LAB_MEDICAL_CONSULTATION_REQUIRED",
