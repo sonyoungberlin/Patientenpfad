@@ -10,6 +10,7 @@
  * gemeinsam gewählt werden.
  *
  * Blöcke (in Anzeigereihenfolge):
+ *    5 IDENTITAET       – Vorname, Nachname, Geburtsdatum, Versicherungsart
  *   10 KONTAKT          – Telefon, E-Mail, Doctolib
  *   20 ADRESSE          – Postanschrift
  *   30 KURZANAMNESE     – Allgemeine Gesundheitsangaben
@@ -69,6 +70,7 @@ export type QuestionnaireBlock = {
 /**
  * Globaler Fragenkatalog mit stabilen IDs.
  *
+ * IDENTITY_*     – Identitätsdaten
  * CONTACT_*      – Kontaktdaten
  * ADDRESS_*      – Adressdaten
  * ANAMNESE_*     – Kurzanamnese
@@ -79,6 +81,33 @@ export type QuestionnaireBlock = {
  * TRANSPORT_*    – Krankenbeförderung / Krankentransport
  */
 export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
+  // --- Identität ---
+  IDENTITY_FIRST_NAME: {
+    id: "IDENTITY_FIRST_NAME",
+    text: "Vorname",
+    type: "text",
+    required: true,
+  },
+  IDENTITY_LAST_NAME: {
+    id: "IDENTITY_LAST_NAME",
+    text: "Nachname",
+    type: "text",
+    required: true,
+  },
+  IDENTITY_BIRTHDATE: {
+    id: "IDENTITY_BIRTHDATE",
+    text: "Geburtsdatum",
+    type: "date",
+    required: true,
+  },
+  IDENTITY_INSURANCE_TYPE: {
+    id: "IDENTITY_INSURANCE_TYPE",
+    text: "Versicherungsart",
+    type: "select",
+    required: true,
+    options: ["gesetzlich versichert", "privat versichert"],
+  },
+
   // --- Kontakt ---
   CONTACT_PHONE: {
     id: "CONTACT_PHONE",
@@ -365,6 +394,17 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
  * damit Kontaktfelder immer zuerst erscheinen.
  */
 export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
+  IDENTITAET: {
+    id: "IDENTITAET",
+    label: "Identität",
+    displayOrder: 5,
+    questionIds: [
+      "IDENTITY_FIRST_NAME",
+      "IDENTITY_LAST_NAME",
+      "IDENTITY_BIRTHDATE",
+      "IDENTITY_INSURANCE_TYPE",
+    ],
+  },
   KONTAKT: {
     id: "KONTAKT",
     label: "Kontaktdaten",
