@@ -53,6 +53,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_NO_APPOINTMENT_ACUTE",
       "AU_MEDICAL_CONSULTATION_REQUIRED",
       "AU_FOLLOWUP",
+      "MEDICAL_DOCUMENT_AU_DIFFERENCE",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
@@ -1958,6 +1959,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
       "MEDICAL_DOCUMENT_INFO_MISSING",
       "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
+      "MEDICAL_DOCUMENT_AU_DIFFERENCE",
     ],
     boundGlobalCheckpointIds: [],
     globalHints: {},

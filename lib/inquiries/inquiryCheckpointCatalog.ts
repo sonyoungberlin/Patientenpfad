@@ -3113,6 +3113,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  MEDICAL_DOCUMENT_AU_DIFFERENCE: {
+    id: "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+    label: "Unterschied Attest und Arbeitsunfähigkeitsbescheinigung (AU)",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_DOCUMENT_AU_DIFFERENCE-Q1", text: "Besteht Unklarheit über den Unterschied zwischen Attest und Arbeitsunfähigkeitsbescheinigung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine Arbeitsunfähigkeitsbescheinigung (AU), umgangssprachlich Krankschreibung, bestätigt, dass Sie aktuell aus gesundheitlichen Gründen nicht arbeitsfähig sind.\nEin Attest ist eine individuelle ärztliche Bescheinigung für einen bestimmten Zweck und kann kostenpflichtig sein.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   /** @deprecated Generischer Ablaufhinweis (Erstellung/Abholung/Übermittlung) ohne Entscheidungsbezug – beschreibt nur den Prozess, keine echte Begründung. Nicht mehr in MEDICAL_DOCUMENTS.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   MEDICAL_DOCUMENT_PROCESS_INFO: {
     id: "MEDICAL_DOCUMENT_PROCESS_INFO",
