@@ -2696,6 +2696,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  ONBOARDING_DATA_UPDATE_REQUIRED: {
+    id: "ONBOARDING_DATA_UPDATE_REQUIRED",
+    label: "Patientendaten aktualisieren",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_DATA_UPDATE_REQUIRED-Q1", text: "Patientendaten aktualisieren?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit. Bitte aktualisieren Sie Ihre Patientendaten über den zugesendeten Fragebogen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Aktualisierung der Patientendaten angefordert.",
+    },
+  },
+
   /** @deprecated Kombinierter GKV/PKV-Nachweis-Baustein – abgelöst durch ONBOARDING_GKV_DOCUMENT_MISSING und ONBOARDING_PKV_PAS_MISSING. Nicht mehr in specificCheckpointIds des ONBOARDING-Profils. Checkpoint bleibt im Katalog erhalten. */
   ONBOARDING_DOCUMENT_MISSING: {
     id: "ONBOARDING_DOCUMENT_MISSING",
