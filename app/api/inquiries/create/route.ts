@@ -52,14 +52,37 @@ export async function POST(req: NextRequest) {
         )
       : [];
 
+    const asTemplate = body?.asTemplate === true;
+    const templateNameRaw =
+      typeof body?.templateName === "string" ? body.templateName : undefined;
+
     const session = await createInquirySession({
       selectedInquiryIds: inquiryIds,
       ownerAccountId: account.id,
+      asTemplate,
+      templateName: templateNameRaw,
     });
 
-    return NextResponse.json({ ok: true, inquiryId: session.id }, { status: 201 });
+    return NextResponse.json(
+      {
+        ok: true,
+        inquiryId: session.id,
+        isTemplate: session.is_template,
+        templateName: session.template_name,
+      },
+      { status: 201 },
+    );
   } catch (err) {
     if (err instanceof InquirySessionError && err.code === "invalid_inquiry_ids") {
+      return NextResponse.json(
+        { ok: false, error: err.message },
+        { status: 422 },
+      );
+    }
+    if (
+      err instanceof InquirySessionError &&
+      err.code === "template_name_required"
+    ) {
       return NextResponse.json(
         { ok: false, error: err.message },
         { status: 422 },

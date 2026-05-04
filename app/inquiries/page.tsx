@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import InquiryListClient, { type InquiryListItem } from "./InquiryListClient";
 
-const MAX_INQUIRIES = 50;
+const MAX_TEMPLATES = 50;
 
 export default async function InquiriesPage() {
   const account = await getSessionAccountFromCookies();
@@ -17,31 +17,43 @@ export default async function InquiriesPage() {
     redirect("/");
   }
 
-  const sessions = await prisma.inquirySession.findMany({
-    where: { owner_account_id: account.id },
+  // Übersicht zeigt ausschließlich Vorlagen (is_template=true).
+  // Reguläre Arbeits-Sessions tauchen hier bewusst nicht auf, damit die
+  // Liste nicht mit einmaligen Nachrichten zugemüllt wird.
+  const templates = await prisma.inquirySession.findMany({
+    where: { owner_account_id: account.id, is_template: true },
     orderBy: { createdAt: "desc" },
-    take: MAX_INQUIRIES,
-    select: { id: true, createdAt: true, status: true, selected_inquiry_ids: true },
+    take: MAX_TEMPLATES,
+    select: {
+      id: true,
+      createdAt: true,
+      template_name: true,
+      selected_inquiry_ids: true,
+    },
   });
 
-  const items: InquiryListItem[] = sessions.map((s) => {
-    const ids = Array.isArray(s.selected_inquiry_ids)
-      ? (s.selected_inquiry_ids as string[])
+  const items: InquiryListItem[] = templates.map((t) => {
+    const ids = Array.isArray(t.selected_inquiry_ids)
+      ? (t.selected_inquiry_ids as string[])
       : [];
     const labels = ids
       .map((inquiryId) => INQUIRY_PROFILE_CATALOG_V2[inquiryId]?.label ?? inquiryId)
       .join(", ");
     return {
-      id: s.id,
+      id: t.id,
+      templateName: t.template_name ?? "Unbenannte Vorlage",
       labels,
-      dateLabel: s.createdAt.toLocaleDateString("de-DE"),
-      statusLabel: s.status === "CONFIRMED" ? "Bestätigt" : "Offen",
+      dateLabel: t.createdAt.toLocaleDateString("de-DE"),
     };
   });
 
   return (
     <main>
-      <h1>Anfragen</h1>
+      <h1>Vorlagen</h1>
+      <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
+        Hier erscheinen ausschließlich gespeicherte Vorlagen. Einmalige
+        Nachrichten werden nicht dauerhaft abgelegt.
+      </p>
       <div style={{ marginBottom: "1.5rem" }}>
         <Link
           href="/inquiries/new"
@@ -55,10 +67,10 @@ export default async function InquiriesPage() {
             fontWeight: 500,
           }}
         >
-          Neue Anfrage
+          Neue Nachricht
         </Link>
       </div>
-      <InquiryListClient sessions={items} />
+      <InquiryListClient templates={items} />
     </main>
   );
 }

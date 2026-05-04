@@ -427,6 +427,19 @@ model InquirySession {
 
   /// Zeitpunkt der Bestätigung (gesetzt zusammen mit status = CONFIRMED).
   confirmed_at DateTime?
+
+  /// Vorlagen-Markierung. Vorlagen erscheinen in der Übersicht
+  /// (Patientenkommunikation → Vorlagen) und werden nicht als reguläre
+  /// Arbeits-Sessions behandelt. Reguläre Sessions (is_template=false)
+  /// laufen den normalen DRAFT/CONFIRMED-Lifecycle und tauchen in der
+  /// sichtbaren Liste nicht auf.
+  is_template Boolean @default(false)
+
+  /// Optionaler, vom Nutzer vergebener Vorlagenname (Pflicht, sobald
+  /// is_template=true; wird im Service validiert).
+  template_name String?
+
+  @@index([owner_account_id, is_template])
 }
 
 /// Phase P1: Mandant ("Praxis"). Wird in P1 ausschließlich per Backfill aus
