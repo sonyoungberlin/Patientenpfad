@@ -1685,6 +1685,187 @@ function AppointmentSpecificSection({
 // Ende APPOINTMENT M2 Gruppen-Prototyp
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ONBOARDING M2 Gruppen-Prototyp
+// [PROTOTYP – hartcodiert, nur für ONBOARDING, reversibel]
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Kurze UI-Labels für ONBOARDING Checkpoints.
+ * Lokale Überschreibung nur für den M2-Gruppenprototyp – Katalog bleibt unverändert.
+ */
+const ONBOARDING_SHORT_LABELS: Record<string, string> = {
+  ONBOARDING_IDENTITY_MISMATCH: "Patient nicht zuordenbar",
+  ONBOARDING_DATA_INCOMPLETE: "Patientendaten unvollständig",
+  ONBOARDING_DATA_UPDATE_REQUIRED: "Patientendaten aktualisieren",
+  ONBOARDING_DOCTOLIB_INFO: "Doctolib erklären",
+  ONBOARDING_WRONG_PRACTICE: "Falsche Praxis",
+  ONBOARDING_GKV_DOCUMENT_MISSING: "Versicherungsnachweis (GKV)",
+  ONBOARDING_PKV_PAS_MISSING: "Unterlagen Privatpatient",
+};
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den ONBOARDING M2 Prototyp.
+ *
+ * Ein Checkpoint kann grundsätzlich in mehreren Gruppen erscheinen – der Status
+ * bleibt global synchron (ein einziger Record-Eintrag). IDs ohne Profil-Eintrag
+ * werden robust übersprungen.
+ *
+ * Hinweis: In dieser Erstfassung erscheint jeder Checkpoint genau in einer
+ * Gruppe (keine Dopplungen).
+ *
+ * [PROTOTYP – hartcodiert, reversibel. Zum Rückgängigmachen: Render-Loop in
+ *  InquiryM2Client wiederherstellen, diese Konstante und die zugehörigen
+ *  Komponenten entfernen.]
+ */
+const ONBOARDING_GROUPS: PrescriptionGroup[] = [
+  // ── 1. Patient eindeutig identifizieren / Daten klären ───────────────────
+  {
+    id: "onb_identifizieren",
+    label: "Patient eindeutig identifizieren / Daten klären",
+    description:
+      "Wer ist die Person und sind die Stammdaten vollständig und aktuell?",
+    checkpointIds: [
+      "ONBOARDING_IDENTITY_MISMATCH",
+      "ONBOARDING_DATA_INCOMPLETE",
+      "ONBOARDING_DATA_UPDATE_REQUIRED",
+      "ONBOARDING_DOCTOLIB_INFO",
+    ],
+    defaultOpen: true,
+  },
+
+  // ── 2. Praxiszuständigkeit ────────────────────────────────────────────────
+  {
+    id: "onb_zustaendigkeit",
+    label: "Praxiszuständigkeit",
+    description:
+      "Ist die Anfrage überhaupt für unsere Praxis bestimmt?",
+    checkpointIds: [
+      "ONBOARDING_WRONG_PRACTICE",
+    ],
+    defaultOpen: false,
+  },
+
+  // ── 3. Versicherung / Unterlagen ─────────────────────────────────────────
+  {
+    id: "onb_versicherung",
+    label: "Versicherung / Unterlagen",
+    description:
+      "Liegen die nötigen Versicherungs- und Identitätsnachweise vor?",
+    checkpointIds: [
+      "ONBOARDING_GKV_DOCUMENT_MISSING",
+      "ONBOARDING_PKV_PAS_MISSING",
+    ],
+    defaultOpen: false,
+  },
+];
+
+/**
+ * Situationsbasierte Akkordeon-Gruppen für den ONBOARDING M2 Prototyp.
+ * Analog zu AUSpecificSection – keine Actions in M2.
+ *
+ * ONBOARDING-Checkpoints, die (noch) keiner Gruppe zugeordnet sind, werden
+ * als Fallback unter „Weitere passende Hinweise" angezeigt, damit kein
+ * Profil-Checkpoint stillschweigend verloren geht.
+ *
+ * [PROTOTYP – hartcodiert, reversibel.]
+ */
+function OnboardingSpecificSection({
+  section,
+  statuses,
+  onChange,
+}: {
+  section: M2SectionData;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+}) {
+  // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht
+  // angezeigt (Actions kommen in M3 über boundActionConditions).
+  const explanationCheckpoints = section.specificCheckpoints.filter(
+    (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+  );
+  const cpById = new Map<string, PlainCheckpoint>(
+    explanationCheckpoints.map((cp) => [cp.id, cp]),
+  );
+
+  // Fallback: alle EXPLANATION-Checkpoints, die in keiner Gruppe vorkommen.
+  const groupedIds = new Set<string>(
+    ONBOARDING_GROUPS.flatMap((g) => g.checkpointIds),
+  );
+  const ungroupedCheckpoints = explanationCheckpoints.filter(
+    (cp) => !groupedIds.has(cp.id),
+  );
+
+  return (
+    <section style={{ marginBottom: "2rem" }}>
+      <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
+      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
+        Wähle aus, welche Situation am besten passt:
+      </p>
+
+      {/* Decision-Klärungsfragen – immer sichtbar (ONBOARDING hat aktuell keine). */}
+      {section.decisionQuestions.length > 0 && (
+        <div style={{ marginBottom: "1rem" }}>
+          <div
+            className="text-muted text-small"
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+          >
+            <span aria-hidden="true">? </span>Klärungsfragen
+          </div>
+          <DecisionQuestionBlock
+            questions={section.decisionQuestions}
+            statuses={statuses}
+            onChange={onChange}
+          />
+        </div>
+      )}
+
+      {/* Accordion-Gruppen */}
+      <div style={{ marginBottom: "0.75rem" }}>
+        {ONBOARDING_GROUPS.map((group) => {
+          const groupCheckpoints = group.checkpointIds
+            .map((id) => cpById.get(id))
+            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+
+          return (
+            <PrescriptionGroupAccordion
+              key={group.id}
+              group={group}
+              checkpoints={groupCheckpoints}
+              statuses={statuses}
+              onChange={onChange}
+              shortLabels={ONBOARDING_SHORT_LABELS}
+            />
+          );
+        })}
+
+        {/* Fallback-Gruppe: noch nicht zugeordnete ONBOARDING-Checkpoints. */}
+        {ungroupedCheckpoints.length > 0 && (
+          <PrescriptionGroupAccordion
+            key="onb_weitere_hinweise"
+            group={{
+              id: "onb_weitere_hinweise",
+              label: "Weitere passende Hinweise",
+              description:
+                "Weitere ONBOARDING-Hinweise, die keiner thematischen Gruppe zugeordnet sind.",
+              checkpointIds: ungroupedCheckpoints.map((cp) => cp.id),
+              defaultOpen: false,
+            }}
+            checkpoints={ungroupedCheckpoints}
+            statuses={statuses}
+            onChange={onChange}
+            shortLabels={ONBOARDING_SHORT_LABELS}
+          />
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ende ONBOARDING M2 Gruppen-Prototyp
+// ─────────────────────────────────────────────────────────────────────────────
+
 /** Section „Weitere passende Hinweise" – standardmäßig eingeklappt. */
 function WeitereHinweiseSection({
   profileActionCheckpoints,
@@ -1889,6 +2070,13 @@ export default function InquiryM2Client({
             statuses={statuses}
             onChange={setStatus}
           />
+        ) : section.inquiryId === "ONBOARDING" ? (
+          <OnboardingSpecificSection
+            key={section.inquiryId}
+            section={section}
+            statuses={statuses}
+            onChange={setStatus}
+          />
         ) : (
           <SpecificSection
             key={section.inquiryId}
@@ -1899,10 +2087,10 @@ export default function InquiryM2Client({
         ),
       )}
 
-      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION / LAB / IMMUNIZATION.
+      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION / LAB / IMMUNIZATION / ONBOARDING.
            Für diese Profile werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
       {profileActionCheckpoints.length > 0 &&
-        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB" || s.inquiryId === "APPOINTMENT" || s.inquiryId === "IMMUNIZATION") && (
+        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB" || s.inquiryId === "APPOINTMENT" || s.inquiryId === "IMMUNIZATION" || s.inquiryId === "ONBOARDING") && (
           <WeitereHinweiseSection
             profileActionCheckpoints={profileActionCheckpoints}
             statuses={statuses}

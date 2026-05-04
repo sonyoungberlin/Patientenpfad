@@ -3201,7 +3201,7 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSectionIntro({ MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE }),
     ]);
-    expect(result.intro).toContain("Durchsicht Ihrer Unterlagen");
+    expect(result.intro).toContain("Sie waren kürzlich in unserer Praxis");
   });
 
   it("MESSAGE_INTRO_MISSING_INFO ACTIVE → output.intro enthält den Text", () => {

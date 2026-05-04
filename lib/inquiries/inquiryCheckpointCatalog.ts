@@ -1389,6 +1389,27 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * Generischer Hinweis auf Selbstzahler-/Privatleistungen: Zahlung vor Ort
+   * per EC- oder Kreditkarte. Bewusst profil-agnostisch formuliert (kein
+   * Bezug zu Attest, Onboarding o. ä.), damit derselbe Baustein über
+   * `boundActionConditions` in beliebigen Profilen freigeschaltet werden
+   * kann (z. B. MEDICAL_DOCUMENTS bei Selbstzahlerleistung, ONBOARDING bei
+   * fehlendem Versicherungsschutz, weitere Selbstzahlerfälle).
+   */
+  PAYMENT_ONSITE_INFO: {
+    id: "PAYMENT_ONSITE_INFO",
+    label: "Zahlung vor Ort",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Zahlung erfolgt vor Ort per EC- oder Kreditkarte.",
+    },
+  },
+
   URINE_SAMPLE_ONSITE: {
     id: "URINE_SAMPLE_ONSITE",
     label: "Urinprobe vor Ort",
@@ -2708,7 +2729,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit. Bitte aktualisieren Sie Ihre Patientendaten über den zugesendeten Fragebogen.",
+        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -3011,13 +3032,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für Ihr Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+        "Atteste oder Bescheinigungen können nur nach ärztlicher Beurteilung ausgestellt werden.",
       // NO: bewusst still – kein Text
     },
     textByAudience: {
       contact_person: {
         [ExplanationStatus.YES]:
-          "Für das Anliegen kann grundsätzlich ein Attest oder eine Bescheinigung ausgestellt werden.",
+          "Atteste oder Bescheinigungen können nur nach ärztlicher Beurteilung ausgestellt werden.",
       },
     },
   },
@@ -3052,7 +3073,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Genaue Angaben zum Verwendungszweck liegen noch nicht vor.",
+        "Bitte geben Sie an, wofür das Attest oder die Bescheinigung benötigt wird.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -3087,7 +3108,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Atteste und Bescheinigungen können je nach Anlass eine Selbstzahlerleistung sein.",
+        "Bestimmte Atteste und Bescheinigungen zählen nicht zur medizinisch notwendigen Versorgung und sind daher Selbstzahlerleistungen. Dazu gehören z. B. Atteste für Sport, Schule oder Reisen. Wir berechnen in der Regel eine Pauschale von 10 Euro. Medizinisch notwendige Nachweise wie eine Arbeitsunfähigkeitsbescheinigung sind kostenfrei.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -3169,11 +3190,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bei der Durchsicht Ihrer Unterlagen ist uns etwas aufgefallen.",
+        "Sie waren kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
     },
     textByAudience: {
       contact_person:
-        "Bei der Durchsicht der Unterlagen Ihrer Angehörigen / Ihres Angehörigen ist uns etwas aufgefallen.",
+        "Ihre Angehörige / Ihr Angehöriger war kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
     },
   },
 

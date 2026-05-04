@@ -1970,6 +1970,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
       "DOCUMENT_UPLOAD",
+      "PAYMENT_ONSITE_INFO",
     ],
     boundActionConditions: {
       DIGITAL_REQUEST_REQUIRED: {
@@ -1983,6 +1984,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       DOCUMENT_UPLOAD: {
         showWhenAny: [{ MEDICAL_DOCUMENT_INFO_MISSING: "YES" }],
+      },
+      PAYMENT_ONSITE_INFO: {
+        showWhenAny: [{ MEDICAL_DOCUMENT_PRIVATE_SERVICE: "YES" }],
       },
     },
 

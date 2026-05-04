@@ -78,7 +78,7 @@ describe("Audience – MESSAGE_INTRO_PRACTICE_FOLLOWUP", () => {
 
   it("audience='contact_person' → Angehörigen-Formulierung", () => {
     const result = renderInquiryResponseFromSections([section], { audience: "contact_person" });
-    expect(result.intro).toContain("Angehörigen");
+    expect(result.intro).toContain("Angehörige");
   });
 });
 
