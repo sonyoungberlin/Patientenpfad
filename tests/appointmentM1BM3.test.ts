@@ -57,6 +57,7 @@ const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
   "APPOINTMENT_CANCEL_OR_RESCHEDULE",
   "APPOINTMENT_WRONG_TYPE",
   "APPOINTMENT_BOOKING_CODE_REQUIRED",
+  "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
   "APPOINTMENT_DATA_INCOMPLETE",
 ] as const;
 
@@ -324,8 +325,8 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau fünf Specific-Checkpoints", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(5);
+  it("APPOINTMENT-Profil hat genau sechs Specific-Checkpoints", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(6);
   });
 
   it("APPOINTMENT_CANCEL_OR_RESCHEDULE hat specificRole PROCESS_INFO", () => {
@@ -842,5 +843,89 @@ describe("APPOINTMENT – Renderer: terminartspezifische Buchungs-Actions", () =
     ]);
     const allText = result.sections[0].attachedParagraphs.join(" ");
     expect(allText).toContain("Online-Buchungskalender");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// APPOINTMENT_EXTERNAL_FINDING_PRESENT + DOCUMENT_UPLOAD-Verknüpfung
+// ---------------------------------------------------------------------------
+
+describe("APPOINTMENT – DOCUMENT_UPLOAD bei externem Befund", () => {
+  it("APPOINTMENT_EXTERNAL_FINDING_PRESENT ist im Katalog als EXPLANATION/SPECIFIC definiert", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_EXTERNAL_FINDING_PRESENT"];
+    expect(cp).toBeDefined();
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
+    expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
+    expect(cp.specificRole).toBe("MISSING_DOCUMENT");
+  });
+
+  it("APPOINTMENT_EXTERNAL_FINDING_PRESENT ist in APPOINTMENT.specificCheckpointIds", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toContain("APPOINTMENT_EXTERNAL_FINDING_PRESENT");
+  });
+
+  it("DOCUMENT_UPLOAD ist in APPOINTMENT.boundActionCheckpointIds", () => {
+    expect((APPOINTMENT as any).boundActionCheckpointIds).toContain("DOCUMENT_UPLOAD");
+  });
+
+  it("DOCUMENT_UPLOAD ist NICHT in APPOINTMENT.availableActionIds (Architekturregel: Listen schließen sich aus)", () => {
+    expect(APPOINTMENT.availableActionIds).not.toContain("DOCUMENT_UPLOAD");
+  });
+
+  it("DOCUMENT_UPLOAD hat showWhenAny [APPOINTMENT_EXTERNAL_FINDING_PRESENT=YES] in boundActionConditions", () => {
+    const conditions = (APPOINTMENT as any).boundActionConditions;
+    expect(conditions?.DOCUMENT_UPLOAD?.showWhenAny).toEqual([
+      { APPOINTMENT_EXTERNAL_FINDING_PRESENT: "YES" },
+    ]);
+  });
+
+  it("DOCUMENT_UPLOAD-Text bleibt unverändert (zentraler GLOBAL-Checkpoint)", () => {
+    const cp = INQUIRY_CHECKPOINT_CATALOG_V2["DOCUMENT_UPLOAD"];
+    expect(cp).toBeDefined();
+    expect(cp.textByStatus[ActionStatus.ACTIVE]).toBe(
+      "Bitte laden Sie relevante Unterlagen über Ihren Doctolib Account hoch.",
+    );
+  });
+
+  it("Renderer: APPOINTMENT_EXTERNAL_FINDING_PRESENT YES + DOCUMENT_UPLOAD ACTIVE → Upload-Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_EXTERNAL_FINDING_PRESENT: ExplanationStatus.YES,
+          DOCUMENT_UPLOAD: ActionStatus.ACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_EXTERNAL_FINDING_PRESENT: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = [
+      ...result.sections[0].attachedParagraphs,
+      ...result.sharedBottom,
+    ].join(" ");
+    expect(allText).toContain("Unterlagen");
+    expect(allText).toContain("hoch");
+  });
+
+  it("Renderer: DOCUMENT_UPLOAD INACTIVE → kein Upload-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "APPOINTMENT",
+        decisionStatus: DecisionStatus.DISABLED,
+        checkpointStatuses: {
+          APPOINTMENT_EXTERNAL_FINDING_PRESENT: ExplanationStatus.YES,
+          DOCUMENT_UPLOAD: ActionStatus.INACTIVE,
+        },
+        explanationOutputStatuses: {
+          APPOINTMENT_EXTERNAL_FINDING_PRESENT: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      },
+    ]);
+    const allText = [
+      ...result.sections[0].attachedParagraphs,
+      ...result.sharedBottom,
+    ].join(" ");
+    expect(allText).not.toContain("Doctolib Account hoch");
   });
 });

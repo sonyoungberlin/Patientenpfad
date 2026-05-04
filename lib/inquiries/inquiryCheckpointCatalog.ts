@@ -2274,6 +2274,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_EXTERNAL_FINDING_PRESENT: {
+    id: "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
+    label: "Befundbesprechung zu externem Befund",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_EXTERNAL_FINDING_PRESENT-Q1", text: "Soll die Befundbesprechung zu einem externen Befund erfolgen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Befundbesprechung soll zu einem externen Befund (z. B. Facharzt, Krankenhaus) erfolgen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   APPOINTMENT_WRONG_TYPE: {
     id: "APPOINTMENT_WRONG_TYPE",
     label: "Falscher Termintyp",
@@ -2676,6 +2693,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Patient zur Datenvervollständigung via Online-Anamnese aufgefordert.",
+    },
+  },
+
+  ONBOARDING_DATA_UPDATE_REQUIRED: {
+    id: "ONBOARDING_DATA_UPDATE_REQUIRED",
+    label: "Patientendaten aktualisieren",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "ONBOARDING_DATA_UPDATE_REQUIRED-Q1", text: "Patientendaten aktualisieren?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit. Bitte aktualisieren Sie Ihre Patientendaten über den zugesendeten Fragebogen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Aktualisierung der Patientendaten angefordert.",
     },
   },
 
