@@ -339,6 +339,97 @@ export async function instantiateFromTemplate(
 }
 
 /**
+ * Speichert den aktuellen Stand einer bestehenden Arbeits-Session als neue
+ * Vorlage (`is_template=true`, `status=DRAFT`). Die Quell-Session bleibt
+ * unverändert und behält ihren Status (DRAFT oder CONFIRMED).
+ *
+ * Kopiert sämtliche M1/M2/M3-Auswahlfelder (selected_inquiry_ids,
+ * section_snapshot, checkpoint_statuses, action_statuses,
+ * explanation_output_statuses, communication_reason_selection,
+ * response_goal_selection), damit ein späteres "Vorlage verwenden"
+ * (instantiateFromTemplate) genau diesen Arbeitsstand wiederherstellt.
+ *
+ * `generated_output` und `confirmed_at` werden bewusst NICHT übernommen –
+ * eine Vorlage ist immer DRAFT und nicht bestätigt.
+ *
+ * Ownership: Quell-Session muss dem aufrufenden Account gehören. Andernfalls
+ * wird – analog zu allen anderen Owner-Guards – session_not_found geworfen
+ * (kein 403, um ID-Enumeration zu vermeiden). Vorlagen selbst können nicht
+ * erneut als Vorlage gespeichert werden (wäre redundant) → session_not_found.
+ *
+ * Wirft:
+ *  - InquirySessionError("template_name_required") bei leerem/whitespace-only Namen.
+ *  - InquirySessionError("session_not_found") bei fehlender Session, fremdem
+ *    Account oder wenn die Quelle bereits eine Vorlage ist.
+ */
+export async function saveSessionAsTemplate(
+  sessionId: string,
+  ownerAccountId: string,
+  templateName: string,
+  client: PrismaLike = defaultPrisma,
+): Promise<InquirySession> {
+  const trimmedName = (templateName ?? "").trim();
+  if (!trimmedName) {
+    throw new InquirySessionError(
+      "template_name_required",
+      "Vorlagenname darf nicht leer sein.",
+    );
+  }
+
+  const source = await client.inquirySession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (
+    !source ||
+    source.owner_account_id !== ownerAccountId ||
+    source.is_template
+  ) {
+    throw new InquirySessionError(
+      "session_not_found",
+      `Session ${sessionId} nicht gefunden.`,
+    );
+  }
+
+  return client.inquirySession.create({
+    data: {
+      owner_account_id: ownerAccountId,
+      status: "DRAFT",
+      is_template: true,
+      template_name: trimmedName,
+      selected_inquiry_ids:
+        source.selected_inquiry_ids === null
+          ? Prisma.JsonNull
+          : toJsonInput(source.selected_inquiry_ids),
+      section_snapshot:
+        source.section_snapshot === null
+          ? Prisma.JsonNull
+          : toJsonInput(source.section_snapshot),
+      checkpoint_statuses:
+        source.checkpoint_statuses === null
+          ? Prisma.JsonNull
+          : toJsonInput(source.checkpoint_statuses),
+      action_statuses:
+        source.action_statuses === null
+          ? Prisma.JsonNull
+          : toJsonInput(source.action_statuses),
+      explanation_output_statuses:
+        source.explanation_output_statuses === null
+          ? Prisma.JsonNull
+          : toJsonInput(source.explanation_output_statuses),
+      communication_reason_selection:
+        source.communication_reason_selection === null
+          ? Prisma.JsonNull
+          : toJsonInput(source.communication_reason_selection),
+      response_goal_selection:
+        source.response_goal_selection === null
+          ? Prisma.JsonNull
+          : toJsonInput(source.response_goal_selection),
+    },
+  });
+}
+
+/**
  * Aktualisiert die Checkpoint- und Aktions-Statuses einer Session.
  *
  * Wirft InquirySessionError("session_confirmed"), wenn die Session bereits
