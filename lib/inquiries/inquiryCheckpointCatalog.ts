@@ -2606,136 +2606,31 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TECH_VIDEO_NOT_WORKING-Q1", text: "Funktioniert die Videosprechstunde technisch nicht (z. B. kein Ton, kein Bild, Verbindungsabbruch)?" },
     ],
     textByStatus: {
-      // M2-Schalter: reine Zustandsaussage – Alternativkanal-Hinweis in TECH_VIDEO_NOT_WORKING_ACTION (M3).
+      // M2-Schalter: genau eine klare Information – kein Lösungsvorschlag durch die Praxis,
+      // klarer Verweis auf den externen Doctolib-Support.
       [ExplanationStatus.YES]:
-        "Die Videosprechstunde ist technisch nicht nutzbar.",
+        "Scheinbar konnte die Videosprechstunde aus technischen Gründen nicht stattfinden. Wenden Sie sich bei Fragen an den Doctolib Support.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
 
   TECH_UPLOAD_FAILED: {
     id: "TECH_UPLOAD_FAILED",
-    label: "Dokumenten-Upload nicht möglich",
+    label: "Dokument unleserlich – erneuter Upload erforderlich",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
     m5Code: "TECH" as M5ReasonCode,
     questions: [
-      { id: "TECH_UPLOAD_FAILED-Q1", text: "Können Dokumente nicht hochgeladen werden (z. B. Datei zu groß, falsches Format, Fehler beim Upload)?" },
+      { id: "TECH_UPLOAD_FAILED-Q1", text: "Ist das hochgeladene Dokument nicht ausreichend lesbar oder unbrauchbar?" },
     ],
     textByStatus: {
-      // M2-Schalter: reine Zustandsaussage – Alternativkanal-Hinweise in TECH_UPLOAD_FAILED_ACTION (M3).
+      // M2-Schalter: genau eine klare Information – Aufforderung zum erneuten Upload,
+      // ohne Hinweis auf Post, Fax oder Vor-Ort-Abgabe und ohne technische Details.
       [ExplanationStatus.YES]:
-        "Der Dokumenten-Upload ist technisch nicht möglich.",
+        "Das hochgeladene Dokument ist nicht ausreichend lesbar und kann so nicht verwendet werden. Bitte laden Sie das Dokument erneut hoch.",
       // NO: bewusst still – keine Erklärung nötig
-    },
-  },
-
-  TECH_LOGIN_PROBLEM: {
-    id: "TECH_LOGIN_PROBLEM",
-    label: "Login / Zugang unklar oder fehlgeschlagen",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    specificRole: "PROCESS_INFO" as SpecificRole,
-    m5Code: "TECH" as M5ReasonCode,
-    questions: [
-      { id: "TECH_LOGIN_PROBLEM-Q1", text: "Hat der Patient Probleme beim Login oder Zugang zum Patientenportal (z. B. Passwort vergessen, Konto gesperrt)?" },
-    ],
-    textByStatus: {
-      // M2-Schalter: reine Zustandsaussage – Prozessanleitung in TECH_LOGIN_PROBLEM_ACTION (M3).
-      [ExplanationStatus.YES]:
-        "Zugangs- oder Anmeldeproblem beim Patientenportal wurde festgestellt.",
-      // NO: bewusst still – keine Erklärung nötig
-    },
-  },
-
-  TECH_PROCESS_INSTRUCTION: {
-    id: "TECH_PROCESS_INSTRUCTION",
-    label: "Allgemeine technische Anleitung (App, QR-Code, Schritte)",
-    kind: InquiryCheckpointKind.EXPLANATION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    specificRole: "PROCESS_INFO" as SpecificRole,
-    questions: [
-      { id: "TECH_PROCESS_INSTRUCTION-Q1", text: "Benötigt der Patient eine Anleitung zur Nutzung der digitalen Dienste (z. B. App-Installation, QR-Code scannen, Schritte zur Anmeldung)?" },
-    ],
-    textByStatus: {
-      // M2-Schalter: reine Zustandsaussage – Bedienungsanleitung in TECH_PROCESS_INSTRUCTION_ACTION (M3).
-      [ExplanationStatus.YES]:
-        "Anleitung zur Nutzung der digitalen Dienste wurde angefragt.",
-      // NO: bewusst still – keine Erklärung nötig
-    },
-  },
-
-  // ---- TECH_SUPPORT ACTION-Bausteine (freigeschaltet über boundActionConditions) ----
-
-  /**
-   * Schritt-für-Schritt-Anleitung zur Nutzung der digitalen Dienste.
-   * Wird in M3 angezeigt, wenn TECH_PROCESS_INSTRUCTION = YES gesetzt ist.
-   */
-  TECH_PROCESS_INSTRUCTION_ACTION: {
-    id: "TECH_PROCESS_INSTRUCTION_ACTION",
-    label: "Anleitung: Nutzung der digitalen Dienste",
-    kind: InquiryCheckpointKind.ACTION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    actionCategory: "NEXT_STEP",
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "So nutzen Sie unsere digitalen Dienste: 1. Laden Sie die App herunter oder öffnen Sie das Portal im Browser. 2. Registrieren Sie sich mit Ihrer E-Mail-Adresse. 3. Scannen Sie den QR-Code aus Ihrer Einladung oder geben Sie den Code manuell ein.",
-    },
-  },
-
-  /**
-   * Prozessanleitung bei Login-/Zugangsproblemen.
-   * Wird in M3 angezeigt, wenn TECH_LOGIN_PROBLEM = YES gesetzt ist.
-   */
-  TECH_LOGIN_PROBLEM_ACTION: {
-    id: "TECH_LOGIN_PROBLEM_ACTION",
-    label: "Anleitung: Login / Passwortzurücksetzen",
-    kind: InquiryCheckpointKind.ACTION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    actionCategory: "NEXT_STEP",
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Für den Zugang zum Patientenportal: Bitte nutzen Sie die Funktion 'Passwort vergessen' auf der Anmeldeseite. Falls das Problem weiterhin besteht, kontaktieren Sie uns direkt.",
-    },
-  },
-
-  /**
-   * Alternativkanal-Hinweis bei nicht möglichem Dokumenten-Upload.
-   * Wird in M3 angezeigt, wenn TECH_UPLOAD_FAILED = YES gesetzt ist.
-   */
-  TECH_UPLOAD_FAILED_ACTION: {
-    id: "TECH_UPLOAD_FAILED_ACTION",
-    label: "Hinweis: Alternativer Übermittlungsweg für Dokumente",
-    kind: InquiryCheckpointKind.ACTION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    actionCategory: "NEXT_STEP",
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Bitte senden Sie die Unterlagen per Post, Fax oder bringen Sie sie beim nächsten Besuch mit.",
-    },
-  },
-
-  /**
-   * Alternativkanal-Hinweis bei technisch nicht nutzbarer Videosprechstunde.
-   * Wird in M3 angezeigt, wenn TECH_VIDEO_NOT_WORKING = YES gesetzt ist.
-   */
-  TECH_VIDEO_NOT_WORKING_ACTION: {
-    id: "TECH_VIDEO_NOT_WORKING_ACTION",
-    label: "Hinweis: Alternativer Kanal statt Videosprechstunde",
-    kind: InquiryCheckpointKind.ACTION,
-    scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
-    actionCategory: "NEXT_STEP",
-    textByStatus: {
-      [ActionStatus.ACTIVE]:
-        "Bitte kontaktieren Sie uns telefonisch oder kommen Sie persönlich in die Praxis.",
     },
   },
 
