@@ -32,6 +32,13 @@ export type QuestionnaireCardProps = {
    * nicht-completed Sessions einen leeren String übergeben.
    */
   noteText: string;
+  /**
+   * Zeitpunkt des ersten erfolgreichen PDF-Downloads (oder `null`, falls noch
+   * nie heruntergeladen). Steuert nur die Beschriftung des PDF-Buttons sowie
+   * einen dezenten Status-Hinweis und ändert nicht das Verhalten des
+   * Downloads selbst.
+   */
+  pdfDownloadedAt?: Date | null;
 };
 
 export default function QuestionnaireCard({
@@ -46,6 +53,7 @@ export default function QuestionnaireCard({
   questions,
   answers,
   noteText,
+  pdfDownloadedAt = null,
 }: QuestionnaireCardProps) {
   return (
     <div
@@ -101,10 +109,20 @@ export default function QuestionnaireCard({
             rel="noopener noreferrer"
             className="btn-secondary text-small"
             data-q-pdf={id}
+            data-q-pdf-downloaded={pdfDownloadedAt ? "true" : "false"}
             style={{ display: "inline-block", marginTop: "0.25rem" }}
           >
-            PDF herunterladen
+            {pdfDownloadedAt ? "PDF erneut herunterladen" : "PDF herunterladen"}
           </a>
+          {pdfDownloadedAt && (
+            <div
+              className="text-small"
+              data-q-pdf-status={id}
+              style={{ color: "var(--muted-fg, #475569)" }}
+            >
+              ✓ PDF heruntergeladen
+            </div>
+          )}
           <MedicalRecordNoteCopyButton sessionId={id} noteText={noteText} />
         </>
       )}

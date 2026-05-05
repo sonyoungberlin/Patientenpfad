@@ -340,6 +340,13 @@ model PatientQuestionnaireSession {
   /// Löschen und kann später durch einen Cleanup-Job endgültig entfernt werden.
   deleted_at DateTime? @db.Timestamp(6)
 
+  /// Markiert, ob/wann eine PDF zu dieser Session erfolgreich heruntergeladen
+  /// wurde. NULL = noch nicht heruntergeladen, Timestamp = Zeitpunkt des
+  /// (letzten — wir setzen nur einmal) erfolgreichen Downloads. Wird in der
+  /// Praxis-Liste als „bereits heruntergeladen"-Hinweis angezeigt, damit ein
+  /// abgelegter Krankenblatt-Eintrag erkennbar bleibt.
+  pdf_downloaded_at DateTime? @db.Timestamp(6)
+
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
   @@index([owner_account_id, createdAt])

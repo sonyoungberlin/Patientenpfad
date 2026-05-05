@@ -55,6 +55,7 @@ export default async function QuestionnairesPage() {
       deduplicated_questions: true,
       answers: true,
       identity_gate_completed_at: true,
+      pdf_downloaded_at: true,
     },
   });
 
@@ -110,6 +111,7 @@ export default async function QuestionnairesPage() {
                 questions={questions}
                 answers={answers}
                 noteText={noteText}
+                pdfDownloadedAt={s.pdf_downloaded_at}
               />
             );
           })}

@@ -325,13 +325,16 @@ describe("GET /api/questionnaire/[id]/pdf — Practice-Scope", () => {
       answers: {},
       identity_gate_completed_at: new Date(),
       identity_gate_method: "dob",
+      pdf_downloaded_at: new Date(), // bereits markiert → kein erneutes update.
     });
     const res = await PdfRoute(pdfReq(), {
       params: Promise.resolve({ id: "sess-1" }),
     });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/pdf");
-    // Kein stilles Update von owner_practice_id beim Lesen.
+    // Kein stilles Update von owner_practice_id beim Lesen, und das
+    // pdf_downloaded_at-Marker-Update ist bereits gesetzt → kein zweites
+    // Schreiben.
     expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 });
