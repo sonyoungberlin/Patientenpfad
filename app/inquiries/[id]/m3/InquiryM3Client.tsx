@@ -796,9 +796,15 @@ function QuestionnaireRequestSection({
                     />
                     {block.label}
                     {blockedByLanguage && (
-                      <span aria-hidden="true" style={{ fontSize: "0.75rem", opacity: 0.7 }}>
-                        (nur DE)
-                      </span>
+                      <>
+                        <span aria-hidden="true" style={{ fontSize: "0.75rem", opacity: 0.7 }}>
+                          (nur DE)
+                        </span>
+                        <span className="sr-only">
+                          {" "}
+                          – Dieser Block ist noch nicht vollständig auf Englisch übersetzt.
+                        </span>
+                      </>
                     )}
                   </label>
                 );
