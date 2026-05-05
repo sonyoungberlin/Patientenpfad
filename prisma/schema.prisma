@@ -27,10 +27,10 @@ enum PracticeRole {
 }
 
 model Account {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  is_approved Boolean  @default(false)
-  is_admin    Boolean  @default(false)
+  id          String  @id @default(cuid())
+  email       String  @unique
+  is_approved Boolean @default(false)
+  is_admin    Boolean @default(false)
 
   /// Passwort-Hash im kompakten Format `scrypt$N$r$p$saltBase64$hashBase64`
   /// (siehe `lib/password.ts`). NULL bedeutet: Account hat (noch) kein
@@ -48,8 +48,8 @@ model Account {
   /// E-Mail-Adresse des Accounts versandt — niemals geloggt.
   password_reset_token   String?   @unique
   password_reset_expires DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   /// Freitext-Signatur für Nachrichten (max. 300 Zeichen, accountbezogen)
   message_signature String?
@@ -378,6 +378,14 @@ model PracticeQuestionnaireForm {
   /// Aktiv-Flag: ein deaktiviertes Formular ist auch in Phase 3b nicht
   /// öffentlich aufrufbar (für Phase 3a verhaltensirrelevant).
   is_active Boolean @default(true)
+
+  /// Sprache der Patientensicht des öffentlichen Website-Formulars
+  /// (`/p/[slug]`). Whitelist: "de" | "en". Default "de", damit
+  /// Bestandszeilen und alle bestehenden Codepfade unverändert deutsch
+  /// bleiben. Praxis-/interne Sichten (Übersicht, PDF, Krankenblatt)
+  /// ignorieren dieses Feld bewusst und bleiben deutsch. Bei "en" dürfen
+  /// nur EN-ready Blöcke gespeichert werden (siehe `isBlockEnReady`).
+  patient_language String @default("de")
 
   patient_questionnaire_sessions PatientQuestionnaireSession[]
 

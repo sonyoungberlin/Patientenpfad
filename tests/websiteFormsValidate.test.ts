@@ -29,6 +29,7 @@ describe("validateWebsiteFormInput", () => {
         intro_text: "Bitte ausfüllen.",
         selected_block_ids: [VALID_BLOCK],
         is_active: true,
+        patient_language: "de",
       });
     }
   });
@@ -137,5 +138,73 @@ describe("validateWebsiteFormInput", () => {
     const r = validateWebsiteFormInput(baseInput({ slug: "admin" }));
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.fieldErrors.slug).toMatch(/reserviert/i);
+  });
+
+  // ---- patient_language ----
+  it("patient_language default = 'de'", () => {
+    const r = validateWebsiteFormInput(baseInput());
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.patient_language).toBe("de");
+  });
+
+  it("akzeptiert patient_language='de' und 'en' wenn alle Blöcke EN-ready", () => {
+    const r1 = validateWebsiteFormInput(baseInput({ patient_language: "de" }));
+    expect(r1.ok).toBe(true);
+    if (r1.ok) expect(r1.value.patient_language).toBe("de");
+
+    const r2 = validateWebsiteFormInput(
+      baseInput({
+        patient_language: "en",
+        // KONTAKT ist im Katalog EN-ready (siehe lib/questionnaire/i18n.ts).
+        selected_block_ids: ["KONTAKT"],
+      }),
+    );
+    expect(r2.ok).toBe(true);
+    if (r2.ok) {
+      expect(r2.value.patient_language).toBe("en");
+      expect(r2.value.selected_block_ids).toEqual(["KONTAKT"]);
+    }
+  });
+
+  it("lehnt unbekannte patient_language-Werte ab", () => {
+    const r = validateWebsiteFormInput(baseInput({ patient_language: "fr" }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.patient_language).toBeTruthy();
+  });
+
+  it("blockiert nicht-EN-ready Blöcke wenn patient_language='en'", () => {
+    // ARBEITSUNFAEHIGKEIT ist NICHT EN-ready.
+    const r = validateWebsiteFormInput(
+      baseInput({
+        patient_language: "en",
+        selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      }),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.fieldErrors.selected_block_ids).toBeTruthy();
+      expect(r.fieldErrors.selected_block_ids).toMatch(/Englisch/);
+    }
+  });
+
+  it("blockiert auch Mischauswahl aus EN-ready und nicht-EN-ready Blöcken", () => {
+    const r = validateWebsiteFormInput(
+      baseInput({
+        patient_language: "en",
+        selected_block_ids: ["KONTAKT", "ARBEITSUNFAEHIGKEIT"],
+      }),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.selected_block_ids).toBeTruthy();
+  });
+
+  it("nicht-EN-ready Blöcke sind im DE-Modus weiterhin erlaubt", () => {
+    const r = validateWebsiteFormInput(
+      baseInput({
+        patient_language: "de",
+        selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      }),
+    );
+    expect(r.ok).toBe(true);
   });
 });

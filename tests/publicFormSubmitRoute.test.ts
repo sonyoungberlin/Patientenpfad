@@ -60,11 +60,13 @@ function makeForm(overrides: Partial<{
   is_active: boolean;
   selected_block_ids: string[];
   owner_account: typeof ENABLED_OWNER | null;
+  patient_language: string;
 }> = {}) {
   return {
     id: "form-1",
     is_active: true,
     selected_block_ids: ["KONTAKT"],
+    patient_language: "de",
     owner_account_id: "acc-1",
     owner_account: ENABLED_OWNER,
     ...overrides,
@@ -323,6 +325,64 @@ describe("POST /api/p/[slug]/submit", () => {
       expect(res.status).toBe(303);
       const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
       expect(call.data.answers.CONTACT_EMAIL).toBeUndefined();
+    });
+  });
+
+  describe("Sprachwahl (patient_language)", () => {
+    it("EN-Formular: Select-Antwort in englisch wird deutsch normalisiert gespeichert", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({
+          patient_language: "en",
+          selected_block_ids: ["IDENTITAET"],
+        }),
+      );
+      const res = await POST(
+        formReq(
+          {
+            email: "p-en@example.com",
+            // Englische Option (laut Katalog) — muss serverseitig auf das
+            // deutsche Originallabel zurückgemappt werden.
+            IDENTITY_INSURANCE_TYPE: "statutory insurance",
+          },
+          SLUG,
+          "9.0.1.1",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(call.data.answers.IDENTITY_INSURANCE_TYPE).toBe(
+        "gesetzlich versichert",
+      );
+      // Praxis-/PDF-/Krankenblatt-Output bleibt deutsch — durch Normalisierung
+      // ist der Speicher-Wert garantiert deutsch.
+      expect(call.data.patient_language).toBe("en");
+    });
+
+    it("DE-Formular: deutsche Select-Antwort bleibt unverändert", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({
+          patient_language: "de",
+          selected_block_ids: ["IDENTITAET"],
+        }),
+      );
+      const res = await POST(
+        formReq(
+          {
+            email: "p-de@example.com",
+            IDENTITY_INSURANCE_TYPE: "privat versichert",
+          },
+          SLUG,
+          "9.0.1.2",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(call.data.answers.IDENTITY_INSURANCE_TYPE).toBe(
+        "privat versichert",
+      );
+      expect(call.data.patient_language).toBe("de");
     });
   });
 

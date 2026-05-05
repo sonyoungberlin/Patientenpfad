@@ -172,6 +172,17 @@ export default async function WebsiteFormsPage({
               </label>
             ))}
           </fieldset>
+          <label style={{ display: "grid", gap: "0.25rem" }}>
+            <span>Sprache der Patientensicht</span>
+            <select name="patient_language" defaultValue="de">
+              <option value="de">Deutsch</option>
+              <option value="en">Englisch</option>
+            </select>
+            <span className="text-muted" style={{ fontSize: "0.8rem" }}>
+              Bei Englisch dürfen nur vollständig übersetzte Blöcke ausgewählt
+              werden. Praxisoutput und PDF bleiben deutsch.
+            </span>
+          </label>
           <label style={{ display: "flex", gap: "0.5rem" }}>
             <input type="checkbox" name="is_active" value="true" defaultChecked />
             <span>Aktiv</span>

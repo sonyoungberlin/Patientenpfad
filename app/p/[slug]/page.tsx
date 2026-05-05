@@ -28,6 +28,10 @@ import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
 import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
+import {
+  localizeQuestion,
+  normalizeQuestionnaireLanguage,
+} from "@/lib/questionnaire/i18n";
 import { PublicFormView } from "./PublicFormView";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +60,7 @@ export default async function PublicFormPage({
       intro_text: true,
       is_active: true,
       selected_block_ids: true,
+      patient_language: true,
       owner_practice_id: true,
       owner_practice: {
         select: {
@@ -96,7 +101,11 @@ export default async function PublicFormPage({
   const selectedBlockIds = Array.isArray(form.selected_block_ids)
     ? (form.selected_block_ids as string[])
     : [];
-  const questions = buildQuestionnaireQuestions(selectedBlockIds);
+  const language = normalizeQuestionnaireLanguage(form.patient_language);
+  const rawQuestions = buildQuestionnaireQuestions(selectedBlockIds);
+  // Praxis-/interne Sichten ignorieren `patient_language` bewusst und bleiben
+  // deutsch. Nur die Patient-Renderschicht hier lokalisiert die Fragen.
+  const questions = rawQuestions.map((q) => localizeQuestion(q, language));
 
   const practiceSignature = form.owner_practice?.message_signature ?? null;
 
@@ -107,6 +116,7 @@ export default async function PublicFormPage({
       introText={form.intro_text}
       practiceSignature={practiceSignature}
       questions={questions}
+      language={language}
     />
   );
 }

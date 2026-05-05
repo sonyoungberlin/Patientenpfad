@@ -26,8 +26,10 @@ import {
   requireWebsiteFormsManagementAccessFromCookies,
 } from "@/lib/authz";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { isBlockEnReady, normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { ownsForm } from "@/lib/websiteForms/practiceScope";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
+import { WebsiteFormBlocksAndLanguage } from "@/components/websiteForms/WebsiteFormBlocksAndLanguage";
 
 type SearchParams = Promise<{ error?: string | string[] }>;
 
@@ -71,6 +73,7 @@ export default async function WebsiteFormDetailPage({
       intro_text: true,
       is_active: true,
       selected_block_ids: true,
+      patient_language: true,
     },
   });
 
@@ -83,7 +86,12 @@ export default async function WebsiteFormDetailPage({
   const selectedBlockIds = Array.isArray(form.selected_block_ids)
     ? (form.selected_block_ids as string[])
     : [];
-  const selectedSet = new Set(selectedBlockIds);
+  const patientLanguage = normalizeQuestionnaireLanguage(form.patient_language);
+  const blockChoices = BLOCK_IDS_SORTED.map((blockId) => ({
+    id: blockId,
+    label: BLOCK_CATALOG[blockId]?.label ?? blockId,
+    enReady: isBlockEnReady(blockId),
+  }));
 
   // Origin für den öffentlichen Link bestimmen.
   const h = await headers();
@@ -183,20 +191,11 @@ export default async function WebsiteFormDetailPage({
               defaultValue={form.intro_text ?? ""}
             />
           </label>
-          <fieldset style={{ display: "grid", gap: "0.25rem" }}>
-            <legend>Fragebogen-Blöcke</legend>
-            {BLOCK_IDS_SORTED.map((blockId) => (
-              <label key={blockId} style={{ display: "flex", gap: "0.5rem" }}>
-                <input
-                  type="checkbox"
-                  name="selected_block_ids"
-                  value={blockId}
-                  defaultChecked={selectedSet.has(blockId)}
-                />
-                <span>{BLOCK_CATALOG[blockId]?.label ?? blockId}</span>
-              </label>
-            ))}
-          </fieldset>
+          <WebsiteFormBlocksAndLanguage
+            blocks={blockChoices}
+            initialLanguage={patientLanguage}
+            initialSelectedBlockIds={selectedBlockIds}
+          />
           <label style={{ display: "flex", gap: "0.5rem" }}>
             <input
               type="checkbox"

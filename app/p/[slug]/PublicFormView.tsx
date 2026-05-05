@@ -19,10 +19,43 @@
  */
 
 import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
-import { PATIENT_QUESTIONNAIRE_INTRO_TEXT } from "@/lib/questionnaire/patientIntro";
+import {
+  PATIENT_QUESTIONNAIRE_INTRO_TEXT,
+  PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN,
+} from "@/lib/questionnaire/patientIntro";
+import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 
 const NOTICE_ID = "public-form-confirm-notice";
+
+// Lokalisierte UI-Strings für die öffentliche Patientensicht. Bewusst inline
+// statt i18n-Library, analog zu `app/q/[token]/QuestionnaireFormClient.tsx`.
+const UI_STRINGS = {
+  de: {
+    confirmNotice:
+      "Nach dem Absenden erhalten Sie eine Bestätigungs-E-Mail. Erst nach Klick auf den Bestätigungslink werden Ihre Angaben an die Praxis übermittelt. Der Link ist 48 Stunden gültig.",
+    emailLabel: "E-Mail-Adresse",
+    selectPlaceholder: "— bitte wählen —",
+    yes: "Ja",
+    no: "Nein",
+    noQuestions: "Dieses Formular enthält aktuell keine Fragen.",
+    submit: "Absenden",
+    honeypotLabel: "Bitte dieses Feld leer lassen.",
+    intro: PATIENT_QUESTIONNAIRE_INTRO_TEXT,
+  },
+  en: {
+    confirmNotice:
+      "After submitting, you will receive a confirmation email. Your information will only be transmitted to the practice after you click the confirmation link. The link is valid for 48 hours.",
+    emailLabel: "Email address",
+    selectPlaceholder: "— please choose —",
+    yes: "Yes",
+    no: "No",
+    noQuestions: "This form currently contains no questions.",
+    submit: "Submit",
+    honeypotLabel: "Please leave this field empty.",
+    intro: PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN,
+  },
+} as const;
 
 const baseInputStyle: React.CSSProperties = {
   width: "100%",
@@ -45,7 +78,14 @@ const honeypotStyle: React.CSSProperties = {
   overflow: "hidden",
 };
 
-function PublicQuestionField({ question }: { question: QuestionDefinition }) {
+function PublicQuestionField({
+  question,
+  language,
+}: {
+  question: QuestionDefinition;
+  language: QuestionnaireLanguage;
+}) {
+  const t = UI_STRINGS[language];
   switch (question.type as QuestionType) {
     case "multi_select":
       return (
@@ -80,7 +120,7 @@ function PublicQuestionField({ question }: { question: QuestionDefinition }) {
           defaultValue=""
           style={baseInputStyle}
         >
-          <option value="">— bitte wählen —</option>
+          <option value="">{t.selectPlaceholder}</option>
           {(question.options ?? []).map((opt) => (
             <option key={opt} value={opt}>
               {opt}
@@ -113,8 +153,10 @@ function PublicQuestionField({ question }: { question: QuestionDefinition }) {
     case "yes_no":
       return (
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-          {(["Ja", "Nein"] as const).map((label) => {
-            const val = label === "Ja" ? "ja" : "nein";
+          {([
+            { val: "ja", label: t.yes },
+            { val: "nein", label: t.no },
+          ] as const).map(({ val, label }) => {
             return (
               <label
                 key={val}
@@ -157,15 +199,18 @@ export function PublicFormView({
   introText,
   practiceSignature,
   questions,
+  language = "de",
 }: {
   slug: string;
   title: string;
   introText: string | null;
   practiceSignature: string | null;
   questions: QuestionDefinition[];
+  language?: QuestionnaireLanguage;
 }) {
+  const t = UI_STRINGS[language];
   return (
-    <main>
+    <main lang={language}>
       <h1>{title}</h1>
 
       <p
@@ -180,9 +225,7 @@ export function PublicFormView({
           marginBottom: "1rem",
         }}
       >
-        Nach dem Absenden erhalten Sie eine Bestätigungs-E-Mail. Erst nach
-        Klick auf den Bestätigungslink werden Ihre Angaben an die Praxis
-        übermittelt. Der Link ist 48 Stunden gültig.
+        {t.confirmNotice}
       </p>
 
       {introText ? (
@@ -199,7 +242,7 @@ export function PublicFormView({
       ) : null}
 
       <p data-patient-intro style={{ marginBottom: "0.5rem" }}>
-        {PATIENT_QUESTIONNAIRE_INTRO_TEXT}
+        {t.intro}
       </p>
 
       {practiceSignature ? (
@@ -224,7 +267,7 @@ export function PublicFormView({
         */}
         <div aria-hidden="true" style={honeypotStyle}>
           <label htmlFor="public-form-hp">
-            Bitte dieses Feld leer lassen.
+            {t.honeypotLabel}
             <input
               id="public-form-hp"
               type="text"
@@ -241,7 +284,7 @@ export function PublicFormView({
             htmlFor="public-form-email"
             style={{ display: "block", fontWeight: 500, marginBottom: "0.4rem" }}
           >
-            E-Mail-Adresse
+            {t.emailLabel}
             <span aria-hidden="true" style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}>
               *
             </span>
@@ -259,7 +302,7 @@ export function PublicFormView({
         </div>
 
         {questions.length === 0 ? (
-          <p data-q-empty>Dieses Formular enthält aktuell keine Fragen.</p>
+          <p data-q-empty>{t.noQuestions}</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {questions.map((q) => (
@@ -283,7 +326,7 @@ export function PublicFormView({
                     </span>
                   )}
                 </label>
-                <PublicQuestionField question={q} />
+                <PublicQuestionField question={q} language={language} />
                 {q.helperText && (
                   <p
                     style={{
@@ -308,7 +351,7 @@ export function PublicFormView({
           aria-describedby={NOTICE_ID}
           style={{ marginTop: "1rem" }}
         >
-          Absenden
+          {t.submit}
         </button>
       </form>
     </main>
