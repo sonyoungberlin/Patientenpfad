@@ -1379,7 +1379,7 @@ function AUSpecificSection({
 
       {/* Pilot: Section-Intros sind jetzt die Schubladen (Akkordeons). */}
       <ProfileSectionIntroDrawers
-        inquiryId="AU"
+        inquiryId={section.inquiryId}
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
         explanationCheckpoints={section.specificCheckpoints.filter(
           (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
@@ -1850,7 +1850,7 @@ function LabSpecificSection({
       </p>
 
       <ProfileSectionIntroDrawers
-        inquiryId="LAB"
+        inquiryId={section.inquiryId}
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
         explanationCheckpoints={section.specificCheckpoints.filter(
           (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
@@ -2093,7 +2093,7 @@ function AppointmentSpecificSection({
       </p>
 
       <ProfileSectionIntroDrawers
-        inquiryId="APPOINTMENT"
+        inquiryId={section.inquiryId}
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
         explanationCheckpoints={section.specificCheckpoints.filter(
           (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
