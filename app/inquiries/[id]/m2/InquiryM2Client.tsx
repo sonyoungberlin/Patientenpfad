@@ -172,6 +172,382 @@ function SectionIntroPicker({
   );
 }
 
+/**
+ * Pilot „Schubladen-Akkordeon" für M2 (AU / LAB / APPOINTMENT).
+ *
+ * Ein Akkordeon-Drawer pro Section-Intro:
+ *   - Drawer-Header zeigt das Section-Intro-Label (z. B. „Angaben fehlen").
+ *   - Im aufgeklappten Zustand: Toggle „Diese Schublade für die Antwort wählen"
+ *     (single-select über alle Section-Intros via `applySectionIntroToggle`)
+ *     und die zugeordneten EXPLANATION-Checkpoints mit ihrem normalen
+ *     Ja/Nein-Verhalten.
+ *
+ * Exklusivität: Klick auf Toggle in einer Schublade deaktiviert die anderen
+ * Section-Intros (Garantie der Toggle-Funktion). Untergeordnete Checkpoint-
+ * Statuses bleiben bewusst erhalten und werden nicht zurückgesetzt.
+ */
+function SectionIntroAccordion({
+  sectionIntro,
+  checkpoints,
+  statuses,
+  onChange,
+  onSectionIntroToggle,
+  shortLabels,
+  defaultOpen,
+}: {
+  sectionIntro: PlainCheckpoint;
+  checkpoints: PlainCheckpoint[];
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
+  shortLabels: Record<string, string>;
+  defaultOpen: boolean;
+}) {
+  const isIntroActive = statuses[sectionIntro.id] === "ACTIVE";
+  const hasAnsweredCheckpoint = checkpoints.some(
+    (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
+  );
+  const [isOpen, setIsOpen] = useState(
+    defaultOpen || isIntroActive || hasAnsweredCheckpoint,
+  );
+
+  // Drawer-Label = Section-Intro-Label ohne den Präfix „Schublade: "
+  const drawerLabel = sectionIntro.label.replace(/^Schublade:\s*/, "");
+
+  return (
+    <div
+      style={{
+        border: isIntroActive
+          ? "2px solid var(--primary, #2563eb)"
+          : "1px solid var(--border)",
+        borderRadius: "var(--radius)",
+        marginBottom: "0.5rem",
+        overflow: "hidden",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0.65rem 0.9rem",
+          background: isOpen ? "var(--muted, #f5f5f5)" : "var(--background)",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+          gap: "0.5rem",
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
+            <span aria-hidden="true">↳ </span>Schublade: {drawerLabel}
+            {isIntroActive && (
+              <span
+                aria-label="aktive Schublade"
+                style={{
+                  marginLeft: "0.5rem",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  background: "var(--primary, #2563eb)",
+                  color: "#fff",
+                  borderRadius: "var(--radius)",
+                  padding: "0.05rem 0.4rem",
+                }}
+              >
+                AKTIV
+              </span>
+            )}
+          </div>
+          {!isOpen && sectionIntro.previewText && (
+            <div className="text-muted text-small" style={{ marginTop: "0.1rem" }}>
+              „… {sectionIntro.previewText}"
+            </div>
+          )}
+        </div>
+        <span aria-hidden="true" style={{ flexShrink: 0 }}>
+          {isOpen ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
+          {/* Section-Intro-Toggle */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.4rem 0",
+              marginBottom: "0.25rem",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => onSectionIntroToggle(sectionIntro.id)}
+              style={{
+                padding: "0.25rem 0.75rem",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border)",
+                background: isIntroActive
+                  ? "var(--primary, #2563eb)"
+                  : "var(--background)",
+                color: isIntroActive ? "#fff" : "var(--foreground)",
+                fontWeight: isIntroActive ? 600 : 400,
+                cursor: "pointer",
+                fontSize: "0.85rem",
+              }}
+              aria-pressed={isIntroActive}
+            >
+              {isIntroActive
+                ? "Schublade aktiv"
+                : "Diese Schublade für die Antwort wählen"}
+            </button>
+            {sectionIntro.previewText && (
+              <span className="text-muted text-small">
+                Anschluss: „… {sectionIntro.previewText}"
+              </span>
+            )}
+          </div>
+
+          {/* Untergeordnete Checkpoints (Ja/Nein, unverändertes Verhalten) */}
+          {checkpoints.length > 0 ? (
+            checkpoints.map((cp) => (
+              <ExplanationQuestionRow
+                key={cp.id}
+                checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                value={statuses[cp.id]}
+                onChange={onChange}
+              />
+            ))
+          ) : (
+            <div
+              className="text-muted text-small"
+              style={{ fontStyle: "italic", marginTop: "0.25rem" }}
+            >
+              Keine zusätzlichen Situations-Checkpoints in dieser Schublade.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Pilot-Mapping: Section-Intro → fachlich passende Checkpoint-IDs pro Profil.
+ *
+ * Reine UI-Gruppierung. Bestehende Checkpoints werden nur einsortiert; keine
+ * neuen fachlichen Checkpoints, keine Texte verändert. Kein Einfluss auf
+ * Decision/Output-Logik. Ein Checkpoint kann in mehreren Schubladen
+ * erscheinen; sein Ja/Nein-Status bleibt global synchron.
+ *
+ * `defaultOpen` markiert die Standard-Schublade pro Profil – sie ist im
+ * Sinne der Praxis-Heuristik der wahrscheinlichste Einstieg.
+ */
+type SectionIntroGroupMapping = {
+  sectionIntroId: string;
+  checkpointIds: readonly string[];
+  defaultOpen?: boolean;
+};
+
+const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroupMapping[]> = {
+  AU: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["AU_MISSING_QUESTIONNAIRE"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["AU_MISSING_EGK"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "AU_DIGITAL_AU_PROCESS",
+        "AU_FOLLOWUP",
+        "AU_NO_APPOINTMENT_ACUTE",
+        "AU_MEDICAL_CONSULTATION_REQUIRED",
+        "AU_BACKDATE_LIMIT",
+        "AU_NEW_PATIENT_LIMIT",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["AU_WORK_ACCIDENT", "AU_CHILD_SICK"],
+    },
+  ],
+  LAB: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "LAB_INTERNAL_ORDER",
+        "LAB_EXTERNAL_REFERRAL",
+        "LAB_CHECKUP_RULES",
+        "LAB_MEDICAL_CONSULTATION_REQUIRED",
+        "BILLING_COST_NOT_COVERED",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["LAB_MPU_EXCLUSION"],
+    },
+  ],
+  APPOINTMENT: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE", "APPOINTMENT_BOOKING_CODE_REQUIRED"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "APPOINTMENT_CAN_BE_BOOKED",
+        "APPOINTMENT_CANCEL_OR_RESCHEDULE",
+        "APPOINTMENT_WRONG_TYPE",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: [],
+    },
+  ],
+};
+
+/**
+ * Rendert pro Profil die Section-Intros als M2-Schubladen-Akkordeon.
+ *
+ * Reihenfolge: identisch zur Profil-Whitelist `availableSectionIntroIds`.
+ * Checkpoints, die in keiner Schublade vorkommen, landen in einem optionalen
+ * Fallback-Drawer „Weitere passende Hinweise", damit kein bestehender
+ * EXPLANATION-Checkpoint stillschweigend verschwindet.
+ */
+function ProfileSectionIntroDrawers({
+  inquiryId,
+  sectionIntroCheckpoints,
+  explanationCheckpoints,
+  shortLabels,
+  statuses,
+  onChange,
+  onSectionIntroToggle,
+}: {
+  inquiryId: string;
+  sectionIntroCheckpoints: PlainCheckpoint[];
+  explanationCheckpoints: PlainCheckpoint[];
+  shortLabels: Record<string, string>;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
+}) {
+  const cpById = new Map<string, PlainCheckpoint>(
+    explanationCheckpoints.map((cp) => [cp.id, cp]),
+  );
+  const introById = new Map<string, PlainCheckpoint>(
+    sectionIntroCheckpoints.map((cp) => [cp.id, cp]),
+  );
+  const mapping = SECTION_INTRO_GROUPS_BY_PROFILE[inquiryId] ?? [];
+
+  // Welche Checkpoints sind irgendeiner Schublade zugeordnet?
+  const groupedCheckpointIds = new Set<string>(
+    mapping.flatMap((g) => g.checkpointIds),
+  );
+  const ungroupedCheckpoints = explanationCheckpoints.filter(
+    (cp) => !groupedCheckpointIds.has(cp.id),
+  );
+
+  return (
+    <div style={{ marginBottom: "0.75rem" }}>
+      {mapping.map((group) => {
+        const sectionIntro = introById.get(group.sectionIntroId);
+        if (!sectionIntro) return null;
+        const groupCheckpoints = group.checkpointIds
+          .map((id) => cpById.get(id))
+          .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+        return (
+          <SectionIntroAccordion
+            key={group.sectionIntroId}
+            sectionIntro={sectionIntro}
+            checkpoints={groupCheckpoints}
+            statuses={statuses}
+            onChange={onChange}
+            onSectionIntroToggle={onSectionIntroToggle}
+            shortLabels={shortLabels}
+            defaultOpen={group.defaultOpen ?? false}
+          />
+        );
+      })}
+
+      {/* Fallback-Drawer für nicht zugeordnete EXPLANATION-Checkpoints. */}
+      {ungroupedCheckpoints.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            marginBottom: "0.5rem",
+            overflow: "hidden",
+          }}
+        >
+          <details>
+            <summary
+              style={{
+                padding: "0.65rem 0.9rem",
+                background: "var(--background)",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+              }}
+            >
+              <span aria-hidden="true">→ </span>Weitere passende Hinweise
+            </summary>
+            <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
+              <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
+                Hinweise, die keiner Schublade zugeordnet sind.
+              </div>
+              {ungroupedCheckpoints.map((cp) => (
+                <ExplanationQuestionRow
+                  key={cp.id}
+                  checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                  value={statuses[cp.id]}
+                  onChange={onChange}
+                />
+              ))}
+            </div>
+          </details>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function YesNoButtons({
   checkpointId,
   value,
@@ -993,26 +1369,25 @@ function AUSpecificSection({
   onChange: (id: string, val: string) => void;
   onSectionIntroToggle: (clickedId: string) => void;
 }) {
-  // Schneller Lookup: Checkpoint-ID → PlainCheckpoint
-  // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht angezeigt.
-  const cpById = new Map<string, PlainCheckpoint>(
-    section.specificCheckpoints
-      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
-      .map((cp) => [cp.id, cp]),
-  );
-
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle die passende Schublade. Innerhalb der Schublade kannst du sie als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
 
-      {/* Pilot: Section-Intro-Schublade als oberster Hauptbaustein */}
-      <SectionIntroPicker
+      {/* Pilot: Section-Intros sind jetzt die Schubladen (Akkordeons). */}
+      <ProfileSectionIntroDrawers
+        inquiryId="AU"
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={AU_SHORT_LABELS}
         statuses={statuses}
-        onToggle={onSectionIntroToggle}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -1036,26 +1411,6 @@ function AUSpecificSection({
           </div>
         ) : null;
       })()}
-
-      {/* Accordion-Gruppen – je nur EXPLANATION-Checkpoints / Situationsmerkmale */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {AU_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
-
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={AU_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
     </section>
   );
 }
@@ -1486,24 +1841,24 @@ function LabSpecificSection({
   onChange: (id: string, val: string) => void;
   onSectionIntroToggle: (clickedId: string) => void;
 }) {
-  const cpById = new Map<string, PlainCheckpoint>(
-    section.specificCheckpoints
-      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
-      .map((cp) => [cp.id, cp]),
-  );
-
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle die passende Schublade. Innerhalb der Schublade kannst du sie als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
 
-      {/* Pilot: Section-Intro-Schublade als oberster Hauptbaustein */}
-      <SectionIntroPicker
+      <ProfileSectionIntroDrawers
+        inquiryId="LAB"
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={LAB_SHORT_LABELS}
         statuses={statuses}
-        onToggle={onSectionIntroToggle}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -1522,26 +1877,6 @@ function LabSpecificSection({
           />
         </div>
       )}
-
-      {/* Accordion-Gruppen */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {LAB_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
-
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={LAB_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
     </section>
   );
 }
@@ -1749,24 +2084,24 @@ function AppointmentSpecificSection({
   onChange: (id: string, val: string) => void;
   onSectionIntroToggle: (clickedId: string) => void;
 }) {
-  const cpById = new Map<string, PlainCheckpoint>(
-    section.specificCheckpoints
-      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
-      .map((cp) => [cp.id, cp]),
-  );
-
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle die passende Schublade. Innerhalb der Schublade kannst du sie als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
 
-      {/* Pilot: Section-Intro-Schublade als oberster Hauptbaustein */}
-      <SectionIntroPicker
+      <ProfileSectionIntroDrawers
+        inquiryId="APPOINTMENT"
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={APPOINTMENT_SHORT_LABELS}
         statuses={statuses}
-        onToggle={onSectionIntroToggle}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -1785,26 +2120,6 @@ function AppointmentSpecificSection({
           />
         </div>
       )}
-
-      {/* Accordion-Gruppen */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {APPOINTMENT_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
-
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={APPOINTMENT_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
     </section>
   );
 }

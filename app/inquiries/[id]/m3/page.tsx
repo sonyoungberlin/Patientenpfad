@@ -194,6 +194,18 @@ export default async function InquiryM3Page({
     )
     .map((cp) => ({ id: cp.id, label: cp.label }));
 
+  // Section-Intro-Bausteine (Pilot M2 „Schubladen"): nur als read-only Anzeige
+  // an den Client durchreichen, damit M3 zeigen kann, welche Schublade in M2
+  // gewählt wurde. Kein Schreib-Pfad in M3 – die Auswahl erfolgt
+  // ausschließlich in M2.
+  const sectionIntroCheckpoints: M3ActionData[] = SECTION_INTRO_CHECKPOINT_IDS
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter(
+      (cp): cp is InquiryCheckpoint =>
+        !!cp && cp.kind === InquiryCheckpointKind.ACTION,
+    )
+    .map((cp) => ({ id: cp.id, label: cp.label }));
+
   // Global context checkpoints (read-only in M3, set in M2)
   // NOTE: per architecture spec, GLOBAL checkpoints must NOT appear in M3 at all.
 
@@ -228,6 +240,7 @@ export default async function InquiryM3Page({
         sections={sections}
         actionCheckpoints={actionCheckpoints}
         introCheckpoints={introCheckpoints}
+        sectionIntroCheckpoints={sectionIntroCheckpoints}
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
         initialExplanationOutputStatuses={explanationOutputStatuses}
