@@ -2776,13 +2776,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis, z. B. Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.",
+        "Für dieses Quartal liegt uns noch kein gültiger Versicherungsnachweis von Ihnen vor.\n\nÜbermitteln Sie Ihre Versicherungsdaten am besten digital über die App Ihrer Krankenkasse:\n\n- Öffnen Sie die angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet.\n- Starten Sie die App Ihrer Krankenkasse auf Ihrem Smartphone.\n- Wählen Sie „Ersatzbescheinigung“ oder „Versicherungsnachweis“ und scannen Sie den QR-Code.\n\nAlternativ können Sie auch Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung hochladen.",
       // NO: bewusst still – keine Erklärung nötig
     },
     textByAudience: {
       contact_person: {
         [ExplanationStatus.YES]:
-          "Zur Bearbeitung wird noch ein gültiger Versicherungsnachweis benötigt, z. B. die Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung der Krankenkasse.",
+          "Für dieses Quartal liegt noch kein gültiger Versicherungsnachweis vor.\n\nDie Versicherungsdaten lassen sich am besten digital über die App der Krankenkasse übermitteln:\n\n- Angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet öffnen.\n- App der Krankenkasse auf einem Smartphone starten.\n- „Ersatzbescheinigung“ oder „Versicherungsnachweis“ auswählen und den QR-Code scannen.\n\nAlternativ kann auch die Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung hochgeladen werden.",
       },
     },
     docByStatus: {
@@ -3233,11 +3233,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Sie waren kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
+        "Sie waren kürzlich bei uns in Behandlung. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
     },
     textByAudience: {
       contact_person:
-        "Ihre Angehörige / Ihr Angehöriger war kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
+        "Ihre Angehörige / Ihr Angehöriger war kürzlich bei uns in Behandlung. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
     },
   },
 
