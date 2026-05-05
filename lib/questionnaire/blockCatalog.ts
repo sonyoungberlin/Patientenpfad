@@ -36,31 +36,47 @@ export type QuestionType =
 export type QuestionDefinition = {
   /** Globale, stabile ID – darf nie geändert werden. */
   id: string;
-  /** Patientenformulierung. */
+  /** Patientenformulierung (Deutsch, kanonisch). */
   text: string;
   /** Interaktionstyp des Feldes. */
   type: QuestionType;
   /** Ob das Feld Pflichtfeld ist. */
   required: boolean;
-  /** Auswahloptionen für select / multi_select. */
+  /** Auswahloptionen für select / multi_select (Deutsch, kanonisch). */
   options?: string[];
-  /** Erläuternder Hilfetext unterhalb des Feldes. */
+  /** Erläuternder Hilfetext unterhalb des Feldes (Deutsch, kanonisch). */
   helperText?: string;
+  /** Optionale englische Übersetzung der Patientenformulierung. */
+  text_en?: string;
+  /**
+   * Optionale englische Auswahloptionen.
+   * MUSS exakt dieselbe Länge und Reihenfolge wie `options` haben, damit das
+   * Reverse-Mapping in `sanitizeAnswers` (EN → DE) eindeutig bleibt.
+   */
+  options_en?: string[];
+  /** Optionale englische Übersetzung des Hilfetextes. */
+  helperText_en?: string;
 };
 
 export type QuestionnaireBlock = {
   /** Stabile Block-ID, z.B. "KONTAKT". */
   id: string;
-  /** Anzeigename für die UI. */
+  /** Anzeigename für die UI (Deutsch, kanonisch). */
   label: string;
-  /** Kurze Beschreibung des Blocks (optional). */
+  /** Kurze Beschreibung des Blocks (optional, Deutsch). */
   description?: string;
-  /** Hinweistext, der unterhalb des Blocks angezeigt wird (optional, keine Logik). */
+  /** Hinweistext, der unterhalb des Blocks angezeigt wird (optional, Deutsch). */
   hint?: string;
   /** Reihenfolge beim Kombinieren (niedrig = zuerst). */
   displayOrder: number;
   /** Geordnete Fragen-IDs aus QUESTION_CATALOG. */
   questionIds: string[];
+  /** Optionale englische Übersetzung des Anzeigenamens. */
+  label_en?: string;
+  /** Optionale englische Übersetzung der Kurzbeschreibung. */
+  description_en?: string;
+  /** Optionale englische Übersetzung des Hinweistextes. */
+  hint_en?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -112,18 +128,21 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   CONTACT_PHONE: {
     id: "CONTACT_PHONE",
     text: "Wie lautet Ihre Telefonnummer (Mobil oder Festnetz)?",
+    text_en: "What is your phone number (mobile or landline)?",
     type: "text",
     required: true,
   },
   CONTACT_EMAIL: {
     id: "CONTACT_EMAIL",
     text: "Wie lautet Ihre E-Mail-Adresse?",
+    text_en: "What is your email address?",
     type: "text",
     required: false,
   },
   CONTACT_DOCTOLIB: {
     id: "CONTACT_DOCTOLIB",
     text: "Haben Sie einen Doctolib-Account?",
+    text_en: "Do you have a Doctolib account?",
     type: "yes_no",
     required: false,
   },
@@ -209,6 +228,7 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   AU_SYMPTOMS: {
     id: "AU_SYMPTOMS",
     text: "Welche Beschwerden haben Sie?",
+    text_en: "What symptoms do you have?",
     type: "multi_select",
     required: true,
     options: [
@@ -222,6 +242,18 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Übelkeit",
       "Erschöpfung",
       "Sonstiges",
+    ],
+    options_en: [
+      "Cough",
+      "Runny nose",
+      "Fever",
+      "Headache",
+      "Back pain",
+      "Abdominal pain",
+      "Dizziness",
+      "Nausea",
+      "Exhaustion",
+      "Other",
     ],
   },
   AU_START_DATE: {
@@ -408,6 +440,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   KONTAKT: {
     id: "KONTAKT",
     label: "Kontaktdaten",
+    label_en: "Contact details",
     displayOrder: 10,
     questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "CONTACT_DOCTOLIB"],
   },
@@ -438,8 +471,10 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   ARBEITSUNFAEHIGKEIT: {
     id: "ARBEITSUNFAEHIGKEIT",
     label: "Arbeitsunfähigkeitsbescheinigung",
+    label_en: "Sick leave certificate",
     displayOrder: 40,
     hint: "Bitte beachten Sie: Die maximale rückwirkende Ausstellungsdauer ist gesetzlich begrenzt.",
+    hint_en: "Please note: the maximum retroactive issuance period is limited by law.",
     questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE", "AU_IS_FOLLOWUP"],
   },
   REZEPT: {

@@ -223,4 +223,53 @@ describe("POST /api/questionnaire", () => {
     const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
     expect(createCall.data.patient_reference).toBe("PAT-042");
   });
+
+  describe("language (Patientensicht-Sprache)", () => {
+    it("speichert language='en' wenn explizit gesetzt", async () => {
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+      prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+      const req = makeRequest({
+        selected_block_ids: ["KONTAKT"],
+        patient_reference: "PAT-EN",
+        language: "en",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(createCall.data.patient_language).toBe("en");
+    });
+
+    it("Default ist 'de' ohne language-Feld", async () => {
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+      prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+      const req = makeRequest({
+        selected_block_ids: ["KONTAKT"],
+        patient_reference: "PAT-DE",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(createCall.data.patient_language).toBe("de");
+    });
+
+    it("ungültige Sprachen fallen auf 'de' zurück", async () => {
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+      prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+      const req = makeRequest({
+        selected_block_ids: ["KONTAKT"],
+        patient_reference: "PAT-X",
+        language: "fr",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(createCall.data.patient_language).toBe("de");
+    });
+  });
 });

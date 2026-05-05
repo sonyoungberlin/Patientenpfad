@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
+import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { IdentityGate } from "@/components/IdentityGate";
 
 function QuestionField({
@@ -9,11 +10,13 @@ function QuestionField({
   value,
   onChange,
   disabled,
+  language,
 }: {
   question: QuestionDefinition;
   value: string;
   onChange: (id: string, val: string) => void;
   disabled: boolean;
+  language: QuestionnaireLanguage;
 }) {
   const baseStyle: React.CSSProperties = {
     width: "100%",
@@ -73,7 +76,9 @@ function QuestionField({
           required={question.required}
           style={{ ...baseStyle }}
         >
-          <option value="">— bitte wählen —</option>
+          <option value="">
+            {language === "en" ? "— please choose —" : "— bitte wählen —"}
+          </option>
           {(question.options ?? []).map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
@@ -106,8 +111,11 @@ function QuestionField({
     case "yes_no":
       return (
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-          {(["Ja", "Nein"] as const).map((label) => {
-            const val = label === "Ja" ? "ja" : "nein";
+          {([
+            { val: "ja", labelDe: "Ja", labelEn: "Yes" },
+            { val: "nein", labelDe: "Nein", labelEn: "No" },
+          ] as const).map(({ val, labelDe, labelEn }) => {
+            const label = language === "en" ? labelEn : labelDe;
             return (
               <button
                 key={val}
@@ -164,11 +172,13 @@ export function QuestionnaireFormClient({
   questions,
   introText,
   practiceSignature,
+  language = "de",
 }: {
   token: string;
   questions: QuestionDefinition[];
   introText?: string | null;
   practiceSignature?: string | null;
+  language?: QuestionnaireLanguage;
 }) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -267,6 +277,7 @@ export function QuestionnaireFormClient({
                 value={values[q.id] ?? ""}
                 onChange={handleChange}
                 disabled={saving}
+                language={language}
               />
               {q.helperText && (
                 <p

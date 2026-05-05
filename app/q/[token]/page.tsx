@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import {
+  normalizeQuestionnaireLanguage,
+  localizeQuestion,
+} from "@/lib/questionnaire/i18n";
 import { PATIENT_QUESTIONNAIRE_INTRO_TEXT } from "@/lib/questionnaire/patientIntro";
 import { QuestionnaireFormClient } from "./QuestionnaireFormClient";
 
@@ -27,6 +31,7 @@ export default async function QuestionnairePage({
       token_expires_at: true,
       status: true,
       deduplicated_questions: true,
+      patient_language: true,
       owner_practice: {
         select: {
           message_signature: true,
@@ -59,9 +64,14 @@ export default async function QuestionnairePage({
     );
   }
 
-  const questions = Array.isArray(session.deduplicated_questions)
+  const rawQuestions = Array.isArray(session.deduplicated_questions)
     ? (session.deduplicated_questions as QuestionDefinition[])
     : [];
+
+  // Praxis-/interne Sichten ignorieren `patient_language` bewusst und bleiben
+  // deutsch. Nur die Patient-Renderschicht hier lokalisiert die Fragen.
+  const language = normalizeQuestionnaireLanguage(session.patient_language);
+  const questions = rawQuestions.map((q) => localizeQuestion(q, language));
 
   const practiceSignature = session.owner_practice?.message_signature ?? null;
 
@@ -73,6 +83,7 @@ export default async function QuestionnairePage({
         questions={questions}
         introText={PATIENT_QUESTIONNAIRE_INTRO_TEXT}
         practiceSignature={practiceSignature}
+        language={language}
       />
     </main>
   );

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
+import { normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 
 export async function POST(
   req: NextRequest,
@@ -17,6 +18,7 @@ export async function POST(
         token_expires_at: true,
         status: true,
         deduplicated_questions: true,
+        patient_language: true,
       },
     });
 
@@ -67,7 +69,11 @@ export async function POST(
       ? (session.deduplicated_questions as Array<{ id: string }>)
       : [];
 
-    const sanitizedAnswers = sanitizeAnswers(body.answers, deduplicatedQuestions);
+    const sanitizedAnswers = sanitizeAnswers(
+      body.answers,
+      deduplicatedQuestions,
+      normalizeQuestionnaireLanguage(session.patient_language),
+    );
 
     await prisma.patientQuestionnaireSession.update({
       where: { id: session.id },

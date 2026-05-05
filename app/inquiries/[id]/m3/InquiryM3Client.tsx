@@ -600,6 +600,7 @@ function QuestionnaireRequestSection({
   const [patientRef, setPatientRef] = useState("");
   const [patientRefTouched, setPatientRefTouched] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
+  const [language, setLanguage] = useState<"de" | "en">("de");
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -635,6 +636,7 @@ function QuestionnaireRequestSection({
           patient_reference: trimmedPatientRef,
           selected_block_ids: blockIds,
           inquiry_session_id: inquirySessionId,
+          language,
         }),
       });
       const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
@@ -766,6 +768,35 @@ function QuestionnaireRequestSection({
                 );
               })}
             </div>
+          </div>
+
+          {/* Language selection */}
+          <div>
+            <label
+              htmlFor="q-language"
+              style={{ display: "block", fontWeight: 500, marginBottom: "0.3rem", fontSize: "0.9rem" }}
+            >
+              Sprache
+            </label>
+            <select
+              id="q-language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value === "en" ? "en" : "de")}
+              disabled={loading || !!link}
+              data-q-language
+              style={{
+                padding: "0.4rem 0.6rem",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius)",
+                background: "var(--input-background)",
+                fontSize: "0.9rem",
+                fontFamily: "inherit",
+                color: "var(--foreground)",
+              }}
+            >
+              <option value="de">Deutsch</option>
+              <option value="en">Englisch</option>
+            </select>
           </div>
 
           {reqError && (
