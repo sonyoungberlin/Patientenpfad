@@ -241,6 +241,13 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "yes_no",
     required: false,
   },
+  ANAMNESE_OCCUPATION: {
+    id: "ANAMNESE_OCCUPATION",
+    text: "Was ist Ihr Beruf?",
+    text_en: "What is your occupation?",
+    type: "text",
+    required: false,
+  },
 
   // --- Arbeitsunfähigkeit ---
   AU_SYMPTOMS: {
@@ -487,6 +494,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "ANAMNESE_ALCOHOL",
       "ANAMNESE_SUBSTANCES",
       "ANAMNESE_VACCINATION",
+      "ANAMNESE_OCCUPATION",
     ],
   },
   ARBEITSUNFAEHIGKEIT: {

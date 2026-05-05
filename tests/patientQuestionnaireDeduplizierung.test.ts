@@ -75,6 +75,7 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     expect(ids).toContain("ANAMNESE_ALCOHOL");
     expect(ids).toContain("ANAMNESE_SUBSTANCES");
     expect(ids).toContain("ANAMNESE_VACCINATION");
+    expect(ids).toContain("ANAMNESE_OCCUPATION");
   });
 
   it("ADRESSE: enthält ADDRESS_POSTAL mit helperText", () => {

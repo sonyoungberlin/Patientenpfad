@@ -3,6 +3,10 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
+import {
+  answerCharactersErrorMessage,
+  validateAnswerCharacters,
+} from "@/lib/questionnaire/validateAnswerCharacters";
 
 export async function POST(
   req: NextRequest,
@@ -67,13 +71,30 @@ export async function POST(
 
     // Validate answers: only known questionIds from the session's deduplicated_questions
     const deduplicatedQuestions = Array.isArray(session.deduplicated_questions)
-      ? (session.deduplicated_questions as Array<{ id: string }>)
+      ? (session.deduplicated_questions as Array<{ id: string; type?: import("@/lib/questionnaire/blockCatalog").QuestionType }>)
       : [];
+
+    // Zeichenvalidierung für Freitextantworten (text/textarea). Greift vor
+    // dem Sanitisieren/Speichern, damit nicht-lateinische Eingaben (z. B.
+    // kyrillisch, arabisch, CJK, Emojis) unabhängig vom Client zuverlässig
+    // abgewiesen werden. Sprache der Fehlermeldung folgt patient_language.
+    const language = normalizeQuestionnaireLanguage(session.patient_language);
+    const charCheck = validateAnswerCharacters(body.answers, deduplicatedQuestions);
+    if (!charCheck.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: answerCharactersErrorMessage(language),
+          invalidQuestionIds: charCheck.invalidQuestionIds,
+        },
+        { status: 400 },
+      );
+    }
 
     const sanitizedAnswers = sanitizeAnswers(
       body.answers,
       deduplicatedQuestions,
-      normalizeQuestionnaireLanguage(session.patient_language),
+      language,
     );
 
     await prisma.patientQuestionnaireSession.update({
