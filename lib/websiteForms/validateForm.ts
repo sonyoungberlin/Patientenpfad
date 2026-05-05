@@ -13,6 +13,10 @@
  */
 
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import {
+  isBlockEnReady,
+  type QuestionnaireLanguage,
+} from "@/lib/questionnaire/i18n";
 import { slugErrorMessage, validateSlug } from "./slug";
 
 export const MIN_TITLE_LENGTH = 1;
@@ -25,6 +29,7 @@ export type WebsiteFormFieldErrors = Partial<{
   intro_text: string;
   selected_block_ids: string;
   is_active: string;
+  patient_language: string;
 }>;
 
 export type ValidatedWebsiteFormInput = {
@@ -33,6 +38,7 @@ export type ValidatedWebsiteFormInput = {
   intro_text: string | null;
   selected_block_ids: string[];
   is_active: boolean;
+  patient_language: QuestionnaireLanguage;
 };
 
 /**
@@ -48,6 +54,7 @@ export type RawWebsiteFormInput = {
   intro_text?: unknown;
   selected_block_ids?: unknown;
   is_active?: unknown;
+  patient_language?: unknown;
 };
 
 function normalizeBoolean(value: unknown, fallback: boolean): boolean {
@@ -142,6 +149,38 @@ export function validateWebsiteFormInput(
     }
   }
 
+  // ---- patient_language ----
+  // Strikte Validierung: Wenn der Aufrufer einen Wert übergibt, muss er
+  // exakt "de" oder "en" sein. Andernfalls Feldfehler — kein stilles
+  // Zurückfallen auf "de", damit die UI eine Fehlbedienung sichtbar macht.
+  // Bei `undefined`/`null` (Feld nicht übermittelt) wird der Default "de"
+  // angewendet.
+  let patientLanguage: QuestionnaireLanguage = "de";
+  if (raw.patient_language !== undefined && raw.patient_language !== null) {
+    if (raw.patient_language === "de" || raw.patient_language === "en") {
+      patientLanguage = raw.patient_language;
+    } else {
+      fieldErrors.patient_language = "Sprache muss \"de\" oder \"en\" sein.";
+    }
+  }
+
+  // ---- EN-Readiness der ausgewählten Blöcke ----
+  // Variante A (analog `/api/questionnaire`): bei `patient_language="en"`
+  // dürfen nur Blöcke gespeichert werden, deren Block- und Fragenfelder
+  // vollständig übersetzt sind. Sonst Hard-Reject.
+  if (
+    patientLanguage === "en" &&
+    !fieldErrors.selected_block_ids &&
+    selectedBlockIds.length > 0
+  ) {
+    const notEnReady = selectedBlockIds.filter((id) => !isBlockEnReady(id));
+    if (notEnReady.length > 0) {
+      fieldErrors.selected_block_ids =
+        "Einige ausgewählte Blöcke sind nicht vollständig auf Englisch übersetzt. " +
+        "Bitte entfernen Sie sie oder wählen Sie Deutsch als Sprache.";
+    }
+  }
+
   // ---- is_active ----
   const isActive = normalizeBoolean(raw.is_active, true);
 
@@ -157,6 +196,7 @@ export function validateWebsiteFormInput(
       intro_text: introText,
       selected_block_ids: selectedBlockIds,
       is_active: isActive,
+      patient_language: patientLanguage,
     },
   };
 }
@@ -170,6 +210,7 @@ export function firstFieldError(errors: WebsiteFormFieldErrors): string {
     "title",
     "slug",
     "intro_text",
+    "patient_language",
     "selected_block_ids",
     "is_active",
   ];

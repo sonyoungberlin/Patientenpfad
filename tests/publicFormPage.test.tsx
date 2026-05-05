@@ -56,12 +56,14 @@ function makeForm(overrides: Partial<{
   selected_block_ids: string[];
   owner_account: typeof ENABLED_OWNER | null;
   owner_practice: (typeof ENABLED_OWNER & { message_signature?: string | null }) | null;
+  patient_language: string;
 }> = {}) {
   return {
     title: "Aufnahmeformular",
     intro_text: "Bitte füllen Sie das Formular aus.",
     is_active: true,
     selected_block_ids: ["KONTAKT", "REZEPT"],
+    patient_language: "de",
     owner_account: ENABLED_OWNER,
     owner_practice: null as
       | (typeof ENABLED_OWNER & { message_signature?: string | null })
@@ -278,5 +280,64 @@ describe("/p/[slug] public form page", () => {
     const r = await runPage();
     // Hinweis bleibt, aber kein zusätzlicher whiteSpace pre-wrap-Absatz
     expect(r.markup).not.toContain("white-space:pre-wrap");
+  });
+
+  describe("Sprachwahl (patient_language)", () => {
+    it("DE-Formular: deutsche UI-Texte (Default)", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"], patient_language: "de" }),
+      );
+      const r = await runPage();
+      expect(r.notFound).toBe(false);
+      const m = r.markup!;
+      expect(m).toContain('lang="de"');
+      expect(m).toContain("Bestätigungs-E-Mail");
+      expect(m).toContain("Absenden");
+      expect(m).toContain("E-Mail-Adresse");
+      // Patient-Intro deutsch
+      expect(m).toContain(
+        "Bitte füllen Sie die folgenden Angaben vollständig aus.",
+      );
+    });
+
+    it("EN-Formular: englische UI-Texte und englische Fragetexte", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        // IDENTITAET ist EN-ready und enthält IDENTITY_INSURANCE_TYPE
+        // (select mit EN-Optionen).
+        makeForm({
+          selected_block_ids: ["IDENTITAET"],
+          patient_language: "en",
+        }),
+      );
+      const r = await runPage();
+      expect(r.notFound).toBe(false);
+      const m = r.markup!;
+      expect(m).toContain('lang="en"');
+      // UI-Strings auf Englisch
+      expect(m).toContain("confirmation email");
+      expect(m).toContain("Submit");
+      expect(m).toContain("Email address");
+      expect(m).toContain("— please choose —");
+      // Patient-Intro englisch
+      expect(m).toContain(
+        "Please fill in the following information completely.",
+      );
+      // Frage selbst wird über localizeQuestion englisch gerendert
+      expect(m).toContain("Type of insurance");
+      // Englische Optionen
+      expect(m).toContain("statutory insurance");
+      expect(m).toContain("private insurance");
+      // Keine deutschen Originale zu select-Optionen
+      expect(m).not.toContain("gesetzlich versichert");
+    });
+
+    it("EN-Formular ohne Fragen: englische Empty-Meldung", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: [], patient_language: "en" }),
+      );
+      const r = await runPage();
+      expect(r.markup).toContain("data-q-empty");
+      expect(r.markup).toContain("This form currently contains no questions.");
+    });
   });
 });

@@ -35,6 +35,7 @@ import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
+import { normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import {
   HONEYPOT_FIELD_NAME,
   isHoneypotTriggered,
@@ -222,6 +223,7 @@ export async function POST(
         id: true,
         is_active: true,
         selected_block_ids: true,
+        patient_language: true,
         owner_account_id: true,
         owner_practice_id: true,
         owner_practice: {
@@ -266,6 +268,10 @@ export async function POST(
     }
 
     // 8. Fragen einfrieren + Antworten sanitisieren.
+    // Sprache des Formulars bestimmen: bei "en" mappt sanitizeAnswers
+    // englische Optionswerte zurück auf das deutsche Originallabel,
+    // damit Praxis-/PDF-/Krankenblatt-Output garantiert deutsch bleibt.
+    const formLanguage = normalizeQuestionnaireLanguage(form.patient_language);
     const selectedBlockIds = Array.isArray(form.selected_block_ids)
       ? (form.selected_block_ids as string[])
       : [];
@@ -273,6 +279,7 @@ export async function POST(
     const sanitizedAnswers = sanitizeAnswers(
       fields.answers,
       deduplicatedQuestions,
+      formLanguage,
     );
 
     // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld spiegeln.
@@ -309,6 +316,7 @@ export async function POST(
         deduplicated_questions:
           deduplicatedQuestions as unknown as Prisma.InputJsonValue,
         answers: sanitizedAnswers as unknown as Prisma.InputJsonValue,
+        patient_language: formLanguage,
         status: STATUS_AWAITING_EMAIL_CONFIRMATION,
         // submitted_at bleibt absichtlich null bis zur Bestätigung.
         confirm_token: token.hash,

@@ -65,6 +65,10 @@ async function readInput(req: NextRequest): Promise<ParsedInput | null> {
           typeof fd.get("is_active") === "string"
             ? (fd.get("is_active") as string)
             : undefined,
+        patient_language:
+          typeof fd.get("patient_language") === "string"
+            ? (fd.get("patient_language") as string)
+            : undefined,
       },
     };
   }
@@ -165,6 +169,7 @@ export async function POST(
         intro_text: result.value.intro_text,
         selected_block_ids: result.value.selected_block_ids as Prisma.InputJsonValue,
         is_active: result.value.is_active,
+        patient_language: result.value.patient_language,
       },
     });
 

@@ -174,4 +174,35 @@ describe("/website-forms/[id] detail page", () => {
     expect(r.markup).toContain("inaktiv");
     expect(r.markup).toContain("Aktivieren");
   });
+
+  it("rendert Sprach-Dropdown (DE/EN) und markiert nicht-EN-ready Blöcke", async () => {
+    getCookies.mockResolvedValue(APPROVED);
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({
+      id: "form-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      title: "Mein Formular",
+      slug: "mein-formular",
+      intro_text: null,
+      is_active: true,
+      selected_block_ids: ["KONTAKT"],
+      patient_language: "de",
+    });
+    const r = await runPage();
+    const m = r.markup!;
+    // Dropdown vorhanden
+    expect(m).toContain('name="patient_language"');
+    expect(m).toContain("Deutsch");
+    expect(m).toContain("Englisch");
+    // Nicht-EN-ready Blöcke werden mit "(nur Deutsch verfügbar)" markiert.
+    // ARBEITSUNFAEHIGKEIT, REZEPT etc. sind nicht EN-ready.
+    expect(m).toMatch(/nur Deutsch verfügbar/);
+    // EN-ready Blöcke (KONTAKT, IDENTITAET, ADRESSE, KURZANAMNESE)
+    // werden NICHT markiert. Wir prüfen, dass mindestens ein Block ohne
+    // den Marker existiert (data-block-en-ready="true" attribut).
+    expect(m).toContain('data-block-en-ready="true"');
+    expect(m).toContain('data-block-en-ready="false"');
+  });
 });

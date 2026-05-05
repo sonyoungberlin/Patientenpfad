@@ -248,6 +248,58 @@ describe("POST /api/website-forms — Validierung", () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
   });
+
+  it("speichert patient_language='en' für EN-ready Blockauswahl", async () => {
+    pm.practiceQuestionnaireForm.create.mockResolvedValue({
+      id: "form-en",
+      slug: "praxis-en",
+    });
+    const res = await POST(
+      jsonReq({
+        title: "EN-Form",
+        slug: "praxis-en",
+        // KONTAKT ist EN-ready.
+        selected_block_ids: ["KONTAKT"],
+        patient_language: "en",
+      }),
+    );
+    expect(res.status).toBe(201);
+    const args = pm.practiceQuestionnaireForm.create.mock.calls[0][0];
+    expect(args.data.patient_language).toBe("en");
+    expect(args.data.selected_block_ids).toEqual(["KONTAKT"]);
+  });
+
+  it("400 wenn patient_language='en' aber Blöcke nicht EN-ready", async () => {
+    const res = await POST(
+      jsonReq({
+        title: "EN-Form",
+        slug: "praxis-en",
+        // ARBEITSUNFAEHIGKEIT ist NICHT EN-ready.
+        selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+        patient_language: "en",
+      }),
+    );
+    expect(res.status).toBe(400);
+    const j = await res.json();
+    expect(j.fieldErrors.selected_block_ids).toMatch(/Englisch/);
+    expect(pm.practiceQuestionnaireForm.create).not.toHaveBeenCalled();
+  });
+
+  it("Default patient_language='de' wenn Feld fehlt", async () => {
+    pm.practiceQuestionnaireForm.create.mockResolvedValue({
+      id: "form-de",
+      slug: "praxis-de",
+    });
+    await POST(
+      jsonReq({
+        title: "DE-Form",
+        slug: "praxis-de",
+        selected_block_ids: ["REZEPT"],
+      }),
+    );
+    const args = pm.practiceQuestionnaireForm.create.mock.calls[0][0];
+    expect(args.data.patient_language).toBe("de");
+  });
 });
 
 describe("POST /api/website-forms — Slug-Kollision", () => {
