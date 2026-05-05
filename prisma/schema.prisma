@@ -337,7 +337,7 @@ model PatientQuestionnaireSession {
   /// Praxis-/Patienten-Pfade behandeln Datensätze mit `deleted_at != null`
   /// wie nicht existent (404). Es gibt bewusst keine UI zum Wiederherstellen;
   /// die Spalte dient als kurzfristiges Sicherheitsnetz gegen versehentliches
-  /// Löschen und kann später durch einen Cleanup-Job entgültig entfernt werden.
+  /// Löschen und kann später durch einen Cleanup-Job endgültig entfernt werden.
   deleted_at DateTime? @db.Timestamp(6)
 
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
