@@ -77,9 +77,9 @@ describe("/q/[token] Mehrsprachigkeit", () => {
   });
 
   it("fällt für Fragen ohne _en-Übersetzung auf Deutsch zurück", async () => {
-    // ANAMNESE_GP existiert ohne text_en → muss DE bleiben.
-    const html = await render("en", ["ANAMNESE_GP"]);
-    expect(html).toContain("Haben Sie einen Hausarzt");
+    // AU_START_DATE existiert ohne text_en → muss DE bleiben.
+    const html = await render("en", ["AU_START_DATE"]);
+    expect(html).toContain("Seit wann bestehen die Beschwerden");
   });
 
   it("zeigt bei patient_language='de' deutsche Texte (Default-Verhalten)", async () => {
@@ -138,6 +138,76 @@ describe("/q/[token] Mehrsprachigkeit", () => {
     // Select placeholder
     expect(html).toContain("— please choose —");
     expect(html).not.toContain("— bitte wählen —");
+  });
+
+  it("rendert die vier Basisblöcke (IDENTITAET+KONTAKT+ADRESSE+KURZANAMNESE) komplett englisch ohne deutsche Fragmente", async () => {
+    // Alle Fragen-IDs der vier Basisblöcke (DE-Original) bei language='en'.
+    const html = await render("en", [
+      // IDENTITAET
+      "IDENTITY_FIRST_NAME",
+      "IDENTITY_LAST_NAME",
+      "IDENTITY_BIRTHDATE",
+      "IDENTITY_INSURANCE_TYPE",
+      // KONTAKT
+      "CONTACT_PHONE",
+      "CONTACT_EMAIL",
+      "CONTACT_DOCTOLIB",
+      // ADRESSE
+      "ADDRESS_POSTAL",
+      // KURZANAMNESE
+      "ANAMNESE_GP",
+      "ANAMNESE_HEIGHT",
+      "ANAMNESE_WEIGHT",
+      "ANAMNESE_CHRONIC",
+      "ANAMNESE_HEREDITARY",
+      "ANAMNESE_ALLERGIES",
+      "ANAMNESE_MEDICATIONS",
+      "ANAMNESE_SMOKING",
+      "ANAMNESE_ALCOHOL",
+      "ANAMNESE_SUBSTANCES",
+      "ANAMNESE_VACCINATION",
+    ]);
+
+    // Stichproben für jede Block-Übersetzung
+    expect(html).toContain("First name");
+    expect(html).toContain("What is your phone number");
+    expect(html).toContain("What is your postal address");
+    expect(html).toContain("Required for billing and documents.");
+    expect(html).toContain("Do you have a general practitioner");
+    expect(html).toContain("How tall are you");
+    expect(html).toContain("Do you suffer from any chronic illnesses");
+    expect(html).toContain("Is your vaccination status known");
+
+    // Garantie: keinerlei deutsche Originalfragetexte/-helper aus den
+    // vier Basisblöcken erscheinen. Bewusst lange/eindeutige Substrings,
+    // damit die Assertion nicht mit anderen Tokens kollidiert.
+    const forbiddenDe = [
+      "Vorname",
+      "Nachname",
+      "Geburtsdatum",
+      "Versicherungsart",
+      "gesetzlich versichert",
+      "privat versichert",
+      "Wie lautet Ihre Telefonnummer",
+      "Wie lautet Ihre E-Mail-Adresse",
+      "Haben Sie einen Doctolib-Account",
+      "Wie lautet Ihre Postanschrift",
+      "Wird für Abrechnung und Dokumente benötigt.",
+      "Haben Sie einen Hausarzt",
+      "Wie groß sind Sie",
+      "Wie viel wiegen Sie",
+      "Leiden Sie an chronischen Erkrankungen",
+      "Gibt es bekannte Erbkrankheiten",
+      "Haben Sie Allergien oder Unverträglichkeiten",
+      "Nehmen Sie regelmäßig Medikamente",
+      "Rauchen Sie",
+      "Trinken Sie Alkohol",
+      "Nehmen Sie sonstige Substanzen",
+      "Ist Ihr Impfstatus bekannt",
+    ];
+    for (const de of forbiddenDe) {
+      expect(html).not.toContain(de);
+    }
   });
 
   it("zeigt englische Expired-Meldung, wenn Session abgelaufen + patient_language='en'", async () => {

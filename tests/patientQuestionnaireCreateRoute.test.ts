@@ -306,6 +306,23 @@ describe("POST /api/questionnaire", () => {
       expect(createCall.data.patient_language).toBe("en");
     });
 
+    it("akzeptiert die vier Basisblöcke gemeinsam bei language='en'", async () => {
+      // IDENTITAET + KONTAKT + ADRESSE + KURZANAMNESE müssen zusammen
+      // versendbar sein, da sie der dokumentierte „EN-Basisscope" sind.
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+      prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+      const req = makeRequest({
+        selected_block_ids: ["IDENTITAET", "KONTAKT", "ADRESSE", "KURZANAMNESE"],
+        patient_reference: "PAT-EN-BASE",
+        language: "en",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(createCall.data.patient_language).toBe("en");
+    });
     it("EN-Reject greift NICHT, wenn language='de'", async () => {
       // Bei DE darf jede Block-Kombination versendet werden.
       getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);

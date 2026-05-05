@@ -244,6 +244,14 @@ describe("isQuestionEnReady / isBlockEnReady", () => {
     expect(isBlockEnReady("KONTAKT")).toBe(true);
   });
 
+  it("isBlockEnReady('ADRESSE') === true (vollständig übersetzt inkl. helperText_en)", () => {
+    expect(isBlockEnReady("ADRESSE")).toBe(true);
+  });
+
+  it("isBlockEnReady('KURZANAMNESE') === true (alle 11 Fragen übersetzt)", () => {
+    expect(isBlockEnReady("KURZANAMNESE")).toBe(true);
+  });
+
   it("isBlockEnReady('ARBEITSUNFAEHIGKEIT') === false (AU_START_DATE etc. ohne text_en)", () => {
     // Beispiel für einen Block, der einzelne, noch nicht übersetzte
     // Fragen hat. Schützt vor versehentlichem Versand gemischter Sprache.
