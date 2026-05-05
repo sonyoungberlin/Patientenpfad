@@ -15,11 +15,13 @@ import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 
 type SearchParams = Promise<{ view?: string | string[] }>;
 
+type PageProps = {
+  searchParams?: SearchParams;
+};
+
 export default async function QuestionnairesPage({
   searchParams,
-}: {
-  searchParams?: SearchParams;
-} = {}) {
+}: PageProps) {
   const account = await requirePatientCommunicationAccessFromCookies();
   if (!account) {
     redirect("/");

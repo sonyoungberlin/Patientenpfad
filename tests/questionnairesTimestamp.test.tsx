@@ -101,7 +101,7 @@ describe("QuestionnairesPage – Zeitanzeige", () => {
       COMPLETED_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     // 11.01.2024 08:00 UTC -> 09:00 Berlin
     expect(markup).toContain("11.01.24, 09:00");
     // createdAt-Zeit (11:00 Berlin) darf NICHT prominent erscheinen.
@@ -113,7 +113,7 @@ describe("QuestionnairesPage – Zeitanzeige", () => {
       PENDING_INTERNAL_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     // 10.01.2024 10:00 UTC -> 11:00 Berlin
     expect(markup).toContain("10.01.24, 11:00");
   });
@@ -123,14 +123,14 @@ describe("QuestionnairesPage – Zeitanzeige", () => {
       COMPLETED_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).not.toContain("Eingegangen:");
   });
 
   it("sortiert findMany nach submitted_at desc nulls:last, dann createdAt desc", async () => {
     prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([]);
 
-    await QuestionnairesPage();
+    await QuestionnairesPage({});
 
     const call = prismaMock.patientQuestionnaireSession.findMany.mock.calls[0]?.[0];
     expect(call?.orderBy).toEqual([

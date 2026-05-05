@@ -135,7 +135,7 @@ describe("/questionnaires list — Practice-Scope", () => {
   it("filtert auf owner_practice_id wenn current_practice gesetzt und kombiniert mit PRACTICE_VISIBLE_SESSION_FILTER", async () => {
     getCookies.mockResolvedValue(ACCOUNT_A1_IN_PRACTICE_A);
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    const node = await QuestionnairesPage();
+    const node = await QuestionnairesPage({});
     renderToStaticMarkup(node);
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND).toBeDefined();
@@ -152,7 +152,7 @@ describe("/questionnaires list — Practice-Scope", () => {
   it("Account A2 sieht dieselbe Liste wie A1 (gleiche Practice → gleicher Where-Filter)", async () => {
     getCookies.mockResolvedValue(ACCOUNT_A2_IN_PRACTICE_A);
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    const node = await QuestionnairesPage();
+    const node = await QuestionnairesPage({});
     renderToStaticMarkup(node);
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND[0]).toEqual({ owner_practice_id: "p-A" });
@@ -161,7 +161,7 @@ describe("/questionnaires list — Practice-Scope", () => {
   it("Fallback auf owner_account_id ohne current_practice", async () => {
     getCookies.mockResolvedValue(ADMIN_NO_PRACTICE);
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    const node = await QuestionnairesPage();
+    const node = await QuestionnairesPage({});
     renderToStaticMarkup(node);
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND[0]).toEqual({ owner_account_id: "acc-ADMIN" });

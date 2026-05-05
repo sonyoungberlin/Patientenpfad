@@ -119,7 +119,7 @@ describe("QuestionnairesPage – Papierkorb-Toggle", () => {
   it("Default: filtert auf deleted_at null und zeigt aktive Liste", async () => {
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([ACTIVE_SESSION]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
 
     const call = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(pickDeletedAtFilter(call)).toEqual({ deleted_at: null });
