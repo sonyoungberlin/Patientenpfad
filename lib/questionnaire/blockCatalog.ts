@@ -101,27 +101,32 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   IDENTITY_FIRST_NAME: {
     id: "IDENTITY_FIRST_NAME",
     text: "Vorname",
+    text_en: "First name",
     type: "text",
     required: true,
   },
   IDENTITY_LAST_NAME: {
     id: "IDENTITY_LAST_NAME",
     text: "Nachname",
+    text_en: "Last name",
     type: "text",
     required: true,
   },
   IDENTITY_BIRTHDATE: {
     id: "IDENTITY_BIRTHDATE",
     text: "Geburtsdatum",
+    text_en: "Date of birth",
     type: "date",
     required: true,
   },
   IDENTITY_INSURANCE_TYPE: {
     id: "IDENTITY_INSURANCE_TYPE",
     text: "Versicherungsart",
+    text_en: "Type of insurance",
     type: "select",
     required: true,
     options: ["gesetzlich versichert", "privat versichert"],
+    options_en: ["statutory insurance", "private insurance"],
   },
 
   // --- Kontakt ---
@@ -429,6 +434,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   IDENTITAET: {
     id: "IDENTITAET",
     label: "Identität",
+    label_en: "Identity",
     displayOrder: 5,
     questionIds: [
       "IDENTITY_FIRST_NAME",

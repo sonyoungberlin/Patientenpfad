@@ -271,5 +271,53 @@ describe("POST /api/questionnaire", () => {
       const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
       expect(createCall.data.patient_language).toBe("de");
     });
+
+    it("lehnt language='en' ab, wenn ein Block nicht vollständig EN-ready ist", async () => {
+      // ARBEITSUNFAEHIGKEIT enthält Fragen ohne text_en und ist daher nicht EN-ready.
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+
+      const req = makeRequest({
+        selected_block_ids: ["KONTAKT", "ARBEITSUNFAEHIGKEIT"],
+        patient_reference: "PAT-MIX",
+        language: "en",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(400);
+
+      const json = await res.json();
+      expect(json.ok).toBe(false);
+      expect(json.not_en_ready_block_ids).toEqual(["ARBEITSUNFAEHIGKEIT"]);
+      expect(prismaMock.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+    });
+
+    it("akzeptiert language='en' wenn ALLE Blöcke vollständig EN-ready sind", async () => {
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+      prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+      const req = makeRequest({
+        selected_block_ids: ["IDENTITAET", "KONTAKT"],
+        patient_reference: "PAT-EN-OK",
+        language: "en",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      const createCall = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(createCall.data.patient_language).toBe("en");
+    });
+
+    it("EN-Reject greift NICHT, wenn language='de'", async () => {
+      // Bei DE darf jede Block-Kombination versendet werden.
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+      prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+      const req = makeRequest({
+        selected_block_ids: ["KONTAKT", "ARBEITSUNFAEHIGKEIT"],
+        patient_reference: "PAT-DE",
+        language: "de",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+    });
   });
 });

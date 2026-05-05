@@ -14,9 +14,11 @@
  *    grundsätzlich unverändert.
  */
 
-import type {
-  QuestionDefinition,
-  QuestionnaireBlock,
+import {
+  BLOCK_CATALOG,
+  QUESTION_CATALOG,
+  type QuestionDefinition,
+  type QuestionnaireBlock,
 } from "./blockCatalog";
 
 /** Unterstützte Patientensprachen. */
@@ -95,4 +97,74 @@ export function localizeBlock(
     description: block.description_en ?? block.description,
     hint: block.hint_en ?? block.hint,
   };
+}
+
+// ---------------------------------------------------------------------------
+// EN-Readiness (Variante A: keine gemischten Sprachen)
+// ---------------------------------------------------------------------------
+
+/**
+ * Eine `QuestionDefinition` ist EN-ready, wenn jedes vorhandene
+ * patient-sichtbare Textfeld eine englische Entsprechung hat:
+ *  - `text_en` MUSS gesetzt sein.
+ *  - `helperText_en` MUSS gesetzt sein, falls `helperText` existiert.
+ *  - `options_en` MUSS dieselbe Länge wie `options` haben, falls `options`
+ *    existiert (jedes Element nicht-leer).
+ *
+ * IDs, Typen und `required` sind sprachneutral und werden nicht geprüft.
+ */
+export function isQuestionEnReady(question: QuestionDefinition): boolean {
+  if (!question.text_en || question.text_en.trim() === "") return false;
+
+  if (question.helperText !== undefined) {
+    if (!question.helperText_en || question.helperText_en.trim() === "") {
+      return false;
+    }
+  }
+
+  if (question.options !== undefined) {
+    if (
+      !question.options_en ||
+      question.options_en.length !== question.options.length ||
+      question.options_en.some((o) => typeof o !== "string" || o.trim() === "")
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Ein `QuestionnaireBlock` ist EN-ready, wenn:
+ *  - alle vorhandenen patient-sichtbaren Block-Felder übersetzt sind
+ *    (`label_en` MUSS gesetzt sein; `description_en` / `hint_en` MÜSSEN
+ *    gesetzt sein, falls `description` / `hint` existieren),
+ *  - UND alle referenzierten Fragen via {@link isQuestionEnReady} bestanden
+ *    haben. Eine fehlende oder unbekannte Fragen-ID gilt als NICHT EN-ready.
+ *
+ * Diese Funktion ist die einzige Wahrheit für „darf bei `language='en'` an
+ * den Patienten gehen?". Sie wird sowohl in der M3-UI (Auswahlfilter) als
+ * auch serverseitig in `POST /api/questionnaire` benutzt.
+ */
+export function isBlockEnReady(blockOrId: QuestionnaireBlock | string): boolean {
+  const block: QuestionnaireBlock | undefined =
+    typeof blockOrId === "string" ? BLOCK_CATALOG[blockOrId] : blockOrId;
+  if (!block) return false;
+
+  if (!block.label_en || block.label_en.trim() === "") return false;
+  if (block.description !== undefined) {
+    if (!block.description_en || block.description_en.trim() === "") return false;
+  }
+  if (block.hint !== undefined) {
+    if (!block.hint_en || block.hint_en.trim() === "") return false;
+  }
+
+  for (const qid of block.questionIds) {
+    const q = QUESTION_CATALOG[qid];
+    if (!q) return false;
+    if (!isQuestionEnReady(q)) return false;
+  }
+
+  return true;
 }

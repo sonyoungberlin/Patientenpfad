@@ -16,6 +16,8 @@ import {
   normalizeQuestionnaireLanguage,
   localizeQuestion,
   localizeBlock,
+  isQuestionEnReady,
+  isBlockEnReady,
   DEFAULT_QUESTIONNAIRE_LANGUAGE,
 } from "@/lib/questionnaire/i18n";
 import type {
@@ -140,5 +142,115 @@ describe("localizeBlock", () => {
     };
     const out = localizeBlock(partial, "en");
     expect(out.label).toBe("Adresse");
+  });
+});
+
+describe("isQuestionEnReady / isBlockEnReady", () => {
+  it("isQuestionEnReady: text_en Pflicht", () => {
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        type: "text",
+        required: true,
+      }),
+    ).toBe(false);
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        text_en: "EN",
+        type: "text",
+        required: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("isQuestionEnReady: helperText_en nur Pflicht wenn helperText vorhanden", () => {
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        text_en: "EN",
+        helperText: "Hinweis",
+        type: "text",
+        required: false,
+      }),
+    ).toBe(false);
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        text_en: "EN",
+        helperText: "Hinweis",
+        helperText_en: "Hint",
+        type: "text",
+        required: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("isQuestionEnReady: options_en muss exakt parallel zu options sein", () => {
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        text_en: "EN",
+        type: "select",
+        required: true,
+        options: ["a", "b"],
+      }),
+    ).toBe(false);
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        text_en: "EN",
+        type: "select",
+        required: true,
+        options: ["a", "b"],
+        options_en: ["A"],
+      }),
+    ).toBe(false);
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        text_en: "EN",
+        type: "select",
+        required: true,
+        options: ["a", "b"],
+        options_en: ["A", ""],
+      }),
+    ).toBe(false);
+    expect(
+      isQuestionEnReady({
+        id: "Q",
+        text: "DE",
+        text_en: "EN",
+        type: "select",
+        required: true,
+        options: ["a", "b"],
+        options_en: ["A", "B"],
+      }),
+    ).toBe(true);
+  });
+
+  it("isBlockEnReady('IDENTITAET') === true (vollständig übersetzt)", () => {
+    expect(isBlockEnReady("IDENTITAET")).toBe(true);
+  });
+
+  it("isBlockEnReady('KONTAKT') === true (vollständig übersetzt)", () => {
+    expect(isBlockEnReady("KONTAKT")).toBe(true);
+  });
+
+  it("isBlockEnReady('ARBEITSUNFAEHIGKEIT') === false (AU_START_DATE etc. ohne text_en)", () => {
+    // Beispiel für einen Block, der einzelne, noch nicht übersetzte
+    // Fragen hat. Schützt vor versehentlichem Versand gemischter Sprache.
+    expect(isBlockEnReady("ARBEITSUNFAEHIGKEIT")).toBe(false);
+  });
+
+  it("isBlockEnReady gibt false für unbekannte Block-ID zurück", () => {
+    expect(isBlockEnReady("DOES_NOT_EXIST")).toBe(false);
   });
 });

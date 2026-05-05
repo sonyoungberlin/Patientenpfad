@@ -167,6 +167,29 @@ function QuestionField({
  * bereits in der Server-Page abgefangen und rendern diese Komponente
  * gar nicht erst.
  */
+// Lokalisierte UI-Strings für die Patientensicht (außerhalb des Frage-Katalogs).
+// Bewusst inline statt i18n-Library, um den minimalen Scope zu wahren.
+const UI_STRINGS = {
+  de: {
+    requiredAriaSuffix: " (Pflichtfeld)",
+    noQuestions: "Keine Fragen vorhanden.",
+    submit: "Absenden",
+    submitting: "Wird übermittelt…",
+    submitted: "Vielen Dank, Ihre Angaben wurden übermittelt.",
+    submitError:
+      "Angaben konnten nicht übermittelt werden. Bitte versuchen Sie es erneut.",
+  },
+  en: {
+    requiredAriaSuffix: " (required)",
+    noQuestions: "No questions available.",
+    submit: "Submit",
+    submitting: "Submitting…",
+    submitted: "Thank you, your information has been submitted.",
+    submitError:
+      "Your information could not be submitted. Please try again.",
+  },
+} as const;
+
 export function QuestionnaireFormClient({
   token,
   questions,
@@ -180,6 +203,8 @@ export function QuestionnaireFormClient({
   practiceSignature?: string | null;
   language?: QuestionnaireLanguage;
 }) {
+  const t = UI_STRINGS[language];
+
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     for (const q of questions) {
@@ -207,19 +232,19 @@ export function QuestionnaireFormClient({
       });
 
       if (!response.ok) {
+        // Fehlermeldungen vom Server sind aktuell deutsch; wir verwenden
+        // sie nur, wenn die Patient:in deutsch ausgewählt hat. Sonst
+        // einheitlich englischer Fallback.
         const data = await response.json().catch(() => null);
-        setError(
-          (data as { error?: string } | null)?.error ??
-            "Angaben konnten nicht übermittelt werden. Bitte versuchen Sie es erneut.",
-        );
+        const serverError =
+          (data as { error?: string } | null)?.error ?? null;
+        setError(language === "de" && serverError ? serverError : t.submitError);
         return;
       }
 
       setSubmitted(true);
     } catch {
-      setError(
-        "Angaben konnten nicht übermittelt werden. Bitte versuchen Sie es erneut.",
-      );
+      setError(t.submitError);
     } finally {
       setSaving(false);
     }
@@ -228,7 +253,7 @@ export function QuestionnaireFormClient({
   if (submitted) {
     return (
       <p data-q-submitted style={{ marginTop: "1.5rem" }}>
-        Vielen Dank, Ihre Angaben wurden übermittelt.
+        {t.submitted}
       </p>
     );
   }
@@ -248,10 +273,10 @@ export function QuestionnaireFormClient({
           {practiceSignature}
         </p>
       ) : null}
-      <IdentityGate>
+      <IdentityGate language={language}>
         <div>
         {questions.length === 0 ? (
-        <p>Keine Fragen vorhanden.</p>
+        <p>{t.noQuestions}</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {questions.map((q) => (
@@ -267,9 +292,12 @@ export function QuestionnaireFormClient({
               >
                 {q.text}
                 {q.required && (
-                  <span aria-hidden="true" style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}>
-                    *
-                  </span>
+                  <>
+                    <span aria-hidden="true" style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}>
+                      *
+                    </span>
+                    <span className="sr-only">{t.requiredAriaSuffix}</span>
+                  </>
                 )}
               </label>
               <QuestionField
@@ -304,7 +332,7 @@ export function QuestionnaireFormClient({
         disabled={saving}
         style={{ marginTop: "1rem" }}
       >
-        {saving ? "Wird übermittelt…" : "Absenden"}
+        {saving ? t.submitting : t.submit}
       </button>
     </div>
     </IdentityGate>
