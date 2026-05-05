@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
+import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
 
 export type PlainCheckpoint = {
   id: string;
@@ -12,6 +13,13 @@ export type PlainCheckpoint = {
   question?: string;
   questions?: Array<{ id: string; text: string }>;
   actionCategory?: string;
+  /**
+   * Vorschau-Text (z. B. ACTIVE-Text für ACTION-Checkpoints), den die UI
+   * unterhalb des Labels anzeigen kann. Wird in M2 für die Section-Intro-
+   * Schubladen verwendet, damit Praxen den späteren Output direkt sehen.
+   * Optional – Renderer/Server-Logik nutzen dieses Feld nicht.
+   */
+  previewText?: string;
 };
 
 export type M2SectionData = {
@@ -29,6 +37,12 @@ export type M2SectionData = {
    * Andere Profile (SpecificSection) ignorieren dieses Feld.
    */
   allBoundActionCheckpoints?: PlainCheckpoint[];
+  /**
+   * Pilot: Section-Intro-Whitelist für die M2-„Schubladen"-Auswahl
+   * (AU/LAB/APPOINTMENT). Leeres Array → keine Schubladen-Auswahl rendern.
+   * Statuses werden global geführt; Toggle via `applySectionIntroToggle`.
+   */
+  sectionIntroCheckpoints?: PlainCheckpoint[];
 };
 
 type Props = {
@@ -70,6 +84,93 @@ const GROUP_BADGE_STYLE = {
   textTransform: "uppercase" as const,
   letterSpacing: "0.04em",
 };
+
+/**
+ * Pilot „Schubladen"-Auswahl für M2 (AU / LAB / APPOINTMENT).
+ *
+ * Rendert eine Single-Select-Radio-Liste über den bestehenden Akkordeons.
+ * Ein erneuter Klick auf das aktive Section-Intro hebt die Auswahl auf
+ * (Toggle-Off, analog M3 `applyIntroToggle`). Schreibt die Statuses über
+ * `applySectionIntroToggle` in die globale `statuses`-Map; der Renderer
+ * hängt den ACTIVE-Text hinter Message-Intros E1/E2/E3 an.
+ *
+ * Die `previewText`-Spalte zeigt den späteren Output-Satz, damit Praxen die
+ * Anschlussform direkt sehen.
+ */
+function SectionIntroPicker({
+  sectionIntroCheckpoints,
+  statuses,
+  onToggle,
+}: {
+  sectionIntroCheckpoints: PlainCheckpoint[];
+  statuses: Record<string, string>;
+  onToggle: (clickedId: string) => void;
+}) {
+  if (sectionIntroCheckpoints.length === 0) return null;
+  const groupName = `section-intro-${sectionIntroCheckpoints[0]?.id ?? "default"}`;
+
+  return (
+    <div
+      style={{
+        marginBottom: "1rem",
+        padding: "0.75rem",
+        background: "#f5f5f5",
+        border: "1px solid #e0e0e0",
+        borderRadius: "var(--radius)",
+      }}
+    >
+      <div
+        className="text-muted text-small"
+        style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
+      >
+        <span aria-hidden="true">↳ </span>Schublade (Einstieg in die Antwort)
+      </div>
+      <p className="text-muted text-small" style={{ margin: "0 0 0.5rem" }}>
+        Optional: maximal eine Schublade. Wird im Antworttext direkt hinter dem
+        Nachrichteneinstieg angehängt (nicht hinter „Vielen Dank…“).
+      </p>
+      <div role="radiogroup" aria-label="Schublade auswählen">
+        {sectionIntroCheckpoints.map((cp) => {
+          const isActive = statuses[cp.id] === "ACTIVE";
+          return (
+            <label
+              key={cp.id}
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                alignItems: "flex-start",
+                padding: "0.35rem 0",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="radio"
+                name={groupName}
+                checked={isActive}
+                onClick={() => onToggle(cp.id)}
+                onChange={() => {
+                  /* handled in onClick to support toggle-off */
+                }}
+                style={{ marginTop: "0.25rem" }}
+              />
+              <span>
+                <span style={{ fontWeight: 500 }}>{cp.label.replace(/^Schublade:\s*/, "")}</span>
+                {cp.previewText && (
+                  <span
+                    className="text-muted text-small"
+                    style={{ display: "block" }}
+                  >
+                    „… {cp.previewText}"
+                  </span>
+                )}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function YesNoButtons({
   checkpointId,
@@ -885,10 +986,12 @@ function AUSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Schneller Lookup: Checkpoint-ID → PlainCheckpoint
   // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht angezeigt.
@@ -904,6 +1007,13 @@ function AUSpecificSection({
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
         Wähle aus, welche Situation am besten passt:
       </p>
+
+      {/* Pilot: Section-Intro-Schublade als oberster Hauptbaustein */}
+      <SectionIntroPicker
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        statuses={statuses}
+        onToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {(() => {
@@ -1369,10 +1479,12 @@ function LabSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     section.specificCheckpoints
@@ -1386,6 +1498,13 @@ function LabSpecificSection({
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
         Wähle aus, welche Situation am besten passt:
       </p>
+
+      {/* Pilot: Section-Intro-Schublade als oberster Hauptbaustein */}
+      <SectionIntroPicker
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        statuses={statuses}
+        onToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
       {section.decisionQuestions.length > 0 && (
@@ -1623,10 +1742,12 @@ function AppointmentSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     section.specificCheckpoints
@@ -1640,6 +1761,13 @@ function AppointmentSpecificSection({
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
         Wähle aus, welche Situation am besten passt:
       </p>
+
+      {/* Pilot: Section-Intro-Schublade als oberster Hauptbaustein */}
+      <SectionIntroPicker
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        statuses={statuses}
+        onToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
       {section.decisionQuestions.length > 0 && (
@@ -1956,6 +2084,24 @@ export default function InquiryM2Client({
     setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
   }
 
+  // Pilot: globale Liste aller in dieser Session verfügbaren Section-Intro-IDs
+  // (Vereinigung der Pro-Profil-Whitelists). `applySectionIntroToggle` setzt
+  // alle Section-Intros aus dieser Liste auf INACTIVE und nur das geklickte
+  // ggf. auf ACTIVE → max. ein Section-Intro aktiv. Wenn keine Section-Intros
+  // verfügbar sind (z. B. nicht-Pilot-Profil), bleibt die Liste leer und der
+  // Picker wird nirgends gerendert.
+  const sectionIntroIds = Array.from(
+    new Set(
+      sections.flatMap((s) =>
+        (s.sectionIntroCheckpoints ?? []).map((cp) => cp.id),
+      ),
+    ),
+  );
+
+  function toggleSectionIntro(clickedId: string) {
+    setStatuses((prev) => applySectionIntroToggle(prev, clickedId, sectionIntroIds));
+  }
+
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
@@ -2034,6 +2180,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "REFERRAL" ? (
           <ReferralSpecificSection
@@ -2055,6 +2202,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "APPOINTMENT" ? (
           <AppointmentSpecificSection
@@ -2062,6 +2210,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "IMMUNIZATION" ? (
           <ImmunizationSpecificSection

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import {
   InquiryCheckpointKind,
   InquiryCheckpointScope,
@@ -178,6 +178,12 @@ export default async function InquiryM3Page({
   // Die IDs werden zu actionIds hinzugefügt, damit ihre Statuses in actionStatuses gespeichert werden.
   // Sie erscheinen NICHT in actionCheckpoints (dafür gibt es introCheckpoints).
   for (const cpId of INTRO_CHECKPOINT_IDS) {
+    actionIds.add(cpId);
+  }
+  // Section-Intro-Bausteine (M2 „Schubladen", Pilot AU/LAB/APPOINTMENT):
+  // werden in M2 gesetzt, müssen aber auch in M3 weiter als action_statuses
+  // erhalten bleiben, damit ein Speichern in M3 die Auswahl nicht löscht.
+  for (const cpId of SECTION_INTRO_CHECKPOINT_IDS) {
     actionIds.add(cpId);
   }
   const introCheckpoints: M3ActionData[] = INTRO_CHECKPOINT_IDS

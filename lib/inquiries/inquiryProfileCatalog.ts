@@ -42,6 +42,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "AU / Arbeitsunfähigkeitsbescheinigung",
     displayOrder: 30,
     decisionCheckpointId: "AU_DECISION",
+    // Pilot: Section-Intros (M2 „Schubladen"). Reine UI-Whitelist – kein
+    // Einfluss auf Decision/Action/Renderer-Pfade A–E. Renderer hängt das
+    // aktive Section-Intro nur hinter Message-Intros E1/E2/E3 an.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
       "AU_NEW_PATIENT_LIMIT",
@@ -543,6 +552,16 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Labor",
     displayOrder: 80,
     decisionCheckpointId: "LAB_DECISION",
+    // Pilot: Section-Intros (M2 „Schubladen"). LAB nutzt das volle Set,
+    // weil Befund-/Wartezeit-Themen alle sechs Schubladen plausibel machen.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "LAB_MPU_EXCLUSION",
       "LAB_RESULTS_PENDING",
@@ -1421,6 +1440,16 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Termin",
     displayOrder: 20,
     decisionCheckpointId: "",
+    // Pilot: Section-Intros (M2 „Schubladen"). „Unterlagen vollständig"
+    // ist im organisatorischen Termin-Profil semantisch ungewöhnlich und
+    // bleibt bewusst außen vor.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "APPOINTMENT_CAN_BE_BOOKED",
       "APPOINTMENT_CANCEL_OR_RESCHEDULE",

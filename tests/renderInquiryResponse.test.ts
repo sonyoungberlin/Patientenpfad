@@ -3269,6 +3269,107 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
   });
 });
 
+describe("renderInquiryResponseFromSections – Section-Intro (M2 Schubladen)", () => {
+  function makeAuSection(statuses: Record<string, string>): InquirySection {
+    return {
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.POSSIBLE,
+      checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
+    };
+  }
+
+  it("Section-Intro alleine (ohne Message-Intro) → kein output.intro", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE }),
+    ]);
+    expect(result.intro).toBeUndefined();
+  });
+
+  it("E1 (PRACTICE_FOLLOWUP) + SECTION_INTRO → angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe(
+      "Nach Ihrem letzten Termin fehlen uns noch einige Angaben.",
+    );
+  });
+
+  it("E2 (MISSING_INFO) + SECTION_INTRO → angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_MISSING_INFO: ActionStatus.ACTIVE,
+        SECTION_INTRO_DOCS_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe(
+      "Zur Bearbeitung Ihres Anliegens liegen uns noch nicht alle erforderlichen Unterlagen vor.",
+    );
+  });
+
+  it("E3 (APPOINTMENT_PREPARATION) + SECTION_INTRO → angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_APPOINTMENT_PREPARATION: ActionStatus.ACTIVE,
+        SECTION_INTRO_REVIEWED: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe(
+      "Zur Vorbereitung Ihres Termins haben wir Ihr Anliegen geprüft.",
+    );
+  });
+
+  it("E4 (PATIENT_REQUEST_RECEIVED) + SECTION_INTRO → Section-Intro NICHT gerendert", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe("Vielen Dank für Ihre Anfrage.");
+    expect(result.intro).not.toContain("fehlen uns");
+  });
+
+  it("E5 (QUESTIONNAIRE_RECEIVED) + SECTION_INTRO → Section-Intro NICHT gerendert", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: ActionStatus.ACTIVE,
+        SECTION_INTRO_DOCS_COMPLETE: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe("Vielen Dank für das Ausfüllen des Fragebogens.");
+    expect(result.intro).not.toContain("liegen uns");
+  });
+
+  it("Mehrere aktive SECTION_INTROs → nur das erste (in SECTION_INTRO_CHECKPOINT_IDS-Reihenfolge) wird angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE,
+        SECTION_INTRO_DOCS_MISSING: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    // SECTION_INTRO_INFO_MISSING steht vor SECTION_INTRO_DOCS_MISSING im Index.
+    expect(result.intro).toBe(
+      "Nach Ihrem letzten Termin fehlen uns noch einige Angaben.",
+    );
+  });
+
+  it("Section-Intros erscheinen nicht in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    for (const entry of result.sharedBottom) {
+      expect(entry).not.toContain("fehlen uns noch einige Angaben.");
+    }
+  });
+});
+
 describe("INTRO_CHECKPOINT_IDS – Katalog-Vollständigkeit", () => {
   it("alle INTRO_CHECKPOINT_IDS sind im Katalog vorhanden", () => {
     for (const id of INTRO_CHECKPOINT_IDS) {

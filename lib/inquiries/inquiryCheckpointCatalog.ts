@@ -3281,6 +3281,105 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---------------------------------------------------------------------------
+  // SECTION INTRO CHECKPOINTS (Pilot AU / LAB / APPOINTMENT)
+  // ---------------------------------------------------------------------------
+  //
+  // Optionale „Schubladen" in M2. Sie geben den ersten inhaltlichen Baustein
+  // unmittelbar nach dem Nachrichteneinstieg vor, ohne Begründung
+  // (kein „weil"/„daher"/„deshalb").
+  //
+  // Architektur:
+  //   - kind: ACTION, scope: GLOBAL, placement: SHARED_BOTTOM
+  //   - actionCategory: "SECTION_INTRO" (eigener Namespace, nicht INTRO)
+  //   - NICHT Teil von INTRO_CHECKPOINT_IDS – stattdessen
+  //     SECTION_INTRO_CHECKPOINT_IDS (eigener Index).
+  //   - Werden NIE in `availableActionIds` oder `boundActionCheckpointIds`
+  //     gebunden; iterieren also nicht in den A–E-Render-Pfaden und landen
+  //     deshalb auch nicht in `sharedBottom`.
+  //   - Renderer hängt den ersten aktiven Section-Intro-Text an `output.intro`
+  //     an, sofern ein Message-Intro E1/E2/E3 aktiv ist (renderInquiryResponse).
+  //   - M2 stellt eine Pro-Profil-Whitelist via
+  //     `InquiryProfileV2.availableSectionIntroIds` als Radio dar; Toggle via
+  //     `applySectionIntroToggle` (max. ein Section-Intro aktiv).
+  //   - Texte sind bewusst Anschlussform (Verbphrase, kleingeschrieben).
+  // ---------------------------------------------------------------------------
+
+  SECTION_INTRO_INFO_MISSING: {
+    id: "SECTION_INTRO_INFO_MISSING",
+    label: "Schublade: Angaben fehlen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "fehlen uns noch einige Angaben.",
+    },
+  },
+
+  SECTION_INTRO_DOCS_MISSING: {
+    id: "SECTION_INTRO_DOCS_MISSING",
+    label: "Schublade: Unterlagen fehlen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "liegen uns noch nicht alle erforderlichen Unterlagen vor.",
+    },
+  },
+
+  SECTION_INTRO_DOCS_COMPLETE: {
+    id: "SECTION_INTRO_DOCS_COMPLETE",
+    label: "Schublade: Unterlagen vollständig",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "liegen uns Ihre Unterlagen vollständig vor.",
+    },
+  },
+
+  SECTION_INTRO_REVIEWED: {
+    id: "SECTION_INTRO_REVIEWED",
+    label: "Schublade: Anliegen geprüft",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "haben wir Ihr Anliegen geprüft.",
+    },
+  },
+
+  SECTION_INTRO_IN_PROGRESS: {
+    id: "SECTION_INTRO_IN_PROGRESS",
+    label: "Schublade: Noch in Bearbeitung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "befindet sich Ihr Anliegen aktuell noch in Bearbeitung.",
+    },
+  },
+
+  SECTION_INTRO_NOT_RESPONSIBLE: {
+    id: "SECTION_INTRO_NOT_RESPONSIBLE",
+    label: "Schublade: Nicht in unserer Praxis",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "können wir Ihr Anliegen nicht in unserer Praxis bearbeiten.",
+    },
+  },
+
+  // ---------------------------------------------------------------------------
   // Profilspezifische Konsultations- / Zustandshinweise
   // (migriert von Global-Checkpoints)
   // ---------------------------------------------------------------------------
@@ -3590,6 +3689,26 @@ export const INTRO_CHECKPOINT_IDS: readonly string[] = [
   "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
   "MESSAGE_INTRO_MISSING_INFO",
   "MESSAGE_INTRO_APPOINTMENT_PREPARATION",
+] as const;
+
+/**
+ * Geordnete Liste der Section-Intro-Checkpoint-IDs (M2 „Schubladen").
+ *
+ * Pilot für AU/LAB/APPOINTMENT. Section-Intros sind ACTION/GLOBAL-Checkpoints
+ * mit `actionCategory: "SECTION_INTRO"` und stehen bewusst NICHT in
+ * INTRO_CHECKPOINT_IDS – sie sind eine eigene zweite Intro-Ebene.
+ *
+ * Texte sind bewusst nur Anschlussform (Verbphrase, kleingeschrieben) und
+ * werden vom Renderer hinter einem aktiven Message-Intro E1/E2/E3 angehängt.
+ * Bei E4/E5 (vollständige Sätze) wird das Section-Intro NICHT gerendert.
+ */
+export const SECTION_INTRO_CHECKPOINT_IDS: readonly string[] = [
+  "SECTION_INTRO_INFO_MISSING",
+  "SECTION_INTRO_DOCS_MISSING",
+  "SECTION_INTRO_DOCS_COMPLETE",
+  "SECTION_INTRO_REVIEWED",
+  "SECTION_INTRO_IN_PROGRESS",
+  "SECTION_INTRO_NOT_RESPONSIBLE",
 ] as const;
 
 /**
