@@ -22,18 +22,27 @@ export async function DELETE(
         source: true,
         status: true,
         confirmed_at: true,
+        deleted_at: true,
       },
     });
 
     if (
       !session ||
+      session.deleted_at != null ||
       !ownsSession(account, session) ||
       !isQuestionnaireVisibleToPractice(session)
     ) {
       return NextResponse.json({ ok: false, error: "Fragebogen nicht gefunden." }, { status: 404 });
     }
 
-    await prisma.patientQuestionnaireSession.delete({ where: { id } });
+    // Soft Delete: den Datensatz nur als archiviert markieren, damit ein
+    // versehentliches Löschen kurzfristig durch eine DB-Korrektur
+    // (`UPDATE ... SET deleted_at = NULL`) rückgängig gemacht werden kann.
+    // Antworten und alle anderen Felder bleiben unverändert.
+    await prisma.patientQuestionnaireSession.update({
+      where: { id },
+      data: { deleted_at: new Date() },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

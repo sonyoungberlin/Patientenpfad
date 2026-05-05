@@ -30,10 +30,11 @@ export async function GET(
       answers: true,
       identity_gate_completed_at: true,
       identity_gate_method: true,
+      deleted_at: true,
     },
   });
 
-  if (!session) {
+  if (!session || session.deleted_at != null) {
     return new Response(JSON.stringify({ ok: false, error: "Session nicht gefunden." }), {
       status: 404,
       headers: { "Content-Type": "application/json" },

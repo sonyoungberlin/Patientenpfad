@@ -163,7 +163,10 @@ export default function QuestionnaireCard({
       )}
 
       {/* Delete */}
-      <QuestionnaireDeleteButton sessionId={id} />
+      <QuestionnaireDeleteButton
+        sessionId={id}
+        patientReference={patientReference}
+      />
     </div>
   );
 }

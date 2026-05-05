@@ -50,6 +50,7 @@ export default async function QuestionnairePage({
       status: true,
       deduplicated_questions: true,
       patient_language: true,
+      deleted_at: true,
       owner_practice: {
         select: {
           message_signature: true,
@@ -61,7 +62,7 @@ export default async function QuestionnairePage({
   // Bei unbekanntem Token kennen wir die Sprache nicht und zeigen die
   // generische DE-Meldung — bewusst ohne EN-Variante, um keine
   // Existenz-/Sprachinformationen preiszugeben.
-  if (!session || !session.token_expires_at) {
+  if (!session || !session.token_expires_at || session.deleted_at != null) {
     return (
       <main>
         <p data-q-expired>{EXPIRED_MESSAGE_DE}</p>

@@ -29,6 +29,9 @@ export default async function QuestionnairesPage() {
         // Phase 3d: Website-Sessions erst sichtbar, wenn bestätigt.
         // Interne Sessions bleiben unverändert sichtbar.
         PRACTICE_VISIBLE_SESSION_FILTER,
+        // Soft-Delete: archivierte Sessions tauchen in der Liste nicht
+        // mehr auf. Die Spalte ist nullable; Bestandszeilen sind NULL.
+        { deleted_at: null },
       ],
     },
     orderBy: [

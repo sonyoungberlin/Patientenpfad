@@ -27,10 +27,10 @@ enum PracticeRole {
 }
 
 model Account {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  is_approved Boolean  @default(false)
-  is_admin    Boolean  @default(false)
+  id          String  @id @default(cuid())
+  email       String  @unique
+  is_approved Boolean @default(false)
+  is_admin    Boolean @default(false)
 
   /// Passwort-Hash im kompakten Format `scrypt$N$r$p$saltBase64$hashBase64`
   /// (siehe `lib/password.ts`). NULL bedeutet: Account hat (noch) kein
@@ -48,8 +48,8 @@ model Account {
   /// E-Mail-Adresse des Accounts versandt — niemals geloggt.
   password_reset_token   String?   @unique
   password_reset_expires DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   /// Freitext-Signatur für Nachrichten (max. 300 Zeichen, accountbezogen)
   message_signature String?
@@ -332,6 +332,13 @@ model PatientQuestionnaireSession {
   /// Praxis-/interne Sichten (Übersicht, PDF, Krankenblatt) ignorieren
   /// dieses Feld bewusst und bleiben deutsch.
   patient_language String @default("de")
+
+  /// Soft-Delete-Marker. NULL = aktiv, gesetzter Zeitstempel = archiviert.
+  /// Praxis-/Patienten-Pfade behandeln Datensätze mit `deleted_at != null`
+  /// wie nicht existent (404). Es gibt bewusst keine UI zum Wiederherstellen;
+  /// die Spalte dient als kurzfristiges Sicherheitsnetz gegen versehentliches
+  /// Löschen und kann später durch einen Cleanup-Job entgültig entfernt werden.
+  deleted_at DateTime? @db.Timestamp(6)
 
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
