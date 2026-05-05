@@ -36,7 +36,7 @@ describe("M3 Audience-Toggle – Default: patient", () => {
     const INTRO_ID = "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED";
     const section = makeAuSection({ [INTRO_ID]: ActionStatus.ACTIVE });
     const result = renderInquiryResponseFromSections([section]);
-    expect(result.intro).toBe("Ihre Nachricht ist bei uns eingegangen.");
+    expect(result.intro).toBe("Vielen Dank für Ihre Anfrage.");
   });
 
   it("renderInquiryResponseFromSections mit audience='patient' gibt identischen Text aus", () => {

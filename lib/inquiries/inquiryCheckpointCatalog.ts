@@ -3190,26 +3190,28 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   //   - Keine M2-Schalter, keine Decision-Logik.
   // ---------------------------------------------------------------------------
 
+  // E4 – Anfrage eingegangen
   MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: {
     id: "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED",
-    label: "Nachricht eingegangen",
+    label: "Anfrage eingegangen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Ihre Nachricht ist bei uns eingegangen.",
+        "Vielen Dank für Ihre Anfrage.",
     },
     textByAudience: {
       contact_person:
-        "Die Nachricht für Ihre Angehörige / Ihren Angehörigen ist bei uns eingegangen.",
+        "Vielen Dank für Ihre Anfrage zu Ihrer Angehörigen / Ihrem Angehörigen.",
     },
   },
 
+  // E5 – Fragebogen eingegangen
   MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: {
     id: "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
-    label: "Fragebogen eingegangen – Angaben geprüft",
+    label: "Fragebogen eingegangen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
@@ -3224,37 +3226,57 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // E1 – Nach Termin
   MESSAGE_INTRO_PRACTICE_FOLLOWUP: {
     id: "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
-    label: "Praxis schreibt aktiv – Angaben fehlen",
+    label: "Nach Termin",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Sie waren kürzlich bei uns in Behandlung. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
+        "Nach Ihrem letzten Termin",
     },
     textByAudience: {
       contact_person:
-        "Ihre Angehörige / Ihr Angehöriger war kürzlich bei uns in Behandlung. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
+        "Nach dem letzten Termin Ihrer Angehörigen / Ihres Angehörigen",
     },
   },
 
+  // E2 – Laufendes Anliegen
   MESSAGE_INTRO_MISSING_INFO: {
     id: "MESSAGE_INTRO_MISSING_INFO",
-    label: "Zusatzangaben benötigt",
+    label: "Laufendes Anliegen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch zusätzliche Angaben.",
+        "Zur Bearbeitung Ihres Anliegens",
     },
     textByAudience: {
       contact_person:
-        "Zur weiteren Bearbeitung des Anliegens Ihrer Angehörigen / Ihres Angehörigen benötigen wir noch zusätzliche Angaben.",
+        "Zur Bearbeitung des Anliegens Ihrer Angehörigen / Ihres Angehörigen",
+    },
+  },
+
+  // E3 – Vorbereitung Termin
+  MESSAGE_INTRO_APPOINTMENT_PREPARATION: {
+    id: "MESSAGE_INTRO_APPOINTMENT_PREPARATION",
+    label: "Vorbereitung Termin",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Zur Vorbereitung Ihres Termins",
+    },
+    textByAudience: {
+      contact_person:
+        "Zur Vorbereitung des Termins Ihrer Angehörigen / Ihres Angehörigen",
     },
   },
 
@@ -3567,6 +3589,7 @@ export const INTRO_CHECKPOINT_IDS: readonly string[] = [
   "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
   "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
   "MESSAGE_INTRO_MISSING_INFO",
+  "MESSAGE_INTRO_APPOINTMENT_PREPARATION",
 ] as const;
 
 /**

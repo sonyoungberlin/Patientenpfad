@@ -37,18 +37,18 @@ describe("Audience – Intro-Checkpoints (MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED
 
   it("Default (kein options) → textByStatus-Text (patient-äquivalent)", () => {
     const result = renderInquiryResponseFromSections([section]);
-    expect(result.intro).toBe("Ihre Nachricht ist bei uns eingegangen.");
+    expect(result.intro).toBe("Vielen Dank für Ihre Anfrage.");
   });
 
   it("audience='patient' → textByStatus-Text (kein patient-Override definiert)", () => {
     const result = renderInquiryResponseFromSections([section], { audience: "patient" });
-    expect(result.intro).toBe("Ihre Nachricht ist bei uns eingegangen.");
+    expect(result.intro).toBe("Vielen Dank für Ihre Anfrage.");
   });
 
   it("audience='contact_person' → textByAudience.contact_person-Text", () => {
     const result = renderInquiryResponseFromSections([section], { audience: "contact_person" });
     expect(result.intro).toContain("Angehörige");
-    expect(result.intro).not.toBe("Ihre Nachricht ist bei uns eingegangen.");
+    expect(result.intro).not.toBe("Vielen Dank für Ihre Anfrage.");
   });
 
   it("Intro-Catalog enthält textByAudience.contact_person", () => {

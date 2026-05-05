@@ -3190,7 +3190,7 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
       makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE }),
     ]);
     expect(result.intro).toBeDefined();
-    expect(result.intro).toContain("Ihre Nachricht ist bei uns eingegangen");
+    expect(result.intro).toContain("Vielen Dank für Ihre Anfrage");
   });
 
   it("MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED ACTIVE → output.intro enthält den Text", () => {
@@ -3204,14 +3204,14 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSectionIntro({ MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE }),
     ]);
-    expect(result.intro).toContain("Sie waren kürzlich bei uns in Behandlung");
+    expect(result.intro).toContain("Nach Ihrem letzten Termin");
   });
 
   it("MESSAGE_INTRO_MISSING_INFO ACTIVE → output.intro enthält den Text", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSectionIntro({ MESSAGE_INTRO_MISSING_INFO: ActionStatus.ACTIVE }),
     ]);
-    expect(result.intro).toContain("Zur weiteren Bearbeitung Ihres Anliegens");
+    expect(result.intro).toContain("Zur Bearbeitung Ihres Anliegens");
   });
 
   it("Intro erscheint NICHT in sharedBottom", () => {
@@ -3229,8 +3229,8 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
         MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: ActionStatus.ACTIVE,
       }),
     ]);
-    expect(result.intro).toContain("Ihre Nachricht ist bei uns eingegangen");
-    expect(result.intro).not.toContain("Vielen Dank");
+    expect(result.intro).toContain("Vielen Dank für Ihre Anfrage");
+    expect(result.intro).not.toContain("Fragebogen");
   });
 
   it("Intro INACTIVE → output.intro ist undefined", () => {
