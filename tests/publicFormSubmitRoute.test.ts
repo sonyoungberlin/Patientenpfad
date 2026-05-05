@@ -466,4 +466,77 @@ describe("POST /api/p/[slug]/submit", () => {
       });
     });
   });
+
+  describe("Zeichenvalidierung Freitext (Bypass-Schutz)", () => {
+    it("400 bei kyrillischer Eingabe in einem Freitext-Block — KEINE Session, KEINE Mail", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"] }),
+      );
+      const res = await POST(
+        formReq(
+          { email: "char1@b.de", CONTACT_PHONE: "Нет" },
+          SLUG,
+          "20.0.0.1",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(400);
+      const text = await res.text();
+      expect(text).toContain("lateinische Buchstaben");
+      expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+      expect(sendMailMock).not.toHaveBeenCalled();
+    });
+
+    it("400 bei Emoji in einem Freitextfeld", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"] }),
+      );
+      const res = await POST(
+        formReq(
+          { email: "char2@b.de", CONTACT_PHONE: "0171 😀" },
+          SLUG,
+          "20.0.0.2",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(400);
+      expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+    });
+
+    it("englische Fehlermeldung wenn patient_language='en'", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"], patient_language: "en" }),
+      );
+      const res = await POST(
+        formReq(
+          { email: "char3@b.de", CONTACT_PHONE: "你好" },
+          SLUG,
+          "20.0.0.3",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(400);
+      const text = await res.text();
+      expect(text).toContain("Latin letters");
+    });
+
+    it("akzeptiert deutsche Umlaute, ß und übliche Satzzeichen (Happy Path bleibt erhalten)", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"] }),
+      );
+      const res = await POST(
+        formReq(
+          {
+            email: "char4@b.de",
+            CONTACT_PHONE: "+49 30 1234, Müller-Str. 5 (Hinterhof) & Co.",
+          },
+          SLUG,
+          "20.0.0.4",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      expect(pm.patientQuestionnaireSession.create).toHaveBeenCalledTimes(1);
+    });
+  });
 });

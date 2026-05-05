@@ -37,6 +37,10 @@ import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionna
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import {
+  answerCharactersErrorMessage,
+  validateAnswerCharacters,
+} from "@/lib/questionnaire/validateAnswerCharacters";
+import {
   HONEYPOT_FIELD_NAME,
   isHoneypotTriggered,
   submitErrorMessage,
@@ -72,6 +76,7 @@ type SubmitOutcome =
   | "mail_failed"
   | "invalid_body"
   | "invalid_email"
+  | "invalid_characters"
   | "honeypot"
   | "not_found"
   | "rate_limited_ip"
@@ -276,6 +281,27 @@ export async function POST(
       ? (form.selected_block_ids as string[])
       : [];
     const deduplicatedQuestions = buildQuestionnaireQuestions(selectedBlockIds);
+
+    // Zeichenvalidierung der Freitextantworten (text/textarea). Greift VOR
+    // sanitizeAnswers/Speichern und VOR Mail-Versand: nicht-lateinische
+    // Eingaben (kyrillisch, arabisch, CJK, Emojis) werden mit 400 abgewiesen.
+    // Sprache der Fehlermeldung folgt der Form-/Patientensprache.
+    const charCheck = validateAnswerCharacters(
+      fields.answers,
+      deduplicatedQuestions,
+    );
+    if (!charCheck.ok) {
+      logSubmit("invalid_characters", {
+        slug: slugValidation.slug,
+        practiceFormId: form.id,
+        invalidQuestionIds: charCheck.invalidQuestionIds,
+      });
+      return new NextResponse(answerCharactersErrorMessage(formLanguage), {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+
     const sanitizedAnswers = sanitizeAnswers(
       fields.answers,
       deduplicatedQuestions,

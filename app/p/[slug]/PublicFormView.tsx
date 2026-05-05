@@ -25,6 +25,11 @@ import {
 } from "@/lib/questionnaire/patientIntro";
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
+import {
+  ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN,
+  answerCharactersErrorMessage,
+} from "@/lib/questionnaire/validateAnswerCharacters";
+import { PublicFormCharactersValidator } from "./PublicFormCharactersValidator";
 
 const NOTICE_ID = "public-form-confirm-notice";
 
@@ -136,6 +141,7 @@ function PublicQuestionField({
           required={question.required}
           rows={3}
           defaultValue=""
+          data-q-freetext={question.id}
           style={{ ...baseInputStyle, resize: "vertical" }}
         />
       );
@@ -187,6 +193,8 @@ function PublicQuestionField({
           name={question.id}
           required={question.required}
           defaultValue=""
+          pattern={ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN}
+          data-q-freetext={question.id}
           style={baseInputStyle}
         />
       );
@@ -260,6 +268,9 @@ export function PublicFormView({
         data-public-form
         style={{ display: "block" }}
       >
+        <PublicFormCharactersValidator
+          errorMessage={answerCharactersErrorMessage(language)}
+        />
         {/*
           Honeypot-Feld: für Menschen unsichtbar (off-screen, tabIndex=-1,
           aria-hidden), naive Bots füllen es trotzdem aus → Submit wird

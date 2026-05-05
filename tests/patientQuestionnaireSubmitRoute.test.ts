@@ -178,4 +178,73 @@ describe("POST /api/q/[token]", () => {
     expect(res.status).toBe(200);
     // Kein Fehler → Route hat caseSession/prefillRun nicht verwendet.
   });
+
+  describe("Zeichenvalidierung Freitext (Bypass-Schutz)", () => {
+    it("400 bei kyrillischer Eingabe in einem Freitextfeld (Bypass-Schutz)", async () => {
+      prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+        SESSION_BASE,
+      );
+
+      const req = makeRequest("valid-token", {
+        answers: { CONTACT_PHONE: "Нет" },
+      });
+      const res = await POST(req, {
+        params: Promise.resolve({ token: "valid-token" }),
+      });
+      const json = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(json.ok).toBe(false);
+      expect(json.error).toContain("lateinische Buchstaben");
+      expect(json.invalidQuestionIds).toEqual(["CONTACT_PHONE"]);
+      // Keine DB-Schreibung trotz Bypass-Versuch via direktem JSON-POST.
+      expect(prismaMock.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    });
+
+    it("400 bei Emoji-Eingabe in einem Freitextfeld", async () => {
+      prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+        SESSION_BASE,
+      );
+
+      const req = makeRequest("valid-token", {
+        answers: { CONTACT_PHONE: "0171 😀" },
+      });
+      const res = await POST(req, {
+        params: Promise.resolve({ token: "valid-token" }),
+      });
+      expect(res.status).toBe(400);
+      expect(prismaMock.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    });
+
+    it("englische Fehlermeldung bei patient_language='en'", async () => {
+      prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
+        ...SESSION_BASE,
+        patient_language: "en",
+      });
+
+      const req = makeRequest("valid-token", {
+        answers: { CONTACT_PHONE: "你好" },
+      });
+      const res = await POST(req, {
+        params: Promise.resolve({ token: "valid-token" }),
+      });
+      const json = await res.json();
+      expect(res.status).toBe(400);
+      expect(json.error).toContain("Latin letters");
+    });
+
+    it("akzeptiert deutsche Umlaute, ß und übliche Satzzeichen", async () => {
+      prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+        SESSION_BASE,
+      );
+
+      const req = makeRequest("valid-token", {
+        answers: { CONTACT_PHONE: "+49 30 1234, Müller-Str. 5 (Hinterhof) & Co." },
+      });
+      const res = await POST(req, {
+        params: Promise.resolve({ token: "valid-token" }),
+      });
+      expect(res.status).toBe(200);
+    });
+  });
 });

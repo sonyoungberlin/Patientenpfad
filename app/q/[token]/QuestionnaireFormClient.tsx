@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { IdentityGate } from "@/components/IdentityGate";
+import {
+  ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN,
+  answerCharactersErrorMessage,
+  isAnswerTextAllowed,
+  validateAnswerCharacters,
+} from "@/lib/questionnaire/validateAnswerCharacters";
 
 function QuestionField({
   question,
@@ -11,12 +17,14 @@ function QuestionField({
   onChange,
   disabled,
   language,
+  hasError,
 }: {
   question: QuestionDefinition;
   value: string;
   onChange: (id: string, val: string) => void;
   disabled: boolean;
   language: QuestionnaireLanguage;
+  hasError: boolean;
 }) {
   const baseStyle: React.CSSProperties = {
     width: "100%",
@@ -93,6 +101,8 @@ function QuestionField({
           disabled={disabled}
           required={question.required}
           rows={3}
+          aria-invalid={hasError || undefined}
+          aria-describedby={hasError ? `${question.id}-charerror` : undefined}
           style={{ ...baseStyle, resize: "vertical" }}
         />
       );
@@ -150,6 +160,9 @@ function QuestionField({
           onChange={(e) => onChange(question.id, e.target.value)}
           disabled={disabled}
           required={question.required}
+          pattern={ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN}
+          aria-invalid={hasError || undefined}
+          aria-describedby={hasError ? `${question.id}-charerror` : undefined}
           style={baseStyle}
         />
       );
@@ -204,6 +217,7 @@ export function QuestionnaireFormClient({
   language?: QuestionnaireLanguage;
 }) {
   const t = UI_STRINGS[language];
+  const charErrorMessage = answerCharactersErrorMessage(language);
 
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -216,13 +230,36 @@ export function QuestionnaireFormClient({
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
+  // Per-Frage Live-Charactervalidierung. Gibt true zurück, wenn der aktuelle
+  // Wert ungültige (nicht-lateinische) Zeichen enthält. Auswahl-/Datums-/
+  // Yes-No-Felder liefern immer false (siehe `isAnswerTextAllowed`).
+  const fieldHasCharError = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const q of questions) {
+      const v = values[q.id] ?? "";
+      map[q.id] = !isAnswerTextAllowed(v, q.type as QuestionType);
+    }
+    return map;
+  }, [values, questions]);
+
+  const hasAnyCharError = Object.values(fieldHasCharError).some(Boolean);
+
   function handleChange(id: string, val: string) {
     setValues((prev) => ({ ...prev, [id]: val }));
   }
 
   async function handleSubmit() {
-    setSaving(true);
     setError(null);
+
+    // Clientseitige Validierung der Freitext-Antworten gegen erlaubte Zeichen.
+    // Block submit, falls verletzt — Server validiert zusätzlich (Bypass-Schutz).
+    const charCheck = validateAnswerCharacters(values, questions);
+    if (!charCheck.ok) {
+      setError(charErrorMessage);
+      return;
+    }
+
+    setSaving(true);
 
     try {
       const response = await fetch(`/api/q/${token}`, {
@@ -306,7 +343,20 @@ export function QuestionnaireFormClient({
                 onChange={handleChange}
                 disabled={saving}
                 language={language}
+                hasError={fieldHasCharError[q.id] === true}
               />
+              {fieldHasCharError[q.id] && (
+                <p
+                  id={`${q.id}-charerror`}
+                  data-q-charerror={q.id}
+                  className="text-error"
+                  role="alert"
+                  aria-live="polite"
+                  style={{ margin: "0.25rem 0 0", fontSize: "0.85rem" }}
+                >
+                  {charErrorMessage}
+                </p>
+              )}
               {q.helperText && (
                 <p
                   style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", color: "var(--muted-foreground, #6b7280)" }}
@@ -329,7 +379,7 @@ export function QuestionnaireFormClient({
         className="btn-primary"
         data-q-submit
         onClick={() => void handleSubmit()}
-        disabled={saving}
+        disabled={saving || hasAnyCharError}
         style={{ marginTop: "1rem" }}
       >
         {saving ? t.submitting : t.submit}
