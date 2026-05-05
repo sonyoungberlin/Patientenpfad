@@ -67,6 +67,7 @@ const SHORT_LABELS: Record<string, string> = {
   ANAMNESE_ALCOHOL: "Alkohol",
   ANAMNESE_SUBSTANCES: "Sonstige Substanzen",
   ANAMNESE_VACCINATION: "Impfstatus bekannt",
+  ANAMNESE_OCCUPATION: "Beruf",
 
   // Arbeitsunfähigkeit
   AU_SYMPTOMS: "Beschwerden",

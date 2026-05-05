@@ -166,6 +166,7 @@ describe("/q/[token] Mehrsprachigkeit", () => {
       "ANAMNESE_ALCOHOL",
       "ANAMNESE_SUBSTANCES",
       "ANAMNESE_VACCINATION",
+      "ANAMNESE_OCCUPATION",
     ]);
 
     // Stichproben für jede Block-Übersetzung
@@ -177,6 +178,7 @@ describe("/q/[token] Mehrsprachigkeit", () => {
     expect(html).toContain("How tall are you");
     expect(html).toContain("Do you suffer from any chronic illnesses");
     expect(html).toContain("Is your vaccination status known");
+    expect(html).toContain("What is your occupation");
 
     // Garantie: keinerlei deutsche Originalfragetexte/-helper aus den
     // vier Basisblöcken erscheinen. Bewusst lange/eindeutige Substrings,
@@ -204,6 +206,7 @@ describe("/q/[token] Mehrsprachigkeit", () => {
       "Trinken Sie Alkohol",
       "Nehmen Sie sonstige Substanzen",
       "Ist Ihr Impfstatus bekannt",
+      "Was ist Ihr Beruf",
     ];
     for (const de of forbiddenDe) {
       expect(html).not.toContain(de);

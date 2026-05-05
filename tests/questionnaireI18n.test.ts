@@ -248,7 +248,7 @@ describe("isQuestionEnReady / isBlockEnReady", () => {
     expect(isBlockEnReady("ADRESSE")).toBe(true);
   });
 
-  it("isBlockEnReady('KURZANAMNESE') === true (alle 11 Fragen übersetzt)", () => {
+  it("isBlockEnReady('KURZANAMNESE') === true (alle 12 Fragen übersetzt)", () => {
     expect(isBlockEnReady("KURZANAMNESE")).toBe(true);
   });
 
