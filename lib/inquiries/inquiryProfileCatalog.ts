@@ -54,6 +54,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_MEDICAL_CONSULTATION_REQUIRED",
       "AU_FOLLOWUP",
       "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
+      // nur dort verfügbar, wo Dokumente eine Rolle spielen (eGK, Fragebogen,
+      // Befunde). Bleibt im Patientenoutput unsichtbar, bis die Praxis ihn
+      // in M2 auf YES und in M3 auf SHOW setzt.
+      "TECH_UPLOAD_FAILED",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
@@ -241,6 +246,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
+      // greift bei Facharztbericht- / Krankenhausentlassbrief-Uploads, wenn
+      // die hochgeladene Datei nicht verwertbar ist. Sichtbar im
+      // Patientenoutput erst nach M2 YES + M3 SHOW.
+      "TECH_UPLOAD_FAILED",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -960,6 +970,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_HAV_CASE",
       "REF_MEDICAL_CONSULTATION_REQUIRED",
+      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
+      // greift bei nachgereichten Unterlagen / Befunden zur Überweisung,
+      // wenn die hochgeladene Datei nicht verwertbar ist. Sichtbar im
+      // Patientenoutput erst nach M2 YES + M3 SHOW.
+      "TECH_UPLOAD_FAILED",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.

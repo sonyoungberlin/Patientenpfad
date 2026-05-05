@@ -1389,7 +1389,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle zwölf Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet alle dreizehn Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
@@ -1403,8 +1403,9 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(12);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(13);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1421,6 +1422,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+      "TECH_UPLOAD_FAILED",
     ]);
   });
 
@@ -2547,20 +2549,21 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("5 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED)", () => {
+  it("6 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED und TECH_UPLOAD_FAILED)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(5);
+    expect(profile.specificCheckpointIds).toHaveLength(6);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     expect(profile.specificCheckpointIds).toContain("REF_SPECIALTY_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
     expect(profile.specificCheckpointIds).toContain("REF_MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
