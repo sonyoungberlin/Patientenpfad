@@ -19,6 +19,7 @@ import {
   inquiryDocumentationToPlainText,
 } from "@/lib/inquiries/formatInquiryOutput";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { isBlockEnReady } from "@/lib/questionnaire/i18n";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
 
 export type M3SpecificCheckpoint = {
@@ -600,6 +601,7 @@ function QuestionnaireRequestSection({
   const [patientRef, setPatientRef] = useState("");
   const [patientRefTouched, setPatientRefTouched] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
+  const [language, setLanguage] = useState<"de" | "en">("de");
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -609,7 +611,26 @@ function QuestionnaireRequestSection({
     setSelectedBlocks((prev) => ({ ...prev, [blockId]: !prev[blockId] }));
   }
 
-  const anyBlockSelected = BLOCK_IDS_SORTED.some((id) => selectedBlocks[id]);
+  // Beim Wechsel auf Englisch dürfen nur EN-ready-Blöcke ausgewählt bleiben.
+  // Eine evtl. bestehende Auswahl wird stillschweigend bereinigt, damit der
+  // serverseitige EN-Reject (siehe POST /api/questionnaire) gar nicht erst
+  // ausgelöst werden kann.
+  function handleLanguageChange(next: "de" | "en") {
+    setLanguage(next);
+    if (next === "en") {
+      setSelectedBlocks((prev) => {
+        const cleaned: Record<string, boolean> = {};
+        for (const id of Object.keys(prev)) {
+          if (prev[id] && isBlockEnReady(id)) cleaned[id] = true;
+        }
+        return cleaned;
+      });
+    }
+  }
+
+  const anyBlockSelected = BLOCK_IDS_SORTED.some(
+    (id) => selectedBlocks[id] && (language !== "en" || isBlockEnReady(id)),
+  );
   const trimmedPatientRef = patientRef.trim();
   const hasPatientRef = trimmedPatientRef.length > 0;
 
@@ -626,7 +647,9 @@ function QuestionnaireRequestSection({
     setCopied(false);
     setLink(null);
 
-    const blockIds = BLOCK_IDS_SORTED.filter((id) => selectedBlocks[id]);
+    const blockIds = BLOCK_IDS_SORTED.filter(
+      (id) => selectedBlocks[id] && (language !== "en" || isBlockEnReady(id)),
+    );
     try {
       const res = await fetch("/api/questionnaire", {
         method: "POST",
@@ -635,6 +658,7 @@ function QuestionnaireRequestSection({
           patient_reference: trimmedPatientRef,
           selected_block_ids: blockIds,
           inquiry_session_id: inquirySessionId,
+          language,
         }),
       });
       const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
@@ -735,10 +759,18 @@ function QuestionnaireRequestSection({
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               {BLOCK_IDS_SORTED.map((blockId) => {
                 const block = BLOCK_CATALOG[blockId];
-                const checked = !!selectedBlocks[blockId];
+                const enReady = isBlockEnReady(blockId);
+                const blockedByLanguage = language === "en" && !enReady;
+                const checked = !!selectedBlocks[blockId] && !blockedByLanguage;
+                const disabled = loading || !!link || blockedByLanguage;
                 return (
                   <label
                     key={blockId}
+                    title={
+                      blockedByLanguage
+                        ? "Dieser Block ist noch nicht vollständig auf Englisch übersetzt."
+                        : undefined
+                    }
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -747,25 +779,66 @@ function QuestionnaireRequestSection({
                       border: `1px solid ${checked ? "var(--primary, #2563eb)" : "var(--border)"}`,
                       borderRadius: "var(--radius)",
                       background: checked ? "var(--primary-subtle, #eff6ff)" : "var(--background)",
-                      cursor: loading || !!link ? "not-allowed" : "pointer",
+                      cursor: disabled ? "not-allowed" : "pointer",
                       fontSize: "0.85rem",
-                      opacity: loading || !!link ? 0.6 : 1,
+                      opacity: disabled ? 0.5 : 1,
                     }}
                     data-q-block-label={blockId}
+                    data-q-block-en-ready={enReady ? "true" : "false"}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleBlock(blockId)}
-                      disabled={loading || !!link}
+                      disabled={disabled}
                       data-q-block={blockId}
                       style={{ accentColor: "var(--primary, #2563eb)" }}
                     />
                     {block.label}
+                    {blockedByLanguage && (
+                      <>
+                        <span aria-hidden="true" style={{ fontSize: "0.75rem", opacity: 0.7 }}>
+                          (nur DE)
+                        </span>
+                        <span className="sr-only">
+                          {" "}
+                          – Dieser Block ist noch nicht vollständig auf Englisch übersetzt.
+                        </span>
+                      </>
+                    )}
                   </label>
                 );
               })}
             </div>
+          </div>
+
+          {/* Language selection */}
+          <div>
+            <label
+              htmlFor="q-language"
+              style={{ display: "block", fontWeight: 500, marginBottom: "0.3rem", fontSize: "0.9rem" }}
+            >
+              Sprache
+            </label>
+            <select
+              id="q-language"
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value === "en" ? "en" : "de")}
+              disabled={loading || !!link}
+              data-q-language
+              style={{
+                padding: "0.4rem 0.6rem",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius)",
+                background: "var(--input-background)",
+                fontSize: "0.9rem",
+                fontFamily: "inherit",
+                color: "var(--foreground)",
+              }}
+            >
+              <option value="de">Deutsch</option>
+              <option value="en">Englisch</option>
+            </select>
           </div>
 
           {reqError && (

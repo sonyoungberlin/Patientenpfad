@@ -326,6 +326,13 @@ model PatientQuestionnaireSession {
   /// (nie Klartext; für Spam-/Doppel-Schutz und Auditierung).
   submitter_email_hash String?
 
+  /// Sprache der Patientensicht beim Ausfüllen des Token-Fragebogens.
+  /// Whitelist: "de" | "en". Default "de", damit Bestandszeilen und alle
+  /// bestehenden Codepfade unverändert deutsch bleiben.
+  /// Praxis-/interne Sichten (Übersicht, PDF, Krankenblatt) ignorieren
+  /// dieses Feld bewusst und bleiben deutsch.
+  patient_language String @default("de")
+
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
   @@index([owner_account_id, createdAt])

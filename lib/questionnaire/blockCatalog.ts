@@ -36,31 +36,47 @@ export type QuestionType =
 export type QuestionDefinition = {
   /** Globale, stabile ID – darf nie geändert werden. */
   id: string;
-  /** Patientenformulierung. */
+  /** Patientenformulierung (Deutsch, kanonisch). */
   text: string;
   /** Interaktionstyp des Feldes. */
   type: QuestionType;
   /** Ob das Feld Pflichtfeld ist. */
   required: boolean;
-  /** Auswahloptionen für select / multi_select. */
+  /** Auswahloptionen für select / multi_select (Deutsch, kanonisch). */
   options?: string[];
-  /** Erläuternder Hilfetext unterhalb des Feldes. */
+  /** Erläuternder Hilfetext unterhalb des Feldes (Deutsch, kanonisch). */
   helperText?: string;
+  /** Optionale englische Übersetzung der Patientenformulierung. */
+  text_en?: string;
+  /**
+   * Optionale englische Auswahloptionen.
+   * MUSS exakt dieselbe Länge und Reihenfolge wie `options` haben, damit das
+   * Reverse-Mapping in `sanitizeAnswers` (EN → DE) eindeutig bleibt.
+   */
+  options_en?: string[];
+  /** Optionale englische Übersetzung des Hilfetextes. */
+  helperText_en?: string;
 };
 
 export type QuestionnaireBlock = {
   /** Stabile Block-ID, z.B. "KONTAKT". */
   id: string;
-  /** Anzeigename für die UI. */
+  /** Anzeigename für die UI (Deutsch, kanonisch). */
   label: string;
-  /** Kurze Beschreibung des Blocks (optional). */
+  /** Kurze Beschreibung des Blocks (optional, Deutsch). */
   description?: string;
-  /** Hinweistext, der unterhalb des Blocks angezeigt wird (optional, keine Logik). */
+  /** Hinweistext, der unterhalb des Blocks angezeigt wird (optional, Deutsch). */
   hint?: string;
   /** Reihenfolge beim Kombinieren (niedrig = zuerst). */
   displayOrder: number;
   /** Geordnete Fragen-IDs aus QUESTION_CATALOG. */
   questionIds: string[];
+  /** Optionale englische Übersetzung des Anzeigenamens. */
+  label_en?: string;
+  /** Optionale englische Übersetzung der Kurzbeschreibung. */
+  description_en?: string;
+  /** Optionale englische Übersetzung des Hinweistextes. */
+  hint_en?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -85,45 +101,53 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   IDENTITY_FIRST_NAME: {
     id: "IDENTITY_FIRST_NAME",
     text: "Vorname",
+    text_en: "First name",
     type: "text",
     required: true,
   },
   IDENTITY_LAST_NAME: {
     id: "IDENTITY_LAST_NAME",
     text: "Nachname",
+    text_en: "Last name",
     type: "text",
     required: true,
   },
   IDENTITY_BIRTHDATE: {
     id: "IDENTITY_BIRTHDATE",
     text: "Geburtsdatum",
+    text_en: "Date of birth",
     type: "date",
     required: true,
   },
   IDENTITY_INSURANCE_TYPE: {
     id: "IDENTITY_INSURANCE_TYPE",
     text: "Versicherungsart",
+    text_en: "Type of insurance",
     type: "select",
     required: true,
     options: ["gesetzlich versichert", "privat versichert"],
+    options_en: ["statutory insurance", "private insurance"],
   },
 
   // --- Kontakt ---
   CONTACT_PHONE: {
     id: "CONTACT_PHONE",
     text: "Wie lautet Ihre Telefonnummer (Mobil oder Festnetz)?",
+    text_en: "What is your phone number (mobile or landline)?",
     type: "text",
     required: true,
   },
   CONTACT_EMAIL: {
     id: "CONTACT_EMAIL",
     text: "Wie lautet Ihre E-Mail-Adresse?",
+    text_en: "What is your email address?",
     type: "text",
     required: false,
   },
   CONTACT_DOCTOLIB: {
     id: "CONTACT_DOCTOLIB",
     text: "Haben Sie einen Doctolib-Account?",
+    text_en: "Do you have a Doctolib account?",
     type: "yes_no",
     required: false,
   },
@@ -132,75 +156,88 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   ADDRESS_POSTAL: {
     id: "ADDRESS_POSTAL",
     text: "Wie lautet Ihre Postanschrift (Straße, PLZ, Ort)?",
+    text_en: "What is your postal address (street, postcode, city)?",
     type: "textarea",
     required: true,
     helperText: "Wird für Abrechnung und Dokumente benötigt.",
+    helperText_en: "Required for billing and documents.",
   },
 
   // --- Kurzanamnese ---
   ANAMNESE_GP: {
     id: "ANAMNESE_GP",
     text: "Haben Sie einen Hausarzt?",
+    text_en: "Do you have a general practitioner?",
     type: "yes_no",
     required: false,
   },
   ANAMNESE_HEIGHT: {
     id: "ANAMNESE_HEIGHT",
     text: "Wie groß sind Sie? (z.B. 175 cm)",
+    text_en: "How tall are you? (e.g. 175 cm)",
     type: "text",
     required: false,
   },
   ANAMNESE_WEIGHT: {
     id: "ANAMNESE_WEIGHT",
     text: "Wie viel wiegen Sie? (z.B. 70 kg)",
+    text_en: "How much do you weigh? (e.g. 70 kg)",
     type: "text",
     required: false,
   },
   ANAMNESE_CHRONIC: {
     id: "ANAMNESE_CHRONIC",
     text: "Leiden Sie an chronischen Erkrankungen? Falls ja, welchen?",
+    text_en: "Do you suffer from any chronic illnesses? If yes, which ones?",
     type: "textarea",
     required: false,
   },
   ANAMNESE_HEREDITARY: {
     id: "ANAMNESE_HEREDITARY",
     text: "Gibt es bekannte Erbkrankheiten in Ihrer Familie?",
+    text_en: "Are there any known hereditary diseases in your family?",
     type: "textarea",
     required: false,
   },
   ANAMNESE_ALLERGIES: {
     id: "ANAMNESE_ALLERGIES",
     text: "Haben Sie Allergien oder Unverträglichkeiten?",
+    text_en: "Do you have any allergies or intolerances?",
     type: "textarea",
     required: false,
   },
   ANAMNESE_MEDICATIONS: {
     id: "ANAMNESE_MEDICATIONS",
     text: "Nehmen Sie regelmäßig Medikamente? Falls ja, welche?",
+    text_en: "Do you take any medication regularly? If yes, which ones?",
     type: "textarea",
     required: false,
   },
   ANAMNESE_SMOKING: {
     id: "ANAMNESE_SMOKING",
     text: "Rauchen Sie?",
+    text_en: "Do you smoke?",
     type: "yes_no",
     required: false,
   },
   ANAMNESE_ALCOHOL: {
     id: "ANAMNESE_ALCOHOL",
     text: "Trinken Sie Alkohol?",
+    text_en: "Do you drink alcohol?",
     type: "yes_no",
     required: false,
   },
   ANAMNESE_SUBSTANCES: {
     id: "ANAMNESE_SUBSTANCES",
     text: "Nehmen Sie sonstige Substanzen?",
+    text_en: "Do you take any other substances?",
     type: "textarea",
     required: false,
   },
   ANAMNESE_VACCINATION: {
     id: "ANAMNESE_VACCINATION",
     text: "Ist Ihr Impfstatus bekannt?",
+    text_en: "Is your vaccination status known?",
     type: "yes_no",
     required: false,
   },
@@ -209,6 +246,7 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   AU_SYMPTOMS: {
     id: "AU_SYMPTOMS",
     text: "Welche Beschwerden haben Sie?",
+    text_en: "What symptoms do you have?",
     type: "multi_select",
     required: true,
     options: [
@@ -222,6 +260,18 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Übelkeit",
       "Erschöpfung",
       "Sonstiges",
+    ],
+    options_en: [
+      "Cough",
+      "Runny nose",
+      "Fever",
+      "Headache",
+      "Back pain",
+      "Abdominal pain",
+      "Dizziness",
+      "Nausea",
+      "Exhaustion",
+      "Other",
     ],
   },
   AU_START_DATE: {
@@ -397,6 +447,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   IDENTITAET: {
     id: "IDENTITAET",
     label: "Identität",
+    label_en: "Identity",
     displayOrder: 5,
     questionIds: [
       "IDENTITY_FIRST_NAME",
@@ -408,18 +459,21 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   KONTAKT: {
     id: "KONTAKT",
     label: "Kontaktdaten",
+    label_en: "Contact details",
     displayOrder: 10,
     questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "CONTACT_DOCTOLIB"],
   },
   ADRESSE: {
     id: "ADRESSE",
     label: "Adresse",
+    label_en: "Address",
     displayOrder: 20,
     questionIds: ["ADDRESS_POSTAL"],
   },
   KURZANAMNESE: {
     id: "KURZANAMNESE",
     label: "Kurzanamnese",
+    label_en: "Brief medical history",
     displayOrder: 30,
     questionIds: [
       "ANAMNESE_GP",
@@ -438,8 +492,10 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   ARBEITSUNFAEHIGKEIT: {
     id: "ARBEITSUNFAEHIGKEIT",
     label: "Arbeitsunfähigkeitsbescheinigung",
+    label_en: "Sick leave certificate",
     displayOrder: 40,
     hint: "Bitte beachten Sie: Die maximale rückwirkende Ausstellungsdauer ist gesetzlich begrenzt.",
+    hint_en: "Please note: the maximum retroactive issuance period is limited by law.",
     questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE", "AU_IS_FOLLOWUP"],
   },
   REZEPT: {

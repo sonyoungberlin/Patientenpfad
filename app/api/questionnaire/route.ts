@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { requirePatientCommunicationAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
+import {
+  isBlockEnReady,
+  normalizeQuestionnaireLanguage,
+} from "@/lib/questionnaire/i18n";
 import { getCreateOwnershipData } from "@/lib/questionnaire/practiceScope";
 
 const IS_DEV = process.env.NODE_ENV === "development";
@@ -71,6 +75,30 @@ export async function POST(req: NextRequest) {
         ? body.inquiry_session_id.trim()
         : null;
 
+    // Optionale Sprache der Patientensicht. Whitelist "de" | "en", Default "de".
+    // Praxis-/interne Sichten ignorieren dieses Feld.
+    const patientLanguage = normalizeQuestionnaireLanguage(body.language);
+
+    // Variante A (keine gemischten Sprachen): bei language="en" dürfen
+    // nur Blöcke versendet werden, deren Block- und Fragenfelder
+    // vollständig übersetzt sind. Sonst Hard-Reject mit Liste der
+    // problematischen Blöcke, damit die UI gezielt korrigieren kann.
+    if (patientLanguage === "en") {
+      const notEnReady = selectedBlockIds.filter((id) => !isBlockEnReady(id));
+      if (notEnReady.length > 0) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Einige ausgewählte Blöcke sind nicht vollständig auf Englisch übersetzt. " +
+              "Bitte entfernen Sie sie oder wählen Sie Deutsch als Sprache.",
+            not_en_ready_block_ids: notEnReady,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     // Build deduplicated questions
     const deduplicatedQuestions = buildQuestionnaireQuestions(selectedBlockIds);
 
@@ -89,6 +117,7 @@ export async function POST(req: NextRequest) {
         inquiry_session_id: inquirySessionId,
         selected_block_ids: selectedBlockIds as Prisma.InputJsonValue,
         deduplicated_questions: deduplicatedQuestions as unknown as Prisma.InputJsonValue,
+        patient_language: patientLanguage,
         status: "pending",
       },
     });

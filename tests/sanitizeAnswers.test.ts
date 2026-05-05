@@ -57,4 +57,61 @@ describe("sanitizeAnswers", () => {
   it("liefert leeres Objekt, wenn deduplicated_questions leer ist", () => {
     expect(sanitizeAnswers({ CONTACT_PHONE: "x" }, [])).toEqual({});
   });
+
+  describe("Mehrsprachigkeit (language='en')", () => {
+    it("mappt einzelne englische select-Option auf das deutsche Original", () => {
+      const out = sanitizeAnswers(
+        { PRESCRIPTION_TYPE: "Dauermedikation" },
+        [{ id: "PRESCRIPTION_TYPE" }],
+        "en",
+      );
+      // PRESCRIPTION_TYPE hat keine options_en → unverändert
+      expect(out.PRESCRIPTION_TYPE).toBe("Dauermedikation");
+    });
+
+    it("mappt englische multi_select-Optionen Komma-für-Komma auf Deutsch", () => {
+      // AU_SYMPTOMS hat options_en in derselben Reihenfolge wie options.
+      const out = sanitizeAnswers(
+        { AU_SYMPTOMS: "Cough, Fever, Other" },
+        [{ id: "AU_SYMPTOMS" }],
+        "en",
+      );
+      expect(out.AU_SYMPTOMS).toBe("Husten, Fieber, Sonstiges");
+    });
+
+    it("lässt unbekannte EN-Werte unverändert (keine Erfindung)", () => {
+      const out = sanitizeAnswers(
+        { AU_SYMPTOMS: "Cough, Unbekannt" },
+        [{ id: "AU_SYMPTOMS" }],
+        "en",
+      );
+      expect(out.AU_SYMPTOMS).toBe("Husten, Unbekannt");
+    });
+
+    it("akzeptiert auch bereits deutsche Werte unter language='en'", () => {
+      const out = sanitizeAnswers(
+        { AU_SYMPTOMS: "Husten, Fieber" },
+        [{ id: "AU_SYMPTOMS" }],
+        "en",
+      );
+      expect(out.AU_SYMPTOMS).toBe("Husten, Fieber");
+    });
+
+    it("verändert Freitext (textarea/text) nicht", () => {
+      const out = sanitizeAnswers(
+        { CONTACT_PHONE: "Cough" },
+        [{ id: "CONTACT_PHONE" }],
+        "en",
+      );
+      expect(out.CONTACT_PHONE).toBe("Cough");
+    });
+
+    it("Default 'de' wendet kein Reverse-Mapping an", () => {
+      const out = sanitizeAnswers(
+        { AU_SYMPTOMS: "Cough" },
+        [{ id: "AU_SYMPTOMS" }],
+      );
+      expect(out.AU_SYMPTOMS).toBe("Cough");
+    });
+  });
 });
