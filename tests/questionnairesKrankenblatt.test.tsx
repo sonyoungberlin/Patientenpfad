@@ -112,7 +112,7 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
       COMPLETED_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain("Krankenblatt-Text kopieren");
     expect(markup).toContain(`data-q-copy-note="session-completed-1"`);
   });
@@ -122,7 +122,7 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
       COMPLETED_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain("AU-Anfrage (digital)");
     expect(markup).toContain("Beschwerden");
   });
@@ -132,7 +132,7 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
       PENDING_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).not.toContain("Krankenblatt-Text kopieren");
     expect(markup).not.toContain("data-q-copy-note");
   });
@@ -143,7 +143,7 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
       PENDING_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain(`data-q-copy-note="session-completed-1"`);
     expect(markup).not.toContain(`data-q-copy-note="session-pending-1"`);
   });
@@ -158,7 +158,7 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
       expiredSession,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).not.toContain("Krankenblatt-Text kopieren");
   });
 });
@@ -173,7 +173,7 @@ describe("QuestionnairesPage – Löschen-Button", () => {
       COMPLETED_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain("Löschen");
     expect(markup).toContain(`data-q-delete="session-completed-1"`);
   });
@@ -183,7 +183,7 @@ describe("QuestionnairesPage – Löschen-Button", () => {
       PENDING_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain("Löschen");
     expect(markup).toContain(`data-q-delete="session-pending-1"`);
   });
@@ -198,7 +198,7 @@ describe("QuestionnairesPage – Löschen-Button", () => {
       expiredSession,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain("Löschen");
     expect(markup).toContain(`data-q-delete="session-expired-2"`);
   });
@@ -209,7 +209,7 @@ describe("QuestionnairesPage – Löschen-Button", () => {
       PENDING_SESSION,
     ]);
 
-    const markup = renderToStaticMarkup(await QuestionnairesPage());
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain(`data-q-delete="session-completed-1"`);
     expect(markup).toContain(`data-q-delete="session-pending-1"`);
   });

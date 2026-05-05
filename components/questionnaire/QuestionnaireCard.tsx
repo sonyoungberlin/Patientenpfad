@@ -2,6 +2,7 @@ import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { getStatusBadgeStyle } from "@/lib/questionnaire/displayStatus";
 import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
 import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
+import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
 
 /**
  * Reine Präsentations-Komponente (Server Component) für eine einzelne
@@ -32,6 +33,20 @@ export type QuestionnaireCardProps = {
    * nicht-completed Sessions einen leeren String übergeben.
    */
   noteText: string;
+  /**
+   * Zeitpunkt des ersten erfolgreichen PDF-Downloads (oder `null`, falls noch
+   * nie heruntergeladen). Steuert nur die Beschriftung des PDF-Buttons sowie
+   * einen dezenten Status-Hinweis und ändert nicht das Verhalten des
+   * Downloads selbst.
+   */
+  pdfDownloadedAt?: Date | null;
+  /**
+   * Soft-Delete-Marker. `null` = aktiver Eintrag (zeigt Lösch-Button), ein
+   * Datum signalisiert, dass die Session im Papierkorb liegt: in diesem Fall
+   * wird ein „Gelöscht"-Badge angezeigt und der Lösch-Button durch einen
+   * Wiederherstellen-Button ersetzt.
+   */
+  deletedAt?: Date | null;
 };
 
 export default function QuestionnaireCard({
@@ -46,11 +61,15 @@ export default function QuestionnaireCard({
   questions,
   answers,
   noteText,
+  pdfDownloadedAt = null,
+  deletedAt = null,
 }: QuestionnaireCardProps) {
+  const isDeleted = deletedAt != null;
   return (
     <div
       className="card"
       data-q-session={id}
+      data-q-deleted={isDeleted ? "true" : "false"}
       style={{ display: "grid", gap: "0.5rem" }}
     >
       <div
@@ -78,6 +97,23 @@ export default function QuestionnaireCard({
         <span style={getStatusBadgeStyle(displayStatus)}>{statusLabel}</span>
       </div>
 
+      {isDeleted && (
+        <div
+          className="text-small"
+          data-q-deleted-badge={id}
+          style={{
+            padding: "0.35rem 0.6rem",
+            background: "var(--muted, #f1f5f9)",
+            borderRadius: "var(--radius)",
+            color: "var(--danger-fg, #b91c1c)",
+            fontWeight: 500,
+            width: "fit-content",
+          }}
+        >
+          Gelöscht
+        </div>
+      )}
+
       <div className="text-muted text-small">
         Blöcke: {blockLabels || "–"}
       </div>
@@ -101,10 +137,20 @@ export default function QuestionnaireCard({
             rel="noopener noreferrer"
             className="btn-secondary text-small"
             data-q-pdf={id}
+            data-q-pdf-downloaded={pdfDownloadedAt ? "true" : "false"}
             style={{ display: "inline-block", marginTop: "0.25rem" }}
           >
-            PDF herunterladen
+            {pdfDownloadedAt ? "PDF erneut herunterladen" : "PDF herunterladen"}
           </a>
+          {pdfDownloadedAt && (
+            <div
+              className="text-small"
+              data-q-pdf-status={id}
+              style={{ color: "var(--muted-fg, #475569)" }}
+            >
+              ✓ PDF heruntergeladen
+            </div>
+          )}
           <MedicalRecordNoteCopyButton sessionId={id} noteText={noteText} />
         </>
       )}
@@ -162,8 +208,16 @@ export default function QuestionnaireCard({
         </details>
       )}
 
-      {/* Delete */}
-      <QuestionnaireDeleteButton sessionId={id} />
+      {/* Delete bzw. Restore — Papierkorb-Einträge bekommen den
+          Wiederherstellen-Button statt eines weiteren Lösch-Buttons. */}
+      {isDeleted ? (
+        <QuestionnaireRestoreButton sessionId={id} />
+      ) : (
+        <QuestionnaireDeleteButton
+          sessionId={id}
+          patientReference={patientReference}
+        />
+      )}
     </div>
   );
 }

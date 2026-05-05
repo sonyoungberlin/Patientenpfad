@@ -6,7 +6,8 @@
  * - 403 wenn nicht freigeschaltet
  * - 404 bei nicht existierender Session
  * - 404 bei fremdem Account
- * - 200 und tatsächliches Löschen für Owner
+ * - 404 bei bereits soft-gelöschter Session
+ * - 200 und Soft Delete (`deleted_at` wird gesetzt) für Owner
  */
 
 import { NextRequest } from "next/server";
@@ -21,6 +22,7 @@ jest.mock("@/lib/prisma", () => ({
     },
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
     },
   },
@@ -30,7 +32,11 @@ import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
   session: { findUnique: jest.Mock; delete: jest.Mock };
-  patientQuestionnaireSession: { findUnique: jest.Mock; delete: jest.Mock };
+  patientQuestionnaireSession: {
+    findUnique: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  };
 };
 
 const pm = prisma as unknown as PrismaMock;
@@ -105,6 +111,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-other",
+      deleted_at: null,
     });
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-1" }) });
@@ -113,35 +120,61 @@ describe("DELETE /api/questionnaire/[id]", () => {
     expect(json.ok).toBe(false);
   });
 
-  it("200 und löscht completed Session", async () => {
+  it("404 wenn Session bereits soft-gelöscht ist (kein erneutes Update)", async () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
+      deleted_at: new Date("2026-05-01T10:00:00Z"),
     });
-    pm.patientQuestionnaireSession.delete.mockResolvedValue({});
+    const req = requestWithCookie("http://localhost/api/questionnaire/q-deleted");
+    const res = await deleteHandler(req, {
+      params: Promise.resolve({ id: "q-deleted" }),
+    });
+    expect(res.status).toBe(404);
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+  });
+
+  it("200 und Soft Delete (setzt deleted_at) für completed Session", async () => {
+    mockSession(true, "acc-owner");
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      deleted_at: null,
+    });
+    pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-completed");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-completed" }) });
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(pm.patientQuestionnaireSession.delete).toHaveBeenCalledWith({
-      where: { id: "q-completed" },
-    });
+    // Hard-Delete darf nicht passieren — Daten müssen erhalten bleiben.
+    expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledTimes(1);
+    const call = pm.patientQuestionnaireSession.update.mock.calls[0][0];
+    expect(call.where).toEqual({ id: "q-completed" });
+    expect(call.data.deleted_at).toBeInstanceOf(Date);
+    // Es darf keine andere Spalte stillschweigend mitgeschrieben werden
+    // (z. B. answers, status), damit eine spätere Wiederherstellung trivial
+    // bleibt.
+    expect(Object.keys(call.data)).toEqual(["deleted_at"]);
   });
 
-  it("200 und löscht pending Session", async () => {
+  it("200 und Soft Delete für pending Session", async () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
+      deleted_at: null,
     });
-    pm.patientQuestionnaireSession.delete.mockResolvedValue({});
+    pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-pending");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-pending" }) });
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(pm.patientQuestionnaireSession.delete).toHaveBeenCalledWith({
+    expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledWith({
       where: { id: "q-pending" },
+      data: { deleted_at: expect.any(Date) },
     });
   });
 
@@ -149,8 +182,9 @@ describe("DELETE /api/questionnaire/[id]", () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
+      deleted_at: null,
     });
-    pm.patientQuestionnaireSession.delete.mockRejectedValue(new Error("DB error"));
+    pm.patientQuestionnaireSession.update.mockRejectedValue(new Error("DB error"));
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-1" }) });
     expect(res.status).toBe(500);

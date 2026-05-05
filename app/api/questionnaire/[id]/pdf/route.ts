@@ -30,10 +30,12 @@ export async function GET(
       answers: true,
       identity_gate_completed_at: true,
       identity_gate_method: true,
+      deleted_at: true,
+      pdf_downloaded_at: true,
     },
   });
 
-  if (!session) {
+  if (!session || session.deleted_at != null) {
     return new Response(JSON.stringify({ ok: false, error: "Session nicht gefunden." }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
@@ -238,6 +240,25 @@ export async function GET(
   }
 
   const pdfBytes = await pdfDoc.save();
+
+  // Markiere die Session als „PDF heruntergeladen". Bewusst nur diese eine
+  // Spalte schreiben (keine Antworten / kein Status anfassen) und nur dann,
+  // wenn das Feld noch nicht gesetzt ist — der Wert markiert den ersten
+  // Download und bleibt danach stabil. Fehler beim Markieren dürfen den
+  // Download nicht blockieren; sie werden geloggt und verschluckt.
+  if (session.pdf_downloaded_at == null) {
+    try {
+      await prisma.patientQuestionnaireSession.update({
+        where: { id },
+        data: { pdf_downloaded_at: new Date() },
+      });
+    } catch (err) {
+      console.error("[GET questionnaire/[id]/pdf] mark_downloaded_failed", {
+        sessionId: id,
+        message: err instanceof Error ? err.message : "UnknownError",
+      });
+    }
+  }
 
   return new Response(Buffer.from(pdfBytes), {
     headers: {

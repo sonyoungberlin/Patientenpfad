@@ -148,6 +148,7 @@ export default async function ConfirmPage({
       confirm_token_expires_at: true,
       confirmed_at: true,
       practice_form_id: true,
+      deleted_at: true,
       owner_account: {
         select: {
           is_approved: true,
@@ -163,7 +164,7 @@ export default async function ConfirmPage({
     },
   });
 
-  if (!session) {
+  if (!session || session.deleted_at != null) {
     logConfirm("not_found");
     return <ErrorView />;
   }

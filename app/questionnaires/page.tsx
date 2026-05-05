@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePatientCommunicationAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
@@ -12,11 +13,26 @@ import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisi
 import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 
-export default async function QuestionnairesPage() {
+type SearchParams = Promise<{ view?: string | string[] }>;
+
+type PageProps = {
+  searchParams?: SearchParams;
+};
+
+export default async function QuestionnairesPage({
+  searchParams,
+}: PageProps) {
   const account = await requirePatientCommunicationAccessFromCookies();
   if (!account) {
     redirect("/");
   }
+
+  // View-Toggle: Default ist „aktiv". Nur der explizite Wert „trash" schaltet
+  // auf den Papierkorb um, damit fremde/zukünftige Werte nicht versehentlich
+  // gelöschte Einträge zeigen.
+  const sp = (await searchParams) ?? {};
+  const rawView = Array.isArray(sp.view) ? sp.view[0] : sp.view;
+  const view: "active" | "trash" = rawView === "trash" ? "trash" : "active";
 
   const sessions = await prisma.patientQuestionnaireSession.findMany({
     where: {
@@ -29,6 +45,11 @@ export default async function QuestionnairesPage() {
         // Phase 3d: Website-Sessions erst sichtbar, wenn bestätigt.
         // Interne Sessions bleiben unverändert sichtbar.
         PRACTICE_VISIBLE_SESSION_FILTER,
+        // Soft-Delete: aktive Liste blendet archivierte Sessions aus,
+        // Papierkorb zeigt ausschließlich archivierte.
+        view === "trash"
+          ? { deleted_at: { not: null } }
+          : { deleted_at: null },
       ],
     },
     orderBy: [
@@ -52,18 +73,75 @@ export default async function QuestionnairesPage() {
       deduplicated_questions: true,
       answers: true,
       identity_gate_completed_at: true,
+      pdf_downloaded_at: true,
+      deleted_at: true,
     },
   });
+
+  const tabBase: React.CSSProperties = {
+    padding: "0.35rem 0.75rem",
+    borderRadius: "var(--radius)",
+    textDecoration: "none",
+    fontSize: "0.9rem",
+  };
+  const tabActive: React.CSSProperties = {
+    ...tabBase,
+    background: "var(--accent, #1e293b)",
+    color: "var(--accent-fg, #ffffff)",
+    fontWeight: 500,
+  };
+  const tabInactive: React.CSSProperties = {
+    ...tabBase,
+    background: "var(--muted, #f1f5f9)",
+    color: "var(--muted-fg, #475569)",
+  };
+
+  const emptyMessage =
+    view === "trash"
+      ? "Papierkorb ist leer."
+      : "Noch keine Fragebögen erstellt.";
 
   return (
     <main>
       <h1>Fragebogen-Übersicht</h1>
+
+      <div
+        role="tablist"
+        aria-label="Ansicht"
+        data-q-view-toggle={view}
+        style={{
+          display: "flex",
+          gap: "0.5rem",
+          marginBottom: "1rem",
+          flexWrap: "wrap",
+        }}
+      >
+        <Link
+          href="/questionnaires"
+          role="tab"
+          aria-selected={view === "active"}
+          data-q-view-tab="active"
+          style={view === "active" ? tabActive : tabInactive}
+        >
+          Aktiv
+        </Link>
+        <Link
+          href="/questionnaires?view=trash"
+          role="tab"
+          aria-selected={view === "trash"}
+          data-q-view-tab="trash"
+          style={view === "trash" ? tabActive : tabInactive}
+        >
+          Papierkorb
+        </Link>
+      </div>
+
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         {sessions.length} Fragebogen{sessions.length !== 1 ? "" : ""}
       </p>
 
       {sessions.length === 0 ? (
-        <p className="text-muted">Noch keine Fragebögen erstellt.</p>
+        <p className="text-muted">{emptyMessage}</p>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>
           {sessions.map((s) => {
@@ -107,6 +185,8 @@ export default async function QuestionnairesPage() {
                 questions={questions}
                 answers={answers}
                 noteText={noteText}
+                pdfDownloadedAt={s.pdf_downloaded_at}
+                deletedAt={s.deleted_at}
               />
             );
           })}

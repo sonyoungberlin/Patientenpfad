@@ -135,7 +135,7 @@ describe("/questionnaires list — Practice-Scope", () => {
   it("filtert auf owner_practice_id wenn current_practice gesetzt und kombiniert mit PRACTICE_VISIBLE_SESSION_FILTER", async () => {
     getCookies.mockResolvedValue(ACCOUNT_A1_IN_PRACTICE_A);
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    const node = await QuestionnairesPage();
+    const node = await QuestionnairesPage({});
     renderToStaticMarkup(node);
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND).toBeDefined();
@@ -143,12 +143,16 @@ describe("/questionnaires list — Practice-Scope", () => {
     // Sichtbarkeitsfilter bleibt unangetastet.
     expect(args.where.AND[1]).toBeDefined();
     expect(args.where.AND[1].OR).toBeDefined();
+    // Soft-Delete-Filter: archivierte Sessions tauchen in der Liste nicht auf.
+    expect(args.where.AND).toEqual(
+      expect.arrayContaining([{ deleted_at: null }]),
+    );
   });
 
   it("Account A2 sieht dieselbe Liste wie A1 (gleiche Practice → gleicher Where-Filter)", async () => {
     getCookies.mockResolvedValue(ACCOUNT_A2_IN_PRACTICE_A);
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    const node = await QuestionnairesPage();
+    const node = await QuestionnairesPage({});
     renderToStaticMarkup(node);
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND[0]).toEqual({ owner_practice_id: "p-A" });
@@ -157,7 +161,7 @@ describe("/questionnaires list — Practice-Scope", () => {
   it("Fallback auf owner_account_id ohne current_practice", async () => {
     getCookies.mockResolvedValue(ADMIN_NO_PRACTICE);
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    const node = await QuestionnairesPage();
+    const node = await QuestionnairesPage({});
     renderToStaticMarkup(node);
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND[0]).toEqual({ owner_account_id: "acc-ADMIN" });
@@ -175,7 +179,7 @@ function deleteReq(id = "sess-1") {
 }
 
 describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
-  it("Cross-Practice-Zugriff → 404, kein delete()", async () => {
+  it("Cross-Practice-Zugriff → 404, kein Update", async () => {
     getAcc.mockResolvedValue(ACCOUNT_B_IN_PRACTICE_B);
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-A1",
@@ -183,15 +187,17 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       source: "internal",
       status: "completed",
       confirmed_at: null,
+      deleted_at: null,
     });
     const res = await DeleteRoute(deleteReq(), {
       params: Promise.resolve({ id: "sess-1" }),
     });
     expect(res.status).toBe(404);
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 
-  it("Account A2 darf Session löschen, die A1 in derselben Practice angelegt hat", async () => {
+  it("Account A2 darf Session soft-löschen, die A1 in derselben Practice angelegt hat", async () => {
     getAcc.mockResolvedValue(ACCOUNT_A2_IN_PRACTICE_A);
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-A1",
@@ -199,17 +205,20 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       source: "internal",
       status: "completed",
       confirmed_at: null,
+      deleted_at: null,
     });
-    pm.patientQuestionnaireSession.delete.mockResolvedValue({});
+    pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const res = await DeleteRoute(deleteReq(), {
       params: Promise.resolve({ id: "sess-1" }),
     });
     expect(res.status).toBe(200);
-    expect(pm.patientQuestionnaireSession.delete).toHaveBeenCalledWith({
-      where: { id: "sess-1" },
-    });
-    // Kein stilles Update von owner_practice_id.
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    // Hard-Delete passiert nicht mehr; stattdessen Soft Delete via update().
+    expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledTimes(1);
+    const call = pm.patientQuestionnaireSession.update.mock.calls[0][0];
+    expect(call.where).toEqual({ id: "sess-1" });
+    expect(call.data.deleted_at).toBeInstanceOf(Date);
+    expect(Object.keys(call.data)).toEqual(["deleted_at"]);
   });
 
   it("Bestand mit owner_practice_id=null im Practice-Modus → 404 (kein Backfill)", async () => {
@@ -220,6 +229,7 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       source: "internal",
       status: "completed",
       confirmed_at: null,
+      deleted_at: null,
     });
     const res = await DeleteRoute(deleteReq(), {
       params: Promise.resolve({ id: "sess-1" }),
@@ -237,12 +247,32 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       source: "internal",
       status: "completed",
       confirmed_at: null,
+      deleted_at: null,
     });
     const res = await DeleteRoute(deleteReq(), {
       params: Promise.resolve({ id: "sess-1" }),
     });
     expect(res.status).toBe(404);
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+  });
+
+  it("Bereits soft-gelöschte Session → 404, kein erneuter Update", async () => {
+    getAcc.mockResolvedValue(ACCOUNT_A1_IN_PRACTICE_A);
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-A1",
+      owner_practice_id: "p-A",
+      source: "internal",
+      status: "completed",
+      confirmed_at: null,
+      deleted_at: new Date("2026-05-01T08:00:00Z"),
+    });
+    const res = await DeleteRoute(deleteReq(), {
+      params: Promise.resolve({ id: "sess-1" }),
+    });
+    expect(res.status).toBe(404);
+    expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 });
 
@@ -295,13 +325,16 @@ describe("GET /api/questionnaire/[id]/pdf — Practice-Scope", () => {
       answers: {},
       identity_gate_completed_at: new Date(),
       identity_gate_method: "dob",
+      pdf_downloaded_at: new Date(), // bereits markiert → kein erneutes update.
     });
     const res = await PdfRoute(pdfReq(), {
       params: Promise.resolve({ id: "sess-1" }),
     });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/pdf");
-    // Kein stilles Update von owner_practice_id beim Lesen.
+    // Kein stilles Update von owner_practice_id beim Lesen, und das
+    // pdf_downloaded_at-Marker-Update ist bereits gesetzt → kein zweites
+    // Schreiben.
     expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 });

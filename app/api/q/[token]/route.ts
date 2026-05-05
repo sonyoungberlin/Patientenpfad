@@ -19,10 +19,11 @@ export async function POST(
         status: true,
         deduplicated_questions: true,
         patient_language: true,
+        deleted_at: true,
       },
     });
 
-    if (!session || !session.token_expires_at) {
+    if (!session || !session.token_expires_at || session.deleted_at != null) {
       return NextResponse.json(
         { ok: false, error: "Link ungültig oder abgelaufen." },
         { status: 404 },
