@@ -1555,16 +1555,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_REASON_UNCLEAR",
       // Schublade „Anliegen geprüft" – Voraussetzung für Videosprechstunde.
       "VIDEO_CONSULTATION_REGION_LIMITATION",
-      // Erklärungen zu Terminarten, Videosprechstunde und Buchungs-/Absageproblemen.
-      "APPOINTMENT_TYPE_PURPOSE_EXPLAINED",
-      "APPOINTMENT_BLOOD_DRAW_NOT_DOCTOR_VISIT",
-      "APPOINTMENT_VIDEO_SCOPE",
-      "APPOINTMENT_IN_PERSON_REQUIRED",
-      "APPOINTMENT_CHECKUP_PURPOSE",
-      "APPOINTMENT_CHRONIC_CONTROL_PURPOSE",
-      "APPOINTMENT_SHORT_NOTICE_CANCELLATION_IMPACT",
-      "APPOINTMENT_BOOKING_RESTRICTED_AFTER_NO_SHOW",
-      "APPOINTMENT_BOOKING_REENABLED_AFTER_CLARIFICATION",
+      // Zentrale Patientenrückfrage zu Terminart/Buchungslogik. Detail-Erklärungen
+      // sind als gebundene Info-Actions (APPOINTMENT_INFO_*) modelliert.
+      "APPOINTMENT_TYPE_QUESTION",
     ],
     boundGlobalCheckpointIds: [
       // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
@@ -1586,6 +1579,17 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_BOOK_CHRONIC_CONTROL",
       "APPOINTMENT_BOOK_GENERAL",
       "DOCUMENT_UPLOAD",
+      // Info-Actions zu Terminarten/Video/Buchungs-/Absageproblemen, gebunden an
+      // den zentralen Trigger APPOINTMENT_TYPE_QUESTION = YES.
+      "APPOINTMENT_INFO_TYPE_PURPOSE",
+      "APPOINTMENT_INFO_BLOOD_DRAW_NOT_DOCTOR_VISIT",
+      "APPOINTMENT_INFO_VIDEO_SCOPE",
+      "APPOINTMENT_INFO_IN_PERSON_REQUIRED",
+      "APPOINTMENT_INFO_CHECKUP_PURPOSE",
+      "APPOINTMENT_INFO_CHRONIC_CONTROL_PURPOSE",
+      "APPOINTMENT_INFO_SHORT_NOTICE_CANCELLATION_IMPACT",
+      "APPOINTMENT_INFO_BOOKING_RESTRICTED_AFTER_NO_SHOW",
+      "APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
@@ -1605,6 +1609,33 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       DOCUMENT_UPLOAD: {
         showWhenAny: [{ APPOINTMENT_EXTERNAL_FINDING_PRESENT: "YES" }],
+      },
+      APPOINTMENT_INFO_TYPE_PURPOSE: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_BLOOD_DRAW_NOT_DOCTOR_VISIT: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_VIDEO_SCOPE: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_IN_PERSON_REQUIRED: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_CHECKUP_PURPOSE: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_CHRONIC_CONTROL_PURPOSE: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_SHORT_NOTICE_CANCELLATION_IMPACT: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_BOOKING_RESTRICTED_AFTER_NO_SHOW: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION: {
+        showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
       },
     },
 
