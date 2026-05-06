@@ -2649,6 +2649,154 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- APPOINTMENT TYPE QUESTION (zentraler Trigger für Termin-Erklär-Infos) ----
+  //
+  // Patientenrückfrage zu Terminart, Buchungslogik oder passendem Termin. Bei YES
+  // werden in M3 die gebundenen Info-Actions (APPOINTMENT_INFO_*) sichtbar; in M2
+  // erscheint nur dieser eine Trigger-Checkpoint im Antwortkontext „Anliegen geprüft".
+
+  APPOINTMENT_TYPE_QUESTION: {
+    id: "APPOINTMENT_TYPE_QUESTION",
+    label: "Rückfrage zu Terminart / Buchungslogik",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_TYPE_QUESTION-Q1", text: "Hat der Patient eine Rückfrage zu Terminart, Buchungslogik oder passendem Termin?" },
+    ],
+    textByStatus: {
+      // M2-Schalter: reine Kontextaussage – die konkreten Erklär-Infos sind als
+      // gebundene Info-Actions (APPOINTMENT_INFO_*) modelliert.
+      [ExplanationStatus.YES]:
+        "Es liegt eine Rückfrage zu Terminart, Buchungslogik oder dem passenden Termin vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  // ---- APPOINTMENT INFO ACTIONS (gebunden an APPOINTMENT_TYPE_QUESTION) ----
+  //
+  // Sachinformationen (actionCategory: "INFO") zu Terminarten, Videosprechstunde
+  // und Buchungs-/Absageproblemen. Sichtbar in M3, wenn der zentrale Trigger
+  // APPOINTMENT_TYPE_QUESTION = YES gesetzt ist und die jeweilige Action ACTIVE.
+
+  APPOINTMENT_INFO_TYPE_PURPOSE: {
+    id: "APPOINTMENT_INFO_TYPE_PURPOSE",
+    label: "Terminarten haben unterschiedliche Zwecke",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Wir nutzen unterschiedliche Terminarten, weil Ablauf und Zeitbedarf je nach Anliegen unterschiedlich sind.",
+    },
+  },
+
+  APPOINTMENT_INFO_BLOOD_DRAW_NOT_DOCTOR_VISIT: {
+    id: "APPOINTMENT_INFO_BLOOD_DRAW_NOT_DOCTOR_VISIT",
+    label: "Blutentnahme nicht im Arzttermin",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Eine Blutentnahme findet nicht im Arzttermin statt, sondern wird separat durch das Praxisteam durchgeführt.",
+    },
+  },
+
+  APPOINTMENT_INFO_VIDEO_SCOPE: {
+    id: "APPOINTMENT_INFO_VIDEO_SCOPE",
+    label: "Videosprechstunde – Zweck und Grenze",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Videosprechstunde ist für kurze medizinische Anliegen oder erste Einschätzungen vorgesehen und ersetzt keinen vollständigen Termin in der Praxis.",
+    },
+  },
+
+  APPOINTMENT_INFO_IN_PERSON_REQUIRED: {
+    id: "APPOINTMENT_INFO_IN_PERSON_REQUIRED",
+    label: "Vor-Ort-Termin erforderlich",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für eine vollständige ärztliche Beurteilung ist ein persönlicher Termin in der Praxis erforderlich.",
+    },
+  },
+
+  APPOINTMENT_INFO_CHECKUP_PURPOSE: {
+    id: "APPOINTMENT_INFO_CHECKUP_PURPOSE",
+    label: "Check-up-Termin erklärt",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Der Gesundheits-Check-up ist eine strukturierte Vorsorgeuntersuchung mit festgelegtem Ablauf und entsprechendem Zeitbedarf.",
+    },
+  },
+
+  APPOINTMENT_INFO_CHRONIC_CONTROL_PURPOSE: {
+    id: "APPOINTMENT_INFO_CHRONIC_CONTROL_PURPOSE",
+    label: "Chroniker-Kontrolltermin erklärt",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bei chronischen Erkrankungen sind regelmäßige Kontrolltermine vorgesehen, um Verlauf und Therapie zu überprüfen.",
+    },
+  },
+
+  APPOINTMENT_INFO_SHORT_NOTICE_CANCELLATION_IMPACT: {
+    id: "APPOINTMENT_INFO_SHORT_NOTICE_CANCELLATION_IMPACT",
+    label: "Kurzfristige Absage belastet Terminvergabe",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Kurzfristig abgesagte Termine können häufig nicht mehr rechtzeitig an andere Patientinnen oder Patienten vergeben werden.",
+    },
+  },
+
+  APPOINTMENT_INFO_BOOKING_RESTRICTED_AFTER_NO_SHOW: {
+    id: "APPOINTMENT_INFO_BOOKING_RESTRICTED_AFTER_NO_SHOW",
+    label: "Buchung nach Nichterscheinen eingeschränkt",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Nach einem unentschuldigten Nichterscheinen kann die Online-Terminbuchung vorübergehend eingeschränkt werden.",
+    },
+  },
+
+  APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION: {
+    id: "APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION",
+    label: "Buchung nach Klärung wieder möglich",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Die Online-Terminbuchung kann nach Klärung wieder freigeschaltet werden.",
+    },
+  },
+
   // ---- BILLING SPECIFIC EXPLANATIONS ----
 
   BILLING_COST_NOT_COVERED: {

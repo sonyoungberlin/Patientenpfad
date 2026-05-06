@@ -100,3 +100,49 @@ describe("Antwortkontext-Schubladen-Mapping (M2)", () => {
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Profilübergreifende Reihenfolge der Antwortkontext-Akkordeons (M2-UI).
+// Alle Profile müssen exakt dieselbe Reihenfolge verwenden, damit die UI
+// einheitlich bleibt. Kein Akkordeon darf mit `defaultOpen: true` markiert
+// sein – alle Schubladen sind beim Öffnen von M2 initial geschlossen.
+// ---------------------------------------------------------------------------
+
+const EXPECTED_SECTION_INTRO_ORDER: readonly string[] = [
+  "SECTION_INTRO_DOCS_COMPLETE",
+  "SECTION_INTRO_REVIEWED",
+  "SECTION_INTRO_INFO_MISSING",
+  "SECTION_INTRO_DOCS_MISSING",
+  "SECTION_INTRO_IN_PROGRESS",
+  "SECTION_INTRO_NOT_RESPONSIBLE",
+];
+
+describe("Antwortkontext-Reihenfolge (M2)", () => {
+  const src = loadM2ClientSource();
+  const mapping = extractMapping(src);
+
+  it.each(PROFILES_WITH_MAPPING)(
+    "%s: nutzt die kanonische Antwortkontext-Reihenfolge",
+    (profileId) => {
+      expect(mapping[profileId]).toEqual([...EXPECTED_SECTION_INTRO_ORDER]);
+    },
+  );
+
+  it("Reihenfolge ist profilübergreifend identisch", () => {
+    const orders = PROFILES_WITH_MAPPING.map((p) => mapping[p].join("|"));
+    const unique = Array.from(new Set(orders));
+    expect(unique).toHaveLength(1);
+  });
+
+  it("kein Antwortkontext hat defaultOpen: true im SECTION_INTRO_GROUPS_BY_PROFILE-Block", () => {
+    // Block-genau prüfen: Ende des Mappings ist der nächste `};` auf Spalte 0.
+    const blockStart = src.indexOf(
+      "const SECTION_INTRO_GROUPS_BY_PROFILE",
+    );
+    expect(blockStart).toBeGreaterThan(-1);
+    const blockEnd = src.indexOf("\n};", blockStart);
+    expect(blockEnd).toBeGreaterThan(blockStart);
+    const block = src.slice(blockStart, blockEnd);
+    expect(block).not.toMatch(/defaultOpen:\s*true/);
+  });
+});

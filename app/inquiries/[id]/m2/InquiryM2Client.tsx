@@ -205,12 +205,12 @@ function SectionIntroAccordion({
   defaultOpen: boolean;
 }) {
   const isIntroActive = statuses[sectionIntro.id] === "ACTIVE";
-  const hasAnsweredCheckpoint = checkpoints.some(
-    (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
-  );
-  const [isOpen, setIsOpen] = useState(
-    defaultOpen || isIntroActive || hasAnsweredCheckpoint,
-  );
+  // Initial geschlossen für alle Antwortkontext-Akkordeons (M2-UI-Vorgabe).
+  // Nutzer:innen öffnen die Schublade manuell. `isIntroActive` /
+  // beantwortete Checkpoints werden bewusst NICHT in den Init-State gemischt,
+  // damit beim Laden von M2 keine Schublade aufklappt; `defaultOpen` bleibt als
+  // Eskalations-Hook erhalten, wird aktuell aber von keinem Profil gesetzt.
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   // Drawer-Label = Section-Intro-Label ohne den Präfix „Schublade: "
   const drawerLabel = sectionIntro.label.replace(/^Schublade:\s*/, "");
@@ -358,15 +358,6 @@ type SectionIntroGroupMapping = {
 const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroupMapping[]> = {
   AU: [
     {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["AU_MISSING_QUESTIONNAIRE"],
-      defaultOpen: true,
-    },
-    {
-      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: ["AU_MISSING_EGK"],
-    },
-    {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
       checkpointIds: [],
     },
@@ -383,6 +374,14 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       ],
     },
     {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["AU_MISSING_QUESTIONNAIRE"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["AU_MISSING_EGK"],
+    },
+    {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
       checkpointIds: [],
     },
@@ -392,21 +391,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   PRESCRIPTION: [
-    {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: [
-        "PRESCRIPTION_MEDICATION_UNCLEAR",
-        "PRESCRIPTION_DOSAGE_UNCLEAR",
-        "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
-      ],
-    },
-    {
-      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: [
-        "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
-        "HOSPITAL_DISCHARGE_REPORT_MISSING",
-      ],
-    },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
       checkpointIds: [],
@@ -434,7 +418,21 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         // Dauermedikation: persönlicher Arzttermin vor weiterer Verordnung erforderlich
         "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON",
       ],
-      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: [
+        "PRESCRIPTION_MEDICATION_UNCLEAR",
+        "PRESCRIPTION_DOSAGE_UNCLEAR",
+        "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [
+        "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+        "HOSPITAL_DISCHARGE_REPORT_MISSING",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
@@ -456,18 +454,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
   ],
   LAB: [
     {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE"],
-      defaultOpen: true,
-    },
-    {
-      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: [
-        "LAB_INTERNAL_ORDER_MISSING",
-        "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
-      ],
-    },
-    {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
       checkpointIds: [
         "LAB_INTERNAL_ORDER_AVAILABLE",
@@ -487,6 +473,17 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       ],
     },
     {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [
+        "LAB_INTERNAL_ORDER_MISSING",
+        "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
+      ],
+    },
+    {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
       checkpointIds: ["LAB_RESULTS_PENDING"],
     },
@@ -496,26 +493,24 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   SAMPLE_COLLECTION: [
-    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
-      defaultOpen: true,
     },
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   ACUTE_CARE: [
-    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["ACUTE_PURPOSE", "ACUTE_APPOINTMENT_INFO"],
-      defaultOpen: true,
     },
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
@@ -523,8 +518,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   REFERRAL: [
-    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -535,18 +528,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "REF_HAV_CASE",
         "REF_MEDICAL_CONSULTATION_REQUIRED",
       ],
-      defaultOpen: true,
     },
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   HOSPITAL_ADMISSION: [
-    {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["HOSPITAL_ADMISSION_MISSING_INFO"],
-      defaultOpen: true,
-    },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -556,19 +544,15 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "HOSPITAL_TRANSPORT_REQUIRED",
       ],
     },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["HOSPITAL_ADMISSION_MISSING_INFO"],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   IMMUNIZATION: [
-    {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["IMMUNIZATION_STATUS_UNCLEAR"],
-      defaultOpen: true,
-    },
-    {
-      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: ["IMMUNIZATION_VACCINATION_RECORD_MISSING"],
-    },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -578,19 +562,18 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "IMMUNIZATION_TRAVEL_MEDICINE",
       ],
     },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["IMMUNIZATION_STATUS_UNCLEAR"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["IMMUNIZATION_VACCINATION_RECORD_MISSING"],
+    },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   APPOINTMENT: [
-    {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE", "APPOINTMENT_BOOKING_CODE_REQUIRED"],
-      defaultOpen: true,
-    },
-    {
-      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: [],
-    },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
       checkpointIds: [],
@@ -602,7 +585,16 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "APPOINTMENT_CANCEL_OR_RESCHEDULE",
         "APPOINTMENT_WRONG_TYPE",
         "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
+        "APPOINTMENT_TYPE_QUESTION",
       ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE", "APPOINTMENT_BOOKING_CODE_REQUIRED"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [],
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
@@ -614,18 +606,22 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   TECH_SUPPORT: [
-    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["TECH_VIDEO_NOT_WORKING"],
-      defaultOpen: true,
     },
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   ONBOARDING: [
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["ONBOARDING_DOCTOLIB_INFO"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_INFO_MISSING",
       checkpointIds: [
@@ -633,7 +629,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "ONBOARDING_DATA_UPDATE_REQUIRED",
         "ONBOARDING_IDENTITY_MISMATCH",
       ],
-      defaultOpen: true,
     },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
@@ -642,11 +637,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "ONBOARDING_PKV_PAS_MISSING",
       ],
     },
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
-    {
-      sectionIntroId: "SECTION_INTRO_REVIEWED",
-      checkpointIds: ["ONBOARDING_DOCTOLIB_INFO"],
-    },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
@@ -654,19 +644,18 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   BILLING: [
-    {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["BILLING_ADDRESS_MISSING"],
-      defaultOpen: true,
-    },
-    {
-      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: ["BILLING_DOCUMENT_MISSING"],
-    },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["BILLING_COST_NOT_COVERED", "BILLING_INVOICE_TIMING"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["BILLING_ADDRESS_MISSING"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["BILLING_DOCUMENT_MISSING"],
     },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     {
@@ -678,15 +667,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   MEDICAL_DOCUMENTS: [
-    {
-      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["MEDICAL_DOCUMENT_INFO_MISSING"],
-      defaultOpen: true,
-    },
-    {
-      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: ["MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED"],
-    },
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -696,6 +676,14 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
         "MEDICAL_DOCUMENT_AU_DIFFERENCE",
       ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["MEDICAL_DOCUMENT_INFO_MISSING"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED"],
     },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
