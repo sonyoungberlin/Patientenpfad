@@ -465,6 +465,108 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- PRESCRIPTION SPECIFIC EXPLANATIONS ----
 
+  PRESCRIPTION_MEDICATION_UNCLEAR: {
+    id: "PRESCRIPTION_MEDICATION_UNCLEAR",
+    label: "Medikament unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_MEDICATION_UNCLEAR-Q1", text: "Ist nicht eindeutig nachvollziehbar, welches Medikament gemeint ist?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Wir können nicht eindeutig nachvollziehen, welches Medikament gemeint ist.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_DOSAGE_UNCLEAR: {
+    id: "PRESCRIPTION_DOSAGE_UNCLEAR",
+    label: "Dosierung unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_DOSAGE_UNCLEAR-Q1", text: "Ist die Dosierung oder Stärke des Medikaments nicht eindeutig angegeben?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Dosierung oder Stärke des Medikaments ist nicht eindeutig angegeben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_MEDICATION_NOT_DOCUMENTED: {
+    id: "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
+    label: "Medikament nicht hinterlegt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED-Q1", text: "Ist das angefragte Medikament in der Krankenakte nicht hinterlegt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "In Ihrer Krankenakte ist das angefragte Medikament nicht hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_INDICATION_NOT_DOCUMENTED: {
+    id: "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
+    label: "Medizinische Begründung fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_INDICATION_NOT_DOCUMENTED-Q1", text: "Ist eine medizinische Begründung für das angefragte Medikament nicht hinterlegt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine medizinische Begründung für das angefragte Medikament ist nicht hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_DOCTOR_REVIEW_REQUIRED: {
+    id: "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
+    label: "Ärztliche Prüfung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED-Q1", text: "Ist für die Verordnung dieses Medikaments eine ärztliche Einschätzung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Verordnung dieses Medikaments ist eine ärztliche Einschätzung erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON: {
+    id: "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON",
+    label: "Persönlicher Termin vor weiterer Verordnung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON-Q1", text: "Ist vor weiterer Verordnung der Dauermedikation ein persönlicher Arzttermin erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ohne vorherigen persönlichen Arzttermin in der Praxis kann die Dauermedikation nicht weiter verordnet werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Inhalt wird aktuell über Termin-/Kontrollhinweise im M3 abgebildet. */
   PRESCRIPTION_CONTROL_OVERDUE: {
     id: "PRESCRIPTION_CONTROL_OVERDUE",
@@ -875,6 +977,110 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // LAB_BRING_REFERRAL, LAB_COST_COVERED_BY_REFERRAL).
       [ExplanationStatus.YES]: "",
       [ExplanationStatus.NO]: "",
+    },
+  },
+
+  // ---- LAB SPECIFIC CHECKPOINTS (praxisnahe Antwort-Bausteine) ----
+
+  LAB_INTERNAL_ORDER_MISSING: {
+    id: "LAB_INTERNAL_ORDER_MISSING",
+    label: "Ärztliche Laboranordnung fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "LAB_INTERNAL_ORDER_MISSING-Q1", text: "Fehlt in der Krankenakte eine ärztliche Anordnung für die gewünschte Blutuntersuchung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "In Ihrer Krankenakte ist keine ärztliche Anordnung für die gewünschte Blutuntersuchung hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_INTERNAL_ORDER_AVAILABLE: {
+    id: "LAB_INTERNAL_ORDER_AVAILABLE",
+    label: "Ärztliche Laboranordnung vorhanden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_INTERNAL_ORDER_AVAILABLE-Q1", text: "Liegt in der Krankenakte eine ärztliche Anordnung zur Kontrolle der Blutwerte vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "In Ihrer Krankenakte ist eine ärztliche Anordnung zur Kontrolle der Blutwerte hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED: {
+    id: "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
+    label: "Fachärztliche Überweisung im Original erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED-Q1", text: "Ist für diese Laboruntersuchung eine Überweisung des behandelnden Facharztes im Original erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für diese Laboruntersuchung ist eine Überweisung des behandelnden Facharztes im Original erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_CHECKUP_BASIC_LAB_INCLUDED: {
+    id: "LAB_CHECKUP_BASIC_LAB_INCLUDED",
+    label: "Basislabor im Rahmen des Check-ups",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_CHECKUP_BASIC_LAB_INCLUDED-Q1", text: "Gehören die angefragten Laborwerte zum vorgesehenen Basislabor im Rahmen des Check-ups?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die angefragten Laborwerte gehören zum vorgesehenen Basislabor im Rahmen des Check-ups.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_SELF_PAYER_POSSIBLE: {
+    id: "LAB_SELF_PAYER_POSSIBLE",
+    label: "Labor als Selbstzahlerleistung möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "LAB_SELF_PAYER_POSSIBLE-Q1", text: "Kann die angefragte Laborleistung als Selbstzahlerleistung durchgeführt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die angefragte Laborleistung kann als Selbstzahlerleistung durchgeführt werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_CONTROL_TIMING_NOT_DUE: {
+    id: "LAB_CONTROL_TIMING_NOT_DUE",
+    label: "Zeitpunkt für Blutkontrolle noch nicht passend",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_TIME_LIMIT" as SpecificRole,
+    questions: [
+      { id: "LAB_CONTROL_TIMING_NOT_DUE-Q1", text: "Ist die geplante Kontrolle der Blutwerte erst zu einem späteren Zeitpunkt vorgesehen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die geplante Kontrolle der Blutwerte ist erst zu einem späteren Zeitpunkt vorgesehen.",
+      // NO: bewusst still – keine Erklärung nötig
     },
   },
 
