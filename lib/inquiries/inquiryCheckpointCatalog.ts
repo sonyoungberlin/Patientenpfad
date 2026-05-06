@@ -2735,7 +2735,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit.",
+        "Ihre Patientendaten sind unvollständig oder nicht mehr aktuell.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
