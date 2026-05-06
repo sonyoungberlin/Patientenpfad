@@ -1039,15 +1039,29 @@ function SpecificSection({
   onChange: (id: string, val: string) => void;
   onSectionIntroToggle: (clickedId: string) => void;
 }) {
+  // Wenn das Profil bereits Antwortkontexte (SECTION_INTRO_GROUPS_BY_PROFILE)
+  // hat, übernimmt `ProfileSectionIntroDrawers` (oben) das Rendering aller
+  // EXPLANATION-Checkpoints (in den Schubladen plus Fallback-Drawer
+  // „Weitere passende Hinweise"). In dem Fall dürfen die EXPLANATION-Einträge
+  // hier nicht zusätzlich unter "+ Zusatzfragen" erscheinen, sonst werden
+  // dieselben Checkpoints doppelt angezeigt (Regression bei ACUTE_CARE,
+  // SAMPLE_COLLECTION, TECH_SUPPORT, BILLING, MEDICAL_DOCUMENTS).
+  const hasIntroMapping = hasSectionIntroMapping(section.inquiryId);
+  const visibleSpecificCheckpoints = hasIntroMapping
+    ? section.specificCheckpoints.filter(
+        (cp) => cp.kind !== InquiryCheckpointKind.EXPLANATION,
+      )
+    : section.specificCheckpoints;
+
   // Auto-expand wenn mindestens ein SPECIFIC EXPLANATION Checkpoint bereits YES/NO hat.
-  const hasAnsweredSpecific = section.specificCheckpoints.some(
+  const hasAnsweredSpecific = visibleSpecificCheckpoints.some(
     (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
   );
   // Auto-expand auch wenn ein ACTION Checkpoint gesetzt wurde.
   const hasAnsweredAction = section.actionCheckpoints.some(
     (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
   );
-  const hasMore = section.specificCheckpoints.length > 0 || section.actionCheckpoints.length > 0;
+  const hasMore = visibleSpecificCheckpoints.length > 0 || section.actionCheckpoints.length > 0;
   const [isExpanded, setIsExpanded] = useState(hasAnsweredSpecific || hasAnsweredAction);
 
   // Bound action checkpoints nach actionCategory gruppieren.
@@ -1119,7 +1133,7 @@ function SpecificSection({
               </button>
               {isExpanded && (
                 <div style={{ marginTop: "0.5rem" }}>
-                  {section.specificCheckpoints.length > 0 && (
+                  {visibleSpecificCheckpoints.length > 0 && (
                     <div
                       className="text-muted text-small"
                       style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
@@ -1128,7 +1142,7 @@ function SpecificSection({
                     </div>
                   )}
                   {/* SPECIFIC EXPLANATION Checkpoints */}
-                  {section.specificCheckpoints.map((cp) =>
+                  {visibleSpecificCheckpoints.map((cp) =>
                     cp.kind === InquiryCheckpointKind.EXPLANATION ? (
                       <ExplanationQuestionRow key={cp.id} checkpoint={cp} value={statuses[cp.id]} onChange={onChange} />
                     ) : (
