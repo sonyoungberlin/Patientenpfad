@@ -404,7 +404,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Eine Beschreibung der aktuellen Beschwerden liegt noch nicht vor.",
+        "Eine Beschreibung Ihrer aktuellen Beschwerden liegt noch nicht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2384,7 +2384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Das Anliegen ist aktuell zu unspezifisch, um einen passenden Termin auswählen zu können.",
+        "Ihr Anliegen ist aktuell noch zu ungenau, um einen passenden Termin auswählen zu können.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2513,7 +2513,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Konkret fehlt für die Abrechnung: eine gültige Gesundheitskarte oder ein Privatärztlicher Abrechnungsschein.",
+        "Konkret fehlt für die Abrechnung: eine gültige Gesundheitskarte oder ein privatärztlicher Abrechnungsschein.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
