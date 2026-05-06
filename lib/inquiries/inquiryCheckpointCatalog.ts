@@ -1434,7 +1434,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Versorgungsweg – persönlich oder digital",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
