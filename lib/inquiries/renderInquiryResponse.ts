@@ -238,6 +238,14 @@ export function renderInquiryResponseFromSections(
   // Track which GLOBAL checkpoints have already contributed a M5 doc entry.
   // GLOBAL docs must appear exactly once across all sections (not per-anliegen).
   const globalDocSeen = new Set<string>();
+  // Track ACTION-Checkpoints, die schon in einer früheren Section in
+  // attachedParagraphs gerendert wurden. Wenn dieselbe Action-ID an mehrere
+  // Profile gebunden ist (z. B. ACUTE_OPEN_CONSULTATION_ACTION, BOOK_APPOINTMENT),
+  // soll sie im Patiententext und in der Dokumentation trotzdem nur einmal
+  // erscheinen – erste Vorkommensstelle gewinnt, Reihenfolge bleibt stabil.
+  // Betrifft nur Actions in `boundActionCheckpointIds` mit placement ≠ SHARED_BOTTOM
+  // (SHARED_BOTTOM-Actions sind über `sharedBottomSeen` bereits dedupliziert.)
+  const attachedActionSeen = new Set<string>();
 
   for (const section of sections) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[section.inquiryId];
@@ -373,6 +381,12 @@ export function renderInquiryResponseFromSections(
           sharedBottomEntries.push({ text, category: checkpoint.actionCategory });
         }
       } else {
+        // Cross-Section-Dedup: gleiche Action-ID nur in der ersten Section
+        // rendern, in der sie aktiv ist. Schützt vor Doppelrendering bei
+        // kombinierten Anliegen (z. B. AU + APPOINTMENT teilen
+        // ACUTE_OPEN_CONSULTATION_ACTION oder BOOK_APPOINTMENT).
+        if (attachedActionSeen.has(actionId)) continue;
+        attachedActionSeen.add(actionId);
         const docText = checkpoint.docByStatus?.[status] ?? text;
         attachedActionEntries.push({ text, docText, label: checkpoint.label, category: checkpoint.actionCategory });
       }
