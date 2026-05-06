@@ -409,14 +409,19 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: [
-        "PRESCRIPTION_BTM_ADHS_RULES",
-        "PRESCRIPTION_GYN_EXCLUSIVITY",
-        "PRESCRIPTION_NO_POSTAL_DELIVERY",
+        // Ergebnis nach Prüfung: Kasse/Privat-Unterscheidung
         "PRESCRIPTION_STATUTORY_POSSIBLE",
+        // Begründung Privatrezept (nur Selbstzahler)
         "PRESCRIPTION_PRIVATE_ONLY",
+        // Kein Rezept nötig (frei verkäuflich o. Ä.)
         "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
-        "PRESCRIPTION_CHRONIC_PATIENT",
+        // Hinweis zum Postversand (Prozessergebnis)
+        "PRESCRIPTION_NO_POSTAL_DELIVERY",
+        // Nachträgliche Änderung nach Apothekenrückmeldung – Ergebnis
         "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+        // Dauermedikation: Hinweis "Kontrolltermine vorgesehen" ist
+        // ein Ergebnis nach Prüfung, kein Blocker → bleibt hier.
+        "PRESCRIPTION_CHRONIC_PATIENT",
       ],
       defaultOpen: true,
     },
@@ -427,7 +432,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
       checkpointIds: [
+        // Anliegen gehört zur fachärztlichen Versorgung
         "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
+        // BtM/ADHS: nicht im normalen hausärztlichen Rezeptweg
+        "PRESCRIPTION_BTM_ADHS_RULES",
+        // Pille/Gynäkologie: nicht im hausärztlichen Rezeptweg
+        "PRESCRIPTION_GYN_EXCLUSIVITY",
+        // Patient im Ausland: regulär nicht von uns einlösbar
         "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       ],
     },
