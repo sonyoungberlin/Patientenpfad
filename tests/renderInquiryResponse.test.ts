@@ -1405,7 +1405,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
     expect(prescriptionProfile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(13);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(14);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1423,6 +1423,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_CHRONIC_PATIENT",
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
       "TECH_UPLOAD_FAILED",
+      "CONTRACEPTION_SPECIALIST_ONLY",
     ]);
   });
 
@@ -2911,18 +2912,19 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("ACUTE_CARE hat genau 4 specificCheckpointIds (inkl. ACUTE_APPOINTMENT_INFO, wiederhergestellt)", () => {
+  it("ACUTE_CARE hat genau 5 specificCheckpointIds (inkl. ACUTE_APPOINTMENT_INFO und NO_HOME_VISITS)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
-    expect(profile.specificCheckpointIds).toHaveLength(4);
+    expect(profile.specificCheckpointIds).toHaveLength(5);
   });
 
-  it("alle 4 verbleibenden SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
+  it("alle 5 verbleibenden SPECIFIC Checkpoints sind im Katalog und an ACUTE_CARE gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     const ids = [
       "ACUTE_PURPOSE",
       "ACUTE_EXCLUSION",
       "CHRONIC_EXCLUSION",
       "ACUTE_APPOINTMENT_INFO",
+      "NO_HOME_VISITS",
     ];
     for (const id of ids) {
       expect(profile.specificCheckpointIds).toContain(id);

@@ -3673,6 +3673,263 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ActionStatus.ACTIVE]: "Fragebogen Krankentransport ausfüllen",
     },
   },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: ANGABEN FEHLEN ----
+
+  INSURANCE_NUMBER_INVALID_FORMAT: {
+    id: "INSURANCE_NUMBER_INVALID_FORMAT",
+    label: "Versichertennummer formal ungültig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "INSURANCE_NUMBER_INVALID_FORMAT-Q1", text: "Entspricht die vorliegende Versichertennummer dem erforderlichen Format für gesetzlich Versicherte?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die vorliegende Versichertennummer entspricht nicht dem erforderlichen Format für gesetzlich Versicherte.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versichertennummer formal ungültig",
+    },
+  },
+
+  APPOINTMENT_REASON_UNCLEAR: {
+    id: "APPOINTMENT_REASON_UNCLEAR",
+    label: "Terminanlass unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_REASON_UNCLEAR-Q1", text: "Ist der medizinische Hintergrund oder das konkrete Ziel des gebuchten Termins eindeutig erkennbar?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Der medizinische Hintergrund oder das konkrete Ziel des gebuchten Termins ist derzeit nicht eindeutig erkennbar.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Terminanlass unklar",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: UNTERLAGEN VOLLSTÄNDIG ----
+
+  DOCUMENTS_RECEIVED_AND_ASSIGNED: {
+    id: "DOCUMENTS_RECEIVED_AND_ASSIGNED",
+    label: "Unterlagen eingegangen und zugeordnet",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "DOCUMENTS_RECEIVED_AND_ASSIGNED-Q1", text: "Sind die nachgereichten Unterlagen eingegangen und der Patientenakte zugeordnet?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die nachgereichten Unterlagen sind eingegangen und wurden der Patientenakte zugeordnet.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Unterlagen eingegangen und zugeordnet",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: ANLIEGEN GEPRÜFT ----
+
+  EAU_VALID_WITHOUT_SIGNATURE: {
+    id: "EAU_VALID_WITHOUT_SIGNATURE",
+    label: "eAU ohne Unterschrift gültig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "EAU_VALID_WITHOUT_SIGNATURE-Q1", text: "Wurde die elektronische Arbeitsunfähigkeitsbescheinigung digital übermittelt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die elektronische Arbeitsunfähigkeitsbescheinigung ist digital übermittelt und auch ohne Unterschrift oder Praxisstempel gültig.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "eAU digital gültig (ohne Unterschrift/Stempel)",
+    },
+  },
+
+  RETURN_TO_WORK_ALLOWED_DURING_AU: {
+    id: "RETURN_TO_WORK_ALLOWED_DURING_AU",
+    label: "Frühere Rückkehr an Arbeitsplatz möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "RETURN_TO_WORK_ALLOWED_DURING_AU-Q1", text: "Ist eine vorzeitige Rückkehr an den Arbeitsplatz vor Ablauf der Arbeitsunfähigkeit Thema?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine Rückkehr an den Arbeitsplatz ist bei Genesung auch vor Ablauf der Arbeitsunfähigkeit möglich.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Vorzeitige Rückkehr an Arbeitsplatz möglich",
+    },
+  },
+
+  SUSPECTED_DIAGNOSIS_EXPLANATION: {
+    id: "SUSPECTED_DIAGNOSIS_EXPLANATION",
+    label: "Verdachtsdiagnose – Bedeutung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "SUSPECTED_DIAGNOSIS_EXPLANATION-Q1", text: "Geht es um die Erläuterung einer dokumentierten Verdachtsdiagnose?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Dokumentierte Verdachtsdiagnosen dienen der Begründung von Untersuchungen und stellen keine gesicherte Dauerdiagnose dar.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Verdachtsdiagnose – keine gesicherte Dauerdiagnose",
+    },
+  },
+
+  AU_EXTENSION_REQUIRES_EXAMINATION: {
+    id: "AU_EXTENSION_REQUIRES_EXAMINATION",
+    label: "AU-Verlängerung – Untersuchung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "AU_EXTENSION_REQUIRES_EXAMINATION-Q1", text: "Ist nach dem bisherigen Verlauf eine persönliche körperliche Untersuchung für die weitere Beurteilung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Nach dem bisherigen Verlauf ist für eine weitere Beurteilung eine persönliche körperliche Untersuchung erforderlich.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Körperliche Untersuchung für weitere Beurteilung erforderlich",
+    },
+  },
+
+  CONTRACEPTION_SPECIALIST_ONLY: {
+    id: "CONTRACEPTION_SPECIALIST_ONLY",
+    label: "Kontrazeptiva – fachspezifisch gebunden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "CONTRACEPTION_SPECIALIST_ONLY-Q1", text: "Bezieht sich die Anfrage auf die Verordnung kontrazeptiver Mittel?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Verordnung kontrazeptiver Mittel ist an fachspezifische Untersuchungen gebunden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Kontrazeptive Verordnung an fachspezifische Untersuchung gebunden",
+    },
+  },
+
+  VIDEO_CONSULTATION_REGION_LIMITATION: {
+    id: "VIDEO_CONSULTATION_REGION_LIMITATION",
+    label: "Videosprechstunde – Einzugsgebiet",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "VIDEO_CONSULTATION_REGION_LIMITATION-Q1", text: "Liegt der Wohnsitz innerhalb des näheren Einzugsgebiets der Praxis?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Durchführung einer Videosprechstunde ist an einen Wohnsitz im näheren Einzugsgebiet der Praxis gebunden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Videosprechstunde an Einzugsgebiet gebunden",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: NOCH IN BEARBEITUNG ----
+
+  TECHNICAL_ISSUE_DELAY: {
+    id: "TECHNICAL_ISSUE_DELAY",
+    label: "Bearbeitung verzögert – technisches Problem",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "TECHNICAL_ISSUE_DELAY-Q1", text: "Verzögert ein vorübergehendes technisches Problem aktuell die Bearbeitung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ein vorübergehendes technisches Problem verzögert aktuell die Bearbeitung.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Bearbeitung durch technisches Problem verzögert",
+    },
+  },
+
+  STAFF_SHORTAGE_DELAY: {
+    id: "STAFF_SHORTAGE_DELAY",
+    label: "Bearbeitung verzögert – personelle Einschränkung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "STAFF_SHORTAGE_DELAY-Q1", text: "Liegt eine kurzfristige personelle Einschränkung vor, die die Bearbeitung beeinflusst?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Aufgrund einer kurzfristigen personellen Einschränkung kann die Bearbeitung derzeit nicht wie gewohnt erfolgen.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Bearbeitung durch personelle Einschränkung verzögert",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: NICHT IN UNSERER PRAXIS ----
+
+  ADULTS_ONLY_PRACTICE: {
+    id: "ADULTS_ONLY_PRACTICE",
+    label: "Praxis nur für Erwachsene",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "ADULTS_ONLY_PRACTICE-Q1", text: "Bezieht sich die Anfrage auf die Behandlung einer minderjährigen Person?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Praxis ist ausschließlich auf die Behandlung von erwachsenen Patientinnen und Patienten ausgerichtet.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Praxis nur für Erwachsene zuständig",
+    },
+  },
+
+  NO_HOME_VISITS: {
+    id: "NO_HOME_VISITS",
+    label: "Hausbesuche nicht im Angebot",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "NO_HOME_VISITS-Q1", text: "Bezieht sich die Anfrage auf einen Hausbesuch?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Hausbesuche sind kein Bestandteil des angebotenen Leistungsspektrums.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Hausbesuche nicht im Leistungsangebot",
+    },
+  },
 };
 
 /**
