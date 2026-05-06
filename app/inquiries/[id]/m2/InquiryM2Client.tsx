@@ -123,13 +123,13 @@ function SectionIntroPicker({
         className="text-muted text-small"
         style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
       >
-        <span aria-hidden="true">↳ </span>Schublade (Einstieg in die Antwort)
+        <span aria-hidden="true">↳ </span>Antwortkontext (Einstieg in die Antwort)
       </div>
       <p className="text-muted text-small" style={{ margin: "0 0 0.5rem" }}>
-        Optional: maximal eine Schublade. Wird im Antworttext direkt hinter dem
+        Optional: maximal ein Antwortkontext. Wird im Antworttext direkt hinter dem
         Nachrichteneinstieg angehängt (nicht hinter „Vielen Dank…“).
       </p>
-      <div role="radiogroup" aria-label="Schublade auswählen">
+      <div role="radiogroup" aria-label="Antwortkontext auswählen">
         {sectionIntroCheckpoints.map((cp) => {
           const isActive = statuses[cp.id] === "ACTIVE";
           return (
@@ -244,10 +244,10 @@ function SectionIntroAccordion({
       >
         <div>
           <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
-            <span aria-hidden="true">↳ </span>Schublade: {drawerLabel}
+            <span aria-hidden="true">↳ </span>{drawerLabel}
             {isIntroActive && (
               <span
-                aria-label="aktive Schublade"
+                aria-label="aktiver Antwortkontext"
                 style={{
                   marginLeft: "0.5rem",
                   fontSize: "0.7rem",
@@ -303,8 +303,8 @@ function SectionIntroAccordion({
               aria-pressed={isIntroActive}
             >
               {isIntroActive
-                ? "Schublade aktiv"
-                : "Diese Schublade für die Antwort wählen"}
+                ? "Antwortkontext aktiv"
+                : "Als Antwortkontext wählen"}
             </button>
             {sectionIntro.previewText && (
               <span className="text-muted text-small">
@@ -328,7 +328,7 @@ function SectionIntroAccordion({
               className="text-muted text-small"
               style={{ fontStyle: "italic", marginTop: "0.25rem" }}
             >
-              Keine zusätzlichen Situations-Checkpoints in dieser Schublade.
+              Keine zusätzlichen Situations-Checkpoints in diesem Antwortkontext.
             </div>
           )}
         </div>
@@ -1373,7 +1373,7 @@ function AUSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle die passende Schublade. Innerhalb der Schublade kannst du sie als
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
         Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
 
@@ -1845,7 +1845,7 @@ function LabSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle die passende Schublade. Innerhalb der Schublade kannst du sie als
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
         Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
 
@@ -2088,7 +2088,7 @@ function AppointmentSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle die passende Schublade. Innerhalb der Schublade kannst du sie als
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
         Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
 

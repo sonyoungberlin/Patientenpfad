@@ -1328,7 +1328,7 @@ export default function InquiryM3Client({
             const drawerLabel = activeSectionIntro.label.replace(/^Schublade:\s*/, "");
             return (
               <section
-                aria-label="Ausgewählte Schublade aus M2"
+                aria-label="Ausgewählter Antwortkontext aus M2"
                 style={{
                   marginBottom: "1.5rem",
                   padding: "0.5rem 0.75rem",
@@ -1342,7 +1342,7 @@ export default function InquiryM3Client({
                   className="text-muted text-small"
                   style={{ ...GROUP_BADGE_STYLE, marginRight: "0.4rem" }}
                 >
-                  <span aria-hidden="true">↳ </span>Schublade (aus M2):
+                  <span aria-hidden="true">↳ </span>Antwortkontext aus M2:
                 </span>
                 <span style={{ fontWeight: 600 }}>{drawerLabel}</span>
               </section>
