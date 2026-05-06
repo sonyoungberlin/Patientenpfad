@@ -673,6 +673,19 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
 };
 
 /**
+ * Gibt `true` zurück, wenn für das übergebene Profil eine
+ * `SECTION_INTRO_GROUPS_BY_PROFILE`-Antwortkontext-Struktur existiert.
+ *
+ * Dient als Schalter, um die alten profilspezifischen Akkordeon-Gruppen
+ * (`PRESCRIPTION_GROUPS`, `REFERRAL_GROUPS`, …) nur dann als Fallback zu
+ * rendern, wenn kein neues Antwortkontext-Mapping vorhanden ist – damit
+ * die UI pro Profil immer nur eine Akkordeon-Struktur zeigt.
+ */
+function hasSectionIntroMapping(inquiryId: string): boolean {
+  return (SECTION_INTRO_GROUPS_BY_PROFILE[inquiryId]?.length ?? 0) > 0;
+}
+
+/**
  * Rendert pro Profil die Section-Intros als M2-Schubladen-Akkordeon.
  *
  * Reihenfolge: identisch zur Profil-Whitelist `availableSectionIntroIds`.
@@ -1453,24 +1466,31 @@ function PrescriptionSpecificSection({
         </div>
       )}
 
-      {/* Accordion-Gruppen – je nur Situationsmerkmale/Checkpoints, keine Actions */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {PRESCRIPTION_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+      {/*
+        Accordion-Gruppen – je nur Situationsmerkmale/Checkpoints, keine Actions.
+        Nur als Fallback rendern, wenn das Profil noch kein neues
+        SECTION_INTRO_GROUPS_BY_PROFILE-Mapping besitzt (sonst würde die UI
+        die Antwortkontexte und die alten Profil-Gruppen doppelt zeigen).
+      */}
+      {!hasSectionIntroMapping(section.inquiryId) && (
+        <div style={{ marginBottom: "0.75rem" }}>
+          {PRESCRIPTION_GROUPS.map((group) => {
+            const groupCheckpoints = group.checkpointIds
+              .map((id) => cpById.get(id))
+              .filter((cp): cp is PlainCheckpoint => cp !== undefined);
 
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-            />
-          );
-        })}
-      </div>
+            return (
+              <PrescriptionGroupAccordion
+                key={group.id}
+                group={group}
+                checkpoints={groupCheckpoints}
+                statuses={statuses}
+                onChange={onChange}
+              />
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -1849,25 +1869,31 @@ function ReferralSpecificSection({
         ) : null;
       })()}
 
-      {/* Accordion-Gruppen – je nur EXPLANATION-Checkpoints / Situationsmerkmale */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {REFERRAL_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+      {/*
+        Accordion-Gruppen – je nur EXPLANATION-Checkpoints / Situationsmerkmale.
+        Nur als Fallback rendern, wenn kein neues SECTION_INTRO_GROUPS_BY_PROFILE-Mapping
+        existiert (sonst Doppeldarstellung mit den Antwortkontexten oben).
+      */}
+      {!hasSectionIntroMapping(section.inquiryId) && (
+        <div style={{ marginBottom: "0.75rem" }}>
+          {REFERRAL_GROUPS.map((group) => {
+            const groupCheckpoints = group.checkpointIds
+              .map((id) => cpById.get(id))
+              .filter((cp): cp is PlainCheckpoint => cp !== undefined);
 
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={REFERRAL_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
+            return (
+              <PrescriptionGroupAccordion
+                key={group.id}
+                group={group}
+                checkpoints={groupCheckpoints}
+                statuses={statuses}
+                onChange={onChange}
+                shortLabels={REFERRAL_SHORT_LABELS}
+              />
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -2011,25 +2037,30 @@ function HospitalAdmissionSpecificSection({
         ) : null;
       })()}
 
-      {/* Accordion-Gruppen */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {HOSPITAL_ADMISSION_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+      {/*
+        Accordion-Gruppen – Fallback nur, wenn kein neues
+        SECTION_INTRO_GROUPS_BY_PROFILE-Mapping vorhanden ist.
+      */}
+      {!hasSectionIntroMapping(section.inquiryId) && (
+        <div style={{ marginBottom: "0.75rem" }}>
+          {HOSPITAL_ADMISSION_GROUPS.map((group) => {
+            const groupCheckpoints = group.checkpointIds
+              .map((id) => cpById.get(id))
+              .filter((cp): cp is PlainCheckpoint => cp !== undefined);
 
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={HOSPITAL_ADMISSION_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
+            return (
+              <PrescriptionGroupAccordion
+                key={group.id}
+                group={group}
+                checkpoints={groupCheckpoints}
+                statuses={statuses}
+                onChange={onChange}
+                shortLabels={HOSPITAL_ADMISSION_SHORT_LABELS}
+              />
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -2299,25 +2330,30 @@ function ImmunizationSpecificSection({
         </div>
       )}
 
-      {/* Accordion-Gruppen */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {IMMUNIZATION_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+      {/*
+        Accordion-Gruppen – Fallback nur, wenn kein neues
+        SECTION_INTRO_GROUPS_BY_PROFILE-Mapping vorhanden ist.
+      */}
+      {!hasSectionIntroMapping(section.inquiryId) && (
+        <div style={{ marginBottom: "0.75rem" }}>
+          {IMMUNIZATION_GROUPS.map((group) => {
+            const groupCheckpoints = group.checkpointIds
+              .map((id) => cpById.get(id))
+              .filter((cp): cp is PlainCheckpoint => cp !== undefined);
 
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={IMMUNIZATION_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
+            return (
+              <PrescriptionGroupAccordion
+                key={group.id}
+                group={group}
+                checkpoints={groupCheckpoints}
+                statuses={statuses}
+                onChange={onChange}
+                shortLabels={IMMUNIZATION_SHORT_LABELS}
+              />
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -2588,44 +2624,53 @@ function OnboardingSpecificSection({
         </div>
       )}
 
-      {/* Accordion-Gruppen */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {ONBOARDING_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+      {/*
+        Accordion-Gruppen + Fallback-Gruppe für ungemappte Checkpoints –
+        nur rendern, wenn das Profil noch kein neues
+        SECTION_INTRO_GROUPS_BY_PROFILE-Mapping besitzt. Bei vorhandenem
+        Mapping übernimmt `ProfileSectionIntroDrawers` (oben) sowohl die
+        Gruppierung als auch den eigenen "Weitere passende Hinweise"-Drawer
+        für nicht zugeordnete EXPLANATION-Checkpoints.
+      */}
+      {!hasSectionIntroMapping(section.inquiryId) && (
+        <div style={{ marginBottom: "0.75rem" }}>
+          {ONBOARDING_GROUPS.map((group) => {
+            const groupCheckpoints = group.checkpointIds
+              .map((id) => cpById.get(id))
+              .filter((cp): cp is PlainCheckpoint => cp !== undefined);
 
-          return (
+            return (
+              <PrescriptionGroupAccordion
+                key={group.id}
+                group={group}
+                checkpoints={groupCheckpoints}
+                statuses={statuses}
+                onChange={onChange}
+                shortLabels={ONBOARDING_SHORT_LABELS}
+              />
+            );
+          })}
+
+          {/* Fallback-Gruppe: noch nicht zugeordnete ONBOARDING-Checkpoints. */}
+          {ungroupedCheckpoints.length > 0 && (
             <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
+              key="onb_weitere_hinweise"
+              group={{
+                id: "onb_weitere_hinweise",
+                label: "Weitere passende Hinweise",
+                description:
+                  "Weitere ONBOARDING-Hinweise, die keiner thematischen Gruppe zugeordnet sind.",
+                checkpointIds: ungroupedCheckpoints.map((cp) => cp.id),
+                defaultOpen: false,
+              }}
+              checkpoints={ungroupedCheckpoints}
               statuses={statuses}
               onChange={onChange}
               shortLabels={ONBOARDING_SHORT_LABELS}
             />
-          );
-        })}
-
-        {/* Fallback-Gruppe: noch nicht zugeordnete ONBOARDING-Checkpoints. */}
-        {ungroupedCheckpoints.length > 0 && (
-          <PrescriptionGroupAccordion
-            key="onb_weitere_hinweise"
-            group={{
-              id: "onb_weitere_hinweise",
-              label: "Weitere passende Hinweise",
-              description:
-                "Weitere ONBOARDING-Hinweise, die keiner thematischen Gruppe zugeordnet sind.",
-              checkpointIds: ungroupedCheckpoints.map((cp) => cp.id),
-              defaultOpen: false,
-            }}
-            checkpoints={ungroupedCheckpoints}
-            statuses={statuses}
-            onChange={onChange}
-            shortLabels={ONBOARDING_SHORT_LABELS}
-          />
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
