@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
+import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
 
 export type PlainCheckpoint = {
   id: string;
@@ -12,6 +13,13 @@ export type PlainCheckpoint = {
   question?: string;
   questions?: Array<{ id: string; text: string }>;
   actionCategory?: string;
+  /**
+   * Vorschau-Text (z. B. ACTIVE-Text für ACTION-Checkpoints), den die UI
+   * unterhalb des Labels anzeigen kann. Wird in M2 für die Section-Intro-
+   * Schubladen verwendet, damit Praxen den späteren Output direkt sehen.
+   * Optional – Renderer/Server-Logik nutzen dieses Feld nicht.
+   */
+  previewText?: string;
 };
 
 export type M2SectionData = {
@@ -29,6 +37,12 @@ export type M2SectionData = {
    * Andere Profile (SpecificSection) ignorieren dieses Feld.
    */
   allBoundActionCheckpoints?: PlainCheckpoint[];
+  /**
+   * Pilot: Section-Intro-Whitelist für die M2-„Schubladen"-Auswahl
+   * (AU/LAB/APPOINTMENT). Leeres Array → keine Schubladen-Auswahl rendern.
+   * Statuses werden global geführt; Toggle via `applySectionIntroToggle`.
+   */
+  sectionIntroCheckpoints?: PlainCheckpoint[];
 };
 
 type Props = {
@@ -70,6 +84,698 @@ const GROUP_BADGE_STYLE = {
   textTransform: "uppercase" as const,
   letterSpacing: "0.04em",
 };
+
+/**
+ * Pilot „Schubladen"-Auswahl für M2 (AU / LAB / APPOINTMENT).
+ *
+ * Rendert eine Single-Select-Radio-Liste über den bestehenden Akkordeons.
+ * Ein erneuter Klick auf das aktive Section-Intro hebt die Auswahl auf
+ * (Toggle-Off, analog M3 `applyIntroToggle`). Schreibt die Statuses über
+ * `applySectionIntroToggle` in die globale `statuses`-Map; der Renderer
+ * hängt den ACTIVE-Text hinter Message-Intros E1/E2/E3 an.
+ *
+ * Die `previewText`-Spalte zeigt den späteren Output-Satz, damit Praxen die
+ * Anschlussform direkt sehen.
+ */
+function SectionIntroPicker({
+  sectionIntroCheckpoints,
+  statuses,
+  onToggle,
+}: {
+  sectionIntroCheckpoints: PlainCheckpoint[];
+  statuses: Record<string, string>;
+  onToggle: (clickedId: string) => void;
+}) {
+  if (sectionIntroCheckpoints.length === 0) return null;
+  const groupName = `section-intro-${sectionIntroCheckpoints[0]?.id ?? "default"}`;
+
+  return (
+    <div
+      style={{
+        marginBottom: "1rem",
+        padding: "0.75rem",
+        background: "#f5f5f5",
+        border: "1px solid #e0e0e0",
+        borderRadius: "var(--radius)",
+      }}
+    >
+      <div
+        className="text-muted text-small"
+        style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
+      >
+        <span aria-hidden="true">↳ </span>Antwortkontext (Einstieg in die Antwort)
+      </div>
+      <p className="text-muted text-small" style={{ margin: "0 0 0.5rem" }}>
+        Optional: maximal ein Antwortkontext. Wird im Antworttext direkt hinter dem
+        Nachrichteneinstieg angehängt (nicht hinter „Vielen Dank…“).
+      </p>
+      <div role="radiogroup" aria-label="Antwortkontext auswählen">
+        {sectionIntroCheckpoints.map((cp) => {
+          const isActive = statuses[cp.id] === "ACTIVE";
+          return (
+            <label
+              key={cp.id}
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                alignItems: "flex-start",
+                padding: "0.35rem 0",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="radio"
+                name={groupName}
+                checked={isActive}
+                onClick={() => onToggle(cp.id)}
+                onChange={() => {
+                  /* handled in onClick to support toggle-off */
+                }}
+                style={{ marginTop: "0.25rem" }}
+              />
+              <span>
+                <span style={{ fontWeight: 500 }}>{cp.label.replace(/^Schublade:\s*/, "")}</span>
+                {cp.previewText && (
+                  <span
+                    className="text-muted text-small"
+                    style={{ display: "block" }}
+                  >
+                    „… {cp.previewText}"
+                  </span>
+                )}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Pilot „Schubladen-Akkordeon" für M2 (AU / LAB / APPOINTMENT).
+ *
+ * Ein Akkordeon-Drawer pro Section-Intro:
+ *   - Drawer-Header zeigt das Section-Intro-Label (z. B. „Angaben fehlen").
+ *   - Im aufgeklappten Zustand: Toggle „Diese Schublade für die Antwort wählen"
+ *     (single-select über alle Section-Intros via `applySectionIntroToggle`)
+ *     und die zugeordneten EXPLANATION-Checkpoints mit ihrem normalen
+ *     Ja/Nein-Verhalten.
+ *
+ * Exklusivität: Klick auf Toggle in einer Schublade deaktiviert die anderen
+ * Section-Intros (Garantie der Toggle-Funktion). Untergeordnete Checkpoint-
+ * Statuses bleiben bewusst erhalten und werden nicht zurückgesetzt.
+ */
+function SectionIntroAccordion({
+  sectionIntro,
+  checkpoints,
+  statuses,
+  onChange,
+  onSectionIntroToggle,
+  shortLabels,
+  defaultOpen,
+}: {
+  sectionIntro: PlainCheckpoint;
+  checkpoints: PlainCheckpoint[];
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
+  shortLabels: Record<string, string>;
+  defaultOpen: boolean;
+}) {
+  const isIntroActive = statuses[sectionIntro.id] === "ACTIVE";
+  const hasAnsweredCheckpoint = checkpoints.some(
+    (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
+  );
+  const [isOpen, setIsOpen] = useState(
+    defaultOpen || isIntroActive || hasAnsweredCheckpoint,
+  );
+
+  // Drawer-Label = Section-Intro-Label ohne den Präfix „Schublade: "
+  const drawerLabel = sectionIntro.label.replace(/^Schublade:\s*/, "");
+
+  return (
+    <div
+      style={{
+        border: isIntroActive
+          ? "2px solid var(--primary, #2563eb)"
+          : "1px solid var(--border)",
+        borderRadius: "var(--radius)",
+        marginBottom: "0.5rem",
+        overflow: "hidden",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0.65rem 0.9rem",
+          background: isOpen ? "var(--muted, #f5f5f5)" : "var(--background)",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+          gap: "0.5rem",
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
+            <span aria-hidden="true">↳ </span>{drawerLabel}
+            {isIntroActive && (
+              <span
+                aria-label="aktiver Antwortkontext"
+                style={{
+                  marginLeft: "0.5rem",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  background: "var(--primary, #2563eb)",
+                  color: "#fff",
+                  borderRadius: "var(--radius)",
+                  padding: "0.05rem 0.4rem",
+                }}
+              >
+                AKTIV
+              </span>
+            )}
+          </div>
+          {!isOpen && sectionIntro.previewText && (
+            <div className="text-muted text-small" style={{ marginTop: "0.1rem" }}>
+              „… {sectionIntro.previewText}"
+            </div>
+          )}
+        </div>
+        <span aria-hidden="true" style={{ flexShrink: 0 }}>
+          {isOpen ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
+          {/* Section-Intro-Toggle */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.4rem 0",
+              marginBottom: "0.25rem",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => onSectionIntroToggle(sectionIntro.id)}
+              style={{
+                padding: "0.25rem 0.75rem",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border)",
+                background: isIntroActive
+                  ? "var(--primary, #2563eb)"
+                  : "var(--background)",
+                color: isIntroActive ? "#fff" : "var(--foreground)",
+                fontWeight: isIntroActive ? 600 : 400,
+                cursor: "pointer",
+                fontSize: "0.85rem",
+              }}
+              aria-pressed={isIntroActive}
+            >
+              {isIntroActive
+                ? "Antwortkontext aktiv"
+                : "Als Antwortkontext wählen"}
+            </button>
+            {sectionIntro.previewText && (
+              <span className="text-muted text-small">
+                Anschluss: „… {sectionIntro.previewText}"
+              </span>
+            )}
+          </div>
+
+          {/* Untergeordnete Checkpoints (Ja/Nein, unverändertes Verhalten) */}
+          {checkpoints.length > 0 ? (
+            checkpoints.map((cp) => (
+              <ExplanationQuestionRow
+                key={cp.id}
+                checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                value={statuses[cp.id]}
+                onChange={onChange}
+              />
+            ))
+          ) : (
+            <div
+              className="text-muted text-small"
+              style={{ fontStyle: "italic", marginTop: "0.25rem" }}
+            >
+              Keine zusätzlichen Situations-Checkpoints in diesem Antwortkontext.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Pilot-Mapping: Section-Intro → fachlich passende Checkpoint-IDs pro Profil.
+ *
+ * Reine UI-Gruppierung. Bestehende Checkpoints werden nur einsortiert; keine
+ * neuen fachlichen Checkpoints, keine Texte verändert. Kein Einfluss auf
+ * Decision/Output-Logik. Ein Checkpoint kann in mehreren Schubladen
+ * erscheinen; sein Ja/Nein-Status bleibt global synchron.
+ *
+ * `defaultOpen` markiert die Standard-Schublade pro Profil – sie ist im
+ * Sinne der Praxis-Heuristik der wahrscheinlichste Einstieg.
+ */
+type SectionIntroGroupMapping = {
+  sectionIntroId: string;
+  checkpointIds: readonly string[];
+  defaultOpen?: boolean;
+};
+
+const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroupMapping[]> = {
+  AU: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["AU_MISSING_QUESTIONNAIRE"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["AU_MISSING_EGK"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "AU_DIGITAL_AU_PROCESS",
+        "AU_FOLLOWUP",
+        "AU_NO_APPOINTMENT_ACUTE",
+        "AU_MEDICAL_CONSULTATION_REQUIRED",
+        "AU_BACKDATE_LIMIT",
+        "AU_NEW_PATIENT_LIMIT",
+        "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["AU_WORK_ACCIDENT", "AU_CHILD_SICK"],
+    },
+  ],
+  PRESCRIPTION: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [
+        "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+        "HOSPITAL_DISCHARGE_REPORT_MISSING",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "PRESCRIPTION_BTM_ADHS_RULES",
+        "PRESCRIPTION_GYN_EXCLUSIVITY",
+        "PRESCRIPTION_NO_POSTAL_DELIVERY",
+        "PRESCRIPTION_STATUTORY_POSSIBLE",
+        "PRESCRIPTION_PRIVATE_ONLY",
+        "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+        "PRESCRIPTION_CHRONIC_PATIENT",
+        "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+      ],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: [
+        "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
+        "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
+      ],
+    },
+  ],
+  LAB: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "LAB_INTERNAL_ORDER",
+        "LAB_EXTERNAL_REFERRAL",
+        "LAB_CHECKUP_RULES",
+        "LAB_MEDICAL_CONSULTATION_REQUIRED",
+        "BILLING_COST_NOT_COVERED",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: ["LAB_RESULTS_PENDING"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["LAB_MPU_EXCLUSION"],
+    },
+  ],
+  SAMPLE_COLLECTION: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  ACUTE_CARE: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["ACUTE_PURPOSE", "ACUTE_APPOINTMENT_INFO"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["ACUTE_EXCLUSION", "CHRONIC_EXCLUSION"],
+    },
+  ],
+  REFERRAL: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "REFERRAL_CAN_BE_ISSUED",
+        "REF_SPECIALTY_REQUIRED",
+        "REF_PSYCHOTHERAPY_FIRST_STEP",
+        "REF_HAV_CASE",
+        "REF_MEDICAL_CONSULTATION_REQUIRED",
+      ],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  HOSPITAL_ADMISSION: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["HOSPITAL_ADMISSION_MISSING_INFO"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
+        "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+        "HOSPITAL_TRANSPORT_REQUIRED",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  IMMUNIZATION: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["IMMUNIZATION_STATUS_UNCLEAR"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["IMMUNIZATION_VACCINATION_RECORD_MISSING"],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "IMMUNIZATION_STANDARD_AVAILABLE",
+        "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+        "IMMUNIZATION_TRAVEL_MEDICINE",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  APPOINTMENT: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE", "APPOINTMENT_BOOKING_CODE_REQUIRED"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "APPOINTMENT_CAN_BE_BOOKED",
+        "APPOINTMENT_CANCEL_OR_RESCHEDULE",
+        "APPOINTMENT_WRONG_TYPE",
+        "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: [],
+    },
+  ],
+  TECH_SUPPORT: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["TECH_VIDEO_NOT_WORKING"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  ONBOARDING: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: [
+        "ONBOARDING_DATA_INCOMPLETE",
+        "ONBOARDING_DATA_UPDATE_REQUIRED",
+        "ONBOARDING_IDENTITY_MISMATCH",
+      ],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [
+        "ONBOARDING_GKV_DOCUMENT_MISSING",
+        "ONBOARDING_PKV_PAS_MISSING",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["ONBOARDING_DOCTOLIB_INFO"],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["ONBOARDING_WRONG_PRACTICE"],
+    },
+  ],
+  BILLING: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["BILLING_ADDRESS_MISSING"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["BILLING_DOCUMENT_MISSING"],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["BILLING_COST_NOT_COVERED", "BILLING_INVOICE_TIMING"],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: [
+        "BILLING_EXTERNAL_RESPONSIBILITY",
+        "BILLING_EXTERNAL_PROVIDER",
+      ],
+    },
+  ],
+  MEDICAL_DOCUMENTS: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["MEDICAL_DOCUMENT_INFO_MISSING"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED"],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "MEDICAL_DOCUMENT_POSSIBLE",
+        "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
+        "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
+        "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+};
+
+/**
+ * Rendert pro Profil die Section-Intros als M2-Schubladen-Akkordeon.
+ *
+ * Reihenfolge: identisch zur Profil-Whitelist `availableSectionIntroIds`.
+ * Checkpoints, die in keiner Schublade vorkommen, landen in einem optionalen
+ * Fallback-Drawer „Weitere passende Hinweise", damit kein bestehender
+ * EXPLANATION-Checkpoint stillschweigend verschwindet.
+ */
+function ProfileSectionIntroDrawers({
+  inquiryId,
+  sectionIntroCheckpoints,
+  explanationCheckpoints,
+  shortLabels,
+  statuses,
+  onChange,
+  onSectionIntroToggle,
+}: {
+  inquiryId: string;
+  sectionIntroCheckpoints: PlainCheckpoint[];
+  explanationCheckpoints: PlainCheckpoint[];
+  shortLabels: Record<string, string>;
+  statuses: Record<string, string>;
+  onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
+}) {
+  const cpById = new Map<string, PlainCheckpoint>(
+    explanationCheckpoints.map((cp) => [cp.id, cp]),
+  );
+  const introById = new Map<string, PlainCheckpoint>(
+    sectionIntroCheckpoints.map((cp) => [cp.id, cp]),
+  );
+  const mapping = SECTION_INTRO_GROUPS_BY_PROFILE[inquiryId] ?? [];
+
+  // Welche Checkpoints sind irgendeiner Schublade zugeordnet?
+  const groupedCheckpointIds = new Set<string>(
+    mapping.flatMap((g) => g.checkpointIds),
+  );
+  const ungroupedCheckpoints = explanationCheckpoints.filter(
+    (cp) => !groupedCheckpointIds.has(cp.id),
+  );
+
+  return (
+    <div style={{ marginBottom: "0.75rem" }}>
+      {mapping.map((group) => {
+        const sectionIntro = introById.get(group.sectionIntroId);
+        if (!sectionIntro) return null;
+        const groupCheckpoints = group.checkpointIds
+          .map((id) => cpById.get(id))
+          .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+        return (
+          <SectionIntroAccordion
+            key={group.sectionIntroId}
+            sectionIntro={sectionIntro}
+            checkpoints={groupCheckpoints}
+            statuses={statuses}
+            onChange={onChange}
+            onSectionIntroToggle={onSectionIntroToggle}
+            shortLabels={shortLabels}
+            defaultOpen={group.defaultOpen ?? false}
+          />
+        );
+      })}
+
+      {/* Fallback-Drawer für nicht zugeordnete EXPLANATION-Checkpoints. */}
+      {ungroupedCheckpoints.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            marginBottom: "0.5rem",
+            overflow: "hidden",
+          }}
+        >
+          <details>
+            <summary
+              style={{
+                padding: "0.65rem 0.9rem",
+                background: "var(--background)",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+              }}
+            >
+              <span aria-hidden="true">→ </span>Weitere passende Hinweise
+            </summary>
+            <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
+              <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
+                Hinweise, die keiner Schublade zugeordnet sind.
+              </div>
+              {ungroupedCheckpoints.map((cp) => (
+                <ExplanationQuestionRow
+                  key={cp.id}
+                  checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                  value={statuses[cp.id]}
+                  onChange={onChange}
+                />
+              ))}
+            </div>
+          </details>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function YesNoButtons({
   checkpointId,
@@ -283,10 +989,12 @@ function SpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Auto-expand wenn mindestens ein SPECIFIC EXPLANATION Checkpoint bereits YES/NO hat.
   const hasAnsweredSpecific = section.specificCheckpoints.some(
@@ -316,6 +1024,22 @@ function SpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon (für alle Profile). */}
+      {(section.sectionIntroCheckpoints?.length ?? 0) > 0 && (
+        <ProfileSectionIntroDrawers
+          inquiryId={section.inquiryId}
+          sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+          explanationCheckpoints={section.specificCheckpoints.filter(
+            (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+          )}
+          shortLabels={{}}
+          statuses={statuses}
+          onChange={onChange}
+          onSectionIntroToggle={onSectionIntroToggle}
+        />
+      )}
+
       {section.decisionQuestions.length === 0 && !hasMore ? (
         <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
       ) : (
@@ -673,10 +1397,12 @@ function PrescriptionSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Schneller Lookup: Checkpoint-ID → PlainCheckpoint
   const cpById = new Map<string, PlainCheckpoint>(
@@ -693,8 +1419,22 @@ function PrescriptionSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={PRESCRIPTION_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {filteredDecisionQuestions.length > 0 && (
@@ -885,25 +1625,33 @@ function AUSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
-  // Schneller Lookup: Checkpoint-ID → PlainCheckpoint
-  // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht angezeigt.
-  const cpById = new Map<string, PlainCheckpoint>(
-    section.specificCheckpoints
-      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
-      .map((cp) => [cp.id, cp]),
-  );
-
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Pilot: Section-Intros sind jetzt die Schubladen (Akkordeons). */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={AU_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {(() => {
@@ -926,26 +1674,6 @@ function AUSpecificSection({
           </div>
         ) : null;
       })()}
-
-      {/* Accordion-Gruppen – je nur EXPLANATION-Checkpoints / Situationsmerkmale */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {AU_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
-
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={AU_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
     </section>
   );
 }
@@ -1064,10 +1792,12 @@ function ReferralSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht angezeigt.
   const cpById = new Map<string, PlainCheckpoint>(
@@ -1080,8 +1810,22 @@ function ReferralSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={REFERRAL_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {(() => {
@@ -1211,10 +1955,12 @@ function HospitalAdmissionSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     section.specificCheckpoints
@@ -1226,8 +1972,22 @@ function HospitalAdmissionSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={HOSPITAL_ADMISSION_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {(() => {
@@ -1369,23 +2129,32 @@ function LabSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
-  const cpById = new Map<string, PlainCheckpoint>(
-    section.specificCheckpoints
-      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
-      .map((cp) => [cp.id, cp]),
-  );
-
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={LAB_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
       {section.decisionQuestions.length > 0 && (
@@ -1403,26 +2172,6 @@ function LabSpecificSection({
           />
         </div>
       )}
-
-      {/* Accordion-Gruppen */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {LAB_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
-
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={LAB_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
     </section>
   );
 }
@@ -1499,10 +2248,12 @@ function ImmunizationSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     section.specificCheckpoints
@@ -1514,8 +2265,22 @@ function ImmunizationSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={IMMUNIZATION_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
       {section.decisionQuestions.length > 0 && (
@@ -1623,23 +2388,32 @@ function AppointmentSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
-  const cpById = new Map<string, PlainCheckpoint>(
-    section.specificCheckpoints
-      .filter((cp) => cp.kind === InquiryCheckpointKind.EXPLANATION)
-      .map((cp) => [cp.id, cp]),
-  );
-
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={APPOINTMENT_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
       {section.decisionQuestions.length > 0 && (
@@ -1657,26 +2431,6 @@ function AppointmentSpecificSection({
           />
         </div>
       )}
-
-      {/* Accordion-Gruppen */}
-      <div style={{ marginBottom: "0.75rem" }}>
-        {APPOINTMENT_GROUPS.map((group) => {
-          const groupCheckpoints = group.checkpointIds
-            .map((id) => cpById.get(id))
-            .filter((cp): cp is PlainCheckpoint => cp !== undefined);
-
-          return (
-            <PrescriptionGroupAccordion
-              key={group.id}
-              group={group}
-              checkpoints={groupCheckpoints}
-              statuses={statuses}
-              onChange={onChange}
-              shortLabels={APPOINTMENT_SHORT_LABELS}
-            />
-          );
-        })}
-      </div>
     </section>
   );
 }
@@ -1774,10 +2528,12 @@ function OnboardingSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht
   // angezeigt (Actions kommen in M3 über boundActionConditions).
@@ -1800,8 +2556,20 @@ function OnboardingSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={explanationCheckpoints}
+        shortLabels={ONBOARDING_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar (ONBOARDING hat aktuell keine). */}
       {section.decisionQuestions.length > 0 && (
@@ -1956,6 +2724,24 @@ export default function InquiryM2Client({
     setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
   }
 
+  // Pilot: globale Liste aller in dieser Session verfügbaren Section-Intro-IDs
+  // (Vereinigung der Pro-Profil-Whitelists). `applySectionIntroToggle` setzt
+  // alle Section-Intros aus dieser Liste auf INACTIVE und nur das geklickte
+  // ggf. auf ACTIVE → max. ein Section-Intro aktiv. Wenn keine Section-Intros
+  // verfügbar sind (z. B. nicht-Pilot-Profil), bleibt die Liste leer und der
+  // Picker wird nirgends gerendert.
+  const sectionIntroIds = Array.from(
+    new Set(
+      sections.flatMap((s) =>
+        (s.sectionIntroCheckpoints ?? []).map((cp) => cp.id),
+      ),
+    ),
+  );
+
+  function toggleSectionIntro(clickedId: string) {
+    setStatuses((prev) => applySectionIntroToggle(prev, clickedId, sectionIntroIds));
+  }
+
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
@@ -2019,7 +2805,8 @@ export default function InquiryM2Client({
       )}
 
       {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen.
-           PRESCRIPTION nutzt den Gruppen-Prototyp, AU, REFERRAL, HOSPITAL_ADMISSION, LAB und IMMUNIZATION ebenso, alle anderen Profile SpecificSection. */}
+           Alle Profil-Sektionen rendern Antwortkontexte (Section-Intros) als Schubladen-Akkordeon;
+           profilspezifische Sektionen ergänzen ihre eigenen Gruppen-Akkordeons. */}
       {sections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
@@ -2027,6 +2814,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "AU" ? (
           <AUSpecificSection
@@ -2034,6 +2822,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "REFERRAL" ? (
           <ReferralSpecificSection
@@ -2041,6 +2830,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "HOSPITAL_ADMISSION" ? (
           <HospitalAdmissionSpecificSection
@@ -2048,6 +2838,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "LAB" ? (
           <LabSpecificSection
@@ -2055,6 +2846,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "APPOINTMENT" ? (
           <AppointmentSpecificSection
@@ -2062,6 +2854,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "IMMUNIZATION" ? (
           <ImmunizationSpecificSection
@@ -2069,6 +2862,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "ONBOARDING" ? (
           <OnboardingSpecificSection
@@ -2076,6 +2870,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : (
           <SpecificSection
@@ -2083,6 +2878,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ),
       )}

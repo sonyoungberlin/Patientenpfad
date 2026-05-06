@@ -18,7 +18,7 @@ import {
   type InquirySectionOutput,
   type InquiryResponseV2Output,
 } from "@/lib/inquiries/types";
-import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 
 /**
@@ -238,6 +238,14 @@ export function renderInquiryResponseFromSections(
   // Track which GLOBAL checkpoints have already contributed a M5 doc entry.
   // GLOBAL docs must appear exactly once across all sections (not per-anliegen).
   const globalDocSeen = new Set<string>();
+  // Track ACTION-Checkpoints, die schon in einer früheren Section in
+  // attachedParagraphs gerendert wurden. Wenn dieselbe Action-ID an mehrere
+  // Profile gebunden ist (z. B. ACUTE_OPEN_CONSULTATION_ACTION, BOOK_APPOINTMENT),
+  // soll sie im Patiententext und in der Dokumentation trotzdem nur einmal
+  // erscheinen – erste Vorkommensstelle gewinnt, Reihenfolge bleibt stabil.
+  // Betrifft nur Actions in `boundActionCheckpointIds` mit placement ≠ SHARED_BOTTOM
+  // (SHARED_BOTTOM-Actions sind über `sharedBottomSeen` bereits dedupliziert.)
+  const attachedActionSeen = new Set<string>();
 
   for (const section of sections) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[section.inquiryId];
@@ -373,6 +381,12 @@ export function renderInquiryResponseFromSections(
           sharedBottomEntries.push({ text, category: checkpoint.actionCategory });
         }
       } else {
+        // Cross-Section-Dedup: gleiche Action-ID nur in der ersten Section
+        // rendern, in der sie aktiv ist. Schützt vor Doppelrendering bei
+        // kombinierten Anliegen (z. B. AU + APPOINTMENT teilen
+        // ACUTE_OPEN_CONSULTATION_ACTION oder BOOK_APPOINTMENT).
+        if (attachedActionSeen.has(actionId)) continue;
+        attachedActionSeen.add(actionId);
         const docText = checkpoint.docByStatus?.[status] ?? text;
         attachedActionEntries.push({ text, docText, label: checkpoint.label, category: checkpoint.actionCategory });
       }
@@ -401,6 +415,7 @@ export function renderInquiryResponseFromSections(
   // Nur der erste aktive Intro wird verwendet; weitere aktive INTROs werden ignoriert.
   // Intro-Texte erscheinen NICHT in sharedBottom.
   let intro: string | undefined;
+  let activeIntroId: string | undefined;
   const firstSectionStatuses = sections[0]?.checkpointStatuses ?? {};
   for (const introId of INTRO_CHECKPOINT_IDS) {
     const status = firstSectionStatuses[introId];
@@ -408,7 +423,32 @@ export function renderInquiryResponseFromSections(
     const introCp = INQUIRY_CHECKPOINT_CATALOG_V2[introId];
     if (!introCp) continue;
     const text = resolveCheckpointText(introCp, ActionStatus.ACTIVE, audience);
-    if (text) { intro = text; break; }
+    if (text) { intro = text; activeIntroId = introId; break; }
+  }
+
+  // ---- G) Section-Intro – nur an Message-Intros E1/E2/E3 anhängen ----
+  // Section-Intros (M2 „Schubladen") sind die zweite Intro-Ebene. Sie werden
+  // ausschließlich als Anschlussform an die Nominalphrasen E1/E2/E3 gehängt.
+  // Hinter E4/E5 (vollständige Sätze) wird kein Section-Intro gerendert.
+  // SECTION_INTRO_CHECKPOINT_IDS bleibt strikt getrennt von INTRO_CHECKPOINT_IDS;
+  // Section-Intros erscheinen ebenfalls NICHT in sharedBottom.
+  const SECTION_INTRO_COMPATIBLE_MESSAGE_INTROS = new Set<string>([
+    "MESSAGE_INTRO_PRACTICE_FOLLOWUP",      // E1
+    "MESSAGE_INTRO_MISSING_INFO",           // E2
+    "MESSAGE_INTRO_APPOINTMENT_PREPARATION", // E3
+  ]);
+  if (intro !== undefined && activeIntroId && SECTION_INTRO_COMPATIBLE_MESSAGE_INTROS.has(activeIntroId)) {
+    for (const sectionIntroId of SECTION_INTRO_CHECKPOINT_IDS) {
+      const status = firstSectionStatuses[sectionIntroId];
+      if (status !== ActionStatus.ACTIVE) continue;
+      const sectionIntroCp = INQUIRY_CHECKPOINT_CATALOG_V2[sectionIntroId];
+      if (!sectionIntroCp) continue;
+      const sectionText = resolveCheckpointText(sectionIntroCp, ActionStatus.ACTIVE, audience);
+      if (sectionText) {
+        intro = `${intro} ${sectionText}`;
+        break;
+      }
+    }
   }
 
   return {

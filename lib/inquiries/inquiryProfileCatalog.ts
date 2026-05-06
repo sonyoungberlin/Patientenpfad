@@ -42,6 +42,17 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "AU / Arbeitsunfähigkeitsbescheinigung",
     displayOrder: 30,
     decisionCheckpointId: "AU_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs
+    // Antwortkontexte, damit alle Profile dieselbe Struktur erhalten.
+    // Reine UI-Whitelist – kein Einfluss auf Decision/Action/Renderer-Pfade A–E.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
       "AU_NEW_PATIENT_LIMIT",
@@ -54,6 +65,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_MEDICAL_CONSULTATION_REQUIRED",
       "AU_FOLLOWUP",
       "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
+      // nur dort verfügbar, wo Dokumente eine Rolle spielen (eGK, Fragebogen,
+      // Befunde). Bleibt im Patientenoutput unsichtbar, bis die Praxis ihn
+      // in M2 auf YES und in M3 auf SHOW setzt.
+      "TECH_UPLOAD_FAILED",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
@@ -228,6 +244,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Rezept",
     displayOrder: 40,
     decisionCheckpointId: "PRESCRIPTION_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
@@ -241,6 +266,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
+      // greift bei Facharztbericht- / Krankenhausentlassbrief-Uploads, wenn
+      // die hochgeladene Datei nicht verwertbar ist. Sichtbar im
+      // Patientenoutput erst nach M2 YES + M3 SHOW.
+      "TECH_UPLOAD_FAILED",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -533,6 +563,17 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Labor",
     displayOrder: 80,
     decisionCheckpointId: "LAB_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    // LAB nutzt das volle Set, weil Befund-/Wartezeit-Themen alle Antwortkontexte
+    // plausibel machen.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "LAB_MPU_EXCLUSION",
       "LAB_RESULTS_PENDING",
@@ -716,6 +757,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Urin- und Stuhlprobe",
     displayOrder: 90,
     decisionCheckpointId: "SAMPLE_COLLECTION_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
     boundGlobalCheckpointIds: [],
     globalHints: {},
@@ -824,6 +874,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Akuttermin / offene Sprechstunde",
     displayOrder: 10,
     decisionCheckpointId: "ACUTE_CARE_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "ACUTE_EXCLUSION",
       "CHRONIC_EXCLUSION",
@@ -954,12 +1013,26 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Überweisung",
     displayOrder: 60,
     decisionCheckpointId: "REFERRAL_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "REFERRAL_CAN_BE_ISSUED",
       "REF_SPECIALTY_REQUIRED",
       "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_HAV_CASE",
       "REF_MEDICAL_CONSULTATION_REQUIRED",
+      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
+      // greift bei nachgereichten Unterlagen / Befunden zur Überweisung,
+      // wenn die hochgeladene Datei nicht verwertbar ist. Sichtbar im
+      // Patientenoutput erst nach M2 YES + M3 SHOW.
+      "TECH_UPLOAD_FAILED",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
@@ -1107,6 +1180,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Krankenhauseinweisung",
     displayOrder: 65,
     decisionCheckpointId: "HOSPITAL_ADMISSION_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
       "HOSPITAL_ADMISSION_MISSING_INFO",
@@ -1279,6 +1361,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Impfung",
     displayOrder: 70,
     decisionCheckpointId: "IMMUNIZATION_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "IMMUNIZATION_STANDARD_AVAILABLE",
       "IMMUNIZATION_RISK_REVIEW_REQUIRED",
@@ -1406,6 +1497,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Termin",
     displayOrder: 20,
     decisionCheckpointId: "",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "APPOINTMENT_CAN_BE_BOOKED",
       "APPOINTMENT_CANCEL_OR_RESCHEDULE",
@@ -1563,6 +1663,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Technische Probleme / Digitale Infrastruktur",
     displayOrder: 120,
     decisionCheckpointId: "",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "TECH_VIDEO_NOT_WORKING",
       "TECH_UPLOAD_FAILED",
@@ -1650,6 +1759,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Patientenaufnahme / Registrierung",
     displayOrder: 100,
     decisionCheckpointId: "",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "ONBOARDING_WRONG_PRACTICE",
       "ONBOARDING_IDENTITY_MISMATCH",
@@ -1796,6 +1914,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Abrechnung",
     displayOrder: 110,
     decisionCheckpointId: "",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "BILLING_COST_NOT_COVERED",
       "BILLING_EXTERNAL_RESPONSIBILITY",
@@ -1938,6 +2065,15 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     label: "Atteste / Bescheinigungen",
     displayOrder: 50,
     decisionCheckpointId: "MEDICAL_DOCUMENTS_DECISION",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
     specificCheckpointIds: [
       "MEDICAL_DOCUMENT_POSSIBLE",
       "MEDICAL_DOCUMENT_PRIVATE_SERVICE",

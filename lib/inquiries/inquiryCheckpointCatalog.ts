@@ -1434,7 +1434,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Versorgungsweg – persönlich oder digital",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1785,7 +1785,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Offene Sprechstunde – Hinweis",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -2776,13 +2776,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Zur Bearbeitung Ihrer Anfrage benötigen wir noch einen gültigen Versicherungsnachweis, z. B. Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.",
+        "Für dieses Quartal liegt uns noch kein gültiger Versicherungsnachweis von Ihnen vor.\n\nÜbermitteln Sie Ihre Versicherungsdaten am besten digital über die App Ihrer Krankenkasse:\n\n- Öffnen Sie die angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet.\n- Starten Sie die App Ihrer Krankenkasse auf Ihrem Smartphone.\n- Wählen Sie „Ersatzbescheinigung“ oder „Versicherungsnachweis“ und scannen Sie den QR-Code.\n\nAlternativ können Sie auch Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung hochladen.",
       // NO: bewusst still – keine Erklärung nötig
     },
     textByAudience: {
       contact_person: {
         [ExplanationStatus.YES]:
-          "Zur Bearbeitung wird noch ein gültiger Versicherungsnachweis benötigt, z. B. die Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung der Krankenkasse.",
+          "Für dieses Quartal liegt noch kein gültiger Versicherungsnachweis vor.\n\nDie Versicherungsdaten lassen sich am besten digital über die App der Krankenkasse übermitteln:\n\n- Angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet öffnen.\n- App der Krankenkasse auf einem Smartphone starten.\n- „Ersatzbescheinigung“ oder „Versicherungsnachweis“ auswählen und den QR-Code scannen.\n\nAlternativ kann auch die Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung hochgeladen werden.",
       },
     },
     docByStatus: {
@@ -3190,26 +3190,28 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   //   - Keine M2-Schalter, keine Decision-Logik.
   // ---------------------------------------------------------------------------
 
+  // E4 – Anfrage eingegangen
   MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: {
     id: "MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED",
-    label: "Nachricht eingegangen",
+    label: "Anfrage eingegangen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Ihre Nachricht ist bei uns eingegangen.",
+        "Vielen Dank für Ihre Anfrage.",
     },
     textByAudience: {
       contact_person:
-        "Die Nachricht für Ihre Angehörige / Ihren Angehörigen ist bei uns eingegangen.",
+        "Vielen Dank für Ihre Anfrage zu Ihrer Angehörigen / Ihrem Angehörigen.",
     },
   },
 
+  // E5 – Fragebogen eingegangen
   MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: {
     id: "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
-    label: "Fragebogen eingegangen – Angaben geprüft",
+    label: "Fragebogen eingegangen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
@@ -3224,37 +3226,156 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // E1 – Nach Termin
   MESSAGE_INTRO_PRACTICE_FOLLOWUP: {
     id: "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
-    label: "Praxis schreibt aktiv – Angaben fehlen",
+    label: "Nach Termin",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Sie waren kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
+        "Nach Ihrem letzten Termin",
     },
     textByAudience: {
       contact_person:
-        "Ihre Angehörige / Ihr Angehöriger war kürzlich in unserer Praxis. Dabei ist uns aufgefallen, dass einige Angaben fehlen oder veraltet sein könnten.",
+        "Nach dem letzten Termin Ihrer Angehörigen / Ihres Angehörigen",
     },
   },
 
+  // E2 – Laufendes Anliegen
   MESSAGE_INTRO_MISSING_INFO: {
     id: "MESSAGE_INTRO_MISSING_INFO",
-    label: "Zusatzangaben benötigt",
+    label: "Laufendes Anliegen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
     placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Zur weiteren Bearbeitung Ihres Anliegens benötigen wir noch zusätzliche Angaben.",
+        "Zur Bearbeitung Ihres Anliegens",
     },
     textByAudience: {
       contact_person:
-        "Zur weiteren Bearbeitung des Anliegens Ihrer Angehörigen / Ihres Angehörigen benötigen wir noch zusätzliche Angaben.",
+        "Zur Bearbeitung des Anliegens Ihrer Angehörigen / Ihres Angehörigen",
+    },
+  },
+
+  // E3 – Vorbereitung Termin
+  MESSAGE_INTRO_APPOINTMENT_PREPARATION: {
+    id: "MESSAGE_INTRO_APPOINTMENT_PREPARATION",
+    label: "Vorbereitung Termin",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Zur Vorbereitung Ihres Termins",
+    },
+    textByAudience: {
+      contact_person:
+        "Zur Vorbereitung des Termins Ihrer Angehörigen / Ihres Angehörigen",
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // SECTION INTRO CHECKPOINTS (Pilot AU / LAB / APPOINTMENT)
+  // ---------------------------------------------------------------------------
+  //
+  // Optionale „Schubladen" in M2. Sie geben den ersten inhaltlichen Baustein
+  // unmittelbar nach dem Nachrichteneinstieg vor, ohne Begründung
+  // (kein „weil"/„daher"/„deshalb").
+  //
+  // Architektur:
+  //   - kind: ACTION, scope: GLOBAL, placement: SHARED_BOTTOM
+  //   - actionCategory: "SECTION_INTRO" (eigener Namespace, nicht INTRO)
+  //   - NICHT Teil von INTRO_CHECKPOINT_IDS – stattdessen
+  //     SECTION_INTRO_CHECKPOINT_IDS (eigener Index).
+  //   - Werden NIE in `availableActionIds` oder `boundActionCheckpointIds`
+  //     gebunden; iterieren also nicht in den A–E-Render-Pfaden und landen
+  //     deshalb auch nicht in `sharedBottom`.
+  //   - Renderer hängt den ersten aktiven Section-Intro-Text an `output.intro`
+  //     an, sofern ein Message-Intro E1/E2/E3 aktiv ist (renderInquiryResponse).
+  //   - M2 stellt eine Pro-Profil-Whitelist via
+  //     `InquiryProfileV2.availableSectionIntroIds` als Radio dar; Toggle via
+  //     `applySectionIntroToggle` (max. ein Section-Intro aktiv).
+  //   - Texte sind bewusst Anschlussform (Verbphrase, kleingeschrieben).
+  // ---------------------------------------------------------------------------
+
+  SECTION_INTRO_INFO_MISSING: {
+    id: "SECTION_INTRO_INFO_MISSING",
+    label: "Schublade: Angaben fehlen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "fehlen uns noch einige Angaben.",
+    },
+  },
+
+  SECTION_INTRO_DOCS_MISSING: {
+    id: "SECTION_INTRO_DOCS_MISSING",
+    label: "Schublade: Unterlagen fehlen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "liegen uns noch nicht alle erforderlichen Unterlagen vor.",
+    },
+  },
+
+  SECTION_INTRO_DOCS_COMPLETE: {
+    id: "SECTION_INTRO_DOCS_COMPLETE",
+    label: "Schublade: Unterlagen vollständig",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "liegen uns Ihre Unterlagen vollständig vor.",
+    },
+  },
+
+  SECTION_INTRO_REVIEWED: {
+    id: "SECTION_INTRO_REVIEWED",
+    label: "Schublade: Anliegen geprüft",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]: "haben wir Ihr Anliegen geprüft.",
+    },
+  },
+
+  SECTION_INTRO_IN_PROGRESS: {
+    id: "SECTION_INTRO_IN_PROGRESS",
+    label: "Schublade: Noch in Bearbeitung",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "befindet sich Ihr Anliegen aktuell noch in Bearbeitung.",
+    },
+  },
+
+  SECTION_INTRO_NOT_RESPONSIBLE: {
+    id: "SECTION_INTRO_NOT_RESPONSIBLE",
+    label: "Schublade: Nicht in unserer Praxis",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "SECTION_INTRO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "können wir Ihr Anliegen nicht in unserer Praxis bearbeiten.",
     },
   },
 
@@ -3567,6 +3688,27 @@ export const INTRO_CHECKPOINT_IDS: readonly string[] = [
   "MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED",
   "MESSAGE_INTRO_PRACTICE_FOLLOWUP",
   "MESSAGE_INTRO_MISSING_INFO",
+  "MESSAGE_INTRO_APPOINTMENT_PREPARATION",
+] as const;
+
+/**
+ * Geordnete Liste der Section-Intro-Checkpoint-IDs (M2 „Schubladen").
+ *
+ * Pilot für AU/LAB/APPOINTMENT. Section-Intros sind ACTION/GLOBAL-Checkpoints
+ * mit `actionCategory: "SECTION_INTRO"` und stehen bewusst NICHT in
+ * INTRO_CHECKPOINT_IDS – sie sind eine eigene zweite Intro-Ebene.
+ *
+ * Texte sind bewusst nur Anschlussform (Verbphrase, kleingeschrieben) und
+ * werden vom Renderer hinter einem aktiven Message-Intro E1/E2/E3 angehängt.
+ * Bei E4/E5 (vollständige Sätze) wird das Section-Intro NICHT gerendert.
+ */
+export const SECTION_INTRO_CHECKPOINT_IDS: readonly string[] = [
+  "SECTION_INTRO_INFO_MISSING",
+  "SECTION_INTRO_DOCS_MISSING",
+  "SECTION_INTRO_DOCS_COMPLETE",
+  "SECTION_INTRO_REVIEWED",
+  "SECTION_INTRO_IN_PROGRESS",
+  "SECTION_INTRO_NOT_RESPONSIBLE",
 ] as const;
 
 /**

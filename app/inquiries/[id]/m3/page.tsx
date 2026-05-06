@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import {
   InquiryCheckpointKind,
   InquiryCheckpointScope,
@@ -180,7 +180,25 @@ export default async function InquiryM3Page({
   for (const cpId of INTRO_CHECKPOINT_IDS) {
     actionIds.add(cpId);
   }
+  // Section-Intro-Bausteine (M2 „Schubladen", Pilot AU/LAB/APPOINTMENT):
+  // werden in M2 gesetzt, müssen aber auch in M3 weiter als action_statuses
+  // erhalten bleiben, damit ein Speichern in M3 die Auswahl nicht löscht.
+  for (const cpId of SECTION_INTRO_CHECKPOINT_IDS) {
+    actionIds.add(cpId);
+  }
   const introCheckpoints: M3ActionData[] = INTRO_CHECKPOINT_IDS
+    .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+    .filter(
+      (cp): cp is InquiryCheckpoint =>
+        !!cp && cp.kind === InquiryCheckpointKind.ACTION,
+    )
+    .map((cp) => ({ id: cp.id, label: cp.label }));
+
+  // Section-Intro-Bausteine (Pilot M2 „Schubladen"): nur als read-only Anzeige
+  // an den Client durchreichen, damit M3 zeigen kann, welche Schublade in M2
+  // gewählt wurde. Kein Schreib-Pfad in M3 – die Auswahl erfolgt
+  // ausschließlich in M2.
+  const sectionIntroCheckpoints: M3ActionData[] = SECTION_INTRO_CHECKPOINT_IDS
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
     .filter(
       (cp): cp is InquiryCheckpoint =>
@@ -222,6 +240,7 @@ export default async function InquiryM3Page({
         sections={sections}
         actionCheckpoints={actionCheckpoints}
         introCheckpoints={introCheckpoints}
+        sectionIntroCheckpoints={sectionIntroCheckpoints}
         initialCheckpointStatuses={checkpointStatuses}
         initialActionStatuses={actionStatuses}
         initialExplanationOutputStatuses={explanationOutputStatuses}

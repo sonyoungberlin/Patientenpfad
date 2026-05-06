@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import {
   InquiryCheckpointScope,
   InquiryCheckpointKind,
+  ActionStatus,
   type InquiryCheckpoint,
 } from "@/lib/inquiries/types";
 import { isStringRecord } from "@/lib/inquiries/inquirySessionService";
@@ -23,6 +24,13 @@ function toPlain(cp: InquiryCheckpoint): PlainCheckpoint {
     question: cp.question,
     questions: cp.questions,
     actionCategory: cp.actionCategory,
+  };
+}
+
+function toPlainWithActiveText(cp: InquiryCheckpoint): PlainCheckpoint {
+  return {
+    ...toPlain(cp),
+    previewText: cp.textByStatus?.[ActionStatus.ACTIVE],
   };
 }
 
@@ -91,6 +99,13 @@ export default async function InquiryM2Page({
       specificCheckpoints: specificCps.map(toPlain),
       actionCheckpoints: actionCps.map(toPlain),
       allBoundActionCheckpoints: allBoundActionCps.map(toPlain),
+      sectionIntroCheckpoints: (profile.availableSectionIntroIds ?? [])
+        .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
+        .filter(
+          (cp): cp is InquiryCheckpoint =>
+            !!cp && cp.kind === InquiryCheckpointKind.ACTION,
+        )
+        .map(toPlainWithActiveText),
     });
   }
 
@@ -116,6 +131,14 @@ export default async function InquiryM2Page({
     });
     // boundActionCheckpointIds must also be saved as actionStatuses
     (profile.boundActionCheckpointIds ?? []).forEach((cpId) => actionIds.add(cpId));
+  }
+
+  // Section-Intro-Checkpoints (M2 „Schubladen") werden – analog zu den
+  // Message-Intros in M3 – als ACTION-Statuses persistiert. Sie sind
+  // profilübergreifend und müssen auch dann als action_statuses gespeichert
+  // werden, wenn ein Profil sie nicht in seine Whitelist aufnimmt.
+  for (const cpId of SECTION_INTRO_CHECKPOINT_IDS) {
+    actionIds.add(cpId);
   }
 
   const globalCheckpoints: PlainCheckpoint[] = Array.from(globalIds)

@@ -497,7 +497,7 @@ export type InquiryCheckpoint = {
    * NEXT_STEP   – Hinweise auf nächste Handlungsschritte (z. B. Buchungscode nutzen).
    * INFO        – Allgemeine Sachinformationen (z. B. Befunddauer).
    */
-  actionCategory?: "INTRO" | "PREPARATION" | "PROCESS" | "NEXT_STEP" | "INFO";
+  actionCategory?: "INTRO" | "SECTION_INTRO" | "PREPARATION" | "PROCESS" | "NEXT_STEP" | "INFO";
   /**
    * Wiederverwendbare Kommunikationsfunktion dieses Checkpoints.
    *
@@ -747,6 +747,21 @@ export type InquiryProfileV2 = {
    * Hat keinen Einfluss auf Renderer, Resolver, M2, M3 oder M5.
    */
   displayOrder?: number;
+  /**
+   * Pilot: Section-Intro-Whitelist für M2 („Schubladen"-Auswahl).
+   *
+   * Liste der `SECTION_INTRO_*`-Checkpoint-IDs, die für dieses Profil in der
+   * M2-Schubladen-Auswahl angeboten werden. Maximal ein Section-Intro darf
+   * gleichzeitig aktiv sein – Exklusivität wird via `applySectionIntroToggle`
+   * durchgesetzt.
+   *
+   * Reine UI-Whitelist – kein Einfluss auf Decision, Action oder die
+   * bestehende `availableActionIds`/`boundActionCheckpointIds`-Logik. Der
+   * Renderer prüft die Statuses unabhängig von dieser Liste.
+   *
+   * Profile ohne dieses Feld zeigen keine Schubladen-Auswahl.
+   */
+  availableSectionIntroIds?: readonly string[];
 };
 
 /**

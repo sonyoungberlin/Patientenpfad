@@ -1389,7 +1389,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle zwölf Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet alle dreizehn Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
@@ -1403,8 +1403,9 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(12);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(13);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1421,6 +1422,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+      "TECH_UPLOAD_FAILED",
     ]);
   });
 
@@ -2547,20 +2549,21 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("5 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED)", () => {
+  it("6 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED und TECH_UPLOAD_FAILED)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(5);
+    expect(profile.specificCheckpointIds).toHaveLength(6);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     expect(profile.specificCheckpointIds).toContain("REF_SPECIALTY_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
     expect(profile.specificCheckpointIds).toContain("REF_MEDICAL_CONSULTATION_REQUIRED");
+    expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
@@ -3187,7 +3190,7 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
       makeAuSectionIntro({ MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE }),
     ]);
     expect(result.intro).toBeDefined();
-    expect(result.intro).toContain("Ihre Nachricht ist bei uns eingegangen");
+    expect(result.intro).toContain("Vielen Dank für Ihre Anfrage");
   });
 
   it("MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED ACTIVE → output.intro enthält den Text", () => {
@@ -3201,14 +3204,14 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSectionIntro({ MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE }),
     ]);
-    expect(result.intro).toContain("Sie waren kürzlich in unserer Praxis");
+    expect(result.intro).toContain("Nach Ihrem letzten Termin");
   });
 
   it("MESSAGE_INTRO_MISSING_INFO ACTIVE → output.intro enthält den Text", () => {
     const result = renderInquiryResponseFromSections([
       makeAuSectionIntro({ MESSAGE_INTRO_MISSING_INFO: ActionStatus.ACTIVE }),
     ]);
-    expect(result.intro).toContain("Zur weiteren Bearbeitung Ihres Anliegens");
+    expect(result.intro).toContain("Zur Bearbeitung Ihres Anliegens");
   });
 
   it("Intro erscheint NICHT in sharedBottom", () => {
@@ -3226,8 +3229,8 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
         MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: ActionStatus.ACTIVE,
       }),
     ]);
-    expect(result.intro).toContain("Ihre Nachricht ist bei uns eingegangen");
-    expect(result.intro).not.toContain("Vielen Dank");
+    expect(result.intro).toContain("Vielen Dank für Ihre Anfrage");
+    expect(result.intro).not.toContain("Fragebogen");
   });
 
   it("Intro INACTIVE → output.intro ist undefined", () => {
@@ -3263,6 +3266,107 @@ describe("renderInquiryResponseFromSections – Intro-Bausteine", () => {
     const lastEntry = withLink.sharedBottom[withLink.sharedBottom.length - 1];
     expect(lastEntry).toContain("https://example.com/q/test");
     expect(withLink.intro).toBe(base.intro);
+  });
+});
+
+describe("renderInquiryResponseFromSections – Section-Intro (M2 Schubladen)", () => {
+  function makeAuSection(statuses: Record<string, string>): InquirySection {
+    return {
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.POSSIBLE,
+      checkpointStatuses: statuses as Record<string, CheckpointStatusValue>,
+    };
+  }
+
+  it("Section-Intro alleine (ohne Message-Intro) → kein output.intro", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({ SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE }),
+    ]);
+    expect(result.intro).toBeUndefined();
+  });
+
+  it("E1 (PRACTICE_FOLLOWUP) + SECTION_INTRO → angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe(
+      "Nach Ihrem letzten Termin fehlen uns noch einige Angaben.",
+    );
+  });
+
+  it("E2 (MISSING_INFO) + SECTION_INTRO → angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_MISSING_INFO: ActionStatus.ACTIVE,
+        SECTION_INTRO_DOCS_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe(
+      "Zur Bearbeitung Ihres Anliegens liegen uns noch nicht alle erforderlichen Unterlagen vor.",
+    );
+  });
+
+  it("E3 (APPOINTMENT_PREPARATION) + SECTION_INTRO → angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_APPOINTMENT_PREPARATION: ActionStatus.ACTIVE,
+        SECTION_INTRO_REVIEWED: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe(
+      "Zur Vorbereitung Ihres Termins haben wir Ihr Anliegen geprüft.",
+    );
+  });
+
+  it("E4 (PATIENT_REQUEST_RECEIVED) + SECTION_INTRO → Section-Intro NICHT gerendert", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PATIENT_REQUEST_RECEIVED: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe("Vielen Dank für Ihre Anfrage.");
+    expect(result.intro).not.toContain("fehlen uns");
+  });
+
+  it("E5 (QUESTIONNAIRE_RECEIVED) + SECTION_INTRO → Section-Intro NICHT gerendert", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_QUESTIONNAIRE_RECEIVED: ActionStatus.ACTIVE,
+        SECTION_INTRO_DOCS_COMPLETE: ActionStatus.ACTIVE,
+      }),
+    ]);
+    expect(result.intro).toBe("Vielen Dank für das Ausfüllen des Fragebogens.");
+    expect(result.intro).not.toContain("liegen uns");
+  });
+
+  it("Mehrere aktive SECTION_INTROs → nur das erste (in SECTION_INTRO_CHECKPOINT_IDS-Reihenfolge) wird angehängt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE,
+        SECTION_INTRO_DOCS_MISSING: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    // SECTION_INTRO_INFO_MISSING steht vor SECTION_INTRO_DOCS_MISSING im Index.
+    expect(result.intro).toBe(
+      "Nach Ihrem letzten Termin fehlen uns noch einige Angaben.",
+    );
+  });
+
+  it("Section-Intros erscheinen nicht in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        MESSAGE_INTRO_PRACTICE_FOLLOWUP: ActionStatus.ACTIVE,
+        SECTION_INTRO_INFO_MISSING: ActionStatus.ACTIVE,
+      }),
+    ]);
+    for (const entry of result.sharedBottom) {
+      expect(entry).not.toContain("fehlen uns noch einige Angaben.");
+    }
   });
 });
 

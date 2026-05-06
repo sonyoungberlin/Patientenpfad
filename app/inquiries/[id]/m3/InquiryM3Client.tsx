@@ -73,6 +73,12 @@ type Props = {
   actionCheckpoints: M3ActionData[];
   /** Intro-Bausteine (Nachrichteneinstieg) – profilübergreifend, immer sichtbar. */
   introCheckpoints: M3ActionData[];
+  /**
+   * Section-Intros (Pilot M2 „Schubladen") – read-only Anzeige in M3, damit
+   * Praxen die in M2 gewählte Schublade wiedererkennen. Wird ausschließlich
+   * dargestellt, nicht in M3 schaltbar; die Auswahl erfolgt in M2.
+   */
+  sectionIntroCheckpoints?: M3ActionData[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   /** Gespeicherte outputStatus-Entscheidungen aus M3 (SHOW / HIDE pro EXPLANATION-Checkpoint). */
@@ -891,6 +897,7 @@ export default function InquiryM3Client({
   sections,
   actionCheckpoints,
   introCheckpoints,
+  sectionIntroCheckpoints = [],
   initialCheckpointStatuses,
   initialActionStatuses,
   initialExplanationOutputStatuses,
@@ -1311,6 +1318,36 @@ export default function InquiryM3Client({
               })}
             </section>
           )}
+
+          {/* Pilot: Anzeige der in M2 gewählten Section-Intro-Schublade. */}
+          {(() => {
+            const activeSectionIntro = sectionIntroCheckpoints.find(
+              (cp) => statuses[cp.id] === "ACTIVE",
+            );
+            if (!activeSectionIntro) return null;
+            const drawerLabel = activeSectionIntro.label.replace(/^Schublade:\s*/, "");
+            return (
+              <section
+                aria-label="Ausgewählter Antwortkontext aus M2"
+                style={{
+                  marginBottom: "1.5rem",
+                  padding: "0.5rem 0.75rem",
+                  borderLeft: "3px solid var(--primary, #2563eb)",
+                  background: "var(--muted, #f5f5f5)",
+                  borderRadius: "var(--radius)",
+                  fontSize: "0.85rem",
+                }}
+              >
+                <span
+                  className="text-muted text-small"
+                  style={{ ...GROUP_BADGE_STYLE, marginRight: "0.4rem" }}
+                >
+                  <span aria-hidden="true">↳ </span>Antwortkontext aus M2:
+                </span>
+                <span style={{ fontWeight: 600 }}>{drawerLabel}</span>
+              </section>
+            );
+          })()}
 
           {/* Decision + SPECIFIC Checkpoints per inquiry */}
           {sections.map((section) => {
