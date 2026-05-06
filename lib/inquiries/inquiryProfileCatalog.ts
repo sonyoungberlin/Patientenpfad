@@ -598,6 +598,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_CHECKUP_RULES",
       "BILLING_COST_NOT_COVERED",
       "APPOINTMENT_DATA_INCOMPLETE",
+      "LAB_INTERNAL_ORDER_MISSING",
+      "LAB_INTERNAL_ORDER_AVAILABLE",
+      "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
+      "LAB_CHECKUP_BASIC_LAB_INCLUDED",
+      "LAB_SELF_PAYER_POSSIBLE",
+      "LAB_CONTROL_TIMING_NOT_DUE",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.

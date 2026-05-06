@@ -2026,7 +2026,13 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("BILLING_COST_NOT_COVERED");
     expect(labProfile.specificCheckpointIds).toContain("APPOINTMENT_DATA_INCOMPLETE");
     expect(labProfile.specificCheckpointIds).toContain("LAB_RESULTS_PENDING");
-    expect(labProfile.specificCheckpointIds).toHaveLength(8);
+    expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER_MISSING");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER_AVAILABLE");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_BASIC_LAB_INCLUDED");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_POSSIBLE");
+    expect(labProfile.specificCheckpointIds).toContain("LAB_CONTROL_TIMING_NOT_DUE");
+    expect(labProfile.specificCheckpointIds).toHaveLength(14);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {

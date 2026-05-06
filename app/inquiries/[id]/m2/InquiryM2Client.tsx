@@ -461,11 +461,16 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: [],
+      checkpointIds: [
+        "LAB_INTERNAL_ORDER_MISSING",
+        "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
-      checkpointIds: [],
+      checkpointIds: [
+        "LAB_INTERNAL_ORDER_AVAILABLE",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -473,8 +478,11 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "LAB_INTERNAL_ORDER",
         "LAB_EXTERNAL_REFERRAL",
         "LAB_CHECKUP_RULES",
+        "LAB_CHECKUP_BASIC_LAB_INCLUDED",
         "LAB_MEDICAL_CONSULTATION_REQUIRED",
         "BILLING_COST_NOT_COVERED",
+        "LAB_SELF_PAYER_POSSIBLE",
+        "LAB_CONTROL_TIMING_NOT_DUE",
       ],
     },
     {

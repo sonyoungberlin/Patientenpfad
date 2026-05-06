@@ -980,6 +980,110 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  // ---- LAB SPECIFIC CHECKPOINTS (praxisnahe Antwort-Bausteine) ----
+
+  LAB_INTERNAL_ORDER_MISSING: {
+    id: "LAB_INTERNAL_ORDER_MISSING",
+    label: "Ärztliche Laboranordnung fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "LAB_INTERNAL_ORDER_MISSING-Q1", text: "Fehlt in der Krankenakte eine ärztliche Anordnung für die gewünschte Blutuntersuchung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "In Ihrer Krankenakte ist keine ärztliche Anordnung für die gewünschte Blutuntersuchung hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_INTERNAL_ORDER_AVAILABLE: {
+    id: "LAB_INTERNAL_ORDER_AVAILABLE",
+    label: "Ärztliche Laboranordnung vorhanden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_INTERNAL_ORDER_AVAILABLE-Q1", text: "Liegt in der Krankenakte eine ärztliche Anordnung zur Kontrolle der Blutwerte vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "In Ihrer Krankenakte ist eine ärztliche Anordnung zur Kontrolle der Blutwerte hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED: {
+    id: "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
+    label: "Fachärztliche Überweisung im Original erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED-Q1", text: "Ist für diese Laboruntersuchung eine Überweisung des behandelnden Facharztes im Original erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für diese Laboruntersuchung ist eine Überweisung des behandelnden Facharztes im Original erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_CHECKUP_BASIC_LAB_INCLUDED: {
+    id: "LAB_CHECKUP_BASIC_LAB_INCLUDED",
+    label: "Basislabor im Rahmen des Check-ups",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "LAB_CHECKUP_BASIC_LAB_INCLUDED-Q1", text: "Gehören die angefragten Laborwerte zum vorgesehenen Basislabor im Rahmen des Check-ups?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die angefragten Laborwerte gehören zum vorgesehenen Basislabor im Rahmen des Check-ups.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_SELF_PAYER_POSSIBLE: {
+    id: "LAB_SELF_PAYER_POSSIBLE",
+    label: "Labor als Selbstzahlerleistung möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_COST_COVERAGE" as SpecificRole,
+    questions: [
+      { id: "LAB_SELF_PAYER_POSSIBLE-Q1", text: "Kann die angefragte Laborleistung als Selbstzahlerleistung durchgeführt werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die angefragte Laborleistung kann als Selbstzahlerleistung durchgeführt werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  LAB_CONTROL_TIMING_NOT_DUE: {
+    id: "LAB_CONTROL_TIMING_NOT_DUE",
+    label: "Zeitpunkt für Blutkontrolle noch nicht passend",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "RULE_TIME_LIMIT" as SpecificRole,
+    questions: [
+      { id: "LAB_CONTROL_TIMING_NOT_DUE-Q1", text: "Ist die geplante Kontrolle der Blutwerte erst zu einem späteren Zeitpunkt vorgesehen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die geplante Kontrolle der Blutwerte ist erst zu einem späteren Zeitpunkt vorgesehen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- LAB ACTION CHECKPOINTS (Terminplanung, basierend auf Specific-Checkpoint-Status) ----
 
   LAB_APPOINTMENT_INTERNAL: {
