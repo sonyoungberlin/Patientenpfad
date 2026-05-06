@@ -413,7 +413,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("fehlende Unterlagen");
+    expect(paragraphs).toContain("privatärztlicher Abrechnungsschein");
   });
 
   it("BILLING_EXTERNAL_RESPONSIBILITY YES + SHOW → Text erscheint", () => {
@@ -820,7 +820,7 @@ describe("BILLING Renderer – neue ACTION-Bausteine ACTIVE/INACTIVE", () => {
     expect(paragraphs).not.toContain("wenden Sie sich");
   });
 
-  it("BILLING_ADDRESS_UPDATE_REQUESTED ACTIVE → 'Postadresse'-Aufforderungstext erscheint", () => {
+  it("BILLING_ADDRESS_UPDATE_REQUESTED ACTIVE → 'Postadresse'-Aufforderungstext erscheint in sharedBottom", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "BILLING",
@@ -834,9 +834,9 @@ describe("BILLING Renderer – neue ACTION-Bausteine ACTIVE/INACTIVE", () => {
         } as Record<string, ExplanationOutputStatus>,
       },
     ]);
-    const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Postadresse");
-    expect(paragraphs).toContain("Bitte teilen Sie uns");
+    const sharedText = result.sharedBottom.join(" ");
+    expect(sharedText).toContain("Postadresse");
+    expect(sharedText).toContain("Bitte teilen Sie uns");
   });
 
   it("BILLING_ADDRESS_UPDATE_REQUESTED INACTIVE → Adressaufforderung erscheint NICHT", () => {

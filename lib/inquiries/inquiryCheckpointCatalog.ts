@@ -384,7 +384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Ausstellung der AU benötigen wir Ihre Versichertendaten. Bitte senden Sie uns über Doctolib entweder ein Foto Ihrer Gesundheitskarte von Vorder- und Rückseite oder eine elektronische Ersatzbescheinigung Ihrer Krankenkasse. Alternativ können Sie die Versichertendaten über die App Ihrer Krankenkasse digital übermitteln. Die Gesundheitskarte muss im laufenden Quartal nachgereicht bzw. eingelesen werden.",
+        "Für die AU fehlen die Versichertendaten – entweder ein Foto der Gesundheitskarte (Vorder- und Rückseite) oder eine elektronische Ersatzbescheinigung der Krankenkasse.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -404,7 +404,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch Angaben zu Ihren aktuellen Beschwerden.",
+        "Eine Beschreibung Ihrer aktuellen Beschwerden liegt noch nicht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -755,7 +755,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Vorbereitung: nüchtern erscheinen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "PREPARATION",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -996,7 +996,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]: "",
-      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung benötigen wir die Überweisung Ihres behandelnden Facharztes im Original.\n\nBitte bringen Sie das Dokument zum Termin mit.",
+      [ExplanationStatus.NO]: "Für die Laboruntersuchung fehlt die Original-Überweisung des behandelnden Facharztes.",
     },
   },
 
@@ -1357,7 +1357,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "eRezept nutzen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1370,7 +1370,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Apotheke / Direktübermittlung",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1421,7 +1421,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Urinprobe vor Ort",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1847,7 +1847,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Infektionsschutz – vorab digital melden",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1860,7 +1860,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Infektionsschutz – Videosprechstunde",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -2083,7 +2083,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Beurteilung benötigen wir Angaben zu den bisher durchgeführten Impfungen.",
+        "Der aktuelle Impfstatus ist unklar – Angaben zu den bisher durchgeführten Impfungen liegen nicht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2100,7 +2100,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Beurteilung Ihres Impfstatus benötigen wir einen Impfpass oder einen anderen Impfnachweis. Falls kein Impfpass vorliegt, können Sie diesen auch bei uns in der Praxis erwerben.",
+        "Für die Beurteilung des Impfstatus fehlt ein Impfpass oder ein anderer Impfnachweis. Ein Impfpass ist auch in der Praxis erhältlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
     textByAudience: {
@@ -2124,7 +2124,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Prüfung des Impfstatus ist ein Impfpass oder ein anderer Impfnachweis hilfreich.",
+        "Hilfreich für die Beurteilung Ihres Impfstatus ist ein Impfpass oder ein anderer Impfnachweis.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2384,7 +2384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Terminvereinbarung benötigen wir weitere Angaben zu Ihrem Anliegen.",
+        "Ihr Anliegen ist aktuell noch zu ungenau, um einen passenden Termin auswählen zu können.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2496,7 +2496,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung benötigen wir noch vollständige Angaben (z. B. aktuelle Adresse oder Versicherungsstatus).",
+        "Konkret fehlt für die Abrechnung: aktuelle Adresse und Versicherungsstatus.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2513,7 +2513,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Gesundheitskarte oder Privatärztlichen Abrechnungsschein).",
+        "Konkret fehlt für die Abrechnung: eine gültige Gesundheitskarte oder ein privatärztlicher Abrechnungsschein.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2628,7 +2628,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Selbstzahler-Zahlung vor Ort",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -2735,7 +2735,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine sichere und vollständige Behandlung benötigen wir aktuelle Angaben zu Ihrer Person und Ihrer Gesundheit.",
+        "Ihre Patientendaten sind unvollständig oder nicht mehr aktuell.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2756,7 +2756,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch einen Versicherungsnachweis:\n\n- Gesetzlich versichert: Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.\n\n- Privat versichert: Bitte senden Sie uns einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
+        "Aktuell liegt noch kein Versicherungsnachweis vor:\n\n- Gesetzlich versichert: ein Foto der Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung der Krankenkasse.\n\n- Privat versichert: ein Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2776,7 +2776,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für dieses Quartal liegt uns noch kein gültiger Versicherungsnachweis von Ihnen vor.\n\nÜbermitteln Sie Ihre Versicherungsdaten am besten digital über die App Ihrer Krankenkasse:\n\n- Öffnen Sie die angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet.\n- Starten Sie die App Ihrer Krankenkasse auf Ihrem Smartphone.\n- Wählen Sie „Ersatzbescheinigung“ oder „Versicherungsnachweis“ und scannen Sie den QR-Code.\n\nAlternativ können Sie auch Ihre Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung hochladen.",
+        "Für dieses Quartal haben wir noch keinen gültigen Versicherungsnachweis von Ihnen erhalten.",
       // NO: bewusst still – keine Erklärung nötig
     },
     textByAudience: {
@@ -2802,7 +2802,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Als privat versicherte Patientin oder privat versicherter Patient benötigen wir für die korrekte Abrechnung einmalig einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
+        "Für die korrekte Privatabrechnung fehlen einmalig ein Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2894,7 +2894,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Identitätsabgleich – Aktion",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -2993,7 +2993,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Aktion: Aktuelle Postadresse anfordern",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -3524,7 +3524,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Bearbeitung der Krankenhauseinweisung fehlen noch Angaben.",
+        "Für die Einweisung fehlen folgende Angaben: Aufnahmedatum, Fachabteilung und Einweisungsgrund.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Angaben zur Krankenhauseinweisung fehlen",
@@ -3649,7 +3649,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TRANSPORT_INFO_MISSING-Q1", text: "Fehlen Angaben zur benötigten Krankenbeförderung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Für die Prüfung der Krankenbeförderung fehlen noch Angaben.",
+      [ExplanationStatus.YES]: "Für die Krankenbeförderung fehlen Angaben zu Mobilitätsgrad, benötigten Hilfsmitteln und einer möglichen Begleitperson.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Angaben zur Krankenbeförderung fehlen",
@@ -3663,7 +3663,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Fragebogen Krankentransport ausfüllen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -3671,6 +3671,263 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
     docByStatus: {
       [ActionStatus.ACTIVE]: "Fragebogen Krankentransport ausfüllen",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: ANGABEN FEHLEN ----
+
+  INSURANCE_NUMBER_INVALID_FORMAT: {
+    id: "INSURANCE_NUMBER_INVALID_FORMAT",
+    label: "Versichertennummer formal ungültig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "INSURANCE_NUMBER_INVALID_FORMAT-Q1", text: "Entspricht die vorliegende Versichertennummer dem erforderlichen Format für gesetzlich Versicherte?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die vorliegende Versichertennummer entspricht nicht dem erforderlichen Format für gesetzlich Versicherte.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versichertennummer formal ungültig",
+    },
+  },
+
+  APPOINTMENT_REASON_UNCLEAR: {
+    id: "APPOINTMENT_REASON_UNCLEAR",
+    label: "Terminanlass unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_REASON_UNCLEAR-Q1", text: "Ist der medizinische Hintergrund oder das konkrete Ziel des gebuchten Termins eindeutig erkennbar?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Der medizinische Hintergrund oder das konkrete Ziel des gebuchten Termins ist derzeit nicht eindeutig erkennbar.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Terminanlass unklar",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: UNTERLAGEN VOLLSTÄNDIG ----
+
+  DOCUMENTS_RECEIVED_AND_ASSIGNED: {
+    id: "DOCUMENTS_RECEIVED_AND_ASSIGNED",
+    label: "Unterlagen eingegangen und zugeordnet",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "DOCUMENTS_RECEIVED_AND_ASSIGNED-Q1", text: "Sind die nachgereichten Unterlagen eingegangen und der Patientenakte zugeordnet?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die nachgereichten Unterlagen sind eingegangen und wurden der Patientenakte zugeordnet.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Unterlagen eingegangen und zugeordnet",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: ANLIEGEN GEPRÜFT ----
+
+  EAU_VALID_WITHOUT_SIGNATURE: {
+    id: "EAU_VALID_WITHOUT_SIGNATURE",
+    label: "eAU ohne Unterschrift gültig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "EAU_VALID_WITHOUT_SIGNATURE-Q1", text: "Wurde die elektronische Arbeitsunfähigkeitsbescheinigung digital übermittelt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die elektronische Arbeitsunfähigkeitsbescheinigung ist digital übermittelt und auch ohne Unterschrift oder Praxisstempel gültig.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "eAU digital gültig (ohne Unterschrift/Stempel)",
+    },
+  },
+
+  RETURN_TO_WORK_ALLOWED_DURING_AU: {
+    id: "RETURN_TO_WORK_ALLOWED_DURING_AU",
+    label: "Frühere Rückkehr an Arbeitsplatz möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "RETURN_TO_WORK_ALLOWED_DURING_AU-Q1", text: "Ist eine vorzeitige Rückkehr an den Arbeitsplatz vor Ablauf der Arbeitsunfähigkeit Thema?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine Rückkehr an den Arbeitsplatz ist bei Genesung auch vor Ablauf der Arbeitsunfähigkeit möglich.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Vorzeitige Rückkehr an Arbeitsplatz möglich",
+    },
+  },
+
+  SUSPECTED_DIAGNOSIS_EXPLANATION: {
+    id: "SUSPECTED_DIAGNOSIS_EXPLANATION",
+    label: "Verdachtsdiagnose – Bedeutung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "SUSPECTED_DIAGNOSIS_EXPLANATION-Q1", text: "Geht es um die Erläuterung einer dokumentierten Verdachtsdiagnose?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Dokumentierte Verdachtsdiagnosen dienen der Begründung von Untersuchungen und stellen keine gesicherte Dauerdiagnose dar.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Verdachtsdiagnose – keine gesicherte Dauerdiagnose",
+    },
+  },
+
+  AU_EXTENSION_REQUIRES_EXAMINATION: {
+    id: "AU_EXTENSION_REQUIRES_EXAMINATION",
+    label: "AU-Verlängerung – Untersuchung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "AU_EXTENSION_REQUIRES_EXAMINATION-Q1", text: "Ist nach dem bisherigen Verlauf eine persönliche körperliche Untersuchung für die weitere Beurteilung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Nach dem bisherigen Verlauf ist für eine weitere Beurteilung eine persönliche körperliche Untersuchung erforderlich.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Körperliche Untersuchung für weitere Beurteilung erforderlich",
+    },
+  },
+
+  CONTRACEPTION_SPECIALIST_ONLY: {
+    id: "CONTRACEPTION_SPECIALIST_ONLY",
+    label: "Kontrazeptiva – fachspezifisch gebunden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "CONTRACEPTION_SPECIALIST_ONLY-Q1", text: "Bezieht sich die Anfrage auf die Verordnung kontrazeptiver Mittel?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Verordnung kontrazeptiver Mittel ist an fachspezifische Untersuchungen gebunden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Kontrazeptive Verordnung an fachspezifische Untersuchung gebunden",
+    },
+  },
+
+  VIDEO_CONSULTATION_REGION_LIMITATION: {
+    id: "VIDEO_CONSULTATION_REGION_LIMITATION",
+    label: "Videosprechstunde – Einzugsgebiet",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "VIDEO_CONSULTATION_REGION_LIMITATION-Q1", text: "Liegt der Wohnsitz innerhalb des näheren Einzugsgebiets der Praxis?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Durchführung einer Videosprechstunde ist an einen Wohnsitz im näheren Einzugsgebiet der Praxis gebunden.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Videosprechstunde an Einzugsgebiet gebunden",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: NOCH IN BEARBEITUNG ----
+
+  TECHNICAL_ISSUE_DELAY: {
+    id: "TECHNICAL_ISSUE_DELAY",
+    label: "Bearbeitung verzögert – technisches Problem",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "TECHNICAL_ISSUE_DELAY-Q1", text: "Verzögert ein vorübergehendes technisches Problem aktuell die Bearbeitung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ein vorübergehendes technisches Problem verzögert aktuell die Bearbeitung.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Bearbeitung durch technisches Problem verzögert",
+    },
+  },
+
+  STAFF_SHORTAGE_DELAY: {
+    id: "STAFF_SHORTAGE_DELAY",
+    label: "Bearbeitung verzögert – personelle Einschränkung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "STAFF_SHORTAGE_DELAY-Q1", text: "Liegt eine kurzfristige personelle Einschränkung vor, die die Bearbeitung beeinflusst?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Aufgrund einer kurzfristigen personellen Einschränkung kann die Bearbeitung derzeit nicht wie gewohnt erfolgen.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Bearbeitung durch personelle Einschränkung verzögert",
+    },
+  },
+
+  // ---- NEW EXPLANATIONS – SCHUBLADE: NICHT IN UNSERER PRAXIS ----
+
+  ADULTS_ONLY_PRACTICE: {
+    id: "ADULTS_ONLY_PRACTICE",
+    label: "Praxis nur für Erwachsene",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "EXTERNAL_RESPONSIBILITY" as SpecificRole,
+    questions: [
+      { id: "ADULTS_ONLY_PRACTICE-Q1", text: "Bezieht sich die Anfrage auf die Behandlung einer minderjährigen Person?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Praxis ist ausschließlich auf die Behandlung von erwachsenen Patientinnen und Patienten ausgerichtet.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Praxis nur für Erwachsene zuständig",
+    },
+  },
+
+  NO_HOME_VISITS: {
+    id: "NO_HOME_VISITS",
+    label: "Hausbesuche nicht im Angebot",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    questions: [
+      { id: "NO_HOME_VISITS-Q1", text: "Bezieht sich die Anfrage auf einen Hausbesuch?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Hausbesuche sind kein Bestandteil des angebotenen Leistungsspektrums.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Hausbesuche nicht im Leistungsangebot",
     },
   },
 };

@@ -325,8 +325,8 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau sechs Specific-Checkpoints", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(6);
+  it("APPOINTMENT-Profil hat genau acht Specific-Checkpoints", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(8);
   });
 
   it("APPOINTMENT_CANCEL_OR_RESCHEDULE hat specificRole PROCESS_INFO", () => {
@@ -459,7 +459,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("weitere Angaben");
+    expect(paragraphs).toContain("zu ungenau");
   });
 
   it("APPOINTMENT_DOCUMENT_MISSING YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {

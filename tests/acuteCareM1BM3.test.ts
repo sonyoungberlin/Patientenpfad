@@ -459,7 +459,7 @@ describe("ACUTE_CARE – neue INFECTIOUS ACTION-Bausteine in boundActionCheckpoi
 });
 
 describe("ACUTE_CARE Renderer – INFECTIOUS ACTION-Bausteine bei ACTIVE erscheinen", () => {
-  it("alle drei INFECTIOUS-ACTIONs erscheinen in attachedParagraphs wenn ACTIVE", () => {
+  it("alle drei INFECTIOUS-ACTIONs erscheinen wenn ACTIVE (CONTACT_DIGITALLY/VIDEO_CONSULTATION in sharedBottom, DO_NOT_ENTER in attachedParagraphs)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "ACUTE_CARE",
@@ -473,10 +473,11 @@ describe("ACUTE_CARE Renderer – INFECTIOUS ACTION-Bausteine bei ACTIVE erschei
       },
     ]);
 
-    const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
-    expect(allText).toContain("Bitte melden Sie sich vorab digital bei uns.");
-    expect(allText).toContain("Alternativ können Sie eine Videosprechstunde wählen.");
-    expect(allText).toContain("Bitte kommen Sie bei Verdacht auf eine ansteckende Erkrankung nicht unangemeldet in die Praxis.");
+    const attachedText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
+    const sharedText = result.sharedBottom.join(" ");
+    expect(sharedText).toContain("Bitte melden Sie sich vorab digital bei uns.");
+    expect(sharedText).toContain("Alternativ können Sie eine Videosprechstunde wählen.");
+    expect(attachedText).toContain("Bitte kommen Sie bei Verdacht auf eine ansteckende Erkrankung nicht unangemeldet in die Praxis.");
   });
 
   it("INFECTIOUS-ACTIONs erscheinen NICHT wenn kein Status gesetzt (INFECTIOUS_PROTOCOL = NO / nicht gesetzt)", () => {

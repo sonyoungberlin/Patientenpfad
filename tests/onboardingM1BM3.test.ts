@@ -372,7 +372,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Gesundheitskarte");
+    expect(paragraphs).toContain("Versicherungsnachweis");
   });
 
   it("ONBOARDING_PKV_PAS_MISSING YES + SHOW → Text erscheint", () => {
