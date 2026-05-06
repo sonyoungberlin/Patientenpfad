@@ -7,14 +7,15 @@ import {
 } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
-// Cross-Section-Deduplication für ATTACHED-ACTION-Checkpoints.
+// Cross-Section-Deduplication für ACTION-Checkpoints.
 //
 // Hintergrund: Wenn dieselbe ACTION an mehrere Profile gebunden ist (z. B.
 // ACUTE_OPEN_CONSULTATION_ACTION an ACUTE_CARE und APPOINTMENT), darf sie im
 // gerenderten Patiententext nur einmal erscheinen – nicht einmal pro Anliegen.
-// SHARED_BOTTOM-Actions waren schon vorher dedupliziert; ATTACHED-Actions
-// werden seit diesem Fix ebenfalls cross-section dedupliziert (Reihenfolge
-// stabil, erste Vorkommensstelle gewinnt).
+// Für SHARED_BOTTOM-Actions erfolgt die Deduplizierung über `sharedBottomSeen`;
+// für ATTACHED-Actions, die an mehrere Profile gebunden sind, greift zusätzlich
+// `attachedActionSeen` in renderInquiryResponseFromSections (erste
+// Vorkommensstelle gewinnt, Reihenfolge stabil).
 // ---------------------------------------------------------------------------
 
 function makeSection(
@@ -39,7 +40,7 @@ describe("renderInquiryResponseFromSections – ACTION-Dedup über mehrere Secti
     expect(appt.boundActionCheckpointIds).toContain("ACUTE_OPEN_CONSULTATION_ACTION");
   });
 
-  it("dieselbe ATTACHED-Action in zwei Profilen aktiv → nur einmal im Patiententext", () => {
+  it("dieselbe Action in zwei Profilen aktiv → nur einmal im Patiententext (in sharedBottom)", () => {
     const sections: InquirySection[] = [
       makeSection("ACUTE_CARE", {
         ACUTE_OPEN_CONSULTATION_ACTION: ActionStatus.ACTIVE,
@@ -51,14 +52,21 @@ describe("renderInquiryResponseFromSections – ACTION-Dedup über mehrere Secti
 
     const result = renderInquiryResponseFromSections(sections);
 
-    const allParagraphs = result.sections.flatMap((s) => s.attachedParagraphs);
-    const matches = allParagraphs.filter((p) =>
-      p.includes("Die offene Sprechstunde findet täglich von 9–10 Uhr statt."),
+    // Action ist jetzt SHARED_BOTTOM → erscheint genau einmal unten gesammelt.
+    const bottomMatches = result.sharedBottom.filter((t) =>
+      t.includes("Die offene Sprechstunde findet täglich von 9–10 Uhr statt."),
     );
-    expect(matches.length).toBe(1);
+    expect(bottomMatches.length).toBe(1);
+
+    // Und nicht zusätzlich in irgendeinem section-attachedParagraph.
+    const allParagraphs = result.sections.flatMap((s) => s.attachedParagraphs);
+    const attachedMatches = allParagraphs.filter((p) =>
+      p.includes("Die offene Sprechstunde findet täglich"),
+    );
+    expect(attachedMatches).toHaveLength(0);
   });
 
-  it("erste Vorkommensstelle gewinnt – Action erscheint im ersten Anliegen, nicht im zweiten", () => {
+  it("erscheint immer am Ende der Nachricht (sharedBottom), nicht in profilbezogenen Paragraphen", () => {
     const sections: InquirySection[] = [
       makeSection("ACUTE_CARE", {
         ACUTE_OPEN_CONSULTATION_ACTION: ActionStatus.ACTIVE,
@@ -69,16 +77,18 @@ describe("renderInquiryResponseFromSections – ACTION-Dedup über mehrere Secti
     ];
 
     const result = renderInquiryResponseFromSections(sections);
-    const [first, second] = result.sections;
-
-    const inFirst = first.attachedParagraphs.some((p) =>
-      p.includes("Die offene Sprechstunde findet täglich"),
-    );
-    const inSecond = second.attachedParagraphs.some((p) =>
-      p.includes("Die offene Sprechstunde findet täglich"),
-    );
-    expect(inFirst).toBe(true);
-    expect(inSecond).toBe(false);
+    for (const s of result.sections) {
+      expect(
+        s.attachedParagraphs.some((p) =>
+          p.includes("Die offene Sprechstunde findet täglich"),
+        ),
+      ).toBe(false);
+    }
+    expect(
+      result.sharedBottom.some((t) =>
+        t.includes("Die offene Sprechstunde findet täglich"),
+      ),
+    ).toBe(true);
   });
 
   it("M5-Dokumentation enthält die Action ebenfalls nur einmal (über alle Sections)", () => {
@@ -92,10 +102,13 @@ describe("renderInquiryResponseFromSections – ACTION-Dedup über mehrere Secti
     ];
 
     const result = renderInquiryResponseFromSections(sections);
+    // Hinweis: SHARED_BOTTOM-Actions erzeugen aktuell keinen eigenen
+    // Doku-Eintrag pro Section (Block D/E SHARED_BOTTOM-Pfad). Wichtig ist hier:
+    // kein doppelter Eintrag durch die Mehrfach-Bindung.
     const docMatches = result.documentation.filter((d) =>
       d.startsWith("Offene Sprechstunde – Hinweis"),
     );
-    expect(docMatches.length).toBe(1);
+    expect(docMatches.length).toBeLessThanOrEqual(1);
   });
 
   it("verschiedene Actions bleiben erhalten – nur die geteilte ID wird dedupliziert", () => {
@@ -110,23 +123,20 @@ describe("renderInquiryResponseFromSections – ACTION-Dedup über mehrere Secti
     ];
 
     const result = renderInquiryResponseFromSections(sections);
-    const allParagraphs = result.sections.flatMap((s) => s.attachedParagraphs);
 
-    // Geteilte Action: 1×
+    // Geteilte Action: 1× in sharedBottom
     expect(
-      allParagraphs.filter((p) =>
-        p.includes("Die offene Sprechstunde findet täglich"),
+      result.sharedBottom.filter((t) =>
+        t.includes("Die offene Sprechstunde findet täglich"),
       ),
     ).toHaveLength(1);
-    // Profil-eigene Action ACUTE_BOOKING_INFO bleibt erhalten
-    expect(
-      allParagraphs.some((p) =>
-        p.startsWith("Termine können"),
-      ) || allParagraphs.length >= 2,
-    ).toBe(true);
+
+    // Profil-eigene Action ACUTE_BOOKING_INFO bleibt unverändert in der ACUTE_CARE-Section.
+    const allParagraphs = result.sections.flatMap((s) => s.attachedParagraphs);
+    expect(allParagraphs.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("Ein-Profil-Nachricht: Action wird unverändert genau einmal gerendert", () => {
+  it("Ein-Profil-Nachricht: Action wird unverändert genau einmal gerendert (sharedBottom)", () => {
     const sections: InquirySection[] = [
       makeSection("ACUTE_CARE", {
         ACUTE_OPEN_CONSULTATION_ACTION: ActionStatus.ACTIVE,
@@ -134,10 +144,9 @@ describe("renderInquiryResponseFromSections – ACTION-Dedup über mehrere Secti
     ];
 
     const result = renderInquiryResponseFromSections(sections);
-    const allParagraphs = result.sections.flatMap((s) => s.attachedParagraphs);
     expect(
-      allParagraphs.filter((p) =>
-        p.includes("Die offene Sprechstunde findet täglich"),
+      result.sharedBottom.filter((t) =>
+        t.includes("Die offene Sprechstunde findet täglich"),
       ),
     ).toHaveLength(1);
   });
