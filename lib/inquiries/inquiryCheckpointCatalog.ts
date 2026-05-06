@@ -384,7 +384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Ausstellung der AU benötigen wir Ihre Versichertendaten. Bitte senden Sie uns über Doctolib entweder ein Foto Ihrer Gesundheitskarte von Vorder- und Rückseite oder eine elektronische Ersatzbescheinigung Ihrer Krankenkasse. Alternativ können Sie die Versichertendaten über die App Ihrer Krankenkasse digital übermitteln. Die Gesundheitskarte muss im laufenden Quartal nachgereicht bzw. eingelesen werden.",
+        "Bitte senden Sie uns für die AU Ihre Versichertendaten: ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine elektronische Ersatzbescheinigung Ihrer Krankenkasse.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -404,7 +404,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch Angaben zu Ihren aktuellen Beschwerden.",
+        "Bitte beschreiben Sie Ihre aktuellen Beschwerden, damit eine AU ausgestellt werden kann.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -996,7 +996,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]: "",
-      [ExplanationStatus.NO]: "Für die Durchführung der Laboruntersuchung benötigen wir die Überweisung Ihres behandelnden Facharztes im Original.\n\nBitte bringen Sie das Dokument zum Termin mit.",
+      [ExplanationStatus.NO]: "Bitte bringen Sie zur Laboruntersuchung die Original-Überweisung Ihres behandelnden Facharztes zum Termin mit.",
     },
   },
 
@@ -2083,7 +2083,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Beurteilung benötigen wir Angaben zu den bisher durchgeführten Impfungen.",
+        "Bitte teilen Sie uns Ihre bisher durchgeführten Impfungen mit, damit der Impfstatus beurteilt werden kann.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2100,7 +2100,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Beurteilung Ihres Impfstatus benötigen wir einen Impfpass oder einen anderen Impfnachweis. Falls kein Impfpass vorliegt, können Sie diesen auch bei uns in der Praxis erwerben.",
+        "Bitte bringen Sie zur Beurteilung Ihres Impfstatus einen Impfpass oder einen anderen Impfnachweis mit. Falls kein Impfpass vorliegt, können Sie diesen auch bei uns in der Praxis erwerben.",
       // NO: bewusst still – keine Erklärung nötig
     },
     textByAudience: {
@@ -2124,7 +2124,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Prüfung des Impfstatus ist ein Impfpass oder ein anderer Impfnachweis hilfreich.",
+        "Hilfreich für die Beurteilung Ihres Impfstatus ist ein Impfpass oder ein anderer Impfnachweis.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2384,7 +2384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Terminvereinbarung benötigen wir weitere Angaben zu Ihrem Anliegen.",
+        "Bitte präzisieren Sie Ihr Anliegen, damit ein passender Termin vergeben werden kann.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2496,7 +2496,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung benötigen wir noch vollständige Angaben (z. B. aktuelle Adresse oder Versicherungsstatus).",
+        "Konkret fehlt für die Abrechnung: aktuelle Adresse und Versicherungsstatus.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2513,7 +2513,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Abrechnung benötigen wir noch fehlende Unterlagen (z. B. Gesundheitskarte oder Privatärztlichen Abrechnungsschein).",
+        "Bitte reichen Sie für die Abrechnung nach: Gesundheitskarte oder Privatärztlichen Abrechnungsschein.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2756,7 +2756,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Bearbeitung Ihrer Anfrage benötigen wir noch einen Versicherungsnachweis:\n\n- Gesetzlich versichert: Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.\n\n- Privat versichert: Bitte senden Sie uns einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
+        "Bitte reichen Sie noch einen Versicherungsnachweis nach:\n\n- Gesetzlich versichert: Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.\n\n- Privat versichert: Bitte senden Sie uns einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2802,7 +2802,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Als privat versicherte Patientin oder privat versicherter Patient benötigen wir für die korrekte Abrechnung einmalig einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
+        "Als privat versicherte Patientin oder privat versicherter Patient reichen Sie für die korrekte Abrechnung bitte einmalig nach: einen Identitätsnachweis (z. B. Personalausweis) und das ausgefüllte, unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -3524,7 +3524,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Bearbeitung der Krankenhauseinweisung fehlen noch Angaben.",
+        "Bitte ergänzen Sie für die Einweisung: Aufnahmedatum, Fachabteilung und Einweisungsgrund.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Angaben zur Krankenhauseinweisung fehlen",
@@ -3649,7 +3649,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TRANSPORT_INFO_MISSING-Q1", text: "Fehlen Angaben zur benötigten Krankenbeförderung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Für die Prüfung der Krankenbeförderung fehlen noch Angaben.",
+      [ExplanationStatus.YES]: "Bitte teilen Sie für die Krankenbeförderung mit: Mobilitätsgrad, benötigte Hilfsmittel und ob eine Begleitperson erforderlich ist.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Angaben zur Krankenbeförderung fehlen",
