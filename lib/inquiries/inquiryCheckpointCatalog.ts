@@ -465,6 +465,91 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- PRESCRIPTION SPECIFIC EXPLANATIONS ----
 
+  PRESCRIPTION_MEDICATION_UNCLEAR: {
+    id: "PRESCRIPTION_MEDICATION_UNCLEAR",
+    label: "Medikament unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_MEDICATION_UNCLEAR-Q1", text: "Ist nicht eindeutig nachvollziehbar, welches Medikament gemeint ist?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Wir können nicht eindeutig nachvollziehen, welches Medikament gemeint ist.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_DOSAGE_UNCLEAR: {
+    id: "PRESCRIPTION_DOSAGE_UNCLEAR",
+    label: "Dosierung unklar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_DOSAGE_UNCLEAR-Q1", text: "Ist die Dosierung oder Stärke des Medikaments nicht eindeutig angegeben?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Dosierung oder Stärke des Medikaments ist nicht eindeutig angegeben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_MEDICATION_NOT_DOCUMENTED: {
+    id: "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
+    label: "Medikament nicht hinterlegt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED-Q1", text: "Ist das angefragte Medikament in der Krankenakte nicht hinterlegt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "In Ihrer Krankenakte ist das angefragte Medikament nicht hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_INDICATION_NOT_DOCUMENTED: {
+    id: "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
+    label: "Medizinische Begründung fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_INDICATION_NOT_DOCUMENTED-Q1", text: "Ist eine medizinische Begründung für das angefragte Medikament nicht hinterlegt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine medizinische Begründung für das angefragte Medikament ist nicht hinterlegt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  PRESCRIPTION_DOCTOR_REVIEW_REQUIRED: {
+    id: "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
+    label: "Ärztliche Prüfung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED-Q1", text: "Ist für die Verordnung dieses Medikaments eine ärztliche Einschätzung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Verordnung dieses Medikaments ist eine ärztliche Einschätzung erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Inhalt wird aktuell über Termin-/Kontrollhinweise im M3 abgebildet. */
   PRESCRIPTION_CONTROL_OVERDUE: {
     id: "PRESCRIPTION_CONTROL_OVERDUE",

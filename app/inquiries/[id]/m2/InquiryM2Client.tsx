@@ -393,7 +393,11 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
   PRESCRIPTION: [
     {
       sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: [],
+      checkpointIds: [
+        "PRESCRIPTION_MEDICATION_UNCLEAR",
+        "PRESCRIPTION_DOSAGE_UNCLEAR",
+        "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
@@ -422,6 +426,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         // Dauermedikation: Hinweis "Kontrolltermine vorgesehen" ist
         // ein Ergebnis nach Prüfung, kein Blocker → bleibt hier.
         "PRESCRIPTION_CHRONIC_PATIENT",
+        // Medizinische Begründung für angefragtes Medikament fehlt
+        "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
+        // Verordnung erfordert ärztliche Einschätzung
+        "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
       ],
       defaultOpen: true,
     },

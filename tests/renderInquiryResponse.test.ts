@@ -1404,12 +1404,22 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
     expect(prescriptionProfile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_MEDICATION_UNCLEAR");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOSAGE_UNCLEAR");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_MEDICATION_NOT_DOCUMENTED");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INDICATION_NOT_DOCUMENTED");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOCTOR_REVIEW_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(14);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(19);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
     expect(prescriptionProfile.specificCheckpointIds).toEqual([
+      "PRESCRIPTION_MEDICATION_UNCLEAR",
+      "PRESCRIPTION_DOSAGE_UNCLEAR",
+      "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
+      "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
+      "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
       "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
