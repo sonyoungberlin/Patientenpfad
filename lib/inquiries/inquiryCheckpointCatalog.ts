@@ -2649,6 +2649,159 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_TYPE_PURPOSE_EXPLAINED: {
+    id: "APPOINTMENT_TYPE_PURPOSE_EXPLAINED",
+    label: "Terminarten haben unterschiedliche Zwecke",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_TYPE_PURPOSE_EXPLAINED-Q1", text: "Soll erklärt werden, warum es unterschiedliche Terminarten gibt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Wir nutzen unterschiedliche Terminarten, weil Ablauf und Zeitbedarf je nach Anliegen unterschiedlich sind.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_BLOOD_DRAW_NOT_DOCTOR_VISIT: {
+    id: "APPOINTMENT_BLOOD_DRAW_NOT_DOCTOR_VISIT",
+    label: "Blutentnahme nicht im Arzttermin",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_BLOOD_DRAW_NOT_DOCTOR_VISIT-Q1", text: "Wird eine Blutentnahme im Rahmen des Arzttermins erwartet?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Eine Blutentnahme findet nicht im Arzttermin statt, sondern wird separat durch das Praxisteam durchgeführt.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_VIDEO_SCOPE: {
+    id: "APPOINTMENT_VIDEO_SCOPE",
+    label: "Videosprechstunde – Zweck und Grenze",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_VIDEO_SCOPE-Q1", text: "Soll der Zweck und die Grenze der Videosprechstunde erläutert werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Videosprechstunde ist für kurze medizinische Anliegen oder erste Einschätzungen vorgesehen und ersetzt keinen vollständigen Termin in der Praxis.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_IN_PERSON_REQUIRED: {
+    id: "APPOINTMENT_IN_PERSON_REQUIRED",
+    label: "Vor-Ort-Termin erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_IN_PERSON_REQUIRED-Q1", text: "Ist für eine vollständige Beurteilung ein persönlicher Termin in der Praxis erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für eine vollständige ärztliche Beurteilung ist ein persönlicher Termin in der Praxis erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_CHECKUP_PURPOSE: {
+    id: "APPOINTMENT_CHECKUP_PURPOSE",
+    label: "Check-up-Termin erklärt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_CHECKUP_PURPOSE-Q1", text: "Soll der Zweck des Gesundheits-Check-up-Termins erläutert werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Der Gesundheits-Check-up ist eine strukturierte Vorsorgeuntersuchung mit festgelegtem Ablauf und entsprechendem Zeitbedarf.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_CHRONIC_CONTROL_PURPOSE: {
+    id: "APPOINTMENT_CHRONIC_CONTROL_PURPOSE",
+    label: "Chroniker-Kontrolltermin erklärt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_CHRONIC_CONTROL_PURPOSE-Q1", text: "Soll der Zweck des Chroniker-Kontrolltermins erläutert werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Bei chronischen Erkrankungen sind regelmäßige Kontrolltermine vorgesehen, um Verlauf und Therapie zu überprüfen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_SHORT_NOTICE_CANCELLATION_IMPACT: {
+    id: "APPOINTMENT_SHORT_NOTICE_CANCELLATION_IMPACT",
+    label: "Kurzfristige Absage belastet Terminvergabe",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_SHORT_NOTICE_CANCELLATION_IMPACT-Q1", text: "Soll auf die Auswirkung kurzfristiger Absagen auf die Terminvergabe hingewiesen werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Kurzfristig abgesagte Termine können häufig nicht mehr rechtzeitig an andere Patientinnen oder Patienten vergeben werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_BOOKING_RESTRICTED_AFTER_NO_SHOW: {
+    id: "APPOINTMENT_BOOKING_RESTRICTED_AFTER_NO_SHOW",
+    label: "Buchung nach Nichterscheinen eingeschränkt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_BOOKING_RESTRICTED_AFTER_NO_SHOW-Q1", text: "Wurde die Online-Terminbuchung nach unentschuldigtem Nichterscheinen eingeschränkt?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Nach einem unentschuldigten Nichterscheinen kann die Online-Terminbuchung vorübergehend eingeschränkt werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_BOOKING_REENABLED_AFTER_CLARIFICATION: {
+    id: "APPOINTMENT_BOOKING_REENABLED_AFTER_CLARIFICATION",
+    label: "Buchung nach Klärung wieder möglich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_BOOKING_REENABLED_AFTER_CLARIFICATION-Q1", text: "Soll die Online-Terminbuchung nach Klärung wieder freigeschaltet werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die Online-Terminbuchung kann nach Klärung wieder freigeschaltet werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- BILLING SPECIFIC EXPLANATIONS ----
 
   BILLING_COST_NOT_COVERED: {

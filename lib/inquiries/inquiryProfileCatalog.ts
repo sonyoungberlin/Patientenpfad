@@ -1555,6 +1555,16 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_REASON_UNCLEAR",
       // Schublade „Anliegen geprüft" – Voraussetzung für Videosprechstunde.
       "VIDEO_CONSULTATION_REGION_LIMITATION",
+      // Erklärungen zu Terminarten, Videosprechstunde und Buchungs-/Absageproblemen.
+      "APPOINTMENT_TYPE_PURPOSE_EXPLAINED",
+      "APPOINTMENT_BLOOD_DRAW_NOT_DOCTOR_VISIT",
+      "APPOINTMENT_VIDEO_SCOPE",
+      "APPOINTMENT_IN_PERSON_REQUIRED",
+      "APPOINTMENT_CHECKUP_PURPOSE",
+      "APPOINTMENT_CHRONIC_CONTROL_PURPOSE",
+      "APPOINTMENT_SHORT_NOTICE_CANCELLATION_IMPACT",
+      "APPOINTMENT_BOOKING_RESTRICTED_AFTER_NO_SHOW",
+      "APPOINTMENT_BOOKING_REENABLED_AFTER_CLARIFICATION",
     ],
     boundGlobalCheckpointIds: [
       // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
