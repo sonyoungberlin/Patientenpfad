@@ -366,6 +366,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       checkpointIds: ["AU_MISSING_EGK"],
     },
     {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: [
         "AU_DIGITAL_AU_PROCESS",
@@ -374,11 +378,58 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "AU_MEDICAL_CONSULTATION_REQUIRED",
         "AU_BACKDATE_LIMIT",
         "AU_NEW_PATIENT_LIMIT",
+        "MEDICAL_DOCUMENT_AU_DIFFERENCE",
       ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: [],
     },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
       checkpointIds: ["AU_WORK_ACCIDENT", "AU_CHILD_SICK"],
+    },
+  ],
+  PRESCRIPTION: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [
+        "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
+        "HOSPITAL_DISCHARGE_REPORT_MISSING",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "PRESCRIPTION_BTM_ADHS_RULES",
+        "PRESCRIPTION_GYN_EXCLUSIVITY",
+        "PRESCRIPTION_NO_POSTAL_DELIVERY",
+        "PRESCRIPTION_STATUTORY_POSSIBLE",
+        "PRESCRIPTION_PRIVATE_ONLY",
+        "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
+        "PRESCRIPTION_CHRONIC_PATIENT",
+        "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
+      ],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      checkpointIds: [],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: [
+        "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
+        "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
+      ],
     },
   ],
   LAB: [
@@ -407,12 +458,98 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
-      checkpointIds: [],
+      checkpointIds: ["LAB_RESULTS_PENDING"],
     },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
       checkpointIds: ["LAB_MPU_EXCLUSION"],
     },
+  ],
+  SAMPLE_COLLECTION: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  ACUTE_CARE: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["ACUTE_PURPOSE", "ACUTE_APPOINTMENT_INFO"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["ACUTE_EXCLUSION", "CHRONIC_EXCLUSION"],
+    },
+  ],
+  REFERRAL: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "REFERRAL_CAN_BE_ISSUED",
+        "REF_SPECIALTY_REQUIRED",
+        "REF_PSYCHOTHERAPY_FIRST_STEP",
+        "REF_HAV_CASE",
+        "REF_MEDICAL_CONSULTATION_REQUIRED",
+      ],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  HOSPITAL_ADMISSION: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["HOSPITAL_ADMISSION_MISSING_INFO"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "HOSPITAL_ADMISSION_CAN_BE_ISSUED",
+        "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
+        "HOSPITAL_TRANSPORT_REQUIRED",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  IMMUNIZATION: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["IMMUNIZATION_STATUS_UNCLEAR"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["IMMUNIZATION_VACCINATION_RECORD_MISSING"],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "IMMUNIZATION_STANDARD_AVAILABLE",
+        "IMMUNIZATION_RISK_REVIEW_REQUIRED",
+        "IMMUNIZATION_TRAVEL_MEDICINE",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   APPOINTMENT: [
     {
@@ -425,11 +562,16 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       checkpointIds: [],
     },
     {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: [],
+    },
+    {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: [
         "APPOINTMENT_CAN_BE_BOOKED",
         "APPOINTMENT_CANCEL_OR_RESCHEDULE",
         "APPOINTMENT_WRONG_TYPE",
+        "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
       ],
     },
     {
@@ -440,6 +582,93 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
       checkpointIds: [],
     },
+  ],
+  TECH_SUPPORT: [
+    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["TECH_VIDEO_NOT_WORKING"],
+      defaultOpen: true,
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
+  ],
+  ONBOARDING: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: [
+        "ONBOARDING_DATA_INCOMPLETE",
+        "ONBOARDING_DATA_UPDATE_REQUIRED",
+        "ONBOARDING_IDENTITY_MISMATCH",
+      ],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: [
+        "ONBOARDING_GKV_DOCUMENT_MISSING",
+        "ONBOARDING_PKV_PAS_MISSING",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["ONBOARDING_DOCTOLIB_INFO"],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["ONBOARDING_WRONG_PRACTICE"],
+    },
+  ],
+  BILLING: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["BILLING_ADDRESS_MISSING"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["BILLING_DOCUMENT_MISSING"],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: ["BILLING_COST_NOT_COVERED", "BILLING_INVOICE_TIMING"],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: [
+        "BILLING_EXTERNAL_RESPONSIBILITY",
+        "BILLING_EXTERNAL_PROVIDER",
+      ],
+    },
+  ],
+  MEDICAL_DOCUMENTS: [
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["MEDICAL_DOCUMENT_INFO_MISSING"],
+      defaultOpen: true,
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED"],
+    },
+    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "MEDICAL_DOCUMENT_POSSIBLE",
+        "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
+        "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
+        "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+      ],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
 };
 
@@ -760,10 +989,12 @@ function SpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Auto-expand wenn mindestens ein SPECIFIC EXPLANATION Checkpoint bereits YES/NO hat.
   const hasAnsweredSpecific = section.specificCheckpoints.some(
@@ -793,6 +1024,22 @@ function SpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon (für alle Profile). */}
+      {(section.sectionIntroCheckpoints?.length ?? 0) > 0 && (
+        <ProfileSectionIntroDrawers
+          inquiryId={section.inquiryId}
+          sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+          explanationCheckpoints={section.specificCheckpoints.filter(
+            (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+          )}
+          shortLabels={{}}
+          statuses={statuses}
+          onChange={onChange}
+          onSectionIntroToggle={onSectionIntroToggle}
+        />
+      )}
+
       {section.decisionQuestions.length === 0 && !hasMore ? (
         <p className="text-muted text-small">Keine Klärfragen für dieses Anliegen.</p>
       ) : (
@@ -1150,10 +1397,12 @@ function PrescriptionSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Schneller Lookup: Checkpoint-ID → PlainCheckpoint
   const cpById = new Map<string, PlainCheckpoint>(
@@ -1170,8 +1419,22 @@ function PrescriptionSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={PRESCRIPTION_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {filteredDecisionQuestions.length > 0 && (
@@ -1529,10 +1792,12 @@ function ReferralSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht angezeigt.
   const cpById = new Map<string, PlainCheckpoint>(
@@ -1545,8 +1810,22 @@ function ReferralSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={REFERRAL_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {(() => {
@@ -1676,10 +1955,12 @@ function HospitalAdmissionSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     section.specificCheckpoints
@@ -1691,8 +1972,22 @@ function HospitalAdmissionSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={HOSPITAL_ADMISSION_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
       {(() => {
@@ -1953,10 +2248,12 @@ function ImmunizationSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     section.specificCheckpoints
@@ -1968,8 +2265,22 @@ function ImmunizationSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={section.specificCheckpoints.filter(
+          (cp) => cp.kind === InquiryCheckpointKind.EXPLANATION,
+        )}
+        shortLabels={IMMUNIZATION_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
       {section.decisionQuestions.length > 0 && (
@@ -2217,10 +2528,12 @@ function OnboardingSpecificSection({
   section,
   statuses,
   onChange,
+  onSectionIntroToggle,
 }: {
   section: M2SectionData;
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
+  onSectionIntroToggle: (clickedId: string) => void;
 }) {
   // Nur EXPLANATION-Checkpoints – ACTION-Checkpoints werden in M2 nicht
   // angezeigt (Actions kommen in M3 über boundActionConditions).
@@ -2243,8 +2556,20 @@ function OnboardingSpecificSection({
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
       <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle aus, welche Situation am besten passt:
+        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
+        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
       </p>
+
+      {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
+      <ProfileSectionIntroDrawers
+        inquiryId={section.inquiryId}
+        sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
+        explanationCheckpoints={explanationCheckpoints}
+        shortLabels={ONBOARDING_SHORT_LABELS}
+        statuses={statuses}
+        onChange={onChange}
+        onSectionIntroToggle={onSectionIntroToggle}
+      />
 
       {/* Decision-Klärungsfragen – immer sichtbar (ONBOARDING hat aktuell keine). */}
       {section.decisionQuestions.length > 0 && (
@@ -2480,7 +2805,8 @@ export default function InquiryM2Client({
       )}
 
       {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen.
-           PRESCRIPTION nutzt den Gruppen-Prototyp, AU, REFERRAL, HOSPITAL_ADMISSION, LAB und IMMUNIZATION ebenso, alle anderen Profile SpecificSection. */}
+           Alle Profil-Sektionen rendern Antwortkontexte (Section-Intros) als Schubladen-Akkordeon;
+           profilspezifische Sektionen ergänzen ihre eigenen Gruppen-Akkordeons. */}
       {sections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
@@ -2488,6 +2814,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "AU" ? (
           <AUSpecificSection
@@ -2503,6 +2830,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "HOSPITAL_ADMISSION" ? (
           <HospitalAdmissionSpecificSection
@@ -2510,6 +2838,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "LAB" ? (
           <LabSpecificSection
@@ -2533,6 +2862,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : section.inquiryId === "ONBOARDING" ? (
           <OnboardingSpecificSection
@@ -2540,6 +2870,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ) : (
           <SpecificSection
@@ -2547,6 +2878,7 @@ export default function InquiryM2Client({
             section={section}
             statuses={statuses}
             onChange={setStatus}
+            onSectionIntroToggle={toggleSectionIntro}
           />
         ),
       )}

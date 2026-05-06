@@ -5,7 +5,7 @@ import {
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 
 // ---------------------------------------------------------------------------
-// Konsistenz-Checks für die Pilot-Section-Intro-Schubladen-Mappings.
+// Konsistenz-Checks für die Antwortkontext-Schubladen-Mappings.
 //
 // Die UI-Datei (app/inquiries/[id]/m2/InquiryM2Client.tsx) enthält das
 // hartkodierte SECTION_INTRO_GROUPS_BY_PROFILE-Mapping. Hier geprüft per
@@ -26,17 +26,26 @@ function loadM2ClientSource(): string {
   return fs.readFileSync(p, "utf8");
 }
 
+// Alle V2-Profile, für die ein Mapping vorhanden sein soll.
+const PROFILES_WITH_MAPPING = Object.keys(INQUIRY_PROFILE_CATALOG_V2);
+
 function extractMapping(src: string): Record<string, string[]> {
   // Erwartet einen Block:
-  //   const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, ...> = { AU: [...], LAB: [...], APPOINTMENT: [...] };
-  // Wir parsen profil-weise sectionIntroId und checkpointIds.
+  //   const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, ...> = { AU: [...], ... };
+  // Wir parsen profil-weise sectionIntroId.
   const result: Record<string, string[]> = {};
-  for (const profile of ["AU", "LAB", "APPOINTMENT"]) {
-    const profileBlockStart = src.indexOf(`${profile}: [`);
-    expect(profileBlockStart).toBeGreaterThan(-1);
-    // Find matching closing "  ],\n" or "  ],"
+  for (const profile of PROFILES_WITH_MAPPING) {
+    const profileBlockStart = src.indexOf(`  ${profile}: [`);
+    if (profileBlockStart === -1) {
+      result[profile] = [];
+      continue;
+    }
+    // Find matching closing "  ],\n"
     const closing = src.indexOf("\n  ],", profileBlockStart);
-    expect(closing).toBeGreaterThan(profileBlockStart);
+    if (closing === -1) {
+      result[profile] = [];
+      continue;
+    }
     const block = src.slice(profileBlockStart, closing);
     const introIds = Array.from(
       block.matchAll(/sectionIntroId:\s*"(SECTION_INTRO_[A-Z_]+)"/g),
@@ -46,15 +55,15 @@ function extractMapping(src: string): Record<string, string[]> {
   return result;
 }
 
-describe("Section-Intro-Schubladen-Mapping (M2 Pilot)", () => {
+describe("Antwortkontext-Schubladen-Mapping (M2)", () => {
   const src = loadM2ClientSource();
 
   it("Mapping-Konstante ist im Client vorhanden", () => {
     expect(src).toContain("SECTION_INTRO_GROUPS_BY_PROFILE");
   });
 
-  it.each(["AU", "LAB", "APPOINTMENT"])(
-    "%s: alle Mapping-Section-Intro-IDs sind im Katalog und in der Profil-Whitelist",
+  it.each(PROFILES_WITH_MAPPING)(
+    "%s: Mapping ist vorhanden und enthält nur gültige Section-Intro-IDs aus der Profil-Whitelist",
     (profileId) => {
       const mapping = extractMapping(src)[profileId] ?? [];
       const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
@@ -69,13 +78,24 @@ describe("Section-Intro-Schubladen-Mapping (M2 Pilot)", () => {
     },
   );
 
-  it.each(["AU", "LAB", "APPOINTMENT"])(
+  it.each(PROFILES_WITH_MAPPING)(
     "%s: jede Whitelist-ID hat ein Mapping (sonst keine Schublade in M2)",
     (profileId) => {
       const mappingIds = new Set(extractMapping(src)[profileId] ?? []);
       const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
       for (const id of profile.availableSectionIntroIds ?? []) {
         expect(mappingIds.has(id)).toBe(true);
+      }
+    },
+  );
+
+  it.each(PROFILES_WITH_MAPPING)(
+    "%s: alle sechs Antwortkontexte sind in der Profil-Whitelist enthalten",
+    (profileId) => {
+      const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
+      const whitelist = new Set(profile.availableSectionIntroIds ?? []);
+      for (const id of SECTION_INTRO_CHECKPOINT_IDS) {
+        expect(whitelist.has(id)).toBe(true);
       }
     },
   );
