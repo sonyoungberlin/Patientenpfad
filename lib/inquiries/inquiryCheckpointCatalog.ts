@@ -550,6 +550,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON: {
+    id: "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON",
+    label: "Persönlicher Termin vor weiterer Verordnung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON-Q1", text: "Ist vor weiterer Verordnung der Dauermedikation ein persönlicher Arzttermin erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ohne vorherigen persönlichen Arzttermin in der Praxis kann die Dauermedikation nicht weiter verordnet werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   /** @deprecated Nicht mehr in PRESCRIPTION.specificCheckpointIds gebunden. Inhalt wird aktuell über Termin-/Kontrollhinweise im M3 abgebildet. */
   PRESCRIPTION_CONTROL_OVERDUE: {
     id: "PRESCRIPTION_CONTROL_OVERDUE",

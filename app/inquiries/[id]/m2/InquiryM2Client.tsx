@@ -430,6 +430,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
         // Verordnung erfordert ärztliche Einschätzung
         "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
+        // Dauermedikation: persönlicher Arzttermin vor weiterer Verordnung erforderlich
+        "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON",
       ],
       defaultOpen: true,
     },

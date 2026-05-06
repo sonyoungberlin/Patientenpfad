@@ -1409,8 +1409,9 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_MEDICATION_NOT_DOCUMENTED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INDICATION_NOT_DOCUMENTED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOCTOR_REVIEW_REQUIRED");
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(19);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(20);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1420,6 +1421,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
+      "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON",
       "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
