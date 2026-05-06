@@ -1954,16 +1954,19 @@ describe("PRESCRIPTION-Profil – neue Actions (E_RECIPE_USE, PHARMACY_INFORMATI
     expect(result.sections[0].attachedParagraphs.some((t) => t.includes("eRezept"))).toBe(true);
   });
 
-  it("PHARMACY_INFORMATION ACTIVE → Text landet nicht mehr in sharedBottom (Placement ATTACHED)", () => {
-    // Hinweis: PHARMACY_INFORMATION ist nur in availableActionIds (nicht in
-    // boundActionCheckpointIds). Mit Placement ATTACHED rendert die bestehende
-    // Renderlogik den Text aktuell nirgends; eine Anbindung an einen Profil-
-    // Anker ist der nächste Schritt.
+  it("PHARMACY_INFORMATION ACTIVE → Text erscheint in attachedParagraphs (PRESCRIPTION-Section), nicht in sharedBottom", () => {
+    // PHARMACY_INFORMATION ist jetzt in PRESCRIPTION.boundActionCheckpointIds
+    // mit hideWhenAny [{ PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "YES" }] gebunden.
+    // Mit Placement ATTACHED rendert die bestehende Logik den Text in
+    // attachedParagraphs der jeweiligen Section.
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PHARMACY_INFORMATION: ActionStatus.ACTIVE },
       }),
     ]);
+    expect(
+      result.sections[0].attachedParagraphs.some((t) => t.includes("Apotheke") || t.includes("Wunschapo")),
+    ).toBe(true);
     expect(
       result.sharedBottom.some((t) => t.includes("Apotheke") || t.includes("Wunschapo")),
     ).toBe(false);
@@ -2281,16 +2284,33 @@ describe("URINE_SAMPLE_ONSITE – GLOBAL ATTACHED", () => {
     expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
   });
 
-  it("URINE_SAMPLE_ONSITE ist in LAB.availableActionIds enthalten", () => {
-    const profile = INQUIRY_PROFILE_CATALOG_V2["LAB"];
-    expect(profile.availableActionIds).toContain("URINE_SAMPLE_ONSITE");
+  it("URINE_SAMPLE_ONSITE ist in SAMPLE_COLLECTION.boundActionCheckpointIds enthalten (thematische Heimat als attached Action)", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
+    expect(profile.boundActionCheckpointIds).toContain("URINE_SAMPLE_ONSITE");
+    expect(profile.boundActionConditions?.URINE_SAMPLE_ONSITE?.showWhenAny).toEqual([
+      { SAMPLE_COLLECTION_ORDER_AVAILABLE: "YES" },
+    ]);
   });
 
-  it("URINE_SAMPLE_ONSITE ACTIVE → Text landet nicht mehr in sharedBottom (Placement ATTACHED)", () => {
-    // Hinweis: URINE_SAMPLE_ONSITE ist nur in availableActionIds (nicht in
-    // boundActionCheckpointIds). Mit Placement ATTACHED rendert die bestehende
-    // Renderlogik den Text aktuell nirgends; die Anbindung an einen Profil-
-    // Anker ist der nächste Schritt.
+  it("URINE_SAMPLE_ONSITE ACTIVE in SAMPLE_COLLECTION → Text erscheint in attachedParagraphs, nicht in sharedBottom", () => {
+    // URINE_SAMPLE_ONSITE ist jetzt in SAMPLE_COLLECTION.boundActionCheckpointIds
+    // mit Trigger SAMPLE_COLLECTION_ORDER_AVAILABLE = YES gebunden. Mit Placement
+    // ATTACHED rendert die bestehende Logik den Text in attachedParagraphs.
+    const result = renderInquiryResponseFromSections([
+      {
+        inquiryId: "SAMPLE_COLLECTION",
+        decisionStatus: DecisionStatus.POSSIBLE,
+        checkpointStatuses: { URINE_SAMPLE_ONSITE: ActionStatus.ACTIVE },
+      },
+    ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("Urinprobe"))).toBe(true);
+    expect(result.sharedBottom.some((t) => t.includes("Urinprobe"))).toBe(false);
+  });
+
+  it("URINE_SAMPLE_ONSITE ACTIVE in LAB-Section → kein Eintrag in sharedBottom (Placement ATTACHED)", () => {
+    // URINE_SAMPLE_ONSITE ist in LAB nur in availableActionIds. Mit Placement
+    // ATTACHED rendert die bestehende Renderlogik in der LAB-Section nichts –
+    // die thematische Heimat ist SAMPLE_COLLECTION (siehe vorigen Test).
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { URINE_SAMPLE_ONSITE: ActionStatus.ACTIVE },

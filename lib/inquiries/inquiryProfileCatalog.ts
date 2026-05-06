@@ -276,7 +276,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "PHARMACY_INFORMATION",
       "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
@@ -284,10 +283,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
+      "PHARMACY_INFORMATION",
     ],
     boundActionConditions: {
       E_RECIPE_USE: {
         showWhenAny: [{ PRESCRIPTION_STATUTORY_POSSIBLE: "YES" }],
+      },
+      PHARMACY_INFORMATION: {
+        hideWhenAny: [{ PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "YES" }],
       },
     },
     globalHints: {},
@@ -642,7 +645,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "URINE_SAMPLE_ONSITE",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
@@ -773,7 +775,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "URINE_SAMPLE_INSTRUCTIONS",
       "STOOL_SAMPLE_INSTRUCTIONS",
       "SAMPLE_HANDOVER",
+      "URINE_SAMPLE_ONSITE",
     ],
+    boundActionConditions: {
+      URINE_SAMPLE_ONSITE: {
+        showWhenAny: [{ SAMPLE_COLLECTION_ORDER_AVAILABLE: "YES" }],
+      },
+    },
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
