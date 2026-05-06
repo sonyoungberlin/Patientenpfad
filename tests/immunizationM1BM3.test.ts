@@ -723,10 +723,10 @@ describe("IMMUNIZATION_VACCINATION_RECORD_MISSING – Checkpoint und Profil-Einb
   it("hat den erwarteten YES-Text und keinen NO-Text", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["IMMUNIZATION_VACCINATION_RECORD_MISSING"];
     expect(cp.textByStatus[ExplanationStatus.YES]).toContain(
-      "Impfpass oder einen anderen Impfnachweis",
+      "Impfpass oder ein anderer Impfnachweis",
     );
     expect(cp.textByStatus[ExplanationStatus.YES]).toContain(
-      "in der Praxis erwerben",
+      "in der Praxis erhältlich",
     );
     expect(cp.textByStatus[ExplanationStatus.NO]).toBeUndefined();
   });
@@ -754,6 +754,6 @@ describe("IMMUNIZATION_VACCINATION_RECORD_MISSING – Checkpoint und Profil-Einb
       },
     ]);
     const allText = result.sections.flatMap((s) => s.attachedParagraphs).join(" ");
-    expect(allText).toContain("Impfpass oder einen anderen Impfnachweis");
+    expect(allText).toContain("Impfpass oder ein anderer Impfnachweis");
   });
 });

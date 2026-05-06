@@ -384,7 +384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte senden Sie uns für die AU Ihre Versichertendaten: ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine elektronische Ersatzbescheinigung Ihrer Krankenkasse.",
+        "Für die AU fehlen die Versichertendaten – entweder ein Foto der Gesundheitskarte (Vorder- und Rückseite) oder eine elektronische Ersatzbescheinigung der Krankenkasse.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -404,7 +404,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte beschreiben Sie Ihre aktuellen Beschwerden, damit eine AU ausgestellt werden kann.",
+        "Eine Beschreibung der aktuellen Beschwerden liegt noch nicht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -996,7 +996,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]: "",
-      [ExplanationStatus.NO]: "Bitte bringen Sie zur Laboruntersuchung die Original-Überweisung Ihres behandelnden Facharztes zum Termin mit.",
+      [ExplanationStatus.NO]: "Für die Laboruntersuchung fehlt die Original-Überweisung des behandelnden Facharztes.",
     },
   },
 
@@ -2083,7 +2083,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte teilen Sie uns Ihre bisher durchgeführten Impfungen mit, damit der Impfstatus beurteilt werden kann.",
+        "Der aktuelle Impfstatus ist unklar – Angaben zu den bisher durchgeführten Impfungen liegen nicht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2100,7 +2100,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte bringen Sie zur Beurteilung Ihres Impfstatus einen Impfpass oder einen anderen Impfnachweis mit. Falls kein Impfpass vorliegt, können Sie diesen auch bei uns in der Praxis erwerben.",
+        "Für die Beurteilung des Impfstatus fehlt ein Impfpass oder ein anderer Impfnachweis. Ein Impfpass ist auch in der Praxis erhältlich.",
       // NO: bewusst still – keine Erklärung nötig
     },
     textByAudience: {
@@ -2384,7 +2384,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte präzisieren Sie Ihr Anliegen, damit ein passender Termin vergeben werden kann.",
+        "Das Anliegen ist aktuell zu unspezifisch, um einen passenden Termin auswählen zu können.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2513,7 +2513,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte reichen Sie für die Abrechnung nach: Gesundheitskarte oder Privatärztlichen Abrechnungsschein.",
+        "Konkret fehlt für die Abrechnung: eine gültige Gesundheitskarte oder ein Privatärztlicher Abrechnungsschein.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2756,7 +2756,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte reichen Sie noch einen Versicherungsnachweis nach:\n\n- Gesetzlich versichert: Bitte senden Sie uns ein Foto Ihrer Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung Ihrer Krankenkasse.\n\n- Privat versichert: Bitte senden Sie uns einen Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
+        "Aktuell liegt noch kein Versicherungsnachweis vor:\n\n- Gesetzlich versichert: ein Foto der Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung der Krankenkasse.\n\n- Privat versichert: ein Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -2802,7 +2802,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Als privat versicherte Patientin oder privat versicherter Patient reichen Sie für die korrekte Abrechnung bitte einmalig nach: einen Identitätsnachweis (z. B. Personalausweis) und das ausgefüllte, unterschriebene PAS-Formular.",
+        "Für die korrekte Privatabrechnung fehlen einmalig ein Identitätsnachweis (z. B. Personalausweis) sowie das ausgefüllte und unterschriebene PAS-Formular.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -3524,7 +3524,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Bitte ergänzen Sie für die Einweisung: Aufnahmedatum, Fachabteilung und Einweisungsgrund.",
+        "Für die Einweisung fehlen folgende Angaben: Aufnahmedatum, Fachabteilung und Einweisungsgrund.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Angaben zur Krankenhauseinweisung fehlen",
@@ -3649,7 +3649,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "TRANSPORT_INFO_MISSING-Q1", text: "Fehlen Angaben zur benötigten Krankenbeförderung?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Bitte teilen Sie für die Krankenbeförderung mit: Mobilitätsgrad, benötigte Hilfsmittel und ob eine Begleitperson erforderlich ist.",
+      [ExplanationStatus.YES]: "Für die Krankenbeförderung fehlen Angaben zu Mobilitätsgrad, benötigten Hilfsmitteln und einer möglichen Begleitperson.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Angaben zur Krankenbeförderung fehlen",

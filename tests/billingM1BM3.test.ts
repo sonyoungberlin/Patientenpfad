@@ -413,7 +413,7 @@ describe("BILLING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Privatärztlichen Abrechnungsschein");
+    expect(paragraphs).toContain("Privatärztlicher Abrechnungsschein");
   });
 
   it("BILLING_EXTERNAL_RESPONSIBILITY YES + SHOW → Text erscheint", () => {

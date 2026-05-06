@@ -459,7 +459,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("präzisieren Sie Ihr Anliegen");
+    expect(paragraphs).toContain("zu unspezifisch");
   });
 
   it("APPOINTMENT_DOCUMENT_MISSING YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
