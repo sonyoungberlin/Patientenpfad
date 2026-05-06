@@ -1621,7 +1621,7 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     ).toBe(false);
   });
 
-  it("PRESCRIPTION_STATUTORY_POSSIBLE YES + E_RECIPE_USE ACTIVE → eRezept-Text in sharedBottom", () => {
+  it("PRESCRIPTION_STATUTORY_POSSIBLE YES + E_RECIPE_USE ACTIVE → eRezept-Text in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: {
@@ -1630,8 +1630,9 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
         },
       }),
     ]);
-    expect(result.sharedBottom.some((t) => t.includes("eRezept"))).toBe(true);
-    expect(result.sharedBottom.some((t) => t.includes("QR-Code"))).toBe(true);
+    const attached = result.sections[0].attachedParagraphs.join(" ");
+    expect(attached).toContain("eRezept");
+    expect(attached).toContain("QR-Code");
   });
 
   it("PRESCRIPTION_STATUTORY_POSSIBLE NO (POSSIBLE) → Sachaussage kein Kassenrezept in attachedParagraphs", () => {
@@ -1920,20 +1921,20 @@ describe("PRESCRIPTION – STATUTORY_POSSIBLE=NO Begründungspfad (Renderer)", (
 // ---------------------------------------------------------------------------
 
 describe("PRESCRIPTION-Profil – neue Actions (E_RECIPE_USE, PHARMACY_INFORMATION, DOCUMENT_UPLOAD)", () => {
-  it("E_RECIPE_USE ist im Katalog als ACTION / GLOBAL / SHARED_BOTTOM definiert", () => {
+  it("E_RECIPE_USE ist im Katalog als ACTION / GLOBAL / ATTACHED definiert", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["E_RECIPE_USE"];
     expect(cp).toBeDefined();
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
     expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
-    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
   });
 
-  it("PHARMACY_INFORMATION ist im Katalog als ACTION / GLOBAL / SHARED_BOTTOM definiert", () => {
+  it("PHARMACY_INFORMATION ist im Katalog als ACTION / GLOBAL / ATTACHED definiert", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["PHARMACY_INFORMATION"];
     expect(cp).toBeDefined();
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
     expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
-    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
   });
 
   it("DOCUMENT_UPLOAD ist im Katalog als ACTION / GLOBAL / SHARED_BOTTOM definiert", () => {
@@ -1944,22 +1945,28 @@ describe("PRESCRIPTION-Profil – neue Actions (E_RECIPE_USE, PHARMACY_INFORMATI
     expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
   });
 
-  it("E_RECIPE_USE ACTIVE → Text erscheint in sharedBottom (PRESCRIPTION-Section)", () => {
+  it("E_RECIPE_USE ACTIVE → Text erscheint in attachedParagraphs (PRESCRIPTION-Section)", () => {
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { E_RECIPE_USE: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sharedBottom.some((t) => t.includes("eRezept"))).toBe(true);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("eRezept"))).toBe(true);
   });
 
-  it("PHARMACY_INFORMATION ACTIVE → Text erscheint in sharedBottom (PRESCRIPTION-Section)", () => {
+  it("PHARMACY_INFORMATION ACTIVE → Text landet nicht mehr in sharedBottom (Placement ATTACHED)", () => {
+    // Hinweis: PHARMACY_INFORMATION ist nur in availableActionIds (nicht in
+    // boundActionCheckpointIds). Mit Placement ATTACHED rendert die bestehende
+    // Renderlogik den Text aktuell nirgends; eine Anbindung an einen Profil-
+    // Anker ist der nächste Schritt.
     const result = renderInquiryResponseFromSections([
       makePrescriptionSection({
         checkpointStatuses: { PHARMACY_INFORMATION: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sharedBottom.some((t) => t.includes("Apotheke") || t.includes("Wunschapo"))).toBe(true);
+    expect(
+      result.sharedBottom.some((t) => t.includes("Apotheke") || t.includes("Wunschapo")),
+    ).toBe(false);
   });
 
   it("DOCUMENT_UPLOAD ACTIVE → Text erscheint in sharedBottom (PRESCRIPTION-Section)", () => {
@@ -2057,12 +2064,12 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect((cp.questions ?? []).length).toBeGreaterThan(0);
   });
 
-  it("LAB_FASTING_REQUIRED ist ACTION/SPECIFIC/SHARED_BOTTOM im Katalog mit actionCategory PREPARATION", () => {
+  it("LAB_FASTING_REQUIRED ist ACTION/SPECIFIC/ATTACHED im Katalog mit actionCategory PREPARATION", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["LAB_FASTING_REQUIRED"];
     expect(cp).toBeDefined();
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
     expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
-    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
     expect(cp.actionCategory).toBe("PREPARATION");
   });
 
@@ -2120,22 +2127,23 @@ describe("LAB-Profil – SPECIFIC Checkpoints", () => {
     expect(result.sections[0].attachedParagraphs).toHaveLength(1);
   });
 
-  it("LAB_FASTING_REQUIRED ACTIVE → Nüchtern-Hinweis erscheint in sharedBottom", () => {
+  it("LAB_FASTING_REQUIRED ACTIVE → Nüchtern-Hinweis erscheint in attachedParagraphs", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sharedBottom.some((t) => t.includes("nüchtern"))).toBe(true);
-    expect(result.sections[0].attachedParagraphs).toHaveLength(0);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("nüchtern"))).toBe(true);
+    expect(result.sharedBottom.some((t) => t.includes("nüchtern"))).toBe(false);
   });
 
-  it("LAB_FASTING_REQUIRED INACTIVE → kein Eintrag in sharedBottom", () => {
+  it("LAB_FASTING_REQUIRED INACTIVE → kein Nüchtern-Hinweis", () => {
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { LAB_FASTING_REQUIRED: ActionStatus.INACTIVE },
       }),
     ]);
+    expect(result.sections[0].attachedParagraphs.some((t) => t.includes("nüchtern"))).toBe(false);
     expect(result.sharedBottom).toHaveLength(0);
   });
 
@@ -2264,13 +2272,13 @@ describe("renderInquiryResponseFromSections – GLOBAL M5 Deduplizierung", () =>
 // URINE_SAMPLE_ONSITE – GLOBAL ACTION / SHARED_BOTTOM
 // ---------------------------------------------------------------------------
 
-describe("URINE_SAMPLE_ONSITE – GLOBAL SHARED_BOTTOM", () => {
-  it("URINE_SAMPLE_ONSITE ist im Katalog als ACTION / GLOBAL / SHARED_BOTTOM definiert", () => {
+describe("URINE_SAMPLE_ONSITE – GLOBAL ATTACHED", () => {
+  it("URINE_SAMPLE_ONSITE ist im Katalog als ACTION / GLOBAL / ATTACHED definiert", () => {
     const cp = INQUIRY_CHECKPOINT_CATALOG_V2["URINE_SAMPLE_ONSITE"];
     expect(cp).toBeDefined();
     expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
     expect(cp.scope).toBe(InquiryCheckpointScope.GLOBAL);
-    expect(cp.placement).toBe(InquiryCheckpointPlacement.SHARED_BOTTOM);
+    expect(cp.placement).toBe(InquiryCheckpointPlacement.ATTACHED);
   });
 
   it("URINE_SAMPLE_ONSITE ist in LAB.availableActionIds enthalten", () => {
@@ -2278,13 +2286,17 @@ describe("URINE_SAMPLE_ONSITE – GLOBAL SHARED_BOTTOM", () => {
     expect(profile.availableActionIds).toContain("URINE_SAMPLE_ONSITE");
   });
 
-  it("URINE_SAMPLE_ONSITE ACTIVE → Text erscheint in sharedBottom (LAB-Section)", () => {
+  it("URINE_SAMPLE_ONSITE ACTIVE → Text landet nicht mehr in sharedBottom (Placement ATTACHED)", () => {
+    // Hinweis: URINE_SAMPLE_ONSITE ist nur in availableActionIds (nicht in
+    // boundActionCheckpointIds). Mit Placement ATTACHED rendert die bestehende
+    // Renderlogik den Text aktuell nirgends; die Anbindung an einen Profil-
+    // Anker ist der nächste Schritt.
     const result = renderInquiryResponseFromSections([
       makeLabSection({
         checkpointStatuses: { URINE_SAMPLE_ONSITE: ActionStatus.ACTIVE },
       }),
     ]);
-    expect(result.sharedBottom.some((t) => t.includes("Urinprobe"))).toBe(true);
+    expect(result.sharedBottom.some((t) => t.includes("Urinprobe"))).toBe(false);
   });
 
   it("URINE_SAMPLE_ONSITE INACTIVE → kein Eintrag in sharedBottom", () => {

@@ -292,7 +292,7 @@ describe("PRESCRIPTION – E_RECIPE_USE als boundAction", () => {
     expect(text).toContain("PDF");
   });
 
-  it("Renderer gibt E_RECIPE_USE-Text in sharedBottom aus, wenn ACTIVE gesetzt", () => {
+  it("Renderer gibt E_RECIPE_USE-Text in attachedParagraphs aus, wenn ACTIVE gesetzt", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "PRESCRIPTION",
@@ -306,9 +306,9 @@ describe("PRESCRIPTION – E_RECIPE_USE als boundAction", () => {
         },
       },
     ]);
-    const sharedBottomText = result.sharedBottom.join(" ");
-    expect(sharedBottomText).toContain("eRezept");
-    expect(sharedBottomText).toContain("QR-Code");
+    const attachedText = result.sections[0].attachedParagraphs.join(" ");
+    expect(attachedText).toContain("eRezept");
+    expect(attachedText).toContain("QR-Code");
   });
 
   it("Renderer gibt E_RECIPE_USE NICHT aus, wenn checkpointStatus fehlt", () => {

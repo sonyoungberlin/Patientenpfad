@@ -755,7 +755,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Vorbereitung: nüchtern erscheinen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "PREPARATION",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1357,7 +1357,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "eRezept nutzen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1370,7 +1370,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Apotheke / Direktübermittlung",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1421,7 +1421,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Urinprobe vor Ort",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1847,7 +1847,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Infektionsschutz – vorab digital melden",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -1860,7 +1860,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Infektionsschutz – Videosprechstunde",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -2628,7 +2628,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Selbstzahler-Zahlung vor Ort",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -2894,7 +2894,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Identitätsabgleich – Aktion",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -2993,7 +2993,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Aktion: Aktuelle Postadresse anfordern",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.SPECIFIC,
-    placement: InquiryCheckpointPlacement.ATTACHED,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
@@ -3663,7 +3663,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     label: "Fragebogen Krankentransport ausfüllen",
     kind: InquiryCheckpointKind.ACTION,
     scope: InquiryCheckpointScope.GLOBAL,
-    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    placement: InquiryCheckpointPlacement.ATTACHED,
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
