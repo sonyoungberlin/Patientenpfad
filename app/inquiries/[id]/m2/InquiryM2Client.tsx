@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
+import { applyLabCheckpointCoupling } from "@/lib/inquiries/labCheckpointCoupling";
 
 export type PlainCheckpoint = {
   id: string;
@@ -2795,7 +2796,7 @@ export default function InquiryM2Client({
   const [error, setError] = useState<string | null>(null);
 
   function setStatus(checkpointId: string, value: string) {
-    setStatuses((prev) => ({ ...prev, [checkpointId]: value }));
+    setStatuses((prev) => applyLabCheckpointCoupling(prev, checkpointId, value));
   }
 
   // Pilot: globale Liste aller in dieser Session verfügbaren Section-Intro-IDs
