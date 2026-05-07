@@ -227,6 +227,79 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Wirkt die aktuelle Einstufung passend zur Situation?",
     },
   ],
+  K13: [
+    // Stürze / Sturzangst
+    {
+      id: "M2-01",
+      text: "Ist der Patient in den letzten 12 Monaten gestürzt?",
+    },
+    {
+      id: "M2-02",
+      text: "Vermeidet der Patient Tätigkeiten oder Wege aus Angst vor einem Sturz?",
+    },
+    // Stimmung / Belastung
+    {
+      id: "M2-03",
+      text: "Besteht aktuell eine vom Patienten oder Umfeld berichtete Belastung durch Stimmung, Erschöpfung oder Antriebsmangel?",
+    },
+    // Wohnsituation
+    {
+      id: "M2-04",
+      text: "Lebt der Patient allein?",
+    },
+    // Sinne
+    {
+      id: "M2-05",
+      text: "Bestehen relevante Probleme mit Hören oder Sehen im Alltag?",
+    },
+    // Inkontinenz
+    {
+      id: "M2-06",
+      text: "Besteht eine relevante Inkontinenzproblematik?",
+    },
+    // Schmerzen
+    {
+      id: "M2-07",
+      text: "Bestehen aktuell relevante Schmerzen?",
+    },
+    // Gewicht / Appetit
+    {
+      id: "M2-08",
+      text: "Gab es zuletzt ungewollten Gewichtsverlust oder deutlich verminderten Appetit?",
+    },
+    // Vorsorgevollmacht / Patientenverfügung
+    {
+      id: "M2-09",
+      text: "Liegt eine Vorsorgevollmacht oder Patientenverfügung vor?",
+    },
+    // Mobilitäts-Assessment (nur Status)
+    {
+      id: "M2-10",
+      text: "Wurde ein Mobilitäts-Assessment durchgeführt?",
+    },
+    {
+      id: "M2-11",
+      text: "Liegt ein Ergebnis zum Mobilitäts-Assessment vor?",
+    },
+    // Kognitives Assessment (nur Status)
+    {
+      id: "M2-12",
+      text: "Wurde ein kognitives Assessment durchgeführt?",
+    },
+    {
+      id: "M2-13",
+      text: "Liegt ein Ergebnis zum kognitiven Assessment vor?",
+    },
+    // Stimmungs-/Belastungsfragebogen (nur Status)
+    {
+      id: "M2-14",
+      text: "Wurde ein Stimmungs-/Belastungsfragebogen durchgeführt?",
+    },
+    {
+      id: "M2-15",
+      text: "Liegt ein Ergebnis zum Stimmungs-/Belastungsfragebogen vor?",
+    },
+  ],
 };
 
 /**

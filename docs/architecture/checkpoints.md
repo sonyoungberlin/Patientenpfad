@@ -40,7 +40,7 @@ Vorläufige Zuordnung der Ist-Werte zur neuen Taxonomie:
 | `PROZESS_VORLAUF` | `DECISION` | K05 |
 | `BEDARF` (Standard) | `DECISION` | K02, K06, K07 |
 | `BEDARF` (MULTI_SELECT) | `MULTI_SELECT` | K10, K11 |
-| `BEDARF` (Einschätzung) | `ASSESSMENT` | K12 |
+| `BEDARF` (Einschätzung) | `ASSESSMENT` | K12, K13 |
 | `ZIEL` | – | _nicht verwendet_ |
 
 ---
@@ -151,6 +151,7 @@ ASSESSMENT-Checkpoint definiert genau eine adressierte Form.
 | K10 | Besonderer Versorgungsaufwand | `BEDARF` | `MULTI_SELECT` | O | A | NONE | 0 | 0 |
 | K11 | Formularanliegen | `BEDARF` | `MULTI_SELECT` | O | A | NONE | 0 | 0 |
 | K12 | Alltagssituation / Pflegeeinschätzung | `BEDARF` | `ASSESSMENT` | M | P | NONE | 0 | 14 |
+| K13 | Geriatrische Zusatzfragen (optional) | `BEDARF` | `ASSESSMENT` | M | P | NONE | 0 | 15 |
 
 **Anmerkungen zur Tabelle:**
 - Spalte „type (Ist)" = aktueller Wert im `CheckpointType`-Enum.
@@ -167,6 +168,9 @@ K10 und K11 sind `MULTI_SELECT`-Checkpoints mit folgendem gemeinsamen Verhalten:
 - **kein Status** (kein OK / TO_DO / ZURÜCKSTELLEN)
 - **nur M5** – die getroffene Auswahl erscheint in der ärztlichen Dokumentation
 - **immer in M3 vorhanden** – beide Checkpoints sind in `ALWAYS_PRESENT_MULTI_SELECT_IDS` enthalten und werden unabhängig von der M1-Blockauswahl auf Arztseite gerendert
+
+- K10 und K11 sind „immer in M3 vorhanden" (`ALWAYS_PRESENT_MULTI_SELECT_IDS`).
+- K12 und K13 sind ASSESSMENT-Checkpoints aus `ALWAYS_PRESENT_ASSESSMENT_IDS`. Sie werden immer in `active_checkpoints` angelegt, aber per Default mit `enabled: false` und erscheinen in M2/M3/M5 nur, wenn sie über die jeweilige Opt-in-Checkbox in M1 zugeschaltet wurden. K13 ist als optionaler geriatrischer Zusatzblock konzipiert und ergänzt K01–K12 ohne Doppelung; er erfasst nur Fakten, Selbst-/Fremdauskünfte sowie reine Statusangaben für Tests („durchgeführt? ja/nein/unklar"; „Ergebnis liegt vor? ja/nein/unklar"). Es findet keine Bewertung statt; M3 sieht nur den Oberbereich (Block `pflegebeobachtung`) und keine Detailauswertung.
 
 Inhaltliche Abgrenzung:
 - **K10 (Besonderer Versorgungsaufwand):** dokumentiert organisatorische Versorgungsschwerpunkte (z. B. Multimedikation, postoperative Nachsorge).

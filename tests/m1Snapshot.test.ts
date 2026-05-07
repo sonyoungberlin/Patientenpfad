@@ -70,8 +70,8 @@ describe("buildM1SnapshotInitial", () => {
 });
 
 describe("CHECKPOINT_CATALOGUE", () => {
-  it("enthält genau 10 Einträge (K01–K09, K12)", () => {
-    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(10);
+  it("enthält genau 11 Einträge (K01–K09, K12, K13)", () => {
+    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(11);
   });
 
   it("jeder Eintrag hat eine id, block_id und m4", () => {
@@ -84,17 +84,17 @@ describe("CHECKPOINT_CATALOGUE", () => {
 });
 
 describe("hydrateActiveCheckpointsFromSnapshot", () => {
-  it("gibt bei leerem Snapshot always-present Checkpoints zurück (K10, K11 MULTI_SELECT + K12 ASSESSMENT)", () => {
+  it("gibt bei leerem Snapshot always-present Checkpoints zurück (K10, K11 MULTI_SELECT + K12, K13 ASSESSMENT)", () => {
     const snapshot: M1SnapshotInitial = {
       blocks: ALL_KLAR,
       activated_checkpoint_ids: [],
     };
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(3);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K10", "K11", "K12"]);
+    expect(checkpoints).toHaveLength(4);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K10", "K11", "K12", "K13"]);
   });
 
-  it("gibt vollständige ActiveCheckpoint-Objekte zurück (inkl. always-present K10, K11, K12)", () => {
+  it("gibt vollständige ActiveCheckpoint-Objekte zurück (inkl. always-present K10, K11, K12, K13)", () => {
     const snapshot = buildM1SnapshotInitial({
       kommunikation: "unklar",
       medizinische_lage: "klar",
@@ -102,8 +102,8 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
       pflegebeobachtung: "klar",
     });
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(6);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K09", "K10", "K11", "K12"]);
+    expect(checkpoints).toHaveLength(7);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K09", "K10", "K11", "K12", "K13"]);
   });
 
   it("setzt initial status TO_DO für alle Checkpoints", () => {
@@ -116,27 +116,28 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
     }
   });
 
-  it("hydratisiert alle 12 Checkpoints wenn alle DECISION-Blöcke unklar sind (+ always-present K10, K11, K12)", () => {
+  it("hydratisiert alle 13 Checkpoints wenn alle DECISION-Blöcke unklar sind (+ always-present K10, K11, K12, K13)", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    // 9 block-activated (K01–K09) + 3 always-present (K10, K11, K12)
-    expect(checkpoints).toHaveLength(12);
+    // 9 block-activated (K01–K09) + 4 always-present (K10, K11, K12, K13)
+    expect(checkpoints).toHaveLength(13);
   });
 
-  it("überspringt unbekannte IDs defensiv (K10, K11, K12 still always-present)", () => {
+  it("überspringt unbekannte IDs defensiv (K10, K11, K12, K13 still always-present)", () => {
     const snapshot: M1SnapshotInitial = {
       blocks: ALL_KLAR,
       activated_checkpoint_ids: ["K01", "UNKNOWN_99"],
     };
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    expect(checkpoints).toHaveLength(4);
+    expect(checkpoints).toHaveLength(5);
     expect(checkpoints[0].id).toBe("K01");
     expect(checkpoints[1].id).toBe("K10");
     expect(checkpoints[2].id).toBe("K11");
     expect(checkpoints[3].id).toBe("K12");
+    expect(checkpoints[4].id).toBe("K13");
   });
 
-  it("Hydration aus Snapshot ist deterministisch – unabhängig vom aktuellen Mapping (K12 always-present)", () => {
+  it("Hydration aus Snapshot ist deterministisch – unabhängig vom aktuellen Mapping (K12, K13 always-present)", () => {
     // Simuliert: Snapshot wurde eingefroren, spätere Mapping-Änderungen dürfen
     // den laufenden Fall nicht beeinflussen.
     const frozenSnapshot: M1SnapshotInitial = {
@@ -149,6 +150,6 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
       activated_checkpoint_ids: ["K01", "K08"], // eingefrorene IDs
     };
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(frozenSnapshot);
-    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K10", "K11", "K12"]);
+    expect(checkpoints.map((c) => c.id)).toEqual(["K01", "K08", "K10", "K11", "K12", "K13"]);
   });
 });

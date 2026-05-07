@@ -44,15 +44,18 @@ describe("filterObsoleteCheckpoints", () => {
     expect(result.map((c) => c.id)).toEqual(["K01", "K12"]);
   });
 
-  it("entfernt veraltete pflegebeobachtung-Checkpoints K13–K18", () => {
-    const obsolete = ["K13", "K14", "K15", "K16", "K17", "K18"].map((id) =>
+  it("entfernt veraltete pflegebeobachtung-Checkpoints K14–K18", () => {
+    const obsolete = ["K14", "K15", "K16", "K17", "K18"].map((id) =>
       makeStandard(id, "pflegebeobachtung"),
     );
-    const valid = makeStandard("K12", "pflegebeobachtung");
-    const input: ActiveCheckpoint[] = [valid, ...obsolete];
+    const valid = [
+      makeStandard("K12", "pflegebeobachtung"),
+      makeStandard("K13", "pflegebeobachtung"),
+    ];
+    const input: ActiveCheckpoint[] = [...valid, ...obsolete];
     const result = filterObsoleteCheckpoints(input);
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("K12");
+    expect(result).toHaveLength(2);
+    expect(result.map((c) => c.id)).toEqual(["K12", "K13"]);
   });
 
   it("behält MULTI_SELECT-Checkpoints K10 und K11", () => {
