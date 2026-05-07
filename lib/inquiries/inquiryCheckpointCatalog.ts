@@ -3165,7 +3165,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     textByAudience: {
       contact_person: {
         [ExplanationStatus.YES]:
-          "Für dieses Quartal liegt noch kein gültiger Versicherungsnachweis vor.\n\nDie Versicherungsdaten lassen sich am besten digital über die App der Krankenkasse übermitteln:\n\n- Angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet öffnen.\n- App der Krankenkasse auf einem Smartphone starten.\n- „Ersatzbescheinigung“ oder „Versicherungsnachweis“ auswählen und den QR-Code scannen.\n\nAlternativ kann auch die Gesundheitskarte (Vorder- und Rückseite) oder eine aktuelle Ersatzbescheinigung hochgeladen werden.",
+          "Für dieses Quartal liegt noch kein gültiger Versicherungsnachweis vor.",
       },
     },
     docByStatus: {
