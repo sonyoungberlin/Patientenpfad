@@ -333,21 +333,41 @@ export function M2PrefillClient({
           <li
             key={`${checkpointId}:${q.id}`}
             data-m2-question={`${checkpointId}:${q.id}`}
-            style={{ marginBottom: "0.75rem" }}
+            style={{ marginBottom: "0.5rem" }}
           >
-            <div style={{ marginBottom: "0.4rem" }}>{q.text}</div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              {ANSWER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  className={`answer-btn${cpAnswers[q.id] === opt.value ? " active" : ""}`}
-                  data-m2-answer={`${checkpointId}:${q.id}:${opt.value}`}
-                  onClick={() => handleAnswer(checkpointId, q.id, opt.value)}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div style={{ marginBottom: "0.25rem" }}>{q.text}</div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.4rem",
+              }}
+            >
+              {ANSWER_OPTIONS.map((opt) => {
+                const isActive = cpAnswers[q.id] === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`answer-btn${isActive ? " active" : ""}`}
+                    data-m2-answer={`${checkpointId}:${q.id}:${opt.value}`}
+                    onClick={() => handleAnswer(checkpointId, q.id, opt.value)}
+                    style={{
+                      minWidth: 0,
+                      padding: "0.25rem 0.75rem",
+                      fontSize: "0.9rem",
+                      fontWeight: isActive ? 600 : 400,
+                      background: isActive ? "var(--primary)" : undefined,
+                      color: isActive ? "#fff" : undefined,
+                      borderColor: isActive ? "var(--primary)" : undefined,
+                      outline: isActive ? "none" : undefined,
+                      outlineOffset: isActive ? 0 : undefined,
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
           </li>
         );
@@ -532,7 +552,7 @@ export function M2PrefillClient({
                   key={cp.id}
                   data-m2-checkpoint={cp.id}
                   className="card"
-                  style={{ marginBottom: "0.75rem" }}
+                  style={{ marginBottom: "0.75rem", padding: "0.75rem 1rem" }}
                 >
                   <div style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
                     {cp.title}
