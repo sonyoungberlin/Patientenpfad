@@ -206,8 +206,9 @@ function SectionIntroAccordion({
   /**
    * Wenn true, werden die untergeordneten EXPLANATION-Checkpoints als kompakte
    * Listenzeilen (Kurzlabel + (?)-Tooltip + Inline-Buttons) gerendert anstatt
-   * als ausführliche Frage-Blöcke. Aktuell nur für das APPOINTMENT-Profil
-   * aktiviert (interner MFA-Klär-Test).
+   * als ausführliche Frage-Blöcke. In der internen M2-Kläransicht ist dieser
+   * Modus profilübergreifend aktiv (alle `*SpecificSection`-Komponenten und
+   * der generische `SpecificSection`-Fallback setzen ihn).
    */
   compactRows?: boolean;
 }) {
@@ -944,8 +945,8 @@ function QuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
  *   neben dem Trigger.
  *
  * Bewusst eigenständig (kein neues Lib-Dependency), weil das Repo aktuell
- * keine Tooltip-Komponente besitzt und der Use-Case sehr begrenzt ist
- * (interne MFA-Klär-Ansicht, APPOINTMENT-Test-Profil).
+ * keine Tooltip-Komponente besitzt und der Use-Case begrenzt ist
+ * (interne MFA-Klär-Ansicht, profilübergreifend in M2 verwendet).
  */
 function CompactTooltip({
   text,
@@ -1051,8 +1052,12 @@ function CompactTooltip({
 }
 
 /**
- * Kompakte Listen-Darstellung eines EXPLANATION-Checkpoints für interne
- * MFA-Klär-Ansichten (Schritt-2-Test im APPOINTMENT-Profil).
+ * Kompakte Listen-Darstellung eines EXPLANATION-Checkpoints für die interne
+ * M2-MFA-Klär-Ansicht. Profilübergreifend in allen Antwortkontext-Schubladen
+ * verwendet (PRESCRIPTION, AU, REFERRAL, HOSPITAL_ADMISSION, LAB,
+ * IMMUNIZATION, APPOINTMENT, ONBOARDING sowie der generische
+ * `SpecificSection`-Fallback für BILLING, ACUTE_CARE, SAMPLE_COLLECTION,
+ * TECH_SUPPORT, MEDICAL_DOCUMENTS).
  *
  * Anzeige:
  *   `Kurzlabel (?)                                  [Ja] [Nein]`
