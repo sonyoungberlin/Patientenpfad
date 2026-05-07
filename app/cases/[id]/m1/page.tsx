@@ -3,7 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import type { ActiveCheckpoint, ActiveCheckpointMultiSelect, M1BlockId } from "@/lib/types";
 import { isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
-import { CHECKPOINT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
+import {
+  ALWAYS_PRESENT_ASSESSMENT_IDS,
+  CHECKPOINT_CATALOGUE,
+} from "@/lib/logic/checkpointCatalog";
 import M1ErgaenzungClient from "./M1ErgaenzungClient";
 
 const M1_BLOCK_IDS: ReadonlyArray<M1BlockId> = [
@@ -72,13 +75,16 @@ export default async function CaseM1Page({
     isMultiSelectCheckpoint,
   );
 
-  // K12 (ASSESSMENT) enabled-Stand aus active_checkpoints lesen.
+  // ASSESSMENT enabled-Stand pro always-present-ID aus active_checkpoints lesen.
   // Fehlt das enabled-Feld (Altfall), gilt enabled als false (nicht aktiviert).
-  const k12Checkpoint = checkpoints.find((cp) => cp.id === "K12");
-  const initialK12Enabled = k12Checkpoint ? (k12Checkpoint.enabled === true) : false;
+  const initialAssessmentEnabled: Record<string, boolean> = {};
+  for (const id of ALWAYS_PRESENT_ASSESSMENT_IDS) {
+    const cp = checkpoints.find((c) => c.id === id);
+    initialAssessmentEnabled[id] = cp ? cp.enabled === true : false;
+  }
 
   // „bereits aktiv" darf ausschließlich aus Standard-DECISION-Checkpoints (K01–K09)
-  // abgeleitet werden. MULTI_SELECT- und ASSESSMENT-Checkpoints (K12) sind
+  // abgeleitet werden. MULTI_SELECT- und ASSESSMENT-Checkpoints (K12, K13, …) sind
   // immer-present und werden unabhängig von M1-Block-Toggles gesteuert.
   const activeBlockIds = new Set<M1BlockId>();
   for (const cp of checkpoints) {
@@ -114,7 +120,7 @@ export default async function CaseM1Page({
         caseId={id}
         lockedBlocks={Array.from(activeBlockIds)}
         initialMultiSelectCheckpoints={multiSelectCheckpoints}
-        initialK12Enabled={initialK12Enabled}
+        initialAssessmentEnabled={initialAssessmentEnabled}
       />
     </main>
   );

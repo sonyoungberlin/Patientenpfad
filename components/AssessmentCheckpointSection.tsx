@@ -6,6 +6,11 @@ export type AssessmentCheckpoint = {
   id: string;
   title: string;
   enabled: boolean;
+  /**
+   * Optionale neutrale Erklärung (z. B. `introText` aus dem Katalog).
+   * Reine Anzeige; daraus wird keine Logik abgeleitet.
+   */
+  description?: string;
 };
 
 export type AssessmentCheckpointSectionProps = {
@@ -15,7 +20,7 @@ export type AssessmentCheckpointSectionProps = {
 };
 
 /**
- * Sektion für ASSESSMENT-Checkpoints (z. B. K12) in M1.
+ * Sektion für ASSESSMENT-Checkpoints (z. B. K12, K13) in M1.
  *
  * Zeigt jeden ASSESSMENT-Checkpoint als Checkbox an – bewusstes Zuschalten
  * durch den Nutzer. Kein klar/unklar-Toggle, keine Optionsliste.
@@ -23,6 +28,10 @@ export type AssessmentCheckpointSectionProps = {
  *
  * Wenn aktiviert (enabled = true): Checkpoint erscheint in M2, M3 und M5.
  * Wenn nicht aktiviert (enabled = false): Checkpoint erscheint nicht in M2/M3/M5.
+ *
+ * Die Liste wird generisch aus `ALWAYS_PRESENT_ASSESSMENT_IDS` gespeist –
+ * neue ASSESSMENT-Checkpoints werden automatisch unterstützt, sobald sie im
+ * Katalog stehen.
  */
 export default function AssessmentCheckpointSection({
   checkpoints,
@@ -58,13 +67,14 @@ export default function AssessmentCheckpointSection({
             />
             {cp.title}
           </label>
-          <p
-            className="text-muted text-small"
-            style={{ marginTop: "0.35rem", marginBottom: 0 }}
-          >
-            Rückmeldung einholen, wenn die Alltagssituation durch eine
-            Kontaktperson eingeschätzt werden soll.
-          </p>
+          {cp.description ? (
+            <p
+              className="text-muted text-small"
+              style={{ marginTop: "0.35rem", marginBottom: 0 }}
+            >
+              {cp.description}
+            </p>
+          ) : null}
         </div>
       ))}
     </section>
