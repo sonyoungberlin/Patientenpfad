@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
@@ -114,9 +114,8 @@ function SectionIntroPicker({
     <div
       style={{
         marginBottom: "1rem",
-        padding: "0.75rem",
-        background: "#f5f5f5",
-        border: "1px solid #e0e0e0",
+        padding: "0.6rem 0.75rem",
+        border: "1px solid var(--border)",
         borderRadius: "var(--radius)",
       }}
     >
@@ -195,6 +194,7 @@ function SectionIntroAccordion({
   onSectionIntroToggle,
   shortLabels,
   defaultOpen,
+  compactRows = false,
 }: {
   sectionIntro: PlainCheckpoint;
   checkpoints: PlainCheckpoint[];
@@ -203,8 +203,24 @@ function SectionIntroAccordion({
   onSectionIntroToggle: (clickedId: string) => void;
   shortLabels: Record<string, string>;
   defaultOpen: boolean;
+  /**
+   * Wenn true, werden die untergeordneten EXPLANATION-Checkpoints als kompakte
+   * Listenzeilen (Kurzlabel + (?)-Tooltip + Inline-Buttons) gerendert anstatt
+   * als ausführliche Frage-Blöcke. In der internen M2-Kläransicht ist dieser
+   * Modus profilübergreifend aktiv (alle `*SpecificSection`-Komponenten und
+   * der generische `SpecificSection`-Fallback setzen ihn).
+   */
+  compactRows?: boolean;
 }) {
   const isIntroActive = statuses[sectionIntro.id] === "ACTIVE";
+  // Eine Schublade gilt als „leer", wenn sie keinen einzigen sichtbaren
+  // Hinweis (EXPLANATION-Checkpoint) enthält. Solche Schubladen werden
+  // optisch deutlich zurückgenommen (heller Hintergrund, schwächere Border,
+  // geringere Text-Opacity, kein Hover-Highlight) – bleiben aber sichtbar
+  // und anklickbar. Sobald mindestens ein sichtbarer Hinweis existiert,
+  // wird die Schublade ganz normal dargestellt – unabhängig davon, ob sie
+  // bereits beantwortet wurde.
+  const isEmptyDrawer = checkpoints.length === 0;
   // Initial geschlossen für alle Antwortkontext-Akkordeons (M2-UI-Vorgabe).
   // Nutzer:innen öffnen die Schublade manuell. `isIntroActive` /
   // beantwortete Checkpoints werden bewusst NICHT in den Init-State gemischt,
@@ -215,15 +231,35 @@ function SectionIntroAccordion({
   // Drawer-Label = Section-Intro-Label ohne den Präfix „Schublade: "
   const drawerLabel = sectionIntro.label.replace(/^Schublade:\s*/, "");
 
+  // Header-Hintergrund: gefüllte Schubladen behalten das bisherige Verhalten
+  // (Hover-/Open-Highlight via `--muted`); leere Schubladen bekommen einen
+  // ruhigen, sehr hellen Hintergrund ohne sichtbaren Open-Highlight.
+  const headerBackground = isEmptyDrawer
+    ? "var(--background)"
+    : isOpen
+    ? "var(--muted, #f5f5f5)"
+    : "var(--background)";
+
   return (
     <div
       style={{
-        border: isIntroActive
-          ? "2px solid var(--primary, #2563eb)"
+        // Aktive Schublade: dezenter linker Akzentbalken statt aggressiver
+        // 2px-Primär-Border. Leere Schublade: schwächere Border, ruhiger Look.
+        border: isEmptyDrawer
+          ? "1px dashed var(--border)"
+          : "1px solid var(--border)",
+        borderLeft: isIntroActive
+          ? "3px solid var(--primary, #2563eb)"
+          : isEmptyDrawer
+          ? "1px dashed var(--border)"
           : "1px solid var(--border)",
         borderRadius: "var(--radius)",
         marginBottom: "0.5rem",
         overflow: "hidden",
+        // Geringere Text-Opacity für leere Schubladen (laut Spec) – aber
+        // hoch genug, damit das Label noch sicher lesbar bleibt.
+        opacity: isEmptyDrawer ? 0.65 : 1,
+        background: isEmptyDrawer ? "var(--background)" : undefined,
       }}
     >
       <button
@@ -236,7 +272,7 @@ function SectionIntroAccordion({
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0.65rem 0.9rem",
-          background: isOpen ? "var(--muted, #f5f5f5)" : "var(--background)",
+          background: headerBackground,
           border: "none",
           cursor: "pointer",
           textAlign: "left",
@@ -314,24 +350,28 @@ function SectionIntroAccordion({
             )}
           </div>
 
-          {/* Untergeordnete Checkpoints (Ja/Nein, unverändertes Verhalten) */}
-          {checkpoints.length > 0 ? (
-            checkpoints.map((cp) => (
-              <ExplanationQuestionRow
-                key={cp.id}
-                checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
-                value={statuses[cp.id]}
-                onChange={onChange}
-              />
-            ))
-          ) : (
-            <div
-              className="text-muted text-small"
-              style={{ fontStyle: "italic", marginTop: "0.25rem" }}
-            >
-              Keine zusätzlichen Situations-Checkpoints in diesem Antwortkontext.
-            </div>
-          )}
+          {/* Untergeordnete Checkpoints (Ja/Nein, unverändertes Verhalten).
+              Bei leerem Antwortkontext bewusst nichts rendern (keine internen
+              Hinweistexte mehr). */}
+          {checkpoints.length > 0 &&
+            (compactRows
+              ? checkpoints.map((cp) => (
+                  <CompactExplanationRow
+                    key={cp.id}
+                    checkpoint={cp}
+                    shortLabel={shortLabels[cp.id] ?? cp.label}
+                    value={statuses[cp.id]}
+                    onChange={onChange}
+                  />
+                ))
+              : checkpoints.map((cp) => (
+                  <ExplanationQuestionRow
+                    key={cp.id}
+                    checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                    value={statuses[cp.id]}
+                    onChange={onChange}
+                  />
+                )))}
         </div>
       )}
     </div>
@@ -719,6 +759,7 @@ function ProfileSectionIntroDrawers({
   statuses,
   onChange,
   onSectionIntroToggle,
+  compactRows = false,
 }: {
   inquiryId: string;
   sectionIntroCheckpoints: PlainCheckpoint[];
@@ -727,6 +768,8 @@ function ProfileSectionIntroDrawers({
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
   onSectionIntroToggle: (clickedId: string) => void;
+  /** Reicht den Compact-Mode an `SectionIntroAccordion` und den Fallback-Drawer weiter. */
+  compactRows?: boolean;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     explanationCheckpoints.map((cp) => [cp.id, cp]),
@@ -762,6 +805,7 @@ function ProfileSectionIntroDrawers({
             onSectionIntroToggle={onSectionIntroToggle}
             shortLabels={shortLabels}
             defaultOpen={group.defaultOpen ?? false}
+            compactRows={compactRows}
           />
         );
       })}
@@ -789,17 +833,24 @@ function ProfileSectionIntroDrawers({
               <span aria-hidden="true">→ </span>Weitere passende Hinweise
             </summary>
             <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
-              <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
-                Hinweise, die keiner Schublade zugeordnet sind.
-              </div>
-              {ungroupedCheckpoints.map((cp) => (
-                <ExplanationQuestionRow
-                  key={cp.id}
-                  checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
-                  value={statuses[cp.id]}
-                  onChange={onChange}
-                />
-              ))}
+              {compactRows
+                ? ungroupedCheckpoints.map((cp) => (
+                    <CompactExplanationRow
+                      key={cp.id}
+                      checkpoint={cp}
+                      shortLabel={shortLabels[cp.id] ?? cp.label}
+                      value={statuses[cp.id]}
+                      onChange={onChange}
+                    />
+                  ))
+                : ungroupedCheckpoints.map((cp) => (
+                    <ExplanationQuestionRow
+                      key={cp.id}
+                      checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                      value={statuses[cp.id]}
+                      onChange={onChange}
+                    />
+                  ))}
             </div>
           </details>
         </div>
@@ -879,6 +930,219 @@ function QuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/**
+ * Kleiner Inline-Tooltip / Popover für die kompakte M2-Listenansicht.
+ *
+ * Verhalten:
+ * – Hover (Desktop): öffnet beim `mouseenter`, schließt beim `mouseleave`.
+ * – Klick / Tap (Touch): öffnet bzw. schließt persistent.
+ * – Klick außerhalb oder `Escape`: schließt den Tooltip wieder.
+ * – Kein neues Modal, kein Backdrop – nur ein kleiner positionierter Block
+ *   neben dem Trigger.
+ *
+ * Bewusst eigenständig (kein neues Lib-Dependency), weil das Repo aktuell
+ * keine Tooltip-Komponente besitzt und der Use-Case begrenzt ist
+ * (interne MFA-Klär-Ansicht, profilübergreifend in M2 verwendet).
+ */
+function CompactTooltip({
+  text,
+  ariaLabel,
+}: {
+  /** Vollständiger Tooltip-Text (z. B. die Originalfrage des Checkpoints). */
+  text: string;
+  /** Screenreader-Label für den Trigger-Button. */
+  ariaLabel: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const containerRef = useRef<HTMLSpanElement>(null);
+
+  // Schließe persistenten (Klick-)Open beim Klick außerhalb oder Escape.
+  useEffect(() => {
+    if (!isOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        e.target instanceof Node &&
+        !containerRef.current.contains(e.target)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen]);
+
+  const visible = isOpen || isHovered;
+
+  return (
+    <span
+      ref={containerRef}
+      style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-expanded={visible}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen((prev) => !prev);
+        }}
+        onFocus={() => setIsHovered(true)}
+        onBlur={() => setIsHovered(false)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "1.1rem",
+          height: "1.1rem",
+          borderRadius: "50%",
+          border: "1px solid var(--border)",
+          background: "var(--background)",
+          color: "var(--muted-foreground, #6b7280)",
+          fontSize: "0.7rem",
+          cursor: "help",
+          padding: 0,
+          lineHeight: 1,
+        }}
+      >
+        ?
+      </button>
+      {visible && (
+        <span
+          role="tooltip"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 0.35rem)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 20,
+            minWidth: "12rem",
+            maxWidth: "22rem",
+            background: "var(--foreground, #111827)",
+            color: "var(--background, #ffffff)",
+            padding: "0.4rem 0.6rem",
+            borderRadius: "var(--radius)",
+            fontSize: "0.8rem",
+            lineHeight: 1.35,
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            whiteSpace: "normal",
+            textAlign: "left",
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Kompakte Listen-Darstellung eines EXPLANATION-Checkpoints für die interne
+ * M2-MFA-Klär-Ansicht. Profilübergreifend in allen Antwortkontext-Schubladen
+ * verwendet (PRESCRIPTION, AU, REFERRAL, HOSPITAL_ADMISSION, LAB,
+ * IMMUNIZATION, APPOINTMENT, ONBOARDING sowie der generische
+ * `SpecificSection`-Fallback für BILLING, ACUTE_CARE, SAMPLE_COLLECTION,
+ * TECH_SUPPORT, MEDICAL_DOCUMENTS).
+ *
+ * Anzeige:
+ *   `Kurzlabel (?)                                  [Ja] [Nein]`
+ *
+ * – Kurzlabel: vom aufrufenden Profil (z. B. „Termin möglich").
+ * – (?): `CompactTooltip` – zeigt die Originalfrage per Hover oder Klick.
+ *   Die Langfrage wird NICHT zusätzlich sichtbar gerendert.
+ * – Ja/Nein: dieselben `YesNoButtons`, jetzt rechtsbündig in derselben Zeile.
+ *
+ * Diese Komponente ändert ausschließlich die Darstellung. Die gespeicherten
+ * Werte (Status pro Checkpoint), die Frage-Texte selbst und die Logik der
+ * `onChange`-Callback bleiben unverändert.
+ */
+function CompactExplanationRow({
+  checkpoint,
+  shortLabel,
+  value,
+  onChange,
+}: {
+  checkpoint: PlainCheckpoint;
+  /** Kurzlabel aus dem Profil-`shortLabels`-Mapping (z. B. „Termin möglich"). */
+  shortLabel: string;
+  value: string | undefined;
+  onChange: (id: string, val: string) => void;
+}) {
+  const questions = checkpoint.questions ?? [];
+  const tooltipText =
+    questions.length > 0
+      ? questions.map((q) => q.text).join("\n")
+      : checkpoint.question ?? checkpoint.label;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "0.5rem",
+        padding: "0.4rem 0",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.4rem",
+          minWidth: 0,
+          flex: "1 1 auto",
+        }}
+      >
+        <span style={{ fontSize: "0.9rem" }}>{shortLabel}</span>
+        <CompactTooltip
+          text={tooltipText}
+          ariaLabel={`Erklärung anzeigen: ${tooltipText}`}
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: "0.4rem",
+          flexWrap: "wrap",
+          flexShrink: 0,
+        }}
+      >
+        {YES_NO_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(checkpoint.id, opt.value)}
+            style={{
+              padding: "0.2rem 0.65rem",
+              borderRadius: "var(--radius)",
+              border: "1px solid var(--border)",
+              background:
+                value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
+              color: value === opt.value ? "#fff" : "var(--foreground)",
+              fontWeight: value === opt.value ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "0.85rem",
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1082,6 +1346,7 @@ function SpecificSection({
           statuses={statuses}
           onChange={onChange}
           onSectionIntroToggle={onSectionIntroToggle}
+          compactRows
         />
       )}
 
@@ -1383,7 +1648,7 @@ function PrescriptionGroupAccordion({
       >
         <div>
           <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{group.label}</div>
-          {!isOpen && (
+          {!isOpen && group.description && (
             <div className="text-muted text-small" style={{ marginTop: "0.1rem" }}>
               {group.description}
             </div>
@@ -1397,11 +1662,13 @@ function PrescriptionGroupAccordion({
       {/* Accordion-Inhalt */}
       {isOpen && (
         <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
-          <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
-            {group.description}
-          </div>
+          {group.description && (
+            <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
+              {group.description}
+            </div>
+          )}
 
-          {checkpoints.length > 0 ? (
+          {checkpoints.length > 0 &&
             checkpoints.map((cp) => (
               <ExplanationQuestionRow
                 key={cp.id}
@@ -1409,15 +1676,7 @@ function PrescriptionGroupAccordion({
                 value={statuses[cp.id]}
                 onChange={onChange}
               />
-            ))
-          ) : (
-            <div
-              className="text-muted text-small"
-              style={{ fontStyle: "italic", marginTop: "0.25rem" }}
-            >
-              Noch keine passenden Situations-Checkpoints vorhanden
-            </div>
-          )}
+            ))}
         </div>
       )}
     </div>
@@ -1463,11 +1722,6 @@ function PrescriptionSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -1479,6 +1733,7 @@ function PrescriptionSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -1687,11 +1942,6 @@ function AUSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Pilot: Section-Intros sind jetzt die Schubladen (Akkordeons). */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -1703,6 +1953,7 @@ function AUSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -1861,11 +2112,6 @@ function ReferralSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -1877,6 +2123,7 @@ function ReferralSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -2029,11 +2276,6 @@ function HospitalAdmissionSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -2045,6 +2287,7 @@ function HospitalAdmissionSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -2202,11 +2445,6 @@ function LabSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
@@ -2217,6 +2455,7 @@ function LabSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -2327,11 +2566,6 @@ function ImmunizationSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -2343,6 +2577,7 @@ function ImmunizationSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -2466,11 +2701,6 @@ function AppointmentSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
@@ -2481,6 +2711,7 @@ function AppointmentSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -2623,11 +2854,6 @@ function OnboardingSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -2637,6 +2863,7 @@ function OnboardingSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar (ONBOARDING hat aktuell keine). */}
@@ -2690,8 +2917,7 @@ function OnboardingSpecificSection({
               group={{
                 id: "onb_weitere_hinweise",
                 label: "Weitere passende Hinweise",
-                description:
-                  "Weitere ONBOARDING-Hinweise, die keiner thematischen Gruppe zugeordnet sind.",
+                description: "",
                 checkpointIds: ungroupedCheckpoints.map((cp) => cp.id),
                 defaultOpen: false,
               }}
@@ -2728,11 +2954,10 @@ function WeitereHinweiseSection({
   return (
     <section
       style={{
-        marginBottom: "2rem",
-        background: "#f9f9f9",
-        border: "1px solid #e0e0e0",
+        marginBottom: "1.25rem",
+        border: "1px solid var(--border)",
         borderRadius: "var(--radius)",
-        padding: "1rem",
+        padding: "0.5rem 0.75rem",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -2852,24 +3077,27 @@ export default function InquiryM2Client({
 
   return (
     <div style={{ maxWidth: "42rem" }}>
-      {/* 1. GLOBAL Checkpoints – oben, visuell abgesetzt, Ja/Nein-Schalter */}
+      {/* 1. GLOBAL Checkpoints – kompakter, optionaler Zusatzbereich oben.
+           Bewusst weniger dominant: keine massive graue Fläche, nur dezenter
+           Rahmen, damit der Fokus auf den Profil-Antwortkontexten bleibt. */}
       {globalCheckpoints.length > 0 && (
         <section
           style={{
-            marginBottom: "2rem",
-            background: "#f5f5f5",
-            border: "1px solid #e0e0e0",
+            marginBottom: "1.25rem",
+            border: "1px solid var(--border)",
             borderRadius: "var(--radius)",
-            padding: "1rem",
+            padding: "0.6rem 0.8rem",
           }}
         >
           <div
             className="text-muted text-small"
-            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
           >
             <span aria-hidden="true">ⓘ </span>Globale Hinweise
           </div>
-          <h2 style={{ marginBottom: "0.5rem" }}>Basisinformationen</h2>
+          <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.25rem" }}>
+            Basisinformationen
+          </div>
           {globalCheckpoints.map((cp) => (
             <SwitchRow
               key={cp.id}
