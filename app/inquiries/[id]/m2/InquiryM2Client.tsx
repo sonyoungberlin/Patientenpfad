@@ -114,9 +114,8 @@ function SectionIntroPicker({
     <div
       style={{
         marginBottom: "1rem",
-        padding: "0.75rem",
-        background: "#f5f5f5",
-        border: "1px solid #e0e0e0",
+        padding: "0.6rem 0.75rem",
+        border: "1px solid var(--border)",
         borderRadius: "var(--radius)",
       }}
     >
@@ -195,6 +194,7 @@ function SectionIntroAccordion({
   onSectionIntroToggle,
   shortLabels,
   defaultOpen,
+  compactRows = false,
 }: {
   sectionIntro: PlainCheckpoint;
   checkpoints: PlainCheckpoint[];
@@ -203,8 +203,24 @@ function SectionIntroAccordion({
   onSectionIntroToggle: (clickedId: string) => void;
   shortLabels: Record<string, string>;
   defaultOpen: boolean;
+  /**
+   * Wenn true, werden die untergeordneten EXPLANATION-Checkpoints als kompakte
+   * Listenzeilen (Kurzlabel + (?)-Tooltip + Inline-Buttons) gerendert anstatt
+   * als ausführliche Frage-Blöcke. Aktuell nur für das APPOINTMENT-Profil
+   * aktiviert (interner MFA-Klär-Test).
+   */
+  compactRows?: boolean;
 }) {
   const isIntroActive = statuses[sectionIntro.id] === "ACTIVE";
+  // Eine Schublade gilt als „leer", wenn weder das Section-Intro selbst aktiv
+  // ist, noch einer der zugeordneten Checkpoints beantwortet wurde. In dem
+  // Fall wird die Schublade optisch gedimmt – sie bleibt aber sichtbar und
+  // anklickbar.
+  const hasAnyAnswer =
+    isIntroActive ||
+    checkpoints.some(
+      (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
+    );
   // Initial geschlossen für alle Antwortkontext-Akkordeons (M2-UI-Vorgabe).
   // Nutzer:innen öffnen die Schublade manuell. `isIntroActive` /
   // beantwortete Checkpoints werden bewusst NICHT in den Init-State gemischt,
@@ -218,12 +234,16 @@ function SectionIntroAccordion({
   return (
     <div
       style={{
-        border: isIntroActive
-          ? "2px solid var(--primary, #2563eb)"
+        // Aktive Schublade: dezenter linker Akzentbalken statt aggressiver
+        // 2px-Primär-Border. Leere Schublade: gedimmt, bleibt sichtbar.
+        border: "1px solid var(--border)",
+        borderLeft: isIntroActive
+          ? "3px solid var(--primary, #2563eb)"
           : "1px solid var(--border)",
         borderRadius: "var(--radius)",
         marginBottom: "0.5rem",
         overflow: "hidden",
+        opacity: hasAnyAnswer ? 1 : 0.7,
       }}
     >
       <button
@@ -314,24 +334,28 @@ function SectionIntroAccordion({
             )}
           </div>
 
-          {/* Untergeordnete Checkpoints (Ja/Nein, unverändertes Verhalten) */}
-          {checkpoints.length > 0 ? (
-            checkpoints.map((cp) => (
-              <ExplanationQuestionRow
-                key={cp.id}
-                checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
-                value={statuses[cp.id]}
-                onChange={onChange}
-              />
-            ))
-          ) : (
-            <div
-              className="text-muted text-small"
-              style={{ fontStyle: "italic", marginTop: "0.25rem" }}
-            >
-              Keine zusätzlichen Situations-Checkpoints in diesem Antwortkontext.
-            </div>
-          )}
+          {/* Untergeordnete Checkpoints (Ja/Nein, unverändertes Verhalten).
+              Bei leerem Antwortkontext bewusst nichts rendern (keine internen
+              Hinweistexte mehr). */}
+          {checkpoints.length > 0 &&
+            (compactRows
+              ? checkpoints.map((cp) => (
+                  <CompactExplanationRow
+                    key={cp.id}
+                    checkpoint={cp}
+                    shortLabel={shortLabels[cp.id] ?? cp.label}
+                    value={statuses[cp.id]}
+                    onChange={onChange}
+                  />
+                ))
+              : checkpoints.map((cp) => (
+                  <ExplanationQuestionRow
+                    key={cp.id}
+                    checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                    value={statuses[cp.id]}
+                    onChange={onChange}
+                  />
+                )))}
         </div>
       )}
     </div>
@@ -719,6 +743,7 @@ function ProfileSectionIntroDrawers({
   statuses,
   onChange,
   onSectionIntroToggle,
+  compactRows = false,
 }: {
   inquiryId: string;
   sectionIntroCheckpoints: PlainCheckpoint[];
@@ -727,6 +752,8 @@ function ProfileSectionIntroDrawers({
   statuses: Record<string, string>;
   onChange: (id: string, val: string) => void;
   onSectionIntroToggle: (clickedId: string) => void;
+  /** Reicht den Compact-Mode an `SectionIntroAccordion` und den Fallback-Drawer weiter. */
+  compactRows?: boolean;
 }) {
   const cpById = new Map<string, PlainCheckpoint>(
     explanationCheckpoints.map((cp) => [cp.id, cp]),
@@ -762,6 +789,7 @@ function ProfileSectionIntroDrawers({
             onSectionIntroToggle={onSectionIntroToggle}
             shortLabels={shortLabels}
             defaultOpen={group.defaultOpen ?? false}
+            compactRows={compactRows}
           />
         );
       })}
@@ -789,17 +817,24 @@ function ProfileSectionIntroDrawers({
               <span aria-hidden="true">→ </span>Weitere passende Hinweise
             </summary>
             <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
-              <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
-                Hinweise, die keiner Schublade zugeordnet sind.
-              </div>
-              {ungroupedCheckpoints.map((cp) => (
-                <ExplanationQuestionRow
-                  key={cp.id}
-                  checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
-                  value={statuses[cp.id]}
-                  onChange={onChange}
-                />
-              ))}
+              {compactRows
+                ? ungroupedCheckpoints.map((cp) => (
+                    <CompactExplanationRow
+                      key={cp.id}
+                      checkpoint={cp}
+                      shortLabel={shortLabels[cp.id] ?? cp.label}
+                      value={statuses[cp.id]}
+                      onChange={onChange}
+                    />
+                  ))
+                : ungroupedCheckpoints.map((cp) => (
+                    <ExplanationQuestionRow
+                      key={cp.id}
+                      checkpoint={{ ...cp, label: shortLabels[cp.id] ?? cp.label }}
+                      value={statuses[cp.id]}
+                      onChange={onChange}
+                    />
+                  ))}
             </div>
           </details>
         </div>
@@ -879,6 +914,115 @@ function QuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/**
+ * Kompakte Listen-Darstellung eines EXPLANATION-Checkpoints für interne
+ * MFA-Klär-Ansichten (Schritt-2-Test im APPOINTMENT-Profil).
+ *
+ * Anzeige:
+ *   `Kurzlabel (?)                                  [Ja] [Nein]`
+ *
+ * – Kurzlabel: vom aufrufenden Profil (z. B. „Termin möglich").
+ * – (?): kleines Info-Icon; via Hover/Tap wird die ausführliche Frage als
+ *   nativer `title`-Tooltip angezeigt.
+ * – Ja/Nein: dieselben `YesNoButtons`, jetzt rechtsbündig in derselben Zeile.
+ *
+ * Diese Komponente ändert ausschließlich die Darstellung. Die gespeicherten
+ * Werte (Status pro Checkpoint), die Frage-Texte selbst und die Logik der
+ * `onChange`-Callback bleiben unverändert.
+ */
+function CompactExplanationRow({
+  checkpoint,
+  shortLabel,
+  value,
+  onChange,
+}: {
+  checkpoint: PlainCheckpoint;
+  /** Kurzlabel aus dem Profil-`shortLabels`-Mapping (z. B. „Termin möglich"). */
+  shortLabel: string;
+  value: string | undefined;
+  onChange: (id: string, val: string) => void;
+}) {
+  const questions = checkpoint.questions ?? [];
+  const tooltipText =
+    questions.length > 0
+      ? questions.map((q) => q.text).join("\n")
+      : checkpoint.question ?? checkpoint.label;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "0.5rem",
+        padding: "0.4rem 0",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.4rem",
+          minWidth: 0,
+          flex: "1 1 auto",
+        }}
+      >
+        <span style={{ fontSize: "0.9rem" }}>{shortLabel}</span>
+        <span
+          tabIndex={0}
+          role="img"
+          aria-label={`Erklärung: ${tooltipText}`}
+          title={tooltipText}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "1.1rem",
+            height: "1.1rem",
+            borderRadius: "50%",
+            border: "1px solid var(--border)",
+            color: "var(--muted-foreground, #6b7280)",
+            fontSize: "0.7rem",
+            cursor: "help",
+            flexShrink: 0,
+          }}
+        >
+          ?
+        </span>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: "0.4rem",
+          flexWrap: "wrap",
+          flexShrink: 0,
+        }}
+      >
+        {YES_NO_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(checkpoint.id, opt.value)}
+            style={{
+              padding: "0.2rem 0.65rem",
+              borderRadius: "var(--radius)",
+              border: "1px solid var(--border)",
+              background:
+                value === opt.value ? "var(--primary, #2563eb)" : "var(--background)",
+              color: value === opt.value ? "#fff" : "var(--foreground)",
+              fontWeight: value === opt.value ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "0.85rem",
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1383,7 +1527,7 @@ function PrescriptionGroupAccordion({
       >
         <div>
           <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{group.label}</div>
-          {!isOpen && (
+          {!isOpen && group.description && (
             <div className="text-muted text-small" style={{ marginTop: "0.1rem" }}>
               {group.description}
             </div>
@@ -1397,11 +1541,13 @@ function PrescriptionGroupAccordion({
       {/* Accordion-Inhalt */}
       {isOpen && (
         <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
-          <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
-            {group.description}
-          </div>
+          {group.description && (
+            <div className="text-muted text-small" style={{ marginBottom: "0.5rem" }}>
+              {group.description}
+            </div>
+          )}
 
-          {checkpoints.length > 0 ? (
+          {checkpoints.length > 0 &&
             checkpoints.map((cp) => (
               <ExplanationQuestionRow
                 key={cp.id}
@@ -1409,15 +1555,7 @@ function PrescriptionGroupAccordion({
                 value={statuses[cp.id]}
                 onChange={onChange}
               />
-            ))
-          ) : (
-            <div
-              className="text-muted text-small"
-              style={{ fontStyle: "italic", marginTop: "0.25rem" }}
-            >
-              Noch keine passenden Situations-Checkpoints vorhanden
-            </div>
-          )}
+            ))}
         </div>
       )}
     </div>
@@ -2481,6 +2619,7 @@ function AppointmentSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -2690,8 +2829,7 @@ function OnboardingSpecificSection({
               group={{
                 id: "onb_weitere_hinweise",
                 label: "Weitere passende Hinweise",
-                description:
-                  "Weitere ONBOARDING-Hinweise, die keiner thematischen Gruppe zugeordnet sind.",
+                description: "",
                 checkpointIds: ungroupedCheckpoints.map((cp) => cp.id),
                 defaultOpen: false,
               }}
@@ -2728,11 +2866,10 @@ function WeitereHinweiseSection({
   return (
     <section
       style={{
-        marginBottom: "2rem",
-        background: "#f9f9f9",
-        border: "1px solid #e0e0e0",
+        marginBottom: "1.25rem",
+        border: "1px solid var(--border)",
         borderRadius: "var(--radius)",
-        padding: "1rem",
+        padding: "0.5rem 0.75rem",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -2852,24 +2989,27 @@ export default function InquiryM2Client({
 
   return (
     <div style={{ maxWidth: "42rem" }}>
-      {/* 1. GLOBAL Checkpoints – oben, visuell abgesetzt, Ja/Nein-Schalter */}
+      {/* 1. GLOBAL Checkpoints – kompakter, optionaler Zusatzbereich oben.
+           Bewusst weniger dominant: keine massive graue Fläche, nur dezenter
+           Rahmen, damit der Fokus auf den Profil-Antwortkontexten bleibt. */}
       {globalCheckpoints.length > 0 && (
         <section
           style={{
-            marginBottom: "2rem",
-            background: "#f5f5f5",
-            border: "1px solid #e0e0e0",
+            marginBottom: "1.25rem",
+            border: "1px solid var(--border)",
             borderRadius: "var(--radius)",
-            padding: "1rem",
+            padding: "0.6rem 0.8rem",
           }}
         >
           <div
             className="text-muted text-small"
-            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}
+            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
           >
             <span aria-hidden="true">ⓘ </span>Globale Hinweise
           </div>
-          <h2 style={{ marginBottom: "0.5rem" }}>Basisinformationen</h2>
+          <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.25rem" }}>
+            Basisinformationen
+          </div>
           {globalCheckpoints.map((cp) => (
             <SwitchRow
               key={cp.id}
