@@ -312,12 +312,11 @@ function SectionIntroAccordion({
 
       {isOpen && (
         <div style={{ padding: "0.5rem 0.9rem 0.75rem" }}>
-          {/* Section-Intro-Toggle */}
+          {/* Section-Intro-Toggle: der Anschluss-Satz selbst ist der Button.
+              Klick aktiviert/deaktiviert den Antwortkontext (Toggle-Logik
+              unverändert via `applySectionIntroToggle`). */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
               padding: "0.4rem 0",
               marginBottom: "0.25rem",
             }}
@@ -326,7 +325,7 @@ function SectionIntroAccordion({
               type="button"
               onClick={() => onSectionIntroToggle(sectionIntro.id)}
               style={{
-                padding: "0.25rem 0.75rem",
+                padding: "0.35rem 0.75rem",
                 borderRadius: "var(--radius)",
                 border: "1px solid var(--border)",
                 background: isIntroActive
@@ -336,18 +335,17 @@ function SectionIntroAccordion({
                 fontWeight: isIntroActive ? 600 : 400,
                 cursor: "pointer",
                 fontSize: "0.85rem",
+                textAlign: "left",
+                lineHeight: 1.35,
+                whiteSpace: "normal",
+                width: "100%",
               }}
               aria-pressed={isIntroActive}
             >
-              {isIntroActive
-                ? "Antwortkontext aktiv"
-                : "Als Antwortkontext wählen"}
+              {sectionIntro.previewText
+                ? `„… ${sectionIntro.previewText}"`
+                : drawerLabel}
             </button>
-            {sectionIntro.previewText && (
-              <span className="text-muted text-small">
-                Anschluss: „… {sectionIntro.previewText}"
-              </span>
-            )}
           </div>
 
           {/* Untergeordnete Checkpoints (Ja/Nein, unverändertes Verhalten).
