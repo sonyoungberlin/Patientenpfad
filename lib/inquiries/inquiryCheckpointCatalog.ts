@@ -1602,13 +1602,87 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   /**
+   * Profil-spezifische EXPLANATION-Trigger für fehlende Versicherungsdaten/eGK
+   * in den Fachprofilen PRESCRIPTION, REFERRAL und APPOINTMENT.
+   *
+   * Bewusst pro Profil getrennt modelliert (statt einem geteilten Trigger),
+   * weil die M2-Frage je Anliegen unterschiedlich phrasiert ist und der
+   * Klärpunkt jeweils direkt im fachlichen Accordion stehen muss. Über
+   * `boundActionConditions` schalten diese Trigger denselben SHARED_BOTTOM-
+   * Action-Baustein `INSURANCE_DATA_APP_TRANSFER` frei – analog zur Bindung
+   * an `ONBOARDING_GKV_DOCUMENT_MISSING` / `AU_MISSING_EGK` /
+   * `BILLING_DOCUMENT_MISSING`.
+   */
+  PRESCRIPTION_INSURANCE_PROOF_MISSING: {
+    id: "PRESCRIPTION_INSURANCE_PROOF_MISSING",
+    label: "Versicherungsnachweis für Rezept fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "PRESCRIPTION_INSURANCE_PROOF_MISSING-Q1", text: "Fehlt für die Ausstellung des Rezepts ein gültiger Versicherungsnachweis (eGK/Ersatzbescheinigung)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung des Rezepts liegt aktuell kein gültiger Versicherungsnachweis vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versicherungsnachweis für Rezept angefordert.",
+    },
+  },
+
+  REFERRAL_INSURANCE_PROOF_MISSING: {
+    id: "REFERRAL_INSURANCE_PROOF_MISSING",
+    label: "Versicherungsnachweis für Überweisung fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "REFERRAL_INSURANCE_PROOF_MISSING-Q1", text: "Fehlt für die Ausstellung der Überweisung ein gültiger Versicherungsnachweis (eGK/Ersatzbescheinigung)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Ausstellung der Überweisung liegt aktuell kein gültiger Versicherungsnachweis vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versicherungsnachweis für Überweisung angefordert.",
+    },
+  },
+
+  APPOINTMENT_INSURANCE_PROOF_MISSING: {
+    id: "APPOINTMENT_INSURANCE_PROOF_MISSING",
+    label: "Versicherungsnachweis für Termin fehlt",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_INSURANCE_PROOF_MISSING-Q1", text: "Fehlt für den Termin (auch Videosprechstunde) ein gültiger Versicherungsnachweis (eGK/Ersatzbescheinigung)?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für den Termin liegt aktuell kein gültiger Versicherungsnachweis vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Versicherungsnachweis für Termin angefordert.",
+    },
+  },
+
+  /**
    * Workflow-spezifische Action: digitale Übermittlung der eGK-/Versicherungsdaten
    * über die Krankenkassen-App (QR-Code-PDF + „Ersatzbescheinigung“/
    * „Versicherungsnachweis" scannen). Bewusst KEIN generischer Upload-Baustein
    * (siehe `DOCUMENT_UPLOAD`) und KEIN EXPLANATION/SECTION_INTRO – sondern eine
    * eigenständige NEXT_STEP-Action, die in mehreren Profilen wiederverwendet
    * wird (ONBOARDING bei fehlendem GKV-Versicherungsnachweis, AU bei fehlender
-   * eGK, BILLING bei fehlenden Abrechnungsunterlagen mit eGK-Bezug).
+   * eGK, BILLING bei fehlenden Abrechnungsunterlagen mit eGK-Bezug, sowie
+   * PRESCRIPTION / REFERRAL / APPOINTMENT bei fehlendem Versicherungsnachweis
+   * für die jeweilige Bearbeitung).
    *
    * Bindung erfolgt über `boundActionCheckpointIds` + `boundActionConditions`
    * im jeweiligen Profil; deduplizierte Ausgabe einmalig im SHARED_BOTTOM.
