@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
@@ -212,15 +212,14 @@ function SectionIntroAccordion({
   compactRows?: boolean;
 }) {
   const isIntroActive = statuses[sectionIntro.id] === "ACTIVE";
-  // Eine Schublade gilt als „leer", wenn weder das Section-Intro selbst aktiv
-  // ist, noch einer der zugeordneten Checkpoints beantwortet wurde. In dem
-  // Fall wird die Schublade optisch gedimmt – sie bleibt aber sichtbar und
-  // anklickbar.
-  const hasAnyAnswer =
-    isIntroActive ||
-    checkpoints.some(
-      (cp) => statuses[cp.id] === "YES" || statuses[cp.id] === "NO",
-    );
+  // Eine Schublade gilt als „leer", wenn sie keinen einzigen sichtbaren
+  // Hinweis (EXPLANATION-Checkpoint) enthält. Solche Schubladen werden
+  // optisch deutlich zurückgenommen (heller Hintergrund, schwächere Border,
+  // geringere Text-Opacity, kein Hover-Highlight) – bleiben aber sichtbar
+  // und anklickbar. Sobald mindestens ein sichtbarer Hinweis existiert,
+  // wird die Schublade ganz normal dargestellt – unabhängig davon, ob sie
+  // bereits beantwortet wurde.
+  const isEmptyDrawer = checkpoints.length === 0;
   // Initial geschlossen für alle Antwortkontext-Akkordeons (M2-UI-Vorgabe).
   // Nutzer:innen öffnen die Schublade manuell. `isIntroActive` /
   // beantwortete Checkpoints werden bewusst NICHT in den Init-State gemischt,
@@ -231,19 +230,35 @@ function SectionIntroAccordion({
   // Drawer-Label = Section-Intro-Label ohne den Präfix „Schublade: "
   const drawerLabel = sectionIntro.label.replace(/^Schublade:\s*/, "");
 
+  // Header-Hintergrund: gefüllte Schubladen behalten das bisherige Verhalten
+  // (Hover-/Open-Highlight via `--muted`); leere Schubladen bekommen einen
+  // ruhigen, sehr hellen Hintergrund ohne sichtbaren Open-Highlight.
+  const headerBackground = isEmptyDrawer
+    ? "var(--background)"
+    : isOpen
+    ? "var(--muted, #f5f5f5)"
+    : "var(--background)";
+
   return (
     <div
       style={{
         // Aktive Schublade: dezenter linker Akzentbalken statt aggressiver
-        // 2px-Primär-Border. Leere Schublade: gedimmt, bleibt sichtbar.
-        border: "1px solid var(--border)",
+        // 2px-Primär-Border. Leere Schublade: schwächere Border, ruhiger Look.
+        border: isEmptyDrawer
+          ? "1px dashed var(--border)"
+          : "1px solid var(--border)",
         borderLeft: isIntroActive
           ? "3px solid var(--primary, #2563eb)"
+          : isEmptyDrawer
+          ? "1px dashed var(--border)"
           : "1px solid var(--border)",
         borderRadius: "var(--radius)",
         marginBottom: "0.5rem",
         overflow: "hidden",
-        opacity: hasAnyAnswer ? 1 : 0.7,
+        // Geringere Text-Opacity für leere Schubladen, ohne sie ganz
+        // unleserlich zu machen.
+        opacity: isEmptyDrawer ? 0.55 : 1,
+        background: isEmptyDrawer ? "var(--background)" : undefined,
       }}
     >
       <button
@@ -256,7 +271,7 @@ function SectionIntroAccordion({
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0.65rem 0.9rem",
-          background: isOpen ? "var(--muted, #f5f5f5)" : "var(--background)",
+          background: headerBackground,
           border: "none",
           cursor: "pointer",
           textAlign: "left",
@@ -919,6 +934,124 @@ function QuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
 }
 
 /**
+ * Kleiner Inline-Tooltip / Popover für die kompakte M2-Listenansicht.
+ *
+ * Verhalten:
+ * – Hover (Desktop): öffnet beim `mouseenter`, schließt beim `mouseleave`.
+ * – Klick / Tap (Touch): öffnet bzw. schließt persistent.
+ * – Klick außerhalb oder `Escape`: schließt den Tooltip wieder.
+ * – Kein neues Modal, kein Backdrop – nur ein kleiner positionierter Block
+ *   neben dem Trigger.
+ *
+ * Bewusst eigenständig (kein neues Lib-Dependency), weil das Repo aktuell
+ * keine Tooltip-Komponente besitzt und der Use-Case sehr begrenzt ist
+ * (interne MFA-Klär-Ansicht, APPOINTMENT-Test-Profil).
+ */
+function CompactTooltip({
+  text,
+  ariaLabel,
+}: {
+  /** Vollständiger Tooltip-Text (z. B. die Originalfrage des Checkpoints). */
+  text: string;
+  /** Screenreader-Label für den Trigger-Button. */
+  ariaLabel: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const containerRef = useRef<HTMLSpanElement>(null);
+
+  // Schließe persistenten (Klick-)Open beim Klick außerhalb oder Escape.
+  useEffect(() => {
+    if (!isOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        e.target instanceof Node &&
+        !containerRef.current.contains(e.target)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen]);
+
+  const visible = isOpen || isHovered;
+
+  return (
+    <span
+      ref={containerRef}
+      style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-expanded={visible}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen((prev) => !prev);
+        }}
+        onFocus={() => setIsHovered(true)}
+        onBlur={() => setIsHovered(false)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "1.1rem",
+          height: "1.1rem",
+          borderRadius: "50%",
+          border: "1px solid var(--border)",
+          background: "var(--background)",
+          color: "var(--muted-foreground, #6b7280)",
+          fontSize: "0.7rem",
+          cursor: "help",
+          padding: 0,
+          lineHeight: 1,
+        }}
+      >
+        ?
+      </button>
+      {visible && (
+        <span
+          role="tooltip"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 0.35rem)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 20,
+            minWidth: "12rem",
+            maxWidth: "22rem",
+            background: "var(--foreground, #111827)",
+            color: "var(--background, #ffffff)",
+            padding: "0.4rem 0.6rem",
+            borderRadius: "var(--radius)",
+            fontSize: "0.8rem",
+            lineHeight: 1.35,
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            whiteSpace: "normal",
+            textAlign: "left",
+            pointerEvents: "none",
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
  * Kompakte Listen-Darstellung eines EXPLANATION-Checkpoints für interne
  * MFA-Klär-Ansichten (Schritt-2-Test im APPOINTMENT-Profil).
  *
@@ -926,8 +1059,8 @@ function QuestionBlock({ checkpoint }: { checkpoint: PlainCheckpoint }) {
  *   `Kurzlabel (?)                                  [Ja] [Nein]`
  *
  * – Kurzlabel: vom aufrufenden Profil (z. B. „Termin möglich").
- * – (?): kleines Info-Icon; via Hover/Tap wird die ausführliche Frage als
- *   nativer `title`-Tooltip angezeigt.
+ * – (?): `CompactTooltip` – zeigt die Originalfrage per Hover oder Klick.
+ *   Die Langfrage wird NICHT zusätzlich sichtbar gerendert.
  * – Ja/Nein: dieselben `YesNoButtons`, jetzt rechtsbündig in derselben Zeile.
  *
  * Diese Komponente ändert ausschließlich die Darstellung. Die gespeicherten
@@ -972,34 +1105,10 @@ function CompactExplanationRow({
         }}
       >
         <span style={{ fontSize: "0.9rem" }}>{shortLabel}</span>
-        <button
-          type="button"
-          aria-label={`Erklärung: ${tooltipText}`}
-          title={tooltipText}
-          // Kein onClick: das (?)-Icon dient nur als Hover-/Fokus-Tooltip-Anker
-          // (nativer `title`-Tooltip + `aria-label` für Screenreader). Ein
-          // echter Button-Kontext (statt focusable Span) ist tastatur- und
-          // a11y-konform.
-          onClick={(e) => e.preventDefault()}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "1.1rem",
-            height: "1.1rem",
-            borderRadius: "50%",
-            border: "1px solid var(--border)",
-            background: "var(--background)",
-            color: "var(--muted-foreground, #6b7280)",
-            fontSize: "0.7rem",
-            cursor: "help",
-            flexShrink: 0,
-            padding: 0,
-            lineHeight: 1,
-          }}
-        >
-          ?
-        </button>
+        <CompactTooltip
+          text={tooltipText}
+          ariaLabel={`Erklärung anzeigen: ${tooltipText}`}
+        />
       </div>
       <div
         style={{
@@ -1608,11 +1717,6 @@ function PrescriptionSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -1832,11 +1936,6 @@ function AUSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Pilot: Section-Intros sind jetzt die Schubladen (Akkordeons). */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -2006,11 +2105,6 @@ function ReferralSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -2174,11 +2268,6 @@ function HospitalAdmissionSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -2347,11 +2436,6 @@ function LabSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
@@ -2472,11 +2556,6 @@ function ImmunizationSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
@@ -2611,11 +2690,6 @@ function AppointmentSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
         sectionIntroCheckpoints={section.sectionIntroCheckpoints ?? []}
@@ -2769,11 +2843,6 @@ function OnboardingSpecificSection({
   return (
     <section style={{ marginBottom: "2rem" }}>
       <h2 style={{ marginBottom: "0.25rem" }}>{section.label}</h2>
-      <p className="text-muted text-small" style={{ marginBottom: "0.75rem" }}>
-        Wähle den passenden Antwortkontext. Innerhalb des Antwortkontexts kannst du ihn als
-        Antwort-Einstieg aktivieren und passende Hinweise mit Ja/Nein beantworten.
-      </p>
-
       {/* Antwortkontexte als M2-Schubladen-Akkordeon. */}
       <ProfileSectionIntroDrawers
         inquiryId={section.inquiryId}
