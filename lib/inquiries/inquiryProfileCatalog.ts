@@ -91,6 +91,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "CARE_CHANNEL_CHOICE",
       "CONTROL_APPOINTMENT_RECOMMENDED",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -113,6 +114,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       CONTROL_APPOINTMENT_RECOMMENDED: {
         hideWhenAny: [],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ AU_MISSING_EGK: "YES" }],
       },
     },
 
@@ -1916,6 +1920,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONBOARDING_DATA_MISSING_CONTEXT",
       "ONBOARDING_WRONG_PRACTICE_NOTICE",
       "DOCUMENT_UPLOAD",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED: {
@@ -1935,6 +1940,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           { ONBOARDING_GKV_DOCUMENT_MISSING: "YES" },
           { ONBOARDING_PKV_PAS_MISSING: "YES" },
         ],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ ONBOARDING_GKV_DOCUMENT_MISSING: "YES" }],
       },
     },
 
@@ -2050,6 +2058,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_ONSITE_PAYMENT",
       "BILLING_CONTACT_EXTERNAL_PARTY",
       "BILLING_ADDRESS_UPDATE_REQUESTED",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       // Alle drei Bausteine nur anzeigen, wenn die Leistung keine Kassenleistung ist.
@@ -2067,6 +2076,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       BILLING_ADDRESS_UPDATE_REQUESTED: {
         showWhenAny: [{ BILLING_ADDRESS_MISSING: "YES" }],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ BILLING_DOCUMENT_MISSING: "YES" }],
       },
     },
     availableActionIds: [

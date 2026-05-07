@@ -1602,6 +1602,35 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   /**
+   * Workflow-spezifische Action: digitale Übermittlung der eGK-/Versicherungsdaten
+   * über die Krankenkassen-App (QR-Code-PDF + „Ersatzbescheinigung“/
+   * „Versicherungsnachweis" scannen). Bewusst KEIN generischer Upload-Baustein
+   * (siehe `DOCUMENT_UPLOAD`) und KEIN EXPLANATION/SECTION_INTRO – sondern eine
+   * eigenständige NEXT_STEP-Action, die in mehreren Profilen wiederverwendet
+   * wird (ONBOARDING bei fehlendem GKV-Versicherungsnachweis, AU bei fehlender
+   * eGK, BILLING bei fehlenden Abrechnungsunterlagen mit eGK-Bezug).
+   *
+   * Bindung erfolgt über `boundActionCheckpointIds` + `boundActionConditions`
+   * im jeweiligen Profil; deduplizierte Ausgabe einmalig im SHARED_BOTTOM.
+   */
+  INSURANCE_DATA_APP_TRANSFER: {
+    id: "INSURANCE_DATA_APP_TRANSFER",
+    label: "Versicherungsdaten digital über Krankenkassen-App übermitteln",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Übermitteln Sie Ihre Versicherungsdaten digital über Ihre Krankenkassen-App:\n\n- Öffnen Sie die angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet.\n- Starten Sie die App Ihrer Krankenkasse auf dem Smartphone.\n- Wählen Sie „Ersatzbescheinigung“ oder „Versicherungsnachweis“ und scannen Sie den QR-Code.\n\nIhre Daten werden automatisch und sicher an unsere Praxis gesendet.",
+    },
+    textByAudience: {
+      contact_person:
+        "Versicherungsdaten lassen sich digital über die App der Krankenkasse übermitteln:\n\n- Angehängte PDF-Datei mit dem QR-Code auf einem Computer oder Tablet öffnen.\n- App der Krankenkasse auf einem Smartphone starten.\n- „Ersatzbescheinigung“ oder „Versicherungsnachweis“ auswählen und den QR-Code scannen.\n\nDie Daten werden automatisch und sicher an die Praxis gesendet.",
+    },
+  },
+
+  /**
    * Generischer Hinweis auf Selbstzahler-/Privatleistungen: Zahlung vor Ort
    * per EC- oder Kreditkarte. Bewusst profil-agnostisch formuliert (kein
    * Bezug zu Attest, Onboarding o. ä.), damit derselbe Baustein über
