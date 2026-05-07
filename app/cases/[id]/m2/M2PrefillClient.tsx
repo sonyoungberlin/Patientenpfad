@@ -217,16 +217,73 @@ export function M2PrefillClient({
           return null;
         }
 
+        const questionCatalog =
+          mode === "patient" ? M2_QUESTIONS : M2_QUESTIONS_MFA;
+
+        // Schritt 1 (nur Rendering): K13 nicht mehr als eigene Hauptkarte
+        // anzeigen, wenn K12 ebenfalls sichtbar ist. K13 wird stattdessen
+        // unten in der K12-Karte als optionaler Unterabschnitt
+        // "Geriatrische Zusatzfragen" eingebettet.
+        // Persistenz, Checkpoint-Identitäten, Antworten und API bleiben
+        // unverändert – nur die Render-Reihenfolge wird angepasst.
+        const visibleIds = new Set(visibleCheckpoints.map((cp) => cp.id));
+        const k13EmbeddedInK12 = visibleIds.has("K12") && visibleIds.has("K13");
+        const k13Checkpoint = k13EmbeddedInK12
+          ? visibleCheckpoints.find((cp) => cp.id === "K13") ?? null
+          : null;
+
+        const renderQuestionList = (
+          checkpointId: string,
+          qs: ReadonlyArray<{ id: string; text: string }>,
+        ) => {
+          const cpAnswers = values[checkpointId] ?? {};
+          return (
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {qs.map((q) => (
+                <li
+                  key={q.id}
+                  data-m2-question={`${checkpointId}:${q.id}`}
+                  style={{ marginBottom: "0.75rem" }}
+                >
+                  <div style={{ marginBottom: "0.4rem" }}>{q.text}</div>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    {ANSWER_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`answer-btn${cpAnswers[q.id] === opt.value ? " active" : ""}`}
+                        data-m2-answer={`${checkpointId}:${q.id}:${opt.value}`}
+                        onClick={() => handleAnswer(checkpointId, q.id, opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          );
+        };
+
         return (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {visibleCheckpoints.map((cp) => {
-              const questionCatalog =
-                mode === "patient" ? M2_QUESTIONS : M2_QUESTIONS_MFA;
+              // K13 wird in die K12-Karte eingebettet, wenn beide sichtbar sind
+              // → keine eigene Hauptkarte für K13 in diesem Fall.
+              if (k13EmbeddedInK12 && cp.id === "K13") return null;
+
               const questions = questionCatalog[cp.id] ?? [];
               // Im MFA-Modus: Block trotzdem rendern, aber mit Hinweistext statt Fragen.
               // Im Patienten-Modus: Checkpoint ohne Fragen ausblenden (bisheriges Verhalten).
               if (mode !== "mfa" && questions.length === 0) return null;
-              const cpAnswers = values[cp.id] ?? {};
+
+              const isK12WithK13 = cp.id === "K12" && k13EmbeddedInK12 && k13Checkpoint;
+              const k13Questions = isK12WithK13
+                ? questionCatalog[k13Checkpoint!.id] ?? []
+                : [];
+              const showK13Subsection =
+                isK12WithK13 && (mode === "mfa" || k13Questions.length > 0);
+
               return (
                 <li
                   key={cp.id}
@@ -243,37 +300,49 @@ export function M2PrefillClient({
                     </div>
                   ) : null}
                   {questions.length > 0 ? (
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                    {questions.map((q) => (
-                      <li
-                        key={q.id}
-                        data-m2-question={`${cp.id}:${q.id}`}
-                        style={{ marginBottom: "0.75rem" }}
-                      >
-                        <div style={{ marginBottom: "0.4rem" }}>
-                          {q.text}
-                        </div>
-                        <div style={{ display: "flex", gap: "0.5rem" }}>
-                          {ANSWER_OPTIONS.map((opt) => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              className={`answer-btn${cpAnswers[q.id] === opt.value ? " active" : ""}`}
-                              data-m2-answer={`${cp.id}:${q.id}:${opt.value}`}
-                              onClick={() => handleAnswer(cp.id, q.id, opt.value)}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                    renderQuestionList(cp.id, questions)
                   ) : (
                     <p style={{ margin: 0, fontStyle: "italic" }}>
                       Für die MFA gibt es hier keine vorbereitenden Fragen.
                     </p>
                   )}
+                  {showK13Subsection ? (
+                    <div
+                      data-m2-checkpoint-embedded={k13Checkpoint!.id}
+                      style={{
+                        marginTop: "1rem",
+                        paddingTop: "0.75rem",
+                        borderTop: "1px solid var(--border, #e5e7eb)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          marginBottom: "0.5rem",
+                          fontWeight: 500,
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Geriatrische Zusatzfragen
+                      </div>
+                      {"introText" in k13Checkpoint! && k13Checkpoint!.introText ? (
+                        <div
+                          style={{
+                            marginBottom: "0.75rem",
+                            fontStyle: "italic",
+                          }}
+                        >
+                          {k13Checkpoint!.introText}
+                        </div>
+                      ) : null}
+                      {k13Questions.length > 0 ? (
+                        renderQuestionList(k13Checkpoint!.id, k13Questions)
+                      ) : (
+                        <p style={{ margin: 0, fontStyle: "italic" }}>
+                          Für die MFA gibt es hier keine vorbereitenden Fragen.
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
