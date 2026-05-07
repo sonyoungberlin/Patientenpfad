@@ -972,11 +972,15 @@ function CompactExplanationRow({
         }}
       >
         <span style={{ fontSize: "0.9rem" }}>{shortLabel}</span>
-        <span
-          tabIndex={0}
-          role="img"
+        <button
+          type="button"
           aria-label={`Erklärung: ${tooltipText}`}
           title={tooltipText}
+          // Kein onClick: das (?)-Icon dient nur als Hover-/Fokus-Tooltip-Anker
+          // (nativer `title`-Tooltip + `aria-label` für Screenreader). Ein
+          // echter Button-Kontext (statt focusable Span) ist tastatur- und
+          // a11y-konform.
+          onClick={(e) => e.preventDefault()}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -985,14 +989,17 @@ function CompactExplanationRow({
             height: "1.1rem",
             borderRadius: "50%",
             border: "1px solid var(--border)",
+            background: "var(--background)",
             color: "var(--muted-foreground, #6b7280)",
             fontSize: "0.7rem",
             cursor: "help",
             flexShrink: 0,
+            padding: 0,
+            lineHeight: 1,
           }}
         >
           ?
-        </span>
+        </button>
       </div>
       <div
         style={{
