@@ -1411,7 +1411,8 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOCTOR_REVIEW_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(20);
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INSURANCE_PROOF_MISSING");
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(21);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1436,6 +1437,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
       "TECH_UPLOAD_FAILED",
       "CONTRACEPTION_SPECIALIST_ONLY",
+      "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ]);
   });
 
@@ -2607,7 +2609,7 @@ describe("REFERRAL-Profil – Struktur", () => {
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(6);
+    expect(profile.specificCheckpointIds).toHaveLength(7);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
@@ -2615,6 +2617,7 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
     expect(profile.specificCheckpointIds).toContain("REF_MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
+    expect(profile.specificCheckpointIds).toContain("REFERRAL_INSURANCE_PROOF_MISSING");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();

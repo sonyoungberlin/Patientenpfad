@@ -91,6 +91,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ACUTE_OPEN_CONSULTATION_ACTION",
       "CARE_CHANNEL_CHOICE",
       "CONTROL_APPOINTMENT_RECOMMENDED",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -113,6 +114,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       CONTROL_APPOINTMENT_RECOMMENDED: {
         hideWhenAny: [],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ AU_MISSING_EGK: "YES" }],
       },
     },
 
@@ -283,6 +287,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECH_UPLOAD_FAILED",
       // Schublade „Anliegen geprüft" – neuer Baustein für kontrazeptive Verordnung.
       "CONTRACEPTION_SPECIALIST_ONLY",
+      // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER` (eGK/
+      // Versicherungsnachweis fehlt für die Rezeptausstellung).
+      "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ],
     boundGlobalCheckpointIds: [],
     availableActionIds: [
@@ -296,6 +303,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
       "PHARMACY_INFORMATION",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       E_RECIPE_USE: {
@@ -303,6 +311,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       PHARMACY_INFORMATION: {
         hideWhenAny: [{ PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "YES" }],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ PRESCRIPTION_INSURANCE_PROOF_MISSING: "YES" }],
       },
     },
     globalHints: {},
@@ -1061,6 +1072,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // wenn die hochgeladene Datei nicht verwertbar ist. Sichtbar im
       // Patientenoutput erst nach M2 YES + M3 SHOW.
       "TECH_UPLOAD_FAILED",
+      // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER` (eGK/
+      // Versicherungsnachweis fehlt für die Ausstellung der Überweisung).
+      "REFERRAL_INSURANCE_PROOF_MISSING",
     ],
     boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
@@ -1068,6 +1082,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       // REF_ORIGINAL_VS_PDF: immer in M3 anzeigen, ohne M2-Schalter.
@@ -1078,6 +1093,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // REF_BOOKING_CODE_PROCESS: nur anzeigen, wenn Hausarztvermittlungsfall (mit Buchungscode).
       REF_BOOKING_CODE_PROCESS: {
         showWhenAny: [{ REF_HAV_CASE: "YES" }],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ REFERRAL_INSURANCE_PROOF_MISSING: "YES" }],
       },
     },
     availableActionIds: [
@@ -1558,6 +1576,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // Zentrale Patientenrückfrage zu Terminart/Buchungslogik. Detail-Erklärungen
       // sind als gebundene Info-Actions (APPOINTMENT_INFO_*) modelliert.
       "APPOINTMENT_TYPE_QUESTION",
+      // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER` (eGK/
+      // Versicherungsnachweis fehlt für die Terminbearbeitung, inkl.
+      // Videosprechstunde).
+      "APPOINTMENT_INSURANCE_PROOF_MISSING",
     ],
     boundGlobalCheckpointIds: [
       // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
@@ -1590,6 +1612,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_INFO_SHORT_NOTICE_CANCELLATION_IMPACT",
       "APPOINTMENT_INFO_BOOKING_RESTRICTED_AFTER_NO_SHOW",
       "APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
@@ -1636,6 +1659,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION: {
         showWhenAny: [{ APPOINTMENT_TYPE_QUESTION: "YES" }],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ APPOINTMENT_INSURANCE_PROOF_MISSING: "YES" }],
       },
     },
 
@@ -1916,6 +1942,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONBOARDING_DATA_MISSING_CONTEXT",
       "ONBOARDING_WRONG_PRACTICE_NOTICE",
       "DOCUMENT_UPLOAD",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED: {
@@ -1935,6 +1962,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
           { ONBOARDING_GKV_DOCUMENT_MISSING: "YES" },
           { ONBOARDING_PKV_PAS_MISSING: "YES" },
         ],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ ONBOARDING_GKV_DOCUMENT_MISSING: "YES" }],
       },
     },
 
@@ -2050,6 +2080,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_ONSITE_PAYMENT",
       "BILLING_CONTACT_EXTERNAL_PARTY",
       "BILLING_ADDRESS_UPDATE_REQUESTED",
+      "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
       // Alle drei Bausteine nur anzeigen, wenn die Leistung keine Kassenleistung ist.
@@ -2067,6 +2098,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       BILLING_ADDRESS_UPDATE_REQUESTED: {
         showWhenAny: [{ BILLING_ADDRESS_MISSING: "YES" }],
+      },
+      INSURANCE_DATA_APP_TRANSFER: {
+        showWhenAny: [{ BILLING_DOCUMENT_MISSING: "YES" }],
       },
     },
     availableActionIds: [
