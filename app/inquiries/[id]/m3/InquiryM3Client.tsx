@@ -367,15 +367,29 @@ function StatusButtons({
   value,
   onChange,
   disabled,
+  inline = false,
 }: {
   checkpointId: string;
   options: Array<{ value: string; label: string }>;
   value: string | undefined;
   onChange: (id: string, val: string) => void;
   disabled: boolean;
+  /**
+   * Wenn true, werden die Buttons ohne `marginTop` gerendert. Wird in der
+   * kompakten Inline-Zeilen-Optik (`CompactRow`) verwendet, in der die Buttons
+   * rechts neben dem Label stehen statt darunter.
+   */
+  inline?: boolean;
 }) {
   return (
-    <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+    <div
+      style={{
+        display: "flex",
+        gap: "0.4rem",
+        flexWrap: "wrap",
+        ...(inline ? {} : { marginTop: "0.4rem" }),
+      }}
+    >
       {options.map((opt) => (
         <button
           key={opt.value}
@@ -397,6 +411,58 @@ function StatusButtons({
           {opt.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Kompakte Zeile für die interne M3-Arbeitsansicht:
+ *
+ *   `Titel ............................... [Btn] [Btn] [Btn]`
+ *
+ * Label links, Action-Buttons rechts in derselben Zeile. Optionale
+ * Kontextinformationen (z. B. M2-Vorbelegung, Klärungsfragen, Hinweise) werden
+ * **unter** der Zeile gerendert (`children`). Diese Komponente ändert
+ * ausschließlich die Darstellung – Status-Werte, Logik und gespeicherte
+ * Daten bleiben unverändert. Inspiriert vom M2-Pendant `CompactExplanationRow`.
+ */
+function CompactRow({
+  label,
+  buttons,
+  children,
+}: {
+  label: ReactNode;
+  buttons: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        padding: "0.35rem 0",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.5rem",
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 500,
+            minWidth: 0,
+            flex: "1 1 auto",
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ flexShrink: 0 }}>{buttons}</div>
+      </div>
+      {children}
     </div>
   );
 }
@@ -1273,25 +1339,23 @@ export default function InquiryM3Client({
         <>
           {/* Nachrichteneinstieg – Intro-Bausteine (profilübergreifend) */}
           {introCheckpoints.length > 0 && (
-            <section style={{ marginBottom: "1.5rem" }}>
-              <h2 style={{ marginBottom: "0.5rem" }}>
+            <section style={{ marginBottom: "1rem" }}>
+              <h2 style={{ marginBottom: "0.35rem" }}>
                 <span aria-hidden="true">✉ </span>Nachrichteneinstieg
               </h2>
               <div
                 className="text-muted text-small"
-                style={{ marginBottom: "0.5rem" }}
+                style={{ marginBottom: "0.35rem" }}
               >
                 Optional: Einstiegssatz vor der Entscheidung. Maximal einen auswählen.
               </div>
               {introCheckpoints.map((cp) => {
                 const isActive = statuses[cp.id] === "ACTIVE";
                 return (
-                  <div
+                  <CompactRow
                     key={cp.id}
-                    style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                  >
-                    <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                    <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+                    label={cp.label}
+                    buttons={
                       <button
                         type="button"
                         onClick={() =>
@@ -1312,8 +1376,8 @@ export default function InquiryM3Client({
                       >
                         {isActive ? "Aktiv" : "Inaktiv"}
                       </button>
-                    </div>
-                  </div>
+                    }
+                  />
                 );
               })}
             </section>
@@ -1330,8 +1394,8 @@ export default function InquiryM3Client({
               <section
                 aria-label="Ausgewählter Antwortkontext aus M2"
                 style={{
-                  marginBottom: "1.5rem",
-                  padding: "0.5rem 0.75rem",
+                  marginBottom: "1rem",
+                  padding: "0.4rem 0.75rem",
                   borderLeft: "3px solid var(--primary, #2563eb)",
                   background: "var(--muted, #f5f5f5)",
                   borderRadius: "var(--radius)",
@@ -1372,43 +1436,47 @@ export default function InquiryM3Client({
               return !!text;
             });
             return (
-            <section key={section.inquiryId} style={{ marginBottom: "1.5rem" }}>
-              <h2 style={{ marginBottom: "0.5rem" }}>{section.label}</h2>
+            <section key={section.inquiryId} style={{ marginBottom: "1rem" }}>
+              <h2 style={{ marginBottom: "0.35rem" }}>{section.label}</h2>
 
               {/* Decision – nur bei Profilen mit Decision-Checkpoint */}
               {section.decisionCheckpointId && (
                 <>
                   <div
                     className="text-muted text-small"
-                    style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
+                    style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.15rem" }}
                   >
                     <span aria-hidden="true">? </span>Entscheidung
                   </div>
-                  <div style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
-                  <div style={{ fontWeight: 500 }}>{section.decisionLabel}</div>
-                  {section.decisionQuestions.length > 0 && (
-                    <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
-                      {section.decisionQuestions
-                        .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
-                        .map((q) => {
-                          const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
-                          return (
-                            <div key={q.id}>
-                              {q.text}
-                              <span style={{ fontWeight: 500 }}> — {answer}</span>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                  <StatusButtons
-                    checkpointId={section.decisionCheckpointId}
-                    options={DECISION_OPTIONS}
-                    value={statuses[section.decisionCheckpointId]}
-                    onChange={setStatus}
-                    disabled={false}
-                  />
-                </div>
+                  <CompactRow
+                    label={section.decisionLabel}
+                    buttons={
+                      <StatusButtons
+                        checkpointId={section.decisionCheckpointId}
+                        options={DECISION_OPTIONS}
+                        value={statuses[section.decisionCheckpointId]}
+                        onChange={setStatus}
+                        disabled={false}
+                        inline
+                      />
+                    }
+                  >
+                    {section.decisionQuestions.length > 0 && (
+                      <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
+                        {section.decisionQuestions
+                          .filter((q) => statuses[q.id] === "YES" || statuses[q.id] === "NO")
+                          .map((q) => {
+                            const answer = statuses[q.id] === "YES" ? "Ja" : "Nein";
+                            return (
+                              <div key={q.id}>
+                                {q.text}
+                                <span style={{ fontWeight: 500 }}> — {answer}</span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </CompactRow>
                 </>
               )}
 
@@ -1416,7 +1484,7 @@ export default function InquiryM3Client({
               {visibleSpecificCps.length > 0 && (
                 <div
                   className="text-muted text-small"
-                  style={{ ...GROUP_BADGE_STYLE, margin: "0.5rem 0 0.25rem" }}
+                  style={{ ...GROUP_BADGE_STYLE, margin: "0.4rem 0 0.15rem" }}
                 >
                   <span aria-hidden="true">+ </span>Zusatzinfos
                 </div>
@@ -1426,12 +1494,28 @@ export default function InquiryM3Client({
                 const m2Status = statuses[cp.id];
                 const m2Label =
                   m2Status === "YES" ? "Ja" : m2Status === "NO" ? "Nein" : undefined;
+                const buttons =
+                  cp.kind === InquiryCheckpointKind.EXPLANATION ? (
+                    <StatusButtons
+                      checkpointId={cp.id}
+                      options={OUTPUT_OPTIONS}
+                      value={outputStatuses[cp.id]}
+                      onChange={setOutputStatus}
+                      disabled={false}
+                      inline
+                    />
+                  ) : (
+                    <StatusButtons
+                      checkpointId={cp.id}
+                      options={optionsForKind(cp.kind)}
+                      value={statuses[cp.id]}
+                      onChange={setStatus}
+                      disabled={false}
+                      inline
+                    />
+                  );
                 return (
-                  <div
-                    key={cp.id}
-                    style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                  >
-                    <div style={{ fontWeight: 500 }}>{cp.label}</div>
+                  <CompactRow key={cp.id} label={cp.label} buttons={buttons}>
                     {/* M2 Prefill – zeigt Fragen + M2-Antwort als Kontext (schreibgeschützt) */}
                     {cp.kind === InquiryCheckpointKind.EXPLANATION &&
                       cp.questions &&
@@ -1463,66 +1547,50 @@ export default function InquiryM3Client({
                           ))}
                         </ul>
                       )}
-                    {/* EXPLANATION: outputStatus-Buttons (SHOW / HIDE) statt factStatus-Buttons */}
-                    {cp.kind === InquiryCheckpointKind.EXPLANATION ? (
-                      <StatusButtons
-                        checkpointId={cp.id}
-                        options={OUTPUT_OPTIONS}
-                        value={outputStatuses[cp.id]}
-                        onChange={setOutputStatus}
-                        disabled={false}
-                      />
-                    ) : (
-                      <StatusButtons
-                        checkpointId={cp.id}
-                        options={optionsForKind(cp.kind)}
-                        value={statuses[cp.id]}
-                        onChange={setStatus}
-                        disabled={false}
-                      />
-                    )}
                     {/* Hinweis bei outputStatus HIDE */}
                     {cp.kind === InquiryCheckpointKind.EXPLANATION &&
                       outputStatuses[cp.id] === ExplanationOutputStatus.HIDE && (
                         <div
                           className="text-muted text-small"
-                          style={{ marginTop: "0.25rem", fontStyle: "italic" }}
+                          style={{ marginTop: "0.2rem", fontStyle: "italic" }}
                         >
                           keine Erklärung erforderlich
                         </div>
                       )}
-                  </div>
+                  </CompactRow>
                 );
               })}
 
               {/* Globale Output-Bausteine (GLOBAL MODULAR EXPLANATION) */}
               {(section.boundGlobalOutputCheckpoints ?? []).filter((cp) => statuses[cp.id] === "YES").length > 0 && (
-                <div style={{ marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
-                  <div className="text-muted text-small" style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.35rem" }}>
+                <div style={{ marginTop: "0.6rem", paddingTop: "0.4rem", borderTop: "1px dashed var(--border)" }}>
+                  <div className="text-muted text-small" style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.2rem" }}>
                     <span aria-hidden="true">ⓘ </span>Globale Bausteine
                   </div>
                   {(section.boundGlobalOutputCheckpoints ?? []).filter((cp) => statuses[cp.id] === "YES").map((cp) => (
-                    <div
+                    <CompactRow
                       key={cp.id}
-                      style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                      label={cp.label}
+                      buttons={
+                        <StatusButtons
+                          checkpointId={cp.id}
+                          options={OUTPUT_OPTIONS}
+                          value={outputStatuses[cp.id]}
+                          onChange={setOutputStatus}
+                          disabled={false}
+                          inline
+                        />
+                      }
                     >
-                      <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                      <StatusButtons
-                        checkpointId={cp.id}
-                        options={OUTPUT_OPTIONS}
-                        value={outputStatuses[cp.id]}
-                        onChange={setOutputStatus}
-                        disabled={false}
-                      />
                       {outputStatuses[cp.id] === ExplanationOutputStatus.HIDE && (
                         <div
                           className="text-muted text-small"
-                          style={{ marginTop: "0.25rem", fontStyle: "italic" }}
+                          style={{ marginTop: "0.2rem", fontStyle: "italic" }}
                         >
                           keine Erklärung erforderlich
                         </div>
                       )}
-                    </div>
+                    </CompactRow>
                   ))}
                 </div>
               )}
@@ -1532,8 +1600,8 @@ export default function InquiryM3Client({
 
           {/* Action checkpoints (globale availableActionIds + profilgebundene boundActionCheckpointIds) */}
           {(actionCheckpoints.filter((cp) => statuses[cp.id] === "ACTIVE").length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
-            <section style={{ marginBottom: "1.5rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: actionsOpen ? "0.5rem" : 0 }}>
+            <section style={{ marginBottom: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: actionsOpen ? "0.35rem" : 0 }}>
                 <h2 style={{ margin: 0 }}><span aria-hidden="true">→ </span>Aktionen / Infos</h2>
                 <button
                   type="button"
@@ -1604,27 +1672,28 @@ export default function InquiryM3Client({
                     if (groupCps.length === 0) continue;
                     groupCps.forEach((cp) => renderedIds.add(cp.id));
                     groupElements.push(
-                      <div key={group.label} style={{ marginTop: "0.75rem" }}>
+                      <div key={group.label} style={{ marginTop: "0.5rem" }}>
                         <div
                           className="text-muted text-small"
-                          style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
+                          style={{ fontWeight: 600, marginBottom: "0.2rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
                         >
                           {group.label}
                         </div>
                         {groupCps.map((cp) => (
-                          <div
+                          <CompactRow
                             key={cp.id}
-                            style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                          >
-                            <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                            <StatusButtons
-                              checkpointId={cp.id}
-                              options={ACTION_OPTIONS}
-                              value={statuses[cp.id]}
-                              onChange={setStatus}
-                              disabled={false}
-                            />
-                          </div>
+                            label={cp.label}
+                            buttons={
+                              <StatusButtons
+                                checkpointId={cp.id}
+                                options={ACTION_OPTIONS}
+                                value={statuses[cp.id]}
+                                onChange={setStatus}
+                                disabled={false}
+                                inline
+                              />
+                            }
+                          />
                         ))}
                       </div>,
                     );
@@ -1636,21 +1705,22 @@ export default function InquiryM3Client({
                   );
                   if (ungrouped.length > 0) {
                     groupElements.push(
-                      <div key="__ungrouped__" style={{ marginTop: "0.75rem" }}>
+                      <div key="__ungrouped__" style={{ marginTop: "0.5rem" }}>
                         {ungrouped.map((cp) => (
-                          <div
+                          <CompactRow
                             key={cp.id}
-                            style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                          >
-                            <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                            <StatusButtons
-                              checkpointId={cp.id}
-                              options={ACTION_OPTIONS}
-                              value={statuses[cp.id]}
-                              onChange={setStatus}
-                              disabled={false}
-                            />
-                          </div>
+                            label={cp.label}
+                            buttons={
+                              <StatusButtons
+                                checkpointId={cp.id}
+                                options={ACTION_OPTIONS}
+                                value={statuses[cp.id]}
+                                onChange={setStatus}
+                                disabled={false}
+                                inline
+                              />
+                            }
+                          />
                         ))}
                       </div>,
                     );
@@ -1708,10 +1778,10 @@ export default function InquiryM3Client({
                     .filter(({ cps }) => cps.length > 0);
 
                   groupElements.push(
-                    <div key={`bound-${sec.inquiryId}`} style={{ marginTop: "0.75rem" }}>
+                    <div key={`bound-${sec.inquiryId}`} style={{ marginTop: "0.5rem" }}>
                       <div
                         className="text-muted text-small"
-                        style={{ fontWeight: 600, marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
+                        style={{ fontWeight: 600, marginBottom: "0.2rem", textTransform: "uppercase", letterSpacing: "0.04em" }}
                       >
                         {sec.label}
                       </div>
@@ -1719,16 +1789,25 @@ export default function InquiryM3Client({
                         <div key={cat}>
                           <div
                             className="text-muted text-small"
-                            style={{ marginTop: "0.5rem", marginBottom: "0.15rem", fontStyle: "italic" }}
+                            style={{ marginTop: "0.35rem", marginBottom: "0.1rem", fontStyle: "italic" }}
                           >
                             {ACTION_CATEGORY_LABELS[cat] ?? cat}
                           </div>
                           {cps.map((cp) => (
-                            <div
+                            <CompactRow
                               key={cp.id}
-                              style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
+                              label={cp.label}
+                              buttons={
+                                <StatusButtons
+                                  checkpointId={cp.id}
+                                  options={ACTION_OPTIONS}
+                                  value={statuses[cp.id]}
+                                  onChange={setStatus}
+                                  disabled={false}
+                                  inline
+                                />
+                              }
                             >
-                              <div style={{ fontWeight: 500 }}>{cp.label}</div>
                               {cp.questions && cp.questions.length > 0 && (
                                 <div className="text-muted text-small" style={{ marginTop: "0.2rem" }}>
                                   {cp.questions.map((q) => (
@@ -1736,14 +1815,7 @@ export default function InquiryM3Client({
                                   ))}
                                 </div>
                               )}
-                              <StatusButtons
-                                checkpointId={cp.id}
-                                options={ACTION_OPTIONS}
-                                value={statuses[cp.id]}
-                                onChange={setStatus}
-                                disabled={false}
-                              />
-                            </div>
+                            </CompactRow>
                           ))}
                         </div>
                       ))}
@@ -1762,24 +1834,25 @@ export default function InquiryM3Client({
                           <div key={`singleorigin-${cat}`}>
                             <div
                               className="text-muted text-small"
-                              style={{ marginTop: "0.5rem", marginBottom: "0.15rem", fontStyle: "italic" }}
+                              style={{ marginTop: "0.35rem", marginBottom: "0.1rem", fontStyle: "italic" }}
                             >
                               {ACTION_CATEGORY_LABELS[cat] ?? cat}
                             </div>
                             {cps.map((cp) => (
-                              <div
+                              <CompactRow
                                 key={cp.id}
-                                style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}
-                              >
-                                <div style={{ fontWeight: 500 }}>{cp.label}</div>
-                                <StatusButtons
-                                  checkpointId={cp.id}
-                                  options={ACTION_OPTIONS}
-                                  value={statuses[cp.id]}
-                                  onChange={setStatus}
-                                  disabled={false}
-                                />
-                              </div>
+                                label={cp.label}
+                                buttons={
+                                  <StatusButtons
+                                    checkpointId={cp.id}
+                                    options={ACTION_OPTIONS}
+                                    value={statuses[cp.id]}
+                                    onChange={setStatus}
+                                    disabled={false}
+                                    inline
+                                  />
+                                }
+                              />
                             ))}
                           </div>
                         ));
