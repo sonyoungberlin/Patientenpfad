@@ -255,9 +255,9 @@ function SectionIntroAccordion({
         borderRadius: "var(--radius)",
         marginBottom: "0.5rem",
         overflow: "hidden",
-        // Geringere Text-Opacity für leere Schubladen, ohne sie ganz
-        // unleserlich zu machen.
-        opacity: isEmptyDrawer ? 0.55 : 1,
+        // Geringere Text-Opacity für leere Schubladen (laut Spec) – aber
+        // hoch genug, damit das Label noch sicher lesbar bleibt.
+        opacity: isEmptyDrawer ? 0.65 : 1,
         background: isEmptyDrawer ? "var(--background)" : undefined,
       }}
     >
@@ -1041,7 +1041,6 @@ function CompactTooltip({
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
             whiteSpace: "normal",
             textAlign: "left",
-            pointerEvents: "none",
           }}
         >
           {text}
