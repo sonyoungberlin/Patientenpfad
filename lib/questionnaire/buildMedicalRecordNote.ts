@@ -71,6 +71,7 @@ const SHORT_LABELS: Record<string, string> = {
 
   // Arbeitsunfähigkeit
   AU_SYMPTOMS: "Beschwerden",
+  AU_SYMPTOMS_OTHER_TEXT: "Beschwerden (Freitext)",
   AU_START_DATE: "Beginn",
   AU_END_DATE: "AU bis",
   AU_IS_FOLLOWUP: "Folge-AU",

@@ -266,6 +266,9 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Schwindel",
       "Übelkeit",
       "Erschöpfung",
+      "Stress / Überlastung",
+      "Zustand nach Unfall",
+      "Zustand nach Operation",
       "Sonstiges",
     ],
     options_en: [
@@ -278,8 +281,22 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Dizziness",
       "Nausea",
       "Exhaustion",
+      "Stress / overload",
+      "Condition after accident",
+      "Condition after surgery",
       "Other",
     ],
+  },
+  AU_SYMPTOMS_OTHER_TEXT: {
+    id: "AU_SYMPTOMS_OTHER_TEXT",
+    text: "Bitte beschreiben Sie Ihre Beschwerden:",
+    text_en: "Please describe your symptoms:",
+    type: "textarea",
+    required: false,
+    helperText:
+      "Nur ausfüllen, wenn Sie oben „Sonstiges“ ausgewählt haben oder Ihre Beschwerden nicht in der Liste enthalten sind.",
+    helperText_en:
+      "Only fill in if you selected “Other” above or your symptoms are not listed.",
   },
   AU_START_DATE: {
     id: "AU_START_DATE",
@@ -504,7 +521,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     displayOrder: 40,
     hint: "Bitte beachten Sie: Die maximale rückwirkende Ausstellungsdauer ist gesetzlich begrenzt.",
     hint_en: "Please note: the maximum retroactive issuance period is limited by law.",
-    questionIds: ["AU_SYMPTOMS", "AU_START_DATE", "AU_END_DATE", "AU_IS_FOLLOWUP"],
+    questionIds: ["AU_SYMPTOMS", "AU_SYMPTOMS_OTHER_TEXT", "AU_START_DATE", "AU_END_DATE", "AU_IS_FOLLOWUP"],
   },
   REZEPT: {
     id: "REZEPT",
