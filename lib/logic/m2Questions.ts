@@ -273,31 +273,27 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Liegt eine Vorsorgevollmacht oder Patientenverfügung vor?",
     },
     // Mobilitäts-Assessment (nur Status)
+    // Hinweis: Die frühere Folgefrage M2-11 ("Liegt ein Ergebnis zum
+    // Mobilitäts-Assessment vor?") wurde entfernt – ein durchgeführtes
+    // Assessment impliziert ein Ergebnis. Die ID M2-11 wird nicht erneut
+    // vergeben, um Kollisionen mit alten persistierten Antworten zu vermeiden.
     {
       id: "M2-10",
       text: "Wurde ein Mobilitäts-Assessment durchgeführt?",
     },
-    {
-      id: "M2-11",
-      text: "Liegt ein Ergebnis zum Mobilitäts-Assessment vor?",
-    },
     // Kognitives Assessment (nur Status)
+    // Hinweis: M2-13 ("Liegt ein Ergebnis zum kognitiven Assessment vor?")
+    // wurde aus demselben Grund entfernt; ID bleibt unbelegt.
     {
       id: "M2-12",
       text: "Wurde ein kognitives Assessment durchgeführt?",
     },
-    {
-      id: "M2-13",
-      text: "Liegt ein Ergebnis zum kognitiven Assessment vor?",
-    },
     // Stimmungs-/Belastungsfragebogen (nur Status)
+    // Hinweis: M2-15 ("Liegt ein Ergebnis zum Stimmungs-/Belastungsfragebogen
+    // vor?") wurde aus demselben Grund entfernt; ID bleibt unbelegt.
     {
       id: "M2-14",
       text: "Wurde ein Stimmungs-/Belastungsfragebogen durchgeführt?",
-    },
-    {
-      id: "M2-15",
-      text: "Liegt ein Ergebnis zum Stimmungs-/Belastungsfragebogen vor?",
     },
   ],
 };

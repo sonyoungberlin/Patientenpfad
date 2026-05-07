@@ -104,18 +104,21 @@ const K12_K13_GROUPS: ReadonlyArray<K12K13GroupSpec> = [
   {
     title: "Durchgeführte Assessments",
     items: [
-      // Die "Liegt ein Ergebnis vor"-Folgefragen (M2-11/13/15) werden direkt
-      // hinter ihrer jeweiligen "durchgeführt"-Frage gerendert, damit keine
-      // bestehende Frage entfällt (Vorgabe: keine Entfernung von Fragen).
+      // Reine Status-/Doku-Fragen. Die früheren "Liegt ein Ergebnis vor"-
+      // Folgefragen (K13:M2-11/13/15) wurden entfernt – ein durchgeführtes
+      // Assessment impliziert ein Ergebnis (siehe lib/logic/m2Questions.ts).
       { cp: "K13", q: "M2-10" }, // Mobilitäts-Assessment durchgeführt
-      { cp: "K13", q: "M2-11" }, // Ergebnis Mobilitäts-Assessment
       { cp: "K13", q: "M2-12" }, // kognitives Assessment durchgeführt
-      { cp: "K13", q: "M2-13" }, // Ergebnis kognitives Assessment
       { cp: "K13", q: "M2-14" }, // Stimmungs-/Belastungsfragebogen durchgeführt
-      { cp: "K13", q: "M2-15" }, // Ergebnis Stimmungs-/Belastungsfragebogen
     ],
   },
 ];
+
+// Schritt 3 (rein visuell): Die Gruppe "Durchgeführte Assessments" enthält
+// reine Status-/Dokumentationsfragen ("wurde XY durchgeführt?"). Sie soll
+// ruhiger und sekundär wirken als die fachlichen Alltagsfragen, jedoch ohne
+// neue Komponente, eigene Antwortbuttons oder geänderte Datenpfade.
+const ASSESSMENT_GROUP_TITLE = "Durchgeführte Assessments";
 
 export function M2PrefillClient({
   caseId,
@@ -390,26 +393,59 @@ export function M2PrefillClient({
               groupItems.push(renderQuestionItem(item.cp, q, answersFor(item.cp)));
             }
             if (groupItems.length === 0) return;
+            // Schritt 3: Sekundäre, ruhigere Darstellung für die reine
+            // Status-/Doku-Gruppe "Durchgeführte Assessments". Reines CSS,
+            // keine Änderung an Markup-Identitäten oder Antwort-Buttons.
+            const isAssessments = group.title === ASSESSMENT_GROUP_TITLE;
             groupBlocks.push(
               <div
                 key={`grp-${gi}`}
                 data-m2-group={group.title}
+                data-m2-group-variant={isAssessments ? "secondary" : "primary"}
                 style={{
                   marginTop: gi === 0 ? 0 : "1rem",
                   paddingTop: gi === 0 ? 0 : "0.75rem",
                   borderTop:
                     gi === 0 ? "none" : "1px solid var(--border, #e5e7eb)",
+                  ...(isAssessments
+                    ? {
+                        marginTop: "1rem",
+                        padding: "0.6rem 0.75rem",
+                        background: "var(--surface-muted, #f5f6f8)",
+                        border: "1px solid var(--border, #e5e7eb)",
+                        borderRadius: "0.375rem",
+                        fontSize: "0.9rem",
+                        color: "var(--text-muted, #4b5563)",
+                      }
+                    : null),
                 }}
               >
                 <div
                   style={{
-                    marginBottom: "0.5rem",
+                    marginBottom: isAssessments ? "0.35rem" : "0.5rem",
                     fontWeight: 500,
-                    fontSize: "0.95rem",
+                    fontSize: isAssessments ? "0.85rem" : "0.95rem",
+                    textTransform: isAssessments ? "uppercase" : undefined,
+                    letterSpacing: isAssessments ? "0.02em" : undefined,
+                    color: isAssessments
+                      ? "var(--text-muted, #6b7280)"
+                      : undefined,
                   }}
                 >
                   {group.title}
                 </div>
+                {isAssessments ? (
+                  <div
+                    style={{
+                      marginBottom: "0.5rem",
+                      fontSize: "0.8rem",
+                      fontStyle: "italic",
+                      color: "var(--text-muted, #6b7280)",
+                    }}
+                  >
+                    Nur Status-/Dokumentationsfragen.
+                  </div>
+                ) : null}
                 <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {groupItems}
                 </ul>
