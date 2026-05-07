@@ -578,9 +578,35 @@ describe("ONBOARDING – availableActionIds", () => {
     expect(profile.availableActionIds).toContain("DIGITAL_REQUEST");
   });
 
-  it("DOCUMENT_UPLOAD ist in ONBOARDING.availableActionIds enthalten", () => {
+  it("DOCUMENT_UPLOAD ist NICHT in ONBOARDING.availableActionIds (Architekturregel: Listen schließen sich aus)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
-    expect(profile.availableActionIds).toContain("DOCUMENT_UPLOAD");
+    expect(profile.availableActionIds).not.toContain("DOCUMENT_UPLOAD");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ONBOARDING – DOCUMENT_UPLOAD konditionelle Anbindung
+// ---------------------------------------------------------------------------
+
+describe("ONBOARDING – DOCUMENT_UPLOAD bei fehlendem Versicherungs-/PAS-Nachweis", () => {
+  const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
+
+  it("DOCUMENT_UPLOAD ist in ONBOARDING.boundActionCheckpointIds", () => {
+    expect(profile.boundActionCheckpointIds).toContain("DOCUMENT_UPLOAD");
+  });
+
+  it("boundActionConditions.DOCUMENT_UPLOAD triggert bei ONBOARDING_GKV_DOCUMENT_MISSING=YES", () => {
+    const condition = profile.boundActionConditions?.["DOCUMENT_UPLOAD"];
+    expect(condition?.showWhenAny).toEqual(
+      expect.arrayContaining([{ ONBOARDING_GKV_DOCUMENT_MISSING: "YES" }]),
+    );
+  });
+
+  it("boundActionConditions.DOCUMENT_UPLOAD triggert bei ONBOARDING_PKV_PAS_MISSING=YES", () => {
+    const condition = profile.boundActionConditions?.["DOCUMENT_UPLOAD"];
+    expect(condition?.showWhenAny).toEqual(
+      expect.arrayContaining([{ ONBOARDING_PKV_PAS_MISSING: "YES" }]),
+    );
   });
 });
 

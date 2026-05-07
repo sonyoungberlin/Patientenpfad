@@ -1881,7 +1881,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "DOCUMENT_UPLOAD",
       "TECHNICAL_ISSUE",
     ],
     actionGuidanceRules: [
@@ -1916,6 +1915,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONBOARDING_PROVIDE_IDENTITY_DATA",
       "ONBOARDING_DATA_MISSING_CONTEXT",
       "ONBOARDING_WRONG_PRACTICE_NOTICE",
+      "DOCUMENT_UPLOAD",
     ],
     boundActionConditions: {
       ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED: {
@@ -1929,6 +1929,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       ONBOARDING_WRONG_PRACTICE_NOTICE: {
         showWhenAny: [{ ONBOARDING_WRONG_PRACTICE: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [
+          { ONBOARDING_GKV_DOCUMENT_MISSING: "YES" },
+          { ONBOARDING_PKV_PAS_MISSING: "YES" },
+        ],
       },
     },
 
