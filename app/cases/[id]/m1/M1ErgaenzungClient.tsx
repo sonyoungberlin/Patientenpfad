@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
+import {
+  ALWAYS_PRESENT_ASSESSMENT_IDS,
+  CHECKPOINT_CATALOGUE,
+} from "@/lib/logic/checkpointCatalog";
 import type { ActiveCheckpointMultiSelect, M1BlockId, M1BlockStatus, M1Selection } from "@/lib/types";
 
 const INITIAL_SELECTION: M1Selection = {
@@ -16,6 +20,15 @@ const INITIAL_SELECTION: M1Selection = {
 
 const PREPARE_ERROR_MSG = 'Ärztlich vorbereitet konnte nicht gespeichert werden.';
 
+/**
+ * Liste der ASSESSMENT-Checkpoint-IDs, die im M1-UI als Opt-in-Checkboxen
+ * angeboten werden sollen. Quelle: ALWAYS_PRESENT_ASSESSMENT_IDS, defensiv
+ * gefiltert auf tatsächlich im Katalog vorhandene Einträge.
+ */
+const ASSESSMENT_CHECKBOX_IDS: readonly string[] = ALWAYS_PRESENT_ASSESSMENT_IDS.filter(
+  (id) => Object.prototype.hasOwnProperty.call(CHECKPOINT_CATALOGUE, id),
+);
+
 export type M1ErgaenzungClientProps = {
   /** Case-ID für den Ergänzungs-Endpoint. */
   caseId: string;
@@ -24,10 +37,10 @@ export type M1ErgaenzungClientProps = {
   /** Aktueller MULTI_SELECT-Stand aus der DB (K10/K11). */
   initialMultiSelectCheckpoints: ActiveCheckpointMultiSelect[];
   /**
-   * Aktueller K12-ASSESSMENT-Stand aus der DB.
-   * true: K12 ist aktiviert; false/undefined: nicht aktiviert.
+   * Aktueller ASSESSMENT-Stand aus der DB pro ID (z. B. K12, K13).
+   * true: Checkpoint ist aktiviert; false/fehlend: nicht aktiviert.
    */
-  initialK12Enabled?: boolean;
+  initialAssessmentEnabled?: Record<string, boolean>;
 };
 
 /**
@@ -50,15 +63,23 @@ export default function M1ErgaenzungClient({
   caseId,
   lockedBlocks,
   initialMultiSelectCheckpoints,
-  initialK12Enabled = false,
+  initialAssessmentEnabled,
 }: M1ErgaenzungClientProps) {
   const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
   const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
     initialMultiSelectCheckpoints,
   );
-  // K12 (ASSESSMENT) – lokaler Stand; PATCH wird sofort ausgelöst, beim Submit zusätzlich im Payload mitgesendet
-  const [k12Enabled, setK12Enabled] = useState<boolean>(initialK12Enabled);
+  // ASSESSMENT-Checkpoints (z. B. K12, K13) – generischer lokaler Stand.
+  // PATCH wird sofort beim Toggle ausgelöst, beim Submit wird der gesamte Map
+  // zusätzlich im Payload mitgesendet (Fallback für Altfälle).
+  const [assessmentEnabled, setAssessmentEnabled] = useState<Record<string, boolean>>(() => {
+    const out: Record<string, boolean> = {};
+    for (const id of ASSESSMENT_CHECKBOX_IDS) {
+      out[id] = initialAssessmentEnabled?.[id] === true;
+    }
+    return out;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savingPrepared, setSavingPrepared] = useState(false);
@@ -108,8 +129,9 @@ export default function M1ErgaenzungClient({
         body: JSON.stringify({ checkpoint_id: id, enabled }),
       });
     } catch {
-      // Best-effort: UI-Stand bleibt erhalten. Für Altfälle, bei denen K12
-      // noch nicht in active_checkpoints ist, wird der Wert beim Submit mitgesendet.
+      // Best-effort: UI-Stand bleibt erhalten. Für Altfälle, bei denen der
+      // Checkpoint noch nicht in active_checkpoints ist, wird der Wert beim
+      // Submit mitgesendet.
     }
   }
 
@@ -125,11 +147,11 @@ export default function M1ErgaenzungClient({
     );
   }
 
-  function handleK12Toggle() {
-    setK12Enabled((prev) => {
-      const newEnabled = !prev;
-      void patchAssessment("K12", newEnabled);
-      return newEnabled;
+  function handleAssessmentToggle(id: string) {
+    setAssessmentEnabled((prev) => {
+      const newEnabled = !(prev[id] === true);
+      void patchAssessment(id, newEnabled);
+      return { ...prev, [id]: newEnabled };
     });
   }
 
@@ -185,7 +207,7 @@ export default function M1ErgaenzungClient({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           blocks: newlySelectedBlocks,
-          assessmentEnabled: { K12: k12Enabled },
+          assessmentEnabled,
         }),
       });
       if (!response.ok) {
@@ -226,8 +248,16 @@ export default function M1ErgaenzungClient({
         lockedBlocks={lockedBlocks}
       />
       <AssessmentCheckpointSection
-        checkpoints={[{ id: "K12", title: "Alltagssituation / Kontaktperson", enabled: k12Enabled }]}
-        onToggleEnabled={handleK12Toggle}
+        checkpoints={ASSESSMENT_CHECKBOX_IDS.map((id) => {
+          const template = CHECKPOINT_CATALOGUE[id]!;
+          return {
+            id,
+            title: template.title,
+            description: template.introText,
+            enabled: assessmentEnabled[id] === true,
+          };
+        })}
+        onToggleEnabled={handleAssessmentToggle}
       />
       <button
         className="btn-primary"

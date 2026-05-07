@@ -20,7 +20,8 @@ describe("K12 – Einschätzungsblock: M4-Verhalten", () => {
 
   it("andere Checkpoints behalten ihren M4-Text", () => {
     for (const [id, cp] of Object.entries(CHECKPOINT_CATALOGUE)) {
-      if (id === "K12") continue;
+      // ASSESSMENT-Checkpoints (K12, K13) erzeugen bewusst keinen M4-Text.
+      if (id === "K12" || id === "K13") continue;
       expect((cp.m4?.text ?? "").length).toBeGreaterThan(0);
     }
   });

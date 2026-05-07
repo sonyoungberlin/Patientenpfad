@@ -227,6 +227,75 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Wirkt die aktuelle Einstufung passend zur Situation?",
     },
   ],
+  K13: [
+    // Stürze / Sturzangst
+    {
+      id: "M2-01",
+      text: "Ist der Patient in den letzten 12 Monaten gestürzt?",
+    },
+    {
+      id: "M2-02",
+      text: "Vermeidet der Patient Tätigkeiten oder Wege aus Angst vor einem Sturz?",
+    },
+    // Stimmung / Belastung
+    {
+      id: "M2-03",
+      text: "Besteht aktuell eine vom Patienten oder Umfeld berichtete Belastung durch Stimmung, Erschöpfung oder Antriebsmangel?",
+    },
+    // Wohnsituation
+    {
+      id: "M2-04",
+      text: "Lebt der Patient allein?",
+    },
+    // Sinne
+    {
+      id: "M2-05",
+      text: "Bestehen relevante Probleme mit Hören oder Sehen im Alltag?",
+    },
+    // Inkontinenz
+    {
+      id: "M2-06",
+      text: "Besteht eine relevante Inkontinenzproblematik?",
+    },
+    // Schmerzen
+    {
+      id: "M2-07",
+      text: "Bestehen aktuell relevante Schmerzen?",
+    },
+    // Gewicht / Appetit
+    {
+      id: "M2-08",
+      text: "Gab es zuletzt ungewollten Gewichtsverlust oder deutlich verminderten Appetit?",
+    },
+    // Vorsorgevollmacht / Patientenverfügung
+    {
+      id: "M2-09",
+      text: "Liegt eine Vorsorgevollmacht oder Patientenverfügung vor?",
+    },
+    // Mobilitäts-Assessment (nur Status)
+    // Hinweis: Die frühere Folgefrage M2-11 ("Liegt ein Ergebnis zum
+    // Mobilitäts-Assessment vor?") wurde entfernt – ein durchgeführtes
+    // Assessment impliziert ein Ergebnis. Die ID M2-11 wird nicht erneut
+    // vergeben, um Kollisionen mit alten persistierten Antworten zu vermeiden.
+    {
+      id: "M2-10",
+      text: "Wurde ein Mobilitäts-Assessment durchgeführt?",
+    },
+    // Kognitives Assessment (nur Status)
+    // Hinweis: M2-13 ("Liegt ein Ergebnis zum kognitiven Assessment vor?")
+    // wurde aus demselben Grund entfernt; ID bleibt unbelegt.
+    {
+      id: "M2-12",
+      text: "Wurde ein kognitives Assessment durchgeführt?",
+    },
+    // Stimmungs-/Belastungsfragebogen (nur Status)
+    // Hinweis: M2-15 ("Liegt ein Ergebnis zum Stimmungs-/Belastungsfragebogen
+    // vor?") wurde aus demselben Grund entfernt; ID bleibt unbelegt.
+    {
+      id: "M2-14",
+      text: "Wurde ein Stimmungs-/Belastungsfragebogen durchgeführt?",
+    },
+  ],
 };
 
 /**

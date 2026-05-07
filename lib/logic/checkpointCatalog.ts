@@ -162,6 +162,29 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
       text: "",
     },
   },
+  K13: {
+    id: "K13",
+    block_id: "pflegebeobachtung",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.M,
+    // K13 ist ein optionaler ASSESSMENT-Checkpoint analog K12.
+    // Default: nicht aktiviert (enabled: false). Erscheint in M2/M3/M5 nur wenn enabled.
+    // Kein M4-Output (m4.text: "").
+    // Zweck: ergänzt nur echte geriatrische Lücken; doppelt keine Fragen aus K01–K12.
+    mode: CheckpointMode.ASSESSMENT,
+    // perspectives = [PATIENT] – erscheint im Patientenfragen-Katalog (M2_QUESTIONS).
+    perspectives: [CheckpointPerspective.PATIENT],
+    title: "Geriatrische Zusatzfragen",
+    introText:
+      "Die folgenden Fragen erfassen ergänzende geriatrische Themen als reine Fakt- oder Selbst-/Fremdauskunft. Es findet keine Bewertung statt; Tests werden nur als Status erfasst.",
+    description:
+      "Optionale geriatrische Zusatzerhebung (Stürze, Sturzangst, Stimmung/Belastung, Wohnsituation, Hören/Sehen, Inkontinenz, Schmerzen, Gewicht/Appetit, Vorsorgevollmacht/Patientenverfügung, Status geriatrischer Assessments). Ergänzt K01–K12 ohne Doppelung.",
+    m4: {
+      // K13 erzeugt bewusst keinen Patientenhinweis (m4_behavior = NONE), analog K12.
+      type: "NOTICE",
+      text: "",
+    },
+  },
 };
 
 /**
@@ -223,7 +246,7 @@ const ALWAYS_PRESENT_MULTI_SELECT_IDS: readonly string[] = ["K10", "K11"];
  * IDs of ASSESSMENT checkpoints that are always present in active_checkpoints,
  * regardless of M1 block activation. Default: enabled = false (opt-in via M1 checkbox).
  */
-export const ALWAYS_PRESENT_ASSESSMENT_IDS: readonly string[] = ["K12"];
+export const ALWAYS_PRESENT_ASSESSMENT_IDS: readonly string[] = ["K12", "K13"];
 
 /**
  * Ensures always-present MULTI_SELECT checkpoints are in the list.

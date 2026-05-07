@@ -11,16 +11,37 @@ import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
 import AppShell from "@/components/AppShell";
-import { MULTI_SELECT_CATALOGUE } from "@/lib/logic/checkpointCatalog";
+import {
+  ALWAYS_PRESENT_ASSESSMENT_IDS,
+  CHECKPOINT_CATALOGUE,
+  MULTI_SELECT_CATALOGUE,
+} from "@/lib/logic/checkpointCatalog";
 
 const INITIAL_SELECTION: M1Selection = {
   kommunikation: "unklar",
   medizinische_lage: "unklar",
   versorgung_im_alltag: "unklar",
   // pflegebeobachtung produziert keine block-aktivierten Checkpoints mehr;
-  // K12 wird als ASSESSMENT-Checkbox gesteuert (immer "klar" übergeben).
+  // ASSESSMENT-Checkpoints (K12, K13, …) werden generisch über Checkboxen gesteuert.
   pflegebeobachtung: "klar",
 };
+
+/**
+ * Liste der ASSESSMENT-Checkpoint-IDs, die im M1-UI als Opt-in-Checkboxen
+ * angeboten werden sollen. Quelle: ALWAYS_PRESENT_ASSESSMENT_IDS, gefiltert
+ * auf tatsächlich im Katalog vorhandene Einträge (defensiv).
+ */
+const ASSESSMENT_CHECKBOX_IDS: readonly string[] = ALWAYS_PRESENT_ASSESSMENT_IDS.filter(
+  (id) => Object.prototype.hasOwnProperty.call(CHECKPOINT_CATALOGUE, id),
+);
+
+function buildInitialAssessmentEnabled(): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const id of ASSESSMENT_CHECKBOX_IDS) {
+    out[id] = false;
+  }
+  return out;
+}
 
 function buildInitialMultiSelectCheckpoints(): ActiveCheckpointMultiSelect[] {
   return Object.values(MULTI_SELECT_CATALOGUE).map((template) => ({
@@ -46,8 +67,11 @@ export default function HomePage() {
   const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
     buildInitialMultiSelectCheckpoints,
   );
-  // K12 (ASSESSMENT) – per Checkbox in M1 zuschaltbar; Default: nicht aktiviert
-  const [k12Enabled, setK12Enabled] = useState<boolean>(false);
+  // ASSESSMENT-Checkpoints (z. B. K12, K13) – per Checkbox in M1 zuschaltbar;
+  // Default: nicht aktiviert. Generischer Map statt hartkodiertem K12-Toggle.
+  const [assessmentEnabled, setAssessmentEnabled] = useState<Record<string, boolean>>(
+    buildInitialAssessmentEnabled,
+  );
   const [mode, setMode] = useState<CaseMode>("guest");
   const [patientReference, setPatientReference] = useState("");
   const [gatekeeper, setGatekeeper] = useState(false);
@@ -166,6 +190,10 @@ export default function HomePage() {
     );
   }
 
+  function handleAssessmentToggle(id: string) {
+    setAssessmentEnabled((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
   async function handleCreate() {
     setLoading(true);
     setGatekeeper(false);
@@ -179,7 +207,7 @@ export default function HomePage() {
         m1Selection: selection,
         mode,
         multiSelectSelections,
-        assessmentEnabled: { K12: k12Enabled },
+        assessmentEnabled,
       };
       if (mode === "practice" && patientReference.trim()) {
         body.patient_reference = patientReference.trim();
@@ -231,7 +259,7 @@ export default function HomePage() {
         m1Selection: selection,
         mode,
         multiSelectSelections: multiSelectSelectionsForPreview,
-        assessmentEnabled: { K12: k12Enabled },
+        assessmentEnabled,
       };
       if (mode === "practice" && patientReference.trim()) {
         body.patient_reference = patientReference.trim();
@@ -465,14 +493,16 @@ export default function HomePage() {
 
 <div data-tour-id="k12-checkbox">
   <AssessmentCheckpointSection
-    checkpoints={[
-      {
-        id: "K12",
-        title: "Alltagssituation / Kontaktperson",
-        enabled: k12Enabled,
-      },
-    ]}
-    onToggleEnabled={() => setK12Enabled((v) => !v)}
+    checkpoints={ASSESSMENT_CHECKBOX_IDS.map((id) => {
+      const template = CHECKPOINT_CATALOGUE[id]!;
+      return {
+        id,
+        title: template.title,
+        description: template.introText,
+        enabled: assessmentEnabled[id] === true,
+      };
+    })}
+    onToggleEnabled={handleAssessmentToggle}
   />
 </div>
 
