@@ -1341,6 +1341,7 @@ function SpecificSection({
           statuses={statuses}
           onChange={onChange}
           onSectionIntroToggle={onSectionIntroToggle}
+          compactRows
         />
       )}
 
@@ -1727,6 +1728,7 @@ function PrescriptionSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -1946,6 +1948,7 @@ function AUSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -2115,6 +2118,7 @@ function ReferralSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -2278,6 +2282,7 @@ function HospitalAdmissionSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen (gefiltert) – immer sichtbar */}
@@ -2445,6 +2450,7 @@ function LabSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -2566,6 +2572,7 @@ function ImmunizationSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar */}
@@ -2851,6 +2858,7 @@ function OnboardingSpecificSection({
         statuses={statuses}
         onChange={onChange}
         onSectionIntroToggle={onSectionIntroToggle}
+        compactRows
       />
 
       {/* Decision-Klärungsfragen – immer sichtbar (ONBOARDING hat aktuell keine). */}
