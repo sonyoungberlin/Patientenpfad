@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 const UNSAVED_WARNING =
@@ -25,6 +25,96 @@ const ANSWER_OPTIONS: { value: M2Answer; label: string }[] = [
   { value: "ja", label: "Ja" },
   { value: "nein", label: "Nein" },
   { value: "unklar", label: "Unklar" },
+];
+
+/**
+ * Schritt 2 (rein visuelle Gruppierung): Wenn K12 und K13 in M2 gemeinsam in
+ * einer Karte gerendert werden (Patientenmodus), werden die Fragen statt als
+ * lange Liste in fachliche Gruppen mit kleinen Zwischenüberschriften
+ * aufgeteilt.
+ *
+ * Wichtig:
+ * - Rein Rendering-basiert. Keine Änderung an Frage-IDs, Antwort-Handlern,
+ *   Datenstrukturen, Persistenz, APIs oder M1/M3/M4/M5.
+ * - Antworten bleiben unter den originalen Checkpoint-IDs gespeichert
+ *   (handleAnswer wird mit der jeweils originalen `cp.id` aufgerufen).
+ * - data-m2-question / data-m2-answer ändern sich pro Frage nicht.
+ * - Reihenfolge der Items innerhalb einer Gruppe spiegelt die Vorgabe wider.
+ * - Sicherheitsnetz: Fragen, die in keiner Gruppe gelistet sind, werden am
+ *   Ende unter "Weitere Fragen" angefügt, damit nichts verloren geht.
+ */
+type K12K13GroupSpec = {
+  title: string;
+  items: ReadonlyArray<{ cp: "K12" | "K13"; q: string }>;
+};
+
+const K12_K13_GROUPS: ReadonlyArray<K12K13GroupSpec> = [
+  {
+    title: "Mobilität & Sturz",
+    items: [
+      { cp: "K12", q: "M2-01" }, // Fortbewegung sicher
+      { cp: "K12", q: "M2-02" }, // Unsicherheit / Sturzgefährdung
+      { cp: "K13", q: "M2-01" }, // Sturz letzte 12 Monate
+      { cp: "K13", q: "M2-02" }, // Angst vor Sturz
+    ],
+  },
+  {
+    title: "Selbstversorgung & Alltag",
+    items: [
+      { cp: "K12", q: "M2-03" }, // Selbstversorgung möglich
+      { cp: "K12", q: "M2-04" }, // Unterstützung notwendig
+      { cp: "K13", q: "M2-04" }, // lebt allein
+    ],
+  },
+  {
+    title: "Kognition & Stimmung",
+    items: [
+      { cp: "K12", q: "M2-05" }, // orientiert / strukturiert
+      { cp: "K12", q: "M2-06" }, // Vergessen / Überforderung
+      { cp: "K13", q: "M2-03" }, // Stimmung / Erschöpfung / Antriebsmangel
+    ],
+  },
+  {
+    title: "Ernährung & Flüssigkeit",
+    items: [
+      { cp: "K12", q: "M2-07" }, // Nahrungsaufnahme ausreichend
+      { cp: "K12", q: "M2-08" }, // Probleme beim Essen
+      { cp: "K12", q: "M2-09" }, // Flüssigkeitsaufnahme ausreichend
+      { cp: "K12", q: "M2-10" }, // zu wenig trinken
+      { cp: "K13", q: "M2-08" }, // Gewichtsverlust / Appetit
+    ],
+  },
+  {
+    title: "Beschwerden & Sinnesfunktionen",
+    items: [
+      { cp: "K12", q: "M2-11" }, // Umgang mit Hilfsmitteln sicher
+      { cp: "K13", q: "M2-05" }, // Hören / Sehen
+      { cp: "K13", q: "M2-07" }, // Schmerzen
+      { cp: "K13", q: "M2-06" }, // Inkontinenz
+    ],
+  },
+  {
+    title: "Versorgung & Vorsorge",
+    items: [
+      { cp: "K12", q: "M2-13" }, // Pflegegrad vorhanden
+      { cp: "K12", q: "M2-14" }, // Einstufung passend
+      { cp: "K13", q: "M2-09" }, // Vorsorgevollmacht / Patientenverfügung
+    ],
+  },
+  {
+    title: "Durchgeführte Assessments",
+    items: [
+      // Die "Liegt ein Ergebnis vor"-Folgefragen (M2-11/13/15) werden direkt
+      // hinter ihrer jeweiligen "durchgeführt"-Frage gerendert, damit keine
+      // bestehende Frage entfällt (Vorgabe: keine Entfernung von Fragen).
+      { cp: "K13", q: "M2-10" }, // Mobilitäts-Assessment durchgeführt
+      { cp: "K13", q: "M2-11" }, // Ergebnis Mobilitäts-Assessment
+      { cp: "K13", q: "M2-12" }, // kognitives Assessment durchgeführt
+      { cp: "K13", q: "M2-13" }, // Ergebnis kognitives Assessment
+      { cp: "K13", q: "M2-14" }, // Stimmungs-/Belastungsfragebogen durchgeführt
+      { cp: "K13", q: "M2-15" }, // Ergebnis Stimmungs-/Belastungsfragebogen
+    ],
+  },
 ];
 
 export function M2PrefillClient({
@@ -232,6 +322,33 @@ export function M2PrefillClient({
           ? visibleCheckpoints.find((cp) => cp.id === "K13") ?? null
           : null;
 
+        const renderQuestionItem = (
+          checkpointId: string,
+          q: { id: string; text: string },
+          cpAnswers: Record<string, M2Answer | undefined>,
+        ) => (
+          <li
+            key={`${checkpointId}:${q.id}`}
+            data-m2-question={`${checkpointId}:${q.id}`}
+            style={{ marginBottom: "0.75rem" }}
+          >
+            <div style={{ marginBottom: "0.4rem" }}>{q.text}</div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {ANSWER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`answer-btn${cpAnswers[q.id] === opt.value ? " active" : ""}`}
+                  data-m2-answer={`${checkpointId}:${q.id}:${opt.value}`}
+                  onClick={() => handleAnswer(checkpointId, q.id, opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </li>
+        );
+
         const renderQuestionList = (
           checkpointId: string,
           qs: ReadonlyArray<{ id: string; text: string }>,
@@ -239,29 +356,114 @@ export function M2PrefillClient({
           const cpAnswers = values[checkpointId] ?? {};
           return (
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {qs.map((q) => (
-                <li
-                  key={q.id}
-                  data-m2-question={`${checkpointId}:${q.id}`}
-                  style={{ marginBottom: "0.75rem" }}
-                >
-                  <div style={{ marginBottom: "0.4rem" }}>{q.text}</div>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    {ANSWER_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        className={`answer-btn${cpAnswers[q.id] === opt.value ? " active" : ""}`}
-                        data-m2-answer={`${checkpointId}:${q.id}:${opt.value}`}
-                        onClick={() => handleAnswer(checkpointId, q.id, opt.value)}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </li>
-              ))}
+              {qs.map((q) => renderQuestionItem(checkpointId, q, cpAnswers))}
             </ul>
+          );
+        };
+
+        // Schritt 2: Render-Helper für die thematische Gruppierung der
+        // K12+K13-Fragen innerhalb der gemeinsamen Karte. Nimmt die jeweiligen
+        // Fragenarrays beider Checkpoints, sortiert sie nach K12_K13_GROUPS
+        // und hängt nicht zugeordnete Fragen unter "Weitere Fragen" an.
+        const renderGroupedK12K13 = (
+          k12Qs: ReadonlyArray<{ id: string; text: string }>,
+          k13Qs: ReadonlyArray<{ id: string; text: string }>,
+        ) => {
+          const byCp: Record<"K12" | "K13", Map<string, { id: string; text: string }>> = {
+            K12: new Map(k12Qs.map((q) => [q.id, q])),
+            K13: new Map(k13Qs.map((q) => [q.id, q])),
+          };
+          const usedIds = new Set<string>(); // "K12:M2-01" usw.
+          const k12Answers = values["K12"] ?? {};
+          const k13Answers = values["K13"] ?? {};
+          const answersFor = (cp: "K12" | "K13") =>
+            cp === "K12" ? k12Answers : k13Answers;
+
+          const groupBlocks: ReactNode[] = [];
+
+          K12_K13_GROUPS.forEach((group, gi) => {
+            const groupItems: ReactNode[] = [];
+            for (const item of group.items) {
+              const q = byCp[item.cp].get(item.q);
+              if (!q) continue;
+              usedIds.add(`${item.cp}:${item.q}`);
+              groupItems.push(renderQuestionItem(item.cp, q, answersFor(item.cp)));
+            }
+            if (groupItems.length === 0) return;
+            groupBlocks.push(
+              <div
+                key={`grp-${gi}`}
+                data-m2-group={group.title}
+                style={{
+                  marginTop: gi === 0 ? 0 : "1rem",
+                  paddingTop: gi === 0 ? 0 : "0.75rem",
+                  borderTop:
+                    gi === 0 ? "none" : "1px solid var(--border, #e5e7eb)",
+                }}
+              >
+                <div
+                  style={{
+                    marginBottom: "0.5rem",
+                    fontWeight: 500,
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  {group.title}
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {groupItems}
+                </ul>
+              </div>,
+            );
+          });
+
+          // Fallback: noch nicht gruppierte Fragen am Ende anhängen, damit
+          // keine Frage verloren geht (z. B. wenn der Katalog erweitert wird).
+          const leftover: ReactNode[] = [];
+          for (const cp of ["K12", "K13"] as const) {
+            for (const q of cp === "K12" ? k12Qs : k13Qs) {
+              if (usedIds.has(`${cp}:${q.id}`)) continue;
+              leftover.push(renderQuestionItem(cp, q, answersFor(cp)));
+            }
+          }
+          if (leftover.length > 0) {
+            groupBlocks.push(
+              <div
+                key="grp-rest"
+                data-m2-group="Weitere Fragen"
+                style={{
+                  marginTop: "1rem",
+                  paddingTop: "0.75rem",
+                  borderTop: "1px solid var(--border, #e5e7eb)",
+                }}
+              >
+                <div
+                  style={{
+                    marginBottom: "0.5rem",
+                    fontWeight: 500,
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Weitere Fragen
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {leftover}
+                </ul>
+              </div>,
+            );
+          }
+
+          // Unsichtbare Wrapper, damit K13-Antworten weiterhin DOM-seitig
+          // einem Checkpoint-Container zugeordnet werden können (Marker-Attr).
+          return (
+            <>
+              {groupBlocks}
+              <span
+                hidden
+                aria-hidden="true"
+                data-m2-checkpoint-embedded="K13"
+              />
+            </>
           );
         };
 
@@ -281,8 +483,13 @@ export function M2PrefillClient({
               const k13Questions = isK12WithK13
                 ? questionCatalog[k13Checkpoint!.id] ?? []
                 : [];
+              // Schritt 2: Grouped-Layout greift nur, wenn beide Checkpoints
+              // tatsächlich Fragen liefern (Patientenmodus). Im MFA-Modus
+              // (keine K12/K13-Fragen) bleibt das Schritt-1-Fallback aktiv.
+              const renderGrouped =
+                isK12WithK13 && questions.length > 0 && k13Questions.length > 0;
               const showK13Subsection =
-                isK12WithK13 && (mode === "mfa" || k13Questions.length > 0);
+                isK12WithK13 && !renderGrouped && (mode === "mfa" || k13Questions.length > 0);
 
               return (
                 <li
@@ -299,7 +506,9 @@ export function M2PrefillClient({
                       {cp.introText}
                     </div>
                   ) : null}
-                  {questions.length > 0 ? (
+                  {renderGrouped ? (
+                    renderGroupedK12K13(questions, k13Questions)
+                  ) : questions.length > 0 ? (
                     renderQuestionList(cp.id, questions)
                   ) : (
                     <p style={{ margin: 0, fontStyle: "italic" }}>
