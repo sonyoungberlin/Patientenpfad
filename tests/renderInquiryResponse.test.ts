@@ -965,7 +965,14 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     // ACUTE_OPEN_CONSULTATION_INFO ist jetzt über boundActionConditions (konditionell) eingebunden
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
-    expect(auProfile.boundGlobalCheckpointIds).toHaveLength(0);
+    // Verbleibende globale Checkpoints im AU-Profil:
+    // - REQUIRED_INFORMATION_COMPLETE: positiver Zwischenzustand (Angaben vollständig).
+    // - DIGITAL_REQUEST_MEDICAL_REVIEW: Prozess-/Erwartungsmanagement-Hinweis
+    //   (GLOBAL EXPLANATION MODULAR – keine Ablehnung, keine Terminpflicht).
+    expect(auProfile.boundGlobalCheckpointIds).toEqual([
+      "REQUIRED_INFORMATION_COMPLETE",
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    ]);
   });
 
   it("MODULAR-gebundene Global Checkpoints liefern Text über textByStatus – kein globalHints-Override erforderlich", () => {
@@ -1457,6 +1464,8 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
     expect(prescriptionProfile.boundGlobalCheckpointIds).toEqual([
       "REQUIRED_INFORMATION_COMPLETE",
+      // Prozess-/Erwartungsmanagement-Hinweis (GLOBAL EXPLANATION MODULAR).
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
     ]);
   });
 
@@ -2651,6 +2660,8 @@ describe("REFERRAL-Profil – Struktur", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     expect(profile.boundGlobalCheckpointIds).toEqual([
       "REQUIRED_INFORMATION_COMPLETE",
+      // Prozess-/Erwartungsmanagement-Hinweis (GLOBAL EXPLANATION MODULAR).
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
     ]);
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");

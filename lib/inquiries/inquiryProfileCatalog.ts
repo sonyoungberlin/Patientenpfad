@@ -75,7 +75,14 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "RETURN_TO_WORK_ALLOWED_DURING_AU",
       "AU_EXTENSION_REQUIRES_EXAMINATION",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      // Positiver Zwischenzustand: Fragebogen/Angaben liegen vollständig vor,
+      // sodass die digitale AU-Anfrage ärztlich geprüft werden kann. Keine Entscheidung.
+      "REQUIRED_INFORMATION_COMPLETE",
+      // Prozess-/Erwartungsmanagement: digitale AU-Anfrage wird ärztlich geprüft;
+      // ggf. persönliche Vorstellung. Kein Outcome.
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    ],
     // Kein globalHints-Override nötig.
     globalHints: {},
     availableActionIds: [
@@ -291,7 +298,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // Versicherungsnachweis fehlt für die Rezeptausstellung).
       "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ],
-    boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    boundGlobalCheckpointIds: [
+      "REQUIRED_INFORMATION_COMPLETE",
+      // Prozess-/Erwartungsmanagement: digitale Rezeptanfrage wird ärztlich geprüft;
+      // ggf. persönliche Vorstellung. Kein Outcome.
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    ],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
@@ -1076,7 +1088,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // Versicherungsnachweis fehlt für die Ausstellung der Überweisung).
       "REFERRAL_INSURANCE_PROOF_MISSING",
     ],
-    boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    boundGlobalCheckpointIds: [
+      "REQUIRED_INFORMATION_COMPLETE",
+      // Prozess-/Erwartungsmanagement: digitale Überweisungsanfrage wird ärztlich geprüft;
+      // ggf. persönliche Vorstellung. Kein Outcome.
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    ],
     // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
@@ -1567,6 +1584,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "APPOINTMENT_CAN_BE_BOOKED",
       "APPOINTMENT_CANCEL_OR_RESCHEDULE",
+      // Ärztliches Outcome nach Prüfung: digital nicht abschließend klärbar →
+      // persönlicher Termin in der Praxis erforderlich. Abgrenzung zu
+      // APPOINTMENT_CAN_BE_BOOKED (grundsätzliche Buchbarkeit) und
+      // APPOINTMENT_TYPE_QUESTION (Rückfrage Terminart).
+      "APPOINTMENT_IN_PERSON_REQUIRED_FOR_REQUEST",
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
       "APPOINTMENT_EXTERNAL_FINDING_PRESENT",

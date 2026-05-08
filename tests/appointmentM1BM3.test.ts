@@ -325,8 +325,8 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau zehn Specific-Checkpoints", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(10);
+  it("APPOINTMENT-Profil hat genau elf Specific-Checkpoints", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(11);
   });
 
   it("APPOINTMENT_CANCEL_OR_RESCHEDULE hat specificRole PROCESS_INFO", () => {

@@ -2521,6 +2521,40 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  /**
+   * APPOINTMENT_IN_PERSON_REQUIRED_FOR_REQUEST – ärztlicher Schluss nach Prüfung
+   * des Anliegens: Eine digitale Bearbeitung ist nicht abschließend möglich,
+   * der Patient muss persönlich in die Praxis kommen.
+   *
+   * Abgrenzung:
+   * - APPOINTMENT_CAN_BE_BOOKED → grundsätzliche Buchbarkeit (kein Outcome).
+   * - BOOK_APPOINTMENT (Action) → wie der Termin gebucht wird.
+   * - APPOINTMENT_TYPE_QUESTION → Patientenrückfrage zur Terminart.
+   * - APPOINTMENT_INFO_IN_PERSON_REQUIRED (ACTION INFO) → an Terminart-Rückfrage
+   *   gebundene Info-Action; deckt den Outcome-Fall „Anliegen ist persönlich
+   *   abzuklären" nicht als auswählbarer Erklärungs-Checkpoint im
+   *   Antwortkontext „Anliegen geprüft" ab.
+   */
+  APPOINTMENT_IN_PERSON_REQUIRED_FOR_REQUEST: {
+    id: "APPOINTMENT_IN_PERSON_REQUIRED_FOR_REQUEST",
+    label: "Persönlicher Termin erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    questions: [
+      {
+        id: "APPOINTMENT_IN_PERSON_REQUIRED_FOR_REQUEST-Q1",
+        text: "Ist für dieses Anliegen ein persönlicher Termin in der Praxis erforderlich?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für dieses Anliegen ist ein persönlicher Termin in der Praxis erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- APPOINTMENT ACTION CHECKPOINTS (terminartspezifische Buchungsanleitungen) ----
 
   APPOINTMENT_BOOK_FINDINGS_REVIEW: {
@@ -4212,6 +4246,45 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   },
 
   // ---- NEW EXPLANATIONS – SCHUBLADE: ANLIEGEN GEPRÜFT ----
+
+  /**
+   * Prozess-/Erwartungsmanagement-Hinweis für digitale Anfragen
+   * (Rezept, AU, Überweisung u. ä.).
+   *
+   * Bewusst KEIN Outcome-Checkpoint:
+   * - keine Ablehnung
+   * - keine Terminpflicht
+   * - keine harte Grenze
+   * - kein `m5Code` (kein NEED_VISIT-Outcome)
+   *
+   * Stellt klar, dass eine digitale Anfrage nicht automatisch eine
+   * Bestellung/Freigabe ist, sondern ärztlich geprüft wird und je nach
+   * Anliegen eine persönliche Vorstellung erforderlich werden kann.
+   *
+   * Antwortkontext: Schublade „Anliegen geprüft" (SECTION_INTRO_REVIEWED).
+   */
+  DIGITAL_REQUEST_MEDICAL_REVIEW: {
+    id: "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    label: "Digitale Anfrage – ärztliche Prüfung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      {
+        id: "DIGITAL_REQUEST_MEDICAL_REVIEW-Q1",
+        text: "Soll dem Patienten erklärt werden, dass digitale Anfragen vor der Bearbeitung ärztlich geprüft werden und je nach Anliegen ein persönlicher Termin erforderlich sein kann?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Digitale Anfragen werden vor der Bearbeitung ärztlich geprüft. Je nach Anliegen kann eine persönliche Vorstellung in der Praxis erforderlich sein.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]:
+        "Patient über ärztliche Prüfung digitaler Anfragen informiert",
+    },
+  },
 
   EAU_VALID_WITHOUT_SIGNATURE: {
     id: "EAU_VALID_WITHOUT_SIGNATURE",
