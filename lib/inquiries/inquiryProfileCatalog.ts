@@ -63,6 +63,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_DIGITAL_AU_PROCESS",
       "AU_NO_APPOINTMENT_ACUTE",
       "AU_MEDICAL_CONSULTATION_REQUIRED",
+      "AU_FOLLOWUP_REQUIRES_VISIT",
       "AU_FOLLOWUP",
       "MEDICAL_DOCUMENT_AU_DIFFERENCE",
       // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
@@ -92,7 +93,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
-      "AU_FOLLOWUP_REQUIRES_VISIT",
       "DIGITAL_REQUEST",
       "DIGITAL_REQUEST_PROCESSING_TIME",
       "ACUTE_OPEN_CONSULTATION_ACTION",
@@ -102,9 +102,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
-        showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
-      },
-      AU_FOLLOWUP_REQUIRES_VISIT: {
         showWhenAny: [{ AU_NEW_PATIENT_LIMIT: "YES" }],
       },
       DIGITAL_REQUEST: {

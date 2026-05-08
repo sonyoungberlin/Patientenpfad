@@ -327,12 +327,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
   AU_FOLLOWUP_REQUIRES_VISIT: {
     id: "AU_FOLLOWUP_REQUIRES_VISIT",
     label: "Folgebescheinigung – persönliche Vorstellung erforderlich",
-    kind: InquiryCheckpointKind.ACTION,
+    kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    actionCategory: "INFO",
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
     textByStatus: {
-      [ActionStatus.ACTIVE]:
+      [ExplanationStatus.YES]:
         "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
     },
   },
@@ -556,7 +557,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
-    specificRole: "PROCESS_INFO" as SpecificRole,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
     questions: [
       { id: "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON-Q1", text: "Ist vor weiterer Verordnung der Dauermedikation ein persönlicher Arzttermin erforderlich?" },
     ],

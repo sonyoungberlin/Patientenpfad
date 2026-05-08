@@ -323,29 +323,30 @@ describe("AU_FOLLOWUP_REQUIRES_VISIT – Checkpoint-Struktur", () => {
     expect(cp).toBeDefined();
   });
 
-  it("hat kind ACTION", () => {
-    expect(cp.kind).toBe(InquiryCheckpointKind.ACTION);
+  it("hat kind EXPLANATION", () => {
+    expect(cp.kind).toBe(InquiryCheckpointKind.EXPLANATION);
   });
 
   it("hat scope SPECIFIC", () => {
     expect(cp.scope).toBe(InquiryCheckpointScope.SPECIFIC);
   });
 
-  it("hat ACTIVE-Text mit Folgebescheinigung-Inhalt", () => {
-    const text = (cp.textByStatus as Record<string, string>)["ACTIVE"];
+  it("hat YES-Text mit Folgebescheinigung-Inhalt", () => {
+    const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
     expect(text).toContain("Folgebescheinigung");
     expect(text).toContain("persönliche Vorstellung");
   });
 
-  it("ist in AU.boundActionCheckpointIds referenziert", () => {
-    expect((AU as any).boundActionCheckpointIds).toContain("AU_FOLLOWUP_REQUIRES_VISIT");
+  it("ist in AU.specificCheckpointIds referenziert", () => {
+    expect(AU.specificCheckpointIds).toContain("AU_FOLLOWUP_REQUIRES_VISIT");
   });
 
-  it("wird bei AU_NEW_PATIENT_LIMIT = YES freigeschaltet", () => {
-    const conditions = (AU as any).boundActionConditions;
-    expect(conditions?.AU_FOLLOWUP_REQUIRES_VISIT?.showWhenAny).toEqual(
-      expect.arrayContaining([{ AU_NEW_PATIENT_LIMIT: "YES" }])
-    );
+  it("hat specificRole MEDICAL_REVIEW_REQUIRED", () => {
+    expect((cp as any).specificRole).toBe("MEDICAL_REVIEW_REQUIRED");
+  });
+
+  it("hat m5Code NEED_VISIT", () => {
+    expect((cp as any).m5Code).toBe("NEED_VISIT");
   });
 });
 
