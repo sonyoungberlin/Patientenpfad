@@ -4173,6 +4173,25 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- NEW EXPLANATIONS – SCHUBLADE: UNTERLAGEN VOLLSTÄNDIG ----
 
+  REQUIRED_INFORMATION_COMPLETE: {
+    id: "REQUIRED_INFORMATION_COMPLETE",
+    label: "Erforderliche Informationen vollständig vorhanden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      { id: "REQUIRED_INFORMATION_COMPLETE-Q1", text: "Liegen die für das Anliegen erforderlichen Informationen vollständig vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die für Ihr Anliegen erforderlichen Informationen liegen vollständig vor.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Erforderliche Informationen vollständig vorhanden",
+    },
+  },
+
   DOCUMENTS_RECEIVED_AND_ASSIGNED: {
     id: "DOCUMENTS_RECEIVED_AND_ASSIGNED",
     label: "Unterlagen eingegangen und zugeordnet",

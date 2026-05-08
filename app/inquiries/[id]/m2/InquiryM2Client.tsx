@@ -431,7 +431,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
   PRESCRIPTION: [
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
-      checkpointIds: [],
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
     },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -494,6 +494,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
       checkpointIds: [
+        "REQUIRED_INFORMATION_COMPLETE",
         "LAB_INTERNAL_ORDER_AVAILABLE",
       ],
     },
@@ -556,7 +557,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   REFERRAL: [
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: [
@@ -573,7 +577,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   HOSPITAL_ADMISSION: [
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: [
@@ -591,7 +598,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   IMMUNIZATION: [
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: [
@@ -614,7 +624,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
   APPOINTMENT: [
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
-      checkpointIds: [],
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
     },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -655,7 +665,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   ONBOARDING: [
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["ONBOARDING_DOCTOLIB_INFO"],
@@ -682,7 +695,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   BILLING: [
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["BILLING_COST_NOT_COVERED", "BILLING_INVOICE_TIMING"],
@@ -705,7 +721,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   MEDICAL_DOCUMENTS: [
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: [

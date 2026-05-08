@@ -1448,19 +1448,29 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_SPECIAL_TYPE");
   });
 
-  it("PRESCRIPTION-Profil hat keine gebundenen Global Checkpoints mehr (IS_CHRONIC_PATIENT, PATIENT_NOT_IN_GERMANY → profilspezifische Specifics)", () => {
+  it("PRESCRIPTION-Profil nutzt nur den neuen globalen Vollständigkeits-Checkpoint (keine Legacy-Global-States)", () => {
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
     expect(prescriptionProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
-    expect(prescriptionProfile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(prescriptionProfile.boundGlobalCheckpointIds).toEqual([
+      "REQUIRED_INFORMATION_COMPLETE",
+    ]);
   });
 
-  it("Alle gebundenen Global Checkpoints haben globalHints im PRESCRIPTION-Profil", () => {
+  it("MODULAR-gebundene Global Checkpoints liefern Text über textByStatus – globalHints bleibt optional", () => {
     for (const id of prescriptionProfile.boundGlobalCheckpointIds) {
-      expect(prescriptionProfile.globalHints).toHaveProperty(id);
+      const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      expect(cp).toBeDefined();
+      if (cp.classification === "MODULAR") {
+        const catalogText = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
+        const hintText = (prescriptionProfile.globalHints ?? {})[id];
+        expect(catalogText || hintText).toBeTruthy();
+      } else {
+        expect(prescriptionProfile.globalHints).toHaveProperty(id);
+      }
     }
   });
 
@@ -2043,7 +2053,7 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).not.toContain("LAB_VALUES_DEFINED");
   });
 
-  it("LAB-Profil hat keine gebundenen Global Checkpoints mehr (MEDICAL_CONSULTATION_REQUIRED → LAB_MEDICAL_CONSULTATION_REQUIRED)", () => {
+  it("LAB-Profil nutzt nur den neuen globalen Vollständigkeits-Checkpoint (keine Legacy-Global-States)", () => {
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("IS_CHRONIC_PATIENT");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
@@ -2051,7 +2061,9 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("TERMIN_PREPARATION_REQUIRED");
     expect(labProfile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(labProfile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(labProfile.boundGlobalCheckpointIds).toEqual([
+      "REQUIRED_INFORMATION_COMPLETE",
+    ]);
   });
 
   it("MODULAR-gebundene Global Checkpoints liefern Text über textByStatus – kein globalHints-Override erforderlich", () => {
@@ -2635,9 +2647,11 @@ describe("REFERRAL-Profil – Struktur", () => {
     }
   });
 
-  it("REFERRAL hat keine gebundenen Global Checkpoints mehr (MEDICAL_CONSULTATION_REQUIRED → REF_MEDICAL_CONSULTATION_REQUIRED)", () => {
+  it("REFERRAL nutzt nur den neuen globalen Vollständigkeits-Checkpoint (keine Legacy-Global-States)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(profile.boundGlobalCheckpointIds).toEqual([
+      "REQUIRED_INFORMATION_COMPLETE",
+    ]);
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
   });
