@@ -965,10 +965,12 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     // ACUTE_OPEN_CONSULTATION_INFO ist jetzt über boundActionConditions (konditionell) eingebunden
     expect(auProfile.boundGlobalCheckpointIds).not.toContain("ACUTE_OPEN_CONSULTATION_INFO");
-    // DIGITAL_REQUEST_MEDICAL_REVIEW (Prozess-/Erwartungsmanagement-Hinweis,
-    // GLOBAL EXPLANATION MODULAR – keine Ablehnung, keine Terminpflicht) ist
-    // bewusst der einzige globale Checkpoint im AU-Profil.
+    // Verbleibende globale Checkpoints im AU-Profil:
+    // - REQUIRED_INFORMATION_COMPLETE: positiver Zwischenzustand (Angaben vollständig).
+    // - DIGITAL_REQUEST_MEDICAL_REVIEW: Prozess-/Erwartungsmanagement-Hinweis
+    //   (GLOBAL EXPLANATION MODULAR – keine Ablehnung, keine Terminpflicht).
     expect(auProfile.boundGlobalCheckpointIds).toEqual([
+      "REQUIRED_INFORMATION_COMPLETE",
       "DIGITAL_REQUEST_MEDICAL_REVIEW",
     ]);
   });

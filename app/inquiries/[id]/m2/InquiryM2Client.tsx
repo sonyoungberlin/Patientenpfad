@@ -397,7 +397,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
   AU: [
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
-      checkpointIds: [],
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
     },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",

@@ -76,6 +76,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_EXTENSION_REQUIRES_EXAMINATION",
     ],
     boundGlobalCheckpointIds: [
+      // Positiver Zwischenzustand: Fragebogen/Angaben liegen vollständig vor,
+      // sodass die digitale AU-Anfrage ärztlich geprüft werden kann. Keine Entscheidung.
+      "REQUIRED_INFORMATION_COMPLETE",
       // Prozess-/Erwartungsmanagement: digitale AU-Anfrage wird ärztlich geprüft;
       // ggf. persönliche Vorstellung. Kein Outcome.
       "DIGITAL_REQUEST_MEDICAL_REVIEW",
