@@ -1584,6 +1584,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "APPOINTMENT_CAN_BE_BOOKED",
       "APPOINTMENT_CANCEL_OR_RESCHEDULE",
+      // Ärztliches Outcome nach Prüfung: digital nicht abschließend klärbar →
+      // persönlicher Termin in der Praxis erforderlich. Abgrenzung zu
+      // APPOINTMENT_CAN_BE_BOOKED (grundsätzliche Buchbarkeit) und
+      // APPOINTMENT_TYPE_QUESTION (Rückfrage Terminart).
+      "APPOINTMENT_IN_PERSON_REQUIRED_FOR_REQUEST",
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
       "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
