@@ -4213,6 +4213,45 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
 
   // ---- NEW EXPLANATIONS – SCHUBLADE: ANLIEGEN GEPRÜFT ----
 
+  /**
+   * Prozess-/Erwartungsmanagement-Hinweis für digitale Anfragen
+   * (Rezept, AU, Überweisung u. ä.).
+   *
+   * Bewusst KEIN Outcome-Checkpoint:
+   * - keine Ablehnung
+   * - keine Terminpflicht
+   * - keine harte Grenze
+   * - kein `m5Code` (kein NEED_VISIT-Outcome)
+   *
+   * Stellt klar, dass eine digitale Anfrage nicht automatisch eine
+   * Bestellung/Freigabe ist, sondern ärztlich geprüft wird und je nach
+   * Anliegen eine persönliche Vorstellung erforderlich werden kann.
+   *
+   * Antwortkontext: Schublade „Anliegen geprüft" (SECTION_INTRO_REVIEWED).
+   */
+  DIGITAL_REQUEST_MEDICAL_REVIEW: {
+    id: "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    label: "Digitale Anfrage – ärztliche Prüfung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    classification: "MODULAR",
+    questions: [
+      {
+        id: "DIGITAL_REQUEST_MEDICAL_REVIEW-Q1",
+        text: "Soll dem Patienten erklärt werden, dass digitale Anfragen vor der Bearbeitung ärztlich geprüft werden und je nach Anliegen ein persönlicher Termin erforderlich sein kann?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Digitale Anfragen werden vor der Bearbeitung ärztlich geprüft. Je nach Anliegen kann eine persönliche Vorstellung in der Praxis erforderlich sein.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]:
+        "Patient über ärztliche Prüfung digitaler Anfragen informiert",
+    },
+  },
+
   EAU_VALID_WITHOUT_SIGNATURE: {
     id: "EAU_VALID_WITHOUT_SIGNATURE",
     label: "eAU ohne Unterschrift gültig",
