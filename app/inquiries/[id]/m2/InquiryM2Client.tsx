@@ -600,7 +600,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       checkpointIds: ["HOSPITAL_ADMISSION_MISSING_INFO"],
     },
     { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
+      // Profils gebunden) – machen die Schublade „Noch in Bearbeitung"
+      // direkt nutzbar.
+      checkpointIds: ["TECHNICAL_ISSUE_DELAY", "STAFF_SHORTAGE_DELAY"],
+    },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   IMMUNIZATION: [
@@ -624,7 +630,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       checkpointIds: ["IMMUNIZATION_VACCINATION_RECORD_MISSING"],
     },
-    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
+      // Profils gebunden) – machen die Schublade „Noch in Bearbeitung"
+      // direkt nutzbar.
+      checkpointIds: ["TECHNICAL_ISSUE_DELAY", "STAFF_SHORTAGE_DELAY"],
+    },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   APPOINTMENT: [
@@ -654,7 +666,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
-      checkpointIds: [],
+      // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
+      // Profils gebunden) – machen die Schublade „Noch in Bearbeitung"
+      // direkt nutzbar.
+      checkpointIds: ["TECHNICAL_ISSUE_DELAY", "STAFF_SHORTAGE_DELAY"],
     },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
@@ -669,7 +684,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
+      // Profils gebunden) – machen die Schublade „Noch in Bearbeitung"
+      // direkt nutzbar.
+      checkpointIds: ["TECHNICAL_ISSUE_DELAY", "STAFF_SHORTAGE_DELAY"],
+    },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
   ONBOARDING: [
@@ -696,7 +717,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "ONBOARDING_PKV_PAS_MISSING",
       ],
     },
-    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
+      // Profils gebunden) – machen die Schublade „Noch in Bearbeitung"
+      // direkt nutzbar.
+      checkpointIds: ["TECHNICAL_ISSUE_DELAY", "STAFF_SHORTAGE_DELAY"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
       checkpointIds: ["ONBOARDING_WRONG_PRACTICE"],
@@ -719,7 +746,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       checkpointIds: ["BILLING_DOCUMENT_MISSING"],
     },
-    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
+      // Profils gebunden) – machen die Schublade „Noch in Bearbeitung"
+      // direkt nutzbar.
+      checkpointIds: ["TECHNICAL_ISSUE_DELAY", "STAFF_SHORTAGE_DELAY"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
       checkpointIds: [
@@ -750,7 +783,13 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       checkpointIds: ["MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED"],
     },
-    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
+      // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
+      // Profils gebunden) – machen die Schublade „Noch in Bearbeitung"
+      // direkt nutzbar.
+      checkpointIds: ["TECHNICAL_ISSUE_DELAY", "STAFF_SHORTAGE_DELAY"],
+    },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
 };
