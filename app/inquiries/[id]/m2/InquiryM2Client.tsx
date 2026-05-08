@@ -409,6 +409,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "AU_BACKDATE_LIMIT",
         "AU_NEW_PATIENT_LIMIT",
         "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+        // Prozessinformationen / Ergebnisse nach Prüfung
+        "EAU_VALID_WITHOUT_SIGNATURE",
+        "RETURN_TO_WORK_ALLOWED_DURING_AU",
+        "AU_EXTENSION_REQUIRES_EXAMINATION",
       ],
     },
     {
@@ -417,7 +421,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: ["AU_MISSING_EGK"],
+      // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
+      checkpointIds: ["AU_MISSING_EGK", "TECH_UPLOAD_FAILED"],
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
@@ -472,6 +477,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "HOSPITAL_DISCHARGE_REPORT_MISSING",
         // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
         "PRESCRIPTION_INSURANCE_PROOF_MISSING",
+        // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
+        "TECH_UPLOAD_FAILED",
       ],
     },
     {
@@ -489,6 +496,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "PRESCRIPTION_GYN_EXCLUSIVITY",
         // Patient im Ausland: regulär nicht von uns einlösbar
         "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
+        // Kontrazeptive Verordnung an fachspezifische Untersuchung gebunden
+        "CONTRACEPTION_SPECIALIST_ONLY",
       ],
     },
   ],
@@ -555,7 +564,12 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
-      checkpointIds: ["ACUTE_EXCLUSION", "CHRONIC_EXCLUSION"],
+      checkpointIds: [
+        "ACUTE_EXCLUSION",
+        "CHRONIC_EXCLUSION",
+        // Hausbesuche nicht im Leistungsangebot
+        "NO_HOME_VISITS",
+      ],
     },
   ],
   REFERRAL: [
@@ -577,7 +591,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
-      checkpointIds: ["REFERRAL_INSURANCE_PROOF_MISSING"],
+      // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
+      checkpointIds: ["REFERRAL_INSURANCE_PROOF_MISSING", "TECH_UPLOAD_FAILED"],
     },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
@@ -657,7 +672,12 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_INFO_MISSING",
-      checkpointIds: ["APPOINTMENT_DATA_INCOMPLETE", "APPOINTMENT_BOOKING_CODE_REQUIRED"],
+      checkpointIds: [
+        "APPOINTMENT_DATA_INCOMPLETE",
+        "APPOINTMENT_BOOKING_CODE_REQUIRED",
+        // Terminanlass / Ziel des gebuchten Termins nicht eindeutig
+        "APPOINTMENT_REASON_UNCLEAR",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
@@ -673,7 +693,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
-      checkpointIds: [],
+      // Videosprechstunde an Wohnsitz im Einzugsgebiet gebunden
+      checkpointIds: ["VIDEO_CONSULTATION_REGION_LIMITATION"],
     },
   ],
   TECH_SUPPORT: [
@@ -683,7 +704,11 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       checkpointIds: ["TECH_VIDEO_NOT_WORKING"],
     },
     { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
+      checkpointIds: ["TECH_UPLOAD_FAILED"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
       // Globale Verzögerungs-Erklärungen (in boundGlobalCheckpointIds des
@@ -773,6 +798,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "MEDICAL_DOCUMENT_PRIVATE_SERVICE",
         "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
         "MEDICAL_DOCUMENT_AU_DIFFERENCE",
+        // Bedeutung dokumentierter Verdachtsdiagnosen
+        "SUSPECTED_DIAGNOSIS_EXPLANATION",
       ],
     },
     {
