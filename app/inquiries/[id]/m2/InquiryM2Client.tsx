@@ -470,6 +470,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       checkpointIds: [
         "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
         "HOSPITAL_DISCHARGE_REPORT_MISSING",
+        // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
+        "PRESCRIPTION_INSURANCE_PROOF_MISSING",
       ],
     },
     {
@@ -572,7 +574,11 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       ],
     },
     { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
+      checkpointIds: ["REFERRAL_INSURANCE_PROOF_MISSING"],
+    },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
@@ -643,7 +649,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
-      checkpointIds: [],
+      // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
+      checkpointIds: ["APPOINTMENT_INSURANCE_PROOF_MISSING"],
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
