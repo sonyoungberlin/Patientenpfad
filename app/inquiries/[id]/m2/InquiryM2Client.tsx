@@ -668,7 +668,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
   APPOINTMENT: [
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
-      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+      checkpointIds: [
+        "REQUIRED_INFORMATION_COMPLETE",
+        "DOCUMENTS_RECEIVED_AND_ASSIGNED",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",

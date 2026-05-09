@@ -190,6 +190,17 @@ describe("Antwortkontext-Reihenfolge (M2)", () => {
     expect(profileBlock).toContain('"APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE"');
   });
 
+  it("APPOINTMENT: SECTION_INTRO_DOCS_COMPLETE enthält DOCUMENTS_RECEIVED_AND_ASSIGNED", () => {
+    const profileBlockStart = src.indexOf("  APPOINTMENT: [");
+    expect(profileBlockStart).toBeGreaterThan(-1);
+    const profileBlockEnd = src.indexOf("\n  ],", profileBlockStart);
+    expect(profileBlockEnd).toBeGreaterThan(profileBlockStart);
+    const profileBlock = src.slice(profileBlockStart, profileBlockEnd);
+
+    expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE"');
+    expect(profileBlock).toContain('"DOCUMENTS_RECEIVED_AND_ASSIGNED"');
+  });
+
   it("ONBOARDING: SECTION_INTRO_REVIEWED enthält ONBOARDING_PRIMARY_CARE_CONFIRMATION", () => {
     const profileBlockStart = src.indexOf("  ONBOARDING: [");
     expect(profileBlockStart).toBeGreaterThan(-1);

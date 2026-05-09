@@ -2734,6 +2734,26 @@ describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", (
     ]);
     expect(result.sharedBottom).toHaveLength(0);
   });
+
+  it("APPOINTMENT bindet DOCUMENTS_RECEIVED_AND_ASSIGNED und rendert den positiven Unterlagenstatus", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["APPOINTMENT"];
+    expect(profile.boundGlobalCheckpointIds).toContain("DOCUMENTS_RECEIVED_AND_ASSIGNED");
+
+    const result = renderInquiryResponseFromSections([
+      makeAppointmentSection({
+        checkpointStatuses: {
+          DOCUMENTS_RECEIVED_AND_ASSIGNED: ExplanationStatus.YES,
+        },
+        explanationOutputStatuses: {
+          DOCUMENTS_RECEIVED_AND_ASSIGNED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).toContain("Die nachgereichten Unterlagen sind eingegangen und wurden der Patientenakte zugeordnet.");
+    expect(result.sharedBottom).toHaveLength(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
