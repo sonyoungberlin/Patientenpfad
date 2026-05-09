@@ -1922,6 +1922,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "ONBOARDING_DOCTOLIB_INFO",
       // Schublade „Angaben fehlen" – Format der Versichertennummer ungültig.
       "INSURANCE_NUMBER_INVALID_FORMAT",
+      // Schublade „Anliegen geprüft" – neutrale Zuständigkeitsklärung ohne Ablehnung.
+      "ONBOARDING_PRIMARY_CARE_CONFIRMATION",
       // Schublade „Nicht in unserer Praxis" – Praxis nur für Erwachsene.
       "ADULTS_ONLY_PRACTICE",
     ],

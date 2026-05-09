@@ -731,7 +731,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
-      checkpointIds: ["ONBOARDING_DOCTOLIB_INFO"],
+      checkpointIds: ["ONBOARDING_DOCTOLIB_INFO", "ONBOARDING_PRIMARY_CARE_CONFIRMATION"],
     },
     {
       sectionIntroId: "SECTION_INTRO_INFO_MISSING",

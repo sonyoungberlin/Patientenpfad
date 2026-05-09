@@ -2699,6 +2699,73 @@ describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", (
 });
 
 // ---------------------------------------------------------------------------
+// ONBOARDING-Profil
+// ---------------------------------------------------------------------------
+
+function makeOnboardingSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "ONBOARDING",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("ONBOARDING-Profil – Hausarzt-Zustaendigkeit (PRIMARY_CARE_CONFIRMATION)", () => {
+  it("Checkpoint ist im ONBOARDING-Profil als specificCheckpoint gebunden", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
+    expect(profile.specificCheckpointIds).toContain("ONBOARDING_PRIMARY_CARE_CONFIRMATION");
+  });
+
+  it("YES + SHOW → Sachstandstext erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeOnboardingSection({
+        checkpointStatuses: { ONBOARDING_PRIMARY_CARE_CONFIRMATION: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          ONBOARDING_PRIMARY_CARE_CONFIRMATION: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).toContain("bitten wir um kurze Rueckmeldung");
+    expect(text).toContain("hausaerztliche Praxis");
+    expect(text).not.toContain("dringend");
+    expect(text).not.toContain("akut");
+    expect(text).not.toContain("leider");
+    expect(text).not.toContain("nicht gefunden");
+  });
+
+  it("Checkpoint erzwingt keine automatische Action (sharedBottom bleibt leer)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeOnboardingSection({
+        checkpointStatuses: { ONBOARDING_PRIMARY_CARE_CONFIRMATION: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          ONBOARDING_PRIMARY_CARE_CONFIRMATION: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+
+  it("ONBOARDING_WRONG_PRACTICE_NOTICE erscheint nicht, wenn nur PRIMARY_CARE_CONFIRMATION aktiv ist", () => {
+    const result = renderInquiryResponseFromSections([
+      makeOnboardingSection({
+        checkpointStatuses: { ONBOARDING_PRIMARY_CARE_CONFIRMATION: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          ONBOARDING_PRIMARY_CARE_CONFIRMATION: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const allText = [
+      ...result.sections[0].attachedParagraphs,
+      ...result.sharedBottom,
+    ].join(" ");
+    expect(allText).not.toContain("nicht als Patient");
+    expect(allText).not.toContain("nicht gefunden");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // REFERRAL-Profil
 // ---------------------------------------------------------------------------
 

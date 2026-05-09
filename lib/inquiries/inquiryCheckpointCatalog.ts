@@ -33,6 +33,7 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
     ],
     hintText:
       "Als Neupatient ist eine vorherige Anmeldung in der Praxis erforderlich.",
+
     responseKind: ResponseKind.VORAUSSETZUNG,
     docText: {
       [InquiryCheckpointStatus.GEKLAERT]: "Patientenstatus: Bestandspatient.",
@@ -3265,6 +3266,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Aktualisierung der Patientendaten angefordert.",
+    },
+  },
+
+  ONBOARDING_PRIMARY_CARE_CONFIRMATION: {
+    id: "ONBOARDING_PRIMARY_CARE_CONFIRMATION",
+    label: "Hausarzt-Zustaendigkeit klaeren",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      {
+        id: "ONBOARDING_PRIMARY_CARE_CONFIRMATION-Q1",
+        text: "Bitte um Rueckmeldung, ob diese Praxis weiterhin als hausaerztliche Praxis gilt?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Fuer die weitere Bearbeitung Ihrer Anfrage bitten wir um kurze Rueckmeldung, ob wir weiterhin Ihre hausaerztliche Praxis sind.",
+      // NO: bewusst still – keine Erklaerung noetig
     },
   },
 
