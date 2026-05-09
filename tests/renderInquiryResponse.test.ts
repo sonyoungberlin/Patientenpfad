@@ -2650,6 +2650,55 @@ describe("SAMPLE_COLLECTION-Profil – GLOBALs entfernt", () => {
 });
 
 // ---------------------------------------------------------------------------
+// APPOINTMENT-Profil
+// ---------------------------------------------------------------------------
+
+function makeAppointmentSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "APPOINTMENT",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", () => {
+  it("Checkpoint ist im APPOINTMENT-Profil als specificCheckpoint gebunden", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2["APPOINTMENT"];
+    expect(profile.specificCheckpointIds).toContain("APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE");
+  });
+
+  it("YES + SHOW → Sachstandstext erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAppointmentSection({
+        checkpointStatuses: { APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).toContain("Uns liegt ein externer Bericht oder Befund vor.");
+    expect(text).toContain("Da Sie laengere Zeit nicht in unserer Praxis waren");
+    expect(text).toContain("eine Besprechung oder Klaerung sinnvoll");
+    expect(text).not.toContain("dringend");
+    expect(text).not.toContain("akut");
+  });
+
+  it("Checkpoint erzwingt keine automatische Terminaktion", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAppointmentSection({
+        checkpointStatuses: { APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // REFERRAL-Profil
 // ---------------------------------------------------------------------------
 

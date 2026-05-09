@@ -1592,6 +1592,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_WRONG_TYPE",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
       "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
+      "APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE",
       "APPOINTMENT_DATA_INCOMPLETE",
       // Schublade „Angaben fehlen" – konkret zum gebuchten Termin.
       "APPOINTMENT_REASON_UNCLEAR",

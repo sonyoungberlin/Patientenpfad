@@ -2675,6 +2675,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE: {
+    id: "APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE",
+    label: "Externer Befund bei laengerem Praxisabstand",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      {
+        id: "APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE-Q1",
+        text: "Liegt ein externer Bericht oder Befund vor und bestand laengere Zeit kein Kontakt zur Praxis?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Uns liegt ein externer Bericht oder Befund vor. Da Sie laengere Zeit nicht in unserer Praxis waren, ist eine Besprechung oder Klaerung sinnvoll.",
+      // NO: bewusst still – keine Erklaerung noetig
+    },
+  },
+
   APPOINTMENT_WRONG_TYPE: {
     id: "APPOINTMENT_WRONG_TYPE",
     label: "Falscher Termintyp",

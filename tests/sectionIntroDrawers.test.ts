@@ -156,4 +156,15 @@ describe("Antwortkontext-Reihenfolge (M2)", () => {
     expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE"');
     expect(profileBlock).toContain('"REQUIRED_INFORMATION_COMPLETE"');
   });
+
+  it("APPOINTMENT: SECTION_INTRO_REVIEWED enthält APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE", () => {
+    const profileBlockStart = src.indexOf("  APPOINTMENT: [");
+    expect(profileBlockStart).toBeGreaterThan(-1);
+    const profileBlockEnd = src.indexOf("\n  ],", profileBlockStart);
+    expect(profileBlockEnd).toBeGreaterThan(profileBlockStart);
+    const profileBlock = src.slice(profileBlockStart, profileBlockEnd);
+
+    expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_REVIEWED"');
+    expect(profileBlock).toContain('"APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE"');
+  });
 });
