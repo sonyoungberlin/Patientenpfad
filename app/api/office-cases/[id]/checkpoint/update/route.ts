@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
-import { ownsOfficeCase } from "@/lib/office/scope";
+import { canAccessOfficeCases, ownsOfficeCase } from "@/lib/office/scope";
 import {
   OfficeCheckpointState,
   type OfficeCheckpointSnapshot,
@@ -39,6 +39,10 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || isString(value);
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -50,7 +54,7 @@ export async function PATCH(
   if (!account.is_approved) {
     return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
   }
-  if (!account.office_cases_enabled && !account.is_admin) {
+  if (!canAccessOfficeCases(account)) {
     return NextResponse.json({ ok: false, error: "Officepfad nicht freigeschaltet." }, { status: 403 });
   }
 
@@ -64,6 +68,14 @@ export async function PATCH(
   }
 
   if (!isString(body.checkpoint_id) || !isString(body.state)) {
+    return NextResponse.json({ ok: false, error: "Ungültige Eingabe." }, { status: 400 });
+  }
+
+  if (
+    !isOptionalString(body.known_note) ||
+    !isOptionalString(body.missing_note) ||
+    !isOptionalString(body.answer_source)
+  ) {
     return NextResponse.json({ ok: false, error: "Ungültige Eingabe." }, { status: 400 });
   }
 

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
-import { ownsOfficeCase } from "@/lib/office/scope";
+import { canAccessOfficeCases, ownsOfficeCase } from "@/lib/office/scope";
 import type { OfficeCheckpointSnapshot } from "@/lib/office/types";
 
 type OfficeCaseSnapshotRecord = {
@@ -35,6 +35,18 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
+function isCheckpointNoteUpdate(value: unknown): value is CheckpointNoteUpdate {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+  const item = value as CheckpointNoteUpdate;
+  return (
+    isString(item.id) &&
+    (item.known_note === undefined || isString(item.known_note)) &&
+    (item.missing_note === undefined || isString(item.missing_note)) &&
+    (item.answer_source === undefined || isString(item.answer_source))
+  );
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -46,7 +58,7 @@ export async function PATCH(
   if (!account.is_approved) {
     return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
   }
-  if (!account.office_cases_enabled && !account.is_admin) {
+  if (!canAccessOfficeCases(account)) {
     return NextResponse.json({ ok: false, error: "Officepfad nicht freigeschaltet." }, { status: 403 });
   }
 
@@ -91,13 +103,11 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: "Keine Checkpoint-Daten übergeben." }, { status: 400 });
   }
 
-  const updates: CheckpointNoteUpdate[] = rawUpdates.filter(
-    (item): item is CheckpointNoteUpdate => !!item && typeof item === "object" && !Array.isArray(item),
-  );
-
-  if (updates.length !== rawUpdates.length) {
+  if (!rawUpdates.every(isCheckpointNoteUpdate)) {
     return NextResponse.json({ ok: false, error: "Ungültige Checkpoint-Daten." }, { status: 400 });
   }
+
+  const updates: CheckpointNoteUpdate[] = rawUpdates;
 
   const nextCheckpoints = snapshot.checkpoints.map((checkpoint) => {
     const update = updates.find((item) => item.id === checkpoint.id);

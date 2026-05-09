@@ -14,6 +14,12 @@ export type OfficeCreateOwnershipData = {
   owner_practice_id?: string;
 };
 
+export function canAccessOfficeCases(
+  account: Pick<SessionAccount, "office_cases_enabled" | "is_admin">,
+): boolean {
+  return account.office_cases_enabled || account.is_admin;
+}
+
 export function getOfficeOwnershipFilter(
   account: Pick<SessionAccount, "id" | "current_practice">,
 ): OfficeOwnershipFilter {
