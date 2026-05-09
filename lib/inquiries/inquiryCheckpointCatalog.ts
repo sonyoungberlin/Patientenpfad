@@ -2754,6 +2754,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_TYPE_MATCH_CONFIRMED: {
+    id: "APPOINTMENT_TYPE_MATCH_CONFIRMED",
+    label: "Terminart passt zum Anliegen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      {
+        id: "APPOINTMENT_TYPE_MATCH_CONFIRMED-Q1",
+        text: "Passt die gewählte Terminart grundsätzlich zum Anliegen?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Die gewählte Terminart passt grundsätzlich zu Ihrem Anliegen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   /** @deprecated Fachprozesswissen (z. B. Labor → Arzttermin) gehört ins jeweilige Fachprofil, nicht in APPOINTMENT. Nicht mehr in APPOINTMENT.specificCheckpointIds. Checkpoint bleibt im Katalog erhalten. */
   APPOINTMENT_PROCESS_MULTI_STEP: {
     id: "APPOINTMENT_PROCESS_MULTI_STEP",

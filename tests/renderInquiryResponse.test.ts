@@ -2704,6 +2704,7 @@ describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", (
   it("Checkpoint ist im APPOINTMENT-Profil als specificCheckpoint gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["APPOINTMENT"];
     expect(profile.specificCheckpointIds).toContain("APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE");
+    expect(profile.specificCheckpointIds).toContain("APPOINTMENT_TYPE_MATCH_CONFIRMED");
   });
 
   it("YES + SHOW → Sachstandstext erscheint in attachedParagraphs", () => {
@@ -2752,6 +2753,23 @@ describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", (
 
     const text = result.sections[0].attachedParagraphs.join(" ");
     expect(text).toContain("Die nachgereichten Unterlagen sind eingegangen und wurden der Patientenakte zugeordnet.");
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+
+  it("APPOINTMENT_TYPE_MATCH_CONFIRMED YES + SHOW → positiver Terminart-Sachstand ohne Action-Nebeneffekt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAppointmentSection({
+        checkpointStatuses: { APPOINTMENT_TYPE_MATCH_CONFIRMED: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          APPOINTMENT_TYPE_MATCH_CONFIRMED: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).toContain("Die gewählte Terminart passt grundsätzlich zu Ihrem Anliegen.");
+    expect(text).not.toContain("dringend");
+    expect(text).not.toContain("akut");
     expect(result.sharedBottom).toHaveLength(0);
   });
 });
