@@ -90,12 +90,25 @@ describe("POST /api/office-cases/create topic validation", () => {
       const createArg = prismaMock.officeCaseSession.create.mock.calls.at(-1)?.[0];
       const snapshot = createArg?.data?.checkpoint_snapshot as {
         topicId?: string;
-        checkpoints?: unknown[];
+        checkpoints?: Array<{
+          deadline?: unknown;
+          responsible_role?: unknown;
+          authority?: unknown;
+          required_documents?: unknown;
+          escalation_needed?: unknown;
+        }>;
       };
 
       expect(snapshot.topicId).toBe(topicId);
       expect(Array.isArray(snapshot.checkpoints)).toBe(true);
       expect((snapshot.checkpoints ?? []).length).toBeGreaterThanOrEqual(5);
+
+      const firstCheckpoint = snapshot.checkpoints?.[0];
+      expect(firstCheckpoint?.deadline).toBe("");
+      expect(firstCheckpoint?.responsible_role).toBe("");
+      expect(firstCheckpoint?.authority).toBe("");
+      expect(firstCheckpoint?.required_documents).toEqual([]);
+      expect(firstCheckpoint?.escalation_needed).toBe(false);
     }
   });
 

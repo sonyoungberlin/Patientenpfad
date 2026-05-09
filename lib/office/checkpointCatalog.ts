@@ -432,5 +432,10 @@ export function buildInitialSnapshotForTopic(
     known_note: "",
     missing_note: "",
     answer_source: "",
+    deadline: "",
+    responsible_role: "",
+    authority: "",
+    required_documents: [],
+    escalation_needed: false,
   }));
 }

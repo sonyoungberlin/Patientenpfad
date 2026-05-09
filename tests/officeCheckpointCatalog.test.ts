@@ -83,6 +83,14 @@ describe("office checkpoint catalog", () => {
       const snapshotIds = snapshot.map((checkpoint) => checkpoint.id);
       const catalogIds = catalog.map((checkpoint) => checkpoint.id);
       expect(snapshotIds).toEqual(catalogIds);
+
+      for (const checkpoint of snapshot) {
+        expect(checkpoint.deadline).toBe("");
+        expect(checkpoint.responsible_role).toBe("");
+        expect(checkpoint.authority).toBe("");
+        expect(checkpoint.required_documents).toEqual([]);
+        expect(checkpoint.escalation_needed).toBe(false);
+      }
     }
   });
 });

@@ -21,4 +21,9 @@ export type OfficeCheckpointSnapshot = {
   known_note?: string;
   missing_note?: string;
   answer_source?: string;
+  deadline?: string;
+  responsible_role?: string;
+  authority?: string;
+  required_documents?: string[];
+  escalation_needed?: boolean;
 };

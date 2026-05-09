@@ -21,6 +21,11 @@ type CheckpointUpdateBody = {
   known_note?: unknown;
   missing_note?: unknown;
   answer_source?: unknown;
+  deadline?: unknown;
+  responsible_role?: unknown;
+  authority?: unknown;
+  required_documents?: unknown;
+  escalation_needed?: unknown;
 };
 
 function readSnapshot(value: unknown): OfficeCaseSnapshotRecord | null {
@@ -41,6 +46,22 @@ function isString(value: unknown): value is string {
 
 function isOptionalString(value: unknown): value is string | undefined {
   return value === undefined || isString(value);
+}
+
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
+function isOptionalBoolean(value: unknown): value is boolean | undefined {
+  return value === undefined || isBoolean(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isOptionalStringArray(value: unknown): value is string[] | undefined {
+  return value === undefined || isStringArray(value);
 }
 
 export async function PATCH(
@@ -74,7 +95,12 @@ export async function PATCH(
   if (
     !isOptionalString(body.known_note) ||
     !isOptionalString(body.missing_note) ||
-    !isOptionalString(body.answer_source)
+    !isOptionalString(body.answer_source) ||
+    !isOptionalString(body.deadline) ||
+    !isOptionalString(body.responsible_role) ||
+    !isOptionalString(body.authority) ||
+    !isOptionalStringArray(body.required_documents) ||
+    !isOptionalBoolean(body.escalation_needed)
   ) {
     return NextResponse.json({ ok: false, error: "Ungültige Eingabe." }, { status: 400 });
   }
@@ -119,6 +145,17 @@ export async function PATCH(
   const nextKnownNote = isString(body.known_note) ? body.known_note : target.known_note;
   const nextMissingNote = isString(body.missing_note) ? body.missing_note : target.missing_note;
   const nextAnswerSource = isString(body.answer_source) ? body.answer_source : target.answer_source;
+  const nextDeadline = isString(body.deadline) ? body.deadline : target.deadline;
+  const nextResponsibleRole = isString(body.responsible_role)
+    ? body.responsible_role
+    : target.responsible_role;
+  const nextAuthority = isString(body.authority) ? body.authority : target.authority;
+  const nextRequiredDocuments = isStringArray(body.required_documents)
+    ? body.required_documents
+    : target.required_documents;
+  const nextEscalationNeeded = isBoolean(body.escalation_needed)
+    ? body.escalation_needed
+    : target.escalation_needed;
 
   if (state === OfficeCheckpointState.OPEN) {
     if (!nextMissingNote || !nextMissingNote.trim() || !nextAnswerSource || !nextAnswerSource.trim()) {
@@ -137,6 +174,11 @@ export async function PATCH(
       known_note: nextKnownNote,
       missing_note: nextMissingNote,
       answer_source: nextAnswerSource,
+      deadline: nextDeadline,
+      responsible_role: nextResponsibleRole,
+      authority: nextAuthority,
+      required_documents: nextRequiredDocuments,
+      escalation_needed: nextEscalationNeeded,
     };
   });
 

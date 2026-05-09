@@ -17,6 +17,11 @@ type CheckpointNoteUpdate = {
   known_note?: unknown;
   missing_note?: unknown;
   answer_source?: unknown;
+  deadline?: unknown;
+  responsible_role?: unknown;
+  authority?: unknown;
+  required_documents?: unknown;
+  escalation_needed?: unknown;
 };
 
 function readSnapshot(value: unknown): OfficeCaseSnapshotRecord | null {
@@ -35,6 +40,14 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
 function isCheckpointNoteUpdate(value: unknown): value is CheckpointNoteUpdate {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 
@@ -43,7 +56,12 @@ function isCheckpointNoteUpdate(value: unknown): value is CheckpointNoteUpdate {
     isString(item.id) &&
     (item.known_note === undefined || isString(item.known_note)) &&
     (item.missing_note === undefined || isString(item.missing_note)) &&
-    (item.answer_source === undefined || isString(item.answer_source))
+    (item.answer_source === undefined || isString(item.answer_source)) &&
+    (item.deadline === undefined || isString(item.deadline)) &&
+    (item.responsible_role === undefined || isString(item.responsible_role)) &&
+    (item.authority === undefined || isString(item.authority)) &&
+    (item.required_documents === undefined || isStringArray(item.required_documents)) &&
+    (item.escalation_needed === undefined || isBoolean(item.escalation_needed))
   );
 }
 
@@ -118,6 +136,17 @@ export async function PATCH(
       known_note: isString(update.known_note) ? update.known_note : checkpoint.known_note,
       missing_note: isString(update.missing_note) ? update.missing_note : checkpoint.missing_note,
       answer_source: isString(update.answer_source) ? update.answer_source : checkpoint.answer_source,
+      deadline: isString(update.deadline) ? update.deadline : checkpoint.deadline,
+      responsible_role: isString(update.responsible_role)
+        ? update.responsible_role
+        : checkpoint.responsible_role,
+      authority: isString(update.authority) ? update.authority : checkpoint.authority,
+      required_documents: isStringArray(update.required_documents)
+        ? update.required_documents
+        : checkpoint.required_documents,
+      escalation_needed: isBoolean(update.escalation_needed)
+        ? update.escalation_needed
+        : checkpoint.escalation_needed,
     };
   });
 
