@@ -1876,6 +1876,19 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED: {
+    id: "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
+    label: "Zeitnahe Besprechung / Klärung vereinbaren",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte vereinbaren Sie zeitnah einen Termin zur Besprechung. Es besteht kein Hinweis auf einen Notfall, die Rückmeldung sollte aber nicht unnötig aufgeschoben werden.",
+    },
+  },
+
   /** @deprecated Abrechnungsaussagen gehören in BILLING. Ersetzt durch BILLING_EXTERNAL_PROVIDER. Nicht mehr in LAB.specificCheckpointIds. */
   LAB_EXTERNAL_BILLING: {
     id: "LAB_EXTERNAL_BILLING",

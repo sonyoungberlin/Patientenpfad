@@ -130,6 +130,11 @@ describe("M2 boundActionCheckpointIds filter", () => {
     expect(m2ActionIds).not.toContain("LAB_FASTING_REQUIRED");
   });
 
+  it("includes the new LAB follow-up action in LAB M2 action rows", () => {
+    const m2ActionIds = buildM2ActionCps("LAB");
+    expect(m2ActionIds).toContain("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED");
+  });
+
   it("keeps genuine M2 switches (no boundActionConditions entry) in LAB", () => {
     const m2ActionIds = buildM2ActionCps("LAB");
     // LAB_RESULT_TIME now has hideWhenAny: [] → condition-controlled, no longer a M2 switch
@@ -172,6 +177,19 @@ describe("M2 boundActionCheckpointIds filter", () => {
       .filter((cp) => !!cp && cp.kind === InquiryCheckpointKind.ACTION)
       .map((cp) => cp!.id);
     expect(buildM2ActionCps(profileId)).toEqual(expected);
+  });
+});
+
+describe("Profile binding – LAB und SAMPLE_COLLECTION", () => {
+  it("LAB bindet den neuen Follow-up-Baustein", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2.LAB;
+    expect(profile.boundActionCheckpointIds).toContain("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED");
+    expect(profile.specificCheckpointIds).toContain("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED");
+  });
+
+  it("SAMPLE_COLLECTION bindet den neuen Follow-up-Baustein", () => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2.SAMPLE_COLLECTION;
+    expect(profile.boundActionCheckpointIds).toContain("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED");
   });
 });
 

@@ -933,6 +933,35 @@ describe("renderInquiryResponseFromSections – ACTION/SHARED_BOTTOM", () => {
   });
 });
 
+describe("renderInquiryResponseFromSections – neutraler Follow-up-Baustein", () => {
+  function makeLabSection(overrides: Partial<InquirySection> = {}): InquirySection {
+    return {
+      inquiryId: "LAB",
+      decisionStatus: DecisionStatus.POSSIBLE,
+      checkpointStatuses: {
+        LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED: ActionStatus.ACTIVE,
+      },
+      ...overrides,
+    };
+  }
+
+  it("LAB Follow-up-Action wird als Patiententext ausgegeben", () => {
+    const result = renderInquiryResponseFromSections([makeLabSection()]);
+    const texts = result.sections[0].attachedParagraphs.join(" ");
+    expect(texts).toContain(
+      "Bitte vereinbaren Sie zeitnah einen Termin zur Besprechung.",
+    );
+    expect(texts).toContain("kein Hinweis auf einen Notfall");
+  });
+
+  it("LAB Follow-up-Action enthält nicht dringende oder akute Formulierungen", () => {
+    const result = renderInquiryResponseFromSections([makeLabSection()]);
+    const texts = result.sections[0].attachedParagraphs.join(" ");
+    expect(texts).not.toContain("dringend");
+    expect(texts).not.toContain("akut");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // AU-Profil-Struktur
 // ---------------------------------------------------------------------------
@@ -2053,7 +2082,8 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_BASIC_LAB_INCLUDED");
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_POSSIBLE");
     expect(labProfile.specificCheckpointIds).toContain("LAB_CONTROL_TIMING_NOT_DUE");
-    expect(labProfile.specificCheckpointIds).toHaveLength(14);
+    expect(labProfile.specificCheckpointIds).toContain("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED");
+    expect(labProfile.specificCheckpointIds).toHaveLength(15);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -2400,7 +2430,12 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
 
   it("alle 3 Action-Checkpoints sind als ACTION/PREPARATION|PROCESS|INFO im Katalog und in boundActionCheckpointIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
-    const ids = ["URINE_SAMPLE_INSTRUCTIONS", "STOOL_SAMPLE_INSTRUCTIONS", "SAMPLE_HANDOVER"];
+    const ids = [
+      "URINE_SAMPLE_INSTRUCTIONS",
+      "STOOL_SAMPLE_INSTRUCTIONS",
+      "SAMPLE_HANDOVER",
+      "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
+    ];
     expect(profile.specificCheckpointIds).toHaveLength(1);
     expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_AVAILABLE");
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
@@ -2510,6 +2545,16 @@ describe("SAMPLE_COLLECTION-Profil – Action-Checkpoints (boundActionCheckpoint
     expect(result.sections[0].attachedParagraphs).toHaveLength(0);
   });
 
+
+  it("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED ACTIVE → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED: ActionStatus.ACTIVE },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toHaveLength(1);
+    expect(result.sections[0].attachedParagraphs[0]).toContain("Bitte vereinbaren Sie zeitnah einen Termin zur Besprechung.");
+  });
   it("LAB_RESULT_TIME ist nicht mehr in SAMPLE_COLLECTION (Deduplizierung – bleibt in LAB)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     expect(profile.boundActionCheckpointIds).not.toContain("LAB_RESULT_TIME");
@@ -2698,6 +2743,34 @@ describe("REFERRAL-Profil – Decision", () => {
       makeReferralSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
     ]);
     expect(result.sections[0].mainDecision).toContain("nicht ausgestellt");
+  });
+
+  it("GLOBAL MODULAR DIGITAL_REQUEST_MEDICAL_REVIEW wird bei PRESCRIPTION + REFERRAL nur einmal ausgegeben", () => {
+    const statusMap = {
+      DIGITAL_REQUEST_MEDICAL_REVIEW: ExplanationStatus.YES,
+    } as Record<string, string>;
+    const outputMap = {
+      DIGITAL_REQUEST_MEDICAL_REVIEW: ExplanationOutputStatus.SHOW,
+    } as Record<string, ExplanationOutputStatus>;
+
+    const result = renderInquiryResponseFromSections([
+      makePrescriptionSection({
+        checkpointStatuses: statusMap,
+        explanationOutputStatuses: outputMap,
+      }),
+      makeReferralSection({
+        checkpointStatuses: statusMap,
+        explanationOutputStatuses: outputMap,
+      }),
+    ]);
+
+    const mergedText = result.sections
+      .flatMap((s) => s.attachedParagraphs)
+      .join(" ");
+
+    const needle = "Digitale Anfragen werden vor der Bearbeitung ärztlich geprüft.";
+    const occurrences = mergedText.split(needle).length - 1;
+    expect(occurrences).toBe(1);
   });
 });
 

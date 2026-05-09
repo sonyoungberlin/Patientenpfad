@@ -624,6 +624,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_CHECKUP_BASIC_LAB_INCLUDED",
       "LAB_SELF_PAYER_POSSIBLE",
       "LAB_CONTROL_TIMING_NOT_DUE",
+      "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ],
     boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
     // Kein globalHints-Override nötig.
@@ -638,6 +639,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_SELF_PAYER_NOTE",
       "LAB_FASTING_REQUIRED",
       "LAB_RESULT_TIME",
+      "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ],
     boundActionConditions: {
       LAB_APPOINTMENT_INTERNAL: {
@@ -814,6 +816,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "STOOL_SAMPLE_INSTRUCTIONS",
       "SAMPLE_HANDOVER",
       "URINE_SAMPLE_ONSITE",
+      "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ],
     boundActionConditions: {
       URINE_SAMPLE_ONSITE: {

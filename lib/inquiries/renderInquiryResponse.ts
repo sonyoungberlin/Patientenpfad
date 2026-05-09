@@ -238,6 +238,10 @@ export function renderInquiryResponseFromSections(
   // Track which GLOBAL checkpoints have already contributed a M5 doc entry.
   // GLOBAL docs must appear exactly once across all sections (not per-anliegen).
   const globalDocSeen = new Set<string>();
+  // Track GLOBAL EXPLANATION-Checkpoints, die bereits in einer früheren Section
+  // in attachedParagraphs gerendert wurden. Derselbe globale Baustein soll im
+  // finalen Patiententext nur einmal erscheinen – erste Vorkommensstelle gewinnt.
+  const globalAttachedSeen = new Set<string>();
   // Track ACTION-Checkpoints, die schon in einer früheren Section in
   // attachedParagraphs gerendert wurden. Wenn dieselbe Action-ID an mehrere
   // Profile gebunden ist (z. B. ACUTE_OPEN_CONSULTATION_ACTION, BOOK_APPOINTMENT),
@@ -333,8 +337,11 @@ export function renderInquiryResponseFromSections(
         profile.globalHints?.[checkpointId] ?? resolveCheckpointText(checkpoint, status, audience);
       if (!text) continue;
 
-      // M4: anliegenspezifischer Hinweistext erscheint pro Anliegen in attachedParagraphs.
-      attachedParagraphs.push(text);
+      // M4: Globaler Hinweistext erscheint profilübergreifend nur einmal.
+      if (!globalAttachedSeen.has(checkpointId)) {
+        globalAttachedSeen.add(checkpointId);
+        attachedParagraphs.push(text);
+      }
 
       // M5: Dokumentationsmarke erscheint genau einmal über alle Anliegen hinweg.
       if (!globalDocSeen.has(checkpointId)) {

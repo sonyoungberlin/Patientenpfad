@@ -521,6 +521,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "BILLING_COST_NOT_COVERED",
         "LAB_SELF_PAYER_POSSIBLE",
         "LAB_CONTROL_TIMING_NOT_DUE",
+        "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
       ],
     },
     {
@@ -547,7 +548,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
-      checkpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
+      checkpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE", "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED"],
     },
     { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
