@@ -59,6 +59,7 @@ type AccountInfo = {
   inquiry_assistant_enabled: boolean;
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
+  office_cases_enabled: boolean;
 };
 
 export default function HomePage() {
@@ -97,7 +98,13 @@ export default function HomePage() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.ok) setAccount(d.account as AccountInfo);
+        if (d.ok)
+          setAccount({
+            ...(d.account as AccountInfo),
+            office_cases_enabled:
+              (d.account as { office_cases_enabled?: boolean })
+                .office_cases_enabled ?? false,
+          });
       })
       .catch(() => {})
       .finally(() => setAuthChecked(true));
@@ -117,7 +124,12 @@ export default function HomePage() {
         setLoginError((data.error as string | undefined) ?? "Login fehlgeschlagen.");
         return;
       }
-      setAccount(data.account as AccountInfo);
+      setAccount({
+        ...(data.account as AccountInfo),
+        office_cases_enabled:
+          (data.account as { office_cases_enabled?: boolean })
+            .office_cases_enabled ?? false,
+      });
       setLoginEmail("");
       setLoginPassword("");
       // Nach erfolgreichem Login → Dashboard. `router.refresh()` aktualisiert
