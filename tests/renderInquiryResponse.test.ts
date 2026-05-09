@@ -2436,8 +2436,10 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
       "SAMPLE_HANDOVER",
       "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(1);
+    expect(profile.specificCheckpointIds).toHaveLength(3);
     expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_AVAILABLE");
+    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE");
+    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING");
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     for (const id of ids) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -2593,6 +2595,8 @@ describe("SAMPLE_COLLECTION-Profil – SAMPLE_COLLECTION_ORDER_AVAILABLE (EXPLAN
   it("Checkpoint ist in SAMPLE_COLLECTION.specificCheckpointIds enthalten", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_AVAILABLE");
+    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE");
+    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING");
   });
 
   it("YES → Text erscheint in attachedParagraphs", () => {
@@ -2606,6 +2610,40 @@ describe("SAMPLE_COLLECTION-Profil – SAMPLE_COLLECTION_ORDER_AVAILABLE (EXPLAN
     ]);
     const allText = result.sections[0].attachedParagraphs.join(" ");
     expect(allText).toContain("Für die Probenabgabe liegt eine entsprechende Anordnung vor.");
+  });
+
+  it("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE YES + SHOW → Text erscheint ohne dringend/akut und ohne sharedBottom-Nebeneffekt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { SAMPLE_COLLECTION_INFORMATION_INCOMPLETE: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          SAMPLE_COLLECTION_INFORMATION_INCOMPLETE: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).toContain("Für die Bearbeitung benötigen wir noch weitere Angaben zu Ihrer Probe oder zum Anlass der Untersuchung.");
+    expect(text).not.toContain("dringend");
+    expect(text).not.toContain("akut");
+    expect(result.sharedBottom).toHaveLength(0);
+  });
+
+  it("SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING YES + SHOW → Text erscheint ohne dringend/akut und ohne sharedBottom-Nebeneffekt", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).toContain("Uns liegt noch keine eindeutige Anordnung oder Information vor, welche Probe abgegeben oder untersucht werden soll.");
+    expect(text).not.toContain("dringend");
+    expect(text).not.toContain("akut");
+    expect(result.sharedBottom).toHaveLength(0);
   });
 });
 

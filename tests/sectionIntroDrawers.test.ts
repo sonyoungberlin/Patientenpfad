@@ -157,6 +157,28 @@ describe("Antwortkontext-Reihenfolge (M2)", () => {
     expect(profileBlock).toContain('"REQUIRED_INFORMATION_COMPLETE"');
   });
 
+  it("SAMPLE_COLLECTION: SECTION_INTRO_INFO_MISSING enthält SAMPLE_COLLECTION_INFORMATION_INCOMPLETE", () => {
+    const profileBlockStart = src.indexOf("  SAMPLE_COLLECTION: [");
+    expect(profileBlockStart).toBeGreaterThan(-1);
+    const profileBlockEnd = src.indexOf("\n  ],", profileBlockStart);
+    expect(profileBlockEnd).toBeGreaterThan(profileBlockStart);
+    const profileBlock = src.slice(profileBlockStart, profileBlockEnd);
+
+    expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_INFO_MISSING"');
+    expect(profileBlock).toContain('"SAMPLE_COLLECTION_INFORMATION_INCOMPLETE"');
+  });
+
+  it("SAMPLE_COLLECTION: SECTION_INTRO_DOCS_MISSING enthält SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING", () => {
+    const profileBlockStart = src.indexOf("  SAMPLE_COLLECTION: [");
+    expect(profileBlockStart).toBeGreaterThan(-1);
+    const profileBlockEnd = src.indexOf("\n  ],", profileBlockStart);
+    expect(profileBlockEnd).toBeGreaterThan(profileBlockStart);
+    const profileBlock = src.slice(profileBlockStart, profileBlockEnd);
+
+    expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_DOCS_MISSING"');
+    expect(profileBlock).toContain('"SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING"');
+  });
+
   it("APPOINTMENT: SECTION_INTRO_REVIEWED enthält APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE", () => {
     const profileBlockStart = src.indexOf("  APPOINTMENT: [");
     expect(profileBlockStart).toBeGreaterThan(-1);

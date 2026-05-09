@@ -1817,6 +1817,46 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  SAMPLE_COLLECTION_INFORMATION_INCOMPLETE: {
+    id: "SAMPLE_COLLECTION_INFORMATION_INCOMPLETE",
+    label: "Angaben zur Probe unvollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    questions: [
+      {
+        id: "SAMPLE_COLLECTION_INFORMATION_INCOMPLETE-Q1",
+        text: "Fehlen Angaben zur Probe oder zum Anlass der Untersuchung?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Bearbeitung benötigen wir noch weitere Angaben zu Ihrer Probe oder zum Anlass der Untersuchung.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING: {
+    id: "SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING",
+    label: "Anordnung oder Probenauftrag unklar/fehlend",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      {
+        id: "SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING-Q1",
+        text: "Liegt eine eindeutige Anordnung vor, welche Probe abgegeben oder untersucht werden soll?",
+      },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Uns liegt noch keine eindeutige Anordnung oder Information vor, welche Probe abgegeben oder untersucht werden soll.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   URINE_SAMPLE_INSTRUCTIONS: {
     id: "URINE_SAMPLE_INSTRUCTIONS",
     label: "Urinprobe – Hinweis",

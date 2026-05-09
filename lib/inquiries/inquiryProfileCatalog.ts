@@ -808,7 +808,11 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "SECTION_INTRO_IN_PROGRESS",
       "SECTION_INTRO_NOT_RESPONSIBLE",
     ],
-    specificCheckpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
+    specificCheckpointIds: [
+      "SAMPLE_COLLECTION_ORDER_AVAILABLE",
+      "SAMPLE_COLLECTION_INFORMATION_INCOMPLETE",
+      "SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING",
+    ],
     boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
     globalHints: {},
     boundActionCheckpointIds: [

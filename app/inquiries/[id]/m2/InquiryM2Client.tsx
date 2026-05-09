@@ -553,8 +553,14 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE", "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED"],
     },
-    { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
-    { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["SAMPLE_COLLECTION_INFORMATION_INCOMPLETE"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING"],
+    },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
