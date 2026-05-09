@@ -809,7 +809,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "SECTION_INTRO_NOT_RESPONSIBLE",
     ],
     specificCheckpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE"],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
     globalHints: {},
     boundActionCheckpointIds: [
       "URINE_SAMPLE_INSTRUCTIONS",

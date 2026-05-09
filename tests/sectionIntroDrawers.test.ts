@@ -145,4 +145,15 @@ describe("Antwortkontext-Reihenfolge (M2)", () => {
     const block = src.slice(blockStart, blockEnd);
     expect(block).not.toMatch(/defaultOpen:\s*true/);
   });
+
+  it("SAMPLE_COLLECTION: SECTION_INTRO_DOCS_COMPLETE enthält REQUIRED_INFORMATION_COMPLETE", () => {
+    const profileBlockStart = src.indexOf("  SAMPLE_COLLECTION: [");
+    expect(profileBlockStart).toBeGreaterThan(-1);
+    const profileBlockEnd = src.indexOf("\n  ],", profileBlockStart);
+    expect(profileBlockEnd).toBeGreaterThan(profileBlockStart);
+    const profileBlock = src.slice(profileBlockStart, profileBlockEnd);
+
+    expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE"');
+    expect(profileBlock).toContain('"REQUIRED_INFORMATION_COMPLETE"');
+  });
 });

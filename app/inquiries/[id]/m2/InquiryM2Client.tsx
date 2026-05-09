@@ -545,7 +545,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     },
   ],
   SAMPLE_COLLECTION: [
-    { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
       checkpointIds: ["SAMPLE_COLLECTION_ORDER_AVAILABLE", "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED"],

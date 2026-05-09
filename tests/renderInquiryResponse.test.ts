@@ -2450,14 +2450,11 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(profile.boundActionCheckpointIds).not.toContain("LAB_RESULT_TIME");
   });
 
-  it("SAMPLE_COLLECTION hat keine boundGlobalCheckpointIds", () => {
+  it("SAMPLE_COLLECTION bindet REQUIRED_INFORMATION_COMPLETE als positiven Vollständigkeitszustand", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
-    expect(profile.boundGlobalCheckpointIds).not.toContain("IS_NEW_PATIENT");
-    expect(profile.boundGlobalCheckpointIds).not.toContain("PATIENT_NOT_IN_GERMANY");
-    expect(profile.boundGlobalCheckpointIds).not.toContain("DOCTOR_REVIEW_REQUIRED");
-    expect(profile.boundGlobalCheckpointIds).not.toContain("DATA_INCOMPLETE");
+    expect(profile.boundGlobalCheckpointIds).toContain("REQUIRED_INFORMATION_COMPLETE");
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(profile.boundGlobalCheckpointIds).toHaveLength(0);
+    expect(profile.boundGlobalCheckpointIds).toHaveLength(1);
   });
 
   it("SAMPLE_COLLECTION hat die erwarteten availableActionIds", () => {
@@ -2468,6 +2465,17 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
     expect(profile.availableActionIds).toContain("DIGITAL_REQUEST");
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
+  });
+
+  it("REQUIRED_INFORMATION_COMPLETE YES → positiver Vollständigkeitstext erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeSampleCollectionSection({
+        checkpointStatuses: { REQUIRED_INFORMATION_COMPLETE: ExplanationStatus.YES },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Die für Ihr Anliegen erforderlichen Informationen liegen vollständig vor.",
+    );
   });
 });
 
