@@ -36,6 +36,7 @@ export type AppShellAccount = {
   inquiry_assistant_enabled: boolean;
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
+  office_cases_enabled: boolean;
   // Optional: aktiver Praxis-Kontext + Mitgliedschaften des Accounts.
   // Werden vom `/api/auth/me`-Endpoint mitgeliefert (siehe lib/auth.ts
   // `SessionAccount`) und hier benötigt, um Praxis-Nav-Items anhand der
@@ -118,7 +119,7 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       { label: "Fallliste", href: "/cases" },
       { label: "Neuer Fall", href: "/" },
     );
-  } else if (isOfficeCases) {
+  } else if (isOfficeCases && (account.office_cases_enabled || account.is_admin)) {
     sectionItems.push({ label: "Officefälle", href: "/office-cases" });
   } else if (isCommunication) {
     sectionItems.push(

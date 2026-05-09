@@ -9,6 +9,8 @@ import {
   disablePatientCommunication,
   enableWebsiteForms,
   disableWebsiteForms,
+  enableOfficeCases,
+  disableOfficeCases,
 } from "@/lib/adminActions";
 import { prisma } from "@/lib/prisma";
 
@@ -36,6 +38,7 @@ export async function GET(req: NextRequest) {
       patient_communication_enabled: true,
       website_forms_enabled: true,
       createdAt: true,
+      office_cases_enabled: true,
     },
     orderBy: [{ is_approved: "asc" }, { createdAt: "desc" }],
   });
@@ -81,7 +84,9 @@ export async function POST(req: NextRequest) {
       action !== "enable_patient_communication" &&
       action !== "disable_patient_communication" &&
       action !== "enable_website_forms" &&
-      action !== "disable_website_forms")
+      action !== "disable_website_forms" &&
+      action !== "enable_office_cases" &&
+      action !== "disable_office_cases")
   ) {
     return NextResponse.json(
       {
@@ -101,7 +106,9 @@ export async function POST(req: NextRequest) {
   else if (action === "enable_patient_communication") result = await enablePatientCommunication(email);
   else if (action === "disable_patient_communication") result = await disablePatientCommunication(email);
   else if (action === "enable_website_forms") result = await enableWebsiteForms(email);
-  else result = await disableWebsiteForms(email);
+  else if (action === "disable_website_forms") result = await disableWebsiteForms(email);
+  else if (action === "enable_office_cases") result = await enableOfficeCases(email);
+  else result = await disableOfficeCases(email);
 
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.message }, { status: 404 });

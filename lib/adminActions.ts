@@ -45,7 +45,8 @@ type FlagPatch =
   | { is_approved: boolean }
   | { inquiry_assistant_enabled: boolean }
   | { patient_communication_enabled: boolean }
-  | { website_forms_enabled: boolean };
+  | { website_forms_enabled: boolean }
+  | { office_cases_enabled: boolean };
 
 async function updateAccountAndOwnerPractices(
   email: string,
@@ -124,6 +125,7 @@ export type AccountSummary = {
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
   createdAt: Date;
+  office_cases_enabled: boolean;
 };
 
 /**
@@ -139,6 +141,7 @@ export async function listAccounts(): Promise<AccountSummary[]> {
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
       website_forms_enabled: true,
+      office_cases_enabled: true,
       createdAt: true,
     },
     orderBy: { createdAt: "desc" },
@@ -218,7 +221,7 @@ export async function enableWebsiteForms(
 }
 
 /**
- * Phase 3a: Deaktiviert die Freigabe für öffentliche Website-Fragebögen
+ * Deaktiviert die Freigabe für öffentliche Website-Fragebögen
  * (`website_forms_enabled = false`) für einen Account per E-Mail.
  */
 export async function disableWebsiteForms(
@@ -229,5 +232,33 @@ export async function disableWebsiteForms(
     { website_forms_enabled: false },
     `Kein Account mit E-Mail "${email}" gefunden.`,
     `Website-Formulare für "${email}" deaktiviert.`,
+  );
+}
+
+/**
+ * Aktiviert den Officepfad für einen Account per E-Mail.
+ */
+export async function enableOfficeCases(
+  email: string,
+): Promise<AdminActionResult> {
+  return updateAccountAndOwnerPractices(
+    email,
+    { office_cases_enabled: true },
+    `Kein Account mit E-Mail "${email}" gefunden.`,
+    `Officepfad für "${email}" aktiviert.`,
+  );
+}
+
+/**
+ * Deaktiviert den Officepfad für einen Account per E-Mail.
+ */
+export async function disableOfficeCases(
+  email: string,
+): Promise<AdminActionResult> {
+  return updateAccountAndOwnerPractices(
+    email,
+    { office_cases_enabled: false },
+    `Kein Account mit E-Mail "${email}" gefunden.`,
+    `Officepfad für "${email}" deaktiviert.`,
   );
 }

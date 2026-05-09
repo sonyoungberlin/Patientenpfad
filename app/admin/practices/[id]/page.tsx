@@ -30,6 +30,7 @@ const FLAG_LABEL: Record<string, string> = {
   inquiry_assistant_enabled: "Anfrage-Assistent",
   patient_communication_enabled: "Patientenkommunikation",
   website_forms_enabled: "Website-Formulare",
+  office_cases_enabled: "Officepfad",
 };
 
 type SearchParams = Promise<{
@@ -67,6 +68,7 @@ export default async function AdminPracticeDetailPage({
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
       website_forms_enabled: true,
+      office_cases_enabled: true,
       created_at: true,
       smtp_host: true,
       smtp_port: true,
@@ -131,6 +133,7 @@ export default async function AdminPracticeDetailPage({
     "inquiry_assistant_enabled",
     "patient_communication_enabled",
     "website_forms_enabled",
+    "office_cases_enabled",
   ] as const;
 
   const toggleAction = `/api/admin/practices/${practice.id}`;

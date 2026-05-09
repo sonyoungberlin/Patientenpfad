@@ -34,6 +34,7 @@ export default async function DashboardPage() {
     null;
   const showPracticeTile =
     myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
+  const showOfficeTile = account.office_cases_enabled || account.is_admin;
 
   return (
     <>
@@ -84,6 +85,7 @@ export default async function DashboardPage() {
             </div>
           </section>
 
+          {showOfficeTile && (
           <section className="card">
             <h2 style={{ marginTop: 0 }}>Officepfad</h2>
             <p>Organisatorische Snapshots strukturiert klären</p>
@@ -93,6 +95,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
           </section>
+          )}
 
           {showPracticeTile && (
             <section className="card">

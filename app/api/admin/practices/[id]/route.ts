@@ -17,6 +17,7 @@
  *   - `inquiry_assistant_enabled`
  *   - `patient_communication_enabled`
  *   - `website_forms_enabled`
+ *   - `office_cases_enabled`
  *
  * Unterstützt zwei Content-Types — analog zu `/api/admin/accounts`:
  *   - `application/json`                  → JSON-Antwort `{ ok, practice }`
@@ -35,6 +36,7 @@ const FLAG_WHITELIST = [
   "inquiry_assistant_enabled",
   "patient_communication_enabled",
   "website_forms_enabled",
+  "office_cases_enabled",
 ] as const;
 type Flag = (typeof FLAG_WHITELIST)[number];
 
@@ -141,6 +143,7 @@ export async function POST(
         inquiry_assistant_enabled: true,
         patient_communication_enabled: true,
         website_forms_enabled: true,
+        office_cases_enabled: true,
       },
     });
 

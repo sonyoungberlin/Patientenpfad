@@ -46,6 +46,9 @@ export async function PATCH(
   if (!account.is_approved) {
     return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
   }
+  if (!account.office_cases_enabled && !account.is_admin) {
+    return NextResponse.json({ ok: false, error: "Officepfad nicht freigeschaltet." }, { status: 403 });
+  }
 
   const { id } = await params;
   let body: { checkpoints?: unknown; checkpoint?: unknown };

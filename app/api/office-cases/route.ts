@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
   if (!account.is_approved) {
     return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
   }
+  if (!account.office_cases_enabled && !account.is_admin) {
+    return NextResponse.json({ ok: false, error: "Officepfad nicht freigeschaltet." }, { status: 403 });
+  }
 
   const ownershipScope = getOfficeOwnershipFilter(account);
 

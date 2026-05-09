@@ -8,13 +8,15 @@ type FlagKey =
   | "is_approved"
   | "patient_communication_enabled"
   | "website_forms_enabled"
-  | "inquiry_assistant_enabled";
+  | "inquiry_assistant_enabled"
+  | "office_cases_enabled";
 
 const FLAG_LABEL: Record<FlagKey, string> = {
   is_approved: "freigeschaltet",
   patient_communication_enabled: "Patientenkommunikation",
   website_forms_enabled: "Website-Formulare",
   inquiry_assistant_enabled: "Anfrage-Assistent",
+  office_cases_enabled: "Officepfad",
 };
 
 export default async function AdminAccountsPage() {
@@ -32,6 +34,7 @@ export default async function AdminAccountsPage() {
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
       website_forms_enabled: true,
+      office_cases_enabled: true,
       createdAt: true,
       memberships: {
         where: { role: PracticeRole.OWNER },
@@ -43,6 +46,7 @@ export default async function AdminAccountsPage() {
               inquiry_assistant_enabled: true,
               patient_communication_enabled: true,
               website_forms_enabled: true,
+              office_cases_enabled: true,
             },
           },
         },
@@ -70,6 +74,7 @@ export default async function AdminAccountsPage() {
         "patient_communication_enabled",
         "website_forms_enabled",
         "inquiry_assistant_enabled",
+        "office_cases_enabled",
       ];
       for (const k of keys) {
         if (acc[k] !== p[k] && !drifted.includes(k)) {
@@ -116,6 +121,7 @@ export default async function AdminAccountsPage() {
             <th>Anfrage-Assistent</th>
             <th>Patientenkommunikation</th>
             <th>Website-Formulare</th>
+            <th>Officepfad</th>
             <th>Drift (Account ≠ Praxis)</th>
             <th>Angelegt</th>
             <th>Aktion</th>
@@ -135,6 +141,9 @@ export default async function AdminAccountsPage() {
               </td>
               <td data-wf={acc.email}>
                 {acc.website_forms_enabled ? "✓ aktiv" : "–"}
+              </td>
+              <td data-oc={acc.email}>
+                {acc.office_cases_enabled ? "✓ aktiv" : "–"}
               </td>
               <td data-drift={acc.email}>
                 {acc.memberships.length === 0 ? (
@@ -205,6 +214,23 @@ export default async function AdminAccountsPage() {
                       : "Website-Formulare aktivieren"}
                   </button>
                 </form>
+                <form method="POST" action="/api/admin/accounts">
+                  <input type="hidden" name="email" value={acc.email} />
+                  <input
+                    type="hidden"
+                    name="action"
+                    value={
+                      acc.office_cases_enabled
+                        ? "disable_office_cases"
+                        : "enable_office_cases"
+                    }
+                  />
+                  <button type="submit" data-oc-toggle={acc.email}>
+                    {acc.office_cases_enabled
+                      ? "Officepfad deaktivieren"
+                      : "Officepfad aktivieren"}
+                  </button>
+                </form>
                 <SendPasswordLinkButton email={acc.email} />
               </td>
             </tr>
@@ -212,7 +238,7 @@ export default async function AdminAccountsPage() {
           })}
           {accounts.length === 0 && (
             <tr>
-              <td colSpan={9} className="text-muted">
+              <td colSpan={10} className="text-muted">
                 Keine Accounts vorhanden.
               </td>
             </tr>

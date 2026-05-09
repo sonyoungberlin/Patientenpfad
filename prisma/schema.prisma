@@ -70,6 +70,11 @@ model Account {
   /// Es gibt bewusst keinen Admin-Bypass; auch Admins müssen diesen Flag tragen.
   website_forms_enabled Boolean @default(false)
 
+  /// Freigabe für den Officepfad (organisatorische Snapshots).
+  /// Muss explizit durch Admin aktiviert werden; Standard: false.
+  /// Kein Backfill — die Funktion startet für alle Accounts deaktiviert.
+  office_cases_enabled Boolean @default(false)
+
   cases                          CaseSession[]
   office_case_sessions           OfficeCaseSession[] @relation("OfficeCaseSessionOwnerAccount")
   sessions                       Session[]
@@ -523,6 +528,8 @@ model Practice {
   patient_communication_enabled Boolean @default(false)
   /// Carry-Over aus `Account.website_forms_enabled`.
   website_forms_enabled         Boolean @default(false)
+  /// Carry-Over aus `Account.office_cases_enabled`.
+  office_cases_enabled          Boolean @default(false)
 
   /// Praxis-spezifische SMTP-Konfiguration für Bestätigungs-E-Mails der
   /// Website-Formulare. Alle Felder sind nullable; eine Konfiguration gilt

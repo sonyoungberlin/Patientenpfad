@@ -11,6 +11,9 @@ export default async function OfficeCaseContinuePage({
   if (!account || !account.is_approved) {
     redirect("/");
   }
+  if (!account.office_cases_enabled && !account.is_admin) {
+    redirect("/dashboard");
+  }
 
   const { id } = await params;
 

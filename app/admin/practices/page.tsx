@@ -30,6 +30,7 @@ export default async function AdminPracticesPage() {
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
       website_forms_enabled: true,
+      office_cases_enabled: true,
       created_at: true,
       memberships: {
         where: { role: PracticeRole.OWNER },
@@ -64,6 +65,7 @@ export default async function AdminPracticesPage() {
             <th>Anfrage-Assistent</th>
             <th>Patientenkommunikation</th>
             <th>Website-Formulare</th>
+            <th>Officepfad</th>
             <th>Aktion</th>
           </tr>
         </thead>
@@ -86,6 +88,7 @@ export default async function AdminPracticesPage() {
                 <td>{p.inquiry_assistant_enabled ? "✓" : "–"}</td>
                 <td>{p.patient_communication_enabled ? "✓" : "–"}</td>
                 <td>{p.website_forms_enabled ? "✓" : "–"}</td>
+                <td>{p.office_cases_enabled ? "✓" : "–"}</td>
                 <td>
                   <Link href={`/admin/practices/${p.id}`}>Verwalten</Link>
                 </td>
@@ -94,7 +97,7 @@ export default async function AdminPracticesPage() {
           })}
           {practices.length === 0 && (
             <tr>
-              <td colSpan={9} className="text-muted">
+              <td colSpan={10} className="text-muted">
                 Keine Praxen vorhanden.
               </td>
             </tr>
