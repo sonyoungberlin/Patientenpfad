@@ -1,8 +1,6 @@
 import {
   deriveM5OutputCondensed,
   getCondensedBlockIds,
-  M5_BLOCK_SUMMARY_TEXTS,
-  resolveM5Text,
 } from "@/lib/logic/deriveM5Output";
 import {
   CheckpointCategory,
@@ -11,7 +9,6 @@ import {
   CheckpointType,
   type ActiveCheckpoint,
   type ActiveCheckpointMultiSelect,
-  type StandardCheckpoint,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -19,8 +16,8 @@ import {
 // ---------------------------------------------------------------------------
 
 function makeStandard(
-  overrides: Partial<StandardCheckpoint> & { id: string; block_id: string },
-): StandardCheckpoint {
+  overrides: Partial<ActiveCheckpoint> & { id: string; block_id: string },
+): ActiveCheckpoint {
   return {
     type: CheckpointType.VERIFIKATION,
     category: CheckpointCategory.M,
@@ -29,7 +26,7 @@ function makeStandard(
     status: "TO_DO",
     m4: { type: "ACTION", text: `m4 for ${overrides.id}` },
     ...overrides,
-  } as StandardCheckpoint;
+  } as ActiveCheckpoint;
 }
 
 function makeMultiSelect(
@@ -124,74 +121,82 @@ describe("getCondensedBlockIds", () => {
 // ---------------------------------------------------------------------------
 
 describe("deriveM5OutputCondensed", () => {
-  it("kommunikation: ≥2 TO_DO → single block summary", () => {
+  it("gruppiert TO_DO unter 'Nicht vollständig geklärt'", () => {
     const cps: ActiveCheckpoint[] = [
       makeStandard({ id: "K01", block_id: "kommunikation", status: "TO_DO" }),
       makeStandard({ id: "K08", block_id: "kommunikation", status: "TO_DO" }),
       makeStandard({ id: "K09", block_id: "kommunikation", status: "TO_DO" }),
     ];
     const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(1);
-    expect(result[0].text).toBe(
-      "Die Kommunikation ist insgesamt nicht ausreichend geklärt.",
-    );
-    expect(result[0].checkpoint_id).toBe("block:kommunikation");
+    expect(result.map((r) => r.text)).toEqual([
+      "Nicht vollständig geklärt:",
+      "- K01",
+      "- K08",
+      "- K09",
+    ]);
   });
 
-  it("medizinische_lage: all TO_DO → single block summary", () => {
+  it("gruppiert OK unter 'Vollständig geklärt'", () => {
     const cps: ActiveCheckpoint[] = [
-      makeStandard({ id: "K03", block_id: "medizinische_lage", status: "TO_DO" }),
-      makeStandard({ id: "K04", block_id: "medizinische_lage", status: "TO_DO" }),
-      makeStandard({ id: "K05", block_id: "medizinische_lage", status: "TO_DO" }),
+      makeStandard({ id: "K03", block_id: "medizinische_lage", status: "OK" }),
+      makeStandard({ id: "K04", block_id: "medizinische_lage", status: "OK" }),
     ];
     const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(1);
-    expect(result[0].text).toBe(
-      "Die medizinische Lage ist insgesamt nicht ausreichend geklärt.",
-    );
+    expect(result.map((r) => r.text)).toEqual([
+      "Vollständig geklärt:",
+      "- K03",
+      "- K04",
+    ]);
   });
 
-  it("versorgung_im_alltag: all TO_DO → single block summary", () => {
+  it("ordnet ZURÜCKSTELLEN ebenfalls als 'Nicht vollständig geklärt' ein", () => {
     const cps: ActiveCheckpoint[] = [
-      makeStandard({ id: "K02", block_id: "versorgung_im_alltag", status: "TO_DO" }),
-      makeStandard({ id: "K06", block_id: "versorgung_im_alltag", status: "TO_DO" }),
-      makeStandard({ id: "K07", block_id: "versorgung_im_alltag", status: "TO_DO" }),
+      makeStandard({ id: "K05", block_id: "medizinische_lage", status: "ZURÜCKSTELLEN" }),
     ];
     const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(1);
-    expect(result[0].text).toBe(
-      "Die Versorgung im Alltag ist insgesamt nicht ausreichend geklärt.",
-    );
+    expect(result.map((r) => r.text)).toEqual([
+      "Nicht vollständig geklärt:",
+      "- K05",
+    ]);
   });
 
-  it("mixed status → no condensation, individual lines", () => {
+  it("liefert beide Gruppen bei gemischten Status, mit Leerzeile dazwischen", () => {
     const cps: ActiveCheckpoint[] = [
       makeStandard({ id: "K03", block_id: "medizinische_lage", status: "TO_DO" }),
       makeStandard({ id: "K04", block_id: "medizinische_lage", status: "OK" }),
     ];
     const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(2);
-    expect(result[0].checkpoint_id).toBe("K03");
-    expect(result[1].checkpoint_id).toBe("K04");
-    // Each should be individual text
-    expect(result[0].text).toBe(resolveM5Text(cps[0] as StandardCheckpoint));
-    expect(result[1].text).toBe(resolveM5Text(cps[1] as StandardCheckpoint));
+    expect(result.map((r) => r.text)).toEqual([
+      "Nicht vollständig geklärt:",
+      "- K03",
+      "\nVollständig geklärt:",
+      "- K04",
+    ]);
+    // Im zusammengefügten Text ergibt \n + join("\n") eine Leerzeile zwischen den Gruppen.
+    const joined = result.map((e) => e.text).filter((t) => t.length > 0).join("\n");
+    expect(joined).toBe(
+      "Nicht vollständig geklärt:\n- K03\n\nVollständig geklärt:\n- K04",
+    );
   });
 
-  it("only 1 active standard CP in block → no condensation", () => {
+  it("behält die Reihenfolge der Punkte innerhalb der Gruppe bei", () => {
     const cps: ActiveCheckpoint[] = [
+      makeStandard({ id: "K07", block_id: "versorgung_im_alltag", status: "TO_DO" }),
+      makeStandard({ id: "K01", block_id: "kommunikation", status: "TO_DO" }),
       makeStandard({ id: "K03", block_id: "medizinische_lage", status: "TO_DO" }),
     ];
     const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(1);
-    expect(result[0].checkpoint_id).toBe("K03");
-    expect(result[0].text).toBe(resolveM5Text(cps[0] as StandardCheckpoint));
+    expect(result.map((r) => r.text)).toEqual([
+      "Nicht vollständig geklärt:",
+      "- K07",
+      "- K01",
+      "- K03",
+    ]);
   });
 
-  it("multi-select in same block does not prevent condensation of standard CPs", () => {
+  it("multi-select bleibt als zusätzlicher M5-Eintrag erhalten", () => {
     const cps: ActiveCheckpoint[] = [
       makeStandard({ id: "K03", block_id: "medizinische_lage", status: "TO_DO" }),
-      makeStandard({ id: "K04", block_id: "medizinische_lage", status: "TO_DO" }),
       makeMultiSelect({
         id: "K10",
         block_id: "medizinische_lage",
@@ -200,74 +205,34 @@ describe("deriveM5OutputCondensed", () => {
       }),
     ];
     const result = deriveM5OutputCondensed(cps);
-    // 1 block summary + 1 multi-select line
-    expect(result).toHaveLength(2);
-    expect(result[0].text).toBe(
-      "Die medizinische Lage ist insgesamt nicht ausreichend geklärt.",
-    );
-    expect(result[1].text).toBe("K10: Multimedikation");
+    expect(result.map((r) => r.text)).toEqual([
+      "Nicht vollständig geklärt:",
+      "- K03",
+      "K10: Multimedikation",
+    ]);
   });
 
-  it("multi-select with no selections → empty text, still present but filtered by consumer", () => {
-    const cps: ActiveCheckpoint[] = [
-      makeStandard({ id: "K03", block_id: "medizinische_lage", status: "TO_DO" }),
-      makeStandard({ id: "K04", block_id: "medizinische_lage", status: "TO_DO" }),
-      makeMultiSelect({ id: "K10", block_id: "medizinische_lage", enabled: false }),
-    ];
-    const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(2);
-    expect(result[0].text).toBe(
-      "Die medizinische Lage ist insgesamt nicht ausreichend geklärt.",
-    );
-    expect(result[1].text).toBe(""); // disabled multi-select
-  });
+  it("disabled assessment bleibt als leerer Eintrag erhalten", () => {
+    const k12Disabled = {
+      ...makeStandard({
+        id: "K12",
+        block_id: "pflegebeobachtung",
+        status: "TO_DO",
+        category: CheckpointCategory.O,
+      }),
+      mode: CheckpointMode.ASSESSMENT,
+      enabled: false,
+    } as ActiveCheckpoint;
 
-  it("condensed block + non-condensed block in same output", () => {
     const cps: ActiveCheckpoint[] = [
-      // kommunikation: all TO_DO → condensed
-      makeStandard({ id: "K01", block_id: "kommunikation", status: "TO_DO" }),
-      makeStandard({ id: "K08", block_id: "kommunikation", status: "TO_DO" }),
-      // medizinische_lage: mixed → individual
-      makeStandard({ id: "K03", block_id: "medizinische_lage", status: "OK" }),
-      makeStandard({ id: "K04", block_id: "medizinische_lage", status: "TO_DO" }),
+      makeStandard({ id: "K01", block_id: "kommunikation", status: "OK" }),
+      k12Disabled,
     ];
     const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(3);
-    expect(result[0].text).toBe(
-      "Die Kommunikation ist insgesamt nicht ausreichend geklärt.",
-    );
-    expect(result[1].checkpoint_id).toBe("K03");
-    expect(result[2].checkpoint_id).toBe("K04");
-  });
-
-  it("all blocks condensed simultaneously", () => {
-    const cps: ActiveCheckpoint[] = [
-      makeStandard({ id: "K01", block_id: "kommunikation", status: "TO_DO" }),
-      makeStandard({ id: "K08", block_id: "kommunikation", status: "TO_DO" }),
-      makeStandard({ id: "K03", block_id: "medizinische_lage", status: "TO_DO" }),
-      makeStandard({ id: "K04", block_id: "medizinische_lage", status: "TO_DO" }),
-      makeStandard({ id: "K02", block_id: "versorgung_im_alltag", status: "TO_DO" }),
-      makeStandard({ id: "K06", block_id: "versorgung_im_alltag", status: "TO_DO" }),
-    ];
-    const result = deriveM5OutputCondensed(cps);
-    expect(result).toHaveLength(3);
-    const texts = result.map((r) => r.text);
-    expect(texts).toContain(M5_BLOCK_SUMMARY_TEXTS.kommunikation);
-    expect(texts).toContain(M5_BLOCK_SUMMARY_TEXTS.medizinische_lage);
-    expect(texts).toContain(M5_BLOCK_SUMMARY_TEXTS.versorgung_im_alltag);
-  });
-
-  it("preserves order: block summary appears at position of first CP in block", () => {
-    const cps: ActiveCheckpoint[] = [
-      makeStandard({ id: "K03", block_id: "medizinische_lage", status: "OK" }),
-      makeStandard({ id: "K01", block_id: "kommunikation", status: "TO_DO" }),
-      makeStandard({ id: "K08", block_id: "kommunikation", status: "TO_DO" }),
-      makeStandard({ id: "K04", block_id: "medizinische_lage", status: "TO_DO" }),
-    ];
-    const result = deriveM5OutputCondensed(cps);
-    // K03 individual, then kommunikation summary, then K04 individual
-    expect(result[0].checkpoint_id).toBe("K03");
-    expect(result[1].checkpoint_id).toBe("block:kommunikation");
-    expect(result[2].checkpoint_id).toBe("K04");
+    expect(result.map((r) => r.text)).toEqual([
+      "Vollständig geklärt:",
+      "- K01",
+      "",
+    ]);
   });
 });

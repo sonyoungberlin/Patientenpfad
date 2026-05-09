@@ -267,9 +267,11 @@ describe("M3 Checkliste", () => {
     );
 
     expect(markup).toContain("Dokumentation für das Krankenblatt");
-    expect(markup).toContain("Diagnosenlage ist ausreichend geklärt.");
-    expect(markup).toContain("Medikation ist nicht ausreichend geprüft.");
-    expect(markup).toContain("Medizinische Mitbehandlung ist unklar.");
+    expect(markup).toContain("Nicht vollständig geklärt:");
+    expect(markup).toContain("- Behandlungsplan");
+    expect(markup).toContain("- Prognose");
+    expect(markup).toContain("Vollständig geklärt:");
+    expect(markup).toContain("- Diagnose");
   });
 
   it("M5: O-OK → geklärt, O-TODO → nicht ausreichend", async () => {
@@ -289,8 +291,10 @@ describe("M3 Checkliste", () => {
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
     );
 
-    expect(markup).toContain("Erreichbarkeit des Patienten ist ausreichend gegeben.");
-    expect(markup).toContain("Unterstützung im Alltag ist aktuell nicht ausreichend organisiert.");
+    expect(markup).toContain("Nicht vollständig geklärt:");
+    expect(markup).toContain("- Überweisung");
+    expect(markup).toContain("Vollständig geklärt:");
+    expect(markup).toContain("- Terminkoordination");
   });
 
   it("M5: mehrere Checkpoints → mehrere Zeilen", async () => {
@@ -306,7 +310,7 @@ describe("M3 Checkliste", () => {
     );
 
     expect(markup).toContain(
-      "Diagnosenlage ist ausreichend geklärt.\nErreichbarkeit des Patienten ist nicht ausreichend gegeben.",
+      "Nicht vollständig geklärt:\n- Beta\n\nVollständig geklärt:\n- Alpha",
     );
   });
 

@@ -207,8 +207,9 @@ describe("M3 – K10 nicht mehr in M3 (nach Migration nach M1)", () => {
 
     // Standard M4 text from K03 still present
     expect(markup).toContain("Bitte Befunde mitbringen.");
-    // K03 M5 fallback text present
-    expect(markup).toContain("Diagnosenlage ist aktuell nicht ausreichend geklärt.");
+    // K03 now appears in compact grouped M5 output
+    expect(markup).toContain("Nicht vollständig geklärt:");
+    expect(markup).toContain("- Diagnosenlage");
     // K10 M5 also present (read from DB, not editable in M3)
     expect(markup).toContain(
       "Besonderer Versorgungsaufwand: Multimedikation, erhöhter Betreuungsbedarf",

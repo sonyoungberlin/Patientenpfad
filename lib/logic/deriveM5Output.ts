@@ -5,6 +5,9 @@ export type M5Entry = {
   text: string;
 };
 
+const M5_GROUP_HEADER_NOT_FULLY = "Nicht vollständig geklärt:";
+const M5_GROUP_HEADER_FULLY = "Vollständig geklärt:";
+
 /**
  * Summary sentences used when all active standard checkpoints in a block
  * have status TO_DO and there are at least 2 such checkpoints.
@@ -182,14 +185,15 @@ export function getCondensedBlockIds(checkpoints: ActiveCheckpoint[]): Set<strin
  * M4 / patient-facing output is not affected by this function.
  */
 export function deriveM5OutputCondensed(checkpoints: ActiveCheckpoint[]): M5Entry[] {
-  const condensedBlocks = getCondensedBlockIds(checkpoints);
-  const emittedBlocks = new Set<string>();
-  const result: M5Entry[] = [];
+  const notFullyClarified: M5Entry[] = [];
+  const fullyClarified: M5Entry[] = [];
+  const additionalEntries: M5Entry[] = [];
+  const disabledAssessmentEntries: M5Entry[] = [];
 
   for (const cp of checkpoints) {
     if (isMultiSelectCheckpoint(cp)) {
-      // Multi-select: always individual, never condensed
-      result.push({
+      // Multi-select stays as an optional existing M5 entry.
+      additionalEntries.push({
         checkpoint_id: cp.id,
         text:
           cp.enabled && cp.selections.length > 0
@@ -201,29 +205,43 @@ export function deriveM5OutputCondensed(checkpoints: ActiveCheckpoint[]): M5Entr
 
     // ASSESSMENT checkpoint: only document if enabled
     if (isAssessmentCheckpoint(cp) && cp.enabled !== true) {
-      result.push({ checkpoint_id: cp.id, text: "" });
+      disabledAssessmentEntries.push({ checkpoint_id: cp.id, text: "" });
       continue;
     }
 
-    if (condensedBlocks.has(cp.block_id)) {
-      // Emit the block summary exactly once
-      if (!emittedBlocks.has(cp.block_id)) {
-        emittedBlocks.add(cp.block_id);
-        result.push({
-          checkpoint_id: `block:${cp.block_id}`,
-          text: M5_BLOCK_SUMMARY_TEXTS[cp.block_id],
-        });
-      }
-      // Skip individual lines for condensed blocks
-      continue;
-    }
-
-    // Non-condensed standard checkpoint: individual line
-    result.push({
+    const pointEntry: M5Entry = {
       checkpoint_id: cp.id,
-      text: resolveM5Text(cp),
-    });
+      text: `- ${cp.title}`,
+    };
+
+    if (cp.status === "OK") {
+      fullyClarified.push(pointEntry);
+      continue;
+    }
+
+    // TO_DO and ZURÜCKSTELLEN are both treated as "not fully clarified".
+    notFullyClarified.push(pointEntry);
   }
+
+  const result: M5Entry[] = [];
+
+  if (notFullyClarified.length > 0) {
+    result.push({ checkpoint_id: "group:not-fully-clarified", text: M5_GROUP_HEADER_NOT_FULLY });
+    result.push(...notFullyClarified);
+  }
+
+  if (fullyClarified.length > 0) {
+    // When both groups are present, prefix the second header with \n so that
+    // joining with "\n" produces a blank separator line in both the <pre>
+    // display and the copied plain text, without needing a separate empty entry.
+    const fullyHeader =
+      notFullyClarified.length > 0 ? `\n${M5_GROUP_HEADER_FULLY}` : M5_GROUP_HEADER_FULLY;
+    result.push({ checkpoint_id: "group:fully-clarified", text: fullyHeader });
+    result.push(...fullyClarified);
+  }
+
+  result.push(...additionalEntries);
+  result.push(...disabledAssessmentEntries);
 
   return result;
 }

@@ -195,9 +195,10 @@ describe("K12 M5-Sichtbarkeit", () => {
   it("K12 mit enabled=true → M5-Text vorhanden", () => {
     const k12Enabled = makeK12(true);
     const result = deriveM5OutputCondensed([k12Enabled]);
-    expect(result).toHaveLength(1);
-    expect(result[0].text.length).toBeGreaterThan(0);
-    expect(result[0].checkpoint_id).toBe("K12");
+    expect(result).toHaveLength(2);
+    expect(result[0].text).toBe("Nicht vollständig geklärt:");
+    const k12Entry = result.find((e) => e.checkpoint_id === "K12");
+    expect(k12Entry?.text.startsWith("- ")).toBe(true);
   });
 
   it("K12 mit enabled=false und anderen Checkpoints → nur K12 hat leeren Text", () => {
@@ -206,8 +207,14 @@ describe("K12 M5-Sichtbarkeit", () => {
     const result = deriveM5OutputCondensed([k01, k12Disabled]);
     const k12Entry = result.find((e) => e.checkpoint_id === "K12");
     expect(k12Entry?.text).toBe("");
+    expect(result).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: "Nicht vollständig geklärt:" }),
+        expect.objectContaining({ checkpoint_id: "K01" }),
+      ]),
+    );
     const k01Entry = result.find((e) => e.checkpoint_id === "K01");
-    expect(k01Entry?.text.length).toBeGreaterThan(0);
+    expect(k01Entry?.text.startsWith("- ")).toBe(true);
   });
 });
 
