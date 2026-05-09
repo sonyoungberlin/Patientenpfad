@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
 import { buildOfficeSummaryText } from "@/lib/office/summary";
+import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
+import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
@@ -46,6 +48,11 @@ function kindLabel(kind: OfficeCheckpointKind) {
     case OfficeCheckpointKind.DEPENDENCY:
       return "DEPENDENCY";
   }
+}
+
+function getQuestionsForCheckpoint(topicId: string | null, checkpointId: string): readonly OfficeM2Question[] {
+  if (!topicId || !isOfficeTopicId(topicId)) return [];
+  return getM2QuestionsForCheckpoint(topicId, checkpointId);
 }
 
 export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
@@ -173,6 +180,19 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
 
               {mode === "m2" ? (
                 <>
+                  {(() => {
+                    const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
+                    return questions.length > 0 ? (
+                      <div style={{ display: "grid", gap: "0.5rem", padding: "0.75rem", backgroundColor: "#f9f9f9", borderRadius: "0.25rem" }}>
+                        <div className="text-small" style={{ fontWeight: "500" }}>Leitfragen für M2:</div>
+                        <ul style={{ margin: "0.5rem 0", paddingLeft: "1.5rem", lineHeight: "1.5" }}>
+                          {questions.map((q) => (
+                            <li key={q.id} className="text-small">{q.text}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null;
+                  })()}
                   <label style={{ display: "grid", gap: "0.25rem" }}>
                     <span>known_note</span>
                     <textarea
