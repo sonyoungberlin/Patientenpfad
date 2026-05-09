@@ -37,6 +37,11 @@ describe("/cases/[id] Weiterleitung", () => {
       is_approved: true,
       is_admin: false,
       inquiry_assistant_enabled: false,
+      patient_communication_enabled: false,
+      website_forms_enabled: false,
+      office_cases_enabled: false,
+      current_practice: null,
+      memberships: [],
     });
   });
 
