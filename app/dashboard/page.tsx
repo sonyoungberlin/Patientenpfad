@@ -84,6 +84,16 @@ export default async function DashboardPage() {
             </div>
           </section>
 
+          <section className="card">
+            <h2 style={{ marginTop: 0 }}>Officepfad</h2>
+            <p>Organisatorische Snapshots strukturiert klären</p>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <Link href="/office-cases">
+                <button type="button">Officefälle öffnen</button>
+              </Link>
+            </div>
+          </section>
+
           {showPracticeTile && (
             <section className="card">
               <h2 style={{ marginTop: 0 }}>Praxis</h2>

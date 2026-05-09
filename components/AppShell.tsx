@@ -106,6 +106,7 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
   const isCases = pathname === "/" || inSection("/cases");
   const isCommunication =
     inSection("/inquiries") || inSection("/questionnaires");
+  const isOfficeCases = inSection("/office-cases");
   const isPractice = inSection("/practice");
   const isWebsiteForms = inSection("/website-forms");
 
@@ -117,6 +118,8 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       { label: "Fallliste", href: "/cases" },
       { label: "Neuer Fall", href: "/" },
     );
+  } else if (isOfficeCases) {
+    sectionItems.push({ label: "Officefälle", href: "/office-cases" });
   } else if (isCommunication) {
     sectionItems.push(
       { label: "Vorlagen", href: "/inquiries" },

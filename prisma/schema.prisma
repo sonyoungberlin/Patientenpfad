@@ -71,6 +71,7 @@ model Account {
   website_forms_enabled Boolean @default(false)
 
   cases                          CaseSession[]
+  office_case_sessions           OfficeCaseSession[] @relation("OfficeCaseSessionOwnerAccount")
   sessions                       Session[]
   inquiry_sessions               InquirySession[]
   patient_questionnaire_sessions PatientQuestionnaireSession[]
@@ -227,6 +228,34 @@ model CaseSession {
   /// Vorbereitungsdurchläufe dieses Falls. Wird in Schritt 1 noch nicht von
   /// bestehenden Routen geschrieben; siehe `lib/server/prefillRuns.ts`.
   prefill_runs PrefillRun[]
+}
+
+/// Snapshot-orientierter Office-Fall (Praxisleitung / Geschäftsführung).
+/// Strikt getrennt vom medizinischen CaseSession-Flow.
+model OfficeCaseSession {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Kurzbezeichnung des Office-Anlasses/Themas.
+  title String?
+
+  /// Freitext-Anlass zum Snapshot-Zeitpunkt.
+  trigger_note String?
+
+  /// Aktueller Snapshot der Office-Checkpoints (JSON-Anker).
+  checkpoint_snapshot Json?
+
+  /// Ersteller-/Owner-Account (immer gesetzt).
+  owner_account_id String
+  owner_account    Account @relation("OfficeCaseSessionOwnerAccount", fields: [owner_account_id], references: [id], onDelete: Restrict)
+
+  /// Practice-first Scope mit Fallback auf owner_account_id.
+  owner_practice_id String?
+  owner_practice    Practice? @relation("OfficeCaseSessionOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: SetNull)
+
+  @@index([owner_account_id, createdAt])
+  @@index([owner_practice_id, createdAt])
 }
 
 enum InquirySessionStatus {
@@ -528,6 +557,7 @@ model Practice {
 
   memberships                    PracticeMembership[]
   case_sessions                  CaseSession[]                 @relation("CaseSessionOwnerPractice")
+  office_case_sessions           OfficeCaseSession[]           @relation("OfficeCaseSessionOwnerPractice")
   inquiry_sessions               InquirySession[]              @relation("InquirySessionOwnerPractice")
   patient_questionnaire_sessions PatientQuestionnaireSession[] @relation("PatientQuestionnaireSessionOwnerPractice")
   practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
