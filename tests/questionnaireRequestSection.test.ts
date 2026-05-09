@@ -21,7 +21,7 @@ import type { InquiryResponseV2Output } from "@/lib/inquiries/types";
 const EXAMPLE_LINK = "https://example.com/q/abc-token-123";
 
 function makeOutput(sharedBottom: string[] = []): InquiryResponseV2Output {
-  return { sections: [], sharedBottom };
+  return { sections: [], sharedBottom, documentation: [] };
 }
 
 const EXPECTED_PREFIX =

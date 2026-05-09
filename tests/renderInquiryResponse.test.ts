@@ -1011,7 +1011,7 @@ describe("AU-Profil – Checkpoint-Bindungen", () => {
       if (cp.classification === "MODULAR") {
         // MODULAR-Checkpoints liefern Text über textByStatus im Katalog; globalHints ist optional.
         const catalogText = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-        const hintText = auProfile.globalHints[id];
+        const hintText = auProfile.globalHints?.[id];
         expect(catalogText || hintText).toBeTruthy();
       } else {
         // GLOBAL_STATE-Checkpoints ohne eigenen Text benötigen globalHints.
@@ -2112,7 +2112,7 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
       if (cp.classification === "MODULAR") {
         // MODULAR-Checkpoints liefern Text über textByStatus; globalHints ist optional.
         const catalogText = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
-        const hintText = labProfile.globalHints[id];
+        const hintText = labProfile.globalHints?.[id];
         expect(catalogText || hintText).toBeTruthy();
       } else {
         expect(labProfile.globalHints).toHaveProperty(id);

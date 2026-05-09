@@ -144,7 +144,7 @@ describe("POST /api/cases/create – MULTI_SELECT-Payload", () => {
     expect(k03).toBeDefined();
     expect(isMultiSelectCheckpoint(k03!)).toBe(false);
     if (!isMultiSelectCheckpoint(k03!)) {
-      expect(k03.status).toBe("TO_DO");
+      expect(k03!.status).toBe("TO_DO");
     }
   });
 

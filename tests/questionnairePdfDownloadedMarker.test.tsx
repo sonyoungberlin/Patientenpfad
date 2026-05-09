@@ -193,7 +193,6 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
 
   it('zeigt "PDF herunterladen" und keinen Status-Hinweis, wenn pdfDownloadedAt null', () => {
     const html = renderToStaticMarkup(
-      // @ts-expect-error — Server-Component-artige Funktion direkt aufrufen.
       QuestionnaireCard({ ...baseProps, pdfDownloadedAt: null }),
     );
     expect(html).toContain(">PDF herunterladen<");
@@ -204,7 +203,6 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
 
   it('zeigt "PDF erneut herunterladen" + Häkchen-Hinweis, wenn pdfDownloadedAt gesetzt', () => {
     const html = renderToStaticMarkup(
-      // @ts-expect-error — Server-Component-artige Funktion direkt aufrufen.
       QuestionnaireCard({
         ...baseProps,
         pdfDownloadedAt: new Date("2026-05-04T10:00:00Z"),
@@ -217,7 +215,6 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
 
   it("zeigt PDF-Block gar nicht, wenn nicht completed (auch mit gesetztem Marker)", () => {
     const html = renderToStaticMarkup(
-      // @ts-expect-error — Server-Component-artige Funktion direkt aufrufen.
       QuestionnaireCard({
         ...baseProps,
         displayStatus: "pending",

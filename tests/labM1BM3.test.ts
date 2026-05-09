@@ -677,7 +677,7 @@ describe("LAB – TERMIN_PREPARATION_REQUIRED", () => {
   });
 
   it("LAB.globalHints enthält keinen TERMIN_PREPARATION_REQUIRED-Eintrag mehr", () => {
-    expect(LAB.globalHints["TERMIN_PREPARATION_REQUIRED"]).toBeUndefined();
+    expect(LAB.globalHints?.["TERMIN_PREPARATION_REQUIRED"]).toBeUndefined();
   });
 
   it("TERMIN_PREPARATION_REQUIRED existiert weiterhin im Katalog (für andere Profile)", () => {
