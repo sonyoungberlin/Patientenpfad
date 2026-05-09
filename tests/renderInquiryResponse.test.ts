@@ -2948,7 +2948,7 @@ describe("REFERRAL-Profil – Decision", () => {
   it("GLOBAL MODULAR DIGITAL_REQUEST_MEDICAL_REVIEW wird bei PRESCRIPTION + REFERRAL nur einmal ausgegeben", () => {
     const statusMap = {
       DIGITAL_REQUEST_MEDICAL_REVIEW: ExplanationStatus.YES,
-    } as Record<string, string>;
+    } as Record<string, CheckpointStatusValue>;
     const outputMap = {
       DIGITAL_REQUEST_MEDICAL_REVIEW: ExplanationOutputStatus.SHOW,
     } as Record<string, ExplanationOutputStatus>;

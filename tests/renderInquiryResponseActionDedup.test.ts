@@ -4,6 +4,7 @@ import {
   ActionStatus,
   DecisionStatus,
   type InquirySection,
+  type CheckpointStatusValue,
 } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
@@ -20,7 +21,7 @@ import {
 
 function makeSection(
   inquiryId: string,
-  active: Record<string, string>,
+  active: Record<string, CheckpointStatusValue>,
   decisionStatus: string = DecisionStatus.POSSIBLE,
 ): InquirySection {
   return {

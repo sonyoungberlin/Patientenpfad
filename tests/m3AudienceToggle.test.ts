@@ -12,14 +12,14 @@
 
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
-import { DecisionStatus, ActionStatus, ExplanationStatus } from "@/lib/inquiries/types";
+import { DecisionStatus, ActionStatus, ExplanationStatus, type CheckpointStatusValue } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /** Section für das AU-Profil (ohne weitere checkpoints). */
-function makeAuSection(extra: Record<string, string> = {}) {
+function makeAuSection(extra: Record<string, CheckpointStatusValue> = {}) {
   return {
     inquiryId: "AU",
     decisionStatus: DecisionStatus.POSSIBLE,
