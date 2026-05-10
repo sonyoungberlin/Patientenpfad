@@ -1,5 +1,8 @@
 import {
+  OfficeCheckpointType,
   OfficeCheckpointKind,
+  OfficeFailureEffect,
+  OfficeOutcomeAudience,
   OfficeCheckpointState,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
@@ -58,8 +61,18 @@ export type OfficeTopic = {
 export type OfficeCheckpointTemplate = {
   id: string;
   title: string;
+  checkpointType?: OfficeCheckpointType;
+  failureEffect?: OfficeFailureEffect;
+  outcomeAudience?: OfficeOutcomeAudience[];
   kind: OfficeCheckpointKind;
   officeKind?: OfficeManagementCheckpointKind;
+  governanceCategory?: "BEFUGNIS" | "GENEHMIGUNG" | "STRUKTUR" | "COMPLIANCE";
+  legalRefs?: readonly string[];
+  requiredEvidenceKeys?: readonly string[];
+  optionalEvidenceKeys?: readonly string[];
+  authorityKeys?: readonly string[];
+  decisionRuleKey?: string;
+  m4RuleKey?: string;
 };
 
 const TOPICS: readonly OfficeTopic[] = [
@@ -100,29 +113,49 @@ const TOPICS: readonly OfficeTopic[] = [
 const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTemplate[]> = {
   [OFFICE_TOPIC_HIRING_REPLACEMENT]: [
     {
-      id: "HR-01",
-      title: "Ausloeser und Dringlichkeit dokumentiert",
-      kind: OfficeCheckpointKind.FACT,
-    },
-    {
-      id: "HR-02",
-      title: "Mindestanforderungen an die Stelle geklaert",
-      kind: OfficeCheckpointKind.RULE,
-    },
-    {
-      id: "HR-03",
-      title: "Rueckmeldung durch Praxisleitung/Partner eingeholt",
-      kind: OfficeCheckpointKind.ASSESSMENT,
-    },
-    {
-      id: "HR-04",
-      title: "Entscheidungspfad fuer Nachbesetzung benannt",
+      id: "NC-REGISTERSTATUS",
+      title: "Registerstatus",
       kind: OfficeCheckpointKind.DECISION,
     },
     {
-      id: "HR-05",
-      title: "Zustaendige Antwortquelle fuer offene Punkte benannt",
-      kind: OfficeCheckpointKind.SOURCE,
+      id: "NC-APPROBATION",
+      title: "Approbation",
+      kind: OfficeCheckpointKind.DECISION,
+    },
+    {
+      id: "NC-FACHARZTQUALIFIKATION",
+      title: "Facharztqualifikation",
+      kind: OfficeCheckpointKind.DECISION,
+    },
+    {
+      id: "NC-BERUFSHAFTPFLICHT",
+      title: "Berufshaftpflicht",
+      kind: OfficeCheckpointKind.DECISION,
+    },
+    {
+      id: "NC-TAETIGKEITSUMFANG",
+      title: "Taetigkeitsumfang",
+      kind: OfficeCheckpointKind.DECISION,
+    },
+    {
+      id: "NC-EXTERNE_STELLE",
+      title: "Zustaendige externe Stelle",
+      kind: OfficeCheckpointKind.DECISION,
+    },
+    {
+      id: "NC-ANTRAGSWEG",
+      title: "Antragsweg",
+      kind: OfficeCheckpointKind.DECISION,
+    },
+    {
+      id: "NC-GENEHMIGUNGSSTATUS",
+      title: "Genehmigungsstatus",
+      kind: OfficeCheckpointKind.DECISION,
+    },
+    {
+      id: "NC-BETRIEBSSTAETTENSTRUKTUR",
+      title: "Betriebsstaettenstruktur",
+      kind: OfficeCheckpointKind.DECISION,
     },
   ],
   [OFFICE_TOPIC_KV_BILLING]: [
@@ -388,6 +421,35 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
   ],
 };
 
+// Temporary additive fallback only.
+// These defaults are intentionally neutral and MUST NOT be interpreted as
+// final fachliche Typisierung. Final values will be set explicitly per checkpoint
+// in a dedicated migration patch.
+function getCheckpointTypeWithLegacyFallback(
+  checkpoint: OfficeCheckpointTemplate,
+): OfficeCheckpointType {
+  return checkpoint.checkpointType ?? OfficeCheckpointType.KONTEXT_INFORMATION;
+}
+
+// Temporary additive fallback only.
+// No semantic derivation from legacy fields (kind/officeKind) is performed here.
+function getFailureEffectWithLegacyFallback(
+  checkpoint: OfficeCheckpointTemplate,
+): OfficeFailureEffect {
+  return checkpoint.failureEffect ?? OfficeFailureEffect.NONE;
+}
+
+// Temporary additive fallback only.
+// Audience defaults to BACKOFFICE until explicit per-checkpoint mapping is added.
+function getOutcomeAudienceWithLegacyFallback(
+  checkpoint: OfficeCheckpointTemplate,
+): OfficeOutcomeAudience[] {
+  if (checkpoint.outcomeAudience && checkpoint.outcomeAudience.length > 0) {
+    return checkpoint.outcomeAudience;
+  }
+  return [OfficeOutcomeAudience.BACKOFFICE];
+}
+
 export function listOfficeManagementCheckpointKinds(): readonly OfficeManagementCheckpointKind[] {
   return OFFICE_MANAGEMENT_KINDS;
 }
@@ -426,6 +488,9 @@ export function buildInitialSnapshotForTopic(
   return getOfficeCheckpointCatalog(topicId).map((checkpoint) => ({
     id: checkpoint.id,
     title: checkpoint.title,
+    checkpointType: getCheckpointTypeWithLegacyFallback(checkpoint),
+    failureEffect: getFailureEffectWithLegacyFallback(checkpoint),
+    outcomeAudience: getOutcomeAudienceWithLegacyFallback(checkpoint),
     kind: checkpoint.kind,
     ...(checkpoint.officeKind ? { office_kind: checkpoint.officeKind } : {}),
     state: OfficeCheckpointState.OPEN,

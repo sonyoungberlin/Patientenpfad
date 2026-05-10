@@ -64,7 +64,7 @@ export default async function OfficeCaseM3Page({
       <section>
         <h1>Officefall M3</h1>
         <p className="text-muted" style={{ marginTop: "0.5rem" }}>
-          Snapshot je Checkpoint setzen und direkt zusammenfassen.
+          Entscheidung je Checkpoint treffen und dokumentierbar zusammenfassen.
         </p>
       </section>
 

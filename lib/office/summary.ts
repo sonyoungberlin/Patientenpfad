@@ -91,9 +91,9 @@ export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
   const sections: string[] = [
     `Office-Snapshot: ${input.topicTitle}`,
     "",
-    "Ist-Stand",
-    ...istStandLines,
   ];
+
+  sections.push("Ist-Stand", ...istStandLines);
 
   if (fristenLines.length > 0) {
     sections.push("", "Fristen und Verantwortung", ...fristenLines);
