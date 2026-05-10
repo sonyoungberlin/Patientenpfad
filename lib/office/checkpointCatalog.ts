@@ -1,5 +1,8 @@
 import {
+  OfficeCheckpointType,
   OfficeCheckpointKind,
+  OfficeFailureEffect,
+  OfficeOutcomeAudience,
   OfficeCheckpointState,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
@@ -58,6 +61,9 @@ export type OfficeTopic = {
 export type OfficeCheckpointTemplate = {
   id: string;
   title: string;
+  checkpointType?: OfficeCheckpointType;
+  failureEffect?: OfficeFailureEffect;
+  outcomeAudience?: OfficeOutcomeAudience[];
   kind: OfficeCheckpointKind;
   officeKind?: OfficeManagementCheckpointKind;
   governanceCategory?: "BEFUGNIS" | "GENEHMIGUNG" | "STRUKTUR" | "COMPLIANCE";
@@ -415,6 +421,35 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
   ],
 };
 
+// Temporary additive fallback only.
+// These defaults are intentionally neutral and MUST NOT be interpreted as
+// final fachliche Typisierung. Final values will be set explicitly per checkpoint
+// in a dedicated migration patch.
+function getCheckpointTypeWithLegacyFallback(
+  checkpoint: OfficeCheckpointTemplate,
+): OfficeCheckpointType {
+  return checkpoint.checkpointType ?? OfficeCheckpointType.KONTEXT_INFORMATION;
+}
+
+// Temporary additive fallback only.
+// No semantic derivation from legacy fields (kind/officeKind) is performed here.
+function getFailureEffectWithLegacyFallback(
+  checkpoint: OfficeCheckpointTemplate,
+): OfficeFailureEffect {
+  return checkpoint.failureEffect ?? OfficeFailureEffect.NONE;
+}
+
+// Temporary additive fallback only.
+// Audience defaults to BACKOFFICE until explicit per-checkpoint mapping is added.
+function getOutcomeAudienceWithLegacyFallback(
+  checkpoint: OfficeCheckpointTemplate,
+): OfficeOutcomeAudience[] {
+  if (checkpoint.outcomeAudience && checkpoint.outcomeAudience.length > 0) {
+    return checkpoint.outcomeAudience;
+  }
+  return [OfficeOutcomeAudience.BACKOFFICE];
+}
+
 export function listOfficeManagementCheckpointKinds(): readonly OfficeManagementCheckpointKind[] {
   return OFFICE_MANAGEMENT_KINDS;
 }
@@ -453,6 +488,9 @@ export function buildInitialSnapshotForTopic(
   return getOfficeCheckpointCatalog(topicId).map((checkpoint) => ({
     id: checkpoint.id,
     title: checkpoint.title,
+    checkpointType: getCheckpointTypeWithLegacyFallback(checkpoint),
+    failureEffect: getFailureEffectWithLegacyFallback(checkpoint),
+    outcomeAudience: getOutcomeAudienceWithLegacyFallback(checkpoint),
     kind: checkpoint.kind,
     ...(checkpoint.officeKind ? { office_kind: checkpoint.officeKind } : {}),
     state: OfficeCheckpointState.OPEN,

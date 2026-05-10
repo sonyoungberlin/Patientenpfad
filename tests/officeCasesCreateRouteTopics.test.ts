@@ -91,6 +91,11 @@ describe("POST /api/office-cases/create topic validation", () => {
       const snapshot = createArg?.data?.checkpoint_snapshot as {
         topicId?: string;
         checkpoints?: Array<{
+          checkpointType?: unknown;
+          failureEffect?: unknown;
+          outcomeAudience?: unknown;
+          kind?: unknown;
+          office_kind?: unknown;
           deadline?: unknown;
           responsible_role?: unknown;
           authority?: unknown;
@@ -104,6 +109,14 @@ describe("POST /api/office-cases/create topic validation", () => {
       expect((snapshot.checkpoints ?? []).length).toBeGreaterThanOrEqual(5);
 
       const firstCheckpoint = snapshot.checkpoints?.[0];
+      // Technische Additiv-Pruefung: diese Assertions validieren keine finale fachliche Typisierung.
+      expect(firstCheckpoint?.checkpointType).toBeDefined();
+      expect(firstCheckpoint?.failureEffect).toBeDefined();
+      expect(Array.isArray(firstCheckpoint?.outcomeAudience)).toBe(true);
+      expect((firstCheckpoint?.outcomeAudience as unknown[] | undefined)?.length).toBeGreaterThan(0);
+
+      // Legacy-Felder bleiben additiv erhalten.
+      expect(firstCheckpoint?.kind).toBeDefined();
       expect(firstCheckpoint?.deadline).toBe("");
       expect(firstCheckpoint?.responsible_role).toBe("");
       expect(firstCheckpoint?.authority).toBe("");
