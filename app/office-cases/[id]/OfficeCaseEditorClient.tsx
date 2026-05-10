@@ -162,36 +162,32 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
       <div style={{ display: "grid", gap: "0.75rem" }}>
         {checkpoints.map((checkpoint) => {
           const isOpen = checkpoint.state === OfficeCheckpointState.OPEN;
-          const showMissing = mode === "m3" && isOpen;
 
           return (
             <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                 <div>
                   <strong>{checkpoint.title}</strong>
-                  <div className="text-small text-muted">{kindLabel(checkpoint.kind)} · {checkpoint.id}</div>
+                  {mode === "m2" ? (
+                    <div className="text-small text-muted">{kindLabel(checkpoint.kind)} · {checkpoint.id}</div>
+                  ) : null}
                 </div>
                 {mode === "m3" ? (
-                  <select
-                    value={checkpoint.state}
-                    onChange={(e) =>
-                      updateCheckpoint(checkpoint.id, {
-                        state: e.target.value as OfficeCheckpointState,
-                        missing_note:
-                          e.target.value === OfficeCheckpointState.OPEN
-                            ? checkpoint.missing_note
-                            : checkpoint.missing_note,
-                        answer_source:
-                          e.target.value === OfficeCheckpointState.OPEN
-                            ? checkpoint.answer_source
-                            : checkpoint.answer_source,
-                      })
-                    }
-                  >
-                    <option value={OfficeCheckpointState.YES}>YES</option>
-                    <option value={OfficeCheckpointState.NO}>NO</option>
-                    <option value={OfficeCheckpointState.OPEN}>OPEN</option>
-                  </select>
+                  <label style={{ display: "grid", gap: "0.25rem" }}>
+                    <span className="text-small text-muted">Entscheidung</span>
+                    <select
+                      value={checkpoint.state}
+                      onChange={(e) =>
+                        updateCheckpoint(checkpoint.id, {
+                          state: e.target.value as OfficeCheckpointState,
+                        })
+                      }
+                    >
+                      <option value={OfficeCheckpointState.YES}>Geklaert</option>
+                      <option value={OfficeCheckpointState.NO}>Nicht ausreichend geklaert</option>
+                      <option value={OfficeCheckpointState.OPEN}>Noch offen</option>
+                    </select>
+                  </label>
                 ) : null}
               </div>
 
@@ -290,36 +286,30 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                 </>
               ) : (
                 <>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>known_note</span>
-                    <textarea
-                      value={checkpoint.known_note ?? ""}
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { known_note: e.target.value })}
-                      rows={2}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>
-                      missing_note{showMissing ? " *" : ""}
-                    </span>
-                    <textarea
-                      value={checkpoint.missing_note ?? ""}
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { missing_note: e.target.value })}
-                      rows={2}
-                      required={isOpen}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>
-                      answer_source{showMissing ? " *" : ""}
-                    </span>
-                    <input
-                      type="text"
-                      value={checkpoint.answer_source ?? ""}
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { answer_source: e.target.value })}
-                      required={isOpen}
-                    />
-                  </label>
+                  {isOpen ? (
+                    <>
+                      <label style={{ display: "grid", gap: "0.25rem" }}>
+                        <span>Was fehlt noch? *</span>
+                        <textarea
+                          value={checkpoint.missing_note ?? ""}
+                          placeholder="Welche Information fehlt fuer die Entscheidung?"
+                          onChange={(e) => updateCheckpoint(checkpoint.id, { missing_note: e.target.value })}
+                          rows={2}
+                          required
+                        />
+                      </label>
+                      <label style={{ display: "grid", gap: "0.25rem" }}>
+                        <span>Wer kann das klaeren? *</span>
+                        <input
+                          type="text"
+                          value={checkpoint.answer_source ?? ""}
+                          placeholder="Person, Stelle oder Dokument"
+                          onChange={(e) => updateCheckpoint(checkpoint.id, { answer_source: e.target.value })}
+                          required
+                        />
+                      </label>
+                    </>
+                  ) : null}
                 </>
               )}
             </article>

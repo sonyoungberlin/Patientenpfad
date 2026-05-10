@@ -64,7 +64,7 @@ export default async function OfficeCaseM2Page({
       <section>
         <h1>Officefall M2</h1>
         <p className="text-muted" style={{ marginTop: "0.5rem" }}>
-          Checkpoints mit Informationen und Notizen ergänzen.
+          Informationen strukturiert sammeln und offene Punkte klaeren.
         </p>
       </section>
 
