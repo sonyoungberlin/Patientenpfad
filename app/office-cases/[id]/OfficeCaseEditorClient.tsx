@@ -10,6 +10,7 @@ import { evaluateHrGovernance, type HrGovernanceEvaluation } from "@/lib/office/
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
+  type M2AnswerValue,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
 
@@ -145,14 +146,7 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
           body: JSON.stringify({
             checkpoints: checkpoints.map((checkpoint) => ({
               id: checkpoint.id,
-              known_note: checkpoint.known_note ?? "",
-              missing_note: checkpoint.missing_note ?? "",
-              answer_source: checkpoint.answer_source ?? "",
-              deadline: checkpoint.deadline ?? "",
-              responsible_role: checkpoint.responsible_role ?? "",
-              authority: checkpoint.authority ?? "",
-              required_documents: checkpoint.required_documents ?? [],
-              escalation_needed: checkpoint.escalation_needed ?? false,
+              m2_answers: checkpoint.m2_answers ?? {},
             })),
           }),
         });
@@ -302,46 +296,66 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                   {(() => {
                     const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
                     return questions.length > 0 ? (
-                      <div style={{ display: "grid", gap: "0.5rem", padding: "0.75rem", backgroundColor: "#f9f9f9", borderRadius: "0.25rem" }}>
-                        <div className="text-small" style={{ fontWeight: "500" }}>Leitfragen für M2:</div>
-                        <ul style={{ margin: "0.5rem 0", paddingLeft: "1.5rem", lineHeight: "1.5" }}>
-                          {questions.map((q) => (
-                            <li key={q.id} className="text-small">{q.text}</li>
-                          ))}
-                        </ul>
+                      <div style={{ display: "grid", gap: "0.5rem" }}>
+                        {questions.map((q) => {
+                          const answer = checkpoint.m2_answers?.[q.id] ?? null;
+                          return (
+                            <div key={q.id} style={{ display: "grid", gap: "0.35rem" }}>
+                              <div className="text-small" style={{ fontWeight: 500 }}>{q.text}</div>
+                              <div style={{ display: "flex", gap: "0.5rem" }}>
+                                {(["YES", "NO", "UNCLEAR"] as M2AnswerValue[]).map((val) => {
+                                  const labels: Record<M2AnswerValue, string> = { YES: "Ja", NO: "Nein", UNCLEAR: "Unklar" };
+                                  const isActive = answer === val;
+                                  return (
+                                    <button
+                                      key={val}
+                                      type="button"
+                                      onClick={() => {
+                                        const next = { ...(checkpoint.m2_answers ?? {}), [q.id]: val };
+                                        updateCheckpoint(checkpoint.id, { m2_answers: next });
+                                      }}
+                                      style={{
+                                        fontWeight: isActive ? 700 : 400,
+                                        outline: isActive ? "2px solid currentColor" : undefined,
+                                      }}
+                                    >
+                                      {labels[val]}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : null;
                   })()}
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>Bereits geklaert</span>
-                    <textarea
-                      value={checkpoint.known_note ?? ""}
-                      placeholder="Was wissen wir sicher?"
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { known_note: e.target.value })}
-                      rows={2}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>Noch offen</span>
-                    <textarea
-                      value={checkpoint.missing_note ?? ""}
-                      placeholder="Was fehlt noch?"
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { missing_note: e.target.value })}
-                      rows={2}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>Wer kann das klaeren?</span>
-                    <input
-                      type="text"
-                      value={checkpoint.answer_source ?? ""}
-                      placeholder="Person, Stelle oder Dokument"
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { answer_source: e.target.value })}
-                    />
-                  </label>
                 </>
               ) : (
                 <>
+                  {(() => {
+                    const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
+                    const answers = checkpoint.m2_answers;
+                    return questions.length > 0 && answers ? (
+                      <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
+                        <div className="text-small text-muted" style={{ fontWeight: 600 }}>Vorbereitung (M2)</div>
+                        {questions.map((q) => {
+                          const val = answers[q.id];
+                          const labels: Record<string, string> = { YES: "Ja", NO: "Nein", UNCLEAR: "Unklar" };
+                          return (
+                            <div key={q.id} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
+                              <span className="text-small">{q.text}</span>
+                              {val ? (
+                                <span className="text-small" style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>{labels[val] ?? val}</span>
+                              ) : (
+                                <span className="text-small text-muted" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>—</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null;
+                  })()}
                   {isOpen ? (
                     <>
                       <label style={{ display: "grid", gap: "0.25rem" }}>

@@ -4,7 +4,7 @@ import { getSessionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { canAccessOfficeCases, ownsOfficeCase } from "@/lib/office/scope";
-import type { OfficeCheckpointSnapshot } from "@/lib/office/types";
+import type { M2AnswerValue, OfficeCheckpointSnapshot } from "@/lib/office/types";
 
 type OfficeCaseSnapshotRecord = {
   topicId?: unknown;
@@ -14,6 +14,7 @@ type OfficeCaseSnapshotRecord = {
 
 type CheckpointNoteUpdate = {
   id?: unknown;
+  m2_answers?: unknown;
   known_note?: unknown;
   missing_note?: unknown;
   answer_source?: unknown;
@@ -48,12 +49,22 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
+const M2_ANSWER_VALUES = new Set(["YES", "NO", "UNCLEAR"]);
+
+function isM2Answers(value: unknown): value is Record<string, M2AnswerValue> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.values(value as Record<string, unknown>).every(
+    (v) => typeof v === "string" && M2_ANSWER_VALUES.has(v),
+  );
+}
+
 function isCheckpointNoteUpdate(value: unknown): value is CheckpointNoteUpdate {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 
   const item = value as CheckpointNoteUpdate;
   return (
     isString(item.id) &&
+    (item.m2_answers === undefined || isM2Answers(item.m2_answers)) &&
     (item.known_note === undefined || isString(item.known_note)) &&
     (item.missing_note === undefined || isString(item.missing_note)) &&
     (item.answer_source === undefined || isString(item.answer_source)) &&
@@ -133,6 +144,7 @@ export async function PATCH(
 
     return {
       ...checkpoint,
+      m2_answers: isM2Answers(update.m2_answers) ? update.m2_answers : checkpoint.m2_answers,
       known_note: isString(update.known_note) ? update.known_note : checkpoint.known_note,
       missing_note: isString(update.missing_note) ? update.missing_note : checkpoint.missing_note,
       answer_source: isString(update.answer_source) ? update.answer_source : checkpoint.answer_source,

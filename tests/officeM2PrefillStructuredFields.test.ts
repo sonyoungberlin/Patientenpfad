@@ -150,4 +150,75 @@ describe("PATCH /api/office-cases/[id]/m2/prefill structured fields", () => {
     expect(checkpoint?.id).toBe("RG-01");
     expect(checkpoint?.known_note).toBe("Neu");
   });
+
+  it("persistiert m2_answers pro Checkpoint", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: null,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_REGRESS,
+        checkpoints: [
+          {
+            id: "RG-01",
+            title: "Anlass dokumentiert",
+            kind: OfficeCheckpointKind.FACT,
+            state: OfficeCheckpointState.OPEN,
+          },
+        ],
+      },
+    });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
+
+    const res = await PATCH(makeRequest({
+      checkpoints: [
+        {
+          id: "RG-01",
+          m2_answers: { "M2-01": "YES", "M2-02": "UNCLEAR" },
+        },
+      ],
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(res.status).toBe(200);
+    const updateArg = prismaMock.officeCaseSession.update.mock.calls[0]?.[0];
+    const checkpoint = (updateArg?.data?.checkpoint_snapshot as {
+      checkpoints?: Array<{ id?: string; m2_answers?: Record<string, string> }>;
+    }).checkpoints?.[0];
+
+    expect(checkpoint?.id).toBe("RG-01");
+    expect(checkpoint?.m2_answers?.["M2-01"]).toBe("YES");
+    expect(checkpoint?.m2_answers?.["M2-02"]).toBe("UNCLEAR");
+  });
+
+  it("lehnt ungueltige m2_answers ab", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: null,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_REGRESS,
+        checkpoints: [
+          {
+            id: "RG-01",
+            title: "Anlass dokumentiert",
+            kind: OfficeCheckpointKind.FACT,
+            state: OfficeCheckpointState.OPEN,
+          },
+        ],
+      },
+    });
+
+    const res = await PATCH(makeRequest({
+      checkpoints: [
+        {
+          id: "RG-01",
+          m2_answers: { "M2-01": "MAYBE" },
+        },
+      ],
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(res.status).toBe(400);
+  });
 });

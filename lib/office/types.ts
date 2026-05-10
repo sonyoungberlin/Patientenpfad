@@ -13,11 +13,14 @@ export enum OfficeCheckpointState {
   OPEN = "OPEN",
 }
 
+export type M2AnswerValue = "YES" | "NO" | "UNCLEAR";
+
 export type OfficeCheckpointSnapshot = {
   id: string;
   title: string;
   kind: OfficeCheckpointKind;
   state: OfficeCheckpointState;
+  m2_answers?: Record<string, M2AnswerValue>;
   known_note?: string;
   missing_note?: string;
   answer_source?: string;
