@@ -19,6 +19,132 @@ export type OfficeM2QuestionsByCheckpoint = Record<string, readonly OfficeM2Ques
 
 const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint> = {
   [OFFICE_TOPIC_HIRING_REPLACEMENT]: {
+    "NC-REGISTERSTATUS": [
+      {
+        id: "M2-01",
+        text: "Welcher aktuelle Registerstatus ist fuer die betroffene Person dokumentiert?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Evidenz liegt zum Registerstatus vor (z. B. Registerauszug, bestaetigte Auskunft)?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann den Registerstatus bei Bedarf verbindlich bestaetigen?",
+      },
+    ],
+    "NC-APPROBATION": [
+      {
+        id: "M2-01",
+        text: "Ist die Approbation mit gueltigem Stand dokumentiert?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Unterlage oder Quelle belegt den Approbationsstatus belastbar?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann offene Rueckfragen zur Approbation beantworten?",
+      },
+    ],
+    "NC-FACHARZTQUALIFIKATION": [
+      {
+        id: "M2-01",
+        text: "Welche Facharztqualifikation ist fuer den Fall relevant?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Evidenz liegt zur Facharztqualifikation vor?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann die Facharztqualifikation verbindlich bestaetigen?",
+      },
+    ],
+    "NC-BERUFSHAFTPFLICHT": [
+      {
+        id: "M2-01",
+        text: "Wie ist der aktuelle Status der Berufshaftpflicht dokumentiert?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Quelle belegt den Haftpflichtstatus nachvollziehbar?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer ist Ansprechpartner fuer fehlende Informationen zur Berufshaftpflicht?",
+      },
+    ],
+    "NC-TAETIGKEITSUMFANG": [
+      {
+        id: "M2-01",
+        text: "Welcher geplante Taetigkeitsumfang ist aktuell festgehalten?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Evidenz stuetzt diesen Taetigkeitsumfang?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann den Taetigkeitsumfang final bestaetigen?",
+      },
+    ],
+    "NC-EXTERNE_STELLE": [
+      {
+        id: "M2-01",
+        text: "Welche externe Stelle ist fuer den Fall zustaendig?",
+      },
+      {
+        id: "M2-02",
+        text: "Woraus ergibt sich die Zuständigkeit dieser Stelle?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann die Zuständigkeit bei Bedarf verifizieren?",
+      },
+    ],
+    "NC-ANTRAGSWEG": [
+      {
+        id: "M2-01",
+        text: "Welcher Antrags- oder Anzeigeweg ist fuer den Fall vorgesehen?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Quelle beschreibt diesen Weg verbindlich?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann offene Fragen zum Antragsweg beantworten?",
+      },
+    ],
+    "NC-GENEHMIGUNGSSTATUS": [
+      {
+        id: "M2-01",
+        text: "Welcher aktuelle Genehmigungsstatus ist dokumentiert?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Evidenz stuetzt den dokumentierten Genehmigungsstatus?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann den Genehmigungsstatus verbindlich bestaetigen?",
+      },
+    ],
+    "NC-BETRIEBSSTAETTENSTRUKTUR": [
+      {
+        id: "M2-01",
+        text: "Welche Betriebsstaettenstruktur ist fuer den Fall hinterlegt?",
+      },
+      {
+        id: "M2-02",
+        text: "Welche Evidenz liegt zur Betriebsstaettenstruktur vor?",
+      },
+      {
+        id: "M2-03",
+        text: "Wer kann die Betriebsstaettenstruktur bei Bedarf bestaetigen?",
+      },
+    ],
     "HR-GOV-A": [
       {
         id: "M2-01",

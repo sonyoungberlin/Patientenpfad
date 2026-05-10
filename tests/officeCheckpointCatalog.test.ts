@@ -43,42 +43,44 @@ const OPTIONAL_OFFICE_MANAGEMENT_KINDS = [
 ] as const;
 
 describe("office checkpoint catalog", () => {
-  it("HR-topic nutzt HR-GOV-A bis HR-GOV-D mit Governance-Metadaten", () => {
+  it("HR-topic nutzt neutrale NC-Checkpoints ohne Governance-Container", () => {
     const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT);
     const ids = catalog.map((checkpoint) => checkpoint.id);
 
-    expect(ids).toEqual(["HR-GOV-A", "HR-GOV-B", "HR-GOV-C", "HR-GOV-D"]);
+    expect(ids).toEqual([
+      "NC-REGISTERSTATUS",
+      "NC-APPROBATION",
+      "NC-FACHARZTQUALIFIKATION",
+      "NC-BERUFSHAFTPFLICHT",
+      "NC-TAETIGKEITSUMFANG",
+      "NC-EXTERNE_STELLE",
+      "NC-ANTRAGSWEG",
+      "NC-GENEHMIGUNGSSTATUS",
+      "NC-BETRIEBSSTAETTENSTRUKTUR",
+    ]);
+
+    expect(ids).not.toContain("HR-GOV-A");
+    expect(ids).not.toContain("HR-GOV-B");
+    expect(ids).not.toContain("HR-GOV-C");
+    expect(ids).not.toContain("HR-GOV-D");
 
     const byId = Object.fromEntries(catalog.map((checkpoint) => [checkpoint.id, checkpoint]));
 
-    expect(byId["HR-GOV-A"]?.governanceCategory).toBe("BEFUGNIS");
-    expect(byId["HR-GOV-A"]?.decisionRuleKey).toBe("HR_PERSON_BEFUGT");
-    expect(byId["HR-GOV-A"]?.m4RuleKey).toBe("HR_PERSON_BEFUGNIS_KLAEREN");
-    expect(byId["HR-GOV-A"]?.requiredEvidenceKeys).toEqual([
-      "approbation",
-      "arztregisterstatus",
-      "facharztanerkennung",
-    ]);
-
-    expect(byId["HR-GOV-B"]?.governanceCategory).toBe("GENEHMIGUNG");
-    expect(byId["HR-GOV-B"]?.decisionRuleKey).toBe("HR_GENEHMIGUNGSFAEHIG");
-    expect(byId["HR-GOV-B"]?.m4RuleKey).toBe("HR_ZULASSUNG_KLAEREN");
-
-    expect(byId["HR-GOV-C"]?.governanceCategory).toBe("STRUKTUR");
-    expect(byId["HR-GOV-C"]?.decisionRuleKey).toBe("HR_STRUKTUR_KONFORM");
-    expect(byId["HR-GOV-C"]?.m4RuleKey).toBe("HR_STRUKTUR_KLAEREN");
-
-    expect(byId["HR-GOV-D"]?.governanceCategory).toBe("COMPLIANCE");
-    expect(byId["HR-GOV-D"]?.decisionRuleKey).toBe("HR_COMPLIANCE_GESICHERT");
-    expect(byId["HR-GOV-D"]?.m4RuleKey).toBe("HR_COMPLIANCE_KLAEREN");
+    expect(byId["NC-REGISTERSTATUS"]?.title).toBe("Registerstatus");
+    expect(byId["NC-APPROBATION"]?.title).toBe("Approbation");
+    expect(byId["NC-FACHARZTQUALIFIKATION"]?.title).toBe("Facharztqualifikation");
+    expect(byId["NC-BERUFSHAFTPFLICHT"]?.title).toBe("Berufshaftpflicht");
+    expect(byId["NC-TAETIGKEITSUMFANG"]?.title).toBe("Taetigkeitsumfang");
+    expect(byId["NC-EXTERNE_STELLE"]?.title).toBe("Zustaendige externe Stelle");
+    expect(byId["NC-ANTRAGSWEG"]?.title).toBe("Antragsweg");
+    expect(byId["NC-GENEHMIGUNGSSTATUS"]?.title).toBe("Genehmigungsstatus");
+    expect(byId["NC-BETRIEBSSTAETTENSTRUKTUR"]?.title).toBe("Betriebsstaettenstruktur");
 
     for (const checkpoint of catalog) {
-      expect(Array.isArray(checkpoint.legalRefs)).toBe(true);
-      expect((checkpoint.legalRefs ?? []).length).toBeGreaterThan(0);
-      expect(Array.isArray(checkpoint.requiredEvidenceKeys)).toBe(true);
-      expect((checkpoint.requiredEvidenceKeys ?? []).length).toBeGreaterThan(0);
-      expect(Array.isArray(checkpoint.authorityKeys)).toBe(true);
-      expect((checkpoint.authorityKeys ?? []).length).toBeGreaterThan(0);
+      expect(checkpoint.kind).toBeDefined();
+      expect(checkpoint.governanceCategory).toBeUndefined();
+      expect(checkpoint.decisionRuleKey).toBeUndefined();
+      expect(checkpoint.m4RuleKey).toBeUndefined();
     }
   });
 

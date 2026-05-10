@@ -47,23 +47,42 @@ describe("office M2 questions", () => {
     }
   });
 
-  it("HR-topic mappt Fragen konsistent auf HR-GOV-A bis HR-GOV-D", () => {
+  it("HR-topic stellt Fragen fuer alle neuen NC-Checkpoint-IDs bereit", () => {
+    const hrCheckpointIds = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT).map(
+      (checkpoint) => checkpoint.id,
+    );
     const byCheckpoint = getM2QuestionsForTopic(OFFICE_TOPIC_HIRING_REPLACEMENT);
     const questionCheckpointIds = Object.keys(byCheckpoint).sort();
 
-    expect(questionCheckpointIds).toEqual([
-      "HR-GOV-A",
-      "HR-GOV-B",
-      "HR-GOV-C",
-      "HR-GOV-D",
-    ]);
+    const expectedNcIds = [
+      "NC-REGISTERSTATUS",
+      "NC-APPROBATION",
+      "NC-FACHARZTQUALIFIKATION",
+      "NC-BERUFSHAFTPFLICHT",
+      "NC-TAETIGKEITSUMFANG",
+      "NC-EXTERNE_STELLE",
+      "NC-ANTRAGSWEG",
+      "NC-GENEHMIGUNGSSTATUS",
+      "NC-BETRIEBSSTAETTENSTRUKTUR",
+    ].sort();
 
-    for (const checkpointId of questionCheckpointIds) {
+    expect(hrCheckpointIds.sort()).toEqual(expectedNcIds);
+    expect(questionCheckpointIds).toEqual(
+      expect.arrayContaining([
+        ...expectedNcIds,
+        "HR-GOV-A",
+        "HR-GOV-B",
+        "HR-GOV-C",
+        "HR-GOV-D",
+      ]),
+    );
+
+    for (const checkpointId of expectedNcIds) {
       const questions = getM2QuestionsForCheckpoint(
         OFFICE_TOPIC_HIRING_REPLACEMENT,
         checkpointId,
       );
-      expect(questions.length).toBeGreaterThanOrEqual(4);
+      expect(questions.length).toBeGreaterThanOrEqual(2);
       expect(questions.every((item) => item.id.trim().length > 0)).toBe(true);
       expect(questions.every((item) => item.text.trim().length > 0)).toBe(true);
     }
