@@ -19,25 +19,77 @@ export type OfficeM2QuestionsByCheckpoint = Record<string, readonly OfficeM2Ques
 
 const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint> = {
   [OFFICE_TOPIC_HIRING_REPLACEMENT]: {
-    "HR-01": [
-      { id: "M2-01", text: "Welcher konkrete Anlass liegt fuer die Nachbesetzung vor?" },
-      { id: "M2-02", text: "Welche Informationen liegen bereits belastbar vor?" },
+    "HR-GOV-A": [
+      {
+        id: "M2-01",
+        text: "Ist belastbar bestaetigt, dass die Person berufsrechtlich als Arzt taetig sein darf?",
+      },
+      {
+        id: "M2-02",
+        text: "Wer kann den aktuellen Arztregisterstatus verbindlich bestaetigen?",
+      },
+      {
+        id: "M2-03",
+        text: "Wodurch ist die fachliche Befaehigung fuer die vorgesehene Taetigkeit eindeutig belegt?",
+      },
+      {
+        id: "M2-04",
+        text: "Ist fuer diese Aussage eine externe Bestaetigung durch KV Berlin oder Aerztekammer noetig?",
+      },
     ],
-    "HR-02": [
-      { id: "M2-01", text: "Welche Mindestanforderungen sind intern festgelegt?" },
-      { id: "M2-02", text: "Welche Punkte sind noch nicht verbindlich geklaert?" },
+    "HR-GOV-B": [
+      {
+        id: "M2-01",
+        text: "Liegt ein belastbarer Verfahrensstand vor, aus dem die Genehmigungsfaehigkeit ableitbar ist?",
+      },
+      {
+        id: "M2-02",
+        text: "Wer kann den aktuellen Stand beim Zulassungsausschuss verbindlich bestaetigen?",
+      },
+      {
+        id: "M2-03",
+        text: "Welche Evidenz stuetzt die Aussage, dass keine erkennbaren Zulassungshindernisse bestehen?",
+      },
+      {
+        id: "M2-04",
+        text: "Ist eine externe Rueckbestaetigung durch Zulassungsausschuss oder KV Berlin ausstehend?",
+      },
     ],
-    "HR-03": [
-      { id: "M2-01", text: "Welche Einschaetzung liegt von Leitung/Partnern vor?" },
-      { id: "M2-02", text: "Welche Einschaetzung fehlt noch und von wem?" },
+    "HR-GOV-C": [
+      {
+        id: "M2-01",
+        text: "Ist die aktuelle Leitungsstruktur der Praxis bzw. des MVZ fuer den Fall regelkonform belegt?",
+      },
+      {
+        id: "M2-02",
+        text: "Wer in der Praxisleitung kann die Strukturkonformitaet verbindlich bestaetigen?",
+      },
+      {
+        id: "M2-03",
+        text: "Welche Evidenz belegt die Vereinbarkeit von Praxis-/MVZ-Struktur und geplanter Anstellung?",
+      },
+      {
+        id: "M2-04",
+        text: "Ist fuer verbleibende Strukturfragen eine externe Einordnung durch KV Berlin erforderlich?",
+      },
     ],
-    "HR-04": [
-      { id: "M2-01", text: "Welche Information ist fuer die Beurteilung noch nicht bekannt?" },
-      { id: "M2-02", text: "Welche Information fehlt fuer diese Entscheidung?" },
-    ],
-    "HR-05": [
-      { id: "M2-01", text: "Wer kann offene Punkte verbindlich beantworten?" },
-      { id: "M2-02", text: "Wie ist die Antwortquelle erreichbar oder zustaendig?" },
+    "HR-GOV-D": [
+      {
+        id: "M2-01",
+        text: "Ist belastbar nachgewiesen, dass die Berufspflichten-Compliance fuer die Taetigkeitsaufnahme gesichert ist?",
+      },
+      {
+        id: "M2-02",
+        text: "Wer kann den aktuellen Status zu Haftpflicht und Fortbildung verbindlich bestaetigen?",
+      },
+      {
+        id: "M2-03",
+        text: "Welche Evidenz stuetzt die Aussage, dass keine compliance-kritische Luecke fuer den Start besteht?",
+      },
+      {
+        id: "M2-04",
+        text: "Ist fuer diese Aussage eine externe Bestaetigung durch Aerztekammer oder KV Berlin erforderlich?",
+      },
     ],
   },
   [OFFICE_TOPIC_KV_BILLING]: {
@@ -224,6 +276,14 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
 };
 
+const LEGACY_HR_CHECKPOINT_ID_MAP: Record<string, string> = {
+  "HR-01": "HR-GOV-A",
+  "HR-02": "HR-GOV-A",
+  "HR-03": "HR-GOV-C",
+  "HR-04": "HR-GOV-B",
+  "HR-05": "HR-GOV-D",
+};
+
 export function getM2QuestionsForTopic(
   topicId: OfficeTopicId,
 ): OfficeM2QuestionsByCheckpoint {
@@ -236,5 +296,11 @@ export function getM2QuestionsForCheckpoint(
 ): readonly OfficeM2Question[] {
   const byCheckpoint = M2_QUESTIONS_BY_TOPIC[topicId];
   if (!byCheckpoint) return [];
-  return byCheckpoint[checkpointId] ?? [];
+
+  const effectiveCheckpointId =
+    topicId === OFFICE_TOPIC_HIRING_REPLACEMENT
+      ? (LEGACY_HR_CHECKPOINT_ID_MAP[checkpointId] ?? checkpointId)
+      : checkpointId;
+
+  return byCheckpoint[effectiveCheckpointId] ?? [];
 }

@@ -9,6 +9,7 @@ import {
   OFFICE_TOPIC_APPLICATION_MANAGEMENT,
   OFFICE_TOPIC_CLOSURE_COVERAGE,
   OFFICE_TOPIC_CONTINUING_EDUCATION,
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_REPORTING_DUTIES,
   OFFICE_TOPIC_SEAT_APPROVAL,
@@ -42,6 +43,45 @@ const OPTIONAL_OFFICE_MANAGEMENT_KINDS = [
 ] as const;
 
 describe("office checkpoint catalog", () => {
+  it("HR-topic nutzt HR-GOV-A bis HR-GOV-D mit Governance-Metadaten", () => {
+    const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT);
+    const ids = catalog.map((checkpoint) => checkpoint.id);
+
+    expect(ids).toEqual(["HR-GOV-A", "HR-GOV-B", "HR-GOV-C", "HR-GOV-D"]);
+
+    const byId = Object.fromEntries(catalog.map((checkpoint) => [checkpoint.id, checkpoint]));
+
+    expect(byId["HR-GOV-A"]?.governanceCategory).toBe("BEFUGNIS");
+    expect(byId["HR-GOV-A"]?.decisionRuleKey).toBe("HR_PERSON_BEFUGT");
+    expect(byId["HR-GOV-A"]?.m4RuleKey).toBe("HR_PERSON_BEFUGNIS_KLAEREN");
+    expect(byId["HR-GOV-A"]?.requiredEvidenceKeys).toEqual([
+      "approbation",
+      "arztregisterstatus",
+      "facharztanerkennung",
+    ]);
+
+    expect(byId["HR-GOV-B"]?.governanceCategory).toBe("GENEHMIGUNG");
+    expect(byId["HR-GOV-B"]?.decisionRuleKey).toBe("HR_GENEHMIGUNGSFAEHIG");
+    expect(byId["HR-GOV-B"]?.m4RuleKey).toBe("HR_ZULASSUNG_KLAEREN");
+
+    expect(byId["HR-GOV-C"]?.governanceCategory).toBe("STRUKTUR");
+    expect(byId["HR-GOV-C"]?.decisionRuleKey).toBe("HR_STRUKTUR_KONFORM");
+    expect(byId["HR-GOV-C"]?.m4RuleKey).toBe("HR_STRUKTUR_KLAEREN");
+
+    expect(byId["HR-GOV-D"]?.governanceCategory).toBe("COMPLIANCE");
+    expect(byId["HR-GOV-D"]?.decisionRuleKey).toBe("HR_COMPLIANCE_GESICHERT");
+    expect(byId["HR-GOV-D"]?.m4RuleKey).toBe("HR_COMPLIANCE_KLAEREN");
+
+    for (const checkpoint of catalog) {
+      expect(Array.isArray(checkpoint.legalRefs)).toBe(true);
+      expect((checkpoint.legalRefs ?? []).length).toBeGreaterThan(0);
+      expect(Array.isArray(checkpoint.requiredEvidenceKeys)).toBe(true);
+      expect((checkpoint.requiredEvidenceKeys ?? []).length).toBeGreaterThan(0);
+      expect(Array.isArray(checkpoint.authorityKeys)).toBe(true);
+      expect((checkpoint.authorityKeys ?? []).length).toBeGreaterThan(0);
+    }
+  });
+
   it("enthaelt die sechs neuen topic ids in der Themenliste", () => {
     const topicIds = listOfficeTopics().map((topic) => topic.id);
 

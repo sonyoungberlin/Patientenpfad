@@ -2,6 +2,7 @@ import {
   OFFICE_TOPIC_APPLICATION_MANAGEMENT,
   OFFICE_TOPIC_CLOSURE_COVERAGE,
   OFFICE_TOPIC_CONTINUING_EDUCATION,
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_REPORTING_DUTIES,
   OFFICE_TOPIC_SEAT_APPROVAL,
@@ -22,6 +23,52 @@ const NEW_TOPIC_IDS = [
 ] as const;
 
 describe("office M2 questions", () => {
+  it("liefert fuer alte HR-Checkpoint-IDs ueber Legacy-Mapping weiterhin Fragen", () => {
+    const legacyToGovernance: Array<[string, string]> = [
+      ["HR-01", "HR-GOV-A"],
+      ["HR-02", "HR-GOV-A"],
+      ["HR-03", "HR-GOV-C"],
+      ["HR-04", "HR-GOV-B"],
+      ["HR-05", "HR-GOV-D"],
+    ];
+
+    for (const [legacyId, governanceId] of legacyToGovernance) {
+      const legacyQuestions = getM2QuestionsForCheckpoint(
+        OFFICE_TOPIC_HIRING_REPLACEMENT,
+        legacyId,
+      );
+      const governanceQuestions = getM2QuestionsForCheckpoint(
+        OFFICE_TOPIC_HIRING_REPLACEMENT,
+        governanceId,
+      );
+
+      expect(legacyQuestions.length).toBeGreaterThan(0);
+      expect(legacyQuestions).toEqual(governanceQuestions);
+    }
+  });
+
+  it("HR-topic mappt Fragen konsistent auf HR-GOV-A bis HR-GOV-D", () => {
+    const byCheckpoint = getM2QuestionsForTopic(OFFICE_TOPIC_HIRING_REPLACEMENT);
+    const questionCheckpointIds = Object.keys(byCheckpoint).sort();
+
+    expect(questionCheckpointIds).toEqual([
+      "HR-GOV-A",
+      "HR-GOV-B",
+      "HR-GOV-C",
+      "HR-GOV-D",
+    ]);
+
+    for (const checkpointId of questionCheckpointIds) {
+      const questions = getM2QuestionsForCheckpoint(
+        OFFICE_TOPIC_HIRING_REPLACEMENT,
+        checkpointId,
+      );
+      expect(questions.length).toBeGreaterThanOrEqual(4);
+      expect(questions.every((item) => item.id.trim().length > 0)).toBe(true);
+      expect(questions.every((item) => item.text.trim().length > 0)).toBe(true);
+    }
+  });
+
   it("liefert fuer jeden Checkpoint der neuen Themen mindestens zwei Leitfragen", () => {
     for (const topicId of NEW_TOPIC_IDS) {
       const checkpoints = getOfficeCheckpointCatalog(topicId);

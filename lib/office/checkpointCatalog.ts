@@ -60,6 +60,13 @@ export type OfficeCheckpointTemplate = {
   title: string;
   kind: OfficeCheckpointKind;
   officeKind?: OfficeManagementCheckpointKind;
+  governanceCategory?: "BEFUGNIS" | "GENEHMIGUNG" | "STRUKTUR" | "COMPLIANCE";
+  legalRefs?: readonly string[];
+  requiredEvidenceKeys?: readonly string[];
+  optionalEvidenceKeys?: readonly string[];
+  authorityKeys?: readonly string[];
+  decisionRuleKey?: string;
+  m4RuleKey?: string;
 };
 
 const TOPICS: readonly OfficeTopic[] = [
@@ -100,29 +107,52 @@ const TOPICS: readonly OfficeTopic[] = [
 const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTemplate[]> = {
   [OFFICE_TOPIC_HIRING_REPLACEMENT]: [
     {
-      id: "HR-01",
-      title: "Ausloeser und Dringlichkeit dokumentiert",
-      kind: OfficeCheckpointKind.FACT,
-    },
-    {
-      id: "HR-02",
-      title: "Mindestanforderungen an die Stelle geklaert",
-      kind: OfficeCheckpointKind.RULE,
-    },
-    {
-      id: "HR-03",
-      title: "Rueckmeldung durch Praxisleitung/Partner eingeholt",
-      kind: OfficeCheckpointKind.ASSESSMENT,
-    },
-    {
-      id: "HR-04",
-      title: "Entscheidungspfad fuer Nachbesetzung benannt",
+      id: "HR-GOV-A",
+      title: "Person ist berufsrechtlich/fachlich befugt",
       kind: OfficeCheckpointKind.DECISION,
+      governanceCategory: "BEFUGNIS",
+      legalRefs: ["§95 SGB V", "Aerzte-ZV §3"],
+      requiredEvidenceKeys: ["approbation", "arztregisterstatus", "facharztanerkennung"],
+      optionalEvidenceKeys: ["taetigkeitsnachweise"],
+      authorityKeys: ["KV Berlin", "Aerztekammer"],
+      decisionRuleKey: "HR_PERSON_BEFUGT",
+      m4RuleKey: "HR_PERSON_BEFUGNIS_KLAEREN",
     },
     {
-      id: "HR-05",
-      title: "Zustaendige Antwortquelle fuer offene Punkte benannt",
-      kind: OfficeCheckpointKind.SOURCE,
+      id: "HR-GOV-B",
+      title: "Anstellung/Nachbesetzung ist zulassungsrechtlich genehmigungsfaehig",
+      kind: OfficeCheckpointKind.DECISION,
+      governanceCategory: "GENEHMIGUNG",
+      legalRefs: ["§95 SGB V", "Aerzte-ZV §32b", "Aerzte-ZV §18", "Aerzte-ZV §19a"],
+      requiredEvidenceKeys: ["zulassungsverfahrensstand", "genehmigungsbescheid_or_status"],
+      optionalEvidenceKeys: ["stellungnahmen"],
+      authorityKeys: ["Zulassungsausschuss", "KV Berlin"],
+      decisionRuleKey: "HR_GENEHMIGUNGSFAEHIG",
+      m4RuleKey: "HR_ZULASSUNG_KLAEREN",
+    },
+    {
+      id: "HR-GOV-C",
+      title: "MVZ-/Praxisstruktur ist regelkonform",
+      kind: OfficeCheckpointKind.DECISION,
+      governanceCategory: "STRUKTUR",
+      legalRefs: ["§95 SGB V", "BMV-Ae §14a", "BMV-Ae §17"],
+      requiredEvidenceKeys: ["leitungsstruktur", "praxis_mvz_struktur"],
+      optionalEvidenceKeys: ["interne_freigabe"],
+      authorityKeys: ["Praxisleitung", "KV Berlin"],
+      decisionRuleKey: "HR_STRUKTUR_KONFORM",
+      m4RuleKey: "HR_STRUKTUR_KLAEREN",
+    },
+    {
+      id: "HR-GOV-D",
+      title: "Berufspflichten-Compliance fuer Taetigkeitsaufnahme ist gesichert",
+      kind: OfficeCheckpointKind.DECISION,
+      governanceCategory: "COMPLIANCE",
+      legalRefs: ["§95d SGB V", "§95 SGB V"],
+      requiredEvidenceKeys: ["berufshaftpflichtstatus", "fortbildungsstatus"],
+      optionalEvidenceKeys: ["weitere_qualifikationsnachweise"],
+      authorityKeys: ["Aerztekammer", "KV Berlin", "Praxisleitung"],
+      decisionRuleKey: "HR_COMPLIANCE_GESICHERT",
+      m4RuleKey: "HR_COMPLIANCE_KLAEREN",
     },
   ],
   [OFFICE_TOPIC_KV_BILLING]: [
