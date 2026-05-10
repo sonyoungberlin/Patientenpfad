@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
 import { buildOfficeSummaryText } from "@/lib/office/summary";
-import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
+import { OFFICE_TOPIC_HIRING_REPLACEMENT, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
+import { evaluateHrGovernance, type HrGovernanceEvaluation } from "@/lib/office/hrGovernance";
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
@@ -55,6 +56,29 @@ function getQuestionsForCheckpoint(topicId: string | null, checkpointId: string)
   return getM2QuestionsForCheckpoint(topicId, checkpointId);
 }
 
+function isHrTopic(topicId: string | null, topicTitle: string | null, title: string | null): boolean {
+  if (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT) return true;
+
+  const haystack = [topicTitle, title]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes("arzt anstellen") || haystack.includes("nachbesetzung");
+}
+
+function hrStateLabel(state: OfficeCheckpointState): string {
+  if (state === OfficeCheckpointState.YES) return "Freigegeben";
+  if (state === OfficeCheckpointState.NO) return "Blockiert";
+  return "Offen";
+}
+
+function hrStateTone(state: OfficeCheckpointState): string {
+  if (state === OfficeCheckpointState.YES) return "#1f6b3a";
+  if (state === OfficeCheckpointState.NO) return "#8a1f1f";
+  return "#7a5b00";
+}
+
 function documentsToInput(value: string[] | undefined): string {
   if (!Array.isArray(value) || value.length === 0) return "";
   return value.join(", ");
@@ -84,6 +108,35 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
       }),
     [checkpoints, officeCase.title, officeCase.topicTitle],
   );
+
+  const isHrGovernanceTopic = isHrTopic(officeCase.topicId, officeCase.topicTitle, officeCase.title);
+
+  const hrGovernance = useMemo<HrGovernanceEvaluation | null>(() => {
+    if (mode !== "m3" || !isHrGovernanceTopic) return null;
+    return evaluateHrGovernance(checkpoints);
+  }, [checkpoints, isHrGovernanceTopic, mode]);
+
+  const hrEvaluationByNormalizedId = useMemo(() => {
+    if (!hrGovernance) return new Map<string, HrGovernanceEvaluation["checkpoints"][number]>();
+    return new Map(hrGovernance.checkpoints.map((item) => [item.normalizedId, item]));
+  }, [hrGovernance]);
+
+  const hrTitleByNormalizedId = useMemo(() => {
+    const titles = new Map<string, string>();
+    if (!hrGovernance) return titles;
+
+    for (const checkpoint of checkpoints) {
+      const normalizedId = hrGovernance.checkpoints.find(
+        (item) => item.checkpointId === checkpoint.id || item.normalizedId === checkpoint.id,
+      )?.normalizedId;
+
+      if (normalizedId && !titles.has(normalizedId)) {
+        titles.set(normalizedId, checkpoint.title);
+      }
+    }
+
+    return titles;
+  }, [checkpoints, hrGovernance]);
 
   function updateCheckpoint(id: string, patch: Partial<OfficeCheckpointSnapshot>) {
     setCheckpoints((prev) =>
@@ -159,9 +212,68 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
         {officeCase.trigger_note ? <p style={{ margin: 0 }}>{officeCase.trigger_note}</p> : null}
       </header>
 
+      {hrGovernance ? (
+        <section className="card" style={{ display: "grid", gap: "0.75rem", backgroundColor: "#f7f8fb" }}>
+          <div style={{ display: "grid", gap: "0.25rem" }}>
+            <h2 style={{ margin: 0 }}>Governance-Freigabe</h2>
+            <div className="text-small text-muted">Gesamtstatus: {hrGovernance.summaryStatus.status}</div>
+          </div>
+
+          {hrGovernance.summaryStatus.reasons.length > 0 ? (
+            <ul style={{ margin: 0, paddingLeft: "1.25rem", lineHeight: 1.5 }}>
+              {hrGovernance.summaryStatus.reasons.map((reason) => (
+                <li key={reason} className="text-small">
+                  {reason}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div style={{ display: "grid", gap: "0.5rem" }}>
+            {hrGovernance.checkpoints.map((checkpoint) => {
+              const title = hrTitleByNormalizedId.get(checkpoint.normalizedId) ?? checkpoint.normalizedId;
+              const sourceLabel = checkpoint.checkpointId !== checkpoint.normalizedId
+                ? `Quelle: ${checkpoint.checkpointId}`
+                : null;
+
+              return (
+                <article
+                  key={`${checkpoint.normalizedId}-${checkpoint.checkpointId}`}
+                  className="card"
+                  style={{ display: "grid", gap: "0.35rem", borderColor: hrStateTone(checkpoint.state) }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "baseline" }}>
+                    <strong>{title}</strong>
+                    <span className="text-small" style={{ color: hrStateTone(checkpoint.state), fontWeight: 600 }}>
+                      {hrStateLabel(checkpoint.state)}
+                    </span>
+                  </div>
+                  <div className="text-small text-muted">{checkpoint.normalizedId}</div>
+                  {sourceLabel ? <div className="text-small text-muted">{sourceLabel}</div> : null}
+                </article>
+              );
+            })}
+          </div>
+
+          {hrGovernance.m4Actions.length > 0 ? (
+            <div style={{ display: "grid", gap: "0.5rem" }}>
+              <h3 style={{ margin: 0 }}>Nächste Klärungsschritte</h3>
+              <ul style={{ margin: 0, paddingLeft: "1.25rem", lineHeight: 1.5 }}>
+                {hrGovernance.m4Actions.map((action) => (
+                  <li key={`${action.normalizedId}-${action.actionType}-${action.message}`} className="text-small">
+                    {action.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       <div style={{ display: "grid", gap: "0.75rem" }}>
         {checkpoints.map((checkpoint) => {
           const isOpen = checkpoint.state === OfficeCheckpointState.OPEN;
+          const hrCheckpoint = hrEvaluationByNormalizedId.get(checkpoint.id) ?? hrGovernance?.checkpoints.find((item) => item.checkpointId === checkpoint.id);
 
           return (
             <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
@@ -170,6 +282,8 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                   <strong>{checkpoint.title}</strong>
                   {mode === "m2" ? (
                     <div className="text-small text-muted">{kindLabel(checkpoint.kind)} · {checkpoint.id}</div>
+                  ) : hrCheckpoint ? (
+                    <div className="text-small text-muted">{hrCheckpoint.normalizedId} · {hrStateLabel(checkpoint.state)}</div>
                   ) : null}
                 </div>
                 {mode === "m3" ? (
@@ -190,6 +304,10 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                   </label>
                 ) : null}
               </div>
+
+              {mode === "m3" && hrCheckpoint ? (
+                <div className="text-small text-muted">Governance-Status: {hrStateLabel(checkpoint.state)}</div>
+              ) : null}
 
               {mode === "m2" ? (
                 <>
