@@ -79,18 +79,6 @@ function hrStateTone(state: OfficeCheckpointState): string {
   return "#7a5b00";
 }
 
-function documentsToInput(value: string[] | undefined): string {
-  if (!Array.isArray(value) || value.length === 0) return "";
-  return value.join(", ");
-}
-
-function inputToDocuments(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
 export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
   const router = useRouter();
   const [checkpoints, setCheckpoints] = useState<OfficeCheckpointSnapshot[]>(
@@ -324,56 +312,6 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                       </div>
                     ) : null;
                   })()}
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>Frist / Wiedervorlage</span>
-                    <input
-                      type="date"
-                      value={checkpoint.deadline ?? ""}
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { deadline: e.target.value })}
-                    />
-                    <span className="text-small text-muted">falls zeitkritisch</span>
-                  </label>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>Verantwortlich in der Praxis</span>
-                    <input
-                      type="text"
-                      value={checkpoint.responsible_role ?? ""}
-                      placeholder="z. B. Praxisleitung, MFA, Abrechnung"
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { responsible_role: e.target.value })}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>Zustaendige Stelle</span>
-                    <input
-                      type="text"
-                      value={checkpoint.authority ?? ""}
-                      placeholder="z. B. KV, Aerztekammer, Zulassungsausschuss"
-                      onChange={(e) => updateCheckpoint(checkpoint.id, { authority: e.target.value })}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>Erforderliche Unterlagen</span>
-                    <input
-                      type="text"
-                      value={documentsToInput(checkpoint.required_documents)}
-                      placeholder="durch Komma getrennt"
-                      onChange={(e) =>
-                        updateCheckpoint(checkpoint.id, {
-                          required_documents: inputToDocuments(e.target.value),
-                        })
-                      }
-                    />
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <input
-                      type="checkbox"
-                      checked={checkpoint.escalation_needed ?? false}
-                      onChange={(e) =>
-                        updateCheckpoint(checkpoint.id, { escalation_needed: e.target.checked })
-                      }
-                    />
-                    <span>Eskalation noetig</span>
-                  </label>
                   <label style={{ display: "grid", gap: "0.25rem" }}>
                     <span>Bereits geklaert</span>
                     <textarea
