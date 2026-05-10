@@ -211,34 +211,38 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                     ) : null;
                   })()}
                   <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>deadline</span>
+                    <span>Frist / Wiedervorlage</span>
                     <input
                       type="date"
                       value={checkpoint.deadline ?? ""}
                       onChange={(e) => updateCheckpoint(checkpoint.id, { deadline: e.target.value })}
                     />
+                    <span className="text-small text-muted">falls zeitkritisch</span>
                   </label>
                   <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>responsible_role</span>
+                    <span>Verantwortlich in der Praxis</span>
                     <input
                       type="text"
                       value={checkpoint.responsible_role ?? ""}
+                      placeholder="z. B. Praxisleitung, MFA, Abrechnung"
                       onChange={(e) => updateCheckpoint(checkpoint.id, { responsible_role: e.target.value })}
                     />
                   </label>
                   <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>authority</span>
+                    <span>Zustaendige Stelle</span>
                     <input
                       type="text"
                       value={checkpoint.authority ?? ""}
+                      placeholder="z. B. KV, Aerztekammer, Zulassungsausschuss"
                       onChange={(e) => updateCheckpoint(checkpoint.id, { authority: e.target.value })}
                     />
                   </label>
                   <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>required_documents (comma separated)</span>
+                    <span>Erforderliche Unterlagen</span>
                     <input
                       type="text"
                       value={documentsToInput(checkpoint.required_documents)}
+                      placeholder="durch Komma getrennt"
                       onChange={(e) =>
                         updateCheckpoint(checkpoint.id, {
                           required_documents: inputToDocuments(e.target.value),
@@ -254,29 +258,32 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                         updateCheckpoint(checkpoint.id, { escalation_needed: e.target.checked })
                       }
                     />
-                    <span>escalation_needed</span>
+                    <span>Eskalation noetig</span>
                   </label>
                   <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>known_note</span>
+                    <span>Bereits geklaert</span>
                     <textarea
                       value={checkpoint.known_note ?? ""}
+                      placeholder="Was wissen wir sicher?"
                       onChange={(e) => updateCheckpoint(checkpoint.id, { known_note: e.target.value })}
                       rows={2}
                     />
                   </label>
                   <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>missing_note</span>
+                    <span>Noch offen</span>
                     <textarea
                       value={checkpoint.missing_note ?? ""}
+                      placeholder="Was fehlt noch?"
                       onChange={(e) => updateCheckpoint(checkpoint.id, { missing_note: e.target.value })}
                       rows={2}
                     />
                   </label>
                   <label style={{ display: "grid", gap: "0.25rem" }}>
-                    <span>answer_source</span>
+                    <span>Wer kann das klaeren?</span>
                     <input
                       type="text"
                       value={checkpoint.answer_source ?? ""}
+                      placeholder="Person, Stelle oder Dokument"
                       onChange={(e) => updateCheckpoint(checkpoint.id, { answer_source: e.target.value })}
                     />
                   </label>
