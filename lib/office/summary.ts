@@ -2,10 +2,6 @@ import {
   OfficeCheckpointState,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
-import {
-  evaluateHrGovernance,
-  type HrGovernanceEvaluation,
-} from "@/lib/office/hrGovernance";
 
 export type OfficeSummaryInput = {
   topicTitle: string;
@@ -32,38 +28,8 @@ function hasDocuments(docs: string[] | undefined): boolean {
   return Array.isArray(docs) && docs.length > 0;
 }
 
-function isHrTopicTitle(topicTitle: string): boolean {
-  const normalized = topicTitle.toLowerCase();
-  return normalized.includes("arzt anstellen") || normalized.includes("nachbesetzung");
-}
-
-function formatHrGovernanceSection(evaluation: HrGovernanceEvaluation): string[] {
-  const lines: string[] = ["Governance-Freigabe", `- Status: ${evaluation.summaryStatus.status}`];
-
-  if (evaluation.summaryStatus.reasons.length > 0) {
-    lines.push(
-      ...evaluation.summaryStatus.reasons.map((reason) => `- ${reason}`),
-    );
-  }
-
-  if (evaluation.m4Actions.length > 0) {
-    lines.push("", "Nächste Klärungsschritte");
-    lines.push(
-      ...evaluation.m4Actions.map(
-        (action) =>
-          `- ${action.normalizedId} [${action.actionType}]: ${action.message}`,
-      ),
-    );
-  }
-
-  return lines;
-}
-
 export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
   const checkpoints = input.checkpoints ?? [];
-  const hrGovernance = isHrTopicTitle(input.topicTitle)
-    ? evaluateHrGovernance(checkpoints)
-    : null;
 
   const istStandLines = checkpoints.map(
     (cp) => `- [${stateLabel(cp.state)}] ${cp.title}`,
@@ -126,10 +92,6 @@ export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
     `Office-Snapshot: ${input.topicTitle}`,
     "",
   ];
-
-  if (hrGovernance) {
-    sections.push(...formatHrGovernanceSection(hrGovernance), "");
-  }
 
   sections.push("Ist-Stand", ...istStandLines);
 

@@ -19,7 +19,7 @@ function hrCheckpoint(
 }
 
 describe("office hr governance summary", () => {
-  it("zeigt FREIGEGEBEN wenn HR-GOV-A bis D alle YES sind", () => {
+  it("zeigt fuer HR-Themen keinen Governance-Block mehr", () => {
     const output = buildOfficeSummaryText({
       topicTitle: "Arzt anstellen / Nachbesetzung",
       checkpoints: [
@@ -30,33 +30,19 @@ describe("office hr governance summary", () => {
       ],
     });
 
-    expect(output).toContain("Governance-Freigabe");
-    expect(output).toContain("FREIGEGEBEN");
+    expect(output).toContain("Office-Snapshot: Arzt anstellen / Nachbesetzung");
+    expect(output).toContain("Ist-Stand");
+    expect(output).not.toContain("Governance-Freigabe");
     expect(output).not.toContain("Nächste Klärungsschritte");
   });
 
-  it("zeigt NICHT_FREIGEGEBEN und einen Blockerhinweis wenn ein NO vorliegt", () => {
+  it("zeigt fuer NO/Open-States weiterhin nur neutrale Ist-Stand- und offene Punkte", () => {
     const output = buildOfficeSummaryText({
       topicTitle: "Arzt anstellen / Nachbesetzung",
       checkpoints: [
-        hrCheckpoint("HR-GOV-A", OfficeCheckpointState.YES),
-        hrCheckpoint("HR-GOV-B", OfficeCheckpointState.NO),
-        hrCheckpoint("HR-GOV-C", OfficeCheckpointState.YES),
-        hrCheckpoint("HR-GOV-D", OfficeCheckpointState.YES),
-      ],
-    });
-
-    expect(output).toContain("NICHT_FREIGEGEBEN");
-    expect(output).toContain("NO_BLOCKER");
-  });
-
-  it("zeigt AUSSTEHEND und naechste Klaerungsschritte wenn ein OPEN vorliegt", () => {
-    const output = buildOfficeSummaryText({
-      topicTitle: "Arzt anstellen / Nachbesetzung",
-      checkpoints: [
-        hrCheckpoint("HR-GOV-A", OfficeCheckpointState.YES),
+        hrCheckpoint("HR-GOV-A", OfficeCheckpointState.NO),
         hrCheckpoint("HR-GOV-B", OfficeCheckpointState.OPEN, {
-          missing_note: "Rueckmeldung vom Zulassungsausschuss fehlt",
+          missing_note: "Rueckmeldung fehlt",
           answer_source: "Zulassungsausschuss",
         }),
         hrCheckpoint("HR-GOV-C", OfficeCheckpointState.YES),
@@ -64,12 +50,16 @@ describe("office hr governance summary", () => {
       ],
     });
 
-    expect(output).toContain("AUSSTEHEND");
-    expect(output).toContain("Nächste Klärungsschritte");
-    expect(output).toContain("OPEN_EXTERNAL_CONFIRMATION");
+    expect(output).toContain("- [NO] HR-GOV-A");
+    expect(output).toContain("- [OPEN] HR-GOV-B");
+    expect(output).toContain("Fehlende Informationen");
+    expect(output).toContain("Rueckmeldung fehlt");
+    expect(output).toContain("Antwortquellen");
+    expect(output).toContain("Zulassungsausschuss");
+    expect(output).not.toContain("Governance-Freigabe");
   });
 
-  it("wertet Legacy-HR-Snapshots mit HR-01 bis HR-05 aus", () => {
+  it("behandelt Legacy-HR-IDs neutral ohne HR-GOV-Auswertung", () => {
     const output = buildOfficeSummaryText({
       topicTitle: "Arzt anstellen / Nachbesetzung",
       checkpoints: [
@@ -81,8 +71,9 @@ describe("office hr governance summary", () => {
       ],
     });
 
-    expect(output).toContain("FREIGEGEBEN");
-    expect(output).toContain("HR-GOV-A bis HR-GOV-D sind auf YES.");
+    expect(output).toContain("- [YES] HR-01");
+    expect(output).toContain("- [YES] HR-05");
+    expect(output).not.toContain("FREIGEGEBEN");
   });
 
   it("laesst Nicht-HR-Topics generisch", () => {
