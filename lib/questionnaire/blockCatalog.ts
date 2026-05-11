@@ -11,6 +11,7 @@
  *
  * Blöcke (in Anzeigereihenfolge):
  *    5 IDENTITAET       – Vorname, Nachname, Geburtsdatum, Versicherungsart
+ *    7 VERSICHERUNG     – Versicherungsdaten
  *   10 KONTAKT          – Telefon, E-Mail, Doctolib
  *   20 ADRESSE          – Postanschrift
  *   30 KURZANAMNESE     – Allgemeine Gesundheitsangaben
@@ -119,14 +120,55 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "date",
     required: true,
   },
+  // Historische, bereits persistierte ID für die Versicherungsart.
+  // Wird für Rückwärtskompatibilität unverändert weiterverwendet und
+  // im Block VERSICHERUNG referenziert.
   IDENTITY_INSURANCE_TYPE: {
     id: "IDENTITY_INSURANCE_TYPE",
     text: "Versicherungsart",
     text_en: "Type of insurance",
     type: "select",
     required: true,
-    options: ["gesetzlich versichert", "privat versichert"],
-    options_en: ["statutory insurance", "private insurance"],
+    options: [
+      "gesetzlich versichert",
+      "privat versichert",
+      "Selbstzahler / sonstiges",
+    ],
+    options_en: [
+      "statutory insurance",
+      "private insurance",
+      "self-pay / other",
+    ],
+  },
+
+  // --- Versicherung ---
+  INSURANCE_PROVIDER_NAME: {
+    id: "INSURANCE_PROVIDER_NAME",
+    text: "Krankenkasse / Versicherung",
+    text_en: "Health insurance provider",
+    type: "text",
+    required: false,
+  },
+  INSURANCE_MEMBER_NUMBER: {
+    id: "INSURANCE_MEMBER_NUMBER",
+    text: "Versicherungsnummer",
+    text_en: "Insurance member number",
+    type: "text",
+    required: false,
+  },
+  INSURANCE_CARD_IDENTIFIER: {
+    id: "INSURANCE_CARD_IDENTIFIER",
+    text: "Kartenkennung / Kennung der Gesundheitskarte",
+    text_en: "Card identifier / health card identifier",
+    type: "text",
+    required: false,
+  },
+  INSURANCE_CARD_VALID_UNTIL: {
+    id: "INSURANCE_CARD_VALID_UNTIL",
+    text: "gültig bis / Ablaufdatum der Karte",
+    text_en: "Valid until / card expiry date",
+    type: "date",
+    required: false,
   },
 
   // --- Kontakt ---
@@ -473,11 +515,19 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     label: "Identität",
     label_en: "Identity",
     displayOrder: 5,
+    questionIds: ["IDENTITY_FIRST_NAME", "IDENTITY_LAST_NAME", "IDENTITY_BIRTHDATE"],
+  },
+  VERSICHERUNG: {
+    id: "VERSICHERUNG",
+    label: "Versicherungsdaten",
+    label_en: "Insurance details",
+    displayOrder: 7,
     questionIds: [
-      "IDENTITY_FIRST_NAME",
-      "IDENTITY_LAST_NAME",
-      "IDENTITY_BIRTHDATE",
       "IDENTITY_INSURANCE_TYPE",
+      "INSURANCE_PROVIDER_NAME",
+      "INSURANCE_MEMBER_NUMBER",
+      "INSURANCE_CARD_IDENTIFIER",
+      "INSURANCE_CARD_VALID_UNTIL",
     ],
   },
   KONTAKT: {

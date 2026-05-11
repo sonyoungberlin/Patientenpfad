@@ -333,7 +333,7 @@ describe("POST /api/p/[slug]/submit", () => {
       pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
         makeForm({
           patient_language: "en",
-          selected_block_ids: ["IDENTITAET"],
+          selected_block_ids: ["VERSICHERUNG"],
         }),
       );
       const res = await POST(
@@ -363,7 +363,7 @@ describe("POST /api/p/[slug]/submit", () => {
       pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
         makeForm({
           patient_language: "de",
-          selected_block_ids: ["IDENTITAET"],
+          selected_block_ids: ["VERSICHERUNG"],
         }),
       );
       const res = await POST(

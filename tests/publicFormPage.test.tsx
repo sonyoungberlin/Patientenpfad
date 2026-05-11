@@ -302,10 +302,10 @@ describe("/p/[slug] public form page", () => {
 
     it("EN-Formular: englische UI-Texte und englische Fragetexte", async () => {
       pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
-        // IDENTITAET ist EN-ready und enthält IDENTITY_INSURANCE_TYPE
+        // VERSICHERUNG ist EN-ready und enthält IDENTITY_INSURANCE_TYPE
         // (select mit EN-Optionen).
         makeForm({
-          selected_block_ids: ["IDENTITAET"],
+          selected_block_ids: ["VERSICHERUNG"],
           patient_language: "en",
         }),
       );

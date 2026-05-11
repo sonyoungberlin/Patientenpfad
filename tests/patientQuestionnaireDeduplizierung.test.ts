@@ -6,7 +6,7 @@
  * - die Reihenfolge nach displayOrder korrekt ist
  * - unbekannte Block-IDs ignoriert werden
  * - leere Eingabe ein leeres Ergebnis liefert
- * - alle neuen Blöcke (ADRESSE, KURZANAMNESE, ARBEITSUNFAEHIGKEIT, REZEPT, UEBERWEISUNG) die erwarteten Fragen enthalten
+ * - alle Blöcke die erwarteten Fragen enthalten
  */
 
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
@@ -85,6 +85,25 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     expect(postal?.helperText).toBe("Wird für Abrechnung und Dokumente benötigt.");
   });
 
+  it("VERSICHERUNG: enthält bestehende Versicherungs-ID und neue Versicherungsfelder", () => {
+    const result = buildQuestionnaireQuestions(["VERSICHERUNG"]);
+    const ids = result.map((q) => q.id);
+    expect(ids).toContain("IDENTITY_INSURANCE_TYPE");
+    expect(ids).toContain("INSURANCE_PROVIDER_NAME");
+    expect(ids).toContain("INSURANCE_MEMBER_NUMBER");
+    expect(ids).toContain("INSURANCE_CARD_IDENTIFIER");
+    expect(ids).toContain("INSURANCE_CARD_VALID_UNTIL");
+  });
+
+  it("IDENTITAET: enthält keine Versicherungsfrage mehr", () => {
+    const result = buildQuestionnaireQuestions(["IDENTITAET"]);
+    const ids = result.map((q) => q.id);
+    expect(ids).toContain("IDENTITY_FIRST_NAME");
+    expect(ids).toContain("IDENTITY_LAST_NAME");
+    expect(ids).toContain("IDENTITY_BIRTHDATE");
+    expect(ids).not.toContain("IDENTITY_INSURANCE_TYPE");
+  });
+
   it("ADDRESS_POSTAL erscheint nur einmal wenn ADRESSE + andere Blöcke kombiniert", () => {
     const result = buildQuestionnaireQuestions(["ADRESSE", "KURZANAMNESE", "REZEPT"]);
     const count = result.filter((q) => q.id === "ADDRESS_POSTAL").length;
@@ -98,6 +117,15 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     const gpIdx = result.findIndex((q) => q.id === "ANAMNESE_GP");
     expect(phoneIdx).toBeLessThan(postalIdx);
     expect(postalIdx).toBeLessThan(gpIdx);
+  });
+
+  it("Reihenfolge: IDENTITAET (order=5) kommt vor VERSICHERUNG (order=7) kommt vor KONTAKT (order=10)", () => {
+    const result = buildQuestionnaireQuestions(["KONTAKT", "VERSICHERUNG", "IDENTITAET"]);
+    const firstNameIdx = result.findIndex((q) => q.id === "IDENTITY_FIRST_NAME");
+    const insuranceTypeIdx = result.findIndex((q) => q.id === "IDENTITY_INSURANCE_TYPE");
+    const phoneIdx = result.findIndex((q) => q.id === "CONTACT_PHONE");
+    expect(firstNameIdx).toBeLessThan(insuranceTypeIdx);
+    expect(insuranceTypeIdx).toBeLessThan(phoneIdx);
   });
 
   it("Reihenfolge: ARBEITSUNFAEHIGKEIT (order=40) kommt vor REZEPT (order=50)", () => {

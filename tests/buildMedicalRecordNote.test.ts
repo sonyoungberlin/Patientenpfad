@@ -220,13 +220,12 @@ describe("buildMedicalRecordNote – Adresse-Block", () => {
 });
 
 describe("buildMedicalRecordNote – Identität-Block", () => {
-  it("gibt alle Identitätsfelder mit eigenem Header aus", () => {
+  it("gibt nur Identitätsfelder (ohne Versicherungsart) mit eigenem Header aus", () => {
     const result = buildMedicalRecordNote({
       answers: {
         IDENTITY_FIRST_NAME: "Son-Young",
         IDENTITY_LAST_NAME: "Test",
         IDENTITY_BIRTHDATE: "1999-01-05",
-        IDENTITY_INSURANCE_TYPE: "gesetzlich versichert",
       },
       selected_block_ids: ["IDENTITAET"],
     });
@@ -235,6 +234,18 @@ describe("buildMedicalRecordNote – Identität-Block", () => {
     expect(lines).toContain("Vorname: Son-Young");
     expect(lines).toContain("Nachname: Test");
     expect(lines).toContain("Geburtsdatum: 1999-01-05");
+    expect(lines).not.toContain("Versicherungsart: gesetzlich versichert");
+  });
+
+  it("gibt Versicherungsart im separaten Block VERSICHERUNG aus", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        IDENTITY_INSURANCE_TYPE: "gesetzlich versichert",
+      },
+      selected_block_ids: ["VERSICHERUNG"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("Versicherungsdaten");
     expect(lines).toContain("Versicherungsart: gesetzlich versichert");
   });
 
@@ -550,7 +561,7 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
     expect(adresse).toBeLessThan(kurz);
   });
 
-  it("entspricht dem dokumentierten Soll-Output für Identität+Kontakt+Adresse+Kurzanamnese", () => {
+  it("entspricht dem dokumentierten Soll-Output für Identität+Versicherung+Kontakt+Adresse+Kurzanamnese", () => {
     const result = buildMedicalRecordNote({
       answers: {
         IDENTITY_FIRST_NAME: "Son-Young",
@@ -572,7 +583,13 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
         ANAMNESE_SUBSTANCES: "kaffee",
         ANAMNESE_VACCINATION: "ja",
       },
-      selected_block_ids: ["IDENTITAET", "KONTAKT", "ADRESSE", "KURZANAMNESE"],
+      selected_block_ids: [
+        "IDENTITAET",
+        "VERSICHERUNG",
+        "KONTAKT",
+        "ADRESSE",
+        "KURZANAMNESE",
+      ],
     });
     const expected = [
       "Digitale Anfrage",
@@ -581,6 +598,8 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
       "Vorname: Son-Young",
       "Nachname: Test",
       "Geburtsdatum: 1999-01-05",
+      "",
+      "Versicherungsdaten",
       "Versicherungsart: gesetzlich versichert",
       "",
       "Kontaktdaten",
