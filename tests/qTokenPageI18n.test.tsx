@@ -67,6 +67,23 @@ describe("/q/[token] Mehrsprachigkeit", () => {
     expect(html).not.toContain("Wie lautet Ihre Telefonnummer");
   });
 
+  it("rendert das korrigierte Versicherungsfeld in DE und EN mit Hilfetext", async () => {
+    const deHtml = await render("de", ["INSURANCE_CARD_IDENTIFIER"]);
+    expect(deHtml).toContain("Krankenkassen-Kennung / IK-Nummer");
+    expect(deHtml).toContain(
+      "Meist 9-stellig, beginnt häufig mit 10. Nicht die Kartenkennung der Gesundheitskarte.",
+    );
+
+    const enHtml = await render("en", ["INSURANCE_CARD_IDENTIFIER"]);
+    expect(enHtml).toContain(
+      "Health insurance fund identifier / provider institution number (IK number)",
+    );
+    expect(enHtml).toContain(
+      "Usually 9 digits and often starts with 10. Not the identifier of the health insurance card.",
+    );
+    expect(enHtml).not.toContain("Kartenkennung / Kennung der Gesundheitskarte");
+  });
+
   it("rendert englische multi_select-Optionen bei patient_language='en'", async () => {
     const html = await render("en", ["AU_SYMPTOMS"]);
     expect(html).toContain("Cough");

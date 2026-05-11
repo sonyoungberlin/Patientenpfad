@@ -48,7 +48,7 @@ const SHORT_LABELS: Record<string, string> = {
   IDENTITY_INSURANCE_TYPE: "Versicherungsart",
   INSURANCE_PROVIDER_NAME: "Krankenkasse / Versicherung",
   INSURANCE_MEMBER_NUMBER: "Versicherungsnummer",
-  INSURANCE_CARD_IDENTIFIER: "Kartenkennung",
+  INSURANCE_CARD_IDENTIFIER: "IK-Nummer Krankenkasse",
   INSURANCE_CARD_VALID_UNTIL: "Karte gültig bis",
 
   // Kontakt

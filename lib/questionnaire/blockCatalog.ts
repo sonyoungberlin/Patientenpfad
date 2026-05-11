@@ -159,10 +159,14 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   },
   INSURANCE_CARD_IDENTIFIER: {
     id: "INSURANCE_CARD_IDENTIFIER",
-    text: "Kartenkennung / Kennung der Gesundheitskarte",
-    text_en: "Card identifier / health card identifier",
+    text: "Krankenkassen-Kennung / IK-Nummer",
+    text_en: "Health insurance fund identifier / provider institution number (IK number)",
     type: "text",
     required: false,
+    helperText:
+      "Meist 9-stellig, beginnt häufig mit 10. Nicht die Kartenkennung der Gesundheitskarte.",
+    helperText_en:
+      "Usually 9 digits and often starts with 10. Not the identifier of the health insurance card.",
   },
   INSURANCE_CARD_VALID_UNTIL: {
     id: "INSURANCE_CARD_VALID_UNTIL",

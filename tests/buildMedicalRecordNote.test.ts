@@ -249,6 +249,17 @@ describe("buildMedicalRecordNote – Identität-Block", () => {
     expect(lines).toContain("Versicherungsart: gesetzlich versichert");
   });
 
+  it("gibt die IK-Nummer mit dem neuen Kurzlabel aus", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        INSURANCE_CARD_IDENTIFIER: "109876543",
+      },
+      selected_block_ids: ["VERSICHERUNG"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("IK-Nummer Krankenkasse: 109876543");
+  });
+
   it("erscheint als erster Block (displayOrder 5) vor Kontakt", () => {
     const result = buildMedicalRecordNote({
       answers: {
