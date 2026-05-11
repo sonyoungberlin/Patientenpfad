@@ -72,4 +72,43 @@ describe("textSmoothing helper", () => {
       code: "invalid_response",
     } as Partial<TextSmoothingError>);
   });
+
+  it("sendet strikte Umlaute- und ß-Regeln im Systemprompt", async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ output_text: "Für die hausärztliche Versorgung." }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await smoothTextWithOpenAI({
+      text: "Für die hausärztliche Versorgung.",
+      context: "inquiry_patient_message",
+    });
+
+    const fetchCallBody = fetchMock.mock.calls[0]?.[1]?.body;
+    const payload = typeof fetchCallBody === "string" ? JSON.parse(fetchCallBody) : null;
+    const systemText = payload?.input?.[0]?.content?.[0]?.text as string;
+
+    expect(systemText).toContain("ä, ö, ü, Ä, Ö, Ü, ß");
+    expect(systemText).toContain("ae, oe, ue, ss");
+  });
+
+  it("wirft Fehler bei Umlaut-Umschreibung (z. B. Für -> Fuer)", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        output_text: "Fuer die hausaerztliche Versorgung.",
+      }),
+    }) as unknown as typeof fetch;
+
+    await expect(
+      smoothTextWithOpenAI({
+        text: "Für die hausärztliche Versorgung.",
+        context: "inquiry_patient_message",
+      }),
+    ).rejects.toMatchObject({
+      name: "TextSmoothingError",
+      code: "invalid_response",
+    } as Partial<TextSmoothingError>);
+  });
 });

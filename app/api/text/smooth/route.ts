@@ -80,19 +80,19 @@ export async function POST(req: NextRequest) {
     if (err instanceof TextSmoothingError) {
       if (err.code === "missing_api_key") {
         return NextResponse.json(
-          { ok: false, error: "Textglättung ist nicht konfiguriert." },
+          { ok: false, error: "Textglättung ist nicht konfiguriert.", code: "missing_api_key" },
           { status: 500 },
         );
       }
 
       return NextResponse.json(
-        { ok: false, error: "Text konnte nicht geglättet werden." },
+        { ok: false, error: "Text konnte nicht geglättet werden.", code: err.code },
         { status: 500 },
       );
     }
 
     return NextResponse.json(
-      { ok: false, error: "Text konnte nicht geglättet werden." },
+      { ok: false, error: "Text konnte nicht geglättet werden.", code: "unknown_error" },
       { status: 500 },
     );
   }

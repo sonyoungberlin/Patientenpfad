@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   DecisionStatus,
   ExplanationStatus,
@@ -562,7 +562,7 @@ function OutputView({
 
   // Determine which text to copy/display: original or smoothed
   const textForCopy = useSmoothed && smoothedText ? smoothedText : copyMessageText;
-  const hasSmoothedVersion = useSmoothed && smoothedText;
+  const hasSmoothedVersion = !!smoothedText;
 
   return (
     <div style={{ marginTop: "2rem", display: "grid", gap: "1.5rem" }}>
@@ -746,6 +746,19 @@ export function appendQuestionnaireSentToM5Lines(
   if (!link) return lines;
   if (lines.includes(QUESTIONNAIRE_SENT_M5_LINE)) return lines;
   return [...lines, QUESTIONNAIRE_SENT_M5_LINE];
+}
+
+function composePatientMessageText(
+  output: InquiryResponseV2Output,
+  messageSignature: string,
+): string {
+  const messageGreeting = "Liebe Patientin, lieber Patient,";
+  const messageBody = inquiryOutputToPlainText(output);
+  const trimmedSignature = messageSignature.trim();
+
+  return [messageGreeting, messageBody, trimmedSignature]
+    .filter((part) => part.length > 0)
+    .join("\n\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -1182,6 +1195,8 @@ export default function InquiryM3Client({
   const [smoothedText, setSmoothedText] = useState<string | null>(null);
   const [smoothingError, setSmoothingError] = useState<string | null>(null);
   const [useSmoothed, setUseSmoothed] = useState(false);
+  const [smoothedSourceText, setSmoothedSourceText] = useState<string | null>(null);
+  const latestMessageTextRef = useRef<string>("");
 
   function openTemplateDialog() {
     setTemplateName("");
@@ -1204,6 +1219,7 @@ export default function InquiryM3Client({
     setIsSmoothing(true);
     setSmoothingError(null);
     setSmoothedText(null);
+    setSmoothedSourceText(textToSmooth);
 
     try {
       const res = await fetch("/api/text/smooth", {
@@ -1218,15 +1234,28 @@ export default function InquiryM3Client({
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.ok) {
+        setSmoothedSourceText(null);
+        // Diagnostisches Logging für Entwickler (keine Patiententexte)
+        if (data?.code) {
+          console.debug("[Text Smoothing]", {
+            code: data.code,
+            timestamp: new Date().toISOString(),
+          });
+        }
         setSmoothingError(
           data?.error ?? "Text konnte nicht geglättet werden.",
         );
         return;
       }
 
+      if (latestMessageTextRef.current !== textToSmooth) {
+        return;
+      }
+
       setSmoothedText(data.smoothedText ?? null);
       setUseSmoothed(true);
     } catch {
+      setSmoothedSourceText(null);
       setSmoothingError("Netzwerkfehler. Bitte erneut versuchen.");
     } finally {
       setIsSmoothing(false);
@@ -1341,6 +1370,27 @@ export default function InquiryM3Client({
     () => appendQuestionnaireSentToM5Lines(frozenM5Lines, questionnaireLink),
     [frozenM5Lines, questionnaireLink],
   );
+
+  const currentMessageText = useMemo(() => {
+    const activeOutput = confirmed ? frozenOutputWithLink : livePreviewWithLink;
+    if (!activeOutput) return "";
+    return composePatientMessageText(activeOutput, messageSignature);
+  }, [confirmed, frozenOutputWithLink, livePreviewWithLink, messageSignature]);
+
+  useEffect(() => {
+    latestMessageTextRef.current = currentMessageText;
+  }, [currentMessageText]);
+
+  useEffect(() => {
+    if (!smoothedSourceText) return;
+    if (currentMessageText === smoothedSourceText) return;
+
+    // Source text changed (e.g. M3 selection changed): drop old smoothed variant.
+    setSmoothedText(null);
+    setSmoothedSourceText(null);
+    setUseSmoothed(false);
+    setSmoothingError(null);
+  }, [currentMessageText, smoothedSourceText]);
 
   function setStatus(checkpointId: string, value: string) {
     if (value === "ACTIVE" && PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId]) {
@@ -2013,7 +2063,18 @@ export default function InquiryM3Client({
           {livePreviewWithLink && (
             <>
               <AudienceToggle value={audience} onChange={setAudience} />
-              <OutputView output={livePreviewWithLink} heading="Vorschau" m5Lines={liveM5LinesWithQuestionnaire} messageSignature={messageSignature} />
+              <OutputView
+                output={livePreviewWithLink}
+                heading="Vorschau"
+                m5Lines={liveM5LinesWithQuestionnaire}
+                messageSignature={messageSignature}
+                isSmoothing={isSmoothing}
+                smoothedText={smoothedText}
+                smoothingError={smoothingError}
+                useSmoothed={useSmoothed}
+                onSmoothText={handleSmoothText}
+                onToggleSmoothed={setUseSmoothed}
+              />
             </>
           )}
 

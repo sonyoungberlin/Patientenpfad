@@ -156,4 +156,44 @@ describe("POST /api/text/smooth", () => {
     expect(response.status).toBe(500);
     expect(json.ok).toBe(false);
   });
+
+  it("gibt error-code im Fehlerfall zur\u00fcck (diagnostisch)", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    smoothTextWithOpenAIMock.mockRejectedValue(
+      new TextSmoothingError("provider_error", "Providerfehler"),
+    );
+
+    const response = await POST(makeRequest({ text: "Bitte kommen Sie morgen." }));
+    const json = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(json.ok).toBe(false);
+    expect(json.code).toBe("provider_error");
+  });
+
+  it("nutzt code missing_api_key f\u00fcr fehlende Konfiguration", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    smoothTextWithOpenAIMock.mockRejectedValue(
+      new TextSmoothingError("missing_api_key", "OPENAI_API_KEY fehlt."),
+    );
+
+    const response = await POST(makeRequest({ text: "Bitte kommen Sie morgen." }));
+    const json = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(json.ok).toBe(false);
+    expect(json.code).toBe("missing_api_key");
+  });
+
+  it("setzt code unknown_error bei allgemeinen Fehlern", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    smoothTextWithOpenAIMock.mockRejectedValue(new Error("Allgemeiner Fehler"));
+
+    const response = await POST(makeRequest({ text: "Bitte kommen Siemorgen." }));
+    const json = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(json.ok).toBe(false);
+    expect(json.code).toBe("unknown_error");
+  });
 });

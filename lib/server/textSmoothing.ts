@@ -40,10 +40,37 @@ function buildSystemInstruction(context?: TextSmoothingContext): string {
     "- Keine medizinische Bewertung oder Interpretation.",
     "- Reihenfolge, Aussagen, Forderungen und Praxislogik vollständig erhalten.",
     "- Sie/Du-Ansprache beibehalten.",
+    "- Deutsche Sonderzeichen strikt erhalten: ä, ö, ü, Ä, Ö, Ü, ß dürfen NICHT umgeschrieben werden.",
+    "- Verboten sind Umschreibungen wie ae, oe, ue, ss anstelle der Originalschreibweise.",
     "- Keine Meta-Kommentare.",
     "- Keine Markdown-Erklärung.",
     "Ausgabe: Nur der geglättete Endtext.",
   ].join("\n");
+}
+
+function transliterateWord(word: string): string {
+  return word
+    .replaceAll("ä", "ae")
+    .replaceAll("ö", "oe")
+    .replaceAll("ü", "ue")
+    .replaceAll("Ä", "Ae")
+    .replaceAll("Ö", "Oe")
+    .replaceAll("Ü", "Ue")
+    .replaceAll("ß", "ss");
+}
+
+function hasDisallowedTransliteration(input: string, output: string): boolean {
+  const words = input.match(/[A-Za-zÄÖÜäöüß]+/g) ?? [];
+  for (const word of words) {
+    if (!/[ÄÖÜäöüß]/.test(word)) continue;
+    const transliterated = transliterateWord(word);
+    if (transliterated === word) continue;
+
+    if (output.includes(transliterated) && !output.includes(word)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function extractOutputText(payload: unknown): string | null {
@@ -138,6 +165,13 @@ export async function smoothTextWithOpenAI({
     throw new TextSmoothingError(
       "invalid_response",
       "Ungültige Provider-Antwort.",
+    );
+  }
+
+  if (hasDisallowedTransliteration(text, smoothed)) {
+    throw new TextSmoothingError(
+      "invalid_response",
+      "Ungültige Provider-Antwort (Sonderzeichen verändert).",
     );
   }
 
