@@ -42,9 +42,9 @@ function makeSection(
 // ---------------------------------------------------------------------------
 
 describe("M5_PROFILE_CODES", () => {
-  it("alle 12 Profile haben eine Bezeichnung", () => {
+  it("alle 13 Profile haben eine Bezeichnung", () => {
     const profileIds = [
-      "AU", "PRESCRIPTION", "REFERRAL", "MEDICAL_DOCUMENTS",
+      "AU", "PRESCRIPTION", "HEILMITTELVERORDNUNG", "REFERRAL", "MEDICAL_DOCUMENTS",
       "APPOINTMENT", "ACUTE_CARE", "LAB", "SAMPLE_COLLECTION",
       "IMMUNIZATION", "BILLING", "TECH_SUPPORT", "ONBOARDING",
     ];

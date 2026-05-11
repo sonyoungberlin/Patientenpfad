@@ -36,6 +36,7 @@ import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpoint
 export const M5_PROFILE_CODES: Record<string, string> = {
   AU: "AU",
   PRESCRIPTION: "Rezept",
+  HEILMITTELVERORDNUNG: "Heilmittel",
   REFERRAL: "Überweisung",
   MEDICAL_DOCUMENTS: "Attest",
   APPOINTMENT: "Termin",

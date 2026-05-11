@@ -1242,6 +1242,52 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ] satisfies ResponseGoal[],
   },
 
+  HEILMITTELVERORDNUNG: {
+    id: "HEILMITTELVERORDNUNG",
+    label: "Heilmittelverordnung",
+    displayOrder: 55,
+    decisionCheckpointId: "",
+    // Section-Intros (M2 Antwortkontexte): vollständiges Set aller sechs.
+    availableSectionIntroIds: [
+      "SECTION_INTRO_INFO_MISSING",
+      "SECTION_INTRO_DOCS_MISSING",
+      "SECTION_INTRO_DOCS_COMPLETE",
+      "SECTION_INTRO_REVIEWED",
+      "SECTION_INTRO_IN_PROGRESS",
+      "SECTION_INTRO_NOT_RESPONSIBLE",
+    ],
+    specificCheckpointIds: [
+      "HMV_REQUEST_COMPLETE",
+      "HMV_INFO_MISSING",
+      "HMV_PREVIOUS_ORDER_MISSING",
+      "HMV_DOCTOR_REVIEW_REQUIRED",
+      "HMV_IN_PERSON_REQUIRED",
+      "HMV_NOT_DIGITAL_POSSIBLE",
+    ],
+    boundGlobalCheckpointIds: [],
+    availableActionIds: [
+      "PROCESSING_DELAY",
+      "TECHNICAL_ISSUE",
+    ],
+    boundActionCheckpointIds: [
+      "DIGITAL_REQUEST",
+      "DOCUMENT_UPLOAD",
+      "BOOK_APPOINTMENT",
+    ],
+    boundActionConditions: {
+      DIGITAL_REQUEST: {
+        showWhenAny: [{ HMV_INFO_MISSING: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [{ HMV_PREVIOUS_ORDER_MISSING: "YES" }],
+      },
+      BOOK_APPOINTMENT: {
+        showWhenAny: [{ HMV_IN_PERSON_REQUIRED: "YES" }],
+      },
+    },
+    globalHints: {},
+  },
+
   HOSPITAL_ADMISSION: {
     id: "HOSPITAL_ADMISSION",
     label: "Krankenhauseinweisung",

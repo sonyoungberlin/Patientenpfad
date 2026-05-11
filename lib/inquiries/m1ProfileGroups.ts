@@ -14,7 +14,7 @@ export interface M1ProfileGroup {
 export const M1_PROFILE_GROUPS: readonly M1ProfileGroup[] = [
   {
     label: "Dokumente & Ergebnisse",
-    profileIds: ["AU", "PRESCRIPTION", "REFERRAL", "HOSPITAL_ADMISSION", "MEDICAL_DOCUMENTS"],
+    profileIds: ["AU", "PRESCRIPTION", "HEILMITTELVERORDNUNG", "REFERRAL", "HOSPITAL_ADMISSION", "MEDICAL_DOCUMENTS"],
   },
   {
     label: "Termine & persönliche Vorstellung",

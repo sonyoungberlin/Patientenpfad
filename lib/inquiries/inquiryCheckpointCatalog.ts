@@ -2393,6 +2393,115 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  HMV_REQUEST_COMPLETE: {
+    id: "HMV_REQUEST_COMPLETE",
+    label: "Heilmittelverordnung: Anfrage vollständig",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "HMV_REQUEST_COMPLETE-Q1", text: "Liegen die Angaben zur Heilmittelverordnung für die weitere Bearbeitung vollständig vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ihre Angaben zur Heilmittelverordnung liegen für die weitere Bearbeitung vor.",
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Angaben zur Heilmittelverordnung vollständig vorhanden",
+    },
+  },
+
+  HMV_INFO_MISSING: {
+    id: "HMV_INFO_MISSING",
+    label: "Heilmittelverordnung: Angaben fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_INFORMATION" as SpecificRole,
+    m5Code: "NO_DATA" as M5ReasonCode,
+    questions: [
+      { id: "HMV_INFO_MISSING-Q1", text: "Fehlen für die Bearbeitung noch Angaben zur Heilmittelverordnung?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Bearbeitung benötigen wir noch weitere Angaben.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  HMV_PREVIOUS_ORDER_MISSING: {
+    id: "HMV_PREVIOUS_ORDER_MISSING",
+    label: "Heilmittelverordnung: Vorverordnung / Unterlagen fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    m5Code: "NO_DOC" as M5ReasonCode,
+    questions: [
+      { id: "HMV_PREVIOUS_ORDER_MISSING-Q1", text: "Fehlen Angaben zur bisherigen Verordnung oder relevante Unterlagen?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die Prüfung benötigen wir noch Angaben zur bisherigen Verordnung oder relevante Unterlagen.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  HMV_DOCTOR_REVIEW_REQUIRED: {
+    id: "HMV_DOCTOR_REVIEW_REQUIRED",
+    label: "Heilmittelverordnung: ärztliche Prüfung erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    questions: [
+      { id: "HMV_DOCTOR_REVIEW_REQUIRED-Q1", text: "Ist vor einer Entscheidung eine ärztliche Prüfung erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Vor einer Entscheidung ist eine ärztliche Prüfung erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  HMV_IN_PERSON_REQUIRED: {
+    id: "HMV_IN_PERSON_REQUIRED",
+    label: "Heilmittelverordnung: persönlicher Termin erforderlich",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
+    m5Code: "NEED_VISIT" as M5ReasonCode,
+    questions: [
+      { id: "HMV_IN_PERSON_REQUIRED-Q1", text: "Ist für die weitere Bearbeitung ein persönlicher Termin in der Praxis erforderlich?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die weitere Bearbeitung ist ein persönlicher Termin in der Praxis erforderlich.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  HMV_NOT_DIGITAL_POSSIBLE: {
+    id: "HMV_NOT_DIGITAL_POSSIBLE",
+    label: "Heilmittelverordnung: digital nicht abschließbar",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "CHANNEL_NOT_SUITABLE" as SpecificRole,
+    m5Code: "WRONG_CHANNEL" as M5ReasonCode,
+    questions: [
+      { id: "HMV_NOT_DIGITAL_POSSIBLE-Q1", text: "Kann dieses Anliegen nicht vollständig digital abgeschlossen werden?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Dieses Anliegen kann nicht vollständig digital abgeschlossen werden.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
   // ---- IMMUNIZATION DECISION ----
 
   IMMUNIZATION_DECISION: {

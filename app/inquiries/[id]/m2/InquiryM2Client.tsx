@@ -608,6 +608,32 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
   ],
+  HEILMITTELVERORDNUNG: [
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
+      checkpointIds: ["HMV_REQUEST_COMPLETE"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_REVIEWED",
+      checkpointIds: [
+        "HMV_DOCTOR_REVIEW_REQUIRED",
+        "HMV_IN_PERSON_REQUIRED",
+      ],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_INFO_MISSING",
+      checkpointIds: ["HMV_INFO_MISSING"],
+    },
+    {
+      sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
+      checkpointIds: ["HMV_PREVIOUS_ORDER_MISSING"],
+    },
+    { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
+    {
+      sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE",
+      checkpointIds: ["HMV_NOT_DIGITAL_POSSIBLE"],
+    },
+  ],
   HOSPITAL_ADMISSION: [
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
