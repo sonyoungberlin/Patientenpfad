@@ -78,6 +78,18 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     expect(ids).toContain("ANAMNESE_OCCUPATION");
   });
 
+  it("KURZANAMNESE: ANAMNESE_OCCUPATION steht nach Größe/Gewicht und nicht am Ende", () => {
+    const result = buildQuestionnaireQuestions(["KURZANAMNESE"]);
+    const ids = result.map((q) => q.id);
+    const occupationIdx = ids.indexOf("ANAMNESE_OCCUPATION");
+    const heightIdx = ids.indexOf("ANAMNESE_HEIGHT");
+    const weightIdx = ids.indexOf("ANAMNESE_WEIGHT");
+
+    expect(occupationIdx).toBeGreaterThan(heightIdx);
+    expect(occupationIdx).toBeGreaterThan(weightIdx);
+    expect(occupationIdx).toBeLessThan(ids.length - 1);
+  });
+
   it("ADRESSE: enthält ADDRESS_POSTAL mit helperText", () => {
     const result = buildQuestionnaireQuestions(["ADRESSE"]);
     const postal = result.find((q) => q.id === "ADDRESS_POSTAL");

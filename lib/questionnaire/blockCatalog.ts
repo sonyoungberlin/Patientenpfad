@@ -553,6 +553,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "ANAMNESE_GP",
       "ANAMNESE_HEIGHT",
       "ANAMNESE_WEIGHT",
+      "ANAMNESE_OCCUPATION",
       "ANAMNESE_CHRONIC",
       "ANAMNESE_HEREDITARY",
       "ANAMNESE_ALLERGIES",
@@ -561,7 +562,6 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "ANAMNESE_ALCOHOL",
       "ANAMNESE_SUBSTANCES",
       "ANAMNESE_VACCINATION",
-      "ANAMNESE_OCCUPATION",
     ],
   },
   ARBEITSUNFAEHIGKEIT: {
