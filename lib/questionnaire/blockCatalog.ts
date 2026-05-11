@@ -12,6 +12,7 @@
  * Blöcke (in Anzeigereihenfolge):
  *    5 IDENTITAET       – Vorname, Nachname, Geburtsdatum, Versicherungsart
  *    7 VERSICHERUNG     – Versicherungsdaten
+ *    9 HEILMITTELVERORDNUNG – Heilmittelverordnung
  *   10 KONTAKT          – Telefon, E-Mail, Doctolib
  *   20 ADRESSE          – Postanschrift
  *   30 KURZANAMNESE     – Allgemeine Gesundheitsangaben
@@ -455,6 +456,71 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Zum Beispiel: starke Mobilitätseinschränkung, Rollstuhl, liegender Transport, medizinische Überwachung während der Fahrt.",
   },
 
+  // --- Heilmittelverordnung ---
+  HMV_CATEGORY: {
+    id: "HMV_CATEGORY",
+    text: "Für welches Heilmittel benötigen Sie eine Verordnung?",
+    type: "select",
+    required: true,
+    options: [
+      "Physiotherapie",
+      "Ergotherapie",
+      "Logopädie",
+      "Podologie",
+      "Lymphdrainage",
+      "Sonstiges Heilmittel",
+    ],
+  },
+  HMV_REQUEST_TYPE: {
+    id: "HMV_REQUEST_TYPE",
+    text: "Handelt es sich um eine neue Verordnung oder eine Folgeverordnung?",
+    type: "select",
+    required: true,
+    options: ["Folgeverordnung", "Neue Beschwerden"],
+  },
+  HMV_CURRENT_COMPLAINT: {
+    id: "HMV_CURRENT_COMPLAINT",
+    text: "Bitte beschreiben Sie Ihre aktuellen Beschwerden.",
+    type: "textarea",
+    required: true,
+  },
+  HMV_PREVIOUS_ORDER_EXISTS: {
+    id: "HMV_PREVIOUS_ORDER_EXISTS",
+    text: "Liegt eine frühere Heilmittelverordnung vor?",
+    type: "yes_no",
+    required: true,
+  },
+  HMV_PREVIOUS_ORDER_END_DATE: {
+    id: "HMV_PREVIOUS_ORDER_END_DATE",
+    text: "Wann endete die letzte Heilmittelverordnung?",
+    type: "date",
+    required: false,
+  },
+  HMV_LAST_PRACTICE_CONTACT_AT: {
+    id: "HMV_LAST_PRACTICE_CONTACT_AT",
+    text: "Wann hatten Sie zuletzt Kontakt mit uns wegen dieser Verordnung?",
+    type: "date",
+    required: false,
+  },
+  HMV_THERAPY_PROVIDER_NAME: {
+    id: "HMV_THERAPY_PROVIDER_NAME",
+    text: "Bei welcher Praxis / Einrichtung erfolgt die Therapie? (falls bekannt)",
+    type: "text",
+    required: false,
+  },
+  HMV_LAST_THERAPY_DATE: {
+    id: "HMV_LAST_THERAPY_DATE",
+    text: "Wann fand die letzte Therapieeinheit statt? (falls bekannt)",
+    type: "date",
+    required: false,
+  },
+  HMV_ADDITIONAL_NOTES: {
+    id: "HMV_ADDITIONAL_NOTES",
+    text: "Weitere Hinweise oder Anmerkungen (optional)",
+    type: "textarea",
+    required: false,
+  },
+
   // --- Krankenbeförderung ---
   TRANSPORT_NEEDED: {
     id: "TRANSPORT_NEEDED",
@@ -528,6 +594,22 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "INSURANCE_MEMBER_NUMBER",
       "INSURANCE_CARD_IDENTIFIER",
       "INSURANCE_CARD_VALID_UNTIL",
+    ],
+  },
+  HEILMITTELVERORDNUNG: {
+    id: "HEILMITTELVERORDNUNG",
+    label: "Heilmittelverordnung",
+    displayOrder: 9,
+    questionIds: [
+      "HMV_CATEGORY",
+      "HMV_REQUEST_TYPE",
+      "HMV_CURRENT_COMPLAINT",
+      "HMV_PREVIOUS_ORDER_EXISTS",
+      "HMV_PREVIOUS_ORDER_END_DATE",
+      "HMV_LAST_PRACTICE_CONTACT_AT",
+      "HMV_THERAPY_PROVIDER_NAME",
+      "HMV_LAST_THERAPY_DATE",
+      "HMV_ADDITIONAL_NOTES",
     ],
   },
   KONTAKT: {

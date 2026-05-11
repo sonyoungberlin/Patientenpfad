@@ -187,6 +187,84 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     expect(pt?.options).toContain("Einzelmedikament");
   });
 
+  it("HEILMITTELVERORDNUNG: enthält alle HMV-Fragen", () => {
+    const result = buildQuestionnaireQuestions(["HEILMITTELVERORDNUNG"]);
+    const ids = result.map((q) => q.id);
+    expect(ids).toContain("HMV_CATEGORY");
+    expect(ids).toContain("HMV_REQUEST_TYPE");
+    expect(ids).toContain("HMV_CURRENT_COMPLAINT");
+    expect(ids).toContain("HMV_PREVIOUS_ORDER_EXISTS");
+    expect(ids).toContain("HMV_PREVIOUS_ORDER_END_DATE");
+    expect(ids).toContain("HMV_LAST_PRACTICE_CONTACT_AT");
+    expect(ids).toContain("HMV_THERAPY_PROVIDER_NAME");
+    expect(ids).toContain("HMV_LAST_THERAPY_DATE");
+    expect(ids).toContain("HMV_ADDITIONAL_NOTES");
+    expect(ids.length).toBe(9);
+  });
+
+  it("HEILMITTELVERORDNUNG: HMV_CATEGORY ist select mit allen 6 Optionen", () => {
+    const result = buildQuestionnaireQuestions(["HEILMITTELVERORDNUNG"]);
+    const cat = result.find((q) => q.id === "HMV_CATEGORY");
+    expect(cat?.type).toBe("select");
+    expect(cat?.required).toBe(true);
+    expect(cat?.options).toContain("Physiotherapie");
+    expect(cat?.options).toContain("Ergotherapie");
+    expect(cat?.options).toContain("Logopädie");
+    expect(cat?.options).toContain("Podologie");
+    expect(cat?.options).toContain("Lymphdrainage");
+    expect(cat?.options).toContain("Sonstiges Heilmittel");
+    expect(cat?.options?.length).toBe(6);
+  });
+
+  it("HEILMITTELVERORDNUNG: HMV_REQUEST_TYPE ist select mit Optionen Folgeverordnung und Neue Beschwerden", () => {
+    const result = buildQuestionnaireQuestions(["HEILMITTELVERORDNUNG"]);
+    const rt = result.find((q) => q.id === "HMV_REQUEST_TYPE");
+    expect(rt?.type).toBe("select");
+    expect(rt?.required).toBe(true);
+    expect(rt?.options).toContain("Folgeverordnung");
+    expect(rt?.options).toContain("Neue Beschwerden");
+  });
+
+  it("HEILMITTELVERORDNUNG: HMV_CURRENT_COMPLAINT ist textarea und required", () => {
+    const result = buildQuestionnaireQuestions(["HEILMITTELVERORDNUNG"]);
+    const cc = result.find((q) => q.id === "HMV_CURRENT_COMPLAINT");
+    expect(cc?.type).toBe("textarea");
+    expect(cc?.required).toBe(true);
+  });
+
+  it("HEILMITTELVERORDNUNG: HMV_PREVIOUS_ORDER_EXISTS ist yes_no und required", () => {
+    const result = buildQuestionnaireQuestions(["HEILMITTELVERORDNUNG"]);
+    const poe = result.find((q) => q.id === "HMV_PREVIOUS_ORDER_EXISTS");
+    expect(poe?.type).toBe("yes_no");
+    expect(poe?.required).toBe(true);
+  });
+
+  it("HEILMITTELVERORDNUNG: Datumsfelder sind date und optional", () => {
+    const result = buildQuestionnaireQuestions(["HEILMITTELVERORDNUNG"]);
+    for (const id of ["HMV_PREVIOUS_ORDER_END_DATE", "HMV_LAST_PRACTICE_CONTACT_AT", "HMV_LAST_THERAPY_DATE"]) {
+      const q = result.find((q) => q.id === id);
+      expect(q?.type).toBe("date");
+      expect(q?.required).toBe(false);
+    }
+  });
+
+  it("HEILMITTELVERORDNUNG (order=9): kommt nach VERSICHERUNG (order=7) und vor KONTAKT (order=10)", () => {
+    const result = buildQuestionnaireQuestions(["KONTAKT", "VERSICHERUNG", "HEILMITTELVERORDNUNG"]);
+    const insuranceIdx = result.findIndex((q) => q.id === "IDENTITY_INSURANCE_TYPE");
+    const hmvIdx = result.findIndex((q) => q.id === "HMV_CATEGORY");
+    const phoneIdx = result.findIndex((q) => q.id === "CONTACT_PHONE");
+    expect(insuranceIdx).toBeLessThan(hmvIdx);
+    expect(hmvIdx).toBeLessThan(phoneIdx);
+  });
+
+  it("HEILMITTELVERORDNUNG kombiniert mit anderen Blöcken: keine Duplikate", () => {
+    const result = buildQuestionnaireQuestions([
+      "IDENTITAET", "VERSICHERUNG", "HEILMITTELVERORDNUNG", "KONTAKT",
+    ]);
+    const ids = result.map((q) => q.id);
+    expect(ids.length).toBe(new Set(ids).size);
+  });
+
   it("gibt QuestionDefinition-Objekte mit id, text, type, required zurück", () => {
     const result = buildQuestionnaireQuestions(["KONTAKT"]);
     expect(result.length).toBeGreaterThan(0);
