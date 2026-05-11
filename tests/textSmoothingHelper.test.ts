@@ -73,7 +73,7 @@ describe("textSmoothing helper", () => {
     } as Partial<TextSmoothingError>);
   });
 
-  it("sendet strikte Umlaute- und ß-Regeln im Systemprompt", async () => {
+  it("sendet vereinfachte Systemprompt-Regeln", async () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ output_text: "Für die hausärztliche Versorgung." }),
@@ -89,8 +89,9 @@ describe("textSmoothing helper", () => {
     const payload = typeof fetchCallBody === "string" ? JSON.parse(fetchCallBody) : null;
     const systemText = payload?.input?.[0]?.content?.[0]?.text as string;
 
-    expect(systemText).toContain("ä, ö, ü, Ä, Ö, Ü, ß");
-    expect(systemText).toContain("ae, oe, ue, ss");
+    expect(systemText).toContain("Du bist ein Sprachassistent für Praxisnachrichten.");
+    expect(systemText).toContain("Deine Aufgabe ist ausschließlich, den vorhandenen Text sprachlich zu glätten.");
+    expect(systemText).toContain("Keine Listen, keine Markdown-Ausgabe.");
   });
 
   it("wirft Fehler bei Umlaut-Umschreibung (z. B. Für -> Fuer)", async () => {
