@@ -519,6 +519,12 @@ function OutputView({
   heading,
   m5Lines,
   messageSignature = "",
+  isSmoothing = false,
+  smoothedText = null,
+  smoothingError = null,
+  useSmoothed = false,
+  onSmoothText,
+  onToggleSmoothed,
 }: {
   output: InquiryResponseV2Output;
   heading: string;
@@ -530,6 +536,12 @@ function OutputView({
    * keine Signaturzeile.
    */
   messageSignature?: string;
+  isSmoothing?: boolean;
+  smoothedText?: string | null;
+  smoothingError?: string | null;
+  useSmoothed?: boolean;
+  onSmoothText?: (text: string) => Promise<void>;
+  onToggleSmoothed?: (use: boolean) => void;
 }) {
   // Anrede wird ausschließlich beim Rendering ergänzt (kein Eingriff in
   // State / generated_output / Backend). Die Grußformel kommt bewusst NICHT
@@ -548,15 +560,69 @@ function OutputView({
     .filter((part) => part.length > 0)
     .join("\n\n");
 
+  // Determine which text to copy/display: original or smoothed
+  const textForCopy = useSmoothed && smoothedText ? smoothedText : copyMessageText;
+  const hasSmoothedVersion = useSmoothed && smoothedText;
+
   return (
     <div style={{ marginTop: "2rem", display: "grid", gap: "1.5rem" }}>
       <h2 style={{ margin: 0 }}>{heading}</h2>
 
-      {/* Bereich 1: Nachrichten-Vorschau + „Nachricht kopieren" */}
+      {/* Bereich 1: Nachrichten-Vorschau + „Nachricht kopieren" + „Text glätten" */}
       <div className="card" style={{ display: "grid", gap: "1rem" }}>
         <h3 style={{ margin: 0 }}>Nachricht</h3>
 
+        {smoothingError && (
+          <p className="text-error" role="alert" aria-live="polite" style={{ margin: 0 }}>
+            {smoothingError}
+          </p>
+        )}
+
         <div style={{ display: "grid", gap: "0.75rem" }}>
+          {hasSmoothedVersion && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                flexWrap: "wrap",
+                fontSize: "0.85rem",
+                padding: "0.35rem 0.65rem",
+                borderRadius: "var(--radius)",
+                background: "var(--muted, #f5f5f5)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <span className="text-muted" style={{ fontWeight: 600 }}>
+                Version:
+              </span>
+              {["original", "geglättet"].map((opt) => {
+                const isSelected = opt === "geglättet" ? useSmoothed : !useSmoothed;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => onToggleSmoothed?.(opt === "geglättet")}
+                    style={{
+                      padding: "0.2rem 0.65rem",
+                      borderRadius: "var(--radius)",
+                      border: "1px solid var(--border)",
+                      background: isSelected
+                        ? "var(--primary, #2563eb)"
+                        : "var(--background)",
+                      color: isSelected ? "#fff" : "var(--foreground)",
+                      fontWeight: isSelected ? 600 : 400,
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    {opt === "original" ? "Original" : "Geglättet"}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <p style={{ margin: 0 }}>{messageGreeting}</p>
 
           {output.intro && (
@@ -598,11 +664,33 @@ function OutputView({
           )}
         </div>
 
-        <CopyTextButton
-          text={copyMessageText}
-          label="Nachricht kopieren"
-          data-testid="copy-message"
-        />
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          {!hasSmoothedVersion && onSmoothText && (
+            <button
+              type="button"
+              onClick={() => onSmoothText(copyMessageText)}
+              disabled={isSmoothing}
+              style={{
+                padding: "0.5rem 1rem",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border)",
+                background: "var(--background)",
+                color: "var(--foreground)",
+                cursor: isSmoothing ? "not-allowed" : "pointer",
+                fontSize: "0.9rem",
+                fontWeight: 500,
+                opacity: isSmoothing ? 0.6 : 1,
+              }}
+            >
+              {isSmoothing ? "Wird geglättet…" : "Text glätten"}
+            </button>
+          )}
+          <CopyTextButton
+            text={textForCopy}
+            label="Nachricht kopieren"
+            data-testid="copy-message"
+          />
+        </div>
       </div>
 
       {/* Bereich 2: Dokumentations-Vorschau + „Dokumentation kopieren" */}
@@ -1089,6 +1177,12 @@ export default function InquiryM3Client({
   const [templateInfo, setTemplateInfo] = useState<string | null>(null);
   const [templateError, setTemplateError] = useState<string | null>(null);
 
+  // Text glätten / Text smoothing state
+  const [isSmoothing, setIsSmoothing] = useState(false);
+  const [smoothedText, setSmoothedText] = useState<string | null>(null);
+  const [smoothingError, setSmoothingError] = useState<string | null>(null);
+  const [useSmoothed, setUseSmoothed] = useState(false);
+
   function openTemplateDialog() {
     setTemplateName("");
     setTemplateError(null);
@@ -1099,6 +1193,44 @@ export default function InquiryM3Client({
   function closeTemplateDialog() {
     if (savingTemplate) return;
     setTemplateDialogOpen(false);
+  }
+
+  async function handleSmoothText(textToSmooth: string) {
+    if (!textToSmooth.trim()) {
+      setSmoothingError("Kein Text zum Glätten vorhanden.");
+      return;
+    }
+
+    setIsSmoothing(true);
+    setSmoothingError(null);
+    setSmoothedText(null);
+
+    try {
+      const res = await fetch("/api/text/smooth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: textToSmooth,
+          context: "inquiry_patient_message",
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok) {
+        setSmoothingError(
+          data?.error ?? "Text konnte nicht geglättet werden.",
+        );
+        return;
+      }
+
+      setSmoothedText(data.smoothedText ?? null);
+      setUseSmoothed(true);
+    } catch {
+      setSmoothingError("Netzwerkfehler. Bitte erneut versuchen.");
+    } finally {
+      setIsSmoothing(false);
+    }
   }
 
   async function handleSaveAsTemplate() {
@@ -1331,7 +1463,18 @@ export default function InquiryM3Client({
           {frozenOutputWithLink && (
             <>
               <AudienceToggle value={audience} onChange={setAudience} />
-              <OutputView output={frozenOutputWithLink} heading="Bestätigter Output" m5Lines={frozenM5LinesWithQuestionnaire} messageSignature={messageSignature} />
+              <OutputView
+                output={frozenOutputWithLink}
+                heading="Bestätigter Output"
+                m5Lines={frozenM5LinesWithQuestionnaire}
+                messageSignature={messageSignature}
+                isSmoothing={isSmoothing}
+                smoothedText={smoothedText}
+                smoothingError={smoothingError}
+                useSmoothed={useSmoothed}
+                onSmoothText={handleSmoothText}
+                onToggleSmoothed={setUseSmoothed}
+              />
             </>
           )}
         </>
