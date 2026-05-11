@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSelect, type StandardCheckpoint, isStandardCheckpoint, isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
 import { resolveQuestionTextForMode, type M2PrefillData } from "@/lib/logic/m2Questions";
@@ -239,12 +239,33 @@ export function M3ChecklistClient({
   const [copiedM4, setCopiedM4] = useState(false);
   const [copiedM5, setCopiedM5] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState(false);
+  const [isSmoothing, setIsSmoothing] = useState(false);
+  const [smoothedText, setSmoothedText] = useState<string | null>(null);
+  const [useSmoothed, setUseSmoothed] = useState(false);
+  const [smoothedSourceText, setSmoothedSourceText] = useState<string | null>(null);
+  const latestMessagePreviewRef = useRef<string>("");
 
   const hasSignature = messageSignature.trim().length > 0;
 
   const messagePreview = hasSignature
     ? `${MESSAGE_INTRO}\n\n${m4TextBlock}\n\n${messageSignature.trim()}`
     : `${MESSAGE_INTRO}\n\n${m4TextBlock}`;
+  const hasSmoothedVersion = !!smoothedText;
+  const activeMessagePreview = useSmoothed && smoothedText ? smoothedText : messagePreview;
+
+  useEffect(() => {
+    latestMessagePreviewRef.current = messagePreview;
+  }, [messagePreview]);
+
+  useEffect(() => {
+    if (!smoothedSourceText) return;
+    if (messagePreview === smoothedSourceText) return;
+
+    // Source message changed (e.g. checklist selection changed): drop old smoothed version.
+    setSmoothedText(null);
+    setUseSmoothed(false);
+    setSmoothedSourceText(null);
+  }, [messagePreview, smoothedSourceText]);
 
   function fallbackCopyText(text: string): boolean {
     const textarea = document.createElement("textarea");
@@ -290,12 +311,53 @@ export function M3ChecklistClient({
 
   async function copyMessageText() {
     if (!m4TextBlock || !hasSignature) return;
-    const ok = await copyToClipboard(messagePreview);
+    const ok = await copyToClipboard(activeMessagePreview);
     if (ok) {
       setCopiedMessage(true);
       setTimeout(() => setCopiedMessage(false), 2000);
     } else {
       setError("Nachricht konnte nicht kopiert werden.");
+    }
+  }
+
+  async function smoothMessageText() {
+    if (!messagePreview.trim()) return;
+
+    const sourceText = messagePreview;
+
+    setIsSmoothing(true);
+    setSmoothedText(null);
+    setSmoothedSourceText(sourceText);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/text/smooth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: sourceText,
+          context: "case_patient_todo",
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        setSmoothedSourceText(null);
+        setError(data?.error ?? "Text konnte nicht geglättet werden.");
+        return;
+      }
+
+      if (latestMessagePreviewRef.current !== sourceText) {
+        return;
+      }
+
+      setSmoothedText(data.smoothedText ?? null);
+      setUseSmoothed(true);
+    } catch {
+      setSmoothedSourceText(null);
+      setError("Text konnte nicht geglättet werden.");
+    } finally {
+      setIsSmoothing(false);
     }
   }
 
@@ -567,15 +629,7 @@ export function M3ChecklistClient({
                 fontFamily: "inherit",
               }}
             >
-              <span className="text-muted">{MESSAGE_INTRO}</span>
-              {"\n\n"}
-              <span>{m4TextBlock}</span>
-              {hasSignature && (
-                <>
-                  {"\n\n"}
-                  <span className="text-muted">{messageSignature.trim()}</span>
-                </>
-              )}
+              <span>{activeMessagePreview}</span>
             </div>
             <button
               type="button"
@@ -584,6 +638,34 @@ export function M3ChecklistClient({
               {copiedM4 ? "Kopiert ✓" : "Text kopieren"}
             </button>
             <div style={{ marginTop: "0.5rem" }}>
+              {!hasSmoothedVersion && (
+                <button
+                  type="button"
+                  onClick={() => void smoothMessageText()}
+                  disabled={isSmoothing}
+                  style={{ marginRight: "0.5rem" }}
+                >
+                  {isSmoothing ? "Wird geglättet…" : "Text glätten"}
+                </button>
+              )}
+              {hasSmoothedVersion && (
+                <span style={{ display: "inline-flex", gap: "0.5rem", marginRight: "0.5rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => setUseSmoothed(false)}
+                    style={{ fontWeight: useSmoothed ? 400 : 600 }}
+                  >
+                    Original
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseSmoothed(true)}
+                    style={{ fontWeight: useSmoothed ? 600 : 400 }}
+                  >
+                    Geglättet
+                  </button>
+                </span>
+              )}
               <button
                 type="button"
                 data-copy-message

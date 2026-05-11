@@ -89,9 +89,10 @@ describe("textSmoothing helper", () => {
     const payload = typeof fetchCallBody === "string" ? JSON.parse(fetchCallBody) : null;
     const systemText = payload?.input?.[0]?.content?.[0]?.text as string;
 
-    expect(systemText).toContain("Du bist ein Sprachassistent für Praxisnachrichten.");
-    expect(systemText).toContain("Deine Aufgabe ist ausschließlich, den vorhandenen Text sprachlich zu glätten.");
-    expect(systemText).toContain("Keine Listen, keine Markdown-Ausgabe.");
+    expect(systemText).toContain("Überarbeite die folgende Praxisnachricht sprachlich.");
+    expect(systemText).toContain("WICHTIG");
+    expect(systemText).toContain("* keine Listen");
+    expect(systemText).toContain("* keine Markdown-Formatierung");
   });
 
   it("wirft Fehler bei Umlaut-Umschreibung (z. B. Für -> Fuer)", async () => {

@@ -563,6 +563,7 @@ function OutputView({
   // Determine which text to copy/display: original or smoothed
   const textForCopy = useSmoothed && smoothedText ? smoothedText : copyMessageText;
   const hasSmoothedVersion = !!smoothedText;
+  const displaySmoothed = useSmoothed && hasSmoothedVersion;
 
   return (
     <div style={{ marginTop: "2rem", display: "grid", gap: "1.5rem" }}>
@@ -623,44 +624,50 @@ function OutputView({
             </div>
           )}
 
-          <p style={{ margin: 0 }}>{messageGreeting}</p>
+          {displaySmoothed && <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{smoothedText}</p>}
 
-          {output.intro && (
-            <p style={{ margin: 0, fontStyle: "italic", color: "var(--muted-foreground)" }}>
-              {output.intro}
-            </p>
-          )}
+          {!displaySmoothed && (
+            <>
+              <p style={{ margin: 0 }}>{messageGreeting}</p>
 
-          {output.sections.map((sec) => (
-            <section key={sec.inquiryId}>
-              {sec.mainDecision && (
-                <p style={{ fontWeight: 600, margin: "0 0 0.5rem" }}>{sec.mainDecision}</p>
+              {output.intro && (
+                <p style={{ margin: 0, fontStyle: "italic", color: "var(--muted-foreground)" }}>
+                  {output.intro}
+                </p>
               )}
-              {sec.attachedParagraphs.map((p, i) => (
-                <p key={i} style={{ margin: "0.25rem 0" }}>
-                  {p}
-                </p>
-              ))}
-            </section>
-          ))}
 
-          {output.sharedBottom.length > 0 && (
-            <section>
-              {output.sharedBottom.map((p, i) => (
-                <p key={i} style={{ margin: "0.25rem 0" }}>
-                  {p}
-                </p>
+              {output.sections.map((sec) => (
+                <section key={sec.inquiryId}>
+                  {sec.mainDecision && (
+                    <p style={{ fontWeight: 600, margin: "0 0 0.5rem" }}>{sec.mainDecision}</p>
+                  )}
+                  {sec.attachedParagraphs.map((p, i) => (
+                    <p key={i} style={{ margin: "0.25rem 0" }}>
+                      {p}
+                    </p>
+                  ))}
+                </section>
               ))}
-            </section>
-          )}
 
-          {trimmedSignature.length > 0 && (
-            <p
-              style={{ margin: 0, whiteSpace: "pre-wrap" }}
-              data-signature-hint
-            >
-              {trimmedSignature}
-            </p>
+              {output.sharedBottom.length > 0 && (
+                <section>
+                  {output.sharedBottom.map((p, i) => (
+                    <p key={i} style={{ margin: "0.25rem 0" }}>
+                      {p}
+                    </p>
+                  ))}
+                </section>
+              )}
+
+              {trimmedSignature.length > 0 && (
+                <p
+                  style={{ margin: 0, whiteSpace: "pre-wrap" }}
+                  data-signature-hint
+                >
+                  {trimmedSignature}
+                </p>
+              )}
+            </>
           )}
         </div>
 
@@ -1235,13 +1242,6 @@ export default function InquiryM3Client({
 
       if (!res.ok || !data?.ok) {
         setSmoothedSourceText(null);
-        // Diagnostisches Logging für Entwickler (keine Patiententexte)
-        if (data?.code) {
-          console.debug("[Text Smoothing]", {
-            code: data.code,
-            timestamp: new Date().toISOString(),
-          });
-        }
         setSmoothingError(
           data?.error ?? "Text konnte nicht geglättet werden.",
         );

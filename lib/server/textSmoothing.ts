@@ -32,18 +32,28 @@ function buildSystemInstruction(context?: TextSmoothingContext): string {
         : "Kontext: Patientennachricht.";
 
   return [
-    "Du bist ein Sprachassistent für Praxisnachrichten.",
+    "Überarbeite die folgende Praxisnachricht sprachlich.",
     contextHint,
-    "Deine Aufgabe ist ausschließlich, den vorhandenen Text sprachlich zu glätten.",
-    "Regeln:",
-    "- Erzeuge einen natürlicheren Lesefluss und weniger vorlagenartige Formulierungen.",
-    "- Verbinde zusammenhängende Aussagen und sorge für flüssige Übergänge.",
-    "- Fachliche Aussage und Inhalt müssen gleich bleiben.",
-    "- Keine neuen Informationen hinzufügen.",
-    "- Keine medizinischen Änderungen, Bewertungen oder Interpretationen.",
-    "- Sachlich und professionell bleiben, ohne KI-Sprache.",
-    "- Keine Listen, keine Markdown-Ausgabe.",
-    "Ausgabe: Nur der geglättete Endtext als Fließtext.",
+    "WICHTIG",
+    "* Inhalt exakt beibehalten",
+    "* nichts hinzufügen",
+    "* nichts entfernen",
+    "* keine medizinischen Ergänzungen",
+    "* keine neuen Empfehlungen",
+    "* keine Markdown-Formatierung",
+    "* keine Listen",
+    "* nur den finalen Nachrichtentext ausgeben",
+    "* Handlungsanweisungen, nächste Schritte oder organisatorische Aktionen als eigenen Absatz erhalten und nicht mit erklärenden Absätzen verschmelzen (z. B. Termin vereinbaren, Fragebogen ausfüllen, Unterlagen hochladen, digitale Anfrage stellen)",
+    "ZIEL",
+    "* natürlicher",
+    "* klarer",
+    "* professionell",
+    "* kürzere Sätze",
+    "* zusammenhängende Aussagen dürfen verbunden werden",
+    "* vorlagenartige Formulierungen reduzieren",
+    "LINKS",
+    "* niemals anklickbar darstellen",
+    "* keine Hyperlinks",
   ].join("\n");
 }
 
@@ -160,6 +170,7 @@ export async function smoothTextWithOpenAI({
 
   const json = (await response.json()) as unknown;
   const smoothed = extractOutputText(json);
+
   if (!smoothed) {
     throw new TextSmoothingError(
       "invalid_response",
