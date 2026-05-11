@@ -16,18 +16,17 @@ export default function MedicalRecordNoteCopyButton({ noteText, sessionId }: Pro
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select text content inside the pre element
-      const el = document.querySelector(`[data-q-note="${sessionId}"]`);
+      // Fallback: select text content from a hidden textarea.
+      const el = document.querySelector(
+        `[data-q-note="${sessionId}"]`,
+      ) as HTMLTextAreaElement | null;
       if (el) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        selection?.removeAllRanges();
-        selection?.addRange(range);
+        el.focus();
+        el.select();
         // Legacy fallback for browsers without Clipboard API support
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         document.execCommand("copy");
-        selection?.removeAllRanges();
+        el.blur();
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }
@@ -48,22 +47,22 @@ export default function MedicalRecordNoteCopyButton({ noteText, sessionId }: Pro
       >
         {copied ? "Kopiert ✓" : "Krankenblatt-Text kopieren"}
       </button>
-      <pre
+      <textarea
+        readOnly
+        aria-hidden="true"
+        tabIndex={-1}
         data-q-note={sessionId}
         style={{
-          margin: 0,
-          padding: "0.5rem",
-          background: "var(--muted, #f1f5f9)",
-          borderRadius: "var(--radius)",
-          fontSize: "0.78rem",
-          lineHeight: 1.5,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          userSelect: "all",
+          position: "absolute",
+          left: "-9999px",
+          top: "auto",
+          width: "1px",
+          height: "1px",
+          opacity: 0,
+          pointerEvents: "none",
         }}
-      >
-        {noteText}
-      </pre>
+        value={noteText}
+      />
     </div>
   );
 }

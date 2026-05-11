@@ -1,7 +1,7 @@
 /**
  * UI-Tests für die /questionnaires-Seite (Praxis-Funktion):
- * Prüft dass bei completed Sessions der Krankenblatt-Text angezeigt wird
- * und bei pending/anderen Sessions nicht.
+ * Prüft dass bei completed Sessions der Krankenblatt-Copy-Button angezeigt
+ * wird und der lange Text nicht dauerhaft sichtbar ist.
  */
 
 import { renderToStaticMarkup } from "react-dom/server";
@@ -35,7 +35,6 @@ jest.mock(
   "@/components/questionnaire/MedicalRecordNoteCopyButton",
   () =>
     function MockCopyButton({
-      noteText,
       sessionId,
     }: {
       noteText: string;
@@ -46,7 +45,6 @@ jest.mock(
           <button type="button" data-q-copy-note={sessionId}>
             Krankenblatt-Text kopieren
           </button>
-          <pre data-q-note={sessionId}>{noteText}</pre>
         </div>
       );
     },
@@ -117,14 +115,14 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
     expect(markup).toContain(`data-q-copy-note="session-completed-1"`);
   });
 
-  it("zeigt Krankenblatt-Text-Inhalt bei completed Session", async () => {
+  it("zeigt keinen sichtbaren Krankenblatt-Text-Inhalt bei completed Session", async () => {
     prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
       COMPLETED_SESSION,
     ]);
 
     const markup = renderToStaticMarkup(await QuestionnairesPage({}));
-    expect(markup).toContain("AU-Anfrage (digital)");
-    expect(markup).toContain("Beschwerden");
+    expect(markup).not.toContain("AU-Anfrage (digital)");
+    expect(markup).not.toContain("Beschwerden: Husten");
   });
 
   it("zeigt keinen Krankenblatt-Text bei pending Session", async () => {
