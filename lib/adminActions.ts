@@ -29,6 +29,45 @@ import { prisma } from "./prisma";
 
 export type AdminActionResult = { ok: boolean; message: string };
 
+export type DeleteAccountBlocker = {
+  model:
+    | "PatientQuestionnaireSession"
+    | "InquirySession"
+    | "CaseSession"
+    | "PracticeQuestionnaireForm"
+    | "OfficeCaseSession"
+    | "PracticeMembership";
+  count: number;
+  reason: "not_empty" | "would_orphan_practice";
+  practiceId?: string;
+};
+
+export type DeleteAccountSuccess = {
+  ok: true;
+  deleted: true;
+  status: 200;
+  code: "account_deleted";
+  message: string;
+  accountId: string;
+  email: string;
+};
+
+export type DeleteAccountFailure = {
+  ok: false;
+  deleted: false;
+  status: 400 | 403 | 404 | 409;
+  code:
+    | "confirm_email_mismatch"
+    | "self_delete_blocked"
+    | "account_not_found"
+    | "account_not_empty"
+    | "practice_would_be_orphaned";
+  message: string;
+  blockers?: DeleteAccountBlocker[];
+};
+
+export type DeleteAccountResult = DeleteAccountSuccess | DeleteAccountFailure;
+
 /**
  * Gemeinsamer Schreibpfad: aktualisiert ein einzelnes Feature-Flag auf
  * `Account` und auf allen `Practice`-Datensätzen, in denen der Account
@@ -261,4 +300,154 @@ export async function disableOfficeCases(
     `Kein Account mit E-Mail "${email}" gefunden.`,
     `Officepfad für "${email}" deaktiviert.`,
   );
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function createCountBlocker(
+  model:
+    | "PatientQuestionnaireSession"
+    | "InquirySession"
+    | "CaseSession"
+    | "PracticeQuestionnaireForm"
+    | "OfficeCaseSession",
+  count: number,
+): DeleteAccountBlocker | null {
+  if (count <= 0) return null;
+  return { model, count, reason: "not_empty" };
+}
+
+/**
+ * Löscht einen Account nur dann hart, wenn keine produktiven Daten mehr
+ * vorhanden sind und keine Practice verwaisen würde.
+ */
+export async function deleteAccount(
+  email: string,
+  actingAccountId: string,
+): Promise<DeleteAccountResult> {
+  const normalizedEmail = normalizeEmail(email);
+
+  const account = await prisma.account.findUnique({
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      email: true,
+      memberships: {
+        where: { role: PracticeRole.OWNER },
+        select: { practice_id: true },
+      },
+    },
+  });
+
+  if (!account) {
+    return {
+      ok: false,
+      deleted: false,
+      status: 404,
+      code: "account_not_found",
+      message: `Kein Account mit E-Mail "${normalizedEmail}" gefunden.`,
+    };
+  }
+
+  if (account.id === actingAccountId) {
+    return {
+      ok: false,
+      deleted: false,
+      status: 403,
+      code: "self_delete_blocked",
+      message: "Admins können ihr eigenes Konto nicht löschen.",
+    };
+  }
+
+  const [questionnaireCount, inquiryCount, caseCount, websiteFormCount, officeCaseCount] =
+    await Promise.all([
+      prisma.patientQuestionnaireSession.count({
+        where: { owner_account_id: account.id },
+      }),
+      prisma.inquirySession.count({ where: { owner_account_id: account.id } }),
+      prisma.caseSession.count({ where: { owner_account_id: account.id } }),
+      prisma.practiceQuestionnaireForm.count({
+        where: { owner_account_id: account.id },
+      }),
+      prisma.officeCaseSession.count({ where: { owner_account_id: account.id } }),
+    ]);
+
+  const blockers: DeleteAccountBlocker[] = [
+    createCountBlocker("PatientQuestionnaireSession", questionnaireCount),
+    createCountBlocker("InquirySession", inquiryCount),
+    createCountBlocker("CaseSession", caseCount),
+    createCountBlocker("PracticeQuestionnaireForm", websiteFormCount),
+    createCountBlocker("OfficeCaseSession", officeCaseCount),
+  ].filter((entry): entry is DeleteAccountBlocker => entry !== null);
+
+  const ownerPracticeIds = Array.isArray(account.memberships)
+    ? account.memberships.map((membership) => membership.practice_id)
+    : [];
+
+  for (const practiceId of ownerPracticeIds) {
+    const otherOwnerCount = await prisma.practiceMembership.count({
+      where: {
+        practice_id: practiceId,
+        role: PracticeRole.OWNER,
+        account_id: { not: account.id },
+      },
+    });
+
+    if (otherOwnerCount === 0) {
+      blockers.push({
+        model: "PracticeMembership",
+        count: 1,
+        reason: "would_orphan_practice",
+        practiceId,
+      });
+    }
+  }
+
+  if (blockers.length > 0) {
+    const hasDataBlockers = blockers.some(
+      (blocker) => blocker.reason === "not_empty",
+    );
+    const hasOwnerBlockers = blockers.some(
+      (blocker) => blocker.reason === "would_orphan_practice",
+    );
+
+    return {
+      ok: false,
+      deleted: false,
+      status: 409,
+      code:
+        hasOwnerBlockers && !hasDataBlockers
+          ? "practice_would_be_orphaned"
+          : "account_not_empty",
+      message: "Account kann nicht gelöscht werden, solange noch Daten vorhanden sind.",
+      blockers,
+    };
+  }
+
+  try {
+    await prisma.account.delete({ where: { id: account.id } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return {
+        ok: false,
+        deleted: false,
+        status: 409,
+        code: "account_not_empty",
+        message: "Account kann nicht gelöscht werden, solange noch Daten vorhanden sind.",
+      };
+    }
+    throw error;
+  }
+
+  return {
+    ok: true,
+    deleted: true,
+    status: 200,
+    code: "account_deleted",
+    message: `Account "${account.email}" wurde gelöscht.`,
+    accountId: account.id,
+    email: account.email,
+  };
 }

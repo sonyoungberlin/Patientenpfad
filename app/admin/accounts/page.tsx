@@ -3,6 +3,7 @@ import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { SendPasswordLinkButton } from "./SendPasswordLinkButton";
+import { DeleteAccountButton } from "./DeleteAccountButton";
 
 type FlagKey =
   | "is_approved"
@@ -232,6 +233,7 @@ export default async function AdminAccountsPage() {
                   </button>
                 </form>
                 <SendPasswordLinkButton email={acc.email} />
+                <DeleteAccountButton email={acc.email} />
               </td>
             </tr>
             );

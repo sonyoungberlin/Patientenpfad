@@ -31,6 +31,7 @@ jest.mock("@/lib/adminActions", () => ({
   disablePatientCommunication: jest.fn(),
   enableWebsiteForms: jest.fn(),
   disableWebsiteForms: jest.fn(),
+  deleteAccount: jest.fn(),
 }));
 
 import { prisma } from "@/lib/prisma";

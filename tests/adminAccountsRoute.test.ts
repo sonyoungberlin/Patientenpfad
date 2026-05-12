@@ -3,7 +3,7 @@
  *
  * Gemockt werden:
  *   - @/lib/prisma  (Datenbankoperationen)
- *   - @/lib/adminActions (approveAccount, revokeAccount)
+ *   - @/lib/adminActions (approveAccount, revokeAccount, deleteAccount)
  */
 
 import { NextRequest } from "next/server";
@@ -31,10 +31,11 @@ jest.mock("@/lib/prisma", () => ({
 jest.mock("@/lib/adminActions", () => ({
   approveAccount: jest.fn(),
   revokeAccount: jest.fn(),
+  deleteAccount: jest.fn(),
 }));
 
 import { prisma } from "@/lib/prisma";
-import { approveAccount, revokeAccount } from "@/lib/adminActions";
+import { approveAccount, revokeAccount, deleteAccount } from "@/lib/adminActions";
 import { GET as getHandler, POST as postHandler } from "@/app/api/admin/accounts/route";
 import { SESSION_COOKIE } from "@/lib/auth";
 
@@ -46,6 +47,7 @@ type PrismaMock = {
 const pm = prisma as unknown as PrismaMock;
 const mockApprove = approveAccount as jest.Mock;
 const mockRevoke = revokeAccount as jest.Mock;
+const mockDelete = deleteAccount as jest.Mock;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -213,5 +215,133 @@ describe("POST /api/admin/accounts", () => {
     expect(res.status).toBe(404);
     const json = await res.json();
     expect(json.ok).toBe(false);
+  });
+
+  it("löscht leeren Account", async () => {
+    mockSession(true);
+    mockDelete.mockResolvedValue({
+      ok: true,
+      deleted: true,
+      status: 200,
+      code: "account_deleted",
+      message: "Account gelöscht.",
+      accountId: "acc-1",
+      email: "delete-me@example.com",
+    });
+
+    const req = requestWithCookie("http://localhost/api/admin/accounts", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "delete-me@example.com",
+        confirmEmail: "delete-me@example.com",
+        action: "delete_account",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await postHandler(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(mockDelete).toHaveBeenCalledWith("delete-me@example.com", "acc-admin");
+  });
+
+  it("blockiert falsche Confirm-Mail", async () => {
+    mockSession(true);
+
+    const req = requestWithCookie("http://localhost/api/admin/accounts", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "delete-me@example.com",
+        confirmEmail: "wrong@example.com",
+        action: "delete_account",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await postHandler(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("confirm_email_mismatch");
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("blockiert Self-Delete", async () => {
+    mockSession(true);
+    pm.session.findUnique.mockResolvedValue({
+      token: "good-token",
+      expiresAt: new Date(Date.now() + 100_000),
+      account: {
+        id: "acc-admin",
+        email: "admin@example.com",
+        is_approved: true,
+        is_admin: true,
+      },
+    });
+
+    const req = requestWithCookie("http://localhost/api/admin/accounts", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "admin@example.com",
+        confirmEmail: "admin@example.com",
+        action: "delete_account",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await postHandler(req);
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.code).toBe("self_delete_blocked");
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("blockiert produktive Daten mit 409", async () => {
+    mockSession(true);
+    mockDelete.mockResolvedValue({
+      ok: false,
+      deleted: false,
+      status: 409,
+      code: "account_not_empty",
+      error: "Account kann nicht gelöscht werden, solange noch Daten vorhanden sind.",
+      blockers: [{ model: "PatientQuestionnaireSession", count: 2, reason: "not_empty" }],
+    });
+
+    const req = requestWithCookie("http://localhost/api/admin/accounts", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "busy@example.com",
+        confirmEmail: "busy@example.com",
+        action: "delete_account",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await postHandler(req);
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.code).toBe("account_not_empty");
+    expect(Array.isArray(json.blockers)).toBe(true);
+  });
+
+  it("404 wenn zu löschender Account nicht existiert", async () => {
+    mockSession(true);
+    mockDelete.mockResolvedValue({
+      ok: false,
+      deleted: false,
+      status: 404,
+      code: "account_not_found",
+      error: "Kein Account mit E-Mail \"missing@example.com\" gefunden.",
+    });
+
+    const req = requestWithCookie("http://localhost/api/admin/accounts", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "missing@example.com",
+        confirmEmail: "missing@example.com",
+        action: "delete_account",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await postHandler(req);
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.code).toBe("account_not_found");
   });
 });
