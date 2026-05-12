@@ -121,6 +121,12 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       id: "NC-APPROBATION",
       title: "Approbation",
       kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.GATEKEEPER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
     },
     {
       id: "NC-FACHARZTQUALIFIKATION",
@@ -131,11 +137,23 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       id: "NC-BERUFSHAFTPFLICHT",
       title: "Berufshaftpflicht",
       kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
     },
     {
       id: "NC-TAETIGKEITSUMFANG",
       title: "Taetigkeitsumfang",
       kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
     },
     {
       id: "NC-EXTERNE_STELLE",
@@ -156,6 +174,12 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       id: "NC-BETRIEBSSTAETTENSTRUKTUR",
       title: "Betriebsstaettenstruktur",
       kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
     },
   ],
   [OFFICE_TOPIC_KV_BILLING]: [
