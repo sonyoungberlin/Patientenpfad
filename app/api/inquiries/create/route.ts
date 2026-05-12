@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionAccount } from "@/lib/auth";
+import { requireInquiriesAccess } from "@/lib/authz";
 import {
   createInquirySession,
   InquirySessionError,
@@ -15,26 +15,8 @@ import {
  */
 export async function POST(req: NextRequest) {
   try {
-    const account = await getSessionAccount(req);
-
-    if (!account) {
-      return NextResponse.json(
-        { ok: false, error: "Nicht angemeldet." },
-        { status: 401 },
-      );
-    }
-    if (!account.is_approved) {
-      return NextResponse.json(
-        { ok: false, error: "Account nicht freigeschaltet." },
-        { status: 403 },
-      );
-    }
-    if (!account.inquiry_assistant_enabled && !account.is_admin) {
-      return NextResponse.json(
-        { ok: false, error: "Kein Zugriff auf den Anfrage-Assistenten." },
-        { status: 403 },
-      );
-    }
+    const { account, error } = await requireInquiriesAccess(req);
+    if (error) return error;
 
     let body: Record<string, unknown>;
     try {

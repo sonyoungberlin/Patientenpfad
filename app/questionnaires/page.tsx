@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requirePatientCommunicationAccessFromCookies } from "@/lib/authz";
+import { requireQuestionnaireInboxAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
@@ -22,7 +22,7 @@ type PageProps = {
 export default async function QuestionnairesPage({
   searchParams,
 }: PageProps) {
-  const account = await requirePatientCommunicationAccessFromCookies();
+  const account = await requireQuestionnaireInboxAccessFromCookies();
   if (!account) {
     redirect("/");
   }

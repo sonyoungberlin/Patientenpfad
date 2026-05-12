@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requirePatientCommunicationAccess } from "@/lib/authz";
+import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
 
@@ -20,7 +20,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { account, error } = await requirePatientCommunicationAccess(req);
+    const { account, error } = await requireQuestionnaireInboxAccess(req);
     if (error) return error;
 
     const { id } = await params;

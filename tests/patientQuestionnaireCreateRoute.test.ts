@@ -41,6 +41,21 @@ const APPROVED_ACCOUNT = {
   patient_communication_enabled: true,
 };
 
+const INBOX_ONLY_ACCOUNT = {
+  ...APPROVED_ACCOUNT,
+  current_practice: {
+    id: "p-1",
+    slug: "p-1",
+    name: "Praxis 1",
+    is_approved: true,
+    inquiry_assistant_enabled: true,
+    patient_communication_enabled: true,
+    website_forms_enabled: false,
+    office_cases_enabled: false,
+  },
+  memberships: [{ practice_id: "p-1", role: "INBOX_ONLY" }],
+};
+
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/questionnaire", {
     method: "POST",
@@ -121,6 +136,16 @@ describe("POST /api/questionnaire", () => {
     expect(res.status).toBe(403);
     const json = await res.json();
     expect(json.error).toBe("Patientenkommunikation nicht freigeschaltet.");
+  });
+
+  it("gibt 403 zurück für INBOX_ONLY (Versenden verboten)", async () => {
+    getSessionAccountMock.mockResolvedValue(INBOX_ONLY_ACCOUNT);
+
+    const req = makeRequest({ selected_block_ids: ["ARBEITSUNFAEHIGKEIT"] });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toBe("Rolle nicht ausreichend.");
   });
 
   it("gibt 400 zurück wenn selected_block_ids fehlt", async () => {

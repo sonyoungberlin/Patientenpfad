@@ -25,6 +25,7 @@ const ALL_ROLES: PracticeRole[] = [
   PracticeRole.OWNER,
   PracticeRole.ADMIN,
   PracticeRole.USER,
+  PracticeRole.INBOX_ONLY,
 ];
 
 const WRITE_ROLES: PracticeRole[] = [

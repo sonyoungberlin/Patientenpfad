@@ -34,6 +34,7 @@ function mockSessionAccount(
   is_approved: boolean,
   inquiry_assistant_enabled = true,
   accountId = "acc-owner",
+  role: "OWNER" | "ADMIN" | "USER" | "INBOX_ONLY" = "USER",
 ) {
   pm.session.findUnique.mockResolvedValue({
     token: "good-token",
@@ -42,8 +43,28 @@ function mockSessionAccount(
       id: accountId,
       email: "owner@example.com",
       is_approved,
+      patient_communication_enabled: true,
+      website_forms_enabled: false,
+      office_cases_enabled: false,
       inquiry_assistant_enabled,
       is_admin: false,
+      memberships: [
+        {
+          practice_id: "p-1",
+          role,
+          created_at: new Date("2025-01-01"),
+          practice: {
+            id: "p-1",
+            slug: "p-1",
+            name: "Praxis 1",
+            is_approved,
+            inquiry_assistant_enabled,
+            patient_communication_enabled: true,
+            website_forms_enabled: false,
+            office_cases_enabled: false,
+          },
+        },
+      ],
     },
   });
 }
@@ -74,6 +95,15 @@ describe("DELETE /api/inquiries/[id]", () => {
     const req = requestWithCookie("http://localhost/api/inquiries/sess-1");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "sess-1" }) });
     expect(res.status).toBe(403);
+  });
+
+  it("403 für INBOX_ONLY (Inquiries gesperrt)", async () => {
+    mockSessionAccount(true, true, "acc-owner", "INBOX_ONLY");
+    const req = requestWithCookie("http://localhost/api/inquiries/sess-1");
+    const res = await deleteHandler(req, { params: Promise.resolve({ id: "sess-1" }) });
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toBe("Rolle nicht ausreichend.");
   });
 
   it("404 wenn Session nicht existiert", async () => {

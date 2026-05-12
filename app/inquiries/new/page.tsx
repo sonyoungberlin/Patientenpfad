@@ -1,16 +1,12 @@
 import { redirect } from "next/navigation";
-import { getSessionAccountFromCookies } from "@/lib/auth";
+import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { M1_PROFILE_GROUPS } from "@/lib/inquiries/m1ProfileGroups";
 import InquiryNewClient from "./InquiryNewClient";
 
 export default async function InquiryNewPage() {
-  const account = await getSessionAccountFromCookies();
-  if (
-    !account ||
-    !account.is_approved ||
-    (!account.inquiry_assistant_enabled && !account.is_admin)
-  ) {
+  const account = await requireInquiriesAccessFromCookies();
+  if (!account) {
     redirect("/");
   }
 

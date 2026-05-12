@@ -26,7 +26,7 @@ export type AddMemberFieldErrors = Partial<{
 
 export type ValidatedAddMemberInput = {
   email: string;
-  role: typeof PracticeRole.ADMIN | typeof PracticeRole.USER;
+  role: typeof PracticeRole.ADMIN | typeof PracticeRole.INBOX_ONLY;
 };
 
 export type RawAddMemberInput = {
@@ -65,8 +65,10 @@ export function validateAddMemberInput(
     fieldErrors.role = "OWNER kann in dieser Phase nicht vergeben werden.";
   } else if (rawRole === PracticeRole.ADMIN) {
     role = PracticeRole.ADMIN;
+  } else if (rawRole === PracticeRole.INBOX_ONLY) {
+    role = PracticeRole.INBOX_ONLY;
   } else if (rawRole === PracticeRole.USER) {
-    role = PracticeRole.USER;
+    fieldErrors.role = "USER kann nicht mehr neu vergeben werden.";
   } else {
     fieldErrors.role = "Ungültige Rolle.";
   }

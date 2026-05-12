@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSessionAccountFromCookies } from "@/lib/auth";
+import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
@@ -79,12 +79,8 @@ export default async function InquiryM3Page({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const account = await getSessionAccountFromCookies();
-  if (
-    !account ||
-    !account.is_approved ||
-    (!account.inquiry_assistant_enabled && !account.is_admin)
-  ) {
+  const account = await requireInquiriesAccessFromCookies();
+  if (!account) {
     redirect("/");
   }
 

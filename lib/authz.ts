@@ -420,3 +420,175 @@ export async function requirePracticeRoleFromCookies(
 
   return account;
 }
+
+function getCurrentPracticeRoleInternal(
+  account: Pick<SessionAccount, "current_practice" | "memberships">,
+): PracticeRole | null {
+  const practiceId = account.current_practice?.id ?? null;
+  if (!practiceId) return null;
+  const memberships = Array.isArray(
+    (account as { memberships?: unknown }).memberships,
+  )
+    ? (account as { memberships: Array<{ practice_id: string; role: PracticeRole }> }).memberships
+    : [];
+  return (
+    memberships.find((m) => m.practice_id === practiceId)?.role ??
+    null
+  );
+}
+
+type RoleCapabilityOptions = {
+  // Legacy fallback: alte Accounts ohne aktuelle Practice nicht hart sperren.
+  allowNoPracticeFallback?: boolean;
+};
+
+function hasCurrentPracticeRole(
+  account: Pick<SessionAccount, "current_practice" | "memberships">,
+  allowedRoles: PracticeRole[],
+  opts?: RoleCapabilityOptions,
+): boolean {
+  const role = getCurrentPracticeRoleInternal(account);
+  if (!role) return opts?.allowNoPracticeFallback === true;
+  return allowedRoles.includes(role);
+}
+
+export function getCurrentPracticeRole(
+  account: Pick<SessionAccount, "current_practice" | "memberships">,
+): PracticeRole | null {
+  return getCurrentPracticeRoleInternal(account);
+}
+
+export async function requireQuestionnaireInboxAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const base = await requirePatientCommunicationAccess(req);
+  if (base.error) return base;
+
+  const allowed = hasCurrentPracticeRole(
+    base.account,
+    [
+      PracticeRole.OWNER,
+      PracticeRole.ADMIN,
+      PracticeRole.USER,
+      PracticeRole.INBOX_ONLY,
+    ],
+    { allowNoPracticeFallback: true },
+  );
+  if (!allowed) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return base;
+}
+
+export async function requireQuestionnaireInboxAccessFromCookies(): Promise<SessionAccount | null> {
+  const account = await requirePatientCommunicationAccessFromCookies();
+  if (!account) return null;
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [
+      PracticeRole.OWNER,
+      PracticeRole.ADMIN,
+      PracticeRole.USER,
+      PracticeRole.INBOX_ONLY,
+    ],
+    { allowNoPracticeFallback: true },
+  );
+  return allowed ? account : null;
+}
+
+export async function requireQuestionnaireSendAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const base = await requirePatientCommunicationAccess(req);
+  if (base.error) return base;
+
+  const allowed = hasCurrentPracticeRole(
+    base.account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN, PracticeRole.USER],
+    { allowNoPracticeFallback: true },
+  );
+  if (!allowed) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return base;
+}
+
+export async function requireInquiriesAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const account = await getSessionAccount(req);
+  if (!account) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Nicht angemeldet." },
+        { status: 401 },
+      ),
+    };
+  }
+
+  if (!effectiveFlags(account).is_approved) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Account nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  if (!account.inquiry_assistant_enabled && !account.is_admin) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Kein Zugriff auf den Anfrage-Assistenten." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN, PracticeRole.USER],
+    { allowNoPracticeFallback: true },
+  );
+  if (!allowed) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { account, error: null };
+}
+
+export async function requireInquiriesAccessFromCookies(): Promise<SessionAccount | null> {
+  const account = await getSessionAccountFromCookies();
+  if (!account) return null;
+  if (!effectiveFlags(account).is_approved) return null;
+  if (!account.inquiry_assistant_enabled && !account.is_admin) return null;
+
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN, PracticeRole.USER],
+    { allowNoPracticeFallback: true },
+  );
+  return allowed ? account : null;
+}

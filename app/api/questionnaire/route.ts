@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requirePatientCommunicationAccess } from "@/lib/authz";
+import { requireQuestionnaireSendAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
 import {
@@ -16,7 +16,7 @@ const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 export async function POST(req: NextRequest) {
   try {
-    const { account, error } = await requirePatientCommunicationAccess(req);
+    const { account, error } = await requireQuestionnaireSendAccess(req);
     if (error) return error;
 
     let body: Record<string, unknown>;

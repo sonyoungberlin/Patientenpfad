@@ -26,7 +26,11 @@ import { useRouter, usePathname } from "next/navigation";
  * (z. B. Login-Sicht) nicht betroffen.
  */
 
-export type AppShellPracticeRole = "OWNER" | "ADMIN" | "USER";
+export type AppShellPracticeRole =
+  | "OWNER"
+  | "ADMIN"
+  | "USER"
+  | "INBOX_ONLY";
 
 export type AppShellAccount = {
   id: string;
@@ -111,10 +115,36 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
   const isPractice = inSection("/practice");
   const isWebsiteForms = inSection("/website-forms");
 
+  const practiceRole: AppShellPracticeRole | null =
+    account.current_practice && account.memberships
+      ? account.memberships.find(
+          (m) => m.practice_id === account.current_practice!.id,
+        )?.role ?? null
+      : null;
+
+  const canUseCases =
+    practiceRole === null ||
+    practiceRole === "OWNER" ||
+    practiceRole === "ADMIN" ||
+    practiceRole === "USER";
+  const canUseInquiries =
+    practiceRole === null ||
+    practiceRole === "OWNER" ||
+    practiceRole === "ADMIN" ||
+    practiceRole === "USER";
+  const canUseQuestionnaireInbox =
+    practiceRole === null ||
+    practiceRole === "OWNER" ||
+    practiceRole === "ADMIN" ||
+    practiceRole === "USER" ||
+    practiceRole === "INBOX_ONLY";
+  const canManagePractice =
+    practiceRole === "OWNER" || practiceRole === "ADMIN";
+
   type NavItem = { label: string; href: string };
   const sectionItems: NavItem[] = [];
 
-  if (isCases) {
+  if (isCases && canUseCases) {
     sectionItems.push(
       { label: "Fallliste", href: "/cases" },
       { label: "Neuer Fall", href: "/" },
@@ -122,23 +152,19 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
   } else if (isOfficeCases && (account.office_cases_enabled || account.is_admin)) {
     sectionItems.push({ label: "Officefälle", href: "/office-cases" });
   } else if (isCommunication) {
-    sectionItems.push(
-      { label: "Vorlagen", href: "/inquiries" },
-      { label: "Neue Nachricht", href: "/inquiries/new" },
-      { label: "Fragebogen-Posteingang", href: "/questionnaires" },
-    );
+    if (canUseInquiries) {
+      sectionItems.push(
+        { label: "Vorlagen", href: "/inquiries" },
+        { label: "Neue Nachricht", href: "/inquiries/new" },
+      );
+    }
+    if (canUseQuestionnaireInbox) {
+      sectionItems.push({
+        label: "Fragebogen-Posteingang",
+        href: "/questionnaires",
+      });
+    }
   } else if (isPractice) {
-    // Effektive Rolle der aktiven Praxis ableiten; defensiv null, falls
-    // current_practice oder memberships fehlen (z. B. Account ohne Praxis
-    // oder älterer /api/auth/me-Mock im Test).
-    const practiceRole: AppShellPracticeRole | null =
-      account.current_practice && account.memberships
-        ? account.memberships.find(
-            (m) => m.practice_id === account.current_practice!.id,
-          )?.role ?? null
-        : null;
-    const canManagePractice =
-      practiceRole === "OWNER" || practiceRole === "ADMIN";
     if (canManagePractice) {
       sectionItems.push({ label: "Mitglieder", href: "/practice/members" });
       sectionItems.push({ label: "Signatur", href: "/practice/signature" });
@@ -146,7 +172,7 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
         sectionItems.push({ label: "Website-Formulare", href: "/website-forms" });
       }
     }
-  } else if (isWebsiteForms && account.website_forms_enabled) {
+  } else if (isWebsiteForms && account.website_forms_enabled && canManagePractice) {
     sectionItems.push(
       { label: "Fragebogen-Posteingang", href: "/questionnaires" },
       { label: "Formularverwaltung", href: "/website-forms" },

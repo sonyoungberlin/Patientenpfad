@@ -21,23 +21,31 @@ describe("validateAdminAddMemberInput", () => {
     if (r.ok) expect(r.value.role).toBe("ADMIN");
   });
 
-  it("akzeptiert USER", () => {
-    const r = validateAdminAddMemberInput({ email: "x@y.de", role: "USER" });
+  it("akzeptiert INBOX_ONLY", () => {
+    const r = validateAdminAddMemberInput({ email: "x@y.de", role: "INBOX_ONLY" });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.value.role).toBe("USER");
+    if (r.ok) expect(r.value.role).toBe("INBOX_ONLY");
+  });
+
+  it("verwirft USER", () => {
+    const r = validateAdminAddMemberInput({ email: "x@y.de", role: "USER" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.fieldErrors.role).toBe("USER kann nicht mehr neu vergeben werden.");
+    }
   });
 
   it("normalisiert E-Mail (trim + lowercase)", () => {
     const r = validateAdminAddMemberInput({
       email: "  Foo@Bar.DE ",
-      role: "USER",
+      role: "INBOX_ONLY",
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.value.email).toBe("foo@bar.de");
   });
 
   it("lehnt leere E-Mail ab", () => {
-    const r = validateAdminAddMemberInput({ email: "", role: "USER" });
+    const r = validateAdminAddMemberInput({ email: "", role: "INBOX_ONLY" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.fieldErrors.email).toBeTruthy();
   });
@@ -45,7 +53,7 @@ describe("validateAdminAddMemberInput", () => {
   it("lehnt ungültige E-Mail ab", () => {
     const r = validateAdminAddMemberInput({
       email: "not-an-email",
-      role: "USER",
+      role: "INBOX_ONLY",
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.fieldErrors.email).toBeTruthy();
@@ -54,7 +62,7 @@ describe("validateAdminAddMemberInput", () => {
   it("lehnt zu lange E-Mail ab", () => {
     const r = validateAdminAddMemberInput({
       email: "a".repeat(200) + "@b.de",
-      role: "USER",
+      role: "INBOX_ONLY",
     });
     expect(r.ok).toBe(false);
   });

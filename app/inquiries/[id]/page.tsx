@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSessionAccountFromCookies } from "@/lib/auth";
+import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export default async function InquiryRoutingPage({
@@ -7,12 +7,8 @@ export default async function InquiryRoutingPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const account = await getSessionAccountFromCookies();
-  if (
-    !account ||
-    !account.is_approved ||
-    (!account.inquiry_assistant_enabled && !account.is_admin)
-  ) {
+  const account = await requireInquiriesAccessFromCookies();
+  if (!account) {
     redirect("/");
   }
 

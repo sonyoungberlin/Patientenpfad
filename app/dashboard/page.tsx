@@ -32,6 +32,22 @@ export default async function DashboardPage() {
         (m) => m.practice_id === account.current_practice!.id,
       )?.role) ||
     null;
+  const canUseCases =
+    myRole === null ||
+    myRole === PracticeRole.OWNER ||
+    myRole === PracticeRole.ADMIN ||
+    myRole === PracticeRole.USER;
+  const canUseInquiries =
+    myRole === null ||
+    myRole === PracticeRole.OWNER ||
+    myRole === PracticeRole.ADMIN ||
+    myRole === PracticeRole.USER;
+  const canUseQuestionnaireInbox =
+    myRole === null ||
+    myRole === PracticeRole.OWNER ||
+    myRole === PracticeRole.ADMIN ||
+    myRole === PracticeRole.USER ||
+    myRole === PracticeRole.INBOX_ONLY;
   const showPracticeTile =
     myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
   const showOfficeTile = account.office_cases_enabled || account.is_admin;
@@ -49,41 +65,47 @@ export default async function DashboardPage() {
             marginTop: "1rem",
           }}
         >
-          <section className="card">
-            <h2 style={{ marginTop: 0 }}>Fragebögen</h2>
-            <p>Eingegangene Fragebögen bearbeiten</p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Link href="/questionnaires">
-                <button type="button">Posteingang öffnen</button>
-              </Link>
-            </div>
-          </section>
+          {canUseQuestionnaireInbox && (
+            <section className="card">
+              <h2 style={{ marginTop: 0 }}>Fragebögen</h2>
+              <p>Eingegangene Fragebögen bearbeiten</p>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <Link href="/questionnaires">
+                  <button type="button">Posteingang öffnen</button>
+                </Link>
+              </div>
+            </section>
+          )}
 
-          <section className="card">
-            <h2 style={{ marginTop: 0 }}>Patientenkommunikation</h2>
-            <p>Nachrichten formulieren</p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Link href="/inquiries">
-                <button type="button">Vorlagen öffnen</button>
-              </Link>
-              <Link href="/inquiries/new">
-                <button type="button">Neue Nachricht</button>
-              </Link>
-            </div>
-          </section>
+          {canUseInquiries && (
+            <section className="card">
+              <h2 style={{ marginTop: 0 }}>Patientenkommunikation</h2>
+              <p>Nachrichten formulieren</p>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <Link href="/inquiries">
+                  <button type="button">Vorlagen öffnen</button>
+                </Link>
+                <Link href="/inquiries/new">
+                  <button type="button">Neue Nachricht</button>
+                </Link>
+              </div>
+            </section>
+          )}
 
-          <section className="card">
-            <h2 style={{ marginTop: 0 }}>Patientenfälle</h2>
-            <p>Fehlende Informationen sammeln und dokumentieren</p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Link href="/cases">
-                <button type="button">Fallliste öffnen</button>
-              </Link>
-              <Link href="/">
-                <button type="button">Neuer Fall</button>
-              </Link>
-            </div>
-          </section>
+          {canUseCases && (
+            <section className="card">
+              <h2 style={{ marginTop: 0 }}>Patientenfälle</h2>
+              <p>Fehlende Informationen sammeln und dokumentieren</p>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <Link href="/cases">
+                  <button type="button">Fallliste öffnen</button>
+                </Link>
+                <Link href="/">
+                  <button type="button">Neuer Fall</button>
+                </Link>
+              </div>
+            </section>
+          )}
 
           {showOfficeTile && (
           <section className="card">

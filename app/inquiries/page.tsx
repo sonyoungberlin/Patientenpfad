@@ -1,19 +1,15 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import InquiryListClient, { type InquiryListItem } from "./InquiryListClient";
 
 const MAX_TEMPLATES = 50;
 
 export default async function InquiriesPage() {
-  const account = await getSessionAccountFromCookies();
-  if (
-    !account ||
-    !account.is_approved ||
-    (!account.inquiry_assistant_enabled && !account.is_admin)
-  ) {
+  const account = await requireInquiriesAccessFromCookies();
+  if (!account) {
     redirect("/");
   }
 

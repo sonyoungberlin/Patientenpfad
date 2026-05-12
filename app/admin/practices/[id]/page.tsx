@@ -22,7 +22,8 @@ import { isMailSecretConfigured } from "@/lib/mail/smtpSecret";
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
   ADMIN: "Admin",
-  USER: "Mitarbeiter",
+  USER: "Mitarbeiter (Legacy)",
+  INBOX_ONLY: "Mini-Zugang / Posteingang",
 };
 
 const FLAG_LABEL: Record<string, string> = {
@@ -568,15 +569,15 @@ export default async function AdminPracticeDetailPage({
             Rolle
             <select
               name="role"
-              defaultValue={PracticeRole.USER}
+              defaultValue={PracticeRole.INBOX_ONLY}
               required
               style={{ display: "block", width: "100%" }}
             >
-              <option value={PracticeRole.USER}>
-                {ROLE_LABEL[PracticeRole.USER]}
-              </option>
               <option value={PracticeRole.ADMIN}>
                 {ROLE_LABEL[PracticeRole.ADMIN]}
+              </option>
+              <option value={PracticeRole.INBOX_ONLY}>
+                {ROLE_LABEL[PracticeRole.INBOX_ONLY]}
               </option>
               <option value={PracticeRole.OWNER}>
                 {ROLE_LABEL[PracticeRole.OWNER]}
