@@ -30,6 +30,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
+import { deletePracticeById } from "@/lib/adminActions";
 
 const FLAG_WHITELIST = [
   "is_approved",
@@ -52,12 +53,25 @@ function isFormSubmit(req: NextRequest): boolean {
   );
 }
 
-type Parsed = { flag?: unknown; value?: unknown };
+type Parsed = {
+  action?: unknown;
+  confirmName?: unknown;
+  flag?: unknown;
+  value?: unknown;
+};
 
 async function readInput(req: NextRequest): Promise<Parsed | null> {
   if (isFormSubmit(req)) {
     const fd = await req.formData();
     return {
+      action:
+        typeof fd.get("action") === "string"
+          ? (fd.get("action") as string)
+          : undefined,
+      confirmName:
+        typeof fd.get("confirmName") === "string"
+          ? (fd.get("confirmName") as string)
+          : undefined,
       flag: typeof fd.get("flag") === "string" ? (fd.get("flag") as string) : undefined,
       value:
         typeof fd.get("value") === "string"
@@ -108,6 +122,14 @@ export async function POST(
       { ok: false, error: "Ungültiges JSON." },
       { status: 400 },
     );
+  }
+
+  const action = typeof raw.action === "string" ? raw.action : undefined;
+  if (action === "delete_practice") {
+    const confirmName =
+      typeof raw.confirmName === "string" ? raw.confirmName : "";
+    const result = await deletePracticeById(id, confirmName);
+    return NextResponse.json(result, { status: result.status });
   }
 
   if (!isFlag(raw.flag)) {

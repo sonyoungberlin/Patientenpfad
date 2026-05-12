@@ -24,8 +24,13 @@ jest.mock("@/lib/auth", () => ({
   getSessionAccountFromCookies: jest.fn(),
 }));
 
+jest.mock("@/lib/adminActions", () => ({
+  deletePracticeById: jest.fn(),
+}));
+
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { deletePracticeById } from "@/lib/adminActions";
 import { POST } from "@/app/api/admin/practices/[id]/route";
 
 type PrismaMock = {
@@ -34,6 +39,7 @@ type PrismaMock = {
 };
 const pm = prisma as unknown as PrismaMock;
 const getSessionAccountMock = getSessionAccount as jest.Mock;
+const deletePracticeByIdMock = deletePracticeById as jest.Mock;
 
 function adminAccount(over: Partial<{ is_admin: boolean }> = {}) {
   return {
@@ -74,6 +80,7 @@ beforeEach(() => {
   pm.practice.update.mockReset();
   pm.account.update.mockReset();
   getSessionAccountMock.mockReset();
+  deletePracticeByIdMock.mockReset();
 });
 
 describe("POST /api/admin/practices/[id] — Auth-Gate", () => {
@@ -234,5 +241,93 @@ describe("POST /api/admin/practices/[id] — Fehler", () => {
     const loc = res.headers.get("location") ?? "";
     expect(loc).toContain("/admin/practices/p-missing");
     expect(loc).toContain("error=");
+  });
+});
+
+describe("POST /api/admin/practices/[id] — delete_practice", () => {
+  it("403 wenn kein Admin", async () => {
+    getSessionAccountMock.mockResolvedValue(adminAccount({ is_admin: false }));
+    const res = await POST(
+      jsonReq("p-1", { action: "delete_practice", confirmName: "Praxis Eins" }),
+      ctx("p-1"),
+    );
+    expect(res.status).toBe(403);
+    expect(deletePracticeByIdMock).not.toHaveBeenCalled();
+  });
+
+  it("400 bei falschem confirmName", async () => {
+    getSessionAccountMock.mockResolvedValue(adminAccount());
+    deletePracticeByIdMock.mockResolvedValue({
+      ok: false,
+      deleted: false,
+      status: 400,
+      code: "confirm_name_mismatch",
+      error: "Bitte den Praxisnamen exakt bestätigen.",
+    });
+    const res = await POST(
+      jsonReq("p-1", { action: "delete_practice", confirmName: "falsch" }),
+      ctx("p-1"),
+    );
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("confirm_name_mismatch");
+  });
+
+  it("404 bei unbekannter Practice", async () => {
+    getSessionAccountMock.mockResolvedValue(adminAccount());
+    deletePracticeByIdMock.mockResolvedValue({
+      ok: false,
+      deleted: false,
+      status: 404,
+      code: "practice_not_found",
+      error: "Practice nicht gefunden.",
+    });
+    const res = await POST(
+      jsonReq("p-missing", { action: "delete_practice", confirmName: "Praxis" }),
+      ctx("p-missing"),
+    );
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.code).toBe("practice_not_found");
+  });
+
+  it("409 mit Blockern wenn nicht leer", async () => {
+    getSessionAccountMock.mockResolvedValue(adminAccount());
+    deletePracticeByIdMock.mockResolvedValue({
+      ok: false,
+      deleted: false,
+      status: 409,
+      code: "practice_not_empty",
+      error: "Praxis kann nicht gelöscht werden, solange noch Daten vorhanden sind.",
+      blockers: [{ model: "CaseSession", count: 2, reason: "not_empty" }],
+    });
+    const res = await POST(
+      jsonReq("p-1", { action: "delete_practice", confirmName: "Praxis Eins" }),
+      ctx("p-1"),
+    );
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.code).toBe("practice_not_empty");
+    expect(json.blockers).toHaveLength(1);
+  });
+
+  it("200 wenn leer und gelöscht", async () => {
+    getSessionAccountMock.mockResolvedValue(adminAccount());
+    deletePracticeByIdMock.mockResolvedValue({
+      ok: true,
+      deleted: true,
+      status: 200,
+      code: "practice_deleted",
+      practiceId: "p-1",
+      name: "Praxis Eins",
+    });
+    const res = await POST(
+      jsonReq("p-1", { action: "delete_practice", confirmName: "Praxis Eins" }),
+      ctx("p-1"),
+    );
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.code).toBe("practice_deleted");
+    expect(deletePracticeByIdMock).toHaveBeenCalledWith("p-1", "Praxis Eins");
   });
 });

@@ -20,6 +20,7 @@ const notFoundMock = jest.fn(() => {
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
   notFound: () => notFoundMock(),
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
 }));
 
 jest.mock("@/lib/auth", () => ({
@@ -178,7 +179,10 @@ describe("/admin/practices/[id] detail page", () => {
     // OWNER ist hier erlaubt — Plattform-Admin-Werkzeug.
     expect(r.markup).toMatch(/<option[^>]*value="OWNER"/);
     expect(r.markup).toMatch(/<option[^>]*value="ADMIN"/);
-    expect(r.markup).toMatch(/<option[^>]*value="USER"/);
+    expect(r.markup).toMatch(/<option[^>]*value="INBOX_ONLY"/);
+
+    // Danger-Zone Delete-Button
+    expect(r.markup).toContain("Praxis endgültig löschen");
   });
 
   it("rendert ?error= als alert", async () => {

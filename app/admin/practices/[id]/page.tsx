@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { describePracticeSmtpStatus } from "@/lib/mail/practiceSmtp";
 import { isMailSecretConfigured } from "@/lib/mail/smtpSecret";
+import { DeletePracticeButton } from "./DeletePracticeButton";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -588,6 +589,15 @@ export default async function AdminPracticeDetailPage({
             <button type="submit">Hinzufügen</button>
           </div>
         </form>
+      </section>
+
+      <section style={{ marginBottom: "2rem" }}>
+        <h2>Gefahrenbereich</h2>
+        <p className="text-muted" style={{ marginBottom: "0.75rem" }}>
+          Eine Praxis kann nur gelöscht werden, wenn keine produktiven Daten
+          vorhanden sind.
+        </p>
+        <DeletePracticeButton practiceId={practice.id} practiceName={practice.name} />
       </section>
     </main>
   );

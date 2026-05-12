@@ -68,6 +68,37 @@ export type DeleteAccountFailure = {
 
 export type DeleteAccountResult = DeleteAccountSuccess | DeleteAccountFailure;
 
+export type DeletePracticeBlocker = {
+  model:
+    | "PatientQuestionnaireSession"
+    | "InquirySession"
+    | "CaseSession"
+    | "OfficeCaseSession"
+    | "PracticeQuestionnaireForm";
+  count: number;
+  reason: "not_empty";
+};
+
+export type DeletePracticeSuccess = {
+  ok: true;
+  deleted: true;
+  status: 200;
+  code: "practice_deleted";
+  practiceId: string;
+  name: string;
+};
+
+export type DeletePracticeFailure = {
+  ok: false;
+  deleted: false;
+  status: 400 | 404 | 409;
+  code: "confirm_name_mismatch" | "practice_not_found" | "practice_not_empty";
+  error: string;
+  blockers?: DeletePracticeBlocker[];
+};
+
+export type DeletePracticeResult = DeletePracticeSuccess | DeletePracticeFailure;
+
 /**
  * Gemeinsamer Schreibpfad: aktualisiert ein einzelnes Feature-Flag auf
  * `Account` und auf allen `Practice`-Datensätzen, in denen der Account
@@ -449,5 +480,111 @@ export async function deleteAccount(
     message: `Account "${account.email}" wurde gelöscht.`,
     accountId: account.id,
     email: account.email,
+  };
+}
+
+function createPracticeCountBlocker(
+  model:
+    | "PatientQuestionnaireSession"
+    | "InquirySession"
+    | "CaseSession"
+    | "OfficeCaseSession"
+    | "PracticeQuestionnaireForm",
+  count: number,
+): DeletePracticeBlocker | null {
+  if (count <= 0) return null;
+  return { model, count, reason: "not_empty" };
+}
+
+/**
+ * Löscht eine Practice nur dann hart, wenn keine produktiven Daten mehr
+ * für diese Practice vorhanden sind.
+ */
+export async function deletePracticeById(
+  practiceId: string,
+  confirmName: string,
+): Promise<DeletePracticeResult> {
+  const practice = await prisma.practice.findUnique({
+    where: { id: practiceId },
+    select: { id: true, name: true },
+  });
+
+  if (!practice) {
+    return {
+      ok: false,
+      deleted: false,
+      status: 404,
+      code: "practice_not_found",
+      error: "Practice nicht gefunden.",
+    };
+  }
+
+  if (confirmName !== practice.name) {
+    return {
+      ok: false,
+      deleted: false,
+      status: 400,
+      code: "confirm_name_mismatch",
+      error: "Bitte den Praxisnamen exakt bestätigen.",
+    };
+  }
+
+  const [questionnaireCount, inquiryCount, caseCount, officeCaseCount, formCount] =
+    await Promise.all([
+      prisma.patientQuestionnaireSession.count({
+        where: { owner_practice_id: practice.id },
+      }),
+      prisma.inquirySession.count({ where: { owner_practice_id: practice.id } }),
+      prisma.caseSession.count({ where: { owner_practice_id: practice.id } }),
+      prisma.officeCaseSession.count({ where: { owner_practice_id: practice.id } }),
+      prisma.practiceQuestionnaireForm.count({
+        where: { owner_practice_id: practice.id },
+      }),
+    ]);
+
+  const blockers: DeletePracticeBlocker[] = [
+    createPracticeCountBlocker("PatientQuestionnaireSession", questionnaireCount),
+    createPracticeCountBlocker("InquirySession", inquiryCount),
+    createPracticeCountBlocker("CaseSession", caseCount),
+    createPracticeCountBlocker("OfficeCaseSession", officeCaseCount),
+    createPracticeCountBlocker("PracticeQuestionnaireForm", formCount),
+  ].filter((entry): entry is DeletePracticeBlocker => entry !== null);
+
+  if (blockers.length > 0) {
+    return {
+      ok: false,
+      deleted: false,
+      status: 409,
+      code: "practice_not_empty",
+      error: "Praxis kann nicht gelöscht werden, solange noch Daten vorhanden sind.",
+      blockers,
+    };
+  }
+
+  try {
+    await prisma.practice.delete({ where: { id: practice.id } });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return {
+        ok: false,
+        deleted: false,
+        status: 404,
+        code: "practice_not_found",
+        error: "Practice nicht gefunden.",
+      };
+    }
+    throw error;
+  }
+
+  return {
+    ok: true,
+    deleted: true,
+    status: 200,
+    code: "practice_deleted",
+    practiceId: practice.id,
+    name: practice.name,
   };
 }
