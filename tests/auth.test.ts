@@ -224,6 +224,8 @@ describe("POST /api/auth/login", () => {
       id: "acc-1",
       email: "test@example.com",
       is_approved: true,
+      default_practice_id: null,
+      memberships: [],
       password_hash: TEST_PASSWORD_HASH,
     });
     pm.session.create.mockResolvedValue({});
@@ -242,11 +244,54 @@ describe("POST /api/auth/login", () => {
     expect(json.redirectTo).toBe("/dashboard");
     expect(pm.account.findUnique).toHaveBeenCalledWith({
       where: { email: "test@example.com" },
-      select: { id: true, email: true, is_approved: true, password_hash: true },
+      select: {
+        id: true,
+        email: true,
+        is_approved: true,
+        password_hash: true,
+        default_practice_id: true,
+        memberships: {
+          select: {
+            practice_id: true,
+            role: true,
+            created_at: true,
+          },
+        },
+      },
     });
     expect(pm.session.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ token: "test-token-hex-value", account_id: "acc-1" }) }),
     );
+  });
+
+  it("liefert /questionnaires als Redirect-Ziel für INBOX_ONLY in der aktiven Praxis", async () => {
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-1",
+      email: "test@example.com",
+      is_approved: true,
+      password_hash: TEST_PASSWORD_HASH,
+      default_practice_id: "p-1",
+      memberships: [
+        {
+          practice_id: "p-1",
+          role: "INBOX_ONLY",
+          created_at: new Date("2025-01-01T00:00:00.000Z"),
+        },
+      ],
+    });
+    pm.session.create.mockResolvedValue({});
+
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "test@example.com", password: TEST_PASSWORD }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.redirectTo).toBe("/questionnaires");
   });
 
   it("setzt httpOnly-Cookie im Response", async () => {

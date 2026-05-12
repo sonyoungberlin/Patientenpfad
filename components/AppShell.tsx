@@ -140,6 +140,7 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
     practiceRole === "INBOX_ONLY";
   const canManagePractice =
     practiceRole === "OWNER" || practiceRole === "ADMIN";
+  const homeHref = practiceRole === "INBOX_ONLY" ? "/questionnaires" : "/dashboard";
 
   type NavItem = { label: string; href: string };
   const sectionItems: NavItem[] = [];
@@ -181,7 +182,7 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
 
   return (
     <nav className="app-nav">
-      <Link href="/dashboard">Hauptmenü</Link>
+      <Link href={homeHref}>Hauptmenü</Link>
       {sectionItems.map((item) => (
         <Link key={item.href} href={item.href}>
           {item.label}

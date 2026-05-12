@@ -458,6 +458,12 @@ export function getCurrentPracticeRole(
   return getCurrentPracticeRoleInternal(account);
 }
 
+export function isInboxOnlyAccount(
+  account: Pick<SessionAccount, "current_practice" | "memberships">,
+): boolean {
+  return getCurrentPracticeRoleInternal(account) === PracticeRole.INBOX_ONLY;
+}
+
 export async function requireQuestionnaireInboxAccess(
   req: NextRequest,
 ): Promise<RequireResult> {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PracticeRole } from "@prisma/client";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { getCurrentPracticeRole } from "@/lib/authz";
 import AppShell from "@/components/AppShell";
 
 /**
@@ -24,6 +25,10 @@ export default async function DashboardPage() {
   const account = await getSessionAccountFromCookies();
   if (!account || !account.is_approved) {
     redirect("/");
+  }
+
+  if (getCurrentPracticeRole(account) === PracticeRole.INBOX_ONLY) {
+    redirect("/questionnaires");
   }
 
   const myRole =

@@ -1,8 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
+import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE, SESSION_DURATION_MS } from "@/lib/auth";
 import { verifyPassword } from "@/lib/password";
+
+type LoginMembership = {
+  practice_id: string;
+  role: PracticeRole;
+  created_at: Date;
+};
+
+function getLoginRedirectPath(account: {
+  default_practice_id?: string | null;
+  memberships?: LoginMembership[];
+}): "/dashboard" | "/questionnaires" {
+  const memberships = Array.isArray(account.memberships)
+    ? account.memberships
+    : [];
+  if (memberships.length === 0) return "/dashboard";
+
+  let currentMembership =
+    account.default_practice_id != null
+      ? memberships.find((m) => m.practice_id === account.default_practice_id)
+      : null;
+
+  if (!currentMembership) {
+    currentMembership =
+      memberships.find((m) => m.role === PracticeRole.OWNER) ??
+      [...memberships].sort(
+        (a, b) => a.created_at.getTime() - b.created_at.getTime(),
+      )[0] ??
+      null;
+  }
+
+  return currentMembership?.role === PracticeRole.INBOX_ONLY
+    ? "/questionnaires"
+    : "/dashboard";
+}
 
 /**
  * Einheitliche, neutrale Antwort fuer alle Faelle, in denen der erste
@@ -43,6 +78,14 @@ export async function POST(req: NextRequest) {
         email: true,
         is_approved: true,
         password_hash: true,
+        default_practice_id: true,
+        memberships: {
+          select: {
+            practice_id: true,
+            role: true,
+            created_at: true,
+          },
+        },
       },
     });
 
@@ -79,7 +122,7 @@ export async function POST(req: NextRequest) {
         email: account.email,
         is_approved: account.is_approved,
       },
-      redirectTo: "/dashboard",
+      redirectTo: getLoginRedirectPath(account),
     });
 
     response.cookies.set(SESSION_COOKIE, token, {

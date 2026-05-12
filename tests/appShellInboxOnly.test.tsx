@@ -41,6 +41,7 @@ describe("AppShell INBOX_ONLY", () => {
       <AppShell account={inboxOnlyAccount()} />,
     );
 
+    expect(html).toContain('href="/questionnaires">Hauptmenü</a>');
     expect(html).toContain("Fragebogen-Posteingang");
     expect(html).not.toContain("Neue Nachricht");
     expect(html).not.toContain("Vorlagen");

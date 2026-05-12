@@ -6,6 +6,76 @@ import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 
+function formatDateYyyyMmDd(date: Date): string {
+  const formatter = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  return `${year}${month}${day}`;
+}
+
+function sanitizeFilenamePart(value: string): string {
+  return value
+    .replaceAll("Ä", "Ae")
+    .replaceAll("Ö", "Oe")
+    .replaceAll("Ü", "Ue")
+    .replaceAll("ä", "ae")
+    .replaceAll("ö", "oe")
+    .replaceAll("ü", "ue")
+    .replaceAll("ß", "ss")
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Za-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function getFirstBlockLabel(selectedBlockIds: string[]): string | null {
+  const firstBlockId = selectedBlockIds[0];
+  if (!firstBlockId) return null;
+
+  const label = BLOCK_CATALOG[firstBlockId]?.label;
+  if (!label) return null;
+
+  const sanitized = sanitizeFilenamePart(label);
+  return sanitized.length > 0 ? sanitized : null;
+}
+
+function buildPdfFilename(session: {
+  submitted_at: Date | null;
+  patient_reference: string | null;
+  selected_block_ids: string[];
+  answers: Record<string, string>;
+}): string {
+  const datePart = formatDateYyyyMmDd(session.submitted_at ?? new Date());
+  const blockPart = getFirstBlockLabel(session.selected_block_ids);
+
+  if (session.patient_reference) {
+    const patientReferencePart = sanitizeFilenamePart(session.patient_reference);
+    return blockPart
+      ? `${datePart}_${patientReferencePart}_${blockPart}.pdf`
+      : `${datePart}_${patientReferencePart}.pdf`;
+  }
+
+  const lastName = sanitizeFilenamePart(session.answers.IDENTITY_LAST_NAME ?? "");
+  const firstName = sanitizeFilenamePart(session.answers.IDENTITY_FIRST_NAME ?? "");
+  if (lastName && firstName) {
+    const namePart = `${lastName}_${firstName}`;
+    return blockPart
+      ? `${datePart}_${namePart}_${blockPart}.pdf`
+      : `${datePart}_${namePart}.pdf`;
+  }
+
+  return blockPart
+    ? `${datePart}_Fragebogen_${blockPart}.pdf`
+    : `${datePart}_Fragebogen.pdf`;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -241,6 +311,13 @@ export async function GET(
 
   const pdfBytes = await pdfDoc.save();
 
+  const pdfFilename = buildPdfFilename({
+    submitted_at: session.submitted_at,
+    patient_reference: session.patient_reference,
+    selected_block_ids: selectedBlockIds,
+    answers,
+  });
+
   // Markiere die Session als „PDF heruntergeladen". Bewusst nur diese eine
   // Spalte schreiben (keine Antworten / kein Status anfassen) und nur dann,
   // wenn das Feld noch nicht gesetzt ist — der Wert markiert den ersten
@@ -263,7 +340,7 @@ export async function GET(
   return new Response(Buffer.from(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="fragebogen-${id}.pdf"`,
+      "Content-Disposition": `attachment; filename="${pdfFilename}"`,
     },
   });
 }

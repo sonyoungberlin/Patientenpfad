@@ -1,5 +1,3 @@
-import { renderToStaticMarkup } from "react-dom/server";
-
 const redirectMock = jest.fn((url: string) => {
   throw new Error(`__REDIRECT__:${url}`);
 });
@@ -12,14 +10,17 @@ jest.mock("@/lib/auth", () => ({
   getSessionAccountFromCookies: jest.fn(),
 }));
 
-// Dashboard rendert AppShell. Fuer diesen Test reicht ein stabiler Platzhalter.
 jest.mock("@/components/AppShell", () => ({
   __esModule: true,
   default: () => null,
 }));
 
+import CasesLayout from "@/app/cases/layout";
+import InquiriesLayout from "@/app/inquiries/layout";
+import OfficeCasesLayout from "@/app/office-cases/layout";
+import PracticeLayout from "@/app/practice/layout";
+import WebsiteFormsLayout from "@/app/website-forms/layout";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import DashboardPage from "@/app/dashboard/page";
 
 const getCookies = getSessionAccountFromCookies as jest.Mock;
 
@@ -31,8 +32,8 @@ function inboxOnlyAccount() {
     is_admin: false,
     inquiry_assistant_enabled: true,
     patient_communication_enabled: true,
-    website_forms_enabled: false,
-    office_cases_enabled: false,
+    website_forms_enabled: true,
+    office_cases_enabled: true,
     current_practice: {
       id: "p-1",
       slug: "p-1",
@@ -40,25 +41,28 @@ function inboxOnlyAccount() {
       is_approved: true,
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
-      website_forms_enabled: false,
-      office_cases_enabled: false,
+      website_forms_enabled: true,
+      office_cases_enabled: true,
     },
-    memberships: [
-      { practice_id: "p-1", role: "INBOX_ONLY" },
-    ],
+    memberships: [{ practice_id: "p-1", role: "INBOX_ONLY" }],
   };
 }
 
-describe("Dashboard INBOX_ONLY", () => {
+describe("INBOX_ONLY Bereichs-Redirects", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     getCookies.mockReset();
+    getCookies.mockResolvedValue(inboxOnlyAccount());
   });
 
-  it("leitet INBOX_ONLY direkt nach /questionnaires um", async () => {
-    getCookies.mockResolvedValue(inboxOnlyAccount());
-
-    await expect(DashboardPage()).rejects.toThrow("__REDIRECT__:/questionnaires");
+  it.each([
+    ["cases", () => CasesLayout({ children: null })],
+    ["inquiries", () => InquiriesLayout({ children: null })],
+    ["office-cases", () => OfficeCasesLayout({ children: null })],
+    ["practice", () => PracticeLayout({ children: null })],
+    ["website-forms", () => WebsiteFormsLayout({ children: null })],
+  ])("leitet %s nach /questionnaires um", async (_label, renderLayout) => {
+    await expect(renderLayout()).rejects.toThrow("__REDIRECT__:/questionnaires");
     expect(redirectMock).toHaveBeenCalledWith("/questionnaires");
   });
 });

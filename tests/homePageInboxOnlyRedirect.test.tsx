@@ -12,14 +12,13 @@ jest.mock("@/lib/auth", () => ({
   getSessionAccountFromCookies: jest.fn(),
 }));
 
-// Dashboard rendert AppShell. Fuer diesen Test reicht ein stabiler Platzhalter.
-jest.mock("@/components/AppShell", () => ({
+jest.mock("@/app/HomePageClient", () => ({
   __esModule: true,
-  default: () => null,
+  default: () => "HOME_CLIENT",
 }));
 
+import HomePage from "@/app/page";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import DashboardPage from "@/app/dashboard/page";
 
 const getCookies = getSessionAccountFromCookies as jest.Mock;
 
@@ -43,22 +42,29 @@ function inboxOnlyAccount() {
       website_forms_enabled: false,
       office_cases_enabled: false,
     },
-    memberships: [
-      { practice_id: "p-1", role: "INBOX_ONLY" },
-    ],
+    memberships: [{ practice_id: "p-1", role: "INBOX_ONLY" }],
   };
 }
 
-describe("Dashboard INBOX_ONLY", () => {
+describe("HomePage INBOX_ONLY", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     getCookies.mockReset();
   });
 
-  it("leitet INBOX_ONLY direkt nach /questionnaires um", async () => {
+  it("leitet freigeschaltete INBOX_ONLY-Accounts nach /questionnaires um", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
 
-    await expect(DashboardPage()).rejects.toThrow("__REDIRECT__:/questionnaires");
+    await expect(HomePage()).rejects.toThrow("__REDIRECT__:/questionnaires");
     expect(redirectMock).toHaveBeenCalledWith("/questionnaires");
+  });
+
+  it("rendert für andere Aufrufer die Client-Startseite", async () => {
+    getCookies.mockResolvedValue(null);
+
+    const html = renderToStaticMarkup(await HomePage());
+
+    expect(html).toContain("HOME_CLIENT");
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 });
