@@ -298,3 +298,34 @@ Relativ stabil bleibt dabei:
 Wichtig:
 - Diese Stabilitaet beschreibt primär das fachliche Modell.
 - Sie bedeutet nicht, dass jede Zielaussage bereits vollstaendig in Runtime-Logik umgesetzt ist.
+
+## HR-GOV-Aggregationsbegriffe (aktueller Stand)
+
+HR-GOV-A bis HR-GOV-D werden aktuell als Aggregations- bzw. Verdichtungsbegriffe genutzt.
+Sie stehen neben den NC-Checkpoints und werden derzeit außerhalb des primären NC-Katalogs verwendet.
+
+Der primäre NC-Katalog liegt in [lib/office/checkpointCatalog.ts](lib/office/checkpointCatalog.ts).
+Die HR-GOV-Logik ist im aktuellen Stand in [lib/office/hrGovernance.ts](lib/office/hrGovernance.ts) abgebildet.
+Begleitende Frage-/Zuordnungsstrukturen liegen in [lib/office/m2Questions.ts](lib/office/m2Questions.ts).
+
+### Einordnung der vier Begriffe
+
+- HR-GOV-A: AND-artige Verdichtung mehrerer berufsrechtlicher Teilaspekte.
+- HR-GOV-B: derzeit eher 1:1-View bzw. leichte Verdichtung eines Zulassungs-/Statusaspekts.
+- HR-GOV-C: derzeit eher 1:1-View bzw. leichte Verdichtung eines Strukturaspekts.
+- HR-GOV-D: derzeit eher 1:1-View bzw. leichte Verdichtung eines Compliance-/Pflichtaspekts.
+
+### Wichtige fachliche Klarstellung
+
+- Die aktuelle Form ist als Arbeitsstand zu lesen, nicht als finale Modellentscheidung.
+- Aus der aktuellen Verwendung folgt keine endgültige Architekturfestlegung.
+- Die langfristige Modellierung von HR-GOV-Begriffen bleibt offen.
+- Eine spätere explizite Aggregations- oder View-Klasse ist möglich, aber derzeit nicht festgelegt.
+- Es wird in diesem Schritt keine technische Ableitung oder neue Laufzeitregel eingeführt.
+- Es wird in diesem Schritt keine zusätzliche Achse, kein neuer Enum-Wert und kein neues Checkpoint-Schema beschlossen.
+
+### Zweck dieses Abschnitts
+
+- Transparenz über den aktuellen Nutzungsstand von HR-GOV-A bis HR-GOV-D.
+- Trennung zwischen aktuellem Ist-Stand und späterer Zielmodell-Entscheidung.
+- Dokumentation ohne Vorgriff auf Runtime- oder Datenstrukturänderungen.
