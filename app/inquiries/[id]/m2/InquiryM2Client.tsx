@@ -423,7 +423,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
-      checkpointIds: ["AU_MISSING_EGK", "TECH_UPLOAD_FAILED"],
+      checkpointIds: ["AU_MISSING_EGK"],
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
@@ -478,8 +478,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "HOSPITAL_DISCHARGE_REPORT_MISSING",
         // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
         "PRESCRIPTION_INSURANCE_PROOF_MISSING",
-        // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
-        "TECH_UPLOAD_FAILED",
       ],
     },
     {
@@ -602,8 +600,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
-      // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
-      checkpointIds: ["REFERRAL_INSURANCE_PROOF_MISSING", "TECH_UPLOAD_FAILED"],
+      checkpointIds: ["REFERRAL_INSURANCE_PROOF_MISSING"],
     },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
@@ -928,6 +925,8 @@ function ProfileSectionIntroDrawers({
         const groupCheckpoints = group.checkpointIds
           .map((id) => cpById.get(id))
           .filter((cp): cp is PlainCheckpoint => cp !== undefined);
+        // Nicht verfügbare Satzergänzung: vollständig ausblenden (kein disabled/placeholder).
+        if (groupCheckpoints.length === 0) return null;
         return (
           <SectionIntroAccordion
             key={group.sectionIntroId}
@@ -1591,6 +1590,7 @@ const PRESCRIPTION_SHORT_LABELS: Record<string, string> = {
   PRESCRIPTION_STATUTORY_POSSIBLE: "Kassenrezept / Privatrezept",
   PRESCRIPTION_PRIVATE_ONLY: "Privatrezept",
   PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "Kein Rezept erforderlich",
+  PRESCRIPTION_INSURANCE_PROOF_MISSING: "Versicherungsnachweis/eGK fehlt",
   PRESCRIPTION_SPECIALIST_RESPONSIBLE: "Facharzt zuständig",
   PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: "Facharztbericht fehlt",
   HOSPITAL_DISCHARGE_REPORT_MISSING: "Krankenhaus-/Entlassbericht fehlt",
@@ -1931,7 +1931,7 @@ function PrescriptionSpecificSection({
 const AU_SHORT_LABELS: Record<string, string> = {
   AU_BACKDATE_LIMIT: "Rückdatierungsgrenze",
   AU_NEW_PATIENT_LIMIT: "Neupatient",
-  AU_MISSING_EGK: "Versichertendaten (eGK)",
+  AU_MISSING_EGK: "Versicherungsnachweis/eGK fehlt",
   AU_MISSING_QUESTIONNAIRE: "Angaben Erkrankung",
   AU_WORK_ACCIDENT: "Arbeitsunfall / D-Arzt",
   AU_CHILD_SICK: "Kind krank / Kinderarzt",
@@ -2123,6 +2123,7 @@ function AUSpecificSection({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const REFERRAL_SHORT_LABELS: Record<string, string> = {
+  REFERRAL_INSURANCE_PROOF_MISSING: "Versicherungsnachweis/eGK fehlt",
   REF_SPECIALTY_REQUIRED: "Fachrichtung fehlt",
   REF_MEDICAL_CONSULTATION_REQUIRED: "Ärztliche Einschätzung",
   REF_PSYCHOTHERAPY_FIRST_STEP: "Psychotherapie Erstvorstellung",
@@ -2773,6 +2774,7 @@ const APPOINTMENT_SHORT_LABELS: Record<string, string> = {
   APPOINTMENT_WRONG_TYPE: "Falscher Termintyp",
   APPOINTMENT_BOOKING_CODE_REQUIRED: "Buchungscode fehlt",
   APPOINTMENT_DATA_INCOMPLETE: "Angaben fehlen",
+  APPOINTMENT_INSURANCE_PROOF_MISSING: "Versicherungsnachweis/eGK fehlt",
 };
 
 /**
