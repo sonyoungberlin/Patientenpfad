@@ -49,6 +49,8 @@ function baseSession(overrides: Partial<Record<string, unknown>> = {}) {
     selected_block_ids: ["VERSICHERUNG"],
     deduplicated_questions: [],
     answers: {},
+    source: "internal_link",
+    practice_form: null,
     identity_gate_completed_at: new Date("2026-05-12T10:00:00.000Z"),
     identity_gate_method: "dob",
     deleted_at: null,
@@ -124,5 +126,30 @@ describe("questionnaire pdf filename", () => {
     );
 
     await expect(getFilename()).resolves.toBe("20260512_4711_Versicherungsdaten.pdf");
+  });
+
+  it("uses public practice form title for website sessions", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({
+        patient_reference: "Test",
+        source: "website",
+        practice_form: { title: "Neupatient" },
+        selected_block_ids: ["VERSICHERUNG"],
+      }),
+    );
+
+    await expect(getFilename()).resolves.toBe("20260512_Test_Neupatient.pdf");
+  });
+
+  it("sanitizes special characters in public practice form title", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({
+        patient_reference: "Test",
+        source: "website",
+        practice_form: { title: "Neu/patient ÄÖÜ!?" },
+      }),
+    );
+
+    await expect(getFilename()).resolves.toBe("20260512_Test_Neupatient_AeOeUe.pdf");
   });
 });

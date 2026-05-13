@@ -1,9 +1,17 @@
 import {
   OFFICE_TOPIC_APPLICATION_MANAGEMENT,
+  OFFICE_TOPIC_CME_GENERAL_MEDICINE,
   OFFICE_TOPIC_CLOSURE_COVERAGE,
   OFFICE_TOPIC_CONTINUING_EDUCATION,
+  OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_HONORAR_NOTICE_REVIEW,
+  OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
   OFFICE_TOPIC_KV_BILLING,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PLAUSIBILITY_BILLING,
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_REPORTING_DUTIES,
   OFFICE_TOPIC_SEAT_APPROVAL,
@@ -145,6 +153,21 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
         text: "Wer kann die Betriebsstaettenstruktur bei Bedarf bestaetigen?",
       },
     ],
+    "NC-ARBEITSVERTRAG_FREIGABE": [
+      { id: "M2-01", text: "Wurde der Arbeitsvertrag unterschrieben?" },
+      { id: "M2-02", text: "Sind Arbeitszeiten festgelegt?" },
+      { id: "M2-03", text: "Wurde die Vergütung freigegeben?" },
+    ],
+    "NC-LANR_BSNR_ZUORDNUNG": [
+      { id: "M2-01", text: "Ist die LANR hinterlegt?" },
+      { id: "M2-02", text: "Ist die BSNR korrekt zugeordnet?" },
+      { id: "M2-03", text: "Wurden Abrechnungsdaten geprüft?" },
+    ],
+    "NC-SYSTEMZUGRIFFE_EINGERICHTET": [
+      { id: "M2-01", text: "Sind PVS-Zugänge eingerichtet?" },
+      { id: "M2-02", text: "Wurden Rollenrechte vergeben?" },
+      { id: "M2-03", text: "Ist der Zugriff dokumentiert?" },
+    ],
     "HR-GOV-A": [
       {
         id: "M2-01",
@@ -240,6 +263,70 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Welche Kontaktstelle ist dafuer zustaendig?" },
     ],
   },
+  [OFFICE_TOPIC_PLAUSIBILITY_BILLING]: {
+    "PL-01": [
+      { id: "M2-01", text: "Wurde das Quartalsprofil vor Abgabe geprüft?" },
+      { id: "M2-02", text: "Gibt es auffällige Quartalszeitwerte?" },
+      { id: "M2-03", text: "Wurde eine interne Klärung dokumentiert?" },
+    ],
+    "PL-02": [
+      { id: "M2-01", text: "Wurden Tagesprofile auf auffällige Zeitwerte geprüft?" },
+      { id: "M2-02", text: "Sind auffällige Tage fachlich erklärbar?" },
+      { id: "M2-03", text: "Liegt ein Dienstplanabgleich vor?" },
+    ],
+    "PL-03": [
+      { id: "M2-01", text: "Ist die abgerechnete Leistung in der Behandlungsdokumentation nachvollziehbar?" },
+      { id: "M2-02", text: "Fehlen Dokumentationsbestandteile für einzelne Leistungen?" },
+      { id: "M2-03", text: "Wurde die Dokumentation ärztlich geprüft?" },
+    ],
+    "PL-04": [
+      { id: "M2-01", text: "Wurden genehmigungspflichtige Leistungen identifiziert?" },
+      { id: "M2-02", text: "Liegt die erforderliche KV-Genehmigung vor?" },
+      { id: "M2-03", text: "Sind Qualifikationsnachweise dokumentiert?" },
+    ],
+    "PL-05": [
+      { id: "M2-01", text: "Ist die persönliche Leistungserbringung nachvollziehbar zugeordnet?" },
+      { id: "M2-02", text: "Sind Delegation und LANR-Zuordnung geprüft?" },
+      { id: "M2-03", text: "Gibt es unklare Arztbezüge in der Abrechnung?" },
+    ],
+    "PL-06": [
+      { id: "M2-01", text: "Wurde die Quartalsabrechnung intern final geprüft?" },
+      { id: "M2-02", text: "Liegt eine Freigabe durch Praxisleitung oder ärztliche Leitung vor?" },
+      { id: "M2-03", text: "Sind Korrekturen vor Versand dokumentiert?" },
+    ],
+  },
+  [OFFICE_TOPIC_HONORAR_NOTICE_REVIEW]: {
+    "HB-01": [
+      { id: "M2-01", text: "Wurden die Fallzahlen mit dem PVS abgeglichen?" },
+      { id: "M2-02", text: "Stimmen die Scheine mit der Quartalsabrechnung überein?" },
+      { id: "M2-03", text: "Sind auffällige Fallzahlabweichungen dokumentiert?" },
+    ],
+    "HB-02": [
+      { id: "M2-01", text: "Wurden alle abgerechneten GOP vergütet?" },
+      { id: "M2-02", text: "Sind Zuschläge im Bescheid enthalten?" },
+      { id: "M2-03", text: "Wurden gestrichene GOP identifiziert?" },
+    ],
+    "HB-03": [
+      { id: "M2-01", text: "Sind Kürzungen im Bescheid begründet?" },
+      { id: "M2-02", text: "Liegt eine Plausibilitätsmaßnahme vor?" },
+      { id: "M2-03", text: "Wurde die Kürzung intern bewertet?" },
+    ],
+    "HB-04": [
+      { id: "M2-01", text: "Lagen gültige KV-Genehmigungen vor?" },
+      { id: "M2-02", text: "Wurden genehmigungspflichtige Leistungen vergütet?" },
+      { id: "M2-03", text: "Sind Genehmigungsnachweise archiviert?" },
+    ],
+    "HB-05": [
+      { id: "M2-01", text: "Wurde das RLV geprüft?" },
+      { id: "M2-02", text: "Wurden QZV-Zuweisungen kontrolliert?" },
+      { id: "M2-03", text: "Sind Quotierungen nachvollziehbar?" },
+    ],
+    "HB-06": [
+      { id: "M2-01", text: "Wurde das Zustellungsdatum dokumentiert?" },
+      { id: "M2-02", text: "Ist die Widerspruchsfrist noch offen?" },
+      { id: "M2-03", text: "Wurde über einen Widerspruch entschieden?" },
+    ],
+  },
   [OFFICE_TOPIC_REGRESS]: {
     "RG-01": [
       { id: "M2-01", text: "Welcher Anlass wurde beanstandet und welcher Zeitraum ist betroffen?" },
@@ -294,6 +381,26 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "UV-06": [
       { id: "M2-01", text: "Welche externe Stelle wurde informiert?" },
       { id: "M2-02", text: "Welcher Kontaktkanal wird verbindlich genutzt?" },
+    ],
+    "UV-PATIENTENINFO": [
+      { id: "M2-01", text: "Wurde ein Aushang erstellt?" },
+      { id: "M2-02", text: "Sind Vertretungsdaten veröffentlicht?" },
+      { id: "M2-03", text: "Wurde die Website aktualisiert?" },
+    ],
+    "UV-NOTFALLVERSORGUNG": [
+      { id: "M2-01", text: "Sind Notfallkontakte hinterlegt?" },
+      { id: "M2-02", text: "Wurde der ärztliche Bereitschaftsdienst angegeben?" },
+      { id: "M2-03", text: "Sind kritische Patienten berücksichtigt?" },
+    ],
+    "UV-TERMINMANAGEMENT": [
+      { id: "M2-01", text: "Wurden Termine rechtzeitig verschoben?" },
+      { id: "M2-02", text: "Sind Patienten informiert worden?" },
+      { id: "M2-03", text: "Wurden Recall-Termine angepasst?" },
+    ],
+    "UV-ABRECHNUNGSZUORDNUNG": [
+      { id: "M2-01", text: "Ist die LANR korrekt hinterlegt?" },
+      { id: "M2-02", text: "Wurde die Abrechnungszuordnung geprüft?" },
+      { id: "M2-03", text: "Sind Zuständigkeiten für die Vertretungsabrechnung festgelegt?" },
     ],
   },
   [OFFICE_TOPIC_SEAT_APPROVAL]: {
@@ -372,6 +479,203 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "WB-06": [
       { id: "M2-01", text: "Welche externe Stelle bestaetigt die Nachweise?" },
       { id: "M2-02", text: "Wie erfolgt die Uebermittlung an die externe Stelle?" },
+    ],
+  },
+  [OFFICE_TOPIC_CME_GENERAL_MEDICINE]: {
+    "FB-01": [
+      { id: "M2-01", text: "Ist der aktuelle Fortbildungszeitraum dokumentiert?" },
+      { id: "M2-02", text: "Wurde das Startdatum des Zyklus erfasst?" },
+      { id: "M2-03", text: "Ist das Fristende hinterlegt?" },
+    ],
+    "FB-02": [
+      { id: "M2-01", text: "Sind alle Fortbildungspunkte erfasst?" },
+      { id: "M2-02", text: "Wurden externe Fortbildungen nachgetragen?" },
+      { id: "M2-03", text: "Ist der aktuelle Punktestand vollständig?" },
+    ],
+    "FB-03": [
+      { id: "M2-01", text: "Sind Teilnahmebescheinigungen archiviert?" },
+      { id: "M2-02", text: "Sind digitale Nachweise abrufbar?" },
+      { id: "M2-03", text: "Wurden fehlende Nachweise angefordert?" },
+    ],
+    "FB-04": [
+      { id: "M2-01", text: "Wird die Frist regelmäßig kontrolliert?" },
+      { id: "M2-02", text: "Existiert eine Erinnerungsfunktion?" },
+      { id: "M2-03", text: "Wurde bei Punktedefizit reagiert?" },
+    ],
+    "FB-05": [
+      { id: "M2-01", text: "Wurden Punkte an die Ärztekammer übertragen?" },
+      { id: "M2-02", text: "Ist die Übertragung bestätigt?" },
+      { id: "M2-03", text: "Wurden Übertragungsfehler geprüft?" },
+    ],
+    "FB-06": [
+      { id: "M2-01", text: "Wurde ein Punktedefizit bewertet?" },
+      { id: "M2-02", text: "Sind mögliche Honorarkürzungen bekannt?" },
+      { id: "M2-03", text: "Wurde ein Maßnahmenplan festgelegt?" },
+    ],
+    "FB-AUFHOLPLAN": [
+      { id: "M2-01", text: "Existiert ein Fortbildungsplan?" },
+      { id: "M2-02", text: "Sind konkrete Termine festgelegt?" },
+      { id: "M2-03", text: "Wird der Fortschritt überwacht?" },
+    ],
+  },
+  [OFFICE_TOPIC_MFA_HIRING]: {
+    "MF-01": [
+      { id: "M2-01", text: "Liegt ein MFA-Abschlussnachweis vor?" },
+      { id: "M2-02", text: "Wurde die Qualifikation geprüft?" },
+      { id: "M2-03", text: "Sind Zusatzqualifikationen dokumentiert?" },
+    ],
+    "MF-02": [
+      { id: "M2-01", text: "Wurde der Arbeitsvertrag unterschrieben?" },
+      { id: "M2-02", text: "Sind Arbeitszeiten festgelegt?" },
+      { id: "M2-03", text: "Wurde die Vergütung freigegeben?" },
+    ],
+    "MF-03": [
+      { id: "M2-01", text: "Liegt die Steuer-ID vor?" },
+      { id: "M2-02", text: "Sind Bankdaten erfasst?" },
+      { id: "M2-03", text: "Ist die Personalakte vollständig?" },
+    ],
+    "MF-04": [
+      { id: "M2-01", text: "Wurde die Anmeldung zur Sozialversicherung durchgeführt?" },
+      { id: "M2-02", text: "Liegt die Meldungsbestätigung vor?" },
+      { id: "M2-03", text: "Wurde die Krankenkasse erfasst?" },
+    ],
+    "MF-05": [
+      { id: "M2-01", text: "Sind PVS-Zugänge eingerichtet?" },
+      { id: "M2-02", text: "Wurden Rollenrechte geprüft?" },
+      { id: "M2-03", text: "Ist der Zugriff dokumentiert?" },
+    ],
+    "MF-06": [
+      { id: "M2-01", text: "Wurde eine Einarbeitung durchgeführt?" },
+      { id: "M2-02", text: "Sind Hygieneschulungen dokumentiert?" },
+      { id: "M2-03", text: "Wurde der Einarbeitungsplan archiviert?" },
+    ],
+  },
+  [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING]: {
+    "MA-01": [
+      { id: "M2-01", text: "Wurden Jugendarbeitsschutzregeln geprüft?" },
+      { id: "M2-02", text: "Sind verbotene Tätigkeiten ausgeschlossen?" },
+      { id: "M2-03", text: "Wurden Pausenregelungen festgelegt?" },
+    ],
+    "MA-02": [
+      { id: "M2-01", text: "Liegt die Erstuntersuchung vor?" },
+      { id: "M2-02", text: "Ist die Bescheinigung gültig?" },
+      { id: "M2-03", text: "Wurde die Bescheinigung archiviert?" },
+    ],
+    "MA-03": [
+      { id: "M2-01", text: "Wurde der Ausbildungsvertrag unterschrieben?" },
+      { id: "M2-02", text: "Wurde der Vertrag eingereicht?" },
+      { id: "M2-03", text: "Liegt die Registrierungsbestätigung vor?" },
+    ],
+    "MA-04": [
+      { id: "M2-01", text: "Sind tägliche Arbeitszeiten begrenzt?" },
+      { id: "M2-02", text: "Werden Ruhezeiten eingehalten?" },
+      { id: "M2-03", text: "Sind Berufsschulzeiten berücksichtigt?" },
+    ],
+    "MA-05": [
+      { id: "M2-01", text: "Liegt die Zustimmung der Sorgeberechtigten vor?" },
+      { id: "M2-02", text: "Sind Kontaktdaten vollständig?" },
+      { id: "M2-03", text: "Wurden Notfallinformationen erfasst?" },
+    ],
+    "MA-06": [
+      { id: "M2-01", text: "Wurde eine Hygieneeinweisung durchgeführt?" },
+      { id: "M2-02", text: "Sind Arbeitsschutzunterweisungen dokumentiert?" },
+      { id: "M2-03", text: "Wurde die Schweigepflicht erklärt?" },
+    ],
+  },
+  [OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE]: {
+    "MG-01": [
+      { id: "M2-01", text: "Liegt eine CE-Kennzeichnung vor?" },
+      { id: "M2-02", text: "Wurde der Einsatzzweck festgelegt?" },
+      { id: "M2-03", text: "Ist das Gerät inventarisiert?" },
+    ],
+    "MG-02": [
+      { id: "M2-01", text: "Wurde die KV-Genehmigungspflicht geprüft?" },
+      { id: "M2-02", text: "Sind Fachkundenachweise erforderlich?" },
+      { id: "M2-03", text: "Liegt eine Genehmigungsbestätigung vor?" },
+    ],
+    "MG-03": [
+      { id: "M2-01", text: "Wurde eine Geräteeinweisung durchgeführt?" },
+      { id: "M2-02", text: "Sind Teilnehmer dokumentiert?" },
+      { id: "M2-03", text: "Liegt ein Einweisungsnachweis vor?" },
+    ],
+    "MG-04": [
+      { id: "M2-01", text: "Existiert ein Wartungsplan?" },
+      { id: "M2-02", text: "Sind Prüffristen hinterlegt?" },
+      { id: "M2-03", text: "Wurde ein Wartungsdienst beauftragt?" },
+    ],
+    "MG-05": [
+      { id: "M2-01", text: "Sind abrechenbare Leistungen definiert?" },
+      { id: "M2-02", text: "Wurden GOP-Anforderungen geprüft?" },
+      { id: "M2-03", text: "Ist die Dokumentation abrechnungsfähig?" },
+    ],
+    "MG-06": [
+      { id: "M2-01", text: "Sind Handbücher archiviert?" },
+      { id: "M2-02", text: "Liegt die Konformitätserklärung vor?" },
+      { id: "M2-03", text: "Sind Wartungsnachweise abgelegt?" },
+    ],
+  },
+  [OFFICE_TOPIC_DATA_PROTECTION_INCIDENT]: {
+    "DS-01": [
+      { id: "M2-01", text: "Wurde der Vorfall zeitnah erfasst?" },
+      { id: "M2-02", text: "Sind Zeitpunkt und Ursache dokumentiert?" },
+      { id: "M2-03", text: "Wurden beteiligte Systeme benannt?" },
+    ],
+    "DS-02": [
+      { id: "M2-01", text: "Sind Patientendaten betroffen?" },
+      { id: "M2-02", text: "Wurde das Risiko bewertet?" },
+      { id: "M2-03", text: "Sind betroffene Personen identifiziert?" },
+    ],
+    "DS-03": [
+      { id: "M2-01", text: "Wurde intern geprüft, ob eine Meldepflicht besteht?" },
+      { id: "M2-02", text: "Wurde die maßgebliche Meldefrist intern bewertet?" },
+      { id: "M2-03", text: "Wurde die Entscheidung zur Meldung dokumentiert?" },
+    ],
+    "DS-04": [
+      { id: "M2-01", text: "Wurden Zugänge gesperrt?" },
+      { id: "M2-02", text: "Sind Passwörter geändert worden?" },
+      { id: "M2-03", text: "Wurden Systeme überprüft?" },
+    ],
+    "DS-05": [
+      { id: "M2-01", text: "Wurden Betroffene informiert?" },
+      { id: "M2-02", text: "Ist die Information dokumentiert?" },
+      { id: "M2-03", text: "Wurden Rückfragen bearbeitet?" },
+    ],
+    "DS-06": [
+      { id: "M2-01", text: "Wurden Schutzmaßnahmen angepasst?" },
+      { id: "M2-02", text: "Wurde das Team unterwiesen?" },
+      { id: "M2-03", text: "Sind Wiederholungsrisiken bewertet?" },
+    ],
+  },
+  [OFFICE_TOPIC_EXTENDED_OPENING_HOURS]: {
+    "OE-01": [
+      { id: "M2-01", text: "Ist ausreichend Personal eingeplant?" },
+      { id: "M2-02", text: "Sind ärztliche Zeiten abgedeckt?" },
+      { id: "M2-03", text: "Wurden Ausfallrisiken bewertet?" },
+    ],
+    "OE-02": [
+      { id: "M2-01", text: "Wurden Arbeitszeiten angepasst?" },
+      { id: "M2-02", text: "Sind Ruhezeiten berücksichtigt?" },
+      { id: "M2-03", text: "Wurden Vertragsänderungen dokumentiert?" },
+    ],
+    "OE-03": [
+      { id: "M2-01", text: "Wurden KV-relevante Anforderungen intern geprüft?" },
+      { id: "M2-02", text: "Wurde bewertet, ob eine Meldung erforderlich ist?" },
+      { id: "M2-03", text: "Wurde die Entscheidung zur KV-Meldung dokumentiert?" },
+    ],
+    "OE-04": [
+      { id: "M2-01", text: "Wurden neue Zeiten veröffentlicht?" },
+      { id: "M2-02", text: "Ist die Website aktualisiert?" },
+      { id: "M2-03", text: "Wurde die Telefonansage angepasst?" },
+    ],
+    "OE-05": [
+      { id: "M2-01", text: "Existiert ein aktualisierter Dienstplan?" },
+      { id: "M2-02", text: "Sind Vertretungen geregelt?" },
+      { id: "M2-03", text: "Wurden Bereitschaften dokumentiert?" },
+    ],
+    "OE-06": [
+      { id: "M2-01", text: "Sind IT-Systeme verfügbar?" },
+      { id: "M2-02", text: "Ist die Versorgung sichergestellt?" },
+      { id: "M2-03", text: "Wurden Sicherheitsmaßnahmen geprüft?" },
     ],
   },
   [OFFICE_TOPIC_REPORTING_DUTIES]: {

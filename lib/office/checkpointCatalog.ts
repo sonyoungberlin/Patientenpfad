@@ -36,21 +36,37 @@ const OFFICE_MANAGEMENT_KINDS: readonly OfficeManagementCheckpointKind[] = [
 
 export const OFFICE_TOPIC_HIRING_REPLACEMENT = "arzt-anstellen-nachbesetzung";
 export const OFFICE_TOPIC_KV_BILLING = "kv-schreiben-abrechnungsrueckfrage";
+export const OFFICE_TOPIC_PLAUSIBILITY_BILLING = "plausibilitaetspruefung-abrechnung";
+export const OFFICE_TOPIC_HONORAR_NOTICE_REVIEW = "honorarbescheid-pruefung";
 export const OFFICE_TOPIC_REGRESS = "regress-wirtschaftlichkeitspruefung";
 export const OFFICE_TOPIC_CLOSURE_COVERAGE = "praxisschliessung-urlaubsvertretung";
 export const OFFICE_TOPIC_SEAT_APPROVAL = "arztsitz-zulassung-genehmigungen";
 export const OFFICE_TOPIC_APPLICATION_MANAGEMENT = "antragsmanagement-fristen-zustaendigkeiten";
 export const OFFICE_TOPIC_CONTINUING_EDUCATION = "weiterbildung-fortbildungspunkte-nachweise";
+export const OFFICE_TOPIC_CME_GENERAL_MEDICINE = "fortbildungspunkte-allgemeinmedizin";
+export const OFFICE_TOPIC_MFA_HIRING = "mfa-einstellung";
+export const OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING = "mfa-azubi-unter-18-einstellung";
+export const OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE = "medizinisches-geraet-anschaffung";
+export const OFFICE_TOPIC_DATA_PROTECTION_INCIDENT = "datenschutzvorfall";
+export const OFFICE_TOPIC_EXTENDED_OPENING_HOURS = "oeffnungszeiten-erweiterung-praxis";
 export const OFFICE_TOPIC_REPORTING_DUTIES = "meldepflichten-zustaendige-stellen";
 
 export type OfficeTopicId =
   | typeof OFFICE_TOPIC_HIRING_REPLACEMENT
   | typeof OFFICE_TOPIC_KV_BILLING
+  | typeof OFFICE_TOPIC_PLAUSIBILITY_BILLING
+  | typeof OFFICE_TOPIC_HONORAR_NOTICE_REVIEW
   | typeof OFFICE_TOPIC_REGRESS
   | typeof OFFICE_TOPIC_CLOSURE_COVERAGE
   | typeof OFFICE_TOPIC_SEAT_APPROVAL
   | typeof OFFICE_TOPIC_APPLICATION_MANAGEMENT
   | typeof OFFICE_TOPIC_CONTINUING_EDUCATION
+  | typeof OFFICE_TOPIC_CME_GENERAL_MEDICINE
+  | typeof OFFICE_TOPIC_MFA_HIRING
+  | typeof OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING
+  | typeof OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE
+  | typeof OFFICE_TOPIC_DATA_PROTECTION_INCIDENT
+  | typeof OFFICE_TOPIC_EXTENDED_OPENING_HOURS
   | typeof OFFICE_TOPIC_REPORTING_DUTIES;
 
 export type OfficeTopic = {
@@ -85,6 +101,14 @@ const TOPICS: readonly OfficeTopic[] = [
     title: "KV-Schreiben / Abrechnungsrueckfrage",
   },
   {
+    id: OFFICE_TOPIC_PLAUSIBILITY_BILLING,
+    title: "Plausibilitätsprüfung / Abrechnungsauffälligkeiten",
+  },
+  {
+    id: OFFICE_TOPIC_HONORAR_NOTICE_REVIEW,
+    title: "Prüfung Honorarbescheid KV",
+  },
+  {
     id: OFFICE_TOPIC_REGRESS,
     title: "Regresspruefung / Wirtschaftlichkeitspruefung",
   },
@@ -103,6 +127,30 @@ const TOPICS: readonly OfficeTopic[] = [
   {
     id: OFFICE_TOPIC_CONTINUING_EDUCATION,
     title: "Weiterbildung / Fortbildungspunkte / Nachweise",
+  },
+  {
+    id: OFFICE_TOPIC_CME_GENERAL_MEDICINE,
+    title: "Fortbildungspunkte Allgemeinmedizin überwachen",
+  },
+  {
+    id: OFFICE_TOPIC_MFA_HIRING,
+    title: "Einstellung Medizinische Fachangestellte",
+  },
+  {
+    id: OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+    title: "Einstellung MFA-Auszubildende unter 18 Jahren",
+  },
+  {
+    id: OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE,
+    title: "Neues medizinisches Gerät anschaffen",
+  },
+  {
+    id: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+    title: "Datenschutzvorfall bearbeiten",
+  },
+  {
+    id: OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
+    title: "Erweiterung der Praxisöffnungszeiten",
   },
   {
     id: OFFICE_TOPIC_REPORTING_DUTIES,
@@ -181,6 +229,33 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
         OfficeOutcomeAudience.CHEF,
       ],
     },
+    {
+      id: "NC-ARBEITSVERTRAG_FREIGABE",
+      title: "Arbeitsvertrag freigegeben",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "NC-LANR_BSNR_ZUORDNUNG",
+      title: "LANR und BSNR zugeordnet",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "NC-SYSTEMZUGRIFFE_EINGERICHTET",
+      title: "Systemzugriffe eingerichtet",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
   ],
   [OFFICE_TOPIC_KV_BILLING]: [
     {
@@ -207,6 +282,130 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       id: "KV-05",
       title: "Antwortquelle fuer fehlende Informationen benannt",
       kind: OfficeCheckpointKind.SOURCE,
+    },
+  ],
+  [OFFICE_TOPIC_PLAUSIBILITY_BILLING]: [
+    {
+      id: "PL-01",
+      title: "Quartalsprofil geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "PL-02",
+      title: "Tagesprofile geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "PL-03",
+      title: "Leistung vollständig dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.GATEKEEPER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "PL-04",
+      title: "Genehmigungspflichtige Leistungen geprüft",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+      failureEffect: OfficeFailureEffect.GATEKEEPER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "PL-05",
+      title: "Persönliche Leistungserbringung gesichert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "PL-06",
+      title: "Abrechnung vor Versand intern freigegeben",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+  ],
+  [OFFICE_TOPIC_HONORAR_NOTICE_REVIEW]: [
+    {
+      id: "HB-01",
+      title: "Fallzahlen abgeglichen",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "HB-02",
+      title: "Abgerechnete GOP vergütet",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.GATEKEEPER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "HB-03",
+      title: "Kürzungen nachvollziehbar",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "HB-04",
+      title: "Genehmigungen berücksichtigt",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "HB-05",
+      title: "RLV und QZV geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "HB-06",
+      title: "Widerspruchsfrist überwacht",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
     },
   ],
   [OFFICE_TOPIC_REGRESS]: [
@@ -289,6 +488,44 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       title: "Externe Stellen und Kontaktkanaele abgestimmt",
       kind: OfficeCheckpointKind.SOURCE,
       officeKind: OFFICE_MANAGEMENT_KIND_EXTERNE_STELLE,
+    },
+    {
+      id: "UV-PATIENTENINFO",
+      title: "Patienteninformation veröffentlicht",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "UV-NOTFALLVERSORGUNG",
+      title: "Notfallversorgung geregelt",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "UV-TERMINMANAGEMENT",
+      title: "Termine angepasst",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "UV-ABRECHNUNGSZUORDNUNG",
+      title: "Abrechnungszuordnung Vertretung festgelegt",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
     },
   ],
   [OFFICE_TOPIC_SEAT_APPROVAL]: [
@@ -403,6 +640,359 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       title: "Externe Stelle fuer Nachweise abgestimmt",
       kind: OfficeCheckpointKind.SOURCE,
       officeKind: OFFICE_MANAGEMENT_KIND_EXTERNE_STELLE,
+    },
+  ],
+  [OFFICE_TOPIC_CME_GENERAL_MEDICINE]: [
+    {
+      id: "FB-01",
+      title: "Fortbildungszeitraum dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "FB-02",
+      title: "Punkte vollständig erfasst",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FB-03",
+      title: "Nachweise archiviert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FB-04",
+      title: "Fristen überwacht",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "FB-05",
+      title: "Meldung an Ärztekammer geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FB-06",
+      title: "Sanktionsrisiken bewertet",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "FB-AUFHOLPLAN",
+      title: "Aufholplan dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+  ],
+  [OFFICE_TOPIC_MFA_HIRING]: [
+    {
+      id: "MF-01",
+      title: "Berufsabschluss geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "MF-02",
+      title: "Arbeitsvertrag freigegeben",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "MF-03",
+      title: "Personalunterlagen vollständig",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MF-04",
+      title: "Sozialversicherung angemeldet",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MF-05",
+      title: "Zugriffsrechte eingerichtet",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "MF-06",
+      title: "Einarbeitung dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+  ],
+  [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING]: [
+    {
+      id: "MA-01",
+      title: "Jugendarbeitsschutz geprüft",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "MA-02",
+      title: "Erstuntersuchung nachgewiesen",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.GATEKEEPER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MA-03",
+      title: "Ausbildungsvertrag registriert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "MA-04",
+      title: "Arbeitszeiten begrenzt",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "MA-05",
+      title: "Einwilligungen vollständig",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MA-06",
+      title: "Unterweisungen dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+  ],
+  [OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE]: [
+    {
+      id: "MG-01",
+      title: "Medizinprodukt bewertet",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "MG-02",
+      title: "Genehmigungspflicht geprüft",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "MG-03",
+      title: "Einweisung dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.GATEKEEPER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MG-04",
+      title: "Wartung organisiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MG-05",
+      title: "Abrechnungsfähigkeit geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "MG-06",
+      title: "Gerätedokumentation archiviert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+  ],
+  [OFFICE_TOPIC_DATA_PROTECTION_INCIDENT]: [
+    {
+      id: "DS-01",
+      title: "Vorfall dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+    {
+      id: "DS-02",
+      title: "Betroffene Daten bewertet",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "DS-03",
+      title: "Meldepflicht geprüft",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "DS-04",
+      title: "Zugriffe gesichert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.GATEKEEPER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-05",
+      title: "Betroffene informiert",
+      kind: OfficeCheckpointKind.DECISION,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "DS-06",
+      title: "Folgemaßnahmen umgesetzt",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.BACKOFFICE,
+        OfficeOutcomeAudience.CHEF,
+      ],
+    },
+  ],
+  [OFFICE_TOPIC_EXTENDED_OPENING_HOURS]: [
+    {
+      id: "OE-01",
+      title: "Personalverfügbarkeit geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "OE-02",
+      title: "Arbeitszeiten angepasst",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+    {
+      id: "OE-03",
+      title: "KV-Anforderungen geprüft",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
+    },
+    {
+      id: "OE-04",
+      title: "Patienteninformation veröffentlicht",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "OE-05",
+      title: "Dienstplanung dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "OE-06",
+      title: "Praxisbetrieb abgesichert",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [
+        OfficeOutcomeAudience.CHEF,
+        OfficeOutcomeAudience.BACKOFFICE,
+      ],
     },
   ],
   [OFFICE_TOPIC_REPORTING_DUTIES]: [

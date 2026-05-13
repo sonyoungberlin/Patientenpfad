@@ -51,14 +51,19 @@ function buildPdfFilename(session: {
   patient_reference: string | null;
   selected_block_ids: string[];
   answers: Record<string, string>;
+  source: string;
+  practice_form: { title: string } | null;
 }): string {
   const datePart = formatDateYyyyMmDd(session.submitted_at ?? new Date());
-  const blockPart = getFirstBlockLabel(session.selected_block_ids);
+  const questionnairePart =
+    session.source === "website"
+      ? sanitizeFilenamePart(session.practice_form?.title ?? "") || null
+      : getFirstBlockLabel(session.selected_block_ids);
 
   if (session.patient_reference) {
     const patientReferencePart = sanitizeFilenamePart(session.patient_reference);
-    return blockPart
-      ? `${datePart}_${patientReferencePart}_${blockPart}.pdf`
+    return questionnairePart
+      ? `${datePart}_${patientReferencePart}_${questionnairePart}.pdf`
       : `${datePart}_${patientReferencePart}.pdf`;
   }
 
@@ -66,13 +71,13 @@ function buildPdfFilename(session: {
   const firstName = sanitizeFilenamePart(session.answers.IDENTITY_FIRST_NAME ?? "");
   if (lastName && firstName) {
     const namePart = `${lastName}_${firstName}`;
-    return blockPart
-      ? `${datePart}_${namePart}_${blockPart}.pdf`
+    return questionnairePart
+      ? `${datePart}_${namePart}_${questionnairePart}.pdf`
       : `${datePart}_${namePart}.pdf`;
   }
 
-  return blockPart
-    ? `${datePart}_Fragebogen_${blockPart}.pdf`
+  return questionnairePart
+    ? `${datePart}_Fragebogen_${questionnairePart}.pdf`
     : `${datePart}_Fragebogen.pdf`;
 }
 
@@ -98,6 +103,12 @@ export async function GET(
       selected_block_ids: true,
       deduplicated_questions: true,
       answers: true,
+      source: true,
+      practice_form: {
+        select: {
+          title: true,
+        },
+      },
       identity_gate_completed_at: true,
       identity_gate_method: true,
       deleted_at: true,
@@ -316,6 +327,8 @@ export async function GET(
     patient_reference: session.patient_reference,
     selected_block_ids: selectedBlockIds,
     answers,
+    source: session.source,
+    practice_form: session.practice_form,
   });
 
   // Markiere die Session als „PDF heruntergeladen". Bewusst nur diese eine
