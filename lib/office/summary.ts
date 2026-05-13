@@ -3,8 +3,8 @@ import {
   OfficeCheckpointState,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
-import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
-import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
+import { deriveCheckpointActions, deriveTopicActions } from "@/lib/office/derivedActions";
+import type { OfficeM2Question } from "@/lib/office/m2Questions";
 
 export type OfficeSummaryInput = {
   topicTitle: string;
@@ -26,11 +26,6 @@ function hasDocuments(docs: string[] | undefined): boolean {
   return Array.isArray(docs) && docs.length > 0;
 }
 
-function getQuestionsForCheckpoint(topicId: string | null | undefined, checkpointId: string): readonly OfficeM2Question[] {
-  if (!topicId || !isOfficeTopicId(topicId)) return [];
-  return getM2QuestionsForCheckpoint(topicId, checkpointId);
-}
-
 function normalizeText(value: string | undefined): string {
   return (value ?? "").trim();
 }
@@ -39,18 +34,11 @@ export function deriveOpenItems(
   checkpoint: OfficeCheckpointSnapshot,
   questions: readonly OfficeM2Question[],
 ): string[] {
+  const openItems = deriveCheckpointActions({ checkpoint, questions }).map(
+    (action) => `- ${action.text}`,
+  );
+
   const answers = checkpoint.m2_answers ?? {};
-  const openItems: string[] = [];
-
-  for (const question of questions) {
-    const answer = answers[question.id];
-    if (answer === "NO") {
-      openItems.push(`- ${question.text} (Nein)`);
-    } else if (answer === "UNCLEAR") {
-      openItems.push(`- ${question.text} (Unklar)`);
-    }
-  }
-
   if (openItems.length === 0 && checkpoint.state === OfficeCheckpointState.OPEN && Object.keys(answers).length === 0) {
     openItems.push("- Generische offene Pruefung noch nicht geklaert.");
   }
@@ -86,28 +74,52 @@ export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
     (cp) => `- [${stateLabel(cp.state)}] ${cp.title}`,
   );
 
-  const openCheckpoints = checkpoints.filter(
-    (cp) => cp.state === OfficeCheckpointState.OPEN,
-  );
+  const topicActions = deriveTopicActions({
+    topicId: input.topicId,
+    checkpoints,
+  });
 
-  const offenePunkteLines = openCheckpoints.length === 0
-    ? ["- Keine offenen Punkte aus M2 erkennbar."]
-    : openCheckpoints.flatMap((cp) => {
-        const questions = getQuestionsForCheckpoint(input.topicId, cp.id);
-        const openItems = deriveOpenItems(cp, questions);
-        if (openItems.length === 0) {
+  const actionsByCheckpoint = new Map<string, typeof topicActions>();
+  for (const action of topicActions) {
+    const list = actionsByCheckpoint.get(action.checkpointId) ?? [];
+    list.push(action);
+    actionsByCheckpoint.set(action.checkpointId, list);
+  }
+
+  const openCheckpoints = checkpoints.filter((cp) => cp.state === OfficeCheckpointState.OPEN);
+
+  const offenePunkteLines = topicActions.length > 0
+    ? checkpoints.flatMap((cp) => {
+        const actions = actionsByCheckpoint.get(cp.id) ?? [];
+        if (actions.length === 0) return [];
+        return [
+          `- ${cp.title}:`,
+          ...actions.map((action) => `- ${action.text} (${action.severity})`),
+        ];
+      })
+    : openCheckpoints.length === 0
+      ? ["- Keine offenen Punkte aus M2 erkennbar."]
+      : openCheckpoints.flatMap((cp) => {
           const legacyMissing = normalizeText(cp.missing_note);
           if (legacyMissing.length > 0) {
             return [`- ${cp.title}: ${legacyMissing}`];
           }
           return ["- Keine offenen Punkte aus M2 erkennbar."];
-        }
-        return [`- ${cp.title}:`, ...openItems];
-      });
+        });
 
-  const zustaendigQuelleLines = openCheckpoints.length === 0
-    ? ["- Keine Zustaendigkeit erforderlich."]
-    : openCheckpoints.map((cp) => `- ${cp.title}: ${deriveAnswerSource(cp)}`);
+  const zustaendigQuelleLines = topicActions.length > 0
+    ? checkpoints.flatMap((cp) => {
+        const actions = actionsByCheckpoint.get(cp.id) ?? [];
+        if (actions.length === 0) {
+          if (cp.state !== OfficeCheckpointState.OPEN) return [];
+          return [`- ${cp.title}: ${deriveAnswerSource(cp)}`];
+        }
+        const owners = Array.from(new Set(actions.map((action) => action.owner)));
+        return [`- ${cp.title}: ${owners.join(", ")}`];
+      })
+    : openCheckpoints.length === 0
+      ? ["- Keine Zustaendigkeit erforderlich."]
+      : openCheckpoints.map((cp) => `- ${cp.title}: ${deriveAnswerSource(cp)}`);
 
   // Strukturierte Felder
   const fristenLines = checkpoints

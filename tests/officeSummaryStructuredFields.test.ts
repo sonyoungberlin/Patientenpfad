@@ -179,9 +179,9 @@ describe("office summary structured fields", () => {
     const output = buildOfficeSummaryText(input);
 
     expect(output).toContain("Offene Punkte");
-    expect(output).toContain("Welcher Anlass wurde beanstandet und welcher Zeitraum ist betroffen?");
-    expect(output).toContain("Welche Basisfakten sind bereits gesichert dokumentiert?");
+    expect(output).toContain("Kontextinformation unvollstaendig");
     expect(output).toContain("Zustaendig / Quelle");
+    expect(output).toContain("BACKOFFICE");
     expect(output).toContain("KV Berlin");
     expect(output).not.toContain("!!! FEHLT");
   });

@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
-import { buildOfficeSummaryText, deriveAnswerSource, deriveOpenItems } from "@/lib/office/summary";
+import { buildOfficeSummaryText } from "@/lib/office/summary";
+import { deriveTopicActions, type DerivedActionSeverity } from "@/lib/office/derivedActions";
 import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
 import {
@@ -56,6 +57,13 @@ function getQuestionsForCheckpoint(topicId: string | null, checkpointId: string)
   return getM2QuestionsForCheckpoint(topicId, checkpointId);
 }
 
+function severityLabel(severity: DerivedActionSeverity): string {
+  if (severity === "critical") return "Kritisch";
+  if (severity === "high") return "Hoch";
+  if (severity === "medium") return "Mittel";
+  return "Niedrig";
+}
+
 export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
   const router = useRouter();
   const [checkpoints, setCheckpoints] = useState<OfficeCheckpointSnapshot[]>(
@@ -74,6 +82,21 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
       }),
     [checkpoints, officeCase.title, officeCase.topicId, officeCase.topicTitle],
   );
+
+  const actionsByCheckpoint = useMemo(() => {
+    const actions = deriveTopicActions({
+      topicId: officeCase.topicId,
+      checkpoints,
+    });
+
+    const grouped = new Map<string, typeof actions>();
+    for (const action of actions) {
+      const list = grouped.get(action.checkpointId) ?? [];
+      list.push(action);
+      grouped.set(action.checkpointId, list);
+    }
+    return grouped;
+  }, [checkpoints, officeCase.topicId]);
 
   function updateCheckpoint(id: string, patch: Partial<OfficeCheckpointSnapshot>) {
     setCheckpoints((prev) =>
@@ -143,8 +166,7 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
       <div style={{ display: "grid", gap: "0.75rem" }}>
         {checkpoints.map((checkpoint) => {
           const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
-          const openItems = deriveOpenItems(checkpoint, questions);
-          const answerSource = deriveAnswerSource(checkpoint);
+          const checkpointActions = actionsByCheckpoint.get(checkpoint.id) ?? [];
 
           return (
             <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
@@ -218,44 +240,46 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                 </>
               ) : (
                 <>
-                  {(() => {
-                    const answers = checkpoint.m2_answers;
-                    return questions.length > 0 && answers ? (
-                      <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
-                        <div className="text-small text-muted" style={{ fontWeight: 600 }}>Vorbereitung (M2)</div>
-                        {questions.map((q) => {
-                          const val = answers[q.id];
-                          const labels: Record<string, string> = { YES: "Ja", NO: "Nein", UNCLEAR: "Unklar" };
-                          return (
-                            <div key={q.id} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
-                              <span className="text-small">{q.text}</span>
-                              {val ? (
-                                <span className="text-small" style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>{labels[val] ?? val}</span>
-                              ) : (
-                                <span className="text-small text-muted" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>—</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : null;
-                  })()}
                   <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
-                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Offene Punkte</div>
-                    {openItems.length > 0 ? (
-                      openItems.map((item) => (
-                        <div key={item} className="text-small">
-                          {item}
+                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Abgeleitete Massnahmen</div>
+                    {checkpointActions.length > 0 ? (
+                      checkpointActions.map((action) => (
+                        <div key={action.id} className="text-small" style={{ display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
+                          <strong>{severityLabel(action.severity)}</strong>
+                          <span>{action.text}</span>
+                          <span className="text-muted" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>{action.owner}</span>
                         </div>
                       ))
                     ) : (
-                      <div className="text-small text-muted">Keine offenen Punkte aus M2 erkennbar.</div>
+                      <div className="text-small text-muted">Keine abgeleiteten Massnahmen aus M2 erkennbar.</div>
                     )}
                   </div>
-                  <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
-                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Zustaendig / Quelle</div>
-                    <div className="text-small">{answerSource}</div>
-                  </div>
+                  {(() => {
+                    const answers = checkpoint.m2_answers;
+                    return questions.length > 0 && answers ? (
+                      <details style={{ opacity: 0.82 }}>
+                        <summary className="text-small text-muted" style={{ cursor: "pointer", fontWeight: 600 }}>
+                          Vorbereitung (M2)
+                        </summary>
+                        <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem", marginTop: "0.35rem" }}>
+                          {questions.map((q) => {
+                            const val = answers[q.id];
+                            const labels: Record<string, string> = { YES: "Ja", NO: "Nein", UNCLEAR: "Unklar" };
+                            return (
+                              <div key={q.id} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
+                                <span className="text-small">{q.text}</span>
+                                {val ? (
+                                  <span className="text-small" style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>{labels[val] ?? val}</span>
+                                ) : (
+                                  <span className="text-small text-muted" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>—</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    ) : null;
+                  })()}
                 </>
               )}
             </article>
