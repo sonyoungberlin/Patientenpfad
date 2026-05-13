@@ -1,5 +1,6 @@
 import { buildOfficeSummaryText } from "@/lib/office/summary";
-import { OfficeCheckpointKind, OfficeCheckpointState } from "@/lib/office/types";
+import { OfficeCheckpointKind, OfficeCheckpointState, OfficeCheckpointType, type M2AnswerValue } from "@/lib/office/types";
+import { OFFICE_TOPIC_REGRESS } from "@/lib/office/checkpointCatalog";
 
 describe("office summary structured fields", () => {
   it("zeigt Fristen und Verantwortung an wenn vorhanden", () => {
@@ -137,11 +138,52 @@ describe("office summary structured fields", () => {
     const output = buildOfficeSummaryText(input);
 
     expect(output).toContain("Ist-Stand");
-    expect(output).toContain("Fehlende Informationen");
-    expect(output).toContain("Antwortquellen");
+    expect(output).toContain("Offene Punkte");
+    expect(output).toContain("Zustaendig / Quelle");
+    expect(output).not.toContain("!!! FEHLT");
     expect(output).not.toContain("Fristen");
     expect(output).not.toContain("Eskalation");
     expect(output).not.toContain("Erforderliche Unterlagen");
+  });
+
+  it("zeigt offene Punkte aus M2 und die abgeleitete Zuständigkeit an", () => {
+    const input = {
+      topicTitle: "Regressfall",
+      topicId: OFFICE_TOPIC_REGRESS,
+      checkpoints: [
+        {
+          id: "RG-01",
+          title: "Anlass dokumentiert",
+          kind: OfficeCheckpointKind.FACT,
+          state: OfficeCheckpointState.OPEN,
+          m2_answers: {
+            "M2-01": "NO",
+            "M2-02": "UNCLEAR",
+          } as Record<string, M2AnswerValue>,
+        },
+        {
+          id: "RG-02",
+          title: "Fristen geprueft",
+          kind: OfficeCheckpointKind.RULE,
+          state: OfficeCheckpointState.OPEN,
+          checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+          authority: "KV Berlin",
+          m2_answers: {
+            "M2-01": "YES",
+            "M2-02": "YES",
+          } as Record<string, M2AnswerValue>,
+        },
+      ],
+    };
+
+    const output = buildOfficeSummaryText(input);
+
+    expect(output).toContain("Offene Punkte");
+    expect(output).toContain("Welcher Anlass wurde beanstandet und welcher Zeitraum ist betroffen?");
+    expect(output).toContain("Welche Basisfakten sind bereits gesichert dokumentiert?");
+    expect(output).toContain("Zustaendig / Quelle");
+    expect(output).toContain("KV Berlin");
+    expect(output).not.toContain("!!! FEHLT");
   });
 
   it("leere Arrays und falsche Booleans werden ignoriert", () => {

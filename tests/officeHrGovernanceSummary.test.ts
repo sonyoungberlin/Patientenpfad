@@ -52,9 +52,9 @@ describe("office hr governance summary", () => {
 
     expect(output).toContain("- [NO] HR-GOV-A");
     expect(output).toContain("- [OPEN] HR-GOV-B");
-    expect(output).toContain("Fehlende Informationen");
+    expect(output).toContain("Offene Punkte");
     expect(output).toContain("Rueckmeldung fehlt");
-    expect(output).toContain("Antwortquellen");
+    expect(output).toContain("Zustaendig / Quelle");
     expect(output).toContain("Zulassungsausschuss");
     expect(output).not.toContain("Governance-Freigabe");
   });

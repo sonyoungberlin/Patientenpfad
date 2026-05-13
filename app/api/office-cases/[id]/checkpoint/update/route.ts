@@ -157,15 +157,6 @@ export async function PATCH(
     ? body.escalation_needed
     : target.escalation_needed;
 
-  if (state === OfficeCheckpointState.OPEN) {
-    if (!nextMissingNote || !nextMissingNote.trim() || !nextAnswerSource || !nextAnswerSource.trim()) {
-      return NextResponse.json(
-        { ok: false, error: "Für OPEN sind missing_note und answer_source erforderlich." },
-        { status: 400 },
-      );
-    }
-  }
-
   const nextCheckpoints = snapshot.checkpoints.map((checkpoint, index) => {
     if (index !== targetIndex) return checkpoint;
     return {

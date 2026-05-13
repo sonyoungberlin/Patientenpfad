@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
-import { buildOfficeSummaryText } from "@/lib/office/summary";
+import { buildOfficeSummaryText, deriveAnswerSource, deriveOpenItems } from "@/lib/office/summary";
 import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
 import {
@@ -69,9 +69,10 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
     () =>
       buildOfficeSummaryText({
         topicTitle: officeCase.topicTitle ?? officeCase.title ?? "Office-Snapshot",
+        topicId: officeCase.topicId,
         checkpoints,
       }),
-    [checkpoints, officeCase.title, officeCase.topicTitle],
+    [checkpoints, officeCase.title, officeCase.topicId, officeCase.topicTitle],
   );
 
   function updateCheckpoint(id: string, patch: Partial<OfficeCheckpointSnapshot>) {
@@ -112,8 +113,6 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
               checkpoint_id: checkpoint.id,
               state: checkpoint.state,
               known_note: checkpoint.known_note ?? "",
-              missing_note: checkpoint.missing_note ?? "",
-              answer_source: checkpoint.answer_source ?? "",
             }),
           });
           const data = await res.json().catch(() => ({}));
@@ -143,7 +142,9 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
 
       <div style={{ display: "grid", gap: "0.75rem" }}>
         {checkpoints.map((checkpoint) => {
-          const isOpen = checkpoint.state === OfficeCheckpointState.OPEN;
+          const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
+          const openItems = deriveOpenItems(checkpoint, questions);
+          const answerSource = deriveAnswerSource(checkpoint);
 
           return (
             <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
@@ -218,7 +219,6 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
               ) : (
                 <>
                   {(() => {
-                    const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
                     const answers = checkpoint.m2_answers;
                     return questions.length > 0 && answers ? (
                       <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
@@ -240,30 +240,22 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                       </div>
                     ) : null;
                   })()}
-                  {isOpen ? (
-                    <>
-                      <label style={{ display: "grid", gap: "0.25rem" }}>
-                        <span>Was fehlt noch? *</span>
-                        <textarea
-                          value={checkpoint.missing_note ?? ""}
-                          placeholder="Welche Information fehlt fuer die Entscheidung?"
-                          onChange={(e) => updateCheckpoint(checkpoint.id, { missing_note: e.target.value })}
-                          rows={2}
-                          required
-                        />
-                      </label>
-                      <label style={{ display: "grid", gap: "0.25rem" }}>
-                        <span>Wer kann das klaeren? *</span>
-                        <input
-                          type="text"
-                          value={checkpoint.answer_source ?? ""}
-                          placeholder="Person, Stelle oder Dokument"
-                          onChange={(e) => updateCheckpoint(checkpoint.id, { answer_source: e.target.value })}
-                          required
-                        />
-                      </label>
-                    </>
-                  ) : null}
+                  <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
+                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Offene Punkte</div>
+                    {openItems.length > 0 ? (
+                      openItems.map((item) => (
+                        <div key={item} className="text-small">
+                          {item}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-small text-muted">Keine offenen Punkte aus M2 erkennbar.</div>
+                    )}
+                  </div>
+                  <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
+                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Zustaendig / Quelle</div>
+                    <div className="text-small">{answerSource}</div>
+                  </div>
                 </>
               )}
             </article>

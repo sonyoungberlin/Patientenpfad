@@ -109,7 +109,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
     expect(checkpoint?.escalation_needed).toBe(true);
   });
 
-  it("laesst OPEN-Regel unveraendert aktiv", async () => {
+  it("erlaubt OPEN ohne manuelle Freitextfelder", async () => {
     getSessionAccountMock.mockResolvedValue(ACCOUNT);
     prismaMock.officeCaseSession.findUnique.mockResolvedValue({
       id: "case-1",
@@ -130,12 +130,11 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
         ],
       },
     });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
 
     const res = await PATCH(makeRequest({
       checkpoint_id: "RG-01",
       state: OfficeCheckpointState.OPEN,
-      missing_note: "",
-      answer_source: "",
       deadline: "2026-06-15",
       responsible_role: "Praxismanager",
       authority: "Kammer",
@@ -143,10 +142,52 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
       escalation_needed: true,
     }), { params: Promise.resolve({ id: "case-1" }) });
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.ok).toBe(false);
-    expect(json.error).toBe("Für OPEN sind missing_note und answer_source erforderlich.");
-    expect(prismaMock.officeCaseSession.update).not.toHaveBeenCalled();
+    expect(json.ok).toBe(true);
+    expect(prismaMock.officeCaseSession.update).toHaveBeenCalled();
+  });
+
+  it("akzeptiert optionale legacy Freitextfelder bei OPEN weiterhin", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: null,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_REGRESS,
+        checkpoints: [
+          {
+            id: "RG-01",
+            title: "Anlass dokumentiert",
+            kind: OfficeCheckpointKind.FACT,
+            state: OfficeCheckpointState.OPEN,
+            known_note: "",
+            missing_note: "Alt",
+            answer_source: "Team",
+          },
+        ],
+      },
+    });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
+
+    const res = await PATCH(makeRequest({
+      checkpoint_id: "RG-01",
+      state: OfficeCheckpointState.OPEN,
+      missing_note: "Alt",
+      answer_source: "Team",
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(res.status).toBe(200);
+    const updateArg = prismaMock.officeCaseSession.update.mock.calls[0]?.[0];
+    const checkpoint = (updateArg?.data?.checkpoint_snapshot as {
+      checkpoints?: Array<{
+        missing_note?: string;
+        answer_source?: string;
+      }>;
+    }).checkpoints?.[0];
+
+    expect(checkpoint?.missing_note).toBe("Alt");
+    expect(checkpoint?.answer_source).toBe("Team");
   });
 });
