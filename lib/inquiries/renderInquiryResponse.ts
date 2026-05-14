@@ -20,6 +20,7 @@ import {
 } from "@/lib/inquiries/types";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
 
 /**
  * Erzeugt deterministisch den Antworttext und die Dokumentation
@@ -283,7 +284,13 @@ export function renderInquiryResponseFromSections(
     }
 
     // ---- B) Specific Checkpoints → attachedParagraphs ----
-    for (const checkpointId of profile.specificCheckpointIds) {
+    // IDs aus PROCESS_SHELF_PROFILE_BINDINGS zusätzlich einspeisen
+    const extraProcessIds = PROCESS_SHELF_PROFILE_BINDINGS[section.inquiryId] || [];
+    const allSpecificIds = Array.from(new Set([
+      ...profile.specificCheckpointIds,
+      ...extraProcessIds,
+    ]));
+    for (const checkpointId of allSpecificIds) {
       const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
       if (!checkpoint) continue;
 

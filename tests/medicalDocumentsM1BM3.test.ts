@@ -479,7 +479,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("wofür das Attest oder die Bescheinigung benötigt wird");
   });
 
-  it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING YES + SHOW → kein Text (deprecated, nicht mehr im Profil)", () => {
+  it("MEDICAL_DOCUMENT_DOCUMENTATION_MISSING YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "MEDICAL_DOCUMENTS",
@@ -491,8 +491,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    // Checkpoint ist @deprecated und nicht mehr im Profil → kein Output
-    expect(paragraphs).not.toContain("Befunde oder Nachweise");
+    expect(paragraphs).toContain("Befunde oder Nachweise");
   });
 
   it("MEDICAL_DOCUMENT_PRIVATE_SERVICE YES + SHOW → Selbstzahler-Text erscheint", () => {
@@ -510,7 +509,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("Selbstzahlerleistung");
   });
 
-  it("MEDICAL_DOCUMENT_PROCESS_INFO YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
+  it("MEDICAL_DOCUMENT_PROCESS_INFO YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "MEDICAL_DOCUMENTS",
@@ -522,7 +521,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("Erstellung, Abholung");
+    expect(paragraphs).toContain("Erstellung, Abholung");
   });
 });
 

@@ -402,7 +402,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("absagen oder verschieben");
   });
 
-  it("APPOINTMENT_PROCESS_MULTI_STEP YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
+  it("APPOINTMENT_PROCESS_MULTI_STEP YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -412,10 +412,10 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("mehrere Schritte");
+    expect(paragraphs).toContain("mehrere Schritte");
   });
 
-  it("APPOINTMENT_PREPARATION_REQUIRED YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
+  it("APPOINTMENT_PREPARATION_REQUIRED YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -425,7 +425,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("Vorbereitungshinweise");
+    expect(paragraphs).toContain("Vorbereitungshinweise");
   });
 
   it("APPOINTMENT_DATA_INCOMPLETE YES + SHOW → Text erscheint", () => {
@@ -441,7 +441,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("zu ungenau");
   });
 
-  it("APPOINTMENT_DOCUMENT_MISSING YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
+  it("APPOINTMENT_DOCUMENT_MISSING YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -451,7 +451,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("erforderlichen Unterlagen");
+    expect(paragraphs).toContain("erforderlichen Unterlagen");
   });
 
   it("APPOINTMENT_WRONG_TYPE HIDE → kein Text erscheint", () => {
@@ -480,7 +480,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("Videosprechstunde");
   });
 
-  it("APPOINTMENT_VIDEO_REQUIREMENTS YES + SHOW → kein Text erscheint (deprecated, nicht mehr im Profil)", () => {
+  it("APPOINTMENT_VIDEO_REQUIREMENTS YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -490,7 +490,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("Internetverbindung");
+    expect(paragraphs).toContain("Internetverbindung");
   });
 
   it("APPOINTMENT_VIDEO_LIMITATIONS HIDE → kein Text erscheint", () => {

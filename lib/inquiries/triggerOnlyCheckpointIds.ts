@@ -1,0 +1,27 @@
+const TRIGGER_ONLY_CHECKPOINT_ID_LIST = [
+  "AU_NEW_PATIENT_LIMIT",
+  "AU_DIGITAL_AU_PROCESS",
+  "AU_NO_APPOINTMENT_ACUTE",
+  "LAB_INTERNAL_ORDER",
+  "LAB_EXTERNAL_REFERRAL",
+  "REF_HAV_CASE",
+  "ACUTE_APPOINTMENT_INFO",
+  "ONBOARDING_IDENTITY_MISMATCH",
+  "ONBOARDING_DATA_INCOMPLETE",
+  "ONBOARDING_WRONG_PRACTICE",
+] as const;
+
+export type TriggerOnlyCheckpointId =
+  (typeof TRIGGER_ONLY_CHECKPOINT_ID_LIST)[number];
+
+export const TRIGGER_ONLY_CHECKPOINT_IDS = TRIGGER_ONLY_CHECKPOINT_ID_LIST;
+
+const TRIGGER_ONLY_CHECKPOINT_ID_SET: ReadonlySet<string> = new Set(
+  TRIGGER_ONLY_CHECKPOINT_ID_LIST,
+);
+
+export function isTriggerOnlyCheckpointId(
+  id: string,
+): id is TriggerOnlyCheckpointId {
+  return TRIGGER_ONLY_CHECKPOINT_ID_SET.has(id);
+}

@@ -57,19 +57,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_BACKDATE_LIMIT",
       "AU_NEW_PATIENT_LIMIT",
       "AU_MISSING_EGK",
-      "AU_MISSING_QUESTIONNAIRE",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
       "AU_DIGITAL_AU_PROCESS",
       "AU_NO_APPOINTMENT_ACUTE",
       "AU_MEDICAL_CONSULTATION_REQUIRED",
       "AU_FOLLOWUP_REQUIRES_VISIT",
-      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
-      // nur dort verfügbar, wo Dokumente eine Rolle spielen (eGK, Fragebogen,
-      // Befunde). Bleibt im Patientenoutput unsichtbar, bis die Praxis ihn
-      // in M2 auf YES und in M3 auf SHOW setzt.
-      "TECH_UPLOAD_FAILED",
-      // Schublade „Anliegen geprüft" – neue Bausteine.
       "EAU_VALID_WITHOUT_SIGNATURE",
       "RETURN_TO_WORK_ALLOWED_DURING_AU",
       "AU_EXTENSION_REQUIRES_EXAMINATION",
@@ -264,28 +257,17 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "SECTION_INTRO_NOT_RESPONSIBLE",
     ],
     specificCheckpointIds: [
-      "PRESCRIPTION_MEDICATION_UNCLEAR",
-      "PRESCRIPTION_DOSAGE_UNCLEAR",
-      "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
       "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON",
       "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
-      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
-      "HOSPITAL_DISCHARGE_REPORT_MISSING",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_PRIVATE_ONLY",
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
-      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
-      // greift bei Facharztbericht- / Krankenhausentlassbrief-Uploads, wenn
-      // die hochgeladene Datei nicht verwertbar ist. Sichtbar im
-      // Patientenoutput erst nach M2 YES + M3 SHOW.
-      "TECH_UPLOAD_FAILED",
-      // Schublade „Anliegen geprüft" – neuer Baustein für kontrazeptive Verordnung.
       "CONTRACEPTION_SPECIALIST_ONLY",
       "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ],
@@ -605,16 +587,13 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     specificCheckpointIds: [
       "LAB_MPU_EXCLUSION",
-      "LAB_RESULTS_PENDING",
       "LAB_EXTERNAL_REFERRAL",
       "LAB_INTERNAL_ORDER",
       "LAB_MEDICAL_CONSULTATION_REQUIRED",
       "LAB_CHECKUP_RULES",
       "BILLING_COST_NOT_COVERED",
       "APPOINTMENT_DATA_INCOMPLETE",
-      "LAB_INTERNAL_ORDER_MISSING",
       "LAB_INTERNAL_ORDER_AVAILABLE",
-      "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
       "LAB_CHECKUP_BASIC_LAB_INCLUDED",
       "LAB_SELF_PAYER_POSSIBLE",
       "LAB_CONTROL_TIMING_NOT_DUE",
@@ -804,8 +783,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     specificCheckpointIds: [
       "SAMPLE_COLLECTION_ORDER_AVAILABLE",
-      "SAMPLE_COLLECTION_INFORMATION_INCOMPLETE",
-      "SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING",
     ],
     boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
     globalHints: {},

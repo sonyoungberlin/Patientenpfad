@@ -969,6 +969,7 @@ describe("renderInquiryResponseFromSections – neutraler Follow-up-Baustein", (
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlacement, ExplanationOutputStatus } from "@/lib/inquiries/types";
+import { PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
 
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
@@ -1427,8 +1428,14 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
 
   it("PRESCRIPTION-Profil bindet die verbliebenen Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
+    // ausgelagert nach PROCESS_SHELF_PROFILE_BINDINGS:
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["PRESCRIPTION"]).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["PRESCRIPTION"]).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["PRESCRIPTION"]).toContain("TECH_UPLOAD_FAILED");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["PRESCRIPTION"]).toContain("PRESCRIPTION_MEDICATION_UNCLEAR");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["PRESCRIPTION"]).toContain("PRESCRIPTION_DOSAGE_UNCLEAR");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["PRESCRIPTION"]).toContain("PRESCRIPTION_MEDICATION_NOT_DOCUMENTED");
+    // noch in specificCheckpointIds:
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PRIVATE_ONLY");
@@ -1437,37 +1444,30 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_MEDICATION_UNCLEAR");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOSAGE_UNCLEAR");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_MEDICATION_NOT_DOCUMENTED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INDICATION_NOT_DOCUMENTED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOCTOR_REVIEW_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INSURANCE_PROOF_MISSING");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(19);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(13);
   });
 
-  it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
+  it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge (nach Auslagerung)", () => {
+    // PRESCRIPTION_MEDICATION_UNCLEAR, PRESCRIPTION_DOSAGE_UNCLEAR, PRESCRIPTION_MEDICATION_NOT_DOCUMENTED,
+    // PRESCRIPTION_SPECIALIST_REPORT_REQUIRED, HOSPITAL_DISCHARGE_REPORT_MISSING, TECH_UPLOAD_FAILED
+    // wurden nach PROCESS_SHELF_PROFILE_BINDINGS ausgelagert.
     expect(prescriptionProfile.specificCheckpointIds).toEqual([
-      "PRESCRIPTION_MEDICATION_UNCLEAR",
-      "PRESCRIPTION_DOSAGE_UNCLEAR",
-      "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_DOCTOR_REVIEW_REQUIRED",
       "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON",
       "PRESCRIPTION_BTM_ADHS_RULES",
       "PRESCRIPTION_GYN_EXCLUSIVITY",
-      "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
-      "HOSPITAL_DISCHARGE_REPORT_MISSING",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_PRIVATE_ONLY",
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
-      "TECH_UPLOAD_FAILED",
       "CONTRACEPTION_SPECIALIST_ONLY",
       "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ]);
@@ -2071,15 +2071,17 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_RULES");
     expect(labProfile.specificCheckpointIds).toContain("BILLING_COST_NOT_COVERED");
     expect(labProfile.specificCheckpointIds).toContain("APPOINTMENT_DATA_INCOMPLETE");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_RESULTS_PENDING");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER_MISSING");
+    // ausgelagert nach PROCESS_SHELF_PROFILE_BINDINGS:
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["LAB"]).toContain("LAB_RESULTS_PENDING");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["LAB"]).toContain("LAB_INTERNAL_ORDER_MISSING");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["LAB"]).toContain("LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED");
+    // noch in specificCheckpointIds:
     expect(labProfile.specificCheckpointIds).toContain("LAB_INTERNAL_ORDER_AVAILABLE");
-    expect(labProfile.specificCheckpointIds).toContain("LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED");
     expect(labProfile.specificCheckpointIds).toContain("LAB_CHECKUP_BASIC_LAB_INCLUDED");
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_POSSIBLE");
     expect(labProfile.specificCheckpointIds).toContain("LAB_CONTROL_TIMING_NOT_DUE");
     expect(labProfile.specificCheckpointIds).toContain("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED");
-    expect(labProfile.specificCheckpointIds).toHaveLength(15);
+    expect(labProfile.specificCheckpointIds).toHaveLength(12);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -2432,10 +2434,11 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
       "SAMPLE_HANDOVER",
       "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(3);
+    expect(profile.specificCheckpointIds).toHaveLength(1);
     expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_AVAILABLE");
-    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE");
-    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING");
+    // ausgelagert nach PROCESS_SHELF_PROFILE_BINDINGS:
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["SAMPLE_COLLECTION"]).toContain("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["SAMPLE_COLLECTION"]).toContain("SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING");
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     for (const id of ids) {
       const cp = INQUIRY_CHECKPOINT_CATALOG_V2[id];
@@ -2591,8 +2594,9 @@ describe("SAMPLE_COLLECTION-Profil – SAMPLE_COLLECTION_ORDER_AVAILABLE (EXPLAN
   it("Checkpoint ist in SAMPLE_COLLECTION.specificCheckpointIds enthalten", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_AVAILABLE");
-    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE");
-    expect(profile.specificCheckpointIds).toContain("SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING");
+    // ausgelagert nach PROCESS_SHELF_PROFILE_BINDINGS:
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["SAMPLE_COLLECTION"]).toContain("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["SAMPLE_COLLECTION"]).toContain("SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING");
   });
 
   it("YES → Text erscheint in attachedParagraphs", () => {
@@ -3715,6 +3719,50 @@ describe("renderInquiryResponseFromSections – Section-Intro (M2 Schubladen)", 
     for (const entry of result.sharedBottom) {
       expect(entry).not.toContain("fehlen uns noch einige Angaben.");
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// MEDICAL_DOCUMENTS – PROCESS_SHELF_PROFILE_BINDINGS
+// ---------------------------------------------------------------------------
+function makeMedicalDocumentsSection(overrides: Partial<InquirySection> = {}): InquirySection {
+  return {
+    inquiryId: "MEDICAL_DOCUMENTS",
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: {},
+    ...overrides,
+  };
+}
+
+describe("MEDICAL_DOCUMENTS-Profil – PROCESS_SHELF_PROFILE_BINDINGS", () => {
+  it("MEDICAL_DOCUMENT_PROCESS_INFO ist in PROCESS_SHELF_PROFILE_BINDINGS[MEDICAL_DOCUMENTS]", () => {
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["MEDICAL_DOCUMENTS"]).toContain("MEDICAL_DOCUMENT_PROCESS_INFO");
+  });
+
+  it("MEDICAL_DOCUMENT_PROCESS_INFO YES + SHOW → Text erscheint in attachedParagraphs", () => {
+    const result = renderInquiryResponseFromSections([
+      makeMedicalDocumentsSection({
+        checkpointStatuses: { MEDICAL_DOCUMENT_PROCESS_INFO: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          MEDICAL_DOCUMENT_PROCESS_INFO: ExplanationOutputStatus.SHOW,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).toContain("Erstellung, Abholung");
+  });
+
+  it("MEDICAL_DOCUMENT_PROCESS_INFO YES + HIDE → kein Text erscheint", () => {
+    const result = renderInquiryResponseFromSections([
+      makeMedicalDocumentsSection({
+        checkpointStatuses: { MEDICAL_DOCUMENT_PROCESS_INFO: ExplanationStatus.YES },
+        explanationOutputStatuses: {
+          MEDICAL_DOCUMENT_PROCESS_INFO: ExplanationOutputStatus.HIDE,
+        } as Record<string, ExplanationOutputStatus>,
+      }),
+    ]);
+    const text = result.sections[0].attachedParagraphs.join(" ");
+    expect(text).not.toContain("Erstellung, Abholung");
   });
 });
 

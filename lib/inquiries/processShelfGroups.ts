@@ -2,16 +2,46 @@ export const PROCESS_SHELF_GROUPS = {
   missingInfoOrDocuments: {
     label: "Fehlende Angaben / Unterlagen",
     checkpointIds: [
+      // AU
       "AU_MISSING_QUESTIONNAIRE",
+      // Rezept
       "PRESCRIPTION_MEDICATION_UNCLEAR",
       "PRESCRIPTION_DOSAGE_UNCLEAR",
       "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_INDICATION_NOT_DOCUMENTED",
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "HOSPITAL_DISCHARGE_REPORT_MISSING",
+      // Überweisung
       "REF_SPECIALTY_REQUIRED",
+      // Termin
       "APPOINTMENT_DATA_INCOMPLETE",
       "APPOINTMENT_REASON_UNCLEAR",
+      "APPOINTMENT_DOCUMENT_MISSING",
+      // Labor
+      "LAB_INTERNAL_ORDER_MISSING",
+      "LAB_SPECIALIST_REFERRAL_ORIGINAL_REQUIRED",
+      // Krankenhauseinweisung
+      "HOSPITAL_ADMISSION_MISSING_INFO",
+      // Probenabgabe
+      "SAMPLE_COLLECTION_INFORMATION_INCOMPLETE",
+      "SAMPLE_COLLECTION_ORDER_UNCLEAR_OR_MISSING",
+      // Impfung
+      "IMMUNIZATION_STATUS_UNCLEAR",
+      "IMMUNIZATION_VACCINATION_RECORD_MISSING",
+      "IMMUNIZATION_PASS_MISSING",
+      // Onboarding
+      "ONBOARDING_DOCUMENT_MISSING",
+      "ONBOARDING_DATA_UPDATE_REQUIRED",
+      "ONBOARDING_IDENTITY_CLARIFICATION_REQUIRED",
+      "ONBOARDING_PROVIDE_IDENTITY_DATA",
+      "ONBOARDING_DATA_MISSING_CONTEXT",
+      // Abrechnung
+      "BILLING_DATA_MISSING",
+      // Attest
+      "MEDICAL_DOCUMENT_DOCUMENTATION_MISSING",
+      "MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED",
+      // Versicherungsnummer
+      "INSURANCE_NUMBER_INVALID_FORMAT",
     ] as const,
   },
   documentsAndUpload: {
@@ -19,6 +49,7 @@ export const PROCESS_SHELF_GROUPS = {
     checkpointIds: [
       "DOCUMENT_UPLOAD",
       "TECH_UPLOAD_FAILED",
+      "REF_ORIGINAL_VS_PDF",
     ] as const,
   },
   insuranceData: {
@@ -34,12 +65,40 @@ export const PROCESS_SHELF_GROUPS = {
   appointmentsAndBooking: {
     label: "Termine & Buchung",
     checkpointIds: [
+      // Allgemein
       "BOOK_APPOINTMENT",
+      "CONTROL_APPOINTMENT_RECOMMENDED",
+      // Termin-Profil
       "APPOINTMENT_BOOK_GENERAL",
       "APPOINTMENT_BOOK_FINDINGS_REVIEW",
       "APPOINTMENT_BOOK_CHECKUP_SECOND",
       "APPOINTMENT_BOOK_CHRONIC_CONTROL",
+      "APPOINTMENT_PROCESS_MULTI_STEP",
+      "APPOINTMENT_INFO_TYPE_PURPOSE",
+      "APPOINTMENT_INFO_BLOOD_DRAW_NOT_DOCTOR_VISIT",
+      "APPOINTMENT_INFO_VIDEO_SCOPE",
+      "APPOINTMENT_INFO_IN_PERSON_REQUIRED",
+      "APPOINTMENT_INFO_CHECKUP_PURPOSE",
+      "APPOINTMENT_INFO_CHRONIC_CONTROL_PURPOSE",
+      "APPOINTMENT_INFO_SHORT_NOTICE_CANCELLATION_IMPACT",
+      "APPOINTMENT_INFO_BOOKING_RESTRICTED_AFTER_NO_SHOW",
+      "APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION",
+      // Überweisung
       "REF_BOOKING_CODE_PROCESS",
+      // Labor
+      "LAB_APPOINTMENT_INTERNAL",
+      "LAB_APPOINTMENT_CHECKUP",
+      "LAB_APPOINTMENT_INDIVIDUAL",
+      "LAB_APPOINTMENT_DOCTOR",
+      "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
+      // Impfung
+      "IMMUNIZATION_BOOK_VACCINATION",
+      "IMMUNIZATION_BOOK_COUNSELING",
+      // Akut
+      "ACUTE_OPEN_CONSULTATION_ACTION",
+      "ACUTE_BOOKING_INFO",
+      // Krankenhaus
+      "TRANSPORT_QUESTIONNAIRE_REQUEST",
     ] as const,
   },
   digitalRequest: {
@@ -49,6 +108,9 @@ export const PROCESS_SHELF_GROUPS = {
       "DIGITAL_REQUEST_REQUIRED",
       "DIGITAL_REQUEST_MEDICAL_REVIEW",
       "E_RECIPE_USE",
+      "PHARMACY_INFORMATION",
+      "ONLINE_ANAMNESIS",
+      "CARE_CHANNEL_CHOICE",
     ] as const,
   },
   waitingProcessingTechnical: {
@@ -59,6 +121,39 @@ export const PROCESS_SHELF_GROUPS = {
       "TECHNICAL_ISSUE",
       "TECHNICAL_ISSUE_DELAY",
       "STAFF_SHORTAGE_DELAY",
+      "TECH_VIDEO_NOT_WORKING",
+      "LAB_RESULTS_PENDING",
+      "LAB_RESULT_TIME",
+    ] as const,
+  },
+  preparation: {
+    label: "Vorbereitung",
+    checkpointIds: [
+      "LAB_FASTING_REQUIRED",
+      "LAB_BRING_REFERRAL",
+      "IMMUNIZATION_BRING_VACCINATION_RECORD",
+      "URINE_SAMPLE_INSTRUCTIONS",
+      "STOOL_SAMPLE_INSTRUCTIONS",
+      "SAMPLE_HANDOVER",
+      "URINE_SAMPLE_ONSITE",
+      "APPOINTMENT_PREPARATION_REQUIRED",
+      "APPOINTMENT_VIDEO_REQUIREMENTS",
+    ] as const,
+  },
+  billing: {
+    label: "Abrechnung / Kosten",
+    checkpointIds: [
+      "BILLING_NOT_COVERED_BY_STATUTORY",
+      "BILLING_GOA_BILLING",
+      "BILLING_ONSITE_PAYMENT",
+      "BILLING_CONTACT_EXTERNAL_PARTY",
+      "BILLING_ADDRESS_UPDATE_REQUESTED",
+      "BILLING_EXTERNAL_PROVIDER",
+      "BILLING_INVOICE_TIMING",
+      "BILLING_PROCESS_EXTERNAL",
+      "PAYMENT_ONSITE_INFO",
+      "LAB_COST_COVERED_BY_REFERRAL",
+      "LAB_SELF_PAYER_NOTE",
     ] as const,
   },
 } as const;
@@ -72,6 +167,8 @@ export const PROCESS_SHELF_GROUP_ORDER: readonly ProcessShelfGroupId[] = [
   "appointmentsAndBooking",
   "digitalRequest",
   "waitingProcessingTechnical",
+  "preparation",
+  "billing",
 ] as const;
 
 export const ALL_PROCESS_SHELF_CHECKPOINT_IDS = PROCESS_SHELF_GROUP_ORDER.flatMap(

@@ -16,6 +16,7 @@
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
   DecisionStatus,
@@ -57,9 +58,11 @@ describe("TECH_UPLOAD_FAILED – Wiederverwendung in dokumentenbezogenen Profile
   });
 
   for (const profileId of DOCUMENT_PROFILES) {
-    it(`${profileId}.specificCheckpointIds enthält TECH_UPLOAD_FAILED`, () => {
+    it(`${profileId} enthält TECH_UPLOAD_FAILED (specific oder PROCESS_SHELF_PROFILE_BINDINGS)`, () => {
       const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
-      expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
+      const inSpecific = profile.specificCheckpointIds.includes("TECH_UPLOAD_FAILED");
+      const inBindings = (PROCESS_SHELF_PROFILE_BINDINGS[profileId] ?? []).includes("TECH_UPLOAD_FAILED");
+      expect(inSpecific || inBindings).toBe(true);
     });
 
     it(`${profileId}: TECH_UPLOAD_FAILED YES + SHOW → Aufforderung zum erneuten Upload erscheint`, () => {

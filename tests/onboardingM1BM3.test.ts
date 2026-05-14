@@ -349,7 +349,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("Online-Anamnese");
   });
 
-  it("ONBOARDING_DOCUMENT_MISSING ist @deprecated und nicht mehr im Profil – kein Renderer-Output", () => {
+  it("ONBOARDING_DOCUMENT_MISSING YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "ONBOARDING",
@@ -359,7 +359,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("PAS-Formular");
+    expect(paragraphs).toContain("PAS-Formular");
   });
 
   it("ONBOARDING_GKV_DOCUMENT_MISSING YES + SHOW → Text erscheint", () => {
@@ -401,7 +401,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("Schreibweise");
   });
 
-  it("ONBOARDING_PROCESS_REQUIRED ist @deprecated und nicht mehr im Profil – kein Renderer-Output", () => {
+  it("ONBOARDING_PROCESS_REQUIRED YES + SHOW → Text erscheint (via PROCESS_SHELF_PROFILE_BINDINGS)", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "ONBOARDING",
@@ -411,7 +411,7 @@ describe("ONBOARDING Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).not.toContain("Neupatient");
+    expect(paragraphs).toContain("Neupatient");
   });
 
   it("ONBOARDING_WRONG_PRACTICE YES + SHOW → reiner M2-Schalter, kein Checkpoint-Text", () => {
