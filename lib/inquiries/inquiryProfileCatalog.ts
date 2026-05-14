@@ -64,8 +64,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_NO_APPOINTMENT_ACUTE",
       "AU_MEDICAL_CONSULTATION_REQUIRED",
       "AU_FOLLOWUP_REQUIRES_VISIT",
-      "AU_FOLLOWUP",
-      "MEDICAL_DOCUMENT_AU_DIFFERENCE",
       // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
       // nur dort verfügbar, wo Dokumente eine Rolle spielen (eGK, Fragebogen,
       // Befunde). Bleibt im Patientenoutput unsichtbar, bis die Praxis ihn
@@ -276,10 +274,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "HOSPITAL_DISCHARGE_REPORT_MISSING",
-      "PRESCRIPTION_NO_POSTAL_DELIVERY",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_PRIVATE_ONLY",
-      "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
@@ -1632,15 +1628,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "SECTION_INTRO_NOT_RESPONSIBLE",
     ],
     specificCheckpointIds: [
-      "APPOINTMENT_CAN_BE_BOOKED",
-      "APPOINTMENT_CANCEL_OR_RESCHEDULE",
       // Ärztliches Outcome nach Prüfung: digital nicht abschließend klärbar →
       // persönlicher Termin in der Praxis erforderlich. Abgrenzung zu
       // APPOINTMENT_CAN_BE_BOOKED (grundsätzliche Buchbarkeit) und
       // APPOINTMENT_TYPE_QUESTION (Rückfrage Terminart).
       "APPOINTMENT_IN_PERSON_REQUIRED_FOR_REQUEST",
       "APPOINTMENT_WRONG_TYPE",
-      "APPOINTMENT_TYPE_MATCH_CONFIRMED",
       "APPOINTMENT_BOOKING_CODE_REQUIRED",
       "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
       "APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE",
@@ -2307,7 +2300,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "MEDICAL_DOCUMENT_INFO_MISSING",
       "MEDICAL_DOCUMENTS_TRANSLATION_REQUIRED",
       "MEDICAL_DOCUMENT_CONSULTATION_REQUIRED",
-      "MEDICAL_DOCUMENT_AU_DIFFERENCE",
       // Schublade „Anliegen geprüft" – Bedeutung dokumentierter Verdachtsdiagnosen.
       "SUSPECTED_DIAGNOSIS_EXPLANATION",
     ],

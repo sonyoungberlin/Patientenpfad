@@ -53,8 +53,6 @@ const EXPECTED_RESPONSE_GOAL_IDS: string[] = [
 // Bekannte Specific-Checkpoint-IDs
 // ---------------------------------------------------------------------------
 const EXPECTED_SPECIFIC_CHECKPOINT_IDS = [
-  "APPOINTMENT_CAN_BE_BOOKED",
-  "APPOINTMENT_CANCEL_OR_RESCHEDULE",
   "APPOINTMENT_WRONG_TYPE",
   "APPOINTMENT_BOOKING_CODE_REQUIRED",
   "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
@@ -307,14 +305,6 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_WRONG_TYPE"].specificRole).toBe("CHANNEL_NOT_SUITABLE");
   });
 
-  it("APPOINTMENT_CAN_BE_BOOKED hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_CAN_BE_BOOKED"].specificRole).toBe("PROCESS_INFO");
-  });
-
-  it("APPOINTMENT_CAN_BE_BOOKED steht an erster Stelle in specificCheckpointIds", () => {
-    expect(APPOINTMENT.specificCheckpointIds[0]).toBe("APPOINTMENT_CAN_BE_BOOKED");
-  });
-
   it("APPOINTMENT_DATA_INCOMPLETE hat specificRole MISSING_INFORMATION", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_DATA_INCOMPLETE"].specificRole).toBe("MISSING_INFORMATION");
   });
@@ -325,19 +315,8 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau dreizehn Specific-Checkpoints", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(13);
-  });
-
-  it("APPOINTMENT_CANCEL_OR_RESCHEDULE hat specificRole PROCESS_INFO", () => {
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2["APPOINTMENT_CANCEL_OR_RESCHEDULE"].specificRole).toBe("PROCESS_INFO");
-  });
-
-  it("APPOINTMENT_CANCEL_OR_RESCHEDULE steht nach APPOINTMENT_CAN_BE_BOOKED in specificCheckpointIds", () => {
-    const ids = APPOINTMENT.specificCheckpointIds;
-    const canBeBookedIdx = ids.indexOf("APPOINTMENT_CAN_BE_BOOKED");
-    const cancelIdx = ids.indexOf("APPOINTMENT_CANCEL_OR_RESCHEDULE");
-    expect(cancelIdx).toBeGreaterThan(canBeBookedIdx);
+  it("APPOINTMENT-Profil hat genau zehn Specific-Checkpoints im Hauptfluss", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(10);
   });
 });
 
@@ -359,7 +338,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).toContain("gebuchte Termintyp");
   });
 
-  it("APPOINTMENT_CAN_BE_BOOKED YES + SHOW → Text erscheint", () => {
+  it("APPOINTMENT_CAN_BE_BOOKED ist nicht mehr im Hauptfluss sichtbar", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -369,10 +348,10 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Für Ihr Anliegen kann grundsätzlich ein Termin vereinbart werden.");
+    expect(paragraphs).not.toContain("Für Ihr Anliegen kann grundsätzlich ein Termin vereinbart werden.");
   });
 
-  it("APPOINTMENT_CAN_BE_BOOKED YES + SHOW → keine automatische Action im sharedBottom", () => {
+  it("APPOINTMENT_CAN_BE_BOOKED erzeugt keine Action im sharedBottom", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -397,7 +376,7 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
     expect(paragraphs).not.toContain("grundsätzlich ein Termin");
   });
 
-  it("APPOINTMENT_CANCEL_OR_RESCHEDULE YES + SHOW → Absage-Text erscheint", () => {
+  it("APPOINTMENT_CANCEL_OR_RESCHEDULE ist nicht mehr im Hauptfluss sichtbar", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",
@@ -407,10 +386,10 @@ describe("APPOINTMENT Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("Sie können Ihren Termin jederzeit über den Online-Kalender absagen oder verschieben.");
+    expect(paragraphs).not.toContain("absagen oder verschieben");
   });
 
-  it("APPOINTMENT_CANCEL_OR_RESCHEDULE NO + SHOW → kein Text erscheint", () => {
+  it("APPOINTMENT_CANCEL_OR_RESCHEDULE erzeugt keinen Text", () => {
     const result = renderInquiryResponseFromSections([
       {
         inquiryId: "APPOINTMENT",

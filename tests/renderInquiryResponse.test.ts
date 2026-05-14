@@ -1425,17 +1425,15 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile).toBeDefined();
   });
 
-  it("PRESCRIPTION-Profil bindet alle dreizehn Specific Checkpoints", () => {
+  it("PRESCRIPTION-Profil bindet die verbliebenen Specific Checkpoints", () => {
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_CONTROL_OVERDUE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_REPORT_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("HOSPITAL_DISCHARGE_REPORT_MISSING");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_BTM_ADHS_RULES");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_STATUTORY_POSSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PRIVATE_ONLY");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_PRESCRIPTION_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_SPECIALIST_RESPONSIBLE");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_GYN_EXCLUSIVITY");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_NO_POSTAL_DELIVERY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_PATIENT_NOT_IN_GERMANY");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_CHRONIC_PATIENT");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK");
@@ -1448,7 +1446,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INSURANCE_PROOF_MISSING");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(21);
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(19);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1463,10 +1461,8 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_GYN_EXCLUSIVITY",
       "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
       "HOSPITAL_DISCHARGE_REPORT_MISSING",
-      "PRESCRIPTION_NO_POSTAL_DELIVERY",
       "PRESCRIPTION_STATUTORY_POSSIBLE",
       "PRESCRIPTION_PRIVATE_ONLY",
-      "PRESCRIPTION_NO_PRESCRIPTION_REQUIRED",
       "PRESCRIPTION_SPECIALIST_RESPONSIBLE",
       "PRESCRIPTION_PATIENT_NOT_IN_GERMANY",
       "PRESCRIPTION_CHRONIC_PATIENT",
@@ -2704,7 +2700,6 @@ describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", (
   it("Checkpoint ist im APPOINTMENT-Profil als specificCheckpoint gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["APPOINTMENT"];
     expect(profile.specificCheckpointIds).toContain("APPOINTMENT_EXTERNAL_FINDING_LONG_ABSENCE");
-    expect(profile.specificCheckpointIds).toContain("APPOINTMENT_TYPE_MATCH_CONFIRMED");
   });
 
   it("YES + SHOW → Sachstandstext erscheint in attachedParagraphs", () => {
