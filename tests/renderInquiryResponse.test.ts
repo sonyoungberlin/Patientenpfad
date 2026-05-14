@@ -1445,8 +1445,8 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOCTOR_REVIEW_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INSURANCE_PROOF_MISSING");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(19);
+    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_INSURANCE_PROOF_MISSING");
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(18);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1469,7 +1469,6 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
       "TECH_UPLOAD_FAILED",
       "CONTRACEPTION_SPECIALIST_ONLY",
-      "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ]);
   });
 
@@ -1760,7 +1759,7 @@ describe("PRESCRIPTION-Profil – SPECIFIC Checkpoints", () => {
     ]);
     expect(
       result.sections[0].attachedParagraphs.some((t) => t.includes("Postversand")),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("PRESCRIPTION_NO_POSTAL_DELIVERY NO → kein Output in attachedParagraphs", () => {
@@ -1805,7 +1804,7 @@ describe("PRESCRIPTION_NO_PRESCRIPTION_REQUIRED – Checkpoint", () => {
     ]);
     expect(
       result.sections[0].attachedParagraphs.some((t) => t.includes("kein Rezept")),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("YES + HIDE → kein Output in attachedParagraphs", () => {
@@ -1904,7 +1903,7 @@ describe("PRESCRIPTION – STATUTORY_POSSIBLE=NO Begründungspfad (Renderer)", (
     ]);
     expect(
       result.sections[0].attachedParagraphs.some((t) => t.includes("kein Rezept")),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       result.sections[0].attachedParagraphs.some((t) => t.includes("nicht als Kassenrezept")),
     ).toBe(true);
@@ -2762,7 +2761,7 @@ describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", (
     ]);
 
     const text = result.sections[0].attachedParagraphs.join(" ");
-    expect(text).toContain("Die gewählte Terminart passt grundsätzlich zu Ihrem Anliegen.");
+    expect(text).not.toContain("Die gewählte Terminart passt grundsätzlich zu Ihrem Anliegen.");
     expect(text).not.toContain("dringend");
     expect(text).not.toContain("akut");
     expect(result.sharedBottom).toHaveLength(0);
@@ -2870,7 +2869,7 @@ describe("REFERRAL-Profil – Struktur", () => {
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(7);
+    expect(profile.specificCheckpointIds).toHaveLength(6);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
@@ -2878,7 +2877,7 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
     expect(profile.specificCheckpointIds).toContain("REF_MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
-    expect(profile.specificCheckpointIds).toContain("REFERRAL_INSURANCE_PROOF_MISSING");
+    expect(profile.specificCheckpointIds).not.toContain("REFERRAL_INSURANCE_PROOF_MISSING");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();
