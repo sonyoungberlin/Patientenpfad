@@ -30,13 +30,14 @@ describe("office hr governance summary", () => {
       ],
     });
 
-    expect(output).toContain("Office-Snapshot: Arzt anstellen / Nachbesetzung");
-    expect(output).toContain("Ist-Stand");
+    expect(output).toContain("Office-Dokumentation: Arzt anstellen / Nachbesetzung");
+    expect(output).toContain("Geklaerte Bereiche");
+    expect(output).toContain("Offene Bereiche");
     expect(output).not.toContain("Governance-Freigabe");
     expect(output).not.toContain("Nächste Klärungsschritte");
   });
 
-  it("zeigt fuer NO/Open-States weiterhin nur neutrale Ist-Stand- und offene Punkte", () => {
+  it("zeigt fuer NO/Open-States weiterhin neutrale offene Bereiche", () => {
     const output = buildOfficeSummaryText({
       topicTitle: "Arzt anstellen / Nachbesetzung",
       checkpoints: [
@@ -50,12 +51,10 @@ describe("office hr governance summary", () => {
       ],
     });
 
-    expect(output).toContain("- [NO] HR-GOV-A");
-    expect(output).toContain("- [OPEN] HR-GOV-B");
-    expect(output).toContain("Offene Punkte");
-    expect(output).toContain("Rueckmeldung fehlt");
-    expect(output).toContain("Zustaendig / Quelle");
-    expect(output).toContain("Zulassungsausschuss");
+    expect(output).toContain("Offene Bereiche");
+    expect(output).toContain("Nicht ausreichend geklaert");
+    expect(output).toContain("Antwortquellen");
+    expect(output).toContain("Falldokumentation");
     expect(output).not.toContain("Governance-Freigabe");
   });
 
@@ -71,8 +70,7 @@ describe("office hr governance summary", () => {
       ],
     });
 
-    expect(output).toContain("- [YES] HR-01");
-    expect(output).toContain("- [YES] HR-05");
+    expect(output).toContain("Weitere Klaerung");
     expect(output).not.toContain("FREIGEGEBEN");
   });
 
@@ -92,6 +90,6 @@ describe("office hr governance summary", () => {
     });
 
     expect(output).not.toContain("Governance-Freigabe");
-    expect(output).toContain("Ist-Stand");
+    expect(output).toContain("Office-Dokumentation");
   });
 });

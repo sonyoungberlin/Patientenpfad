@@ -1,262 +1,155 @@
 import { buildOfficeSummaryText } from "@/lib/office/summary";
-import { OfficeCheckpointKind, OfficeCheckpointState, OfficeCheckpointType, type M2AnswerValue } from "@/lib/office/types";
-import { OFFICE_TOPIC_REGRESS } from "@/lib/office/checkpointCatalog";
+import {
+  OfficeCheckpointKind,
+  OfficeCheckpointState,
+  OfficeCheckpointType,
+  type M2AnswerValue,
+} from "@/lib/office/types";
+import { OFFICE_TOPIC_HIRING_REPLACEMENT } from "@/lib/office/checkpointCatalog";
 
-describe("office summary structured fields", () => {
-  it("zeigt Fristen und Verantwortung an wenn vorhanden", () => {
-    const input = {
-      topicTitle: "Test Topic",
+describe("office summary concise structure", () => {
+  it("nutzt die neue kurze Office-Dokumentationsstruktur", () => {
+    const output = buildOfficeSummaryText({
+      topicTitle: "Arzt anstellen / Nachbesetzung",
+      topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,
       checkpoints: [
         {
-          id: "CP-01",
-          title: "Checkpoint 1",
-          kind: OfficeCheckpointKind.FACT,
-          state: OfficeCheckpointState.OPEN,
-          deadline: "2026-06-15",
-          responsible_role: "Geschäftsführer",
-        },
-      ],
-    };
-
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Fristen und Verantwortung");
-    expect(output).toContain("Checkpoint 1");
-    expect(output).toContain("2026-06-15");
-    expect(output).toContain("Geschäftsführer");
-  });
-
-  it("zeigt nur Frist an wenn Verantwortung leer", () => {
-    const input = {
-      topicTitle: "Test Topic",
-      checkpoints: [
-        {
-          id: "CP-01",
-          title: "Checkpoint 1",
-          kind: OfficeCheckpointKind.FACT,
-          state: OfficeCheckpointState.OPEN,
-          deadline: "2026-06-15",
-        },
-      ],
-    };
-
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Fristen und Verantwortung");
-    expect(output).toContain("2026-06-15");
-    expect(output).not.toContain("Verantwortung: ");
-  });
-
-  it("zeigt erforderliche Unterlagen als Checkliste an", () => {
-    const input = {
-      topicTitle: "Test Topic",
-      checkpoints: [
-        {
-          id: "CP-01",
-          title: "Checkpoint 1",
-          kind: OfficeCheckpointKind.FACT,
-          state: OfficeCheckpointState.OPEN,
-          required_documents: ["Anschreiben", "Nachweis", "Bestätigung"],
-        },
-      ],
-    };
-
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Erforderliche Unterlagen");
-    expect(output).toContain("Checkpoint 1:");
-    expect(output).toContain("• Anschreiben");
-    expect(output).toContain("• Nachweis");
-    expect(output).toContain("• Bestätigung");
-  });
-
-  it("zeigt Eskalation an wenn escalation_needed true", () => {
-    const input = {
-      topicTitle: "Test Topic",
-      checkpoints: [
-        {
-          id: "CP-01",
-          title: "Checkpoint 1",
-          kind: OfficeCheckpointKind.FACT,
-          state: OfficeCheckpointState.OPEN,
-          escalation_needed: true,
-        },
-        {
-          id: "CP-02",
-          title: "Checkpoint 2",
+          id: "NC-APPROBATION",
+          title: "Approbation",
           kind: OfficeCheckpointKind.DECISION,
-          state: OfficeCheckpointState.YES,
-          escalation_needed: false,
+          state: OfficeCheckpointState.OPEN,
+          m2_answers: {
+            "M2-01": "NO",
+          } as Record<string, M2AnswerValue>,
         },
       ],
-    };
+    });
 
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Eskalation erforderlich");
-    expect(output).toContain("- Checkpoint 1");
-    const eskalationSection = output.split("Eskalation erforderlich")[1];
-    expect(eskalationSection).not.toContain("Checkpoint 2");
+    expect(output).toContain("Office-Dokumentation:");
+    expect(output).toContain("Geklaerte Bereiche");
+    expect(output).toContain("Offene Bereiche");
+    expect(output).toContain("Naechste Schritte");
+    expect(output).toContain("Antwortquellen");
+    expect(output).not.toContain("Ist-Stand");
+    expect(output).not.toContain("Klaerungsstand nach Bereichen");
   });
 
-  it("zeigt Zustaendige Stellen an wenn authority vorhanden", () => {
-    const input = {
+  it("enthaelt keine redundante doppelphrase bei offenen punkten", () => {
+    const output = buildOfficeSummaryText({
       topicTitle: "Test Topic",
       checkpoints: [
         {
           id: "CP-01",
           title: "Checkpoint 1",
-          kind: OfficeCheckpointKind.SOURCE,
-          state: OfficeCheckpointState.OPEN,
-          authority: "Kassenärztliche Vereinigung",
-        },
-      ],
-    };
-
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Zustaendige Stellen");
-    expect(output).toContain("Checkpoint 1: Kassenärztliche Vereinigung");
-  });
-
-  it("bleibt rueckwaertskompatibel mit alten Snapshots ohne neue Felder", () => {
-    const input = {
-      topicTitle: "Test Topic",
-      checkpoints: [
-        {
-          id: "CP-01",
-          title: "Checkpoint 1",
-          kind: OfficeCheckpointKind.FACT,
-          state: OfficeCheckpointState.OPEN,
-          known_note: "Bekannt",
-          missing_note: "Fehlt",
-          answer_source: "Manager",
-        },
-      ],
-    };
-
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Ist-Stand");
-    expect(output).toContain("Offene Punkte");
-    expect(output).toContain("Zustaendig / Quelle");
-    expect(output).not.toContain("!!! FEHLT");
-    expect(output).not.toContain("Fristen");
-    expect(output).not.toContain("Eskalation");
-    expect(output).not.toContain("Erforderliche Unterlagen");
-  });
-
-  it("zeigt offene Punkte aus M2 und die abgeleitete Zuständigkeit an", () => {
-    const input = {
-      topicTitle: "Regressfall",
-      topicId: OFFICE_TOPIC_REGRESS,
-      checkpoints: [
-        {
-          id: "RG-01",
-          title: "Anlass dokumentiert",
           kind: OfficeCheckpointKind.FACT,
           state: OfficeCheckpointState.OPEN,
           m2_answers: {
             "M2-01": "NO",
-            "M2-02": "UNCLEAR",
+          } as Record<string, M2AnswerValue>,
+        },
+      ],
+    });
+
+    expect(output).not.toContain("Nicht vollstaendig: Offen:");
+  });
+
+  it("zeigt geklaerte und offene bereiche getrennt", () => {
+    const output = buildOfficeSummaryText({
+      topicTitle: "Arzt anstellen / Nachbesetzung",
+      topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,
+      checkpoints: [
+        {
+          id: "NC-APPROBATION",
+          title: "Approbation",
+          kind: OfficeCheckpointKind.DECISION,
+          state: OfficeCheckpointState.YES,
+          m2_answers: {
+            "M2-01": "NO",
           } as Record<string, M2AnswerValue>,
         },
         {
-          id: "RG-02",
-          title: "Fristen geprueft",
+          id: "NC-GENEHMIGUNGSSTATUS",
+          title: "Genehmigungsstatus",
+          kind: OfficeCheckpointKind.DECISION,
+          state: OfficeCheckpointState.OPEN,
+          m2_answers: {
+            "M2-01": "UNCLEAR",
+          } as Record<string, M2AnswerValue>,
+        },
+      ],
+    });
+
+    expect(output).toContain("Geklaerte Bereiche");
+    expect(output).toContain("Berufsrechtliche Voraussetzungen");
+    expect(output).toContain("Offene Bereiche");
+    expect(output).toContain("KV / Zulassung / Abrechnung");
+  });
+
+  it("bildet naechste schritte handlungsorientiert ab", () => {
+    const output = buildOfficeSummaryText({
+      topicTitle: "Arzt anstellen / Nachbesetzung",
+      topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,
+      checkpoints: [
+        {
+          id: "NC-APPROBATION",
+          title: "Approbation",
+          kind: OfficeCheckpointKind.DECISION,
+          state: OfficeCheckpointState.OPEN,
+          m2_answers: {
+            "M2-01": "NO",
+          } as Record<string, M2AnswerValue>,
+        },
+      ],
+    });
+
+    expect(output).toContain("Naechste Schritte");
+    expect(output).toContain("Nachweis beschaffen: Approbation");
+  });
+
+  it("zeigt antwortquellen fuer offene bereiche", () => {
+    const output = buildOfficeSummaryText({
+      topicTitle: "Test Topic",
+      checkpoints: [
+        {
+          id: "CP-01",
+          title: "Checkpoint 1",
           kind: OfficeCheckpointKind.RULE,
           state: OfficeCheckpointState.OPEN,
           checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
           authority: "KV Berlin",
           m2_answers: {
-            "M2-01": "YES",
-            "M2-02": "YES",
+            "M2-01": "UNCLEAR",
           } as Record<string, M2AnswerValue>,
         },
       ],
-    };
+    });
 
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Offene Punkte");
-    expect(output).toContain("Kontextinformation unvollstaendig");
-    expect(output).toContain("Zustaendig / Quelle");
-    expect(output).toContain("BACKOFFICE");
+    expect(output).toContain("Antwortquellen");
     expect(output).toContain("KV Berlin");
-    expect(output).not.toContain("!!! FEHLT");
   });
 
-  it("leere Arrays und falsche Booleans werden ignoriert", () => {
-    const input = {
+  it("enthaelt keine severity- oder risiko-woerter", () => {
+    const output = buildOfficeSummaryText({
       topicTitle: "Test Topic",
       checkpoints: [
         {
           id: "CP-01",
           title: "Checkpoint 1",
           kind: OfficeCheckpointKind.FACT,
-          state: OfficeCheckpointState.YES,
-          deadline: "",
-          responsible_role: "",
-          authority: "",
-          required_documents: [],
-          escalation_needed: false,
+          state: OfficeCheckpointState.OPEN,
+          m2_answers: {
+            "M2-01": "NO",
+          } as Record<string, M2AnswerValue>,
         },
       ],
-    };
+    });
 
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).not.toContain("Fristen");
-    expect(output).not.toContain("Zustaendige Stellen");
-    expect(output).not.toContain("Erforderliche Unterlagen");
-    expect(output).not.toContain("Eskalation erforderlich");
-  });
-
-  it("kombiniert mehrere Checkpoints mit unterschiedlichen Strukturfeldern", () => {
-    const input = {
-      topicTitle: "Regressfall",
-      checkpoints: [
-        {
-          id: "RG-01",
-          title: "Anlass dokumentiert",
-          kind: OfficeCheckpointKind.FACT,
-          state: OfficeCheckpointState.OPEN,
-          deadline: "2026-06-01",
-          responsible_role: "GF",
-          required_documents: ["Anschreiben KV"],
-          escalation_needed: true,
-        },
-        {
-          id: "RG-02",
-          title: "Fristen geprueft",
-          kind: OfficeCheckpointKind.RULE,
-          state: OfficeCheckpointState.YES,
-          authority: "Anwalt",
-        },
-        {
-          id: "RG-03",
-          title: "Verantwortung benannt",
-          kind: OfficeCheckpointKind.ASSESSMENT,
-          state: OfficeCheckpointState.OPEN,
-          responsible_role: "Praxismanager",
-        },
-      ],
-    };
-
-    const output = buildOfficeSummaryText(input);
-
-    expect(output).toContain("Fristen und Verantwortung");
-    expect(output).toContain("Anlass dokumentiert");
-    expect(output).toContain("Frist: 2026-06-01");
-    expect(output).toContain("Verantw: GF");
-    expect(output).toContain("Verantwortung benannt");
-    expect(output).toContain("Verantw: Praxismanager");
-    expect(output).toContain("Zustaendige Stellen");
-    expect(output).toContain("Fristen geprueft: Anwalt");
-    expect(output).toContain("Erforderliche Unterlagen");
-    expect(output).toContain("• Anschreiben KV");
-    expect(output).toContain("Eskalation erforderlich");
-    const eskalationSection = output.split("Eskalation erforderlich")[1];
-    expect(eskalationSection).toContain("Anlass dokumentiert");
+    expect(output).not.toContain("kritisch");
+    expect(output).not.toContain("hoch");
+    expect(output).not.toContain("mittel");
+    expect(output).not.toContain("niedrig");
+    expect(output).not.toContain("Risiko");
+    expect(output).not.toContain("Warnung");
+    expect(output).not.toContain("Eskalation");
   });
 });

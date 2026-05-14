@@ -8,10 +8,11 @@ import {
   OfficeCheckpointType,
   OfficeFailureEffect,
   OfficeOutcomeAudience,
+  OfficeCheckpointState,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
 
-export type DerivedActionSeverity = "critical" | "high" | "medium" | "low";
+export type DerivedActionStatus = "geklaert" | "offen" | "nicht_vollstaendig";
 
 export type DerivedActionType =
   | "external_confirmation_pending"
@@ -24,9 +25,10 @@ export type DerivedActionType =
 export type DerivedAction = {
   id: string;
   checkpointId: string;
-  severity: DerivedActionSeverity;
+  status: DerivedActionStatus;
   text: string;
-  owner: OfficeOutcomeAudience;
+  answerOwner: string;
+  processOwner?: OfficeOutcomeAudience;
   type: DerivedActionType;
   sourceQuestionId?: string;
 };
@@ -52,32 +54,37 @@ const ACTION_TYPE_BY_CHECKPOINT_TYPE: Record<OfficeCheckpointType, DerivedAction
 };
 
 const ACTION_TEXT_BY_TYPE: Record<DerivedActionType, string> = {
-  external_confirmation_pending: "Externe Rueckmeldung offen",
-  evidence_missing: "Nachweis fehlt",
-  internal_decision_pending: "Interne Entscheidung ausstehend",
-  rule_check_required: "Regelpruefung erforderlich",
-  context_incomplete: "Kontextinformation unvollstaendig",
-  process_path_unclear: "Verfahrensweg klaeren",
+  external_confirmation_pending: "Offen: Klaerung mit externer Stelle steht aus",
+  evidence_missing: "Nicht vollstaendig: Nachweis fehlt",
+  internal_decision_pending: "Offen: Entscheidung noch nicht dokumentiert",
+  rule_check_required: "Offen: Klaerung steht aus",
+  context_incomplete: "Offen: Klaerung steht aus",
+  process_path_unclear: "Offen: Klaerung steht aus",
 };
 
 const ACTION_TEXT_OVERRIDES: Record<string, string> = {
-  "OE-02": "Arbeitszeiten festlegen",
-  "UV-ABRECHNUNGSZUORDNUNG": "Abrechnungszuordnung klaeren",
-  "DS-04": "Zugriffe absichern",
+  "OE-02": "Offen: Arbeitszeiten festlegen",
+  "UV-ABRECHNUNGSZUORDNUNG": "Offen: Abrechnungszuordnung klaeren",
+  "DS-04": "Nicht vollstaendig: Zugriffe absichern",
 };
 
-const SEVERITY_BY_FAILURE_EFFECT: Record<OfficeFailureEffect, DerivedActionSeverity> = {
-  [OfficeFailureEffect.GATEKEEPER]: "critical",
-  [OfficeFailureEffect.BLOCKER]: "high",
-  [OfficeFailureEffect.RISK]: "medium",
-  [OfficeFailureEffect.NONE]: "low",
+const ANSWER_OWNER_OVERRIDES: Record<string, string> = {
+  "NC-APPROBATION": "Aerztekammer / Approbationsnachweis / Register",
+  "NC-FACHARZTQUALIFIKATION": "Aerztekammer / Facharzturkunde",
+  "NC-GENEHMIGUNGSSTATUS": "KV / Zulassungsausschuss",
+  "NC-EXTERNE_STELLE": "KV / zustaendige externe Stelle",
+  "NC-ARBEITSVERTRAG_FREIGABE": "Praxisleitung / Arbeitgeberunterlagen",
+  "NC-LANR_BSNR_ZUORDNUNG": "KV-Abrechnungsdaten / PVS",
+  "NC-SYSTEMZUGRIFFE_EINGERICHTET": "interne IT / PVS-Administration",
+  "UV-ABRECHNUNGSZUORDNUNG": "KV-Abrechnungsdaten / PVS",
+  "DS-04": "interne IT / Zugriffsdokumentation",
 };
 
-const SEVERITY_RANK: Record<DerivedActionSeverity, number> = {
-  critical: 0,
-  high: 1,
-  medium: 2,
-  low: 3,
+const PRIORITY_BY_FAILURE_EFFECT: Record<OfficeFailureEffect, number> = {
+  [OfficeFailureEffect.GATEKEEPER]: 0,
+  [OfficeFailureEffect.BLOCKER]: 1,
+  [OfficeFailureEffect.RISK]: 2,
+  [OfficeFailureEffect.NONE]: 3,
 };
 
 function resolveCheckpointType(input: DeriveCheckpointActionsInput): OfficeCheckpointType {
@@ -99,8 +106,8 @@ function resolveOwner(input: DeriveCheckpointActionsInput): OfficeOutcomeAudienc
   return audiences[0] ?? OfficeOutcomeAudience.BACKOFFICE;
 }
 
-function toSeverity(effect: OfficeFailureEffect): DerivedActionSeverity {
-  return SEVERITY_BY_FAILURE_EFFECT[effect] ?? "low";
+function toPriority(effect: OfficeFailureEffect): number {
+  return PRIORITY_BY_FAILURE_EFFECT[effect] ?? 3;
 }
 
 function toActionType(checkpointType: OfficeCheckpointType): DerivedActionType {
@@ -111,40 +118,99 @@ function toActionText(checkpointId: string, actionType: DerivedActionType): stri
   return ACTION_TEXT_OVERRIDES[checkpointId] ?? ACTION_TEXT_BY_TYPE[actionType];
 }
 
+function toAnswerOwner(checkpointId: string, checkpointType: OfficeCheckpointType): string {
+  if (ANSWER_OWNER_OVERRIDES[checkpointId]) return ANSWER_OWNER_OVERRIDES[checkpointId];
+
+  switch (checkpointType) {
+    case OfficeCheckpointType.EXTERNE_BESTAETIGUNG:
+      return "zustaendige externe Stelle";
+    case OfficeCheckpointType.NACHWEIS_PFLICHT:
+      return "Nachweis / Dokumentenquelle";
+    case OfficeCheckpointType.REGEL_PARAMETER:
+      return "Regelgrundlage / interne Pruefung";
+    case OfficeCheckpointType.INTERNE_ENTSCHEIDUNG:
+      return "Praxisleitung / interne Entscheidung";
+    case OfficeCheckpointType.VERFAHRENSWEG:
+      return "Verfahrensdokumentation";
+    case OfficeCheckpointType.KONTEXT_INFORMATION:
+    default:
+      return "Falldokumentation";
+  }
+}
+
+function toStatus(answer: "NO" | "UNCLEAR"): DerivedActionStatus {
+  if (answer === "NO") return "nicht_vollstaendig";
+  return "offen";
+}
+
 function actionSort(a: DerivedAction, b: DerivedAction): number {
-  const severityDelta = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
-  if (severityDelta !== 0) return severityDelta;
+  const priorityDelta = toPriorityFromAction(a) - toPriorityFromAction(b);
+  if (priorityDelta !== 0) return priorityDelta;
+  const statusDelta = statusRank(a.status) - statusRank(b.status);
+  if (statusDelta !== 0) return statusDelta;
   const checkpointDelta = a.checkpointId.localeCompare(b.checkpointId);
   if (checkpointDelta !== 0) return checkpointDelta;
   return a.text.localeCompare(b.text);
 }
 
-function dedupeActionKey(action: Pick<DerivedAction, "checkpointId" | "type" | "owner" | "text">): string {
-  return `${action.checkpointId}::${action.type}::${action.owner}::${action.text}`;
+function statusRank(status: DerivedActionStatus): number {
+  if (status === "nicht_vollstaendig") return 0;
+  if (status === "offen") return 1;
+  return 2;
+}
+
+function toPriorityFromAction(action: DerivedAction): number {
+  if (action.type === "evidence_missing") return 0;
+  if (action.type === "external_confirmation_pending") return 1;
+  if (action.type === "internal_decision_pending") return 2;
+  if (action.type === "rule_check_required") return 3;
+  if (action.type === "process_path_unclear") return 4;
+  return 5;
+}
+
+function dedupeActionKey(action: Pick<DerivedAction, "checkpointId" | "type" | "status" | "text" | "answerOwner">): string {
+  return `${action.checkpointId}::${action.type}::${action.status}::${action.text}::${action.answerOwner}`;
 }
 
 export function deriveCheckpointActions(input: DeriveCheckpointActionsInput): DerivedAction[] {
-  const answers = input.checkpoint.m2_answers ?? {};
   const checkpointType = resolveCheckpointType(input);
-  const failureEffect = resolveFailureEffect(input);
-  const owner = resolveOwner(input);
-
+  resolveFailureEffect(input);
+  const processOwner = resolveOwner(input);
   const actionType = toActionType(checkpointType);
-  const text = toActionText(input.checkpoint.id, actionType);
-  const severity = toSeverity(failureEffect);
+  const answerOwner = toAnswerOwner(input.checkpoint.id, checkpointType);
 
+  if (input.checkpoint.state === OfficeCheckpointState.YES) {
+    return [];
+  }
+
+  if (input.checkpoint.state === OfficeCheckpointState.NO) {
+    return [{
+      id: `${input.checkpoint.id}:${actionType}:state_no`,
+      checkpointId: input.checkpoint.id,
+      status: "nicht_vollstaendig",
+      text: "Nicht ausreichend geklaert",
+      answerOwner,
+      processOwner,
+      type: actionType,
+    }];
+  }
+
+  const answers = input.checkpoint.m2_answers ?? {};
+  const text = toActionText(input.checkpoint.id, actionType);
   const deduped = new Map<string, DerivedAction>();
 
   for (const question of input.questions) {
     const answer = answers[question.id];
     if (answer !== "NO" && answer !== "UNCLEAR") continue;
+    const status = toStatus(answer);
 
     const candidate: DerivedAction = {
-      id: `${input.checkpoint.id}:${actionType}:${owner}`,
+      id: `${input.checkpoint.id}:${actionType}:${status}`,
       checkpointId: input.checkpoint.id,
-      severity,
+      status,
       text,
-      owner,
+      answerOwner,
+      processOwner,
       type: actionType,
       sourceQuestionId: question.id,
     };
@@ -179,7 +245,6 @@ export function deriveTopicActions(input: DeriveTopicActionsInput): DerivedActio
     const questions = topicId
       ? getM2QuestionsForCheckpoint(topicId, checkpoint.id)
       : [];
-    if (questions.length === 0) continue;
 
     const actions = deriveCheckpointActions({
       checkpoint,
