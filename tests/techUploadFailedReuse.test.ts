@@ -23,10 +23,25 @@ import {
   ExplanationOutputStatus,
   InquiryCheckpointKind,
   InquiryCheckpointScope,
+  type InquirySection,
 } from "@/lib/inquiries/types";
 
 const DOCUMENT_PROFILES = ["AU", "PRESCRIPTION", "REFERRAL"] as const;
 const NON_DOCUMENT_PROFILES = ["APPOINTMENT", "BILLING"] as const;
+
+function makeTechUploadSection(
+  inquiryId: string,
+  outputStatus: ExplanationOutputStatus,
+): InquirySection {
+  return {
+    inquiryId,
+    decisionStatus: DecisionStatus.POSSIBLE,
+    checkpointStatuses: { TECH_UPLOAD_FAILED: ExplanationStatus.YES },
+    explanationOutputStatuses: {
+      TECH_UPLOAD_FAILED: outputStatus,
+    } as Record<string, ExplanationOutputStatus>,
+  };
+}
 
 describe("TECH_UPLOAD_FAILED – Wiederverwendung in dokumentenbezogenen Profilen", () => {
   it("Checkpoint existiert weiterhin im Katalog mit unverändertem Text und Rolle", () => {
@@ -102,5 +117,55 @@ describe("TECH_UPLOAD_FAILED – Wiederverwendung in dokumentenbezogenen Profile
   it("TECH_SUPPORT-Flow bleibt unverändert: TECH_UPLOAD_FAILED weiterhin gebunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["TECH_SUPPORT"];
     expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
+  });
+
+  it("AU + PRESCRIPTION mit TECH_UPLOAD_FAILED YES/SHOW in beiden Sections → Text genau einmal", () => {
+    const result = renderInquiryResponseFromSections([
+      makeTechUploadSection("AU", ExplanationOutputStatus.SHOW),
+      makeTechUploadSection("PRESCRIPTION", ExplanationOutputStatus.SHOW),
+    ]);
+
+    const allParagraphs = result.sections.flatMap((section) => section.attachedParagraphs);
+    const matches = allParagraphs.filter((text) =>
+      text.includes("nicht ausreichend lesbar") && text.includes("erneut hoch"),
+    );
+    expect(matches).toHaveLength(1);
+
+    const docMatches = result.documentation.filter((entry) =>
+      entry.startsWith("Dokument unleserlich – erneuter Upload erforderlich:"),
+    );
+    expect(docMatches).toHaveLength(1);
+  });
+
+  it("Reihenfolge vertauscht → Text weiterhin genau einmal", () => {
+    const result = renderInquiryResponseFromSections([
+      makeTechUploadSection("PRESCRIPTION", ExplanationOutputStatus.SHOW),
+      makeTechUploadSection("AU", ExplanationOutputStatus.SHOW),
+    ]);
+
+    const allParagraphs = result.sections.flatMap((section) => section.attachedParagraphs);
+    const matches = allParagraphs.filter((text) =>
+      text.includes("nicht ausreichend lesbar") && text.includes("erneut hoch"),
+    );
+    expect(matches).toHaveLength(1);
+
+    expect(result.sections[0].attachedParagraphs.join(" ")).toContain("nicht ausreichend lesbar");
+    expect(result.sections[1].attachedParagraphs.join(" ")).not.toContain("nicht ausreichend lesbar");
+  });
+
+  it("Erste Section HIDE, zweite Section SHOW → Text genau einmal aus zweiter Section", () => {
+    const result = renderInquiryResponseFromSections([
+      makeTechUploadSection("AU", ExplanationOutputStatus.HIDE),
+      makeTechUploadSection("PRESCRIPTION", ExplanationOutputStatus.SHOW),
+    ]);
+
+    const allParagraphs = result.sections.flatMap((section) => section.attachedParagraphs);
+    const matches = allParagraphs.filter((text) =>
+      text.includes("nicht ausreichend lesbar") && text.includes("erneut hoch"),
+    );
+    expect(matches).toHaveLength(1);
+
+    expect(result.sections[0].attachedParagraphs.join(" ")).not.toContain("nicht ausreichend lesbar");
+    expect(result.sections[1].attachedParagraphs.join(" ")).toContain("nicht ausreichend lesbar");
   });
 });

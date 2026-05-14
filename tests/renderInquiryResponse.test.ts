@@ -1445,8 +1445,8 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_DOCTOR_REVIEW_REQUIRED");
     expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON");
     expect(prescriptionProfile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
-    expect(prescriptionProfile.specificCheckpointIds).not.toContain("PRESCRIPTION_INSURANCE_PROOF_MISSING");
-    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(18);
+    expect(prescriptionProfile.specificCheckpointIds).toContain("PRESCRIPTION_INSURANCE_PROOF_MISSING");
+    expect(prescriptionProfile.specificCheckpointIds).toHaveLength(19);
   });
 
   it("PRESCRIPTION.specificCheckpointIds sind in gewünschter Reihenfolge", () => {
@@ -1469,6 +1469,7 @@ describe("PRESCRIPTION-Profil – Checkpoint-Bindungen", () => {
       "PRESCRIPTION_RECIPE_CHANGED_AFTER_PHARMACY_FEEDBACK",
       "TECH_UPLOAD_FAILED",
       "CONTRACEPTION_SPECIALIST_ONLY",
+      "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ]);
   });
 
@@ -2862,14 +2863,14 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(cp.questions).toHaveLength(1);
   });
 
-  it("6 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED und TECH_UPLOAD_FAILED)", () => {
+  it("7 Checkpoints in REFERRAL specificCheckpointIds (inkl. REF_MEDICAL_CONSULTATION_REQUIRED und TECH_UPLOAD_FAILED)", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     const ids = [
       "REF_DOCTOR_CONTACT_REQUIRED",
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(6);
+    expect(profile.specificCheckpointIds).toHaveLength(7);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
@@ -2877,7 +2878,7 @@ describe("REFERRAL-Profil – Struktur", () => {
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
     expect(profile.specificCheckpointIds).toContain("REF_MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
-    expect(profile.specificCheckpointIds).not.toContain("REFERRAL_INSURANCE_PROOF_MISSING");
+    expect(profile.specificCheckpointIds).toContain("REFERRAL_INSURANCE_PROOF_MISSING");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
       expect(INQUIRY_CHECKPOINT_CATALOG_V2[id]).toBeDefined();

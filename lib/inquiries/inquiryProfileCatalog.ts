@@ -56,6 +56,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "AU_BACKDATE_LIMIT",
       "AU_NEW_PATIENT_LIMIT",
+      "AU_MISSING_EGK",
       "AU_MISSING_QUESTIONNAIRE",
       "AU_WORK_ACCIDENT",
       "AU_CHILD_SICK",
@@ -286,6 +287,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "TECH_UPLOAD_FAILED",
       // Schublade „Anliegen geprüft" – neuer Baustein für kontrazeptive Verordnung.
       "CONTRACEPTION_SPECIALIST_ONLY",
+      "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ],
     boundGlobalCheckpointIds: [
       "REQUIRED_INFORMATION_COMPLETE",
@@ -1080,6 +1082,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // wenn die hochgeladene Datei nicht verwertbar ist. Sichtbar im
       // Patientenoutput erst nach M2 YES + M3 SHOW.
       "TECH_UPLOAD_FAILED",
+      "REFERRAL_INSURANCE_PROOF_MISSING",
     ],
     boundGlobalCheckpointIds: [
       "REQUIRED_INFORMATION_COMPLETE",
@@ -1638,6 +1641,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // Zentrale Patientenrückfrage zu Terminart/Buchungslogik. Detail-Erklärungen
       // sind als gebundene Info-Actions (APPOINTMENT_INFO_*) modelliert.
       "APPOINTMENT_TYPE_QUESTION",
+      "APPOINTMENT_INSURANCE_PROOF_MISSING",
     ],
     boundGlobalCheckpointIds: [
       "REQUIRED_INFORMATION_COMPLETE",

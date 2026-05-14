@@ -250,6 +250,14 @@ export function renderInquiryResponseFromSections(
   // Betrifft nur Actions in `boundActionCheckpointIds` mit placement ≠ SHARED_BOTTOM
   // (SHARED_BOTTOM-Actions sind über `sharedBottomSeen` bereits dedupliziert.)
   const attachedActionSeen = new Set<string>();
+  // Track SPECIFIC EXPLANATION-Checkpoints, die bereits in einer früheren
+  // Section im Patiententext gerendert wurden. Wenn dieselbe Checkpoint-ID in
+  // mehreren Profilen wiederverwendet wird (z. B. TECH_UPLOAD_FAILED), soll der
+  // Text samt Dokumentation nur einmal erscheinen – erste sichtbare Vorkommensstelle
+  // gewinnt. Der Guard greift erst nach Status-/SHOW-Prüfung und tatsächlicher
+  // Textauflösung, damit HIDE oder fehlender Text eine spätere sichtbare Section
+  // nicht blockieren.
+  const specificExplanationSeen = new Set<string>();
 
   for (const section of sections) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[section.inquiryId];
@@ -307,6 +315,14 @@ export function renderInquiryResponseFromSections(
 
       const text = resolveCheckpointText(checkpoint, status, audience);
       if (!text) continue;
+
+      if (
+        checkpoint.kind === InquiryCheckpointKind.EXPLANATION &&
+        checkpoint.scope === InquiryCheckpointScope.SPECIFIC
+      ) {
+        if (specificExplanationSeen.has(checkpointId)) continue;
+        specificExplanationSeen.add(checkpointId);
+      }
 
       const docText = checkpoint.docByStatus?.[status] ?? text;
       attachedParagraphs.push(text);
