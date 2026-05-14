@@ -51,6 +51,18 @@ Die Trennung nach Regalen reduziert Dopplung, stabilisiert Triggerketten und mac
 - Regalmodell und Regeln klar dokumentieren.
 - Keine Architekturmigration und keine Persistenzänderung.
 
+Aktueller Stand in Phase 1:
+
+- Eine zentrale Zuordnung der Prozessregale ist als vorbereitende Struktur vorhanden.
+- Verwendete Gruppen:
+	- Fehlende Angaben / Unterlagen
+	- Dokumente & Upload
+	- Versicherungsdaten
+	- Termine & Buchung
+	- Digitale Anfrage
+	- Warten / Bearbeitung / technische Hinweise
+- Es werden nur bestehende IDs gruppiert, ohne Laufzeitverhalten in M2/M3 zu ändern.
+
 ### Phase 2: Trigger-only-Schicht
 
 - Trigger-only technisch klar kennzeichnen oder separat führen.
