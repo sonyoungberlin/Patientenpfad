@@ -47,6 +47,11 @@ export const PROCESS_SHELF_GROUPS = {
     checkpointIds: [
       "DOCUMENT_UPLOAD",
       "REF_ORIGINAL_VS_PDF",
+      "HMV_PREVIOUS_ORDER_MISSING",
+      "APPOINTMENT_EXTERNAL_FINDING_PRESENT",
+      "ONBOARDING_GKV_DOCUMENT_MISSING",
+      "ONBOARDING_PKV_PAS_MISSING",
+      "MEDICAL_DOCUMENT_INFO_MISSING",
     ] as const,
   },
   insuranceData: {
