@@ -3,6 +3,7 @@ import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
 import {
   InquiryCheckpointKind,
   InquiryCheckpointScope,
@@ -137,6 +138,12 @@ export default async function InquiryM3Page({
   // (availableActionIds only – boundActionCheckpointIds are rendered via sections[].boundActionCheckpoints).
   const actionIds = new Set<string>();
   const displayActionIds = new Set<string>();
+  // Globale Actions (profilübergreifend, einmalig): vor dem Profil-Loop einspeisen.
+  for (const cpId of GLOBAL_ACTION_SHELF) {
+    actionIds.add(cpId);
+    displayActionIds.add(cpId);
+  }
+
   for (const inquiryId of selectedIds) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
     if (!profile) continue;

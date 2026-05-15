@@ -9,6 +9,19 @@ function onlyExplanations(ids: readonly string[]): string[] {
   );
 }
 
+function onlyActions(ids: readonly string[]): string[] {
+  return ids.filter(
+    (id) => INQUIRY_CHECKPOINT_CATALOG_V2[id]?.kind === "ACTION"
+  );
+}
+
+export const GLOBAL_ACTION_SHELF: readonly string[] = onlyActions([
+  // Action-IDs, die in nahezu allen Profilen vorkommen und global einmalig verarbeitet werden sollen
+  "PROCESSING_DELAY",
+  "TECHNICAL_ISSUE",
+  "DOCUMENT_UPLOAD",
+]);
+
 export const GLOBAL_PROCESS_SHELF: readonly string[] = onlyExplanations([
   // IDs, die in mehreren Profilen vorkommen und technisch nur einmal verarbeitet werden sollen
   "TECH_UPLOAD_FAILED",

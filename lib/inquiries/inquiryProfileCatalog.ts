@@ -268,7 +268,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
       "CONTROL_APPOINTMENT_RECOMMENDED",
@@ -1070,7 +1069,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
-      "DOCUMENT_UPLOAD",
       "DIGITAL_REQUEST",
     ],
 
@@ -1260,7 +1258,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "DIGITAL_REQUEST",
-      "DOCUMENT_UPLOAD",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
     ],
@@ -1444,7 +1441,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
-      "DOCUMENT_UPLOAD",
     ],
     boundActionCheckpointIds: [
       "IMMUNIZATION_BOOK_VACCINATION",
@@ -2095,7 +2091,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BOOK_APPOINTMENT",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
-      "DOCUMENT_UPLOAD",
     ],
     actionGuidanceRules: [
       // DOCUMENT_UPLOAD empfehlen, wenn Abrechnungsunterlagen fehlen

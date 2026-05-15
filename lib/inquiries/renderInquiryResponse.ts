@@ -20,7 +20,7 @@ import {
 } from "@/lib/inquiries/types";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
+import { PROCESS_SHELF_PROFILE_BINDINGS, GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
 
 /**
  * Erzeugt deterministisch den Antworttext und die Dokumentation
@@ -235,6 +235,23 @@ export function renderInquiryResponseFromSections(
   const sectionOutputs: InquirySectionOutput[] = [];
   const sharedBottomEntries: Array<{ text: string; category?: string }> = [];
   const sharedBottomSeen = new Set<string>();
+
+  // ---- Globale Actions (GLOBAL_ACTION_SHELF) – einmalig vor dem sections-Loop ----
+  // statuses ist ein flaches, session-weites Objekt; sections[0] enthält dieselbe
+  // checkpointStatuses-Referenz wie alle anderen Sections.
+  const globalActionStatuses = sections[0]?.checkpointStatuses ?? {};
+  for (const actionId of GLOBAL_ACTION_SHELF) {
+    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
+    if (!checkpoint || checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
+    const status = globalActionStatuses[actionId];
+    if (status === undefined || status === ActionStatus.INACTIVE) continue;
+    const text = resolveCheckpointText(checkpoint, status, audience);
+    if (!text) continue;
+    if (!sharedBottomSeen.has(actionId)) {
+      sharedBottomSeen.add(actionId);
+      sharedBottomEntries.push({ text, category: checkpoint.actionCategory });
+    }
+  }
   const allDocumentation: string[] = [];
   // Track which GLOBAL checkpoints have already contributed a M5 doc entry.
   // GLOBAL docs must appear exactly once across all sections (not per-anliegen).
