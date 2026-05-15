@@ -105,6 +105,17 @@ const PROCESS_SHELF_LABELS: Record<ProcessShelfGroupId, string> = {
   billing: "Abrechnung / Kosten",
 };
 
+/**
+ * GLOBAL-Action-Checkpoints, die nicht mehr als manuelle Praxis-Schalter in M2 erscheinen sollen.
+ * Diese Actions werden in M3 schubladen-gesteuert aktiviert (siehe processShelfGroups).
+ * Reiner UI-Filter – kein Datenmodell-Eingriff, keine Logikänderung.
+ */
+const HIDDEN_M2_ACTION_IDS = new Set<string>([
+  "DOCUMENT_UPLOAD",
+  "PROCESSING_DELAY",
+  "TECHNICAL_ISSUE",
+]);
+
 type ProcessShelfGroupData = {
   id: ProcessShelfGroupId;
   label: string;
@@ -193,23 +204,30 @@ function ProcessShelfOrientationSection({
   return (
     <section
       style={{
-        margin: "-1rem 0 1.5rem",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "0.6rem 0.8rem",
-        background: "var(--background)",
+        margin: "0 0 1.5rem",
       }}
     >
-      <div
-        className="text-muted text-small"
-        style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.3rem" }}
+      <details
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "0.5rem 0.75rem",
+          background: "var(--background)",
+        }}
       >
-        <span aria-hidden="true">≡ </span>Prozessregale
-      </div>
-      <p className="text-muted text-small" style={{ margin: "0 0 0.5rem" }}>
-        Zusätzliche Orientierung: fachliche Auswahl bleibt unverändert, Prozessbausteine sind
-        hier nur gruppiert sichtbar.
-      </p>
+        <summary
+          style={{
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "0.9rem",
+            color: "var(--muted-foreground, #6b7280)",
+          }}
+        >
+          <span aria-hidden="true">≡ </span>Weitere Hinweise &amp; Prozessablauf
+        </summary>
+        <p className="text-muted text-small" style={{ margin: "0.5rem 0" }}>
+          Optional: prozessbezogene Hinweise, gruppiert. Die fachliche Auswahl bleibt unverändert.
+        </p>
 
       {processGroups.map((group) => (
         <details
@@ -250,6 +268,7 @@ function ProcessShelfOrientationSection({
           </div>
         </details>
       ))}
+      </details>
     </section>
   );
 }
@@ -3412,15 +3431,6 @@ export default function InquiryM2Client({
         </section>
       )}
 
-      <ProcessShelfOrientationSection
-        sections={sections}
-        profileActionCheckpoints={profileActionCheckpoints}
-        statuses={statuses}
-      />
-
-      {/* 2. + 3. SPECIFIC Checkpoints pro Anliegen.
-           Alle Profil-Sektionen rendern Antwortkontexte (Section-Intros) als Schubladen-Akkordeon;
-           profilspezifische Sektionen ergänzen ihre eigenen Gruppen-Akkordeons. */}
       {sections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
@@ -3498,15 +3508,22 @@ export default function InquiryM2Client({
       )}
 
       {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION / LAB / IMMUNIZATION / ONBOARDING.
-           Für diese Profile werden Actions in M3 durch Trigger-Logik freigeschaltet. */}
-      {profileActionCheckpoints.length > 0 &&
+           Globale Prozess-Actions (DOCUMENT_UPLOAD/PROCESSING_DELAY/TECHNICAL_ISSUE) werden hier ausgeblendet –
+           sie werden in M3 schubladen-gesteuert aktiviert. */}
+      {profileActionCheckpoints.filter((cp) => !HIDDEN_M2_ACTION_IDS.has(cp.id)).length > 0 &&
         !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB" || s.inquiryId === "APPOINTMENT" || s.inquiryId === "IMMUNIZATION" || s.inquiryId === "ONBOARDING") && (
           <WeitereHinweiseSection
-            profileActionCheckpoints={profileActionCheckpoints}
+            profileActionCheckpoints={profileActionCheckpoints.filter((cp) => !HIDDEN_M2_ACTION_IDS.has(cp.id))}
             statuses={statuses}
             onChange={setStatus}
           />
         )}
+
+      <ProcessShelfOrientationSection
+        sections={sections}
+        profileActionCheckpoints={profileActionCheckpoints}
+        statuses={statuses}
+      />
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>

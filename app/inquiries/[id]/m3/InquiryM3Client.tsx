@@ -1124,43 +1124,6 @@ export default function InquiryM3Client({
     initialResponseGoalSelection,
   );
 
-  const [actionsOpen, setActionsOpen] = useState(() => {
-    // Automatisch aufklappen, wenn bereits ein Action-Status gesetzt ist
-    // (globale Actions oder boundActionCheckpointIds).
-    const allBoundActionIds = sections.flatMap((s) => s.boundActionCheckpoints.map((cp) => cp.id));
-    const hasExplicitActionStatus =
-      actionIds.some(
-        (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
-      ) ||
-      allBoundActionIds.some(
-        (id) => initialActionStatuses[id] === "ACTIVE" || initialActionStatuses[id] === "INACTIVE",
-      );
-    if (hasExplicitActionStatus) return true;
-    // Automatisch aufklappen, wenn showWhenAny-Bedingungen bereits erfüllt sind
-    // (z.B. M2-Schalter mit YES → condition-gesteuerte Actions sind sofort sichtbar).
-    const allStatuses = { ...initialCheckpointStatuses, ...initialActionStatuses };
-    const matchesConditionSet = (condSet: Record<string, string>) =>
-      Object.entries(condSet).every(([id, expected]) => allStatuses[id] === expected);
-    if (sections.some((s) =>
-      s.boundActionCheckpoints.some(
-        (cp) => cp.showWhenAny && cp.showWhenAny.some(matchesConditionSet),
-      ),
-    )) return true;
-    // Automatisch aufklappen, wenn PRESCRIPTION-Trigger bereits aktiv sind.
-    if (sections.some((s) => s.inquiryId === PRESCRIPTION_INQUIRY_ID)) {
-      const hasPrescriptionTrigger = PRESCRIPTION_M3_TRIGGER_GROUPS.some((group) =>
-        group.triggers.some((t) => t.values.includes(allStatuses[t.id] ?? "")),
-      );
-      if (hasPrescriptionTrigger) return true;
-    }
-    // Automatisch aufklappen, wenn PRESCRIPTION-Section gebundene Actions hat (Fallback immer sichtbar).
-    return sections.some(
-      (s) =>
-        s.inquiryId === PRESCRIPTION_INQUIRY_ID &&
-        s.boundActionCheckpoints.length > 0,
-    );
-  });
-
   const [confirmed, setConfirmed] = useState(isConfirmed);
   const [frozenOutput, setFrozenOutput] = useState<InquiryResponseV2Output | null>(
     initialGeneratedOutput,
@@ -1791,29 +1754,18 @@ export default function InquiryM3Client({
             );
           })}
 
-          {/* Action checkpoints (globale availableActionIds + profilgebundene boundActionCheckpointIds) */}
+          {/* Action checkpoints (globale availableActionIds + profilgebundene boundActionCheckpointIds)
+              Gruppiert in drei Accordions:
+              1. „Empfohlene nächste Schritte" – fachliche Aktionen (default geöffnet)
+              2. „Weitere Möglichkeiten" – sekundäre / ungruppierte Aktionen (collapsed)
+              3. „Prozess & Hinweise" – DOCUMENT_UPLOAD / PROCESSING_DELAY / TECHNICAL_ISSUE (collapsed) */}
           {(actionCheckpoints.filter((cp) => statuses[cp.id] === "ACTIVE").length > 0 || sections.some((s) => s.boundActionCheckpoints.length > 0)) && (
             <section style={{ marginBottom: "1rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: actionsOpen ? "0.35rem" : 0 }}>
-                <h2 style={{ margin: 0 }}><span aria-hidden="true">→ </span>Aktionen / Infos</h2>
-                <button
-                  type="button"
-                  onClick={() => setActionsOpen((o) => !o)}
-                  style={{
-                    padding: "0.15rem 0.6rem",
-                    borderRadius: "var(--radius)",
-                    border: "1px solid var(--border)",
-                    background: "var(--background)",
-                    color: "var(--foreground)",
-                    fontSize: "0.8rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  {actionsOpen ? "Weniger ▲" : "Mehr ▼"}
-                </button>
-              </div>
-              {actionsOpen && (() => {
-                const groupElements: ReactNode[] = [];
+              {(() => {
+                const primaryElements: ReactNode[] = [];
+                const secondaryElements: ReactNode[] = [];
+                const processInfoElements: ReactNode[] = [];
+                const PROCESS_INFO_GROUP_LABEL = "Organisation & Hinweise";
 
                 // Pre-compute which PRESCRIPTION action IDs are currently visible (trigger-based).
                 // This is used as a visibility gate for PRESCRIPTION actions in the unified
@@ -1864,7 +1816,7 @@ export default function InquiryM3Client({
                       .filter((cp): cp is M3ActionData => !!cp);
                     if (groupCps.length === 0) continue;
                     groupCps.forEach((cp) => renderedIds.add(cp.id));
-                    groupElements.push(
+                    const groupNode = (
                       <div key={group.label} style={{ marginTop: "0.5rem" }}>
                         <div
                           className="text-muted text-small"
@@ -1888,8 +1840,13 @@ export default function InquiryM3Client({
                             }
                           />
                         ))}
-                      </div>,
+                      </div>
                     );
+                    if (group.label === PROCESS_INFO_GROUP_LABEL) {
+                      processInfoElements.push(groupNode);
+                    } else {
+                      primaryElements.push(groupNode);
+                    }
                   }
 
                   // Ungrouped fallback
@@ -1897,7 +1854,7 @@ export default function InquiryM3Client({
                     (cp) => !renderedIds.has(cp.id),
                   );
                   if (ungrouped.length > 0) {
-                    groupElements.push(
+                    secondaryElements.push(
                       <div key="__ungrouped__" style={{ marginTop: "0.5rem" }}>
                         {ungrouped.map((cp) => (
                           <CompactRow
@@ -1970,7 +1927,7 @@ export default function InquiryM3Client({
                     .map((cat) => ({ cat, cps: byCategory.get(cat) ?? [] }))
                     .filter(({ cps }) => cps.length > 0);
 
-                  groupElements.push(
+                  primaryElements.push(
                     <div key={`bound-${sec.inquiryId}`} style={{ marginTop: "0.5rem" }}>
                       <div
                         className="text-muted text-small"
@@ -2054,7 +2011,59 @@ export default function InquiryM3Client({
                   );
                 }
 
-                return groupElements;
+                return (
+                  <>
+                    {primaryElements.length > 0 && (
+                      <details
+                        open
+                        style={{
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius)",
+                          padding: "0.5rem 0.75rem",
+                          marginBottom: "0.5rem",
+                          background: "var(--background)",
+                        }}
+                      >
+                        <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+                          <span aria-hidden="true">→ </span>Empfohlene nächste Schritte
+                        </summary>
+                        <div style={{ marginTop: "0.35rem" }}>{primaryElements}</div>
+                      </details>
+                    )}
+                    {secondaryElements.length > 0 && (
+                      <details
+                        style={{
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius)",
+                          padding: "0.5rem 0.75rem",
+                          marginBottom: "0.5rem",
+                          background: "var(--background)",
+                        }}
+                      >
+                        <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--muted-foreground, #6b7280)" }}>
+                          <span aria-hidden="true">… </span>Weitere Möglichkeiten
+                        </summary>
+                        <div style={{ marginTop: "0.35rem" }}>{secondaryElements}</div>
+                      </details>
+                    )}
+                    {processInfoElements.length > 0 && (
+                      <details
+                        style={{
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius)",
+                          padding: "0.5rem 0.75rem",
+                          marginBottom: "0.5rem",
+                          background: "var(--background)",
+                        }}
+                      >
+                        <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--muted-foreground, #6b7280)" }}>
+                          <span aria-hidden="true">≡ </span>Prozess &amp; Hinweise
+                        </summary>
+                        <div style={{ marginTop: "0.35rem" }}>{processInfoElements}</div>
+                      </details>
+                    )}
+                  </>
+                );
               })()}
             </section>
           )}
