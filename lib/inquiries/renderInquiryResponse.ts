@@ -21,6 +21,10 @@ import {
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { PROCESS_SHELF_PROFILE_BINDINGS, GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
+import {
+  getActiveProcessShelfGroupsFromStatuses,
+  getAllowedGlobalActionIds,
+} from "@/lib/inquiries/processShelfGroups";
 
 /**
  * Erzeugt deterministisch den Antworttext und die Dokumentation
@@ -240,7 +244,16 @@ export function renderInquiryResponseFromSections(
   // statuses ist ein flaches, session-weites Objekt; sections[0] enthält dieselbe
   // checkpointStatuses-Referenz wie alle anderen Sections.
   const globalActionStatuses = sections[0]?.checkpointStatuses ?? {};
+  // Schubladen-konditionale Auswahl: globale Actions werden nur gerendert, wenn
+  // ihre Prozess-Schublade durch aktive Statuses aktiviert wurde. Verhindert,
+  // dass verwaiste action_statuses aus älteren Sessions weiterhin im Output
+  // erscheinen.
+  const _activeShelfGroups = getActiveProcessShelfGroupsFromStatuses(
+    globalActionStatuses as Record<string, string>,
+  );
+  const _allowedGlobalActionIds = getAllowedGlobalActionIds(_activeShelfGroups);
   for (const actionId of GLOBAL_ACTION_SHELF) {
+    if (!_allowedGlobalActionIds.has(actionId)) continue;
     const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
     if (!checkpoint || checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
     const status = globalActionStatuses[actionId];

@@ -5,6 +5,10 @@ import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalo
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
 import {
+  getActiveProcessShelfGroupsFromStatuses,
+  getAllowedGlobalActionIds,
+} from "@/lib/inquiries/processShelfGroups";
+import {
   InquiryCheckpointKind,
   InquiryCheckpointScope,
   type InquiryCheckpoint,
@@ -132,16 +136,38 @@ export default async function InquiryM3Page({
     .map(toM3Section)
     .filter((s): s is M3SectionData => s !== null);
 
+  // Statuses früh laden – werden für die schubladen-konditionale Auswahl der
+  // GLOBAL_ACTION_SHELF-Actions sowie weiter unten unverändert weiterverwendet.
+  const checkpointStatusesEarly: Record<string, string> =
+    isStringRecord(session.checkpoint_statuses) ? session.checkpoint_statuses : {};
+  const actionStatusesEarly: Record<string, string> =
+    isStringRecord(session.action_statuses) ? session.action_statuses : {};
+  const mergedStatuses: Record<string, string> = {
+    ...checkpointStatusesEarly,
+    ...actionStatusesEarly,
+  };
+  const activeShelfGroups = getActiveProcessShelfGroupsFromStatuses(mergedStatuses);
+  const allowedGlobalActionIds = getAllowedGlobalActionIds(activeShelfGroups);
+
   // Deduplicated ACTION IDs across all selected inquiries.
   // actionIds is the full set used for status storage (includes boundActionCheckpointIds).
   // displayActionIds is the subset used for the ungrouped global action list in M3
   // (availableActionIds only – boundActionCheckpointIds are rendered via sections[].boundActionCheckpoints).
   const actionIds = new Set<string>();
   const displayActionIds = new Set<string>();
-  // Globale Actions (profilübergreifend, einmalig): vor dem Profil-Loop einspeisen.
+  // Globale Actions (profilübergreifend, einmalig): nur einspeisen, wenn die
+  // zugehörige Prozess-Schublade durch aktive M2-Statuses aktiviert wurde.
   for (const cpId of GLOBAL_ACTION_SHELF) {
+    if (!allowedGlobalActionIds.has(cpId)) continue;
     actionIds.add(cpId);
     displayActionIds.add(cpId);
+  }
+  // Persistenz-Erhalt: Bereits gespeicherte action_statuses-Einträge globaler
+  // Shelf-Actions weiter in actionIds führen, damit der Save-Pfad sie nicht
+  // versehentlich verwirft. Nicht in displayActionIds (keine Anzeige ohne
+  // aktive Schublade).
+  for (const cpId of GLOBAL_ACTION_SHELF) {
+    if (cpId in actionStatusesEarly) actionIds.add(cpId);
   }
 
   for (const inquiryId of selectedIds) {
@@ -212,11 +238,9 @@ export default async function InquiryM3Page({
   // Global context checkpoints (read-only in M3, set in M2)
   // NOTE: per architecture spec, GLOBAL checkpoints must NOT appear in M3 at all.
 
-  const checkpointStatuses: Record<string, string> =
-    isStringRecord(session.checkpoint_statuses) ? session.checkpoint_statuses : {};
+  const checkpointStatuses: Record<string, string> = checkpointStatusesEarly;
 
-  const actionStatuses: Record<string, string> =
-    isStringRecord(session.action_statuses) ? session.action_statuses : {};
+  const actionStatuses: Record<string, string> = actionStatusesEarly;
 
   const explanationOutputStatuses: Record<string, string> =
     isStringRecord(session.explanation_output_statuses)

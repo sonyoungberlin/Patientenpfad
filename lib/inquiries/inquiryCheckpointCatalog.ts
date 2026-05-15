@@ -4077,7 +4077,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "SECTION_INTRO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "befindet sich Ihr Anliegen aktuell noch in Bearbeitung.",
+        "bitten wir noch um etwas Geduld.",
     },
   },
 

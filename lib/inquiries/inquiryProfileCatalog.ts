@@ -580,6 +580,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_CHECKUP_BASIC_LAB_INCLUDED",
       "LAB_SELF_PAYER_POSSIBLE",
       "LAB_CONTROL_TIMING_NOT_DUE",
+      "LAB_RESULTS_PENDING",
       "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ],
     boundGlobalCheckpointIds: [],

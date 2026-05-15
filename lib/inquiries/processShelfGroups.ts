@@ -119,8 +119,6 @@ export const PROCESS_SHELF_GROUPS = {
       "DIGITAL_REQUEST_PROCESSING_TIME",
       "PROCESSING_DELAY",
       "TECHNICAL_ISSUE",
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
       "TECH_VIDEO_NOT_WORKING",
       "LAB_RESULTS_PENDING",
       "LAB_RESULT_TIME",
@@ -189,4 +187,62 @@ export function getProcessShelfGroupForCheckpointId(
   checkpointId: string,
 ): ProcessShelfGroupId | null {
   return PROCESS_SHELF_LOOKUP.get(checkpointId) ?? null;
+}
+
+/**
+ * Bindung „Prozess-Schublade → globale Action-IDs".
+ *
+ * Entkoppelt von `PROCESS_SHELF_GROUPS[*].checkpointIds` (welche fachliche und
+ * Prozess-Checkpoints mischen). Nur globale Shelf-Actions, die ausschließlich
+ * dann in M3/M5 erscheinen sollen, wenn ihre Schublade durch aktive
+ * fachliche Statuswerte aktiviert wurde.
+ */
+export const PROCESS_SHELF_GROUP_ACTION_IDS: Record<ProcessShelfGroupId, readonly string[]> = {
+  missingInfoOrDocuments: [],
+  documentsAndUpload: ["DOCUMENT_UPLOAD"],
+  insuranceData: [],
+  appointmentsAndBooking: [],
+  digitalRequest: [],
+  waitingProcessingTechnical: ["PROCESSING_DELAY", "TECHNICAL_ISSUE"],
+  preparation: [],
+  billing: [],
+};
+
+// Self-Activation-Guard: IDs, die selbst globale Shelf-Actions sind, dürfen
+// nicht über ihren eigenen ACTIVE-Status ihre Schublade freischalten.
+const GLOBAL_SHELF_ACTION_ID_SET: ReadonlySet<string> = new Set<string>(
+  PROCESS_SHELF_GROUP_ORDER.flatMap((g) => [...PROCESS_SHELF_GROUP_ACTION_IDS[g]]),
+);
+
+/**
+ * Leitet aus einer gemischten Status-Map (checkpoint_statuses ∪ action_statuses)
+ * die Menge der aktiven Prozess-Schubladen ab. Aktiv sind ausschließlich die
+ * Werte "YES", "SHOW", "ACTIVE". IDs, die selbst zu den globalen Shelf-Actions
+ * gehören, werden ignoriert (kein Selbstaktivierungs-Loop).
+ */
+export function getActiveProcessShelfGroupsFromStatuses(
+  statuses: Record<string, string>,
+): Set<ProcessShelfGroupId> {
+  const active = new Set<ProcessShelfGroupId>();
+  for (const [id, value] of Object.entries(statuses)) {
+    if (value !== "YES" && value !== "SHOW" && value !== "ACTIVE") continue;
+    if (GLOBAL_SHELF_ACTION_ID_SET.has(id)) continue;
+    const g = getProcessShelfGroupForCheckpointId(id);
+    if (g) active.add(g);
+  }
+  return active;
+}
+
+/**
+ * Liefert die Menge der globalen Action-IDs, die durch die übergebenen
+ * aktiven Schubladen freigegeben sind.
+ */
+export function getAllowedGlobalActionIds(
+  activeGroups: ReadonlySet<ProcessShelfGroupId>,
+): Set<string> {
+  const allowed = new Set<string>();
+  for (const g of activeGroups) {
+    for (const id of PROCESS_SHELF_GROUP_ACTION_IDS[g]) allowed.add(id);
+  }
+  return allowed;
 }
