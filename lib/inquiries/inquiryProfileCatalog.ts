@@ -72,8 +72,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
@@ -268,8 +266,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
       "CONTROL_APPOINTMENT_RECOMMENDED",
     ],
     boundActionCheckpointIds: [
@@ -645,8 +641,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
 
     // -----------------------------------------------------------------------
@@ -788,8 +782,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
 
     // -----------------------------------------------------------------------
@@ -907,8 +899,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
     globalHints: {},
     boundActionCheckpointIds: [
@@ -1067,8 +1057,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     },
     availableActionIds: [
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
       "DIGITAL_REQUEST",
     ],
 
@@ -1210,10 +1198,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "HMV_NOT_DIGITAL_POSSIBLE",
     ],
     boundGlobalCheckpointIds: [],
-    availableActionIds: [
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
-    ],
+    availableActionIds: [],
     boundActionCheckpointIds: [
       "DIGITAL_REQUEST",
       "DOCUMENT_UPLOAD",
@@ -1258,8 +1243,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "DIGITAL_REQUEST",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
     boundActionCheckpointIds: [
       "CONTROL_APPOINTMENT_RECOMMENDED",
@@ -1439,8 +1422,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "DIGITAL_REQUEST",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
     boundActionCheckpointIds: [
       "IMMUNIZATION_BOOK_VACCINATION",
@@ -1586,8 +1567,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
@@ -1789,8 +1768,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
     boundActionCheckpointIds: [],
     boundActionConditions: {},
@@ -1895,7 +1872,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
-      "TECHNICAL_ISSUE",
     ],
     actionGuidanceRules: [
       // DOCUMENT_UPLOAD empfehlen, wenn GKV-Versicherungsnachweis fehlt
@@ -2089,8 +2065,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
     ],
     actionGuidanceRules: [
       // DOCUMENT_UPLOAD empfehlen, wenn Abrechnungsunterlagen fehlen
@@ -2213,10 +2187,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [],
     globalHints: {},
-    availableActionIds: [
-      "PROCESSING_DELAY",
-      "TECHNICAL_ISSUE",
-    ],
+    availableActionIds: [],
     boundActionCheckpointIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
