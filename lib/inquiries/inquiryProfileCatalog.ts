@@ -67,14 +67,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "RETURN_TO_WORK_ALLOWED_DURING_AU",
       "AU_EXTENSION_REQUIRES_EXAMINATION",
     ],
-    boundGlobalCheckpointIds: [
-      // Positiver Zwischenzustand: Fragebogen/Angaben liegen vollständig vor,
-      // sodass die digitale AU-Anfrage ärztlich geprüft werden kann. Keine Entscheidung.
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Prozess-/Erwartungsmanagement: digitale AU-Anfrage wird ärztlich geprüft;
-      // ggf. persönliche Vorstellung. Kein Outcome.
-      "DIGITAL_REQUEST_MEDICAL_REVIEW",
-    ],
+    boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
     globalHints: {},
     availableActionIds: [
@@ -271,12 +264,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "CONTRACEPTION_SPECIALIST_ONLY",
       "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Prozess-/Erwartungsmanagement: digitale Rezeptanfrage wird ärztlich geprüft;
-      // ggf. persönliche Vorstellung. Kein Outcome.
-      "DIGITAL_REQUEST_MEDICAL_REVIEW",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
@@ -599,7 +587,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_CONTROL_TIMING_NOT_DUE",
       "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ],
-    boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
@@ -784,7 +772,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "SAMPLE_COLLECTION_ORDER_AVAILABLE",
     ],
-    boundGlobalCheckpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+    boundGlobalCheckpointIds: [],
     globalHints: {},
     boundActionCheckpointIds: [
       "URINE_SAMPLE_INSTRUCTIONS",
@@ -1054,19 +1042,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "REF_PSYCHOTHERAPY_FIRST_STEP",
       "REF_HAV_CASE",
       "REF_MEDICAL_CONSULTATION_REQUIRED",
-      // Wiederverwendung des Technik-Bausteins für unleserliche Uploads –
-      // greift bei nachgereichten Unterlagen / Befunden zur Überweisung,
-      // wenn die hochgeladene Datei nicht verwertbar ist. Sichtbar im
-      // Patientenoutput erst nach M2 YES + M3 SHOW.
-      "TECH_UPLOAD_FAILED",
       "REFERRAL_INSURANCE_PROOF_MISSING",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Prozess-/Erwartungsmanagement: digitale Überweisungsanfrage wird ärztlich geprüft;
-      // ggf. persönliche Vorstellung. Kein Outcome.
-      "DIGITAL_REQUEST_MEDICAL_REVIEW",
-    ],
+    boundGlobalCheckpointIds: [],
     // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
@@ -1277,13 +1255,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "HOSPITAL_ADMISSION_MEDICAL_CONSULTATION_REQUIRED",
       "HOSPITAL_TRANSPORT_REQUIRED",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
-      "DOCUMENTS_RECEIVED_AND_ASSIGNED",
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
-    ],
+    boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -1465,13 +1437,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "IMMUNIZATION_VACCINATION_RECORD_MISSING",
       "IMMUNIZATION_TRAVEL_MEDICINE",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
-      "DOCUMENTS_RECEIVED_AND_ASSIGNED",
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
-    ],
+    boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
@@ -1620,13 +1586,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_TYPE_QUESTION",
       "APPOINTMENT_INSURANCE_PROOF_MISSING",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
-      "DOCUMENTS_RECEIVED_AND_ASSIGNED",
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
-    ],
+    boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
       "DIGITAL_REQUEST",
@@ -1828,13 +1788,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     specificCheckpointIds: [
       "TECH_VIDEO_NOT_WORKING",
-      "TECH_UPLOAD_FAILED",
     ],
-    boundGlobalCheckpointIds: [
-      // Schublade „Noch in Bearbeitung" – global verwendbar.
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
@@ -1941,13 +1896,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // Schublade „Nicht in unserer Praxis" – Praxis nur für Erwachsene.
       "ADULTS_ONLY_PRACTICE",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
-      "DOCUMENTS_RECEIVED_AND_ASSIGNED",
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
-    ],
+    boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "TECHNICAL_ISSUE",
@@ -2111,13 +2060,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BILLING_EXTERNAL_PROVIDER",
       "BILLING_INVOICE_TIMING",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
-      "DOCUMENTS_RECEIVED_AND_ASSIGNED",
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
-    ],
+    boundGlobalCheckpointIds: [],
     boundActionCheckpointIds: [
       "BILLING_NOT_COVERED_BY_STATUTORY",
       "BILLING_GOA_BILLING",
@@ -2273,13 +2216,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // Schublade „Anliegen geprüft" – Bedeutung dokumentierter Verdachtsdiagnosen.
       "SUSPECTED_DIAGNOSIS_EXPLANATION",
     ],
-    boundGlobalCheckpointIds: [
-      "REQUIRED_INFORMATION_COMPLETE",
-      // Schubladen „Unterlagen vollständig" / „Noch in Bearbeitung" – global verwendbar.
-      "DOCUMENTS_RECEIVED_AND_ASSIGNED",
-      "TECHNICAL_ISSUE_DELAY",
-      "STAFF_SHORTAGE_DELAY",
-    ],
+    boundGlobalCheckpointIds: [],
     globalHints: {},
     availableActionIds: [
       "PROCESSING_DELAY",
