@@ -3,6 +3,7 @@ import {
   OFFICE_TOPIC_CLOSURE_COVERAGE,
   OFFICE_TOPIC_CONTINUING_EDUCATION,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_KV_BILLING,
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_REPORTING_DUTIES,
   OFFICE_TOPIC_SEAT_APPROVAL,
@@ -64,6 +65,9 @@ describe("office M2 questions", () => {
       "NC-ANTRAGSWEG",
       "NC-GENEHMIGUNGSSTATUS",
       "NC-BETRIEBSSTAETTENSTRUKTUR",
+      "NC-ARBEITSVERTRAG_FREIGABE",
+      "NC-LANR_BSNR_ZUORDNUNG",
+      "NC-SYSTEMZUGRIFFE_EINGERICHTET",
     ].sort();
 
     expect(hrCheckpointIds.sort()).toEqual(expectedNcIds);
@@ -110,6 +114,90 @@ describe("office M2 questions", () => {
         .sort();
 
       expect(questionCheckpointIds).toEqual(catalogCheckpointIds);
+    }
+  });
+
+  // Erweitern, sobald ein Topic auf operative Ja/Nein/Unklar-Fragen migriert wurde.
+  const OPERATIONAL_QUESTION_TOPICS = [
+    OFFICE_TOPIC_KV_BILLING,
+    OFFICE_TOPIC_REGRESS,
+    OFFICE_TOPIC_SEAT_APPROVAL,
+    OFFICE_TOPIC_APPLICATION_MANAGEMENT,
+    OFFICE_TOPIC_CONTINUING_EDUCATION,
+    OFFICE_TOPIC_REPORTING_DUTIES,
+    OFFICE_TOPIC_HIRING_REPLACEMENT,
+    OFFICE_TOPIC_CLOSURE_COVERAGE,
+  ] as const;
+
+  const W_PREFIXES = ["Was ", "Welch", "Wer ", "Wodurch"];
+
+  const FORBIDDEN_TERMS = [
+    "Compliance",
+    "regelkonform",
+    "belastbar",
+    "ableitbar",
+    "ma\u00dfgeblich",
+    "massgeblich",
+    "sichergestellt",
+    "Existiert",
+    "wurde bewertet",
+    "wurden bewertet",
+  ];
+
+  it("migrierte Themen: keine Frage beginnt mit einem W-Fragewort", () => {
+    for (const topicId of OPERATIONAL_QUESTION_TOPICS) {
+      const byCheckpoint = getM2QuestionsForTopic(topicId);
+      for (const [checkpointId, questions] of Object.entries(byCheckpoint)) {
+        for (const q of questions) {
+          const startsWithW = W_PREFIXES.some((p) => q.text.startsWith(p));
+          if (startsWithW) {
+            throw new Error(
+              `[${topicId}/${checkpointId}/${q.id}] W-Fragewort am Anfang: "${q.text}"`,
+            );
+          }
+        }
+      }
+    }
+  });
+
+  it("keine M2-Frage enthaelt verbotene Governance-Begriffe", () => {
+    for (const topicId of OPERATIONAL_QUESTION_TOPICS) {
+      const byCheckpoint = getM2QuestionsForTopic(topicId);
+      for (const [checkpointId, questions] of Object.entries(byCheckpoint)) {
+        for (const q of questions) {
+          const textLower = q.text.toLowerCase();
+          for (const term of FORBIDDEN_TERMS) {
+            if (textLower.includes(term.toLowerCase())) {
+              throw new Error(
+                `[${topicId}/${checkpointId}/${q.id}] Verbotener Begriff "${term}" in: "${q.text}"`,
+              );
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("jeder Checkpoint der neuen Themen hat checkpointType, failureEffect und outcomeAudience", () => {
+    for (const topicId of NEW_TOPIC_IDS) {
+      const checkpoints = getOfficeCheckpointCatalog(topicId);
+      for (const cp of checkpoints) {
+        expect({ id: cp.id, field: "checkpointType", value: cp.checkpointType }).toMatchObject({
+          id: cp.id,
+          field: "checkpointType",
+          value: expect.anything(),
+        });
+        expect({ id: cp.id, field: "failureEffect", value: cp.failureEffect }).toMatchObject({
+          id: cp.id,
+          field: "failureEffect",
+          value: expect.anything(),
+        });
+        expect({ id: cp.id, field: "outcomeAudience", value: cp.outcomeAudience }).toMatchObject({
+          id: cp.id,
+          field: "outcomeAudience",
+          value: expect.anything(),
+        });
+      }
     }
   });
 });

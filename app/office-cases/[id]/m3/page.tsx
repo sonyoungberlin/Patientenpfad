@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { prisma } from "@/lib/prisma";
+import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
+import { buildCheckpointComplianceMap } from "@/lib/office/checkpointCompliance";
 import OfficeCaseEditorClient from "../OfficeCaseEditorClient";
 
 export default async function OfficeCaseM3Page({
@@ -59,6 +61,12 @@ export default async function OfficeCaseM3Page({
       }[])
     : [];
 
+  const topicIdString = typeof snapshot?.topicId === "string" ? snapshot.topicId : null;
+  const complianceByCheckpointId =
+    topicIdString && isOfficeTopicId(topicIdString)
+      ? buildCheckpointComplianceMap(topicIdString)
+      : {};
+
   return (
     <main style={{ display: "grid", gap: "1rem" }}>
       <section>
@@ -73,14 +81,15 @@ export default async function OfficeCaseM3Page({
           id: officeCase.id,
           title: officeCase.title,
           trigger_note: officeCase.trigger_note,
-          topicId: typeof snapshot?.topicId === "string" ? snapshot.topicId : null,
+          topicId: topicIdString,
           topicTitle: typeof snapshot?.topicTitle === "string" ? snapshot.topicTitle : null,
           checkpoint_snapshot: {
-            topicId: typeof snapshot?.topicId === "string" ? snapshot.topicId : null,
+            topicId: topicIdString,
             checkpoints,
           },
         }}
         mode="m3"
+        complianceByCheckpointId={complianceByCheckpointId}
       />
     </main>
   );

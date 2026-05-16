@@ -12,6 +12,8 @@ import {
 } from "@/lib/office/officeBlocks";
 import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
+import type { CheckpointComplianceView } from "@/lib/office/checkpointCompliance";
+import OfficeComplianceFooter from "@/components/office/OfficeComplianceFooter";
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
@@ -34,6 +36,12 @@ type OfficeCaseData = {
 type Props = {
   officeCase: OfficeCaseData;
   mode: "m2" | "m3";
+  /**
+   * Optional: Map von Checkpoint-ID zu Compliance-View fuer den M3-Footer.
+   * Wird ausschliesslich im M3-Modus gerendert. Fehlt der Prop oder ein
+   * Eintrag, wird kein Footer fuer den betroffenen Checkpoint angezeigt.
+   */
+  complianceByCheckpointId?: Record<string, CheckpointComplianceView>;
 };
 
 function cloneCheckpoints(checkpoints: OfficeCheckpointSnapshot[]) {
@@ -109,7 +117,11 @@ function statusLabel(status: DerivedActionStatus | OfficeCheckpointState): strin
   return "nicht vollstaendig";
 }
 
-export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
+export default function OfficeCaseEditorClient({
+  officeCase,
+  mode,
+  complianceByCheckpointId,
+}: Props) {
   const router = useRouter();
   const [checkpoints, setCheckpoints] = useState<OfficeCheckpointSnapshot[]>(
     cloneCheckpoints(officeCase.checkpoint_snapshot.checkpoints),
@@ -419,6 +431,12 @@ export default function OfficeCaseEditorClient({ officeCase, mode }: Props) {
                       <div className="text-small text-muted">keine offenen Punkte erkennbar</div>
                     )}
                   </div>
+                  {mode === "m3" && complianceByCheckpointId?.[checkpoint.id] ? (
+                    <OfficeComplianceFooter
+                      compliance={complianceByCheckpointId[checkpoint.id]}
+                      checkpointId={checkpoint.id}
+                    />
+                  ) : null}
                   {(() => {
                     const answers = checkpoint.m2_answers;
                     return questions.length > 0 && answers ? (

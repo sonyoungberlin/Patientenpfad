@@ -60,5 +60,6 @@ export type OfficeCheckpointSnapshot = {
   responsible_role?: string;
   authority?: string;
   required_documents?: string[];
+  optional_documents?: string[];
   escalation_needed?: boolean;
 };

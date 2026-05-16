@@ -58,9 +58,8 @@ describe("office derived actions", () => {
           kind: OfficeCheckpointKind.DECISION,
           state: OfficeCheckpointState.OPEN,
           m2_answers: {
-            "M2-01": "YES",
+            "M2-01": "UNCLEAR",
             "M2-02": "NO",
-            "M2-03": "UNCLEAR",
           },
         },
       ],

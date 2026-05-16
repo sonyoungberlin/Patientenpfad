@@ -83,8 +83,6 @@ export default async function InquiryM2Page({
       .filter((cpId) => !profile.boundActionConditions?.[cpId])
       .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
       .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);
-    // Alle bound actions inkl. konditionaler – nur für den PRESCRIPTION-M2-Prototyp genutzt.
-    // Andere Profile ignorieren allBoundActionCheckpoints in SpecificSection.
     const allBoundActionCps = (profile.boundActionCheckpointIds ?? [])
       .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
       .filter((cp): cp is InquiryCheckpoint => !!cp && cp.kind === InquiryCheckpointKind.ACTION);

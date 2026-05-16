@@ -28,130 +28,40 @@ export type OfficeM2QuestionsByCheckpoint = Record<string, readonly OfficeM2Ques
 const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint> = {
   [OFFICE_TOPIC_HIRING_REPLACEMENT]: {
     "NC-REGISTERSTATUS": [
-      {
-        id: "M2-01",
-        text: "Welcher aktuelle Registerstatus ist fuer die betroffene Person dokumentiert?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Evidenz liegt zum Registerstatus vor (z. B. Registerauszug, bestaetigte Auskunft)?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann den Registerstatus bei Bedarf verbindlich bestaetigen?",
-      },
+      { id: "M2-01", text: "Ist der aktuelle Arztregisterstatus fuer die betroffene Person dokumentiert?" },
+      { id: "M2-02", text: "Liegt ein prueffaehiger Nachweis zum Registerstatus vor?" },
     ],
     "NC-APPROBATION": [
-      {
-        id: "M2-01",
-        text: "Ist die Approbation mit gueltigem Stand dokumentiert?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Unterlage oder Quelle belegt den Approbationsstatus belastbar?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann offene Rueckfragen zur Approbation beantworten?",
-      },
+      { id: "M2-01", text: "Ist die Approbation mit gueltigem Stand dokumentiert?" },
+      { id: "M2-02", text: "Liegt ein prueffaehiger Nachweis des aktuellen Approbationsstatus vor?" },
     ],
     "NC-FACHARZTQUALIFIKATION": [
-      {
-        id: "M2-01",
-        text: "Welche Facharztqualifikation ist fuer den Fall relevant?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Evidenz liegt zur Facharztqualifikation vor?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann die Facharztqualifikation verbindlich bestaetigen?",
-      },
+      { id: "M2-01", text: "Ist die relevante Facharztqualifikation fuer den Fall dokumentiert?" },
+      { id: "M2-02", text: "Liegt ein prueffaehiger Nachweis der Facharztqualifikation vor?" },
     ],
     "NC-BERUFSHAFTPFLICHT": [
-      {
-        id: "M2-01",
-        text: "Wie ist der aktuelle Status der Berufshaftpflicht dokumentiert?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Quelle belegt den Haftpflichtstatus nachvollziehbar?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer ist Ansprechpartner fuer fehlende Informationen zur Berufshaftpflicht?",
-      },
+      { id: "M2-01", text: "Ist die Berufshaftpflicht aktuell gueltig und intern dokumentiert?" },
+      { id: "M2-02", text: "Liegt ein prueffaehiger Haftpflichtnachweis vor?" },
     ],
     "NC-TAETIGKEITSUMFANG": [
-      {
-        id: "M2-01",
-        text: "Welcher geplante Taetigkeitsumfang ist aktuell festgehalten?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Evidenz stuetzt diesen Taetigkeitsumfang?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann den Taetigkeitsumfang final bestaetigen?",
-      },
+      { id: "M2-01", text: "Ist der geplante Taetigkeitsumfang fuer den Einsatz intern festgehalten?" },
+      { id: "M2-02", text: "Liegt ein Nachweis oder eine Vereinbarung zum Taetigkeitsumfang vor?" },
     ],
     "NC-EXTERNE_STELLE": [
-      {
-        id: "M2-01",
-        text: "Welche externe Stelle ist fuer den Fall zustaendig?",
-      },
-      {
-        id: "M2-02",
-        text: "Woraus ergibt sich die Zuständigkeit dieser Stelle?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann die Zuständigkeit bei Bedarf verifizieren?",
-      },
+      { id: "M2-01", text: "Ist die zustaendige externe Stelle fuer den Anstellungsfall dokumentiert?" },
+      { id: "M2-02", text: "Ist die Grundlage fuer die Zustaendigkeit dieser Stelle intern bekannt?" },
     ],
     "NC-ANTRAGSWEG": [
-      {
-        id: "M2-01",
-        text: "Welcher Antrags- oder Anzeigeweg ist fuer den Fall vorgesehen?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Quelle beschreibt diesen Weg verbindlich?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann offene Fragen zum Antragsweg beantworten?",
-      },
+      { id: "M2-01", text: "Ist der vorgesehene Antrags- oder Anzeigeweg fuer den Fall dokumentiert?" },
+      { id: "M2-02", text: "Ist die verbindliche Grundlage fuer diesen Antragsweg bekannt?" },
     ],
     "NC-GENEHMIGUNGSSTATUS": [
-      {
-        id: "M2-01",
-        text: "Welcher aktuelle Genehmigungsstatus ist dokumentiert?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Evidenz stuetzt den dokumentierten Genehmigungsstatus?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann den Genehmigungsstatus verbindlich bestaetigen?",
-      },
+      { id: "M2-01", text: "Ist der aktuelle Genehmigungsstatus intern dokumentiert?" },
+      { id: "M2-02", text: "Liegt ein Nachweis fuer den dokumentierten Genehmigungsstatus vor?" },
     ],
     "NC-BETRIEBSSTAETTENSTRUKTUR": [
-      {
-        id: "M2-01",
-        text: "Welche Betriebsstaettenstruktur ist fuer den Fall hinterlegt?",
-      },
-      {
-        id: "M2-02",
-        text: "Welche Evidenz liegt zur Betriebsstaettenstruktur vor?",
-      },
-      {
-        id: "M2-03",
-        text: "Wer kann die Betriebsstaettenstruktur bei Bedarf bestaetigen?",
-      },
+      { id: "M2-01", text: "Ist die relevante Betriebsstaettenstruktur fuer den Anstellungsfall hinterlegt?" },
+      { id: "M2-02", text: "Liegt ein Nachweis zur Betriebsstaettenstruktur vor?" },
     ],
     "NC-ARBEITSVERTRAG_FREIGABE": [
       { id: "M2-01", text: "Wurde der Arbeitsvertrag unterschrieben?" },
@@ -169,98 +79,46 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-03", text: "Ist der Zugriff dokumentiert?" },
     ],
     "HR-GOV-A": [
-      {
-        id: "M2-01",
-        text: "Ist belastbar bestaetigt, dass die Person berufsrechtlich als Arzt taetig sein darf?",
-      },
-      {
-        id: "M2-02",
-        text: "Wer kann den aktuellen Arztregisterstatus verbindlich bestaetigen?",
-      },
-      {
-        id: "M2-03",
-        text: "Wodurch ist die fachliche Befaehigung fuer die vorgesehene Taetigkeit eindeutig belegt?",
-      },
-      {
-        id: "M2-04",
-        text: "Ist fuer diese Aussage eine externe Bestaetigung durch KV Berlin oder Aerztekammer noetig?",
-      },
+      { id: "M2-01", text: "Ist bestaetigt, dass die Person aktuell zur aerztlichen Taetigkeit zugelassen ist?" },
+      { id: "M2-02", text: "Liegt ein aktueller Nachweis des Arztregisterstatus vor?" },
+      { id: "M2-03", text: "Ist eine externe Bestaetigung durch KV Berlin oder Aerztekammer erforderlich?" },
     ],
     "HR-GOV-B": [
-      {
-        id: "M2-01",
-        text: "Liegt ein belastbarer Verfahrensstand vor, aus dem die Genehmigungsfaehigkeit ableitbar ist?",
-      },
-      {
-        id: "M2-02",
-        text: "Wer kann den aktuellen Stand beim Zulassungsausschuss verbindlich bestaetigen?",
-      },
-      {
-        id: "M2-03",
-        text: "Welche Evidenz stuetzt die Aussage, dass keine erkennbaren Zulassungshindernisse bestehen?",
-      },
-      {
-        id: "M2-04",
-        text: "Ist eine externe Rueckbestaetigung durch Zulassungsausschuss oder KV Berlin ausstehend?",
-      },
+      { id: "M2-01", text: "Liegt ein dokumentierter Verfahrensstand vor, der eine Zulassung grundsaetzlich ermoeglicht?" },
+      { id: "M2-02", text: "Sind keine erkennbaren Zulassungshindernisse aktenkundig?" },
+      { id: "M2-03", text: "Ist eine externe Rueckbestaetigung durch Zulassungsausschuss oder KV Berlin ausstehend?" },
     ],
     "HR-GOV-C": [
-      {
-        id: "M2-01",
-        text: "Ist die aktuelle Leitungsstruktur der Praxis bzw. des MVZ fuer den Fall regelkonform belegt?",
-      },
-      {
-        id: "M2-02",
-        text: "Wer in der Praxisleitung kann die Strukturkonformitaet verbindlich bestaetigen?",
-      },
-      {
-        id: "M2-03",
-        text: "Welche Evidenz belegt die Vereinbarkeit von Praxis-/MVZ-Struktur und geplanter Anstellung?",
-      },
-      {
-        id: "M2-04",
-        text: "Ist fuer verbleibende Strukturfragen eine externe Einordnung durch KV Berlin erforderlich?",
-      },
+      { id: "M2-01", text: "Ist dokumentiert, dass die Praxisleitung die geplante Anstellung genehmigt hat?" },
+      { id: "M2-02", text: "Ist die Vereinbarkeit von Praxisstruktur und geplanter Anstellung geprueft?" },
+      { id: "M2-03", text: "Ist eine externe Einordnung durch KV Berlin fuer verbleibende Strukturfragen erforderlich?" },
     ],
     "HR-GOV-D": [
-      {
-        id: "M2-01",
-        text: "Ist belastbar nachgewiesen, dass die Berufspflichten-Compliance fuer die Taetigkeitsaufnahme gesichert ist?",
-      },
-      {
-        id: "M2-02",
-        text: "Wer kann den aktuellen Status zu Haftpflicht und Fortbildung verbindlich bestaetigen?",
-      },
-      {
-        id: "M2-03",
-        text: "Welche Evidenz stuetzt die Aussage, dass keine compliance-kritische Luecke fuer den Start besteht?",
-      },
-      {
-        id: "M2-04",
-        text: "Ist fuer diese Aussage eine externe Bestaetigung durch Aerztekammer oder KV Berlin erforderlich?",
-      },
+      { id: "M2-01", text: "Ist nachgewiesen, dass Haftpflicht und Fortbildung vor Dienstbeginn den Anforderungen entsprechen?" },
+      { id: "M2-02", text: "Liegt ein aktueller Nachweis zu Haftpflicht und Fortbildungsstatus vor?" },
+      { id: "M2-03", text: "Ist eine externe Bestaetigung durch Aerztekammer oder KV Berlin erforderlich?" },
     ],
   },
   [OFFICE_TOPIC_KV_BILLING]: {
     "KV-01": [
-      { id: "M2-01", text: "Was beanstandet das KV-Schreiben konkret?" },
-      { id: "M2-02", text: "Welche Nachweise dazu liegen bereits vor?" },
+      { id: "M2-01", text: "Ist der Beanstandungsgegenstand des KV-Schreibens vollstaendig erfasst?" },
+      { id: "M2-02", text: "Sind die betroffenen Abrechnungszeitraeume oder -ziffern eindeutig benannt?" },
     ],
     "KV-02": [
-      { id: "M2-01", text: "Welche Frist und formalen Anforderungen sind gesetzt?" },
-      { id: "M2-02", text: "Welche formalen Informationen fehlen noch?" },
+      { id: "M2-01", text: "Ist die Antwortfrist der KV intern hinterlegt?" },
+      { id: "M2-02", text: "Sind die formalen Anforderungen fuer die Stellungnahme bekannt?" },
     ],
     "KV-03": [
-      { id: "M2-01", text: "Welche interne Einschaetzung liegt aktuell vor?" },
-      { id: "M2-02", text: "Welche fachliche Rueckmeldung fehlt noch?" },
+      { id: "M2-01", text: "Liegt eine interne Einschaetzung zur Berechtigung der Beanstandung vor?" },
+      { id: "M2-02", text: "Ist der aerztliche Klaerungsbedarf fuer die Stellungnahme dokumentiert?" },
     ],
     "KV-04": [
-      { id: "M2-01", text: "Welches Vorgehen fuer die Rueckmeldung wurde festgelegt?" },
-      { id: "M2-02", text: "Welche Entscheidung ist noch offen?" },
+      { id: "M2-01", text: "Ist die Reaktionsstrategie auf das KV-Schreiben intern freigegeben?" },
+      { id: "M2-02", text: "Kann die beschlossene Reaktion fristgerecht umgesetzt werden?" },
     ],
     "KV-05": [
-      { id: "M2-01", text: "Wer kann offene Abrechnungsfragen verbindlich beantworten?" },
-      { id: "M2-02", text: "Welche Kontaktstelle ist dafuer zustaendig?" },
+      { id: "M2-01", text: "Ist der zustaendige KV-Ansprechpartner fuer diesen Fall dokumentiert?" },
+      { id: "M2-02", text: "Ist der Kommunikationskanal fuer Rueckfragen an die KV festgelegt?" },
     ],
   },
   [OFFICE_TOPIC_PLAUSIBILITY_BILLING]: {
@@ -309,7 +167,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "HB-03": [
       { id: "M2-01", text: "Sind Kürzungen im Bescheid begründet?" },
       { id: "M2-02", text: "Liegt eine Plausibilitätsmaßnahme vor?" },
-      { id: "M2-03", text: "Wurde die Kürzung intern bewertet?" },
+      { id: "M2-03", text: "Ist eine interne Einschätzung zur Kürzung dokumentiert?" },
     ],
     "HB-04": [
       { id: "M2-01", text: "Lagen gültige KV-Genehmigungen vor?" },
@@ -317,9 +175,9 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-03", text: "Sind Genehmigungsnachweise archiviert?" },
     ],
     "HB-05": [
-      { id: "M2-01", text: "Wurde das RLV geprüft?" },
-      { id: "M2-02", text: "Wurden QZV-Zuweisungen kontrolliert?" },
-      { id: "M2-03", text: "Sind Quotierungen nachvollziehbar?" },
+      { id: "M2-01", text: "Ist das Regelleistungsvolumen (RLV) fuer das Quartal geprueft?" },
+      { id: "M2-02", text: "Wurden QZV-Zuweisungen (Zusatzvolumen fuer Sonderleistungen) nachvollzogen?" },
+      { id: "M2-03", text: "Sind auffaellige Quotierungen oder Kappungen im Bescheid dokumentiert und eingeordnet?" },
     ],
     "HB-06": [
       { id: "M2-01", text: "Wurde das Zustellungsdatum dokumentiert?" },
@@ -329,58 +187,58 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_REGRESS]: {
     "RG-01": [
-      { id: "M2-01", text: "Welcher Anlass wurde beanstandet und welcher Zeitraum ist betroffen?" },
-      { id: "M2-02", text: "Welche Basisfakten sind bereits gesichert dokumentiert?" },
+      { id: "M2-01", text: "Ist der Beanstandungsanlass aus dem Regressschreiben eindeutig dokumentiert?" },
+      { id: "M2-02", text: "Ist der betroffene Pruefzeitraum intern erfasst?" },
     ],
     "RG-02": [
-      { id: "M2-01", text: "Welche Fristen und Formvorgaben gelten konkret?" },
-      { id: "M2-02", text: "Welche Regelpunkte sind noch unklar oder offen?" },
+      { id: "M2-01", text: "Ist die Stellungnahmefrist intern hinterlegt?" },
+      { id: "M2-02", text: "Sind die formalen Anforderungen des Pruefverfahrens bekannt?" },
     ],
     "RG-03": [
-      { id: "M2-01", text: "Wer fuehrt den Fall fachlich und organisatorisch?" },
-      { id: "M2-02", text: "Wer vertritt die Verantwortung bei Abwesenheit?" },
+      { id: "M2-01", text: "Ist die fachliche und organisatorische Fallverantwortung intern zugewiesen?" },
+      { id: "M2-02", text: "Ist eine Vertretungsregelung fuer den Fall dokumentiert?" },
     ],
     "RG-04": [
-      { id: "M2-01", text: "Welche Nachweise liegen bereits vollstaendig vor?" },
-      { id: "M2-02", text: "Welche Unterlagen muessen noch beschafft werden?" },
+      { id: "M2-01", text: "Liegen alle fuer die Stellungnahme benoetigten Nachweise vollstaendig vor?" },
+      { id: "M2-02", text: "Ist dokumentiert, ob noch Unterlagen beschafft werden muessen?" },
     ],
     "RG-05": [
-      { id: "M2-01", text: "Welches Vorgehen wurde verbindlich entschieden?" },
-      { id: "M2-02", text: "Welche Freigabe fehlt fuer die Umsetzung noch?" },
+      { id: "M2-01", text: "Ist eine verbindliche Entscheidung zur Reaktion auf das Regressverfahren getroffen?" },
+      { id: "M2-02", text: "Ist die Freigabe fuer die naechsten Umsetzungsschritte erteilt?" },
     ],
     "RG-06": [
-      { id: "M2-01", text: "Welche externe Stelle ist fuer Rueckfragen zustaendig?" },
-      { id: "M2-02", text: "Ueber welchen Kanal erfolgt die Kommunikation?" },
+      { id: "M2-01", text: "Ist die zustaendige externe Stelle fuer Rueckfragen dokumentiert?" },
+      { id: "M2-02", text: "Ist der verbindliche Kommunikationskanal mit der externen Stelle festgelegt?" },
     ],
     "RG-07": [
-      { id: "M2-01", text: "Welche Risiken sind aktuell absehbar?" },
-      { id: "M2-02", text: "Welche Abhaengigkeiten koennen den Ablauf verzoegern?" },
+      { id: "M2-01", text: "Sind bekannte Risiken fuer den Verfahrensablauf intern erfasst?" },
+      { id: "M2-02", text: "Sind kritische Abhaengigkeiten identifiziert, die den Ablauf gefaehrden koennten?" },
     ],
   },
   [OFFICE_TOPIC_CLOSURE_COVERAGE]: {
     "UV-01": [
-      { id: "M2-01", text: "Welcher Zeitraum und welche Leistungen sind von der Schliessung betroffen?" },
-      { id: "M2-02", text: "Welche internen Angaben zum Anlass sind bereits gesichert?" },
+      { id: "M2-01", text: "Ist der Schliessungszeitraum intern dokumentiert?" },
+      { id: "M2-02", text: "Ist der Anlass der Schliessung vollstaendig erfasst?" },
     ],
     "UV-02": [
-      { id: "M2-01", text: "Welche Melde- und Informationsfristen muessen eingehalten werden?" },
-      { id: "M2-02", text: "Welche formalen Pflichten sind noch nicht abschliessend geklaert?" },
+      { id: "M2-01", text: "Sind die geltenden Melde- und Informationsfristen intern hinterlegt?" },
+      { id: "M2-02", text: "Sind die formalen Pflichten fuer die Schliessungsphase geprueft?" },
     ],
     "UV-03": [
-      { id: "M2-01", text: "Wer verantwortet die operative Vertretungsplanung?" },
-      { id: "M2-02", text: "Wer verantwortet die externe Kommunikation?" },
+      { id: "M2-01", text: "Ist die Verantwortung fuer die Vertretungsplanung intern namentlich zugewiesen?" },
+      { id: "M2-02", text: "Ist eine Vertretungsregelung fuer die externe Kommunikation waehrend der Schliessung dokumentiert?" },
     ],
     "UV-04": [
-      { id: "M2-01", text: "Welche Vertretungsnachweise liegen vor?" },
-      { id: "M2-02", text: "Welche Unterlagen muessen fuer den Zeitraum noch ergaenzt werden?" },
+      { id: "M2-01", text: "Liegen die erforderlichen Vertretungsnachweise vor?" },
+      { id: "M2-02", text: "Ist dokumentiert, ob noch Unterlagen fuer den Schliessungszeitraum ergaenzt werden muessen?" },
     ],
     "UV-05": [
-      { id: "M2-01", text: "Welches Vertretungsmodell wurde freigegeben?" },
-      { id: "M2-02", text: "Welche Entscheidung ist noch offen?" },
+      { id: "M2-01", text: "Ist das Vertretungsmodell fuer die Schliessung intern freigegeben?" },
+      { id: "M2-02", text: "Sind noch offene Klaerungspunkte zur Vertretung intern dokumentiert?" },
     ],
     "UV-06": [
-      { id: "M2-01", text: "Welche externe Stelle wurde informiert?" },
-      { id: "M2-02", text: "Welcher Kontaktkanal wird verbindlich genutzt?" },
+      { id: "M2-01", text: "Ist die zustaendige externe Stelle fuer die Schliessung informiert?" },
+      { id: "M2-02", text: "Ist der Kommunikationskanal mit der externen Stelle intern festgelegt?" },
     ],
     "UV-PATIENTENINFO": [
       { id: "M2-01", text: "Wurde ein Aushang erstellt?" },
@@ -405,80 +263,80 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_SEAT_APPROVAL]: {
     "ZA-01": [
-      { id: "M2-01", text: "Welches Zielbild fuer Sitz/Zulassung wird verfolgt?" },
-      { id: "M2-02", text: "Welche Ausgangsdaten sind bereits belastbar vorhanden?" },
+      { id: "M2-01", text: "Ist der Anlass fuer das Zulassungsverfahren intern klar dokumentiert?" },
+      { id: "M2-02", text: "Ist der angestrebte Verfahrenstyp eindeutig bestimmt?" },
     ],
     "ZA-02": [
-      { id: "M2-01", text: "Welche Fristen und Verfahrensregeln gelten fuer den Fall?" },
-      { id: "M2-02", text: "Welche formalen Anforderungen sind noch unklar?" },
+      { id: "M2-01", text: "Ist die geltende Antragsfrist bekannt und intern hinterlegt?" },
+      { id: "M2-02", text: "Sind die Verfahrensregeln des Zulassungsausschusses fuer diesen Fall geprueft?" },
     ],
     "ZA-03": [
-      { id: "M2-01", text: "Wer ist fuer welchen Verfahrensschritt verantwortlich?" },
-      { id: "M2-02", text: "Welche Vertretung ist fuer Engpaesse festgelegt?" },
+      { id: "M2-01", text: "Sind die Zustaendigkeiten fuer die einzelnen Verfahrensschritte intern zugewiesen?" },
+      { id: "M2-02", text: "Ist eine Vertretungsregelung fuer Engpaesse im Verfahrensablauf dokumentiert?" },
     ],
     "ZA-04": [
-      { id: "M2-01", text: "Welche Antragsnachweise sind bereits vorhanden?" },
-      { id: "M2-02", text: "Welche Unterlagen fehlen noch bis zur Einreichung?" },
+      { id: "M2-01", text: "Liegen alle fuer den Antrag benoetigten Nachweise vollstaendig vor?" },
+      { id: "M2-02", text: "Ist dokumentiert, ob noch fehlende Unterlagen beschafft werden muessen?" },
     ],
     "ZA-05": [
-      { id: "M2-01", text: "Welche Reihenfolge der Schritte wurde entschieden?" },
-      { id: "M2-02", text: "Welche Freigabe fehlt fuer den naechsten Schritt?" },
+      { id: "M2-01", text: "Ist die Entscheidung zur Einreichungsreihenfolge intern freigegeben?" },
+      { id: "M2-02", text: "Ist die Freigabe fuer den naechsten Verfahrensschritt erteilt?" },
     ],
     "ZA-06": [
-      { id: "M2-01", text: "Welche externe Stelle ist federfuehrend?" },
-      { id: "M2-02", text: "Wie wird die Kommunikation dokumentiert und nachgehalten?" },
+      { id: "M2-01", text: "Ist die federfuehrende externe Stelle fuer das Verfahren dokumentiert?" },
+      { id: "M2-02", text: "Ist der Kommunikationsweg mit der externen Stelle verbindlich festgelegt?" },
     ],
   },
   [OFFICE_TOPIC_APPLICATION_MANAGEMENT]: {
     "AM-01": [
-      { id: "M2-01", text: "Welcher Antrag liegt vor und welches Ziel wird verfolgt?" },
-      { id: "M2-02", text: "Welche Kerninformationen zum Anlass sind gesichert?" },
+      { id: "M2-01", text: "Ist der Antragsanlass intern klar beschrieben?" },
+      { id: "M2-02", text: "Ist der Antragstyp eindeutig bestimmt?" },
     ],
     "AM-02": [
-      { id: "M2-01", text: "Welche Fristen und Einreichungsvorgaben sind bindend?" },
-      { id: "M2-02", text: "Welche Pflichtschritte sind noch offen?" },
+      { id: "M2-01", text: "Sind alle bindenden Einreichungsfristen bekannt und intern hinterlegt?" },
+      { id: "M2-02", text: "Sind die Pflichtschritte bis zur Einreichung vollstaendig identifiziert?" },
     ],
     "AM-03": [
-      { id: "M2-01", text: "Wer ist fuer Erstellung, Pruefung und Einreichung zustaendig?" },
-      { id: "M2-02", text: "Wie ist die Vertretung bei Ausfall geregelt?" },
+      { id: "M2-01", text: "Sind Erstellung, Pruefung und Einreichung intern klar zugewiesen?" },
+      { id: "M2-02", text: "Ist eine Vertretungsregelung fuer den Ausfall dokumentiert?" },
     ],
     "AM-04": [
-      { id: "M2-01", text: "Welche Nachweise liegen bereits vollstaendig vor?" },
-      { id: "M2-02", text: "Welche Dokumente fehlen fuer die Einreichung noch?" },
+      { id: "M2-01", text: "Liegen alle fuer die Einreichung benoetigten Nachweise vollstaendig vor?" },
+      { id: "M2-02", text: "Ist dokumentiert, ob noch fehlende Dokumente beschafft werden muessen?" },
     ],
     "AM-05": [
-      { id: "M2-01", text: "Welche Entscheidung zur Einreichung wurde getroffen?" },
-      { id: "M2-02", text: "Welche Entscheidung ist noch zu eskalieren?" },
+      { id: "M2-01", text: "Ist die Entscheidung zur Einreichung intern freigegeben?" },
+      { id: "M2-02", text: "Ist eine Eskalation fuer offene Entscheidungspunkte eingeleitet?" },
     ],
     "AM-06": [
-      { id: "M2-01", text: "Welche Risiken bedrohen den fristgerechten Abschluss?" },
-      { id: "M2-02", text: "Welche Abhaengigkeiten koennen den Antrag blockieren?" },
+      { id: "M2-01", text: "Sind bekannte Risiken fuer den fristgerechten Abschluss intern erfasst?" },
+      { id: "M2-02", text: "Sind Abhaengigkeiten identifiziert, die den Antrag blockieren koennten?" },
     ],
   },
   [OFFICE_TOPIC_CONTINUING_EDUCATION]: {
     "WB-01": [
-      { id: "M2-01", text: "Welche Rollen oder Personen sind vom Nachweisthema betroffen?" },
-      { id: "M2-02", text: "Welche Ausgangslage ist bereits dokumentiert?" },
+      { id: "M2-01", text: "Ist der Anlass fuer das Fortbildungsthema intern erfasst?" },
+      { id: "M2-02", text: "Sind die betroffenen Personen oder Rollen dokumentiert?" },
     ],
     "WB-02": [
-      { id: "M2-01", text: "Welche Fristen und Regeln fuer Punkte/Nachweise gelten?" },
-      { id: "M2-02", text: "Welche Pflichtvorgaben sind noch nicht abschliessend geklaert?" },
+      { id: "M2-01", text: "Sind die geltenden Fortbildungsfristen bekannt und intern hinterlegt?" },
+      { id: "M2-02", text: "Sind die Nachweisregeln der zustaendigen Stelle geprueft?" },
     ],
     "WB-03": [
-      { id: "M2-01", text: "Wer verantwortet die Nachverfolgung je Person?" },
-      { id: "M2-02", text: "Wer prueft die Vollstaendigkeit vor Fristablauf?" },
+      { id: "M2-01", text: "Ist die Verantwortung fuer die Nachverfolgung je betroffener Person zugewiesen?" },
+      { id: "M2-02", text: "Ist dokumentiert, ob die Vollstaendigkeit vor Fristablauf geprueft wird?" },
     ],
     "WB-04": [
-      { id: "M2-01", text: "Welche Nachweise/Punkte liegen bereits vor?" },
-      { id: "M2-02", text: "Welche Belege muessen noch nachgereicht werden?" },
+      { id: "M2-01", text: "Liegen alle erforderlichen Fortbildungsnachweise vollstaendig vor?" },
+      { id: "M2-02", text: "Ist dokumentiert, ob noch fehlende Belege nachgereicht werden muessen?" },
     ],
     "WB-05": [
-      { id: "M2-01", text: "Welche Massnahmen wurden priorisiert?" },
-      { id: "M2-02", text: "Welche Entscheidung steht noch aus?" },
+      { id: "M2-01", text: "Sind konkrete Massnahmen zur Schliessung von Fortbildungsluecken priorisiert?" },
+      { id: "M2-02", text: "Ist eine Entscheidung zu offenen Priorisierungsfragen getroffen?" },
     ],
     "WB-06": [
-      { id: "M2-01", text: "Welche externe Stelle bestaetigt die Nachweise?" },
-      { id: "M2-02", text: "Wie erfolgt die Uebermittlung an die externe Stelle?" },
+      { id: "M2-01", text: "Ist die zustaendige externe Stelle fuer die Nachweisuebermittlung dokumentiert?" },
+      { id: "M2-02", text: "Ist der Uebermittlungsweg an die externe Stelle verbindlich festgelegt?" },
     ],
   },
   [OFFICE_TOPIC_CME_GENERAL_MEDICINE]: {
@@ -499,7 +357,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "FB-04": [
       { id: "M2-01", text: "Wird die Frist regelmäßig kontrolliert?" },
-      { id: "M2-02", text: "Existiert eine Erinnerungsfunktion?" },
+      { id: "M2-02", text: "Ist eine Erinnerung oder Wiedervorlage fuer die Fortbildungsfrist eingerichtet?" },
       { id: "M2-03", text: "Wurde bei Punktedefizit reagiert?" },
     ],
     "FB-05": [
@@ -508,12 +366,12 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-03", text: "Wurden Übertragungsfehler geprüft?" },
     ],
     "FB-06": [
-      { id: "M2-01", text: "Wurde ein Punktedefizit bewertet?" },
+      { id: "M2-01", text: "Ist ein Punktedefizit festgestellt und dokumentiert?" },
       { id: "M2-02", text: "Sind mögliche Honorarkürzungen bekannt?" },
       { id: "M2-03", text: "Wurde ein Maßnahmenplan festgelegt?" },
     ],
     "FB-AUFHOLPLAN": [
-      { id: "M2-01", text: "Existiert ein Fortbildungsplan?" },
+      { id: "M2-01", text: "Liegt ein Fortbildungsplan fuer den Aufholzeitraum vor?" },
       { id: "M2-02", text: "Sind konkrete Termine festgelegt?" },
       { id: "M2-03", text: "Wird der Fortschritt überwacht?" },
     ],
@@ -599,7 +457,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-03", text: "Liegt ein Einweisungsnachweis vor?" },
     ],
     "MG-04": [
-      { id: "M2-01", text: "Existiert ein Wartungsplan?" },
+      { id: "M2-01", text: "Liegt ein Wartungsplan fuer das Geraet vor?" },
       { id: "M2-02", text: "Sind Prüffristen hinterlegt?" },
       { id: "M2-03", text: "Wurde ein Wartungsdienst beauftragt?" },
     ],
@@ -622,12 +480,12 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "DS-02": [
       { id: "M2-01", text: "Sind Patientendaten betroffen?" },
-      { id: "M2-02", text: "Wurde das Risiko bewertet?" },
+      { id: "M2-02", text: "Ist das Schadensrisiko fuer betroffene Personen eingeschaetzt?" },
       { id: "M2-03", text: "Sind betroffene Personen identifiziert?" },
     ],
     "DS-03": [
       { id: "M2-01", text: "Wurde intern geprüft, ob eine Meldepflicht besteht?" },
-      { id: "M2-02", text: "Wurde die maßgebliche Meldefrist intern bewertet?" },
+      { id: "M2-02", text: "Ist bekannt, ob die 72-Stunden-Meldefrist noch laeuft oder bereits abgelaufen ist?" },
       { id: "M2-03", text: "Wurde die Entscheidung zur Meldung dokumentiert?" },
     ],
     "DS-04": [
@@ -643,14 +501,14 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "DS-06": [
       { id: "M2-01", text: "Wurden Schutzmaßnahmen angepasst?" },
       { id: "M2-02", text: "Wurde das Team unterwiesen?" },
-      { id: "M2-03", text: "Sind Wiederholungsrisiken bewertet?" },
+      { id: "M2-03", text: "Ist eingeschaetzt, ob sich ein aehnlicher Vorfall wiederholen koennte?" },
     ],
   },
   [OFFICE_TOPIC_EXTENDED_OPENING_HOURS]: {
     "OE-01": [
       { id: "M2-01", text: "Ist ausreichend Personal eingeplant?" },
       { id: "M2-02", text: "Sind ärztliche Zeiten abgedeckt?" },
-      { id: "M2-03", text: "Wurden Ausfallrisiken bewertet?" },
+      { id: "M2-03", text: "Ist fuer moegliche Personalausfaelle eine Vertretungsregelung vorhanden?" },
     ],
     "OE-02": [
       { id: "M2-01", text: "Wurden Arbeitszeiten angepasst?" },
@@ -659,7 +517,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "OE-03": [
       { id: "M2-01", text: "Wurden KV-relevante Anforderungen intern geprüft?" },
-      { id: "M2-02", text: "Wurde bewertet, ob eine Meldung erforderlich ist?" },
+      { id: "M2-02", text: "Ist geprueft, ob eine Meldung bei der KV erforderlich ist?" },
       { id: "M2-03", text: "Wurde die Entscheidung zur KV-Meldung dokumentiert?" },
     ],
     "OE-04": [
@@ -680,28 +538,28 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_REPORTING_DUTIES]: {
     "MP-01": [
-      { id: "M2-01", text: "Welches meldepflichtige Ereignis liegt vor?" },
-      { id: "M2-02", text: "Welche Basisdaten sind bereits belastbar erfasst?" },
+      { id: "M2-01", text: "Ist das meldepflichtige Ereignis intern klar dokumentiert?" },
+      { id: "M2-02", text: "Sind die relevanten Basisdaten fuer die Meldung vollstaendig erfasst?" },
     ],
     "MP-02": [
-      { id: "M2-01", text: "Welche Meldefrist und welche Formvorgaben gelten?" },
-      { id: "M2-02", text: "Welche Pflichtteile der Meldung sind noch offen?" },
+      { id: "M2-01", text: "Ist die geltende Meldefrist bekannt und intern hinterlegt?" },
+      { id: "M2-02", text: "Sind die Formvorgaben fuer die Meldung geprueft?" },
     ],
     "MP-03": [
-      { id: "M2-01", text: "Wer erstellt, prueft und gibt die Meldung frei?" },
-      { id: "M2-02", text: "Wie ist die Vertretung fuer den Meldeweg geregelt?" },
+      { id: "M2-01", text: "Sind Erstellung, Pruefung und Freigabe der Meldung intern zugewiesen?" },
+      { id: "M2-02", text: "Ist eine Vertretungsregelung fuer den Meldeweg dokumentiert?" },
     ],
     "MP-04": [
-      { id: "M2-01", text: "Welche Nachweise sind fuer die Meldung vorhanden?" },
-      { id: "M2-02", text: "Welche Unterlagen fehlen noch bis zur finalen Abgabe?" },
+      { id: "M2-01", text: "Liegen alle fuer die Meldung erforderlichen Nachweise vor?" },
+      { id: "M2-02", text: "Ist dokumentiert, ob noch fehlende Unterlagen beschafft werden muessen?" },
     ],
     "MP-05": [
-      { id: "M2-01", text: "Welche Entscheidung zur finalen Abgabe wurde getroffen?" },
-      { id: "M2-02", text: "Welche interne Freigabe ist noch erforderlich?" },
+      { id: "M2-01", text: "Ist die Entscheidung zur finalen Abgabe der Meldung getroffen?" },
+      { id: "M2-02", text: "Ist die interne Freigabe fuer die Abgabe erteilt?" },
     ],
     "MP-06": [
-      { id: "M2-01", text: "Welche externe Stelle ist fuer die Meldung zustaendig?" },
-      { id: "M2-02", text: "Welcher Kanal ist fuer Rueckfragen verbindlich?" },
+      { id: "M2-01", text: "Ist die zustaendige externe Stelle fuer die Meldung dokumentiert?" },
+      { id: "M2-02", text: "Ist der verbindliche Meldekanal festgelegt?" },
     ],
   },
 };

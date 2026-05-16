@@ -66,6 +66,9 @@ describe("office checkpoint catalog", () => {
       "NC-ANTRAGSWEG",
       "NC-GENEHMIGUNGSSTATUS",
       "NC-BETRIEBSSTAETTENSTRUKTUR",
+      "NC-ARBEITSVERTRAG_FREIGABE",
+      "NC-LANR_BSNR_ZUORDNUNG",
+      "NC-SYSTEMZUGRIFFE_EINGERICHTET",
     ]);
 
     expect(ids).not.toContain("HR-GOV-A");

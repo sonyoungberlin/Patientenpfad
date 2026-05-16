@@ -58,6 +58,90 @@ Runtime-Stand heute:
 BLOCKER, GATEKEEPER und RISIKO/RISK sind keine Informationstypen.
 Sie sind Auswirkungen oder Prozessrollen.
 
+## M2-Fragen — Sprach- und UX-Regeln
+
+### Grundsatz
+
+M2 ist die Arbeitsoberfläche für MFA und Praxismanagement — kein Rechtsgutachten und kein Audit-Bogen.
+Wer eine M2-Frage liest, muss sie sofort verstehen und sofort mit Ja, Nein oder Unklar beantworten können.
+Wenn eine MFA die Frage erklären müsste, bevor sie sie beantwortet, ist die Frage falsch formuliert.
+
+### Pflichtregeln
+
+- **Jede Frage = genau ein prüfbarer Zustand.**
+  Nicht: „Sind Fristen bekannt und Unterlagen vollständig?"
+  Sondern zwei getrennte Fragen.
+
+- **Jede Frage muss direkt mit Ja / Nein / Unklar beantwortbar sein.**
+  Fragen, die eine Recherche, eine Bewertung oder eine Liste als Antwort erfordern, sind unzulässig.
+
+- **Keine W-Fragen.**
+  W-Fragen (Was, Welche, Wer, Wodurch, Woraus) erzwingen eine offene Antwort. Sie gehören in den Fallkommentar, nicht in M2.
+
+- **Keine Mehrfachfragen.**
+  Erkennbar an „und", „oder" und mehreren Subjekten in einem Satz.
+
+- **Keine Fachabkürzungen ohne kurze Erklärung.**
+  LANR, RLV, QZV, GOP, CE müssen entweder ausgeschrieben oder mit einem Klammerzusatz versehen sein.
+  Ausnahme: Begriffe, die im direkten Arbeitsumfeld der Praxis allgemein bekannt sind (z. B. PVS, KV).
+
+- **Keine juristische oder abstrakte Governance-Sprache.**
+  Die Frage soll den Praxisalltag abbilden, nicht eine Compliance-Prüfung simulieren.
+
+### Verbotene Formulierungen
+
+Die folgenden Begriffe und Konstruktionen sind in M2-Fragen nicht erlaubt:
+
+| Verboten | Grund |
+|---|---|
+| „regelkonform" | juristisch, kein klares Kriterium |
+| „Compliance" / „compliant" | englisch-deutsches Governance-Wort, zu abstrakt |
+| „belastbar" | juristischer Qualitätsbegriff ohne konkreten Prüfpunkt |
+| „ableitbar" | logische Schlussfolgerung, kein prüfbarer Zustand |
+| „maßgeblich" | formal-juristisch, unklar für Backoffice |
+| „sichergestellt" | ohne konkretes Kriterium nicht beantwortbar |
+| „Existiert …?" | Softwaresprache, klingt nach Systemprüfung |
+| „Wurde bewertet …?" | Bewertung ist keine abgeschlossene Handlung, die man ablesen kann |
+
+### Schlechte Beispiele
+
+Fragen aus dem Officepfad, die gegen die Regeln verstoßen:
+
+1. **„Liegt ein belastbarer Verfahrensstand vor, aus dem die Genehmigungsfaehigkeit ableitbar ist?"**
+   Problem: „belastbar", „ableitbar", „Genehmigungsfaehigkeit" — drei abstrakte Begriffe in einer Frage. Kein Ja/Nein möglich.
+
+2. **„Ist belastbar nachgewiesen, dass die Berufspflichten-Compliance fuer die Taetigkeitsaufnahme gesichert ist?"**
+   Problem: „Berufspflichten-Compliance", „Taetigkeitsaufnahme", „sichergestellt" — juristisch, unverständlich für MFA.
+
+3. **„Liegt eine Plausibilitätsmaßnahme vor?"**
+   Problem: KV-Fachbegriff, den nur Abrechnungsexperten kennen. MFA kann nicht Ja/Nein antworten ohne zu wissen, was gemeint ist.
+
+4. **„Gibt es auffällige Quartalszeitwerte?"**
+   Problem: „Quartalszeitwerte" ist ein technischer KV-Abrechnungsbegriff ohne Alltagsbedeutung.
+
+5. **„Existiert eine Erinnerungsfunktion?"**
+   Problem: Klingt nach Software-Feature-Test. Wer oder was soll erinnert werden? Woran? Unklar.
+
+### Gute Beispiele
+
+Fragen aus dem Officepfad, die die Regeln einhalten:
+
+1. **„Ist die Approbation mit gueltigem Stand dokumentiert?"**
+   Konkret, ein Zustand, sofort mit Ja/Nein beantwortbar.
+
+2. **„Ist die Stellungnahmefrist intern hinterlegt?"**
+   Klar: Ja = Frist steht irgendwo. Nein = nicht gefunden. Kein Interpretationsspielraum.
+
+3. **„Liegen alle fuer die Einreichung benoetigten Nachweise vollstaendig vor?"**
+   Leicht lang, aber konkret handlungsbezogen — MFA weiß genau, was geprüft werden soll.
+
+4. **„Ist eine externe Bestaetigung durch KV Berlin oder Aerztekammer erforderlich?"**
+   Benennt die zuständige Stelle explizit. Kein Abstrakt-Begriff. Ja/Nein eindeutig.
+
+5. **„Ist das Regelleistungsvolumen (RLV) fuer das Quartal geprueft?"**
+   Abkürzung vorhanden, aber mit Klammererklärung — ausreichend verständlich auch ohne KV-Vorwissen.
+
+
 Klarstellung:
 - BLOCKER beschreibt eine blockierende Bearbeitungsluecke.
 - GATEKEEPER beschreibt einen harten fachlichen Stopp.
