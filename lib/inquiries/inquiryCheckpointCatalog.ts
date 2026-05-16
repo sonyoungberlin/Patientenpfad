@@ -386,7 +386,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die AU fehlen die Versichertendaten – entweder ein Foto der Gesundheitskarte (Vorder- und Rückseite) oder eine elektronische Ersatzbescheinigung der Krankenkasse.",
+        "Für die Ausstellung der AU benötigen wir noch einen aktuellen Versicherungsnachweis.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -547,7 +547,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Verordnung dieses Medikaments ist eine ärztliche Einschätzung erforderlich.",
+        "Vor der Verordnung dieses Medikaments ist zunächst eine ärztliche Einschätzung notwendig.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -598,7 +598,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für diese Medikation ist ein aktueller Facharztbericht erforderlich.",
+        "Für diese Medikation benötigen wir einen aktuellen Facharztbericht.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -628,7 +628,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Es liegt kein aktueller Krankenhaus- oder Entlassbericht vor.",
+        "Uns liegt aktuell kein Krankenhaus- oder Entlassbericht vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -996,7 +996,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "In Ihrer Krankenakte ist keine ärztliche Anordnung für die gewünschte Blutuntersuchung hinterlegt.",
+        "Für die gewünschte Blutuntersuchung liegt aktuell keine ärztliche Anordnung vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1013,7 +1013,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "In Ihrer Krankenakte ist eine ärztliche Anordnung zur Kontrolle der Blutwerte hinterlegt.",
+        "Für die Kontrolle Ihrer Blutwerte liegt bereits eine ärztliche Anordnung vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1247,8 +1247,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_MEDICAL_INDICATION-Q3", text: "Geht es um eine Routinekontrolle?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: Anlass für Laboruntersuchung ist angegeben.",
-      [ExplanationStatus.NO]: "Labor-Hinweis: Kein Laboranlass / Indikation nicht erkennbar.",
+      [ExplanationStatus.YES]: "Der Anlass für die gewünschte Laboruntersuchung ist bekannt.",
+      [ExplanationStatus.NO]: "Für die gewünschte Laboruntersuchung fehlt ein nachvollziehbarer Anlass.",
     },
   },
 
@@ -1264,8 +1264,8 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "LAB_CHECKUP_ELIGIBLE-Q2", text: "Wann war der letzte Check-up?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Labor-Hinweis: Check-up / Vorsorge möglich.",
-      [ExplanationStatus.NO]: "Labor-Hinweis: Check-up / Vorsorge derzeit nicht vorgesehen.",
+      [ExplanationStatus.YES]: "Labor-Hinweis: Check-up / Vorsorgeuntersuchung möglich.",
+      [ExplanationStatus.NO]: "Nach den uns vorliegenden Angaben ist derzeit kein weiterer Check-up über die Krankenkasse möglich.",
     },
   },
 
@@ -1812,7 +1812,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       { id: "SAMPLE_COLLECTION_ORDER_AVAILABLE-Q1", text: "Liegt eine ärztliche Anordnung für die Probenabgabe vor?" },
     ],
     textByStatus: {
-      [ExplanationStatus.YES]: "Für die Probenabgabe liegt eine entsprechende Anordnung vor.",
+      [ExplanationStatus.YES]: "Für die gewünschte Probenabgabe liegt bereits eine ärztliche Anordnung vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1852,7 +1852,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Uns liegt noch keine eindeutige Anordnung oder Information vor, welche Probe abgegeben oder untersucht werden soll.",
+        "Aktuell ist noch unklar, welche Probe abgegeben oder untersucht werden soll.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -1943,7 +1943,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Abrechnung der Laborleistungen erfolgt direkt über unser Partnerlabor. Sie erhalten die Rechnung unabhängig von uns vom Labor.",
+        "Die Abrechnung der Laborleistungen erfolgt direkt über unser Partnerlabor. Die Rechnung erhalten Sie direkt vom Labor.",
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
@@ -1967,7 +1967,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [DecisionStatus.POSSIBLE]:
         "Sie können sich mit Ihrem Anliegen im Rahmen eines Akuttermins oder der offenen Sprechstunde vorstellen.",
       [DecisionStatus.NOT_POSSIBLE]:
-        "Für Ihr Anliegen ist diese Terminart nicht geeignet.",
+        "Für Ihr Anliegen ist eine andere Terminart vorgesehen.",
     },
     textByAudience: {
       contact_person: {
@@ -2405,7 +2405,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Ihre Angaben zur Heilmittelverordnung liegen für die weitere Bearbeitung vor.",
+        "Ihre Angaben zur Heilmittelverordnung sind eingegangen.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Angaben zur Heilmittelverordnung vollständig vorhanden",
@@ -2425,7 +2425,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Bearbeitung benötigen wir noch weitere Angaben.",
+        "Wir benötigen noch weitere Angaben.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2479,7 +2479,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die weitere Bearbeitung ist ein persönlicher Termin in der Praxis erforderlich.",
+        "Für die Heilmittelverordnung ist ein persönlicher Termin in der Praxis notwendig.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -2556,7 +2556,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Der aktuelle Impfstatus ist unklar – Angaben zu den bisher durchgeführten Impfungen liegen nicht vor.",
+        "Zu den bisherigen Impfungen liegen uns aktuell keine ausreichenden Angaben vor.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
