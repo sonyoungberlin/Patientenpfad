@@ -5,14 +5,6 @@ import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
 import { applyLabCheckpointCoupling } from "@/lib/inquiries/labCheckpointCoupling";
-import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
-
-import {
-  getProcessShelfGroupForCheckpointId,
-  PROCESS_SHELF_GROUP_ORDER,
-  type ProcessShelfGroupId,
-} from "@/lib/inquiries/processShelfGroups";
-import { PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
 
 export type PlainCheckpoint = {
   id: string;
@@ -94,17 +86,6 @@ const GROUP_BADGE_STYLE = {
   letterSpacing: "0.04em",
 };
 
-const PROCESS_SHELF_LABELS: Record<ProcessShelfGroupId, string> = {
-  missingInfoOrDocuments: "Fehlende Angaben / Unterlagen",
-  documentsAndUpload: "Dokumente & Upload",
-  insuranceData: "Versicherungsdaten",
-  appointmentsAndBooking: "Termine & Buchung",
-  digitalRequest: "Digitale Anfrage",
-  waitingProcessingTechnical: "Warten / Technik",
-  preparation: "Vorbereitung",
-  billing: "Abrechnung / Kosten",
-};
-
 /**
  * GLOBAL-Action-Checkpoints, die nicht mehr als manuelle Praxis-Schalter in M2 erscheinen sollen.
  * Diese Actions werden in M3 schubladen-gesteuert aktiviert (siehe processShelfGroups).
@@ -115,163 +96,6 @@ const HIDDEN_M2_ACTION_IDS = new Set<string>([
   "PROCESSING_DELAY",
   "TECHNICAL_ISSUE",
 ]);
-
-type ProcessShelfGroupData = {
-  id: ProcessShelfGroupId;
-  label: string;
-  checkpoints: PlainCheckpoint[];
-};
-
-function toProcessShelfStatusText(value: string | undefined): string {
-  if (value === "YES") return "Status: Ja";
-  if (value === "NO") return "Status: Nein";
-  if (value === "ACTIVE") return "Status: Aktiv";
-  if (value === "INACTIVE") return "Status: Inaktiv";
-  return "Status: Offen";
-}
-
-function buildGlobalProcessShelfGroups(
-  sections: M2SectionData[],
-  profileActionCheckpoints: PlainCheckpoint[],
-): ProcessShelfGroupData[] {
-  // Globale Deduplizierung ueber alle gewaehlten Profile und alle relevanten
-  // Quellen (specific, action, bound action, profileAction, sectionIntro).
-  const checkpointById = new Map<string, PlainCheckpoint>();
-  for (const section of sections) {
-    for (const cp of section.specificCheckpoints) checkpointById.set(cp.id, cp);
-    for (const cp of section.actionCheckpoints) checkpointById.set(cp.id, cp);
-    for (const cp of section.allBoundActionCheckpoints ?? []) checkpointById.set(cp.id, cp);
-    for (const cp of section.sectionIntroCheckpoints ?? []) checkpointById.set(cp.id, cp);
-  }
-  for (const cp of profileActionCheckpoints) checkpointById.set(cp.id, cp);
-
-  // IDs aus PROCESS_SHELF_PROFILE_BINDINGS zusätzlich einspeisen
-  for (const section of sections) {
-    const extraIds = PROCESS_SHELF_PROFILE_BINDINGS[section.inquiryId] || [];
-    for (const id of extraIds) {
-      if (!checkpointById.has(id)) {
-        // Erst in specificCheckpoints suchen (falls noch vorhanden),
-        // sonst direkt aus dem Checkpoint-Katalog laden.
-        const fromSection = section.specificCheckpoints.find((cp) => cp.id === id);
-        if (fromSection) {
-          checkpointById.set(id, fromSection);
-        } else {
-          const catalogEntry = INQUIRY_CHECKPOINT_CATALOG_V2[id];
-          if (catalogEntry) {
-            checkpointById.set(id, {
-              id: catalogEntry.id,
-              label: catalogEntry.label,
-              kind: catalogEntry.kind,
-              scope: catalogEntry.scope,
-              questions: catalogEntry.questions,
-              actionCategory: catalogEntry.actionCategory,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  const groupedById = new Map<ProcessShelfGroupId, PlainCheckpoint[]>();
-  for (const cp of checkpointById.values()) {
-    const groupId = getProcessShelfGroupForCheckpointId(cp.id);
-    if (!groupId) continue;
-    if (!groupedById.has(groupId)) groupedById.set(groupId, []);
-    groupedById.get(groupId)!.push(cp);
-  }
-
-  return PROCESS_SHELF_GROUP_ORDER
-    .map((groupId) => ({
-      id: groupId,
-      label: PROCESS_SHELF_LABELS[groupId],
-      checkpoints: groupedById.get(groupId) ?? [],
-    }))
-    .filter((group) => group.checkpoints.length > 0);
-}
-
-function ProcessShelfOrientationSection({
-  sections,
-  profileActionCheckpoints,
-  statuses,
-}: {
-  sections: M2SectionData[];
-  profileActionCheckpoints: PlainCheckpoint[];
-  statuses: Record<string, string>;
-}) {
-  const processGroups = buildGlobalProcessShelfGroups(sections, profileActionCheckpoints);
-  if (processGroups.length === 0) return null;
-
-  return (
-    <section
-      style={{
-        margin: "0 0 1.5rem",
-      }}
-    >
-      <details
-        style={{
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          padding: "0.5rem 0.75rem",
-          background: "var(--background)",
-        }}
-      >
-        <summary
-          style={{
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: "0.9rem",
-            color: "var(--muted-foreground, #6b7280)",
-          }}
-        >
-          <span aria-hidden="true">≡ </span>Weitere Hinweise &amp; Prozessablauf
-        </summary>
-        <p className="text-muted text-small" style={{ margin: "0.5rem 0" }}>
-          Optional: prozessbezogene Hinweise, gruppiert. Die fachliche Auswahl bleibt unverändert.
-        </p>
-
-      {processGroups.map((group) => (
-        <details
-          key={group.id}
-          style={{
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            marginBottom: "0.4rem",
-            overflow: "hidden",
-          }}
-        >
-          <summary
-            style={{
-              cursor: "pointer",
-              padding: "0.5rem 0.7rem",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              background: "var(--background)",
-            }}
-          >
-            {group.label} ({group.checkpoints.length})
-          </summary>
-          <div style={{ padding: "0.3rem 0.7rem 0.5rem" }}>
-            {group.checkpoints.map((cp) => (
-              <div
-                key={cp.id}
-                style={{
-                  padding: "0.45rem 0",
-                  borderBottom: "1px solid var(--border)",
-                }}
-              >
-                <div style={{ fontSize: "0.9rem", fontWeight: 500 }}>{cp.label}</div>
-                <div className="text-muted text-small" style={{ marginTop: "0.15rem" }}>
-                  {toProcessShelfStatusText(statuses[cp.id])}
-                </div>
-              </div>
-            ))}
-          </div>
-        </details>
-      ))}
-      </details>
-    </section>
-  );
-}
 
 /**
  * Pilot „Schubladen"-Auswahl für M2 (AU / LAB / APPOINTMENT).
@@ -3518,12 +3342,6 @@ export default function InquiryM2Client({
             onChange={setStatus}
           />
         )}
-
-      <ProcessShelfOrientationSection
-        sections={sections}
-        profileActionCheckpoints={profileActionCheckpoints}
-        statuses={statuses}
-      />
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>
