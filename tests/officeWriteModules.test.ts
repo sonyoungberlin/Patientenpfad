@@ -7,7 +7,7 @@ import {
   evaluateOfficeWriteModules,
   renderOfficeWriteTemplate,
 } from "@/lib/office/writeRenderer";
-import { OFFICE_TOPIC_REGRESS } from "@/lib/office/checkpointCatalog";
+import { OFFICE_TOPIC_REGRESS, OFFICE_TOPIC_KV_BILLING } from "@/lib/office/checkpointCatalog";
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
@@ -506,5 +506,321 @@ describe("Keine Begriffskollision mit 'action'", () => {
     for (const v of Object.values(OfficeWriteKind)) {
       expect(v.toLowerCase()).not.toContain("action");
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktion: KV-Snapshot
+// ---------------------------------------------------------------------------
+
+/** Alle KV-Checkpoints auf YES – einzelne States via overrides überschreibbar. */
+function makeKvSnapshot(
+  overrides: Partial<Record<string, OfficeCheckpointState>> = {},
+): OfficeCheckpointSnapshot[] {
+  const defaults: Record<string, OfficeCheckpointState> = {
+    "KV-01": OfficeCheckpointState.YES,
+    "KV-02": OfficeCheckpointState.YES,
+    "KV-03": OfficeCheckpointState.YES,
+    "KV-04": OfficeCheckpointState.YES,
+    "KV-05": OfficeCheckpointState.YES,
+  };
+  return Object.entries({ ...defaults, ...overrides } as Record<string, OfficeCheckpointState>).map(
+    ([id, state]) => makeCheckpoint(id, state),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 11. Katalogsanität KV-Templates
+// ---------------------------------------------------------------------------
+
+describe("OFFICE_WRITE_TEMPLATES: KV-Katalog", () => {
+  it("alle drei KV-Templates sind im Katalog enthalten", () => {
+    const ids = OFFICE_WRITE_TEMPLATES.map((t) => t.id);
+    expect(ids).toContain("kv-antwortschreiben");
+    expect(ids).toContain("kv-arztgespraech-vorbereiten");
+    expect(ids).toContain("kv-klaerungsnotiz");
+  });
+
+  it("alle KV-Templates haben topicIds = [OFFICE_TOPIC_KV_BILLING]", () => {
+    const kvTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+      t.trigger.topicIds.includes(OFFICE_TOPIC_KV_BILLING),
+    );
+    expect(kvTemplates).toHaveLength(3);
+    for (const t of kvTemplates) {
+      expect(t.trigger.topicIds).toEqual([OFFICE_TOPIC_KV_BILLING]);
+    }
+  });
+
+  it("alle Template-IDs sind nach wie vor eindeutig", () => {
+    const ids = OFFICE_WRITE_TEMPLATES.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. KV-Templates erscheinen nicht beim Regress-Topic
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: KV-Topic-Filter", () => {
+  const KV_IDS = [
+    "kv-antwortschreiben",
+    "kv-arztgespraech-vorbereiten",
+    "kv-klaerungsnotiz",
+  ] as const;
+
+  it("KV-Templates sind nicht verfügbar für Regress-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_REGRESS,
+      checkpoints: makeRegressSnapshot(),
+    });
+    for (const id of KV_IDS) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+
+  it("Regress-Templates sind nicht verfügbar für KV-Topic", () => {
+    const REGRESS_IDS = [
+      "regress-stellungnahme",
+      "regress-arztgespraech-vorbereiten",
+      "regress-unterlagen-nachfordern",
+    ] as const;
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot(),
+    });
+    for (const id of REGRESS_IDS) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 13. kv-antwortschreiben: allOf + blockedWhenAnyOpen
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: kv-antwortschreiben", () => {
+  it("verfügbar wenn KV-01 und KV-02 YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "kv-antwortschreiben");
+    expect(m?.isAvailable).toBe(true);
+    expect(m?.unavailableReason).toBeUndefined();
+  });
+
+  it("nicht verfügbar wenn KV-01 NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot({ "KV-01": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "kv-antwortschreiben");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("nicht verfügbar wenn KV-02 NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot({ "KV-02": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "kv-antwortschreiben");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("geblockt wenn KV-01 OPEN – unavailableReason enthält 'KV-01'", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot({ "KV-01": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "kv-antwortschreiben");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toContain("KV-01");
+  });
+
+  it("geblockt wenn KV-02 OPEN – unavailableReason enthält 'KV-02'", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot({ "KV-02": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "kv-antwortschreiben");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toContain("KV-02");
+  });
+
+  it("geblockt bei leerem Snapshot (KV-01 und KV-02 fehlen → OPEN)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "kv-antwortschreiben");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 14. kv-arztgespraech-vorbereiten: anyOf KV-03 OPEN
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: kv-arztgespraech-vorbereiten", () => {
+  it("verfügbar wenn KV-03 OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot({ "KV-03": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "kv-arztgespraech-vorbereiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn KV-03 YES (alle YES)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "kv-arztgespraech-vorbereiten");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (KV-03 fehlt → OPEN)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "kv-arztgespraech-vorbereiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 15. kv-klaerungsnotiz: anyOf KV-04 oder KV-05 OPEN
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: kv-klaerungsnotiz", () => {
+  it("verfügbar wenn KV-04 OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot({ "KV-04": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "kv-klaerungsnotiz");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn KV-05 OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot({ "KV-05": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "kv-klaerungsnotiz");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn KV-04 und KV-05 beide YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "kv-klaerungsnotiz");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (KV-04 und KV-05 fehlen → OPEN)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "kv-klaerungsnotiz");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 16. renderOfficeWriteTemplate: kv-antwortschreiben
+// ---------------------------------------------------------------------------
+
+describe("renderOfficeWriteTemplate: kv-antwortschreiben", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "kv-antwortschreiben")!;
+
+  const pflichtfelder: Record<string, string> = {
+    praxisname: "Praxis Muster",
+    bsnr: "123456789",
+    arztname: "Dr. med. Anna Müller",
+    lanr: "987654321",
+    datum_schreiben: "17.05.2026",
+    empfaenger_block: "KV Berlin\nMasurenallee 6-8\n14057 Berlin",
+    aktenzeichen: "ABR-2026-0099",
+    datum_kv_schreiben: "05.05.2026",
+    abrechnungszeitraum: "Quartal 2/2025",
+    beanstandete_leistung: "GOP 13250",
+    sachverhalt: "Die Leistung wurde erbracht.",
+    fachliche_einschaetzung: "Medizinisch indiziert wegen Herzinsuffizienz.",
+  };
+
+  it("erzeugt Schreiben mit allen Pflichtfeldern und ohne {{-Rest", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("KV Berlin");
+    expect(result).toContain("GOP 13250");
+    expect(result).toContain("Quartal 2/2025");
+    expect(result).toContain("ABR-2026-0099");
+    expect(result).toContain("Medizinisch indiziert wegen Herzinsuffizienz.");
+    expect(result).toContain("KV-Schreiben vom 05.05.2026, Az. ABR-2026-0099");
+    expect(result).toContain("Rückfrage vom 05.05.2026");
+    expect(result).not.toContain("KV-Schreiben vom Az.");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+
+  it("Kontaktblock erscheint wenn kontakt_rueckfragen gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      kontakt_rueckfragen: "Tel. 030 / 12345-0",
+    });
+    expect(result).toContain("Kontakt für Rückfragen: Tel. 030 / 12345-0");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Kontaktblock fehlt vollständig wenn kontakt_rueckfragen nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Kontakt für Rückfragen");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+    expect(result).not.toContain("[{{kontakt_rueckfragen}}]");
+  });
+
+  it("Anlagenblock erscheint wenn anlagen gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      anlagen: "Diagnoseauszug aus PVS\nExportprotokoll vom 18.05.2026",
+    });
+    expect(result).toContain("Anlagen:");
+    expect(result).toContain("Diagnoseauszug aus PVS");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Anlagenblock fehlt vollständig wenn anlagen nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Anlagen:");
+    expect(result).not.toContain("[{{anlagen}}]");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Antwortfrist erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      antwortfrist: "30.05.2026",
+    });
+    expect(result).toContain("Antwortfrist: 30.05.2026");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Antwortfrist-Block fehlt vollständig wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Antwortfrist");
+    expect(result).not.toContain("[{{antwortfrist}}]");
   });
 });

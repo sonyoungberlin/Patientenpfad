@@ -1,4 +1,4 @@
-import { OFFICE_TOPIC_REGRESS } from "@/lib/office/checkpointCatalog";
+import { OFFICE_TOPIC_REGRESS, OFFICE_TOPIC_KV_BILLING } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
 // OfficeWriteOutputKind – dokumentenspezifische Ausgabeart
@@ -496,6 +496,384 @@ Kontakt für Rückfragen: {{kontakt_rueckfragen}}
 {{/if}}`,
     smoothingEnabled: true,
     audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+
+  // ─── KV-Schreiben: Antwortschreiben ──────────────────────────────────────
+  {
+    id: "kv-antwortschreiben",
+    label: "KV-Antwortschreiben erstellen",
+    outputKind: OfficeWriteOutputKind.KV_ANTWORT,
+    writeKind: OfficeWriteKind.AUTHORITY_RESPONSE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_KV_BILLING],
+      /**
+       * Sichtbar wenn beanstandeter Sachverhalt erfasst (KV-01) und
+       * Frist/Formalien geprüft (KV-02) – beide müssen YES sein.
+       * Solange einer der beiden OPEN ist, ist das Schreiben gesperrt.
+       */
+      allOf: [
+        { checkpointId: "KV-01", state: "YES" },
+        { checkpointId: "KV-02", state: "YES" },
+      ],
+      blockedWhenAnyOpen: ["KV-01", "KV-02"],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Gemeinschaftspraxis Müller & Schmidt",
+      },
+      {
+        key: "bsnr",
+        label: "Betriebsstättennummer (BSNR)",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 123456789",
+      },
+      {
+        key: "arztname",
+        label: "Name des Vertragsarztes",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Dr. med. Anna Müller",
+      },
+      {
+        key: "lanr",
+        label: "Lebenslange Arztnummer (LANR)",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 123456789",
+      },
+      {
+        key: "datum_schreiben",
+        label: "Datum des Schreibens",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "empfaenger_block",
+        label: "Empfänger (vollständige Anschrift)",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. KV Berlin\nMasurenallee 6-8\n14057 Berlin",
+      },
+      {
+        key: "aktenzeichen",
+        label: "Aktenzeichen des KV-Schreibens",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. ABR-2026-0099",
+      },
+      {
+        key: "datum_kv_schreiben",
+        label: "Datum des KV-Schreibens",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 05.05.2026",
+      },
+      {
+        key: "abrechnungszeitraum",
+        label: "Abrechnungszeitraum",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Quartal 2/2025",
+      },
+      {
+        key: "antwortfrist",
+        label: "Antwortfrist (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. 30.05.2026",
+      },
+      {
+        key: "beanstandete_leistung",
+        label: "Beanstandete Leistung / GOP",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. GOP 13250 – Hämodynamische Messung",
+      },
+      {
+        key: "sachverhalt",
+        label: "Sachverhaltsdarstellung",
+        kind: "multiline",
+        required: true,
+        placeholder: "Kurze Darstellung des beanstandeten Sachverhalts ...",
+      },
+      {
+        key: "fachliche_einschaetzung",
+        label: "Fachliche Einschätzung / Begründung",
+        kind: "multiline",
+        required: true,
+        placeholder: "Medizinisch-fachliche Begründung für die Abrechnung ...",
+      },
+      {
+        key: "anlagen",
+        label: "Anlagen (optional)",
+        kind: "multiline",
+        required: false,
+        placeholder: "z. B. Diagnoseauszug aus PVS\nExportprotokoll vom 18.05.2026",
+      },
+      {
+        key: "kontakt_rueckfragen",
+        label: "Kontakt für Rückfragen (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Tel. 030 / 12345-0 oder mail@praxis.de",
+      },
+    ],
+    bodyTemplate: `{{praxisname}}
+BSNR: {{bsnr}}
+{{datum_schreiben}}
+
+{{empfaenger_block}}
+
+Betreff: Stellungnahme zur Abrechnungsrückfrage – {{beanstandete_leistung}}, {{abrechnungszeitraum}}
+Bezug: KV-Schreiben vom {{datum_kv_schreiben}}, Az. {{aktenzeichen}}{{#if antwortfrist}}
+Antwortfrist: {{antwortfrist}}{{/if}}
+
+Sehr geehrte Damen und Herren,
+
+hiermit nehmen wir Stellung zu Ihrer Rückfrage vom {{datum_kv_schreiben}} zur Abrechnung für den Zeitraum {{abrechnungszeitraum}}.
+
+Beanstandete Leistung: {{beanstandete_leistung}}
+
+Sachverhalt:
+{{sachverhalt}}
+
+Fachliche Einschätzung:
+{{fachliche_einschaetzung}}
+
+Wir bitten um Prüfung und Kenntnisnahme unserer Ausführungen und stehen für Rückfragen zur Verfügung.
+
+Mit freundlichen Grüßen
+{{arztname}}
+{{praxisname}}
+LANR: {{lanr}}{{#if kontakt_rueckfragen}}
+Kontakt für Rückfragen: {{kontakt_rueckfragen}}
+{{/if}}{{#if anlagen}}
+Anlagen:
+{{anlagen}}
+{{/if}}`,
+    smoothingEnabled: true,
+    audience: "KV",
+    estimatedLength: "MEDIUM",
+  },
+
+  // ─── KV-Schreiben: Arztgespräch vorbereiten ──────────────────────────────
+  {
+    id: "kv-arztgespraech-vorbereiten",
+    label: "Arztgespräch vorbereiten (KV-Rückfrage)",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.INTERNAL_GUIDE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_KV_BILLING],
+      /**
+       * Sichtbar solange interne fachliche Einschätzung (KV-03) noch offen.
+       */
+      anyOf: [
+        { checkpointId: "KV-03", state: "OPEN" },
+      ],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Gemeinschaftspraxis Müller & Schmidt",
+      },
+      {
+        key: "gespraechspartner",
+        label: "Gesprächspartner",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Dr. Müller",
+      },
+      {
+        key: "geplantes_datum",
+        label: "Geplantes Datum",
+        kind: "date",
+        required: false,
+      },
+      {
+        key: "aktenzeichen",
+        label: "Aktenzeichen (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. ABR-2026-0099",
+      },
+      {
+        key: "abrechnungszeitraum",
+        label: "Abrechnungszeitraum (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Quartal 2/2025",
+      },
+      {
+        key: "beanstandete_leistung",
+        label: "Beanstandete Leistung / GOP",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. GOP 13250",
+      },
+      {
+        key: "offene_punkte",
+        label: "Offene Punkte / Klärungsbedarf",
+        kind: "multiline",
+        required: true,
+        placeholder: "Stichpunkte zu offenen Sachverhalten ...",
+      },
+      {
+        key: "antwortfrist",
+        label: "Antwortfrist KV (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. 30.05.2026",
+      },
+      {
+        key: "verantwortliche_person",
+        label: "Verantwortliche Person (Folgeschritte, optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Dr. Schmidt (Praxisleitung)",
+      },
+    ],
+    bodyTemplate: `Gesprächsvorbereitung: KV-Abrechnungsrückfrage
+Praxis: {{praxisname}}
+Az.: {{aktenzeichen}} | Zeitraum: {{abrechnungszeitraum}}{{#if antwortfrist}}
+Antwortfrist KV: {{antwortfrist}}{{/if}}
+
+Gesprächspartner: {{gespraechspartner}}
+Datum: {{geplantes_datum}}
+
+Hintergrund:
+Die KV hat eine Rückfrage zur Abrechnung der Leistung {{beanstandete_leistung}} gestellt.
+Vor der Antwort an die KV muss die fachliche Einschätzung intern geklärt werden.
+
+Offene Punkte:
+{{offene_punkte}}
+
+Nächste Schritte:
+- Fachliche Einschätzung mit {{gespraechspartner}} verbindlich klären und dokumentieren
+- Entscheidung zum Vorgehen (Antwort / Widerspruch / Korrektur) festlegen
+- Verantwortliche Person für Folgeschritte: {{verantwortliche_person}}{{#if antwortfrist}}
+- Fristgerechte Antwort bis {{antwortfrist}} sicherstellen{{/if}}`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  // ─── KV-Schreiben: Interne Klärungsnotiz ─────────────────────────────────
+  {
+    id: "kv-klaerungsnotiz",
+    label: "Interne Klärungsnotiz anlegen",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_KV_BILLING],
+      /**
+       * Sichtbar solange Vorgehen (KV-04) oder Antwortquelle (KV-05) noch offen.
+       */
+      anyOf: [
+        { checkpointId: "KV-04", state: "OPEN" },
+        { checkpointId: "KV-05", state: "OPEN" },
+      ],
+    },
+    inputSchema: [
+      {
+        key: "datum_notiz",
+        label: "Datum der Notiz",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 19.05.2026",
+      },
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Gemeinschaftspraxis Müller & Schmidt",
+      },
+      {
+        key: "aktenzeichen",
+        label: "Aktenzeichen (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. ABR-2026-0099",
+      },
+      {
+        key: "abrechnungszeitraum",
+        label: "Abrechnungszeitraum (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Quartal 2/2025",
+      },
+      {
+        key: "antwortfrist",
+        label: "Antwortfrist KV (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. 30.05.2026",
+      },
+      {
+        key: "beanstandete_leistung",
+        label: "Beanstandete Leistung / GOP",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. GOP 13250",
+      },
+      {
+        key: "fehlende_informationen",
+        label: "Fehlende Informationen / offene Fragen",
+        kind: "multiline",
+        required: true,
+        placeholder: "Welche Informationen fehlen noch für die Antwort an die KV?",
+      },
+      {
+        key: "entscheidungsstand",
+        label: "Aktueller Entscheidungsstand",
+        kind: "multiline",
+        required: true,
+        placeholder: "Was wurde bereits entschieden oder besprochen?",
+      },
+      {
+        key: "naechster_schritt",
+        label: "Nächster Schritt",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Rücksprache mit Dr. Müller bis 30.05.2026",
+      },
+      {
+        key: "verantwortliche_person",
+        label: "Verantwortliche Person (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. MFA Meier (Backoffice)",
+      },
+    ],
+    bodyTemplate: `Interne Klärungsnotiz: KV-Abrechnungsrückfrage
+Datum: {{datum_notiz}}
+Praxis: {{praxisname}}
+Az.: {{aktenzeichen}} | Zeitraum: {{abrechnungszeitraum}}{{#if antwortfrist}}
+Antwortfrist KV: {{antwortfrist}}{{/if}}
+
+Beanstandete Leistung: {{beanstandete_leistung}}
+
+Fehlende Informationen / offene Fragen:
+{{fehlende_informationen}}
+
+Aktueller Entscheidungsstand:
+{{entscheidungsstand}}
+
+Nächster Schritt: {{naechster_schritt}}
+Verantwortlich: {{verantwortliche_person}}
+
+Interne Arbeitsunterlage – fachlich zu prüfen.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
     estimatedLength: "SHORT",
   },
 ];
