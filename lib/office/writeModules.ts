@@ -1,4 +1,8 @@
-import { OFFICE_TOPIC_REGRESS, OFFICE_TOPIC_KV_BILLING } from "@/lib/office/checkpointCatalog";
+import {
+  OFFICE_TOPIC_REGRESS,
+  OFFICE_TOPIC_KV_BILLING,
+  OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+} from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
 // OfficeWriteOutputKind – dokumentenspezifische Ausgabeart
@@ -19,6 +23,7 @@ export enum OfficeWriteOutputKind {
   UNTERLAGEN_ANFORDERUNG = "UNTERLAGEN_ANFORDERUNG",
   DATENSCHUTZ_MELDUNG    = "DATENSCHUTZ_MELDUNG",
   KV_ANTWORT             = "KV_ANTWORT",
+  BETROFFENENINFORMATION = "BETROFFENENINFORMATION",
 }
 
 // ---------------------------------------------------------------------------
@@ -39,6 +44,7 @@ export enum OfficeWriteKind {
   DATA_REQUEST        = "DATA_REQUEST",
   INTERNAL_NOTE       = "INTERNAL_NOTE",
   STAFF_COMMUNICATION = "STAFF_COMMUNICATION",
+  PERSON_COMMUNICATION = "PERSON_COMMUNICATION",
 }
 
 // ---------------------------------------------------------------------------
@@ -875,5 +881,374 @@ Interne Arbeitsunterlage – fachlich zu prüfen.`,
     smoothingEnabled: false,
     audience: "INTERN",
     estimatedLength: "SHORT",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Datenschutzvorfall-Module
+  // ---------------------------------------------------------------------------
+
+  {
+    id: "ds-vorfallsnotiz",
+    label: "Interne Vorfallsnotiz erstellen",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_DATA_PROTECTION_INCIDENT],
+      anyOf: [{ checkpointId: "DS-01", state: "YES" }],
+    },
+    inputSchema: [
+      {
+        key: "datum_vorfall",
+        label: "Datum des Vorfalls",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. 14.05.2026 ca. 10:30 Uhr",
+      },
+      {
+        key: "datum_bekanntwerden",
+        label: "Datum der Kenntniserlangung",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. 14.05.2026, 11:00 Uhr (relevant für 72-h-Frist)",
+      },
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. Gemeinschaftspraxis Müller & Schmidt",
+      },
+      {
+        key: "beschreibung_vorfall",
+        label: "Beschreibung des Vorfalls",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "Was ist konkret passiert? Wo und wie wurde der Vorfall entdeckt?",
+      },
+      {
+        key: "betroffene_datenkategorien",
+        label: "Betroffene Datenkategorien",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "z. B. Patientennamen, Diagnosen, GKV-Nummern",
+      },
+      {
+        key: "anzahl_betroffene",
+        label: "Geschätzte Zahl betroffener Personen",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. ca. 30 Patienten",
+      },
+      {
+        key: "erstverantwortliche_person",
+        label: "Person, die den Vorfall gemeldet / entdeckt hat",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. MFA Meier (Anmeldung)",
+      },
+      {
+        key: "sofortmassnahmen",
+        label: "Sofortmaßnahmen (optional)",
+        kind: "multiline" as const,
+        required: false,
+        placeholder: "Was wurde unmittelbar nach Bekanntwerden unternommen?",
+      },
+    ],
+    bodyTemplate: `Interne Vorfallsnotiz: Datenschutzvorfall
+Datum des Vorfalls: {{datum_vorfall}}
+Datum der Kenntniserlangung: {{datum_bekanntwerden}}
+Hinweis: Wenn eine meldepflichtige Datenschutzverletzung vorliegt, läuft die 72-Stunden-Frist ab Kenntniserlangung. Meldepflicht und Frist bitte gesondert prüfen.
+Praxis: {{praxisname}}
+
+Beschreibung des Vorfalls:
+{{beschreibung_vorfall}}
+
+Betroffene Datenkategorien:
+{{betroffene_datenkategorien}}
+
+Geschätzte Zahl betroffener Personen: {{anzahl_betroffene}}
+
+Erstmeldung durch: {{erstverantwortliche_person}}{{#if sofortmassnahmen}}
+
+Sofortmaßnahmen:
+{{sofortmassnahmen}}{{/if}}
+
+Interne Arbeitsunterlage – fachlich zu prüfen.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "ds-meldung-behoerde",
+    label: "Meldung an Berliner Datenschutzbehörde vorbereiten",
+    outputKind: OfficeWriteOutputKind.DATENSCHUTZ_MELDUNG,
+    writeKind: OfficeWriteKind.AUTHORITY_RESPONSE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_DATA_PROTECTION_INCIDENT],
+      allOf: [
+        { checkpointId: "DS-01", state: "YES" },
+        { checkpointId: "DS-02", state: "YES" },
+        { checkpointId: "DS-03", state: "YES" },
+      ],
+      blockedWhenAnyOpen: ["DS-01", "DS-02"],
+    },
+    inputSchema: [
+      {
+        key: "datum_vorfall",
+        label: "Datum des Vorfalls",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. 14.05.2026",
+      },
+      {
+        key: "datum_bekanntwerden",
+        label: "Datum der Kenntniserlangung (Beginn der 72-h-Frist)",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. 14.05.2026, 11:00 Uhr",
+      },
+      {
+        key: "meldung_fristdatum",
+        label: "72-h-Frist endet am (optional)",
+        kind: "text" as const,
+        required: false,
+        placeholder: "z. B. 17.05.2026, 11:00 Uhr",
+      },
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. Gemeinschaftspraxis Müller & Schmidt",
+      },
+      {
+        key: "bsnr",
+        label: "BSNR (optional)",
+        kind: "text" as const,
+        required: false,
+        placeholder: "z. B. 123456789",
+      },
+      {
+        key: "arztname_verantwortliche",
+        label: "Verantwortliche Person (i. S. v. Art. 4 Nr. 7 DSGVO)",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. Dr. med. Müller",
+      },
+      {
+        key: "beschreibung_vorfall",
+        label: "Beschreibung des Vorfalls",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "Art der Datenschutzverletzung, Hergang, betroffene Systeme",
+      },
+      {
+        key: "betroffene_datenkategorien",
+        label: "Betroffene Datenkategorien",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "z. B. Patientennamen, Diagnosen, GKV-Nummern",
+      },
+      {
+        key: "anzahl_betroffene_geschaetzt",
+        label: "Geschätzte Zahl betroffener Personen",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. ca. 30 Patienten",
+      },
+      {
+        key: "risikobewertung_ergebnis",
+        label: "Ergebnis der Risikobewertung",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "Wahrscheinliche Folgen der Verletzung und Risikoeinstufung",
+      },
+      {
+        key: "ergriffene_massnahmen",
+        label: "Ergriffene Maßnahmen",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "Welche Schritte wurden zur Eindämmung und Behebung eingeleitet?",
+      },
+      {
+        key: "kontakt_rueckfragen",
+        label: "Kontakt für Rückfragen (optional)",
+        kind: "text" as const,
+        required: false,
+        placeholder: "z. B. Tel. 030 / 12345-0",
+      },
+      {
+        key: "verzoegerung_begruendung",
+        label: "Begründung bei Überschreitung der 72-Stunden-Frist (optional)",
+        kind: "multiline" as const,
+        required: false,
+        placeholder: "Begründung gem. Art. 33 Abs. 3 lit. e DSGVO, falls Frist überschritten",
+      },
+    ],
+    bodyTemplate: `Meldung Datenschutzverletzung gemäß Art. 33 DSGVO
+Verantwortliche: {{praxisname}}{{#if bsnr}} (BSNR {{bsnr}}){{/if}}
+Vertretungsberechtigte Person: {{arztname_verantwortliche}}
+
+Datum des Vorfalls: {{datum_vorfall}}
+Datum der Kenntniserlangung: {{datum_bekanntwerden}}{{#if meldung_fristdatum}}
+72-h-Frist endet: {{meldung_fristdatum}}{{/if}}
+
+Art der Datenschutzverletzung:
+{{beschreibung_vorfall}}
+
+Betroffene Datenkategorien:
+{{betroffene_datenkategorien}}
+
+Geschätzte Zahl betroffener Personen: {{anzahl_betroffene_geschaetzt}}
+
+Risikobewertung:
+{{risikobewertung_ergebnis}}
+
+Ergriffene Maßnahmen:
+{{ergriffene_massnahmen}}{{#if kontakt_rueckfragen}}
+
+Kontakt für Rückfragen: {{kontakt_rueckfragen}}{{/if}}{{#if verzoegerung_begruendung}}
+
+Begründung bei Überschreitung der 72-Stunden-Frist:
+{{verzoegerung_begruendung}}{{/if}}
+
+Arbeitsentwurf – Meldung muss im offiziellen Kanal der Berliner Datenschutzbehörde erfolgen. Fachlich und rechtlich zu prüfen.`,
+    smoothingEnabled: false,
+    audience: "BEHOERDE",
+    estimatedLength: "MEDIUM",
+  },
+
+  {
+    id: "ds-betroffeneninformation",
+    label: "Betroffeneninformation vorbereiten",
+    outputKind: OfficeWriteOutputKind.BETROFFENENINFORMATION,
+    writeKind: OfficeWriteKind.PERSON_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_DATA_PROTECTION_INCIDENT],
+      anyOf: [{ checkpointId: "DS-05", state: "OPEN" }],
+      blockedWhenAnyOpen: ["DS-01", "DS-02"],
+    },
+    inputSchema: [
+      {
+        key: "datum_schreiben",
+        label: "Datum des Schreibens",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. 17.05.2026",
+      },
+      {
+        key: "anrede_name",
+        label: "Name für individuelle Anrede (optional)",
+        kind: "text" as const,
+        required: false,
+        placeholder: "z. B. Frau Müller – leer lassen für allgemeine Anrede",
+      },
+      {
+        key: "datum_vorfall",
+        label: "Datum des Vorfalls",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. 14.05.2026",
+      },
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. Gemeinschaftspraxis Müller & Schmidt",
+      },
+      {
+        key: "arztname",
+        label: "Name der verantwortlichen Ärztin / des verantwortlichen Arztes",
+        kind: "text" as const,
+        required: true,
+        placeholder: "z. B. Dr. med. Müller",
+      },
+      {
+        key: "beschreibung_vorfall_extern",
+        label: "Beschreibung des Vorfalls (verständlich für Betroffene)",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "Was ist passiert? Bitte in verständlicher Sprache formulieren.",
+      },
+      {
+        key: "betroffene_datenkategorien",
+        label: "Betroffene Datenkategorien",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "z. B. Name, Diagnose, Versicherungsnummer",
+      },
+      {
+        key: "moegliche_folgen",
+        label: "Wahrscheinliche Folgen der Verletzung",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "Welche Risiken oder Nachteile könnten für Betroffene entstehen?",
+      },
+      {
+        key: "ergriffene_massnahmen",
+        label: "Ergriffene Maßnahmen",
+        kind: "multiline" as const,
+        required: true,
+        placeholder: "Was wurde zur Behebung und zum Schutz der Betroffenen unternommen?",
+      },
+      {
+        key: "empfehlung_betroffene",
+        label: "Empfehlungen an Betroffene (optional)",
+        kind: "multiline" as const,
+        required: false,
+        placeholder: "z. B. Passwort ändern, Kontoauszüge prüfen",
+      },
+      {
+        key: "ansprechpartner_ds",
+        label: "Datenschutzbeauftragter / Ansprechpartner (optional)",
+        kind: "text" as const,
+        required: false,
+        placeholder: "Name und Kontakt",
+      },
+      {
+        key: "kontakt_rueckfragen",
+        label: "Kontakt für Rückfragen (optional)",
+        kind: "text" as const,
+        required: false,
+        placeholder: "z. B. Tel. 030 / 12345-0",
+      },
+    ],
+    bodyTemplate: `Information über Datenschutzverletzung gemäß Art. 34 DSGVO
+{{praxisname}}
+Datum: {{datum_schreiben}}
+
+{{#if anrede_name}}Sehr geehrte/r {{anrede_name}},{{/if}}{{#unless anrede_name}}Sehr geehrte Damen und Herren,{{/unless}}
+
+wir informieren Sie hiermit über eine Datenschutzverletzung, die am {{datum_vorfall}} in unserer Praxis eingetreten ist und möglicherweise Ihre personenbezogenen Daten betrifft.
+
+Was ist passiert:
+{{beschreibung_vorfall_extern}}
+
+Welche Daten sind betroffen:
+{{betroffene_datenkategorien}}
+
+Mögliche Folgen:
+{{moegliche_folgen}}
+
+Maßnahmen, die wir ergriffen haben:
+{{ergriffene_massnahmen}}{{#if empfehlung_betroffene}}
+
+Empfehlungen an Sie:
+{{empfehlung_betroffene}}{{/if}}{{#if ansprechpartner_ds}}
+
+Unser Datenschutzbeauftragter / Ansprechpartner: {{ansprechpartner_ds}}{{/if}}{{#if kontakt_rueckfragen}}
+
+Kontakt für Rückfragen: {{kontakt_rueckfragen}}{{/if}}
+
+Mit freundlichen Grüßen
+{{arztname}}
+{{praxisname}}
+
+Arbeitsentwurf – Benachrichtigungspflicht besteht nur bei voraussichtlich hohem Risiko. Vor Versand fachlich und rechtlich prüfen.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "MEDIUM",
   },
 ];

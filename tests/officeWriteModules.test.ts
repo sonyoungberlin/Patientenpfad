@@ -7,7 +7,7 @@ import {
   evaluateOfficeWriteModules,
   renderOfficeWriteTemplate,
 } from "@/lib/office/writeRenderer";
-import { OFFICE_TOPIC_REGRESS, OFFICE_TOPIC_KV_BILLING } from "@/lib/office/checkpointCatalog";
+import { OFFICE_TOPIC_REGRESS, OFFICE_TOPIC_KV_BILLING, OFFICE_TOPIC_DATA_PROTECTION_INCIDENT } from "@/lib/office/checkpointCatalog";
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
@@ -822,5 +822,405 @@ describe("renderOfficeWriteTemplate: kv-antwortschreiben", () => {
     const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
     expect(result).not.toContain("Antwortfrist");
     expect(result).not.toContain("[{{antwortfrist}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 17. Neue Enums: BETROFFENENINFORMATION + PERSON_COMMUNICATION
+// ---------------------------------------------------------------------------
+
+describe("Neue Enums: BETROFFENENINFORMATION + PERSON_COMMUNICATION", () => {
+  it("OfficeWriteOutputKind.BETROFFENENINFORMATION ist definiert", () => {
+    expect(OfficeWriteOutputKind.BETROFFENENINFORMATION).toBe("BETROFFENENINFORMATION");
+  });
+
+  it("OfficeWriteKind.PERSON_COMMUNICATION ist definiert", () => {
+    expect(OfficeWriteKind.PERSON_COMMUNICATION).toBe("PERSON_COMMUNICATION");
+  });
+
+  it("kein OfficeWriteOutputKind-Wert enthält 'action'", () => {
+    for (const v of Object.values(OfficeWriteOutputKind)) {
+      expect(v.toLowerCase()).not.toContain("action");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 18. DS-Templates: Topic-Relevanz
+// ---------------------------------------------------------------------------
+
+/** Alle DS-Checkpoints auf YES – einzelne States via overrides überschreibbar. */
+function makeDsSnapshot(
+  overrides: Partial<Record<string, OfficeCheckpointState>> = {},
+): OfficeCheckpointSnapshot[] {
+  const defaults: Record<string, OfficeCheckpointState> = {
+    "DS-01": OfficeCheckpointState.YES,
+    "DS-02": OfficeCheckpointState.YES,
+    "DS-03": OfficeCheckpointState.YES,
+    "DS-04": OfficeCheckpointState.YES,
+    "DS-05": OfficeCheckpointState.YES,
+    "DS-06": OfficeCheckpointState.YES,
+  };
+  return Object.entries({ ...defaults, ...overrides } as Record<string, OfficeCheckpointState>).map(
+    ([id, state]) => makeCheckpoint(id, state),
+  );
+}
+
+describe("DS-Templates: Topic-Relevanz", () => {
+  it("kein DS-Template ist verfügbar beim Regress-Topic", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_REGRESS,
+      checkpoints: makeRegressSnapshot(),
+    });
+    const availableDs = evaluated.filter(
+      (m) => m.templateId.startsWith("ds-") && m.isAvailable,
+    );
+    expect(availableDs).toHaveLength(0);
+  });
+
+  it("alle drei DS-Templates erscheinen beim Datenschutz-Topic (alle YES)", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot(),
+    });
+    const dsIds = evaluated.map((m) => m.templateId);
+    expect(dsIds).toContain("ds-vorfallsnotiz");
+    expect(dsIds).toContain("ds-meldung-behoerde");
+    expect(dsIds).toContain("ds-betroffeneninformation");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 19. DS-Templates: Trigger ds-vorfallsnotiz
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: ds-vorfallsnotiz Trigger", () => {
+  it("ist verfügbar wenn DS-01=YES", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: [makeCheckpoint("DS-01", OfficeCheckpointState.YES)],
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-vorfallsnotiz");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("ist nicht verfügbar wenn DS-01=OPEN", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: [makeCheckpoint("DS-01", OfficeCheckpointState.OPEN)],
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-vorfallsnotiz");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 20. DS-Templates: Trigger ds-meldung-behoerde
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: ds-meldung-behoerde Trigger", () => {
+  it("ist verfügbar wenn DS-01, DS-02, DS-03 alle YES", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot(),
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-meldung-behoerde");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("ist nicht verfügbar wenn DS-03=OPEN (allOf verletzt)", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot({ "DS-03": OfficeCheckpointState.OPEN }),
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-meldung-behoerde");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("ist nicht verfügbar wenn DS-02=OPEN (blockedWhenAnyOpen)", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot({ "DS-02": OfficeCheckpointState.OPEN }),
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-meldung-behoerde");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 21. DS-Templates: Trigger ds-betroffeneninformation
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: ds-betroffeneninformation Trigger", () => {
+  it("ist verfügbar wenn DS-05=OPEN und DS-01/DS-02=YES", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot({ "DS-05": OfficeCheckpointState.OPEN }),
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-betroffeneninformation");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("ist nicht verfügbar wenn DS-01=OPEN (blockedWhenAnyOpen)", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot({ "DS-01": OfficeCheckpointState.OPEN, "DS-05": OfficeCheckpointState.OPEN }),
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-betroffeneninformation");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("ist nicht verfügbar wenn DS-05=YES (anyOf nicht erfüllt)", () => {
+    const evaluated = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot(),
+    });
+    const m = evaluated.find((e) => e.templateId === "ds-betroffeneninformation");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 22. renderOfficeWriteTemplate: ds-meldung-behoerde
+// ---------------------------------------------------------------------------
+
+describe("renderOfficeWriteTemplate: ds-meldung-behoerde", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "ds-meldung-behoerde")!;
+
+  const pflichtfelder: Record<string, string> = {
+    datum_vorfall: "14.05.2026",
+    datum_bekanntwerden: "14.05.2026, 11:00 Uhr",
+    praxisname: "Praxis am Gendarmenmarkt",
+    arztname_verantwortliche: "Dr. med. Schulz",
+    beschreibung_vorfall: "E-Mail mit Patientendaten an falsche Adresse versandt.",
+    betroffene_datenkategorien: "Patientennamen, Diagnosen",
+    anzahl_betroffene_geschaetzt: "ca. 12 Patienten",
+    risikobewertung_ergebnis: "Mittleres Risiko für Betroffene.",
+    ergriffene_massnahmen: "E-Mail zurückgerufen, Zugänge geprüft.",
+  };
+
+  it("erzeugt Meldung mit allen Pflichtfeldern und ohne {{-Rest", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Art. 33 DSGVO");
+    expect(result).toContain("Praxis am Gendarmenmarkt");
+    expect(result).toContain("Dr. med. Schulz");
+    expect(result).toContain("14.05.2026");
+    expect(result).toContain("E-Mail mit Patientendaten an falsche Adresse versandt.");
+    expect(result).toContain("ca. 12 Patienten");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+
+  it("Hinweis 'Berliner Datenschutzbehörde' erscheint im Text", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Berliner Datenschutzbehörde");
+    expect(result).toContain("Arbeitsentwurf");
+    expect(result).toContain("Fachlich und rechtlich zu prüfen");
+  });
+
+  it("Fristblock erscheint wenn meldung_fristdatum gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      meldung_fristdatum: "17.05.2026, 11:00 Uhr",
+    });
+    expect(result).toContain("72-h-Frist endet: 17.05.2026, 11:00 Uhr");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("Fristblock fehlt vollständig wenn meldung_fristdatum nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("72-h-Frist endet");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("Kontaktblock erscheint wenn kontakt_rueckfragen gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      kontakt_rueckfragen: "Tel. 030 / 99887-0",
+    });
+    expect(result).toContain("Kontakt für Rückfragen: Tel. 030 / 99887-0");
+  });
+
+  it("BSNR-Block erscheint wenn bsnr gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      bsnr: "123456789",
+    });
+    expect(result).toContain("BSNR 123456789");
+  });
+
+  it("BSNR-Block fehlt wenn bsnr nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("BSNR");
+    expect(result).not.toContain("{{#if");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 23. renderOfficeWriteTemplate: ds-betroffeneninformation
+// ---------------------------------------------------------------------------
+
+describe("renderOfficeWriteTemplate: ds-betroffeneninformation", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "ds-betroffeneninformation")!;
+
+  const pflichtfelder: Record<string, string> = {
+    datum_schreiben: "17.05.2026",
+    datum_vorfall: "14.05.2026",
+    praxisname: "Praxis am Gendarmenmarkt",
+    arztname: "Dr. med. Schulz",
+    beschreibung_vorfall_extern: "Eine E-Mail mit Ihren Patientendaten wurde versehentlich an eine falsche Adresse gesendet.",
+    betroffene_datenkategorien: "Name, Diagnose, Versicherungsnummer",
+    moegliche_folgen: "Mögliche unbefugte Kenntnisnahme Ihrer Gesundheitsdaten.",
+    ergriffene_massnahmen: "Die E-Mail wurde zurückgerufen und der Vorfall intern dokumentiert.",
+  };
+
+  it("erzeugt Betroffeneninformation mit allen Pflichtfeldern und ohne {{-Rest", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Art. 34 DSGVO");
+    expect(result).toContain("Praxis am Gendarmenmarkt");
+    expect(result).toContain("Dr. med. Schulz");
+    expect(result).toContain("14.05.2026");
+    expect(result).toContain("E-Mail mit Ihren Patientendaten");
+    expect(result).toContain("Name, Diagnose, Versicherungsnummer");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+
+  it("Hinweis 'hohem Risiko' und 'Arbeitsentwurf' erscheinen im Text", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("hohem Risiko");
+    expect(result).toContain("Arbeitsentwurf");
+    expect(result).toContain("Vor Versand fachlich und rechtlich prüfen");
+  });
+
+  it("Empfehlungsblock erscheint wenn empfehlung_betroffene gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      empfehlung_betroffene: "Bitte prüfen Sie Ihre Kontoauszüge.",
+    });
+    expect(result).toContain("Empfehlungen an Sie:");
+    expect(result).toContain("Bitte prüfen Sie Ihre Kontoauszüge.");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("Empfehlungsblock fehlt wenn empfehlung_betroffene nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Empfehlungen an Sie:");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("Datenschutzbeauftragter-Block erscheint wenn ansprechpartner_ds gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      ansprechpartner_ds: "Max Muster, Tel. 030 / 111-22",
+    });
+    expect(result).toContain("Datenschutzbeauftragter / Ansprechpartner: Max Muster");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("Datenschutzbeauftragter-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Datenschutzbeauftragter");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("Betroffeneninformation enthält datum_schreiben", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Datum: 17.05.2026");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+
+  it("individuelle Anrede erscheint wenn anrede_name gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      anrede_name: "Frau Müller",
+    });
+    expect(result).toContain("Sehr geehrte/r Frau Müller,");
+    expect(result).not.toContain("Sehr geehrte Damen und Herren,");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+    expect(result).not.toContain("{{#unless");
+    expect(result).not.toContain("{{/unless}}");
+  });
+
+  it("allgemeine Anrede bleibt wenn anrede_name fehlt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Sehr geehrte Damen und Herren,");
+    expect(result).not.toContain("Sehr geehrte/r");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+    expect(result).not.toContain("{{#unless");
+    expect(result).not.toContain("{{/unless}}");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 24. renderOfficeWriteTemplate: ds-vorfallsnotiz
+// ---------------------------------------------------------------------------
+
+describe("renderOfficeWriteTemplate: ds-vorfallsnotiz", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "ds-vorfallsnotiz")!;
+
+  const pflichtfelder: Record<string, string> = {
+    datum_vorfall: "14.05.2026, ca. 15:30 Uhr",
+    datum_bekanntwerden: "14.05.2026, 16:00 Uhr",
+    praxisname: "Hausarztpraxis Dr. Kröger",
+    beschreibung_vorfall: "Excel-Tabelle an falsche E-Mail-Adresse gesendet.",
+    betroffene_datenkategorien: "Name, Geburtsdatum, GKV-Nummer",
+    anzahl_betroffene: "43 Patienten",
+    erstverantwortliche_person: "MFA Julia Schwarz",
+  };
+
+  it("72h-Hinweis erscheint in Vorfallsnotiz", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("72-Stunden-Frist");
+    expect(result).toContain("Meldepflicht und Frist bitte gesondert prüfen");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+
+  it("erzeugt vollständige Notiz mit allen Pflichtfeldern und ohne {{-Rest", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Kröger");
+    expect(result).toContain("14.05.2026, ca. 15:30 Uhr");
+    expect(result).toContain("Excel-Tabelle an falsche E-Mail-Adresse");
+    expect(result).toContain("Interne Arbeitsunterlage");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 25. renderOfficeWriteTemplate: ds-meldung-behoerde – Verzögerungsbegründung
+// ---------------------------------------------------------------------------
+
+describe("renderOfficeWriteTemplate: ds-meldung-behoerde – Verzögerungsbegründung", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "ds-meldung-behoerde")!;
+
+  const pflichtfelder: Record<string, string> = {
+    datum_vorfall: "14.05.2026",
+    datum_bekanntwerden: "14.05.2026, 16:00 Uhr",
+    praxisname: "Praxis am Gendarmenmarkt",
+    arztname_verantwortliche: "Dr. med. Schulz",
+    beschreibung_vorfall: "E-Mail mit Patientendaten an falsche Adresse versandt.",
+    betroffene_datenkategorien: "Patientennamen, Diagnosen",
+    anzahl_betroffene_geschaetzt: "ca. 12 Patienten",
+    risikobewertung_ergebnis: "Mittleres Risiko für Betroffene.",
+    ergriffene_massnahmen: "E-Mail zurückgerufen, Zugänge geprüft.",
+  };
+
+  it("Verzögerungsbegründung erscheint wenn verzoegerung_begruendung gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      verzoegerung_begruendung:
+        "Der Vorfall wurde zunächst als technisches Problem eingestuft.",
+    });
+    expect(result).toContain("Begründung bei Überschreitung der 72-Stunden-Frist:");
+    expect(result).toContain("Der Vorfall wurde zunächst als technisches Problem eingestuft.");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Verzögerungsblock fehlt vollständig wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Begründung bei Überschreitung");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
   });
 });

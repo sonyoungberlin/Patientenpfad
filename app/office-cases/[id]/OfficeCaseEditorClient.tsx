@@ -10,7 +10,7 @@ import {
   getPrimaryOpenTextForBlock,
   getTopNextSteps,
 } from "@/lib/office/officeBlocks";
-import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
+import { isOfficeTopicId, inferOfficeTopicIdFromCheckpoints } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
 import type { CheckpointComplianceView } from "@/lib/office/checkpointCompliance";
 import OfficeComplianceFooter from "@/components/office/OfficeComplianceFooter";
@@ -127,6 +127,12 @@ export default function OfficeCaseEditorClient({
   const [checkpoints, setCheckpoints] = useState<OfficeCheckpointSnapshot[]>(
     cloneCheckpoints(officeCase.checkpoint_snapshot.checkpoints),
   );
+
+  // Fallback: Topic aus Checkpoint-IDs ableiten, falls snapshot.topicId fehlt
+  // (ältere Fälle ohne gespeichertes topicId).
+  const effectiveTopicId =
+    officeCase.topicId ?? inferOfficeTopicIdFromCheckpoints(checkpoints);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -391,7 +397,7 @@ export default function OfficeCaseEditorClient({
 
       {mode === "m3" ? (
         <OfficeWritePanel
-          topicId={officeCase.topicId}
+          topicId={effectiveTopicId}
           checkpoints={checkpoints}
         />
       ) : null}

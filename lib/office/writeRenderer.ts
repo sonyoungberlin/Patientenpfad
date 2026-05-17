@@ -181,7 +181,19 @@ function processConditionalBlocks(
   text: string,
   inputs: Record<string, string>,
 ): string {
-  return text.replace(
+  // {{#unless key}}...{{/unless}} – Block bleibt nur wenn key FEHLT oder leer
+  const withUnless = text.replace(
+    /\{\{#unless (\w+)\}\}([\s\S]*?)\{\{\/unless\}\}/g,
+    (_match, key: string, content: string) => {
+      const value = inputs[key];
+      if (value === undefined || value.trim() === "") {
+        return content;
+      }
+      return "";
+    },
+  );
+  // {{#if key}}...{{/if}} – Block bleibt nur wenn key gesetzt und nicht leer
+  return withUnless.replace(
     /\{\{#if (\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
     (_match, key: string, content: string) => {
       const value = inputs[key];

@@ -1492,6 +1492,39 @@ export function isOfficeTopicId(value: string): value is OfficeTopicId {
   return TOPICS.some((topic) => topic.id === value);
 }
 
+/**
+ * Leitet die Topic-ID aus den Checkpoint-IDs eines Snapshots ab.
+ *
+ * Wird als Fallback eingesetzt, wenn `checkpoint_snapshot.topicId` fehlt
+ * (z. B. bei älteren Fällen, die vor Einführung der Topic-Logik erstellt wurden).
+ *
+ * Algorithmus: Für jedes bekannte Topic wird gezählt, wie viele der übergebenen
+ * Checkpoint-IDs im Katalog des Topics vorkommen. Das Topic mit den meisten
+ * Treffern gewinnt. Bei null Treffern wird null zurückgegeben.
+ *
+ * Akzeptiert jedes Objekt mit `id: string`, also auch `OfficeCheckpointSnapshot[]`.
+ */
+export function inferOfficeTopicIdFromCheckpoints(
+  checkpoints: readonly { id: string }[],
+): OfficeTopicId | null {
+  if (checkpoints.length === 0) return null;
+
+  const inputIds = new Set(checkpoints.map((c) => c.id));
+  let bestTopicId: OfficeTopicId | null = null;
+  let bestMatchCount = 0;
+
+  for (const topic of TOPICS) {
+    const catalog = getOfficeCheckpointCatalog(topic.id);
+    const matchCount = catalog.filter((cp) => inputIds.has(cp.id)).length;
+    if (matchCount > bestMatchCount) {
+      bestMatchCount = matchCount;
+      bestTopicId = topic.id;
+    }
+  }
+
+  return bestMatchCount > 0 ? bestTopicId : null;
+}
+
 export function getOfficeTopic(topicId: OfficeTopicId): OfficeTopic {
   const topic = TOPICS.find((item) => item.id === topicId);
   if (!topic) {
