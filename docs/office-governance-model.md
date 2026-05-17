@@ -66,6 +66,92 @@ M2 ist die Arbeitsoberfläche für MFA und Praxismanagement — kein Rechtsgutac
 Wer eine M2-Frage liest, muss sie sofort verstehen und sofort mit Ja, Nein oder Unklar beantworten können.
 Wenn eine MFA die Frage erklären müsste, bevor sie sie beantwortet, ist die Frage falsch formuliert.
 
+### Rolle von M2 und M3 — klare Abgrenzung
+
+#### M2 — Fallklärung und operative Informationssammlung
+
+M2 ist **nicht**:
+- reine Compliance-Checkliste
+- reine Dokumentationsprüfung
+- Governance- oder Prozesssprech
+- juristische Verdichtung
+
+M2 **ist**:
+- konkrete Fallklärung
+- situationsbezogene Hilfestellung
+- operative Informationssammlung
+- Vorbereitung der fachlichen Bewertung in M3
+
+M2 **soll**:
+- helfen, den Fall zu verstehen
+- die entscheidenden Informationen sichtbar machen
+- fehlende Informationen identifizieren
+- den Nutzer durch die fachliche Situation führen
+- konkrete praktische Probleme sichtbar machen
+- fachliche Schwachstellen aufdecken
+
+M2 **darf**:
+- konkrete medizinische oder organisatorische Situationen ansprechen
+- typische Problemkonstellationen benennen
+- nach realen Nachweisen, Befunden oder Dokumentationen fragen
+- typische Regress-, Melde- oder Genehmigungsprobleme konkretisieren
+
+M2 **soll klingen wie**:
+„Ein erfahrener Kollege schaut mit auf den Fall und fragt nach den entscheidenden Punkten."
+
+#### M3 — Verdichtung und Entscheidungsebene
+
+M3 ist:
+- fachliche Bewertung des in M2 geklärten Sachverhalts
+- Risiko- und Compliance-Einordnung
+- strukturierte Handlungsempfehlung
+- formalisierte Zusammenfassung
+
+M3 beantwortet:
+- Wie ist der Fall fachlich zu bewerten?
+- Welche Risiken bestehen?
+- Welche Schritte sind jetzt erforderlich?
+- Ist die Dokumentation ausreichend?
+- Ist externe Eskalation nötig?
+
+**Konsequenz für die Fragengestaltung:**
+Prozessfragen (Fristen, Zuständigkeiten, Versandwege) gehören in M2, aber sie sind *nachgelagert* zur fachlichen Fallklärung.
+Zuerst muss in M2 klar sein, worum es inhaltlich geht — dann können M3 die Lage fachlich einordnen.
+
+### Fachlicher Anspruch: M2 als Fallklärung, nicht als Checkliste
+
+M2-Fragen dürfen nicht nur prüfen, ob etwas „dokumentiert", „hinterlegt" oder „geprüft" wurde.
+Sie müssen die konkreten Informationen sammeln, die für die M3-Entscheidung, die Stellungnahme oder die nächste Handlung gebraucht werden.
+
+**Prüffrage beim Formulieren einer M2-Frage:**
+Kann jemand diese Frage mit Ja beantworten, ohne den Fall inhaltlich zu kennen?
+Wenn ja — die Frage ist zu abstrakt und muss konkretisiert werden.
+
+**Eine gute M2-Frage muss mindestens eines leisten:**
+- fachlichen Kontext klären
+- konkrete Unsicherheit reduzieren
+- fehlende Begründung sichtbar machen
+- echte Handlung vorbereiten
+
+**Schlechte Richtung** — fragt nur, ob etwas formal vorhanden ist:
+
+| Schlecht | Warum |
+|---|---|
+| „Sind Nachweise vorhanden?" | Beantwortet nichts über den Inhalt des Falles |
+| „Ist die externe Stelle dokumentiert?" | Kann mit Ja beantwortet werden ohne Fallkenntnis |
+| „Ist der Prüfzeitraum erfasst?" | Sagt nichts darüber, ob der Fall fachlich verstanden wurde |
+| „Ist die Frist dokumentiert?" | Zu abstrakt — welche Frist, welche Konsequenz? |
+
+**Gute Richtung** — fragt nach dem fachlichen Kern:
+
+| Gut | Warum |
+|---|---|
+| „Gibt es Befunde oder Dokumentation, die erklären, warum genau dieses Medikament verordnet wurde?" | Deckt die medizinische Begründung auf |
+| „Ist aus dem Bescheid klar, welche Verordnung oder Leistung beanstandet wird?" | Stellt sicher, dass der Gegenstand des Verfahrens bekannt ist |
+| „Gibt es Diagnosen oder Befunde, die die beanstandete Verordnung begründen?" | Zeigt, ob eine Verteidigung möglich ist |
+| „Ist bekannt, bis wann spätestens auf das Schreiben reagiert werden muss?" | Konkret handlungsrelevant, keine Abstraktion |
+| „Sind Praxisbesonderheiten (z. B. besondere Patientengruppe, Schwerpunkt) dokumentiert?" | Benennt das stärkste Gegenargument im Regressfall |
+
 ### Pflichtregeln
 
 - **Jede Frage = genau ein prüfbarer Zustand.**
