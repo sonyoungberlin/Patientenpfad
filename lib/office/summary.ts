@@ -111,24 +111,10 @@ export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
     ? answerQuellenLines
     : fallbackAnswerQuellen;
 
-  const docsSummary = checkpoints.filter((cp) => hasDocuments(cp.required_documents)).length;
-  const fristenSummary = checkpoints.filter((cp) => hasValue(cp.deadline)).length;
-  const verantwortungSummary = checkpoints.filter((cp) => hasValue(cp.responsible_role)).length;
-
   const sections: string[] = [
     `Office-Dokumentation: ${input.topicTitle}`,
     "",
   ];
-
-  sections.push(
-    "Kurzuebersicht",
-    `- Bereiche gesamt: ${blocks.length}`,
-    `- Geklaerte Bereiche: ${blocks.filter((block) => block.status === "geklaert").length}`,
-    `- Offene Bereiche: ${blocks.filter((block) => block.status === "offen").length}`,
-    `- Offene Fristen: ${fristenSummary}`,
-    `- Bereiche mit Unterlagen: ${docsSummary}`,
-    `- Bereiche mit Verantwortungsrolle: ${verantwortungSummary}`,
-  );
 
   sections.push(
     "",

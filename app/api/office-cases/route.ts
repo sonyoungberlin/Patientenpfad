@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const ownershipScope = getOfficeOwnershipFilter(account);
 
   const officeCases = await prisma.officeCaseSession.findMany({
-    where: ownershipScope,
+    where: { ...ownershipScope, internal_saved_at: { not: null } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

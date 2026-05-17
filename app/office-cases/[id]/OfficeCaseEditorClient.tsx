@@ -14,6 +14,7 @@ import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
 import type { CheckpointComplianceView } from "@/lib/office/checkpointCompliance";
 import OfficeComplianceFooter from "@/components/office/OfficeComplianceFooter";
+import OfficeWritePanel from "@/components/office/OfficeWritePanel";
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
@@ -386,6 +387,13 @@ export default function OfficeCaseEditorClient({
           <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{summaryText}</pre>
           <CopyTextButton label="Dokumentation kopieren" text={summaryText} />
         </section>
+      ) : null}
+
+      {mode === "m3" ? (
+        <OfficeWritePanel
+          topicId={officeCase.topicId}
+          checkpoints={checkpoints}
+        />
       ) : null}
 
       {mode === "m3" ? (

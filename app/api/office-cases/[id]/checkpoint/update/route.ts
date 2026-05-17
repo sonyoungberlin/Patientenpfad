@@ -121,6 +121,7 @@ export async function PATCH(
       owner_account_id: true,
       owner_practice_id: true,
       checkpoint_snapshot: true,
+      internal_saved_at: true,
     },
   });
 
@@ -182,6 +183,7 @@ export async function PATCH(
     where: { id },
     data: {
       checkpoint_snapshot: updatedSnapshot,
+      internal_saved_at: officeCase.internal_saved_at ?? new Date(),
     },
   });
 

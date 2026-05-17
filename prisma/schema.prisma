@@ -249,6 +249,10 @@ model OfficeCaseSession {
   /// Freitext-Anlass zum Snapshot-Zeitpunkt.
   trigger_note String?
 
+  /// Gesetzt beim ersten M3-Speichern. Null = Fall noch nicht intern gespeichert.
+  /// Steuert die Sichtbarkeit in der Fallübersicht.
+  internal_saved_at DateTime?
+
   /// Aktueller Snapshot der Office-Checkpoints (JSON-Anker).
   checkpoint_snapshot Json?
 

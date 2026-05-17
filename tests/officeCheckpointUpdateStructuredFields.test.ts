@@ -59,6 +59,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
       id: "case-1",
       owner_account_id: "acc-1",
       owner_practice_id: null,
+      internal_saved_at: null,
       checkpoint_snapshot: {
         topicId: OFFICE_TOPIC_REGRESS,
         checkpoints: [
@@ -107,6 +108,43 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
     expect(checkpoint?.authority).toBe("Kammer");
     expect(checkpoint?.required_documents).toEqual(["Formblatt A"]);
     expect(checkpoint?.escalation_needed).toBe(true);
+
+    // internal_saved_at wird beim ersten Speichern gesetzt
+    expect(updateArg?.data?.internal_saved_at).toBeInstanceOf(Date);
+  });
+
+  it("überschreibt vorhandenes internal_saved_at nicht", async () => {
+    const existingDate = new Date("2026-05-10T08:00:00.000Z");
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: null,
+      internal_saved_at: existingDate,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_REGRESS,
+        checkpoints: [
+          {
+            id: "RG-01",
+            title: "Anlass dokumentiert",
+            kind: OfficeCheckpointKind.FACT,
+            state: OfficeCheckpointState.YES,
+            known_note: "",
+            missing_note: "",
+            answer_source: "",
+          },
+        ],
+      },
+    });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
+
+    await PATCH(makeRequest({
+      checkpoint_id: "RG-01",
+      state: OfficeCheckpointState.YES,
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    const updateArg = prismaMock.officeCaseSession.update.mock.calls[0]?.[0];
+    expect(updateArg?.data?.internal_saved_at).toEqual(existingDate);
   });
 
   it("erlaubt OPEN ohne manuelle Freitextfelder", async () => {
@@ -115,6 +153,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
       id: "case-1",
       owner_account_id: "acc-1",
       owner_practice_id: null,
+      internal_saved_at: null,
       checkpoint_snapshot: {
         topicId: OFFICE_TOPIC_REGRESS,
         checkpoints: [
@@ -154,6 +193,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
       id: "case-1",
       owner_account_id: "acc-1",
       owner_practice_id: null,
+      internal_saved_at: null,
       checkpoint_snapshot: {
         topicId: OFFICE_TOPIC_REGRESS,
         checkpoints: [

@@ -15,7 +15,7 @@ export default async function OfficeCasesPage() {
   }
 
   const officeCases = await prisma.officeCaseSession.findMany({
-    where: getOfficeOwnershipFilter(account),
+    where: { ...getOfficeOwnershipFilter(account), internal_saved_at: { not: null } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
