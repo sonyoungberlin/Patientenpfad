@@ -6,6 +6,7 @@ import {
   OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
   OFFICE_TOPIC_CLOSURE_COVERAGE,
+  OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -1980,6 +1981,137 @@ Checkliste vor Schließungsbeginn:
 - Dringende Vorgänge an Vertretung übergeben
 
 Interne Arbeitsliste – vor Schließungsbeginn prüfen.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
+  // ---------------------------------------------------------------------------
+  // oeffnungszeiten-erweiterung-praxis
+  // ---------------------------------------------------------------------------
+
+  {
+    id: "oe-patienteninfo-oeffnungszeiten",
+    label: "Patienteninformation / Aushang neue Öffnungszeiten",
+    outputKind: OfficeWriteOutputKind.BETROFFENENINFORMATION,
+    writeKind: OfficeWriteKind.PERSON_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_EXTENDED_OPENING_HOURS],
+      anyOf: [
+        { checkpointId: "OE-04", state: "OPEN" },
+        { checkpointId: "OE-04", state: "NO" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Keller" },
+      { key: "aenderungsart", label: "Art der Änderung", kind: "select", required: true, options: ["Erweiterung", "Einschränkung", "Änderung", "vorübergehend"] },
+      { key: "gueltig_ab", label: "Gültig ab", kind: "date", required: true },
+      { key: "neue_oeffnungszeiten", label: "Neue Öffnungszeiten", kind: "multiline", required: true, placeholder: "z. B. Mo–Fr 8–12 Uhr und 15–18 Uhr, Sa 9–12 Uhr" },
+      { key: "gueltig_bis", label: "Gültig bis (optional, bei vorübergehender Änderung)", kind: "date", required: false },
+      { key: "hinweis", label: "Zusätzlicher Hinweis (optional)", kind: "text", required: false, placeholder: "z. B. Termine nur nach Vereinbarung" },
+    ],
+    bodyTemplate: `Liebe Patientinnen und Patienten,
+
+wir möchten Sie über eine Änderung unserer Öffnungszeiten informieren.
+
+Art der Änderung: {{aenderungsart}}
+Ab {{gueltig_ab}} gelten folgende Öffnungszeiten:{{#if gueltig_bis}}
+(Gültig bis {{gueltig_bis}}){{/if}}
+
+{{neue_oeffnungszeiten}}{{#if hinweis}}
+
+Hinweis: {{hinweis}}{{/if}}
+
+Vielen Dank für Ihr Verständnis.
+
+{{praxisname}}
+
+Arbeitsentwurf – bitte vor Veröffentlichung inhaltlich prüfen.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "oe-telefonansage-oeffnungszeiten",
+    label: "Telefonansage / MFA-Skript neue Öffnungszeiten",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_EXTENDED_OPENING_HOURS],
+      anyOf: [
+        { checkpointId: "OE-04", state: "OPEN" },
+        { checkpointId: "OE-04", state: "NO" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Keller" },
+      { key: "gueltig_ab", label: "Gültig ab", kind: "date", required: true },
+      { key: "neue_oeffnungszeiten", label: "Neue Öffnungszeiten", kind: "multiline", required: true, placeholder: "z. B. Mo–Fr 8–12 Uhr und 15–18 Uhr, Sa 9–12 Uhr" },
+      { key: "hinweis", label: "Zusätzlicher Hinweis (optional)", kind: "text", required: false, placeholder: "z. B. Terminvergabe nur telefonisch" },
+    ],
+    bodyTemplate: `Ansagetext / MFA-Skript – Neue Öffnungszeiten
+Praxis: {{praxisname}}
+Gültig ab: {{gueltig_ab}}
+
+---
+
+Herzlichen Dank für Ihren Anruf bei {{praxisname}}. Bitte beachten Sie unsere neuen Öffnungszeiten ab {{gueltig_ab}}:
+
+{{neue_oeffnungszeiten}}{{#if hinweis}}
+
+{{hinweis}}{{/if}}
+
+Wir freuen uns auf Ihren Anruf. Auf Wiederhören.
+
+---
+
+Internes Arbeitsskript – nicht für Patienten bestimmt.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "oe-umstellungscheckliste",
+    label: "Interne Umstellungscheckliste neue Öffnungszeiten",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_EXTENDED_OPENING_HOURS],
+      anyOf: [
+        { checkpointId: "OE-05", state: "OPEN" },
+        { checkpointId: "OE-05", state: "NO" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Keller" },
+      { key: "aenderungsart", label: "Art der Änderung", kind: "select", required: true, options: ["Erweiterung", "Einschränkung", "Änderung", "vorübergehend"] },
+      { key: "gueltig_ab", label: "Gültig ab", kind: "date", required: true },
+      { key: "neue_oeffnungszeiten", label: "Neue Öffnungszeiten", kind: "multiline", required: true, placeholder: "z. B. Mo–Fr 8–12 Uhr und 15–18 Uhr, Sa 9–12 Uhr" },
+      { key: "offene_aufgaben", label: "Offene Aufgaben / Abstimmungspunkte", kind: "multiline", required: true, placeholder: "z. B. Dienstplan abstimmen, PVS-Termine anpassen" },
+      { key: "verantwortliche_person", label: "Verantwortliche Person (optional)", kind: "text", required: false, placeholder: "z. B. Fr. Müller (Praxismanagement)" },
+    ],
+    bodyTemplate: `Umstellungscheckliste: Neue Öffnungszeiten
+Praxis: {{praxisname}}
+Art der Änderung: {{aenderungsart}}
+Gültig ab: {{gueltig_ab}}{{#if verantwortliche_person}}
+Verantwortlich: {{verantwortliche_person}}{{/if}}
+
+Neue Öffnungszeiten:
+{{neue_oeffnungszeiten}}
+
+Offene Aufgaben / Abstimmungspunkte:
+{{offene_aufgaben}}
+
+Checkliste vor Inkrafttreten:
+- Mitarbeiter informiert (Schicht- / Dienstplan angepasst)
+- Praxissoftware / PVS aktualisiert (Terminbuchung, Online-Kalender)
+- Telefonansage aktualisiert
+- Website und Online-Profile aktualisiert
+- Patienteninformation / Aushang veröffentlicht
+
+Interne Arbeitsliste – vor Inkrafttreten der neuen Öffnungszeiten prüfen.`,
     smoothingEnabled: false,
     audience: "INTERN",
     estimatedLength: "MEDIUM",

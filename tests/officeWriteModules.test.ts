@@ -15,6 +15,7 @@ import {
   OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
   OFFICE_TOPIC_CLOSURE_COVERAGE,
+  OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
 } from "@/lib/office/checkpointCatalog";
 import {
   OfficeCheckpointKind,
@@ -3125,6 +3126,466 @@ describe("59. Compliance: keine unerlaubten Inhalte in UV-Templates", () => {
   it("kein 'rechtssicher' in bodyTemplates", () => {
     for (const t of uvTemplates) {
       expect(t.bodyTemplate).not.toContain("rechtssicher");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktionen – OE (oeffnungszeiten-erweiterung-praxis)
+// ---------------------------------------------------------------------------
+
+function makeOeSnapshot(
+  overrides: Partial<Record<string, OfficeCheckpointState>> = {},
+): OfficeCheckpointSnapshot[] {
+  const defaults: Record<string, OfficeCheckpointState> = {
+    "OE-01": OfficeCheckpointState.YES,
+    "OE-02": OfficeCheckpointState.YES,
+    "OE-03": OfficeCheckpointState.YES,
+    "OE-04": OfficeCheckpointState.YES,
+    "OE-05": OfficeCheckpointState.YES,
+    "OE-06": OfficeCheckpointState.YES,
+  };
+  return Object.entries({ ...defaults, ...overrides } as Record<string, OfficeCheckpointState>).map(
+    ([id, state]) => makeCheckpoint(id, state),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 60. Katalog-Sanität: OE-Templates
+// ---------------------------------------------------------------------------
+
+describe("60. Katalog-Sanität: OE-Templates", () => {
+  const oeTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_EXTENDED_OPENING_HOURS),
+  );
+
+  it("enthält genau 3 OE-Templates", () => {
+    expect(oeTemplates).toHaveLength(3);
+  });
+
+  it("alle OE-Template-IDs sind eindeutig", () => {
+    const ids = oeTemplates.map((t) => t.id);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  it("oe-patienteninfo-oeffnungszeiten: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "oe-patienteninfo-oeffnungszeiten")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.BETROFFENENINFORMATION);
+    expect(t.writeKind).toBe(OfficeWriteKind.PERSON_COMMUNICATION);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("EXTERNE_STELLE");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("oe-telefonansage-oeffnungszeiten: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "oe-telefonansage-oeffnungszeiten")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.INTERNE_NOTIZ);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_NOTE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("oe-umstellungscheckliste: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "oe-umstellungscheckliste")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.INTERNE_NOTIZ);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_NOTE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("MEDIUM");
+  });
+
+  it("oe-patienteninfo-oeffnungszeiten: aenderungsart-Feld ist select mit korrekten Optionen", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "oe-patienteninfo-oeffnungszeiten")!;
+    const field = t.inputSchema.find((f) => f.key === "aenderungsart")!;
+    expect(field.kind).toBe("select");
+    expect(field.required).toBe(true);
+    expect(field.options).toEqual(["Erweiterung", "Einschränkung", "Änderung", "vorübergehend"]);
+  });
+
+  it("alle OE-Templates haben topicIds mit OFFICE_TOPIC_EXTENDED_OPENING_HOURS", () => {
+    for (const t of oeTemplates) {
+      expect(t.trigger.topicIds).toContain(OFFICE_TOPIC_EXTENDED_OPENING_HOURS);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 61. Topic-Filter: OE-Templates nicht für andere Topics
+// ---------------------------------------------------------------------------
+
+describe("61. Topic-Filter: OE-Templates nicht für andere Topics", () => {
+  const oeIds = [
+    "oe-patienteninfo-oeffnungszeiten",
+    "oe-telefonansage-oeffnungszeiten",
+    "oe-umstellungscheckliste",
+  ];
+
+  it.each([
+    OFFICE_TOPIC_REGRESS,
+    OFFICE_TOPIC_MFA_HIRING,
+    OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+    OFFICE_TOPIC_HIRING_REPLACEMENT,
+    OFFICE_TOPIC_CLOSURE_COVERAGE,
+  ])("nicht verfügbar für Topic %s", (topic) => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot(),
+    });
+    for (const id of oeIds) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 62. Trigger: oe-patienteninfo-oeffnungszeiten
+// ---------------------------------------------------------------------------
+
+describe("62. evaluateOfficeWriteModules: oe-patienteninfo-oeffnungszeiten", () => {
+  const topic = OFFICE_TOPIC_EXTENDED_OPENING_HOURS;
+
+  it("verfügbar wenn OE-04=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-04": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-patienteninfo-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn OE-04=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-04": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-patienteninfo-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn OE-04=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-04": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-patienteninfo-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (OPEN-Default greift)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "oe-patienteninfo-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 63. Trigger: oe-telefonansage-oeffnungszeiten
+// ---------------------------------------------------------------------------
+
+describe("63. evaluateOfficeWriteModules: oe-telefonansage-oeffnungszeiten", () => {
+  const topic = OFFICE_TOPIC_EXTENDED_OPENING_HOURS;
+
+  it("verfügbar wenn OE-04=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-04": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-telefonansage-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn OE-04=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-04": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-telefonansage-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn OE-04=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-04": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-telefonansage-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("verfügbar bei leerem Snapshot (OPEN-Default greift)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "oe-telefonansage-oeffnungszeiten");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 64. Trigger: oe-umstellungscheckliste
+// ---------------------------------------------------------------------------
+
+describe("64. evaluateOfficeWriteModules: oe-umstellungscheckliste", () => {
+  const topic = OFFICE_TOPIC_EXTENDED_OPENING_HOURS;
+
+  it("verfügbar wenn OE-05=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-05": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-umstellungscheckliste");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn OE-05=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-05": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-umstellungscheckliste");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn OE-05=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeOeSnapshot({ "OE-05": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "oe-umstellungscheckliste");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (OPEN-Default greift)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "oe-umstellungscheckliste");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 65. renderOfficeWriteTemplate: oe-patienteninfo-oeffnungszeiten
+// ---------------------------------------------------------------------------
+
+describe("65. renderOfficeWriteTemplate: oe-patienteninfo-oeffnungszeiten", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "oe-patienteninfo-oeffnungszeiten")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Keller",
+    aenderungsart: "Erweiterung",
+    gueltig_ab: "01.06.2026",
+    neue_oeffnungszeiten: "Mo–Fr 8–12 Uhr und 15–18 Uhr\nSa 9–12 Uhr",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Keller");
+    expect(result).toContain("Erweiterung");
+    expect(result).toContain("01.06.2026");
+    expect(result).toContain("Mo–Fr 8–12 Uhr und 15–18 Uhr");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("gueltig_bis-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      gueltig_bis: "31.08.2026",
+    });
+    expect(result).toContain("31.08.2026");
+    expect(result).toContain("Gültig bis");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("gueltig_bis-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Gültig bis");
+    expect(result).not.toContain("[{{gueltig_bis}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("hinweis erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      hinweis: "Termine nur nach Vereinbarung",
+    });
+    expect(result).toContain("Termine nur nach Vereinbarung");
+    expect(result).toContain("Hinweis:");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("hinweis fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Hinweis:");
+    expect(result).not.toContain("[{{hinweis}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{aenderungsart}}]");
+    expect(result).toContain("[{{gueltig_ab}}]");
+    expect(result).toContain("[{{neue_oeffnungszeiten}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 66. renderOfficeWriteTemplate: oe-telefonansage-oeffnungszeiten
+// ---------------------------------------------------------------------------
+
+describe("66. renderOfficeWriteTemplate: oe-telefonansage-oeffnungszeiten", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "oe-telefonansage-oeffnungszeiten")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Keller",
+    gueltig_ab: "01.06.2026",
+    neue_oeffnungszeiten: "Mo–Fr 8–12 Uhr und 15–18 Uhr\nSa 9–12 Uhr",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Keller");
+    expect(result).toContain("01.06.2026");
+    expect(result).toContain("Mo–Fr 8–12 Uhr und 15–18 Uhr");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("hinweis erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      hinweis: "Terminvergabe nur telefonisch",
+    });
+    expect(result).toContain("Terminvergabe nur telefonisch");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("hinweis fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("[{{hinweis}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{gueltig_ab}}]");
+    expect(result).toContain("[{{neue_oeffnungszeiten}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 67. renderOfficeWriteTemplate: oe-umstellungscheckliste
+// ---------------------------------------------------------------------------
+
+describe("67. renderOfficeWriteTemplate: oe-umstellungscheckliste", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "oe-umstellungscheckliste")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Keller",
+    aenderungsart: "Erweiterung",
+    gueltig_ab: "01.06.2026",
+    neue_oeffnungszeiten: "Mo–Fr 8–12 Uhr und 15–18 Uhr\nSa 9–12 Uhr",
+    offene_aufgaben: "Dienstplan abstimmen\nPVS-Termine anpassen\nOnline-Profil aktualisieren",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Keller");
+    expect(result).toContain("Erweiterung");
+    expect(result).toContain("01.06.2026");
+    expect(result).toContain("Mo–Fr 8–12 Uhr und 15–18 Uhr");
+    expect(result).toContain("Dienstplan abstimmen");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("verantwortliche_person erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      verantwortliche_person: "Fr. Müller (Praxismanagement)",
+    });
+    expect(result).toContain("Fr. Müller (Praxismanagement)");
+    expect(result).toContain("Verantwortlich:");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("verantwortliche_person fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Verantwortlich:");
+    expect(result).not.toContain("[{{verantwortliche_person}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("feste Checkliste enthält operative Punkte aber keine KV-Meldung", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Telefonansage aktualisiert");
+    expect(result).toContain("Praxissoftware");
+    expect(result).toContain("Patienteninformation");
+    expect(result).not.toContain("KV-Meldung");
+    expect(result).not.toContain("KV melden");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{aenderungsart}}]");
+    expect(result).toContain("[{{offene_aufgaben}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 68. Compliance: keine unerlaubten Inhalte in OE-Templates
+// ---------------------------------------------------------------------------
+
+describe("68. Compliance: keine unerlaubten Inhalte in OE-Templates", () => {
+  const oeTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_EXTENDED_OPENING_HOURS),
+  );
+
+  it("kein Paragraphenzeichen in bodyTemplates", () => {
+    for (const t of oeTemplates) {
+      expect(t.bodyTemplate).not.toContain("§");
+    }
+  });
+
+  it("kein KV-Antrag / KV-Meldung in bodyTemplates", () => {
+    for (const t of oeTemplates) {
+      expect(t.bodyTemplate).not.toContain("KV-Meldung");
+      expect(t.bodyTemplate).not.toContain("KV-Antrag");
+      expect(t.bodyTemplate).not.toContain("Kassenärztliche Vereinigung");
+    }
+  });
+
+  it("keine Fristbewertung in bodyTemplates", () => {
+    for (const t of oeTemplates) {
+      expect(t.bodyTemplate).not.toContain("fristgerecht");
+      expect(t.bodyTemplate).not.toContain("Meldefrist");
+    }
+  });
+
+  it("keine Rechtsberatung in bodyTemplates", () => {
+    for (const t of oeTemplates) {
+      expect(t.bodyTemplate).not.toContain("rechtssicher");
+      expect(t.bodyTemplate).not.toContain("rechtliche Pflicht");
+    }
+  });
+
+  it("keine arbeitsrechtliche Bewertung in bodyTemplates", () => {
+    for (const t of oeTemplates) {
+      expect(t.bodyTemplate).not.toContain("Arbeitsrecht");
+      expect(t.bodyTemplate).not.toContain("Änderungskündigung");
     }
   });
 });
