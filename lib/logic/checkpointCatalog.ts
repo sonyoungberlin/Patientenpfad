@@ -284,15 +284,17 @@ export function ensureAlwaysPresentCheckpoints(
  * IDs der Checkpoints, die automatisch ergänzt werden, wenn K11 den Wert
  * REHA_TRIGGER_SELECTION in seinen `selections` enthält.
  *
- * Bewusst nur K03/K04/K05 — die drei Dokumentations-Checkpoints, die für
- * jeden Reha-Antrag organisatorisch benötigt werden.
+ * K03/K04/K05 — Dokumentations-Checkpoints (Diagnosenlage, Medikation,
+ * Medizinische Mitbehandlung).
+ * K06/K07 — Versorgungskontext (dauerhafter und vorübergehender
+ * Unterstützungsbedarf im Alltag).
  * K01, K02, K09 werden nicht automatisch ergänzt: Sie sind zu allgemein
  * und ihre Aktivierung wäre semantisch nicht eindeutig dem Reha-Kontext
  * zuzuordnen.
  */
 const REHA_TRIGGER_CHECKPOINT_ID = "K11";
 const REHA_TRIGGER_SELECTION = "Reha-Antrag";
-const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05"];
+const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07"];
 
 /**
  * Ergänzt Checkpoints, die aufgrund einer K11-Selektion relevant werden,

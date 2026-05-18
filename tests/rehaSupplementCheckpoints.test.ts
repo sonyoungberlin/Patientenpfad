@@ -46,6 +46,16 @@ function makeK04(status: "OK" | "TO_DO" = "TO_DO"): ActiveCheckpoint {
   return { ...template, status } as ActiveCheckpoint;
 }
 
+function makeK06(status: "OK" | "TO_DO" = "TO_DO"): ActiveCheckpoint {
+  const template = CHECKPOINT_CATALOGUE["K06"]!;
+  return { ...template, status } as ActiveCheckpoint;
+}
+
+function makeK07(status: "OK" | "TO_DO" = "TO_DO"): ActiveCheckpoint {
+  const template = CHECKPOINT_CATALOGUE["K07"]!;
+  return { ...template, status } as ActiveCheckpoint;
+}
+
 function baseCheckpoints(): ActiveCheckpoint[] {
   // Minimale Ausgangsliste: nur K11 mit leeren Selektionen (always-present)
   return [makeK11([])];
@@ -116,9 +126,21 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     expect(ids).toContain("K05");
   });
 
+  it("K11 = ['Reha-Antrag'] → K06 wird ergänzt", () => {
+    const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
+    const ids = result.map((cp) => cp.id);
+    expect(ids).toContain("K06");
+  });
+
+  it("K11 = ['Reha-Antrag'] → K07 wird ergänzt", () => {
+    const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
+    const ids = result.map((cp) => cp.id);
+    expect(ids).toContain("K07");
+  });
+
   it("neu ergänzte Checkpoints haben status: TO_DO", () => {
     const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
-    for (const id of ["K03", "K04", "K05"]) {
+    for (const id of ["K03", "K04", "K05", "K06", "K07"]) {
       const cp = result.find((c) => c.id === id)!;
       expect(isStandardCheckpoint(cp)).toBe(true);
       if (isStandardCheckpoint(cp)) {
@@ -127,12 +149,12 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     }
   });
 
-  it("Gesamtlänge nach Ergänzung: 1 (K11) + 3 (K03/K04/K05) = 4", () => {
+  it("Gesamtlänge nach Ergänzung: 1 (K11) + 5 (K03/K04/K05/K06/K07) = 6", () => {
     const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
-    expect(result).toHaveLength(4);
+    expect(result).toHaveLength(6);
   });
 
-  it("K11 = ['Reha-Antrag', 'Attest / Bescheinigung'] → K03/K04/K05 werden trotzdem ergänzt", () => {
+  it("K11 = ['Reha-Antrag', 'Attest / Bescheinigung'] → K03/K04/K05/K06/K07 werden trotzdem ergänzt", () => {
     const result = ensureSelectionConditionalCheckpoints([
       makeK11(["Reha-Antrag", "Attest / Bescheinigung"]),
     ]);
@@ -140,6 +162,8 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     expect(ids).toContain("K03");
     expect(ids).toContain("K04");
     expect(ids).toContain("K05");
+    expect(ids).toContain("K06");
+    expect(ids).toContain("K07");
   });
 
   it("K01, K02, K09 werden NICHT automatisch ergänzt", () => {
@@ -189,13 +213,15 @@ describe("ensureSelectionConditionalCheckpoints: Duplikat-Schutz", () => {
     expect(ids).toContain("K05");
   });
 
-  it("K03, K04, K05 alle vorhanden → Funktion gibt exakt dieselbe Liste zurück", () => {
+  it("K03, K04, K05, K06, K07 alle vorhanden → Funktion gibt exakt dieselbe Liste zurück", () => {
     const k05 = { ...CHECKPOINT_CATALOGUE["K05"]!, status: "TO_DO" } as ActiveCheckpoint;
     const input: ActiveCheckpoint[] = [
       makeK11(["Reha-Antrag"]),
       makeK03("OK"),
       makeK04("TO_DO"),
       k05,
+      makeK06("TO_DO"),
+      makeK07("TO_DO"),
     ];
     const result = ensureSelectionConditionalCheckpoints(input);
     expect(result).toBe(input);
@@ -243,6 +269,8 @@ describe("ensureSelectionConditionalCheckpoints: Zusammenspiel", () => {
     expect(ids).toContain("K03");
     expect(ids).toContain("K04");
     expect(ids).toContain("K05");
+    expect(ids).toContain("K06");
+    expect(ids).toContain("K07");
     // K01/K09 waren schon via M1 drin — keine Duplikate
     expect(ids.filter((id) => id === "K01")).toHaveLength(1);
   });
@@ -265,9 +293,12 @@ describe("ensureSelectionConditionalCheckpoints: Zusammenspiel", () => {
         : cp,
     );
     const result = ensureSelectionConditionalCheckpoints(withReha);
-    // Duplikat-Schutz: K03/K04/K05 je exakt einmal vorhanden
+    // Duplikat-Schutz: K03/K04/K05 je exakt einmal vorhanden (via M1)
     expect(result.filter((cp) => cp.id === "K03")).toHaveLength(1);
     expect(result.filter((cp) => cp.id === "K04")).toHaveLength(1);
     expect(result.filter((cp) => cp.id === "K05")).toHaveLength(1);
+    // K06/K07 nicht via M1 → werden durch ensureSelectionConditional ergänzt
+    expect(result.filter((cp) => cp.id === "K06")).toHaveLength(1);
+    expect(result.filter((cp) => cp.id === "K07")).toHaveLength(1);
   });
 });
