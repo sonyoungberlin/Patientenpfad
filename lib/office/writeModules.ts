@@ -3,6 +3,7 @@ import {
   OFFICE_TOPIC_KV_BILLING,
   OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
   OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -1528,6 +1529,163 @@ Erste Aufgaben / Einarbeitungsschwerpunkte:
 {{erste_aufgaben}}
 
 Interne Arbeitsliste – vor dem ersten Arbeitstag abhaken.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
+  // ---------------------------------------------------------------------------
+  // mfa-azubi-unter-18-einstellung
+  // ---------------------------------------------------------------------------
+
+  {
+    id: "azubi-unterlagen-anforderung",
+    label: "Fehlende Unterlagen anfordern (Azubi)",
+    outputKind: OfficeWriteOutputKind.UNTERLAGEN_ANFORDERUNG,
+    writeKind: OfficeWriteKind.DATA_REQUEST,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING],
+      anyOf: [
+        { checkpointId: "MA-02", state: "OPEN" },
+        { checkpointId: "MA-05", state: "NO" },
+        { checkpointId: "MA-05", state: "OPEN" },
+      ],
+    },
+    inputSchema: [
+      { key: "datum_schreiben", label: "Datum des Schreibens", kind: "date", required: true },
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Müller" },
+      { key: "azubi_name", label: "Name der Auszubildenden / des Auszubildenden", kind: "text", required: true, placeholder: "z. B. Lena Hoffmann" },
+      { key: "fehlende_unterlagen", label: "Fehlende Unterlagen", kind: "multiline", required: true, placeholder: "z. B. Erstuntersuchungsnachweis, Einwilligungserklärung der Erziehungsberechtigten" },
+      { key: "rueckgabefrist", label: "Rückgabefrist (optional)", kind: "date", required: false },
+      { key: "kontakt_rueckfragen", label: "Kontakt für Rückfragen (optional)", kind: "text", required: false, placeholder: "z. B. Tel. 030 / 12345-0 oder mail@praxis.de" },
+    ],
+    bodyTemplate: `{{praxisname}}
+{{datum_schreiben}}
+
+An: {{azubi_name}} / Erziehungsberechtigte
+
+Betreff: Vollständigkeit der Unterlagen zum Ausbildungsstart
+
+Guten Tag,
+
+für den Ausbildungsstart von {{azubi_name}} bei uns fehlen noch folgende Unterlagen:
+
+{{fehlende_unterlagen}}
+
+Wir bitten um Einreichung baldmöglichst.{{#if rueckgabefrist}}
+Bitte übermitteln Sie die Unterlagen bis spätestens {{rueckgabefrist}}.{{/if}}{{#if kontakt_rueckfragen}}
+
+Bei Rückfragen stehen wir Ihnen gerne zur Verfügung: {{kontakt_rueckfragen}}{{/if}}
+
+Vielen Dank für Ihre Unterstützung.
+
+Mit freundlichen Grüßen
+{{praxisname}}
+
+Arbeitsentwurf – bitte vor Versand inhaltlich prüfen.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "azubi-gespraechsleitfaden",
+    label: "Gesprächsleitfaden Ausbildungsgespräch",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.INTERNAL_GUIDE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING],
+      anyOf: [
+        { checkpointId: "MA-01", state: "OPEN" },
+        { checkpointId: "MA-01", state: "YES" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Müller" },
+      { key: "azubi_name", label: "Name der Auszubildenden / des Auszubildenden", kind: "text", required: true, placeholder: "z. B. Lena Hoffmann" },
+      { key: "gespraechsdatum", label: "Datum des Gesprächs (optional)", kind: "date", required: false },
+      { key: "ausbildungsbeginn", label: "Geplanter Ausbildungsbeginn", kind: "text", required: true, placeholder: "z. B. 01.09.2026" },
+      { key: "einsatzbereich", label: "Geplanter Einsatzbereich", kind: "text", required: true, placeholder: "z. B. Anmeldung, Prophylaxe" },
+      { key: "wochenstunden", label: "Geplante Wochenstunden", kind: "text", required: true, placeholder: "z. B. 38,5 h / Woche" },
+      { key: "offene_punkte", label: "Offene Punkte / Klärungsbedarf", kind: "multiline", required: true, placeholder: "z. B. Berufsschulplan, Unterlagenstatus" },
+      { key: "verantwortliche_person", label: "Gesprächsführende Person (optional)", kind: "text", required: false, placeholder: "z. B. Dr. Müller (Praxisleitung)" },
+    ],
+    bodyTemplate: `Gesprächsleitfaden: Ausbildungsgespräch MFA-Azubi
+Praxis: {{praxisname}}{{#if gespraechsdatum}}
+Datum: {{gespraechsdatum}}{{/if}}
+Auszubildende/r: {{azubi_name}}{{#if verantwortliche_person}}
+Gesprächsführung: {{verantwortliche_person}}{{/if}}
+
+Geplanter Ausbildungsbeginn: {{ausbildungsbeginn}}
+Geplanter Einsatzbereich: {{einsatzbereich}}
+Geplante Wochenstunden: {{wochenstunden}}
+
+Gesprächspunkte:
+1. Vorstellung der Praxis und des Teams
+2. Aufgaben und Einsatzbereich: {{einsatzbereich}}
+3. Arbeitszeit und Wochenstunden: {{wochenstunden}} – Berufsschultage im Dienstplan berücksichtigen
+4. Ausbildungsplan, Probezeit, Urlaubsregelung
+5. Unterlagenstatus klären (Erstuntersuchungsnachweis, Ausbildungsvertrag)
+6. Einwilligung der Erziehungsberechtigten: Status und nächste Schritte
+
+Offene Punkte:
+{{offene_punkte}}
+
+Nächste Schritte:
+- Fehlende Unterlagen anfordern
+- Ausbildungsvertrag zur Registrierung vorbereiten
+- Erziehungsberechtigte einbeziehen
+
+Interne Arbeitsunterlage – keine Vertragszusage, keine Rechtsbewertung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "azubi-onboarding-plan",
+    label: "Onboarding-Plan neue Auszubildende",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING],
+      allOf: [
+        { checkpointId: "MA-03", state: "YES" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Müller" },
+      { key: "azubi_name", label: "Name der Auszubildenden / des Auszubildenden", kind: "text", required: true, placeholder: "z. B. Lena Hoffmann" },
+      { key: "startdatum", label: "Startdatum", kind: "date", required: true },
+      { key: "ausbildungsjahr", label: "Ausbildungsjahr", kind: "text", required: true, placeholder: "z. B. 1. Ausbildungsjahr" },
+      { key: "einsatzbereich", label: "Einsatzbereich", kind: "text", required: true, placeholder: "z. B. Anmeldung, Prophylaxe" },
+      { key: "berufsschultage", label: "Berufsschultage", kind: "text", required: true, placeholder: "z. B. Montag und Mittwoch" },
+      { key: "systemzugriffe", label: "Einzurichtende Systemzugriffe", kind: "multiline", required: true, placeholder: "z. B. PVS-Zugang, Zeiterfassung" },
+      { key: "pflichtunterweisungen", label: "Pflichtunterweisungen", kind: "multiline", required: true, placeholder: "z. B. Datenschutz, Schweigepflicht, Hygieneplan, Brandschutz" },
+      { key: "erste_aufgaben", label: "Erste Aufgaben / Einarbeitungsschwerpunkte", kind: "multiline", required: true, placeholder: "z. B. Begleitung Anmeldung Woche 1" },
+      { key: "verantwortliche_person", label: "Verantwortliche Person für Einarbeitung (optional)", kind: "text", required: false, placeholder: "z. B. MFA Meyer (Patin)" },
+      { key: "notfallkontakt", label: "Notfallkontakt Erziehungsberechtigte (optional)", kind: "text", required: false, placeholder: "z. B. Eltern Hoffmann, Tel. 040 / 12345" },
+    ],
+    bodyTemplate: `Onboarding-Plan: Neue Auszubildende MFA
+Praxis: {{praxisname}}
+Auszubildende/r: {{azubi_name}}
+Startdatum: {{startdatum}}
+Ausbildungsjahr: {{ausbildungsjahr}}
+Einsatzbereich: {{einsatzbereich}}
+Berufsschultage: {{berufsschultage}} – im Dienstplan berücksichtigen{{#if verantwortliche_person}}
+Ansprechperson Einarbeitung: {{verantwortliche_person}}{{/if}}{{#if notfallkontakt}}
+Notfallkontakt: {{notfallkontakt}}{{/if}}
+
+Systemzugriffe einrichten:
+{{systemzugriffe}}
+
+Pflichtunterweisungen durchführen:
+{{pflichtunterweisungen}}
+
+Erste Aufgaben / Einarbeitungsschwerpunkte:
+{{erste_aufgaben}}
+
+Interne Arbeitsliste – vor dem ersten Ausbildungstag abhaken.`,
     smoothingEnabled: false,
     audience: "INTERN",
     estimatedLength: "MEDIUM",

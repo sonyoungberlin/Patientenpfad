@@ -12,6 +12,7 @@ import {
   OFFICE_TOPIC_KV_BILLING,
   OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
   OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
 } from "@/lib/office/checkpointCatalog";
 import {
   OfficeCheckpointKind,
@@ -1640,5 +1641,493 @@ describe("renderOfficeWriteTemplate: mfa-onboarding-plan", () => {
     expect(result).toContain("[{{mfa_name}}]");
     expect(result).toContain("[{{startdatum}}]");
     expect(result).toContain("[{{systemzugriffe}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktionen – Azubi
+// ---------------------------------------------------------------------------
+
+function makeAzubiSnapshot(
+  overrides: Partial<Record<string, OfficeCheckpointState>> = {},
+): OfficeCheckpointSnapshot[] {
+  const defaults: Record<string, OfficeCheckpointState> = {
+    "MA-01": OfficeCheckpointState.YES,
+    "MA-02": OfficeCheckpointState.YES,
+    "MA-03": OfficeCheckpointState.YES,
+    "MA-04": OfficeCheckpointState.YES,
+    "MA-05": OfficeCheckpointState.YES,
+    "MA-06": OfficeCheckpointState.YES,
+  };
+  return Object.entries({ ...defaults, ...overrides } as Record<string, OfficeCheckpointState>).map(
+    ([id, state]) => makeCheckpoint(id, state),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 33. Katalog-Sanität: azubi-Templates
+// ---------------------------------------------------------------------------
+
+describe("33. Katalog-Sanität: azubi-Templates", () => {
+  const azubiTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING),
+  );
+
+  it("enthält genau 3 Azubi-Templates", () => {
+    expect(azubiTemplates).toHaveLength(3);
+  });
+
+  it("alle Azubi-Template-IDs sind eindeutig", () => {
+    const ids = azubiTemplates.map((t) => t.id);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  it("azubi-unterlagen-anforderung: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "azubi-unterlagen-anforderung")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.UNTERLAGEN_ANFORDERUNG);
+    expect(t.writeKind).toBe(OfficeWriteKind.DATA_REQUEST);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("EXTERNE_STELLE");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("azubi-gespraechsleitfaden: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "azubi-gespraechsleitfaden")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.GESPRAECHSLEITFADEN);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_GUIDE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("azubi-onboarding-plan: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "azubi-onboarding-plan")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.INTERNE_NOTIZ);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_NOTE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("MEDIUM");
+  });
+
+  it("alle Azubi-Templates haben topicIds mit OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING", () => {
+    for (const t of azubiTemplates) {
+      expect(t.trigger.topicIds).toContain(OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 34. Topic-Filter: azubi-Templates nicht für andere Topics
+// ---------------------------------------------------------------------------
+
+describe("34. Topic-Filter: azubi-Templates nicht für andere Topics", () => {
+  it("azubi-unterlagen-anforderung nicht verfügbar für regress-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_REGRESS,
+      checkpoints: makeAzubiSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("azubi-gespraechsleitfaden nicht verfügbar für kv-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeAzubiSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("azubi-onboarding-plan nicht verfügbar für mfa-einstellung-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeAzubiSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-onboarding-plan");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("azubi-Templates nicht verfügbar für datenschutz-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeAzubiSnapshot(),
+    });
+    const azubiIds = ["azubi-unterlagen-anforderung", "azubi-gespraechsleitfaden", "azubi-onboarding-plan"];
+    for (const id of azubiIds) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 35. Trigger: azubi-unterlagen-anforderung
+// ---------------------------------------------------------------------------
+
+describe("35. evaluateOfficeWriteModules: azubi-unterlagen-anforderung", () => {
+  const topic = OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING;
+
+  it("verfügbar wenn MA-02=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-02": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn MA-05=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-05": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn MA-05=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-05": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn MA-02=YES und MA-05=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-02": OfficeCheckpointState.YES, "MA-05": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (OPEN-Default greift für MA-02)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "azubi-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 36. Trigger: azubi-gespraechsleitfaden
+// ---------------------------------------------------------------------------
+
+describe("36. evaluateOfficeWriteModules: azubi-gespraechsleitfaden", () => {
+  const topic = OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING;
+
+  it("verfügbar wenn MA-01=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-01": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn MA-01=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-01": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn MA-01=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-01": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 37. Trigger: azubi-onboarding-plan
+// ---------------------------------------------------------------------------
+
+describe("37. evaluateOfficeWriteModules: azubi-onboarding-plan", () => {
+  const topic = OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING;
+
+  it("verfügbar wenn MA-03=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-03": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-onboarding-plan");
+    expect(m?.isAvailable).toBe(true);
+    expect(m?.unavailableReason).toBeUndefined();
+  });
+
+  it("nicht verfügbar wenn MA-03=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-03": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-onboarding-plan");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("nicht verfügbar wenn MA-03=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeAzubiSnapshot({ "MA-03": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "azubi-onboarding-plan");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("nicht verfügbar bei leerem Snapshot (OPEN-Default, kein YES für MA-03)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "azubi-onboarding-plan");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 38. renderOfficeWriteTemplate: azubi-unterlagen-anforderung
+// ---------------------------------------------------------------------------
+
+describe("38. renderOfficeWriteTemplate: azubi-unterlagen-anforderung", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "azubi-unterlagen-anforderung")!;
+
+  const pflichtfelder = {
+    datum_schreiben: "15.07.2026",
+    praxisname: "Hausarztpraxis Dr. Müller",
+    azubi_name: "Lena Hoffmann",
+    fehlende_unterlagen: "Erstuntersuchungsnachweis\nEinwilligungserklärung",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Müller");
+    expect(result).toContain("15.07.2026");
+    expect(result).toContain("Lena Hoffmann");
+    expect(result).toContain("Erstuntersuchungsnachweis");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("rueckgabefrist-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      rueckgabefrist: "31.07.2026",
+    });
+    expect(result).toContain("31.07.2026");
+    expect(result).toContain("spätestens");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("rueckgabefrist-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("spätestens");
+    expect(result).not.toContain("[{{rueckgabefrist}}]");
+  });
+
+  it("kontakt_rueckfragen-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      kontakt_rueckfragen: "Tel. 030 / 12345-0",
+    });
+    expect(result).toContain("Tel. 030 / 12345-0");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("kontakt_rueckfragen-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Rückfragen stehen wir");
+    expect(result).not.toContain("[{{kontakt_rueckfragen}}]");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{datum_schreiben}}]");
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{azubi_name}}]");
+    expect(result).toContain("[{{fehlende_unterlagen}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 39. renderOfficeWriteTemplate: azubi-gespraechsleitfaden
+// ---------------------------------------------------------------------------
+
+describe("39. renderOfficeWriteTemplate: azubi-gespraechsleitfaden", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "azubi-gespraechsleitfaden")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Müller",
+    azubi_name: "Lena Hoffmann",
+    ausbildungsbeginn: "01.09.2026",
+    einsatzbereich: "Anmeldung",
+    wochenstunden: "38,5 h / Woche",
+    offene_punkte: "Berufsschulplan klären",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Müller");
+    expect(result).toContain("Lena Hoffmann");
+    expect(result).toContain("01.09.2026");
+    expect(result).toContain("Anmeldung");
+    expect(result).toContain("38,5 h / Woche");
+    expect(result).toContain("Berufsschulplan klären");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("gespraechsdatum-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      gespraechsdatum: "10.07.2026",
+    });
+    expect(result).toContain("10.07.2026");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("gespraechsdatum-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Datum:");
+    expect(result).not.toContain("[{{gespraechsdatum}}]");
+  });
+
+  it("verantwortliche_person-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      verantwortliche_person: "Dr. Müller (Praxisleitung)",
+    });
+    expect(result).toContain("Dr. Müller (Praxisleitung)");
+    expect(result).toContain("Gesprächsführung");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("verantwortliche_person-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Gesprächsführung");
+    expect(result).not.toContain("[{{verantwortliche_person}}]");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{azubi_name}}]");
+    expect(result).toContain("[{{ausbildungsbeginn}}]");
+    expect(result).toContain("[{{offene_punkte}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 40. renderOfficeWriteTemplate: azubi-onboarding-plan
+// ---------------------------------------------------------------------------
+
+describe("40. renderOfficeWriteTemplate: azubi-onboarding-plan", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "azubi-onboarding-plan")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Müller",
+    azubi_name: "Lena Hoffmann",
+    startdatum: "01.09.2026",
+    ausbildungsjahr: "1. Ausbildungsjahr",
+    einsatzbereich: "Anmeldung",
+    berufsschultage: "Montag und Mittwoch",
+    systemzugriffe: "PVS-Zugang\nZeiterfassung",
+    pflichtunterweisungen: "Datenschutz\nSchweigepflicht",
+    erste_aufgaben: "Begleitung Anmeldung Woche 1",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Lena Hoffmann");
+    expect(result).toContain("01.09.2026");
+    expect(result).toContain("1. Ausbildungsjahr");
+    expect(result).toContain("Montag und Mittwoch");
+    expect(result).toContain("PVS-Zugang");
+    expect(result).toContain("Datenschutz");
+    expect(result).toContain("Begleitung Anmeldung Woche 1");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("verantwortliche_person-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      verantwortliche_person: "MFA Meyer (Patin)",
+    });
+    expect(result).toContain("MFA Meyer (Patin)");
+    expect(result).toContain("Ansprechperson Einarbeitung");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("verantwortliche_person-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Ansprechperson Einarbeitung");
+    expect(result).not.toContain("[{{verantwortliche_person}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("notfallkontakt-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      notfallkontakt: "Eltern Hoffmann, Tel. 040 / 12345",
+    });
+    expect(result).toContain("Notfallkontakt: Eltern Hoffmann, Tel. 040 / 12345");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("notfallkontakt-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Notfallkontakt");
+    expect(result).not.toContain("[{{notfallkontakt}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{azubi_name}}]");
+    expect(result).toContain("[{{startdatum}}]");
+    expect(result).toContain("[{{systemzugriffe}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 41. Compliance: keine unerlaubten Rechtsverweise in Azubi-Templates
+// ---------------------------------------------------------------------------
+
+describe("41. Compliance: keine unerlaubten Rechtsverweise in Azubi-Templates", () => {
+  const azubiTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING),
+  );
+
+  it("kein Paragraphenzeichen in bodyTemplates", () => {
+    for (const t of azubiTemplates) {
+      expect(t.bodyTemplate).not.toContain("§");
+    }
+  });
+
+  it("kein 'JArbSchG' in bodyTemplates", () => {
+    for (const t of azubiTemplates) {
+      expect(t.bodyTemplate).not.toContain("JArbSchG");
+    }
+  });
+
+  it("keine fest kodierten Stundenzahlen (z. B. '8 Stunden') in bodyTemplates", () => {
+    for (const t of azubiTemplates) {
+      expect(t.bodyTemplate).not.toMatch(/\b8\s*Stunden\b/);
+      expect(t.bodyTemplate).not.toMatch(/\b40\s*Stunden\b/);
+    }
   });
 });
