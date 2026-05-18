@@ -7,7 +7,12 @@ import {
   evaluateOfficeWriteModules,
   renderOfficeWriteTemplate,
 } from "@/lib/office/writeRenderer";
-import { OFFICE_TOPIC_REGRESS, OFFICE_TOPIC_KV_BILLING, OFFICE_TOPIC_DATA_PROTECTION_INCIDENT } from "@/lib/office/checkpointCatalog";
+import {
+  OFFICE_TOPIC_REGRESS,
+  OFFICE_TOPIC_KV_BILLING,
+  OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+  OFFICE_TOPIC_MFA_HIRING,
+} from "@/lib/office/checkpointCatalog";
 import {
   OfficeCheckpointKind,
   OfficeCheckpointState,
@@ -1222,5 +1227,418 @@ describe("renderOfficeWriteTemplate: ds-meldung-behoerde – Verzögerungsbegrü
     expect(result).not.toContain("Begründung bei Überschreitung");
     expect(result).not.toContain("{{#if");
     expect(result).not.toContain("{{/if}}");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktion: MFA-Snapshot
+// ---------------------------------------------------------------------------
+
+/** Alle MF-Checkpoints auf YES – einzelne States via overrides überschreibbar. */
+function makeMfaSnapshot(
+  overrides: Partial<Record<string, OfficeCheckpointState>> = {},
+): OfficeCheckpointSnapshot[] {
+  const defaults: Record<string, OfficeCheckpointState> = {
+    "MF-01": OfficeCheckpointState.YES,
+    "MF-02": OfficeCheckpointState.YES,
+    "MF-03": OfficeCheckpointState.YES,
+    "MF-04": OfficeCheckpointState.YES,
+    "MF-05": OfficeCheckpointState.YES,
+    "MF-06": OfficeCheckpointState.YES,
+  };
+  return Object.entries({ ...defaults, ...overrides } as Record<string, OfficeCheckpointState>).map(
+    ([id, state]) => makeCheckpoint(id, state),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 26. MFA-Templates: Katalog-Sanität
+// ---------------------------------------------------------------------------
+
+describe("OFFICE_WRITE_TEMPLATES: MFA-Katalog", () => {
+  it("alle drei MFA-Templates sind im Katalog enthalten", () => {
+    const ids = OFFICE_WRITE_TEMPLATES.map((t) => t.id);
+    expect(ids).toContain("mfa-gespraechsleitfaden");
+    expect(ids).toContain("mfa-unterlagen-anforderung");
+    expect(ids).toContain("mfa-onboarding-plan");
+  });
+
+  it("alle MFA-Templates haben topicIds = [OFFICE_TOPIC_MFA_HIRING]", () => {
+    const mfaTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+      t.trigger.topicIds.includes(OFFICE_TOPIC_MFA_HIRING),
+    );
+    expect(mfaTemplates).toHaveLength(3);
+    for (const t of mfaTemplates) {
+      expect(t.trigger.topicIds).toEqual([OFFICE_TOPIC_MFA_HIRING]);
+    }
+  });
+
+  it("alle Template-IDs bleiben eindeutig nach MFA-Erweiterung", () => {
+    const ids = OFFICE_WRITE_TEMPLATES.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("MFA-Templates haben smoothingEnabled = false", () => {
+    const mfaTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+      t.trigger.topicIds.includes(OFFICE_TOPIC_MFA_HIRING),
+    );
+    for (const t of mfaTemplates) {
+      expect(t.smoothingEnabled).toBe(false);
+    }
+  });
+
+  it("mfa-gespraechsleitfaden: outputKind GESPRAECHSLEITFADEN, writeKind INTERNAL_GUIDE", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "mfa-gespraechsleitfaden")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.GESPRAECHSLEITFADEN);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_GUIDE);
+    expect(t.audience).toBe("INTERN");
+  });
+
+  it("mfa-unterlagen-anforderung: outputKind UNTERLAGEN_ANFORDERUNG, writeKind DATA_REQUEST", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "mfa-unterlagen-anforderung")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.UNTERLAGEN_ANFORDERUNG);
+    expect(t.writeKind).toBe(OfficeWriteKind.DATA_REQUEST);
+    expect(t.audience).toBe("EXTERNE_STELLE");
+  });
+
+  it("mfa-onboarding-plan: outputKind INTERNE_NOTIZ, writeKind INTERNAL_NOTE", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "mfa-onboarding-plan")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.INTERNE_NOTIZ);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_NOTE);
+    expect(t.audience).toBe("INTERN");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 27. MFA-Templates: Topic-Filter
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: MFA-Topic-Filter", () => {
+  const MFA_IDS = [
+    "mfa-gespraechsleitfaden",
+    "mfa-unterlagen-anforderung",
+    "mfa-onboarding-plan",
+  ] as const;
+
+  it("MFA-Templates sind nicht verfügbar für Regress-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_REGRESS,
+      checkpoints: makeRegressSnapshot(),
+    });
+    for (const id of MFA_IDS) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+
+  it("MFA-Templates sind nicht verfügbar für KV-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_KV_BILLING,
+      checkpoints: makeKvSnapshot(),
+    });
+    for (const id of MFA_IDS) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+
+  it("MFA-Templates sind nicht verfügbar für Datenschutz-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+      checkpoints: makeDsSnapshot(),
+    });
+    for (const id of MFA_IDS) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+
+  it("Regress-Templates sind nicht verfügbar für MFA-Topic", () => {
+    const REGRESS_IDS = [
+      "regress-stellungnahme",
+      "regress-arztgespraech-vorbereiten",
+      "regress-unterlagen-nachfordern",
+    ] as const;
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot(),
+    });
+    for (const id of REGRESS_IDS) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 28. mfa-gespraechsleitfaden: allOf MF-01=YES
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: mfa-gespraechsleitfaden", () => {
+  it("verfügbar wenn MF-01=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(true);
+    expect(m?.unavailableReason).toBeUndefined();
+  });
+
+  it("nicht verfügbar wenn MF-01=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot({ "MF-01": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("nicht verfügbar wenn MF-01=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot({ "MF-01": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("nicht verfügbar bei leerem Snapshot (MF-01 fehlt → OPEN)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "mfa-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 29. mfa-unterlagen-anforderung: anyOf MF-03=NO oder MF-03=OPEN
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: mfa-unterlagen-anforderung", () => {
+  it("verfügbar wenn MF-03=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot({ "MF-03": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn MF-03=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot({ "MF-03": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn MF-03=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (MF-03 fehlt → OPEN)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "mfa-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 30. mfa-onboarding-plan: allOf MF-02=YES
+// ---------------------------------------------------------------------------
+
+describe("evaluateOfficeWriteModules: mfa-onboarding-plan", () => {
+  it("verfügbar wenn MF-02=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-onboarding-plan");
+    expect(m?.isAvailable).toBe(true);
+    expect(m?.unavailableReason).toBeUndefined();
+  });
+
+  it("nicht verfügbar wenn MF-02=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot({ "MF-02": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-onboarding-plan");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("nicht verfügbar wenn MF-02=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeMfaSnapshot({ "MF-02": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "mfa-onboarding-plan");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("nicht verfügbar bei leerem Snapshot (MF-02 fehlt → OPEN)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "mfa-onboarding-plan");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 31. renderOfficeWriteTemplate: mfa-unterlagen-anforderung
+// ---------------------------------------------------------------------------
+
+describe("renderOfficeWriteTemplate: mfa-unterlagen-anforderung", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "mfa-unterlagen-anforderung")!;
+
+  const pflichtfelder: Record<string, string> = {
+    praxisname: "Hausarztpraxis Dr. Müller",
+    datum_schreiben: "19.05.2026",
+    bewerber_name: "Julia Schmidt",
+    fehlende_unterlagen: "Steuer-ID\nSV-Ausweis\nAbschlusszeugnis",
+  };
+
+  it("erzeugt Anforderungsschreiben mit allen Pflichtfeldern und ohne {{-Rest", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Müller");
+    expect(result).toContain("19.05.2026");
+    expect(result).toContain("Julia Schmidt");
+    expect(result).toContain("Steuer-ID");
+    expect(result).toContain("SV-Ausweis");
+    expect(result).toContain("Abschlusszeugnis");
+    expect(result).toContain("Arbeitsentwurf");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+
+  it("enthält neutrale Anrede 'Guten Tag'", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Guten Tag Julia Schmidt,");
+  });
+
+  it("enthält nicht mehr 'Sehr geehrte/r'", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Sehr geehrte/r");
+  });
+
+  it("Fristblock erscheint wenn rueckgabefrist gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      rueckgabefrist: "01.06.2026",
+    });
+    expect(result).toContain("01.06.2026");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Fristblock fehlt vollständig wenn rueckgabefrist nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("spätestens");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+    expect(result).not.toContain("[{{rueckgabefrist}}]");
+  });
+
+  it("Kontaktblock erscheint wenn kontakt_rueckfragen gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      kontakt_rueckfragen: "Tel. 030 / 12345-0",
+    });
+    expect(result).toContain("Tel. 030 / 12345-0");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Kontaktblock fehlt vollständig wenn kontakt_rueckfragen nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Rückfragen stehen");
+    expect(result).not.toContain("[{{kontakt_rueckfragen}}]");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Schreiben mit optionaler Frist UND Kontakt enthält beide Blöcke ohne {{-Rest", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      rueckgabefrist: "15.06.2026",
+      kontakt_rueckfragen: "mail@praxis.de",
+    });
+    expect(result).toContain("15.06.2026");
+    expect(result).toContain("mail@praxis.de");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 32. renderOfficeWriteTemplate: mfa-onboarding-plan
+// ---------------------------------------------------------------------------
+
+describe("renderOfficeWriteTemplate: mfa-onboarding-plan", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "mfa-onboarding-plan")!;
+
+  const pflichtfelder: Record<string, string> = {
+    praxisname: "Hausarztpraxis Dr. Müller",
+    mfa_name: "Julia Schmidt",
+    startdatum: "01.06.2026",
+    einsatzbereich: "Anmeldung und Prophylaxe",
+    systemzugriffe: "PVS-Zugang\nZeiterfassung\nE-Mail-Postfach",
+    pflichtunterweisungen: "Datenschutz\nSchweigepflicht\nHygieneplan",
+    erste_aufgaben: "Woche 1: Begleitung Anmeldung\nWoche 2: PVS-Schulung",
+  };
+
+  it("erzeugt Onboarding-Plan mit allen Pflichtfeldern und ohne {{-Rest", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Müller");
+    expect(result).toContain("Julia Schmidt");
+    expect(result).toContain("01.06.2026");
+    expect(result).toContain("Anmeldung und Prophylaxe");
+    expect(result).toContain("PVS-Zugang");
+    expect(result).toContain("Datenschutz");
+    expect(result).toContain("Woche 1: Begleitung Anmeldung");
+    expect(result).toContain("Interne Arbeitsliste");
+    expect(result).not.toMatch(/\{\{[^}]+\}\}/);
+  });
+
+  it("verantwortliche_person erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      verantwortliche_person: "MFA Meyer (Patin)",
+    });
+    expect(result).toContain("MFA Meyer (Patin)");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("verantwortliche_person-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Ansprechperson Einarbeitung");
+    expect(result).not.toContain("[{{verantwortliche_person}}]");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{mfa_name}}]");
+    expect(result).toContain("[{{startdatum}}]");
+    expect(result).toContain("[{{systemzugriffe}}]");
   });
 });

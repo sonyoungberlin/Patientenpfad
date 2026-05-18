@@ -2,6 +2,7 @@ import {
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_KV_BILLING,
   OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
+  OFFICE_TOPIC_MFA_HIRING,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -1249,6 +1250,286 @@ Mit freundlichen Grüßen
 Arbeitsentwurf – Benachrichtigungspflicht besteht nur bei voraussichtlich hohem Risiko. Vor Versand fachlich und rechtlich prüfen.`,
     smoothingEnabled: false,
     audience: "EXTERNE_STELLE",
+    estimatedLength: "MEDIUM",
+  },
+
+  // ---------------------------------------------------------------------------
+  // MFA-Einstellung-Module
+  // ---------------------------------------------------------------------------
+
+  // ─── MFA: Gesprächsleitfaden Einstellungsgespräch ─────────────────────────
+  {
+    id: "mfa-gespraechsleitfaden",
+    label: "Gesprächsleitfaden Einstellungsgespräch",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.INTERNAL_GUIDE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_MFA_HIRING],
+      /**
+       * Sichtbar sobald Berufsabschluss (MF-01) bestätigt ist.
+       * Dient der internen Gesprächsvorbereitung vor dem Einstellungsgespräch.
+       */
+      allOf: [
+        { checkpointId: "MF-01", state: "YES" },
+      ],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Müller",
+      },
+      {
+        key: "bewerber_name",
+        label: "Name der Bewerberin / des Bewerbers",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Julia Schmidt",
+      },
+      {
+        key: "gespraechsdatum",
+        label: "Datum des Gesprächs (optional)",
+        kind: "date",
+        required: false,
+      },
+      {
+        key: "einsatzbereich",
+        label: "Geplanter Einsatzbereich",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Anmeldung, Prophylaxe, Röntgen",
+      },
+      {
+        key: "wochenstunden",
+        label: "Geplante Wochenstunden",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 38,5 h / Woche oder Teilzeit 20 h",
+      },
+      {
+        key: "offene_punkte",
+        label: "Offene Punkte / Klärungsbedarf",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. Urlaubsanspruch, Fortbildungsbereitschaft, Probezeit",
+      },
+      {
+        key: "verantwortliche_person",
+        label: "Gesprächsführende Person (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Dr. Müller (Praxisleitung)",
+      },
+    ],
+    bodyTemplate: `Gesprächsleitfaden: Einstellungsgespräch MFA
+Praxis: {{praxisname}}{{#if gespraechsdatum}}
+Datum: {{gespraechsdatum}}{{/if}}
+Bewerberin / Bewerber: {{bewerber_name}}{{#if verantwortliche_person}}
+Gesprächsführung: {{verantwortliche_person}}{{/if}}
+
+Geplanter Einsatzbereich: {{einsatzbereich}}
+Geplante Wochenstunden: {{wochenstunden}}
+
+Gesprächspunkte:
+1. Vorstellung der Praxis und des Teams
+2. Aufgaben und Zuständigkeiten im Einsatzbereich: {{einsatzbereich}}
+3. Arbeitszeit und Wochenstunden: {{wochenstunden}}
+4. Probezeit, Urlaubsregelung, Fortbildungen
+5. Offene Punkte klären:
+{{offene_punkte}}
+
+Nächste Schritte:
+- Unterlagen vollständig vorlegen lassen (Abschlusszeugnis, SV-Daten, Steuer-ID)
+- Interne Entscheidung und ggf. Arbeitsvertrag vorbereiten
+
+Interne Arbeitsunterlage – keine Vertragszusage, keine Rechtsbewertung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  // ─── MFA: Fehlende Personalunterlagen anfordern ───────────────────────────
+  {
+    id: "mfa-unterlagen-anforderung",
+    label: "Fehlende Personalunterlagen anfordern",
+    outputKind: OfficeWriteOutputKind.UNTERLAGEN_ANFORDERUNG,
+    writeKind: OfficeWriteKind.DATA_REQUEST,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_MFA_HIRING],
+      /**
+       * Sichtbar wenn Personalunterlagen (MF-03) nicht vollständig (NO) oder
+       * noch offen sind (OPEN).
+       */
+      anyOf: [
+        { checkpointId: "MF-03", state: "NO" },
+        { checkpointId: "MF-03", state: "OPEN" },
+      ],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Müller",
+      },
+      {
+        key: "datum_schreiben",
+        label: "Datum des Schreibens",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "bewerber_name",
+        label: "Name der Mitarbeiterin / des Mitarbeiters",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Julia Schmidt",
+      },
+      {
+        key: "fehlende_unterlagen",
+        label: "Fehlende Unterlagen",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. Steuer-ID, SV-Ausweis, Abschlusszeugnis",
+      },
+      {
+        key: "rueckgabefrist",
+        label: "Rückgabefrist (optional)",
+        kind: "date",
+        required: false,
+      },
+      {
+        key: "kontakt_rueckfragen",
+        label: "Kontakt für Rückfragen (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Tel. 030 / 12345-0 oder mail@praxis.de",
+      },
+    ],
+    bodyTemplate: `{{praxisname}}
+{{datum_schreiben}}
+
+An: {{bewerber_name}}
+
+Betreff: Vollständigkeit Ihrer Personalunterlagen
+
+Guten Tag {{bewerber_name}},
+
+für Ihre Einstellung bei uns fehlen noch folgende Unterlagen:
+
+{{fehlende_unterlagen}}
+
+Wir bitten Sie, diese Unterlagen baldmöglichst einzureichen.{{#if rueckgabefrist}}
+Bitte übermitteln Sie die Unterlagen bis spätestens {{rueckgabefrist}}.{{/if}}{{#if kontakt_rueckfragen}}
+
+Bei Rückfragen stehen wir Ihnen gerne zur Verfügung: {{kontakt_rueckfragen}}{{/if}}
+
+Vielen Dank für Ihre Unterstützung.
+
+Mit freundlichen Grüßen
+{{praxisname}}
+
+Arbeitsentwurf – bitte vor Versand inhaltlich prüfen.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+
+  // ─── MFA: Onboarding-Plan neue MFA ───────────────────────────────────────
+  {
+    id: "mfa-onboarding-plan",
+    label: "Onboarding-Plan neue MFA",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_MFA_HIRING],
+      /**
+       * Sichtbar sobald Arbeitsvertrag freigegeben (MF-02) ist.
+       * Dient der internen Einarbeitungsplanung vor dem ersten Arbeitstag.
+       */
+      allOf: [
+        { checkpointId: "MF-02", state: "YES" },
+      ],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Müller",
+      },
+      {
+        key: "mfa_name",
+        label: "Name der neuen MFA",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Julia Schmidt",
+      },
+      {
+        key: "startdatum",
+        label: "Startdatum",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "einsatzbereich",
+        label: "Einsatzbereich",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Anmeldung, Prophylaxe, Röntgen",
+      },
+      {
+        key: "systemzugriffe",
+        label: "Einzurichtende Systemzugriffe",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. PVS-Zugang, Zeiterfassung, E-Mail-Postfach",
+      },
+      {
+        key: "pflichtunterweisungen",
+        label: "Pflichtunterweisungen",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. Datenschutz, Schweigepflicht, Hygieneplan, Brandschutz",
+      },
+      {
+        key: "erste_aufgaben",
+        label: "Erste Aufgaben / Einarbeitungsschwerpunkte",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. Begleitung Anmeldung Woche 1, PVS-Schulung Woche 2",
+      },
+      {
+        key: "verantwortliche_person",
+        label: "Verantwortliche Person für Einarbeitung (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. MFA Meyer (Patin)",
+      },
+    ],
+    bodyTemplate: `Onboarding-Plan: Neue MFA
+Praxis: {{praxisname}}
+Mitarbeiterin / Mitarbeiter: {{mfa_name}}
+Startdatum: {{startdatum}}
+Einsatzbereich: {{einsatzbereich}}{{#if verantwortliche_person}}
+Ansprechperson Einarbeitung: {{verantwortliche_person}}{{/if}}
+
+Systemzugriffe einrichten:
+{{systemzugriffe}}
+
+Pflichtunterweisungen durchführen:
+{{pflichtunterweisungen}}
+
+Erste Aufgaben / Einarbeitungsschwerpunkte:
+{{erste_aufgaben}}
+
+Interne Arbeitsliste – vor dem ersten Arbeitstag abhaken.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
     estimatedLength: "MEDIUM",
   },
 ];
