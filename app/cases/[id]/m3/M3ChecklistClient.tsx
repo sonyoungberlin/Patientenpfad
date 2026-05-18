@@ -6,6 +6,7 @@ import { CheckpointCategory, type ActiveCheckpoint, type ActiveCheckpointMultiSe
 import { resolveQuestionTextForMode, type M2PrefillData } from "@/lib/logic/m2Questions";
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
 import type { PrefillRunSource } from "@/lib/server/prefillRuns";
+import PatientWritePanel from "@/components/PatientWritePanel";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
@@ -698,6 +699,7 @@ export function M3ChecklistClient({
           {copiedM5 ? "Kopiert ✓" : "Dokumentation kopieren"}
         </button>
       </section>
+      <PatientWritePanel checkpoints={allCheckpoints} />
       <section className="section-divider">
         {confirmed ? (
           <p
