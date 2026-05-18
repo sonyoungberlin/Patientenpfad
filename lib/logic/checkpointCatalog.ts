@@ -3,6 +3,7 @@ import {
   CheckpointMode,
   CheckpointPerspective,
   CheckpointType,
+  isMultiSelectCheckpoint,
   type ActiveCheckpoint,
   type ActiveCheckpointMultiSelect,
   type StandardCheckpoint,
@@ -273,6 +274,59 @@ export function ensureAlwaysPresentCheckpoints(
       const template = CHECKPOINT_CATALOGUE[id];
       if (template) {
         missing.push({ ...template, status: "TO_DO", enabled: false } as ActiveCheckpoint);
+      }
+    }
+  }
+  return missing.length > 0 ? [...checkpoints, ...missing] : checkpoints;
+}
+
+/**
+ * IDs der Checkpoints, die automatisch ergänzt werden, wenn K11 den Wert
+ * REHA_TRIGGER_SELECTION in seinen `selections` enthält.
+ *
+ * Bewusst nur K03/K04/K05 — die drei Dokumentations-Checkpoints, die für
+ * jeden Reha-Antrag organisatorisch benötigt werden.
+ * K01, K02, K09 werden nicht automatisch ergänzt: Sie sind zu allgemein
+ * und ihre Aktivierung wäre semantisch nicht eindeutig dem Reha-Kontext
+ * zuzuordnen.
+ */
+const REHA_TRIGGER_CHECKPOINT_ID = "K11";
+const REHA_TRIGGER_SELECTION = "Reha-Antrag";
+const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05"];
+
+/**
+ * Ergänzt Checkpoints, die aufgrund einer K11-Selektion relevant werden,
+ * auch wenn sie über M1 nicht aktiviert wurden.
+ *
+ * Auslöser: K11.selections enthält "Reha-Antrag".
+ * Ergänzt:  K03, K04, K05 (nur wenn noch nicht vorhanden).
+ *
+ * Bestehende Checkpoints — inklusive ihres Status — werden niemals
+ * verändert. Neu ergänzte Checkpoints starten mit status: "TO_DO".
+ *
+ * Ist K11 nicht vorhanden, nicht vom Typ MULTI_SELECT oder enthält
+ * "Reha-Antrag" nicht in seinen Selektionen, gibt die Funktion die
+ * Eingabeliste unverändert zurück.
+ */
+export function ensureSelectionConditionalCheckpoints(
+  checkpoints: ActiveCheckpoint[],
+): ActiveCheckpoint[] {
+  const k11 = checkpoints.find((cp) => cp.id === REHA_TRIGGER_CHECKPOINT_ID);
+  if (
+    !k11 ||
+    !isMultiSelectCheckpoint(k11) ||
+    !k11.selections.includes(REHA_TRIGGER_SELECTION)
+  ) {
+    return checkpoints;
+  }
+
+  const ids = new Set(checkpoints.map((cp) => cp.id));
+  const missing: ActiveCheckpoint[] = [];
+  for (const id of REHA_CONDITIONAL_IDS) {
+    if (!ids.has(id)) {
+      const template = CHECKPOINT_CATALOGUE[id];
+      if (template) {
+        missing.push({ ...template, status: "TO_DO" } as ActiveCheckpoint);
       }
     }
   }
