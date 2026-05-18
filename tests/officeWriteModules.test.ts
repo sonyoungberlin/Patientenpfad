@@ -13,6 +13,8 @@ import {
   OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
   OFFICE_TOPIC_MFA_HIRING,
   OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_CLOSURE_COVERAGE,
 } from "@/lib/office/checkpointCatalog";
 import {
   OfficeCheckpointKind,
@@ -2128,6 +2130,1001 @@ describe("41. Compliance: keine unerlaubten Rechtsverweise in Azubi-Templates", 
     for (const t of azubiTemplates) {
       expect(t.bodyTemplate).not.toMatch(/\b8\s*Stunden\b/);
       expect(t.bodyTemplate).not.toMatch(/\b40\s*Stunden\b/);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktionen – NC (arzt-anstellen-nachbesetzung)
+// ---------------------------------------------------------------------------
+
+function makeNcSnapshot(
+  overrides: Partial<Record<string, OfficeCheckpointState>> = {},
+): OfficeCheckpointSnapshot[] {
+  const defaults: Record<string, OfficeCheckpointState> = {
+    "NC-REGISTERSTATUS": OfficeCheckpointState.YES,
+    "NC-APPROBATION": OfficeCheckpointState.YES,
+    "NC-FACHARZTQUALIFIKATION": OfficeCheckpointState.YES,
+    "NC-BERUFSHAFTPFLICHT": OfficeCheckpointState.YES,
+    "NC-TAETIGKEITSUMFANG": OfficeCheckpointState.YES,
+    "NC-EXTERNE_STELLE": OfficeCheckpointState.YES,
+    "NC-ANTRAGSWEG": OfficeCheckpointState.YES,
+    "NC-GENEHMIGUNGSSTATUS": OfficeCheckpointState.YES,
+    "NC-BETRIEBSSTAETTENSTRUKTUR": OfficeCheckpointState.YES,
+    "NC-ARBEITSVERTRAG_FREIGABE": OfficeCheckpointState.YES,
+    "NC-LANR_BSNR_ZUORDNUNG": OfficeCheckpointState.YES,
+    "NC-SYSTEMZUGRIFFE_EINGERICHTET": OfficeCheckpointState.YES,
+  };
+  return Object.entries({ ...defaults, ...overrides } as Record<string, OfficeCheckpointState>).map(
+    ([id, state]) => makeCheckpoint(id, state),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 42. Katalog-Sanität: NC-Templates
+// ---------------------------------------------------------------------------
+
+describe("42. Katalog-Sanität: NC-Templates", () => {
+  const ncTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_HIRING_REPLACEMENT),
+  );
+
+  it("enthält genau 3 NC-Templates", () => {
+    expect(ncTemplates).toHaveLength(3);
+  });
+
+  it("alle NC-Template-IDs sind eindeutig", () => {
+    const ids = ncTemplates.map((t) => t.id);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  it("nc-unterlagen-anforderung: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "nc-unterlagen-anforderung")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.UNTERLAGEN_ANFORDERUNG);
+    expect(t.writeKind).toBe(OfficeWriteKind.DATA_REQUEST);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("EXTERNE_STELLE");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("nc-gespraechsleitfaden: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "nc-gespraechsleitfaden")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.GESPRAECHSLEITFADEN);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_GUIDE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("nc-onboarding-abrechnungsstart: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "nc-onboarding-abrechnungsstart")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.INTERNE_NOTIZ);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_NOTE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("MEDIUM");
+  });
+
+  it("alle NC-Templates haben topicIds mit OFFICE_TOPIC_HIRING_REPLACEMENT", () => {
+    for (const t of ncTemplates) {
+      expect(t.trigger.topicIds).toContain(OFFICE_TOPIC_HIRING_REPLACEMENT);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 43. Topic-Filter: NC-Templates nicht für andere Topics
+// ---------------------------------------------------------------------------
+
+describe("43. Topic-Filter: NC-Templates nicht für andere Topics", () => {
+  it("NC-Templates nicht verfügbar für regress-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_REGRESS,
+      checkpoints: makeNcSnapshot(),
+    });
+    const ncIds = ["nc-unterlagen-anforderung", "nc-gespraechsleitfaden", "nc-onboarding-abrechnungsstart"];
+    for (const id of ncIds) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+
+  it("NC-Templates nicht verfügbar für mfa-einstellung-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MFA_HIRING,
+      checkpoints: makeNcSnapshot(),
+    });
+    const ncIds = ["nc-unterlagen-anforderung", "nc-gespraechsleitfaden", "nc-onboarding-abrechnungsstart"];
+    for (const id of ncIds) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+
+  it("NC-Templates nicht verfügbar für azubi-Topic", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+      checkpoints: makeNcSnapshot(),
+    });
+    const ncIds = ["nc-unterlagen-anforderung", "nc-gespraechsleitfaden", "nc-onboarding-abrechnungsstart"];
+    for (const id of ncIds) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 44. Trigger: nc-unterlagen-anforderung
+// ---------------------------------------------------------------------------
+
+describe("44. evaluateOfficeWriteModules: nc-unterlagen-anforderung", () => {
+  const topic = OFFICE_TOPIC_HIRING_REPLACEMENT;
+
+  it("verfügbar wenn NC-APPROBATION=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-APPROBATION": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-APPROBATION=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-APPROBATION": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-FACHARZTQUALIFIKATION=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-FACHARZTQUALIFIKATION": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-FACHARZTQUALIFIKATION=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-FACHARZTQUALIFIKATION": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-BERUFSHAFTPFLICHT=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-BERUFSHAFTPFLICHT": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-BERUFSHAFTPFLICHT=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-BERUFSHAFTPFLICHT": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn alle drei Nachweischeckpoints YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot(),
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (OPEN-Default greift)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "nc-unterlagen-anforderung");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 45. Trigger: nc-gespraechsleitfaden
+// ---------------------------------------------------------------------------
+
+describe("45. evaluateOfficeWriteModules: nc-gespraechsleitfaden", () => {
+  const topic = OFFICE_TOPIC_HIRING_REPLACEMENT;
+
+  it("verfügbar wenn NC-TAETIGKEITSUMFANG=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-TAETIGKEITSUMFANG": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-TAETIGKEITSUMFANG=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-TAETIGKEITSUMFANG": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-BETRIEBSSTAETTENSTRUKTUR=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-BETRIEBSSTAETTENSTRUKTUR": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn NC-BETRIEBSSTAETTENSTRUKTUR=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-BETRIEBSSTAETTENSTRUKTUR": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn beide Checkpoints NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({
+        "NC-TAETIGKEITSUMFANG": OfficeCheckpointState.NO,
+        "NC-BETRIEBSSTAETTENSTRUKTUR": OfficeCheckpointState.NO,
+      }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-gespraechsleitfaden");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 46. Trigger: nc-onboarding-abrechnungsstart
+// ---------------------------------------------------------------------------
+
+describe("46. evaluateOfficeWriteModules: nc-onboarding-abrechnungsstart", () => {
+  const topic = OFFICE_TOPIC_HIRING_REPLACEMENT;
+
+  it("verfügbar wenn NC-GENEHMIGUNGSSTATUS=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-GENEHMIGUNGSSTATUS": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-onboarding-abrechnungsstart");
+    expect(m?.isAvailable).toBe(true);
+    expect(m?.unavailableReason).toBeUndefined();
+  });
+
+  it("nicht verfügbar wenn NC-GENEHMIGUNGSSTATUS=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-GENEHMIGUNGSSTATUS": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-onboarding-abrechnungsstart");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("nicht verfügbar wenn NC-GENEHMIGUNGSSTATUS=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeNcSnapshot({ "NC-GENEHMIGUNGSSTATUS": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "nc-onboarding-abrechnungsstart");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("nicht verfügbar bei leerem Snapshot (OPEN-Default, kein YES)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "nc-onboarding-abrechnungsstart");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 47. renderOfficeWriteTemplate: nc-unterlagen-anforderung
+// ---------------------------------------------------------------------------
+
+describe("47. renderOfficeWriteTemplate: nc-unterlagen-anforderung", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "nc-unterlagen-anforderung")!;
+
+  const pflichtfelder = {
+    datum_schreiben: "20.05.2026",
+    praxisname: "Gemeinschaftspraxis Dres. Keller & Nowak",
+    arzt_name: "Dr. Martina Böhm",
+    fehlende_unterlagen: "Approbationsurkunde\nBerufshaftpflichtnachweis",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Gemeinschaftspraxis Dres. Keller & Nowak");
+    expect(result).toContain("20.05.2026");
+    expect(result).toContain("Dr. Martina Böhm");
+    expect(result).toContain("Approbationsurkunde");
+    expect(result).toContain("Berufshaftpflichtnachweis");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("rueckgabefrist-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      rueckgabefrist: "10.06.2026",
+    });
+    expect(result).toContain("10.06.2026");
+    expect(result).toContain("spätestens");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("rueckgabefrist-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("spätestens");
+    expect(result).not.toContain("[{{rueckgabefrist}}]");
+  });
+
+  it("kontakt_rueckfragen-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      kontakt_rueckfragen: "Tel. 040 / 12345-0",
+    });
+    expect(result).toContain("Tel. 040 / 12345-0");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("kontakt_rueckfragen-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Rückfragen stehen wir");
+    expect(result).not.toContain("[{{kontakt_rueckfragen}}]");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{datum_schreiben}}]");
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{arzt_name}}]");
+    expect(result).toContain("[{{fehlende_unterlagen}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 48. renderOfficeWriteTemplate: nc-gespraechsleitfaden
+// ---------------------------------------------------------------------------
+
+describe("48. renderOfficeWriteTemplate: nc-gespraechsleitfaden", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "nc-gespraechsleitfaden")!;
+
+  const pflichtfelder = {
+    praxisname: "Gemeinschaftspraxis Dres. Keller & Nowak",
+    arzt_name: "Dr. Martina Böhm",
+    einstellungsdatum: "01.10.2026",
+    taetigkeitsumfang: "20 h / Woche",
+    betriebsstaette: "Hauptstandort Musterstr. 1",
+    offene_punkte: "LANR-Zuordnung noch offen",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Dr. Martina Böhm");
+    expect(result).toContain("01.10.2026");
+    expect(result).toContain("20 h / Woche");
+    expect(result).toContain("Hauptstandort Musterstr. 1");
+    expect(result).toContain("LANR-Zuordnung noch offen");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("Gesprächspunkt 3 enthält keine implizite Vertragszusage", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Vertrag folgt separat");
+    expect(result).not.toContain("Probezeit");
+  });
+
+  it("gespraechsdatum-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      gespraechsdatum: "25.05.2026",
+    });
+    expect(result).toContain("25.05.2026");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("gespraechsdatum-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Datum:");
+    expect(result).not.toContain("[{{gespraechsdatum}}]");
+  });
+
+  it("verantwortliche_person-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      verantwortliche_person: "Dr. Keller (Praxisleitung)",
+    });
+    expect(result).toContain("Dr. Keller (Praxisleitung)");
+    expect(result).toContain("Gesprächsführung");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("verantwortliche_person-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Gesprächsführung");
+    expect(result).not.toContain("[{{verantwortliche_person}}]");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{arzt_name}}]");
+    expect(result).toContain("[{{einstellungsdatum}}]");
+    expect(result).toContain("[{{offene_punkte}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 49. renderOfficeWriteTemplate: nc-onboarding-abrechnungsstart
+// ---------------------------------------------------------------------------
+
+describe("49. renderOfficeWriteTemplate: nc-onboarding-abrechnungsstart", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "nc-onboarding-abrechnungsstart")!;
+
+  const pflichtfelder = {
+    praxisname: "Gemeinschaftspraxis Dres. Keller & Nowak",
+    arzt_name: "Dr. Martina Böhm",
+    startdatum: "01.10.2026",
+    betriebsstaette: "Hauptstandort Musterstr. 1",
+    taetigkeitsumfang: "20 h / Woche",
+    lanr_bsnr_status: "LANR 123456789 zugeordnet, BSNR bestätigt",
+    systemzugriffe: "PVS-Zugang\nZeiterfassung\nE-Mail",
+    pflichtunterweisungen: "Datenschutz\nSchweigepflicht\nBrandschutz",
+    erste_aufgaben: "Woche 1: Einführung Praxisabläufe",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Dr. Martina Böhm");
+    expect(result).toContain("01.10.2026");
+    expect(result).toContain("Hauptstandort Musterstr. 1");
+    expect(result).toContain("20 h / Woche");
+    expect(result).toContain("LANR 123456789 zugeordnet");
+    expect(result).toContain("PVS-Zugang");
+    expect(result).toContain("Datenschutz");
+    expect(result).toContain("Woche 1: Einführung Praxisabläufe");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("verantwortliche_person-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      verantwortliche_person: "Dr. Keller (Praxisleitung)",
+    });
+    expect(result).toContain("Dr. Keller (Praxisleitung)");
+    expect(result).toContain("Ansprechperson Einarbeitung");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("verantwortliche_person-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Ansprechperson Einarbeitung");
+    expect(result).not.toContain("[{{verantwortliche_person}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{arzt_name}}]");
+    expect(result).toContain("[{{startdatum}}]");
+    expect(result).toContain("[{{lanr_bsnr_status}}]");
+    expect(result).toContain("[{{systemzugriffe}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 50. Compliance: keine unerlaubten Inhalte in NC-Templates
+// ---------------------------------------------------------------------------
+
+describe("50. Compliance: keine unerlaubten Inhalte in NC-Templates", () => {
+  const ncTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_HIRING_REPLACEMENT),
+  );
+
+  it("kein Paragraphenzeichen in bodyTemplates", () => {
+    for (const t of ncTemplates) {
+      expect(t.bodyTemplate).not.toContain("§");
+    }
+  });
+
+  it("kein 'Zulassungsausschuss-Antrag' in bodyTemplates", () => {
+    for (const t of ncTemplates) {
+      expect(t.bodyTemplate).not.toContain("Zulassungsausschuss-Antrag");
+      expect(t.bodyTemplate).not.toContain("Antrag beim Zulassungsausschuss");
+    }
+  });
+
+  it("kein 'rechtssicher' in bodyTemplates", () => {
+    for (const t of ncTemplates) {
+      expect(t.bodyTemplate).not.toContain("rechtssicher");
+    }
+  });
+
+  it("keine Vertragsklauseln ('§ 626', 'Kündigungsschutz') in bodyTemplates", () => {
+    for (const t of ncTemplates) {
+      expect(t.bodyTemplate).not.toContain("§ 626");
+      expect(t.bodyTemplate).not.toContain("Kündigungsschutz");
+    }
+  });
+
+  it("kein 'rechtliche Begründung' in bodyTemplates", () => {
+    for (const t of ncTemplates) {
+      expect(t.bodyTemplate).not.toContain("rechtliche Begründung");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktionen – UV (praxisschliessung-urlaubsvertretung)
+// ---------------------------------------------------------------------------
+
+function makeUvSnapshot(
+  overrides: Partial<Record<string, OfficeCheckpointState>> = {},
+): OfficeCheckpointSnapshot[] {
+  const defaults: Record<string, OfficeCheckpointState> = {
+    "UV-01": OfficeCheckpointState.YES,
+    "UV-02": OfficeCheckpointState.YES,
+    "UV-03": OfficeCheckpointState.YES,
+    "UV-04": OfficeCheckpointState.YES,
+    "UV-05": OfficeCheckpointState.YES,
+    "UV-06": OfficeCheckpointState.YES,
+    "UV-PATIENTENINFO": OfficeCheckpointState.YES,
+    "UV-NOTFALLVERSORGUNG": OfficeCheckpointState.YES,
+    "UV-TERMINMANAGEMENT": OfficeCheckpointState.YES,
+    "UV-ABRECHNUNGSZUORDNUNG": OfficeCheckpointState.YES,
+  };
+  return Object.entries({ ...defaults, ...overrides } as Record<string, OfficeCheckpointState>).map(
+    ([id, state]) => makeCheckpoint(id, state),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 51. Katalog-Sanität: UV-Templates
+// ---------------------------------------------------------------------------
+
+describe("51. Katalog-Sanität: UV-Templates", () => {
+  const uvTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_CLOSURE_COVERAGE),
+  );
+
+  it("enthält genau 3 UV-Templates", () => {
+    expect(uvTemplates).toHaveLength(3);
+  });
+
+  it("alle UV-Template-IDs sind eindeutig", () => {
+    const ids = uvTemplates.map((t) => t.id);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  it("uv-patienteninfo-aushang: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "uv-patienteninfo-aushang")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.BETROFFENENINFORMATION);
+    expect(t.writeKind).toBe(OfficeWriteKind.PERSON_COMMUNICATION);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("EXTERNE_STELLE");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("uv-telefonansage: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "uv-telefonansage")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.INTERNE_NOTIZ);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_NOTE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("SHORT");
+  });
+
+  it("uv-uebergabe-checkliste: outputKind und writeKind korrekt", () => {
+    const t = OFFICE_WRITE_TEMPLATES.find((x) => x.id === "uv-uebergabe-checkliste")!;
+    expect(t.outputKind).toBe(OfficeWriteOutputKind.INTERNE_NOTIZ);
+    expect(t.writeKind).toBe(OfficeWriteKind.INTERNAL_NOTE);
+    expect(t.smoothingEnabled).toBe(false);
+    expect(t.audience).toBe("INTERN");
+    expect(t.estimatedLength).toBe("MEDIUM");
+  });
+
+  it("alle UV-Templates haben topicIds mit OFFICE_TOPIC_CLOSURE_COVERAGE", () => {
+    for (const t of uvTemplates) {
+      expect(t.trigger.topicIds).toContain(OFFICE_TOPIC_CLOSURE_COVERAGE);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 52. Topic-Filter: UV-Templates nicht für andere Topics
+// ---------------------------------------------------------------------------
+
+describe("52. Topic-Filter: UV-Templates nicht für andere Topics", () => {
+  const uvIds = ["uv-patienteninfo-aushang", "uv-telefonansage", "uv-uebergabe-checkliste"];
+
+  it.each([
+    OFFICE_TOPIC_REGRESS,
+    OFFICE_TOPIC_MFA_HIRING,
+    OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+    OFFICE_TOPIC_HIRING_REPLACEMENT,
+  ])("nicht verfügbar für Topic %s", (topic) => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot(),
+    });
+    for (const id of uvIds) {
+      const m = modules.find((m) => m.templateId === id);
+      expect(m?.isAvailable).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 53. Trigger: uv-patienteninfo-aushang
+// ---------------------------------------------------------------------------
+
+describe("53. evaluateOfficeWriteModules: uv-patienteninfo-aushang", () => {
+  const topic = OFFICE_TOPIC_CLOSURE_COVERAGE;
+
+  it("verfügbar wenn UV-PATIENTENINFO=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-PATIENTENINFO": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-patienteninfo-aushang");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn UV-PATIENTENINFO=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-PATIENTENINFO": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-patienteninfo-aushang");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn UV-PATIENTENINFO=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-PATIENTENINFO": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-patienteninfo-aushang");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (OPEN-Default greift)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "uv-patienteninfo-aushang");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 54. Trigger: uv-telefonansage
+// ---------------------------------------------------------------------------
+
+describe("54. evaluateOfficeWriteModules: uv-telefonansage", () => {
+  const topic = OFFICE_TOPIC_CLOSURE_COVERAGE;
+
+  it("verfügbar wenn UV-PATIENTENINFO=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-PATIENTENINFO": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-telefonansage");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("verfügbar wenn UV-PATIENTENINFO=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-PATIENTENINFO": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-telefonansage");
+    expect(m?.isAvailable).toBe(true);
+  });
+
+  it("nicht verfügbar wenn UV-PATIENTENINFO=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-PATIENTENINFO": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-telefonansage");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("verfügbar bei leerem Snapshot (OPEN-Default greift)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "uv-telefonansage");
+    expect(m?.isAvailable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 55. Trigger: uv-uebergabe-checkliste
+// ---------------------------------------------------------------------------
+
+describe("55. evaluateOfficeWriteModules: uv-uebergabe-checkliste", () => {
+  const topic = OFFICE_TOPIC_CLOSURE_COVERAGE;
+
+  it("verfügbar wenn UV-05=YES", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-05": OfficeCheckpointState.YES }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-uebergabe-checkliste");
+    expect(m?.isAvailable).toBe(true);
+    expect(m?.unavailableReason).toBeUndefined();
+  });
+
+  it("nicht verfügbar wenn UV-05=NO", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-05": OfficeCheckpointState.NO }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-uebergabe-checkliste");
+    expect(m?.isAvailable).toBe(false);
+    expect(m?.unavailableReason).toBeTruthy();
+  });
+
+  it("nicht verfügbar wenn UV-05=OPEN", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: makeUvSnapshot({ "UV-05": OfficeCheckpointState.OPEN }),
+    });
+    const m = modules.find((m) => m.templateId === "uv-uebergabe-checkliste");
+    expect(m?.isAvailable).toBe(false);
+  });
+
+  it("nicht verfügbar bei leerem Snapshot (kein YES)", () => {
+    const modules = evaluateOfficeWriteModules({
+      topicId: topic,
+      checkpoints: [],
+    });
+    const m = modules.find((m) => m.templateId === "uv-uebergabe-checkliste");
+    expect(m?.isAvailable).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 56. renderOfficeWriteTemplate: uv-patienteninfo-aushang
+// ---------------------------------------------------------------------------
+
+describe("56. renderOfficeWriteTemplate: uv-patienteninfo-aushang", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "uv-patienteninfo-aushang")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Keller",
+    schliessungsbeginn: "28.07.2026",
+    schliessungsende: "08.08.2026",
+    vertretung_name: "Dr. Andrea Nowak",
+    vertretung_adresse: "Musterstraße 12, 20095 Hamburg",
+    vertretung_telefon: "040 / 98765-0",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Keller");
+    expect(result).toContain("28.07.2026");
+    expect(result).toContain("08.08.2026");
+    expect(result).toContain("Dr. Andrea Nowak");
+    expect(result).toContain("Musterstraße 12, 20095 Hamburg");
+    expect(result).toContain("040 / 98765-0");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("notfallhinweis-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      notfallhinweis: "Im Notfall: 116 117 oder 112",
+    });
+    expect(result).toContain("Im Notfall: 116 117 oder 112");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("notfallhinweis-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Im Notfall");
+    expect(result).not.toContain("[{{notfallhinweis}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{schliessungsbeginn}}]");
+    expect(result).toContain("[{{vertretung_name}}]");
+    expect(result).toContain("[{{vertretung_telefon}}]");
+  });
+
+  it("vertretung_oeffnungszeiten erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      vertretung_oeffnungszeiten: "Mo–Fr 8–12 Uhr und 14–18 Uhr",
+    });
+    expect(result).toContain("Sprechzeiten / Erreichbarkeit: Mo–Fr 8–12 Uhr und 14–18 Uhr");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("vertretung_oeffnungszeiten fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Sprechzeiten / Erreichbarkeit");
+    expect(result).not.toContain("[{{vertretung_oeffnungszeiten}}]");
+    expect(result).not.toContain("{{#if");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 57. renderOfficeWriteTemplate: uv-telefonansage
+// ---------------------------------------------------------------------------
+
+describe("57. renderOfficeWriteTemplate: uv-telefonansage", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "uv-telefonansage")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Keller",
+    schliessungsbeginn: "28.07.2026",
+    schliessungsende: "08.08.2026",
+    vertretung_name: "Dr. Andrea Nowak",
+    vertretung_telefon: "040 / 98765-0",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Keller");
+    expect(result).toContain("28.07.2026");
+    expect(result).toContain("08.08.2026");
+    expect(result).toContain("Dr. Andrea Nowak");
+    expect(result).toContain("040 / 98765-0");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("notfallhinweis erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      notfallhinweis: "Im Notfall: 116 117",
+    });
+    expect(result).toContain("Im Notfall: 116 117");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("notfallhinweis fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("[{{notfallhinweis}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{schliessungsbeginn}}]");
+    expect(result).toContain("[{{vertretung_name}}]");
+    expect(result).toContain("[{{vertretung_telefon}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 58. renderOfficeWriteTemplate: uv-uebergabe-checkliste
+// ---------------------------------------------------------------------------
+
+describe("58. renderOfficeWriteTemplate: uv-uebergabe-checkliste", () => {
+  const tmpl = OFFICE_WRITE_TEMPLATES.find((t) => t.id === "uv-uebergabe-checkliste")!;
+
+  const pflichtfelder = {
+    praxisname: "Hausarztpraxis Dr. Keller",
+    schliessungsbeginn: "28.07.2026",
+    schliessungsende: "08.08.2026",
+    vertretungsarzt_name: "Dr. Andrea Nowak",
+    vertretungsarzt_kontakt: "Tel. 040 / 98765-0",
+    offene_aufgaben: "Rezeptwiederholungen vorbereiten\nLaborbefunde weiterleiten\nNachsorgetermine absagen",
+  };
+
+  it("rendert Pflichtfelder korrekt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).toContain("Hausarztpraxis Dr. Keller");
+    expect(result).toContain("28.07.2026");
+    expect(result).toContain("08.08.2026");
+    expect(result).toContain("Dr. Andrea Nowak");
+    expect(result).toContain("Tel. 040 / 98765-0");
+    expect(result).toContain("Rezeptwiederholungen vorbereiten");
+    expect(result).not.toContain("{{#if");
+    expect(result).not.toContain("{{/if}}");
+  });
+
+  it("abrechnungshinweis-Block erscheint wenn gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {
+      ...pflichtfelder,
+      abrechnungshinweis: "Quartalsabschluss noch offen",
+    });
+    expect(result).toContain("Quartalsabschluss noch offen");
+    expect(result).toContain("Abrechnungshinweis");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("abrechnungshinweis-Block fehlt wenn nicht gesetzt", () => {
+    const result = renderOfficeWriteTemplate(tmpl, pflichtfelder);
+    expect(result).not.toContain("Abrechnungshinweis");
+    expect(result).not.toContain("[{{abrechnungshinweis}}]");
+    expect(result).not.toContain("{{#if");
+  });
+
+  it("fehlende Pflichtfelder werden als [{{key}}] markiert", () => {
+    const result = renderOfficeWriteTemplate(tmpl, {});
+    expect(result).toContain("[{{praxisname}}]");
+    expect(result).toContain("[{{vertretungsarzt_name}}]");
+    expect(result).toContain("[{{offene_aufgaben}}]");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 59. Compliance: keine unerlaubten Inhalte in UV-Templates
+// ---------------------------------------------------------------------------
+
+describe("59. Compliance: keine unerlaubten Inhalte in UV-Templates", () => {
+  const uvTemplates = OFFICE_WRITE_TEMPLATES.filter((t) =>
+    t.trigger.topicIds?.includes(OFFICE_TOPIC_CLOSURE_COVERAGE),
+  );
+
+  it("kein Paragraphenzeichen in bodyTemplates", () => {
+    for (const t of uvTemplates) {
+      expect(t.bodyTemplate).not.toContain("§");
+    }
+  });
+
+  it("keine KV-Antragsformulierung in bodyTemplates", () => {
+    for (const t of uvTemplates) {
+      expect(t.bodyTemplate).not.toContain("Zulassungsausschuss");
+      expect(t.bodyTemplate).not.toContain("KV-Antrag");
+      expect(t.bodyTemplate).not.toContain("Antrag bei der KV");
+    }
+  });
+
+  it("keine Fristbewertung in bodyTemplates", () => {
+    for (const t of uvTemplates) {
+      expect(t.bodyTemplate).not.toContain("Frist");
+      expect(t.bodyTemplate).not.toContain("fristgerecht");
+    }
+  });
+
+  it("keine Patientendaten-Weitergabe in bodyTemplates (kein 'Patientendaten')", () => {
+    for (const t of uvTemplates) {
+      expect(t.bodyTemplate).not.toContain("Patientendaten");
+      expect(t.bodyTemplate).not.toContain("Patientenakte");
+    }
+  });
+
+  it("kein 'rechtssicher' in bodyTemplates", () => {
+    for (const t of uvTemplates) {
+      expect(t.bodyTemplate).not.toContain("rechtssicher");
     }
   });
 });

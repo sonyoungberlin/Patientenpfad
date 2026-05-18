@@ -4,6 +4,8 @@ import {
   OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
   OFFICE_TOPIC_MFA_HIRING,
   OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_CLOSURE_COVERAGE,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -1686,6 +1688,298 @@ Erste Aufgaben / Einarbeitungsschwerpunkte:
 {{erste_aufgaben}}
 
 Interne Arbeitsliste – vor dem ersten Ausbildungstag abhaken.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
+  // ---------------------------------------------------------------------------
+  // arzt-anstellen-nachbesetzung
+  // ---------------------------------------------------------------------------
+
+  {
+    id: "nc-unterlagen-anforderung",
+    label: "Fehlende Unterlagen anfordern (Anstellung Arzt/Ärztin)",
+    outputKind: OfficeWriteOutputKind.UNTERLAGEN_ANFORDERUNG,
+    writeKind: OfficeWriteKind.DATA_REQUEST,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_HIRING_REPLACEMENT],
+      anyOf: [
+        { checkpointId: "NC-APPROBATION", state: "NO" },
+        { checkpointId: "NC-APPROBATION", state: "OPEN" },
+        { checkpointId: "NC-FACHARZTQUALIFIKATION", state: "NO" },
+        { checkpointId: "NC-FACHARZTQUALIFIKATION", state: "OPEN" },
+        { checkpointId: "NC-BERUFSHAFTPFLICHT", state: "NO" },
+        { checkpointId: "NC-BERUFSHAFTPFLICHT", state: "OPEN" },
+      ],
+    },
+    inputSchema: [
+      { key: "datum_schreiben", label: "Datum des Schreibens", kind: "date", required: true },
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Gemeinschaftspraxis Dres. Keller & Nowak" },
+      { key: "arzt_name", label: "Name des Arztes / der Ärztin", kind: "text", required: true, placeholder: "z. B. Dr. Martina Böhm" },
+      { key: "fehlende_unterlagen", label: "Fehlende Unterlagen", kind: "multiline", required: true, placeholder: "z. B. Approbationsurkunde, Berufshaftpflichtnachweis" },
+      { key: "rueckgabefrist", label: "Rückgabefrist (optional)", kind: "date", required: false },
+      { key: "kontakt_rueckfragen", label: "Kontakt für Rückfragen (optional)", kind: "text", required: false, placeholder: "z. B. Tel. 040 / 12345-0 oder mail@praxis.de" },
+    ],
+    bodyTemplate: `{{praxisname}}
+{{datum_schreiben}}
+
+An: {{arzt_name}}
+
+Betreff: Vollständigkeit der Unterlagen zur geplanten Anstellung
+
+Guten Tag,
+
+für die geplante Anstellung von {{arzt_name}} bei uns fehlen noch folgende Unterlagen:
+
+{{fehlende_unterlagen}}
+
+Wir bitten um Einreichung baldmöglichst.{{#if rueckgabefrist}}
+Bitte übermitteln Sie die Unterlagen bis spätestens {{rueckgabefrist}}.{{/if}}{{#if kontakt_rueckfragen}}
+
+Bei Rückfragen stehen wir Ihnen gerne zur Verfügung: {{kontakt_rueckfragen}}{{/if}}
+
+Vielen Dank für Ihre Unterstützung.
+
+Mit freundlichen Grüßen
+{{praxisname}}
+
+Arbeitsentwurf – bitte vor Versand inhaltlich prüfen.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "nc-gespraechsleitfaden",
+    label: "Gesprächsleitfaden Anstellungsgespräch (Arzt/Ärztin)",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.INTERNAL_GUIDE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_HIRING_REPLACEMENT],
+      anyOf: [
+        { checkpointId: "NC-TAETIGKEITSUMFANG", state: "OPEN" },
+        { checkpointId: "NC-TAETIGKEITSUMFANG", state: "YES" },
+        { checkpointId: "NC-BETRIEBSSTAETTENSTRUKTUR", state: "OPEN" },
+        { checkpointId: "NC-BETRIEBSSTAETTENSTRUKTUR", state: "YES" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Gemeinschaftspraxis Dres. Keller & Nowak" },
+      { key: "arzt_name", label: "Name des Arztes / der Ärztin", kind: "text", required: true, placeholder: "z. B. Dr. Martina Böhm" },
+      { key: "gespraechsdatum", label: "Datum des Gesprächs (optional)", kind: "date", required: false },
+      { key: "einstellungsdatum", label: "Geplantes Einstellungsdatum", kind: "text", required: true, placeholder: "z. B. 01.10.2026" },
+      { key: "taetigkeitsumfang", label: "Tätigkeitsumfang (intern abgestimmt)", kind: "text", required: true, placeholder: "z. B. 20 h / Woche" },
+      { key: "betriebsstaette", label: "Betriebsstätte / Standort", kind: "text", required: true, placeholder: "z. B. Hauptstandort Musterstr. 1" },
+      { key: "offene_punkte", label: "Offene Punkte / Klärungsbedarf", kind: "multiline", required: true, placeholder: "z. B. Unterlagenstatus, LANR-Zuordnung" },
+      { key: "verantwortliche_person", label: "Gesprächsführende Person (optional)", kind: "text", required: false, placeholder: "z. B. Dr. Keller (Praxisleitung)" },
+    ],
+    bodyTemplate: `Gesprächsleitfaden: Anstellungsgespräch Arzt/Ärztin
+Praxis: {{praxisname}}{{#if gespraechsdatum}}
+Datum: {{gespraechsdatum}}{{/if}}
+Arzt/Ärztin: {{arzt_name}}{{#if verantwortliche_person}}
+Gesprächsführung: {{verantwortliche_person}}{{/if}}
+
+Geplantes Einstellungsdatum: {{einstellungsdatum}}
+Tätigkeitsumfang: {{taetigkeitsumfang}}
+Betriebsstätte: {{betriebsstaette}}
+
+Gesprächspunkte:
+1. Vorstellung Praxis, Team und Struktur
+2. Tätigkeitsumfang und Betriebsstätte: {{taetigkeitsumfang}} / {{betriebsstaette}}
+3. Einstellungsdatum und weitere Rahmenbedingungen des Arbeitsverhältnisses (Vertrag folgt separat)
+4. Unterlagenstatus klären (Approbation, Facharztqualifikation, Berufshaftpflicht)
+5. Abrechnungsstart: LANR- und BSNR-Zuordnung klären
+6. Systemzugriffe einrichten (PVS, Zeiterfassung, E-Mail)
+
+Offene Punkte:
+{{offene_punkte}}
+
+Nächste Schritte:
+- Fehlende Unterlagen anfordern
+- LANR/BSNR-Zuordnung mit KV klären
+- Systemzugriffe vor erstem Einsatztag einrichten
+
+Interne Arbeitsunterlage – keine Vertragszusage, keine Rechtsbewertung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "nc-onboarding-abrechnungsstart",
+    label: "Onboarding- und Abrechnungsstart-Plan (Arzt/Ärztin)",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_HIRING_REPLACEMENT],
+      allOf: [
+        { checkpointId: "NC-GENEHMIGUNGSSTATUS", state: "YES" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Gemeinschaftspraxis Dres. Keller & Nowak" },
+      { key: "arzt_name", label: "Name des Arztes / der Ärztin", kind: "text", required: true, placeholder: "z. B. Dr. Martina Böhm" },
+      { key: "startdatum", label: "Startdatum", kind: "date", required: true },
+      { key: "betriebsstaette", label: "Betriebsstätte / Standort", kind: "text", required: true, placeholder: "z. B. Hauptstandort Musterstr. 1" },
+      { key: "taetigkeitsumfang", label: "Tätigkeitsumfang", kind: "text", required: true, placeholder: "z. B. 20 h / Woche" },
+      { key: "lanr_bsnr_status", label: "LANR / BSNR Status", kind: "text", required: true, placeholder: "z. B. LANR 123456789 zugeordnet, BSNR bestätigt" },
+      { key: "systemzugriffe", label: "Einzurichtende Systemzugriffe", kind: "multiline", required: true, placeholder: "z. B. PVS-Zugang, Zeiterfassung, E-Mail" },
+      { key: "pflichtunterweisungen", label: "Pflichtunterweisungen", kind: "multiline", required: true, placeholder: "z. B. Datenschutz, Schweigepflicht, Hygieneplan, Brandschutz" },
+      { key: "erste_aufgaben", label: "Erste Aufgaben / Einarbeitungsschwerpunkte", kind: "multiline", required: true, placeholder: "z. B. Einführung Praxisabläufe Woche 1" },
+      { key: "verantwortliche_person", label: "Verantwortliche Person für Einarbeitung (optional)", kind: "text", required: false, placeholder: "z. B. Dr. Keller (Praxisleitung)" },
+    ],
+    bodyTemplate: `Onboarding- und Abrechnungsstart-Plan: Arzt/Ärztin
+Praxis: {{praxisname}}
+Arzt/Ärztin: {{arzt_name}}
+Startdatum: {{startdatum}}
+Betriebsstätte: {{betriebsstaette}}
+Tätigkeitsumfang: {{taetigkeitsumfang}}
+LANR / BSNR: {{lanr_bsnr_status}}{{#if verantwortliche_person}}
+Ansprechperson Einarbeitung: {{verantwortliche_person}}{{/if}}
+
+Systemzugriffe einrichten:
+{{systemzugriffe}}
+
+Pflichtunterweisungen durchführen:
+{{pflichtunterweisungen}}
+
+Erste Aufgaben / Einarbeitungsschwerpunkte:
+{{erste_aufgaben}}
+
+Interne Arbeitsliste – vor dem ersten Einsatztag abhaken.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
+  // ---------------------------------------------------------------------------
+  // praxisschliessung-urlaubsvertretung
+  // ---------------------------------------------------------------------------
+
+  {
+    id: "uv-patienteninfo-aushang",
+    label: "Patienteninformation / Aushang Praxisschließung",
+    outputKind: OfficeWriteOutputKind.BETROFFENENINFORMATION,
+    writeKind: OfficeWriteKind.PERSON_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_CLOSURE_COVERAGE],
+      anyOf: [
+        { checkpointId: "UV-PATIENTENINFO", state: "OPEN" },
+        { checkpointId: "UV-PATIENTENINFO", state: "NO" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Keller" },
+      { key: "schliessungsbeginn", label: "Schließung ab", kind: "date", required: true },
+      { key: "schliessungsende", label: "Schließung bis", kind: "date", required: true },
+      { key: "vertretung_name", label: "Vertretung: Name", kind: "text", required: true, placeholder: "z. B. Dr. Andrea Nowak" },
+      { key: "vertretung_adresse", label: "Vertretung: Adresse", kind: "text", required: true, placeholder: "z. B. Musterstraße 12, 20095 Hamburg" },
+      { key: "vertretung_telefon", label: "Vertretung: Telefon", kind: "text", required: true, placeholder: "z. B. 040 / 98765-0" },
+      { key: "notfallhinweis", label: "Notfallhinweis (optional)", kind: "text", required: false, placeholder: "z. B. Im Notfall: 116 117 oder 112" },
+      { key: "vertretung_oeffnungszeiten", label: "Sprechzeiten / Erreichbarkeit der Vertretung (optional)", kind: "text", required: false, placeholder: "z. B. Mo–Fr 8–12 Uhr und 14–18 Uhr" },
+    ],
+    bodyTemplate: `Liebe Patientinnen und Patienten,
+
+unsere Praxis {{praxisname}} ist vom {{schliessungsbeginn}} bis einschließlich {{schliessungsende}} geschlossen.
+
+In dieser Zeit wird unsere Praxis vertreten durch:
+
+{{vertretung_name}}
+{{vertretung_adresse}}
+Tel.: {{vertretung_telefon}}{{#if vertretung_oeffnungszeiten}}
+Sprechzeiten / Erreichbarkeit: {{vertretung_oeffnungszeiten}}{{/if}}{{#if notfallhinweis}}
+
+{{notfallhinweis}}{{/if}}
+
+Wir danken für Ihr Verständnis und freuen uns, Sie nach unserer Rückkehr wieder begrüßen zu dürfen.
+
+{{praxisname}}
+
+Arbeitsentwurf – bitte vor Veröffentlichung inhaltlich prüfen.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "uv-telefonansage",
+    label: "Telefonansage / MFA-Skript Praxisschließung",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_CLOSURE_COVERAGE],
+      anyOf: [
+        { checkpointId: "UV-PATIENTENINFO", state: "OPEN" },
+        { checkpointId: "UV-PATIENTENINFO", state: "NO" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Keller" },
+      { key: "schliessungsbeginn", label: "Schließung ab", kind: "date", required: true },
+      { key: "schliessungsende", label: "Schließung bis", kind: "date", required: true },
+      { key: "vertretung_name", label: "Vertretung: Name", kind: "text", required: true, placeholder: "z. B. Dr. Andrea Nowak" },
+      { key: "vertretung_telefon", label: "Vertretung: Telefon", kind: "text", required: true, placeholder: "z. B. 040 / 98765-0" },
+      { key: "notfallhinweis", label: "Notfallhinweis (optional)", kind: "text", required: false, placeholder: "z. B. Im Notfall: 116 117 oder 112" },
+    ],
+    bodyTemplate: `Ansagetext / MFA-Skript – Praxisschließung
+Praxis: {{praxisname}}
+Zeitraum: {{schliessungsbeginn}} bis {{schliessungsende}}
+
+---
+
+Herzlichen Dank für Ihren Anruf bei {{praxisname}}. Unsere Praxis ist vom {{schliessungsbeginn}} bis einschließlich {{schliessungsende}} geschlossen. Ihre Vertretung übernimmt {{vertretung_name}}, erreichbar unter {{vertretung_telefon}}.{{#if notfallhinweis}} {{notfallhinweis}}{{/if}} Bitte wenden Sie sich in dringenden Angelegenheiten an die Vertretungspraxis. Wir sind ab dem {{schliessungsende}} wieder für Sie da. Auf Wiederhören.
+
+---
+
+Internes Arbeitsskript – nicht für Patienten bestimmt.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "uv-uebergabe-checkliste",
+    label: "Interne Übergabecheckliste Praxisschließung",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_CLOSURE_COVERAGE],
+      allOf: [
+        { checkpointId: "UV-05", state: "YES" },
+      ],
+    },
+    inputSchema: [
+      { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Keller" },
+      { key: "schliessungsbeginn", label: "Schließung ab", kind: "date", required: true },
+      { key: "schliessungsende", label: "Schließung bis", kind: "date", required: true },
+      { key: "vertretungsarzt_name", label: "Vertretungsarzt: Name", kind: "text", required: true, placeholder: "z. B. Dr. Andrea Nowak" },
+      { key: "vertretungsarzt_kontakt", label: "Vertretungsarzt: Kontakt", kind: "text", required: true, placeholder: "z. B. Tel. 040 / 98765-0" },
+      { key: "offene_aufgaben", label: "Offene Aufgaben / Übergabepunkte", kind: "multiline", required: true, placeholder: "z. B. Rezeptwiederholungen vorbereiten, Laborbefunde weiterleiten" },
+      { key: "abrechnungshinweis", label: "Abrechnungshinweis (optional)", kind: "text", required: false, placeholder: "z. B. Quartalsabschluss noch offen, Rücksprache mit Abrechnungsstelle geplant" },
+    ],
+    bodyTemplate: `Übergabecheckliste: Praxisschließung
+Praxis: {{praxisname}}
+Zeitraum: {{schliessungsbeginn}} bis {{schliessungsende}}
+
+Vertretung:
+Name: {{vertretungsarzt_name}}
+Kontakt: {{vertretungsarzt_kontakt}}
+
+Offene Aufgaben / Übergabepunkte:
+{{offene_aufgaben}}{{#if abrechnungshinweis}}
+
+Abrechnungshinweis (Status):
+{{abrechnungshinweis}}{{/if}}
+
+Checkliste vor Schließungsbeginn:
+- Patienteninformation / Aushang veröffentlicht
+- Telefonansage eingerichtet
+- Vertretungsarzt informiert und erreichbar
+- Terminkalender gesperrt
+- Dringende Vorgänge an Vertretung übergeben
+
+Interne Arbeitsliste – vor Schließungsbeginn prüfen.`,
     smoothingEnabled: false,
     audience: "INTERN",
     estimatedLength: "MEDIUM",
