@@ -1097,11 +1097,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, wählen Sie bitte im Online-Buchungskalender:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie den folgenden Code ein, um den Termin zu bestätigen:\nLKBP25",
+        "Für die Kontrolle der Blutwerte wählen Sie im Online-Buchungskalender bitte:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nGeben Sie zur Bestätigung den Buchungscode LKBP25 ein.",
     },
     textByAudience: {
       contact_person:
-        "Um einen Termin nach ärztlicher Anordnung zu vereinbaren, bitte im Online-Buchungskalender wählen:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nZur Bestätigung wird der Code LKBP25 benötigt.",
+        "Für die Kontrolle der Blutwerte bitte im Online-Buchungskalender wählen:\n\n1. Labor\n2. Ärztliche Anordnung\n3. Blutwerte\n\nBuchungscode zur Bestätigung: LKBP25.",
     },
   },
 
@@ -2791,6 +2791,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  APPOINTMENT_BOOK_EKG_ORDER: {
+    id: "APPOINTMENT_BOOK_EKG_ORDER",
+    label: "EKG-Termin nach ärztlicher Anordnung buchen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Für die EKG-Untersuchung wählen Sie im Online-Buchungskalender bitte:\n\n1. Hausarzt / Allgemeinmediziner\n2. Vor Ort\n3. Ärztliche Anordnung\n\nGeben Sie zur Bestätigung den Buchungscode LKBP25 ein.",
+    },
+    textByAudience: {
+      contact_person:
+        "Für die EKG-Untersuchung bitte im Online-Buchungskalender wählen:\n\n1. Hausarzt / Allgemeinmediziner\n2. Vor Ort\n3. Ärztliche Anordnung\n\nBuchungscode zur Bestätigung: LKBP25.",
+    },
+  },
+
   APPOINTMENT_BOOKING_CODE_REQUIRED: {
     id: "APPOINTMENT_BOOKING_CODE_REQUIRED",
     label: "Buchungscode erforderlich",
@@ -2805,6 +2822,26 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]:
         "Für die gewünschte Terminart ist ein Buchungscode erforderlich.",
       // NO: bewusst still – keine Erklärung nötig
+    },
+  },
+
+  APPOINTMENT_INTERNAL_ORDER_EKG: {
+    id: "APPOINTMENT_INTERNAL_ORDER_EKG",
+    label: "Ärztliche Anordnung für EKG-Untersuchung",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "APPOINTMENT_INTERNAL_ORDER_EKG-Q1", text: "Liegt eine ärztliche Anordnung für eine EKG-Untersuchung vor?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Für die EKG-Untersuchung liegt eine ärztliche Anordnung vor.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Ärztliche Anordnung für EKG-Untersuchung liegt vor.",
     },
   },
 

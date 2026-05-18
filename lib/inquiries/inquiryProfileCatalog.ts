@@ -1563,6 +1563,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // sind als gebundene Info-Actions (APPOINTMENT_INFO_*) modelliert.
       "APPOINTMENT_TYPE_QUESTION",
       "APPOINTMENT_INSURANCE_PROOF_MISSING",
+      "APPOINTMENT_INTERNAL_ORDER_EKG",
     ],
     boundGlobalCheckpointIds: [],
     globalHints: {},
@@ -1589,6 +1590,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_INFO_BOOKING_RESTRICTED_AFTER_NO_SHOW",
       "APPOINTMENT_INFO_BOOKING_REENABLED_AFTER_CLARIFICATION",
       "INSURANCE_DATA_APP_TRANSFER",
+      "APPOINTMENT_BOOK_EKG_ORDER",
     ],
     boundActionConditions: {
       ACUTE_OPEN_CONSULTATION_ACTION: {
@@ -1638,6 +1640,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       INSURANCE_DATA_APP_TRANSFER: {
         showWhenAny: [{ APPOINTMENT_INSURANCE_PROOF_MISSING: "YES" }],
+      },
+      APPOINTMENT_BOOK_EKG_ORDER: {
+        showWhenAny: [{ APPOINTMENT_INTERNAL_ORDER_EKG: "YES" }],
       },
     },
 
