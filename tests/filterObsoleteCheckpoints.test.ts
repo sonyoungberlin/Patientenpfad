@@ -44,10 +44,8 @@ describe("filterObsoleteCheckpoints", () => {
     expect(result.map((c) => c.id)).toEqual(["K01", "K12"]);
   });
 
-  it("entfernt veraltete pflegebeobachtung-Checkpoints K14–K18", () => {
-    const obsolete = ["K14", "K15", "K16", "K17", "K18"].map((id) =>
-      makeStandard(id, "pflegebeobachtung"),
-    );
+  it("entfernt veralteten pflegebeobachtung-Checkpoint K18", () => {
+    const obsolete = [makeStandard("K18", "pflegebeobachtung")];
     const valid = [
       makeStandard("K12", "pflegebeobachtung"),
       makeStandard("K13", "pflegebeobachtung"),
@@ -56,6 +54,20 @@ describe("filterObsoleteCheckpoints", () => {
     const result = filterObsoleteCheckpoints(input);
     expect(result).toHaveLength(2);
     expect(result.map((c) => c.id)).toEqual(["K12", "K13"]);
+  });
+
+  it("behält neue Reha-Checkpoints K14/K15 (nicht mehr obsolet)", () => {
+    const input = [makeStandard("K14"), makeStandard("K15")];
+    const result = filterObsoleteCheckpoints(input);
+    expect(result).toHaveLength(2);
+    expect(result.map((c) => c.id)).toEqual(["K14", "K15"]);
+  });
+
+  it("behält neue Pflege-Checkpoints K16/K17 (nicht mehr obsolet)", () => {
+    const input = [makeStandard("K16"), makeStandard("K17")];
+    const result = filterObsoleteCheckpoints(input);
+    expect(result).toHaveLength(2);
+    expect(result.map((c) => c.id)).toEqual(["K16", "K17"]);
   });
 
   it("behält MULTI_SELECT-Checkpoints K10 und K11", () => {
@@ -75,8 +87,8 @@ describe("filterObsoleteCheckpoints", () => {
     expect(result[0].id).toBe("K03");
   });
 
-  it("alle aktuellen Katalog-Checkpoints K01–K09, K12 passieren den Filter", () => {
-    const knownIds = ["K01", "K02", "K03", "K04", "K05", "K06", "K07", "K08", "K09", "K12"];
+  it("alle aktuellen Katalog-Checkpoints K01–K09, K12–K17 passieren den Filter", () => {
+    const knownIds = ["K01", "K02", "K03", "K04", "K05", "K06", "K07", "K08", "K09", "K12", "K13", "K14", "K15", "K16", "K17"];
     const input: ActiveCheckpoint[] = knownIds.map((id) => makeStandard(id));
     const result = filterObsoleteCheckpoints(input);
     expect(result).toHaveLength(knownIds.length);

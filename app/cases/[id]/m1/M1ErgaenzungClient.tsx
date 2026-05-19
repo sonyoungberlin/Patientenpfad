@@ -8,6 +8,7 @@ import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSectio
 import {
   ALWAYS_PRESENT_ASSESSMENT_IDS,
   CHECKPOINT_CATALOGUE,
+  K11_SELECTIONS_WITH_FOLLOWUP,
 } from "@/lib/logic/checkpointCatalog";
 import type { ActiveCheckpointMultiSelect, M1BlockId, M1BlockStatus, M1Selection } from "@/lib/types";
 
@@ -241,6 +242,7 @@ export default function M1ErgaenzungClient({
         checkpoints={multiSelectCheckpoints}
         onToggleEnabled={handleMultiToggleEnabled}
         onToggleOption={handleMultiToggleOption}
+        triggerOptions={K11_SELECTIONS_WITH_FOLLOWUP}
       />
       <M1SelectionForm
         selection={selection}

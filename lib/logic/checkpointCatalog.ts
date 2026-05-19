@@ -3,6 +3,7 @@ import {
   CheckpointMode,
   CheckpointPerspective,
   CheckpointType,
+  isMultiSelectCheckpoint,
   type ActiveCheckpoint,
   type ActiveCheckpointMultiSelect,
   type StandardCheckpoint,
@@ -185,6 +186,58 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
       text: "",
     },
   },
+  K14: {
+    id: "K14",
+    block_id: "medizinische_lage",
+    type: CheckpointType.PROZESS_VORLAUF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "Reha-Vorbereitung & Vorleistungen",
+    description: "Frühere Reha-/Kurmaßnahmen, ambulante Vorleistungen und organisatorischer Vorbereitungsgrad sind bekannt.",
+    m4: {
+      type: "ACTION",
+      text: "Bitte bringen Sie vorhandene Reha-Unterlagen, Schreiben von Krankenkasse/Rentenversicherung sowie Informationen zu früheren Reha- oder Kurmaßnahmen zum nächsten Termin mit.",
+    },
+  },
+  K15: {
+    id: "K15",
+    block_id: "medizinische_lage",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "Beruflicher Kontext & AU-Situation",
+    description: "Beruflicher Status, aktuelle AU-Situation und patientenseitig berichtete Belastungen im Arbeitskontext.",
+    m4: {
+      type: "NOTICE",
+      text: "Bitte teilen Sie uns mit, ob Sie aktuell berufstätig oder krankgeschrieben sind und ob Ihre Beschwerden Ihre Arbeit betreffen.",
+    },
+  },
+  K16: {
+    id: "K16",
+    block_id: "medizinische_lage",
+    type: CheckpointType.PROZESS_VORLAUF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "MD-Vorbereitung & Antragshistorie",
+    description: "Erstantrag oder Höherstufung ist bekannt; Pflegetagebuch, relevante Unterlagen und MD-Begutachtungstermin sind organisatorisch geklärt.",
+    m4: {
+      type: "ACTION",
+      text: "Bitte bereiten Sie folgende Unterlagen für den Begutachtungstermin vor: Arztbriefe und Befunde, ggf. frühere Pflegegradentscheidungen oder Gutachten sowie ein Pflegetagebuch, falls eines geführt wurde.",
+    },
+  },
+  K17: {
+    id: "K17",
+    block_id: "versorgung_im_alltag",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "Kurzzeitpflege & Entlastung",
+    description: "Kurzzeitpflege, Verhinderungspflege und Entlastungsleistungen (§45b SGB XI) als formale Leistungsformen sind bekannt und ggf. in Planung.",
+    m4: {
+      type: "NOTICE",
+      text: "Falls Ihre pflegende Person vorübergehend ausfällt oder selbst Entlastung benötigt, informieren Sie uns. Die Pflegekasse bietet Leistungen wie Kurzzeit- oder Verhinderungspflege an.",
+    },
+  },
 };
 
 /**
@@ -280,13 +333,100 @@ export function ensureAlwaysPresentCheckpoints(
 }
 
 /**
+ * IDs der Checkpoints, die automatisch ergänzt werden, wenn K11 den Wert
+ * REHA_TRIGGER_SELECTION in seinen `selections` enthält.
+ *
+ * K03/K04/K05 — Dokumentations-Checkpoints (Diagnosenlage, Medikation,
+ * Medizinische Mitbehandlung).
+ * K06/K07 — Versorgungskontext (dauerhafter und vorübergehender
+ * Unterstützungsbedarf im Alltag).
+ * K01, K02, K09 werden nicht automatisch ergänzt: Sie sind zu allgemein
+ * und ihre Aktivierung wäre semantisch nicht eindeutig dem jeweiligen
+ * Kontext zuzuordnen.
+ */
+const SELECTION_TRIGGER_CHECKPOINT_ID = "K11";
+const REHA_TRIGGER_SELECTION = "Reha-Antrag";
+const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K14", "K15"];
+
+const PFLEGE_TRIGGER_SELECTION = "Pflegegrad / Höherstufung";
+const PFLEGE_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K16", "K17"];
+
+const JOBCENTER_TRIGGER_SELECTION = "Jobcenter / Sozialleistungen";
+const JOBCENTER_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K15"];
+
+/**
+ * Alle K11-Selektionen, die Zusatz-Checkpoints auslösen.
+ * Wird in der M1-UI verwendet, um triggernde Optionen visuell zu kennzeichnen.
+ */
+export const K11_SELECTIONS_WITH_FOLLOWUP: readonly string[] = [
+  REHA_TRIGGER_SELECTION,
+  PFLEGE_TRIGGER_SELECTION,
+  JOBCENTER_TRIGGER_SELECTION,
+];
+
+/**
+ * Ergänzt Checkpoints, die aufgrund einer K11-Selektion relevant werden,
+ * auch wenn sie über M1 nicht aktiviert wurden.
+ *
+ * Auslöser "Reha-Antrag":               ergänzt K03–K07, K14, K15.
+ * Auslöser "Pflegegrad / Höherstufung":  ergänzt K03–K07, K16, K17.
+ * Auslöser "Jobcenter / Sozialleistungen": ergänzt K03–K06, K15.
+ *
+ * Mehrere Trigger können gleichzeitig aktiv sein; gemeinsame IDs
+ * werden dabei nur einmal ergänzt.
+ *
+ * Bestehende Checkpoints — inklusive ihres Status — werden niemals
+ * verändert. Neu ergänzte Checkpoints starten mit status: "TO_DO".
+ *
+ * Ist K11 nicht vorhanden, nicht vom Typ MULTI_SELECT oder enthält keinen
+ * der bekannten Trigger, gibt die Funktion die Eingabeliste unverändert
+ * zurück.
+ */
+export function ensureSelectionConditionalCheckpoints(
+  checkpoints: ActiveCheckpoint[],
+): ActiveCheckpoint[] {
+  const k11 = checkpoints.find((cp) => cp.id === SELECTION_TRIGGER_CHECKPOINT_ID);
+  if (!k11 || !isMultiSelectCheckpoint(k11)) {
+    return checkpoints;
+  }
+
+  const hasReha = k11.selections.includes(REHA_TRIGGER_SELECTION);
+  const hasPflege = k11.selections.includes(PFLEGE_TRIGGER_SELECTION);
+  const hasJobcenter = k11.selections.includes(JOBCENTER_TRIGGER_SELECTION);
+
+  if (!hasReha && !hasPflege && !hasJobcenter) {
+    return checkpoints;
+  }
+
+  const ids = new Set(checkpoints.map((cp) => cp.id));
+  const missing: ActiveCheckpoint[] = [];
+
+  const conditionalIds = [
+    ...(hasReha ? REHA_CONDITIONAL_IDS : []),
+    ...(hasPflege ? PFLEGE_CONDITIONAL_IDS : []),
+    ...(hasJobcenter ? JOBCENTER_CONDITIONAL_IDS : []),
+  ];
+
+  for (const id of conditionalIds) {
+    if (!ids.has(id)) {
+      const template = CHECKPOINT_CATALOGUE[id];
+      if (template) {
+        missing.push({ ...template, status: "TO_DO" } as ActiveCheckpoint);
+        ids.add(id);
+      }
+    }
+  }
+  return missing.length > 0 ? [...checkpoints, ...missing] : checkpoints;
+}
+
+/**
  * Entfernt Checkpoints, deren ID weder im `CHECKPOINT_CATALOGUE` noch im
  * `MULTI_SELECT_CATALOGUE` vorkommt.
  *
  * Wird defensiv beim Laden von `active_checkpoints` aus der Datenbank
- * eingesetzt, um sicherzustellen, dass veraltete IDs (z. B. K13–K18 nach
- * dem Einschätzungsblock-Umbau) niemals gerendert werden – unabhängig
- * davon, was in einem gespeicherten Fall steht.
+ * eingesetzt, um sicherzustellen, dass veraltete IDs (z. B. ehemalige
+ * Einschätzungsblock-Checkpoints vor dem Katalog-Umbau) niemals gerendert
+ * werden – unabhängig davon, was in einem gespeicherten Fall steht.
  */
 export function filterObsoleteCheckpoints(
   checkpoints: ActiveCheckpoint[],
