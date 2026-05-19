@@ -212,6 +212,32 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
       text: "Bitte teilen Sie uns mit, ob Sie aktuell berufstätig oder krankgeschrieben sind und ob Ihre Beschwerden Ihre Arbeit betreffen.",
     },
   },
+  K16: {
+    id: "K16",
+    block_id: "medizinische_lage",
+    type: CheckpointType.PROZESS_VORLAUF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "MD-Vorbereitung & Antragshistorie",
+    description: "Erstantrag oder Höherstufung ist bekannt; Pflegetagebuch, relevante Unterlagen und MD-Begutachtungstermin sind organisatorisch geklärt.",
+    m4: {
+      type: "ACTION",
+      text: "Bitte bereiten Sie folgende Unterlagen für den Begutachtungstermin vor: Arztbriefe und Befunde, ggf. frühere Pflegegradentscheidungen oder Gutachten sowie ein Pflegetagebuch, falls eines geführt wurde.",
+    },
+  },
+  K17: {
+    id: "K17",
+    block_id: "versorgung_im_alltag",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "Kurzzeitpflege & Entlastung",
+    description: "Kurzzeitpflege, Verhinderungspflege und Entlastungsleistungen (§45b SGB XI) als formale Leistungsformen sind bekannt und ggf. in Planung.",
+    m4: {
+      type: "NOTICE",
+      text: "Falls Ihre pflegende Person vorübergehend ausfällt oder selbst Entlastung benötigt, informieren Sie uns. Die Pflegekasse bietet Leistungen wie Kurzzeit- oder Verhinderungspflege an.",
+    },
+  },
 };
 
 /**
@@ -315,46 +341,62 @@ export function ensureAlwaysPresentCheckpoints(
  * K06/K07 — Versorgungskontext (dauerhafter und vorübergehender
  * Unterstützungsbedarf im Alltag).
  * K01, K02, K09 werden nicht automatisch ergänzt: Sie sind zu allgemein
- * und ihre Aktivierung wäre semantisch nicht eindeutig dem Reha-Kontext
- * zuzuordnen.
+ * und ihre Aktivierung wäre semantisch nicht eindeutig dem jeweiligen
+ * Kontext zuzuordnen.
  */
-const REHA_TRIGGER_CHECKPOINT_ID = "K11";
+const SELECTION_TRIGGER_CHECKPOINT_ID = "K11";
 const REHA_TRIGGER_SELECTION = "Reha-Antrag";
 const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K14", "K15"];
+
+const PFLEGE_TRIGGER_SELECTION = "Pflegegrad / Höherstufung";
+const PFLEGE_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K16", "K17"];
 
 /**
  * Ergänzt Checkpoints, die aufgrund einer K11-Selektion relevant werden,
  * auch wenn sie über M1 nicht aktiviert wurden.
  *
- * Auslöser: K11.selections enthält "Reha-Antrag".
- * Ergänzt:  K03, K04, K05 (nur wenn noch nicht vorhanden).
+ * Auslöser "Reha-Antrag":          ergänzt K03–K07, K14, K15.
+ * Auslöser "Pflegegrad / Höherstufung": ergänzt K03–K07, K16, K17.
+ *
+ * Beide Trigger können gleichzeitig aktiv sein; gemeinsame IDs (K03–K07)
+ * werden dabei nur einmal ergänzt.
  *
  * Bestehende Checkpoints — inklusive ihres Status — werden niemals
  * verändert. Neu ergänzte Checkpoints starten mit status: "TO_DO".
  *
- * Ist K11 nicht vorhanden, nicht vom Typ MULTI_SELECT oder enthält
- * "Reha-Antrag" nicht in seinen Selektionen, gibt die Funktion die
- * Eingabeliste unverändert zurück.
+ * Ist K11 nicht vorhanden, nicht vom Typ MULTI_SELECT oder enthält keinen
+ * der bekannten Trigger, gibt die Funktion die Eingabeliste unverändert
+ * zurück.
  */
 export function ensureSelectionConditionalCheckpoints(
   checkpoints: ActiveCheckpoint[],
 ): ActiveCheckpoint[] {
-  const k11 = checkpoints.find((cp) => cp.id === REHA_TRIGGER_CHECKPOINT_ID);
-  if (
-    !k11 ||
-    !isMultiSelectCheckpoint(k11) ||
-    !k11.selections.includes(REHA_TRIGGER_SELECTION)
-  ) {
+  const k11 = checkpoints.find((cp) => cp.id === SELECTION_TRIGGER_CHECKPOINT_ID);
+  if (!k11 || !isMultiSelectCheckpoint(k11)) {
+    return checkpoints;
+  }
+
+  const hasReha = k11.selections.includes(REHA_TRIGGER_SELECTION);
+  const hasPflege = k11.selections.includes(PFLEGE_TRIGGER_SELECTION);
+
+  if (!hasReha && !hasPflege) {
     return checkpoints;
   }
 
   const ids = new Set(checkpoints.map((cp) => cp.id));
   const missing: ActiveCheckpoint[] = [];
-  for (const id of REHA_CONDITIONAL_IDS) {
+
+  const conditionalIds = [
+    ...(hasReha ? REHA_CONDITIONAL_IDS : []),
+    ...(hasPflege ? PFLEGE_CONDITIONAL_IDS : []),
+  ];
+
+  for (const id of conditionalIds) {
     if (!ids.has(id)) {
       const template = CHECKPOINT_CATALOGUE[id];
       if (template) {
         missing.push({ ...template, status: "TO_DO" } as ActiveCheckpoint);
+        ids.add(id);
       }
     }
   }

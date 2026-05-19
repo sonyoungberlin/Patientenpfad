@@ -202,6 +202,46 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Haben Ihre Beschwerden Auswirkungen auf Ihre Arbeit oder beruflichen Tätigkeiten?",
     },
   ],
+  K16: [
+    {
+      id: "M2-01",
+      text: "Wissen Sie, ob es sich um eine Erstbeantragung oder um eine Höherstufung handelt?",
+    },
+    {
+      id: "M2-02",
+      text: "Haben Sie ein Pflegetagebuch geführt oder liegt eines vor?",
+    },
+    {
+      id: "M2-03",
+      text: "Haben Sie Unterlagen bereit, die für den Begutachtungstermin wichtig sind (z. B. Arztbriefe, frühere Bescheide)?",
+    },
+    {
+      id: "M2-04",
+      text: "Ist ein Termin für die Begutachtung bereits vereinbart oder angekündigt?",
+    },
+    {
+      id: "M2-05",
+      text: "Wurden Sie oder Ihr Angehöriger bereits früher für einen Pflegegrad begutachtet?",
+    },
+  ],
+  K17: [
+    {
+      id: "M2-01",
+      text: "Benötigen oder nutzen Sie Kurzzeitpflege (z. B. wenn Ihre Pflegeperson vorübergehend ausfällt)?",
+    },
+    {
+      id: "M2-02",
+      text: "Benötigen oder nutzen Sie Verhinderungspflege (z. B. wenn Ihre Pflegeperson krank oder im Urlaub ist)?",
+    },
+    {
+      id: "M2-03",
+      text: "Ist die Person, die Sie betreut, derzeit selbst belastet oder erkrankt?",
+    },
+    {
+      id: "M2-04",
+      text: "Wissen Sie, ob Entlastungsleistungen durch Ihre Pflegekasse verfügbar sind?",
+    },
+  ],
   K12: [
     // Mobilität
     {
@@ -636,6 +676,46 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
     {
       id: "MFA-K15-03",
       text: "Ist bekannt, ob der Antrag im Zusammenhang mit Berufstätigkeit, Arbeitsunfähigkeit oder Erwerbsfähigkeit steht?",
+    },
+  ],
+  K16: [
+    {
+      id: "MFA-K16-01",
+      text: "Ist bekannt, ob ein Erstantrag oder eine Höherstufung beantragt wird?",
+    },
+    {
+      id: "MFA-K16-02",
+      text: "Liegt ein Pflegetagebuch vor?",
+    },
+    {
+      id: "MFA-K16-03",
+      text: "Liegen die für die MD-Begutachtung relevanten Unterlagen vor (z. B. Arztbriefe, frühere Bescheide)?",
+    },
+    {
+      id: "MFA-K16-04",
+      text: "Ist ein MD-Begutachtungstermin vereinbart oder angekündigt?",
+    },
+    {
+      id: "MFA-K16-05",
+      text: "Liegen frühere Begutachtungsbescheide vor?",
+    },
+  ],
+  K17: [
+    {
+      id: "MFA-K17-01",
+      text: "Ist Kurzzeitpflege für diesen Patienten bekannt oder relevant?",
+    },
+    {
+      id: "MFA-K17-02",
+      text: "Ist Verhinderungspflege bekannt oder in Planung?",
+    },
+    {
+      id: "MFA-K17-03",
+      text: "Ist bekannt, ob die pflegende Person selbst belastet oder erkrankt ist?",
+    },
+    {
+      id: "MFA-K17-04",
+      text: "Sind Entlastungsleistungen (§45b SGB XI) bekannt oder bereits genutzt?",
     },
   ],
 };

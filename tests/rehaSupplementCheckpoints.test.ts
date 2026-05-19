@@ -92,9 +92,9 @@ describe("ensureSelectionConditionalCheckpoints: kein Trigger", () => {
     expect(result).toHaveLength(1);
   });
 
-  it("K11 mit anderem Anliegen (Pflegegrad) → keine Ergänzung", () => {
+  it("K11 mit anderem Anliegen (Attest) → keine Ergänzung", () => {
     const result = ensureSelectionConditionalCheckpoints([
-      makeK11(["Pflegegrad / Höherstufung"]),
+      makeK11(["Attest / Bescheinigung"]),
     ]);
     expect(result).toHaveLength(1);
   });
