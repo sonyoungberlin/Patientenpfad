@@ -123,6 +123,20 @@ const k11Checkpoint: ActiveCheckpoint = {
   enabled: false,
 };
 
+/** K11 – MULTI_SELECT mit Reha-Antrag-Selektion → löst K14/K15 aus */
+const k11RehaCheckpoint: ActiveCheckpoint = {
+  id: "K11",
+  block_id: "medizinische_lage",
+  type: CheckpointType.BEDARF,
+  category: CheckpointCategory.O,
+  perspectives: [],
+  mode: CheckpointMode.MULTI_SELECT,
+  title: "Formularanliegen",
+  options: ["Reha-Antrag"],
+  selections: ["Reha-Antrag"],
+  enabled: true,
+};
+
 
 describe("M2 Seite", () => {
   beforeEach(() => {
@@ -417,5 +431,43 @@ describe("M2 Seite", () => {
     expect(markup).toContain('data-m2-checkpoint="K12"');
     // interner MFA-Hinweis darf im PATIENT-Modus NICHT erscheinen
     expect(markup).not.toContain("Für die MFA gibt es hier keine vorbereitenden Fragen.");
+  });
+
+  it("zeigt K14/K15 im MFA-Modus wenn K11 = 'Reha-Antrag'", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k11RehaCheckpoint],
+      ctx_prefill: null,
+      preparation_mode: "mfa",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-reha-mfa" }) }),
+    );
+
+    expect(markup).toContain('data-m2-checkpoint="K14"');
+    expect(markup).toContain('data-m2-checkpoint="K15"');
+    expect(markup).toContain("Sind frühere Reha- oder Kurmaßnahmen dokumentiert oder bekannt?");
+    expect(markup).toContain("Besteht eine aktuelle Arbeitsunfähigkeit?");
+  });
+
+  it("zeigt K14/K15 im Patientengespräch-Modus wenn K11 = 'Reha-Antrag'", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k11RehaCheckpoint],
+      ctx_prefill: null,
+      preparation_mode: "conversation",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-reha-conv" }) }),
+    );
+
+    expect(markup).toContain('data-m2-checkpoint="K14"');
+    expect(markup).toContain('data-m2-checkpoint="K15"');
+    expect(markup).toContain("Haben Sie in den letzten Jahren bereits eine Reha oder Kur gemacht?");
+    expect(markup).toContain("Sind Sie aktuell berufstätig?");
   });
 });
