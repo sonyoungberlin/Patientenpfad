@@ -17,6 +17,7 @@ import {
   OFFICE_TOPIC_SEAT_APPROVAL,
   OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
   OFFICE_TOPIC_WORKTIME_CHANGE,
+  OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
   type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 
@@ -535,6 +536,40 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "AZ-07": [
       { id: "M2-01", text: "Sind alle offenen organisatorischen Aufgaben aus der Umstellung intern verteilt und terminiert?" },
       { id: "M2-02", text: "Gibt es noch ungeklaerte operative Punkte, die vor dem Stichtag erledigt sein muessen?" },
+    ],
+  },
+  [OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE]: {
+    "DS-01": [
+      { id: "M2-01", text: "Ist intern klar beschrieben, welches System umgestellt wird und welche Ablaeufe davon betroffen sind?" },
+      { id: "M2-02", text: "Ist ein grober Zeitplan fuer die Umstellung intern kommuniziert?" },
+    ],
+    "DS-02": [
+      { id: "M2-01", text: "Ist intern eindeutig festgelegt, wer die Gesamtverantwortung fuer die Umstellung traegt?" },
+      { id: "M2-02", text: "Sind Teilzustaendigkeiten (z. B. Koordination, Schulung, Abnahme) intern benannt?" },
+    ],
+    "DS-03": [
+      { id: "M2-01", text: "Ist geklart, welche Daten und Dokumente aus dem alten System uebernommen werden muessen?" },
+      { id: "M2-02", text: "Ist intern festgelegt, wer die Datenubernahme koordiniert und abzeichnet?" },
+    ],
+    "DS-04": [
+      { id: "M2-01", text: "Sind alle betroffenen Mitarbeiterinnen und Mitarbeiter ueber die Systemumstellung informiert?" },
+      { id: "M2-02", text: "Sind Fragen und Bedenken aus dem Team intern aufgenommen und adressiert?" },
+    ],
+    "DS-05": [
+      { id: "M2-01", text: "Sind Schulungstermine fuer alle betroffenen Mitarbeiterinnen und Mitarbeiter abgestimmt?" },
+      { id: "M2-02", text: "Sind Lernziele und Inhalte fuer die Schulung intern festgelegt?" },
+    ],
+    "DS-06": [
+      { id: "M2-01", text: "Ist intern geklart, wie die Praxis bei einem technischen Ausfall waehrend der Umstellungsphase weiterarbeitet?" },
+      { id: "M2-02", text: "Sind Notfallablaeufe (z. B. Papierformulare, manuelle Prozesse) intern kommuniziert?" },
+    ],
+    "DS-07": [
+      { id: "M2-01", text: "Sind Patientinnen und Patienten ueber Aenderungen in den digitalen Ablaeufen informiert (z. B. Online-Termine, Kontaktwege)?" },
+      { id: "M2-02", text: "Ist intern abgestimmt, ueber welche Kanaele (Aushang, Website, Empfang) kommuniziert wird?" },
+    ],
+    "DS-08": [
+      { id: "M2-01", text: "Ist die interne Freigabe fuer den Go-live erteilt und dokumentiert?" },
+      { id: "M2-02", text: "Sind alle offenen Punkte aus der Umstellungsvorbereitung vor dem Go-live abgearbeitet?" },
     ],
   },
 };

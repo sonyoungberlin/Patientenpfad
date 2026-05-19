@@ -9,6 +9,7 @@ import {
   OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
   OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
   OFFICE_TOPIC_WORKTIME_CHANGE,
+  OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -2629,6 +2630,141 @@ Bitte die Änderung des Stundenumfangs ab dem genannten Datum in der laufenden A
 Arbeitsentwurf – interne Abstimmung, keine abschließende Bewertung.`,
     smoothingEnabled: false,
     audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+  // ---------------------------------------------------------------------------
+  // OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE
+  // ---------------------------------------------------------------------------
+  {
+    id: "digitale-umstellung-checkliste",
+    label: "Interne Umstellungscheckliste",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE],
+      allOf: [{ checkpointId: "DS-01", state: "YES" }],
+      anyOf: [
+        { checkpointId: "DS-03", state: "OPEN" },
+        { checkpointId: "DS-03", state: "NO" },
+        { checkpointId: "DS-05", state: "OPEN" },
+        { checkpointId: "DS-05", state: "NO" },
+        { checkpointId: "DS-06", state: "OPEN" },
+        { checkpointId: "DS-06", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["DS-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",           label: "Praxisname",              kind: "text",      required: true },
+      { key: "system_name",          label: "Systembezeichnung",       kind: "text",      required: true },
+      { key: "go_live_datum",        label: "Geplantes Go-live-Datum", kind: "date",      required: true },
+      { key: "verantwortliche_person", label: "Verantwortliche Person", kind: "text",      required: false },
+      { key: "offene_punkte",        label: "Offene Punkte",           kind: "multiline", required: true },
+    ],
+    bodyTemplate: `Interne Umstellungscheckliste
+Praxis: {{praxisname}}
+System: {{system_name}}
+Geplantes Go-live: {{go_live_datum}}{{#if verantwortliche_person}}
+Verantwortlich: {{verantwortliche_person}}{{/if}}
+
+Offene Punkte:
+{{offene_punkte}}
+
+Prüfpunkte:
+[ ] Systemumstellung intern beschrieben (DS-01)
+[ ] Verantwortlichkeiten intern geklärt (DS-02)
+[ ] Datenmigration und Dokumentenübernahme vorbereitet (DS-03)
+[ ] Team informiert (DS-04)
+[ ] Schulungsplan erstellt und Termine abgestimmt (DS-05)
+[ ] Ausfall- und Übergangsbetrieb dokumentiert (DS-06)
+[ ] Patientenkommunikation vorbereitet (DS-07)
+[ ] Go-live intern freigegeben (DS-08)
+
+Arbeitshilfe – keine technische oder rechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+  {
+    id: "digitale-umstellung-teaminfo",
+    label: "Teaminfo und Schulungsplan",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.STAFF_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE],
+      anyOf: [
+        { checkpointId: "DS-04", state: "OPEN" },
+        { checkpointId: "DS-04", state: "NO" },
+        { checkpointId: "DS-05", state: "OPEN" },
+        { checkpointId: "DS-05", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["DS-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",           label: "Praxisname",          kind: "text",      required: true },
+      { key: "system_name",          label: "Systembezeichnung",   kind: "text",      required: true },
+      { key: "schulungsdatum",       label: "Schulungsdatum",      kind: "date",      required: false },
+      { key: "schulungsort",         label: "Schulungsort / -form", kind: "text",      required: false },
+      { key: "lernziele",            label: "Lernziele / Agenda",  kind: "multiline", required: true },
+      { key: "verantwortliche_person", label: "Ansprechpartner (Praxis)", kind: "text", required: false },
+    ],
+    bodyTemplate: `Teaminfo: Systemumstellung {{system_name}}
+Praxis: {{praxisname}}{{#if schulungsdatum}}
+Schulungstermin: {{schulungsdatum}}{{/if}}{{#if schulungsort}}
+Ort / Form: {{schulungsort}}{{/if}}{{#if verantwortliche_person}}
+Ansprechpartner: {{verantwortliche_person}}{{/if}}
+
+Lernziele und Agenda:
+{{lernziele}}
+
+Themen der Einführung:
+– Neue Bedienoberfläche und wichtigste Funktionen
+– Was ändert sich im Tagesablauf?
+– Datenmigration: Welche Daten sind im neuen System verfügbar?
+– Übergangsbetrieb: Wie gehen wir bei Ausfällen vor?
+– Patientenbezogene Änderungen: Was kommunizieren wir?
+– Ansprechpartner und Meldewege bei Problemen
+
+Arbeitshilfe – keine technische Systemdokumentation oder rechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+  {
+    id: "digitale-umstellung-patienteninfo",
+    label: "Patienteninformation bei geänderten digitalen Abläufen",
+    outputKind: OfficeWriteOutputKind.BETROFFENENINFORMATION,
+    writeKind: OfficeWriteKind.PERSON_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE],
+      anyOf: [
+        { checkpointId: "DS-07", state: "OPEN" },
+        { checkpointId: "DS-07", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["DS-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",          label: "Praxisname",                    kind: "text",      required: true },
+      { key: "system_name",         label: "Systembezeichnung",              kind: "text",      required: true },
+      { key: "gueltig_ab",          label: "Gültig ab",                      kind: "date",      required: true },
+      { key: "betroffene_ablaeufe", label: "Betroffene Abläufe für Patienten", kind: "multiline", required: true },
+      { key: "ansprechpartner",     label: "Ansprechpartner (Praxis)",       kind: "text",      required: false },
+      { key: "hinweis",             label: "Weiterer Hinweis",               kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Information der Praxis {{praxisname}}
+
+Ab {{gueltig_ab}} nutzen wir {{system_name}}.
+
+Für Sie als Patientin / Patient ändert sich:
+{{betroffene_ablaeufe}}{{#if ansprechpartner}}
+
+Bei Fragen wenden Sie sich an: {{ansprechpartner}}{{/if}}{{#if hinweis}}
+
+Hinweis:
+{{hinweis}}{{/if}}
+
+Arbeitsentwurf – kein Datenschutzhinweis im Sinne der DSGVO. Keine rechtliche oder technische Beratung.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
     estimatedLength: "SHORT",
   },
 ];

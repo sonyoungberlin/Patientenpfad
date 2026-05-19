@@ -52,6 +52,7 @@ export const OFFICE_TOPIC_EXTENDED_OPENING_HOURS = "oeffnungszeiten-erweiterung-
 export const OFFICE_TOPIC_REPORTING_DUTIES = "meldepflichten-zustaendige-stellen";
 export const OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION = "arzt-austritt-praxisorganisation";
 export const OFFICE_TOPIC_WORKTIME_CHANGE = "arbeitszeit-aenderung-praxisorganisation";
+export const OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE = "digitale-systemumstellung-praxisorganisation";
 
 export type OfficeTopicId =
   | typeof OFFICE_TOPIC_HIRING_REPLACEMENT
@@ -71,7 +72,8 @@ export type OfficeTopicId =
   | typeof OFFICE_TOPIC_EXTENDED_OPENING_HOURS
   | typeof OFFICE_TOPIC_REPORTING_DUTIES
   | typeof OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION
-  | typeof OFFICE_TOPIC_WORKTIME_CHANGE;
+  | typeof OFFICE_TOPIC_WORKTIME_CHANGE
+  | typeof OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE;
 
 export type OfficeTopic = {
   id: OfficeTopicId;
@@ -167,6 +169,10 @@ const TOPICS: readonly OfficeTopic[] = [
   {
     id: OFFICE_TOPIC_WORKTIME_CHANGE,
     title: "Organisatorische Arbeitszeitaenderung",
+  },
+  {
+    id: OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
+    title: "Digitale Systemumstellung / PVS / Praxissoftware",
   },
 ] as const;
 
@@ -1581,6 +1587,80 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
     {
       id: "AZ-07",
       title: "Organisatorische Folgeaufgaben intern abgestimmt",
+      kind: OfficeCheckpointKind.DECISION,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+  ],
+  [OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE]: [
+    {
+      id: "DS-01",
+      title: "Art und Umfang der Systemumstellung intern beschrieben",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ANLASS,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-02",
+      title: "Verantwortlichkeiten und Projektzustaendigkeiten intern geklaert",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-03",
+      title: "Datenmigration und Dokumentenuebernahme intern vorbereitet",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-04",
+      title: "Team ueber die Systemumstellung informiert",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-05",
+      title: "Schulungsplan erstellt und Termine intern abgestimmt",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-06",
+      title: "Ausfall- und Uebergangsbetrieb fuer Umstellungsphase intern dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-07",
+      title: "Patientenkommunikation zu geaenderten digitalen Ablaeufen vorbereitet",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "DS-08",
+      title: "Go-live intern freigegeben",
       kind: OfficeCheckpointKind.DECISION,
       officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
       checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
