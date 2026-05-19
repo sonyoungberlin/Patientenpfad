@@ -635,7 +635,7 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
     },
     {
       id: "MFA-K15-03",
-      text: "Ist ein DRV-Bezug (Erwerbsfähigkeit) für diesen Reha-Antrag wahrscheinlich?",
+      text: "Ist bekannt, ob der Antrag im Zusammenhang mit Berufstätigkeit, Arbeitsunfähigkeit oder Erwerbsfähigkeit steht?",
     },
   ],
 };
