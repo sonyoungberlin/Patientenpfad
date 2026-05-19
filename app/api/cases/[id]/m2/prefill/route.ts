@@ -122,8 +122,20 @@ export async function PATCH(
             .filter((cpId): cpId is string => cpId !== null)
         : activeCheckpointIds;
 
+    // Scope-Fix: sanitizedPrefill auf runCheckpointIds begrenzen, bevor Defaults
+    // gesetzt werden. withDefaultOffenForCheckpoints kopiert alle Einträge aus
+    // `prefill` blind in das Ergebnis – auch solche außerhalb des Run-Scopes.
+    // Ohne diesen Filter würden Checkpoints, die der Client mit "offen" befüllt
+    // hat (weil sie im DB-Stand existieren, aber nicht zum Delta gehören), in
+    // den eingefrorenen Run übernommen und in M3 fälschlicherweise als "offen"
+    // angezeigt, obwohl dieser Run für sie nicht zuständig ist.
+    const runCheckpointIdSet = new Set(runCheckpointIds);
+    const scopedPrefill = Object.fromEntries(
+      Object.entries(sanitizedPrefill).filter(([cpId]) => runCheckpointIdSet.has(cpId)),
+    );
+
     const filledPrefill = withDefaultOffenForCheckpoints(
-      sanitizedPrefill,
+      scopedPrefill,
       runCheckpointIds,
       preparationMode,
     );
