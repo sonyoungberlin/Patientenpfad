@@ -186,6 +186,32 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
       text: "",
     },
   },
+  K14: {
+    id: "K14",
+    block_id: "medizinische_lage",
+    type: CheckpointType.PROZESS_VORLAUF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "Reha-Vorbereitung & Vorleistungen",
+    description: "Frühere Reha-/Kurmaßnahmen, ambulante Vorleistungen und organisatorischer Vorbereitungsgrad sind bekannt.",
+    m4: {
+      type: "ACTION",
+      text: "Bitte bringen Sie vorhandene Reha-Unterlagen, Schreiben von Krankenkasse/Rentenversicherung sowie Informationen zu früheren Reha- oder Kurmaßnahmen zum nächsten Termin mit.",
+    },
+  },
+  K15: {
+    id: "K15",
+    block_id: "medizinische_lage",
+    type: CheckpointType.BEDARF,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "Beruflicher Kontext & AU-Situation",
+    description: "Beruflicher Status, aktuelle AU-Situation und patientenseitig berichtete Belastungen im Arbeitskontext.",
+    m4: {
+      type: "NOTICE",
+      text: "Bitte teilen Sie uns mit, ob Sie aktuell berufstätig oder krankgeschrieben sind und ob Ihre Beschwerden Ihre Arbeit betreffen.",
+    },
+  },
 };
 
 /**
@@ -294,7 +320,7 @@ export function ensureAlwaysPresentCheckpoints(
  */
 const REHA_TRIGGER_CHECKPOINT_ID = "K11";
 const REHA_TRIGGER_SELECTION = "Reha-Antrag";
-const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07"];
+const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K14", "K15"];
 
 /**
  * Ergänzt Checkpoints, die aufgrund einer K11-Selektion relevant werden,

@@ -166,6 +166,42 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Möchten Sie Informationen oder Erklärungen zur Nutzung unserer digitalen Angebote erhalten?",
     },
   ],
+  K14: [
+    {
+      id: "M2-01",
+      text: "Haben Sie in den letzten Jahren bereits eine Reha oder Kur gemacht?",
+    },
+    {
+      id: "M2-02",
+      text: "Haben Sie in den letzten 6 Monaten Anwendungen oder Therapien erhalten, z. B. Physiotherapie, Ergotherapie oder Logopädie?",
+    },
+    {
+      id: "M2-03",
+      text: "Wurde eine Reha bereits von einer anderen Stelle angesprochen, z. B. Krankenhaus, Krankenkasse, Rentenversicherung oder Beratungsstelle?",
+    },
+    {
+      id: "M2-04",
+      text: "Haben Sie bereits Kontakt mit Ihrer Krankenkasse oder der Deutschen Rentenversicherung wegen einer Reha aufgenommen?",
+    },
+    {
+      id: "M2-05",
+      text: "Haben Sie bereits Unterlagen oder Formulare für den Reha-Antrag vorbereitet?",
+    },
+  ],
+  K15: [
+    {
+      id: "M2-01",
+      text: "Sind Sie aktuell berufstätig?",
+    },
+    {
+      id: "M2-02",
+      text: "Sind Sie derzeit krankgeschrieben?",
+    },
+    {
+      id: "M2-03",
+      text: "Haben Ihre Beschwerden Auswirkungen auf Ihre Arbeit oder beruflichen Tätigkeiten?",
+    },
+  ],
   K12: [
     // Mobilität
     {
@@ -571,7 +607,35 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
     },
     {
       id: "MFA-K09-02",
-      text: "Hält sich der Patient an Praxisabläufe (z. B. Terminvereinbarung statt spontanes Erscheinen)?",
+      text: "Hält sich der Patient an Praxisabläufe (z. B. Terminvereinbarung statt spontanes Erscheinen)?",
+    },
+  ],
+  K14: [
+    {
+      id: "MFA-K14-01",
+      text: "Sind frühere Reha- oder Kurmaßnahmen dokumentiert oder bekannt?",
+    },
+    {
+      id: "MFA-K14-02",
+      text: "Ist bekannt, ob der Patient bereits Kontakt zur DRV oder GKV wegen einer Reha hatte?",
+    },
+    {
+      id: "MFA-K14-03",
+      text: "Liegen vorbereitete Unterlagen oder ausgefüllte Formulare für den Antrag vor?",
+    },
+  ],
+  K15: [
+    {
+      id: "MFA-K15-01",
+      text: "Ist bekannt, ob der Patient aktuell berufstätig oder berentet ist?",
+    },
+    {
+      id: "MFA-K15-02",
+      text: "Besteht eine aktuelle Arbeitsunfähigkeit?",
+    },
+    {
+      id: "MFA-K15-03",
+      text: "Ist ein DRV-Bezug (Erwerbsfähigkeit) für diesen Reha-Antrag wahrscheinlich?",
     },
   ],
 };

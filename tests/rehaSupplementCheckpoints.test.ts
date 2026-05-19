@@ -56,6 +56,16 @@ function makeK07(status: "OK" | "TO_DO" = "TO_DO"): ActiveCheckpoint {
   return { ...template, status } as ActiveCheckpoint;
 }
 
+function makeK14(status: "OK" | "TO_DO" = "TO_DO"): ActiveCheckpoint {
+  const template = CHECKPOINT_CATALOGUE["K14"]!;
+  return { ...template, status } as ActiveCheckpoint;
+}
+
+function makeK15(status: "OK" | "TO_DO" = "TO_DO"): ActiveCheckpoint {
+  const template = CHECKPOINT_CATALOGUE["K15"]!;
+  return { ...template, status } as ActiveCheckpoint;
+}
+
 function baseCheckpoints(): ActiveCheckpoint[] {
   // Minimale Ausgangsliste: nur K11 mit leeren Selektionen (always-present)
   return [makeK11([])];
@@ -137,10 +147,18 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     const ids = result.map((cp) => cp.id);
     expect(ids).toContain("K07");
   });
+  it("K11 = ['Reha-Antrag'] \u2192 K14 wird erg\u00e4nzt", () => {
+    const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
+    expect(result.map((cp) => cp.id)).toContain("K14");
+  });
 
+  it("K11 = ['Reha-Antrag'] \u2192 K15 wird erg\u00e4nzt", () => {
+    const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
+    expect(result.map((cp) => cp.id)).toContain("K15");
+  });
   it("neu ergänzte Checkpoints haben status: TO_DO", () => {
     const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
-    for (const id of ["K03", "K04", "K05", "K06", "K07"]) {
+    for (const id of ["K03", "K04", "K05", "K06", "K07", "K14", "K15"]) {
       const cp = result.find((c) => c.id === id)!;
       expect(isStandardCheckpoint(cp)).toBe(true);
       if (isStandardCheckpoint(cp)) {
@@ -149,12 +167,12 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     }
   });
 
-  it("Gesamtlänge nach Ergänzung: 1 (K11) + 5 (K03/K04/K05/K06/K07) = 6", () => {
+  it("Gesamtl\u00e4nge nach Erg\u00e4nzung: 1 (K11) + 7 (K03/K04/K05/K06/K07/K14/K15) = 8", () => {
     const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
-    expect(result).toHaveLength(6);
+    expect(result).toHaveLength(8);
   });
 
-  it("K11 = ['Reha-Antrag', 'Attest / Bescheinigung'] → K03/K04/K05/K06/K07 werden trotzdem ergänzt", () => {
+  it("K11 = ['Reha-Antrag', 'Attest / Bescheinigung'] \u2192 K03/K04/K05/K06/K07/K14/K15 werden trotzdem erg\u00e4nzt", () => {
     const result = ensureSelectionConditionalCheckpoints([
       makeK11(["Reha-Antrag", "Attest / Bescheinigung"]),
     ]);
@@ -164,6 +182,8 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     expect(ids).toContain("K05");
     expect(ids).toContain("K06");
     expect(ids).toContain("K07");
+    expect(ids).toContain("K14");
+    expect(ids).toContain("K15");
   });
 
   it("K01, K02, K09 werden NICHT automatisch ergänzt", () => {
@@ -213,7 +233,7 @@ describe("ensureSelectionConditionalCheckpoints: Duplikat-Schutz", () => {
     expect(ids).toContain("K05");
   });
 
-  it("K03, K04, K05, K06, K07 alle vorhanden → Funktion gibt exakt dieselbe Liste zurück", () => {
+  it("K03, K04, K05, K06, K07, K14, K15 alle vorhanden \u2192 Funktion gibt exakt dieselbe Liste zur\u00fcck", () => {
     const k05 = { ...CHECKPOINT_CATALOGUE["K05"]!, status: "TO_DO" } as ActiveCheckpoint;
     const input: ActiveCheckpoint[] = [
       makeK11(["Reha-Antrag"]),
@@ -222,6 +242,8 @@ describe("ensureSelectionConditionalCheckpoints: Duplikat-Schutz", () => {
       k05,
       makeK06("TO_DO"),
       makeK07("TO_DO"),
+      makeK14("TO_DO"),
+      makeK15("TO_DO"),
     ];
     const result = ensureSelectionConditionalCheckpoints(input);
     expect(result).toBe(input);

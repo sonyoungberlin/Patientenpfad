@@ -6,10 +6,9 @@ describe("pflegebeobachtung – M2 Fragenkatalog (Einschätzungsblock)", () => {
     expect(M2_QUESTIONS.K12).toHaveLength(13);
   });
 
-  it("K14–K18 existieren nicht als eigenständige Checkpoint-Einträge (K13 ist neu hinzugekommen)", () => {
-    expect(M2_QUESTIONS.K13).toBeDefined();
-    expect(M2_QUESTIONS.K14).toBeUndefined();
-    expect(M2_QUESTIONS.K15).toBeUndefined();
+  it("K14/K15 existieren jetzt als Reha-Checkpoints; K16–K18 existieren nicht", () => {
+    expect(M2_QUESTIONS.K14).toBeDefined();
+    expect(M2_QUESTIONS.K15).toBeDefined();
     expect(M2_QUESTIONS.K16).toBeUndefined();
     expect(M2_QUESTIONS.K17).toBeUndefined();
     expect(M2_QUESTIONS.K18).toBeUndefined();
