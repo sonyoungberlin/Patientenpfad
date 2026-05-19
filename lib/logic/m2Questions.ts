@@ -242,20 +242,6 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Wissen Sie, ob Entlastungsleistungen durch Ihre Pflegekasse verfügbar sind?",
     },
   ],
-  K18: [
-    {
-      id: "M2-01",
-      text: "Wer oder welche Stelle hat das Dokument angefordert?",
-    },
-    {
-      id: "M2-02",
-      text: "Haben Sie ein Schreiben oder Formular dabei, das die Anfrage beschreibt?",
-    },
-    {
-      id: "M2-03",
-      text: "Haben Sie eine Frist erhalten, bis wann das Dokument benötigt wird?",
-    },
-  ],
   K12: [
     // Mobilität
     {
@@ -730,20 +716,6 @@ export const M2_QUESTIONS_MFA: Record<string, M2Question[]> = {
     {
       id: "MFA-K17-04",
       text: "Sind Entlastungsleistungen (§45b SGB XI) bekannt oder bereits genutzt?",
-    },
-  ],
-  K18: [
-    {
-      id: "MFA-K18-01",
-      text: "Von welcher Stelle wird das Dokument angefordert? (z. B. Jobcenter, Arbeitgeber, Versicherung, eigene Initiative)",
-    },
-    {
-      id: "MFA-K18-02",
-      text: "Liegt ein schriftliches Schreiben oder Formular der anfragenden Stelle vor?",
-    },
-    {
-      id: "MFA-K18-03",
-      text: "Ist eine Frist bekannt, bis wann das Dokument benötigt wird?",
     },
   ],
 };

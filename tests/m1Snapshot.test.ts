@@ -70,8 +70,8 @@ describe("buildM1SnapshotInitial", () => {
 });
 
 describe("CHECKPOINT_CATALOGUE", () => {
-  it("enthält genau 16 Einträge (K01–K09, K12–K18)", () => {
-    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(16);
+  it("enthält genau 15 Einträge (K01–K09, K12–K17)", () => {
+    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(15);
   });
 
   it("jeder Eintrag hat eine id, block_id und m4", () => {

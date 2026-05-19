@@ -194,11 +194,6 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     expect(ids).not.toContain("K09");
   });
 
-  it("Reha-Trigger aktiviert K18 nicht", () => {
-    const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
-    expect(result.map((cp) => cp.id)).not.toContain("K18");
-  });
-
   it("ergänzte Checkpoints übernehmen Katalog-Daten korrekt (K03 title und block_id)", () => {
     const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
     const k03 = result.find((cp) => cp.id === "K03")!;

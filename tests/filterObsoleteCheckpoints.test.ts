@@ -44,12 +44,16 @@ describe("filterObsoleteCheckpoints", () => {
     expect(result.map((c) => c.id)).toEqual(["K01", "K12"]);
   });
 
-  it("behält K18 (jetzt im Katalog als Attest/Jobcenter-Checkpoint, auch mit altem block_id)", () => {
-    // K18 ist nun im Katalog → filterObsoleteCheckpoints filtert nach ID, nicht nach block_id
-    const input = [makeStandard("K18", "pflegebeobachtung")];
+  it("entfernt veralteten pflegebeobachtung-Checkpoint K18", () => {
+    const obsolete = [makeStandard("K18", "pflegebeobachtung")];
+    const valid = [
+      makeStandard("K12", "pflegebeobachtung"),
+      makeStandard("K13", "pflegebeobachtung"),
+    ];
+    const input: ActiveCheckpoint[] = [...valid, ...obsolete];
     const result = filterObsoleteCheckpoints(input);
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("K18");
+    expect(result).toHaveLength(2);
+    expect(result.map((c) => c.id)).toEqual(["K12", "K13"]);
   });
 
   it("behält neue Reha-Checkpoints K14/K15 (nicht mehr obsolet)", () => {
@@ -83,15 +87,8 @@ describe("filterObsoleteCheckpoints", () => {
     expect(result[0].id).toBe("K03");
   });
 
-  it("behält neuen Attest/Jobcenter-Checkpoint K18 (nicht mehr obsolet)", () => {
-    const input = [makeStandard("K18")];
-    const result = filterObsoleteCheckpoints(input);
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("K18");
-  });
-
-  it("alle aktuellen Katalog-Checkpoints K01–K09, K12–K18 passieren den Filter", () => {
-    const knownIds = ["K01", "K02", "K03", "K04", "K05", "K06", "K07", "K08", "K09", "K12", "K13", "K14", "K15", "K16", "K17", "K18"];
+  it("alle aktuellen Katalog-Checkpoints K01–K09, K12–K17 passieren den Filter", () => {
+    const knownIds = ["K01", "K02", "K03", "K04", "K05", "K06", "K07", "K08", "K09", "K12", "K13", "K14", "K15", "K16", "K17"];
     const input: ActiveCheckpoint[] = knownIds.map((id) => makeStandard(id));
     const result = filterObsoleteCheckpoints(input);
     expect(result).toHaveLength(knownIds.length);

@@ -238,19 +238,6 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
       text: "Falls Ihre pflegende Person vorübergehend ausfällt oder selbst Entlastung benötigt, informieren Sie uns. Die Pflegekasse bietet Leistungen wie Kurzzeit- oder Verhinderungspflege an.",
     },
   },
-  K18: {
-    id: "K18",
-    block_id: "medizinische_lage",
-    type: CheckpointType.PROZESS_VORLAUF,
-    category: CheckpointCategory.O,
-    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
-    title: "Anfragestelle & Unterlagen",
-    description: "Die anfragende Stelle ist bekannt, ein Schreiben oder Formular liegt vor, und eine ggf. genannte Frist ist dokumentiert.",
-    m4: {
-      type: "ACTION",
-      text: "Bitte bringen Sie das Schreiben oder Formular der anfragenden Stelle zum Termin mit.",
-    },
-  },
 };
 
 /**
@@ -365,16 +352,7 @@ const PFLEGE_TRIGGER_SELECTION = "Pflegegrad / Höherstufung";
 const PFLEGE_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K16", "K17"];
 
 const JOBCENTER_TRIGGER_SELECTION = "Jobcenter / Sozialleistungen";
-const JOBCENTER_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K15", "K18"];
-
-const ATTEST_TRIGGER_SELECTION = "Attest / Bescheinigung";
-const ATTEST_CONDITIONAL_IDS: readonly string[] = ["K03", "K18"];
-
-const VERSICHERUNG_TRIGGER_SELECTION = "Versicherung / Gutachten";
-const VERSICHERUNG_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K18"];
-
-const SONSTIGER_TRIGGER_SELECTION = "Sonstiger Antrag / Formular";
-const SONSTIGER_CONDITIONAL_IDS: readonly string[] = ["K03", "K18"];
+const JOBCENTER_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K15"];
 
 /**
  * Alle K11-Selektionen, die Zusatz-Checkpoints auslösen.
@@ -384,9 +362,6 @@ export const K11_SELECTIONS_WITH_FOLLOWUP: readonly string[] = [
   REHA_TRIGGER_SELECTION,
   PFLEGE_TRIGGER_SELECTION,
   JOBCENTER_TRIGGER_SELECTION,
-  ATTEST_TRIGGER_SELECTION,
-  VERSICHERUNG_TRIGGER_SELECTION,
-  SONSTIGER_TRIGGER_SELECTION,
 ];
 
 /**
@@ -395,10 +370,7 @@ export const K11_SELECTIONS_WITH_FOLLOWUP: readonly string[] = [
  *
  * Auslöser "Reha-Antrag":               ergänzt K03–K07, K14, K15.
  * Auslöser "Pflegegrad / Höherstufung":  ergänzt K03–K07, K16, K17.
- * Auslöser "Jobcenter / Sozialleistungen": ergänzt K03–K06, K15, K18.
- * Auslöser "Attest / Bescheinigung":     ergänzt K03, K18.
- * Auslöser "Versicherung / Gutachten":   ergänzt K03–K05, K18.
- * Auslöser "Sonstiger Antrag / Formular": ergänzt K03, K18.
+ * Auslöser "Jobcenter / Sozialleistungen": ergänzt K03–K06, K15.
  *
  * Mehrere Trigger können gleichzeitig aktiv sein; gemeinsame IDs
  * werden dabei nur einmal ergänzt.
@@ -421,11 +393,8 @@ export function ensureSelectionConditionalCheckpoints(
   const hasReha = k11.selections.includes(REHA_TRIGGER_SELECTION);
   const hasPflege = k11.selections.includes(PFLEGE_TRIGGER_SELECTION);
   const hasJobcenter = k11.selections.includes(JOBCENTER_TRIGGER_SELECTION);
-  const hasAttest = k11.selections.includes(ATTEST_TRIGGER_SELECTION);
-  const hasVersicherung = k11.selections.includes(VERSICHERUNG_TRIGGER_SELECTION);
-  const hasSonstiger = k11.selections.includes(SONSTIGER_TRIGGER_SELECTION);
 
-  if (!hasReha && !hasPflege && !hasJobcenter && !hasAttest && !hasVersicherung && !hasSonstiger) {
+  if (!hasReha && !hasPflege && !hasJobcenter) {
     return checkpoints;
   }
 
@@ -436,9 +405,6 @@ export function ensureSelectionConditionalCheckpoints(
     ...(hasReha ? REHA_CONDITIONAL_IDS : []),
     ...(hasPflege ? PFLEGE_CONDITIONAL_IDS : []),
     ...(hasJobcenter ? JOBCENTER_CONDITIONAL_IDS : []),
-    ...(hasAttest ? ATTEST_CONDITIONAL_IDS : []),
-    ...(hasVersicherung ? VERSICHERUNG_CONDITIONAL_IDS : []),
-    ...(hasSonstiger ? SONSTIGER_CONDITIONAL_IDS : []),
   ];
 
   for (const id of conditionalIds) {
@@ -469,54 +435,6 @@ export function filterObsoleteCheckpoints(
     (cp) =>
       cp.id in CHECKPOINT_CATALOGUE || cp.id in MULTI_SELECT_CATALOGUE,
   );
-}
-
-/**
- * Selektionen in K11, die K18 ("Anfragestelle & Unterlagen") rechtfertigen.
- */
-const K18_JUSTIFYING_SELECTIONS: readonly string[] = [
-  JOBCENTER_TRIGGER_SELECTION,
-  ATTEST_TRIGGER_SELECTION,
-  VERSICHERUNG_TRIGGER_SELECTION,
-  SONSTIGER_TRIGGER_SELECTION,
-];
-
-/**
- * Entfernt Checkpoints, die ausschließlich über einen K11-Selektion-Trigger
- * entstehen dürfen, aber ohne passende K11-Selektion in `active_checkpoints`
- * vorhanden sind.
- *
- * Betrifft derzeit: K18 ("Anfragestelle & Unterlagen").
- * K18 ist nur legitim, wenn K11 mindestens eine der folgenden Selektionen enthält:
- *   - "Jobcenter / Sozialleistungen"
- *   - "Attest / Bescheinigung"
- *   - "Versicherung / Gutachten"
- *   - "Sonstiger Antrag / Formular"
- *
- * Schützt vor Alt-DB-Daten: K18-Einträge aus früheren Systemversionen
- * (z. B. block_id "pflegebeobachtung") werden entfernt, sofern kein passender
- * K11-Trigger vorliegt.
- *
- * Ist ein passender Trigger vorhanden, bleibt K18 unverändert erhalten
- * (Status wird nicht zurückgesetzt).
- *
- * Muss direkt vor `ensureSelectionConditionalCheckpoints` aufgerufen werden.
- */
-export function filterUnjustifiedConditionalCheckpoints(
-  checkpoints: ActiveCheckpoint[],
-): ActiveCheckpoint[] {
-  if (!checkpoints.some((cp) => cp.id === "K18")) {
-    return checkpoints;
-  }
-
-  const k11 = checkpoints.find((cp) => cp.id === SELECTION_TRIGGER_CHECKPOINT_ID);
-  const k18Justified =
-    k11 !== undefined &&
-    isMultiSelectCheckpoint(k11) &&
-    K18_JUSTIFYING_SELECTIONS.some((sel) => k11.selections.includes(sel));
-
-  if (k18Justified) return checkpoints;
-  return checkpoints.filter((cp) => cp.id !== "K18");
 }
 
 /**
