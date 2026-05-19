@@ -92,16 +92,16 @@ describe("ensureSelectionConditionalCheckpoints: kein Trigger", () => {
     expect(result).toHaveLength(1);
   });
 
-  it("K11 mit anderem Anliegen (Attest) → keine Ergänzung", () => {
+  it("K11 mit unbekanntem Anliegen → keine Ergänzung", () => {
     const result = ensureSelectionConditionalCheckpoints([
-      makeK11(["Attest / Bescheinigung"]),
+      makeK11(["Unbekanntes Anliegen"]),
     ]);
     expect(result).toHaveLength(1);
   });
 
-  it("K11 mit mehreren Anliegen, keines = Reha → keine Ergänzung", () => {
+  it("K11 mit mehreren unbekannten Anliegen → keine Ergänzung", () => {
     const result = ensureSelectionConditionalCheckpoints([
-      makeK11(["Attest / Bescheinigung", "Jobcenter / Sozialleistungen"]),
+      makeK11(["Unbekanntes Anliegen A", "Unbekanntes Anliegen B"]),
     ]);
     expect(result).toHaveLength(1);
   });
@@ -192,6 +192,11 @@ describe("ensureSelectionConditionalCheckpoints: Reha-Trigger aktiv", () => {
     expect(ids).not.toContain("K01");
     expect(ids).not.toContain("K02");
     expect(ids).not.toContain("K09");
+  });
+
+  it("Reha-Trigger aktiviert K18 nicht", () => {
+    const result = ensureSelectionConditionalCheckpoints([makeK11(["Reha-Antrag"])]);
+    expect(result.map((cp) => cp.id)).not.toContain("K18");
   });
 
   it("ergänzte Checkpoints übernehmen Katalog-Daten korrekt (K03 title und block_id)", () => {

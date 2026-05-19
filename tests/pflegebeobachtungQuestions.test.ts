@@ -6,12 +6,13 @@ describe("pflegebeobachtung – M2 Fragenkatalog (Einschätzungsblock)", () => {
     expect(M2_QUESTIONS.K12).toHaveLength(13);
   });
 
-  it("K14/K15 existieren als Reha-Checkpoints; K16/K17 existieren als Pflege-Checkpoints; K18 existiert nicht", () => {
+  it("K14/K15 existieren als Reha-Checkpoints; K16/K17 existieren als Pflege-Checkpoints; K18 existiert als Attest/Jobcenter-Checkpoint; K19 existiert nicht", () => {
     expect(M2_QUESTIONS.K14).toBeDefined();
     expect(M2_QUESTIONS.K15).toBeDefined();
     expect(M2_QUESTIONS.K16).toBeDefined();
     expect(M2_QUESTIONS.K17).toBeDefined();
-    expect(M2_QUESTIONS.K18).toBeUndefined();
+    expect(M2_QUESTIONS.K18).toBeDefined();
+    expect(M2_QUESTIONS.K19).toBeUndefined();
   });
 
   it("hat keine MFA-Fragen für K12 / K13 (ASSESSMENT-Checkpoints, Patient-only)", () => {

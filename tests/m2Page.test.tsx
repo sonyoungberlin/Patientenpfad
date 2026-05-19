@@ -151,6 +151,20 @@ const k11PflegeCheckpoint: ActiveCheckpoint = {
   enabled: true,
 };
 
+/** K11 – MULTI_SELECT mit Attest-Selektion → löst K03/K18 aus */
+const k11AttestCheckpoint: ActiveCheckpoint = {
+  id: "K11",
+  block_id: "medizinische_lage",
+  type: CheckpointType.BEDARF,
+  category: CheckpointCategory.O,
+  perspectives: [],
+  mode: CheckpointMode.MULTI_SELECT,
+  title: "Formularanliegen",
+  options: ["Attest / Bescheinigung"],
+  selections: ["Attest / Bescheinigung"],
+  enabled: true,
+};
+
 
 describe("M2 Seite", () => {
   beforeEach(() => {
@@ -521,5 +535,39 @@ describe("M2 Seite", () => {
     expect(markup).toContain('data-m2-checkpoint="K17"');
     expect(markup).toContain("Wissen Sie, ob es sich um eine Erstbeantragung oder um eine Höherstufung handelt?");
     expect(markup).toContain("Benötigen oder nutzen Sie Kurzzeitpflege (z. B. wenn Ihre Pflegeperson vorübergehend ausfällt)?");
+  });
+
+  it("zeigt K18 im MFA-Modus wenn K11 = 'Attest / Bescheinigung'", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k11AttestCheckpoint],
+      ctx_prefill: null,
+      preparation_mode: "mfa",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-attest-mfa" }) }),
+    );
+
+    expect(markup).toContain('data-m2-checkpoint="K18"');
+    expect(markup).toContain("Von welcher Stelle wird das Dokument angefordert?");
+  });
+
+  it("zeigt K18 im Patientengespräch-Modus wenn K11 = 'Attest / Bescheinigung'", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k11AttestCheckpoint],
+      ctx_prefill: null,
+      preparation_mode: "conversation",
+      doctor_confirmed: false,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-attest-conv" }) }),
+    );
+
+    expect(markup).toContain('data-m2-checkpoint="K18"');
+    expect(markup).toContain("Wer oder welche Stelle hat das Dokument angefordert?");
   });
 });
