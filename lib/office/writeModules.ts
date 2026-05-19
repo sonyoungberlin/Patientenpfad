@@ -10,6 +10,7 @@ import {
   OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
   OFFICE_TOPIC_WORKTIME_CHANGE,
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
+  OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -2763,6 +2764,147 @@ Hinweis:
 {{hinweis}}{{/if}}
 
 Arbeitsentwurf – kein Datenschutzhinweis im Sinne der DSGVO. Keine rechtliche oder technische Beratung.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+  // ---------------------------------------------------------------------------
+  // OFFICE_TOPIC_VACATION_TEAM_COORDINATION
+  // ---------------------------------------------------------------------------
+  {
+    id: "urlaubs-uebergabe-checkliste",
+    label: "Übergabe-Checkliste Urlaub",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_VACATION_TEAM_COORDINATION],
+      allOf: [{ checkpointId: "UT-01", state: "YES" }],
+      anyOf: [
+        { checkpointId: "UT-06", state: "OPEN" },
+        { checkpointId: "UT-06", state: "NO" },
+        { checkpointId: "UT-07", state: "OPEN" },
+        { checkpointId: "UT-07", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["UT-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",       label: "Praxisname",                    kind: "text",      required: true },
+      { key: "mitarbeiter_name", label: "Mitarbeiterin / Mitarbeiter",   kind: "text",      required: true },
+      { key: "urlaubszeitraum",  label: "Urlaubszeitraum",               kind: "text",      required: true },
+      { key: "vertretung_name",  label: "Vertretung",                    kind: "text",      required: false },
+      { key: "offene_aufgaben",  label: "Offene Aufgaben / Übergabe",    kind: "multiline", required: true },
+      { key: "hinweis",          label: "Weiterer Hinweis",              kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Übergabe-Checkliste: Urlaub
+Praxis: {{praxisname}}
+Mitarbeiterin / Mitarbeiter: {{mitarbeiter_name}}
+Urlaubszeitraum: {{urlaubszeitraum}}{{#if vertretung_name}}
+Vertretung: {{vertretung_name}}{{/if}}
+
+Offene Aufgaben und Übergabe:
+{{offene_aufgaben}}{{#if hinweis}}
+
+Hinweis:
+{{hinweis}}{{/if}}
+
+Prüfpunkte:
+[ ] Urlaubszeitraum intern abgestimmt (UT-01)
+[ ] Mindestbesetzung geprüft (UT-02)
+[ ] Vertretungen organisiert und bestätigt (UT-03)
+[ ] Dienstplan angepasst (UT-04)
+[ ] Patientenkommunikation vorbereitet (UT-05)
+[ ] Offene Aufgaben übergeben (UT-06)
+[ ] Praxisbetrieb abgesichert (UT-07)
+[ ] Rückkehrplanung abgestimmt (UT-08)
+
+Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+  {
+    id: "teaminfo-abwesenheit",
+    label: "Teaminfo: Abwesenheit und Vertretung",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.STAFF_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_VACATION_TEAM_COORDINATION],
+      anyOf: [
+        { checkpointId: "UT-03", state: "OPEN" },
+        { checkpointId: "UT-03", state: "NO" },
+        { checkpointId: "UT-04", state: "OPEN" },
+        { checkpointId: "UT-04", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["UT-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",         label: "Praxisname",               kind: "text",      required: true },
+      { key: "mitarbeiter_name",   label: "Mitarbeiterin / Mitarbeiter", kind: "text",   required: true },
+      { key: "urlaubszeitraum",    label: "Urlaubszeitraum",           kind: "text",      required: true },
+      { key: "vertretungsregelung", label: "Vertretungsregelung",      kind: "multiline", required: true },
+      { key: "ansprechpartner",    label: "Ansprechpartner (Praxis)",  kind: "text",      required: false },
+      { key: "besondere_hinweise", label: "Besondere Hinweise",        kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Teaminfo: Abwesenheit {{mitarbeiter_name}}
+Praxis: {{praxisname}}
+Zeitraum: {{urlaubszeitraum}}{{#if ansprechpartner}}
+Ansprechpartner: {{ansprechpartner}}{{/if}}
+
+Vertretungsregelung:
+{{vertretungsregelung}}{{#if besondere_hinweise}}
+
+Besondere Hinweise:
+{{besondere_hinweise}}{{/if}}
+
+Agenda:
+– Wer übernimmt welche Aufgaben?
+– Dienstplan: angepasste Zeiten im Überblick
+– Erreichbarkeit und Meldewege während Abwesenheit
+– Offene Vorgänge: Was wurde übergeben?
+– Praxisbetrieb: Sind alle Abläufe abgesichert?
+– Rückkehr: Wiederanlauf und Übergabe geplant?
+
+Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+  {
+    id: "patienteninfo-urlaub",
+    label: "Patienteninformation bei Abwesenheit",
+    outputKind: OfficeWriteOutputKind.BETROFFENENINFORMATION,
+    writeKind: OfficeWriteKind.PERSON_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_VACATION_TEAM_COORDINATION],
+      anyOf: [
+        { checkpointId: "UT-05", state: "OPEN" },
+        { checkpointId: "UT-05", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["UT-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",        label: "Praxisname",                     kind: "text",      required: true },
+      { key: "abwesenheit_text",  label: "Abwesenheitstext",               kind: "text",      required: true },
+      { key: "abwesend_von",      label: "Abwesend ab",                    kind: "date",      required: true },
+      { key: "abwesend_bis",      label: "Abwesend bis",                   kind: "date",      required: true },
+      { key: "vertretung_info",   label: "Vertretung / Erreichbarkeit",    kind: "multiline", required: true },
+      { key: "rueckkehr_hinweis", label: "Rückkehr",                       kind: "text",      required: false },
+      { key: "notfallkontakt",    label: "Notfallkontakt",                 kind: "text",      required: false },
+    ],
+    bodyTemplate: `Information der Praxis {{praxisname}}
+
+{{abwesenheit_text}}
+
+Zeitraum: {{abwesend_von}} bis {{abwesend_bis}}
+
+Vertretung / Erreichbarkeit:
+{{vertretung_info}}{{#if rueckkehr_hinweis}}
+
+Ab {{rueckkehr_hinweis}} sind wir wieder vollständig für Sie da.{{/if}}{{#if notfallkontakt}}
+
+Bei dringendem Bedarf: {{notfallkontakt}}{{/if}}
+
+Vielen Dank für Ihr Verständnis.`,
     smoothingEnabled: false,
     audience: "EXTERNE_STELLE",
     estimatedLength: "SHORT",

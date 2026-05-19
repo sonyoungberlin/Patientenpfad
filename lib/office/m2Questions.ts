@@ -18,6 +18,7 @@ import {
   OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
   OFFICE_TOPIC_WORKTIME_CHANGE,
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
+  OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
   type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 
@@ -570,6 +571,40 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "DS-08": [
       { id: "M2-01", text: "Ist die interne Freigabe fuer den Go-live erteilt und dokumentiert?" },
       { id: "M2-02", text: "Sind alle offenen Punkte aus der Umstellungsvorbereitung vor dem Go-live abgearbeitet?" },
+    ],
+  },
+  [OFFICE_TOPIC_VACATION_TEAM_COORDINATION]: {
+    "UT-01": [
+      { id: "M2-01", text: "Ist intern klar, wer in welchem Zeitraum abwesend ist?" },
+      { id: "M2-02", text: "Sind alle betroffenen Personen und Zeitraeume intern kommuniziert?" },
+    ],
+    "UT-02": [
+      { id: "M2-01", text: "Ist geprueft, ob die Praxis im Urlaubszeitraum ausreichend besetzt ist?" },
+      { id: "M2-02", text: "Gibt es Zeitraeume mit kritisch niedriger Besetzung, die intern geloest werden muessen?" },
+    ],
+    "UT-03": [
+      { id: "M2-01", text: "Sind fuer alle abwesenden Personen konkrete Vertretungen benannt und bestaetigt?" },
+      { id: "M2-02", text: "Sind Zustaendigkeiten und Meldewege fuer die Vertretungszeit intern abgestimmt?" },
+    ],
+    "UT-04": [
+      { id: "M2-01", text: "Ist der Dienstplan auf die Abwesenheitszeiten und Vertretungen angepasst?" },
+      { id: "M2-02", text: "Ist die Dienstplananpassung intern freigegeben und kommuniziert?" },
+    ],
+    "UT-05": [
+      { id: "M2-01", text: "Sind Patientinnen und Patienten bei laengeren oder praxisweiten Abwesenheiten informiert?" },
+      { id: "M2-02", text: "Ist intern abgestimmt, ueber welche Kanaele kommuniziert wird (Aushang, Ansage, Website)?" },
+    ],
+    "UT-06": [
+      { id: "M2-01", text: "Sind alle laufenden Aufgaben und offenen Vorgaenge intern uebergeben?" },
+      { id: "M2-02", text: "Ist sichergestellt, dass keine dringenden Aufgaben waehrend der Abwesenheit liegenbleiben?" },
+    ],
+    "UT-07": [
+      { id: "M2-01", text: "Sind alle Ablaeufe fuer den laufenden Praxisbetrieb waehrend der Abwesenheit sichergestellt?" },
+      { id: "M2-02", text: "Gibt es ungeklaerte operative Luecken, die vor Urlaubsbeginn geschlossen werden muessen?" },
+    ],
+    "UT-08": [
+      { id: "M2-01", text: "Ist intern geklart, welche Aufgaben nach der Rueckkehr als erstes uebernommen werden?" },
+      { id: "M2-02", text: "Sind Uebergabe und Wiederanlauf fuer alle betroffenen Personen abgestimmt?" },
     ],
   },
 };
