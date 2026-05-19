@@ -15,6 +15,8 @@ import {
   OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
   OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
   OFFICE_TOPIC_REPORTING_DUTIES,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  OFFICE_TOPIC_WORKTIME_CHANGE,
   buildInitialSnapshotForTopic,
   getOfficeCheckpointCatalog,
   listOfficeTopics,
@@ -40,10 +42,12 @@ const EXPECTED_TOPIC_IDS = [
   OFFICE_TOPIC_DATA_PROTECTION_INCIDENT,
   OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
   OFFICE_TOPIC_REPORTING_DUTIES,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  OFFICE_TOPIC_WORKTIME_CHANGE,
 ] as const;
 
 describe("Office-Checkpoint Referenz-Integritaet gegen Registries", () => {
-  it("alle 16 Topic-IDs sind unveraendert vorhanden", () => {
+  it("alle 18 Topic-IDs sind unveraendert vorhanden", () => {
     const actualIds = listOfficeTopics().map((topic) => topic.id);
     expect(actualIds).toEqual([...EXPECTED_TOPIC_IDS]);
   });

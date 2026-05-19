@@ -7,6 +7,8 @@ import {
   OFFICE_TOPIC_HIRING_REPLACEMENT,
   OFFICE_TOPIC_CLOSURE_COVERAGE,
   OFFICE_TOPIC_EXTENDED_OPENING_HOURS,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  OFFICE_TOPIC_WORKTIME_CHANGE,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -2115,5 +2117,518 @@ Interne Arbeitsliste – vor Inkrafttreten der neuen Öffnungszeiten prüfen.`,
     smoothingEnabled: false,
     audience: "INTERN",
     estimatedLength: "MEDIUM",
+  },
+
+  // ---------------------------------------------------------------------------
+  // arzt-austritt-praxisorganisation
+  // ---------------------------------------------------------------------------
+
+  {
+    id: "exit-patienteninformation",
+    label: "Patienteninformation Arztwechsel",
+    outputKind: OfficeWriteOutputKind.BETROFFENENINFORMATION,
+    writeKind: OfficeWriteKind.PERSON_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION],
+      /**
+       * Verfuegbar sobald AA-01 (Datum bekannt) geklaert ist und
+       * AA-05 (Patientenkommunikation) noch nicht erledigt.
+       * Geblockt solange AA-01 offen – Datum fehlt fuer den Text.
+       */
+      anyOf: [
+        { checkpointId: "AA-05", state: "OPEN" },
+        { checkpointId: "AA-05", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["AA-01"],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Keller",
+      },
+      {
+        key: "arztname_austretend",
+        label: "Ärztin / Arzt (austretend)",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Dr. med. Jana Richter",
+      },
+      {
+        key: "letzter_praxistag",
+        label: "Letzter Praxistag",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "nachfolge_info",
+        label: "Hinweis zur Weiterversorgung (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Ihre Weiterbetreuung übernimmt Dr. Meier.",
+      },
+      {
+        key: "kontakt_fragen",
+        label: "Kontakt für Rückfragen (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Tel. 030 / 12345-0",
+      },
+    ],
+    bodyTemplate: `Liebe Patientinnen und Patienten,
+
+wir möchten Sie darüber informieren, dass {{arztname_austretend}} unsere Praxis {{praxisname}} zum {{letzter_praxistag}} verlassen wird.
+
+Wir sorgen für eine reibungslose Weiterbetreuung und werden Sie über alle weiteren Schritte informieren.{{#if nachfolge_info}}
+
+{{nachfolge_info}}{{/if}}{{#if kontakt_fragen}}
+
+Für Rückfragen stehen wir Ihnen unter {{kontakt_fragen}} zur Verfügung.{{/if}}
+
+Mit freundlichen Grüßen
+{{praxisname}}
+
+Arbeitsentwurf – vor Veröffentlichung inhaltlich prüfen.`,
+    smoothingEnabled: false,
+    audience: "EXTERNE_STELLE",
+    estimatedLength: "SHORT",
+  },
+
+  {
+    id: "exit-uebergabe-checkliste",
+    label: "Interne Übergabecheckliste Arztwechsel",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION],
+      /**
+       * Verfuegbar sobald AA-01 YES (Datum und Umfang bekannt)
+       * und AA-03 (Uebergabe) noch nicht dokumentiert.
+       * blockedWhenAnyOpen verhindert Zugriff bei noch offenem AA-01.
+       */
+      allOf: [{ checkpointId: "AA-01", state: "YES" }],
+      anyOf: [
+        { checkpointId: "AA-03", state: "OPEN" },
+        { checkpointId: "AA-03", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["AA-01"],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Keller",
+      },
+      {
+        key: "arztname_austretend",
+        label: "Ärztin / Arzt (austretend)",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Dr. med. Jana Richter",
+      },
+      {
+        key: "austrittsdatum",
+        label: "Letzter Praxistag",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "offene_patientenfaelle",
+        label: "Offene Patientenfälle / Übergabepunkte",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. Laufende Therapien, geplante Eingriffe, kritische Fälle …",
+      },
+      {
+        key: "offene_befunde",
+        label: "Offene Befunde / ausstehende Ergebnisse (optional)",
+        kind: "multiline",
+        required: false,
+        placeholder: "z. B. Laborbefunde ausstehend, Radiologiebericht erwartet",
+      },
+      {
+        key: "team_aufgaben",
+        label: "Interne Teamaufgaben (optional)",
+        kind: "multiline",
+        required: false,
+        placeholder: "z. B. Einarbeitung Nachfolger, Umverteilung Zuständigkeiten",
+      },
+    ],
+    bodyTemplate: `Interne Übergabecheckliste: Arzt-Austritt
+Praxis: {{praxisname}}
+Ärztin / Arzt: {{arztname_austretend}}
+Letzter Praxistag: {{austrittsdatum}}
+
+Offene Patientenfälle / Übergabepunkte:
+{{offene_patientenfaelle}}{{#if offene_befunde}}
+
+Offene Befunde / ausstehende Ergebnisse:
+{{offene_befunde}}{{/if}}{{#if team_aufgaben}}
+
+Interne Teamaufgaben:
+{{team_aufgaben}}{{/if}}
+
+Organisatorische Folgeaufgaben – Chef-Mitdenken-Liste:
+(Operative Übersicht, kein Anspruch auf Vollständigkeit)
+- Zuständigkeiten für laufende Aufgaben intern neu geregelt?
+- Externe Stellen intern auf Handlungsbedarf geprüft?
+- Dienstplan, Schichteinteilung und Erreichbarkeiten aktualisiert?
+- Praxisunterlagen und interne Zugänge übergeben oder gesichert?
+
+Interne Arbeitsunterlage – vor dem letzten Praxistag abarbeiten.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
+  {
+    id: "exit-zugriffscheckliste",
+    label: "Systemzugriffe abschalten – Checkliste",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION],
+      /**
+       * Verfuegbar solange AA-04 (Systemzugriffe) noch nicht bestaetigt.
+       * Geblockt solange AA-01 offen – Datum fehlt fuer die Checkliste.
+       */
+      anyOf: [
+        { checkpointId: "AA-04", state: "OPEN" },
+        { checkpointId: "AA-04", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["AA-01"],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Keller",
+      },
+      {
+        key: "arztname_austretend",
+        label: "Ärztin / Arzt (austretend)",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Dr. med. Jana Richter",
+      },
+      {
+        key: "austrittsdatum",
+        label: "Letzter Zugriffstag",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "verantwortliche_it",
+        label: "Verantwortliche Person (IT / Backoffice, optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. MFA Meier",
+      },
+      {
+        key: "erledigt_am",
+        label: "Erledigt am (optional)",
+        kind: "date",
+        required: false,
+      },
+    ],
+    bodyTemplate: `Systemzugriffe abschalten: Arzt-Austritt
+Praxis: {{praxisname}}
+Ärztin / Arzt: {{arztname_austretend}}
+Letzter Zugriffstag: {{austrittsdatum}}{{#if verantwortliche_it}}
+Verantwortlich: {{verantwortliche_it}}{{/if}}{{#if erledigt_am}}
+Erledigt am: {{erledigt_am}}{{/if}}
+
+Zugänge zu deaktivieren / anzupassen:
+[ ] Praxisverwaltungssystem (PVS) – Konto gesperrt
+[ ] E-Mail-Konto – Weiterleitung oder Sperrung geregelt
+[ ] Telefonlisten und Erreichbarkeiten aktualisiert
+[ ] Schließsystem / Schlüssel / Zutrittskarte eingezogen
+[ ] Dienstplan / Terminkalender bereinigt
+[ ] Weitere interne Zugänge (z. B. Praxisportale)
+
+Interne Checkliste – vor oder am letzten Praxistag abarbeiten.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+
+  // ---------------------------------------------------------------------------
+  // arbeitszeit-aenderung-praxisorganisation
+  // ---------------------------------------------------------------------------
+
+  {
+    id: "arbeitszeit-aenderung-gespraech",
+    label: "Gesprächsleitfaden Arbeitszeitänderung",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.INTERNAL_GUIDE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_WORKTIME_CHANGE],
+      /**
+       * Verfuegbar solange AZ-01 (Stundenumfang abgestimmt) noch nicht bestaetigt.
+       * Kein Hard-Blocker – der Leitfaden soll auch bei NO nochmals nutzbar sein.
+       */
+      anyOf: [
+        { checkpointId: "AZ-01", state: "OPEN" },
+        { checkpointId: "AZ-01", state: "NO" },
+      ],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Keller",
+      },
+      {
+        key: "mitarbeiter_name",
+        label: "Mitarbeiterin / Mitarbeiter",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. MFA Sandra Meier",
+      },
+      {
+        key: "gespraechsdatum",
+        label: "Gesprächsdatum (optional)",
+        kind: "date",
+        required: false,
+      },
+      {
+        key: "neuer_umfang",
+        label: "Geplanter neuer Stundenumfang",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 25 Std./Woche (bisher 38 Std.)",
+      },
+      {
+        key: "einsatzzeiten",
+        label: "Geplante Einsatzzeiten / Arbeitstage",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Mo, Di, Do 08:00–14:00 Uhr",
+      },
+      {
+        key: "offene_punkte",
+        label: "Offene Punkte / Abstimmungsbedarf (optional)",
+        kind: "multiline",
+        required: false,
+        placeholder: "z. B. Vertretungsregelung noch offen",
+      },
+      {
+        key: "verantwortliche_person",
+        label: "Verantwortliche Person (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Praxismanagerin Fr. Schulz",
+      },
+    ],
+    bodyTemplate: `Gesprächsleitfaden: Organisatorische Arbeitszeitänderung
+Praxis: {{praxisname}}
+Mitarbeiterin / Mitarbeiter: {{mitarbeiter_name}}{{#if gespraechsdatum}}
+Gesprächsdatum: {{gespraechsdatum}}{{/if}}{{#if verantwortliche_person}}
+Verantwortlich: {{verantwortliche_person}}{{/if}}
+
+Geplante Änderung:
+Neuer Stundenumfang: {{neuer_umfang}}
+Einsatzzeiten / Arbeitstage: {{einsatzzeiten}}
+
+Gesprächspunkte – operative Umsetzung:
+- Wann soll die neue Arbeitszeit gelten?
+- Welche Einsatzzeiten und Arbeitstage sind konkret geplant?
+- Welche Aufgabenbereiche sind von der Änderung betroffen?
+- Sind Vertretungen und Übergaben für die neuen Zeiten geregelt?
+- Muss der Dienstplan angepasst werden, und bis wann?
+- Müssen Kolleginnen oder Kollegen informiert werden?
+- Wer informiert das Lohnbüro / die Abrechnung?
+- Sind Zeiterfassung oder Praxissysteme anzupassen?{{#if offene_punkte}}
+
+Offene Punkte:
+{{offene_punkte}}{{/if}}
+
+Interne Arbeitshilfe – nur operative Abstimmung, kein Ersatz für weitergehende Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
+  {
+    id: "arbeitszeit-aenderung-checkliste",
+    label: "Organisatorische Umstellungscheckliste Arbeitszeitänderung",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_WORKTIME_CHANGE],
+      /**
+       * Verfuegbar sobald AZ-01 YES (Parameter bekannt) und
+       * organisatorische Schritte (AZ-03 Dienstplan oder AZ-05 Systeme) noch offen.
+       * Geblockt solange AZ-01 offen – Datum und Umfang fehlen.
+       */
+      allOf: [{ checkpointId: "AZ-01", state: "YES" }],
+      anyOf: [
+        { checkpointId: "AZ-03", state: "OPEN" },
+        { checkpointId: "AZ-03", state: "NO" },
+        { checkpointId: "AZ-05", state: "OPEN" },
+        { checkpointId: "AZ-05", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["AZ-01"],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Keller",
+      },
+      {
+        key: "mitarbeiter_name",
+        label: "Mitarbeiterin / Mitarbeiter",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. MFA Sandra Meier",
+      },
+      {
+        key: "gueltig_ab",
+        label: "Gültig ab",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "neuer_umfang",
+        label: "Neuer Stundenumfang",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 25 Std./Woche",
+      },
+      {
+        key: "einsatzzeiten",
+        label: "Einsatzzeiten / Arbeitstage",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Mo, Di, Do 08:00–14:00 Uhr",
+      },
+      {
+        key: "offene_aufgaben",
+        label: "Offene Aufgaben / Abstimmungspunkte",
+        kind: "multiline",
+        required: true,
+        placeholder: "z. B. Dienstplan anpassen, Zeiterfassung updaten …",
+      },
+      {
+        key: "verantwortliche_person",
+        label: "Verantwortliche Person (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Praxismanagerin Fr. Schulz",
+      },
+    ],
+    bodyTemplate: `Organisatorische Umstellungscheckliste: Arbeitszeitänderung
+Praxis: {{praxisname}}
+Mitarbeiterin / Mitarbeiter: {{mitarbeiter_name}}
+Gültig ab: {{gueltig_ab}}
+Neuer Stundenumfang: {{neuer_umfang}}
+Einsatzzeiten / Arbeitstage: {{einsatzzeiten}}{{#if verantwortliche_person}}
+Verantwortlich: {{verantwortliche_person}}{{/if}}
+
+Offene Aufgaben / Abstimmungspunkte:
+{{offene_aufgaben}}
+
+Checkliste – organisatorische Umsetzung:
+[ ] Dienstplan angepasst und freigegeben
+[ ] Zeiterfassung / Praxissoftware aktualisiert
+[ ] Teamkommunikation abgeschlossen (Kolleginnen / Kollegen informiert)
+[ ] Vertretungen für geänderte Zeiten geregelt
+[ ] Lohnbüro / Abrechnung informiert
+[ ] Praxisabläufe auf neue Einsatzzeiten abgestimmt
+[ ] Erreichbarkeit und Ansprechbarkeit für Patientinnen und Patienten gesichert
+
+Interne Arbeitsunterlage – kein Ersatz für weitergehende Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
+  {
+    id: "arbeitszeit-aenderung-lohnbuero-info",
+    label: "Interne Information ans Lohnbüro",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_WORKTIME_CHANGE],
+      /**
+       * Verfuegbar solange AZ-04 (Lohnbuero informiert) noch nicht bestaetigt.
+       * Geblockt solange AZ-01 offen – Datum und Umfang fehlen fuer den Text.
+       */
+      anyOf: [
+        { checkpointId: "AZ-04", state: "OPEN" },
+        { checkpointId: "AZ-04", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["AZ-01"],
+    },
+    inputSchema: [
+      {
+        key: "praxisname",
+        label: "Praxisname",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. Hausarztpraxis Dr. Keller",
+      },
+      {
+        key: "mitarbeiter_name",
+        label: "Mitarbeiterin / Mitarbeiter",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. MFA Sandra Meier",
+      },
+      {
+        key: "gueltig_ab",
+        label: "Gültig ab",
+        kind: "date",
+        required: true,
+      },
+      {
+        key: "neuer_umfang",
+        label: "Neuer Stundenumfang",
+        kind: "text",
+        required: true,
+        placeholder: "z. B. 25 Std./Woche",
+      },
+      {
+        key: "ansprechpartner",
+        label: "Ansprechpartner Praxis (optional)",
+        kind: "text",
+        required: false,
+        placeholder: "z. B. Fr. Schulz, Tel. 030 / 12345-0",
+      },
+      {
+        key: "hinweis",
+        label: "Hinweis / Besonderheit (optional)",
+        kind: "multiline",
+        required: false,
+        placeholder: "z. B. Änderung betrifft nur Monat Mai",
+      },
+    ],
+    bodyTemplate: `Interne Information: Arbeitszeitänderung
+Praxis: {{praxisname}}
+Mitarbeiterin / Mitarbeiter: {{mitarbeiter_name}}
+Gültig ab: {{gueltig_ab}}
+Neuer Stundenumfang: {{neuer_umfang}}{{#if ansprechpartner}}
+Ansprechpartner (Praxis): {{ansprechpartner}}{{/if}}{{#if hinweis}}
+
+Hinweis:
+{{hinweis}}{{/if}}
+
+Bitte die Änderung des Stundenumfangs ab dem genannten Datum in der laufenden Abrechnung berücksichtigen.
+
+Arbeitsentwurf – interne Abstimmung, keine abschließende Bewertung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
   },
 ];

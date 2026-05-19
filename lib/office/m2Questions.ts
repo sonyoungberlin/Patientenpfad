@@ -15,6 +15,8 @@ import {
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_REPORTING_DUTIES,
   OFFICE_TOPIC_SEAT_APPROVAL,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  OFFICE_TOPIC_WORKTIME_CHANGE,
   type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 
@@ -502,6 +504,37 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "MP-06": [
       { id: "M2-01", text: "Ist bekannt, welches Gesundheitsamt fuer diesen Fall zustaendig ist?" },
       { id: "M2-02", text: "Liegen Kontaktdaten des zustaendigen Gesundheitsamts (Fax, Online-Portal oder Adresse) vor?" },
+    ],
+  },
+  [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION]: {},
+  [OFFICE_TOPIC_WORKTIME_CHANGE]: {
+    "AZ-01": [
+      { id: "M2-01", text: "Ist der neue Stundenumfang intern klar und schriftlich festgehalten?" },
+      { id: "M2-02", text: "Ist das Datum, ab dem die neue Arbeitszeit gilt, intern kommuniziert?" },
+    ],
+    "AZ-02": [
+      { id: "M2-01", text: "Sind die konkreten Arbeitstage und Einsatzzeiten intern bekannt und abgestimmt?" },
+      { id: "M2-02", text: "Sind Vertretungsregelungen fuer die neuen Einsatzzeiten bereits besprochen?" },
+    ],
+    "AZ-03": [
+      { id: "M2-01", text: "Ist der Dienstplan auf die neuen Einsatzzeiten aktualisiert?" },
+      { id: "M2-02", text: "Ist die Anpassung des Dienstplans intern freigegeben?" },
+    ],
+    "AZ-04": [
+      { id: "M2-01", text: "Ist das Lohnbuero (intern oder extern) ueber den neuen Stundenumfang informiert?" },
+      { id: "M2-02", text: "Ist sichergestellt, dass die Information rechtzeitig vor dem Abrechnungsstichtag vorliegt?" },
+    ],
+    "AZ-05": [
+      { id: "M2-01", text: "Sind Zeiterfassungssystem und Praxissoftware auf den neuen Stundenumfang angepasst?" },
+      { id: "M2-02", text: "Sind alle betroffenen Systeme (z. B. Terminplanung, Dienstplan-Tool) aktualisiert?" },
+    ],
+    "AZ-06": [
+      { id: "M2-01", text: "Sind alle betroffenen Kolleginnen und Kollegen ueber die Aenderung informiert?" },
+      { id: "M2-02", text: "Sind Zustaendigkeiten und Vertretungen fuer die geaenderten Zeiten intern abgestimmt?" },
+    ],
+    "AZ-07": [
+      { id: "M2-01", text: "Sind alle offenen organisatorischen Aufgaben aus der Umstellung intern verteilt und terminiert?" },
+      { id: "M2-02", text: "Gibt es noch ungeklaerte operative Punkte, die vor dem Stichtag erledigt sein muessen?" },
     ],
   },
 };

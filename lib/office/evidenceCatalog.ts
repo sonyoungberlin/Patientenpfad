@@ -429,6 +429,14 @@ export const EVIDENCES = [
     category: "BEHOERDLICHE_BESTAETIGUNG",
     formatHint: "Bescheid mit Bekanntgabedatum und Rechtsbehelfsbelehrung; Bekanntgabedatum als Fristanker fuer Widerspruchsfrist (§ 84 SGG).",
   },
+
+  // ---------- Arzt-Austritt ----------
+  {
+    id: "PATIENTENINFO_ARZTWECHSEL",
+    label: "Patienteninformation zum Arztwechsel (Aushang/Brief/Website)",
+    category: "AUSHANG",
+    note: "Fuer Topic arzt-austritt-praxisorganisation; Abgrenzung zu PATIENTENINFO_AUSHANG (Schliessung/Vertretung).",
+  },
 ] as const satisfies readonly Evidence[];
 
 export type EvidenceId = (typeof EVIDENCES)[number]["id"];

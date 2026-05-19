@@ -50,6 +50,8 @@ export const OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE = "medizinisches-geraet-anscha
 export const OFFICE_TOPIC_DATA_PROTECTION_INCIDENT = "datenschutzvorfall";
 export const OFFICE_TOPIC_EXTENDED_OPENING_HOURS = "oeffnungszeiten-erweiterung-praxis";
 export const OFFICE_TOPIC_REPORTING_DUTIES = "meldepflichten-zustaendige-stellen";
+export const OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION = "arzt-austritt-praxisorganisation";
+export const OFFICE_TOPIC_WORKTIME_CHANGE = "arbeitszeit-aenderung-praxisorganisation";
 
 export type OfficeTopicId =
   | typeof OFFICE_TOPIC_HIRING_REPLACEMENT
@@ -67,7 +69,9 @@ export type OfficeTopicId =
   | typeof OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE
   | typeof OFFICE_TOPIC_DATA_PROTECTION_INCIDENT
   | typeof OFFICE_TOPIC_EXTENDED_OPENING_HOURS
-  | typeof OFFICE_TOPIC_REPORTING_DUTIES;
+  | typeof OFFICE_TOPIC_REPORTING_DUTIES
+  | typeof OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION
+  | typeof OFFICE_TOPIC_WORKTIME_CHANGE;
 
 export type OfficeTopic = {
   id: OfficeTopicId;
@@ -155,6 +159,14 @@ const TOPICS: readonly OfficeTopic[] = [
   {
     id: OFFICE_TOPIC_REPORTING_DUTIES,
     title: "Meldepflichten und zustaendige Stellen",
+  },
+  {
+    id: OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+    title: "Organisatorischer Arzt-Austritt",
+  },
+  {
+    id: OFFICE_TOPIC_WORKTIME_CHANGE,
+    title: "Organisatorische Arbeitszeitaenderung",
   },
 ] as const;
 
@@ -1441,6 +1453,139 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       legalRefs: ["IFSG_PAR_8", "IFSG_PAR_9"],
       authorityKeys: ["GESUNDHEITSAMT_BERLIN"],
       requiredEvidenceKeys: ["IFSG_MELDUNG"],
+    },
+  ],
+  [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION]: [
+    {
+      id: "AA-01",
+      title: "Austrittsdatum und Taetigkeitsumfang erfasst",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ANLASS,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AA-02",
+      title: "Patientenversorgung in der Uebergangsphase gesichert",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AA-03",
+      title: "Uebergabe offener Patientenfaelle dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AA-04",
+      title: "Systemzugriffe und Zugangsdaten deaktiviert",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+      legalRefs: ["DSGVO_ART_32"],
+      optionalEvidenceKeys: ["DS_TOM_DOKU"],
+    },
+    {
+      id: "AA-05",
+      title: "Patientenkommunikation geplant und umgesetzt",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+      requiredEvidenceKeys: ["PATIENTENINFO_ARZTWECHSEL"],
+    },
+    {
+      id: "AA-06",
+      title: "Teamkommunikation und interne Abstimmung abgeschlossen",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AA-07",
+      title: "Organisatorische Folgeaufgaben intern abgestimmt",
+      kind: OfficeCheckpointKind.DECISION,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+  ],
+  [OFFICE_TOPIC_WORKTIME_CHANGE]: [
+    {
+      id: "AZ-01",
+      title: "Neuer Stundenumfang und Gueltigkeitsdatum intern abgestimmt",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ANLASS,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AZ-02",
+      title: "Einsatzzeiten und Arbeitstage konkret festgelegt",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AZ-03",
+      title: "Dienstplan angepasst und freigegeben",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AZ-04",
+      title: "Lohnbuero und Abrechnung informiert",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_EXTERNE_STELLE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AZ-05",
+      title: "Zeiterfassung und Praxissysteme aktualisiert",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AZ-06",
+      title: "Teamkommunikation abgeschlossen",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "AZ-07",
+      title: "Organisatorische Folgeaufgaben intern abgestimmt",
+      kind: OfficeCheckpointKind.DECISION,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
     },
   ],
 };
