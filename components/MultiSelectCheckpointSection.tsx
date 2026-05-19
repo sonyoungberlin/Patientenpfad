@@ -8,6 +8,8 @@ export type MultiSelectCheckpointSectionProps = {
   onToggleEnabled: (id: string) => void;
   onToggleOption: (id: string, option: string) => void;
   disabled?: boolean;
+  /** Optionen, die Zusatz-Checkpoints auslösen – werden visuell markiert. */
+  triggerOptions?: readonly string[];
 };
 
 /**
@@ -23,6 +25,7 @@ export default function MultiSelectCheckpointSection({
   onToggleEnabled,
   onToggleOption,
   disabled = false,
+  triggerOptions,
 }: MultiSelectCheckpointSectionProps) {
   if (checkpoints.length === 0) return null;
 
@@ -77,6 +80,14 @@ export default function MultiSelectCheckpointSection({
                       disabled={disabled}
                     />
                     {option}
+                    {triggerOptions?.includes(option) && (
+                      <span
+                        className="text-muted"
+                        style={{ fontSize: "0.8em", fontWeight: 400 }}
+                      >
+                        · mit Zusatzfragen
+                      </span>
+                    )}
                   </label>
                 </li>
               ))}

@@ -14,6 +14,7 @@ import AppShell from "@/components/AppShell";
 import {
   ALWAYS_PRESENT_ASSESSMENT_IDS,
   CHECKPOINT_CATALOGUE,
+  K11_SELECTIONS_WITH_FOLLOWUP,
   MULTI_SELECT_CATALOGUE,
 } from "@/lib/logic/checkpointCatalog";
 
@@ -469,6 +470,7 @@ export default function HomePageClient() {
             checkpoints={multiSelectCheckpoints}
             onToggleEnabled={handleMultiToggleEnabled}
             onToggleOption={handleMultiToggleOption}
+            triggerOptions={K11_SELECTIONS_WITH_FOLLOWUP}
           />
         </div>
 

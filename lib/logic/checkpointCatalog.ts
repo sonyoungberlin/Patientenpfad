@@ -377,6 +377,19 @@ const SONSTIGER_TRIGGER_SELECTION = "Sonstiger Antrag / Formular";
 const SONSTIGER_CONDITIONAL_IDS: readonly string[] = ["K03", "K18"];
 
 /**
+ * Alle K11-Selektionen, die Zusatz-Checkpoints auslösen.
+ * Wird in der M1-UI verwendet, um triggernde Optionen visuell zu kennzeichnen.
+ */
+export const K11_SELECTIONS_WITH_FOLLOWUP: readonly string[] = [
+  REHA_TRIGGER_SELECTION,
+  PFLEGE_TRIGGER_SELECTION,
+  JOBCENTER_TRIGGER_SELECTION,
+  ATTEST_TRIGGER_SELECTION,
+  VERSICHERUNG_TRIGGER_SELECTION,
+  SONSTIGER_TRIGGER_SELECTION,
+];
+
+/**
  * Ergänzt Checkpoints, die aufgrund einer K11-Selektion relevant werden,
  * auch wenn sie über M1 nicht aktiviert wurden.
  *
