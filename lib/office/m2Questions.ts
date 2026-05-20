@@ -101,10 +101,10 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   [OFFICE_TOPIC_KV_BILLING]: {
     "KV-01": [
       { id: "M2-01", text: "Ist aus dem KV-Schreiben klar, welche GOPs oder Leistungen beanstandet werden?" },
-      { id: "M2-02", text: "Ist bekannt, ob es um Plausibilitaet, Abrechnungskorrektur oder eine formale Rueckfrage geht?" },
+      { id: "M2-02", text: "Ist intern bekannt, um welche Art von KV-Vorgang es sich handelt?" },
     ],
     "KV-02": [
-      { id: "M2-01", text: "Ist die Frist zur Stellungnahme aus dem KV-Schreiben bekannt und notiert?" },
+      { id: "M2-01", text: "Ist die Frist zur Stellungnahme intern schriftlich festgehalten?" },
       { id: "M2-02", text: "Ist klar, in welcher Form (schriftlich, per Portal, per Fax) die KV eine Antwort erwartet?" },
     ],
     "KV-03": [
@@ -112,7 +112,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist mit dem zustaendigen Arzt geklaert, warum die Leistung so abgerechnet wurde?" },
     ],
     "KV-04": [
-      { id: "M2-01", text: "Ist entschieden, ob die Praxis widerspricht, korrigiert oder die Beanstandung akzeptiert?" },
+      { id: "M2-01", text: "Ist intern entschieden, wie die Praxis auf die KV-Beanstandung reagiert?" },
       { id: "M2-02", text: "Ist die Antwort von der Praxisleitung freigegeben?" },
     ],
     "KV-05": [
@@ -122,7 +122,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_PLAUSIBILITY_BILLING]: {
     "PL-01": [
-      { id: "M2-01", text: "Ist klar, welche GOP oder welcher Arzt die auffälligen Zeitwerte ausgelöst hat?" },
+      { id: "M2-01", text: "Ist intern bekannt, worauf die auffälligen Zeitwerte zurückzuführen sind?" },
       { id: "M2-02", text: "Gibt es eine nachvollziehbare Erklärung für die auffälligen Quartalswerte?" },
     ],
     "PL-02": [
@@ -130,7 +130,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es für diese Tage eine nachvollziehbare Erklärung?" },
     ],
     "PL-03": [
-      { id: "M2-01", text: "Ist klar, welche Leistung fachlich oder formal beanstandet wird?" },
+      { id: "M2-01", text: "Ist intern bekannt, welche Leistung in der Plausibilitätsprüfung beanstandet wird?" },
       { id: "M2-02", text: "Fehlt ein konkreter Dokumentationsbestandteil wie Befund, Diagnose oder Indikation?" },
     ],
     "PL-04": [
@@ -138,11 +138,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Liegt die passende KV-Genehmigung aktuell vor?" },
     ],
     "PL-05": [
-      { id: "M2-01", text: "Ist klar, welcher Arzt die Leistung erbracht hat und ob die LANR korrekt ist?" },
+      { id: "M2-01", text: "Ist die korrekte LANR-Zuordnung für die beanstandete Leistung intern geprüft?" },
       { id: "M2-02", text: "Gibt es Leistungen, bei denen persönliche Leistungserbringung zweifelhaft ist?" },
     ],
     "PL-06": [
-      { id: "M2-01", text: "Haben Praxisleitung oder verantwortlicher Arzt die Abrechnung freigegeben?" },
+      { id: "M2-01", text: "Hat die zuständige Person in der Praxis die Antwort an die KV freigegeben?" },
       { id: "M2-02", text: "Gibt es noch offene Punkte, bevor die Antwort oder Korrektur an die KV geht?" },
     ],
   },
@@ -153,7 +153,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "HB-02": [
       { id: "M2-01", text: "Wurden alle abgerechneten GOPs im Bescheid tatsaechlich verguetet?" },
-      { id: "M2-02", text: "Gibt es GOPs, die ohne erkennbare Begruendung fehlen oder gestrichen wurden?" },
+      { id: "M2-02", text: "Gibt es im Bescheid nicht verguetete GOPs ohne erkennbare Begruendung?" },
     ],
     "HB-03": [
       { id: "M2-01", text: "Ist klar, warum die KV im Bescheid gekuerzt hat?" },
@@ -161,22 +161,22 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "HB-04": [
       { id: "M2-01", text: "Wurden Leistungen abgerechnet, fuer die eine KV-Genehmigung erforderlich war?" },
-      { id: "M2-02", text: "Liegt die entsprechende Genehmigung vor und wurde sie im Bescheid beruecksichtigt?" },
+      { id: "M2-02", text: "Ist die KV-Genehmigung fuer die betreffende Leistung im Bescheid beruecksichtigt?" },
     ],
     "HB-05": [
       { id: "M2-01", text: "Ist das Regelleistungsvolumen (RLV) fuer dieses Quartal bekannt?" },
-      { id: "M2-02", text: "Gibt es auffaellige Quotierungen oder Kappungen, die erklaert werden muessen?" },
+      { id: "M2-02", text: "Gibt es Kuerzungen im Bescheid, die intern erklaert werden muessen?" },
     ],
     "HB-06": [
       { id: "M2-01", text: "Ist das Zustellungsdatum des Bescheids bekannt?" },
-      { id: "M2-02", text: "Ist entschieden, ob Widerspruch eingelegt wird, und ist die Frist noch offen?" },
+      { id: "M2-02", text: "Ist intern entschieden, ob Widerspruch gegen den Bescheid eingelegt wird?" },
     ],
   },
   [OFFICE_TOPIC_REGRESS]: {
     "RG-01": [
-      { id: "M2-01", text: "Ist aus dem Bescheid klar, welche Verordnung oder Leistung beanstandet wird?" },
+      { id: "M2-01", text: "Ist aus dem Bescheid eindeutig, was konkret beanstandet wird?" },
       { id: "M2-02", text: "Ist der geprufte Zeitraum aus dem Bescheid bekannt?" },
-      { id: "M2-03", text: "Ist bekannt, ob es sich um einen Individualregress oder eine Gruppenprüfung handelt?" },
+      { id: "M2-03", text: "Ist intern bekannt, um welche Art von Regressverfahren es sich handelt?" },
     ],
     "RG-02": [
       { id: "M2-01", text: "Ist die Frist zur Stellungnahme aus dem Bescheid notiert?" },
@@ -188,11 +188,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "RG-04": [
       { id: "M2-01", text: "Liegen Verordnungsdaten aus dem PVS fuer den betroffenen Zeitraum vor?" },
-      { id: "M2-02", text: "Gibt es Diagnosen oder Befunde, die die beanstandete Verordnung begruenden?" },
+      { id: "M2-02", text: "Gibt es in der Patientenakte dokumentierte klinische Begruendungen fuer die beanstandete Verordnung?" },
       { id: "M2-03", text: "Sind Praxisbesonderheiten (z. B. besondere Patientengruppe, Schwerpunkt) dokumentiert?" },
     ],
     "RG-05": [
-      { id: "M2-01", text: "Ist entschieden, ob eine Stellungnahme eingereicht oder der Regress anerkannt wird?" },
+      { id: "M2-01", text: "Ist intern entschieden, wie auf den Regressbescheid reagiert wird?" },
       { id: "M2-02", text: "Wurde eingeschaetzt, ob externe Beratung (KV, Anwalt) noetig ist?" },
     ],
     "RG-06": [
@@ -201,7 +201,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "RG-07": [
       { id: "M2-01", text: "Ist die moegliche Forderung so hoch, dass externe Beratung sinnvoll ist?" },
-      { id: "M2-02", text: "Sind weitere aehnliche Pruefungen oder Regressfaelle bekannt?" },
+      { id: "M2-02", text: "Sind weitere laufende Regressverfahren fuer diese Praxis bekannt?" },
     ],
   },
   [OFFICE_TOPIC_CLOSURE_COVERAGE]: {
@@ -249,7 +249,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   [OFFICE_TOPIC_SEAT_APPROVAL]: {
     "ZA-01": [
       { id: "M2-01", text: "Ist klar, welches Verfahren angestrebt wird (z. B. Neuzulassung, Nachbesetzung, Anstellungsgenehmigung, Ermaechtigung)?" },
-      { id: "M2-02", text: "Ist bekannt, ob der Sitz oder das Fachgebiet am Standort ueberhaupt frei bzw. zulassungsfaehig ist?" },
+      { id: "M2-02", text: "Ist bekannt, ob am Standort ein zulassungsfaehiger Sitz fuer das angestrebte Fachgebiet verfuegbar ist?" },
     ],
     "ZA-02": [
       { id: "M2-01", text: "Ist bekannt, wann der Antrag spaetestens eingereicht werden muss?" },
@@ -257,19 +257,19 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "ZA-03": [
       { id: "M2-01", text: "Ist klar, wer in der Praxis den Antrag zusammenstellt und einreicht?" },
-      { id: "M2-02", text: "Ist bekannt, wer bei Abwesenheit die Frist und den Eingang ueberwacht?" },
+      { id: "M2-02", text: "Ist eine Vertretungsregelung fuer die Fristueberwachung beim Zulassungsantrag intern festgelegt?" },
     ],
     "ZA-04": [
-      { id: "M2-01", text: "Liegen Approbationsurkunde, Facharzt-Urkunde und aktueller Arztregistereintrag vor?" },
-      { id: "M2-02", text: "Ist die Berufshaftpflicht aktuell gueltig und liegt der Nachweis vor?" },
+      { id: "M2-01", text: "Liegen alle erforderlichen Qualifikationsnachweise fuer den Zulassungsantrag vollstaendig vor?" },
+      { id: "M2-02", text: "Liegt ein aktueller Nachweis der gueltigen Berufshaftpflicht vor?" },
     ],
     "ZA-05": [
-      { id: "M2-01", text: "Ist entschieden, ob vor dem Antrag noch eine Rueckfrage bei KV oder Zulassungsausschuss noetig ist?" },
+      { id: "M2-01", text: "Ist intern geklaert, ob vor der Einreichung noch eine Rueckfrage bei einer zustaendigen Stelle noetig ist?" },
       { id: "M2-02", text: "Hat die Praxisleitung die Einreichung freigegeben?" },
     ],
     "ZA-06": [
-      { id: "M2-01", text: "Ist bekannt, an welche Stelle der Antrag zu richten ist (Zulassungsausschuss, KV Berlin oder Aerztekammer Berlin)?" },
-      { id: "M2-02", text: "Liegen Einreichungsadresse und bevorzugter Uebermittlungsweg (Post, Fax, Portal) vor?" },
+      { id: "M2-01", text: "Ist die zustaendige Einreichungsstelle fuer den Antrag bekannt?" },
+      { id: "M2-02", text: "Ist bekannt, auf welchem Weg der Antrag eingereicht werden soll?" },
     ],
   },
   [OFFICE_TOPIC_APPLICATION_MANAGEMENT]: {
@@ -278,11 +278,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist bekannt, an welche Stelle der Antrag geschickt werden muss?" },
     ],
     "AM-02": [
-      { id: "M2-01", text: "Ist die Einreichungsfrist bekannt und notiert?" },
-      { id: "M2-02", text: "Ist klar, ob vor der Einreichung noch Unterlagen oder Genehmigungen von Dritten fehlen?" },
+      { id: "M2-01", text: "Ist die Einreichungsfrist intern schriftlich festgehalten?" },
+      { id: "M2-02", text: "Ist intern geklaert, ob vor der Einreichung noch Unterlagen von Dritten fehlen?" },
     ],
     "AM-03": [
-      { id: "M2-01", text: "Ist klar, wer den Antrag erstellt und einreicht?" },
+      { id: "M2-01", text: "Ist die verantwortliche Person fuer die Antragstellung intern festgelegt?" },
       { id: "M2-02", text: "Ist bekannt, wer die Frist ueberwacht, falls die zust\u00e4ndige Person ausfaellt?" },
     ],
     "AM-04": [
@@ -290,7 +290,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es Unterlagen, die noch beschafft werden muessen?" },
     ],
     "AM-05": [
-      { id: "M2-01", text: "Ist entschieden, ob der Antrag jetzt eingereicht werden kann oder vorher noch Ruecksprache noetig ist?" },
+      { id: "M2-01", text: "Ist intern entschieden, ob der Antrag zur Einreichung freigegeben ist?" },
       { id: "M2-02", text: "Hat die Praxisleitung die Einreichung freigegeben?" },
     ],
     "AM-06": [
