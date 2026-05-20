@@ -510,7 +510,36 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Liegen Kontaktdaten des zustaendigen Gesundheitsamts (Fax, Online-Portal oder Adresse) vor?" },
     ],
   },
-  [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION]: {},
+  [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION]: {
+    "AA-01": [
+      { id: "M2-01", text: "Ist das Austrittsdatum intern schriftlich festgehalten?" },
+      { id: "M2-02", text: "Ist der genaue Taetigkeitsumfang bis zum Austritt intern dokumentiert?" },
+    ],
+    "AA-02": [
+      { id: "M2-01", text: "Ist geregelt, wer die laufenden Patientenfaelle in der Uebergangsphase betreut?" },
+      { id: "M2-02", text: "Sind Vertretungsregelungen fuer kurzfristige Engpaesse in der Uebergangszeit festgelegt?" },
+    ],
+    "AA-03": [
+      { id: "M2-01", text: "Sind alle offenen Patientenfaelle identifiziert und einer Folgezustaendigkeit zugeordnet?" },
+      { id: "M2-02", text: "Ist die Uebergabe der Patientenunterlagen und Befunde intern dokumentiert?" },
+    ],
+    "AA-04": [
+      { id: "M2-01", text: "Ist festgelegt, welche Systemzugriffe zum Austrittsdatum deaktiviert werden muessen?" },
+      { id: "M2-02", text: "Ist intern geklaert, wer die Deaktivierung der Zugaenge veranlasst und prueft?" },
+    ],
+    "AA-05": [
+      { id: "M2-01", text: "Ist intern abgestimmt, welche Patienten ueber den Austritt informiert werden muessen?" },
+      { id: "M2-02", text: "Sind Form und Zeitpunkt der Patientenkommunikation festgelegt?" },
+    ],
+    "AA-06": [
+      { id: "M2-01", text: "Sind alle relevanten Teammitglieder ueber den Austritt und die Konsequenzen informiert?" },
+      { id: "M2-02", text: "Sind interne Zustaendigkeiten nach dem Austritt klar geregelt?" },
+    ],
+    "AA-07": [
+      { id: "M2-01", text: "Sind alle organisatorischen Aufgaben, die durch den Austritt entstehen, intern erfasst?" },
+      { id: "M2-02", text: "Ist fuer jede Folgeaufgabe eine Zustaendigkeit und ein Zeitrahmen benannt?" },
+    ],
+  },
   [OFFICE_TOPIC_WORKTIME_CHANGE]: {
     "AZ-01": [
       { id: "M2-01", text: "Ist der neue Stundenumfang intern schriftlich festgehalten?" },
