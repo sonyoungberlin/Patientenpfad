@@ -665,6 +665,11 @@ model DigitalRequest {
   /// Nullable: noch nicht gesetzt, solange die Praxis keine Auswahl getroffen hat.
   selected_block_ids Json?
 
+  /// Vom Patienten ausgewählte Anliegen (Mehrfachauswahl).
+  /// Whitelist: "AU" | "PRESCRIPTION" | "REFERRAL"
+  /// Gesetzt beim Einreichen der Anfrage; danach unveränderlich.
+  requested_topics Json?
+
   /// Verknüpfung zur in Phase B erzeugten PatientQuestionnaireSession.
   /// @unique — eine Anfrage erzeugt maximal eine Session.
   questionnaire_session_id String? @unique

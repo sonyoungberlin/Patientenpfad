@@ -41,6 +41,7 @@ function activePractice() {
   return {
     is_approved: true,
     patient_communication_enabled: true,
+    message_signature: null,
   };
 }
 
@@ -120,4 +121,42 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
       expect.objectContaining({ where: { slug: "neupatient-formular" } }),
     );
   });
+
+  it("Geburtsdatum-Feld hat required-Attribut", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const r = await runPage("meine-praxis");
+    expect(r.markup).toMatch(/name="birth_date"[^>]*required|required[^>]*name="birth_date"/);
+  });
+
+  it("rendert Checkboxen für AU, PRESCRIPTION und REFERRAL", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const r = await runPage("meine-praxis");
+    expect(r.markup).toContain('value="AU"');
+    expect(r.markup).toContain('value="PRESCRIPTION"');
+    expect(r.markup).toContain('value="REFERRAL"');
+    expect(r.markup).toContain('name="requested_topic"');
+  });
+
+  it("hat kein concern_text-Textarea mehr", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const r = await runPage("meine-praxis");
+    expect(r.markup).not.toContain('name="concern_text"');
+  });
+
+  it("zeigt Praxis-Signatur wenn message_signature gesetzt", async () => {
+    pm.practice.findUnique.mockResolvedValue({
+      ...activePractice(),
+      message_signature: "Ihre Muster-Praxis \nTel: 0800 123456",
+    });
+    const r = await runPage("meine-praxis");
+    expect(r.markup).toContain("Ihre Muster-Praxis");
+    expect(r.markup).toContain("data-testid=\"practice-signature\"");
+  });
+
+  it("zeigt keine Signatur wenn message_signature null", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const r = await runPage("meine-praxis");
+    expect(r.markup).not.toContain("data-testid=\"practice-signature\"");
+  });
 });
+

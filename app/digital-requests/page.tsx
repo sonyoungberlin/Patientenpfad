@@ -18,6 +18,7 @@ import {
   isInboxOnlyAccount,
 } from "@/lib/authz";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
+import { topicLabel } from "@/lib/digitalRequests/topics";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +77,7 @@ export default async function DigitalRequestsPage() {
       createdAt: true,
       submitter_name: true,
       status: true,
-      concern_text: true,
+      requested_topics: true,
     },
   });
 
@@ -122,10 +123,8 @@ export default async function DigitalRequestsPage() {
                     </span>
                   </td>
                   <td className="py-3 pr-4 text-gray-600">
-                    {req.concern_text
-                      ? req.concern_text.length > 80
-                        ? `${req.concern_text.slice(0, 80)}…`
-                        : req.concern_text
+                    {Array.isArray(req.requested_topics) && req.requested_topics.length > 0
+                      ? (req.requested_topics as string[]).map(topicLabel).join(", ")
                       : <span className="text-gray-400">–</span>}
                   </td>
                   <td className="py-3">

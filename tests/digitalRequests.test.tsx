@@ -55,6 +55,9 @@ jest.mock("@/lib/prisma", () => ({
     practiceQuestionnaireForm: {
       findUnique: jest.fn(),
     },
+    practice: {
+      findUnique: jest.fn(),
+    },
     digitalRequest: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -75,6 +78,7 @@ import DigitalRequestsPage from "@/app/digital-requests/page";
 
 type PrismaMock = {
   practiceQuestionnaireForm: { findUnique: jest.Mock };
+  practice: { findUnique: jest.Mock };
   digitalRequest: { create: jest.Mock; findMany: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
@@ -99,6 +103,21 @@ function makeForm(overrides: Record<string, unknown> = {}) {
     owner_account: ENABLED_OWNER,
     owner_practice: null,
     ...overrides,
+  };
+}
+
+/**
+ * Dummy-Rückgabewert für `prisma.practice.findUnique` —
+ * deckt sowohl die AnfragePage-Felder (is_approved, patient_communication_enabled,
+ * message_signature) als auch die Submit-Route-Felder (id, memberships) ab.
+ */
+function activePracticeData() {
+  return {
+    id: "p-1",
+    is_approved: true,
+    patient_communication_enabled: true,
+    message_signature: null as string | null,
+    memberships: [{ account_id: "acc-1" }],
   };
 }
 
@@ -168,6 +187,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   pm.digitalRequest.create.mockResolvedValue({ id: "dr-1" });
   pm.digitalRequest.findMany.mockResolvedValue([]);
+  // Standardmäßig: aktive Practice (für Page- und Route-Lookups).
+  // Einzelne Tests können dies überschreiben.
+  pm.practice.findUnique.mockResolvedValue(activePracticeData());
   consoleInfoSpy = jest.spyOn(console, "info").mockImplementation(() => {});
   consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -183,8 +205,7 @@ afterEach(() => {
 
 describe("AnfragePage — Sichtbarkeits-Cascade", () => {
   it("rendert bei aktivem Form mit patient_communication_enabled=true", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
+    // pm.practice.findUnique ist durch beforeEach bereits als aktiv konfiguriert.
     const { notFound, result } = await runPage(() =>
       AnfragePage({ params: Promise.resolve({ slug: SLUG }) }),
     );
@@ -194,10 +215,8 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
     expect(markup).toContain("Digitales Anliegen");
   });
 
-  it("notFound bei inaktivem Form", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
-      makeForm({ is_active: false }),
-    );
+  it("notFound wenn keine Practice mit dem Slug gefunden wird", async () => {
+    pm.practice.findUnique.mockResolvedValue(null);
 
     const { notFound } = await runPage(() =>
       AnfragePage({ params: Promise.resolve({ slug: SLUG }) }),
@@ -207,14 +226,10 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
   });
 
   it("notFound wenn patient_communication_enabled=false", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
-      makeForm({
-        owner_account: {
-          ...ENABLED_OWNER,
-          patient_communication_enabled: false,
-        },
-      }),
-    );
+    pm.practice.findUnique.mockResolvedValue({
+      ...activePracticeData(),
+      patient_communication_enabled: false,
+    });
 
     const { notFound } = await runPage(() =>
       AnfragePage({ params: Promise.resolve({ slug: SLUG }) }),
@@ -223,21 +238,15 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
     expect(notFound).toBe(true);
   });
 
-  it("rendert auch wenn website_forms_enabled=false (nicht erforderlich)", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
-      makeForm({
-        owner_account: {
-          ...ENABLED_OWNER,
-          website_forms_enabled: false,
-        },
-      }),
-    );
-
+  it("rendert unabhängig von website_forms_enabled (wird nicht geprüft)", async () => {
+    // website_forms_enabled ist am Account-Modell, nicht an Practice;
+    // die AnfragePage prüft es bewusst NICHT.
+    // pm.practice.findUnique ist durch beforeEach bereits als aktiv konfiguriert.
     const { notFound } = await runPage(() =>
       AnfragePage({ params: Promise.resolve({ slug: SLUG }) }),
     );
 
-    // Sollte NICHT notFound sein — website_forms_enabled ist irrelevant
+    // Sollte NICHT notFound sein.
     expect(notFound).toBe(false);
   });
 
@@ -247,7 +256,7 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
     );
 
     expect(notFound).toBe(true);
-    expect(pm.practiceQuestionnaireForm.findUnique).not.toHaveBeenCalled();
+    expect(pm.practice.findUnique).not.toHaveBeenCalled();
   });
 });
 
@@ -269,11 +278,11 @@ describe("EingegangeneAnfragePage", () => {
 
 describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   it("erstellt DigitalRequest mit email im Klartext UND Hash", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
     const req = formReq({
       submitter_name: "Max Mustermann",
       email: "Max@Beispiel.de",
+      birth_date: "1990-01-15",
+      requested_topic: "AU",
     });
     const res = await POST(req, { params: Promise.resolve({ slug: SLUG }) });
 
@@ -293,12 +302,11 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("speichert Geburtsdatum als Hash, KEIN Klartext", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
     const req = formReq({
       submitter_name: "Anna Muster",
       email: "anna@beispiel.de",
       birth_date: "1990-05-15",
+      requested_topic: "AU",
     });
     const res = await POST(req, { params: Promise.resolve({ slug: SLUG }) });
 
@@ -316,8 +324,6 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("Honeypot-Treffer → Redirect ohne DB-Schreibung", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
     const req = formReq({
       submitter_name: "Bot",
       email: "bot@example.com",
@@ -330,14 +336,10 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("404 wenn patient_communication_enabled=false", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
-      makeForm({
-        owner_account: {
-          ...ENABLED_OWNER,
-          patient_communication_enabled: false,
-        },
-      }),
-    );
+    pm.practice.findUnique.mockResolvedValue({
+      ...activePracticeData(),
+      patient_communication_enabled: false,
+    });
 
     const req = formReq({
       submitter_name: "Jemand",
@@ -350,18 +352,13 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("akzeptiert wenn website_forms_enabled=false (nicht erforderlich)", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
-      makeForm({
-        owner_account: {
-          ...ENABLED_OWNER,
-          website_forms_enabled: false,
-        },
-      }),
-    );
-
+    // website_forms_enabled ist kein Prüfkriterium für Digitale Anfragen.
+    // pm.practice.findUnique ist durch beforeEach bereits als aktiv konfiguriert.
     const req = formReq({
       submitter_name: "Jemand",
       email: "websiteforms-test@beispiel.de",
+      birth_date: "1985-03-20",
+      requested_topic: "PRESCRIPTION",
     });
     const res = await POST(req, { params: Promise.resolve({ slug: SLUG }) });
 
@@ -370,8 +367,6 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("400 bei ungültiger E-Mail", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
     const req = formReq({
       submitter_name: "Jemand",
       email: "keine-email",
@@ -383,8 +378,6 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("400 bei leerem Namen", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
     const req = formReq({
       submitter_name: "   ",
       email: "leername-test@beispiel.de",
@@ -396,11 +389,11 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("setzt status='new' beim Erstellen", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
     const req = formReq({
       submitter_name: "Jemand",
       email: "status-test@beispiel.de",
+      birth_date: "1975-07-04",
+      requested_topic: "REFERRAL",
     });
     await POST(req, { params: Promise.resolve({ slug: SLUG }) });
 
@@ -412,11 +405,11 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
   });
 
   it("Redirect-Ziel ist /anfrage/[slug]/eingegangen", async () => {
-    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
-
     const req = formReq({
       submitter_name: "Jemand",
       email: "redirect-test@beispiel.de",
+      birth_date: "1988-12-01",
+      requested_topic: "AU",
     });
     const res = await POST(req, { params: Promise.resolve({ slug: SLUG }) });
 

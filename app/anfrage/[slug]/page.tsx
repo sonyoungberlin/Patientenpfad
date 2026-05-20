@@ -25,6 +25,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
+import { DIGITAL_REQUEST_TOPICS } from "@/lib/digitalRequests/topics";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -48,6 +49,7 @@ export default async function AnfragePage({
     select: {
       is_approved: true,
       patient_communication_enabled: true,
+      message_signature: true,
     },
   });
 
@@ -62,9 +64,13 @@ export default async function AnfragePage({
   return (
     <main className="mx-auto max-w-lg px-4 py-10">
       <h1 className="mb-2 text-2xl font-semibold">Digitales Anliegen</h1>
-      <p className="mb-6 text-sm text-gray-600">
-        Ihre Praxis prüft Ihre Anfrage und meldet sich mit dem passenden
-        nächsten Schritt.
+      <p className="mb-2 text-sm text-gray-600">
+        Bitte wählen Sie aus, wofür Sie einen Fragebogenlink anfordern möchten.
+        Die Praxis prüft Ihre Angaben und sendet Ihnen anschließend den passenden Link.
+      </p>
+      <p className="mb-6 text-sm text-gray-500">
+        Wenn Ihr Anliegen nicht zu diesen Punkten passt, schreiben Sie uns bitte
+        wie gewohnt eine Nachricht.
       </p>
 
       <form method="POST" action={`/api/anfrage/${validation.slug}`}>
@@ -105,41 +111,48 @@ export default async function AnfragePage({
           />
         </div>
 
-        {/* Geburtsdatum (optional) */}
+        {/* Geburtsdatum (Pflichtfeld) */}
         <div className="mb-4">
           <label
             htmlFor="birth_date"
             className="mb-1 block text-sm font-medium"
           >
-            Geburtsdatum{" "}
-            <span className="text-gray-400">(optional)</span>
+            Geburtsdatum <span aria-hidden="true">*</span>
           </label>
           <input
             id="birth_date"
             name="birth_date"
             type="date"
+            required
             autoComplete="bday"
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
 
-        {/* Anliegen (optional) */}
-        <div className="mb-6">
-          <label
-            htmlFor="concern_text"
-            className="mb-1 block text-sm font-medium"
-          >
-            Ihr Anliegen{" "}
-            <span className="text-gray-400">(optional, max. 500 Zeichen)</span>
-          </label>
-          <textarea
-            id="concern_text"
-            name="concern_text"
-            rows={4}
-            maxLength={500}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
+        {/* Anliegen-Auswahl (Pflichtfeld, Mehrfachauswahl) */}
+        <fieldset className="mb-6">
+          <legend className="mb-2 block text-sm font-medium">
+            Anliegen <span aria-hidden="true">*</span>
+          </legend>
+          <div className="space-y-2" data-testid="topic-checkboxes">
+            {(Object.entries(DIGITAL_REQUEST_TOPICS) as [string, string][]).map(
+              ([value, label]) => (
+                <label
+                  key={value}
+                  className="flex cursor-pointer items-center gap-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name="requested_topic"
+                    value={value}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                  />
+                  <span>{label}</span>
+                </label>
+              ),
+            )}
+          </div>
+        </fieldset>
 
         {/* Honeypot — unsichtbar für echte Nutzer */}
         <div aria-hidden="true" style={{ display: "none" }}>
@@ -160,6 +173,17 @@ export default async function AnfragePage({
           Anfrage absenden
         </button>
       </form>
+
+      {/* Praxis-Signatur */}
+      {practice.message_signature && (
+        <div
+          className="mt-10 border-t border-gray-200 pt-6 text-sm text-gray-500"
+          data-testid="practice-signature"
+          style={{ whiteSpace: "pre-wrap" }}
+        >
+          {practice.message_signature}
+        </div>
+      )}
     </main>
   );
 }

@@ -163,6 +163,7 @@ describe("Detailseite — sent-Status (via Server-Component-Render)", () => {
     const markup = renderToStaticMarkup(result as React.ReactElement);
     expect(markup).toContain("Fragebogen wurde versendet");
     expect(markup).not.toContain("Auswahl speichern");
+    expect(markup).not.toContain("Fragebogen senden");
   });
 
   it("zeigt Fragebogen-Link wenn questionnaire_session_id gesetzt", async () => {
@@ -182,6 +183,7 @@ describe("Detailseite — sent-Status (via Server-Component-Render)", () => {
     const markup = renderToStaticMarkup(result as React.ReactElement);
     expect(markup).not.toContain("Fragebogen wurde versendet");
     expect(markup).toContain("Auswahl speichern");
+    expect(markup).toContain("Fragebogen senden");
   });
 
   it("zeigt Versandzeitpunkt wenn sent_at gesetzt", async () => {

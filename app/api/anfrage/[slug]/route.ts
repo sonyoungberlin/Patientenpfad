@@ -17,8 +17,8 @@
  *   7. Rate-Limit (E-Mail-Hash, nach Practice-Lookup).
  *   8. Name validieren (min 1, max 100 Zeichen).
  *   9. E-Mail hashen (SHA-256).
- *  10. Geburtsdatum hashen, falls angegeben (SHA-256, kein Klartext).
- *  11. Anliegen kürzen (max 500 Zeichen).
+ *  10. Geburtsdatum hashen (SHA-256, kein Klartext) – Pflichtfeld.
+ *  11. Anliegen (requested_topics) validieren – Whitelist, mind. 1 Eintrag.
  *  12. DigitalRequest anlegen (status = "new", practice_form_id = null).
  *  13. 303-Redirect auf `/anfrage/[slug]/eingegangen`.
  *
@@ -47,6 +47,7 @@ import {
   getClientIp,
 } from "@/lib/websiteForms/submitRateLimit";
 import { PracticeRole } from "@prisma/client";
+import { VALID_TOPICS } from "@/lib/digitalRequests/topics";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,8 @@ type SubmitOutcome =
   | "invalid_body"
   | "invalid_email"
   | "invalid_name"
+  | "invalid_birth_date"
+  | "invalid_topics"
   | "honeypot"
   | "not_found"
   | "rate_limited_ip"
@@ -94,7 +97,7 @@ type SubmitFields = {
   email: unknown;
   name: unknown;
   birth_date: unknown;
-  concern_text: unknown;
+  requested_topics: unknown;
   honeypot: unknown;
 };
 
@@ -110,7 +113,7 @@ async function parseFields(
         email: body.email,
         name: body.submitter_name,
         birth_date: body.birth_date,
-        concern_text: body.concern_text,
+        requested_topics: body.requested_topics,
         honeypot: body[HONEYPOT_FIELD_NAME],
       };
     } catch {
@@ -124,7 +127,8 @@ async function parseFields(
       email: fd.get("email"),
       name: fd.get("submitter_name"),
       birth_date: fd.get("birth_date"),
-      concern_text: fd.get("concern_text"),
+      // Mehrere Checkboxen mit name="requested_topic"
+      requested_topics: fd.getAll("requested_topic"),
       honeypot: fd.get(HONEYPOT_FIELD_NAME),
     };
   } catch {
@@ -239,7 +243,20 @@ export async function POST(
 
     // 9. E-Mail-Hash bereits in Schritt 7 berechnet (submitterEmailHash).
 
-    // 10. Geburtsdatum hashen, falls angegeben. Kein Klartext.
+    // 10. Geburtsdatum ist Pflichtfeld — hashen, kein Klartext.
+    if (
+      typeof fields.birth_date !== "string" ||
+      fields.birth_date.trim().length === 0
+    ) {
+      logSubmit("invalid_birth_date", { slug: slugValidation.slug });
+      return new NextResponse(
+        "Bitte geben Sie Ihr Geburtsdatum ein.",
+        {
+          status: 400,
+          headers: { "content-type": "text/plain; charset=utf-8" },
+        },
+      );
+    }
     let birthDateHash: string | null = null;
     if (
       typeof fields.birth_date === "string" &&
@@ -250,14 +267,25 @@ export async function POST(
         .digest("hex");
     }
 
-    // 11. Anliegen kürzen.
-    let concernText: string | null = null;
-    if (
-      typeof fields.concern_text === "string" &&
-      fields.concern_text.trim().length > 0
-    ) {
-      concernText = fields.concern_text.trim().slice(0, 500);
+    // 11. Anliegen (requested_topics) validieren — Whitelist, mind. 1 Eintrag.
+    const rawTopics: unknown[] = Array.isArray(fields.requested_topics)
+      ? fields.requested_topics
+      : [];
+    const validTopics = rawTopics.filter(
+      (t): t is string => typeof t === "string" && VALID_TOPICS.has(t),
+    );
+    if (validTopics.length === 0) {
+      logSubmit("invalid_topics", { slug: slugValidation.slug });
+      return new NextResponse(
+        "Bitte wählen Sie mindestens ein Anliegen aus.",
+        {
+          status: 400,
+          headers: { "content-type": "text/plain; charset=utf-8" },
+        },
+      );
     }
+    // Deduplizieren und sortieren für deterministischen JSON-Inhalt.
+    const topics = [...new Set(validTopics)].sort();
 
     // 12. DigitalRequest anlegen.
     await prisma.digitalRequest.create({
@@ -269,7 +297,7 @@ export async function POST(
         submitter_email: emailCheck.email,
         submitter_email_hash: submitterEmailHash,
         ...(birthDateHash !== null ? { birth_date_hash: birthDateHash } : {}),
-        ...(concernText !== null ? { concern_text: concernText } : {}),
+        requested_topics: topics,
         status: "new",
       },
       select: { id: true },

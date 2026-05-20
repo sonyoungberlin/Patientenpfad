@@ -24,6 +24,7 @@ import {
 } from "@/lib/questionnaire/blockCatalog";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 import { DigitalRequestDetailClient } from "@/components/DigitalRequestDetailClient";
+import { topicLabel } from "@/lib/digitalRequests/topics";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,7 @@ export default async function DigitalRequestDetailPage({
       createdAt: true,
       submitter_name: true,
       submitter_email: true,
-      concern_text: true,
+      requested_topics: true,
       status: true,
       patient_reference: true,
       selected_block_ids: true,
@@ -174,14 +175,17 @@ export default async function DigitalRequestDetailPage({
             </span>
           </dd>
 
-          {request.concern_text && (
-            <>
-              <dt className="font-medium text-gray-500">Anliegen</dt>
-              <dd className="whitespace-pre-wrap text-gray-900">
-                {request.concern_text}
-              </dd>
-            </>
-          )}
+          {Array.isArray(request.requested_topics) &&
+            request.requested_topics.length > 0 && (
+              <>
+                <dt className="font-medium text-gray-500">Angefragte Anliegen</dt>
+                <dd className="text-gray-900">
+                  {(request.requested_topics as string[])
+                    .map(topicLabel)
+                    .join(", ")}
+                </dd>
+              </>
+            )}
         </dl>
       </div>
 

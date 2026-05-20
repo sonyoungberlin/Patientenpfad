@@ -68,6 +68,8 @@ function validBody(over: Record<string, unknown> = {}) {
   return {
     submitter_name: "Max Mustermann",
     email: "max@example.com",
+    birth_date: "1990-05-15",
+    requested_topics: ["AU"],
     company_website: "", // honeypot leer
     ...over,
   };
@@ -141,6 +143,73 @@ describe("POST /api/anfrage/[slug]", () => {
     expect(res.status).toBe(303);
     const location = res.headers.get("location") ?? "";
     expect(location).toContain("/anfrage/meine-praxis/eingegangen");
+  });
+
+  it("gibt 400 zurück wenn birth_date fehlt", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ birth_date: undefined })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    const text = await res.text();
+    expect(text).toContain("Geburtsdatum");
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("gibt 400 zurück wenn birth_date leer ist", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ birth_date: "" })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("speichert birth_date_hash (nicht Klartext) in der DB", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    await POST(makeJsonReq("meine-praxis", validBody()), CTX("meine-praxis"));
+    const data = pm.digitalRequest.create.mock.calls[0][0].data;
+    // Hash muss gesetzt sein
+    expect(data.birth_date_hash).toBeTruthy();
+    // Klartextdatum darf NICHT im gespeicherten Objekt stehen
+    expect(data.birth_date).toBeUndefined();
+    expect(JSON.stringify(data)).not.toContain("1990-05-15");
+  });
+
+  it("gibt 400 zurück wenn requested_topics fehlt (leeres Array)", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ requested_topics: [] })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    const text = await res.text();
+    expect(text).toContain("Anliegen");
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("gibt 400 zurück wenn requested_topics unbekannte Werte enthält", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ requested_topics: ["INVALID"] })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("speichert requested_topics als sortiertes Array in der DB", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    await POST(
+      makeJsonReq("meine-praxis", validBody({ requested_topics: ["REFERRAL", "AU"] })),
+      CTX("meine-praxis"),
+    );
+    const data = pm.digitalRequest.create.mock.calls[0][0].data;
+    expect(data.requested_topics).toEqual(["AU", "REFERRAL"]);
+    // Kein concern_text mehr
+    expect(data.concern_text).toBeUndefined();
   });
 
   it("gibt 400 zurück bei ungültiger E-Mail", async () => {
