@@ -1473,6 +1473,23 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     },
   },
 
+  CONTACT_PERSON_INFO: {
+    id: "CONTACT_PERSON_INFO",
+    label: "Kontaktperson dokumentieren",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Wenn eine andere Person organisatorische Anliegen für Sie übernehmen oder Rezepte/Unterlagen abholen soll, möchten wir das kurz dokumentieren.",
+    },
+    textByAudience: {
+      contact_person:
+        "Wenn Sie organisatorische Anliegen für die Patientin / den Patienten übernehmen oder Rezepte/Unterlagen abholen möchten, bitten wir um eine kurze Dokumentation.",
+    },
+  },
+
   DIGITAL_REQUEST_PROCESSING_TIME: {
     id: "DIGITAL_REQUEST_PROCESSING_TIME",
     label: "Bearbeitungszeit digitale Anfrage",

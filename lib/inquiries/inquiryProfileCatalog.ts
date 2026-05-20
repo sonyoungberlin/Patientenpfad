@@ -72,6 +72,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
+      "CONTACT_PERSON_INFO",
     ],
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
@@ -267,6 +268,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
       "CONTROL_APPOINTMENT_RECOMMENDED",
+      "CONTACT_PERSON_INFO",
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
@@ -1059,6 +1061,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "DIGITAL_REQUEST",
+      "CONTACT_PERSON_INFO",
     ],
 
     actionGuidanceRules: [
@@ -1887,6 +1890,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundGlobalCheckpointIds: [],
     availableActionIds: [
       "DIGITAL_REQUEST",
+      "CONTACT_PERSON_INFO",
     ],
     actionGuidanceRules: [
       // DOCUMENT_UPLOAD empfehlen, wenn GKV-Versicherungsnachweis fehlt
