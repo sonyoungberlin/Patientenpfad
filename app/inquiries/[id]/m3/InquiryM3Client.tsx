@@ -519,6 +519,7 @@ function OutputView({
   heading,
   m5Lines,
   messageSignature = "",
+  audience = "patient",
   isSmoothing = false,
   smoothedText = null,
   smoothingError = null,
@@ -536,6 +537,7 @@ function OutputView({
    * keine Signaturzeile.
    */
   messageSignature?: string;
+  audience?: Audience;
   isSmoothing?: boolean;
   smoothedText?: string | null;
   smoothingError?: string | null;
@@ -549,7 +551,10 @@ function OutputView({
   // (`messageSignature`), damit sie nicht doppelt erscheint. Der Klartext
   // für den „Nachricht kopieren"-Button wird aus genau denselben
   // Bestandteilen zusammengesetzt, die hier sichtbar sind.
-  const messageGreeting = "Liebe Patientin, lieber Patient,";
+  const messageGreeting =
+    audience === "contact_person"
+      ? "Vielen Dank, dass Sie unsere Patientin / unseren Patienten unterstützen."
+      : "Liebe Patientin, lieber Patient,";
   const trimmedSignature = messageSignature.trim();
   const messageBody = inquiryOutputToPlainText(output);
   const copyMessageText = [
@@ -758,8 +763,12 @@ export function appendQuestionnaireSentToM5Lines(
 function composePatientMessageText(
   output: InquiryResponseV2Output,
   messageSignature: string,
+  audience: Audience = "patient",
 ): string {
-  const messageGreeting = "Liebe Patientin, lieber Patient,";
+  const messageGreeting =
+    audience === "contact_person"
+      ? "Vielen Dank, dass Sie unsere Patientin / unseren Patienten unterstützen."
+      : "Liebe Patientin, lieber Patient,";
   const messageBody = inquiryOutputToPlainText(output);
   const trimmedSignature = messageSignature.trim();
 
@@ -1337,8 +1346,8 @@ export default function InquiryM3Client({
   const currentMessageText = useMemo(() => {
     const activeOutput = confirmed ? frozenOutputWithLink : livePreviewWithLink;
     if (!activeOutput) return "";
-    return composePatientMessageText(activeOutput, messageSignature);
-  }, [confirmed, frozenOutputWithLink, livePreviewWithLink, messageSignature]);
+    return composePatientMessageText(activeOutput, messageSignature, audience);
+  }, [confirmed, frozenOutputWithLink, livePreviewWithLink, messageSignature, audience]);
 
   useEffect(() => {
     latestMessageTextRef.current = currentMessageText;
@@ -1481,6 +1490,7 @@ export default function InquiryM3Client({
                 heading="Bestätigter Output"
                 m5Lines={frozenM5LinesWithQuestionnaire}
                 messageSignature={messageSignature}
+                audience={audience}
                 isSmoothing={isSmoothing}
                 smoothedText={smoothedText}
                 smoothingError={smoothingError}
@@ -2077,6 +2087,7 @@ export default function InquiryM3Client({
                 heading="Vorschau"
                 m5Lines={liveM5LinesWithQuestionnaire}
                 messageSignature={messageSignature}
+                audience={audience}
                 isSmoothing={isSmoothing}
                 smoothedText={smoothedText}
                 smoothingError={smoothingError}
