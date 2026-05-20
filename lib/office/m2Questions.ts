@@ -51,10 +51,10 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "NC-TAETIGKEITSUMFANG": [
       { id: "M2-01", text: "Ist klar, in welchem Umfang der neue Arzt tätig sein soll (Vollzeit, Teilzeit, Wochenstunden)?" },
-      { id: "M2-02", text: "Ist dieser Umfang mit dem Zulassungsausschuss abgestimmt oder genehmigt?" },
+      { id: "M2-02", text: "Hat der Zulassungsausschuss den geplanten Tätigkeitsumfang bestätigt?" },
     ],
     "NC-EXTERNE_STELLE": [
-      { id: "M2-01", text: "Ist bekannt, ob die Anstellung eine Genehmigung durch den Zulassungsausschuss, eine Anzeige bei der KV oder beides erfordert?" },
+      { id: "M2-01", text: "Ist bekannt, welches Verfahren (Genehmigung, Anzeige) für diese Anstellung erforderlich ist?" },
       { id: "M2-02", text: "Ist der zuständige Ansprechpartner bei der externen Stelle bekannt?" },
     ],
     "NC-ANTRAGSWEG": [
@@ -86,7 +86,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Liegt ein aktueller Nachweis dazu vor?" },
     ],
     "HR-GOV-B": [
-      { id: "M2-01", text: "Gibt es bekannte Hindernisse für die Anstellung oder Zulassung?" },
+      { id: "M2-01", text: "Sind der Praxisleitung Hindernisse bekannt, die der Anstellung entgegenstehen?" },
       { id: "M2-02", text: "Liegt eine Rückmeldung der zuständigen Stelle vor?" },
     ],
     "HR-GOV-C": [
@@ -100,7 +100,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_KV_BILLING]: {
     "KV-01": [
-      { id: "M2-01", text: "Ist aus dem KV-Schreiben klar, welche GOPs oder Leistungen beanstandet werden?" },
+      { id: "M2-01", text: "Ist aus dem KV-Schreiben klar, welche Leistungen beanstandet werden?" },
       { id: "M2-02", text: "Ist intern bekannt, um welche Art von KV-Vorgang es sich handelt?" },
     ],
     "KV-02": [
