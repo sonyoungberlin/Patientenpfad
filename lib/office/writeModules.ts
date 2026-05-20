@@ -12,6 +12,7 @@ import {
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
   OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
   OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
+  OFFICE_TOPIC_TRAINING_COORDINATION,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -3059,4 +3060,160 @@ Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
     audience: "INTERN",
     estimatedLength: "MEDIUM",
   },
+  // OFFICE_TOPIC_TRAINING_COORDINATION
+  {
+    id: "schulungs-terminankuendigung",
+    label: "Schulungsankündigung intern",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.STAFF_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_TRAINING_COORDINATION],
+      allOf: [
+        { checkpointId: "FO-01", state: "YES" },
+        { checkpointId: "FO-02", state: "YES" },
+      ],
+      anyOf: [
+        { checkpointId: "FO-04", state: "OPEN" },
+        { checkpointId: "FO-04", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["FO-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",     label: "Praxisname",               kind: "text",      required: true },
+      { key: "schulungsthema", label: "Schulungsthema",            kind: "text",      required: true },
+      { key: "termin_datum",   label: "Termin (Datum)",            kind: "date",      required: true },
+      { key: "termin_uhrzeit", label: "Uhrzeit",                   kind: "text",      required: false },
+      { key: "ort",            label: "Ort / Raum",                kind: "text",      required: false },
+      { key: "zielgruppe",     label: "Eingeladen",                kind: "text",      required: true },
+      { key: "referent",       label: "Referent / Referentin",     kind: "text",      required: false },
+      { key: "vorbereitung",   label: "Vorbereitung",              kind: "multiline", required: false },
+      { key: "hinweis",        label: "Hinweis",                   kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Schulungsankündigung
+Praxis: {{praxisname}}
+Thema: {{schulungsthema}}
+Termin: {{termin_datum}}{{#if termin_uhrzeit}}
+Uhrzeit: {{termin_uhrzeit}}{{/if}}{{#if ort}}
+Ort: {{ort}}{{/if}}
+Eingeladen: {{zielgruppe}}{{#if referent}}
+Referent / Referentin: {{referent}}{{/if}}{{#if vorbereitung}}
+
+Vorbereitung:
+{{vorbereitung}}{{/if}}{{#if hinweis}}
+
+Hinweis:
+{{hinweis}}{{/if}}
+
+Agenda:
+– Einführung: Warum findet diese Schulung statt?
+– Inhalt: Was wird vermittelt?
+– Fragen und Diskussion
+– Folgeschritte: Was ändert sich im Praxisalltag?
+– Offene Punkte: Was ist noch zu klären?
+
+Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+  {
+    id: "teilnehmerliste-schulung",
+    label: "Anwesenheitsnotiz Schulung",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_TRAINING_COORDINATION],
+      allOf: [
+        { checkpointId: "FO-01", state: "YES" },
+        { checkpointId: "FO-02", state: "YES" },
+      ],
+      anyOf: [
+        { checkpointId: "FO-05", state: "OPEN" },
+        { checkpointId: "FO-05", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["FO-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",             label: "Praxisname",                    kind: "text",      required: true },
+      { key: "schulungsthema",         label: "Schulungsthema",                kind: "text",      required: true },
+      { key: "termin_datum",           label: "Datum",                         kind: "date",      required: true },
+      { key: "teilnehmer_liste",       label: "Teilnehmende (Name, Funktion)", kind: "multiline", required: true },
+      { key: "unterschriften_hinweis", label: "Hinweis zur Dokumentation",     kind: "text",      required: false },
+      { key: "abwesende_mit_grund",    label: "Nicht anwesend",                kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Anwesenheitsnotiz: {{schulungsthema}}
+Praxis: {{praxisname}}
+Datum: {{termin_datum}}
+
+Teilnehmende:
+{{teilnehmer_liste}}{{#if unterschriften_hinweis}}
+
+Dokumentation:
+{{unterschriften_hinweis}}{{/if}}{{#if abwesende_mit_grund}}
+
+Nicht anwesend:
+{{abwesende_mit_grund}}{{/if}}
+
+Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "SHORT",
+  },
+  {
+    id: "schulungsnachbereitung",
+    label: "Schulungsnachbereitung",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_TRAINING_COORDINATION],
+      allOf: [
+        { checkpointId: "FO-01", state: "YES" },
+        { checkpointId: "FO-05", state: "YES" },
+      ],
+      anyOf: [
+        { checkpointId: "FO-06", state: "OPEN" },
+        { checkpointId: "FO-06", state: "NO" },
+        { checkpointId: "FO-07", state: "OPEN" },
+        { checkpointId: "FO-07", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["FO-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",              label: "Praxisname",               kind: "text",      required: true },
+      { key: "schulungsthema",          label: "Schulungsthema",            kind: "text",      required: true },
+      { key: "termin_datum",            label: "Datum",                     kind: "date",      required: true },
+      { key: "teilnehmer_anzahl",       label: "Anzahl Teilnehmende",       kind: "text",      required: true },
+      { key: "inhalte_zusammenfassung", label: "Inhalte und Ergebnisse",    kind: "multiline", required: true },
+      { key: "offene_punkte",           label: "Offene Punkte",             kind: "multiline", required: true },
+      { key: "folgeaufgaben",           label: "Folgeaufgaben",             kind: "multiline", required: true },
+      { key: "naechster_termin",        label: "Nächster Termin (optional)", kind: "text",     required: false },
+      { key: "hinweis",                 label: "Hinweis",                   kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Schulungsnachbereitung: {{schulungsthema}}
+Praxis: {{praxisname}}
+Datum: {{termin_datum}}
+Teilnehmende (Anzahl): {{teilnehmer_anzahl}}
+
+Inhalte und Ergebnisse:
+{{inhalte_zusammenfassung}}
+
+Offene Punkte:
+{{offene_punkte}}
+
+Folgeaufgaben:
+{{folgeaufgaben}}{{#if naechster_termin}}
+
+Nächster Termin:
+{{naechster_termin}}{{/if}}{{#if hinweis}}
+
+Hinweis:
+{{hinweis}}{{/if}}
+
+Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+
 ];
+

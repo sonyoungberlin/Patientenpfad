@@ -20,6 +20,7 @@ import {
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
   OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
   OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
+  OFFICE_TOPIC_TRAINING_COORDINATION,
   buildInitialSnapshotForTopic,
   getOfficeCheckpointCatalog,
   listOfficeTopics,
@@ -50,10 +51,11 @@ const EXPECTED_TOPIC_IDS = [
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
   OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
   OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
+  OFFICE_TOPIC_TRAINING_COORDINATION,
 ] as const;
 
 describe("Office-Checkpoint Referenz-Integritaet gegen Registries", () => {
-  it("alle 21 Topic-IDs sind unveraendert vorhanden", () => {
+  it("alle 22 Topic-IDs sind unveraendert vorhanden", () => {
     const actualIds = listOfficeTopics().map((topic) => topic.id);
     expect(actualIds).toEqual([...EXPECTED_TOPIC_IDS]);
   });

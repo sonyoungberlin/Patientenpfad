@@ -20,6 +20,7 @@ import {
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
   OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
   OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
+  OFFICE_TOPIC_TRAINING_COORDINATION,
   type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 
@@ -640,6 +641,36 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "RZ-08": [
       { id: "M2-01", text: "Ist die beschriebene Zustaendigkeitsstruktur intern freigegeben und kommuniziert?" },
       { id: "M2-02", text: "Sind alle Beteiligten ueber die finale Rollenverteilung informiert?" },
+    ],
+  },
+  [OFFICE_TOPIC_TRAINING_COORDINATION]: {
+    "FO-01": [
+      { id: "M2-01", text: "Ist das Thema der geplanten Schulung intern klar beschrieben und ein Anlass dokumentiert?" },
+      { id: "M2-02", text: "Wissen alle Beteiligten, warum diese Schulung intern durchgefuehrt wird?" },
+    ],
+    "FO-02": [
+      { id: "M2-01", text: "Ist intern abgestimmt, wer an der Schulung teilnimmt?" },
+      { id: "M2-02", text: "Gibt es einen festgelegten Termin fuer die Schulungsveranstaltung?" },
+    ],
+    "FO-03": [
+      { id: "M2-01", text: "Sind Raum, notwendige Materialien und ggf. ein Referent / eine Referentin organisiert?" },
+      { id: "M2-02", text: "Gibt es noch offene Logistik-Punkte, die vor dem Termin geklaert werden muessen?" },
+    ],
+    "FO-04": [
+      { id: "M2-01", text: "Wurden alle Beteiligten rechtzeitig ueber den Schulungstermin informiert?" },
+      { id: "M2-02", text: "Wurden Hinweise zur Vorbereitung oder zum Ablauf mitgeteilt?" },
+    ],
+    "FO-05": [
+      { id: "M2-01", text: "Ist dokumentiert, wer an der Schulung teilgenommen hat?" },
+      { id: "M2-02", text: "Gibt es Hinweise darauf, wer gefehlt hat und warum?" },
+    ],
+    "FO-06": [
+      { id: "M2-01", text: "Sind die Inhalte und Ergebnisse der Schulung intern zusammengefasst worden?" },
+      { id: "M2-02", text: "Sind offene Punkte und Rueckfragen aus der Schulung festgehalten?" },
+    ],
+    "FO-07": [
+      { id: "M2-01", text: "Wurden Folgeaufgaben aus der Schulung intern konkreten Personen zugewiesen?" },
+      { id: "M2-02", text: "Ist geklart, ob und wann eine Folgeschulung oder Wiederholung geplant wird?" },
     ],
   },
 };

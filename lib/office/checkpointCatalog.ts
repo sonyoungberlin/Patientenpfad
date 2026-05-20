@@ -55,6 +55,7 @@ export const OFFICE_TOPIC_WORKTIME_CHANGE = "arbeitszeit-aenderung-praxisorganis
 export const OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE = "digitale-systemumstellung-praxisorganisation";
 export const OFFICE_TOPIC_VACATION_TEAM_COORDINATION = "urlaub-teamkoordination-praxisorganisation";
 export const OFFICE_TOPIC_RESPONSIBILITY_COORDINATION = "rollen-und-zustaendigkeiten-praxis";
+export const OFFICE_TOPIC_TRAINING_COORDINATION = "fortbildung-schulung-praxisorganisation";
 
 export type OfficeTopicId =
   | typeof OFFICE_TOPIC_HIRING_REPLACEMENT
@@ -77,7 +78,8 @@ export type OfficeTopicId =
   | typeof OFFICE_TOPIC_WORKTIME_CHANGE
   | typeof OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE
   | typeof OFFICE_TOPIC_VACATION_TEAM_COORDINATION
-  | typeof OFFICE_TOPIC_RESPONSIBILITY_COORDINATION;
+  | typeof OFFICE_TOPIC_RESPONSIBILITY_COORDINATION
+  | typeof OFFICE_TOPIC_TRAINING_COORDINATION;
 
 export type OfficeTopic = {
   id: OfficeTopicId;
@@ -185,6 +187,10 @@ const TOPICS: readonly OfficeTopic[] = [
   {
     id: OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
     title: "Rollen / Zustaendigkeiten / Praxisorganisation",
+  },
+  {
+    id: OFFICE_TOPIC_TRAINING_COORDINATION,
+    title: "Fortbildung / Schulungsorganisation",
   },
 ] as const;
 
@@ -1823,6 +1829,71 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       title: "Zustaendigkeitsstruktur intern freigegeben",
       kind: OfficeCheckpointKind.DECISION,
       officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+  ],
+  [OFFICE_TOPIC_TRAINING_COORDINATION]: [
+    {
+      id: "FO-01",
+      title: "Schulungsthema und Anlass intern festgelegt",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ANLASS,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FO-02",
+      title: "Teilnehmerkreis und Termin intern abgestimmt",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FO-03",
+      title: "Raum, Material und Referent organisiert",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FO-04",
+      title: "Team ueber Schulungstermin informiert",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FO-05",
+      title: "Anwesenheit intern erfasst und dokumentiert",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FO-06",
+      title: "Inhalte und Ergebnisse intern nachbereitet",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "FO-07",
+      title: "Folgeaufgaben und Zustaendigkeiten intern verteilt",
+      kind: OfficeCheckpointKind.DECISION,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
       checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
       failureEffect: OfficeFailureEffect.RISK,
       outcomeAudience: [OfficeOutcomeAudience.CHEF],
