@@ -213,24 +213,33 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   // --- Kurzanamnese ---
   ANAMNESE_GP: {
     id: "ANAMNESE_GP",
-    text: "Haben Sie einen Hausarzt?",
-    text_en: "Do you have a general practitioner?",
+    text: "Haben Sie einen anderen Hausarzt?",
+    text_en: "Do you have a different general practitioner?",
     type: "yes_no",
     required: false,
+  },
+  ANAMNESE_GP_NAME: {
+    id: "ANAMNESE_GP_NAME",
+    text: "Name Ihres Hausarztes",
+    text_en: "Name of your general practitioner",
+    type: "text",
+    required: false,
+    helperText: "Nur ausfüllen, wenn Sie einen anderen Hausarzt haben.",
+    helperText_en: "Only fill in if you have a different general practitioner.",
   },
   ANAMNESE_HEIGHT: {
     id: "ANAMNESE_HEIGHT",
     text: "Wie groß sind Sie? (z.B. 175 cm)",
     text_en: "How tall are you? (e.g. 175 cm)",
     type: "text",
-    required: false,
+    required: true,
   },
   ANAMNESE_WEIGHT: {
     id: "ANAMNESE_WEIGHT",
     text: "Wie viel wiegen Sie? (z.B. 70 kg)",
     text_en: "How much do you weigh? (e.g. 70 kg)",
     type: "text",
-    required: false,
+    required: true,
   },
   ANAMNESE_CHRONIC: {
     id: "ANAMNESE_CHRONIC",
@@ -637,6 +646,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     displayOrder: 30,
     questionIds: [
       "ANAMNESE_GP",
+      "ANAMNESE_GP_NAME",
       "ANAMNESE_HEIGHT",
       "ANAMNESE_WEIGHT",
       "ANAMNESE_OCCUPATION",

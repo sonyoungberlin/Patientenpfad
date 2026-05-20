@@ -61,6 +61,7 @@ const SHORT_LABELS: Record<string, string> = {
 
   // Kurzanamnese
   ANAMNESE_GP: "Hausarzt",
+  ANAMNESE_GP_NAME: "Name Hausarzt",
   ANAMNESE_HEIGHT: "Größe",
   ANAMNESE_WEIGHT: "Gewicht",
   ANAMNESE_CHRONIC: "Chronische Erkrankungen",
