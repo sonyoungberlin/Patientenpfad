@@ -54,6 +54,7 @@ export const OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION = "arzt-austritt-praxisorg
 export const OFFICE_TOPIC_WORKTIME_CHANGE = "arbeitszeit-aenderung-praxisorganisation";
 export const OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE = "digitale-systemumstellung-praxisorganisation";
 export const OFFICE_TOPIC_VACATION_TEAM_COORDINATION = "urlaub-teamkoordination-praxisorganisation";
+export const OFFICE_TOPIC_RESPONSIBILITY_COORDINATION = "rollen-und-zustaendigkeiten-praxis";
 
 export type OfficeTopicId =
   | typeof OFFICE_TOPIC_HIRING_REPLACEMENT
@@ -75,7 +76,8 @@ export type OfficeTopicId =
   | typeof OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION
   | typeof OFFICE_TOPIC_WORKTIME_CHANGE
   | typeof OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE
-  | typeof OFFICE_TOPIC_VACATION_TEAM_COORDINATION;
+  | typeof OFFICE_TOPIC_VACATION_TEAM_COORDINATION
+  | typeof OFFICE_TOPIC_RESPONSIBILITY_COORDINATION;
 
 export type OfficeTopic = {
   id: OfficeTopicId;
@@ -179,6 +181,10 @@ const TOPICS: readonly OfficeTopic[] = [
   {
     id: OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
     title: "Urlaubsplanung / Teamkoordination",
+  },
+  {
+    id: OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
+    title: "Rollen / Zustaendigkeiten / Praxisorganisation",
   },
 ] as const;
 
@@ -1741,6 +1747,80 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
     {
       id: "UT-08",
       title: "Rueckkehrplanung und Wiederanlauf intern abgestimmt",
+      kind: OfficeCheckpointKind.DECISION,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+  ],
+  [OFFICE_TOPIC_RESPONSIBILITY_COORDINATION]: [
+    {
+      id: "RZ-01",
+      title: "Rollen und Aufgabenbereiche intern beschrieben",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ANLASS,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "RZ-02",
+      title: "Zustaendigkeiten fuer wiederkehrende Aufgaben intern zugewiesen",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "RZ-03",
+      title: "Ansprechpartner fuer interne und externe Anfragen intern bekannt",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "RZ-04",
+      title: "Vertretungsregelungen fuer strukturelle Abwesenheiten intern geregelt",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "RZ-05",
+      title: "Interne Eskalationswege dokumentiert",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "RZ-06",
+      title: "Aufgabenverteilung im Team kommuniziert und verstanden",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "RZ-07",
+      title: "Uebergabeprozesse fuer Stellenwechsel und laengere Abwesenheiten intern geregelt",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "RZ-08",
+      title: "Zustaendigkeitsstruktur intern freigegeben",
       kind: OfficeCheckpointKind.DECISION,
       officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
       checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,

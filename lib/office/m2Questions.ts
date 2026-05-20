@@ -19,6 +19,7 @@ import {
   OFFICE_TOPIC_WORKTIME_CHANGE,
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
   OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
+  OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
   type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 
@@ -605,6 +606,40 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "UT-08": [
       { id: "M2-01", text: "Ist intern geklart, welche Aufgaben nach der Rueckkehr als erstes uebernommen werden?" },
       { id: "M2-02", text: "Sind Uebergabe und Wiederanlauf fuer alle betroffenen Personen abgestimmt?" },
+    ],
+  },
+  [OFFICE_TOPIC_RESPONSIBILITY_COORDINATION]: {
+    "RZ-01": [
+      { id: "M2-01", text: "Sind die Rollen und Aufgabenbereiche in der Praxis intern schriftlich oder muendlich beschrieben?" },
+      { id: "M2-02", text: "Ist intern klar, wer welchen Bereich in der Praxis verantwortet?" },
+    ],
+    "RZ-02": [
+      { id: "M2-01", text: "Sind die wiederkehrenden Aufgaben (Rezeption, Abrechnung, Bestellwesen etc.) konkreten Personen zugewiesen?" },
+      { id: "M2-02", text: "Gibt es Aufgaben ohne klare Zustaendigkeit, die im Alltag zu Unsicherheiten fuehren?" },
+    ],
+    "RZ-03": [
+      { id: "M2-01", text: "Ist intern bekannt, wer bei Fragen von Patienten, Lieferanten oder der KV zustaendig ist?" },
+      { id: "M2-02", text: "Sind externe Ansprechpartner fuer das Team zugaenglich dokumentiert?" },
+    ],
+    "RZ-04": [
+      { id: "M2-01", text: "Gibt es eine allgemeine Regelung, wer welche Funktion bei laengerer Abwesenheit uebernimmt?" },
+      { id: "M2-02", text: "Ist die strukturelle Vertretungsregel unabhaengig vom konkreten Urlaubsfall geregelt?" },
+    ],
+    "RZ-05": [
+      { id: "M2-01", text: "Ist intern bekannt, wer bei unerwarteten Situationen oder Entscheidungsbedarf angesprochen wird?" },
+      { id: "M2-02", text: "Sind die Eskalationswege auch fuer neue oder vertretende Mitarbeitende verstaendlich?" },
+    ],
+    "RZ-06": [
+      { id: "M2-01", text: "Ist die Aufgabenverteilung im Team besprochen und verstanden worden?" },
+      { id: "M2-02", text: "Gibt es offene Fragen oder Unklarheiten zur Aufgabenverteilung im Team?" },
+    ],
+    "RZ-07": [
+      { id: "M2-01", text: "Gibt es einen definierten Prozess fuer die Uebergabe bei Stellenwechsel oder laengerer Abwesenheit?" },
+      { id: "M2-02", text: "Ist sichergestellt, dass implizites Wissen bei Personalaenderungen nicht verloren geht?" },
+    ],
+    "RZ-08": [
+      { id: "M2-01", text: "Ist die beschriebene Zustaendigkeitsstruktur intern freigegeben und kommuniziert?" },
+      { id: "M2-02", text: "Sind alle Beteiligten ueber die finale Rollenverteilung informiert?" },
     ],
   },
 };

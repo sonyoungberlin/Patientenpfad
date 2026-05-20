@@ -11,6 +11,7 @@ import {
   OFFICE_TOPIC_WORKTIME_CHANGE,
   OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE,
   OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
+  OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
 } from "@/lib/office/checkpointCatalog";
 
 // ---------------------------------------------------------------------------
@@ -2908,5 +2909,154 @@ Vielen Dank für Ihr Verständnis.`,
     smoothingEnabled: false,
     audience: "EXTERNE_STELLE",
     estimatedLength: "SHORT",
+  },
+  // OFFICE_TOPIC_RESPONSIBILITY_COORDINATION
+  {
+    id: "zustaendigkeits-uebersicht",
+    label: "Zuständigkeitsübersicht Praxis",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_RESPONSIBILITY_COORDINATION],
+      allOf: [
+        { checkpointId: "RZ-01", state: "YES" },
+      ],
+      anyOf: [
+        { checkpointId: "RZ-02", state: "OPEN" },
+        { checkpointId: "RZ-02", state: "NO" },
+        { checkpointId: "RZ-03", state: "OPEN" },
+        { checkpointId: "RZ-03", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["RZ-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",           label: "Praxisname",            kind: "text",      required: true },
+      { key: "stand_datum",          label: "Stand",                 kind: "date",      required: true },
+      { key: "zustaendigkeiten",     label: "Aufgaben & Zuständigkeiten", kind: "multiline", required: true },
+      { key: "vertretungsstruktur",  label: "Vertretungsstruktur",   kind: "multiline", required: true },
+      { key: "eskalationsweg",       label: "Eskalationsweg",        kind: "text",      required: false },
+      { key: "hinweis",              label: "Hinweis",               kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Zuständigkeitsübersicht
+Praxis: {{praxisname}}
+Stand: {{stand_datum}}
+
+Aufgaben und Zuständigkeiten:
+{{zustaendigkeiten}}
+
+Vertretungsstruktur:
+{{vertretungsstruktur}}{{#if eskalationsweg}}
+
+Eskalationsweg:
+{{eskalationsweg}}{{/if}}{{#if hinweis}}
+
+Hinweis:
+{{hinweis}}{{/if}}
+
+Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+  {
+    id: "uebergabe-notiz-stelle",
+    label: "Übergabe-Notiz bei Stellenwechsel",
+    outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
+    writeKind: OfficeWriteKind.INTERNAL_NOTE,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_RESPONSIBILITY_COORDINATION],
+      allOf: [
+        { checkpointId: "RZ-01", state: "YES" },
+      ],
+      anyOf: [
+        { checkpointId: "RZ-07", state: "OPEN" },
+        { checkpointId: "RZ-07", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["RZ-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",        label: "Praxisname",                    kind: "text",      required: true },
+      { key: "stelle_bezeichnung",label: "Stelle / Funktion",             kind: "text",      required: true },
+      { key: "uebergabe_an",      label: "Übergabe an",                   kind: "text",      required: true },
+      { key: "uebergabe_von",     label: "Übergabe von",                  kind: "text",      required: false },
+      { key: "aufgaben_liste",    label: "Aufgaben & Zuständigkeiten",    kind: "multiline", required: true },
+      { key: "offene_punkte",     label: "Offene Punkte",                 kind: "multiline", required: true },
+      { key: "zugang_info",       label: "Zugänge und Systeme",          kind: "multiline", required: false },
+      { key: "hinweis",           label: "Hinweis",                       kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Übergabe-Notiz: {{stelle_bezeichnung}}
+Praxis: {{praxisname}}
+Übergabe an: {{uebergabe_an}}{{#if uebergabe_von}}
+Übergabe von: {{uebergabe_von}}{{/if}}
+
+Aufgaben und Zuständigkeiten:
+{{aufgaben_liste}}
+
+Offene Punkte:
+{{offene_punkte}}{{#if zugang_info}}
+
+Zugänge und Systeme:
+{{zugang_info}}{{/if}}{{#if hinweis}}
+
+Hinweis:
+{{hinweis}}{{/if}}
+
+Arbeitshilfe – kein Zeugnis, keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
+  },
+  {
+    id: "teaminfo-rollen",
+    label: "Teaminfo: Rollen und Zuständigkeiten",
+    outputKind: OfficeWriteOutputKind.GESPRAECHSLEITFADEN,
+    writeKind: OfficeWriteKind.STAFF_COMMUNICATION,
+    trigger: {
+      topicIds: [OFFICE_TOPIC_RESPONSIBILITY_COORDINATION],
+      anyOf: [
+        { checkpointId: "RZ-05", state: "OPEN" },
+        { checkpointId: "RZ-05", state: "NO" },
+        { checkpointId: "RZ-06", state: "OPEN" },
+        { checkpointId: "RZ-06", state: "NO" },
+      ],
+      blockedWhenAnyOpen: ["RZ-01"],
+    },
+    inputSchema: [
+      { key: "praxisname",           label: "Praxisname",             kind: "text",      required: true },
+      { key: "datum",                label: "Datum",                  kind: "date",      required: false },
+      { key: "kontext",              label: "Anlass",                 kind: "text",      required: true },
+      { key: "neue_regelungen",      label: "Neue Regelungen",        kind: "multiline", required: true },
+      { key: "ansprechpartner_liste",label: "Ansprechpartner",        kind: "multiline", required: true },
+      { key: "eskalationsweg",       label: "Eskalationsweg",         kind: "text",      required: false },
+      { key: "besondere_hinweise",   label: "Besondere Hinweise",     kind: "multiline", required: false },
+    ],
+    bodyTemplate: `Teaminfo: Rollen und Zuständigkeiten
+Praxis: {{praxisname}}
+Anlass: {{kontext}}{{#if datum}}
+Datum: {{datum}}{{/if}}
+
+Neue Regelungen / Zuständigkeiten:
+{{neue_regelungen}}
+
+Ansprechpartner:
+{{ansprechpartner_liste}}{{#if eskalationsweg}}
+
+Eskalationsweg:
+{{eskalationsweg}}{{/if}}{{#if besondere_hinweise}}
+
+Besondere Hinweise:
+{{besondere_hinweise}}{{/if}}
+
+Agenda:
+– Wer übernimmt welche Aufgaben?
+– Ansprechpartner: Wer ist für was zuständig?
+– Vertretungsregelungen: Wer übernimmt bei Abwesenheit?
+– Eskalation: An wen wende ich mich bei ungeklärten Fragen?
+– Offene Punkte: Was ist noch zu klären?
+
+Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
+    smoothingEnabled: false,
+    audience: "INTERN",
+    estimatedLength: "MEDIUM",
   },
 ];
