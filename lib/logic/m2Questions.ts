@@ -242,6 +242,20 @@ export const M2_QUESTIONS: Record<string, M2Question[]> = {
       text: "Wissen Sie, ob Entlastungsleistungen durch Ihre Pflegekasse verfügbar sind?",
     },
   ],
+  K18: [
+    {
+      id: "M2-01",
+      text: "Ich nutze die ePA aktiv.",
+    },
+    {
+      id: "M2-02",
+      text: "Ich möchte die ePA nicht benutzen.",
+    },
+    {
+      id: "M2-03",
+      text: "Ich weiß bisher nicht gut, wie die ePA funktioniert.",
+    },
+  ],
   K12: [
     // Mobilität
     {

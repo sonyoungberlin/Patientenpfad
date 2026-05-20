@@ -238,6 +238,19 @@ export const CHECKPOINT_CATALOGUE: Record<string, CheckpointTemplate> = {
       text: "Falls Ihre pflegende Person vorübergehend ausfällt oder selbst Entlastung benötigt, informieren Sie uns. Die Pflegekasse bietet Leistungen wie Kurzzeit- oder Verhinderungspflege an.",
     },
   },
+  K18: {
+    id: "K18",
+    block_id: "medizinische_lage",
+    type: CheckpointType.VERIFIKATION,
+    category: CheckpointCategory.O,
+    perspectives: [CheckpointPerspective.MFA, CheckpointPerspective.PATIENT],
+    title: "ePA Nutzung",
+    description: "Nutzungsstatus der ePA (elektronische Patientenakte) des Patienten ist bekannt und dokumentiert.",
+    m4: {
+      type: "NOTICE",
+      text: "Falls Sie Fragen zur ePA (elektronische Patientenakte) haben oder Unterstützung bei der Einrichtung benötigen, sprechen Sie uns gerne an.",
+    },
+  },
 };
 
 /**
