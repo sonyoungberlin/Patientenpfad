@@ -1,5 +1,9 @@
 /**
- * Phase A: Submit-Endpoint für Digitale Anfragen (POST `/api/anfrage/[slug]`).
+ * Phase A (aktualisiert): Submit-Endpoint für Digitale Anfragen
+ * (POST `/api/anfrage/[slug]`).
+ *
+ * Slug-Quelle: `Practice.slug` — praxisweit, unabhängig von
+ * `PracticeQuestionnaireForm`. `practice_form_id` ist beim Anlegen null.
  *
  * Pipeline:
  *   1. Slug-Format validieren.
@@ -7,20 +11,21 @@
  *   3. Honeypot prüfen → Treffer: identische Erfolgs-Antwort, KEINE DB-Schreibung.
  *   4. E-Mail validieren (Format).
  *   5. Rate-Limit (IP + Slug, best-effort in-memory).
- *   6. Formular + Owner-Flags laden (Cascade: slug ungültig/inaktiv/deaktiviert → 404).
+ *   6. Practice + OWNER-Membership laden (Cascade: slug ungültig/deaktiviert → 404).
  *      Prüft nur `patient_communication_enabled`, NICHT `website_forms_enabled`.
- *   7. Rate-Limit (E-Mail-Hash, nach Form-Lookup).
+ *      Keine `is_active`-Prüfung mehr (formularunabhängig).
+ *   7. Rate-Limit (E-Mail-Hash, nach Practice-Lookup).
  *   8. Name validieren (min 1, max 100 Zeichen).
  *   9. E-Mail hashen (SHA-256).
  *  10. Geburtsdatum hashen, falls angegeben (SHA-256, kein Klartext).
  *  11. Anliegen kürzen (max 500 Zeichen).
- *  12. DigitalRequest anlegen (status = "new").
+ *  12. DigitalRequest anlegen (status = "new", practice_form_id = null).
  *  13. 303-Redirect auf `/anfrage/[slug]/eingegangen`.
  *
  * Antwort-Codes:
  *   - 303 → Erfolg (und Honeypot-Treffer).
  *   - 400 → Validierungsfehler (E-Mail oder Name).
- *   - 404 → Slug-/Owner-Cascade negativ.
+ *   - 404 → Slug-Cascade negativ oder Practice nicht konfiguriert.
  *   - 429 → Rate-Limit überschritten.
  */
 
@@ -41,7 +46,7 @@ import {
   createRateLimiter,
   getClientIp,
 } from "@/lib/websiteForms/submitRateLimit";
-import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
+import { PracticeRole } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -178,44 +183,35 @@ export async function POST(
       });
     }
 
-    // 6. Formular + Owner-Flags laden.
-    // Cascade: inaktiv / nicht freigegeben / patient_communication_enabled=false → 404.
-    // website_forms_enabled wird hier bewusst NICHT geprüft.
-    const form = await prisma.practiceQuestionnaireForm.findUnique({
+    // 6. Practice + OWNER-Membership laden.
+    // Cascade: nicht gefunden / nicht freigegeben / patient_communication_enabled=false → 404.
+    // website_forms_enabled wird bewusst NICHT geprüft.
+    // is_active entfällt — die digitale Anfrage ist praxisweit, kein Formular-Feature.
+    const practice = await prisma.practice.findUnique({
       where: { slug: slugValidation.slug },
       select: {
         id: true,
-        is_active: true,
-        owner_account_id: true,
-        owner_practice_id: true,
-        owner_practice: {
-          select: {
-            is_approved: true,
-            patient_communication_enabled: true,
-            website_forms_enabled: true,
-          },
-        },
-        owner_account: {
-          select: {
-            is_approved: true,
-            patient_communication_enabled: true,
-            website_forms_enabled: true,
-          },
+        is_approved: true,
+        patient_communication_enabled: true,
+        memberships: {
+          where: { role: PracticeRole.OWNER },
+          select: { account_id: true },
+          take: 1,
         },
       },
     });
 
-    const flags = form ? getEffectivePracticeFlags(form) : null;
     if (
-      !form ||
-      !form.is_active ||
-      !flags ||
-      !flags.is_approved ||
-      !flags.patient_communication_enabled
+      !practice ||
+      !practice.is_approved ||
+      !practice.patient_communication_enabled ||
+      practice.memberships.length === 0
     ) {
       logSubmit("not_found", { slug: slugValidation.slug });
       return notFoundHtml();
     }
+
+    const ownerAccountId = practice.memberships[0].account_id;
 
     // 7. Rate-Limit (E-Mail-Hash) — nach Form-Lookup.
     const submitterEmailHash = hashSubmitterEmail(emailCheck.email);
@@ -266,11 +262,9 @@ export async function POST(
     // 12. DigitalRequest anlegen.
     await prisma.digitalRequest.create({
       data: {
-        owner_account_id: form.owner_account_id,
-        ...(form.owner_practice_id
-          ? { owner_practice_id: form.owner_practice_id }
-          : {}),
-        practice_form_id: form.id,
+        owner_account_id: ownerAccountId,
+        owner_practice_id: practice.id,
+        // practice_form_id bleibt null — kein Bezug zu einem einzelnen Formular.
         submitter_name: rawName,
         submitter_email: emailCheck.email,
         submitter_email_hash: submitterEmailHash,

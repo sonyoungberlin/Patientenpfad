@@ -24,6 +24,7 @@
  */
 
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
@@ -31,6 +32,7 @@ import {
   type SessionAccount,
 } from "@/lib/auth";
 import { requirePracticeRoleFromCookies } from "@/lib/authz";
+import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -82,6 +84,13 @@ export default async function PracticeMembersPage({
     },
     orderBy: [{ role: "asc" }, { created_at: "asc" }],
   });
+
+  // Origin für den öffentlichen Anfrage-Link bestimmen.
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const origin = host ? `${proto}://${host}` : "";
+  const anfrageLink = `${origin}/anfrage/${practice.slug}`;
 
   const sp = (await searchParams) ?? {};
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
@@ -195,6 +204,31 @@ export default async function PracticeMembersPage({
           })}
         </tbody>
       </table>
+
+      {practice.patient_communication_enabled && (
+        <section
+          style={{ marginTop: "2.5rem" }}
+          data-testid="anfrage-link-section"
+        >
+          <h2>Digitale Anfrage — Öffentlicher Link</h2>
+          <p style={{ marginBottom: "0.75rem" }}>
+            Neutraler Einstieg für Patient:innen, um einen Fragebogenlink
+            anzufordern. Die Praxis wählt anschließend die passenden Blöcke
+            aus.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <input
+              type="text"
+              readOnly
+              value={anfrageLink}
+              style={{ flexGrow: 1, fontFamily: "monospace" }}
+              aria-label="Öffentlicher Anfrage-Link"
+              data-testid="anfrage-link-input"
+            />
+            <CopyPublicLinkButton link={anfrageLink} />
+          </div>
+        </section>
+      )}
     </main>
   );
 }

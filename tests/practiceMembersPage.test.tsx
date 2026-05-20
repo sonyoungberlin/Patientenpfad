@@ -10,6 +10,7 @@
  *   - Es gibt **keine** Mutations-Forms (read-only).
  */
 
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const redirectMock = jest.fn((url: string) => {
@@ -22,6 +23,20 @@ const notFoundMock = jest.fn(() => {
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
   notFound: () => notFoundMock(),
+}));
+
+jest.mock("next/headers", () => ({
+  headers: async () =>
+    new Map([
+      ["host", "praxis.example.com"],
+      ["x-forwarded-proto", "https"],
+    ]) as unknown as Headers,
+}));
+
+jest.mock("@/components/websiteForms/CopyPublicLinkButton", () => ({
+  __esModule: true,
+  default: ({ link }: { link: string }) =>
+    (<button data-testid="copy-btn" data-link={link}>Link kopieren</button>) as unknown as React.JSX.Element,
 }));
 
 jest.mock("@/lib/auth", () => ({
@@ -193,9 +208,9 @@ describe("/practice/members read-only page", () => {
     expect(r.markup).toMatch(/<form[^>]*action="\/api\/practice\/members"[^>]*method="POST"/i);
     expect(r.markup).toMatch(/name="email"/);
     expect(r.markup).toMatch(/name="role"/);
-    // Rollen-Auswahl bietet ADMIN und USER, aber **nicht** OWNER.
+    // Rollen-Auswahl bietet ADMIN und INBOX_ONLY, aber **nicht** OWNER.
     expect(r.markup).toMatch(/<option[^>]*value="ADMIN"/);
-    expect(r.markup).toMatch(/<option[^>]*value="USER"/);
+    expect(r.markup).toMatch(/<option[^>]*value="INBOX_ONLY"/);
     expect(r.markup).not.toMatch(/<option[^>]*value="OWNER"/);
   });
 
@@ -223,5 +238,49 @@ describe("/practice/members read-only page", () => {
     const markup = renderToStaticMarkup(node);
     expect(markup).toContain("neu@example.com");
     expect(markup).toMatch(/role="status"/);
+  });
+});
+
+describe("practice/members — Digitale Anfrage Link-Abschnitt", () => {
+  beforeEach(() => {
+    redirectMock.mockClear();
+    notFoundMock.mockClear();
+    getCookies.mockReset();
+    pm.practiceMembership.findMany.mockReset();
+    pm.practiceMembership.findMany.mockResolvedValue([]);
+  });
+
+  it("OWNER mit patient_communication_enabled=true sieht den Anfrage-Link", async () => {
+    getCookies.mockResolvedValue(makeAccount("OWNER"));
+    const r = await runPage();
+    expect(r.markup).toContain("Digitale Anfrage");
+    expect(r.markup).toContain("https://praxis.example.com/anfrage/p1");
+    expect(r.markup).toContain("data-testid=\"anfrage-link-section\"");
+  });
+
+  it("ADMIN mit patient_communication_enabled=true sieht den Anfrage-Link", async () => {
+    getCookies.mockResolvedValue(makeAccount("ADMIN"));
+    const r = await runPage();
+    expect(r.markup).toContain("https://praxis.example.com/anfrage/p1");
+  });
+
+  it("Abschnitt NICHT sichtbar wenn patient_communication_enabled=false", async () => {
+    getCookies.mockResolvedValue({
+      ...makeAccount("OWNER"),
+      current_practice: { ...PRACTICE, patient_communication_enabled: false },
+    });
+    const r = await runPage();
+    expect(r.markup).not.toContain("data-testid=\"anfrage-link-section\"");
+    expect(r.markup).not.toContain("/anfrage/");
+  });
+
+  it("Abschnitt sichtbar unabhaengig von website_forms_enabled", async () => {
+    getCookies.mockResolvedValue({
+      ...makeAccount("OWNER"),
+      current_practice: { ...PRACTICE, website_forms_enabled: false },
+    });
+    const r = await runPage();
+    expect(r.markup).toContain("data-testid=\"anfrage-link-section\"");
+    expect(r.markup).toContain("/anfrage/p1");
   });
 });
