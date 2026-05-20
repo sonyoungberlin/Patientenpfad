@@ -206,44 +206,44 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_CLOSURE_COVERAGE]: {
     "UV-01": [
-      { id: "M2-01", text: "Ist klar, für welchen Zeitraum die Praxis schließt oder wer wie lange abwesend ist?" },
-      { id: "M2-02", text: "Betrifft die Schließung alle Ärzte der Praxis oder nur einzelne Personen?" },
+      { id: "M2-01", text: "Ist der Abwesenheitszeitraum aller betroffenen Personen intern festgelegt?" },
+      { id: "M2-02", text: "Ist intern festgelegt, welche Personen von der Abwesenheit betroffen sind?" },
     ],
     "UV-02": [
-      { id: "M2-01", text: "Ist bekannt, ob und bis wann die KV über die Schließung informiert werden muss?" },
+      { id: "M2-01", text: "Ist intern geklaert, ob die KV ueber die Schliessung informiert werden muss?" },
       { id: "M2-02", text: "Ist bekannt, ob für den Zeitraum eine ärztliche Vertretung organisiert werden muss?" },
     ],
     "UV-03": [
-      { id: "M2-01", text: "Ist klar, wer die Vertretungsarrangements organisiert und die KV informiert?" },
+      { id: "M2-01", text: "Ist intern festgelegt, wer die Vertretung und KV-Kommunikation koordiniert?" },
       { id: "M2-02", text: "Ist bekannt, wer während der Schließung für Rückfragen von Patienten erreichbar ist?" },
     ],
     "UV-04": [
       { id: "M2-01", text: "Liegt eine schriftliche Vertretungsvereinbarung mit dem Vertretungsarzt vor?" },
-      { id: "M2-02", text: "Ist der Vertretungsarzt namentlich bekannt und der KV gemeldet?" },
+      { id: "M2-02", text: "Ist der Vertretungsarzt der KV namentlich gemeldet?" },
     ],
     "UV-05": [
       { id: "M2-01", text: "Ist entschieden, wie Patientinnen und Patienten während der Schließung versorgt werden?" },
       { id: "M2-02", text: "Hat die Praxisleitung das Vertretungsmodell freigegeben?" },
     ],
     "UV-06": [
-      { id: "M2-01", text: "Ist die KV Berlin über Schließung und ggf. Vertretungsarzt informiert?" },
+      { id: "M2-01", text: "Ist die KV Berlin ueber die Praxisschliessung informiert?" },
       { id: "M2-02", text: "Ist bekannt, ob zusätzlich eine andere Stelle informiert werden muss?" },
     ],
     "UV-PATIENTENINFO": [
-      { id: "M2-01", text: "Hängt ein Aushang an der Praxistür mit Schließungszeitraum und Vertretungsinfos?" },
-      { id: "M2-02", text: "Ist die Telefonansage mit aktuellen Infos zu Schließung und Notfallkontakt aktualisiert?" },
+      { id: "M2-01", text: "Ist ein Patientenaushang mit Schliessungshinweis an der Praxistuer angebracht?" },
+      { id: "M2-02", text: "Ist die Telefonansage auf den Schliesszungszeitraum aktualisiert?" },
     ],
     "UV-NOTFALLVERSORGUNG": [
       { id: "M2-01", text: "Ist geregelt, wohin Patienten im Notfall gehen können?" },
       { id: "M2-02", text: "Gibt es Patienten mit dringendem Versorgungsbedarf, die proaktiv informiert werden müssen?" },
     ],
     "UV-TERMINMANAGEMENT": [
-      { id: "M2-01", text: "Sind alle Termine im Schließungszeitraum abgesagt oder verschoben?" },
+      { id: "M2-01", text: "Sind alle Termine im Schliesszungszeitraum intern abgestimmt?" },
       { id: "M2-02", text: "Wurden Patienten mit dringenden Folgebedarfen (z. B. Rezepte, Überweisungen) rechtzeitig kontaktiert?" },
     ],
     "UV-ABRECHNUNGSZUORDNUNG": [
-      { id: "M2-01", text: "Ist klar, unter welcher LANR und BSNR der Vertretungsarzt abrechnet?" },
-      { id: "M2-02", text: "Ist abgestimmt, ob der Vertretungsarzt auf Praxisschein oder eigene Scheine behandelt?" },
+      { id: "M2-01", text: "Ist die Abrechnungszuordnung fuer den Vertretungsarzt intern geklaert?" },
+      { id: "M2-02", text: "Ist intern abgestimmt, nach welchem Abrechnungsmodell der Vertretungsarzt behandelt?" },
     ],
   },
   [OFFICE_TOPIC_SEAT_APPROVAL]: {
@@ -256,7 +256,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist bekannt, wann der Zulassungsausschuss ueber den Antrag entscheidet?" },
     ],
     "ZA-03": [
-      { id: "M2-01", text: "Ist klar, wer in der Praxis den Antrag zusammenstellt und einreicht?" },
+      { id: "M2-01", text: "Ist intern festgelegt, wer den Antrag zusammenstellt?" },
       { id: "M2-02", text: "Ist eine Vertretungsregelung fuer die Fristueberwachung beim Zulassungsantrag intern festgelegt?" },
     ],
     "ZA-04": [
@@ -305,28 +305,28 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "WB-02": [
       { id: "M2-01", text: "Ist bekannt, bis wann der Fortbildungsnachweis erbracht werden muss?" },
-      { id: "M2-02", text: "Hat die KV bereits wegen fehlender Fortbildungspunkte angefragt oder erinnert?" },
+      { id: "M2-02", text: "Hat die KV die Praxis bereits wegen fehlender Fortbildungspunkte kontaktiert?" },
     ],
     "WB-03": [
-      { id: "M2-01", text: "Ist festgelegt, wer den Punktestand prüft und fehlende Nachweise einsammelt?" },
+      { id: "M2-01", text: "Ist intern festgelegt, wer fuer das Fortbildungsmanagement zustaendig ist?" },
       { id: "M2-02", text: "Ist festgelegt, wer die betroffene Person rechtzeitig erinnert?" },
     ],
     "WB-04": [
       { id: "M2-01", text: "Ist bekannt, wie viele Fortbildungspunkte aktuell vorhanden sind?" },
-      { id: "M2-02", text: "Liegen Zertifikate oder Punktekontoauszüge als Nachweis vor?" },
+      { id: "M2-02", text: "Liegt ein aktueller Nachweis ueber den Fortbildungspunktestand vor?" },
     ],
     "WB-05": [
       { id: "M2-01", text: "Ist festgelegt, welche Fortbildungen als nächstes absolviert werden sollen?" },
       { id: "M2-02", text: "Ist realistisch, dass fehlende Punkte noch rechtzeitig erreicht werden?" },
     ],
     "WB-06": [
-      { id: "M2-01", text: "Ist bekannt, ob Punkte automatisch oder manuell bei der Ärztekammer eingetragen werden?" },
+      { id: "M2-01", text: "Ist bekannt, wie absolvierte Fortbildungen im Aerztekammer-Konto eingetragen werden?" },
       { id: "M2-02", text: "Liegt ein aktueller Punktekontoauszug der Ärztekammer vor?" },
     ],
   },
   [OFFICE_TOPIC_CME_GENERAL_MEDICINE]: {
     "FB-01": [
-      { id: "M2-01", text: "Ist bekannt, in welchem 5-Jahres-Zyklus der Arzt aktuell ist und wann dieser endet?" },
+      { id: "M2-01", text: "Ist das Enddatum des aktuellen 5-Jahres-Fortbildungszyklus bekannt?" },
       { id: "M2-02", text: "Ist bekannt, wie viel Zeit bis zum Ende des Zyklus noch verbleibt?" },
     ],
     "FB-02": [
@@ -334,24 +334,24 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es Fortbildungen, die zwar absolviert wurden, aber noch nicht im Konto eingetragen sind?" },
     ],
     "FB-03": [
-      { id: "M2-01", text: "Liegen Teilnahmebescheinigungen oder Zertifikate für die absolvierten Fortbildungen vor?" },
-      { id: "M2-02", text: "Gibt es Fortbildungen, für die noch kein Nachweis vorliegt oder die bei der Ärztekammer noch ausstehen?" },
+      { id: "M2-01", text: "Liegen Nachweise fuer alle absolvierten Fortbildungen vor?" },
+      { id: "M2-02", text: "Gibt es absolvierte Fortbildungen, die noch nicht im Aerztekammer-Konto eingetragen sind?" },
     ],
     "FB-04": [
       { id: "M2-01", text: "Reicht die verbleibende Zeit aus, um noch fehlende Punkte bis zum Fristende zu sammeln?" },
-      { id: "M2-02", text: "Ist klar, wer in der Praxis den Punktestand und die Frist im Blick behält?" },
+      { id: "M2-02", text: "Ist intern festgelegt, wer die Fortbildungsfrist ueberwacht?" },
     ],
     "FB-05": [
-      { id: "M2-01", text: "Sind alle absolvierten Fortbildungen im Ärztekammer-Konto eingetragen und bestätigt?" },
+      { id: "M2-01", text: "Sind alle absolvierten Fortbildungen im Aerztekammer-Konto eingetragen?" },
       { id: "M2-02", text: "Hat die KV Berlin bereits eine Anfrage wegen fehlender Fortbildungspunkte geschickt?" },
     ],
     "FB-06": [
       { id: "M2-01", text: "Ist bekannt, ob bei Fristablauf eine Honorarkürzung droht (25 % pro Quartal, danach mehr)?" },
-      { id: "M2-02", text: "Gibt es Anzeichen, dass ein Honorareinbehalt bereits läuft oder unmittelbar bevorsteht?" },
+      { id: "M2-02", text: "Gibt es Hinweise auf einen bevorstehenden Honorareinbehalt durch die KV?" },
     ],
     "FB-AUFHOLPLAN": [
       { id: "M2-01", text: "Ist ein realistischer Plan vorhanden, wie die fehlenden Punkte vor Fristende noch erreicht werden können?" },
-      { id: "M2-02", text: "Sind konkrete Fortbildungstermine oder -kurse bereits gebucht oder fest eingeplant?" },
+      { id: "M2-02", text: "Sind konkrete Fortbildungstermine vor dem Fristende verbindlich geplant?" },
     ],
   },
   [OFFICE_TOPIC_MFA_HIRING]: {
@@ -360,59 +360,59 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es Zusatzqualifikationen, die für den geplanten Einsatz wichtig sind?" },
     ],
     "MF-02": [
-      { id: "M2-01", text: "Ist der Arbeitsvertrag mit Beginn, Stunden und Vergütung vollständig unterschrieben?" },
-      { id: "M2-02", text: "Ist geklärt, ob Vergütung und Arbeitszeit zum geplanten Einsatz passen?" },
+      { id: "M2-01", text: "Ist der Arbeitsvertrag von beiden Seiten unterschrieben?" },
+      { id: "M2-02", text: "Ist intern geprueft, ob die Vertragsbedingungen zum geplanten Einsatz passen?" },
     ],
     "MF-03": [
-      { id: "M2-01", text: "Liegen Steuer-ID und Sozialversicherungsnummer für die Lohnbuchhaltung vor?" },
+      { id: "M2-01", text: "Liegen alle Lohnbuchhaltungsdaten fuer die neue MFA vor?" },
       { id: "M2-02", text: "Ist die neue MFA in der Lohnbuchhaltung angelegt?" },
     ],
     "MF-04": [
-      { id: "M2-01", text: "Ist geklärt, ob Vollzeit, Teilzeit oder Minijob vorliegt?" },
+      { id: "M2-01", text: "Ist die Beschaeftigungsform fuer die neue MFA intern festgelegt?" },
       { id: "M2-02", text: "Ist die Sozialversicherung passend dazu angemeldet?" },
     ],
     "MF-05": [
       { id: "M2-01", text: "Hat die neue MFA Zugriff auf die Systeme, die sie für ihre Aufgaben braucht?" },
-      { id: "M2-02", text: "Wurde der Umgang mit Patientendaten und Schweigepflicht erklärt?" },
+      { id: "M2-02", text: "Ist die neue MFA in ihre Datenschutzpflichten eingewiesen?" },
     ],
     "MF-06": [
       { id: "M2-01", text: "Ist klar, in welche Aufgaben die neue MFA zuerst eingearbeitet wird?" },
-      { id: "M2-02", text: "Sind die Pflichtunterweisungen wie Datenschutz und Hygiene erledigt?" },
+      { id: "M2-02", text: "Sind alle Pflichtunterweisungen fuer die neue MFA abgeschlossen?" },
     ],
   },
   [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING]: {
     "MA-01": [
-      { id: "M2-01", text: "Ist bekannt, welche Tätigkeiten für Minderjährige in der Praxis nicht erlaubt oder eingeschränkt sind?" },
-      { id: "M2-02", text: "Ist der Dienstplan so geplant, dass Arbeitszeitgrenzen und Berufsschule eingehalten werden?" },
+      { id: "M2-01", text: "Sind die Taetigkeitsbeschraenkungen fuer Minderjaehrige in der Praxis bekannt?" },
+      { id: "M2-02", text: "Ist der Dienstplan auf die gesetzlichen Arbeitszeitvorgaben fuer Minderjaehrige ausgerichtet?" },
     ],
     "MA-02": [
       { id: "M2-01", text: "Liegt die ärztliche Erstuntersuchung vor dem Ausbildungsbeginn vor?" },
       { id: "M2-02", text: "Ist bekannt, wann eine Nachuntersuchung nötig wird?" },
     ],
     "MA-03": [
-      { id: "M2-01", text: "Ist der Ausbildungsvertrag von Praxis, Azubi und Erziehungsberechtigten unterschrieben?" },
+      { id: "M2-01", text: "Ist der Ausbildungsvertrag von allen erforderlichen Personen unterschrieben?" },
       { id: "M2-02", text: "Liegt die Bestätigung der Ärztekammer Berlin zum Ausbildungsvertrag vor?" },
     ],
     "MA-04": [
       { id: "M2-01", text: "Sind Berufsschultage im Dienstplan berücksichtigt?" },
-      { id: "M2-02", text: "Sind Abenddienste, Überstunden und Pausen für den Azubi passend geregelt?" },
+      { id: "M2-02", text: "Sind die Arbeitszeitregelungen fuer den Azubi entsprechend den gesetzlichen Vorgaben eingehalten?" },
     ],
     "MA-05": [
       { id: "M2-01", text: "Liegt die Einwilligung der Erziehungsberechtigten vor?" },
       { id: "M2-02", text: "Sind Notfallkontakte der Erziehungsberechtigten in der Praxis hinterlegt?" },
     ],
     "MA-06": [
-      { id: "M2-01", text: "Wurde der Azubi in Datenschutz und Schweigepflicht eingewiesen?" },
+      { id: "M2-01", text: "Ist der Azubi in seine Datenschutzpflichten eingewiesen?" },
       { id: "M2-02", text: "Sind die Pflichtunterweisungen für Jugendliche schriftlich belegt?" },
     ],
   },
   [OFFICE_TOPIC_MEDICAL_DEVICE_PURCHASE]: {
     "MG-01": [
-      { id: "M2-01", text: "Ist klar, welches Gerät angeschafft wird und wofür es eingesetzt werden soll?" },
-      { id: "M2-02", text: "Ist die Geräteklasse oder Risikoklasse bekannt?" },
+      { id: "M2-01", text: "Ist das anzuschaffende Geraet mit seinem Einsatzbereich intern festgelegt?" },
+      { id: "M2-02", text: "Ist die Risikoklasse des Geraets bekannt?" },
     ],
     "MG-02": [
-      { id: "M2-01", text: "Ist bekannt, ob für Betrieb oder Abrechnung eine Genehmigung nötig ist?" },
+      { id: "M2-01", text: "Ist intern bekannt, welche Genehmigungsanforderungen fuer dieses Geraet gelten?" },
       { id: "M2-02", text: "Ist bekannt, ob Fachkundenachweise erforderlich sind?" },
     ],
     "MG-03": [
@@ -420,38 +420,38 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist die Einweisung schriftlich nachweisbar?" },
     ],
     "MG-04": [
-      { id: "M2-01", text: "Ist bekannt, ob für das Gerät STK oder MTK erforderlich ist?" },
-      { id: "M2-02", text: "Ist klar, bis wann die erste Kontrolle oder Wartung fällig ist?" },
+      { id: "M2-01", text: "Ist die zutreffende Pruefpflicht fuer das Geraet bekannt?" },
+      { id: "M2-02", text: "Ist der Termin fuer die erste vorgeschriebene Pruefung des Geraets bekannt?" },
     ],
     "MG-05": [
       { id: "M2-01", text: "Ist klar, mit welcher GOP die Leistung abgerechnet werden soll?" },
       { id: "M2-02", text: "Sind die Dokumentationsanforderungen für diese Leistung bekannt?" },
     ],
     "MG-06": [
-      { id: "M2-01", text: "Ist das Gerät im Medizinproduktebuch oder Bestandsverzeichnis erfasst?" },
+      { id: "M2-01", text: "Ist das Geraet in den vorgeschriebenen internen Registern erfasst?" },
       { id: "M2-02", text: "Liegt die CE-Konformitätserklärung des Herstellers vor?" },
     ],
   },
   [OFFICE_TOPIC_DATA_PROTECTION_INCIDENT]: {
     "DS-01": [
       { id: "M2-01", text: "Ist klar, was genau passiert ist (z. B. falsche E-Mail, verlorenes Gerät, unberechtigter Zugriff)?" },
-      { id: "M2-02", text: "Ist bekannt, wann der Vorfall passiert ist oder entdeckt wurde?" },
+      { id: "M2-02", text: "Ist der Zeitpunkt des Datenschutzvorfalls intern bekannt?" },
     ],
     "DS-02": [
-      { id: "M2-01", text: "Sind Patientendaten oder andere personenbezogene Daten betroffen?" },
-      { id: "M2-02", text: "Sind besonders sensible Daten betroffen, z. B. Diagnosen oder Behandlungsinformationen?" },
+      { id: "M2-01", text: "Sind durch den Vorfall personenbezogene Daten betroffen?" },
+      { id: "M2-02", text: "Sind besonders schutzbeduertige personenbezogene Daten vom Vorfall betroffen?" },
     ],
     "DS-03": [
       { id: "M2-01", text: "Ist bekannt, ob eine Meldung an die Berliner Datenschutzbehörde nötig ist?" },
-      { id: "M2-02", text: "Läuft die 72-Stunden-Frist noch oder ist sie bereits abgelaufen?" },
+      { id: "M2-02", text: "Ist bekannt, ob die 72-Stunden-Meldefrist noch laeuft?" },
     ],
     "DS-04": [
-      { id: "M2-01", text: "Sind betroffene Zugänge, Geräte oder Systeme gesperrt oder gesichert?" },
-      { id: "M2-02", text: "Ist die Ursache des Vorfalls gefunden und behoben?" },
+      { id: "M2-01", text: "Sind alle vom Vorfall betroffenen Zugaenge und Systeme intern gesichert?" },
+      { id: "M2-02", text: "Ist die Ursache des Datenschutzvorfalls behoben?" },
     ],
     "DS-05": [
       { id: "M2-01", text: "Müssen betroffene Patientinnen oder Patienten informiert werden?" },
-      { id: "M2-02", text: "Ist die Information bereits erfolgt oder vorbereitet?" },
+      { id: "M2-02", text: "Ist die Benachrichtigung der betroffenen Personen eingeleitet?" },
     ],
     "DS-06": [
       { id: "M2-01", text: "Ist bekannt, wodurch der Vorfall möglich wurde?" },
@@ -460,19 +460,19 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_EXTENDED_OPENING_HOURS]: {
     "OE-01": [
-      { id: "M2-01", text: "Ist klar, für welche Tage und Uhrzeiten die Öffnungszeiten erweitert werden sollen?" },
-      { id: "M2-02", text: "Steht ausreichend ärztliches und nicht-ärztliches Personal für diese Zeiten zur Verfügung?" },
+      { id: "M2-01", text: "Sind die neuen Sprechzeiten intern konkret festgelegt?" },
+      { id: "M2-02", text: "Ist die Personalabdeckung fuer alle neuen Sprechzeiten sichergestellt?" },
     ],
     "OE-02": [
       { id: "M2-01", text: "Sind die neuen Arbeitszeiten mit den betroffenen Mitarbeitenden abgestimmt?" },
-      { id: "M2-02", text: "Sind Pausen und Ruhezeiten bei den neuen Diensten eingeplant?" },
+      { id: "M2-02", text: "Sind die vorgeschriebenen Ruhezeiten bei den neuen Diensten beruecksichtigt?" },
     ],
     "OE-03": [
       { id: "M2-01", text: "Ist bekannt, ob die neuen Sprechzeiten der KV gemeldet werden müssen?" },
       { id: "M2-02", text: "Ist geprüft, ob die Praxis mit den neuen Zeiten die Mindestsprechstunden erfüllt?" },
     ],
     "OE-04": [
-      { id: "M2-01", text: "Sind Aushang, Website und Online-Profile mit den neuen Zeiten aktualisiert?" },
+      { id: "M2-01", text: "Sind alle Patienteninformationskanaele mit den neuen Sprechzeiten aktualisiert?" },
       { id: "M2-02", text: "Ist die Telefonansage mit den neuen Zeiten aktualisiert?" },
     ],
     "OE-05": [
@@ -480,25 +480,25 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist geregelt, wer bei Ausfall in den neuen Zeiten einspringt?" },
     ],
     "OE-06": [
-      { id: "M2-01", text: "Sind PVS, Telefon und Empfang für die neuen Sprechzeiten einsatzbereit?" },
-      { id: "M2-02", text: "Ist geklärt, ob Schließdienst, Alarm oder Notfallkontakte angepasst werden müssen?" },
+      { id: "M2-01", text: "Sind alle praxisinternen Systeme fuer die neuen Sprechzeiten einsatzbereit?" },
+      { id: "M2-02", text: "Ist intern geklaert, ob die Sicherheitsregelungen auf die neuen Sprechzeiten angepasst werden muessen?" },
     ],
   },
   [OFFICE_TOPIC_REPORTING_DUTIES]: {
     "MP-01": [
-      { id: "M2-01", text: "Ist klar, welche Krankheit, welcher Erreger oder welcher Vorfall die Meldung ausloest?" },
-      { id: "M2-02", text: "Ist klar, ob die Praxis selbst melden muss oder ob das Labor meldet?" },
+      { id: "M2-01", text: "Ist intern klar, welcher Sachverhalt die Meldepflicht ausloest?" },
+      { id: "M2-02", text: "Ist intern geklaert, wer fuer die Meldung an das Gesundheitsamt zustaendig ist?" },
     ],
     "MP-02": [
       { id: "M2-01", text: "Ist bekannt, bis wann spaetestens gemeldet werden muss?" },
       { id: "M2-02", text: "Ist klar, ob die Meldung namentlich erfolgen muss?" },
     ],
     "MP-03": [
-      { id: "M2-01", text: "Ist klar, welche Person in der Praxis die Meldung erstellt und abschickt?" },
+      { id: "M2-01", text: "Ist intern festgelegt, wer die Meldung erstellt?" },
       { id: "M2-02", text: "Ist bekannt, wer bei Abwesenheit die Meldung uebernimmt?" },
     ],
     "MP-04": [
-      { id: "M2-01", text: "Liegen Patientendaten, Diagnose und Untersuchungsergebnis vor, die fuer die Meldung erforderlich sind?" },
+      { id: "M2-01", text: "Liegen alle fuer die Meldung erforderlichen Patientenangaben vor?" },
       { id: "M2-02", text: "Ist die Meldung (Formular oder digitale Uebermittlung) bereit zur Abgabe?" },
     ],
     "MP-05": [
@@ -513,11 +513,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION]: {},
   [OFFICE_TOPIC_WORKTIME_CHANGE]: {
     "AZ-01": [
-      { id: "M2-01", text: "Ist der neue Stundenumfang intern klar und schriftlich festgehalten?" },
+      { id: "M2-01", text: "Ist der neue Stundenumfang intern schriftlich festgehalten?" },
       { id: "M2-02", text: "Ist das Datum, ab dem die neue Arbeitszeit gilt, intern kommuniziert?" },
     ],
     "AZ-02": [
-      { id: "M2-01", text: "Sind die konkreten Arbeitstage und Einsatzzeiten intern bekannt und abgestimmt?" },
+      { id: "M2-01", text: "Sind die neuen Arbeitstage und Einsatzzeiten intern abgestimmt?" },
       { id: "M2-02", text: "Sind Vertretungsregelungen fuer die neuen Einsatzzeiten bereits besprochen?" },
     ],
     "AZ-03": [
@@ -529,21 +529,21 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist sichergestellt, dass die Information rechtzeitig vor dem Abrechnungsstichtag vorliegt?" },
     ],
     "AZ-05": [
-      { id: "M2-01", text: "Sind Zeiterfassungssystem und Praxissoftware auf den neuen Stundenumfang angepasst?" },
-      { id: "M2-02", text: "Sind alle betroffenen Systeme (z. B. Terminplanung, Dienstplan-Tool) aktualisiert?" },
+      { id: "M2-01", text: "Ist das Zeiterfassungssystem auf den neuen Stundenumfang aktualisiert?" },
+      { id: "M2-02", text: "Sind die betroffenen Planungssysteme auf den neuen Stundenumfang aktualisiert?" },
     ],
     "AZ-06": [
       { id: "M2-01", text: "Sind alle betroffenen Kolleginnen und Kollegen ueber die Aenderung informiert?" },
-      { id: "M2-02", text: "Sind Zustaendigkeiten und Vertretungen fuer die geaenderten Zeiten intern abgestimmt?" },
+      { id: "M2-02", text: "Sind die Zustaendigkeiten fuer die geaenderten Einsatzzeiten intern abgestimmt?" },
     ],
     "AZ-07": [
-      { id: "M2-01", text: "Sind alle offenen organisatorischen Aufgaben aus der Umstellung intern verteilt und terminiert?" },
+      { id: "M2-01", text: "Sind alle offenen Aufgaben aus der Arbeitszeitumstellung intern verteilt?" },
       { id: "M2-02", text: "Gibt es noch ungeklaerte operative Punkte, die vor dem Stichtag erledigt sein muessen?" },
     ],
   },
   [OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE]: {
     "DS-01": [
-      { id: "M2-01", text: "Ist intern klar beschrieben, welches System umgestellt wird und welche Ablaeufe davon betroffen sind?" },
+      { id: "M2-01", text: "Ist der Umfang der geplanten Systemumstellung intern dokumentiert?" },
       { id: "M2-02", text: "Ist ein grober Zeitplan fuer die Umstellung intern kommuniziert?" },
     ],
     "DS-02": [
@@ -551,16 +551,16 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Sind Teilzustaendigkeiten (z. B. Koordination, Schulung, Abnahme) intern benannt?" },
     ],
     "DS-03": [
-      { id: "M2-01", text: "Ist geklart, welche Daten und Dokumente aus dem alten System uebernommen werden muessen?" },
-      { id: "M2-02", text: "Ist intern festgelegt, wer die Datenubernahme koordiniert und abzeichnet?" },
+      { id: "M2-01", text: "Ist intern festgelegt, welche Inhalte aus dem alten System uebernommen werden muessen?" },
+      { id: "M2-02", text: "Ist intern festgelegt, wer die Datenubernahme koordiniert?" },
     ],
     "DS-04": [
       { id: "M2-01", text: "Sind alle betroffenen Mitarbeiterinnen und Mitarbeiter ueber die Systemumstellung informiert?" },
-      { id: "M2-02", text: "Sind Fragen und Bedenken aus dem Team intern aufgenommen und adressiert?" },
+      { id: "M2-02", text: "Sind offene Fragen des Teams zur Systemumstellung intern erfasst?" },
     ],
     "DS-05": [
       { id: "M2-01", text: "Sind Schulungstermine fuer alle betroffenen Mitarbeiterinnen und Mitarbeiter abgestimmt?" },
-      { id: "M2-02", text: "Sind Lernziele und Inhalte fuer die Schulung intern festgelegt?" },
+      { id: "M2-02", text: "Sind die Schulungsinhalte fuer die neue Software intern festgelegt?" },
     ],
     "DS-06": [
       { id: "M2-01", text: "Ist intern geklart, wie die Praxis bei einem technischen Ausfall waehrend der Umstellungsphase weiterarbeitet?" },
@@ -571,33 +571,33 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist intern abgestimmt, ueber welche Kanaele (Aushang, Website, Empfang) kommuniziert wird?" },
     ],
     "DS-08": [
-      { id: "M2-01", text: "Ist die interne Freigabe fuer den Go-live erteilt und dokumentiert?" },
+      { id: "M2-01", text: "Ist die interne Freigabe fuer den Go-live erteilt?" },
       { id: "M2-02", text: "Sind alle offenen Punkte aus der Umstellungsvorbereitung vor dem Go-live abgearbeitet?" },
     ],
   },
   [OFFICE_TOPIC_VACATION_TEAM_COORDINATION]: {
     "UT-01": [
       { id: "M2-01", text: "Ist intern klar, wer in welchem Zeitraum abwesend ist?" },
-      { id: "M2-02", text: "Sind alle betroffenen Personen und Zeitraeume intern kommuniziert?" },
+      { id: "M2-02", text: "Sind alle geplanten Abwesenheiten intern kommuniziert?" },
     ],
     "UT-02": [
       { id: "M2-01", text: "Ist geprueft, ob die Praxis im Urlaubszeitraum ausreichend besetzt ist?" },
       { id: "M2-02", text: "Gibt es Zeitraeume mit kritisch niedriger Besetzung, die intern geloest werden muessen?" },
     ],
     "UT-03": [
-      { id: "M2-01", text: "Sind fuer alle abwesenden Personen konkrete Vertretungen benannt und bestaetigt?" },
-      { id: "M2-02", text: "Sind Zustaendigkeiten und Meldewege fuer die Vertretungszeit intern abgestimmt?" },
+      { id: "M2-01", text: "Sind fuer alle abwesenden Personen konkrete Vertretungen benannt?" },
+      { id: "M2-02", text: "Sind die Zustaendigkeiten fuer die Vertretungszeit intern abgestimmt?" },
     ],
     "UT-04": [
-      { id: "M2-01", text: "Ist der Dienstplan auf die Abwesenheitszeiten und Vertretungen angepasst?" },
-      { id: "M2-02", text: "Ist die Dienstplananpassung intern freigegeben und kommuniziert?" },
+      { id: "M2-01", text: "Ist der Dienstplan auf den Urlaubszeitraum angepasst?" },
+      { id: "M2-02", text: "Ist die Dienstplananpassung intern freigegeben?" },
     ],
     "UT-05": [
-      { id: "M2-01", text: "Sind Patientinnen und Patienten bei laengeren oder praxisweiten Abwesenheiten informiert?" },
+      { id: "M2-01", text: "Sind Patientinnen und Patienten ueber relevante Abwesenheiten informiert?" },
       { id: "M2-02", text: "Ist intern abgestimmt, ueber welche Kanaele kommuniziert wird (Aushang, Ansage, Website)?" },
     ],
     "UT-06": [
-      { id: "M2-01", text: "Sind alle laufenden Aufgaben und offenen Vorgaenge intern uebergeben?" },
+      { id: "M2-01", text: "Sind alle laufenden Aufgaben intern uebergeben?" },
       { id: "M2-02", text: "Ist sichergestellt, dass keine dringenden Aufgaben waehrend der Abwesenheit liegenbleiben?" },
     ],
     "UT-07": [
@@ -606,12 +606,12 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "UT-08": [
       { id: "M2-01", text: "Ist intern geklart, welche Aufgaben nach der Rueckkehr als erstes uebernommen werden?" },
-      { id: "M2-02", text: "Sind Uebergabe und Wiederanlauf fuer alle betroffenen Personen abgestimmt?" },
+      { id: "M2-02", text: "Ist der Wiederanlauf nach der Rueckkehr fuer alle betroffenen Personen abgestimmt?" },
     ],
   },
   [OFFICE_TOPIC_RESPONSIBILITY_COORDINATION]: {
     "RZ-01": [
-      { id: "M2-01", text: "Sind die Rollen und Aufgabenbereiche in der Praxis intern schriftlich oder muendlich beschrieben?" },
+      { id: "M2-01", text: "Sind die Rollen und Aufgabenbereiche in der Praxis intern beschrieben?" },
       { id: "M2-02", text: "Ist intern klar, wer welchen Bereich in der Praxis verantwortet?" },
     ],
     "RZ-02": [
@@ -619,7 +619,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es Aufgaben ohne klare Zustaendigkeit, die im Alltag zu Unsicherheiten fuehren?" },
     ],
     "RZ-03": [
-      { id: "M2-01", text: "Ist intern bekannt, wer bei Fragen von Patienten, Lieferanten oder der KV zustaendig ist?" },
+      { id: "M2-01", text: "Ist intern bekannt, wer bei Anfragen externer Stellen zustaendig ist?" },
       { id: "M2-02", text: "Sind externe Ansprechpartner fuer das Team zugaenglich dokumentiert?" },
     ],
     "RZ-04": [
@@ -627,25 +627,25 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist die strukturelle Vertretungsregel unabhaengig vom konkreten Urlaubsfall geregelt?" },
     ],
     "RZ-05": [
-      { id: "M2-01", text: "Ist intern bekannt, wer bei unerwarteten Situationen oder Entscheidungsbedarf angesprochen wird?" },
+      { id: "M2-01", text: "Ist intern bekannt, wer bei ungeplanten Problemen angesprochen wird?" },
       { id: "M2-02", text: "Sind die Eskalationswege auch fuer neue oder vertretende Mitarbeitende verstaendlich?" },
     ],
     "RZ-06": [
-      { id: "M2-01", text: "Ist die Aufgabenverteilung im Team besprochen und verstanden worden?" },
-      { id: "M2-02", text: "Gibt es offene Fragen oder Unklarheiten zur Aufgabenverteilung im Team?" },
+      { id: "M2-01", text: "Ist die Aufgabenverteilung im Team besprochen worden?" },
+      { id: "M2-02", text: "Gibt es noch ungeklaerte Punkte zur Aufgabenverteilung im Team?" },
     ],
     "RZ-07": [
-      { id: "M2-01", text: "Gibt es einen definierten Prozess fuer die Uebergabe bei Stellenwechsel oder laengerer Abwesenheit?" },
+      { id: "M2-01", text: "Gibt es einen definierten Uebergabeprozess fuer Personalveraenderungen?" },
       { id: "M2-02", text: "Ist sichergestellt, dass implizites Wissen bei Personalaenderungen nicht verloren geht?" },
     ],
     "RZ-08": [
-      { id: "M2-01", text: "Ist die beschriebene Zustaendigkeitsstruktur intern freigegeben und kommuniziert?" },
+      { id: "M2-01", text: "Ist die Zustaendigkeitsstruktur intern freigegeben?" },
       { id: "M2-02", text: "Sind alle Beteiligten ueber die finale Rollenverteilung informiert?" },
     ],
   },
   [OFFICE_TOPIC_TRAINING_COORDINATION]: {
     "FO-01": [
-      { id: "M2-01", text: "Ist das Thema der geplanten Schulung intern klar beschrieben und ein Anlass dokumentiert?" },
+      { id: "M2-01", text: "Ist das Thema der geplanten Schulung intern festgelegt?" },
       { id: "M2-02", text: "Wissen alle Beteiligten, warum diese Schulung intern durchgefuehrt wird?" },
     ],
     "FO-02": [
@@ -653,24 +653,24 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es einen festgelegten Termin fuer die Schulungsveranstaltung?" },
     ],
     "FO-03": [
-      { id: "M2-01", text: "Sind Raum, notwendige Materialien und ggf. ein Referent / eine Referentin organisiert?" },
+      { id: "M2-01", text: "Ist die gesamte Schulungslogistik intern organisiert?" },
       { id: "M2-02", text: "Gibt es noch offene Logistik-Punkte, die vor dem Termin geklaert werden muessen?" },
     ],
     "FO-04": [
       { id: "M2-01", text: "Wurden alle Beteiligten rechtzeitig ueber den Schulungstermin informiert?" },
-      { id: "M2-02", text: "Wurden Hinweise zur Vorbereitung oder zum Ablauf mitgeteilt?" },
+      { id: "M2-02", text: "Sind alle relevanten Hinweise zur Schulung an die Beteiligten mitgeteilt?" },
     ],
     "FO-05": [
       { id: "M2-01", text: "Ist dokumentiert, wer an der Schulung teilgenommen hat?" },
-      { id: "M2-02", text: "Gibt es Hinweise darauf, wer gefehlt hat und warum?" },
+      { id: "M2-02", text: "Sind fehlende Teilnehmende intern dokumentiert?" },
     ],
     "FO-06": [
-      { id: "M2-01", text: "Sind die Inhalte und Ergebnisse der Schulung intern zusammengefasst worden?" },
-      { id: "M2-02", text: "Sind offene Punkte und Rueckfragen aus der Schulung festgehalten?" },
+      { id: "M2-01", text: "Ist die Schulungsdokumentation intern erstellt worden?" },
+      { id: "M2-02", text: "Sind offene Punkte aus der Schulung intern festgehalten?" },
     ],
     "FO-07": [
       { id: "M2-01", text: "Wurden Folgeaufgaben aus der Schulung intern konkreten Personen zugewiesen?" },
-      { id: "M2-02", text: "Ist geklart, ob und wann eine Folgeschulung oder Wiederholung geplant wird?" },
+      { id: "M2-02", text: "Ist intern entschieden, ob eine Folgeschulung geplant wird?" },
     ],
   },
 };
