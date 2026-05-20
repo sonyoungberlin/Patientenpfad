@@ -2820,7 +2820,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die gewünschte Terminart ist ein Buchungscode erforderlich.",
+        "Für diesen Termin ist ein Buchungscode nötig.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -3047,7 +3047,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // M2-Schalter: reine Kontextaussage – die konkreten Erklär-Infos sind als
       // gebundene Info-Actions (APPOINTMENT_INFO_*) modelliert.
       [ExplanationStatus.YES]:
-        "Es liegt eine Rückfrage zu Terminart, Buchungslogik oder dem passenden Termin vor.",
+        "Zur Terminbuchung haben wir noch eine kurze Rückfrage.",
       // NO: bewusst still – keine Erklärung nötig
     },
   },
@@ -4147,7 +4147,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+        "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
     },
   },
 
@@ -4162,7 +4162,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+        "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
     },
   },
 
@@ -4177,7 +4177,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+        "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
     },
   },
 
@@ -4192,7 +4192,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine abschließende Einschätzung ist eine ärztliche Konsultation erforderlich.",
+        "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
     },
   },
 
@@ -4295,7 +4295,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Vor Ausstellung der Krankenhauseinweisung ist eine ärztliche Konsultation erforderlich.",
+        "Für die Einweisung ist vorab ein persönlicher Termin nötig.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "ärztliche Konsultation vor Krankenhauseinweisung erforderlich",
@@ -4459,7 +4459,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Der medizinische Hintergrund oder das konkrete Ziel des gebuchten Termins ist derzeit nicht eindeutig erkennbar.",
+        "Der Anlass für Ihren Termin ist für uns noch nicht ganz klar.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Terminanlass unklar",
@@ -4480,7 +4480,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die für Ihr Anliegen erforderlichen Informationen liegen vollständig vor.",
+        "Alle Angaben zu Ihrem Anliegen sind vollständig.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Erforderliche Informationen vollständig vorhanden",
@@ -4499,7 +4499,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die nachgereichten Unterlagen sind eingegangen und wurden der Patientenakte zugeordnet.",
+        "Ihre Unterlagen sind bei uns eingegangen.",
     },
     docByStatus: {
       [ExplanationStatus.YES]: "Unterlagen eingegangen und zugeordnet",
