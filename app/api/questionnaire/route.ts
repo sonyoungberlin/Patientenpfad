@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireSendAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
-import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
 import {
   isBlockEnReady,
   normalizeQuestionnaireLanguage,
 } from "@/lib/questionnaire/i18n";
 import { getCreateOwnershipData } from "@/lib/questionnaire/practiceScope";
+import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 
 const IS_DEV = process.env.NODE_ENV === "development";
-
-const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 export async function POST(req: NextRequest) {
   try {
@@ -99,31 +96,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Build deduplicated questions
-    const deduplicatedQuestions = buildQuestionnaireQuestions(selectedBlockIds);
-
-    const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
-
-    await prisma.patientQuestionnaireSession.create({
-      data: {
-        token,
-        token_expires_at: expiresAt,
-        // Phase P3b: Doppelschreiben — `owner_account_id` immer,
-        // `owner_practice_id` zusätzlich, falls eine `current_practice`
-        // im Session-Account vorhanden ist.
-        ...getCreateOwnershipData(account),
-        patient_reference: patientReference,
-        inquiry_session_id: inquirySessionId,
-        selected_block_ids: selectedBlockIds as Prisma.InputJsonValue,
-        deduplicated_questions: deduplicatedQuestions as unknown as Prisma.InputJsonValue,
-        patient_language: patientLanguage,
-        status: "pending",
-      },
+    const ownership = getCreateOwnershipData(account);
+    const { tokenLink: link } = await createQuestionnaireSession({
+      selectedBlockIds,
+      patientReference,
+      patientLanguage,
+      ownerAccountId: ownership.owner_account_id,
+      ownerPracticeId: ownership.owner_practice_id ?? null,
+      inquirySessionId,
+      origin: req.nextUrl.origin,
     });
-
-    const origin = req.nextUrl.origin;
-    const link = `${origin}/q/${token}`;
 
     return NextResponse.json({ ok: true, link });
   } catch (err) {

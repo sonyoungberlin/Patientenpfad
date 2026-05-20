@@ -114,6 +114,7 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
   const isOfficeCases = inSection("/office-cases");
   const isPractice = inSection("/practice");
   const isWebsiteForms = inSection("/website-forms");
+  const isDigitalRequests = inSection("/digital-requests");
 
   const practiceRole: AppShellPracticeRole | null =
     account.current_practice && account.memberships
@@ -123,6 +124,11 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       : null;
 
   const canUseCases =
+    practiceRole === null ||
+    practiceRole === "OWNER" ||
+    practiceRole === "ADMIN" ||
+    practiceRole === "USER";
+  const canUseDigitalRequests =
     practiceRole === null ||
     practiceRole === "OWNER" ||
     practiceRole === "ADMIN" ||
@@ -178,6 +184,8 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       { label: "Fragebogen-Posteingang", href: "/questionnaires" },
       { label: "Formularverwaltung", href: "/website-forms" },
     );
+  } else if (isDigitalRequests && canUseDigitalRequests) {
+    sectionItems.push({ label: "Digitale Anfragen", href: "/digital-requests" });
   }
 
   return (

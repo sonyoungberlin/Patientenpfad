@@ -78,6 +78,24 @@ export default async function QuestionnairesPage({
     },
   });
 
+  // Phase B: Herkunftsbadge — prüfen, welche Sessions aus einer DigitalRequest stammen.
+  const sessionIds = sessions.map((s) => s.id);
+  const digitalRequestSessionIds = new Set<string>();
+  if (sessionIds.length > 0) {
+    const linkedRequests = await prisma.digitalRequest.findMany({
+      where: {
+        questionnaire_session_id: { in: sessionIds },
+        deleted_at: null,
+      },
+      select: { questionnaire_session_id: true },
+    });
+    for (const r of linkedRequests) {
+      if (r.questionnaire_session_id) {
+        digitalRequestSessionIds.add(r.questionnaire_session_id);
+      }
+    }
+  }
+
   const tabBase: React.CSSProperties = {
     padding: "0.35rem 0.75rem",
     borderRadius: "var(--radius)",
@@ -187,6 +205,7 @@ export default async function QuestionnairesPage({
                 noteText={noteText}
                 pdfDownloadedAt={s.pdf_downloaded_at}
                 deletedAt={s.deleted_at}
+                isFromDigitalRequest={digitalRequestSessionIds.has(s.id)}
               />
             );
           })}

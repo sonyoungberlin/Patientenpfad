@@ -46,8 +46,11 @@ export type QuestionnaireCardProps = {
    * wird ein „Gelöscht"-Badge angezeigt und der Lösch-Button durch einen
    * Wiederherstellen-Button ersetzt.
    */
-  deletedAt?: Date | null;
-};
+  deletedAt?: Date | null;  /**
+   * Zeigt ein „Digitale Anfrage“-Badge an, wenn die Session aus einer
+   * DigitalRequest erzeugt wurde (Phase B Schritt 5).
+   */
+  isFromDigitalRequest?: boolean;};
 
 export default function QuestionnaireCard({
   id,
@@ -63,6 +66,7 @@ export default function QuestionnaireCard({
   noteText,
   pdfDownloadedAt = null,
   deletedAt = null,
+  isFromDigitalRequest = false,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
   return (
@@ -96,6 +100,23 @@ export default function QuestionnaireCard({
         </div>
         <span style={getStatusBadgeStyle(displayStatus)}>{statusLabel}</span>
       </div>
+
+      {isFromDigitalRequest && (
+        <div
+          className="text-small"
+          data-q-source-badge={id}
+          style={{
+            padding: "0.25rem 0.6rem",
+            background: "#eff6ff",
+            borderRadius: "var(--radius)",
+            color: "#1d4ed8",
+            fontWeight: 500,
+            width: "fit-content",
+          }}
+        >
+          Digitale Anfrage
+        </div>
+      )}
 
       {isDeleted && (
         <div

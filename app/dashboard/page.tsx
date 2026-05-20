@@ -42,6 +42,15 @@ export default async function DashboardPage() {
     myRole === PracticeRole.OWNER ||
     myRole === PracticeRole.ADMIN ||
     myRole === PracticeRole.USER;
+  const patientCommunicationEnabled = account.current_practice
+    ? account.current_practice.patient_communication_enabled
+    : account.patient_communication_enabled;
+  const canUseDigitalRequests =
+    patientCommunicationEnabled &&
+    (myRole === null ||
+      myRole === PracticeRole.OWNER ||
+      myRole === PracticeRole.ADMIN ||
+      myRole === PracticeRole.USER);
   const canUseInquiries =
     myRole === null ||
     myRole === PracticeRole.OWNER ||
@@ -107,6 +116,18 @@ export default async function DashboardPage() {
                 </Link>
                 <Link href="/">
                   <button type="button">Neuer Fall</button>
+                </Link>
+              </div>
+            </section>
+          )}
+
+          {canUseDigitalRequests && (
+            <section className="card" data-testid="digital-requests-tile">
+              <h2 style={{ marginTop: 0 }}>Digitale Anfragen</h2>
+              <p>Anfragen prüfen und Fragebogenlinks senden</p>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <Link href="/digital-requests">
+                  <button type="button">Anfragen öffnen</button>
                 </Link>
               </div>
             </section>

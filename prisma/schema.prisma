@@ -82,6 +82,7 @@ model Account {
   inquiry_sessions               InquirySession[]
   patient_questionnaire_sessions PatientQuestionnaireSession[]
   practice_questionnaire_forms   PracticeQuestionnaireForm[]
+  digital_requests               DigitalRequest[]
 
   /// Phase P1: Mitgliedschaften des Accounts in Practices.
   /// Wird per Backfill zunächst genau einmal pro Account mit Rolle
@@ -394,8 +395,6 @@ model PatientQuestionnaireSession {
   /// können. Wird in P1 noch nicht genutzt.
   @@index([owner_practice_id, createdAt])
 }
-
-/// Phase 3a: Öffentliches Website-Fragebogen-Formular einer Praxis.
 /// Wird in Phase 3a nur als Datenstruktur eingeführt; es gibt noch keine
 /// öffentliche Route `/p/[slug]`, keinen Submit-Endpoint und keine
 /// Praxis-UI zum Anlegen. In Phase 3a sind Datensätze ausschließlich
@@ -441,6 +440,9 @@ model PracticeQuestionnaireForm {
   patient_language String @default("de")
 
   patient_questionnaire_sessions PatientQuestionnaireSession[]
+
+  /// Rückverknüpfung zu digitalen Anfragen, die dieses Formular als Einstiegspunkt nutzten.
+  digital_requests DigitalRequest[]
 
   @@index([owner_account_id, createdAt])
   /// Phase P1 (additiv): Index analog zum bestehenden Owner-Index.
@@ -573,6 +575,7 @@ model Practice {
   inquiry_sessions               InquirySession[]              @relation("InquirySessionOwnerPractice")
   patient_questionnaire_sessions PatientQuestionnaireSession[] @relation("PatientQuestionnaireSessionOwnerPractice")
   practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
+  digital_requests               DigitalRequest[]              @relation("DigitalRequestOwnerPractice")
 
   /// Option C (minimal): Accounts, die diese Practice als Standard-Praxis
   /// referenzieren. Gegenseite zu `Account.default_practice`.
@@ -598,4 +601,81 @@ model PracticeMembership {
 
   @@unique([account_id, practice_id])
   @@index([practice_id, role])
+}
+
+/// Phase A: Digitale Anfrage eines Patienten an die Praxis.
+///
+/// Zwei-Stufen-Flow:
+///   1. Patient reicht über eine öffentliche Seite (`/anfrage/[slug]`) eine
+///      neutrale Anfrage ein (Name, E-Mail, optionales Geburtsdatum, optionaler
+///      Freitext). Keine automatische Leistungszusage.
+///   2. Praxis prüft intern, trägt Patientenreferenz ein und wählt in Phase B
+///      Fragebogen-Blöcke aus. Das System erzeugt dann eine
+///      `PatientQuestionnaireSession` und versendet den Token-Link.
+///
+/// Datenschutz: `submitter_email` wird im Klartext gespeichert, weil der
+/// Rückversand des Token-Links durch das System erfolgt (Zweckbindung).
+/// `submitter_email_hash` (SHA-256) dient nur Rate-Limit und Audit.
+/// `birth_date_hash` (SHA-256) dient dem späteren IdentityGate; kein Klartext.
+model DigitalRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Name des Einreichenden (Klartext; nur Praxis-intern sichtbar).
+  submitter_name String
+
+  /// E-Mail-Adresse im Klartext (zweckgebunden: Rückversand des Token-Links).
+  submitter_email String
+
+  /// SHA-256-Hash der E-Mail (trim+lowercase) für Rate-Limit und Audit.
+  submitter_email_hash String
+
+  /// SHA-256-Hash des Geburtsdatums, falls angegeben. Kein Klartext.
+  /// Wird in Phase B für das IdentityGate im Token-Fragebogen-Flow genutzt.
+  birth_date_hash String?
+
+  /// Optionaler kurzer Freitext zum Anliegen (max. 500 Zeichen, neutral gehalten).
+  concern_text String?
+
+  /// Status der Anfrage.
+  /// Whitelist: "new" | "in_review" | "sent" | "closed"
+  status String @default("new")
+
+  /// Eigentümer-Account (Pflichtfeld, Doppelschreiben-Konvention).
+  /// onDelete: Restrict — analog zu PatientQuestionnaireSession.owner_account.
+  owner_account_id String
+  owner_account    Account @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
+
+  /// Phase P1 (additiv): Verknüpfung zum Mandanten (Practice). Nullable in
+  /// P1, `NOT NULL` folgt in P5. Practice-first analog zu anderen Modellen.
+  /// onDelete: Restrict, damit Praxis-Löschung nicht still löscht.
+  owner_practice_id String?
+  owner_practice    Practice? @relation("DigitalRequestOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: Restrict)
+
+  /// Optionaler Bezug zum auslösenden öffentlichen Formular (`/anfrage/[slug]`).
+  /// onDelete: SetNull — Formular-Löschung hebt den Bezug auf, Anfrage bleibt.
+  practice_form_id String?
+  practice_form    PracticeQuestionnaireForm? @relation(fields: [practice_form_id], references: [id], onDelete: SetNull)
+
+  /// Interne Patientenreferenz (PVS-Nummer; trägt Praxis in Phase B ein).
+  patient_reference String?
+
+  /// Vom Praxis-Nutzer ausgewählte Block-IDs für den Fragebogen (Phase B).
+  /// Nullable: noch nicht gesetzt, solange die Praxis keine Auswahl getroffen hat.
+  selected_block_ids Json?
+
+  /// Verknüpfung zur in Phase B erzeugten PatientQuestionnaireSession.
+  /// @unique — eine Anfrage erzeugt maximal eine Session.
+  questionnaire_session_id String? @unique
+
+  /// Phase B Schritt 5: Zeitpunkt des erfolgreichen Mailversands (status → "sent").
+  /// NULL = noch nicht versendet.
+  sent_at DateTime?
+
+  /// Soft-Delete-Marker. NULL = aktiv, gesetzter Zeitstempel = archiviert.
+  deleted_at DateTime?
+
+  @@index([owner_practice_id, createdAt])
+  @@index([owner_account_id, createdAt])
 }
