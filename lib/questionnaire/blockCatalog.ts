@@ -199,6 +199,32 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     required: false,
   },
 
+  // --- Kontaktperson ---
+  KONTAKTPERSON_NAME: {
+    id: "KONTAKTPERSON_NAME",
+    text: "Vollständiger Name der Kontaktperson",
+    type: "text",
+    required: true,
+  },
+  KONTAKTPERSON_BIRTHDATE: {
+    id: "KONTAKTPERSON_BIRTHDATE",
+    text: "Geburtsdatum der Kontaktperson",
+    type: "date",
+    required: true,
+  },
+  KONTAKTPERSON_RELATIONSHIP: {
+    id: "KONTAKTPERSON_RELATIONSHIP",
+    text: "Beziehung zum Patienten",
+    type: "text",
+    required: true,
+  },
+  KONTAKTPERSON_CONFIRMATION: {
+    id: "KONTAKTPERSON_CONFIRMATION",
+    text: "Diese Person darf organisatorische Anliegen für mich übernehmen (z. B. Rezepte oder Unterlagen abholen).",
+    type: "yes_no",
+    required: true,
+  },
+
   // --- Adresse ---
   ADDRESS_POSTAL: {
     id: "ADDRESS_POSTAL",
@@ -631,6 +657,17 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     label_en: "Contact details",
     displayOrder: 10,
     questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "CONTACT_DOCTOLIB"],
+  },
+  KONTAKTPERSON: {
+    id: "KONTAKTPERSON",
+    label: "Kontaktperson",
+    displayOrder: 15,
+    questionIds: [
+      "KONTAKTPERSON_NAME",
+      "KONTAKTPERSON_BIRTHDATE",
+      "KONTAKTPERSON_RELATIONSHIP",
+      "KONTAKTPERSON_CONFIRMATION",
+    ],
   },
   ADRESSE: {
     id: "ADRESSE",

@@ -56,6 +56,12 @@ const SHORT_LABELS: Record<string, string> = {
   CONTACT_EMAIL: "E-Mail",
   CONTACT_DOCTOLIB: "Doctolib",
 
+  // Kontaktperson
+  KONTAKTPERSON_NAME: "Kontaktperson",
+  KONTAKTPERSON_BIRTHDATE: "Geburtsdatum Kontaktperson",
+  KONTAKTPERSON_RELATIONSHIP: "Beziehung",
+  KONTAKTPERSON_CONFIRMATION: "Organisatorische Anliegen erlaubt",
+
   // Adresse
   ADDRESS_POSTAL: "Adresse",
 

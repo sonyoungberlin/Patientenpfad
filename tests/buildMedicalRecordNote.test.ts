@@ -637,3 +637,28 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
     expect(result).toBe(expected);
   });
 });
+
+describe("buildMedicalRecordNote – Kontaktperson-Block", () => {
+  it("gibt 'Kontaktperson'-Header und Name aus", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        KONTAKTPERSON_NAME: "Max Mustermann",
+        KONTAKTPERSON_RELATIONSHIP: "Sohn",
+      },
+      selected_block_ids: ["KONTAKTPERSON"],
+    });
+    const lines = result.split("\n");
+    expect(lines).toContain("Kontaktperson");
+    expect(lines).toContain("Kontaktperson: Max Mustermann");
+    expect(lines).toContain("Beziehung: Sohn");
+  });
+
+  it("lässt Block weg wenn KONTAKTPERSON nicht in Block-IDs", () => {
+    const result = buildMedicalRecordNote({
+      answers: { KONTAKTPERSON_NAME: "Max Mustermann" },
+      selected_block_ids: ["KONTAKT"],
+    });
+    const lines = result.split("\n");
+    expect(lines.some((l) => l.startsWith("Kontaktperson:"))).toBe(false);
+  });
+});
