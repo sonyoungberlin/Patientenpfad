@@ -54,15 +54,22 @@ export type AppShellAccount = {
 type AppShellProps = {
   account?: AppShellAccount | null;
   onLogout?: () => void;
+  /** Wird aus Server-Kontext befüllt oder intern per Fetch nachgeladen. */
+  digitalRequestsHasUnread?: boolean;
 };
 
-export default function AppShell({ account: accountProp, onLogout }: AppShellProps) {
+export default function AppShell({
+  account: accountProp,
+  onLogout,
+  digitalRequestsHasUnread: propHasUnread,
+}: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const [internalAccount, setInternalAccount] = useState<AppShellAccount | null>(
     accountProp ?? null,
   );
   const [internalLoaded, setInternalLoaded] = useState<boolean>(accountProp !== undefined);
+  const [hasUnread, setHasUnread] = useState<boolean>(propHasUnread ?? false);
 
   useEffect(() => {
     if (accountProp !== undefined) {
@@ -85,6 +92,25 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       cancelled = true;
     };
   }, [accountProp]);
+
+  // Unread-Indikator für Digitale Anfragen – entweder per Prop (Server) oder Fetch.
+  useEffect(() => {
+    if (propHasUnread !== undefined) {
+      setHasUnread(propHasUnread);
+      return;
+    }
+    const currentAccount = accountProp !== undefined ? accountProp : internalAccount;
+    if (!currentAccount?.patient_communication_enabled) return;
+
+    fetch("/api/digital-requests/unread")
+      .then((r) => r.json())
+      .then((d: unknown) => {
+        if (d && typeof d === "object" && "hasUnread" in d && (d as { hasUnread: boolean }).hasUnread) {
+          setHasUnread(true);
+        }
+      })
+      .catch(() => {});
+  }, [accountProp, internalAccount, propHasUnread]);
 
   async function handleLogoutDefault() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
@@ -184,13 +210,33 @@ export default function AppShell({ account: accountProp, onLogout }: AppShellPro
       { label: "Fragebogen-Posteingang", href: "/questionnaires" },
       { label: "Formularverwaltung", href: "/website-forms" },
     );
-  } else if (isDigitalRequests && canUseDigitalRequests) {
-    sectionItems.push({ label: "Digitale Anfragen", href: "/digital-requests" });
   }
 
   return (
     <nav className="app-nav">
       <Link href={homeHref}>Hauptmenü</Link>
+      {account.patient_communication_enabled && canUseDigitalRequests && (
+        <Link
+          href="/digital-requests"
+          style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+        >
+          Digitale Anfragen
+          {hasUnread && (
+            <span
+              data-testid="digital-requests-unread-dot"
+              aria-label="Neue Anfragen vorhanden"
+              style={{
+                display: "inline-block",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#ef4444",
+                flexShrink: 0,
+              }}
+            />
+          )}
+        </Link>
+      )}
       {sectionItems.map((item) => (
         <Link key={item.href} href={item.href}>
           {item.label}

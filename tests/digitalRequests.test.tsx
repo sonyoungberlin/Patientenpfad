@@ -215,6 +215,19 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
     expect(markup).toContain("Digitales Anliegen");
   });
 
+  it("Anliegen-Checkboxen rendern ohne fieldset-Border (kein <fieldset>)", async () => {
+    const { result } = await runPage(() =>
+      AnfragePage({ params: Promise.resolve({ slug: SLUG }) }),
+    );
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+
+    // Kein <fieldset> mehr — Border-Bug behoben:
+    expect(markup).not.toContain("<fieldset");
+    // Checkboxen werden trotzdem gerendert:
+    expect(markup).toContain('data-testid="topic-checkboxes"');
+    expect(markup).toContain('value="AU"');
+  });
+
   it("notFound wenn keine Practice mit dem Slug gefunden wird", async () => {
     pm.practice.findUnique.mockResolvedValue(null);
 
@@ -454,6 +467,31 @@ describe("DigitalRequestsPage — Interne Liste", () => {
       unknown
     >;
     expect(whereArg.owner_practice_id).toBe("praxis-1");
+    // Nur offene Anfragen laden (new + in_review):
+    expect(whereArg.status).toEqual({ in: ["new", "in_review"] });
+  });
+
+  it("sent-Anfragen erscheinen nicht im Query-Where", async () => {
+    const account = makeAccount({
+      current_practice: { id: "praxis-1" },
+      memberships: [{ practice_id: "praxis-1", role: "OWNER" }],
+    });
+    requirePatComm.mockResolvedValue(account);
+    isInboxOnly.mockReturnValue(false);
+    // DB gibt nichts zurück (sent ist herausgefiltert)
+    pm.digitalRequest.findMany.mockResolvedValue([]);
+
+    const { result } = await runPage(() => DigitalRequestsPage());
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+
+    expect(markup).toContain("Keine offenen Anfragen");
+
+    const whereArg = pm.digitalRequest.findMany.mock.calls[0][0].where as Record<
+      string,
+      unknown
+    >;
+    // Status-Filter schließt sent / closed aus:
+    expect(whereArg.status).toEqual({ in: ["new", "in_review"] });
   });
 
   it("INBOX_ONLY wird zu /questionnaires weitergeleitet", async () => {
@@ -530,5 +568,43 @@ describe("AppShell — Digitale Anfragen NavItem", () => {
   it("INBOX_ONLY sieht KEIN 'Digitale Anfragen' NavItem", () => {
     const markup = renderNav("INBOX_ONLY");
     expect(markup).not.toContain("Digitale Anfragen");
+  });
+
+  it("Unread-Indikator erscheint wenn digitalRequestsHasUnread=true", () => {
+    const account = {
+      id: "acc-1",
+      email: "praxis@example.com",
+      is_approved: true,
+      is_admin: false,
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled: true,
+      website_forms_enabled: false,
+      office_cases_enabled: false,
+      current_practice: { id: "praxis-1" },
+      memberships: [{ practice_id: "praxis-1", role: "OWNER" as const }],
+    };
+    const markup = renderToStaticMarkup(
+      React.createElement(AppShell, { account, digitalRequestsHasUnread: true }),
+    );
+    expect(markup).toContain("digital-requests-unread-dot");
+  });
+
+  it("Kein Unread-Indikator wenn digitalRequestsHasUnread=false", () => {
+    const account = {
+      id: "acc-1",
+      email: "praxis@example.com",
+      is_approved: true,
+      is_admin: false,
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled: true,
+      website_forms_enabled: false,
+      office_cases_enabled: false,
+      current_practice: { id: "praxis-1" },
+      memberships: [{ practice_id: "praxis-1", role: "OWNER" as const }],
+    };
+    const markup = renderToStaticMarkup(
+      React.createElement(AppShell, { account, digitalRequestsHasUnread: false }),
+    );
+    expect(markup).not.toContain("digital-requests-unread-dot");
   });
 });

@@ -130,11 +130,11 @@ export default async function AnfragePage({
         </div>
 
         {/* Anliegen-Auswahl (Pflichtfeld, Mehrfachauswahl) */}
-        <fieldset className="mb-6">
-          <legend className="mb-2 block text-sm font-medium">
+        <div className="mb-6" role="group" aria-labelledby="topics-label">
+          <p id="topics-label" className="mb-3 text-sm font-medium">
             Anliegen <span aria-hidden="true">*</span>
-          </legend>
-          <div className="space-y-2" data-testid="topic-checkboxes">
+          </p>
+          <div className="flex flex-col gap-3" data-testid="topic-checkboxes">
             {(Object.entries(DIGITAL_REQUEST_TOPICS) as [string, string][]).map(
               ([value, label]) => (
                 <label
@@ -145,14 +145,14 @@ export default async function AnfragePage({
                     type="checkbox"
                     name="requested_topic"
                     value={value}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                    className="h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600"
                   />
                   <span>{label}</span>
                 </label>
               ),
             )}
           </div>
-        </fieldset>
+        </div>
 
         {/* Honeypot — unsichtbar für echte Nutzer */}
         <div aria-hidden="true" style={{ display: "none" }}>

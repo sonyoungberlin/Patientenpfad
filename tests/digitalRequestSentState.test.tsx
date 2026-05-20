@@ -206,37 +206,37 @@ describe("DigitalRequestsPage — CTA-Labels", () => {
     isInboxOnlyMock.mockReturnValue(false);
   });
 
-  it("zeigt 'Ansehen' für sent-Zeilen", async () => {
-    pm.digitalRequest.findMany.mockResolvedValue([
-      { id: "dr-1", createdAt: new Date(), submitter_name: "Test", status: "sent", concern_text: null },
-    ]);
-    const { result } = await runPage(() => DigitalRequestsPage());
-    const markup = renderToStaticMarkup(result as React.ReactElement);
-    expect(markup).toContain("Ansehen");
-    expect(markup).not.toContain("Bearbeiten");
-  });
-
   it("zeigt 'Bearbeiten' für aktive Zeilen (new / in_review)", async () => {
     pm.digitalRequest.findMany.mockResolvedValue([
-      { id: "dr-1", createdAt: new Date(), submitter_name: "Test", status: "new", concern_text: null },
+      { id: "dr-1", createdAt: new Date(), submitter_name: "Test", status: "new", concern_text: null, requested_topics: null },
     ]);
     const { result } = await runPage(() => DigitalRequestsPage());
     const markup = renderToStaticMarkup(result as React.ReactElement);
     expect(markup).toContain("Bearbeiten");
-    expect(markup).not.toContain("Ansehen");
   });
 
-  it("separiert aktive und versendete Zeilen in zwei Bereiche", async () => {
+  it("Query-Where enthält Status-Filter für new und in_review", async () => {
+    pm.digitalRequest.findMany.mockResolvedValue([]);
+    await runPage(() => DigitalRequestsPage());
+    const whereArg = pm.digitalRequest.findMany.mock.calls[0][0].where as Record<
+      string,
+      unknown
+    >;
+    expect(whereArg.status).toEqual({ in: ["new", "in_review"] });
+  });
+
+  it("zeigt eine einzige Tabelle ohne Abschnittstrennungen", async () => {
     pm.digitalRequest.findMany.mockResolvedValue([
-      { id: "dr-1", createdAt: new Date(), submitter_name: "Aktiv", status: "new", concern_text: null },
-      { id: "dr-2", createdAt: new Date(), submitter_name: "Versendet", status: "sent", concern_text: null },
+      { id: "dr-1", createdAt: new Date(), submitter_name: "Aktiv", status: "new", concern_text: null, requested_topics: null },
+      { id: "dr-2", createdAt: new Date(), submitter_name: "In Bearbeitung", status: "in_review", concern_text: null, requested_topics: null },
     ]);
     const { result } = await runPage(() => DigitalRequestsPage());
     const markup = renderToStaticMarkup(result as React.ReactElement);
-    expect(markup).toContain("Offen");
-    expect(markup).toContain("Versendet");
-    expect(markup).toContain("Bearbeiten");
-    expect(markup).toContain("Ansehen");
+    // Beide Zeilen sichtbar:
+    expect(markup).toContain("Aktiv");
+    expect(markup).toContain("In Bearbeitung");
+    // Keine Abschnittsüberschriften:
+    expect(markup).not.toContain("Versendet / Abgeschlossen");
   });
 });
 

@@ -68,6 +68,7 @@ export default async function DigitalRequestsPage() {
   const requests = await prisma.digitalRequest.findMany({
     where: {
       ...getOwnershipFilter(account),
+      status: { in: ["new", "in_review"] },
       deleted_at: null,
     },
     orderBy: { createdAt: "desc" },
@@ -81,20 +82,15 @@ export default async function DigitalRequestsPage() {
     },
   });
 
-  const activeRequests = requests.filter(
-    (r) => r.status !== "sent" && r.status !== "closed",
-  );
-  const sentRequests = requests.filter(
-    (r) => r.status === "sent" || r.status === "closed",
-  );
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="mb-6 text-2xl font-semibold">Digitale Anfragen</h1>
 
-  function renderTable(rows: typeof requests, label: string) {
-    if (rows.length === 0) return null;
-    return (
-      <section className="mb-10">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          {label}
-        </h2>
+      {requests.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          Keine offenen Anfragen.
+        </p>
+      ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -107,7 +103,7 @@ export default async function DigitalRequestsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((req) => (
+              {requests.map((req) => (
                 <tr key={req.id} className="border-b last:border-0">
                   <td className="py-3 pr-4 font-medium">
                     {req.submitter_name}
@@ -132,9 +128,7 @@ export default async function DigitalRequestsPage() {
                       href={`/digital-requests/${req.id}`}
                       className="text-sm text-blue-600 hover:underline"
                     >
-                      {req.status === "sent" || req.status === "closed"
-                        ? "Ansehen"
-                        : "Bearbeiten"}
+                      Bearbeiten
                     </Link>
                   </td>
                 </tr>
@@ -142,23 +136,6 @@ export default async function DigitalRequestsPage() {
             </tbody>
           </table>
         </div>
-      </section>
-    );
-  }
-
-  return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-semibold">Digitale Anfragen</h1>
-
-      {requests.length === 0 ? (
-        <p className="text-sm text-gray-500">
-          Noch keine Anfragen eingegangen.
-        </p>
-      ) : (
-        <>
-          {renderTable(activeRequests, "Offen")}
-          {renderTable(sentRequests, "Versendet / Abgeschlossen")}
-        </>
       )}
     </main>
   );

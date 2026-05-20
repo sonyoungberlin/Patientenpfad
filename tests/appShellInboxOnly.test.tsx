@@ -61,4 +61,13 @@ describe("AppShell INBOX_ONLY", () => {
     );
     expect(htmlWebsiteForms).not.toContain("Formularverwaltung");
   });
+
+  it("zeigt keinen 'Digitale Anfragen'-Link und keinen Unread-Punkt", () => {
+    mockedPathname = "/questionnaires";
+    const html = renderToStaticMarkup(
+      <AppShell account={inboxOnlyAccount()} digitalRequestsHasUnread={true} />,
+    );
+    expect(html).not.toContain("Digitale Anfragen");
+    expect(html).not.toContain("digital-requests-unread-dot");
+  });
 });
