@@ -23,13 +23,15 @@ import { Prisma, type PrismaClient, type InquirySession } from "@prisma/client";
 import {
   DecisionStatus,
   ExplanationOutputStatus,
+  type InquiryCheckpoint,
   type InquirySection,
   type InquiryResponseV2Output,
   type CheckpointStatusValue,
 } from "@/lib/inquiries/types";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_CHECKPOINT_CATALOG_V2, getInquiryCheckpointCatalog } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
+import { getPracticeInquiryConfig } from "@/lib/inquiries/practiceConfig";
 import { prisma as defaultPrisma } from "@/lib/prisma";
 
 // ---------------------------------------------------------------------------
@@ -206,8 +208,9 @@ export function buildInitialInquirySectionSnapshot(
  */
 export function generateOutputFromSections(
   sections: InquirySection[],
+  catalog?: Record<string, InquiryCheckpoint>,
 ): InquiryResponseV2Output {
-  return renderInquiryResponseFromSections(sections);
+  return renderInquiryResponseFromSections(sections, { catalog });
 }
 
 // ---------------------------------------------------------------------------
@@ -601,7 +604,10 @@ export async function confirmInquirySession(
       };
     });
 
-    const generatedOutput = generateOutputFromSections(sections);
+    const generatedOutput = generateOutputFromSections(
+      sections,
+      getInquiryCheckpointCatalog(getPracticeInquiryConfig(session.owner_practice_id)),
+    );
 
     return tx.inquirySession.update({
       where: { id: sessionId },
