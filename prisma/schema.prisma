@@ -566,6 +566,26 @@ model Practice {
   /// sonst ADMIN-, sonst ältesten Membership übernommen.
   message_signature String?
 
+  /// Praxis-spezifische Konfigurationsparameter für den Anfrage-Assistenten.
+  /// Alle Felder nullable; NULL = Fallback auf PILOT_PRACTICE_INQUIRY_CONFIG
+  /// im Resolver (`lib/inquiries/practiceConfig.ts`).
+  /// Resolver-Anbindung erfolgt in separatem Schritt.
+  inq_booking_calendar_name         String?
+  inq_findings_review_code          String?
+  inq_chronic_control_code          String?
+  inq_checkup_second_code           String?
+  inq_doctor_order_code             String?
+  inq_upload_platform_name          String?
+  inq_upload_platform_account_label String?
+  inq_open_consultation_days        String?
+  inq_open_consultation_hours       String?
+  inq_open_consultation_cap_limited Boolean?
+  inq_video_support_contact         String?
+  inq_billing_cycle_label           String?
+  inq_digital_req_time_min          Int?
+  inq_digital_req_time_max          Int?
+  inq_digital_req_time_unit         String?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
