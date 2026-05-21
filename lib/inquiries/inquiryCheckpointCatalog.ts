@@ -3443,13 +3443,13 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für die Kommunikation mit unserer Praxis nutzen wir Doctolib.\n\nSie können dort Termine online buchen und verwalten sowie Rezepte oder Bescheinigungen digital anfragen.\n\nBitte nutzen Sie dafür Ihren Doctolib-Account.",
+        `Für die Kommunikation mit unserer Praxis nutzen wir ${_cfg.uploadPlatformName}.\n\nSie können dort Termine online buchen und verwalten sowie Rezepte oder Bescheinigungen digital anfragen.\n\nBitte nutzen Sie dafür Ihren ${_cfg.uploadPlatformAccountLabel}.`,
       // NO: bewusst still – keine Erklärung nötig
     },
     textByAudience: {
       contact_person: {
         [ExplanationStatus.YES]:
-          "Für die Kommunikation mit unserer Praxis wird Doctolib genutzt.\n\nDort können Termine online gebucht und verwaltet sowie Rezepte oder Bescheinigungen digital angefragt werden.\n\nBitte dafür den Doctolib-Account nutzen.",
+          `Für die Kommunikation mit unserer Praxis wird ${_cfg.uploadPlatformName} genutzt.\n\nDort können Termine online gebucht und verwaltet sowie Rezepte oder Bescheinigungen digital angefragt werden.\n\nBitte dafür den ${_cfg.uploadPlatformAccountLabel} nutzen.`,
       },
     },
   },
