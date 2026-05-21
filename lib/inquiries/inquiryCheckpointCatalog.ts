@@ -13,7 +13,7 @@ import {
   type M5ReasonCode,
 } from "@/lib/inquiries/types";
 // Config-Anbindung nur für DIGITAL_REQUEST_PROCESSING_TIME. Keine weiteren Checkpoints ohne separaten Review-Schritt.
-import { PILOT_PRACTICE_INQUIRY_CONFIG as _cfg } from "@/lib/inquiries/practiceConfig";
+import { PILOT_PRACTICE_INQUIRY_CONFIG, type PracticeInquiryConfig } from "@/lib/inquiries/practiceConfig";
 
 /**
  * Statischer Klärpunkt-Katalog für den Anfrage-Assistenten.
@@ -153,7 +153,10 @@ export const INQUIRY_CHECKPOINT_CATALOGUE: Record<string, InquiryCheckpointTempl
  * Enthält alle Checkpoints des AU-Anliegen sowie die wiederverwendbaren
  * globalen Checkpoints (GLOBAL scope).
  */
-export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = {
+export function getInquiryCheckpointCatalog(
+  _cfg: PracticeInquiryConfig = PILOT_PRACTICE_INQUIRY_CONFIG,
+): Record<string, InquiryCheckpoint> {
+  return {
 
   // ---- DECISION ----
 
@@ -4759,7 +4762,10 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       [ExplanationStatus.YES]: "Hausbesuche nicht im Leistungsangebot",
     },
   },
-};
+  };
+}
+
+export const INQUIRY_CHECKPOINT_CATALOG_V2 = getInquiryCheckpointCatalog();
 
 /**
  * Geordnete Liste der Intro-Checkpoint-IDs.
