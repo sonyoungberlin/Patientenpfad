@@ -3404,7 +3404,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
       // M2-Schalter: genau eine klare Information – kein Lösungsvorschlag durch die Praxis,
       // klarer Verweis auf den externen Doctolib-Support.
       [ExplanationStatus.YES]:
-        "Scheinbar konnte die Videosprechstunde aus technischen Gründen nicht stattfinden. Wenden Sie sich bei Fragen an den Doctolib Support.",
+        `Scheinbar konnte die Videosprechstunde aus technischen Gründen nicht stattfinden. Wenden Sie sich bei Fragen an den ${_cfg.videoSupportContact}.`,
       // NO: bewusst still – keine Erklärung nötig
     },
   },
