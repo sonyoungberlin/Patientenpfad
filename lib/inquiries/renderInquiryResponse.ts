@@ -178,6 +178,7 @@ function actionCategoryRank(category?: string): number {
  */
 export type RenderOptions = {
   audience?: Audience;
+  catalog?: Record<string, InquiryCheckpoint>;
 };
 
 /**
@@ -236,6 +237,7 @@ export function renderInquiryResponseFromSections(
   options?: RenderOptions,
 ): InquiryResponseV2Output {
   const audience: Audience = options?.audience ?? "patient";
+  const catalog = options?.catalog ?? INQUIRY_CHECKPOINT_CATALOG_V2;
   const sectionOutputs: InquirySectionOutput[] = [];
   const sharedBottomEntries: Array<{ text: string; category?: string }> = [];
   const sharedBottomSeen = new Set<string>();
@@ -254,7 +256,7 @@ export function renderInquiryResponseFromSections(
   const _allowedGlobalActionIds = getAllowedGlobalActionIds(_activeShelfGroups);
   for (const actionId of GLOBAL_ACTION_SHELF) {
     if (!_allowedGlobalActionIds.has(actionId)) continue;
-    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
+    const checkpoint = catalog[actionId];
     if (!checkpoint || checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
     const status = globalActionStatuses[actionId];
     if (status === undefined || status === ActionStatus.INACTIVE) continue;
@@ -303,7 +305,7 @@ export function renderInquiryResponseFromSections(
 
     // ---- A) Decision-Checkpoint → mainDecision ----
     let mainDecision: string | null = null;
-    const decisionCheckpoint = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
+    const decisionCheckpoint = catalog[profile.decisionCheckpointId];
     if (decisionCheckpoint) {
       const text = resolveCheckpointText(decisionCheckpoint, section.decisionStatus, audience) ?? null;
       mainDecision = text;
@@ -321,7 +323,7 @@ export function renderInquiryResponseFromSections(
       ...extraProcessIds,
     ]));
     for (const checkpointId of allSpecificIds) {
-      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
+      const checkpoint = catalog[checkpointId];
       if (!checkpoint) continue;
 
       const status = section.checkpointStatuses[checkpointId];
@@ -368,7 +370,7 @@ export function renderInquiryResponseFromSections(
 
     // ---- C) Global EXPLANATION Checkpoints → YES + SHOW → globalHints oder textByStatus[YES] ----
     for (const checkpointId of profile.boundGlobalCheckpointIds) {
-      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[checkpointId];
+      const checkpoint = catalog[checkpointId];
       if (!checkpoint) continue;
       if (checkpoint.scope !== InquiryCheckpointScope.GLOBAL) continue;
       if (checkpoint.kind !== InquiryCheckpointKind.EXPLANATION) continue;
@@ -405,7 +407,7 @@ export function renderInquiryResponseFromSections(
 
     // ---- D) ACTION/SHARED_BOTTOM (availableActionIds) – unverändert ----
     for (const actionId of profile.availableActionIds) {
-      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
+      const checkpoint = catalog[actionId];
       if (!checkpoint) continue;
       if (checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
       if (checkpoint.placement !== InquiryCheckpointPlacement.SHARED_BOTTOM) continue;
@@ -425,7 +427,7 @@ export function renderInquiryResponseFromSections(
     // ---- E) Profil-spezifische ACTION-Checkpoints (boundActionCheckpointIds) ----
     const attachedActionEntries: Array<{ text: string; docText: string; label: string; category?: string }> = [];
     for (const actionId of profile.boundActionCheckpointIds ?? []) {
-      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[actionId];
+      const checkpoint = catalog[actionId];
       if (!checkpoint) continue;
       if (checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
 
@@ -480,7 +482,7 @@ export function renderInquiryResponseFromSections(
   for (const introId of INTRO_CHECKPOINT_IDS) {
     const status = firstSectionStatuses[introId];
     if (status !== ActionStatus.ACTIVE) continue;
-    const introCp = INQUIRY_CHECKPOINT_CATALOG_V2[introId];
+    const introCp = catalog[introId];
     if (!introCp) continue;
     const text = resolveCheckpointText(introCp, ActionStatus.ACTIVE, audience);
     if (text) { intro = text; activeIntroId = introId; break; }
@@ -501,7 +503,7 @@ export function renderInquiryResponseFromSections(
     for (const sectionIntroId of SECTION_INTRO_CHECKPOINT_IDS) {
       const status = firstSectionStatuses[sectionIntroId];
       if (status !== ActionStatus.ACTIVE) continue;
-      const sectionIntroCp = INQUIRY_CHECKPOINT_CATALOG_V2[sectionIntroId];
+      const sectionIntroCp = catalog[sectionIntroId];
       if (!sectionIntroCp) continue;
       const sectionText = resolveCheckpointText(sectionIntroCp, ActionStatus.ACTIVE, audience);
       if (sectionText) {
