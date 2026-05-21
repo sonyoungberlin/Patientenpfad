@@ -2783,11 +2783,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte buchen Sie im Online-Buchungskalender einen Chroniker-Kontrolltermin. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode CHKT25.",
+        `Bitte buchen Sie im ${_cfg.bookingCalendarName} einen Chroniker-Kontrolltermin. Für diesen Termin benötigen Sie den Buchungscode ${_cfg.chronicControlBookingCode}.`,
     },
     textByAudience: {
       contact_person:
-        "Bitte im Online-Buchungskalender einen Chroniker-Kontrolltermin buchen. Zur Best\u00E4tigung wird der Buchungscode CHKT25 ben\u00F6tigt.",
+        `Bitte im ${_cfg.bookingCalendarName} einen Chroniker-Kontrolltermin buchen. Zur Bestätigung wird der Buchungscode ${_cfg.chronicControlBookingCode} benötigt.`,
     },
   },
 
