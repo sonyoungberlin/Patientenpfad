@@ -2819,11 +2819,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Für die EKG-Untersuchung wählen Sie im Online-Buchungskalender bitte:\n\n1. Hausarzt / Allgemeinmediziner\n2. Vor Ort\n3. Ärztliche Anordnung\n\nGeben Sie zur Bestätigung den Buchungscode LKBP25 ein.",
+        `Für die EKG-Untersuchung wählen Sie im ${_cfg.bookingCalendarName} bitte:\n\n1. Hausarzt / Allgemeinmediziner\n2. Vor Ort\n3. Ärztliche Anordnung\n\nGeben Sie zur Bestätigung den Buchungscode ${_cfg.ekgOrderBookingCode} ein.`,
     },
     textByAudience: {
       contact_person:
-        "Für die EKG-Untersuchung bitte im Online-Buchungskalender wählen:\n\n1. Hausarzt / Allgemeinmediziner\n2. Vor Ort\n3. Ärztliche Anordnung\n\nBuchungscode zur Bestätigung: LKBP25.",
+        `Für die EKG-Untersuchung bitte im ${_cfg.bookingCalendarName} wählen:\n\n1. Hausarzt / Allgemeinmediziner\n2. Vor Ort\n3. Ärztliche Anordnung\n\nBuchungscode zur Bestätigung: ${_cfg.ekgOrderBookingCode}.`,
     },
   },
 
