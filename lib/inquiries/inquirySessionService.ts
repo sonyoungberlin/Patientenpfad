@@ -49,6 +49,8 @@ import { prisma as defaultPrisma } from "@/lib/prisma";
 export type CreateInquirySessionInput = {
   /** Optionale Account-ID des erstellenden Nutzers. */
   ownerAccountId?: string;
+  /** Optionale Praxis-ID der erstellenden Praxis. Wird als owner_practice_id gespeichert. */
+  ownerPracticeId?: string;
   /** Liste der vom Nutzer gewählten Anliegen-IDs (z. B. ["AU"]). */
   selectedInquiryIds?: string[];
   /** Wenn true, wird die Session als dauerhafte Vorlage gespeichert. */
@@ -251,6 +253,7 @@ export async function createInquirySession(
   return client.inquirySession.create({
     data: {
       owner_account_id: input.ownerAccountId ?? null,
+      owner_practice_id: input.ownerPracticeId ?? null,
       status: "DRAFT",
       selected_inquiry_ids: toJsonInput(validIds),
       section_snapshot: toJsonInput(sections),

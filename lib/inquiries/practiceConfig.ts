@@ -164,3 +164,21 @@ export const PILOT_PRACTICE_INQUIRY_CONFIG = {
   billingCycleLabel: "quartalsweise",
   prescriptionPostalDeliveryAllowed: false,
 } as const satisfies PracticeInquiryConfig;
+
+// ---------------------------------------------------------------------------
+// Resolver
+// ---------------------------------------------------------------------------
+
+/**
+ * Gibt die Praxis-Konfiguration für den Anfrage-Assistenten zurück.
+ *
+ * Phase 1: Gibt immer PILOT_PRACTICE_INQUIRY_CONFIG zurück.
+ * Spätere Phasen können hier einen DB-Lookup auf Basis der practiceId ergänzen.
+ *
+ * NULL- und undefined-safe: fehlende IDs fallen auf die Pilot-Config zurück.
+ */
+export function getPracticeInquiryConfig(
+  _practiceId: string | null | undefined,
+): PracticeInquiryConfig {
+  return PILOT_PRACTICE_INQUIRY_CONFIG;
+}
