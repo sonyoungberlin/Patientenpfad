@@ -36,6 +36,8 @@ export type PracticeInquiryConfig = {
   readonly findingsReviewBookingCode: string;
   /** Buchungscode für den Termin „Chroniker-Kontrolltermin". */
   readonly chronicControlBookingCode: string;
+  /** Buchungscode für den Termin „Check-Up - 2. Termin". */
+  readonly checkupSecondBookingCode: string;
   /**
    * URL für digitale Anfragen.
    * Leer lassen (""), wenn die URL praxisspezifisch gesetzt werden muss.
@@ -121,6 +123,7 @@ export const PILOT_PRACTICE_INQUIRY_CONFIG = {
   bookingCalendarUrl: "",
   findingsReviewBookingCode: "BFSP25",
   chronicControlBookingCode: "CHKT25",
+  checkupSecondBookingCode: "CHECK25",
   // URL ist praxisspezifisch – bewusst leer; muss je Deployment gesetzt werden
   digitalRequestUrl: "",
 

@@ -2766,11 +2766,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte buchen Sie im Online-Buchungskalender den Termin \u201ECheck-Up - 2. Termin\u201C. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung ben\u00F6tigen Sie den Buchungscode CHECK25. Bitte bringen Sie Ihren Impfpass mit.",
+        `Bitte buchen Sie im ${_cfg.bookingCalendarName} den Termin \u201ECheck-Up - 2. Termin\u201C. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung ben\u00F6tigen Sie den Buchungscode ${_cfg.checkupSecondBookingCode}. Bitte bringen Sie Ihren Impfpass mit.`,
     },
     textByAudience: {
       contact_person:
-        "Bitte im Online-Buchungskalender den Termin \u201ECheck-Up - 2. Termin\u201C buchen. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung wird der Buchungscode CHECK25 ben\u00F6tigt. Bitte den Impfpass mitbringen.",
+        `Bitte im ${_cfg.bookingCalendarName} den Termin \u201ECheck-Up - 2. Termin\u201C buchen. Dieser Termin ist erst sinnvoll, wenn die Laborwerte aus dem ersten Termin vorliegen. Zur Best\u00E4tigung wird der Buchungscode ${_cfg.checkupSecondBookingCode} ben\u00F6tigt. Bitte den Impfpass mitbringen.`,
     },
   },
 
