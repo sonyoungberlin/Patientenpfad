@@ -12,6 +12,8 @@ import {
   type SpecificRole,
   type M5ReasonCode,
 } from "@/lib/inquiries/types";
+// Config-Anbindung nur für DIGITAL_REQUEST_PROCESSING_TIME. Keine weiteren Checkpoints ohne separaten Review-Schritt.
+import { PILOT_PRACTICE_INQUIRY_CONFIG as _cfg } from "@/lib/inquiries/practiceConfig";
 
 /**
  * Statischer Klärpunkt-Katalog für den Anfrage-Assistenten.
@@ -1499,7 +1501,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Die Bearbeitung digitaler Anfragen dauert je nach Auslastung 8–12 Stunden. Bitte sehen Sie in dieser Zeit von Nachfragen zum Bearbeitungsstand ab.",
+        `Die Bearbeitung digitaler Anfragen dauert je nach Auslastung ${_cfg.digitalRequestProcessingTimeMin}–${_cfg.digitalRequestProcessingTimeMax} ${_cfg.digitalRequestProcessingTimeUnit}. Bitte sehen Sie in dieser Zeit von Nachfragen zum Bearbeitungsstand ab.`,
     },
   },
 
