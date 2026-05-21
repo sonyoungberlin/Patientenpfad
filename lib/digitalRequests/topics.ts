@@ -10,6 +10,7 @@
 
 export const DIGITAL_REQUEST_TOPICS = {
   AU: "Arbeitsunfähigkeitsbescheinigung",
+  HEILMITTELVERORDNUNG: "Heilmittelverordnung",
   PRESCRIPTION: "Rezept",
   REFERRAL: "Überweisung",
 } as const;

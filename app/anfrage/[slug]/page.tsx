@@ -112,7 +112,7 @@ export default async function AnfragePage({
         </div>
 
         {/* Geburtsdatum (Pflichtfeld) */}
-        <div className="mb-4">
+        <div className="mb-6">
           <label
             htmlFor="birth_date"
             className="mb-1 block text-sm font-medium"
@@ -130,24 +130,24 @@ export default async function AnfragePage({
         </div>
 
         {/* Anliegen-Auswahl (Pflichtfeld, Mehrfachauswahl) */}
-        <div className="mb-6" role="group" aria-labelledby="topics-label">
+        <div className="mb-8" role="group" aria-labelledby="topics-label">
           <p id="topics-label" className="mb-3 text-sm font-medium">
             Anliegen <span aria-hidden="true">*</span>
           </p>
-          <div className="flex flex-col gap-3" data-testid="topic-checkboxes">
+          <div className="flex flex-col gap-4" data-testid="topic-checkboxes">
             {(Object.entries(DIGITAL_REQUEST_TOPICS) as [string, string][]).map(
               ([value, label]) => (
                 <label
                   key={value}
-                  className="flex cursor-pointer items-center gap-2 text-sm"
+                  className="flex cursor-pointer items-start gap-3 text-sm"
                 >
                   <input
                     type="checkbox"
                     name="requested_topic"
                     value={value}
-                    className="h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600"
                   />
-                  <span>{label}</span>
+                  <span className="leading-relaxed">{label}</span>
                 </label>
               ),
             )}
@@ -168,7 +168,7 @@ export default async function AnfragePage({
 
         <button
           type="submit"
-          className="rounded bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="mt-6 w-full rounded bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
         >
           Anfrage absenden
         </button>
