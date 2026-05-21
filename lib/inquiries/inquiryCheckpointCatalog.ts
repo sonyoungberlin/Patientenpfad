@@ -1614,11 +1614,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte laden Sie relevante Unterlagen über Ihren Doctolib Account hoch.",
+        `Bitte laden Sie relevante Unterlagen über Ihren ${_cfg.uploadPlatformName} Account hoch.`,
     },
     textByAudience: {
       contact_person:
-        "Bitte relevante Unterlagen über den Doctolib-Account hochladen.",
+        `Bitte relevante Unterlagen über den ${_cfg.uploadPlatformAccountLabel} hochladen.`,
     },
   },
 
