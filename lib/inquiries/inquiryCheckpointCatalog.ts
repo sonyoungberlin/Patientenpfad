@@ -2172,7 +2172,7 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "INFO",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Die offene Sprechstunde findet täglich von 9–10 Uhr statt. Eine vorherige Terminvereinbarung ist nicht erforderlich. Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist.",
+        `Die offene Sprechstunde findet ${_cfg.openConsultationDays} von ${_cfg.openConsultationHours} statt. Eine vorherige Terminvereinbarung ist nicht erforderlich.${_cfg.openConsultationCapacityLimited ? " Bitte beachten Sie, dass es je nach Auslastung zu Wartezeiten kommen kann und die Aufnahme begrenzt ist." : ""}`,
     },
   },
 
