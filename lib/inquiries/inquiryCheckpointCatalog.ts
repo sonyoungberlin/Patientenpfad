@@ -2749,11 +2749,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     actionCategory: "NEXT_STEP",
     textByStatus: {
       [ActionStatus.ACTIVE]:
-        "Bitte buchen Sie im Online-Buchungskalender eine Befundbesprechung. F\u00FCr diesen Termin ben\u00F6tigen Sie den Buchungscode BFSP25.",
+        `Bitte buchen Sie im ${_cfg.bookingCalendarName} eine Befundbesprechung. Für diesen Termin benötigen Sie den Buchungscode ${_cfg.findingsReviewBookingCode}.`,
     },
     textByAudience: {
       contact_person:
-        "Bitte im Online-Buchungskalender eine Befundbesprechung buchen. Zur Best\u00E4tigung wird der Buchungscode BFSP25 ben\u00F6tigt.",
+        `Bitte im ${_cfg.bookingCalendarName} eine Befundbesprechung buchen. Zur Bestätigung wird der Buchungscode ${_cfg.findingsReviewBookingCode} benötigt.`,
     },
   },
 
