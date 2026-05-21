@@ -3325,11 +3325,11 @@ export const INQUIRY_CHECKPOINT_CATALOG_V2: Record<string, InquiryCheckpoint> = 
     ],
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Die Abrechnung erfolgt in der Regel quartalsweise über unsere Buchhaltung. Sie erhalten Ihre Rechnung anschließend automatisch vom Abrechnungsdienstleister.",
+        `Die Abrechnung erfolgt in der Regel ${_cfg.billingCycleLabel} über unsere Buchhaltung. Sie erhalten Ihre Rechnung anschließend automatisch vom Abrechnungsdienstleister.`,
       // NO: bewusst still – keine Erklärung nötig
     },
     docByStatus: {
-      [ExplanationStatus.YES]: "Patient über quartalsweise Abrechnung informiert.",
+      [ExplanationStatus.YES]: `Patient über ${_cfg.billingCycleLabel} Abrechnung informiert.`,
     },
   },
 
