@@ -3,6 +3,7 @@ import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { getPracticeInquiryConfig } from "@/lib/inquiries/practiceConfig";
 import { GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
 import {
   getActiveProcessShelfGroupsFromStatuses,
@@ -126,6 +127,8 @@ export default async function InquiryM3Page({
       messageSignature = "";
     }
   }
+
+  const practiceConfig = await getPracticeInquiryConfig(currentPracticeId ?? undefined);
 
   const selectedIds: string[] = Array.isArray(session.selected_inquiry_ids)
     ? (session.selected_inquiry_ids as string[])
@@ -277,6 +280,7 @@ export default async function InquiryM3Page({
         initialGeneratedOutput={generatedOutput}
         isConfirmed={isConfirmed}
         messageSignature={messageSignature}
+        practiceConfig={practiceConfig}
       />
     </main>
   );

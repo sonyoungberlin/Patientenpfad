@@ -13,6 +13,8 @@ import {
 } from "@/lib/inquiries/types";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { buildInquiryM5Summary } from "@/lib/inquiries/buildInquiryM5Summary";
+import { getInquiryCheckpointCatalog } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import type { PracticeInquiryConfig } from "@/lib/inquiries/practiceConfig";
 import { applyIntroToggle } from "@/lib/inquiries/introToggle";
 import {
   inquiryOutputToPlainText,
@@ -102,6 +104,8 @@ type Props = {
    * State und Speicherung bleiben unverändert.
    */
   messageSignature?: string;
+  /** Praxisspezifische Inquiry-Config – steuert den Checkpoint-Katalog für die Vorschau. */
+  practiceConfig?: PracticeInquiryConfig;
 };
 
 const DECISION_OPTIONS = [
@@ -1090,8 +1094,14 @@ export default function InquiryM3Client({
   initialGeneratedOutput,
   isConfirmed,
   messageSignature = "",
+  practiceConfig,
 }: Props) {
   const actionIdSet = new Set(actionIds);
+
+  const catalog = useMemo(
+    () => getInquiryCheckpointCatalog(practiceConfig),
+    [practiceConfig],
+  );
 
   // IDs aller EXPLANATION-Checkpoints aus allen Sections (für outputStatus-Initialisierung).
   const explanationCheckpointIds = useMemo(
@@ -1290,11 +1300,11 @@ export default function InquiryM3Client({
   const livePreview = useMemo((): InquiryResponseV2Output | null => {
     if (confirmed) return null;
     try {
-      return renderInquiryResponseFromSections(buildInquirySections, { audience });
+      return renderInquiryResponseFromSections(buildInquirySections, { audience, catalog });
     } catch {
       return null;
     }
-  }, [confirmed, buildInquirySections, audience]);
+  }, [confirmed, buildInquirySections, audience, catalog]);
 
   // M5 compact summary for live preview – computed from same sections as livePreview.
   const liveM5Lines = useMemo((): string[] => {
@@ -1317,11 +1327,11 @@ export default function InquiryM3Client({
   const frozenOutputByAudience = useMemo((): InquiryResponseV2Output | null => {
     if (!confirmed) return null;
     try {
-      return renderInquiryResponseFromSections(buildInquirySections, { audience });
+      return renderInquiryResponseFromSections(buildInquirySections, { audience, catalog });
     } catch {
       return frozenOutput;
     }
-  }, [confirmed, buildInquirySections, audience, frozenOutput]);
+  }, [confirmed, buildInquirySections, audience, frozenOutput, catalog]);
 
   const frozenOutputWithLink = useMemo(
     () => {
