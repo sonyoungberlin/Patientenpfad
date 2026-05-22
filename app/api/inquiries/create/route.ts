@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const session = await createInquirySession({
       selectedInquiryIds: inquiryIds,
       ownerAccountId: account.id,
-      ownerPracticeId: account.default_practice_id ?? undefined,
+      ownerPracticeId: account.current_practice?.id ?? undefined,
       asTemplate,
       templateName: templateNameRaw,
     });
