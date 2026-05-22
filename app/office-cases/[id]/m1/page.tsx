@@ -55,7 +55,6 @@ export default async function OfficeCaseM1Page({
   return (
     <main style={{ display: "grid", gap: "1rem" }}>
       <section className="card" style={{ display: "grid", gap: "0.5rem" }}>
-        <div className="text-small text-muted">M1</div>
         <h1 style={{ margin: 0 }}>{topic?.title ?? officeCase.title ?? "Officefall"}</h1>
         <p style={{ margin: 0 }}>
           {officeCase.trigger_note ?? "Kein Anlass erfasst."}
@@ -67,10 +66,10 @@ export default async function OfficeCaseM1Page({
 
       <section className="card" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
         <Link href={`/office-cases/${id}/m2`}>
-          <button type="button">Zu M2</button>
+          <button type="button">Operative Prüfung</button>
         </Link>
         <Link href={`/office-cases/${id}/m3`}>
-          <button type="button">Zu M3</button>
+          <button type="button">Schreiben & Vorlagen</button>
         </Link>
       </section>
     </main>

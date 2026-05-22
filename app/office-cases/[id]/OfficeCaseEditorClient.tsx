@@ -201,7 +201,7 @@ export default function OfficeCaseEditorClient({
           setError(data.error ?? "Speichern fehlgeschlagen.");
           return;
         }
-        setStatus("M2 gespeichert.");
+        setStatus("Operative Prüfung gespeichert.");
       } else {
         for (const checkpoint of checkpoints) {
           const res = await fetch(`/api/office-cases/${officeCase.id}/checkpoint/update`, {
@@ -219,7 +219,7 @@ export default function OfficeCaseEditorClient({
             return;
           }
         }
-        setStatus("M3 gespeichert.");
+        setStatus("Schreiben & Vorlagen gespeichert.");
       }
 
       router.refresh();
@@ -543,9 +543,9 @@ export default function OfficeCaseEditorClient({
         <button type="button" onClick={() => void handleSave()} disabled={saving}>
           {saving ? "Speichert…" : "Speichern"}
         </button>
-        {mode === "m2" && status === "M2 gespeichert." ? (
+        {mode === "m2" && status === "Operative Prüfung gespeichert." ? (
           <button type="button" onClick={() => router.push(`/office-cases/${officeCase.id}/m3`)}>
-            Weiter zu M3
+            Weiter zu Schreiben & Vorlagen
           </button>
         ) : null}
         {status ? <span className="text-muted">{status}</span> : null}

@@ -62,7 +62,7 @@ export default async function OfficeCaseM2Page({
   return (
     <main style={{ display: "grid", gap: "1rem" }}>
       <section>
-        <h1>Officefall M2</h1>
+        <h1>Operative Prüfung</h1>
         <p className="text-muted" style={{ marginTop: "0.5rem" }}>
           Informationen strukturiert sammeln und offene Punkte klaeren.
         </p>
