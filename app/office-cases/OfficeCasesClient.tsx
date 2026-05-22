@@ -23,7 +23,6 @@ export default function OfficeCasesClient({ topics, items }: Props) {
   const router = useRouter();
   const [topicId, setTopicId] = useState<string>(topics[0]?.id ?? "");
   const [title, setTitle] = useState("");
-  const [triggerNote, setTriggerNote] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +37,6 @@ export default function OfficeCasesClient({ topics, items }: Props) {
         body: JSON.stringify({
           topicId,
           title: title.trim() || undefined,
-          trigger_note: triggerNote.trim() || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -47,7 +45,7 @@ export default function OfficeCasesClient({ topics, items }: Props) {
         return;
       }
 
-      router.push(`/office-cases/${data.office_case.id}/m1`);
+      router.push(`/office-cases/${data.office_case.id}/m2`);
       router.refresh();
     } catch {
       setError("Netzwerkfehler beim Anlegen des Officefalls.");
@@ -74,14 +72,6 @@ export default function OfficeCasesClient({ topics, items }: Props) {
           <label style={{ display: "grid", gap: "0.25rem" }}>
             <span>Titel optional</span>
             <input value={title} onChange={(e) => setTitle(e.target.value)} type="text" />
-          </label>
-          <label style={{ display: "grid", gap: "0.25rem" }}>
-            <span>trigger_note optional</span>
-            <textarea
-              value={triggerNote}
-              onChange={(e) => setTriggerNote(e.target.value)}
-              rows={3}
-            />
           </label>
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
             <button type="button" onClick={() => void handleCreate()} disabled={pending}>

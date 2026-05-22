@@ -492,7 +492,6 @@ export default function OfficeCaseEditorClient({
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                   <div>
                     <strong>{checkpoint.title}</strong>
-                    <div className="text-small text-muted">{kindLabel(checkpoint.kind)} · {checkpoint.id}</div>
                   </div>
                 </div>
 
