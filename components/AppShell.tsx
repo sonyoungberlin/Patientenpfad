@@ -215,7 +215,7 @@ export default function AppShell({
   return (
     <nav className="app-nav">
       <Link href={homeHref}>Hauptmenü</Link>
-      {account.patient_communication_enabled && canUseDigitalRequests && (
+      {account.patient_communication_enabled && canUseDigitalRequests && isDigitalRequests && (
         <Link
           href="/digital-requests"
           style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}

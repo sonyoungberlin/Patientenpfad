@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
-import { getOfficeTopic, isOfficeTopicId, listOfficeTopics } from "@/lib/office/checkpointCatalog";
+import { getOfficeTopic, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import OfficeCasesClient, { type OfficeCaseListItem } from "./OfficeCasesClient";
 
 export default async function OfficeCasesPage() {
@@ -64,18 +64,11 @@ export default async function OfficeCasesPage() {
       <section>
         <h1>Officefälle</h1>
         <p className="text-muted" style={{ marginTop: "0.5rem" }}>
-          Snapshot-Tool für Praxisleitung und Geschäftsführung.
+          Organisatorische Abläufe strukturiert und nachvollziehbar umsetzen.
         </p>
       </section>
 
-      <OfficeCasesClient topics={listOfficeTopics()} items={items} />
-
-      <section className="card">
-        <h2 style={{ marginTop: 0 }}>Kurzpfad</h2>
-        <p className="text-small text-muted" style={{ marginBottom: 0 }}>
-          Neue Snapshots können über ein Thema angelegt und anschließend strukturiert betrachtet werden.
-        </p>
-      </section>
+      <OfficeCasesClient items={items} />
     </main>
   );
 }
