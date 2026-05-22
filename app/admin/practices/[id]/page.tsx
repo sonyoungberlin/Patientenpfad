@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { describePracticeSmtpStatus } from "@/lib/mail/practiceSmtp";
 import { isMailSecretConfigured } from "@/lib/mail/smtpSecret";
+import { PILOT_PRACTICE_INQUIRY_CONFIG } from "@/lib/inquiries/practiceConfig";
 import { DeletePracticeButton } from "./DeletePracticeButton";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
@@ -44,6 +45,8 @@ type SearchParams = Promise<{
   mailError?: string | string[];
   mailSaved?: string | string[];
   mailDeleted?: string | string[];
+  inqConfigSaved?: string | string[];
+  inqConfigError?: string | string[];
 }>;
 
 export default async function AdminPracticeDetailPage({
@@ -80,6 +83,21 @@ export default async function AdminPracticeDetailPage({
       smtp_from_email: true,
       smtp_from_name: true,
       smtp_updated_at: true,
+      inq_booking_calendar_name: true,
+      inq_findings_review_code: true,
+      inq_chronic_control_code: true,
+      inq_checkup_second_code: true,
+      inq_doctor_order_code: true,
+      inq_digital_req_time_min: true,
+      inq_digital_req_time_max: true,
+      inq_digital_req_time_unit: true,
+      inq_upload_platform_name: true,
+      inq_upload_platform_account_label: true,
+      inq_open_consultation_days: true,
+      inq_open_consultation_hours: true,
+      inq_open_consultation_cap_limited: true,
+      inq_billing_cycle_label: true,
+      inq_video_support_contact: true,
       memberships: {
         select: {
           id: true,
@@ -116,6 +134,12 @@ export default async function AdminPracticeDetailPage({
   const mailDeleted = Array.isArray(sp.mailDeleted)
     ? sp.mailDeleted[0]
     : sp.mailDeleted;
+  const inqConfigSaved = Array.isArray(sp.inqConfigSaved)
+    ? sp.inqConfigSaved[0]
+    : sp.inqConfigSaved;
+  const inqConfigErrorMsg = Array.isArray(sp.inqConfigError)
+    ? sp.inqConfigError[0]
+    : sp.inqConfigError;
 
   const mailStatus = describePracticeSmtpStatus({
     id: practice.id,
@@ -433,6 +457,271 @@ export default async function AdminPracticeDetailPage({
             </button>
           </form>
         )}
+      </section>
+
+      <section style={{ marginBottom: "2rem" }} data-section="inquiry-config">
+        <h2>Anfrage-Konfiguration</h2>
+        <p className="text-muted" style={{ fontSize: "0.85em" }}>
+          Diese Felder steuern praxisspezifische Texte im Anfrage-Assistenten.
+          Leere Felder nutzen den Pilot-Fallback (in grau angezeigt).
+        </p>
+
+        {inqConfigErrorMsg && (
+          <p
+            role="alert"
+            data-inq-config-error
+            style={{ color: "#a00", marginBottom: "1rem" }}
+          >
+            {inqConfigErrorMsg}
+          </p>
+        )}
+        {inqConfigSaved && (
+          <p
+            role="status"
+            data-inq-config-saved
+            style={{ color: "#0a6", marginBottom: "1rem" }}
+          >
+            Anfrage-Konfiguration gespeichert.
+          </p>
+        )}
+
+        <form
+          method="POST"
+          action={`/api/admin/practices/${practice.id}/inquiry-config`}
+          data-inq-config-form
+          style={{ display: "grid", gap: "0.5rem", maxWidth: "36rem" }}
+        >
+          <fieldset>
+            <legend>Buchungskalender</legend>
+            <label>
+              Kalender-Name
+              <input
+                type="text"
+                name="inq_booking_calendar_name"
+                defaultValue={practice.inq_booking_calendar_name ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.bookingCalendarName}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.bookingCalendarName}"
+              </small>
+            </label>
+            <label>
+              Befundbesprechung — Buchungscode
+              <input
+                type="text"
+                name="inq_findings_review_code"
+                defaultValue={practice.inq_findings_review_code ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.findingsReviewBookingCode}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.findingsReviewBookingCode}"
+              </small>
+            </label>
+            <label>
+              Chroniker-Kontrolle — Buchungscode
+              <input
+                type="text"
+                name="inq_chronic_control_code"
+                defaultValue={practice.inq_chronic_control_code ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.chronicControlBookingCode}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.chronicControlBookingCode}"
+              </small>
+            </label>
+            <label>
+              Check-up (2. Termin) — Buchungscode
+              <input
+                type="text"
+                name="inq_checkup_second_code"
+                defaultValue={practice.inq_checkup_second_code ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.checkupSecondBookingCode}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.checkupSecondBookingCode}"
+              </small>
+            </label>
+            <label>
+              Ärztliche Anordnung — Buchungscode
+              <input
+                type="text"
+                name="inq_doctor_order_code"
+                defaultValue={practice.inq_doctor_order_code ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.doctorOrderBookingCode}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.doctorOrderBookingCode}"
+              </small>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Digitale Anfrage / Bearbeitungszeit</legend>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem" }}>
+              <label>
+                Min
+                <input
+                  type="number"
+                  name="inq_digital_req_time_min"
+                  defaultValue={practice.inq_digital_req_time_min ?? ""}
+                  min={1}
+                  max={999}
+                  placeholder={String(PILOT_PRACTICE_INQUIRY_CONFIG.digitalRequestProcessingTimeMin)}
+                  style={{ display: "block", width: "100%" }}
+                />
+              </label>
+              <label>
+                Max
+                <input
+                  type="number"
+                  name="inq_digital_req_time_max"
+                  defaultValue={practice.inq_digital_req_time_max ?? ""}
+                  min={1}
+                  max={999}
+                  placeholder={String(PILOT_PRACTICE_INQUIRY_CONFIG.digitalRequestProcessingTimeMax)}
+                  style={{ display: "block", width: "100%" }}
+                />
+              </label>
+              <label>
+                Einheit
+                <select
+                  name="inq_digital_req_time_unit"
+                  defaultValue={practice.inq_digital_req_time_unit ?? ""}
+                  style={{ display: "block", width: "100%" }}
+                >
+                  <option value="">(Fallback: {PILOT_PRACTICE_INQUIRY_CONFIG.digitalRequestProcessingTimeUnit})</option>
+                  <option value="Stunden">Stunden</option>
+                  <option value="Werktage">Werktage</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Upload-Plattform</legend>
+            <label>
+              Plattform-Name
+              <input
+                type="text"
+                name="inq_upload_platform_name"
+                defaultValue={practice.inq_upload_platform_name ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.uploadPlatformName}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.uploadPlatformName}"
+              </small>
+            </label>
+            <label>
+              Account-Bezeichnung
+              <input
+                type="text"
+                name="inq_upload_platform_account_label"
+                defaultValue={practice.inq_upload_platform_account_label ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.uploadPlatformAccountLabel}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.uploadPlatformAccountLabel}"
+              </small>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Offene Sprechstunde</legend>
+            <label>
+              Tage
+              <input
+                type="text"
+                name="inq_open_consultation_days"
+                defaultValue={practice.inq_open_consultation_days ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.openConsultationDays}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.openConsultationDays}"
+              </small>
+            </label>
+            <label>
+              Uhrzeiten
+              <input
+                type="text"
+                name="inq_open_consultation_hours"
+                defaultValue={practice.inq_open_consultation_hours ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.openConsultationHours}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.openConsultationHours}"
+              </small>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                name="inq_open_consultation_cap_limited"
+                value="true"
+                defaultChecked={practice.inq_open_consultation_cap_limited ?? PILOT_PRACTICE_INQUIRY_CONFIG.openConsultationCapacityLimited}
+              />{" "}
+              Kapazität begrenzt
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Abrechnung</legend>
+            <label>
+              Abrechnungszyklus
+              <input
+                type="text"
+                name="inq_billing_cycle_label"
+                defaultValue={practice.inq_billing_cycle_label ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.billingCycleLabel}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.billingCycleLabel}"
+              </small>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Technik / Video</legend>
+            <label>
+              Video-Support-Kontakt
+              <input
+                type="text"
+                name="inq_video_support_contact"
+                defaultValue={practice.inq_video_support_contact ?? ""}
+                maxLength={200}
+                placeholder={PILOT_PRACTICE_INQUIRY_CONFIG.videoSupportContact}
+                style={{ display: "block", width: "100%" }}
+              />
+              <small style={{ color: "#888" }}>
+                Fallback: "{PILOT_PRACTICE_INQUIRY_CONFIG.videoSupportContact}"
+              </small>
+            </label>
+          </fieldset>
+
+          <div>
+            <button type="submit" data-inq-config-submit>
+              Speichern
+            </button>
+          </div>
+        </form>
       </section>
 
       <section style={{ marginBottom: "2rem" }}>
