@@ -604,9 +604,10 @@ export async function confirmInquirySession(
       };
     });
 
+    const practiceConfig = await getPracticeInquiryConfig(session.owner_practice_id);
     const generatedOutput = generateOutputFromSections(
       sections,
-      getInquiryCheckpointCatalog(getPracticeInquiryConfig(session.owner_practice_id)),
+      getInquiryCheckpointCatalog(practiceConfig),
     );
 
     return tx.inquirySession.update({

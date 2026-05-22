@@ -169,16 +169,70 @@ export const PILOT_PRACTICE_INQUIRY_CONFIG = {
 // Resolver
 // ---------------------------------------------------------------------------
 
+import { prisma } from "@/lib/prisma";
+
 /**
  * Gibt die Praxis-Konfiguration für den Anfrage-Assistenten zurück.
  *
- * Phase 1: Gibt immer PILOT_PRACTICE_INQUIRY_CONFIG zurück.
- * Spätere Phasen können hier einen DB-Lookup auf Basis der practiceId ergänzen.
+ * Liest die 15 Phase-1-Felder aus der DB und fällt feldweise auf
+ * PILOT_PRACTICE_INQUIRY_CONFIG zurück, wenn ein Feld NULL ist oder die
+ * Practice nicht gefunden wird.
  *
- * NULL- und undefined-safe: fehlende IDs fallen auf die Pilot-Config zurück.
+ * NULL- und undefined-safe: fehlende IDs fallen sofort auf die Pilot-Config zurück.
  */
-export function getPracticeInquiryConfig(
-  _practiceId: string | null | undefined,
-): PracticeInquiryConfig {
-  return PILOT_PRACTICE_INQUIRY_CONFIG;
+export async function getPracticeInquiryConfig(
+  practiceId: string | null | undefined,
+): Promise<PracticeInquiryConfig> {
+  if (!practiceId) return PILOT_PRACTICE_INQUIRY_CONFIG;
+
+  const p = await prisma.practice.findUnique({
+    where: { id: practiceId },
+    select: {
+      inq_booking_calendar_name:         true,
+      inq_findings_review_code:          true,
+      inq_chronic_control_code:          true,
+      inq_checkup_second_code:           true,
+      inq_doctor_order_code:             true,
+      inq_upload_platform_name:          true,
+      inq_upload_platform_account_label: true,
+      inq_open_consultation_days:        true,
+      inq_open_consultation_hours:       true,
+      inq_open_consultation_cap_limited: true,
+      inq_video_support_contact:         true,
+      inq_billing_cycle_label:           true,
+      inq_digital_req_time_min:          true,
+      inq_digital_req_time_max:          true,
+      inq_digital_req_time_unit:         true,
+    },
+  });
+
+  if (!p) return PILOT_PRACTICE_INQUIRY_CONFIG;
+
+  const P = PILOT_PRACTICE_INQUIRY_CONFIG;
+
+  const VALID_UNITS = ["Stunden", "Werktage"] as const;
+  const rawUnit = p.inq_digital_req_time_unit;
+  const safeUnit: "Stunden" | "Werktage" =
+    rawUnit !== null && (VALID_UNITS as readonly string[]).includes(rawUnit)
+      ? (rawUnit as "Stunden" | "Werktage")
+      : P.digitalRequestProcessingTimeUnit;
+
+  return {
+    ...P,
+    bookingCalendarName:              p.inq_booking_calendar_name         ?? P.bookingCalendarName,
+    findingsReviewBookingCode:        p.inq_findings_review_code          ?? P.findingsReviewBookingCode,
+    chronicControlBookingCode:        p.inq_chronic_control_code          ?? P.chronicControlBookingCode,
+    checkupSecondBookingCode:         p.inq_checkup_second_code           ?? P.checkupSecondBookingCode,
+    doctorOrderBookingCode:           p.inq_doctor_order_code             ?? P.doctorOrderBookingCode,
+    uploadPlatformName:               p.inq_upload_platform_name          ?? P.uploadPlatformName,
+    uploadPlatformAccountLabel:       p.inq_upload_platform_account_label ?? P.uploadPlatformAccountLabel,
+    openConsultationDays:             p.inq_open_consultation_days        ?? P.openConsultationDays,
+    openConsultationHours:            p.inq_open_consultation_hours       ?? P.openConsultationHours,
+    openConsultationCapacityLimited:  p.inq_open_consultation_cap_limited ?? P.openConsultationCapacityLimited,
+    videoSupportContact:              p.inq_video_support_contact         ?? P.videoSupportContact,
+    billingCycleLabel:                p.inq_billing_cycle_label           ?? P.billingCycleLabel,
+    digitalRequestProcessingTimeMin:  p.inq_digital_req_time_min          ?? P.digitalRequestProcessingTimeMin,
+    digitalRequestProcessingTimeMax:  p.inq_digital_req_time_max          ?? P.digitalRequestProcessingTimeMax,
+    digitalRequestProcessingTimeUnit: safeUnit,
+  };
 }
