@@ -581,16 +581,16 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die Praxisleitung Teilzuständigkeiten (z. B. Koordination, Schulung, Abnahme) benannt?" },
     ],
     "DS-03": [
-      { id: "M2-01", text: "Ist intern festgelegt, welche Inhalte aus dem alten System uebernommen werden muessen?" },
-      { id: "M2-02", text: "Ist intern festgelegt, wer die Datenubernahme koordiniert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welche Inhalte aus dem alten System übernommen werden müssen?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Datenübernahme koordiniert?" },
     ],
     "DS-04": [
       { id: "M2-01", text: "Hat die Praxisleitung alle Mitarbeiterinnen und Mitarbeiter über die Systemumstellung informiert?" },
-      { id: "M2-02", text: "Sind offene Fragen des Teams zur Systemumstellung intern erfasst?" },
+      { id: "M2-02", text: "Hat die Praxisleitung offene Fragen des Teams zur Systemumstellung erfasst?" },
     ],
     "DS-05": [
-      { id: "M2-01", text: "Sind Schulungstermine fuer alle betroffenen Mitarbeiterinnen und Mitarbeiter abgestimmt?" },
-      { id: "M2-02", text: "Sind die Schulungsinhalte fuer die neue Software intern festgelegt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung Schulungstermine für alle Mitarbeiterinnen und Mitarbeiter abgestimmt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Schulungsinhalte für die neue Software festgelegt?" },
     ],
     "DS-06": [
       { id: "M2-01", text: "Ist intern geklart, wie die Praxis bei einem technischen Ausfall waehrend der Umstellungsphase weiterarbeitet?" },
