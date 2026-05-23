@@ -177,7 +177,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "RG-01": [
       { id: "M2-01", text: "Ist aus dem Bescheid eindeutig, was konkret beanstandet wird?" },
       { id: "M2-02", text: "Ist der geprufte Zeitraum aus dem Bescheid bekannt?" },
-      { id: "M2-03", text: "Ist intern bekannt, um welche Art von Regressverfahren es sich handelt?" },
+      { id: "M2-03", text: "Hat die Praxisleitung geklärt, um welche Art von Regressverfahren es sich handelt?" },
     ],
     "RG-02": [
       { id: "M2-01", text: "Ist die Frist zur Stellungnahme aus dem Bescheid notiert?" },
@@ -280,10 +280,10 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "AM-02": [
       { id: "M2-01", text: "Ist die Einreichungsfrist intern schriftlich festgehalten?" },
-      { id: "M2-02", text: "Ist intern geklaert, ob vor der Einreichung noch Unterlagen von Dritten fehlen?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob vor der Einreichung noch Unterlagen von Dritten fehlen?" },
     ],
     "AM-03": [
-      { id: "M2-01", text: "Ist die verantwortliche Person fuer die Antragstellung intern festgelegt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer die Antragstellung übernimmt?" },
       { id: "M2-02", text: "Ist bekannt, wer die Frist ueberwacht, falls die zust\u00e4ndige Person ausfaellt?" },
     ],
     "AM-04": [
@@ -291,7 +291,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es Unterlagen, die noch beschafft werden muessen?" },
     ],
     "AM-05": [
-      { id: "M2-01", text: "Ist intern entschieden, ob der Antrag zur Einreichung freigegeben ist?" },
+      { id: "M2-01", text: "Hat die Praxisleitung entschieden, ob der Antrag zur Einreichung freigegeben ist?" },
       { id: "M2-02", text: "Hat die Praxisleitung die Einreichung freigegeben?" },
     ],
     "AM-06": [
@@ -503,7 +503,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist die Meldung (Formular oder digitale Uebermittlung) bereit zur Abgabe?" },
     ],
     "MP-05": [
-      { id: "M2-01", text: "Ist entschieden, ueber welchen Weg die Meldung abgegeben wird?" },
+      { id: "M2-01", text: "Hat die Praxisleitung entschieden, über welchen Weg die Meldung abgegeben wird?" },
       { id: "M2-02", text: "Ist klar, wer die Meldung vor dem Versand freigibt?" },
     ],
     "MP-06": [
