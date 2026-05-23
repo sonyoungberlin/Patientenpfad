@@ -370,14 +370,14 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "MF-04": [
       { id: "M2-01", text: "Hat die Praxisleitung die Beschäftigungsform für die neue MFA festgelegt?" },
-      { id: "M2-02", text: "Ist die Sozialversicherung passend dazu angemeldet?" },
+      { id: "M2-02", text: "Ist die neue MFA passend zur Beschäftigungsform bei der Sozialversicherung angemeldet?" },
     ],
     "MF-05": [
       { id: "M2-01", text: "Hat die neue MFA Zugriff auf die Systeme, die sie für ihre Aufgaben braucht?" },
       { id: "M2-02", text: "Ist die neue MFA in ihre Datenschutzpflichten eingewiesen?" },
     ],
     "MF-06": [
-      { id: "M2-01", text: "Ist klar, in welche Aufgaben die neue MFA zuerst eingearbeitet wird?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, in welche Aufgaben die neue MFA zuerst eingearbeitet wird?" },
       { id: "M2-02", text: "Sind alle Pflichtunterweisungen fuer die neue MFA abgeschlossen?" },
     ],
   },
@@ -461,16 +461,16 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_EXTENDED_OPENING_HOURS]: {
     "OE-01": [
-      { id: "M2-01", text: "Sind die neuen Sprechzeiten intern konkret festgelegt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die neuen Sprechzeiten konkret festgelegt?" },
       { id: "M2-02", text: "Hat die Praxisleitung die Personalabdeckung für alle neuen Sprechzeiten festgelegt?" },
     ],
     "OE-02": [
-      { id: "M2-01", text: "Sind die neuen Arbeitszeiten mit den betroffenen Mitarbeitenden abgestimmt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die neuen Arbeitszeiten mit den Mitarbeitenden abgestimmt?" },
       { id: "M2-02", text: "Sind die vorgeschriebenen Ruhezeiten bei den neuen Diensten beruecksichtigt?" },
     ],
     "OE-03": [
       { id: "M2-01", text: "Hat die Praxisleitung geklärt, ob die neuen Sprechzeiten der KV gemeldet werden müssen?" },
-      { id: "M2-02", text: "Ist geprüft, ob die Praxis mit den neuen Zeiten die Mindestsprechstunden erfüllt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob die Praxis mit den neuen Zeiten die Mindestsprechstunden erfüllt?" },
     ],
     "OE-04": [
       { id: "M2-01", text: "Sind alle Patienteninformationskanaele mit den neuen Sprechzeiten aktualisiert?" },
