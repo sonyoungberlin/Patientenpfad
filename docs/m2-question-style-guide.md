@@ -197,6 +197,57 @@ Niemals nur `„eine externe Stelle"` schreiben.
 
 ---
 
+## Abgrenzung: Wann Aktivformulierungen nicht erzwungen werden sollen
+
+Die Regeln 1 und 2 sollen sicherstellen, dass M2-Fragen klare Verantwortlichkeiten benennen.
+Sie sind kein Auftrag, jede Zustandsfrage mechanisch in eine Aktivformulierung umzuschreiben.
+
+### „Praxisleitung" nur bei echten Leitungsaufgaben
+
+Die Rolle `Praxisleitung` ist angemessen bei:
+
+- formellen Freigaben und Genehmigungen
+- Zuständigkeitszuweisungen und Personalentscheidungen
+- Compliance- und Rechtsverantwortung
+- strategischen Organisationsentscheidungen (z. B. Systemumstellungen, Öffnungszeiten)
+
+Die Rolle `Praxisleitung` ist **nicht** angemessen bei:
+
+- kollektiv getragenen Organisationszuständen (z. B. Wissensstand im Team)
+- delegierten operativen Abläufen (z. B. Schichtübergaben, Dienstplanaktualisierungen)
+- technischen Statusfragen (z. B. „Ist das Zeiterfassungssystem aktualisiert?")
+- Patientenkommunikation, die über die Praxis als Organisation erfolgt — nicht als persönlicher Leitungsakt
+
+Wenn Patientenkommunikation als Organisationshandlung gemeint ist, steht `die Praxis` als Subjekt:
+
+```
+Nicht: „Hat die Praxisleitung Patientinnen und Patienten über Änderungen informiert?"
+Besser: „Hat die Praxis Patientinnen und Patienten über Änderungen informiert?"
+```
+
+### „intern" bleibt zulässig bei kollektivem Wissensstand
+
+„Intern" ist erlaubt, wenn:
+
+- ein kollektiver Informationsstand im Team geprüft wird: „Sind alle Abwesenheiten im Team bekannt?"
+- eine organisatorische Einigkeit ohne klaren Einzelakteur gemeint ist
+- kein spezifischer Entscheidungsträger sinnvoll benennbar ist
+
+„Intern" ist **nicht** erlaubt, wenn eine echte Verantwortungslücke verschleiert wird — z. B. wer eine strategische Entscheidung getroffen hat oder wer für eine Meldepflicht zuständig ist.
+
+### Zustandsfragen sind ausdrücklich zulässig
+
+Folgende Fragetypen müssen nicht aktiviert werden:
+
+- **Technische Status-Checks:** „Ist der Dienstplan angepasst?", „Ist die Telefonansage aktualisiert?"
+- **Vollständigkeitsprüfungen:** „Liegen alle Unterlagen vor?", „Sind alle offenen Punkte abgearbeitet?"
+- **Existenzfragen:** „Gibt es ungeklärte operative Lücken?"
+- **Teamwissen:** „Sind alle Mitarbeitenden informiert?", „Sind alle Abwesenheiten im Team bekannt?"
+
+Diese Fragen prüfen Ergebnisse, nicht Prozesse. Das Ergebnis ist mit Ja/Nein beantwortbar — unabhängig davon, wer es herbeigeführt hat.
+
+---
+
 ## Checkliste vor neuen M2-Fragen
 
 Vor dem Eintragen einer neuen M2-Frage folgende Punkte prüfen:
