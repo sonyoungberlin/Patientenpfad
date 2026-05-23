@@ -139,6 +139,11 @@ export const EVIDENCES = [
     category: "MELDUNG",
   },
   {
+    id: "SV_ABMELDUNG",
+    label: "Sozialversicherungs-Abmeldung",
+    category: "MELDUNG",
+  },
+  {
     id: "DS_MELDUNG_AUFSICHT",
     label: "Datenschutz-Meldung an die Aufsichtsbehoerde (Art. 33 DSGVO)",
     category: "MELDUNG",

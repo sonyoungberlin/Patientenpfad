@@ -56,6 +56,7 @@ export const OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE = "digitale-systemumstellung-pra
 export const OFFICE_TOPIC_VACATION_TEAM_COORDINATION = "urlaub-teamkoordination-praxisorganisation";
 export const OFFICE_TOPIC_RESPONSIBILITY_COORDINATION = "rollen-und-zustaendigkeiten-praxis";
 export const OFFICE_TOPIC_TRAINING_COORDINATION = "fortbildung-schulung-praxisorganisation";
+export const OFFICE_TOPIC_MFA_EXIT = "mfa-austritt";
 
 export type OfficeTopicId =
   | typeof OFFICE_TOPIC_HIRING_REPLACEMENT
@@ -79,7 +80,8 @@ export type OfficeTopicId =
   | typeof OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE
   | typeof OFFICE_TOPIC_VACATION_TEAM_COORDINATION
   | typeof OFFICE_TOPIC_RESPONSIBILITY_COORDINATION
-  | typeof OFFICE_TOPIC_TRAINING_COORDINATION;
+  | typeof OFFICE_TOPIC_TRAINING_COORDINATION
+  | typeof OFFICE_TOPIC_MFA_EXIT;
 
 export type OfficeTopic = {
   id: OfficeTopicId;
@@ -191,6 +193,10 @@ const TOPICS: readonly OfficeTopic[] = [
   {
     id: OFFICE_TOPIC_TRAINING_COORDINATION,
     title: "Fortbildung / Schulungsorganisation",
+  },
+  {
+    id: OFFICE_TOPIC_MFA_EXIT,
+    title: "Austritt einer MFA aus der Arztpraxis",
   },
 ] as const;
 
@@ -1897,6 +1903,75 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
       checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
       failureEffect: OfficeFailureEffect.RISK,
       outcomeAudience: [OfficeOutcomeAudience.CHEF],
+    },
+  ],
+  [OFFICE_TOPIC_MFA_EXIT]: [
+    {
+      id: "MX-01",
+      title: "Austrittsdatum und Beschaeftigungsverhaeltnis dokumentiert",
+      kind: OfficeCheckpointKind.FACT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ANLASS,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MX-02",
+      title: "Resturlaub und Arbeitszeitkonto abgeschlossen",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_VERANTWORTUNG,
+      checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE, OfficeOutcomeAudience.CHEF],
+      legalRefs: ["BURLG_PAR_7"],
+    },
+    {
+      id: "MX-03",
+      title: "Uebergabe offener Patientenaufgaben dokumentiert",
+      kind: OfficeCheckpointKind.RULE,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MX-04",
+      title: "Rueckgabe von Praxiseigentum bestaetigt",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_NACHWEIS,
+      checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    },
+    {
+      id: "MX-05",
+      title: "Systemzugriffe und Zugangsdaten deaktiviert",
+      kind: OfficeCheckpointKind.ASSESSMENT,
+      officeKind: OFFICE_MANAGEMENT_KIND_ENTSCHEIDUNG,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+      legalRefs: ["DSGVO_ART_32"],
+    },
+    {
+      id: "MX-06",
+      title: "Sozialversicherung abgemeldet",
+      kind: OfficeCheckpointKind.RULE,
+      checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+      failureEffect: OfficeFailureEffect.BLOCKER,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+      legalRefs: ["SGB_IV_PAR_28A"],
+      authorityKeys: ["MINIJOB_ZENTRALE", "KRANKENKASSE_EINZUGSSTELLE"],
+      requiredEvidenceKeys: ["SV_ABMELDUNG"],
+    },
+    {
+      id: "MX-07",
+      title: "Lohnbuero informiert und Abschlussaufgaben delegiert",
+      kind: OfficeCheckpointKind.DEPENDENCY,
+      officeKind: OFFICE_MANAGEMENT_KIND_EXTERNE_STELLE,
+      checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+      failureEffect: OfficeFailureEffect.RISK,
+      outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
     },
   ],
 };
