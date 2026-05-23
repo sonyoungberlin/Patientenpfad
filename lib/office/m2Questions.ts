@@ -607,8 +607,8 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_VACATION_TEAM_COORDINATION]: {
     "UT-01": [
-      { id: "M2-01", text: "Ist intern klar, wer in welchem Zeitraum abwesend ist?" },
-      { id: "M2-02", text: "Sind alle geplanten Abwesenheiten intern kommuniziert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung erfasst, wer in welchem Zeitraum abwesend ist?" },
+      { id: "M2-02", text: "Hat die Praxisleitung alle geplanten Abwesenheiten kommuniziert?" },
     ],
     "UT-02": [
       { id: "M2-01", text: "Ist geprueft, ob die Praxis im Urlaubszeitraum ausreichend besetzt ist?" },
@@ -624,14 +624,14 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "UT-05": [
       { id: "M2-01", text: "Sind Patientinnen und Patienten ueber relevante Abwesenheiten informiert?" },
-      { id: "M2-02", text: "Ist intern abgestimmt, ueber welche Kanaele kommuniziert wird (Aushang, Ansage, Website)?" },
+      { id: "M2-02", text: "Hat die Praxisleitung abgestimmt, über welche Kanäle kommuniziert wird (Aushang, Ansage, Website)?" },
     ],
     "UT-06": [
       { id: "M2-01", text: "Sind alle laufenden Aufgaben intern uebergeben?" },
-      { id: "M2-02", text: "Ist sichergestellt, dass keine dringenden Aufgaben waehrend der Abwesenheit liegenbleiben?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, dass keine dringenden Aufgaben während der Abwesenheit liegenbleiben?" },
     ],
     "UT-07": [
-      { id: "M2-01", text: "Sind alle Ablaeufe fuer den laufenden Praxisbetrieb waehrend der Abwesenheit sichergestellt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung alle Abläufe für den laufenden Praxisbetrieb während der Abwesenheit geregelt?" },
       { id: "M2-02", text: "Gibt es ungeklaerte operative Luecken, die vor Urlaubsbeginn geschlossen werden muessen?" },
     ],
     "UT-08": [
