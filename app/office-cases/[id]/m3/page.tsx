@@ -70,9 +70,9 @@ export default async function OfficeCaseM3Page({
   return (
     <main style={{ display: "grid", gap: "1rem" }}>
       <section>
-        <h1>Schreiben & Vorlagen</h1>
+        <h1>Klärung & nächste Schritte</h1>
         <p className="text-muted" style={{ marginTop: "0.5rem" }}>
-          Entscheidung je Checkpoint treffen und dokumentierbar zusammenfassen.
+          Klärungsstand je Bereich eintragen und offene Punkte sichtbar machen.
         </p>
       </section>
 

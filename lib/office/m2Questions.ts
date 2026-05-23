@@ -102,7 +102,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   [OFFICE_TOPIC_KV_BILLING]: {
     "KV-01": [
       { id: "M2-01", text: "Ist aus dem KV-Schreiben klar, welche Leistungen beanstandet werden?" },
-      { id: "M2-02", text: "Ist intern bekannt, um welche Art von KV-Vorgang es sich handelt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Art des KV-Vorgangs eingeordnet (Abrechnungsprüfung, Plausibilitätsprüfung oder Regress)?" },
     ],
     "KV-02": [
       { id: "M2-01", text: "Ist die Frist zur Stellungnahme intern schriftlich festgehalten?" },
@@ -207,50 +207,50 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_CLOSURE_COVERAGE]: {
     "UV-01": [
-      { id: "M2-01", text: "Ist der Abwesenheitszeitraum aller betroffenen Personen intern festgelegt?" },
-      { id: "M2-02", text: "Ist intern festgelegt, welche Personen von der Abwesenheit betroffen sind?" },
+      { id: "M2-01", text: "Sind Beginn und Ende der Schließung in der Praxis dokumentiert?" },
+      { id: "M2-02", text: "Ist dokumentiert, welche Ärzte und welche MFA während dieses Zeitraums nicht verfügbar sind?" },
     ],
     "UV-02": [
-      { id: "M2-01", text: "Ist intern geklaert, ob die KV ueber die Schliessung informiert werden muss?" },
-      { id: "M2-02", text: "Ist bekannt, ob für den Zeitraum eine ärztliche Vertretung organisiert werden muss?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geprüft, ob für diesen Schließungszeitraum eine Meldepflicht gegenüber der KV Berlin besteht?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geprüft, ob für diesen Zeitraum eine ärztliche Vertretung verpflichtend ist?" },
     ],
     "UV-03": [
-      { id: "M2-01", text: "Ist intern festgelegt, wer die Vertretung und KV-Kommunikation koordiniert?" },
-      { id: "M2-02", text: "Ist bekannt, wer während der Schließung für Rückfragen von Patienten erreichbar ist?" },
+      { id: "M2-01", text: "Hat die Praxisleitung benannt, wer die Vertretungsorganisation und die KV-Meldung koordiniert?" },
+      { id: "M2-02", text: "Ist namentlich festgelegt, wer während der Schließung für dringende Patientenanfragen erreichbar ist?" },
     ],
     "UV-04": [
       { id: "M2-01", text: "Liegt eine schriftliche Vertretungsvereinbarung mit dem Vertretungsarzt vor?" },
       { id: "M2-02", text: "Ist der Vertretungsarzt der KV namentlich gemeldet?" },
     ],
     "UV-05": [
-      { id: "M2-01", text: "Ist entschieden, wie Patientinnen und Patienten während der Schließung versorgt werden?" },
+      { id: "M2-01", text: "Hat die Praxisleitung entschieden, durch wen Patienten während der Schließung ärztlich versorgt werden?" },
       { id: "M2-02", text: "Hat die Praxisleitung das Vertretungsmodell freigegeben?" },
     ],
     "UV-06": [
       { id: "M2-01", text: "Ist die KV Berlin ueber die Praxisschliessung informiert?" },
-      { id: "M2-02", text: "Ist bekannt, ob zusätzlich eine andere Stelle informiert werden muss?" },
+      { id: "M2-02", text: "Muss neben der KV Berlin noch eine weitere Stelle informiert werden?" },
     ],
     "UV-PATIENTENINFO": [
       { id: "M2-01", text: "Ist ein Patientenaushang mit Schliessungshinweis an der Praxistuer angebracht?" },
       { id: "M2-02", text: "Ist die Telefonansage auf den Schliesszungszeitraum aktualisiert?" },
     ],
     "UV-NOTFALLVERSORGUNG": [
-      { id: "M2-01", text: "Ist geregelt, wohin Patienten im Notfall gehen können?" },
+      { id: "M2-01", text: "Ist für Patienten klar erkennbar, wohin sie sich im Notfall während der Schließung wenden können?" },
       { id: "M2-02", text: "Gibt es Patienten mit dringendem Versorgungsbedarf, die proaktiv informiert werden müssen?" },
     ],
     "UV-TERMINMANAGEMENT": [
-      { id: "M2-01", text: "Sind alle Termine im Schliesszungszeitraum intern abgestimmt?" },
+      { id: "M2-01", text: "Sind alle Patiententermine im PVS für den Schließungszeitraum storniert (oder auf andere Termine verlegt)?" },
       { id: "M2-02", text: "Wurden Patienten mit dringenden Folgebedarfen (z. B. Rezepte, Überweisungen) rechtzeitig kontaktiert?" },
     ],
     "UV-ABRECHNUNGSZUORDNUNG": [
-      { id: "M2-01", text: "Ist die Abrechnungszuordnung fuer den Vertretungsarzt intern geklaert?" },
-      { id: "M2-02", text: "Ist intern abgestimmt, nach welchem Abrechnungsmodell der Vertretungsarzt behandelt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung mit dem Vertretungsarzt geklärt, unter welcher LANR und BSNR seine Leistungen abgerechnet werden?" },
+      { id: "M2-02", text: "Liegt die Bestätigung vor, dass die LANR- und BSNR-Zuordnung für den Vertretungsarzt korrekt ist?" },
     ],
   },
   [OFFICE_TOPIC_SEAT_APPROVAL]: {
     "ZA-01": [
       { id: "M2-01", text: "Ist klar, welches Verfahren angestrebt wird (z. B. Neuzulassung, Nachbesetzung, Anstellungsgenehmigung, Ermaechtigung)?" },
-      { id: "M2-02", text: "Ist bekannt, ob am Standort ein zulassungsfaehiger Sitz fuer das angestrebte Fachgebiet verfuegbar ist?" },
+      { id: "M2-02", text: "Hat die Praxisleitung beim Zulassungsausschuss Berlin geklärt, ob am Standort ein freier Sitz für das angestrebte Fachgebiet verfügbar ist?" },
     ],
     "ZA-02": [
       { id: "M2-01", text: "Ist bekannt, wann der Antrag spaetestens eingereicht werden muss?" },
@@ -413,7 +413,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist die Risikoklasse des Geraets bekannt?" },
     ],
     "MG-02": [
-      { id: "M2-01", text: "Ist intern bekannt, welche Genehmigungsanforderungen fuer dieses Geraet gelten?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, welche Genehmigungen für dieses Gerät eingeholt werden müssen?" },
       { id: "M2-02", text: "Ist bekannt, ob Fachkundenachweise erforderlich sind?" },
     ],
     "MG-03": [
@@ -488,7 +488,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   [OFFICE_TOPIC_REPORTING_DUTIES]: {
     "MP-01": [
       { id: "M2-01", text: "Ist intern klar, welcher Sachverhalt die Meldepflicht ausloest?" },
-      { id: "M2-02", text: "Ist intern geklaert, wer fuer die Meldung an das Gesundheitsamt zustaendig ist?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Meldung an das Gesundheitsamt erstellt?" },
     ],
     "MP-02": [
       { id: "M2-01", text: "Ist bekannt, bis wann spaetestens gemeldet werden muss?" },
@@ -517,7 +517,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist der genaue Taetigkeitsumfang bis zum Austritt intern dokumentiert?" },
     ],
     "AA-02": [
-      { id: "M2-01", text: "Ist geregelt, wer die laufenden Patientenfaelle in der Uebergangsphase betreut?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welcher Arzt die laufenden Patientenfälle bis zum Austrittsdatum betreut?" },
       { id: "M2-02", text: "Sind Vertretungsregelungen fuer kurzfristige Engpaesse in der Uebergangszeit festgelegt?" },
     ],
     "AA-03": [

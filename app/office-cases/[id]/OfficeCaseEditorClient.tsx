@@ -219,7 +219,7 @@ export default function OfficeCaseEditorClient({
             return;
           }
         }
-        setStatus("Schreiben & Vorlagen gespeichert.");
+        setStatus("Klärungsstand gespeichert.");
       }
 
       router.refresh();
@@ -240,7 +240,7 @@ export default function OfficeCaseEditorClient({
 
       {mode === "m3" ? (
         <section className="card" style={{ display: "grid", gap: "0.75rem" }}>
-          <h2 style={{ marginTop: 0 }}>Bereichscheckliste</h2>
+          <h2 style={{ marginTop: 0 }}>Klärungsstand je Bereich</h2>
           {blocks.length > 0 ? (
             <div style={{ display: "grid", gap: "0.6rem" }}>
               {blocks.map((block) => {
@@ -260,13 +260,13 @@ export default function OfficeCaseEditorClient({
                     <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                       <strong>{block.title}</strong>
                       <span className="text-small" style={{ fontWeight: 600 }}>
-                        {block.status === "offen" ? "Offen" : "Geklaert"}
+                        {block.status === "offen" ? "Offen" : "Geklärt"}
                       </span>
                     </div>
                     {primaryText ? (
                       <div className="text-small text-muted">Offen: {primaryText}</div>
                     ) : (
-                      <div className="text-small text-muted">Bereich ist geklaert.</div>
+                      <div className="text-small text-muted">Bereich ist geklärt.</div>
                     )}
                     <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.2rem" }}>
                       {block.checkpoints.map((checkpoint) => {
@@ -288,7 +288,7 @@ export default function OfficeCaseEditorClient({
                           >
                             <div style={{ display: "grid", gap: "0.2rem" }}>
                               <strong>{checkpoint.title}</strong>
-                              <div className="text-small text-muted">Klaerungsstand: {shortStatus}</div>
+                              <div className="text-small text-muted">Klärungsstand: {shortStatus}</div>
                               <div className="text-small text-muted">
                                 Vorbereitung:{" "}
                                 {compactPrefill.length > 0
@@ -317,7 +317,7 @@ export default function OfficeCaseEditorClient({
                                       : undefined,
                                 }}
                               >
-                                Geklaert
+                                Geklärt
                               </button>
                               <button
                                 type="button"
@@ -334,7 +334,7 @@ export default function OfficeCaseEditorClient({
                                       : undefined,
                                 }}
                               >
-                                Nicht vollstaendig
+                                Nicht vollständig
                               </button>
                               <button
                                 type="button"
@@ -372,7 +372,7 @@ export default function OfficeCaseEditorClient({
 
       {mode === "m3" ? (
         <section className="card" style={{ display: "grid", gap: "0.75rem" }}>
-          <h2 style={{ marginTop: 0 }}>Interne To-dos / naechste Schritte</h2>
+          <h2 style={{ marginTop: 0 }}>Offene Punkte & nächste Schritte</h2>
           {topNextSteps.length > 0 ? (
             <ul style={{ margin: 0, paddingLeft: "1.1rem", display: "grid", gap: "0.25rem" }}>
               {topNextSteps.map((step) => (
@@ -388,14 +388,6 @@ export default function OfficeCaseEditorClient({
       ) : null}
 
       {mode === "m3" ? (
-        <section className="card" style={{ display: "grid", gap: "0.75rem" }}>
-          <h2 style={{ marginTop: 0 }}>Dokumentation fuer Praxisakte</h2>
-          <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{summaryText}</pre>
-          <CopyTextButton label="Dokumentation kopieren" text={summaryText} />
-        </section>
-      ) : null}
-
-      {mode === "m3" ? (
         <OfficeWritePanel
           topicId={effectiveTopicId}
           checkpoints={checkpoints}
@@ -407,9 +399,7 @@ export default function OfficeCaseEditorClient({
           <summary className="text-small text-muted" style={{ cursor: "pointer", fontWeight: 600 }}>
             Details je Checkpoint anzeigen
           </summary>
-          <div className="text-small text-muted" style={{ marginTop: "0.35rem" }}>
-            Diese fachliche M3-Entscheidung steuert die Blockuebersicht und die Summary direkt.
-          </div>
+
           <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.6rem" }}>
             {checkpoints.map((checkpoint) => {
               const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
@@ -420,15 +410,14 @@ export default function OfficeCaseEditorClient({
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                     <div>
                       <strong>{checkpoint.title}</strong>
-                      <div className="text-small text-muted">{checkpoint.id}</div>
                     </div>
                     <div className="text-small text-muted" style={{ fontWeight: 600 }}>
-                      Fachliche M3-Freigabe: {statusLabel(checkpoint.state)}
+                      Klärungsstand: {statusLabel(checkpoint.state)}
                     </div>
                   </div>
 
                   <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
-                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Klaerungsstand</div>
+                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Klärungsstand</div>
                     {checkpointActions.length > 0 ? (
                       checkpointActions.map((action) => (
                         <div key={action.id} className="text-small" style={{ display: "grid", gap: "0.2rem" }}>
@@ -440,7 +429,7 @@ export default function OfficeCaseEditorClient({
                         </div>
                       ))
                     ) : checkpoint.state === OfficeCheckpointState.YES ? (
-                      <div className="text-small">geklaert</div>
+                      <div className="text-small">geklärt</div>
                     ) : (
                       <div className="text-small text-muted">keine offenen Punkte erkennbar</div>
                     )}
