@@ -478,11 +478,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "OE-05": [
       { id: "M2-01", text: "Gibt es einen Dienstplan für die neuen Sprechstunden?" },
-      { id: "M2-02", text: "Ist geregelt, wer bei Ausfall in den neuen Zeiten einspringt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geregelt, wer bei Ausfall in den neuen Zeiten einspringt?" },
     ],
     "OE-06": [
       { id: "M2-01", text: "Sind alle praxisinternen Systeme fuer die neuen Sprechzeiten einsatzbereit?" },
-      { id: "M2-02", text: "Ist intern geklaert, ob die Sicherheitsregelungen auf die neuen Sprechzeiten angepasst werden muessen?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob die Sicherheitsregelungen auf die neuen Sprechzeiten angepasst werden müssen?" },
     ],
   },
   [OFFICE_TOPIC_REPORTING_DUTIES]: {
@@ -513,16 +513,16 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION]: {
     "AA-01": [
-      { id: "M2-01", text: "Ist das Austrittsdatum intern schriftlich festgehalten?" },
-      { id: "M2-02", text: "Ist der genaue Taetigkeitsumfang bis zum Austritt intern dokumentiert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung das Austrittsdatum schriftlich festgehalten?" },
+      { id: "M2-02", text: "Hat die Praxisleitung den genauen Tätigkeitsumfang bis zum Austritt dokumentiert?" },
     ],
     "AA-02": [
       { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welcher Arzt die laufenden Patientenfälle bis zum Austrittsdatum betreut?" },
-      { id: "M2-02", text: "Sind Vertretungsregelungen fuer kurzfristige Engpaesse in der Uebergangszeit festgelegt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung Vertretungsregelungen für kurzfristige Engpässe in der Übergangszeit festgelegt?" },
     ],
     "AA-03": [
       { id: "M2-01", text: "Sind alle offenen Patientenfaelle identifiziert und einer Folgezustaendigkeit zugeordnet?" },
-      { id: "M2-02", text: "Ist die Uebergabe der Patientenunterlagen und Befunde intern dokumentiert?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Übergabe der Patientenunterlagen und Befunde dokumentiert?" },
     ],
     "AA-04": [
       { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welche Systemzugänge zum Austrittsdatum deaktiviert werden?" },
@@ -534,17 +534,17 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "AA-06": [
       { id: "M2-01", text: "Hat die Praxisleitung alle betroffenen Teammitglieder über den Austritt und die neuen Zuständigkeiten informiert?" },
-      { id: "M2-02", text: "Sind interne Zustaendigkeiten nach dem Austritt klar geregelt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Zuständigkeiten nach dem Austritt klar geregelt?" },
     ],
     "AA-07": [
       { id: "M2-01", text: "Sind alle organisatorischen Aufgaben, die durch den Austritt entstehen, intern erfasst?" },
-      { id: "M2-02", text: "Ist fuer jede Folgeaufgabe eine Zustaendigkeit und ein Zeitrahmen benannt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung für jede Folgeaufgabe eine Zuständigkeit und einen Zeitrahmen benannt?" },
     ],
   },
   [OFFICE_TOPIC_WORKTIME_CHANGE]: {
     "AZ-01": [
-      { id: "M2-01", text: "Ist der neue Stundenumfang intern schriftlich festgehalten?" },
-      { id: "M2-02", text: "Ist das Datum, ab dem die neue Arbeitszeit gilt, intern kommuniziert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung den neuen Stundenumfang schriftlich festgehalten?" },
+      { id: "M2-02", text: "Hat die Praxisleitung das Datum, ab dem die neue Arbeitszeit gilt, kommuniziert?" },
     ],
     "AZ-02": [
       { id: "M2-01", text: "Sind die neuen Arbeitstage und Einsatzzeiten intern abgestimmt?" },
