@@ -123,7 +123,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_PLAUSIBILITY_BILLING]: {
     "PL-01": [
-      { id: "M2-01", text: "Ist intern bekannt, worauf die auffälligen Zeitwerte zurückzuführen sind?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, worauf die auffälligen Zeitwerte zurückzuführen sind?" },
       { id: "M2-02", text: "Gibt es eine nachvollziehbare Erklärung für die auffälligen Quartalswerte?" },
     ],
     "PL-02": [
@@ -131,7 +131,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es für diese Tage eine nachvollziehbare Erklärung?" },
     ],
     "PL-03": [
-      { id: "M2-01", text: "Ist intern bekannt, welche Leistung in der Plausibilitätsprüfung beanstandet wird?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, welche Leistung in der Plausibilitätsprüfung beanstandet wird?" },
       { id: "M2-02", text: "Fehlt ein konkreter Dokumentationsbestandteil wie Befund, Diagnose oder Indikation?" },
     ],
     "PL-04": [
@@ -279,12 +279,12 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist bekannt, an welche Stelle der Antrag geschickt werden muss?" },
     ],
     "AM-02": [
-      { id: "M2-01", text: "Ist die Einreichungsfrist intern schriftlich festgehalten?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die Einreichungsfrist schriftlich festgehalten?" },
       { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob vor der Einreichung noch Unterlagen von Dritten fehlen?" },
     ],
     "AM-03": [
       { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer die Antragstellung übernimmt?" },
-      { id: "M2-02", text: "Ist bekannt, wer die Frist ueberwacht, falls die zust\u00e4ndige Person ausfaellt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Fristüberwachung bei Ausfall übernimmt?" },
     ],
     "AM-04": [
       { id: "M2-01", text: "Liegen alle notwendigen Unterlagen fuer die Einreichung vor?" },
@@ -309,15 +309,15 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die KV die Praxis bereits wegen fehlender Fortbildungspunkte kontaktiert?" },
     ],
     "WB-03": [
-      { id: "M2-01", text: "Ist intern festgelegt, wer fuer das Fortbildungsmanagement zustaendig ist?" },
-      { id: "M2-02", text: "Ist festgelegt, wer die betroffene Person rechtzeitig erinnert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer das Fortbildungsmanagement verantwortet?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer rechtzeitig an die Fortbildungsfrist erinnert?" },
     ],
     "WB-04": [
       { id: "M2-01", text: "Ist bekannt, wie viele Fortbildungspunkte aktuell vorhanden sind?" },
       { id: "M2-02", text: "Liegt ein aktueller Nachweis ueber den Fortbildungspunktestand vor?" },
     ],
     "WB-05": [
-      { id: "M2-01", text: "Ist festgelegt, welche Fortbildungen als nächstes absolviert werden sollen?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welche Fortbildungen als Nächstes absolviert werden sollen?" },
       { id: "M2-02", text: "Ist realistisch, dass fehlende Punkte noch rechtzeitig erreicht werden?" },
     ],
     "WB-06": [
@@ -340,7 +340,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "FB-04": [
       { id: "M2-01", text: "Reicht die verbleibende Zeit aus, um noch fehlende Punkte bis zum Fristende zu sammeln?" },
-      { id: "M2-02", text: "Ist intern festgelegt, wer die Fortbildungsfrist ueberwacht?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Fortbildungsfrist überwacht?" },
     ],
     "FB-05": [
       { id: "M2-01", text: "Sind alle absolvierten Fortbildungen im Aerztekammer-Konto eingetragen?" },
@@ -417,7 +417,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob für dieses Gerät Fachkundenachweise erforderlich sind?" },
     ],
     "MG-03": [
-      { id: "M2-01", text: "Ist festgelegt, wer in die Bedienung eingewiesen werden muss?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer in die Bedienung eingewiesen werden muss?" },
       { id: "M2-02", text: "Ist die Einweisung schriftlich nachweisbar?" },
     ],
     "MG-04": [
@@ -452,7 +452,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "DS-05": [
       { id: "M2-01", text: "Müssen betroffene Patientinnen oder Patienten informiert werden?" },
-      { id: "M2-02", text: "Ist die Benachrichtigung der betroffenen Personen eingeleitet?" },
+      { id: "M2-02", text: "Ist die Benachrichtigung der betroffenen Patientinnen und Patienten eingeleitet?" },
     ],
     "DS-06": [
       { id: "M2-01", text: "Ist bekannt, wodurch der Vorfall möglich wurde?" },
