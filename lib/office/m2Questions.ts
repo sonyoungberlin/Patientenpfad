@@ -88,7 +88,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "HR-GOV-B": [
       { id: "M2-01", text: "Sind der Praxisleitung Hindernisse bekannt, die der Anstellung entgegenstehen?" },
-      { id: "M2-02", text: "Liegt eine Rückmeldung der zuständigen Stelle vor?" },
+      { id: "M2-02", text: "Liegt eine Rückmeldung des Zulassungsausschusses vor?" },
     ],
     "HR-GOV-C": [
       { id: "M2-01", text: "Hat die Praxisleitung die geplante Anstellung freigegeben?" },
@@ -197,7 +197,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Wurde eingeschaetzt, ob externe Beratung (KV, Anwalt) noetig ist?" },
     ],
     "RG-06": [
-      { id: "M2-01", text: "Ist die zustaendige Pruefungsstelle aus dem Bescheid erfasst?" },
+      { id: "M2-01", text: "Ist die im Bescheid genannte Prüfungsstelle namentlich erfasst?" },
       { id: "M2-02", text: "Ist der Adressat fuer die Stellungnahme eindeutig benannt?" },
     ],
     "RG-07": [
@@ -321,7 +321,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist realistisch, dass fehlende Punkte noch rechtzeitig erreicht werden?" },
     ],
     "WB-06": [
-      { id: "M2-01", text: "Ist bekannt, wie absolvierte Fortbildungen im Aerztekammer-Konto eingetragen werden?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, wie absolvierte Fortbildungen im Ärztekammer-Konto eingetragen werden?" },
       { id: "M2-02", text: "Liegt ein aktueller Punktekontoauszug der Ärztekammer vor?" },
     ],
   },
@@ -491,12 +491,12 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Meldung an das Gesundheitsamt erstellt?" },
     ],
     "MP-02": [
-      { id: "M2-01", text: "Ist bekannt, bis wann spaetestens gemeldet werden muss?" },
-      { id: "M2-02", text: "Ist klar, ob die Meldung namentlich erfolgen muss?" },
+      { id: "M2-01", text: "Hat die Praxisleitung ermittelt, bis wann spätestens gemeldet werden muss?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob die Meldung namentlich erfolgen muss?" },
     ],
     "MP-03": [
       { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer die Meldung erstellt?" },
-      { id: "M2-02", text: "Ist bekannt, wer bei Abwesenheit die Meldung uebernimmt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer bei Abwesenheit die Meldung übernimmt?" },
     ],
     "MP-04": [
       { id: "M2-01", text: "Liegen alle fuer die Meldung erforderlichen Patientenangaben vor?" },
@@ -507,7 +507,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist klar, wer die Meldung vor dem Versand freigibt?" },
     ],
     "MP-06": [
-      { id: "M2-01", text: "Ist bekannt, welches Gesundheitsamt fuer diesen Fall zustaendig ist?" },
+      { id: "M2-01", text: "Hat die Praxisleitung ermittelt, welches Gesundheitsamt für diesen Fall zuständig ist?" },
       { id: "M2-02", text: "Liegen Kontaktdaten des zustaendigen Gesundheitsamts (Fax, Online-Portal oder Adresse) vor?" },
     ],
   },
