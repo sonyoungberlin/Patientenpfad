@@ -74,7 +74,14 @@ function evaluateTrigger(
   trigger: OfficeWriteTrigger,
   topicId: string,
   stateMap: Record<string, "YES" | "NO" | "OPEN">,
+  titleMap: Record<string, string>,
 ): { available: boolean; reason?: string } {
+  const stateLabel: Record<"YES" | "NO" | "OPEN", string> = {
+    YES: "geklärt",
+    NO: "nicht vollständig",
+    OPEN: "offen",
+  };
+  const cpTitle = (id: string) => titleMap[id] ?? id;
   // 1. Topic-Filter
   if (trigger.topicIds.length > 0 && !trigger.topicIds.includes(topicId)) {
     return { available: false, reason: "Nicht verfügbar für dieses Topic." };
@@ -88,7 +95,7 @@ function evaluateTrigger(
     if (blockedBy) {
       return {
         available: false,
-        reason: `Klärpunkt ${blockedBy} ist noch offen.`,
+        reason: `„${cpTitle(blockedBy)}“ muss zuerst geklärt werden.`,
       };
     }
   }
@@ -99,7 +106,7 @@ function evaluateTrigger(
     if (failed) {
       return {
         available: false,
-        reason: `Voraussetzung nicht erfüllt: ${failed.checkpointId} muss ${failed.state} sein.`,
+        reason: `„${cpTitle(failed.checkpointId)}" muss zuerst als ${stateLabel[failed.state]} markiert sein.`,
       };
     }
   }
@@ -121,7 +128,7 @@ function evaluateTrigger(
     if (violated) {
       return {
         available: false,
-        reason: `Bedingung verhindert Freigabe: ${violated.checkpointId} = ${violated.state}.`,
+        reason: `Solange „${cpTitle(violated.checkpointId)}“ ${stateLabel[violated.state]} ist, ist dieser Schritt nicht verfügbar.`,
       };
     }
   }
@@ -157,9 +164,13 @@ type EvaluateParams = {
 export function evaluateOfficeWriteModules(params: EvaluateParams): OfficeWriteModule[] {
   const { topicId, checkpoints, templates = OFFICE_WRITE_TEMPLATES } = params;
   const stateMap = buildStateMap(checkpoints);
+  const titleMap: Record<string, string> = {};
+  for (const cp of checkpoints) {
+    titleMap[cp.id] = cp.title;
+  }
 
   return templates.map((template) => {
-    const { available, reason } = evaluateTrigger(template.trigger, topicId, stateMap);
+    const { available, reason } = evaluateTrigger(template.trigger, topicId, stateMap, titleMap);
     return {
       templateId: template.id,
       label: template.label,
