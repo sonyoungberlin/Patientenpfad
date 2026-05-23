@@ -573,19 +573,19 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_DIGITAL_SYSTEM_CHANGE]: {
     "DS-01": [
-      { id: "M2-01", text: "Ist der Umfang der geplanten Systemumstellung intern dokumentiert?" },
-      { id: "M2-02", text: "Ist ein grober Zeitplan fuer die Umstellung intern kommuniziert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung den Umfang der geplanten Systemumstellung dokumentiert?" },
+      { id: "M2-02", text: "Hat die Praxisleitung einen groben Zeitplan für die Umstellung kommuniziert?" },
     ],
     "DS-02": [
-      { id: "M2-01", text: "Ist intern eindeutig festgelegt, wer die Gesamtverantwortung fuer die Umstellung traegt?" },
-      { id: "M2-02", text: "Sind Teilzustaendigkeiten (z. B. Koordination, Schulung, Abnahme) intern benannt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung eindeutig festgelegt, wer die Gesamtverantwortung für die Umstellung trägt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung Teilzuständigkeiten (z. B. Koordination, Schulung, Abnahme) benannt?" },
     ],
     "DS-03": [
       { id: "M2-01", text: "Ist intern festgelegt, welche Inhalte aus dem alten System uebernommen werden muessen?" },
       { id: "M2-02", text: "Ist intern festgelegt, wer die Datenubernahme koordiniert?" },
     ],
     "DS-04": [
-      { id: "M2-01", text: "Sind alle betroffenen Mitarbeiterinnen und Mitarbeiter ueber die Systemumstellung informiert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung alle Mitarbeiterinnen und Mitarbeiter über die Systemumstellung informiert?" },
       { id: "M2-02", text: "Sind offene Fragen des Teams zur Systemumstellung intern erfasst?" },
     ],
     "DS-05": [
