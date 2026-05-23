@@ -253,8 +253,8 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die Praxisleitung beim Zulassungsausschuss Berlin geklärt, ob am Standort ein freier Sitz für das angestrebte Fachgebiet verfügbar ist?" },
     ],
     "ZA-02": [
-      { id: "M2-01", text: "Ist bekannt, wann der Antrag spaetestens eingereicht werden muss?" },
-      { id: "M2-02", text: "Ist bekannt, wann der Zulassungsausschuss ueber den Antrag entscheidet?" },
+      { id: "M2-01", text: "Hat die Praxisleitung ermittelt, wann der Antrag spätestens eingereicht werden muss?" },
+      { id: "M2-02", text: "Hat die Praxisleitung erfragt, wann der Zulassungsausschuss über den Antrag entscheidet?" },
     ],
     "ZA-03": [
       { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer den Zulassungsantrag zusammenstellt?" },
@@ -270,13 +270,13 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "ZA-06": [
       { id: "M2-01", text: "Hat die Praxisleitung bestätigt, dass der Antrag beim Zulassungsausschuss Berlin eingereicht wird?" },
-      { id: "M2-02", text: "Ist bekannt, auf welchem Weg der Antrag eingereicht werden soll?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, auf welchem Weg der Antrag eingereicht werden soll?" },
     ],
   },
   [OFFICE_TOPIC_APPLICATION_MANAGEMENT]: {
     "AM-01": [
       { id: "M2-01", text: "Ist klar, was konkret beantragt wird (z. B. welche Leistung, Genehmigung oder Berechtigung)?" },
-      { id: "M2-02", text: "Ist bekannt, an welche Stelle der Antrag geschickt werden muss?" },
+      { id: "M2-02", text: "Hat die Praxisleitung ermittelt, an welche Stelle der Antrag geschickt werden muss?" },
     ],
     "AM-02": [
       { id: "M2-01", text: "Hat die Praxisleitung die Einreichungsfrist schriftlich festgehalten?" },
@@ -504,7 +504,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "MP-05": [
       { id: "M2-01", text: "Hat die Praxisleitung entschieden, über welchen Weg die Meldung abgegeben wird?" },
-      { id: "M2-02", text: "Ist klar, wer die Meldung vor dem Versand freigibt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Meldung vor dem Versand freigibt?" },
     ],
     "MP-06": [
       { id: "M2-01", text: "Hat die Praxisleitung ermittelt, welches Gesundheitsamt für diesen Fall zuständig ist?" },
