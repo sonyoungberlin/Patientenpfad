@@ -56,7 +56,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "NC-EXTERNE_STELLE": [
       { id: "M2-01", text: "Ist bekannt, welches Verfahren (Genehmigung, Anzeige) für diese Anstellung erforderlich ist?" },
-      { id: "M2-02", text: "Ist der zuständige Ansprechpartner bei der externen Stelle bekannt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung den Ansprechpartner bei der zuständigen Stelle (Zulassungsausschuss oder KV Berlin) für dieses Verfahren ermittelt?" },
     ],
     "NC-ANTRAGSWEG": [
       { id: "M2-01", text: "Ist der Antrag auf Anstellungsgenehmigung beim Zulassungsausschuss Berlin gestellt?" },
@@ -117,8 +117,8 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist die Antwort von der Praxisleitung freigegeben?" },
     ],
     "KV-05": [
-      { id: "M2-01", text: "Ist bekannt, welcher KV-Bereich (Abrechnung, Plausibilitaet) fuer dieses Schreiben zustaendig ist?" },
-      { id: "M2-02", text: "Liegen Kontaktdaten des zustaendigen KV-Ansprechpartners vor, falls Rueckfragen noetig sind?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, welcher KV-Bereich (Abrechnung oder Plausibilitätsprüfung) für dieses Schreiben zuständig ist?" },
+      { id: "M2-02", text: "Liegen Kontaktdaten des zuständigen KV-Sachbearbeiters (Abrechnung oder Plausibilitätsprüfung) vor?" },
     ],
   },
   [OFFICE_TOPIC_PLAUSIBILITY_BILLING]: {
@@ -143,7 +143,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Gibt es Leistungen, bei denen persönliche Leistungserbringung zweifelhaft ist?" },
     ],
     "PL-06": [
-      { id: "M2-01", text: "Hat die zuständige Person in der Praxis die Antwort an die KV freigegeben?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die Antwort an die KV freigegeben?" },
       { id: "M2-02", text: "Gibt es noch offene Punkte, bevor die Antwort oder Korrektur an die KV geht?" },
     ],
   },
@@ -265,11 +265,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Liegt ein aktueller Nachweis der gueltigen Berufshaftpflicht vor?" },
     ],
     "ZA-05": [
-      { id: "M2-01", text: "Ist intern geklaert, ob vor der Einreichung noch eine Rueckfrage bei einer zustaendigen Stelle noetig ist?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, ob vor der Einreichung noch eine Rückfrage beim Zulassungsausschuss Berlin nötig ist?" },
       { id: "M2-02", text: "Hat die Praxisleitung die Einreichung freigegeben?" },
     ],
     "ZA-06": [
-      { id: "M2-01", text: "Ist die zustaendige Einreichungsstelle fuer den Antrag bekannt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung bestätigt, dass der Antrag beim Zulassungsausschuss Berlin eingereicht wird?" },
       { id: "M2-02", text: "Ist bekannt, auf welchem Weg der Antrag eingereicht werden soll?" },
     ],
   },
@@ -414,7 +414,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "MG-02": [
       { id: "M2-01", text: "Hat die Praxisleitung geklärt, welche Genehmigungen für dieses Gerät eingeholt werden müssen?" },
-      { id: "M2-02", text: "Ist bekannt, ob Fachkundenachweise erforderlich sind?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob für dieses Gerät Fachkundenachweise erforderlich sind?" },
     ],
     "MG-03": [
       { id: "M2-01", text: "Ist festgelegt, wer in die Bedienung eingewiesen werden muss?" },
@@ -487,7 +487,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   },
   [OFFICE_TOPIC_REPORTING_DUTIES]: {
     "MP-01": [
-      { id: "M2-01", text: "Ist intern klar, welcher Sachverhalt die Meldepflicht ausloest?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgestellt, welcher Sachverhalt im vorliegenden Fall die Meldepflicht auslöst?" },
       { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Meldung an das Gesundheitsamt erstellt?" },
     ],
     "MP-02": [
@@ -529,11 +529,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist intern geklaert, wer die Deaktivierung der Zugaenge veranlasst und prueft?" },
     ],
     "AA-05": [
-      { id: "M2-01", text: "Ist intern abgestimmt, welche Patienten ueber den Austritt informiert werden muessen?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welche Patienten über den Austritt informiert werden?" },
       { id: "M2-02", text: "Sind Form und Zeitpunkt der Patientenkommunikation festgelegt?" },
     ],
     "AA-06": [
-      { id: "M2-01", text: "Sind alle relevanten Teammitglieder ueber den Austritt und die Konsequenzen informiert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung alle betroffenen Teammitglieder über den Austritt und die neuen Zuständigkeiten informiert?" },
       { id: "M2-02", text: "Sind interne Zustaendigkeiten nach dem Austritt klar geregelt?" },
     ],
     "AA-07": [
