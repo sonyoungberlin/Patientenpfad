@@ -60,15 +60,15 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "NC-ANTRAGSWEG": [
       { id: "M2-01", text: "Ist der Antrag auf Anstellungsgenehmigung beim Zulassungsausschuss Berlin gestellt?" },
-      { id: "M2-02", text: "Ist bekannt, welche Unterlagen für den Antrag noch fehlen?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, welche Unterlagen für den Antrag noch fehlen?" },
     ],
     "NC-GENEHMIGUNGSSTATUS": [
       { id: "M2-01", text: "Liegt die Anstellungsgenehmigung des Zulassungsausschusses vor?" },
-      { id: "M2-02", text: "Ist bekannt, bis wann mit einer Entscheidung zu rechnen ist?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, bis wann mit einer Entscheidung zu rechnen ist?" },
     ],
     "NC-BETRIEBSSTAETTENSTRUKTUR": [
       { id: "M2-01", text: "Ist die Praxis-BSNR als Beschäftigungsort für den neuen Arzt vorgesehen?" },
-      { id: "M2-02", text: "Ist geklärt, ob der neue Arzt auch an weiteren Betriebsstätten arbeitet?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob der neue Arzt auch an weiteren Betriebsstätten arbeitet?" },
     ],
     "NC-ARBEITSVERTRAG_FREIGABE": [
       { id: "M2-01", text: "Ist der Arbeitsvertrag mit Beginn, Stunden und Vergütung vollständig unterschrieben?" },
@@ -105,7 +105,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die Praxisleitung die Art des KV-Vorgangs eingeordnet (Abrechnungsprüfung, Plausibilitätsprüfung oder Regress)?" },
     ],
     "KV-02": [
-      { id: "M2-01", text: "Ist die Frist zur Stellungnahme intern schriftlich festgehalten?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die Frist zur Stellungnahme schriftlich festgehalten?" },
       { id: "M2-02", text: "Ist klar, in welcher Form (schriftlich, per Portal, per Fax) die KV eine Antwort erwartet?" },
     ],
     "KV-03": [
@@ -302,10 +302,10 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   [OFFICE_TOPIC_CONTINUING_EDUCATION]: {
     "WB-01": [
       { id: "M2-01", text: "Ist klar, welcher Arzt oder welche Ärztin vom Fortbildungsnachweis betroffen ist?" },
-      { id: "M2-02", text: "Ist bekannt, wodurch der Fall ausgelöst wurde (z. B. KV-Anfrage, Fristablauf, neuer Arzt)?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgestellt, wodurch der Fall ausgelöst wurde?" },
     ],
     "WB-02": [
-      { id: "M2-01", text: "Ist bekannt, bis wann der Fortbildungsnachweis erbracht werden muss?" },
+      { id: "M2-01", text: "Hat die Praxisleitung ermittelt, bis wann der Fortbildungsnachweis erbracht werden muss?" },
       { id: "M2-02", text: "Hat die KV die Praxis bereits wegen fehlender Fortbildungspunkte kontaktiert?" },
     ],
     "WB-03": [
