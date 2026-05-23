@@ -110,10 +110,10 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "KV-03": [
       { id: "M2-01", text: "Gibt es in der Patientenakte Eintraege, die die beanstandete Leistung erklaeren?" },
-      { id: "M2-02", text: "Ist mit dem zustaendigen Arzt geklaert, warum die Leistung so abgerechnet wurde?" },
+      { id: "M2-02", text: "Hat die Praxisleitung mit dem behandelnden Arzt geklärt, warum die Leistung so abgerechnet wurde?" },
     ],
     "KV-04": [
-      { id: "M2-01", text: "Ist intern entschieden, wie die Praxis auf die KV-Beanstandung reagiert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung entschieden, wie auf die KV-Beanstandung reagiert wird?" },
       { id: "M2-02", text: "Ist die Antwort von der Praxisleitung freigegeben?" },
     ],
     "KV-05": [
@@ -170,7 +170,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "HB-06": [
       { id: "M2-01", text: "Ist das Zustellungsdatum des Bescheids bekannt?" },
-      { id: "M2-02", text: "Ist intern entschieden, ob Widerspruch gegen den Bescheid eingelegt wird?" },
+      { id: "M2-02", text: "Hat die Praxisleitung entschieden, ob Widerspruch gegen den Bescheid eingelegt wird?" },
     ],
   },
   [OFFICE_TOPIC_REGRESS]: {
@@ -184,7 +184,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist klar, ob ein mehrstufiges Verfahren (Anhoerung, Bescheid, Widerspruch) vorliegt?" },
     ],
     "RG-03": [
-      { id: "M2-01", text: "Ist intern festgelegt, wer die Stellungnahme vorbereitet?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer die Stellungnahme vorbereitet?" },
       { id: "M2-02", text: "Ist klar, welcher Arzt oder welche Aerztin die medizinische Pruefung uebernimmt?" },
     ],
     "RG-04": [
@@ -193,7 +193,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-03", text: "Sind Praxisbesonderheiten (z. B. besondere Patientengruppe, Schwerpunkt) dokumentiert?" },
     ],
     "RG-05": [
-      { id: "M2-01", text: "Ist intern entschieden, wie auf den Regressbescheid reagiert wird?" },
+      { id: "M2-01", text: "Hat die Praxisleitung entschieden, wie auf den Regressbescheid reagiert wird?" },
       { id: "M2-02", text: "Wurde eingeschaetzt, ob externe Beratung (KV, Anwalt) noetig ist?" },
     ],
     "RG-06": [
@@ -257,8 +257,8 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist bekannt, wann der Zulassungsausschuss ueber den Antrag entscheidet?" },
     ],
     "ZA-03": [
-      { id: "M2-01", text: "Ist intern festgelegt, wer den Antrag zusammenstellt?" },
-      { id: "M2-02", text: "Ist eine Vertretungsregelung fuer die Fristueberwachung beim Zulassungsantrag intern festgelegt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer den Zulassungsantrag zusammenstellt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung eine Vertretungsregelung für die Fristüberwachung beim Zulassungsantrag festgelegt?" },
     ],
     "ZA-04": [
       { id: "M2-01", text: "Liegen alle erforderlichen Qualifikationsnachweise fuer den Zulassungsantrag vollstaendig vor?" },
@@ -495,7 +495,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist klar, ob die Meldung namentlich erfolgen muss?" },
     ],
     "MP-03": [
-      { id: "M2-01", text: "Ist intern festgelegt, wer die Meldung erstellt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer die Meldung erstellt?" },
       { id: "M2-02", text: "Ist bekannt, wer bei Abwesenheit die Meldung uebernimmt?" },
     ],
     "MP-04": [
@@ -525,8 +525,8 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Ist die Uebergabe der Patientenunterlagen und Befunde intern dokumentiert?" },
     ],
     "AA-04": [
-      { id: "M2-01", text: "Ist festgelegt, welche Systemzugriffe zum Austrittsdatum deaktiviert werden muessen?" },
-      { id: "M2-02", text: "Ist intern geklaert, wer die Deaktivierung der Zugaenge veranlasst und prueft?" },
+      { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welche Systemzugänge zum Austrittsdatum deaktiviert werden?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, wer die Deaktivierung der Systemzugänge veranlasst und bestätigt?" },
     ],
     "AA-05": [
       { id: "M2-01", text: "Hat die Praxisleitung festgelegt, welche Patienten über den Austritt informiert werden?" },
