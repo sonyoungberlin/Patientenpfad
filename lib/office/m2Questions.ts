@@ -547,12 +547,12 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die Praxisleitung das Datum, ab dem die neue Arbeitszeit gilt, kommuniziert?" },
     ],
     "AZ-02": [
-      { id: "M2-01", text: "Sind die neuen Arbeitstage und Einsatzzeiten intern abgestimmt?" },
-      { id: "M2-02", text: "Sind Vertretungsregelungen fuer die neuen Einsatzzeiten bereits besprochen?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die neuen Arbeitstage und Einsatzzeiten abgestimmt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung Vertretungsregelungen für die neuen Einsatzzeiten besprochen?" },
     ],
     "AZ-03": [
       { id: "M2-01", text: "Ist der Dienstplan auf die neuen Einsatzzeiten aktualisiert?" },
-      { id: "M2-02", text: "Ist die Anpassung des Dienstplans intern freigegeben?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Anpassung des Dienstplans freigegeben?" },
     ],
     "AZ-04": [
       { id: "M2-01", text: "Ist das Lohnbuero (intern oder extern) ueber den neuen Stundenumfang informiert?" },
@@ -563,8 +563,8 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Sind die betroffenen Planungssysteme auf den neuen Stundenumfang aktualisiert?" },
     ],
     "AZ-06": [
-      { id: "M2-01", text: "Sind alle betroffenen Kolleginnen und Kollegen ueber die Aenderung informiert?" },
-      { id: "M2-02", text: "Sind die Zustaendigkeiten fuer die geaenderten Einsatzzeiten intern abgestimmt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung alle Kolleginnen und Kollegen über die Änderung informiert?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Zuständigkeiten für die geänderten Einsatzzeiten abgestimmt?" },
     ],
     "AZ-07": [
       { id: "M2-01", text: "Sind alle offenen Aufgaben aus der Arbeitszeitumstellung intern verteilt?" },
