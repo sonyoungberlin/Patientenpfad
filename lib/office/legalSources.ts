@@ -323,6 +323,15 @@ export const LEGAL_SOURCES: readonly LegalSource[] = [
     note: "Schriftliche Niederlegung wesentlicher Arbeitsbedingungen.",
   },
   {
+    id: "BURLG_PAR_7",
+    title: "BUrlG § 7 Zeitpunkt, Uebertragbarkeit und Abgeltung des Urlaubs",
+    paragraph: "§ 7",
+    shortName: "BUrlG",
+    jurisdiction: "BUND",
+    sourceUrl: "https://www.gesetze-im-internet.de/burlg/__7.html",
+    note: "Abs. 4: Urlaub ist abzugelten, soweit er wegen Beendigung des Arbeitsverhaeltnisses nicht mehr gewaehrt werden kann.",
+  },
+  {
     id: "BBIG_PAR_10",
     title: "BBiG § 10 Vertrag",
     paragraph: "§ 10",

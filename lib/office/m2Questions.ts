@@ -21,6 +21,7 @@ import {
   OFFICE_TOPIC_VACATION_TEAM_COORDINATION,
   OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
   OFFICE_TOPIC_TRAINING_COORDINATION,
+  OFFICE_TOPIC_MFA_EXIT,
   type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 
@@ -700,6 +701,36 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     "FO-07": [
       { id: "M2-01", text: "Wurden Folgeaufgaben aus der Schulung intern konkreten Personen zugewiesen?" },
       { id: "M2-02", text: "Ist intern entschieden, ob eine Folgeschulung geplant wird?" },
+    ],
+  },
+  [OFFICE_TOPIC_MFA_EXIT]: {
+    "MX-01": [
+      { id: "M2-01", text: "Ist das Austrittsdatum der ausscheidenden MFA intern schriftlich festgehalten?" },
+      { id: "M2-02", text: "Ist die Art der Beendigung des Beschaeftigungsverhaeltnisses intern dokumentiert?" },
+    ],
+    "MX-02": [
+      { id: "M2-01", text: "Sind die verbleibenden Urlaubstage berechnet und die Abgeltung intern abgestimmt?" },
+      { id: "M2-02", text: "Ist das Arbeitszeitkonto der ausscheidenden MFA vor dem Austritt intern abgeschlossen?" },
+    ],
+    "MX-03": [
+      { id: "M2-01", text: "Sind alle offenen Aufgaben der ausscheidenden MFA im PVS einer anderen Person zugewiesen?" },
+      { id: "M2-02", text: "Gibt es laufende Vorgaenge, die eine persoenliche Uebergabe an eine konkrete Person benoetigen?" },
+    ],
+    "MX-04": [
+      { id: "M2-01", text: "Wurden alle ausgehaendigten Schluessel und Zugangsmittel intern zurueckgegeben?" },
+      { id: "M2-02", text: "Ist die Rueckgabe der sonstigen Ausstattung intern schriftlich dokumentiert?" },
+    ],
+    "MX-05": [
+      { id: "M2-01", text: "Sind alle Zugriffsrechte der ausscheidenden MFA im PVS deaktiviert?" },
+      { id: "M2-02", text: "Hat die verantwortliche Person den Abschluss der Zugangssperrung intern bestaetigt?" },
+    ],
+    "MX-06": [
+      { id: "M2-01", text: "Wurde die ausscheidende MFA bei der zustaendigen Einzugsstelle abgemeldet?" },
+      { id: "M2-02", text: "Ist die SV-Abmeldung fristgerecht innerhalb der gesetzlichen Meldefrist eingereicht worden?" },
+    ],
+    "MX-07": [
+      { id: "M2-01", text: "Wurde das Lohnbuero ueber das Austrittsdatum und den letzten Beschaeftigungstag informiert?" },
+      { id: "M2-02", text: "Ist intern geklaert, ob die ausscheidende MFA ein Arbeitszeugnis beantragt hat?" },
     ],
   },
 };
