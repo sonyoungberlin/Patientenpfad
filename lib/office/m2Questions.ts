@@ -181,11 +181,11 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "RG-02": [
       { id: "M2-01", text: "Ist die Frist zur Stellungnahme aus dem Bescheid notiert?" },
-      { id: "M2-02", text: "Ist klar, ob ein mehrstufiges Verfahren (Anhoerung, Bescheid, Widerspruch) vorliegt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob ein mehrstufiges Verfahren (Anhörung, Bescheid, Widerspruch) vorliegt?" },
     ],
     "RG-03": [
       { id: "M2-01", text: "Hat die Praxisleitung festgelegt, wer die Stellungnahme vorbereitet?" },
-      { id: "M2-02", text: "Ist klar, welcher Arzt oder welche Aerztin die medizinische Pruefung uebernimmt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung festgelegt, welche ärztliche Person die medizinische Prüfung übernimmt?" },
     ],
     "RG-04": [
       { id: "M2-01", text: "Liegen Verordnungsdaten aus dem PVS fuer den betroffenen Zeitraum vor?" },
@@ -194,7 +194,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "RG-05": [
       { id: "M2-01", text: "Hat die Praxisleitung entschieden, wie auf den Regressbescheid reagiert wird?" },
-      { id: "M2-02", text: "Wurde eingeschaetzt, ob externe Beratung (KV, Anwalt) noetig ist?" },
+      { id: "M2-02", text: "Hat die Praxisleitung eingeschätzt, ob externe Beratung (KV, Anwalt) nötig ist?" },
     ],
     "RG-06": [
       { id: "M2-01", text: "Ist die im Bescheid genannte Prüfungsstelle namentlich erfasst?" },
