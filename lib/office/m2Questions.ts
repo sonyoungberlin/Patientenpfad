@@ -362,14 +362,14 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "MF-02": [
       { id: "M2-01", text: "Ist der Arbeitsvertrag von beiden Seiten unterschrieben?" },
-      { id: "M2-02", text: "Ist intern geprueft, ob die Vertragsbedingungen zum geplanten Einsatz passen?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob die Vertragsbedingungen zum geplanten Einsatz passen?" },
     ],
     "MF-03": [
       { id: "M2-01", text: "Liegen alle Lohnbuchhaltungsdaten fuer die neue MFA vor?" },
       { id: "M2-02", text: "Ist die neue MFA in der Lohnbuchhaltung angelegt?" },
     ],
     "MF-04": [
-      { id: "M2-01", text: "Ist die Beschaeftigungsform fuer die neue MFA intern festgelegt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die Beschäftigungsform für die neue MFA festgelegt?" },
       { id: "M2-02", text: "Ist die Sozialversicherung passend dazu angemeldet?" },
     ],
     "MF-05": [
@@ -462,14 +462,14 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
   [OFFICE_TOPIC_EXTENDED_OPENING_HOURS]: {
     "OE-01": [
       { id: "M2-01", text: "Sind die neuen Sprechzeiten intern konkret festgelegt?" },
-      { id: "M2-02", text: "Ist die Personalabdeckung fuer alle neuen Sprechzeiten sichergestellt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Personalabdeckung für alle neuen Sprechzeiten festgelegt?" },
     ],
     "OE-02": [
       { id: "M2-01", text: "Sind die neuen Arbeitszeiten mit den betroffenen Mitarbeitenden abgestimmt?" },
       { id: "M2-02", text: "Sind die vorgeschriebenen Ruhezeiten bei den neuen Diensten beruecksichtigt?" },
     ],
     "OE-03": [
-      { id: "M2-01", text: "Ist bekannt, ob die neuen Sprechzeiten der KV gemeldet werden müssen?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, ob die neuen Sprechzeiten der KV gemeldet werden müssen?" },
       { id: "M2-02", text: "Ist geprüft, ob die Praxis mit den neuen Zeiten die Mindestsprechstunden erfüllt?" },
     ],
     "OE-04": [
@@ -556,7 +556,7 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
     ],
     "AZ-04": [
       { id: "M2-01", text: "Ist das Lohnbuero (intern oder extern) ueber den neuen Stundenumfang informiert?" },
-      { id: "M2-02", text: "Ist sichergestellt, dass die Information rechtzeitig vor dem Abrechnungsstichtag vorliegt?" },
+      { id: "M2-02", text: "Hat die Praxisleitung geklärt, ob die Information rechtzeitig vor dem Abrechnungsstichtag vorliegt?" },
     ],
     "AZ-05": [
       { id: "M2-01", text: "Ist das Zeiterfassungssystem auf den neuen Stundenumfang aktualisiert?" },
