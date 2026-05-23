@@ -593,15 +593,15 @@ const M2_QUESTIONS_BY_TOPIC: Record<OfficeTopicId, OfficeM2QuestionsByCheckpoint
       { id: "M2-02", text: "Hat die Praxisleitung die Schulungsinhalte für die neue Software festgelegt?" },
     ],
     "DS-06": [
-      { id: "M2-01", text: "Ist intern geklart, wie die Praxis bei einem technischen Ausfall waehrend der Umstellungsphase weiterarbeitet?" },
-      { id: "M2-02", text: "Sind Notfallablaeufe (z. B. Papierformulare, manuelle Prozesse) intern kommuniziert?" },
+      { id: "M2-01", text: "Hat die Praxisleitung geklärt, wie die Praxis bei einem technischen Ausfall während der Umstellungsphase weiterarbeitet?" },
+      { id: "M2-02", text: "Hat die Praxisleitung die Notfallabläufe (z. B. Papierformulare, manuelle Prozesse) kommuniziert?" },
     ],
     "DS-07": [
-      { id: "M2-01", text: "Sind Patientinnen und Patienten ueber Aenderungen in den digitalen Ablaeufen informiert (z. B. Online-Termine, Kontaktwege)?" },
-      { id: "M2-02", text: "Ist intern abgestimmt, ueber welche Kanaele (Aushang, Website, Empfang) kommuniziert wird?" },
+      { id: "M2-01", text: "Hat die Praxisleitung Patientinnen und Patienten über Änderungen in den digitalen Abläufen informiert (z. B. Online-Termine, Kontaktwege)?" },
+      { id: "M2-02", text: "Hat die Praxisleitung abgestimmt, über welche Kanäle (Aushang, Website, Empfang) kommuniziert wird?" },
     ],
     "DS-08": [
-      { id: "M2-01", text: "Ist die interne Freigabe fuer den Go-live erteilt?" },
+      { id: "M2-01", text: "Hat die Praxisleitung die Freigabe für den Go-live erteilt?" },
       { id: "M2-02", text: "Sind alle offenen Punkte aus der Umstellungsvorbereitung vor dem Go-live abgearbeitet?" },
     ],
   },
