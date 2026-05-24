@@ -8,11 +8,6 @@ type Props = {
   evidenceDateStatusById?: Record<string, EvidenceDateStatus>;
 };
 
-const externalLinkProps = {
-  target: "_blank",
-  rel: "noreferrer noopener",
-} as const;
-
 const sectionStyle: React.CSSProperties = {
   display: "grid",
   gap: "0.2rem",
@@ -126,13 +121,7 @@ export default function OfficeComplianceFooter({
             <ul className="text-small" style={listStyle}>
               {compliance.legalSources.map((entry) => (
                 <li key={entry.id}>
-                  {entry.sourceUrl ? (
-                    <a href={entry.sourceUrl} {...externalLinkProps}>
-                      {formatLegalSourceLabel(entry)}
-                    </a>
-                  ) : (
-                    <span>{formatLegalSourceLabel(entry)}</span>
-                  )}
+                  <span>{formatLegalSourceLabel(entry)}</span>
                   {entry.note ? (
                     <span className="text-small text-muted" style={noteStyle}>
                       {entry.note}
@@ -152,13 +141,7 @@ export default function OfficeComplianceFooter({
             <ul className="text-small" style={listStyle}>
               {compliance.authorities.map((entry) => (
                 <li key={entry.id}>
-                  {entry.sourceUrl ? (
-                    <a href={entry.sourceUrl} {...externalLinkProps}>
-                      {entry.name}
-                    </a>
-                  ) : (
-                    <span>{entry.name}</span>
-                  )}
+                  <span>{entry.name}</span>
                   {entry.note ? (
                     <span className="text-small text-muted" style={noteStyle}>
                       {entry.note}

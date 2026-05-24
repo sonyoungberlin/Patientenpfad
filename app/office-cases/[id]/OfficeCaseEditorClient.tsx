@@ -354,6 +354,39 @@ export default function OfficeCaseEditorClient({
                                 Offen
                               </button>
                             </div>
+                            {complianceByCheckpointId?.[checkpoint.id] ? (
+                              <OfficeComplianceFooter
+                                compliance={complianceByCheckpointId[checkpoint.id]}
+                                checkpointId={checkpoint.id}
+                              />
+                            ) : null}
+                            {(() => {
+                              const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
+                              const answers = checkpoint.m2_answers;
+                              return questions.length > 0 && answers ? (
+                                <details style={{ opacity: 0.82 }}>
+                                  <summary className="text-small text-muted" style={{ cursor: "pointer", fontWeight: 600 }}>
+                                    Vorbereitung (M2)
+                                  </summary>
+                                  <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem", marginTop: "0.35rem" }}>
+                                    {questions.map((q) => {
+                                      const val = answers[q.id];
+                                      const labels: Record<string, string> = { YES: "Ja", NO: "Nein", UNCLEAR: "Unklar" };
+                                      return (
+                                        <div key={q.id} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
+                                          <span className="text-small">{q.text}</span>
+                                          {val ? (
+                                            <span className="text-small" style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>{labels[val] ?? val}</span>
+                                          ) : (
+                                            <span className="text-small text-muted" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>—</span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </details>
+                              ) : null;
+                            })()}
                           </div>
                         );
                       })}
@@ -394,84 +427,7 @@ export default function OfficeCaseEditorClient({
         />
       ) : null}
 
-      {mode === "m3" ? (
-        <details>
-          <summary className="text-small text-muted" style={{ cursor: "pointer", fontWeight: 600 }}>
-            Details je Checkpoint anzeigen
-          </summary>
-
-          <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.6rem" }}>
-            {checkpoints.map((checkpoint) => {
-              const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
-              const checkpointActions = actionsByCheckpoint.get(checkpoint.id) ?? [];
-
-              return (
-                <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                    <div>
-                      <strong>{checkpoint.title}</strong>
-                    </div>
-                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>
-                      Klärungsstand: {statusLabel(checkpoint.state)}
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem" }}>
-                    <div className="text-small text-muted" style={{ fontWeight: 600 }}>Klärungsstand</div>
-                    {checkpointActions.length > 0 ? (
-                      checkpointActions.map((action) => (
-                        <div key={action.id} className="text-small" style={{ display: "grid", gap: "0.2rem" }}>
-                          <div style={{ display: "flex", gap: "0.4rem", alignItems: "baseline" }}>
-                            <strong>{statusLabel(action.status)}</strong>
-                            <span>{action.text}</span>
-                          </div>
-                          <div className="text-muted">Antwortquelle: {action.answerOwner}</div>
-                        </div>
-                      ))
-                    ) : checkpoint.state === OfficeCheckpointState.YES ? (
-                      <div className="text-small">geklärt</div>
-                    ) : (
-                      <div className="text-small text-muted">keine offenen Punkte erkennbar</div>
-                    )}
-                  </div>
-                  {mode === "m3" && complianceByCheckpointId?.[checkpoint.id] ? (
-                    <OfficeComplianceFooter
-                      compliance={complianceByCheckpointId[checkpoint.id]}
-                      checkpointId={checkpoint.id}
-                    />
-                  ) : null}
-                  {(() => {
-                    const answers = checkpoint.m2_answers;
-                    return questions.length > 0 && answers ? (
-                      <details style={{ opacity: 0.82 }}>
-                        <summary className="text-small text-muted" style={{ cursor: "pointer", fontWeight: 600 }}>
-                          Vorbereitung (M2)
-                        </summary>
-                        <div style={{ display: "grid", gap: "0.35rem", padding: "0.6rem", backgroundColor: "#f5f7fa", borderRadius: "0.25rem", marginTop: "0.35rem" }}>
-                          {questions.map((q) => {
-                            const val = answers[q.id];
-                            const labels: Record<string, string> = { YES: "Ja", NO: "Nein", UNCLEAR: "Unklar" };
-                            return (
-                              <div key={q.id} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
-                                <span className="text-small">{q.text}</span>
-                                {val ? (
-                                  <span className="text-small" style={{ fontWeight: 700, marginLeft: "auto", whiteSpace: "nowrap" }}>{labels[val] ?? val}</span>
-                                ) : (
-                                  <span className="text-small text-muted" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>—</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </details>
-                    ) : null;
-                  })()}
-                </article>
-              );
-            })}
-          </div>
-        </details>
-      ) : (
+      {mode !== "m3" ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {checkpoints.map((checkpoint) => {
             const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
@@ -526,7 +482,7 @@ export default function OfficeCaseEditorClient({
             );
           })}
         </div>
-      )}
+      ) : null}
 
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
         <button type="button" onClick={() => void handleSave()} disabled={saving}>
@@ -534,10 +490,10 @@ export default function OfficeCaseEditorClient({
         </button>
         {mode === "m2" && status === "Operative Prüfung gespeichert." ? (
           <button type="button" onClick={() => router.push(`/office-cases/${officeCase.id}/m3`)}>
-            Weiter zu Schreiben & Vorlagen
+            Weiter zu Klärung & nächste Schritte
           </button>
         ) : null}
-        {status ? <span className="text-muted">{status}</span> : null}
+        {status && status !== "Operative Prüfung gespeichert." ? <span className="text-muted">{status}</span> : null}
         {error ? <span className="text-muted">{error}</span> : null}
       </div>
     </section>
