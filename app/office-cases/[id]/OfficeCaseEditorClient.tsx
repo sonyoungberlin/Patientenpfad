@@ -534,10 +534,10 @@ export default function OfficeCaseEditorClient({
         </button>
         {mode === "m2" && status === "Operative Prüfung gespeichert." ? (
           <button type="button" onClick={() => router.push(`/office-cases/${officeCase.id}/m3`)}>
-            Weiter zu Schreiben & Vorlagen
+            Weiter zu Klärung & nächste Schritte
           </button>
         ) : null}
-        {status ? <span className="text-muted">{status}</span> : null}
+        {status && status !== "Operative Prüfung gespeichert." ? <span className="text-muted">{status}</span> : null}
         {error ? <span className="text-muted">{error}</span> : null}
       </div>
     </section>
