@@ -662,3 +662,85 @@ describe("buildMedicalRecordNote – Kontaktperson-Block", () => {
     expect(lines.some((l) => l.startsWith("Kontaktperson:"))).toBe(false);
   });
 });
+
+describe("buildMedicalRecordNote – FACHAERZTE-Block", () => {
+  it("gibt mehrere Facharzt-Einträge aus", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        FACHAERZTE: JSON.stringify([
+          {
+            erkrankung: "Herzrhythmusstörungen",
+            bereich: "Kardiologie",
+            name: "Dr. Müller",
+            adresse: "Hauptstr. 1, Berlin",
+          },
+          {
+            erkrankung: "Rückenschmerzen",
+            bereich: "Orthopädie",
+            name: "Praxis am Markt",
+            adresse: "",
+          },
+        ]),
+      },
+      selected_block_ids: ["FACHAERZTE"],
+    });
+
+    const lines = result.split("\n");
+    expect(lines).toContain("Fachärzte");
+    expect(lines.some((l) => l.includes("1. Eintrag"))).toBe(true);
+    expect(lines.some((l) => l.includes("Herzrhythmusstörungen"))).toBe(true);
+    expect(lines.some((l) => l.includes("Dr. Müller"))).toBe(true);
+    expect(lines.some((l) => l.includes("2. Eintrag"))).toBe(true);
+    expect(lines.some((l) => l.includes("Orthopädie"))).toBe(true);
+  });
+
+  it("lässt leere Arrays weg", () => {
+    const result = buildMedicalRecordNote({
+      answers: { FACHAERZTE: "[]" },
+      selected_block_ids: ["FACHAERZTE"],
+    });
+    expect(result).not.toContain("Fachärzte");
+  });
+
+  it("ignoriert ungültiges JSON", () => {
+    const result = buildMedicalRecordNote({
+      answers: { FACHAERZTE: "nicht-json" },
+      selected_block_ids: ["FACHAERZTE"],
+    });
+    expect(result).not.toContain("Fachärzte");
+  });
+
+  it("formatiert Erkrankung als mehrzeiligen Text", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        FACHAERZTE: JSON.stringify([
+          {
+            erkrankung: "Diabetes Typ 2\nBluthochdruck\nHoher Cholesterinspiegel",
+            bereich: "Innere Medizin",
+            name: "Dr. Schmidt",
+            adresse: "",
+          },
+        ]),
+      },
+      selected_block_ids: ["FACHAERZTE"],
+    });
+
+    const lines = result.split("\n");
+    expect(lines.some((l) => l.includes("Erkrankung / Grund"))).toBe(true);
+    expect(lines.some((l) => l.includes("Diabetes Typ 2"))).toBe(true);
+    expect(lines.some((l) => l.includes("Bluthochdruck"))).toBe(true);
+    expect(lines.some((l) => l.includes("Hoher Cholesterinspiegel"))).toBe(true);
+  });
+
+  it("lässt Block weg wenn FACHAERZTE nicht in Block-IDs", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        FACHAERZTE: JSON.stringify([
+          { erkrankung: "Test", bereich: "K", name: "Dr. T", adresse: "" },
+        ]),
+      },
+      selected_block_ids: ["KONTAKT"],
+    });
+    expect(result).not.toContain("Fachärzte");
+  });
+});

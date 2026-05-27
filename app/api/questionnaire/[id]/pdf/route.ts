@@ -314,7 +314,123 @@ export async function GET(
     y -= 6;
 
     for (const q of section.questions) {
-      drawWrappedPair(q.text, answers[q.id] ?? "");
+      const value = answers[q.id] ?? "";
+      
+      // Spezialfall: FACHAERZTE repeatable group
+      if (q.id === "FACHAERZTE" && value.trim() !== "") {
+        try {
+          const parsed = JSON.parse(value);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const size = 9;
+            ensureSpace((size + 4) * 2);
+            
+            page.drawText(q.text + ":", {
+              x: marginLeft,
+              y,
+              size,
+              font: boldFont,
+              color: rgb(0, 0, 0),
+              maxWidth: contentWidth,
+            });
+            y -= size + 4;
+
+            parsed.forEach((entry, idx) => {
+              if (typeof entry !== "object" || entry === null) return;
+              
+              ensureSpace((size + 4) * 6);
+              
+              page.drawText(`${idx + 1}. Eintrag`, {
+                x: marginLeft + 10,
+                y,
+                size: size + 1,
+                font: boldFont,
+                color: rgb(0.2, 0.2, 0.2),
+                maxWidth: contentWidth - 10,
+              });
+              y -= size + 4;
+
+              const erkrankung = (entry as Record<string, unknown>).erkrankung;
+              if (typeof erkrankung === "string" && erkrankung.trim() !== "") {
+                page.drawText("Erkrankung / Grund:", {
+                  x: marginLeft + 20,
+                  y,
+                  size,
+                  font,
+                  color: rgb(0, 0, 0),
+                  maxWidth: contentWidth - 20,
+                });
+                y -= size + 3;
+                page.drawText(erkrankung.trim(), {
+                  x: marginLeft + 25,
+                  y,
+                  size,
+                  font,
+                  color: rgb(0, 0, 0),
+                  maxWidth: contentWidth - 25,
+                });
+                y -= size + 4;
+              }
+
+              const bereich = (entry as Record<string, unknown>).bereich;
+              if (typeof bereich === "string" && bereich.trim() !== "") {
+                page.drawText(`Facharztbereich: ${bereich.trim()}`, {
+                  x: marginLeft + 20,
+                  y,
+                  size,
+                  font,
+                  color: rgb(0, 0, 0),
+                  maxWidth: contentWidth - 20,
+                });
+                y -= size + 4;
+              }
+
+              const name = (entry as Record<string, unknown>).name;
+              if (typeof name === "string" && name.trim() !== "") {
+                page.drawText(`Name: ${name.trim()}`, {
+                  x: marginLeft + 20,
+                  y,
+                  size,
+                  font,
+                  color: rgb(0, 0, 0),
+                  maxWidth: contentWidth - 20,
+                });
+                y -= size + 4;
+              }
+
+              const adresse = (entry as Record<string, unknown>).adresse;
+              if (typeof adresse === "string" && adresse.trim() !== "") {
+                page.drawText("Adresse:", {
+                  x: marginLeft + 20,
+                  y,
+                  size,
+                  font,
+                  color: rgb(0, 0, 0),
+                  maxWidth: contentWidth - 20,
+                });
+                y -= size + 3;
+                page.drawText(adresse.trim(), {
+                  x: marginLeft + 25,
+                  y,
+                  size,
+                  font,
+                  color: rgb(0, 0, 0),
+                  maxWidth: contentWidth - 25,
+                });
+                y -= size + 4;
+              }
+
+              y -= size / 2; // Abstand zwischen Einträgen
+            });
+
+            y -= sectionGap / 2;
+            continue;
+          }
+        } catch {
+          // Bei Parsing-Fehler Fallback zu normalem Rendering
+        }
+      }
+      
+      drawWrappedPair(q.text, value);
     }
 
     y -= sectionGap;

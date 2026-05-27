@@ -600,6 +600,19 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "date",
     required: false,
   },
+
+  // --- Fachärzte ---
+  FACHAERZTE: {
+    id: "FACHAERZTE",
+    text: "Behandelnde Fachärzte",
+    text_en: "Treating specialists",
+    type: "textarea",
+    required: false,
+    helperText:
+      "Bitte geben Sie Ihre behandelnden Fachärzte an. Sie können mehrere Einträge hinzufügen.",
+    helperText_en:
+      "Please provide information about your treating specialists. You can add multiple entries.",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -753,6 +766,15 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "TRANSPORT_MOBILITY",
       "TRANSPORT_DATE",
     ],
+  },
+  FACHAERZTE: {
+    id: "FACHAERZTE",
+    label: "Fachärzte",
+    label_en: "Specialists",
+    displayOrder: 85,
+    description: "Angaben zu behandelnden Fachärzten",
+    description_en: "Information about treating specialists",
+    questionIds: ["FACHAERZTE"],
   },
 };
 

@@ -113,6 +113,9 @@ const SHORT_LABELS: Record<string, string> = {
   TRANSPORT_REASON: "Grund",
   TRANSPORT_MOBILITY: "Einschränkung",
   TRANSPORT_DATE: "Datum",
+
+  // Fachärzte
+  FACHAERZTE: "Behandelnde Fachärzte",
 };
 
 /**
@@ -128,6 +131,66 @@ const VALUE_TRANSFORMS: Record<string, Record<string, string>> = {
 function truncateLine(value: string): string {
   if (value.length <= MAX_LINE_LENGTH) return value;
   return value.slice(0, MAX_LINE_LENGTH - 1) + "…";
+}
+
+/**
+ * Formatiert das FACHAERZTE-Feld (repeatable group) für die Krankenblatt-Ausgabe.
+ */
+function formatFacharztEntries(jsonValue: string): string[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonValue);
+  } catch {
+    return [];
+  }
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return [];
+  }
+
+  const lines: string[] = [];
+
+  parsed.forEach((entry, idx) => {
+    if (typeof entry !== "object" || entry === null) return;
+
+    lines.push(`  ${idx + 1}. Eintrag:`);
+
+    const erkrankung = (entry as Record<string, unknown>).erkrankung;
+    if (typeof erkrankung === "string" && erkrankung.trim() !== "") {
+      const parts = erkrankung
+        .trim()
+        .split(/\r?\n/)
+        .filter((line) => line.trim() !== "");
+      lines.push("     Erkrankung / Grund:");
+      parts.forEach((line) => {
+        lines.push(`       ${truncateLine(line.trim())}`);
+      });
+    }
+
+    const bereich = (entry as Record<string, unknown>).bereich;
+    if (typeof bereich === "string" && bereich.trim() !== "") {
+      lines.push(`     Facharztbereich: ${truncateLine(bereich.trim())}`);
+    }
+
+    const name = (entry as Record<string, unknown>).name;
+    if (typeof name === "string" && name.trim() !== "") {
+      lines.push(`     Name: ${truncateLine(name.trim())}`);
+    }
+
+    const adresse = (entry as Record<string, unknown>).adresse;
+    if (typeof adresse === "string" && adresse.trim() !== "") {
+      const parts = adresse
+        .trim()
+        .split(/\r?\n/)
+        .filter((line) => line.trim() !== "");
+      lines.push("     Adresse:");
+      parts.forEach((line) => {
+        lines.push(`       ${truncateLine(line.trim())}`);
+      });
+    }
+  });
+
+  return lines;
 }
 
 function getLabel(questionId: string): string {
@@ -206,6 +269,16 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
       if (!(questionId in QUESTION_CATALOG)) continue;
       const raw = (answers[questionId] ?? "").trim();
       if (raw === "") continue;
+      
+      // Spezialfall: FACHAERZTE repeatable group
+      if (questionId === "FACHAERZTE") {
+        const formatted = formatFacharztEntries(raw);
+        if (formatted.length > 0) {
+          blockLines.push(...formatted);
+        }
+        continue;
+      }
+      
       blockLines.push(...renderQuestionLines(questionId, raw));
     }
     if (blockLines.length === 0) continue;
