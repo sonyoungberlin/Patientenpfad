@@ -296,6 +296,7 @@ export async function POST(
         submitter_name: rawName,
         submitter_email: emailCheck.email,
         submitter_email_hash: submitterEmailHash,
+        birth_date: typeof fields.birth_date === "string" ? fields.birth_date.trim() : undefined,
         ...(birthDateHash !== null ? { birth_date_hash: birthDateHash } : {}),
         requested_topics: topics,
         status: "new",

@@ -87,6 +87,7 @@ export default async function DigitalRequestDetailPage({
       createdAt: true,
       submitter_name: true,
       submitter_email: true,
+      birth_date: true,
       requested_topics: true,
       status: true,
       patient_reference: true,
@@ -162,6 +163,15 @@ export default async function DigitalRequestDetailPage({
 
           <dt className="font-medium text-gray-500">E-Mail</dt>
           <dd className="text-gray-900">{request.submitter_email}</dd>
+
+          {request.birth_date && (
+            <>
+              <dt className="font-medium text-gray-500">Geburtsdatum</dt>
+              <dd className="text-gray-900">
+                {request.birth_date.split("-").reverse().join(".")}
+              </dd>
+            </>
+          )}
 
           <dt className="font-medium text-gray-500">Eingegangen</dt>
           <dd className="text-gray-900">{formatDate(request.createdAt)}</dd>

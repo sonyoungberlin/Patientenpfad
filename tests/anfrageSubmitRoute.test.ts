@@ -167,15 +167,14 @@ describe("POST /api/anfrage/[slug]", () => {
     expect(pm.digitalRequest.create).not.toHaveBeenCalled();
   });
 
-  it("speichert birth_date_hash (nicht Klartext) in der DB", async () => {
+  it("speichert birth_date_hash UND birth_date (Klartext) in der DB", async () => {
     pm.practice.findUnique.mockResolvedValue(activePractice());
     await POST(makeJsonReq("meine-praxis", validBody()), CTX("meine-praxis"));
     const data = pm.digitalRequest.create.mock.calls[0][0].data;
     // Hash muss gesetzt sein
     expect(data.birth_date_hash).toBeTruthy();
-    // Klartextdatum darf NICHT im gespeicherten Objekt stehen
-    expect(data.birth_date).toBeUndefined();
-    expect(JSON.stringify(data)).not.toContain("1990-05-15");
+    // Klartext-Geburtsdatum muss zusätzlich gespeichert sein
+    expect(data.birth_date).toBe("1990-05-15");
   });
 
   it("gibt 400 zurück wenn requested_topics fehlt (leeres Array)", async () => {

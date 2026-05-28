@@ -8,7 +8,7 @@
  *   4. Öffentliche Seite — rendert auch wenn website_forms_enabled=false
  *      (Digitale Anfragen brauchen dieses Flag NICHT).
  *   5. Submit-Endpoint: erstellt DigitalRequest mit email im Klartext + Hash.
- *   6. Submit-Endpoint: speichert birth_date NUR als Hash, keinen Klartext.
+ *   6. Submit-Endpoint: speichert birth_date als Klartext UND als Hash.
  *   7. Submit-Endpoint: Honeypot-Treffer → Redirect, keine DB-Schreibung.
  *   8. Submit-Endpoint: 404 wenn patient_communication_enabled=false.
  *   9. Submit-Endpoint: 404 wenn website_forms_enabled=false wird ignoriert
@@ -314,7 +314,7 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
     );
   });
 
-  it("speichert Geburtsdatum als Hash, KEIN Klartext", async () => {
+  it("speichert Geburtsdatum als Klartext UND als Hash", async () => {
     const req = formReq({
       submitter_name: "Anna Muster",
       email: "anna@beispiel.de",
@@ -329,9 +329,9 @@ describe("POST /api/anfrage/[slug] — Submit-Endpoint", () => {
       string,
       unknown
     >;
-    // Kein Klartext-Geburtsdatum
-    expect(data).not.toHaveProperty("birth_date");
-    // Hash muss gesetzt sein
+    // Klartext-Geburtsdatum muss gespeichert sein
+    expect(data.birth_date).toBe("1990-05-15");
+    // Hash muss zusätzlich gesetzt sein
     expect(typeof data.birth_date_hash).toBe("string");
     expect(data.birth_date_hash).toHaveLength(64); // SHA-256 hex
   });

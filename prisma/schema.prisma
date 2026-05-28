@@ -651,6 +651,10 @@ model DigitalRequest {
   /// SHA-256-Hash der E-Mail (trim+lowercase) für Rate-Limit und Audit.
   submitter_email_hash String
 
+  /// Geburtsdatum im Klartext (Format YYYY-MM-DD), wie vom Patienten eingegeben.
+  /// Dient der Praxis zur Patientenzuordnung.
+  birth_date String?
+
   /// SHA-256-Hash des Geburtsdatums, falls angegeben. Kein Klartext.
   /// Wird in Phase B für das IdentityGate im Token-Fragebogen-Flow genutzt.
   birth_date_hash String?
