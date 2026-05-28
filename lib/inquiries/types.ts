@@ -817,6 +817,14 @@ export type InquiryResponseV2Output = {
   sections: InquirySectionOutput[];
   sharedBottom: string[];
   documentation: string[];
+  /**
+   * Aktive praxisbezogene Info-Bausteine aus M3 (PRACTICE_INFO_1/2/3).
+   * Nur gesetzt wenn ≥1 Baustein in M3 auf ACTIVE gesetzt wurde.
+   * Erscheinen in der generierten Nachricht nach sharedBottom,
+   * unter der Überschrift „Zusätzliche Praxisinformationen".
+   * Rückwärtskompatibel: fehlendes Feld = keine Praxisinfos.
+   */
+  practiceInfoTexts?: string[];
 };
 
 // ---------------------------------------------------------------------------

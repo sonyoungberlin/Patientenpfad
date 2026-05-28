@@ -101,6 +101,18 @@ export type PracticeInquiryConfig = {
   readonly billingCycleLabel: string;
   /** Ob Rezepte per Post versendet werden. */
   readonly prescriptionPostalDeliveryAllowed: boolean;
+
+  // ---- Praxis-eigene Info-Texte (M3) ------------------------------------
+  /**
+   * Optionaler Freitext-Baustein 1 für M3 (max. 300 Zeichen).
+   * Leer ("") = deaktiviert. Zeilenumbrüche und einfache Listen mit "-"
+   * sind erlaubt.
+   */
+  readonly inqInfoText1: string;
+  /** Optionaler Freitext-Baustein 2 für M3 (max. 300 Zeichen). */
+  readonly inqInfoText2: string;
+  /** Optionaler Freitext-Baustein 3 für M3 (max. 300 Zeichen). */
+  readonly inqInfoText3: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -163,6 +175,11 @@ export const PILOT_PRACTICE_INQUIRY_CONFIG = {
   billingPartnerName: "Partnerlabor",
   billingCycleLabel: "quartalsweise",
   prescriptionPostalDeliveryAllowed: false,
+
+  // ---- Praxis-eigene Info-Texte (M3) ------------------------------------
+  inqInfoText1: "",
+  inqInfoText2: "",
+  inqInfoText3: "",
 } as const satisfies PracticeInquiryConfig;
 
 // ---------------------------------------------------------------------------
@@ -190,6 +207,9 @@ export async function getPracticeInquiryConfig(
     select: {
       inq_booking_calendar_name:         true,
       inq_findings_review_code:          true,
+      inq_info_text_1:                   true,
+      inq_info_text_2:                   true,
+      inq_info_text_3:                   true,
       inq_chronic_control_code:          true,
       inq_checkup_second_code:           true,
       inq_doctor_order_code:             true,
@@ -234,5 +254,8 @@ export async function getPracticeInquiryConfig(
     digitalRequestProcessingTimeMin:  p.inq_digital_req_time_min          ?? P.digitalRequestProcessingTimeMin,
     digitalRequestProcessingTimeMax:  p.inq_digital_req_time_max          ?? P.digitalRequestProcessingTimeMax,
     digitalRequestProcessingTimeUnit: safeUnit,
+    inqInfoText1:                     p.inq_info_text_1 ?? P.inqInfoText1,
+    inqInfoText2:                     p.inq_info_text_2 ?? P.inqInfoText2,
+    inqInfoText3:                     p.inq_info_text_3 ?? P.inqInfoText3,
   };
 }

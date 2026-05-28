@@ -201,6 +201,7 @@ export default function AppShell({
     if (canManagePractice) {
       sectionItems.push({ label: "Mitglieder", href: "/practice/members" });
       sectionItems.push({ label: "Signatur", href: "/practice/signature" });
+      sectionItems.push({ label: "Anfrage-Einstellungen", href: "/practice/inquiry-settings" });
       if (account.website_forms_enabled) {
         sectionItems.push({ label: "Website-Formulare", href: "/website-forms" });
       }

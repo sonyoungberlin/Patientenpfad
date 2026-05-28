@@ -218,6 +218,14 @@ export default async function InquiryM3Page({
   for (const cpId of SECTION_INTRO_CHECKPOINT_IDS) {
     actionIds.add(cpId);
   }
+
+  // Praxis-eigene Info-Bausteine (PRACTICE_INFO_1/2/3): virtuelle IDs, die
+  // ausschließlich in action_statuses persistiert werden. Der Text kommt
+  // zur Laufzeit aus practiceConfig. NICHT im Checkpoint-Katalog enthalten.
+  const PRACTICE_INFO_IDS = ["PRACTICE_INFO_1", "PRACTICE_INFO_2", "PRACTICE_INFO_3"] as const;
+  for (const id of PRACTICE_INFO_IDS) {
+    actionIds.add(id);
+  }
   const introCheckpoints: M3ActionData[] = INTRO_CHECKPOINT_IDS
     .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
     .filter(

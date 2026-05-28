@@ -130,6 +130,33 @@ const ACTION_OPTIONS = [
   { value: "INACTIVE", label: "Inaktiv" },
 ];
 
+// ---------------------------------------------------------------------------
+// Praxis-eigene Info-Checkpoints (PRACTICE_INFO_1/2/3)
+// Virtuelle IDs – NICHT im Checkpoint-Katalog. Text kommt aus practiceConfig.
+// ---------------------------------------------------------------------------
+
+const PRACTICE_INFO_CHECKPOINT_IDS = [
+  "PRACTICE_INFO_1",
+  "PRACTICE_INFO_2",
+  "PRACTICE_INFO_3",
+] as const;
+
+type PracticeInfoCheckpointId = (typeof PRACTICE_INFO_CHECKPOINT_IDS)[number];
+
+function isPracticeInfoCheckpoint(id: string): id is PracticeInfoCheckpointId {
+  return (PRACTICE_INFO_CHECKPOINT_IDS as readonly string[]).includes(id);
+}
+
+function getPracticeInfoTextById(
+  id: string,
+  config: PracticeInquiryConfig,
+): string {
+  if (id === "PRACTICE_INFO_1") return config.inqInfoText1;
+  if (id === "PRACTICE_INFO_2") return config.inqInfoText2;
+  if (id === "PRACTICE_INFO_3") return config.inqInfoText3;
+  return "";
+}
+
 const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
   {
     label: "Kontakt & Anfrage",
@@ -663,6 +690,19 @@ function OutputView({
                   {output.sharedBottom.map((p, i) => (
                     <p key={i} style={{ margin: "0.25rem 0" }}>
                       {p}
+                    </p>
+                  ))}
+                </section>
+              )}
+
+              {output.practiceInfoTexts && output.practiceInfoTexts.length > 0 && (
+                <section>
+                  <p style={{ fontWeight: 600, margin: "0 0 0.25rem" }}>
+                    Zusätzliche Praxisinformationen
+                  </p>
+                  {output.practiceInfoTexts.map((t, i) => (
+                    <p key={i} style={{ margin: "0.25rem 0", whiteSpace: "pre-wrap" }}>
+                      {t}
                     </p>
                   ))}
                 </section>
@@ -1317,10 +1357,18 @@ export default function InquiryM3Client({
   }, [confirmed, buildInquirySections]);
 
   // Fragebogen-Link als Nachrichteninhalt: Link wird in sharedBottom der Ausgabe integriert.
-  const livePreviewWithLink = useMemo(
-    () => (livePreview ? appendQuestionnaireLinkToOutput(livePreview, questionnaireLink) : null),
-    [livePreview, questionnaireLink],
-  );
+  // Praxis-eigene Info-Texte: aktive PRACTICE_INFO_*-Checkpoints werden als practiceInfoTexts hinzugefügt.
+  const livePreviewWithLink = useMemo((): InquiryResponseV2Output | null => {
+    if (!livePreview) return null;
+    const withLink = appendQuestionnaireLinkToOutput(livePreview, questionnaireLink);
+    if (!practiceConfig) return withLink;
+    const activeInfoTexts = PRACTICE_INFO_CHECKPOINT_IDS
+      .filter((id) => statuses[id] === "ACTIVE")
+      .map((id) => getPracticeInfoTextById(id, practiceConfig).trim())
+      .filter((t) => t.length > 0);
+    if (activeInfoTexts.length === 0) return withLink;
+    return { ...withLink, practiceInfoTexts: activeInfoTexts };
+  }, [livePreview, questionnaireLink, practiceConfig, statuses]);
 
   // Audience-bewusster Confirmed-Output: re-rendert die bestätigten Sections mit dem
   // aktuell gewählten audience-Wert. Setzt frozenOutput für die Anzeige außer Kraft.
@@ -2087,6 +2135,58 @@ export default function InquiryM3Client({
               })()}
             </section>
           )}
+
+          {/* Praxis-eigene Info-Bausteine (PRACTICE_INFO_1/2/3) */}
+          {practiceConfig &&
+            PRACTICE_INFO_CHECKPOINT_IDS.some(
+              (id) => getPracticeInfoTextById(id, practiceConfig).trim().length > 0,
+            ) && (
+              <section style={{ marginBottom: "1rem" }}>
+                <h4 style={{ margin: "0 0 0.5rem 0", fontWeight: 600 }}>
+                  Zusätzliche Praxisinformationen
+                </h4>
+                <p
+                  className="text-muted"
+                  style={{ fontSize: "0.85rem", margin: "0 0 0.5rem 0" }}
+                >
+                  Optional zuschaltbare Praxis-Hinweise. Standard: inaktiv.
+                </p>
+                {PRACTICE_INFO_CHECKPOINT_IDS.map((id, i) => {
+                  const text = getPracticeInfoTextById(id, practiceConfig).trim();
+                  if (!text) return null;
+                  const label = `Info ${i + 1}`;
+                  return (
+                    <CompactRow
+                      key={id}
+                      label={
+                        <span>
+                          <strong>{label}</strong>
+                          {" — "}
+                          <span
+                            className="text-muted"
+                            style={{ fontSize: "0.85em" }}
+                          >
+                            {text.length > 80 ? text.slice(0, 80) + " …" : text}
+                          </span>
+                        </span>
+                      }
+                      buttons={
+                        <StatusButtons
+                          checkpointId={id}
+                          options={ACTION_OPTIONS}
+                          value={statuses[id]}
+                          onChange={(cpId, val) =>
+                            setStatuses((prev) => ({ ...prev, [cpId]: val }))
+                          }
+                          disabled={confirmed}
+                          inline
+                        />
+                      }
+                    />
+                  );
+                })}
+              </section>
+            )}
 
           {/* Live preview */}
           {livePreviewWithLink && (

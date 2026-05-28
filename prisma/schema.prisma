@@ -586,6 +586,14 @@ model Practice {
   inq_digital_req_time_max          Int?
   inq_digital_req_time_unit         String?
 
+  /// Praxis-eigene Info-Texte für M3 (optional).
+  /// Erscheinen nur in M3 als optionale Bausteine und müssen nicht über
+  /// M1/M2 aktiviert werden. Nullable; leere/NULL = deaktiviert.
+  /// Max. 300 Zeichen je Feld (Validierung im App-Layer).
+  inq_info_text_1  String?
+  inq_info_text_2  String?
+  inq_info_text_3  String?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

@@ -610,12 +610,30 @@ export async function confirmInquirySession(
       getInquiryCheckpointCatalog(practiceConfig),
     );
 
+    // Praxis-eigene Info-Bausteine: aktive PRACTICE_INFO_*-Statuses auslesen
+    // und als practiceInfoTexts in den Output anhängen.
+    const activeInfoTexts = (
+      ["PRACTICE_INFO_1", "PRACTICE_INFO_2", "PRACTICE_INFO_3"] as const
+    )
+      .filter((id) => actionStatuses[id] === "ACTIVE")
+      .map((id) => {
+        if (id === "PRACTICE_INFO_1") return practiceConfig.inqInfoText1.trim();
+        if (id === "PRACTICE_INFO_2") return practiceConfig.inqInfoText2.trim();
+        return practiceConfig.inqInfoText3.trim();
+      })
+      .filter((t) => t.length > 0);
+
+    const finalOutput =
+      activeInfoTexts.length > 0
+        ? { ...generatedOutput, practiceInfoTexts: activeInfoTexts }
+        : generatedOutput;
+
     return tx.inquirySession.update({
       where: { id: sessionId },
       data: {
         status: "CONFIRMED",
         confirmed_at: new Date(),
-        generated_output: toJsonInput(generatedOutput),
+        generated_output: toJsonInput(finalOutput),
       },
     });
   });

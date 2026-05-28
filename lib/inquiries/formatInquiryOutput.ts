@@ -36,6 +36,13 @@ export function inquiryOutputToPlainText(output: InquiryResponseV2Output): strin
     push(p);
   }
 
+  if (output.practiceInfoTexts && output.practiceInfoTexts.length > 0) {
+    paragraphs.push("Zusätzliche Praxisinformationen");
+    for (const p of output.practiceInfoTexts) {
+      push(p);
+    }
+  }
+
   return paragraphs.join("\n\n");
 }
 
