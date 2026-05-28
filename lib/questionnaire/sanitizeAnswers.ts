@@ -82,6 +82,61 @@ function canonicalizeAnswerValue(
 }
 
 /**
+ * Validiert und bereinigt das FACHAERZTE-Feld (repeatable group).
+ * 
+ * Erwartet ein JSON-Array von Objekten mit den Keys:
+ * - erkrankung (string)
+ * - bereich (string)
+ * - name (string)
+ * - adresse (string)
+ * 
+ * @param rawValue JSON-String vom Client
+ * @param maxEntries Maximale Anzahl Einträge (default 10)
+ * @returns Validiertes Array oder null bei Fehler
+ */
+function sanitizeFacharztArray(
+  rawValue: string,
+  maxEntries = 10,
+): Record<string, string>[] | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawValue);
+  } catch {
+    return null;
+  }
+
+  if (!Array.isArray(parsed)) return null;
+  if (parsed.length > maxEntries) return null;
+
+  const result: Record<string, string>[] = [];
+  const allowedKeys = new Set(["erkrankung", "bereich", "name", "adresse"]);
+
+  for (const entry of parsed) {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      continue;
+    }
+
+    const cleanEntry: Record<string, string> = {};
+
+    for (const key of allowedKeys) {
+      const val = (entry as Record<string, unknown>)[key];
+      if (typeof val !== "string") continue;
+
+      const trimmed = val.slice(0, MAX_ANSWER_LENGTH).trim();
+      cleanEntry[key] = trimmed;
+    }
+
+    // Nur Einträge mit mindestens einem nicht-leeren Wert speichern
+    const hasValue = Object.values(cleanEntry).some(val => val !== "");
+    if (hasValue) {
+      result.push(cleanEntry);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Filtert und kürzt rohe Patientenantworten gegen die in der Session
  * eingefrorenen `deduplicated_questions`. Reine Funktion, keine Seiteneffekte.
  *
@@ -114,6 +169,17 @@ export function sanitizeAnswers(
     if (!allowedQuestionIds.has(questionId)) continue;
     if (!(questionId in QUESTION_CATALOG)) continue;
     if (typeof value !== "string") continue;
+    
+    // Spezialfall: FACHAERZTE repeatable group
+    if (questionId === "FACHAERZTE") {
+      const validated = sanitizeFacharztArray(value);
+      if (validated !== null && validated.length > 0) {
+        // Zurück zu String für Speicherung
+        sanitized[questionId] = JSON.stringify(validated);
+      }
+      continue;
+    }
+    
     const sliced = value.slice(0, MAX_ANSWER_LENGTH);
     sanitized[questionId] =
       language === "en"

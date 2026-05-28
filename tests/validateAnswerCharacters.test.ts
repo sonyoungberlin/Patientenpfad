@@ -91,6 +91,13 @@ describe("isAnswerTextAllowed", () => {
     expect(isAnswerTextAllowed(null, "text")).toBe(true);
     expect(isAnswerTextAllowed(42, "text")).toBe(true);
   });
+
+  it("überspringt FACHAERZTE unabhängig vom Wert (JSON-String erlaubt)", () => {
+    const jsonValue = JSON.stringify([{ erkrankung: "Test", bereich: "K", name: "Dr. M", adresse: "" }]);
+    expect(isAnswerTextAllowed(jsonValue, "textarea", "FACHAERZTE")).toBe(true);
+    expect(isAnswerTextAllowed("[]", "textarea", "FACHAERZTE")).toBe(true);
+    expect(isAnswerTextAllowed("", "textarea", "FACHAERZTE")).toBe(true);
+  });
 });
 
 describe("validateAnswerCharacters", () => {
@@ -169,6 +176,37 @@ describe("validateAnswerCharacters", () => {
       ok: true,
       invalidQuestionIds: [],
     });
+  });
+
+  it("überspringt FACHAERZTE (JSON-Strukturzeichen sind erlaubt)", () => {
+    // FACHAERZTE hat type="textarea", aber Wert ist JSON-String
+    // → JSON-Strukturzeichen wie {, }, [, ] würden normalerweise blockieren
+    // → wird serverseitig in sanitizeAnswers.ts separat validiert
+    const jsonValue = JSON.stringify([
+      { erkrankung: "Test", bereich: "Kardiologie", name: "Dr. M", adresse: "" },
+    ]);
+    
+    const out = validateAnswerCharacters(
+      { FACHAERZTE: jsonValue },
+      [{ id: "FACHAERZTE" }],
+    );
+    expect(out).toEqual({ ok: true, invalidQuestionIds: [] });
+  });
+
+  it("überspringt leeres FACHAERZTE", () => {
+    const out = validateAnswerCharacters(
+      { FACHAERZTE: "" },
+      [{ id: "FACHAERZTE" }],
+    );
+    expect(out).toEqual({ ok: true, invalidQuestionIds: [] });
+  });
+
+  it("überspringt FACHAERZTE mit leerem JSON-Array", () => {
+    const out = validateAnswerCharacters(
+      { FACHAERZTE: "[]" },
+      [{ id: "FACHAERZTE" }],
+    );
+    expect(out).toEqual({ ok: true, invalidQuestionIds: [] });
   });
 });
 

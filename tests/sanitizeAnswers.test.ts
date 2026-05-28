@@ -114,4 +114,88 @@ describe("sanitizeAnswers", () => {
       expect(out.AU_SYMPTOMS).toBe("Cough");
     });
   });
+
+  describe("FACHAERZTE repeatable group", () => {
+    const questions = [{ id: "FACHAERZTE" }];
+
+    it("akzeptiert valides JSON-Array", () => {
+      const input = {
+        FACHAERZTE: JSON.stringify([
+          { erkrankung: "Herz", bereich: "Kardiologie", name: "Dr. M", adresse: "Str. 1" },
+          { erkrankung: "Rücken", bereich: "Orthopädie", name: "Dr. S", adresse: "" },
+        ]),
+      };
+      const out = sanitizeAnswers(input, questions);
+      expect(out.FACHAERZTE).toBeDefined();
+      const parsed = JSON.parse(out.FACHAERZTE);
+      expect(parsed).toHaveLength(2);
+      expect(parsed[0].name).toBe("Dr. M");
+      expect(parsed[1].bereich).toBe("Orthopädie");
+    });
+
+    it("verwirft ungültiges JSON", () => {
+      const input = { FACHAERZTE: "nicht-json" };
+      const out = sanitizeAnswers(input, questions);
+      expect(out.FACHAERZTE).toBeUndefined();
+    });
+
+    it("verwirft Nicht-Array", () => {
+      const input = { FACHAERZTE: JSON.stringify({ foo: "bar" }) };
+      const out = sanitizeAnswers(input, questions);
+      expect(out.FACHAERZTE).toBeUndefined();
+    });
+
+    it("begrenzt auf maxEntries (10)", () => {
+      const entries = Array.from({ length: 15 }, (_, i) => ({
+        erkrankung: `E${i}`,
+        bereich: "Kardiologie",
+        name: `Dr. ${i}`,
+        adresse: "",
+      }));
+      const input = { FACHAERZTE: JSON.stringify(entries) };
+      const out = sanitizeAnswers(input, questions);
+      expect(out.FACHAERZTE).toBeUndefined(); // > maxEntries
+    });
+
+    it("kürzt zu lange Werte", () => {
+      const long = "x".repeat(3000);
+      const input = {
+        FACHAERZTE: JSON.stringify([{ erkrankung: long, bereich: "K", name: "D", adresse: "" }]),
+      };
+      const out = sanitizeAnswers(input, questions);
+      const parsed = JSON.parse(out.FACHAERZTE);
+      expect(parsed[0].erkrankung.length).toBeLessThanOrEqual(2000);
+    });
+
+    it("filtert nur erlaubte Keys", () => {
+      const input = {
+        FACHAERZTE: JSON.stringify([
+          { erkrankung: "Test", bereich: "K", name: "D", adresse: "A", extraKey: "should be removed" },
+        ]),
+      };
+      const out = sanitizeAnswers(input, questions);
+      const parsed = JSON.parse(out.FACHAERZTE);
+      expect(parsed[0]).not.toHaveProperty("extraKey");
+      expect(Object.keys(parsed[0]).sort()).toEqual(["adresse", "bereich", "erkrankung", "name"]);
+    });
+
+    it("entfernt leere Einträge", () => {
+      const input = {
+        FACHAERZTE: JSON.stringify([
+          { erkrankung: "Test", bereich: "K", name: "D", adresse: "" },
+          { erkrankung: "", bereich: "", name: "", adresse: "" },
+          { erkrankung: "Test2", bereich: "O", name: "D2", adresse: "" },
+        ]),
+      };
+      const out = sanitizeAnswers(input, questions);
+      const parsed = JSON.parse(out.FACHAERZTE);
+      expect(parsed).toHaveLength(2);
+    });
+
+    it("liefert undefined für leeres Array", () => {
+      const input = { FACHAERZTE: JSON.stringify([]) };
+      const out = sanitizeAnswers(input, questions);
+      expect(out.FACHAERZTE).toBeUndefined();
+    });
+  });
 });

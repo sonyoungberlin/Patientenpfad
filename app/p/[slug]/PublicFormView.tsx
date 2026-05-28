@@ -91,6 +91,7 @@ function PublicQuestionField({
   language: QuestionnaireLanguage;
 }) {
   const t = UI_STRINGS[language];
+  
   switch (question.type as QuestionType) {
     case "multi_select":
       return (

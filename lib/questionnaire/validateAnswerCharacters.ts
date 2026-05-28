@@ -84,12 +84,20 @@ const FREE_TEXT_QUESTION_TYPES: ReadonlySet<QuestionType> = new Set([
  * unabhängig vom Wert `true` zurück, da deren Werte aus festen Optionen
  * bzw. Browser-Kontrollen stammen.
  *
+ * Spezialfälle:
+ *   - FACHAERZTE: Wird serverseitig separat validiert (JSON-Format), daher hier übersprungen.
+ *
  * Leere Strings sind erlaubt (Required-Logik liegt nicht hier).
  */
 export function isAnswerTextAllowed(
   value: unknown,
   type: QuestionType,
+  questionId?: string,
 ): boolean {
+  // FACHAERZTE hat type="textarea", aber Wert ist JSON-String mit Strukturzeichen
+  // → wird serverseitig in sanitizeAnswers.ts separat validiert
+  if (questionId === "FACHAERZTE") return true;
+  
   if (!FREE_TEXT_QUESTION_TYPES.has(type)) return true;
   if (typeof value !== "string") return true;
   if (value.length === 0) return true;
@@ -135,6 +143,11 @@ export function validateAnswerCharacters(
     rawAnswers as Record<string, unknown>,
   )) {
     if (!allowedIds.has(questionId)) continue;
+    
+    // FACHAERZTE hat type="textarea", aber Wert ist JSON-String
+    // → wird serverseitig in sanitizeAnswers.ts separat validiert
+    if (questionId === "FACHAERZTE") continue;
+    
     const def = QUESTION_CATALOG[questionId];
     if (!def) continue;
     if (!FREE_TEXT_QUESTION_TYPES.has(def.type)) continue;

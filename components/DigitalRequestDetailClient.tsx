@@ -189,17 +189,22 @@ export function DigitalRequestDetailClient({
       </div>
 
       {/* Block-Auswahl */}
-      <fieldset disabled={isReadOnly}>
-        <legend className="mb-2 text-sm font-medium text-gray-700">
+      <fieldset disabled={isReadOnly} style={{ margin: "1.5rem 0", padding: 0, border: "none" }}>
+        <legend style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
           Fragebogen-Blöcke
         </legend>
-        <div className="space-y-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {blocks.map((b) => (
             <label
               key={b.id}
-              className={`flex items-center gap-2 text-sm${
-                isReadOnly ? " cursor-not-allowed text-gray-400" : " cursor-pointer"
-              }`}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "0.75rem",
+                cursor: isReadOnly ? "not-allowed" : "pointer",
+                color: isReadOnly ? "#9ca3af" : undefined,
+                fontWeight: 400,
+              }}
               data-block-choice={b.id}
             >
               <input
@@ -207,7 +212,7 @@ export function DigitalRequestDetailClient({
                 checked={!!selected[b.id]}
                 onChange={() => { if (!isReadOnly) toggleBlock(b.id); }}
                 disabled={isReadOnly}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
               />
               <span>{b.label}</span>
             </label>
