@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { IdentityGate } from "@/components/IdentityGate";
@@ -279,20 +279,22 @@ function FachaerzeField({
   disabled: boolean;
   language: QuestionnaireLanguage;
 }) {
-  const entries: FacharztEntry[] = useMemo(() => {
+  // Lokaler State für Einträge mit stabilen _localId für React keys
+  // Initialisiert nur beim ersten Render aus value prop
+  const [entries, setEntries] = useState<FacharztEntry[]>(() => {
     if (!value || value === "") return [];
     try {
       const parsed = JSON.parse(value);
       if (!Array.isArray(parsed)) return [];
-      // Füge _localId hinzu wenn nicht vorhanden (für stabile React keys)
+      // Füge _localId hinzu beim initialen Laden
       return parsed.map((entry) => ({
         ...entry,
-        _localId: entry._localId || generateLocalId(),
+        _localId: generateLocalId(),
       }));
     } catch {
       return [];
     }
-  }, [value]);
+  });
 
   // Entfernt _localId vor dem Speichern (nur Datenfelder bleiben)
   const cleanEntries = (entries: FacharztEntry[]) => {
@@ -310,17 +312,20 @@ function FachaerzeField({
       ...entries,
       { erkrankung: "", bereich: "", name: "", adresse: "", _localId: generateLocalId() },
     ];
+    setEntries(newEntries);
     onChange(JSON.stringify(cleanEntries(newEntries)));
   };
 
   const removeEntry = (index: number) => {
     const newEntries = entries.filter((_, i) => i !== index);
+    setEntries(newEntries);
     onChange(JSON.stringify(cleanEntries(newEntries)));
   };
 
   const updateEntry = (index: number, key: keyof FacharztEntry, val: string) => {
     const newEntries = [...entries];
     newEntries[index] = { ...newEntries[index], [key]: val };
+    setEntries(newEntries);
     onChange(JSON.stringify(cleanEntries(newEntries)));
   };
 
