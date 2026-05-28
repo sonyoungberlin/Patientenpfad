@@ -56,7 +56,7 @@ describe("FACHAERZTE repeatable group – Integration", () => {
     expect(block.id).toBe("FACHAERZTE");
     expect(block.label).toBe("Fachärzte");
     expect(block.label_en).toBe("Specialists");
-    expect(block.displayOrder).toBe(85);
+    expect(block.displayOrder).toBe(130);
     expect(block.questionIds).toEqual(["FACHAERZTE"]);
   });
 

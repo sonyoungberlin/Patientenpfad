@@ -624,22 +624,22 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
  *
  * Telefonnummer, E-Mail und Adresse erscheinen nur in KONTAKT bzw. ADRESSE
  * und werden durch buildQuestionnaireQuestions() dedupliziert.
- * Die Blöcke KONTAKT (10) und ADRESSE (20) haben den niedrigsten displayOrder,
- * damit Kontaktfelder immer zuerst erscheinen.
+ * Die Blöcke IDENTITAET (10), KONTAKT (20) und ADRESSE (40) bilden die Basis,
+ * danach folgen Versicherung, Anamnese und fachliche Anliegen.
  */
 export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   IDENTITAET: {
     id: "IDENTITAET",
     label: "Identität",
     label_en: "Identity",
-    displayOrder: 5,
+    displayOrder: 10,
     questionIds: ["IDENTITY_FIRST_NAME", "IDENTITY_LAST_NAME", "IDENTITY_BIRTHDATE"],
   },
   VERSICHERUNG: {
     id: "VERSICHERUNG",
     label: "Versicherungsdaten",
     label_en: "Insurance details",
-    displayOrder: 7,
+    displayOrder: 50,
     questionIds: [
       "IDENTITY_INSURANCE_TYPE",
       "INSURANCE_PROVIDER_NAME",
@@ -651,7 +651,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   HEILMITTELVERORDNUNG: {
     id: "HEILMITTELVERORDNUNG",
     label: "Heilmittelverordnung",
-    displayOrder: 9,
+    displayOrder: 100,
     questionIds: [
       "HMV_CATEGORY",
       "HMV_REQUEST_TYPE",
@@ -668,13 +668,13 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     id: "KONTAKT",
     label: "Kontaktdaten",
     label_en: "Contact details",
-    displayOrder: 10,
+    displayOrder: 20,
     questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "CONTACT_DOCTOLIB"],
   },
   KONTAKTPERSON: {
     id: "KONTAKTPERSON",
     label: "Kontaktperson",
-    displayOrder: 15,
+    displayOrder: 30,
     questionIds: [
       "KONTAKTPERSON_NAME",
       "KONTAKTPERSON_BIRTHDATE",
@@ -686,14 +686,14 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     id: "ADRESSE",
     label: "Adresse",
     label_en: "Address",
-    displayOrder: 20,
+    displayOrder: 40,
     questionIds: ["ADDRESS_POSTAL"],
   },
   KURZANAMNESE: {
     id: "KURZANAMNESE",
     label: "Kurzanamnese",
     label_en: "Brief medical history",
-    displayOrder: 30,
+    displayOrder: 60,
     questionIds: [
       "ANAMNESE_GP",
       "ANAMNESE_GP_NAME",
@@ -714,7 +714,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     id: "ARBEITSUNFAEHIGKEIT",
     label: "Arbeitsunfähigkeitsbescheinigung",
     label_en: "Sick leave certificate",
-    displayOrder: 40,
+    displayOrder: 70,
     hint: "Bitte beachten Sie: Die maximale rückwirkende Ausstellungsdauer ist gesetzlich begrenzt.",
     hint_en: "Please note: the maximum retroactive issuance period is limited by law.",
     questionIds: ["AU_SYMPTOMS", "AU_SYMPTOMS_OTHER_TEXT", "AU_START_DATE", "AU_END_DATE", "AU_IS_FOLLOWUP"],
@@ -722,7 +722,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   REZEPT: {
     id: "REZEPT",
     label: "Rezept",
-    displayOrder: 50,
+    displayOrder: 80,
     questionIds: [
       "PRESCRIPTION_TYPE",
       "PRESCRIPTION_MEDICATION",
@@ -732,7 +732,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   UEBERWEISUNG: {
     id: "UEBERWEISUNG",
     label: "Überweisung",
-    displayOrder: 60,
+    displayOrder: 90,
     questionIds: [
       "REF_SPECIALTY",
       "REF_DOCTOR_NAME",
@@ -745,7 +745,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   HOSPITAL_ADMISSION: {
     id: "HOSPITAL_ADMISSION",
     label: "Krankenhauseinweisung",
-    displayOrder: 70,
+    displayOrder: 110,
     questionIds: [
       "HOSP_ADMISSION_REASON",
       "HOSP_ADMISSION_IS_CONTROL",
@@ -755,7 +755,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   TRANSPORT: {
     id: "TRANSPORT",
     label: "Krankenbeförderung / Krankentransport",
-    displayOrder: 80,
+    displayOrder: 120,
     // Conditional visibility (TRANSPORT_DESTINATION, TRANSPORT_REASON, TRANSPORT_MOBILITY
     // und TRANSPORT_DATE nur anzeigen wenn TRANSPORT_NEEDED = ja) wird vom aktuellen
     // Fragebogen-System nicht unterstützt – alle Felder sind immer sichtbar.
@@ -771,7 +771,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     id: "FACHAERZTE",
     label: "Fachärzte",
     label_en: "Specialists",
-    displayOrder: 85,
+    displayOrder: 130,
     description: "Angaben zu behandelnden Fachärzten",
     description_en: "Information about treating specialists",
     questionIds: ["FACHAERZTE"],
