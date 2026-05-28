@@ -30,7 +30,6 @@ import {
   answerCharactersErrorMessage,
 } from "@/lib/questionnaire/validateAnswerCharacters";
 import { PublicFormCharactersValidator } from "./PublicFormCharactersValidator";
-import { RepeatableGroupField } from "./PublicFormClient";
 
 const NOTICE_ID = "public-form-confirm-notice";
 
@@ -92,11 +91,6 @@ function PublicQuestionField({
   language: QuestionnaireLanguage;
 }) {
   const t = UI_STRINGS[language];
-  
-  // Spezialfall: FACHAERZTE repeatable group
-  if (question.id === "FACHAERZTE") {
-    return <RepeatableGroupField questionId="FACHAERZTE" language={language} maxEntries={10} />;
-  }
   
   switch (question.type as QuestionType) {
     case "multi_select":

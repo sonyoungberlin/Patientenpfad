@@ -11,6 +11,89 @@ import {
   validateAnswerCharacters,
 } from "@/lib/questionnaire/validateAnswerCharacters";
 
+// ---------------------------------------------------------------------------
+// FACHAERZTE Schema (lokaler Spezialfall)
+// ---------------------------------------------------------------------------
+
+type FacharztEntry = {
+  erkrankung: string;
+  bereich: string;
+  name: string;
+  adresse: string;
+  _localId?: string; // Nur für React keys, wird nicht gespeichert
+};
+
+function generateLocalId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+const FACHAERZTE_SCHEMA: Array<{
+  key: keyof FacharztEntry;
+  label: string;
+  label_en: string;
+  type: "text" | "select" | "textarea";
+  required: boolean;
+  options?: string[];
+  placeholder?: string;
+  placeholder_en?: string;
+  helperText?: string;
+  helperText_en?: string;
+}> = [
+  {
+    key: "erkrankung",
+    label: "Erkrankung / Grund der fachärztlichen Behandlung",
+    label_en: "Condition / Reason for specialist treatment",
+    type: "textarea",
+    required: true,
+    placeholder: "z.B. Herz-Kreislauf-Probleme, Diabetes",
+    placeholder_en: "e.g. Cardiovascular problems, Diabetes",
+  },
+  {
+    key: "bereich",
+    label: "Facharztbereich",
+    label_en: "Medical specialty",
+    type: "select",
+    required: true,
+    options: [
+      "Allgemeinmedizin",
+      "Augenheilkunde",
+      "Chirurgie",
+      "Dermatologie",
+      "Gynäkologie",
+      "HNO",
+      "Innere Medizin",
+      "Kardiologie",
+      "Neurologie",
+      "Orthopädie",
+      "Pädiatrie",
+      "Psychiatrie / Psychotherapie",
+      "Radiologie",
+      "Urologie",
+      "Sonstiges",
+    ],
+  },
+  {
+    key: "name",
+    label: "Name des Facharztes oder der Praxis",
+    label_en: "Name of the specialist or practice",
+    type: "text",
+    required: true,
+    placeholder: "Dr. Müller / Praxis am Markt",
+    placeholder_en: "Dr. Smith / Market Practice",
+  },
+  {
+    key: "adresse",
+    label: "Adresse der Praxis",
+    label_en: "Address of the practice",
+    type: "textarea",
+    required: false,
+    placeholder: "Straße, PLZ, Ort",
+    placeholder_en: "Street, Postcode, City",
+    helperText: "Falls bekannt",
+    helperText_en: "If known",
+  },
+];
+
 function QuestionField({
   question,
   value,
@@ -36,6 +119,18 @@ function QuestionField({
     fontFamily: "inherit",
     color: "var(--foreground)",
   };
+
+  // Spezialfall: FACHAERZTE repeatable group
+  if (question.id === "FACHAERZTE") {
+    return (
+      <FachaerzeField
+        value={value}
+        onChange={(jsonValue) => onChange(question.id, jsonValue)}
+        disabled={disabled}
+        language={language}
+      />
+    );
+  }
 
   switch (question.type as QuestionType) {
     case "multi_select":
@@ -167,6 +262,200 @@ function QuestionField({
         />
       );
   }
+}
+
+// ---------------------------------------------------------------------------
+// FACHAERZTE Repeatable Field (lokaler Spezialfall)
+// ---------------------------------------------------------------------------
+
+function FachaerzeField({
+  value,
+  onChange,
+  disabled,
+  language,
+}: {
+  value: string;
+  onChange: (jsonValue: string) => void;
+  disabled: boolean;
+  language: QuestionnaireLanguage;
+}) {
+  const entries: FacharztEntry[] = useMemo(() => {
+    if (!value || value === "") return [];
+    try {
+      const parsed = JSON.parse(value);
+      if (!Array.isArray(parsed)) return [];
+      // Füge _localId hinzu wenn nicht vorhanden (für stabile React keys)
+      return parsed.map((entry) => ({
+        ...entry,
+        _localId: entry._localId || generateLocalId(),
+      }));
+    } catch {
+      return [];
+    }
+  }, [value]);
+
+  // Entfernt _localId vor dem Speichern (nur Datenfelder bleiben)
+  const cleanEntries = (entries: FacharztEntry[]) => {
+    return entries.map(({ erkrankung, bereich, name, adresse }) => ({
+      erkrankung,
+      bereich,
+      name,
+      adresse,
+    }));
+  };
+
+  const addEntry = () => {
+    if (entries.length >= 10) return;
+    const newEntries = [
+      ...entries,
+      { erkrankung: "", bereich: "", name: "", adresse: "", _localId: generateLocalId() },
+    ];
+    onChange(JSON.stringify(cleanEntries(newEntries)));
+  };
+
+  const removeEntry = (index: number) => {
+    const newEntries = entries.filter((_, i) => i !== index);
+    onChange(JSON.stringify(cleanEntries(newEntries)));
+  };
+
+  const updateEntry = (index: number, key: keyof FacharztEntry, val: string) => {
+    const newEntries = [...entries];
+    newEntries[index] = { ...newEntries[index], [key]: val };
+    onChange(JSON.stringify(cleanEntries(newEntries)));
+  };
+
+  const getLabel = (field: typeof FACHAERZTE_SCHEMA[number]): string => {
+    return language === "en" && field.label_en ? field.label_en : field.label;
+  };
+
+  const getPlaceholder = (field: typeof FACHAERZTE_SCHEMA[number]): string | undefined => {
+    return language === "en" && field.placeholder_en ? field.placeholder_en : field.placeholder;
+  };
+
+  const baseStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.4rem 0.6rem",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius)",
+    background: "var(--input-background)",
+    fontSize: "1rem",
+    fontFamily: "inherit",
+    color: "var(--foreground)",
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      {entries.map((entry, idx) => (
+        <div
+          key={entry._localId || `fachaerzte-${idx}`}
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "1rem",
+            background: "var(--card-background, #fafafa)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+            <strong style={{ fontSize: "0.9rem", color: "var(--foreground)" }}>
+              {language === "en" ? `Specialist ${idx + 1}` : `Eintrag ${idx + 1}`}
+            </strong>
+            <button
+              type="button"
+              onClick={() => removeEntry(idx)}
+              disabled={disabled}
+              style={{
+                padding: "0.25rem 0.5rem",
+                fontSize: "0.85rem",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius)",
+                background: "var(--destructive, #dc2626)",
+                color: "#fff",
+                cursor: disabled ? "not-allowed" : "pointer",
+                opacity: disabled ? 0.6 : 1,
+              }}
+            >
+              {language === "en" ? "Remove" : "Entfernen"}
+            </button>
+          </div>
+          {FACHAERZTE_SCHEMA.map((field) => (
+            <label
+              key={field.key}
+              style={{ display: "block", marginBottom: "0.5rem" }}
+            >
+              <span style={{ display: "block", fontWeight: 500, marginBottom: "0.25rem", fontSize: "0.9rem" }}>
+                {getLabel(field)}
+                {field.required && (
+                  <span style={{ color: "var(--destructive, #dc2626)", marginLeft: "0.25rem" }}>*</span>
+                )}
+              </span>
+              {field.type === "select" ? (
+                <select
+                  value={entry[field.key]}
+                  onChange={(e) => updateEntry(idx, field.key, e.target.value)}
+                  disabled={disabled}
+                  style={baseStyle}
+                >
+                  <option value="">
+                    {language === "en" ? "— please choose —" : "— bitte wählen —"}
+                  </option>
+                  {field.options?.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              ) : field.type === "textarea" ? (
+                <textarea
+                  value={entry[field.key]}
+                  onChange={(e) => updateEntry(idx, field.key, e.target.value)}
+                  disabled={disabled}
+                  rows={2}
+                  placeholder={getPlaceholder(field)}
+                  style={{ ...baseStyle, resize: "vertical" }}
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={entry[field.key]}
+                  onChange={(e) => updateEntry(idx, field.key, e.target.value)}
+                  disabled={disabled}
+                  placeholder={getPlaceholder(field)}
+                  style={baseStyle}
+                />
+              )}
+              {field.helperText && (
+                <span style={{ display: "block", fontSize: "0.8rem", color: "var(--muted-foreground, #6b7280)", marginTop: "0.25rem" }}>
+                  {language === "en" && field.helperText_en ? field.helperText_en : field.helperText}
+                </span>
+              )}
+            </label>
+          ))}
+        </div>
+      ))}
+      {entries.length < 10 && (
+        <button
+          type="button"
+          onClick={addEntry}
+          disabled={disabled}
+          style={{
+            padding: "0.5rem 1rem",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            background: "var(--secondary, #f1f5f9)",
+            color: "var(--foreground)",
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.6 : 1,
+            fontSize: "0.9rem",
+            fontWeight: 500,
+          }}
+        >
+          {language === "en"
+            ? "+ Add another specialist"
+            : "+ Weiteren Facharzt hinzufügen"}
+        </button>
+      )}
+    </div>
+  );
 }
 
 /**
