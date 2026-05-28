@@ -5,6 +5,73 @@ import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
 
 /**
+ * Formatiert FACHAERZTE-JSON für die Antwortanzeige im Posteingang.
+ */
+function FacharztAnswerDisplay({ value }: { value: string }) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return <span className="text-muted">ungültiges Format</span>;
+  }
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return <span className="text-muted">–</span>;
+  }
+
+  return (
+    <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.25rem" }}>
+      {parsed.map((entry, idx) => {
+        if (typeof entry !== "object" || entry === null) return null;
+        
+        const erkrankung = (entry as Record<string, unknown>).erkrankung;
+        const bereich = (entry as Record<string, unknown>).bereich;
+        const name = (entry as Record<string, unknown>).name;
+        const adresse = (entry as Record<string, unknown>).adresse;
+
+        return (
+          <div
+            key={idx}
+            style={{
+              paddingLeft: "0.5rem",
+              borderLeft: "2px solid var(--border)",
+            }}
+          >
+            <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>
+              {idx + 1}. Eintrag
+            </div>
+            {typeof erkrankung === "string" && erkrankung.trim() && (
+              <div>
+                <span style={{ fontWeight: 500 }}>Erkrankung / Grund:</span>{" "}
+                {erkrankung.trim()}
+              </div>
+            )}
+            {typeof bereich === "string" && bereich.trim() && (
+              <div>
+                <span style={{ fontWeight: 500 }}>Facharztbereich:</span>{" "}
+                {bereich.trim()}
+              </div>
+            )}
+            {typeof name === "string" && name.trim() && (
+              <div>
+                <span style={{ fontWeight: 500 }}>Name Facharzt/Praxis:</span>{" "}
+                {name.trim()}
+              </div>
+            )}
+            {typeof adresse === "string" && adresse.trim() && (
+              <div>
+                <span style={{ fontWeight: 500 }}>Adresse:</span>{" "}
+                {adresse.trim()}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * Reine Präsentations-Komponente (Server Component) für eine einzelne
  * Fragebogen-Karte in der Übersicht.
  *
@@ -218,7 +285,11 @@ export default function QuestionnaireCard({
                   style={{ marginLeft: "0.5rem" }}
                 >
                   {answers[q.id] !== undefined && answers[q.id] !== "" ? (
-                    answers[q.id]
+                    q.id === "FACHAERZTE" ? (
+                      <FacharztAnswerDisplay value={answers[q.id]} />
+                    ) : (
+                      answers[q.id]
+                    )
                   ) : (
                     <span className="text-muted">–</span>
                   )}
