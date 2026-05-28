@@ -531,7 +531,7 @@ export function QuestionnaireFormClient({
     const map: Record<string, boolean> = {};
     for (const q of questions) {
       const v = values[q.id] ?? "";
-      map[q.id] = !isAnswerTextAllowed(v, q.type as QuestionType);
+      map[q.id] = !isAnswerTextAllowed(v, q.type as QuestionType, q.id);
     }
     return map;
   }, [values, questions]);
