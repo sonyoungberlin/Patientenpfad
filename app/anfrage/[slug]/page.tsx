@@ -75,7 +75,7 @@ export default async function AnfragePage({
 
       <form method="POST" action={`/api/anfrage/${validation.slug}`}>
         {/* Name */}
-        <div className="mb-4">
+        <div className="mb-5">
           <label
             htmlFor="submitter_name"
             className="mb-1 block text-sm font-medium"
@@ -94,7 +94,7 @@ export default async function AnfragePage({
         </div>
 
         {/* E-Mail */}
-        <div className="mb-4">
+        <div className="mb-5">
           <label
             htmlFor="email"
             className="mb-1 block text-sm font-medium"
@@ -125,16 +125,17 @@ export default async function AnfragePage({
             type="date"
             required
             autoComplete="bday"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 text-sm"
+            style={{ minWidth: "200px" }}
           />
         </div>
 
         {/* Anliegen-Auswahl (Pflichtfeld, Mehrfachauswahl) */}
         <div className="mb-8" role="group" aria-labelledby="topics-label">
-          <p id="topics-label" className="mb-3 text-sm font-medium">
+          <p id="topics-label" className="mb-4 text-sm font-medium">
             Anliegen <span aria-hidden="true">*</span>
           </p>
-          <div className="flex flex-col gap-4" data-testid="topic-checkboxes">
+          <div className="space-y-3" data-testid="topic-checkboxes">
             {(Object.entries(DIGITAL_REQUEST_TOPICS) as [string, string][]).map(
               ([value, label]) => (
                 <label
@@ -168,7 +169,7 @@ export default async function AnfragePage({
 
         <button
           type="submit"
-          className="mt-6 w-full rounded bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
+          className="mt-8 w-full rounded bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto sm:px-8"
         >
           Anfrage absenden
         </button>
