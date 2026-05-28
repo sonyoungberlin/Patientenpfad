@@ -62,24 +62,21 @@ export default async function AnfragePage({
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="mb-2 text-2xl font-semibold">Digitales Anliegen</h1>
-      <p className="mb-2 text-sm text-gray-600">
+    <main style={{ maxWidth: "38rem", margin: "0 auto", padding: "2.5rem 1rem" }}>
+      <h1>Digitales Anliegen</h1>
+      <p style={{ marginBottom: "0.5rem", color: "#555" }}>
         Bitte wählen Sie aus, wofür Sie einen Fragebogenlink anfordern möchten.
         Die Praxis prüft Ihre Angaben und sendet Ihnen anschließend den passenden Link.
       </p>
-      <p className="mb-6 text-sm text-gray-500">
+      <p style={{ marginBottom: "2rem", color: "#777" }}>
         Wenn Ihr Anliegen nicht zu diesen Punkten passt, schreiben Sie uns bitte
         wie gewohnt eine Nachricht.
       </p>
 
       <form method="POST" action={`/api/anfrage/${validation.slug}`}>
         {/* Name */}
-        <div className="mb-5">
-          <label
-            htmlFor="submitter_name"
-            className="mb-1 block text-sm font-medium"
-          >
+        <div style={{ marginBottom: "1.25rem" }}>
+          <label htmlFor="submitter_name" style={{ display: "block", marginBottom: "0.25rem" }}>
             Ihr Name <span aria-hidden="true">*</span>
           </label>
           <input
@@ -89,16 +86,12 @@ export default async function AnfragePage({
             required
             maxLength={100}
             autoComplete="name"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
 
         {/* E-Mail */}
-        <div className="mb-5">
-          <label
-            htmlFor="email"
-            className="mb-1 block text-sm font-medium"
-          >
+        <div style={{ marginBottom: "1.25rem" }}>
+          <label htmlFor="email" style={{ display: "block", marginBottom: "0.25rem" }}>
             E-Mail-Adresse <span aria-hidden="true">*</span>
           </label>
           <input
@@ -107,16 +100,12 @@ export default async function AnfragePage({
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
 
         {/* Geburtsdatum (Pflichtfeld) */}
-        <div className="mb-6">
-          <label
-            htmlFor="birth_date"
-            className="mb-1 block text-sm font-medium"
-          >
+        <div style={{ marginBottom: "1.75rem" }}>
+          <label htmlFor="birth_date" style={{ display: "block", marginBottom: "0.25rem" }}>
             Geburtsdatum <span aria-hidden="true">*</span>
           </label>
           <input
@@ -125,30 +114,43 @@ export default async function AnfragePage({
             type="date"
             required
             autoComplete="bday"
-            className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 text-sm"
-            style={{ minWidth: "200px" }}
+            style={{
+              display: "block",
+              width: "100%",
+              maxWidth: "16rem",
+              fontFamily: "inherit",
+              fontSize: "1rem",
+              lineHeight: "1.5",
+              padding: "0.5rem 0.75rem",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              background: "var(--input-background)",
+            }}
           />
         </div>
 
         {/* Anliegen-Auswahl (Pflichtfeld, Mehrfachauswahl) */}
-        <div className="mb-8" role="group" aria-labelledby="topics-label">
-          <p id="topics-label" className="mb-4 text-sm font-medium">
+        <div style={{ marginBottom: "2rem" }} role="group" aria-labelledby="topics-label">
+          <p id="topics-label" style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
             Anliegen <span aria-hidden="true">*</span>
           </p>
-          <div className="space-y-3" data-testid="topic-checkboxes">
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}
+            data-testid="topic-checkboxes"
+          >
             {(Object.entries(DIGITAL_REQUEST_TOPICS) as [string, string][]).map(
               ([value, label]) => (
                 <label
                   key={value}
-                  className="flex cursor-pointer items-start gap-3 text-sm"
+                  style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", cursor: "pointer", fontWeight: 400 }}
                 >
                   <input
                     type="checkbox"
                     name="requested_topic"
                     value={value}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600"
+                    style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
                   />
-                  <span className="leading-relaxed">{label}</span>
+                  <span>{label}</span>
                 </label>
               ),
             )}
@@ -169,7 +171,7 @@ export default async function AnfragePage({
 
         <button
           type="submit"
-          className="mt-8 w-full rounded bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto sm:px-8"
+          style={{ marginTop: "2rem" }}
         >
           Anfrage absenden
         </button>
