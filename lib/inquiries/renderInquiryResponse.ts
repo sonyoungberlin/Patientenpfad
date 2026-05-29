@@ -315,6 +315,82 @@ export function renderInquiryResponseFromSections(
       }
     }
 
+    // ---- B-P) boundCheckpointPairs – gepaarte Erklärung + Action ----
+    //
+    // Für jedes Paar wird die Erklärung mit identischer Logik wie Section B geprüft.
+    // Ist sie sichtbar, wird sie als Paar-Erklärung gerendert; Section B überspringt sie
+    // danach automatisch (specificExplanationSeen-Guard).
+    // Die Action wird direkt nach der Erklärung gerendert – sofern ACTIVE und noch nicht
+    // durch eine frühere Paarung oder durch Section D/E verbraucht.
+    // „Erste passende Paarung gewinnt": eine verbrauchte Action erscheint weder in
+    // späteren Paaren noch in sharedBottom.
+    for (const pair of profile.boundCheckpointPairs ?? []) {
+      const { explanationId, actionId } = pair;
+
+      // 1. Erklärung auflösen (identische Bedingungskette wie Section B)
+      const explanationCp = catalog[explanationId];
+      if (!explanationCp) continue;
+
+      const explanationStatus = section.checkpointStatuses[explanationId];
+      if (explanationStatus === undefined) continue;
+      if (explanationStatus === ActionStatus.INACTIVE) continue;
+
+      // OUTCOME-Guard (§19)
+      if (explanationCp.classification === "OUTCOME" && section.decisionStatus !== DecisionStatus.POSSIBLE) continue;
+
+      // EXPLANATION-Regel §18 – gilt nur für SPECIFIC, nicht-OUTCOME
+      if (
+        explanationCp.kind === InquiryCheckpointKind.EXPLANATION &&
+        explanationCp.scope === InquiryCheckpointScope.SPECIFIC &&
+        explanationCp.classification !== "OUTCOME"
+      ) {
+        if (section.explanationOutputStatuses) {
+          if (section.explanationOutputStatuses[explanationId] !== ExplanationOutputStatus.SHOW) continue;
+        } else {
+          // Backward-Compat: factStatus YES → wie SHOW
+          if (explanationStatus !== ExplanationStatus.YES) continue;
+        }
+      }
+
+      const explanationText = resolveCheckpointText(explanationCp, explanationStatus, audience);
+      if (!explanationText) continue;
+
+      // Cross-section Dedup: bereits in einer früheren Section gerendert → überspringen.
+      // Dies verhindert zugleich, dass Section B dieselbe Erklärung nochmals rendert.
+      if (specificExplanationSeen.has(explanationId)) continue;
+      specificExplanationSeen.add(explanationId);
+
+      // Erklärung ausgeben
+      attachedParagraphs.push(explanationText);
+      sectionDocumentation.push(
+        `${explanationCp.label}: ${explanationCp.docByStatus?.[explanationStatus] ?? explanationText}`,
+      );
+
+      // 2. Action auflösen – erste passende Paarung gewinnt
+      // Eine bereits verbrauchte Action (durch frühere Paarung, Section D oder E)
+      // wird nicht erneut gerendert.
+      if (sharedBottomSeen.has(actionId) || attachedActionSeen.has(actionId)) continue;
+
+      const actionCp = catalog[actionId];
+      if (!actionCp || actionCp.kind !== InquiryCheckpointKind.ACTION) continue;
+
+      const actionStatus = section.checkpointStatuses[actionId];
+      if (actionStatus === undefined || actionStatus === ActionStatus.INACTIVE) continue;
+
+      const actionText = resolveCheckpointText(actionCp, actionStatus, audience);
+      if (!actionText) continue;
+
+      // Action direkt nach der Erklärung ausgeben
+      attachedParagraphs.push(actionText);
+      sectionDocumentation.push(
+        `${actionCp.label}: ${actionCp.docByStatus?.[actionStatus] ?? actionText}`,
+      );
+
+      // Action als verbraucht markieren – verhindert Rendering in Section D und E
+      attachedActionSeen.add(actionId);
+      sharedBottomSeen.add(actionId);
+    }
+
     // ---- B) Specific Checkpoints → attachedParagraphs ----
     // IDs aus PROCESS_SHELF_PROFILE_BINDINGS zusätzlich einspeisen
     const extraProcessIds = PROCESS_SHELF_PROFILE_BINDINGS[section.inquiryId] || [];

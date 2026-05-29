@@ -713,6 +713,25 @@ export type InquiryProfileV2 = {
     }
   >;
   /**
+   * Statische Erklärung-Action-Paarungen für den Renderer.
+   *
+   * Jedes Paar besteht aus einer Erklärung (EXPLANATION) und einer Aktion (ACTION).
+   * Wenn die Erklärung in M4 sichtbar ist, wird die Aktion direkt danach gerendert –
+   * ohne Lücke, unabhängig von ihrer normalen placement-Reihenfolge.
+   *
+   * Regeln:
+   * - Reihenfolge der Paare bestimmt die Priorität.
+   * - Erste passende Paarung gewinnt: die Action gilt danach als verbraucht.
+   * - Verbrauchte Actions erscheinen weder in späteren Paaren noch in sharedBottom.
+   * - Ist die Erklärung nicht sichtbar, rendert die Action auf ihrem normalen Pfad (Section D/E).
+   * - Ist die Action inaktiv, rendert nur die Erklärung (kein Paar-Output für die Action).
+   * - Kein Einfluss auf M2, M3, DB oder DecisionStatus.
+   */
+  boundCheckpointPairs?: Array<{
+    explanationId: string;
+    actionId: string;
+  }>;
+  /**
    * Anliegenspezifische Hinweistexte aus globalen Checkpoints.
    * Key = globalCheckpointId; Value = Hinweistext, der bei Status „ja"
    * für dieses Anliegen in M4 erscheint.

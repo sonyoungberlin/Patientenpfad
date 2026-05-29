@@ -106,6 +106,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [{ AU_MISSING_EGK: "YES" }],
       },
     },
+    boundCheckpointPairs: [
+      { explanationId: "AU_MISSING_EGK",          actionId: "INSURANCE_DATA_APP_TRANSFER" },
+      { explanationId: "AU_FOLLOWUP_REQUIRES_VISIT", actionId: "BOOK_APPOINTMENT" },
+    ],
 
     // -----------------------------------------------------------------------
     // M1B – Kommunikationsanlässe (Pilot)
@@ -286,6 +290,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [{ PRESCRIPTION_INSURANCE_PROOF_MISSING: "YES" }],
       },
     },
+    boundCheckpointPairs: [
+      { explanationId: "PRESCRIPTION_INSURANCE_PROOF_MISSING",    actionId: "INSURANCE_DATA_APP_TRANSFER" },
+      { explanationId: "PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON", actionId: "BOOK_APPOINTMENT" },
+    ],
     globalHints: {},
     actionGuidanceRules: [
       // 1. DOCUMENT_UPLOAD empfehlen, wenn Facharztbericht erforderlich
@@ -1058,6 +1066,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [{ REFERRAL_INSURANCE_PROOF_MISSING: "YES" }],
       },
     },
+    boundCheckpointPairs: [
+      { explanationId: "REFERRAL_INSURANCE_PROOF_MISSING", actionId: "INSURANCE_DATA_APP_TRANSFER" },
+      { explanationId: "REFERRAL_CAN_BE_ISSUED",          actionId: "REF_ORIGINAL_VS_PDF" },
+    ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "DIGITAL_REQUEST",

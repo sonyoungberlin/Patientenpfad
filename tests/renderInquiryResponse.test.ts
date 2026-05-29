@@ -3805,3 +3805,219 @@ describe("INTRO_CHECKPOINT_IDS – Katalog-Vollständigkeit", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// boundCheckpointPairs – Integrationstests
+// ---------------------------------------------------------------------------
+
+describe("boundCheckpointPairs – A: Versicherungsnachweis fehlt → App-Übermittlung (AU)", () => {
+  const EGK_TEXT = "Für die Ausstellung der AU benötigen wir noch einen aktuellen Versicherungsnachweis.";
+  const APP_TEXT = "Versicherungsdaten digital";
+
+  it("AU_MISSING_EGK YES + INSURANCE_DATA_APP_TRANSFER ACTIVE → beide in attachedParagraphs (backward-compat)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_MISSING_EGK: ExplanationStatus.YES,
+          INSURANCE_DATA_APP_TRANSFER: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    const egkIdx = paragraphs.findIndex((p) => p.includes(EGK_TEXT));
+    const appIdx = paragraphs.findIndex((p) => p.includes(APP_TEXT));
+    expect(egkIdx).toBeGreaterThanOrEqual(0);
+    expect(appIdx).toBeGreaterThanOrEqual(0);
+  });
+
+  it("Reihenfolge: EGK-Erklärung erscheint unmittelbar vor App-Übermittlung", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_MISSING_EGK: ExplanationStatus.YES,
+          INSURANCE_DATA_APP_TRANSFER: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    const egkIdx = paragraphs.findIndex((p) => p.includes(EGK_TEXT));
+    const appIdx = paragraphs.findIndex((p) => p.includes(APP_TEXT));
+    expect(appIdx).toBe(egkIdx + 1);
+  });
+
+  it("INSURANCE_DATA_APP_TRANSFER erscheint NICHT in sharedBottom", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_MISSING_EGK: ExplanationStatus.YES,
+          INSURANCE_DATA_APP_TRANSFER: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const sharedTexts = result.sharedBottom.map((e) => e.text);
+    expect(sharedTexts.some((t) => t.includes(APP_TEXT))).toBe(false);
+  });
+
+  it("AU_MISSING_EGK YES + INSURANCE_DATA_APP_TRANSFER INACTIVE → nur Erklärung, keine Action", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_MISSING_EGK: ExplanationStatus.YES,
+          INSURANCE_DATA_APP_TRANSFER: ActionStatus.INACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    expect(paragraphs.some((p) => p.includes(EGK_TEXT))).toBe(true);
+    expect(paragraphs.some((p) => p.includes(APP_TEXT))).toBe(false);
+  });
+});
+
+describe("boundCheckpointPairs – B: Überweisung ausgestellt → Original/PDF (REFERRAL)", () => {
+  const ISSUED_TEXT = "Die Überweisung kann ausgestellt werden.";
+  const PDF_TEXT = "Die Überweisung kann digital für die Terminvereinbarung genutzt werden";
+
+  it("REFERRAL_CAN_BE_ISSUED YES + REF_ORIGINAL_VS_PDF ACTIVE → Paar in attachedParagraphs (backward-compat)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: {
+          REFERRAL_CAN_BE_ISSUED: ExplanationStatus.YES,
+          REF_ORIGINAL_VS_PDF: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    expect(paragraphs.some((p) => p.includes(ISSUED_TEXT))).toBe(true);
+    expect(paragraphs.some((p) => p.includes(PDF_TEXT))).toBe(true);
+  });
+
+  it("Reihenfolge: CAN_BE_ISSUED-Text erscheint unmittelbar vor ORIGINAL_VS_PDF-Text", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: {
+          REFERRAL_CAN_BE_ISSUED: ExplanationStatus.YES,
+          REF_ORIGINAL_VS_PDF: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    const issuedIdx = paragraphs.findIndex((p) => p.includes(ISSUED_TEXT));
+    const pdfIdx = paragraphs.findIndex((p) => p.includes(PDF_TEXT));
+    expect(pdfIdx).toBe(issuedIdx + 1);
+  });
+
+  it("REF_ORIGINAL_VS_PDF erscheint nicht doppelt in attachedParagraphs (B-P verbraucht Section E)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeReferralSection({
+        checkpointStatuses: {
+          REFERRAL_CAN_BE_ISSUED: ExplanationStatus.YES,
+          REF_ORIGINAL_VS_PDF: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    const count = paragraphs.filter((p) => p.includes(PDF_TEXT)).length;
+    expect(count).toBe(1);
+  });
+});
+
+describe("boundCheckpointPairs – C: Persönliche Vorstellung → Termin buchen (AU)", () => {
+  const VISIT_TEXT = "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.";
+  const APPT_TEXT = "Termine können über den Online-Kalender vereinbart werden.";
+
+  it("AU_FOLLOWUP_REQUIRES_VISIT YES + BOOK_APPOINTMENT ACTIVE → Paar in attachedParagraphs (backward-compat)", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_FOLLOWUP_REQUIRES_VISIT: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    expect(paragraphs.some((p) => p.includes(VISIT_TEXT))).toBe(true);
+    expect(paragraphs.some((p) => p.includes(APPT_TEXT))).toBe(true);
+  });
+
+  it("BOOK_APPOINTMENT erscheint NICHT in sharedBottom wenn durch Paarung verbraucht", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_FOLLOWUP_REQUIRES_VISIT: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    const sharedTexts = result.sharedBottom.map((e) => e.text);
+    expect(sharedTexts.some((t) => t.includes(APPT_TEXT))).toBe(false);
+  });
+
+  it("AU_FOLLOWUP_REQUIRES_VISIT YES + BOOK_APPOINTMENT INACTIVE → nur Erklärung, keine Action", () => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_FOLLOWUP_REQUIRES_VISIT: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.INACTIVE,
+        },
+      }),
+    ]);
+    const paragraphs = result.sections[0].attachedParagraphs;
+    expect(paragraphs.some((p) => p.includes(VISIT_TEXT))).toBe(true);
+    expect(paragraphs.some((p) => p.includes(APPT_TEXT))).toBe(false);
+  });
+});
+
+describe("boundCheckpointPairs – D: Multi-Profil-Dedup BOOK_APPOINTMENT", () => {
+  const AU_VISIT_TEXT = "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.";
+  const PRESC_VISIT_TEXT = "Ohne vorherigen persönlichen Arzttermin in der Praxis kann die Dauermedikation nicht weiter verordnet werden.";
+  const APPT_TEXT = "Termine können über den Online-Kalender vereinbart werden.";
+
+  function makeMultiSectionResult() {
+    return renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_FOLLOWUP_REQUIRES_VISIT: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+        },
+      }),
+      makePrescriptionSection({
+        checkpointStatuses: {
+          PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON: ExplanationStatus.YES,
+          BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+  }
+
+  it("AU_FOLLOWUP + PRESCRIPTION_FOLLOWUP beide aktiv → BOOK_APPOINTMENT genau einmal in Gesamtausgabe", () => {
+    const result = makeMultiSectionResult();
+    const allTexts = [
+      ...result.sections.flatMap((s) => s.attachedParagraphs),
+      ...result.sharedBottom.map((e) => e.text),
+    ];
+    const count = allTexts.filter((t) => t.includes(APPT_TEXT)).length;
+    expect(count).toBe(1);
+  });
+
+  it("BOOK_APPOINTMENT erscheint in der AU-Section (erste Section gewinnt)", () => {
+    const result = makeMultiSectionResult();
+    expect(result.sections[0].attachedParagraphs.some((p) => p.includes(APPT_TEXT))).toBe(true);
+  });
+
+  it("BOOK_APPOINTMENT erscheint NICHT in der PRESCRIPTION-Section", () => {
+    const result = makeMultiSectionResult();
+    expect(result.sections[1].attachedParagraphs.some((p) => p.includes(APPT_TEXT))).toBe(false);
+  });
+
+  it("BOOK_APPOINTMENT erscheint NICHT in sharedBottom", () => {
+    const result = makeMultiSectionResult();
+    const sharedTexts = result.sharedBottom.map((e) => e.text);
+    expect(sharedTexts.some((t) => t.includes(APPT_TEXT))).toBe(false);
+  });
+
+  it("Beide Erklärungstexte (AU + PRESCRIPTION) erscheinen in ihren jeweiligen Sections", () => {
+    const result = makeMultiSectionResult();
+    expect(result.sections[0].attachedParagraphs.some((p) => p.includes(AU_VISIT_TEXT))).toBe(true);
+    expect(result.sections[1].attachedParagraphs.some((p) => p.includes(PRESC_VISIT_TEXT))).toBe(true);
+  });
+});
