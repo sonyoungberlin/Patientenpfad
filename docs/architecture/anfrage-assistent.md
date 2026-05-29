@@ -473,3 +473,96 @@ online gebucht werden und sind auch als Videosprechstunde möglich."
 
 → Implizite Buchungshandlung + zwei kombinierte Aussagen → ausgelagert in `ACUTE_BOOKING_INFO`.
 → ACUTE_CARE-Profil bindet den Baustein mit Condition `ACUTE_APPOINTMENT_INFO = YES`.
+
+---
+
+## 21. Checkpoint–Action Pairing
+
+### Zweck
+
+Normalerweise rendert der Renderer alle Erklärungen eines Anliegens (Section B/C) gebündelt
+und alle Actions separat danach (Section D/E). Für semantisch eng zusammengehörende
+Erklärung-Action-Paare – z. B. „Versicherungsnachweis fehlt" + „Daten jetzt per App
+übermitteln" – entsteht dadurch eine störende Lücke zwischen Ursache und Lösung.
+
+`boundCheckpointPairs` löst dieses Problem: Es ordnet einer Erklärung eine Action statisch
+zu. Der Renderer rendert beide direkt nacheinander, unabhängig von der normalen
+Reihenfolge der Action-Sections (D und E).
+
+### Profil-Konfiguration
+
+```ts
+boundCheckpointPairs: Array<{
+  explanationId: string; // ID eines SPECIFIC EXPLANATION-Checkpoints
+  actionId: string;      // ID eines ACTION-Checkpoints
+}>
+```
+
+Das Array ist am Profil-Objekt in `INQUIRY_PROFILE_CATALOG_V2` definiert.
+
+### Rendering-Regeln
+
+Der Renderer verarbeitet `boundCheckpointPairs` in **Section B-P**, die vor Section B
+(Specific Checkpoints) läuft.
+
+Für jedes Paar gilt:
+
+1. **Erklärung prüfen** – identische Bedingungskette wie Section B:
+   - Checkpoint muss im Katalog vorhanden sein.
+   - Status darf nicht `INACTIVE` sein.
+   - OUTCOME-Guard: OUTCOME-Checkpoints nur bei `decisionStatus = POSSIBLE` (§19).
+   - EXPLANATION-Regel §18: bei `SPECIFIC` non-OUTCOME muss `outputStatus = SHOW` (neu) oder
+     `factStatus = YES` (Backward-Compat ohne gespeicherte outputStatuses) gelten.
+   - `resolveCheckpointText` muss einen nicht-leeren Text liefern.
+
+2. **Cross-Section-Dedup der Erklärung** – vor dem Rendern wird die `explanationId` in
+   `specificExplanationSeen` aufgenommen. Section B überspringt sie dadurch automatisch;
+   die Erklärung erscheint nicht doppelt.
+
+3. **Erklärung rendern** – Text wird an `attachedParagraphs` des Anliegen-Abschnitts
+   angehängt.
+
+4. **Action prüfen**:
+   - Checkpoint muss im Katalog vorhanden und `kind = ACTION` sein.
+   - Action darf noch nicht durch eine frühere Paarung, Section D oder E verbraucht sein.
+   - Status muss `ACTIVE` sein.
+   - `resolveCheckpointText` muss einen nicht-leeren Text liefern.
+
+5. **Action direkt nach Erklärung rendern** – Text wird unmittelbar nach dem
+   Erklärungstext an `attachedParagraphs` angehängt.
+
+6. **Action als verbraucht markieren** – `attachedActionSeen` und `sharedBottomSeen`
+   werden gesetzt. Section D (SHARED_BOTTOM) und Section E (ATTACHED) überspringen sie
+   dadurch automatisch.
+
+### Dedup-Verhalten
+
+| Situation | Ergebnis |
+|---|---|
+| Erklärung sichtbar, Action ACTIVE | Paar wird gerendert; Action danach verbraucht |
+| Erklärung sichtbar, Action INACTIVE | Nur Erklärung wird gerendert; kein Paar-Output für Action |
+| Erklärung nicht sichtbar (HIDE / NO) | Paar-Schleife überspringt Eintrag; Action läuft normal durch Section D/E |
+| Action bereits durch früheres Paar verbraucht | Erklärung rendert allein; Action erscheint nicht erneut |
+| Mehrere Profile teilen dieselbe Action (z. B. `BOOK_APPOINTMENT`) | Erste passende Paarung gewinnt; Action erscheint genau einmal |
+
+**Invariante:** Eine Action kann über alle Sections und Anliegen hinweg maximal
+einmal gerendert werden – unabhängig davon, ob sie über B-P, Section D oder E
+ihren Weg in den Output findet.
+
+### Aktuell implementierte Pilot-Paarungen
+
+| Profil | Erklärung | Action | Semantik |
+|---|---|---|---|
+| AU | `AU_MISSING_EGK` | `INSURANCE_DATA_APP_TRANSFER` | Versicherungsnachweis fehlt → per Krankenkassen-App übermitteln |
+| AU | `AU_FOLLOWUP_REQUIRES_VISIT` | `BOOK_APPOINTMENT` | Persönliche Vorstellung für Folge-AU nötig → Termin buchen |
+| PRESCRIPTION | `PRESCRIPTION_INSURANCE_PROOF_MISSING` | `INSURANCE_DATA_APP_TRANSFER` | Versicherungsnachweis für Rezept fehlt → per App übermitteln |
+| PRESCRIPTION | `PRESCRIPTION_FOLLOWUP_REQUIRED_IN_PERSON` | `BOOK_APPOINTMENT` | Dauermedikation erfordert Arzttermin → Termin buchen |
+| REFERRAL | `REFERRAL_INSURANCE_PROOF_MISSING` | `INSURANCE_DATA_APP_TRANSFER` | Versicherungsnachweis für Überweisung fehlt → per App übermitteln |
+| REFERRAL | `REFERRAL_CAN_BE_ISSUED` | `REF_ORIGINAL_VS_PDF` | Überweisung kann ausgestellt werden → Hinweis digital vs. Original |
+
+Die Reihenfolge der Einträge je Profil ist relevant: das erste Paar, dessen Erklärung
+sichtbar ist, „verbraucht" die Action. Spätere Paare mit derselben Action rendern
+die Action nicht erneut.
+
+→ Zur Implementierung: Section B-P in `lib/inquiries/renderInquiryResponse.ts`  
+→ Typdefinition: `boundCheckpointPairs` in `InquiryProfileV2` (`lib/inquiries/types.ts`)
