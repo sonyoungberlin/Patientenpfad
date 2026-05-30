@@ -3854,7 +3854,7 @@ describe("boundCheckpointPairs – A: Versicherungsnachweis fehlt → App-Überm
         },
       }),
     ]);
-    const sharedTexts = result.sharedBottom.map((e) => e.text);
+    const sharedTexts = result.sharedBottom;
     expect(sharedTexts.some((t) => t.includes(APP_TEXT))).toBe(false);
   });
 
@@ -3948,7 +3948,7 @@ describe("boundCheckpointPairs – C: Persönliche Vorstellung → Termin buchen
         },
       }),
     ]);
-    const sharedTexts = result.sharedBottom.map((e) => e.text);
+    const sharedTexts = result.sharedBottom;
     expect(sharedTexts.some((t) => t.includes(APPT_TEXT))).toBe(false);
   });
 
@@ -3993,7 +3993,7 @@ describe("boundCheckpointPairs – D: Multi-Profil-Dedup BOOK_APPOINTMENT", () =
     const result = makeMultiSectionResult();
     const allTexts = [
       ...result.sections.flatMap((s) => s.attachedParagraphs),
-      ...result.sharedBottom.map((e) => e.text),
+      ...result.sharedBottom,
     ];
     const count = allTexts.filter((t) => t.includes(APPT_TEXT)).length;
     expect(count).toBe(1);
@@ -4011,7 +4011,7 @@ describe("boundCheckpointPairs – D: Multi-Profil-Dedup BOOK_APPOINTMENT", () =
 
   it("BOOK_APPOINTMENT erscheint NICHT in sharedBottom", () => {
     const result = makeMultiSectionResult();
-    const sharedTexts = result.sharedBottom.map((e) => e.text);
+    const sharedTexts = result.sharedBottom;
     expect(sharedTexts.some((t) => t.includes(APPT_TEXT))).toBe(false);
   });
 
