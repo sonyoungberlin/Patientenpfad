@@ -7,6 +7,7 @@ import { resolveQuestionTextForMode, type M2PrefillData } from "@/lib/logic/m2Qu
 import { deriveM5OutputCondensed } from "@/lib/logic/deriveM5Output";
 import type { PrefillRunSource } from "@/lib/server/prefillRuns";
 import PatientWritePanel from "@/components/PatientWritePanel";
+import VersorgungsplanPanel from "@/components/VersorgungsplanPanel";
 
 const UNSAVED_WARNING =
   "Wenn Sie die Seite verlassen, gehen nicht gespeicherte Änderungen verloren.";
@@ -700,6 +701,7 @@ export function M3ChecklistClient({
         </button>
       </section>
       <PatientWritePanel checkpoints={allCheckpoints} />
+      <VersorgungsplanPanel />
       <section className="section-divider">
         {confirmed ? (
           <p
