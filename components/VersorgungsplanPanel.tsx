@@ -12,7 +12,7 @@
  *   - Ausschließlich für die interne Arzt/Praxis-Seite (M3-Page)
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
 import {
   CARE_PLAN_SECTIONS,
   getAllCarePlanFields,
@@ -59,10 +59,11 @@ function CarePlanFieldInput({ field, value, onChange }: FieldProps) {
         htmlFor={id}
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: "0.5rem",
           cursor: "pointer",
           marginBottom: "0.25rem",
+          lineHeight: 1.4,
         }}
       >
         <input
@@ -70,8 +71,9 @@ function CarePlanFieldInput({ field, value, onChange }: FieldProps) {
           type="checkbox"
           checked={value === true}
           onChange={(e) => onChange(field.id, e.target.checked)}
+          style={{ marginTop: "0.15rem", flexShrink: 0 }}
         />
-        {field.label}
+        <span style={{ fontSize: "0.875rem" }}>{field.label}</span>
       </label>
     );
   }
@@ -93,6 +95,32 @@ function CarePlanFieldInput({ field, value, onChange }: FieldProps) {
           onChange={(e) => onChange(field.id, e.target.value)}
           style={{ width: "100%", boxSizing: "border-box" }}
         />
+      </div>
+    );
+  }
+
+  if (field.kind === "select") {
+    return (
+      <div style={{ marginBottom: "0.5rem" }}>
+        <label
+          htmlFor={id}
+          style={{ display: "block", fontSize: "0.875rem", marginBottom: "0.25rem" }}
+        >
+          {field.label}
+        </label>
+        <select
+          id={id}
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(field.id, e.target.value)}
+          style={{ width: "100%", boxSizing: "border-box" }}
+        >
+          <option value="">– bitte wählen –</option>
+          {field.options?.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
       </div>
     );
   }
@@ -158,12 +186,25 @@ export default function VersorgungsplanPanel() {
             </legend>
             <div style={{ marginTop: "0.5rem" }}>
               {section.fields.map((field) => (
-                <CarePlanFieldInput
-                  key={field.id}
-                  field={field}
-                  value={answers[field.id] ?? (field.kind === "checkbox" ? false : "")}
-                  onChange={handleChange}
-                />
+                <Fragment key={field.id}>
+                  {field.rowGroupLabel && (
+                    <p
+                      style={{
+                        fontWeight: 600,
+                        fontSize: "0.8125rem",
+                        margin: "0.75rem 0 0.25rem",
+                        color: "#555",
+                      }}
+                    >
+                      {field.rowGroupLabel}
+                    </p>
+                  )}
+                  <CarePlanFieldInput
+                    field={field}
+                    value={answers[field.id] ?? (field.kind === "checkbox" ? false : "")}
+                    onChange={handleChange}
+                  />
+                </Fragment>
               ))}
             </div>
           </fieldset>

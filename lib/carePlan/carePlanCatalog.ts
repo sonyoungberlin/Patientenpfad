@@ -12,13 +12,19 @@
  *   - "text"     : Einzeilige Freitext-Eingabe
  *   - "date"     : Datum (ISO-Format aus Browser-Input)
  *   - "textarea" : Mehrzeilige Freitext-Eingabe
+ *   - "select"   : Auswahl aus vordefinierten Optionen (→ wie text im Output)
+ *
+ * Sonderfelder:
+ *   - rowGroup     : Felder mit gleicher rowGroup werden im Output als eine
+ *                    kombinierte Zeile ausgegeben (Werte mit „ – " verbunden).
+ *   - rowGroupLabel: Angezeigter Gruppen-Titel im Panel (nur am ersten Feld).
  */
 
 // ---------------------------------------------------------------------------
 // Typen
 // ---------------------------------------------------------------------------
 
-export type CarePlanFieldKind = "text" | "date" | "checkbox" | "textarea";
+export type CarePlanFieldKind = "text" | "date" | "checkbox" | "textarea" | "select";
 
 export type CarePlanField = {
   /** Stabile ID – darf nach Einführung nie geändert werden. */
@@ -29,6 +35,19 @@ export type CarePlanField = {
   readonly kind: CarePlanFieldKind;
   /** Optionaler Platzhaltertext (nur für text / textarea). */
   readonly placeholder?: string;
+  /** Auswahl-Optionen – nur für kind "select". */
+  readonly options?: readonly string[];
+  /**
+   * Optionale Gruppen-ID für kombinierte Ausgabe:
+   * Alle Felder mit gleicher rowGroup werden im Renderer als eine
+   * „{part1} – {part2} – {part3}"-Zeile zusammengefasst.
+   */
+  readonly rowGroup?: string;
+  /**
+   * Angezeigter Gruppen-Titel im Panel.
+   * Nur am ersten Feld einer Gruppe setzen.
+   */
+  readonly rowGroupLabel?: string;
 };
 
 export type CarePlanSection = {
@@ -39,6 +58,17 @@ export type CarePlanSection = {
   /** Geordnete Felder dieser Sektion. */
   readonly fields: readonly CarePlanField[];
 };
+
+// ---------------------------------------------------------------------------
+// Wiederverwendete Optionslisten
+// ---------------------------------------------------------------------------
+
+export const INTERVAL_OPTIONS = [
+  "1x im Quartal",
+  "halbjährlich",
+  "jährlich",
+  "individuell",
+] as const;
 
 // ---------------------------------------------------------------------------
 // Katalog
@@ -62,9 +92,16 @@ export const CARE_PLAN_SECTIONS: readonly CarePlanSection[] = [
         placeholder: "z. B. Hypertonie, Diabetes Typ 2, Herzinsuffizienz …",
       },
       {
-        id: "ha_naechster_termin",
-        label: "Nächster Termin",
-        kind: "date",
+        id: "ha_kontrolle_aerztlich",
+        label: "Ärztliche Kontrolle",
+        kind: "select",
+        options: INTERVAL_OPTIONS,
+      },
+      {
+        id: "ha_kontrolle_labor",
+        label: "Laborkontrolle",
+        kind: "select",
+        options: INTERVAL_OPTIONS,
       },
       {
         id: "ha_notizen",
@@ -80,23 +117,72 @@ export const CARE_PLAN_SECTIONS: readonly CarePlanSection[] = [
     id: "section_fachaerzte",
     title: "Fachärztliche Betreuung",
     fields: [
+      // Facharzt 1
       {
-        id: "fa_zeile_1",
-        label: "Facharzt 1",
+        id: "fa_1_fachrichtung",
+        label: "Fachrichtung",
         kind: "text",
-        placeholder: "z. B. Kardiologie – Dr. Müller – Termin 10.07.2026",
+        rowGroup: "fa_1",
+        rowGroupLabel: "Facharzt 1",
+        placeholder: "z. B. Kardiologie",
       },
       {
-        id: "fa_zeile_2",
-        label: "Facharzt 2",
+        id: "fa_1_praxis",
+        label: "Praxis / Arzt",
         kind: "text",
-        placeholder: "z. B. Diabetologie – Praxis am Markt – Termin offen",
+        rowGroup: "fa_1",
+        placeholder: "z. B. Dr. Müller",
       },
       {
-        id: "fa_zeile_3",
-        label: "Facharzt 3",
+        id: "fa_1_intervall",
+        label: "Kontrollintervall",
+        kind: "select",
+        rowGroup: "fa_1",
+        options: INTERVAL_OPTIONS,
+      },
+      // Facharzt 2
+      {
+        id: "fa_2_fachrichtung",
+        label: "Fachrichtung",
         kind: "text",
-        placeholder: "z. B. Neurologie – noch kein Termin",
+        rowGroup: "fa_2",
+        rowGroupLabel: "Facharzt 2",
+        placeholder: "z. B. Diabetologie",
+      },
+      {
+        id: "fa_2_praxis",
+        label: "Praxis / Arzt",
+        kind: "text",
+        rowGroup: "fa_2",
+      },
+      {
+        id: "fa_2_intervall",
+        label: "Kontrollintervall",
+        kind: "select",
+        rowGroup: "fa_2",
+        options: INTERVAL_OPTIONS,
+      },
+      // Facharzt 3
+      {
+        id: "fa_3_fachrichtung",
+        label: "Fachrichtung",
+        kind: "text",
+        rowGroup: "fa_3",
+        rowGroupLabel: "Facharzt 3",
+        placeholder: "z. B. Neurologie",
+      },
+      {
+        id: "fa_3_praxis",
+        label: "Praxis / Arzt",
+        kind: "text",
+        rowGroup: "fa_3",
+      },
+      {
+        id: "fa_3_intervall",
+        label: "Kontrollintervall",
+        kind: "select",
+        rowGroup: "fa_3",
+        options: INTERVAL_OPTIONS,
       },
     ],
   },
@@ -107,23 +193,30 @@ export const CARE_PLAN_SECTIONS: readonly CarePlanSection[] = [
     title: "Versorgung & Organisation",
     fields: [
       {
+        id: "v_rezepte_digital",
+        label:
+          "Wenn Kontrolltermine wahrgenommen werden und alle Informationen vollständig vorliegen, sind Rezepte digital möglich.",
+        kind: "checkbox",
+      },
+      {
+        id: "v_ueberweisungen_digital",
+        label:
+          "Wenn Kontrolltermine wahrgenommen werden und alle Informationen vollständig vorliegen, sind Überweisungen digital möglich.",
+        kind: "checkbox",
+      },
+      {
+        id: "v_facharztberichte",
+        label: "Facharztberichte werden regelmäßig nachgereicht oder angefordert.",
+        kind: "checkbox",
+      },
+      {
         id: "v_medikamentenplan",
-        label: "Medikamentenplan ausgehändigt",
+        label: "Der Medikamentenplan wird regelmäßig aktualisiert.",
         kind: "checkbox",
       },
       {
-        id: "v_pflegedienst",
-        label: "Pflegedienst / ambulante Pflege organisiert",
-        kind: "checkbox",
-      },
-      {
-        id: "v_hilfsmittel",
-        label: "Hilfsmittel verordnet / beantragt",
-        kind: "checkbox",
-      },
-      {
-        id: "v_transport",
-        label: "Krankentransport / Beförderung geklärt",
+        id: "v_digitale_wege",
+        label: "Digitale Praxiswege werden bevorzugt genutzt.",
         kind: "checkbox",
       },
       {

@@ -6,7 +6,10 @@
  * Regeln:
  *   - Nur Felder mit Inhalt erscheinen im Output.
  *   - Checkboxen: nur wenn `true` → „✓ {label}".
- *   - Text / Date / Textarea: nur wenn getrimmt nicht leer.
+ *   - Text / Date / Select / Textarea: nur wenn getrimmt nicht leer.
+ *   - rowGroup-Felder: alle Felder einer Gruppe werden als eine Zeile
+ *     ausgegeben: nicht-leere Werte mit „ – " verbunden.
+ *     Ist die Gruppe komplett leer, wird keine Zeile ausgegeben.
  *   - Sektionen: nur ausgeben wenn ≥ 1 Feld in der Sektion einen sichtbaren
  *     Wert hat. Andernfalls wird die Sektion komplett übersprungen.
  *   - Zwischen Sektionen eine Leerzeile.
@@ -49,8 +52,9 @@ function hasValue(field: CarePlanField, answers: CarePlanAnswers): boolean {
 }
 
 /**
- * Gibt die Ausgabezeilen für ein einzelnes Feld zurück.
+ * Gibt die Ausgabezeilen für ein einzelnes (nicht-rowGroup-)Feld zurück.
  * Gibt ein leeres Array zurück, wenn das Feld keinen sichtbaren Wert hat.
+ * Für rowGroup-Felder wird diese Funktion nicht aufgerufen.
  */
 function renderField(field: CarePlanField, answers: CarePlanAnswers): string[] {
   const raw = answers[field.id];
@@ -77,7 +81,7 @@ function renderField(field: CarePlanField, answers: CarePlanAnswers): string[] {
     return [`${field.label}:`, ...lines.map((l) => `  ${l}`)];
   }
 
-  // text / date: einzeilig
+  // text / date / select: einzeilig
   return [`${field.label}: ${trimmed}`];
 }
 
@@ -104,9 +108,29 @@ export function buildCarePlanText(answers: CarePlanAnswers): string {
     outputLines.push(section.title);
 
     // Felder der Sektion
+    const processedGroups = new Set<string>();
+
     for (const field of section.fields) {
-      const lines = renderField(field, answers);
-      outputLines.push(...lines);
+      if (field.rowGroup) {
+        // Gruppenfelder: beim ersten Auftreten der Gruppe verarbeiten,
+        // danach überspringen.
+        if (processedGroups.has(field.rowGroup)) continue;
+        processedGroups.add(field.rowGroup);
+        const groupFields = section.fields.filter(
+          (f) => f.rowGroup === field.rowGroup
+        );
+        const parts = groupFields
+          .map((f) => {
+            const raw = answers[f.id];
+            return typeof raw === "string" ? raw.trim() : "";
+          })
+          .filter((v) => v !== "");
+        if (parts.length > 0) {
+          outputLines.push(parts.join(" \u2013 "));
+        }
+      } else {
+        outputLines.push(...renderField(field, answers));
+      }
     }
   }
 
