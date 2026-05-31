@@ -27,12 +27,10 @@ describe("validateAdminAddMemberInput", () => {
     if (r.ok) expect(r.value.role).toBe("INBOX_ONLY");
   });
 
-  it("verwirft USER", () => {
+  it("akzeptiert USER", () => {
     const r = validateAdminAddMemberInput({ email: "x@y.de", role: "USER" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.fieldErrors.role).toBe("USER kann nicht mehr neu vergeben werden.");
-    }
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.role).toBe("USER");
   });
 
   it("normalisiert E-Mail (trim + lowercase)", () => {

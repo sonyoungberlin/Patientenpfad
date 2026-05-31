@@ -68,7 +68,7 @@ export function validateAdminAddMemberInput(
   } else if (rawRole === PracticeRole.INBOX_ONLY) {
     role = PracticeRole.INBOX_ONLY;
   } else if (rawRole === PracticeRole.USER) {
-    fieldErrors.role = "USER kann nicht mehr neu vergeben werden.";
+    role = PracticeRole.USER;
   } else {
     fieldErrors.role = "Ungültige Rolle.";
   }

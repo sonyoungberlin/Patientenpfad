@@ -37,7 +37,7 @@ import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
   ADMIN: "Admin",
-  USER: "Mitarbeiter (Legacy)",
+  USER: "Mitarbeiter",
   INBOX_ONLY: "Mini-Zugang / Posteingang",
 };
 
@@ -156,12 +156,12 @@ export default async function PracticeMembersPage({
             Rolle
             <select
               name="role"
-              defaultValue={PracticeRole.INBOX_ONLY}
+              defaultValue={PracticeRole.USER}
               required
               style={{ display: "block", width: "100%" }}
             >
-              <option value={PracticeRole.ADMIN}>
-                {ROLE_LABEL[PracticeRole.ADMIN]}
+              <option value={PracticeRole.USER}>
+                {ROLE_LABEL[PracticeRole.USER]}
               </option>
               <option value={PracticeRole.INBOX_ONLY}>
                 {ROLE_LABEL[PracticeRole.INBOX_ONLY]}

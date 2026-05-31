@@ -1,11 +1,11 @@
 /**
- * Phase P4b: Unit-Tests für `validateAddMemberInput`.
+ * Unit-Tests für `validateAddMemberInput`.
  *
  * Stellt sicher, dass:
  *   - E-Mail getrimmt + lowercased wird,
  *   - leere/ungültige E-Mail einen Feldfehler liefert,
- *   - Rolle exakt ADMIN oder INBOX_ONLY sein muss,
- *   - "OWNER" explizit verworfen wird (mit dedizierter Meldung),
+ *   - Rolle exakt USER oder INBOX_ONLY sein muss,
+ *   - "OWNER" und "ADMIN" explizit verworfen werden,
  *   - unbekannte Rollen einen Feldfehler liefern.
  */
 
@@ -21,10 +21,14 @@ describe("validateAddMemberInput", () => {
     }
   });
 
-  it("akzeptiert ADMIN", () => {
+  it("verwirft ADMIN (nicht mehr vom Praxis-Inhaber vergabe)", () => {
     const r = validateAddMemberInput({ email: "a@b.de", role: "ADMIN" });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.value.role).toBe("ADMIN");
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.fieldErrors.role).toBe(
+        "ADMIN kann nicht mehr vom Praxis-Inhaber vergeben werden.",
+      );
+    }
   });
 
   it("liefert Feldfehler bei fehlender E-Mail", () => {
@@ -52,11 +56,19 @@ describe("validateAddMemberInput", () => {
     if (!r.ok) expect(r.fieldErrors.email).toBeTruthy();
   });
 
-  it("verwirft USER explizit", () => {
-    const r = validateAddMemberInput({ email: "x@y.de", role: "USER" });
+  it("akzeptiert USER", () => {
+    const r = validateAddMemberInput({ email: "a@b.de", role: "USER" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.role).toBe("USER");
+  });
+
+  it("verwirft ADMIN explizit mit dedizierter Meldung", () => {
+    const r = validateAddMemberInput({ email: "x@y.de", role: "ADMIN" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
-      expect(r.fieldErrors.role).toBe("USER kann nicht mehr neu vergeben werden.");
+      expect(r.fieldErrors.role).toBe(
+        "ADMIN kann nicht mehr vom Praxis-Inhaber vergeben werden.",
+      );
     }
   });
 
@@ -65,7 +77,7 @@ describe("validateAddMemberInput", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.fieldErrors.role).toBe(
-        "OWNER kann in dieser Phase nicht vergeben werden.",
+        "OWNER kann nicht vom Praxis-Inhaber vergeben werden.",
       );
     }
   });

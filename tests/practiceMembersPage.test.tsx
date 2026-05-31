@@ -208,10 +208,11 @@ describe("/practice/members read-only page", () => {
     expect(r.markup).toMatch(/<form[^>]*action="\/api\/practice\/members"[^>]*method="POST"/i);
     expect(r.markup).toMatch(/name="email"/);
     expect(r.markup).toMatch(/name="role"/);
-    // Rollen-Auswahl bietet ADMIN und INBOX_ONLY, aber **nicht** OWNER.
-    expect(r.markup).toMatch(/<option[^>]*value="ADMIN"/);
+    // Rollen-Auswahl bietet USER und INBOX_ONLY, aber **nicht** OWNER und **nicht** ADMIN.
+    expect(r.markup).toMatch(/<option[^>]*value="USER"/);
     expect(r.markup).toMatch(/<option[^>]*value="INBOX_ONLY"/);
     expect(r.markup).not.toMatch(/<option[^>]*value="OWNER"/);
+    expect(r.markup).not.toMatch(/<option[^>]*value="ADMIN"/);
   });
 
   it("zeigt ?error=… als Fehlermeldung", async () => {

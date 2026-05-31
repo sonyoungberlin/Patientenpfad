@@ -142,7 +142,7 @@ describe("POST /api/practice/members — Validierung", () => {
     expect(res.status).toBe(400);
     const j = await res.json();
     expect(j.fieldErrors.role).toBe(
-      "OWNER kann in dieser Phase nicht vergeben werden.",
+      "OWNER kann nicht vom Praxis-Inhaber vergeben werden.",
     );
     expect(pm.account.findUnique).not.toHaveBeenCalled();
     expect(pm.practiceMembership.create).not.toHaveBeenCalled();
@@ -256,32 +256,22 @@ describe("POST /api/practice/members — Happy Path", () => {
     expect(pm.practiceMembership.create).toHaveBeenCalledTimes(1);
   });
 
-  it("OWNER fügt ADMIN hinzu (JSON, 201)", async () => {
+  it("400 wenn OWNER versucht ADMIN zu vergeben", async () => {
     getSessionAccountMock.mockResolvedValue(makeAccount("OWNER"));
-    pm.practiceMembership.create.mockResolvedValue({
-      id: "m-2",
-      account_id: "acc-2",
-      role: "ADMIN",
-    });
     const res = await POST(
       jsonReq({ email: "neu@example.com", role: "ADMIN" }),
     );
-    expect(res.status).toBe(201);
-    const args = pm.practiceMembership.create.mock.calls[0][0];
-    expect(args.data.role).toBe("ADMIN");
+    expect(res.status).toBe(400);
+    expect(pm.practiceMembership.create).not.toHaveBeenCalled();
   });
 
-  it("ADMIN fügt ADMIN hinzu (JSON, 201)", async () => {
+  it("400 wenn ADMIN versucht ADMIN zu vergeben", async () => {
     getSessionAccountMock.mockResolvedValue(makeAccount("ADMIN"));
-    pm.practiceMembership.create.mockResolvedValue({
-      id: "m-3",
-      account_id: "acc-2",
-      role: "ADMIN",
-    });
     const res = await POST(
       jsonReq({ email: "neu@example.com", role: "ADMIN" }),
     );
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(400);
+    expect(pm.practiceMembership.create).not.toHaveBeenCalled();
   });
 
   it("ignoriert practice_id aus Body und nutzt practice_id aus Session", async () => {

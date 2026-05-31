@@ -179,6 +179,7 @@ describe("/admin/practices/[id] detail page", () => {
     // OWNER ist hier erlaubt — Plattform-Admin-Werkzeug.
     expect(r.markup).toMatch(/<option[^>]*value="OWNER"/);
     expect(r.markup).toMatch(/<option[^>]*value="ADMIN"/);
+    expect(r.markup).toMatch(/<option[^>]*value="USER"/);
     expect(r.markup).toMatch(/<option[^>]*value="INBOX_ONLY"/);
 
     // Danger-Zone Delete-Button

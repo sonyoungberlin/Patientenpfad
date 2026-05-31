@@ -24,7 +24,7 @@ import { DeletePracticeButton } from "./DeletePracticeButton";
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
   ADMIN: "Admin",
-  USER: "Mitarbeiter (Legacy)",
+  USER: "Mitarbeiter",
   INBOX_ONLY: "Mini-Zugang / Posteingang",
 };
 
@@ -865,6 +865,9 @@ export default async function AdminPracticeDetailPage({
             >
               <option value={PracticeRole.ADMIN}>
                 {ROLE_LABEL[PracticeRole.ADMIN]}
+              </option>
+              <option value={PracticeRole.USER}>
+                {ROLE_LABEL[PracticeRole.USER]}
               </option>
               <option value={PracticeRole.INBOX_ONLY}>
                 {ROLE_LABEL[PracticeRole.INBOX_ONLY]}

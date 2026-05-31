@@ -1,17 +1,17 @@
 /**
- * Phase P4b: Eingabe-Normalisierung und Validierung für das Hinzufügen
- * eines bestehenden Accounts zur aktuellen Practice
- * (`POST /api/practice/members`).
+ * Eingabe-Normalisierung und Validierung für das Hinzufügen eines
+ * bestehenden Accounts zur aktuellen Practice (`POST /api/practice/members`).
  *
  * Wird sowohl vom JSON-API-Pfad als auch vom HTML-Form-POST-Pfad benutzt,
  * damit beide Schreibpfade konsistent dieselben Felder produzieren. Liefert
  * entweder normierte Werte oder strukturierte Feldfehler.
  *
- * P4b-Scope:
+ * Vergabe durch Praxis-Inhaber (OWNER/ADMIN):
+ *   - USER (Mitarbeiter)  → erlaubt
+ *   - INBOX_ONLY (Mini)   → erlaubt
+ *   - OWNER               → explizit verworfen
+ *   - ADMIN               → explizit verworfen (nur noch per Plattform-Admin)
  *   - email: trim + lowercase, pragmatische RFC-Form-Prüfung, Pflichtfeld.
- *   - role: muss exakt "ADMIN" oder "USER" sein. "OWNER" wird **explizit
- *     verworfen** (Scope: „OWNER nur durch OWNER setzbar, falls überhaupt"
- *     — in P4b: nicht setzbar). Andere Werte → "Ungültige Rolle.".
  */
 
 import { PracticeRole } from "@prisma/client";
@@ -26,7 +26,7 @@ export type AddMemberFieldErrors = Partial<{
 
 export type ValidatedAddMemberInput = {
   email: string;
-  role: typeof PracticeRole.ADMIN | typeof PracticeRole.INBOX_ONLY;
+  role: typeof PracticeRole.USER | typeof PracticeRole.INBOX_ONLY;
 };
 
 export type RawAddMemberInput = {
@@ -62,13 +62,13 @@ export function validateAddMemberInput(
   if (!rawRole) {
     fieldErrors.role = "Rolle ist erforderlich.";
   } else if (rawRole === PracticeRole.OWNER) {
-    fieldErrors.role = "OWNER kann in dieser Phase nicht vergeben werden.";
+    fieldErrors.role = "OWNER kann nicht vom Praxis-Inhaber vergeben werden.";
   } else if (rawRole === PracticeRole.ADMIN) {
-    role = PracticeRole.ADMIN;
+    fieldErrors.role = "ADMIN kann nicht mehr vom Praxis-Inhaber vergeben werden.";
+  } else if (rawRole === PracticeRole.USER) {
+    role = PracticeRole.USER;
   } else if (rawRole === PracticeRole.INBOX_ONLY) {
     role = PracticeRole.INBOX_ONLY;
-  } else if (rawRole === PracticeRole.USER) {
-    fieldErrors.role = "USER kann nicht mehr neu vergeben werden.";
   } else {
     fieldErrors.role = "Ungültige Rolle.";
   }
