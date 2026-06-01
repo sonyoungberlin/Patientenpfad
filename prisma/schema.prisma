@@ -671,7 +671,7 @@ model DigitalRequest {
   concern_text String?
 
   /// Status der Anfrage.
-  /// Whitelist: "new" | "in_review" | "sent" | "closed"
+  /// Whitelist: "new" | "in_review" | "sent" | "closed" | "rejected"
   status String @default("new")
 
   /// Eigentümer-Account (Pflichtfeld, Doppelschreiben-Konvention).

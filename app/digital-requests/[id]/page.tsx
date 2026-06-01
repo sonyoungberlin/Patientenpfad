@@ -33,6 +33,7 @@ const STATUS_LABEL: Record<string, string> = {
   in_review: "In Bearbeitung",
   sent: "Versendet",
   closed: "Abgeschlossen",
+  rejected: "Abgelehnt",
 };
 
 function statusBadgeClass(status: string): string {
@@ -45,6 +46,8 @@ function statusBadgeClass(status: string): string {
       return "bg-yellow-100 text-yellow-800";
     case "closed":
       return "bg-gray-100 text-gray-600";
+    case "rejected":
+      return "bg-red-100 text-red-700";
     default:
       return "bg-gray-100 text-gray-600";
   }
@@ -102,6 +105,7 @@ export default async function DigitalRequestDetailPage({
   }
 
   const isSent = request.status === "sent" || request.status === "closed";
+  const isRejected = request.status === "rejected";
 
   // selected_block_ids ist Json? – wir caste auf string[] (leer falls null)
   const savedBlockIds: string[] = Array.isArray(request.selected_block_ids)
@@ -126,7 +130,7 @@ export default async function DigitalRequestDetailPage({
       </div>
 
       <h1 className="mb-6 text-2xl font-semibold">
-        {isSent ? "Anfrage (versendet)" : "Anfrage bearbeiten"}
+        {isSent ? "Anfrage (versendet)" : isRejected ? "Anfrage (abgelehnt)" : "Anfrage bearbeiten"}
       </h1>
 
       {/* Versand-Hinweis (sent / closed) */}
@@ -152,6 +156,19 @@ export default async function DigitalRequestDetailPage({
               </Link>
             </p>
           )}
+        </div>
+      )}
+
+      {/* Ablehnungs-Hinweis (rejected) */}
+      {isRejected && (
+        <div
+          className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          data-testid="rejected-notice"
+        >
+          <p className="font-medium">Anfrage wurde abgelehnt.</p>
+          <p className="mt-1 text-red-700">
+            Der Patient wurde per E-Mail über die Ablehnung informiert.
+          </p>
         </div>
       )}
 
@@ -199,13 +216,15 @@ export default async function DigitalRequestDetailPage({
         </dl>
       </div>
 
-      {/* Interaktives Formular (deaktiviert wenn versendet) */}
+      {/* Interaktives Formular (deaktiviert wenn versendet oder abgelehnt) */}
       <DigitalRequestDetailClient
         requestId={request.id}
         initialPatientReference={request.patient_reference ?? null}
         initialSelectedBlockIds={savedBlockIds}
         blocks={blocks}
         isSent={isSent}
+        isRejected={isRejected}
+        canDelete={!isSent}
       />
     </main>
   );

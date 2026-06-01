@@ -8,10 +8,15 @@
  * - "Auswahl speichern": PATCH /api/digital-requests/[id]
  * - "Fragebogen senden": PATCH + POST /api/digital-requests/[id]/process
  *   Voraussetzung: patient_reference vorhanden, ≥1 Block ausgewählt,
- *   status nicht sent/closed.
+ *   status nicht sent/closed/rejected.
+ * - "Digitale Anfrage ablehnen": POST /api/digital-requests/[id]/reject
+ *   Sendet Standard-Ablehnungsmail, setzt Status auf rejected.
+ * - "Löschen": DELETE /api/digital-requests/[id]
+ *   Hard-Delete ohne Mail. Nur wenn nicht sent/closed.
  */
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export type BlockChoice = {
   id: string;
@@ -25,6 +30,10 @@ type Props = {
   blocks: BlockChoice[];
   /** Wenn true, ist das Formular schreibgeschützt (status = sent/closed). */
   isSent?: boolean;
+  /** Wenn true, wurde die Anfrage abgelehnt (status = rejected). */
+  isRejected?: boolean;
+  /** Wenn true, darf die Anfrage nicht gelöscht werden (status = sent/closed). */
+  canDelete?: boolean;
 };
 
 export function DigitalRequestDetailClient({
@@ -33,7 +42,10 @@ export function DigitalRequestDetailClient({
   initialSelectedBlockIds,
   blocks,
   isSent = false,
+  isRejected: isRejectedProp = false,
+  canDelete = false,
 }: Props) {
+  const router = useRouter();
   const [patientReference, setPatientReference] = useState(
     initialPatientReference ?? "",
   );
@@ -50,8 +62,17 @@ export function DigitalRequestDetailClient({
   const [sendError, setSendError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  // Effektiver Readonly-Zustand: server-seitig versendet ODER lokal gerade versendet.
-  const isReadOnly = isSent || sent;
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectError, setRejectError] = useState<string | null>(null);
+  const [rejected, setRejected] = useState(false);
+
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Effektiver Readonly-Zustand
+  const isRejected = isRejectedProp || rejected;
+  // Effektiver Readonly-Zustand: server-seitig versendet ODER lokal gerade versendet ODER abgelehnt.
+  const isReadOnly = isSent || sent || isRejected;
 
   function toggleBlock(id: string) {
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -141,15 +162,71 @@ export function DigitalRequestDetailClient({
     }
   }
 
+  async function handleReject() {
+    setRejecting(true);
+    setRejectError(null);
+
+    try {
+      const res = await fetch(`/api/digital-requests/${requestId}/reject`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (data.ok) {
+        setRejected(true);
+      } else {
+        setRejectError(data.error ?? "Fehler beim Ablehnen.");
+      }
+    } catch {
+      setRejectError("Netzwerkfehler.");
+    } finally {
+      setRejecting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm("Anfrage wirklich löschen?")) return;
+    setDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch(`/api/digital-requests/${requestId}`, {
+        method: "DELETE",
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (data.ok) {
+        router.push("/digital-requests");
+      } else {
+        setDeleteError(data.error ?? "Fehler beim Löschen.");
+      }
+    } catch {
+      setDeleteError("Netzwerkfehler.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="mt-8 space-y-6">
-      {isReadOnly && (
+      {isReadOnly && !isRejected && (
         <p
           className="text-sm text-gray-500"
           data-testid="form-readonly-notice"
         >
           Das Formular ist schreibgeschützt, da der Fragebogen bereits versendet wurde.
         </p>
+      )}
+
+      {/* Lokal abgelehnte Anfrage – Hinweis */}
+      {isRejected && (
+        <div
+          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          data-testid="reject-notice"
+        >
+          <p className="font-medium">Anfrage wurde abgelehnt.</p>
+          <p className="mt-1 text-red-700">
+            Der Patient wurde per E-Mail benachrichtigt.
+          </p>
+        </div>
       )}
 
       {/* Lokal versendete Erfolgsmeldung */}
@@ -261,6 +338,50 @@ export function DigitalRequestDetailClient({
             {sendError && (
               <span className="text-sm text-red-600" role="alert" data-testid="send-error">
                 {sendError}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Ablehnen-Button – nur wenn nicht readonly und nicht schon abgelehnt */}
+      {!isSent && !isRejected && !sent && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={handleReject}
+              disabled={rejecting || deleting || saving || sending}
+              data-testid="reject-btn"
+              className="rounded border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              {rejecting ? "Wird abgelehnt…" : "Digitale Anfrage ablehnen"}
+            </button>
+            {rejectError && (
+              <span className="text-sm text-red-600" role="alert" data-testid="reject-error">
+                {rejectError}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Löschen-Button – nur wenn nicht sent/closed */}
+      {!isSent && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting || rejecting || sending || saving}
+              data-testid="delete-btn"
+              className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {deleting ? "Wird gelöscht…" : "Löschen"}
+            </button>
+            {deleteError && (
+              <span className="text-sm text-red-600" role="alert" data-testid="delete-error">
+                {deleteError}
               </span>
             )}
           </div>

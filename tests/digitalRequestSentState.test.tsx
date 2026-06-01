@@ -197,6 +197,61 @@ describe("Detailseite — sent-Status (via Server-Component-Render)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Detailseite — rejected-Status (via Server-Component-Render)
+// ---------------------------------------------------------------------------
+
+const DR_REJECTED = {
+  ...DR_NEW,
+  id: "dr-3",
+  status: "rejected",
+};
+
+describe("Detailseite — rejected-Status (via Server-Component-Render)", () => {
+  beforeEach(() => {
+    requireAccessMock.mockResolvedValue(ACCOUNT);
+    isInboxOnlyMock.mockReturnValue(false);
+  });
+
+  it("zeigt Ablehnungs-Hinweis wenn status=rejected", async () => {
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_REJECTED);
+    const { result } = await runPage(() =>
+      DigitalRequestDetailPage({ params: Promise.resolve({ id: "dr-3" }) }),
+    );
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+    expect(markup).toContain("rejected-notice");
+    expect(markup).toContain("Anfrage wurde abgelehnt");
+  });
+
+  it("kein Versand-Hinweis wenn status=rejected", async () => {
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_REJECTED);
+    const { result } = await runPage(() =>
+      DigitalRequestDetailPage({ params: Promise.resolve({ id: "dr-3" }) }),
+    );
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+    expect(markup).not.toContain("Fragebogen wurde versendet");
+  });
+
+  it("kein 'Auswahl speichern'- oder 'Fragebogen senden'-Button bei rejected", async () => {
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_REJECTED);
+    const { result } = await runPage(() =>
+      DigitalRequestDetailPage({ params: Promise.resolve({ id: "dr-3" }) }),
+    );
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+    expect(markup).not.toContain("Auswahl speichern");
+    expect(markup).not.toContain("Fragebogen senden");
+  });
+
+  it("zeigt 'Anfrage (abgelehnt)' als Seitentitel", async () => {
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_REJECTED);
+    const { result } = await runPage(() =>
+      DigitalRequestDetailPage({ params: Promise.resolve({ id: "dr-3" }) }),
+    );
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+    expect(markup).toContain("Anfrage (abgelehnt)");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Liste — CTA-Label je Status
 // ---------------------------------------------------------------------------
 

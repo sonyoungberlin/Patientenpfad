@@ -11,11 +11,29 @@
  *  5. Klick ruft zuerst PATCH, dann process auf
  *  6. Erfolgreicher Versand zeigt Erfolgsmeldung
  *  7. Mailfehler zeigt Fehlermeldung, Formular bleibt bearbeitbar
+ *  8. Ablehnen-Button sichtbar/versteckt
+ *  9. Ablehnen-Klick → POST /reject → reject-notice sichtbar
+ * 10. Ablehnen-Fehler → Fehlermeldung
+ * 11. Löschen-Button sichtbar/versteckt
+ * 12. Löschen: confirm=false → kein fetch
+ * 13. Löschen: confirm=true → DELETE → router.push
+ * 14. Löschen-Fehler → Fehlermeldung
  */
 
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
+
+// ---------------------------------------------------------------------------
+// useRouter-Mock (muss vor dem Komponenten-Import stehen)
+// ---------------------------------------------------------------------------
+
+const mockRouterPush = jest.fn();
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockRouterPush }),
+}));
+
 import { DigitalRequestDetailClient } from "@/components/DigitalRequestDetailClient";
 
 // ---------------------------------------------------------------------------
@@ -209,6 +227,166 @@ describe("DigitalRequestDetailClient — Send-Interaktion", () => {
     const errorEl = container.querySelector('[data-testid="send-error"]');
     expect(errorEl).not.toBeNull();
     expect(errorEl!.textContent).toContain("Validierungsfehler");
+
+    await cleanup(root, container);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: Ablehnen-Button
+// ---------------------------------------------------------------------------
+
+describe("DigitalRequestDetailClient — Ablehnen-Button", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    mockRouterPush.mockReset();
+  });
+
+  it("zeigt reject-btn wenn isSent=false und isRejected=false", async () => {
+    const { container, root } = await renderComponent(defaultProps());
+    expect(container.querySelector('[data-testid="reject-btn"]')).not.toBeNull();
+    await cleanup(root, container);
+  });
+
+  it("kein reject-btn wenn isSent=true", async () => {
+    const { container, root } = await renderComponent(defaultProps({ isSent: true }));
+    expect(container.querySelector('[data-testid="reject-btn"]')).toBeNull();
+    await cleanup(root, container);
+  });
+
+  it("kein reject-btn wenn isRejected=true (Prop)", async () => {
+    const { container, root } = await renderComponent(defaultProps({ isRejected: true }));
+    expect(container.querySelector('[data-testid="reject-btn"]')).toBeNull();
+    await cleanup(root, container);
+  });
+
+  it("Klick auf reject-btn → POST /reject → reject-notice sichtbar, reject-btn weg", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, status: "rejected" }),
+    });
+
+    const { container, root } = await renderComponent(defaultProps());
+    const btn = container.querySelector<HTMLButtonElement>('[data-testid="reject-btn"]')!;
+
+    await act(async () => { btn.click(); });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/api/digital-requests/dr-1/reject");
+    expect(opts.method).toBe("POST");
+
+    // reject-notice ist jetzt sichtbar
+    expect(container.querySelector('[data-testid="reject-notice"]')).not.toBeNull();
+    // reject-btn ist weg
+    expect(container.querySelector('[data-testid="reject-btn"]')).toBeNull();
+
+    await cleanup(root, container);
+  });
+
+  it("zeigt reject-Fehlermeldung wenn POST fehlschlägt", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ ok: false, error: "Mail konnte nicht gesendet werden." }),
+    });
+
+    const { container, root } = await renderComponent(defaultProps());
+    const btn = container.querySelector<HTMLButtonElement>('[data-testid="reject-btn"]')!;
+
+    await act(async () => { btn.click(); });
+
+    const errEl = container.querySelector('[data-testid="reject-error"]');
+    expect(errEl).not.toBeNull();
+    expect(errEl!.textContent).toContain("Mail");
+
+    // reject-btn noch sichtbar (Fehlerfall)
+    expect(container.querySelector('[data-testid="reject-btn"]')).not.toBeNull();
+
+    await cleanup(root, container);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: Löschen-Button
+// ---------------------------------------------------------------------------
+
+describe("DigitalRequestDetailClient — Löschen-Button", () => {
+  let originalConfirm: typeof window.confirm;
+
+  beforeEach(() => {
+    mockFetch.mockReset();
+    mockRouterPush.mockReset();
+    originalConfirm = window.confirm;
+  });
+  afterEach(() => {
+    window.confirm = originalConfirm;
+  });
+
+  it("zeigt delete-btn wenn canDelete=true", async () => {
+    const { container, root } = await renderComponent(defaultProps({ canDelete: true }));
+    expect(container.querySelector('[data-testid="delete-btn"]')).not.toBeNull();
+    await cleanup(root, container);
+  });
+
+  it("kein delete-btn wenn isSent=true", async () => {
+    const { container, root } = await renderComponent(defaultProps({ isSent: true }));
+    expect(container.querySelector('[data-testid="delete-btn"]')).toBeNull();
+    await cleanup(root, container);
+  });
+
+  it("confirm=false → kein fetch-Aufruf", async () => {
+    window.confirm = jest.fn().mockReturnValue(false);
+    const { container, root } = await renderComponent(defaultProps({ canDelete: true }));
+    const btn = container.querySelector<HTMLButtonElement>('[data-testid="delete-btn"]')!;
+
+    await act(async () => { btn.click(); });
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockRouterPush).not.toHaveBeenCalled();
+
+    await cleanup(root, container);
+  });
+
+  it("confirm=true → DELETE fetch → router.push('/digital-requests')", async () => {
+    window.confirm = jest.fn().mockReturnValue(true);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true }),
+    });
+
+    const { container, root } = await renderComponent(defaultProps({ canDelete: true }));
+    const btn = container.querySelector<HTMLButtonElement>('[data-testid="delete-btn"]')!;
+
+    await act(async () => { btn.click(); });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/api/digital-requests/dr-1");
+    expect(opts.method).toBe("DELETE");
+
+    expect(mockRouterPush).toHaveBeenCalledWith("/digital-requests");
+
+    await cleanup(root, container);
+  });
+
+  it("zeigt delete-Fehlermeldung wenn DELETE fehlschlägt", async () => {
+    window.confirm = jest.fn().mockReturnValue(true);
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ ok: false, error: "Anfrage konnte nicht gelöscht werden." }),
+    });
+
+    const { container, root } = await renderComponent(defaultProps({ canDelete: true }));
+    const btn = container.querySelector<HTMLButtonElement>('[data-testid="delete-btn"]')!;
+
+    await act(async () => { btn.click(); });
+
+    const errEl = container.querySelector('[data-testid="delete-error"]');
+    expect(errEl).not.toBeNull();
+    expect(errEl!.textContent).toContain("gelöscht werden");
+
+    // router.push wurde NICHT aufgerufen
+    expect(mockRouterPush).not.toHaveBeenCalled();
 
     await cleanup(root, container);
   });

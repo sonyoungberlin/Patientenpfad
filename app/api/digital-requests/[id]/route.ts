@@ -19,7 +19,7 @@ import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 
 /** Status-Werte, die über diesen Endpoint nicht verlassen werden dürfen. */
-const TERMINAL_STATUSES = new Set(["sent", "closed"]);
+const TERMINAL_STATUSES = new Set(["sent", "closed", "rejected"]);
 
 export async function PATCH(
   req: NextRequest,
@@ -132,6 +132,56 @@ export async function PATCH(
     where: { id: existing.id },
     data,
   });
+
+  return NextResponse.json({ ok: true });
+}
+
+/**
+ * DELETE /api/digital-requests/[id]
+ *
+ * Löscht eine DigitalRequest dauerhaft (Hard-Delete).
+ * Nur möglich, solange der Status nicht "sent" oder "closed" ist.
+ * Eine eventuell vorhandene PatientQuestionnaireSession wird NICHT gelöscht.
+ *
+ * Rechte: OWNER / ADMIN / USER (via requireQuestionnaireSendAccess).
+ * INBOX_ONLY → 403. Nicht eingeloggt → 401.
+ *
+ * Fehlerverhalten:
+ *   - 404: Anfrage unbekannt oder fremde Practice.
+ *   - 409: Anfrage hat Status "sent" oder "closed" (Fragebogen versendet).
+ */
+export async function DELETE(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const { account, error } = await requireQuestionnaireSendAccess(req);
+  if (error) return error;
+
+  const { id } = await ctx.params;
+
+  const existing = await prisma.digitalRequest.findFirst({
+    where: { id, ...getOwnershipFilter(account), deleted_at: null },
+    select: { id: true, status: true },
+  });
+  if (!existing) {
+    return NextResponse.json(
+      { ok: false, error: "Anfrage nicht gefunden." },
+      { status: 404 },
+    );
+  }
+
+  // Bereits versendete Anfragen dürfen nicht gelöscht werden.
+  if (existing.status === "sent" || existing.status === "closed") {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Anfrage hat bereits den Status "${existing.status}" und kann nicht gelöscht werden.`,
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.digitalRequest.delete({ where: { id: existing.id } });
 
   return NextResponse.json({ ok: true });
 }

@@ -15,13 +15,14 @@
  */
 
 import { NextRequest } from "next/server";
-import { PATCH } from "@/app/api/digital-requests/[id]/route";
+import { PATCH, DELETE } from "@/app/api/digital-requests/[id]/route";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     digitalRequest: {
       findFirst: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
   },
 }));
@@ -37,6 +38,7 @@ type PrismaMock = {
   digitalRequest: {
     findFirst: jest.Mock;
     update: jest.Mock;
+    delete: jest.Mock;
   };
 };
 const pm = prisma as unknown as PrismaMock;
@@ -286,5 +288,124 @@ describe("PATCH /api/digital-requests/[id]", () => {
     // Scope-Check: findFirst wurde mit owner_practice_id aufgerufen
     const whereArg = pm.digitalRequest.findFirst.mock.calls[0][0].where;
     expect(whereArg.owner_practice_id).toBe("p-1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /api/digital-requests/[id]
+// ---------------------------------------------------------------------------
+
+function makeDeleteRequest(id: string) {
+  return new NextRequest(`http://localhost/api/digital-requests/${id}`, {
+    method: "DELETE",
+  });
+}
+
+describe("DELETE /api/digital-requests/[id]", () => {
+  beforeEach(() => {
+    pm.digitalRequest.findFirst.mockReset();
+    pm.digitalRequest.update.mockReset();
+    pm.digitalRequest.delete.mockReset();
+    getSessionAccountMock.mockReset();
+  });
+
+  // --- Auth ---
+
+  it("gibt 401 zurück wenn nicht angemeldet", async () => {
+    getSessionAccountMock.mockResolvedValue(null);
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(401);
+  });
+
+  it("gibt 403 zurück für INBOX_ONLY", async () => {
+    getSessionAccountMock.mockResolvedValue(INBOX_ONLY_ACCOUNT);
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(403);
+  });
+
+  // --- Eigentum ---
+
+  it("gibt 404 zurück bei fremder Practice", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_OTHER_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue(null);
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+  });
+
+  it("gibt 404 zurück bei unbekannter ID", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue(null);
+    const res = await DELETE(makeDeleteRequest("nonexistent"), CTX("nonexistent"));
+    expect(res.status).toBe(404);
+  });
+
+  // --- Terminal-Status (409) ---
+
+  it("gibt 409 zurück wenn status = 'sent'", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "sent" });
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.ok).toBe(false);
+    expect(pm.digitalRequest.delete).not.toHaveBeenCalled();
+  });
+
+  it("gibt 409 zurück wenn status = 'closed'", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "closed" });
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(409);
+    expect(pm.digitalRequest.delete).not.toHaveBeenCalled();
+  });
+
+  // --- rejected darf gelöscht werden ---
+
+  it("löscht Anfrage mit status = 'rejected'", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "rejected" });
+    pm.digitalRequest.delete.mockResolvedValue({});
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(pm.digitalRequest.delete).toHaveBeenCalledWith({ where: { id: "dr-1" } });
+  });
+
+  // --- Erfolgreiches Löschen ---
+
+  it("löscht Anfrage und gibt { ok: true } zurück", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "new" });
+    pm.digitalRequest.delete.mockResolvedValue({});
+
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+
+    expect(pm.digitalRequest.delete).toHaveBeenCalledTimes(1);
+    expect(pm.digitalRequest.delete).toHaveBeenCalledWith({ where: { id: "dr-1" } });
+  });
+
+  it("löscht auch Anfragen mit status = 'in_review'", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "in_review" });
+    pm.digitalRequest.delete.mockResolvedValue({});
+
+    const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(200);
+    expect(pm.digitalRequest.delete).toHaveBeenCalled();
+  });
+
+  it("ruft update NICHT auf (nur delete)", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "new" });
+    pm.digitalRequest.delete.mockResolvedValue({});
+
+    await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
+    expect(pm.digitalRequest.update).not.toHaveBeenCalled();
   });
 });

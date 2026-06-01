@@ -27,6 +27,7 @@ const STATUS_LABEL: Record<string, string> = {
   in_review: "In Bearbeitung",
   sent: "Versendet",
   closed: "Abgeschlossen",
+  rejected: "Abgelehnt",
 };
 
 function statusBadgeClass(status: string): string {
@@ -39,6 +40,8 @@ function statusBadgeClass(status: string): string {
       return "bg-yellow-100 text-yellow-800";
     case "closed":
       return "bg-gray-100 text-gray-600";
+    case "rejected":
+      return "bg-red-100 text-red-700";
     default:
       return "bg-gray-100 text-gray-600";
   }

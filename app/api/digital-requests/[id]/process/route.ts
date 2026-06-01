@@ -27,7 +27,7 @@ import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { sendDigitalRequestTokenEmail } from "@/lib/mail/sendDigitalRequestTokenEmail";
 
 /** Status-Werte, bei denen kein erneuter Prozess erlaubt ist. */
-const TERMINAL_STATUSES = new Set(["sent", "closed"]);
+const TERMINAL_STATUSES = new Set(["sent", "closed", "rejected"]);
 
 export async function POST(
   req: NextRequest,
