@@ -6,6 +6,8 @@ import {
   sanitizePrefillForMode,
   withDefaultOffenForCheckpoints,
 } from "@/lib/logic/m2Questions";
+import { ensureSelectionConditionalCheckpoints } from "@/lib/logic/checkpointCatalog";
+import type { ActiveCheckpoint } from "@/lib/types";
 import {
   createOpenRun,
   freezeRun,
@@ -83,14 +85,19 @@ export async function PATCH(
     // Defensive Server-Absicherung: Auch wenn der Client weniger schickt,
     // werden alle Fragen gemäß Katalog ergänzt. Das endgültige Fill erfolgt
     // aber weiter unten nach Bestimmung des Runs (Fehler-1-Fix).
-    const activeCheckpointIds: string[] = Array.isArray(session.active_checkpoints)
-      ? (session.active_checkpoints as Array<{ id?: unknown }>)
-          .map((cp) => (typeof cp?.id === "string" ? cp.id : null))
-          .filter((id): id is string => id !== null)
-      : [];
-    const activeCheckpointsSnapshot = Array.isArray(session.active_checkpoints)
-      ? (session.active_checkpoints as unknown[])
-      : [];
+    //
+    // ensureSelectionConditionalCheckpoints ergänzt transiente Checkpoints
+    // (K14/K15 für Reha bzw. beruflichen Kontext, K16/K17 für Pflege)
+    // analog zu M2/page.tsx und M3/page.tsx. Ohne diese Erweiterung würden
+    // Antworten für die bedingt eingeblendeten Zusatzblöcke durch den
+    // Scope-Filter weiter unten herausgefiltert.
+    const expandedCheckpoints = ensureSelectionConditionalCheckpoints(
+      Array.isArray(session.active_checkpoints)
+        ? (session.active_checkpoints as ActiveCheckpoint[])
+        : [],
+    );
+    const activeCheckpointIds: string[] = expandedCheckpoints.map((cp) => cp.id);
+    const activeCheckpointsSnapshot = expandedCheckpoints as unknown[];
 
     // Schreibpfad: vorhandenen offenen Run weiterführen, sonst einen neuen
     // anlegen; in beiden Fällen anschließend einfrieren. Der partielle
