@@ -359,13 +359,13 @@ export function ensureAlwaysPresentCheckpoints(
  */
 const SELECTION_TRIGGER_CHECKPOINT_ID = "K11";
 const REHA_TRIGGER_SELECTION = "Reha-Antrag";
-const REHA_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K14", "K15"];
+const REHA_CONDITIONAL_IDS: readonly string[] = ["K14", "K15"];
 
 const PFLEGE_TRIGGER_SELECTION = "Pflegegrad / Höherstufung";
-const PFLEGE_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07", "K16", "K17"];
+const PFLEGE_CONDITIONAL_IDS: readonly string[] = ["K16", "K17"];
 
 const JOBCENTER_TRIGGER_SELECTION = "Jobcenter / Sozialleistungen";
-const JOBCENTER_CONDITIONAL_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K15"];
+const JOBCENTER_CONDITIONAL_IDS: readonly string[] = ["K15"];
 
 /**
  * Alle K11-Selektionen, die Zusatz-Checkpoints auslösen.
