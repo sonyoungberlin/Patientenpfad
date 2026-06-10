@@ -151,6 +151,7 @@ function CarePlanFieldInput({ field, value, onChange }: FieldProps) {
 // ---------------------------------------------------------------------------
 
 export default function VersorgungsplanPanel() {
+  const [open, setOpen] = useState(false);
   const [answers, setAnswers] = useState<CarePlanAnswers>(buildInitialAnswers);
 
   function handleChange(id: string, value: string | boolean) {
@@ -166,94 +167,118 @@ export default function VersorgungsplanPanel() {
 
   return (
     <section className="card" style={{ marginTop: "2rem" }}>
-      <h2 style={{ marginBottom: "1rem" }}>Persönlicher Versorgungsplan</h2>
-      <p
-        className="text-muted"
-        style={{ fontSize: "0.875rem", marginBottom: "1.5rem" }}
-      >
-        Interne Dokumentation für Arzt / Praxis – kein PDF, keine Speicherung.
-        Ausgefüllten Plan über den Copy-Button in die Zwischenablage kopieren.
-      </p>
-
-      <div style={{ display: "grid", gap: "1.5rem" }}>
-        {CARE_PLAN_SECTIONS.map((section) => (
-          <fieldset
-            key={section.id}
-            style={{ border: "1px solid #ddd", borderRadius: "6px", padding: "1rem" }}
-          >
-            <legend style={{ fontWeight: 600, padding: "0 0.25rem" }}>
-              {section.title}
-            </legend>
-            <div style={{ marginTop: "0.5rem" }}>
-              {section.fields.map((field) => (
-                <Fragment key={field.id}>
-                  {field.rowGroupLabel && (
-                    <p
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "0.8125rem",
-                        margin: "0.75rem 0 0.25rem",
-                        color: "#555",
-                      }}
-                    >
-                      {field.rowGroupLabel}
-                    </p>
-                  )}
-                  <CarePlanFieldInput
-                    field={field}
-                    value={answers[field.id] ?? (field.kind === "checkbox" ? false : "")}
-                    onChange={handleChange}
-                  />
-                </Fragment>
-              ))}
-            </div>
-          </fieldset>
-        ))}
-      </div>
-
-      {/* Vorschau */}
-      {!isEmpty && (
-        <div style={{ marginTop: "1.5rem" }}>
-          <h3 style={{ fontSize: "0.875rem", marginBottom: "0.5rem" }}>Vorschau</h3>
-          <pre
-            style={{
-              background: "#f5f5f5",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              padding: "0.75rem",
-              fontSize: "0.8125rem",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}
-          >
-            {previewText}
-          </pre>
-        </div>
-      )}
-
-      {/* Aktions-Leiste */}
-      <div
-        style={{
-          display: "flex",
-          gap: "1rem",
-          alignItems: "center",
-          marginTop: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <CopyTextButton
-          label="Versorgungsplan kopieren"
-          text={isEmpty ? "" : previewText}
-          data-testid="copy-versorgungsplan"
-        />
+      <h2 style={{ marginBottom: open ? "1rem" : 0 }}>
         <button
           type="button"
-          onClick={handleReset}
-          style={{ fontSize: "0.875rem", background: "none", border: "1px solid #ccc", borderRadius: "4px", padding: "0.25rem 0.75rem", cursor: "pointer" }}
+          aria-expanded={open}
+          aria-controls="versorgungsplan-content"
+          onClick={() => setOpen((v) => !v)}
+          style={{
+            all: "unset",
+            outline: "revert",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            width: "100%",
+          }}
         >
-          Zurücksetzen
+          Persönlicher Versorgungsplan
+          <span aria-hidden="true">{open ? "▲" : "▼"}</span>
         </button>
-      </div>
+      </h2>
+
+      {open && (
+        <div id="versorgungsplan-content">
+          <p
+            className="text-muted"
+            style={{ fontSize: "0.875rem", marginBottom: "1.5rem" }}
+          >
+            Interne Dokumentation für Arzt / Praxis – kein PDF, keine Speicherung.
+            Ausgefüllten Plan über den Copy-Button in die Zwischenablage kopieren.
+          </p>
+
+          <div style={{ display: "grid", gap: "1.5rem" }}>
+            {CARE_PLAN_SECTIONS.map((section) => (
+              <fieldset
+                key={section.id}
+                style={{ border: "1px solid #ddd", borderRadius: "6px", padding: "1rem" }}
+              >
+                <legend style={{ fontWeight: 600, padding: "0 0.25rem" }}>
+                  {section.title}
+                </legend>
+                <div style={{ marginTop: "0.5rem" }}>
+                  {section.fields.map((field) => (
+                    <Fragment key={field.id}>
+                      {field.rowGroupLabel && (
+                        <p
+                          style={{
+                            fontWeight: 600,
+                            fontSize: "0.8125rem",
+                            margin: "0.75rem 0 0.25rem",
+                            color: "#555",
+                          }}
+                        >
+                          {field.rowGroupLabel}
+                        </p>
+                      )}
+                      <CarePlanFieldInput
+                        field={field}
+                        value={answers[field.id] ?? (field.kind === "checkbox" ? false : "")}
+                        onChange={handleChange}
+                      />
+                    </Fragment>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+
+          {/* Vorschau */}
+          {!isEmpty && (
+            <div style={{ marginTop: "1.5rem" }}>
+              <h3 style={{ fontSize: "0.875rem", marginBottom: "0.5rem" }}>Vorschau</h3>
+              <pre
+                style={{
+                  background: "#f5f5f5",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  padding: "0.75rem",
+                  fontSize: "0.8125rem",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {previewText}
+              </pre>
+            </div>
+          )}
+
+          {/* Aktions-Leiste */}
+          <div
+            style={{
+              display: "flex",
+              gap: "1rem",
+              alignItems: "center",
+              marginTop: "1rem",
+              flexWrap: "wrap",
+            }}
+          >
+            <CopyTextButton
+              label="Versorgungsplan kopieren"
+              text={isEmpty ? "" : previewText}
+              data-testid="copy-versorgungsplan"
+            />
+            <button
+              type="button"
+              onClick={handleReset}
+              style={{ fontSize: "0.875rem", background: "none", border: "1px solid #ccc", borderRadius: "4px", padding: "0.25rem 0.75rem", cursor: "pointer" }}
+            >
+              Zurücksetzen
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
