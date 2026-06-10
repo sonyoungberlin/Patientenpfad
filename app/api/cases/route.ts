@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { getCaseOwnershipFilter } from "@/lib/cases/practiceScope";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     const sessions = await prisma.caseSession.findMany({
-      where: { owner_account_id: account.id },
+      where: getCaseOwnershipFilter(account),
       orderBy: { createdAt: "desc" },
       take: 20,
       select: {

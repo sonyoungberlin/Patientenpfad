@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 import {
   createOpenRun,
   getOpenRun,
@@ -49,13 +50,14 @@ export async function POST(
       where: { id },
       select: {
         owner_account_id: true,
+        owner_practice_id: true,
         active_checkpoints: true,
         doctor_confirmed: true,
         clinical_status: true,
       },
     });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Fall nicht gefunden." },
         { status: 404 },

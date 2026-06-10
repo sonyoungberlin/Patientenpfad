@@ -14,6 +14,7 @@ import {
 import { buildM1SnapshotInitial, isGatekeeperCase } from "@/lib/logic/m1Activation";
 import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
 import { getSessionAccount } from "@/lib/auth";
+import { getCaseCreateOwnershipData } from "@/lib/cases/practiceScope";
 
 /**
  * Validates and extracts per-checkpoint MULTI_SELECT overrides from the
@@ -205,7 +206,7 @@ export async function POST(req: NextRequest) {
         m1_snapshot_initial: m1SnapshotInitial ?? undefined,
         mode,
         patient_reference: patientReference,
-        owner_account_id: account.id,
+        ...getCaseCreateOwnershipData(account),
       },
       select: {
         id: true,

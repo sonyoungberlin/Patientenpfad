@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 import {
   sanitizePrefillForMode,
   withDefaultOffenForCheckpoints,
@@ -70,12 +71,13 @@ export async function PATCH(
       where: { id },
       select: {
         owner_account_id: true,
+        owner_practice_id: true,
         m2_status: true,
         active_checkpoints: true,
       },
     });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Not found" },
         { status: 404 },

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 import type { ActiveCheckpoint, ActiveCheckpointMultiSelect, M1BlockId } from "@/lib/types";
 import { isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
 import {
@@ -48,13 +49,14 @@ export default async function CaseM1Page({
     where: { id },
     select: {
       owner_account_id: true,
+      owner_practice_id: true,
       active_checkpoints: true,
       doctor_confirmed: true,
       clinical_status: true,
     },
   });
 
-  if (!session || session.owner_account_id !== account.id) {
+  if (!session || !canAccessCaseSession(account, session)) {
     redirect("/");
   }
 

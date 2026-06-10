@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 import { getOpenRun, getFrozenRuns } from "@/lib/server/prefillRuns";
 import { backfillPerspectives, ensureSelectionConditionalCheckpoints } from "@/lib/logic/checkpointCatalog";
 import { M2PrefillClient } from "./M2PrefillClient";
@@ -25,10 +26,10 @@ export default async function M2Page({
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
-    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, doctor_confirmed: true, preparation_mode: true },
+    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, owner_practice_id: true, doctor_confirmed: true, preparation_mode: true },
   });
 
-  if (!session || session.owner_account_id !== account.id) {
+  if (!session || !canAccessCaseSession(account, session)) {
     redirect("/");
   }
 

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { buildCaseM2Path, buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 
 function hasPrefillData(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -26,6 +27,7 @@ export default async function CaseContinuePage({
     where: { id },
     select: {
       owner_account_id: true,
+      owner_practice_id: true,
       ctx_prefill: true,
       stage_status: true,
       active_checkpoints: true,
@@ -33,7 +35,7 @@ export default async function CaseContinuePage({
     },
   });
 
-  if (!session || session.owner_account_id !== account.id) {
+  if (!session || !canAccessCaseSession(account, session)) {
     return redirect("/");
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 
 export async function PATCH(
   req: NextRequest,
@@ -41,10 +42,10 @@ export async function PATCH(
 
     const session = await prisma.caseSession.findUnique({
       where: { id },
-      select: { owner_account_id: true, doctor_confirmed: true },
+      select: { owner_account_id: true, owner_practice_id: true, doctor_confirmed: true },
     });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json({ ok: false, error: "Fall nicht gefunden." }, { status: 404 });
     }
 

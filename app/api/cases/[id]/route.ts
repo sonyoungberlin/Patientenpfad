@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 
 export async function GET(
   req: NextRequest,
@@ -19,7 +20,7 @@ export async function GET(
 
     const session = await prisma.caseSession.findUnique({ where: { id } });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Not found" },
         { status: 404 }
@@ -53,10 +54,10 @@ export async function DELETE(
 
     const session = await prisma.caseSession.findUnique({
       where: { id },
-      select: { owner_account_id: true },
+      select: { owner_account_id: true, owner_practice_id: true },
     });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json({ ok: false, error: "Fall nicht gefunden." }, { status: 404 });
     }
 

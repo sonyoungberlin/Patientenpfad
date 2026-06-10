@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { BlockStatus, type ActiveCheckpoint, type BlockSummary } from "@/lib/types";
 import { deriveBlockStatus } from "@/lib/logic/deriveBlockStatus";
 import { getSessionAccount } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 
 export async function POST(
   req: NextRequest,
@@ -32,7 +33,7 @@ export async function POST(
 
     const session = await prisma.caseSession.findUnique({ where: { id } });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Not found" },
         { status: 404 }

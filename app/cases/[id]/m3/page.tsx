@@ -4,6 +4,7 @@ import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { ensureAlwaysPresentCheckpoints, ensureSelectionConditionalCheckpoints, filterObsoleteCheckpoints } from "@/lib/logic/checkpointCatalog";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 import {
   getFrozenRuns,
   getOpenRun,
@@ -29,6 +30,7 @@ export default async function M3Page({
       active_checkpoints: true,
       ctx_prefill: true,
       owner_account_id: true,
+      owner_practice_id: true,
       m2_status: true,
       preparation_mode: true,
       doctor_confirmed: true,
@@ -36,7 +38,7 @@ export default async function M3Page({
     },
   });
 
-  if (!session || session.owner_account_id !== account.id) {
+  if (!session || !canAccessCaseSession(account, session)) {
     redirect("/");
   }
 

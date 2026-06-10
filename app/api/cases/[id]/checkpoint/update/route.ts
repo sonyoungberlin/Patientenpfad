@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint, isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
 import { getSessionAccount } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
@@ -98,7 +99,7 @@ export async function PATCH(
 
     const session = await prisma.caseSession.findUnique({ where: { id } });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Not found" },
         { status: 404 },

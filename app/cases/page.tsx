@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { getCaseOwnershipFilter } from "@/lib/cases/practiceScope";
 import CaseListClient, { type CaseListItem } from "./CaseListClient";
 
 const MAX_CASES_PER_PAGE = 50;
@@ -74,7 +75,7 @@ export default async function CasesPage() {
   }
 
   const sessions = await prisma.caseSession.findMany({
-    where: { owner_account_id: account.id },
+    where: getCaseOwnershipFilter(account),
     orderBy: { createdAt: "desc" },
     take: MAX_CASES_PER_PAGE,
     select: {

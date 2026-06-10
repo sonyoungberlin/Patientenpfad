@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
+import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 import {
   BlockStatus,
   type ActiveCheckpoint,
@@ -109,6 +110,7 @@ export async function POST(
       where: { id },
       select: {
         owner_account_id: true,
+        owner_practice_id: true,
         active_checkpoints: true,
         block_status_anchor: true,
         doctor_confirmed: true,
@@ -116,7 +118,7 @@ export async function POST(
       },
     });
 
-    if (!session || session.owner_account_id !== account.id) {
+    if (!session || !canAccessCaseSession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Fall nicht gefunden." },
         { status: 404 },
