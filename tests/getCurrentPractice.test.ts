@@ -14,6 +14,7 @@ const practice = {
   patient_communication_enabled: true,
   website_forms_enabled: true,
   office_cases_enabled: false,
+  arbeitsprozesse_enabled: false,
 };
 
 function acc(overrides: Partial<SessionAccount>): SessionAccount {
@@ -26,6 +27,7 @@ function acc(overrides: Partial<SessionAccount>): SessionAccount {
     patient_communication_enabled: false,
     website_forms_enabled: false,
     office_cases_enabled: false,
+    arbeitsprozesse_enabled: false,
     current_practice: null,
     memberships: [],
     ...overrides,

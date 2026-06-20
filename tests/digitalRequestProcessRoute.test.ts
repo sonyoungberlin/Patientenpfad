@@ -79,6 +79,7 @@ const PRACTICE_FIXTURE = {
   patient_communication_enabled: true,
   website_forms_enabled: false,
   office_cases_enabled: false,
+  arbeitsprozesse_enabled: false,
 };
 
 const ACCOUNT_WITH_PRACTICE = {

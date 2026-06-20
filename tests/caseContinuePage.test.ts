@@ -40,6 +40,7 @@ describe("/cases/[id] Weiterleitung", () => {
       patient_communication_enabled: false,
       website_forms_enabled: false,
       office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
       current_practice: null,
       memberships: [],
     });

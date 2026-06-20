@@ -65,6 +65,7 @@ export default async function DashboardPage() {
   const showPracticeTile =
     myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
   const showOfficeTile = account.office_cases_enabled || account.is_admin;
+  const showWorkflowTile = account.arbeitsprozesse_enabled || account.is_admin;
 
   return (
     <>
@@ -143,6 +144,21 @@ export default async function DashboardPage() {
               </Link>
             </div>
           </section>
+          )}
+
+          {showWorkflowTile && (
+            <section className="card">
+              <h2 style={{ marginTop: 0 }}>Arbeitsprozesse</h2>
+              <p>Musterprozesse strukturiert dokumentieren</p>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <Link href="/workflow-cases">
+                  <button type="button">Arbeitsprozesse öffnen</button>
+                </Link>
+                <Link href="/workflow-cases/new">
+                  <button type="button">Neue Sitzung</button>
+                </Link>
+              </div>
+            </section>
           )}
 
           {showPracticeTile && (

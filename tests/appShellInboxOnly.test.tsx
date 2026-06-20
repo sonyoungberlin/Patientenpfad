@@ -24,6 +24,7 @@ function inboxOnlyAccount() {
     patient_communication_enabled: true,
     website_forms_enabled: true,
     office_cases_enabled: false,
+    arbeitsprozesse_enabled: false,
     current_practice: { id: "p-1" },
     memberships: [{ practice_id: "p-1", role: "INBOX_ONLY" as const }],
   };

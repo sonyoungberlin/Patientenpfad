@@ -35,6 +35,7 @@ const ACCOUNT = {
   is_approved: true,
   is_admin: false,
   office_cases_enabled: true,
+  arbeitsprozesse_enabled: false,
   current_practice: null,
 };
 

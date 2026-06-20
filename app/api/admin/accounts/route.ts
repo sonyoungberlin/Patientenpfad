@@ -12,6 +12,8 @@ import {
   disableWebsiteForms,
   enableOfficeCases,
   disableOfficeCases,
+  enableArbeitsprozesse,
+  disableArbeitsprozesse,
 } from "@/lib/adminActions";
 import { prisma } from "@/lib/prisma";
 
@@ -98,6 +100,8 @@ export async function POST(req: NextRequest) {
       action !== "disable_website_forms" &&
       action !== "enable_office_cases" &&
       action !== "disable_office_cases" &&
+      action !== "enable_arbeitsprozesse" &&
+      action !== "disable_arbeitsprozesse" &&
       action !== "delete_account")
   ) {
     return NextResponse.json(
@@ -149,7 +153,9 @@ export async function POST(req: NextRequest) {
   else if (action === "enable_website_forms") result = await enableWebsiteForms(email);
   else if (action === "disable_website_forms") result = await disableWebsiteForms(email);
   else if (action === "enable_office_cases") result = await enableOfficeCases(email);
-  else result = await disableOfficeCases(email);
+  else if (action === "disable_office_cases") result = await disableOfficeCases(email);
+  else if (action === "enable_arbeitsprozesse") result = await enableArbeitsprozesse(email);
+  else result = await disableArbeitsprozesse(email);
 
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.message }, { status: 404 });

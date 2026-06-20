@@ -52,6 +52,7 @@ const INBOX_ONLY_ACCOUNT = {
     patient_communication_enabled: true,
     website_forms_enabled: false,
     office_cases_enabled: false,
+    arbeitsprozesse_enabled: false,
   },
   memberships: [{ practice_id: "p-1", role: "INBOX_ONLY" }],
 };

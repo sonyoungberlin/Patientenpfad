@@ -38,6 +38,7 @@ const FLAG_WHITELIST = [
   "patient_communication_enabled",
   "website_forms_enabled",
   "office_cases_enabled",
+  "arbeitsprozesse_enabled",
 ] as const;
 type Flag = (typeof FLAG_WHITELIST)[number];
 

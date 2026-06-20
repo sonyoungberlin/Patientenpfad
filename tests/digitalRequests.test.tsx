@@ -131,6 +131,7 @@ function makeAccount(over: Record<string, unknown> = {}) {
     website_forms_enabled: true,
     inquiry_assistant_enabled: false,
     office_cases_enabled: false,
+    arbeitsprozesse_enabled: false,
     current_practice: null,
     memberships: [],
     ...over,
@@ -540,6 +541,7 @@ describe("AppShell — Digitale Anfragen NavItem", () => {
       patient_communication_enabled: true,
       website_forms_enabled: false,
       office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
       current_practice: role !== null ? { id: "praxis-1" } : null,
       memberships:
         role !== null
@@ -580,6 +582,7 @@ describe("AppShell — Digitale Anfragen NavItem", () => {
       patient_communication_enabled: true,
       website_forms_enabled: false,
       office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
       current_practice: { id: "praxis-1" },
       memberships: [{ practice_id: "praxis-1", role: "OWNER" as const }],
     };
@@ -599,6 +602,7 @@ describe("AppShell — Digitale Anfragen NavItem", () => {
       patient_communication_enabled: true,
       website_forms_enabled: false,
       office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
       current_practice: { id: "praxis-1" },
       memberships: [{ practice_id: "praxis-1", role: "OWNER" as const }],
     };

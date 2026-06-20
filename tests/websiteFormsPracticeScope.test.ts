@@ -33,6 +33,7 @@ const ACCOUNT_WITH_PRACTICE = {
     patient_communication_enabled: true,
     website_forms_enabled: true,
     office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
   },
 } as const;
 
@@ -47,6 +48,7 @@ const ACCOUNT_DIFFERENT_PRACTICE = {
     patient_communication_enabled: true,
     website_forms_enabled: true,
     office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
   },
 } as const;
 

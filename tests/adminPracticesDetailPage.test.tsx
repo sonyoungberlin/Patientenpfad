@@ -120,6 +120,8 @@ describe("/admin/practices/[id] detail page", () => {
       inquiry_assistant_enabled: false,
       patient_communication_enabled: true,
       website_forms_enabled: false,
+      office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
       created_at: new Date("2025-01-01"),
       memberships: [
         {

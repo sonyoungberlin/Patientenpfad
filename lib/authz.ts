@@ -464,6 +464,29 @@ export function isInboxOnlyAccount(
   return getCurrentPracticeRoleInternal(account) === PracticeRole.INBOX_ONLY;
 }
 
+/**
+ * Prüft ob ein Account das Arbeitsprozesse-Modul nutzen darf.
+ * Zugangsregel: freigeschaltet + (arbeitsprozesse_enabled ODER is_admin).
+ * Bewusst nicht auf OWNER beschränkt — USER/ADMIN-Rollen sind erlaubt.
+ */
+export function canAccessWorkflowCases(
+  account: Pick<SessionAccount, "arbeitsprozesse_enabled" | "is_admin">,
+): boolean {
+  return account.arbeitsprozesse_enabled || account.is_admin;
+}
+
+/**
+ * Server-Component-Variante: liefert den Account oder null.
+ */
+export async function requireWorkflowAccessFromCookies(): Promise<SessionAccount | null> {
+  const { getSessionAccountFromCookies } = await import("./auth");
+  const account = await getSessionAccountFromCookies();
+  if (!account) return null;
+  if (!account.is_approved) return null;
+  if (!canAccessWorkflowCases(account)) return null;
+  return account;
+}
+
 export async function requireQuestionnaireInboxAccess(
   req: NextRequest,
 ): Promise<RequireResult> {

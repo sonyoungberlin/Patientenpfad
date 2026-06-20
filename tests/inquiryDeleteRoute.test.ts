@@ -46,6 +46,7 @@ function mockSessionAccount(
       patient_communication_enabled: true,
       website_forms_enabled: false,
       office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
       inquiry_assistant_enabled,
       is_admin: false,
       memberships: [
@@ -62,6 +63,7 @@ function mockSessionAccount(
             patient_communication_enabled: true,
             website_forms_enabled: false,
             office_cases_enabled: false,
+            arbeitsprozesse_enabled: false,
           },
         },
       ],

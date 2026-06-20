@@ -10,7 +10,8 @@ type FlagKey =
   | "patient_communication_enabled"
   | "website_forms_enabled"
   | "inquiry_assistant_enabled"
-  | "office_cases_enabled";
+  | "office_cases_enabled"
+  | "arbeitsprozesse_enabled";
 
 const FLAG_LABEL: Record<FlagKey, string> = {
   is_approved: "freigeschaltet",
@@ -18,6 +19,7 @@ const FLAG_LABEL: Record<FlagKey, string> = {
   website_forms_enabled: "Website-Formulare",
   inquiry_assistant_enabled: "Anfrage-Assistent",
   office_cases_enabled: "Officepfad",
+  arbeitsprozesse_enabled: "Arbeitsprozesse",
 };
 
 export default async function AdminAccountsPage() {
@@ -36,6 +38,7 @@ export default async function AdminAccountsPage() {
       patient_communication_enabled: true,
       website_forms_enabled: true,
       office_cases_enabled: true,
+      arbeitsprozesse_enabled: true,
       createdAt: true,
       memberships: {
         where: { role: PracticeRole.OWNER },
@@ -48,6 +51,7 @@ export default async function AdminAccountsPage() {
               patient_communication_enabled: true,
               website_forms_enabled: true,
               office_cases_enabled: true,
+              arbeitsprozesse_enabled: true,
             },
           },
         },
@@ -76,6 +80,7 @@ export default async function AdminAccountsPage() {
         "website_forms_enabled",
         "inquiry_assistant_enabled",
         "office_cases_enabled",
+        "arbeitsprozesse_enabled",
       ];
       for (const k of keys) {
         if (acc[k] !== p[k] && !drifted.includes(k)) {
@@ -123,6 +128,7 @@ export default async function AdminAccountsPage() {
             <th>Patientenkommunikation</th>
             <th>Website-Formulare</th>
             <th>Officepfad</th>
+            <th>Arbeitsprozesse</th>
             <th>Drift (Account ≠ Praxis)</th>
             <th>Angelegt</th>
             <th>Aktion</th>
@@ -145,6 +151,9 @@ export default async function AdminAccountsPage() {
               </td>
               <td data-oc={acc.email}>
                 {acc.office_cases_enabled ? "✓ aktiv" : "–"}
+              </td>
+              <td data-ap={acc.email}>
+                {acc.arbeitsprozesse_enabled ? "✓ aktiv" : "–"}
               </td>
               <td data-drift={acc.email}>
                 {acc.memberships.length === 0 ? (
@@ -230,6 +239,23 @@ export default async function AdminAccountsPage() {
                     {acc.office_cases_enabled
                       ? "Officepfad deaktivieren"
                       : "Officepfad aktivieren"}
+                  </button>
+                </form>
+                <form method="POST" action="/api/admin/accounts">
+                  <input type="hidden" name="email" value={acc.email} />
+                  <input
+                    type="hidden"
+                    name="action"
+                    value={
+                      acc.arbeitsprozesse_enabled
+                        ? "disable_arbeitsprozesse"
+                        : "enable_arbeitsprozesse"
+                    }
+                  />
+                  <button type="submit" data-ap-toggle={acc.email}>
+                    {acc.arbeitsprozesse_enabled
+                      ? "Arbeitsprozesse deaktivieren"
+                      : "Arbeitsprozesse aktivieren"}
                   </button>
                 </form>
                 <SendPasswordLinkButton email={acc.email} />

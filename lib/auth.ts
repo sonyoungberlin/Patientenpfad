@@ -22,6 +22,7 @@ export type SessionPractice = {
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
   office_cases_enabled: boolean;
+  arbeitsprozesse_enabled: boolean;
 };
 
 /**
@@ -43,6 +44,7 @@ export type SessionAccount = {
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
   office_cases_enabled: boolean;
+  arbeitsprozesse_enabled: boolean;
   /**
    * Phase P2: Aktive Praxis (OWNER-Membership des Accounts) oder `null`,
    * falls der Account (noch) keine Membership hat. In diesem Fall fallen
@@ -83,6 +85,7 @@ type LoadedMembership = {
     patient_communication_enabled: boolean;
     website_forms_enabled: boolean;
     office_cases_enabled: boolean;
+    arbeitsprozesse_enabled: boolean;
   };
 };
 
@@ -120,6 +123,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
           patient_communication_enabled: true,
           website_forms_enabled: true,
           office_cases_enabled: true,
+          arbeitsprozesse_enabled: true,
           default_practice_id: true,
           memberships: {
             select: {
@@ -136,6 +140,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
                   patient_communication_enabled: true,
                   website_forms_enabled: true,
                   office_cases_enabled: true,
+                  arbeitsprozesse_enabled: true,
                 },
               },
             },
@@ -176,6 +181,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
           picked.practice.patient_communication_enabled,
         website_forms_enabled: picked.practice.website_forms_enabled,
         office_cases_enabled: picked.practice.office_cases_enabled,
+        arbeitsprozesse_enabled: picked.practice.arbeitsprozesse_enabled,
       }
     : null;
 
@@ -196,6 +202,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
     | "patient_communication_enabled"
     | "website_forms_enabled"
     | "office_cases_enabled"
+    | "arbeitsprozesse_enabled"
   > = current_practice
     ? {
         is_approved: current_practice.is_approved,
@@ -204,6 +211,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
           current_practice.patient_communication_enabled,
         website_forms_enabled: current_practice.website_forms_enabled,
         office_cases_enabled: current_practice.office_cases_enabled,
+        arbeitsprozesse_enabled: current_practice.arbeitsprozesse_enabled,
       }
     : {
         is_approved: account.is_approved,
@@ -211,6 +219,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
         patient_communication_enabled: account.patient_communication_enabled,
         website_forms_enabled: account.website_forms_enabled,
         office_cases_enabled: (account as { office_cases_enabled?: boolean }).office_cases_enabled ?? false,
+        arbeitsprozesse_enabled: (account as { arbeitsprozesse_enabled?: boolean }).arbeitsprozesse_enabled ?? false,
       };
 
   return {
@@ -222,6 +231,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
     patient_communication_enabled: effective.patient_communication_enabled,
     website_forms_enabled: effective.website_forms_enabled,
     office_cases_enabled: effective.office_cases_enabled,
+    arbeitsprozesse_enabled: effective.arbeitsprozesse_enabled,
     current_practice,
     memberships,
   };

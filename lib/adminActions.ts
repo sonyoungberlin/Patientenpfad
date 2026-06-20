@@ -116,7 +116,8 @@ type FlagPatch =
   | { inquiry_assistant_enabled: boolean }
   | { patient_communication_enabled: boolean }
   | { website_forms_enabled: boolean }
-  | { office_cases_enabled: boolean };
+  | { office_cases_enabled: boolean }
+  | { arbeitsprozesse_enabled: boolean };
 
 async function updateAccountAndOwnerPractices(
   email: string,
@@ -330,6 +331,34 @@ export async function disableOfficeCases(
     { office_cases_enabled: false },
     `Kein Account mit E-Mail "${email}" gefunden.`,
     `Officepfad für "${email}" deaktiviert.`,
+  );
+}
+
+/**
+ * Aktiviert das Arbeitsprozesse-Modul für einen Account per E-Mail.
+ */
+export async function enableArbeitsprozesse(
+  email: string,
+): Promise<AdminActionResult> {
+  return updateAccountAndOwnerPractices(
+    email,
+    { arbeitsprozesse_enabled: true },
+    `Kein Account mit E-Mail "${email}" gefunden.`,
+    `Arbeitsprozesse für "${email}" aktiviert.`,
+  );
+}
+
+/**
+ * Deaktiviert das Arbeitsprozesse-Modul für einen Account per E-Mail.
+ */
+export async function disableArbeitsprozesse(
+  email: string,
+): Promise<AdminActionResult> {
+  return updateAccountAndOwnerPractices(
+    email,
+    { arbeitsprozesse_enabled: false },
+    `Kein Account mit E-Mail "${email}" gefunden.`,
+    `Arbeitsprozesse für "${email}" deaktiviert.`,
   );
 }
 
