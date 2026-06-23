@@ -27,100 +27,80 @@ const M2_QUESTIONS_BY_TOPIC: Record<WorkflowTopicId, M2QuestionsByCheckpoint> = 
   [WORKFLOW_TOPIC_AU]: {
     "WF-C01": {
       MFA: [
-        { id: "M2-01", text: "Sind Name und Geburtsdatum im System vorhanden?" },
-        { id: "M2-02", text: "Ist ein AU-Zeitraum mit Von-/Bis-Datum vorhanden?" },
-        { id: "M2-03", text: "Ist ein ICD-10-Code vorhanden?" },
-        { id: "M2-04", text: "Ist das Ausstellungsdatum vorhanden?" },
-        { id: "M2-05", text: "Ist Erst- oder Folgebescheinigung angegeben?" },
+        { id: "M2-01", text: "AU-Zeitraum (Von/Bis) eingetragen?" },
+        { id: "M2-02", text: "ICD-10 und Ausstellungsdatum eingetragen?" },
+        { id: "M2-03", text: "Erst-/Folgebescheinigung angegeben?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Sind Zeitraum, ICD-10-Code und Ausstellungsdatum im Fall erfasst?" },
-        { id: "M2-02", text: "Ist Erst-/Folge-AU im Fall nachvollziehbar?" },
+        { id: "M2-01", text: "ICD-10 zur dokumentierten Diagnose passend?" },
       ],
     },
     "WF-C02": {
       MFA: [
-        { id: "M2-01", text: "Gibt es einen Kontakt-/Untersuchungsvermerk im Krankenblatt?" },
-        { id: "M2-02", text: "Ist der Anlass der AU im Krankenblatt beschrieben?" },
-        { id: "M2-03", text: "Ist dokumentiert, worauf die AU gestützt wurde? z. B. Praxisbesuch, Videosprechstunde, Telefonkontakt, digitale Anfrage, Angehörige/Pflegedienst." },
+        { id: "M2-01", text: "AU-Begründung im Krankenblatt vorhanden?" },
+        { id: "M2-02", text: "Kontaktart dokumentiert (Praxisbesuch, Video, Telefon)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Sind Beschwerden, Befund oder Kontaktinhalt beschrieben?" },
-        { id: "M2-02", text: "Ist die Kontaktart dokumentiert? Persönlich, Video, Telefon, digitale Anfrage, Kontaktperson." },
-        { id: "M2-03", text: "Ist nachvollziehbar, worauf die Arbeitsunfähigkeit gestützt wurde?" },
-        { id: "M2-04", text: "Ist bei besonderer Kontaktart die Grundlage nachvollziehbar beschrieben?" },
+        { id: "M2-01", text: "Befund oder Beschwerden für die AU dokumentiert?" },
+        { id: "M2-02", text: "Kontaktart für AU-Ausstellung dokumentiert?" },
       ],
     },
     "WF-C03": {
       MFA: [
-        { id: "M2-01", text: "Gab es in letzter Zeit mehrere AU-Anfragen?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf besondere Rahmenbedingungen? z. B. Arbeitgeber, Jobcenter, Prüfung, Reise, Konflikt, Pflege-/Familiensituation." },
-        { id: "M2-03", text: "Gibt es frühere Hinweise oder Absprachen zur AU in der Akte?" },
-        { id: "M2-04", text: "Wurde der Patient bereits um Termin, Untersuchung oder Unterlagen gebeten?" },
-        { id: "M2-05", text: "Ist erkennbar, ob diese Absprachen eingehalten wurden?" },
+        { id: "M2-01", text: "Mehrere AU-Anfragen in kurzer Zeit vorhanden?" },
+        { id: "M2-02", text: "Besondere Rahmenbedingungen dokumentiert (Jobcenter, Arbeitgeber, Prüfung)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Gibt es im Verlauf Besonderheiten, die fuer die Dokumentation relevant sind?" },
-        { id: "M2-02", text: "Gibt es häufige AU-Anfragen, wiederkehrende Muster oder frühere Absprachen?" },
-        { id: "M2-03", text: "Gibt es externe Rahmenbedingungen? Arbeitgeber, Jobcenter, Prüfung, Reise, Konflikt." },
-        { id: "M2-04", text: "Gibt es psychosoziale Belastungen, bekannte Vorerkrankungen oder Versorgungsthemen, die für den Verlauf relevant sind?" },
-        { id: "M2-05", text: "Gibt es Gründe für eine besonders knappe oder ausführliche Dokumentation?" },
+        { id: "M2-01", text: "AU-Häufung in der Akte dokumentiert?" },
+        { id: "M2-02", text: "Verlaufseinordnung zu den AU-Anfragen vorhanden?" },
       ],
     },
     "WF-C04": {
       MFA: [
-        { id: "M2-01", text: "Ist eine Wiedervorstellung oder Kontrolle angegeben?" },
-        { id: "M2-02", text: "Ist ein nächster Schritt dokumentiert? z. B. Termin, Untersuchung, Unterlagen, Rückmeldung, Facharztkontakt." },
+        { id: "M2-01", text: "Wiedervorstellungstermin vereinbart oder Abschluss vermerkt?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist dokumentiert, ob und wann eine Wiedervorstellung erforderlich ist?" },
-        { id: "M2-02", text: "Ist dokumentiert, ob Unterlagen, Befunde oder weitere Untersuchungen benötigt werden?" },
-        { id: "M2-03", text: "Ist dokumentiert, was bei erneuter Anfrage gelten soll?" },
+        { id: "M2-01", text: "Weiteres Vorgehen nach der AU festgelegt?" },
+        { id: "M2-02", text: "Umgang mit möglicher Verlängerungsanfrage festgelegt?" },
       ],
     },
   },
+
   [WORKFLOW_TOPIC_REZEPT]: {
     "WF-C01": {
       MFA: [
-        { id: "M2-01", text: "Ist das Präparat benannt?" },
-        { id: "M2-02", text: "Sind Wirkstärke, Packungsgröße/Menge und Dosierung erfasst?" },
-        { id: "M2-03", text: "Ist erkennbar, ob es sich um Akut- oder Dauermedikation handelt?" },
-        { id: "M2-04", text: "Sind Kostenträger / Versichertenstatus erfasst?" },
+        { id: "M2-01", text: "Diagnose oder Anlass für das Medikament angegeben?" },
+        { id: "M2-02", text: "Verordnungsart angegeben (Akutverordnung oder Dauermedikation)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist das Präparat mit Wirkstärke und Dosierung erfasst?" },
-        { id: "M2-02", text: "Ist erkennbar, ob Akut- oder Dauermedikation?" },
-        { id: "M2-03", text: "Sind Kostenträger / Versichertenstatus erfasst?" },
+        { id: "M2-01", text: "Therapiestatus angegeben (neu, fortgeführt, geändert, übernommen)?" },
       ],
     },
     "WF-C02": {
       MFA: [
-        { id: "M2-01", text: "Liegt eine bekannte Diagnose oder Dauermedikation vor?" },
-        { id: "M2-02", text: "Sind Hinweise auf Unverträglichkeiten oder Wechselwirkungen in der Akte erkennbar?" },
+        { id: "M2-01", text: "Diagnose in der Akte vorhanden?" },
+        { id: "M2-02", text: "Änderungsanlass dokumentiert (falls Änderung)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist die Indikation für das Präparat aus der Akte nachvollziehbar?" },
-        { id: "M2-02", text: "Ist die aktuelle Medikamentenliste im System erkennbar?" },
-        { id: "M2-03", text: "Gibt es Hinweise auf Kontraindikationen oder relevante Wechselwirkungen?" },
+        { id: "M2-01", text: "Veranlassung der Therapieentscheidung dokumentiert?" },
+        { id: "M2-02", text: "Änderungsanlass dokumentiert (falls Änderung)?" },
       ],
     },
     "WF-C03": {
       MFA: [
-        { id: "M2-01", text: "Gibt es frühere Anfragen für dasselbe oder ähnliche Präparate?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf Dosisänderungen oder Therapieabbrüche?" },
+        { id: "M2-01", text: "Bisheriger Therapieverlauf in der Akte dokumentiert?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Gibt es Verlaufshinweise, die für die Verordnung relevant sind?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf besondere Rahmenbedingungen? z. B. Langzeittherapie, Betäubungsmittel, Hilfsmittelbedarf." },
+        { id: "M2-01", text: "Therapieverlauf dokumentiert (Labor, Verlaufseintrag, Rückmeldung)?" },
+        { id: "M2-02", text: "Letzte Überprüfung dokumentiert (falls Langzeittherapie oder BtM)?" },
       ],
     },
     "WF-C04": {
       MFA: [
-        { id: "M2-01", text: "Ist dokumentiert, ob Laborkontrolle oder Wiedervorstellung erforderlich ist?" },
-        { id: "M2-02", text: "Ist ein nächster Schritt erkennbar?" },
+        { id: "M2-01", text: "Kontrolltermin vereinbart oder kein Kontrollbedarf vermerkt?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist dokumentiert, ob und wann eine Kontrolle oder Folgeverordnung geplant ist?" },
+        { id: "M2-01", text: "Kontroll- oder Folgeverordnungstermin festgelegt?" },
       ],
     },
   },
@@ -128,42 +108,38 @@ const M2_QUESTIONS_BY_TOPIC: Record<WorkflowTopicId, M2QuestionsByCheckpoint> = 
   [WORKFLOW_TOPIC_UEBERWEISUNG]: {
     "WF-C01": {
       MFA: [
-        { id: "M2-01", text: "Ist das Überweisungsziel (Fachrichtung / Einrichtung) angegeben?" },
-        { id: "M2-02", text: "Ist der Überweisungsschein vollständig ausgefüllt?" },
-        { id: "M2-03", text: "Sind Patientendaten und Datum angegeben?" },
+        { id: "M2-01", text: "Fachrichtung oder Einrichtung angegeben?" },
+        { id: "M2-02", text: "Dringlichkeit angegeben?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist die Fragestellung für die Überweisung formuliert?" },
-        { id: "M2-02", text: "Sind Fachrichtung und Überweisungsanlass angegeben?" },
+        { id: "M2-01", text: "Fragestellung für den Facharzt formuliert?" },
       ],
     },
     "WF-C02": {
       MFA: [
-        { id: "M2-01", text: "Liegt ein dokumentierter Anlass für die Überweisung vor?" },
-        { id: "M2-02", text: "Ist die Dringlichkeit erkennbar?" },
+        { id: "M2-01", text: "Anlass der Überweisung dokumentiert?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist die Indikation für die Überweisung dokumentiert?" },
-        { id: "M2-02", text: "Sind relevante Vorbefunde oder Vorgeschichte angegeben?" },
+        { id: "M2-01", text: "Indikation für die Überweisung dokumentiert?" },
+        { id: "M2-02", text: "Eigene Vordiagnostik oder Vorbehandlung dokumentiert?" },
       ],
     },
     "WF-C03": {
       MFA: [
-        { id: "M2-01", text: "Gibt es frühere Überweisungen in ähnlichem Kontext?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf besondere Rahmenbedingungen?" },
+        { id: "M2-01", text: "Frühere Überweisung zum selben Thema vorhanden?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist der Verlauf dokumentiert, der zur Überweisung geführt hat?" },
-        { id: "M2-02", text: "Gibt es Vorbefunde oder Berichte, die mitgegeben werden sollen?" },
+        { id: "M2-01", text: "Überweisungsart angegeben (Abklärung, Mitbehandlung, Weitergabe)?" },
+        { id: "M2-02", text: "Relevante Vorbefunde für den Facharzt benannt?" },
       ],
     },
     "WF-C04": {
       MFA: [
-        { id: "M2-01", text: "Ist dokumentiert, ob Befunde erwartet werden?" },
-        { id: "M2-02", text: "Ist ein nächster Schritt oder Wiedervorstellungstermin erkennbar?" },
+        { id: "M2-01", text: "Erwarteter Rücklauf definiert (Befundbericht, Empfehlung)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist dokumentiert, was nach Erhalt des Befunds folgen soll?" },
+        { id: "M2-01", text: "Erwarteter Rücklauf und weiteres Vorgehen dokumentiert?" },
+        { id: "M2-02", text: "Patient über Ziel der Überweisung informiert?" },
       ],
     },
   },
@@ -171,41 +147,39 @@ const M2_QUESTIONS_BY_TOPIC: Record<WorkflowTopicId, M2QuestionsByCheckpoint> = 
   [WORKFLOW_TOPIC_HEILMITTEL]: {
     "WF-C01": {
       MFA: [
-        { id: "M2-01", text: "Sind Heilmittelart, Frequenz und Verordnungsmenge angegeben?" },
-        { id: "M2-02", text: "Sind Diagnosegruppe und ICD-10 erfasst?" },
-        { id: "M2-03", text: "Ist der Therapiebeginn angegeben?" },
+        { id: "M2-01", text: "Heilmittelart, Menge und Frequenz eingetragen?" },
+        { id: "M2-02", text: "Diagnosegruppe eingetragen?" },
+        { id: "M2-03", text: "Erst-/Folgeverordnung angegeben?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Sind Heilmittel, Menge und Frequenz erkennbar angegeben?" },
-        { id: "M2-02", text: "Ist die Diagnosegruppe dokumentiert?" },
+        { id: "M2-01", text: "Therapieziel benannt?" },
       ],
     },
     "WF-C02": {
       MFA: [
-        { id: "M2-01", text: "Liegt eine bekannte Indikation für das Heilmittel vor?" },
-        { id: "M2-02", text: "Ist erkennbar, ob eine Vorverordnung vorliegt?" },
+        { id: "M2-01", text: "Diagnose oder Funktionseinschränkung angegeben?" },
+        { id: "M2-02", text: "Aktueller Behandlungsbedarf in der Akte dokumentiert?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist die Therapiebegründung aus der Akte nachvollziehbar?" },
-        { id: "M2-02", text: "Ist der aktuelle Therapiebedarf erkennbar?" },
+        { id: "M2-01", text: "Indikation für Verordnung ausreichend dokumentiert?" },
       ],
     },
     "WF-C03": {
       MFA: [
-        { id: "M2-01", text: "Gibt es Vorverordnungen für dasselbe Heilmittel?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf Therapieabbrüche oder Therapieerfolge?" },
+        { id: "M2-01", text: "Therapieerfolg der Vorbehandlung dokumentiert (falls Folgeverordnung)?" },
+        { id: "M2-02", text: "Frühere Therapieerfahrungen des Patienten bekannt?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Gibt es Verlaufshinweise, die den Therapiebedarf stützen?" },
-        { id: "M2-02", text: "Gibt es Besonderheiten im bisherigen Therapieverlauf?" },
+        { id: "M2-01", text: "Therapieverlauf dokumentiert?" },
+        { id: "M2-02", text: "Begründung für Folgeverordnung in der Akte vorhanden?" },
       ],
     },
     "WF-C04": {
       MFA: [
-        { id: "M2-01", text: "Ist dokumentiert, ob ein Kontrolltermin oder eine Verlaufsprüfung geplant ist?" },
+        { id: "M2-01", text: "Kontroll- oder Verlaufsprüfung geplant?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist dokumentiert, ab wann und in welchen Abständen der Therapieerfolg geprüft wird?" },
+        { id: "M2-01", text: "Erfolgskriterium für die Therapie definiert?" },
       ],
     },
   },
@@ -213,40 +187,38 @@ const M2_QUESTIONS_BY_TOPIC: Record<WorkflowTopicId, M2QuestionsByCheckpoint> = 
   [WORKFLOW_TOPIC_HILFSMITTEL]: {
     "WF-C01": {
       MFA: [
-        { id: "M2-01", text: "Sind Patientendaten und das Hilfsmittel vollständig angegeben?" },
-        { id: "M2-02", text: "Ist der ICD-10-Code erfasst?" },
-        { id: "M2-03", text: "Ist die Versorgungsart angegeben? z. B. Erstversorgung, Ersatz, Reparatur." },
+        { id: "M2-01", text: "Hilfsmittel und Diagnose eindeutig angegeben?" },
+        { id: "M2-02", text: "Versorgungsart angegeben (Erstversorgung, Ersatz, Reparatur)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist das Hilfsmittel konkret benannt?" },
-        { id: "M2-02", text: "Ist die Diagnose erfasst?" },
+        { id: "M2-01", text: "Hilfsmittelzweck benannt?" },
+        { id: "M2-02", text: "Bedarfsfeststellung dokumentiert?" },
       ],
     },
     "WF-C02": {
       MFA: [
-        { id: "M2-01", text: "Liegt eine bekannte Indikation für das Hilfsmittel vor?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf frühere Versorgungen?" },
+        { id: "M2-01", text: "Erkrankung oder Einschränkung als Begründung angegeben?" },
+        { id: "M2-02", text: "Aktueller Bedarf dokumentiert?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist die Notwendigkeit des Hilfsmittels aus der Akte nachvollziehbar?" },
-        { id: "M2-02", text: "Ist die Grunderkrankung dokumentiert?" },
+        { id: "M2-01", text: "Medizinische Indikation für das Hilfsmittel dokumentiert?" },
       ],
     },
     "WF-C03": {
       MFA: [
-        { id: "M2-01", text: "Gibt es Hinweise auf frühere Versorgung oder Ablehnung durch die Krankenkasse?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf veränderten Bedarf oder geänderte Lebensumstände?" },
+        { id: "M2-01", text: "Frühere Hilfsmittelversorgung oder Antrag dokumentiert?" },
+        { id: "M2-02", text: "Situationsveränderung dokumentiert (falls Folgeversorgung)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist im Verlauf dokumentiert, warum das Hilfsmittel jetzt erforderlich ist?" },
+        { id: "M2-01", text: "Früherer Hilfsmittelbedarf in der Akte thematisiert?" },
       ],
     },
     "WF-C04": {
       MFA: [
-        { id: "M2-01", text: "Ist dokumentiert, ob Kontakt mit Leistungserbringer (Sanitätshaus o. ä.) geplant ist?" },
+        { id: "M2-01", text: "Nächster Schritt für Patient oder Praxis festgelegt?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist dokumentiert, ob eine Kontrolle des Versorgungserfolgs geplant ist?" },
+        { id: "M2-01", text: "Kontrolltermin für Versorgung geplant?" },
       ],
     },
   },
@@ -254,45 +226,43 @@ const M2_QUESTIONS_BY_TOPIC: Record<WorkflowTopicId, M2QuestionsByCheckpoint> = 
   [WORKFLOW_TOPIC_KRANKENTRANSPORT]: {
     "WF-C01": {
       MFA: [
-        { id: "M2-01", text: "Sind Datum, Transportziel und Transportart angegeben?" },
-        { id: "M2-02", text: "Sind Patientendaten und Kostenträger erfasst?" },
-        { id: "M2-03", text: "Ist erkennbar, ob Einzel- oder Serienfahrten beantragt werden?" },
+        { id: "M2-01", text: "Datum, Transportziel und Transportart angegeben?" },
+        { id: "M2-02", text: "Einzel- oder Serienfahrt angegeben?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist die Transportart dokumentiert? z. B. Taxi, KTW, RTW." },
-        { id: "M2-02", text: "Ist die medizinische Notwendigkeit erkennbar angegeben?" },
+        { id: "M2-01", text: "Begründung für Transportart in der Akte vorhanden?" },
       ],
     },
     "WF-C02": {
       MFA: [
-        { id: "M2-01", text: "Liegt eine bekannte Erkrankung vor, die den Transport begründet?" },
-        { id: "M2-02", text: "Ist die Dringlichkeit oder Transportart erkennbar?" },
+        { id: "M2-01", text: "Erkrankung oder Einschränkung als Transportbegründung angegeben?" },
+        { id: "M2-02", text: "Dringlichkeit angegeben?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist die Transportnotwendigkeit aus dem Krankheitsbild nachvollziehbar?" },
-        { id: "M2-02", text: "Ist die gewählte Transportart begründbar?" },
+        { id: "M2-01", text: "Mobilitätseinschränkung in der Akte dokumentiert?" },
+        { id: "M2-02", text: "Begründung für gewählte Transportart dokumentiert?" },
       ],
     },
     "WF-C03": {
       MFA: [
-        { id: "M2-01", text: "Gab es frühere Transportverordnungen für diesen Patienten?" },
-        { id: "M2-02", text: "Gibt es Hinweise auf besondere Rahmenbedingungen? z. B. Pflegesituation, Mobilitätseinschränkung." },
+        { id: "M2-01", text: "Frühere Transportverordnungen vorhanden?" },
+        { id: "M2-02", text: "Besondere Anforderungen dokumentiert (Rollstuhl, Sauerstoff, Begleitung)?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Gibt es im Verlauf Hinweise, die die Transportnotwendigkeit stützen?" },
-        { id: "M2-02", text: "Gibt es Besonderheiten, die für künftige Fahrten relevant sein könnten?" },
+        { id: "M2-01", text: "Grunderkrankung als Ursache des Transportbedarfs dokumentiert?" },
+        { id: "M2-02", text: "Transportbedarf als dauerhaft oder vorübergehend eingestuft?" },
       ],
     },
     "WF-C04": {
       MFA: [
-        { id: "M2-01", text: "Ist dokumentiert, ob Rücktransport oder weiterer Transport erforderlich ist?" },
-        { id: "M2-02", text: "Ist ein nächster Schritt oder Termin erkennbar?" },
+        { id: "M2-01", text: "Rücktransport oder Folgefahrten benötigt?" },
       ],
       ARZT: [
-        { id: "M2-01", text: "Ist dokumentiert, was nach dem Transport folgen soll?" },
+        { id: "M2-01", text: "Folgeschritte nach dem Transport festgelegt?" },
       ],
     },
-  },};
+  },
+};
 
 export function getM2QuestionsForCheckpoint(
   topicId: WorkflowTopicId,
