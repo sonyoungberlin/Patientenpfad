@@ -127,6 +127,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Kontingent-Prüfung: nur für Accounts mit einer aktiven Praxis.
+    // Accounts ohne current_practice (Edge-Case/Admin) sind ausgenommen.
+    const practiceId = account.current_practice?.id ?? null;
+    if (practiceId) {
+      const practice = await prisma.practice.findUnique({
+        where: { id: practiceId },
+        select: { case_quota: true },
+      });
+      if (practice?.case_quota != null) {
+        const existingCount = await prisma.caseSession.count({
+          where: { owner_practice_id: practiceId },
+        });
+        if (existingCount >= practice.case_quota) {
+          return NextResponse.json(
+            { ok: false, reason: "case_quota_exceeded" },
+            { status: 403 },
+          );
+        }
+      }
+    }
+
     const body = await req.json().catch(() => ({}));
     const query: string | undefined =
       typeof body?.query === "string" ? body.query : undefined;

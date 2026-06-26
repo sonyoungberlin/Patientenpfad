@@ -577,6 +577,12 @@ model Practice {
   /// Freigabe für das Arbeitsprozesse-Modul (Musterprozess-Dokumentation).
   arbeitsprozesse_enabled       Boolean @default(false)
 
+  /// Maximale Anzahl an Patientenpfad-Fällen (CaseSession) für diese Praxis.
+  /// null = unbegrenzt (Default); 0 = keine neuen Fälle erlaubt; n > 0 = max. n Fälle.
+  /// Wird ausschließlich in der Create-Route geprüft; Lesen/Bearbeiten bestehender
+  /// Fälle ist davon unberührt. Admin-seitig setzbar über /admin/practices/[id].
+  case_quota                    Int?
+
   /// Praxis-spezifische SMTP-Konfiguration für Bestätigungs-E-Mails der
   /// Website-Formulare. Alle Felder sind nullable; eine Konfiguration gilt
   /// erst dann als „vollständig", wenn alle Pflichtfelder (Host, Port,

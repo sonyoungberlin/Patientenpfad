@@ -48,7 +48,9 @@ type SearchParams = Promise<{
   mailDeleted?: string | string[];
   inqConfigSaved?: string | string[];
   inqConfigError?: string | string[];
-}>;
+  quotaSaved?: string | string[];
+  quotaError?: string | string[];
+};
 
 export default async function AdminPracticeDetailPage({
   params,
@@ -76,6 +78,7 @@ export default async function AdminPracticeDetailPage({
       website_forms_enabled: true,
       office_cases_enabled: true,
       arbeitsprozesse_enabled: true,
+      case_quota: true,
       created_at: true,
       smtp_host: true,
       smtp_port: true,
@@ -121,6 +124,10 @@ export default async function AdminPracticeDetailPage({
     notFound();
   }
 
+  const caseCount = await prisma.caseSession.count({
+    where: { owner_practice_id: practice.id },
+  });
+
   const sp = (await searchParams) ?? {};
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
   const addedEmail = Array.isArray(sp.added) ? sp.added[0] : sp.added;
@@ -142,6 +149,12 @@ export default async function AdminPracticeDetailPage({
   const inqConfigErrorMsg = Array.isArray(sp.inqConfigError)
     ? sp.inqConfigError[0]
     : sp.inqConfigError;
+  const quotaSaved = Array.isArray(sp.quotaSaved)
+    ? sp.quotaSaved[0]
+    : sp.quotaSaved;
+  const quotaErrorMsg = Array.isArray(sp.quotaError)
+    ? sp.quotaError[0]
+    : sp.quotaError;
 
   const mailStatus = describePracticeSmtpStatus({
     id: practice.id,
@@ -724,6 +737,56 @@ export default async function AdminPracticeDetailPage({
               Speichern
             </button>
           </div>
+        </form>
+      </section>
+
+      <section style={{ marginBottom: "2rem" }} data-section="case-quota">
+        <h2>Patientenpfad-Kontingent</h2>
+        <p className="text-muted" style={{ fontSize: "0.85em" }}>
+          Begrenzt die Anzahl der Patientenpfad-Fälle (CaseSession), die diese Praxis anlegen darf.
+          Leer lassen = unbegrenzt. Bestehende Fälle sind davon unberührt.
+        </p>
+
+        {quotaErrorMsg && (
+          <p role="alert" data-quota-error style={{ color: "#a00", marginBottom: "1rem" }}>
+            {quotaErrorMsg}
+          </p>
+        )}
+        {quotaSaved && (
+          <p role="status" data-quota-saved style={{ color: "#0a6", marginBottom: "1rem" }}>
+            Kontingent gespeichert.
+          </p>
+        )}
+
+        <p style={{ marginBottom: "0.75rem" }}>
+          <strong>Aktueller Verbrauch:</strong>{" "}
+          {caseCount} {caseCount === 1 ? "Fall" : "Fälle"} angelegt
+          {practice.case_quota != null
+            ? ` · Kontingent: ${practice.case_quota}`
+            : " · unbegrenzt"}
+        </p>
+
+        <form
+          method="POST"
+          action={`/api/admin/practices/${practice.id}/quota`}
+          data-quota-form
+          style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end", maxWidth: "20rem" }}
+        >
+          <label style={{ flex: 1 }}>
+            Kontingent (leer = unbegrenzt)
+            <input
+              type="number"
+              name="case_quota"
+              defaultValue={practice.case_quota ?? ""}
+              min={0}
+              step={1}
+              placeholder="unbegrenzt"
+              style={{ display: "block", width: "100%", marginTop: "0.25rem" }}
+            />
+          </label>
+          <button type="submit" data-quota-submit>
+            Speichern
+          </button>
         </form>
       </section>
 

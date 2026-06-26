@@ -11,11 +11,25 @@ export type CaseListItem = {
   statusLabel: string;
 };
 
-export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
+export type QuotaInfo = {
+  limit: number | null;
+  current: number;
+};
+
+export default function CaseListClient({
+  cases,
+  quota,
+}: {
+  cases: CaseListItem[];
+  quota?: QuotaInfo | null;
+}) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const quotaExhausted =
+    quota != null && quota.limit != null && quota.current >= quota.limit;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
   const filteredCases =
@@ -45,11 +59,47 @@ export default function CaseListClient({ cases }: { cases: CaseListItem[] }) {
   }
 
   if (cases.length === 0) {
-    return <p className="text-muted">Keine Fälle vorhanden.</p>;
+    return (
+      <>
+        {quotaExhausted && (
+          <div
+            className="banner-warning"
+            role="status"
+            data-quota-exhausted
+            style={{ marginBottom: "1rem" }}
+          >
+            Das Fallkontingent dieser Praxis ist ausgeschöpft. Bitte wenden Sie
+            sich an den Admin.
+          </div>
+        )}
+        {quota != null && quota.limit != null && !quotaExhausted && (
+          <p className="text-muted text-small" data-quota-info>
+            {quota.current} von {quota.limit} {quota.limit === 1 ? "Fall" : "Fälle"} genutzt
+          </p>
+        )}
+        <p className="text-muted">Keine Fälle vorhanden.</p>
+      </>
+    );
   }
 
   return (
     <>
+      {quotaExhausted && (
+        <div
+          className="banner-warning"
+          role="status"
+          data-quota-exhausted
+          style={{ marginBottom: "1rem" }}
+        >
+          Das Fallkontingent dieser Praxis ist ausgeschöpft. Bitte wenden Sie
+          sich an den Admin.
+        </div>
+      )}
+      {quota != null && quota.limit != null && !quotaExhausted && (
+        <p className="text-muted text-small" data-quota-info>
+          {quota.current} von {quota.limit} {quota.limit === 1 ? "Fall" : "Fälle"} genutzt
+        </p>
+      )}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <input
           type="search"
