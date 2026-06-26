@@ -50,7 +50,7 @@ type SearchParams = Promise<{
   inqConfigError?: string | string[];
   quotaSaved?: string | string[];
   quotaError?: string | string[];
-};
+}>;
 
 export default async function AdminPracticeDetailPage({
   params,
