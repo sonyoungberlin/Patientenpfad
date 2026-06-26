@@ -74,20 +74,35 @@ export default async function CasesPage() {
     redirect("/");
   }
 
-  const sessions = await prisma.caseSession.findMany({
-    where: getCaseOwnershipFilter(account),
-    orderBy: { createdAt: "desc" },
-    take: MAX_CASES_PER_PAGE,
-    select: {
-      id: true,
-      createdAt: true,
-      query_raw: true,
-      patient_reference: true,
-      doctor_confirmed: true,
-      clinical_status: true,
-      ctx_prefill: true,
-    },
-  });
+  const practiceId = account.current_practice?.id ?? null;
+
+  const [sessions, quotaInfo] = await Promise.all([
+    prisma.caseSession.findMany({
+      where: getCaseOwnershipFilter(account),
+      orderBy: { createdAt: "desc" },
+      take: MAX_CASES_PER_PAGE,
+      select: {
+        id: true,
+        createdAt: true,
+        query_raw: true,
+        patient_reference: true,
+        doctor_confirmed: true,
+        clinical_status: true,
+        ctx_prefill: true,
+      },
+    }),
+    practiceId
+      ? prisma.practice.findUnique({
+          where: { id: practiceId },
+          select: { case_quota: true },
+        }).then(async (p) => {
+          const current = await prisma.caseSession.count({
+            where: { owner_practice_id: practiceId },
+          });
+          return { limit: p?.case_quota ?? null, current };
+        })
+      : Promise.resolve(null),
+  ]);
 
   const cases: CaseListItem[] = sessions.map((session) => ({
     id: session.id,
@@ -100,7 +115,7 @@ export default async function CasesPage() {
     <main>
       <h1>Fälle</h1>
       <div style={{ marginTop: "1rem", display: "grid", gap: "0.75rem" }}>
-        <CaseListClient cases={cases} />
+        <CaseListClient cases={cases} quota={quotaInfo} />
       </div>
     </main>
   );

@@ -220,7 +220,13 @@ export default function HomePageClient() {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setError("Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.");
+        if ((data as { reason?: string }).reason === "case_quota_exceeded") {
+          setError(
+            "Das Fallkontingent dieser Praxis ist ausgeschöpft. Bitte wenden Sie sich an den Admin.",
+          );
+        } else {
+          setError("Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.");
+        }
         return;
       }
       if (isGatekeeperResponse(data)) {
@@ -264,9 +270,15 @@ export default function HomePageClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json() as { ok?: boolean; case_id?: string; gatekeeper?: boolean };
+      const data = await res.json() as { ok?: boolean; case_id?: string; gatekeeper?: boolean; reason?: string };
       if (!res.ok || !data.ok) {
-        setError("Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.");
+        if (data.reason === "case_quota_exceeded") {
+          setError(
+            "Das Fallkontingent dieser Praxis ist ausgeschöpft. Bitte wenden Sie sich an den Admin.",
+          );
+        } else {
+          setError("Der Fall konnte gerade nicht angelegt werden. Bitte versuchen Sie es erneut.");
+        }
         return;
       }
       if (isGatekeeperResponse(data)) {
