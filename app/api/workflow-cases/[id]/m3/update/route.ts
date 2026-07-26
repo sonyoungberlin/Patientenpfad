@@ -53,20 +53,33 @@ export async function PATCH(
 
   const snapshot = { ...session.process_snapshot };
 
-  const updatedM3 = (body.m3Checkpoints as M3CheckpointUpdate[])
-    .filter((item) => typeof item.id === "string" && isProcessPointStatus(item.status))
-    .map((item) => ({
-      id: item.id as string,
-      title:
-        (snapshot.m3Checkpoints ?? []).find((c) => c.id === item.id)?.title ?? (item.id as string),
-      status: item.status as import("@/lib/workflow/types").ProcessPointStatus,
-    }));
+  // Nur Einträge mit gültiger id (string) und gültigem Status weiterverarbeiten.
+  const validUpdates = (body.m3Checkpoints as M3CheckpointUpdate[]).filter(
+    (item) => typeof item.id === "string" && isProcessPointStatus(item.status),
+  );
 
-  if (updatedM3.length === 0) {
+  if (validUpdates.length === 0) {
     return NextResponse.json({ ok: false, error: "Keine gültigen M3-Checkpoints übergeben." }, { status: 400 });
   }
 
-  snapshot.m3Checkpoints = updatedM3;
+  // Statusänderungen auf bekannte Checkpoint-IDs beschränken, damit unbekannte
+  // IDs keine neuen Einträge einschleusen können.
+  const existingCheckpoints = snapshot.m3Checkpoints ?? [];
+  const updateMap = new Map<string, import("@/lib/workflow/types").ProcessPointStatus>();
+  for (const item of validUpdates) {
+    const knownId = item.id as string;
+    if (existingCheckpoints.some((c) => c.id === knownId)) {
+      updateMap.set(knownId, item.status as import("@/lib/workflow/types").ProcessPointStatus);
+    }
+  }
+
+  // Vorhandene Checkpoints vollständig erhalten; nur den Status überschreiben,
+  // wo ein gültiges Update vorliegt. Alle anderen Felder (m2_answers, title …)
+  // bleiben durch den Spread unverändert.
+  snapshot.m3Checkpoints = existingCheckpoints.map((existing) => {
+    const newStatus = updateMap.get(existing.id);
+    return newStatus !== undefined ? { ...existing, status: newStatus } : existing;
+  });
 
   await prisma.workflowSession.update({
     where: { id },
