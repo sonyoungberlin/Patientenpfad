@@ -11,6 +11,7 @@ type SessionItem = {
   topicTitle: string | null;
   role: string | null;
   pointCount: number;
+  href?: string;
 };
 
 export default function WorkflowCasesListClient({ items: initialItems }: { items: SessionItem[] }) {
@@ -67,7 +68,7 @@ export default function WorkflowCasesListClient({ items: initialItems }: { items
               <td>{item.title ?? "–"}</td>
               <td>{item.pointCount}</td>
               <td style={{ display: "flex", gap: "0.5rem" }}>
-                <Link href={`/workflow-cases/${item.id}`}>
+                <Link href={item.href ?? `/workflow-cases/${item.id}`}>
                   <button type="button">Öffnen</button>
                 </Link>
                 <button

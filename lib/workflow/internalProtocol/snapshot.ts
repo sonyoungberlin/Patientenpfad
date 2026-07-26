@@ -10,8 +10,6 @@
  * oder anderen klinischen Workflow-Modulen.
  */
 
-import { randomUUID } from "crypto";
-
 import type {
   ProtocolSection,
   ProtocolQuestion,
@@ -63,6 +61,32 @@ export interface InternalProtocolSnapshot {
    * vorgegeben). Die konkrete Typisierung erfolgt in einem späteren Schritt.
    */
   answers: ProtocolAnswersMap;
+}
+
+// ---------------------------------------------------------------------------
+// Browser- und server-kompatible UUID-Generierung (kein Node-only-Import)
+// ---------------------------------------------------------------------------
+
+/**
+ * Erzeugt eine UUID v4. Nutzt die Web Crypto API (browser + Node.js ≥ 19),
+ * fällt andernfalls auf einen Math.random-basierten Ersatz zurück.
+ * Kein Import aus dem Node-only-Modul "crypto".
+ */
+function generateUUID(): string {
+  if (typeof (globalThis as Record<string, unknown>).crypto === "object") {
+    const webCrypto = (globalThis as Record<string, unknown>).crypto as {
+      randomUUID?: () => string;
+    };
+    if (typeof webCrypto.randomUUID === "function") {
+      return webCrypto.randomUUID();
+    }
+  }
+  // Fallback für ältere Umgebungen ohne Web Crypto API
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16);
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -130,26 +154,42 @@ function buildEmptyAnswers(sections: ProtocolSection[]): ProtocolAnswersMap {
 // ---------------------------------------------------------------------------
 
 /**
+ * Optionen zum Injizieren stabiler Metadaten in einen neuen Snapshot.
+ *
+ * Beide Felder sind optional. Fehlt ein Feld, wird ein neuer Wert generiert:
+ * - protocolId: neue UUID v4 via globalThis.crypto.randomUUID() (kein Node-Import)
+ * - createdAt:  aktueller ISO-8601-Zeitstempel
+ */
+export interface CreateProtocolSnapshotOptions {
+  /** Stabile ID, die wiederverwendet werden soll (z. B. Session-ID). */
+  protocolId?: string;
+  /** Stabiler Erstellungszeitpunkt als ISO-8601-String. */
+  createdAt?: string;
+}
+
+/**
  * Erzeugt einen neuen InternalProtocolSnapshot aus einem Array von ProtocolSection.
  *
  * - Erstellt ausschließlich tiefe Kopien aller Sections, Regeln, Quellen,
  *   Fragen und Optionen. Keine Referenzen auf die Eingabedaten.
  * - Initialisiert alle Antwortplätze mit null (= noch unbeantwortet).
  * - Setzt version auf 1.
- * - Setzt createdAt auf den aktuellen Zeitstempel (ISO-8601).
- * - Generiert eine neue protocolId (UUID v4).
+ * - protocolId und createdAt werden aus options übernommen, falls angegeben;
+ *   andernfalls werden neue Werte generiert (browser- und serverkompatibel).
  *
  * @param sections Abschnitte, die dem Snapshot zugrunde liegen sollen.
+ * @param options  Optionale stabile Metadaten (protocolId, createdAt).
  * @returns Neuer, vollständig eigenständiger InternalProtocolSnapshot.
  */
 export function createProtocolSnapshot(
   sections: ProtocolSection[],
+  options?: CreateProtocolSnapshotOptions,
 ): InternalProtocolSnapshot {
   const copiedSections = sections.map(cloneSection);
   return {
-    protocolId: randomUUID(),
+    protocolId: options?.protocolId ?? generateUUID(),
     version: 1,
-    createdAt: new Date().toISOString(),
+    createdAt: options?.createdAt ?? new Date().toISOString(),
     sections: copiedSections,
     answers: buildEmptyAnswers(copiedSections),
   };

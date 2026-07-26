@@ -467,3 +467,54 @@ describe("createProtocolSnapshot() – Edge Cases", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// createProtocolSnapshot – options (injizierte Metadaten)
+// ---------------------------------------------------------------------------
+
+describe("createProtocolSnapshot() – options", () => {
+  const sections = getPatientWithoutAppointmentSections();
+
+  it("übernimmt injizierte protocolId", () => {
+    const snap = createProtocolSnapshot(sections, { protocolId: "injected-id" });
+    expect(snap.protocolId).toBe("injected-id");
+  });
+
+  it("übernimmt injiziertes createdAt", () => {
+    const ts = "2025-01-15T09:00:00.000Z";
+    const snap = createProtocolSnapshot(sections, { createdAt: ts });
+    expect(snap.createdAt).toBe(ts);
+  });
+
+  it("kann protocolId und createdAt gleichzeitig injizieren", () => {
+    const snap = createProtocolSnapshot(sections, {
+      protocolId: "stable-id",
+      createdAt: "2025-06-01T12:00:00.000Z",
+    });
+    expect(snap.protocolId).toBe("stable-id");
+    expect(snap.createdAt).toBe("2025-06-01T12:00:00.000Z");
+  });
+
+  it("generiert neue protocolId wenn options fehlt", () => {
+    const a = createProtocolSnapshot(sections);
+    const b = createProtocolSnapshot(sections);
+    expect(a.protocolId).not.toBe(b.protocolId);
+  });
+
+  it("generiert neue protocolId wenn options.protocolId fehlt", () => {
+    const a = createProtocolSnapshot(sections, { createdAt: "2025-01-01T00:00:00.000Z" });
+    const b = createProtocolSnapshot(sections, { createdAt: "2025-01-01T00:00:00.000Z" });
+    expect(a.protocolId).not.toBe(b.protocolId);
+  });
+
+  it("erzeugt weiterhin tiefe Kopien der Sections (defensiv kopierend) auch mit options", () => {
+    const source = getPatientWithoutAppointmentSections();
+    const snap = createProtocolSnapshot(source, { protocolId: "x" });
+    expect(snap.sections[0]).not.toBe(source[0]);
+  });
+
+  it("version ist auch mit injizierter ID immer 1", () => {
+    const snap = createProtocolSnapshot(sections, { protocolId: "v-test" });
+    expect(snap.version).toBe(1);
+  });
+});

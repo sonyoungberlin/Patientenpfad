@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
 import { getWorkflowTopic, isWorkflowTopicId } from "@/lib/workflow/processCatalog";
 import { isValidProcessSnapshot } from "@/lib/workflow/types";
+import { isInternalProtocolWorkflowSnapshot } from "@/lib/workflow/internalProtocol/workflowAdapter";
 import WorkflowCasesListClient from "./WorkflowCasesListClient";
 
 export default async function WorkflowCasesPage() {
@@ -32,6 +33,20 @@ export default async function WorkflowCasesPage() {
   });
 
   const items = sessions.map((s) => {
+    // Internes Protokoll
+    if (isInternalProtocolWorkflowSnapshot(s.process_snapshot)) {
+      return {
+        id: s.id,
+        createdAt: s.createdAt.toISOString().slice(0, 10),
+        title: s.title,
+        topicTitle: "Patienten ohne Termin",
+        role: null,
+        pointCount: s.process_snapshot.checkpoints.length,
+        href: `/workflow-cases/${s.id}/protocol`,
+        kind: "internal-protocol" as const,
+      };
+    }
+    // Klinischer Workflow
     const snapshot = isValidProcessSnapshot(s.process_snapshot) ? s.process_snapshot : null;
     const topicTitle =
       snapshot && isWorkflowTopicId(snapshot.topicId)
@@ -46,6 +61,8 @@ export default async function WorkflowCasesPage() {
       topicTitle,
       role,
       pointCount,
+      href: `/workflow-cases/${s.id}`,
+      kind: "clinical" as const,
     };
   });
 
