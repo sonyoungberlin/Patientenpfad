@@ -120,7 +120,8 @@ import { getPatientWithoutAppointmentSections } from "./patientWithoutAppointmen
  * Erzeugt die initialen Checkpoints für eine neue Protokoll-Sitzung
  * aus den definierten Sections des Pilotprozesses.
  *
- * Alle Checkpoints starten mit status: "OPEN" und leeren Antworten.
+ * Alle Checkpoints starten mit status: "OPEN" und leeren Antworten (alle null).
+ * Wird für Tests und als Basis für buildPrefillProtocolWorkflowCheckpoints verwendet.
  */
 export function buildInitialProtocolWorkflowCheckpoints(): ProtocolWorkflowCheckpoint[] {
   return getPatientWithoutAppointmentSections().map((section) => {
@@ -137,14 +138,85 @@ export function buildInitialProtocolWorkflowCheckpoints(): ProtocolWorkflowCheck
   });
 }
 
+// ---------------------------------------------------------------------------
+// Prefill-Vorschlagswerte für „Patienten ohne Termin"
+// ---------------------------------------------------------------------------
+
+/**
+ * Praxistaugliche Ausgangsvorschläge für neue Internal-Protocol-Sitzungen.
+ *
+ * Diese Werte sind Praxisvorschläge, keine gesetzlichen Vorgaben.
+ * Alle Fragen-IDs und Option-IDs beziehen sich auf die aktuellen Definitionen
+ * in patientWithoutAppointment.ts. Nicht abgedeckte Fragen bleiben null.
+ *
+ * Fachliche Lücke: POT-Q-C05-02 ist SINGLE_SELECT; die gewünschte Kombination
+ * „jährlich + anlassbezogen nach Auffälligkeiten" ist technisch nicht abbildbar.
+ * Es wird POT-Q-C05-02-A (jährlich im QM-Zyklus) als primäre Option gewählt.
+ */
+const PATIENTEN_OHNE_TERMIN_PREFILL: Readonly<Record<string, ProtocolWorkflowAnswerValue>> = {
+  // PC-C01: Geltungsbereich
+  "POT-Q-C01-01": ["POT-Q-C01-01-A"],   // Während regulärer Sprechzeiten
+  "POT-Q-C01-02": "YES",                 // Gilt für alle Mitarbeitenden
+
+  // PC-C02: Zuständigkeit
+  "POT-Q-C02-01": "POT-Q-C02-01-A",     // MFA am Empfang
+  "POT-Q-C02-02": "POT-Q-C02-02-B",     // Erfahrene MFA nach Schema, Rücksprache Arzt
+
+  // PC-C03: Standardablauf
+  "POT-Q-C03-01": [
+    "POT-Q-C03-01-A",  // Name und Geburtsdatum
+    "POT-Q-C03-01-B",  // Art und Schwere der Beschwerden
+    "POT-Q-C03-01-C",  // Dringlichkeits-Selbsteinschätzung
+  ],
+  "POT-Q-C03-02": "POT-Q-C03-02-D",     // Situationsabhängige Entscheidung
+  "POT-Q-C03-03": "YES",                 // Anliegen vor Entscheidung dokumentieren
+
+  // PC-C04: Ausnahmen und Eskalation
+  "POT-Q-C04-01": [
+    "POT-Q-C04-01-A",  // Abfrage definierter Warnsymptome
+    "POT-Q-C04-01-B",  // Einschätzung durch erfahrene MFA
+  ],
+  "POT-Q-C04-02": "POT-Q-C04-02-A",     // Sofortige Benachrichtigung + Notruf 112
+  "POT-Q-C04-04": "UNCLEAR",             // Eskalationsstufen bekannt: noch unklar
+
+  // PC-C05: Dokumentation und Überprüfung
+  "POT-Q-C05-01": "YES",                 // Entscheidungen dokumentieren
+  "POT-Q-C05-02": "POT-Q-C05-02-A",     // Jährlich im Rahmen des QM-Zyklus
+  "POT-Q-C05-03": "POT-Q-C05-03-D",     // Gemeinsam im Praxisteam
+} as const;
+
+/**
+ * Erzeugt Checkpoints für eine neue Sitzung mit praxistauglichen Vorschlagswerten.
+ *
+ * - Nur beim Erstellen einer neuen Sitzung verwenden.
+ * - Bereits gespeicherte Antworten werden durch diesen Aufruf nicht verändert.
+ * - Prefill-Werte basieren ausschließlich auf vorhandenen Option-IDs.
+ */
+export function buildPrefillProtocolWorkflowCheckpoints(): ProtocolWorkflowCheckpoint[] {
+  return getPatientWithoutAppointmentSections().map((section) => {
+    const answers: ProtocolWorkflowAnswers = {};
+    for (const q of section.questions) {
+      const prefill = PATIENTEN_OHNE_TERMIN_PREFILL[q.id];
+      answers[q.id] = prefill !== undefined ? prefill : null;
+    }
+    return {
+      id: section.id,
+      title: section.title,
+      status: "OPEN" as const,
+      answers,
+    };
+  });
+}
+
 /**
  * Erzeugt einen neuen InternalProtocolWorkflowSnapshot für den Pilotprozess.
+ * Neue Sitzungen erhalten praxistaugliche Vorschlagswerte (Prefill).
  */
 export function buildInitialInternalProtocolWorkflowSnapshot(): InternalProtocolWorkflowSnapshot {
   return {
     processKind: "internal-protocol",
     topicId: "patienten-ohne-termin",
-    checkpoints: buildInitialProtocolWorkflowCheckpoints(),
+    checkpoints: buildPrefillProtocolWorkflowCheckpoints(),
   };
 }
 

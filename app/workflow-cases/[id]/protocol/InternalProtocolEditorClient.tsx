@@ -13,6 +13,7 @@ import { createProtocolSnapshot } from "@/lib/workflow/internalProtocol/snapshot
 import { createProtocolDocument } from "@/lib/workflow/internalProtocol/document";
 import type { ProtocolDocument } from "@/lib/workflow/internalProtocol/document";
 import type { ProtocolSection } from "@/lib/workflow/internalProtocol/questions";
+import { resolveAnswerLabel } from "@/lib/workflow/internalProtocol/answerLabel";
 
 type Props = {
   sessionId: string;
@@ -40,15 +41,6 @@ function statusLabel(status: ProtocolCheckpointStatus): string {
   }
 }
 
-function answerLabel(value: ProtocolWorkflowAnswerValue): string {
-  if (value === null || value === undefined) return "—";
-  if (Array.isArray(value)) return value.length === 0 ? "—" : value.join(", ");
-  if (value === "YES") return "Ja";
-  if (value === "NO") return "Nein";
-  if (value === "UNCLEAR") return "Unklar";
-  return value;
-}
-
 // ---------------------------------------------------------------------------
 // M2: Einzelne Fragen-Eingabe
 // ---------------------------------------------------------------------------
@@ -64,54 +56,7 @@ function QuestionInput({
 }) {
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      {/* Offizielle Leitplanken */}
-      {section.officialRules.length > 0 && (
-        <details>
-          <summary
-            className="text-small text-muted"
-            style={{ cursor: "pointer", fontWeight: 600 }}
-          >
-            Offizielle Leitplanken ({section.officialRules.length})
-          </summary>
-          <div
-            style={{
-              display: "grid",
-              gap: "0.5rem",
-              padding: "0.75rem",
-              background: "#f5f7fa",
-              borderRadius: "0.25rem",
-              marginTop: "0.35rem",
-            }}
-          >
-            {section.officialRules.map((rule) => (
-              <div key={rule.id} style={{ display: "grid", gap: "0.2rem" }}>
-                <span
-                  className="text-small"
-                  style={{
-                    fontWeight: 600,
-                    color:
-                      rule.bindingLevel === "MANDATORY"
-                        ? "#c00"
-                        : rule.bindingLevel === "RECOMMENDED"
-                          ? "#555"
-                          : "#777",
-                  }}
-                >
-                  {rule.bindingLevel === "MANDATORY"
-                    ? "Verbindlich"
-                    : rule.bindingLevel === "RECOMMENDED"
-                      ? "Empfohlen"
-                      : "Orientierung"}{" "}
-                  – {rule.source.reference ?? rule.source.author}
-                </span>
-                <span className="text-small">{rule.text}</span>
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
-
-      {/* Praxisfragen */}
+      {/* Praxisfragen (primär sichtbar) */}
       {section.questions.map((q) => {
         const answer = checkpoint.answers[q.id] ?? null;
         return (
@@ -225,6 +170,53 @@ function QuestionInput({
           </div>
         );
       })}
+
+      {/* Rechtlicher und fachlicher Hintergrund (standardmäßig eingeklappt) */}
+      {section.officialRules.length > 0 && (
+        <details style={{ marginTop: "0.25rem" }}>
+          <summary
+            className="text-small text-muted"
+            style={{ cursor: "pointer", userSelect: "none" }}
+          >
+            Rechtlicher und fachlicher Hintergrund
+          </summary>
+          <div
+            style={{
+              display: "grid",
+              gap: "0.5rem",
+              padding: "0.75rem",
+              background: "#f5f7fa",
+              borderRadius: "0.25rem",
+              marginTop: "0.35rem",
+            }}
+          >
+            {section.officialRules.map((rule) => (
+              <div key={rule.id} style={{ display: "grid", gap: "0.2rem" }}>
+                <span
+                  className="text-small"
+                  style={{
+                    fontWeight: 600,
+                    color:
+                      rule.bindingLevel === "MANDATORY"
+                        ? "#c00"
+                        : rule.bindingLevel === "RECOMMENDED"
+                          ? "#555"
+                          : "#777",
+                  }}
+                >
+                  {rule.bindingLevel === "MANDATORY"
+                    ? "Verbindlich"
+                    : rule.bindingLevel === "RECOMMENDED"
+                      ? "Empfohlen"
+                      : "Orientierung"}{" "}
+                  – {rule.source.reference ?? rule.source.author}
+                </span>
+                <span className="text-small">{rule.text}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }
@@ -233,7 +225,22 @@ function QuestionInput({
 // M4/M5: ProtocolDocument-Darstellung
 // ---------------------------------------------------------------------------
 
-function ProtocolDocumentView({ doc }: { doc: ProtocolDocument }) {
+function ProtocolDocumentView({
+  doc,
+  sections,
+}: {
+  doc: ProtocolDocument;
+  sections: ProtocolSection[];
+}) {
+  /** Sucht die Fragendefinition anhand von Section-ID und Frage-ID. */
+  function findQuestion(
+    sectionId: string,
+    questionId: string,
+  ) {
+    return sections
+      .find((s) => s.id === sectionId)
+      ?.questions.find((q) => q.id === questionId);
+  }
   return (
     <div style={{ display: "grid", gap: "1.5rem" }}>
       <header style={{ display: "grid", gap: "0.25rem" }}>
@@ -255,7 +262,7 @@ function ProtocolDocumentView({ doc }: { doc: ProtocolDocument }) {
           }}
         >
           <h3 style={{ margin: 0 }}>
-            {section.id}: {section.title}
+            {section.title}
           </h3>
 
           {/* Offizielle Leitplanken */}
@@ -313,6 +320,7 @@ function ProtocolDocumentView({ doc }: { doc: ProtocolDocument }) {
                 q.answer !== undefined &&
                 !(Array.isArray(q.answer) && (q.answer as string[]).length === 0) &&
                 q.answer !== "";
+              const question = findQuestion(section.id, q.id);
               return (
                 <div
                   key={q.id}
@@ -336,7 +344,10 @@ function ProtocolDocumentView({ doc }: { doc: ProtocolDocument }) {
                   <div className="text-small">
                     {isAnswered ? (
                       <span style={{ color: "#1a6" }}>
-                        {answerLabel(q.answer as ProtocolWorkflowAnswerValue)}
+                        {resolveAnswerLabel(
+                          question,
+                          q.answer as ProtocolWorkflowAnswerValue,
+                        )}
                       </span>
                     ) : (
                       <span style={{ color: "#c44" }}>Noch nicht beantwortet</span>
@@ -465,10 +476,6 @@ export default function InternalProtocolEditorClient({
     );
   }, [sections, checkpoints]);
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
   const topicTitle = "Umgang mit Patienten ohne Termin";
 
   return (
@@ -506,7 +513,7 @@ export default function InternalProtocolEditorClient({
             return (
               <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
                 <strong>
-                  {checkpoint.id}: {checkpoint.title}
+                  {checkpoint.title}
                 </strong>
                 <QuestionInput
                   section={section}
@@ -541,7 +548,7 @@ export default function InternalProtocolEditorClient({
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                   <strong>
-                    {checkpoint.id}: {checkpoint.title}
+                    {checkpoint.title}
                   </strong>
                   <span className="text-small" style={{ fontWeight: 600 }}>
                     {statusLabel(checkpoint.status)}
@@ -574,7 +581,7 @@ export default function InternalProtocolEditorClient({
       {/* ── Output: Regelungsdokument (M4/M5) ── */}
       {step === "output" && (
         <div style={{ display: "grid", gap: "1rem" }}>
-          <ProtocolDocumentView doc={protocolDocument} />
+          <ProtocolDocumentView doc={protocolDocument} sections={sections} />
         </div>
       )}
 
