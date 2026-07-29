@@ -148,10 +148,6 @@ export function buildInitialProtocolWorkflowCheckpoints(): ProtocolWorkflowCheck
  * Diese Werte sind Praxisvorschläge, keine gesetzlichen Vorgaben.
  * Alle Fragen-IDs und Option-IDs beziehen sich auf die aktuellen Definitionen
  * in patientWithoutAppointment.ts. Nicht abgedeckte Fragen bleiben null.
- *
- * Fachliche Lücke: POT-Q-C05-02 ist SINGLE_SELECT; die gewünschte Kombination
- * „jährlich + anlassbezogen nach Auffälligkeiten" ist technisch nicht abbildbar.
- * Es wird POT-Q-C05-02-A (jährlich im QM-Zyklus) als primäre Option gewählt.
  */
 const PATIENTEN_OHNE_TERMIN_PREFILL: Readonly<Record<string, ProtocolWorkflowAnswerValue>> = {
   // PC-C01: Geltungsbereich
@@ -181,7 +177,7 @@ const PATIENTEN_OHNE_TERMIN_PREFILL: Readonly<Record<string, ProtocolWorkflowAns
 
   // PC-C05: Dokumentation und Überprüfung
   "POT-Q-C05-01": "YES",                 // Entscheidungen dokumentieren
-  "POT-Q-C05-02": "POT-Q-C05-02-A",     // Jährlich im Rahmen des QM-Zyklus
+  "POT-Q-C05-02": ["POT-Q-C05-02-A"],    // Jährlich im Rahmen des QM-Zyklus (Mehrfachauswahl möglich)
   "POT-Q-C05-03": "POT-Q-C05-03-D",     // Gemeinsam im Praxisteam
 } as const;
 

@@ -14,6 +14,10 @@ import { createProtocolDocument } from "@/lib/workflow/internalProtocol/document
 import type { ProtocolDocument } from "@/lib/workflow/internalProtocol/document";
 import type { ProtocolSection } from "@/lib/workflow/internalProtocol/questions";
 import { resolveAnswerLabel } from "@/lib/workflow/internalProtocol/answerLabel";
+import {
+  getProtocolSectionClarificationState,
+  type QuestionClarificationReason,
+} from "@/lib/workflow/internalProtocol/clarificationState";
 
 type Props = {
   sessionId: string;
@@ -364,6 +368,253 @@ function ProtocolDocumentView({
 }
 
 // ---------------------------------------------------------------------------
+// M3: Klärungsstand
+// ---------------------------------------------------------------------------
+
+function issueReasonLabel(reason: QuestionClarificationReason): string {
+  switch (reason) {
+    case "missing": return "Antwort fehlt";
+    case "unclear": return "Noch unklar";
+    case "unresolvable": return "Unbekannte Auswahl";
+  }
+}
+
+function M3View({
+  sections,
+  checkpoints,
+  onStatusChange,
+}: {
+  sections: ProtocolSection[];
+  checkpoints: ProtocolWorkflowCheckpoint[];
+  onStatusChange: (checkpointId: string, status: ProtocolCheckpointStatus) => void;
+}) {
+  const data = checkpoints.flatMap((cp) => {
+    const section = sections.find((s) => s.id === cp.id);
+    if (!section) return [];
+    return [{ cp, section, state: getProtocolSectionClarificationState(section, cp) }];
+  });
+
+  const openData = data.filter((d) => d.state.needsClarification);
+  const clarifiedData = data.filter((d) => d.state.isClarified && d.state.status === "CONFIRMED");
+  const notApplicableData = data.filter((d) => d.state.status === "NOT_APPLICABLE");
+
+  const openCount = openData.length;
+  const clarifiedCount = clarifiedData.length;
+  const notApplicableCount = notApplicableData.length;
+
+  return (
+    <div style={{ display: "grid", gap: "1.25rem" }}>
+
+      {/* ─ Zusammenfassung ─ */}
+      <div
+        style={{
+          display: "flex",
+          gap: "1.5rem",
+          flexWrap: "wrap",
+          padding: "0.6rem 0.9rem",
+          background: "#f5f7fa",
+          borderRadius: "0.35rem",
+          alignItems: "center",
+        }}
+      >
+        <span className="text-small">
+          <strong style={{ color: openCount > 0 ? "#c44" : "#555" }}>
+            Noch zu klären: {openCount}
+          </strong>
+        </span>
+        <span className="text-small">
+          Festgelegt: {clarifiedCount}
+        </span>
+        {notApplicableCount > 0 && (
+          <span className="text-small">
+            Nicht zutreffend: {notApplicableCount}
+          </span>
+        )}
+      </div>
+
+      {/* ─ Noch zu klären ─ */}
+      {openData.length > 0 && (
+        <section style={{ display: "grid", gap: "0.75rem" }}>
+          <h2
+            className="text-small"
+            style={{ margin: 0, fontWeight: 700, color: "#c00" }}
+          >
+            Noch zu klären ({openData.length})
+          </h2>
+          {openData.map(({ cp, section, state }) => (
+            <article
+              key={cp.id}
+              style={{
+                border: "1px solid #f0c0c0",
+                borderRadius: "0.4rem",
+                padding: "0.8rem",
+                display: "grid",
+                gap: "0.6rem",
+                background: "#fffafa",
+              }}
+            >
+              <strong>{cp.title}</strong>
+
+              {/* Offene Punkte */}
+              {state.hasTeamConfirmationPending ? (
+                <p
+                  className="text-small text-muted"
+                  style={{ margin: 0, fontStyle: "italic" }}
+                >
+                  Alle Fragen beantwortet – Teamentscheidung noch nicht bestätigt.
+                </p>
+              ) : (
+                <div style={{ display: "grid", gap: "0.4rem" }}>
+                  {state.openIssues.map((issue) => (
+                    <div
+                      key={issue.question.id}
+                      style={{
+                        display: "grid",
+                        gap: "0.15rem",
+                        padding: "0.4rem 0.6rem",
+                        background: "#fff0f0",
+                        borderRadius: "0.25rem",
+                        borderLeft: "3px solid #e44",
+                      }}
+                    >
+                      <span className="text-small" style={{ fontWeight: 600 }}>
+                        {issue.question.text}
+                      </span>
+                      <span
+                        className="text-small text-muted"
+                        style={{ fontStyle: "italic" }}
+                      >
+                        {issueReasonLabel(issue.reason)}
+                        {issue.currentAnswer !== null && (
+                          <>: {resolveAnswerLabel(issue.question, issue.currentAnswer)}</>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Statusbereich */}
+              <div style={{ display: "grid", gap: "0.3rem", borderTop: "1px solid #eee", paddingTop: "0.5rem" }}>
+                <span
+                  className="text-small text-muted"
+                  style={{ fontWeight: 600 }}
+                >
+                  Status dieser Entscheidung
+                </span>
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  {CHECKPOINT_STATUS_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => onStatusChange(cp.id, opt.value)}
+                      style={{
+                        fontWeight: cp.status === opt.value ? 700 : 400,
+                        outline: cp.status === opt.value ? "2px solid currentColor" : undefined,
+                        padding: "0.25rem 0.6rem",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
+
+      {/* ─ Festgelegt ─ */}
+      {(clarifiedData.length > 0 || notApplicableData.length > 0) && (
+        <details style={{ display: "grid", gap: "0.75rem" }}>
+          <summary
+            className="text-small"
+            style={{ cursor: "pointer", userSelect: "none", fontWeight: 700 }}
+          >
+            Festgelegt ({clarifiedCount + notApplicableCount})
+          </summary>
+          <div style={{ display: "grid", gap: "0.6rem", marginTop: "0.5rem" }}>
+            {[...clarifiedData, ...notApplicableData].map(({ cp, section, state }) => (
+              <article
+                key={cp.id}
+                style={{
+                  border: "1px solid #c0e0c0",
+                  borderRadius: "0.4rem",
+                  padding: "0.8rem",
+                  display: "grid",
+                  gap: "0.5rem",
+                  background: "#f8fff8",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
+                  <strong>{cp.title}</strong>
+                  {cp.status === "NOT_APPLICABLE" && (
+                    <span className="text-small text-muted">Nicht zutreffend</span>
+                  )}
+                </div>
+
+                {/* Getroffene Festlegungen (kompakt) */}
+                {state.answeredQuestions.length > 0 && cp.status !== "NOT_APPLICABLE" && (
+                  <div style={{ display: "grid", gap: "0.25rem" }}>
+                    {state.answeredQuestions.map((q) => {
+                      const answer = cp.answers[q.id] ?? null;
+                      if (answer === null) return null;
+                      return (
+                        <div key={q.id} className="text-small" style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+                          <span style={{ color: "#555" }}>{q.text}:</span>
+                          <span style={{ color: "#1a6", fontWeight: 600 }}>
+                            {resolveAnswerLabel(q, answer)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Statusbereich */}
+                <div style={{ display: "grid", gap: "0.3rem", borderTop: "1px solid #ddd", paddingTop: "0.4rem" }}>
+                  <span
+                    className="text-small text-muted"
+                    style={{ fontWeight: 600 }}
+                  >
+                    Status dieser Entscheidung
+                  </span>
+                  <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                    {CHECKPOINT_STATUS_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => onStatusChange(cp.id, opt.value)}
+                        style={{
+                          fontWeight: cp.status === opt.value ? 700 : 400,
+                          outline: cp.status === opt.value ? "2px solid currentColor" : undefined,
+                          padding: "0.25rem 0.6rem",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* Alle Sections geklärt */}
+      {openData.length === 0 && clarifiedData.length + notApplicableData.length === data.length && (
+        <p className="text-small text-muted" style={{ margin: 0 }}>
+          Alle Abschnitte sind geklärt.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Haupt-Editor-Component
 // ---------------------------------------------------------------------------
 
@@ -528,54 +779,11 @@ export default function InternalProtocolEditorClient({
 
       {/* ── M3: Klärungsstand ── */}
       {step === "m3" && (
-        <div style={{ display: "grid", gap: "0.75rem" }}>
-          {checkpoints.map((checkpoint) => {
-            const answered = Object.values(checkpoint.answers).filter(
-              (v) => v !== null && !(Array.isArray(v) && v.length === 0) && v !== "",
-            ).length;
-            const total = Object.keys(checkpoint.answers).length;
-
-            return (
-              <article
-                key={checkpoint.id}
-                style={{
-                  border: "1px solid #d8e0ea",
-                  borderRadius: "0.4rem",
-                  padding: "0.7rem",
-                  display: "grid",
-                  gap: "0.5rem",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                  <strong>
-                    {checkpoint.title}
-                  </strong>
-                  <span className="text-small" style={{ fontWeight: 600 }}>
-                    {statusLabel(checkpoint.status)}
-                  </span>
-                </div>
-                <div className="text-small text-muted">
-                  {answered}/{total} Fragen beantwortet
-                </div>
-                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                  {CHECKPOINT_STATUS_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleStatusChange(checkpoint.id, opt.value)}
-                      style={{
-                        fontWeight: checkpoint.status === opt.value ? 700 : 400,
-                        outline: checkpoint.status === opt.value ? "2px solid currentColor" : undefined,
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <M3View
+          sections={sections}
+          checkpoints={checkpoints}
+          onStatusChange={handleStatusChange}
+        />
       )}
 
       {/* ── Output: Regelungsdokument (M4/M5) ── */}

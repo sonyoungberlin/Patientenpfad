@@ -368,7 +368,7 @@ const SECTION_C03: ProtocolSection = {
     },
     {
       id: "POT-Q-C03-02",
-      text: "Welche Maßnahme wird Patienten ohne Termin standardmäßig angeboten?",
+      text: "Wie wird bei Patienten ohne Termin standardmäßig verfahren?",
       kind: "SINGLE_SELECT",
       required: true,
       options: [
@@ -532,7 +532,7 @@ const SECTION_C05: ProtocolSection = {
     {
       id: "POT-Q-C05-02",
       text: "Wie häufig wird dieser Prozess überprüft und ggf. angepasst?",
-      kind: "SINGLE_SELECT",
+      kind: "MULTI_SELECT",
       required: true,
       options: [
         {
