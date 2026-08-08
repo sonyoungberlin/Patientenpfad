@@ -9,6 +9,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/">Neuer Fall</Link>
         <Link href="/admin/practices">Admin: Praxen</Link>
         <Link href="/admin/accounts">Admin: Accounts (Legacy)</Link>
+        <Link href="/admin/practice-processes">Admin: Praxisprozesse</Link>
       </nav>
       {children}
     </>
