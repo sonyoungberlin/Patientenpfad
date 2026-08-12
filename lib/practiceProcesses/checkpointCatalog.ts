@@ -425,6 +425,10 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
         id: "patient-telefonisch-kontaktieren-a1",
         text: "Wurde der Patient telefonisch erreicht?",
       },
+      {
+        id: "patient-telefonisch-kontaktieren-a2",
+        text: "Ist das Ergebnis des Telefonats nachvollziehbar festgehalten?",
+      },
     ],
   },
 
@@ -508,6 +512,22 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
       {
         id: "rezept-erstellen-a2",
         text: "Hat der Arzt das Rezept freigegeben?",
+      },
+    ],
+  },
+
+  "ueberweisung-erstellen": {
+    id: "ueberweisung-erstellen",
+    title: "Überweisung erstellen",
+    description: "Für den Patienten wird eine Überweisung ausgestellt.",
+    orientationAnchors: [
+      {
+        id: "ueberweisung-erstellen-a1",
+        text: "Wurde die Überweisung erstellt?",
+      },
+      {
+        id: "ueberweisung-erstellen-a2",
+        text: "Hat der Arzt die Überweisung freigegeben?",
       },
     ],
   },

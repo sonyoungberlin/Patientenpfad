@@ -151,6 +151,65 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "dauermedikation-vorhanden",    group: "Anamnese" },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Patientenanfragen & Kontaktanlässe
+  // ---------------------------------------------------------------------------
+
+  "terminanfrage": {
+    id: "terminanfrage",
+    title: "Terminanfrage",
+    description: "Ein Patient fragt nach einem Termin in der Praxis.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                    group: "Patient" },
+      { checkpointId: "anlass-der-einbestellung-pruefen",   group: "Klärung" },
+      { checkpointId: "termin-vereinbaren",                 group: "Abschluss" },
+    ],
+  },
+
+  "ueberweisungsanfrage": {
+    id: "ueberweisungsanfrage",
+    title: "Überweisungsanfrage",
+    description: "Ein Patient fragt nach einer Überweisung zu einem Facharzt.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                      group: "Patient" },
+      { checkpointId: "anlass-einer-ueberweisung-pruefen",    group: "Klärung" },
+      { checkpointId: "fragestellung-der-ueberweisung-klaeren", group: "Klärung" },
+      { checkpointId: "ueberweisung-erstellen",               group: "Abschluss" },
+    ],
+  },
+
+  "verlaufskontakt": {
+    id: "verlaufskontakt",
+    title: "Verlaufskontakt",
+    description: "Ein Patient meldet sich mit Rückmeldung zum aktuellen Krankheitsverlauf.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",         group: "Patient" },
+      { checkpointId: "aktuellen-verlauf-erfassen", group: "Verlauf" },
+      { checkpointId: "kontrolle-aktuell",       group: "Abschluss" },
+    ],
+  },
+
+  "rueckrufbitte": {
+    id: "rueckrufbitte",
+    title: "Rückrufbitte",
+    description: "Ein Patient bittet darum, von der Praxis zurückgerufen zu werden.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                  group: "Patient" },
+      { checkpointId: "zur-wiedervorlage-vormerken",      group: "Organisation" },
+      { checkpointId: "patient-telefonisch-kontaktieren", group: "Abschluss" },
+    ],
+  },
+
+  "befundanfrage": {
+    id: "befundanfrage",
+    title: "Befundanfrage",
+    description: "Ein Patient fragt nach einem vorliegenden Befund.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",   group: "Patient" },
+      { checkpointId: "patient-informieren", group: "Abschluss" },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
