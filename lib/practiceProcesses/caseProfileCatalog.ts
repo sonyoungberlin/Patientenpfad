@@ -45,28 +45,15 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "termin-vorhanden",             group: "Nachsorge" },
     ],
   },
-  "eingang-laborbefund-intern": {
-    id: "eingang-laborbefund-intern",
-    title: "Eingang Laborbefund (intern)",
+  "laborbefund-eingegangen": {
+    id: "laborbefund-eingegangen",
+    title: "Laborbefund eingegangen",
     description:
-      "Eingang eines Laborbefunds zu einem intern angeordneten Auftrag der eigenen Praxis.",
+      "Eingang eines Laborbefunds: Zuordnung prüfen und dem Arzt zur Bewertung weiterleiten.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",          group: "Patientenstatus" },
-      { checkpointId: "laborbefund-vorhanden",    group: "Befundeingang" },
-      { checkpointId: "termin-vorhanden",         group: "Nachsorge" },
-    ],
-  },
-
-  "eingang-laborbefund-extern": {
-    id: "eingang-laborbefund-extern",
-    title: "Eingang Laborbefund (extern / Facharzt)",
-    description:
-      "Eingang eines Laborbefunds, der von einem externen Arzt oder Facharzt eingesandt wurde.",
-    checkpointRefs: [
-      { checkpointId: "patient-bekannt",          group: "Patientenstatus" },
-      { checkpointId: "laborbefund-vorhanden",    group: "Befundeingang" },
-      { checkpointId: "diagnose-dokumentiert",    group: "Dokumentation" },
-      { checkpointId: "termin-vorhanden",         group: "Nachsorge" },
+      { checkpointId: "patient-bekannt",       group: "Patientenstatus" },
+      { checkpointId: "laborbefund-vorhanden", group: "Befundeingang" },
+      { checkpointId: "dokument-weiterleiten", group: "Abschluss" },
     ],
   },
   "patient-bringt-unterlagen": {
