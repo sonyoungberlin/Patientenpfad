@@ -279,6 +279,23 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "zeitpunkt-der-einbestellung-festlegen", group: "Entscheidung" },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Prävention
+  // ---------------------------------------------------------------------------
+
+  // Klärungsfall: Impfbedarf basiert auf ärztlicher Bewertung des individuellen Profils
+  "impfung-empfehlen": {
+    id: "impfung-empfehlen",
+    title: "Impfung empfehlen",
+    description:
+      "Auf Basis des individuellen Patientenprofils wird ein Impfbedarf medizinisch festgestellt und dem Patienten empfohlen. Der Fall endet mit der Empfehlung — Durchführung und Organisation sind nachgelagerte Prozesse.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",       group: "Patient" },
+      { checkpointId: "impfbedarf-pruefen",    group: "Entscheidung" },
+      { checkpointId: "patient-informieren",   group: "Abschluss" },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------

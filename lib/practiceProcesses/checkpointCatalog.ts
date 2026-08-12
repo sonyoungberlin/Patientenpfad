@@ -662,6 +662,27 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
       },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Prävention
+  // ---------------------------------------------------------------------------
+
+  "impfbedarf-pruefen": {
+    id: "impfbedarf-pruefen",
+    title: "Impfbedarf prüfen",
+    description:
+      "Für den Patienten wird auf Basis des individuellen Profils geprüft, ob ein Impfbedarf besteht.",
+    orientationAnchors: [
+      {
+        id: "impfbedarf-pruefen-a1",
+        text: "Ist für den Patienten ein konkreter Impfbedarf erkennbar?",
+      },
+      {
+        id: "impfbedarf-pruefen-a2",
+        text: "Sind die relevanten Empfehlungen (z. B. STIKO, ggf. reisemedizinische Leitlinien) einbezogen?",
+      },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
