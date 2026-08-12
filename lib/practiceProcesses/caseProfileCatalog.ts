@@ -32,17 +32,15 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     ],
   },
 
-  "eingang-krankenhausbericht": {
-    id: "eingang-krankenhausbericht",
-    title: "Eingang Krankenhausbericht",
+  "krankenhausbrief-eingegangen": {
+    id: "krankenhausbrief-eingegangen",
+    title: "Krankenhausbrief eingegangen",
     description:
-      "Eingang und vollständige Verarbeitung eines Entlass- oder Arztbriefs nach stationärem Aufenthalt.",
+      "Eingang eines Entlass- oder Arztbriefs nach stationärem Aufenthalt: Vollständigkeit prüfen und dem Arzt zur Einordnung weiterleiten.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",              group: "Patientenstatus" },
-      { checkpointId: "krankenhausbrief-vorhanden",   group: "Briefeingang" },
-      { checkpointId: "diagnose-dokumentiert",        group: "Dokumentation" },
-      { checkpointId: "dauermedikation-vorhanden",    group: "Dokumentation" },
-      { checkpointId: "termin-vorhanden",             group: "Nachsorge" },
+      { checkpointId: "patient-bekannt",            group: "Patientenstatus" },
+      { checkpointId: "krankenhausbrief-vorhanden", group: "Befundeingang" },
+      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
     ],
   },
   "laborbefund-eingegangen": {
@@ -68,17 +66,76 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
     ],
   },
+
+  // Klärungsfall: Facharztbericht hausärztlich einordnen und Patienten informieren
+  "facharztbericht-bearbeiten": {
+    id: "facharztbericht-bearbeiten",
+    title: "Facharztbericht bearbeiten",
+    description:
+      "Ein eingegangener Facharztbericht wird haustärztlich eingeordnet und der Patient über das Ergebnis informiert.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",           group: "Patientenstatus" },
+      { checkpointId: "facharztbericht-einordnen", group: "Medizinische Einordnung" },
+      { checkpointId: "patient-informieren",       group: "Abschluss" },
+    ],
+  },
+
+  // Ausnahmefälle: Organisatorische Dokumentenprobleme
+  "dokument-unklar": {
+    id: "dokument-unklar",
+    title: "Dokument unklar",
+    description:
+      "Ein eingehender Vorgang kann nicht eindeutig klassifiziert oder zugeordnet werden — Dokumenttyp, Absender oder Patientenbezug sind unklar.",
+    checkpointRefs: [
+      { checkpointId: "dokument-kennzeichnen",      group: "Identifikation" },
+      { checkpointId: "patientenzuordnung-pruefen", group: "Identifikation" },
+      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
+    ],
+  },
+
+  "dokument-nicht-zuordenbar": {
+    id: "dokument-nicht-zuordenbar",
+    title: "Dokument nicht zuordenbar",
+    description:
+      "Ein Dokument liegt vor, kann aber keinem Patienten in der Praxis zugeordnet werden.",
+    checkpointRefs: [
+      { checkpointId: "patientenzuordnung-pruefen",  group: "Klärung" },
+      { checkpointId: "zur-wiedervorlage-vormerken", group: "Abschluss" },
+    ],
+  },
+
+  "dokument-fehlzugeordnet": {
+    id: "dokument-fehlzugeordnet",
+    title: "Dokument fehlzugeordnet",
+    description:
+      "Ein Dokument ist einem falschen Patienten zugeordnet. Der korrekte Patient ist identifizierbar.",
+    checkpointRefs: [
+      { checkpointId: "patientenzuordnung-pruefen", group: "Klärung" },
+      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
+    ],
+  },
+
+  "eingang-mit-maengeln": {
+    id: "eingang-mit-maengeln",
+    title: "Eingang mit Mängeln",
+    description:
+      "Ein eingegangenes Dokument ist mangelhaft — unvollständig, unleserlich, abgeschnitten oder fehlerhaft gescannt.",
+    checkpointRefs: [
+      { checkpointId: "dokument-kennzeichnen",       group: "Mängelerfassung" },
+      { checkpointId: "unterlagen-anfordern",        group: "Nachforderung" },
+      { checkpointId: "zur-wiedervorlage-vormerken", group: "Abschluss" },
+    ],
+  },
+
   "patient-bringt-unterlagen": {
     id: "patient-bringt-unterlagen",
     title: "Patient bringt Unterlagen mit",
     description:
-      "Patient übergibt der Praxis Unterlagen, die in die Patientenakte aufzunehmen und zu verarbeiten sind.",
+      "Patient übergibt der Praxis Unterlagen, die in die Akte aufzunehmen und weiterzuleiten sind.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",           group: "Patientenstatus" },
-      { checkpointId: "unterlagen-vorhanden",      group: "Eingang" },
-      { checkpointId: "diagnose-dokumentiert",     group: "Dokumentation" },
-      { checkpointId: "dauermedikation-vorhanden", group: "Dokumentation" },
-      { checkpointId: "termin-vorhanden",          group: "Nachsorge" },
+      { checkpointId: "patient-bekannt",       group: "Patientenstatus" },
+      { checkpointId: "unterlagen-vorhanden",  group: "Eingang" },
+      { checkpointId: "dokument-weiterleiten", group: "Abschluss" },
     ],
   },
   "neupatient": {
