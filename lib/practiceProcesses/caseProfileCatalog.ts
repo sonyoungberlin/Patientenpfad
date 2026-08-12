@@ -247,6 +247,38 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "zur-wiedervorlage-vormerken",        group: "Abschluss" },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Chronische Erkrankungen & Verlauf
+  // ---------------------------------------------------------------------------
+
+  "patient-erinnern": {
+    id: "patient-erinnern",
+    title: "Patient erinnern",
+    // Recall: Terminverantwortung liegt beim Patienten — kein Nachfassen, keine Eskalation
+    description:
+      "Die Praxis erinnert den Patienten an eine fällige Kontrolle oder Vorsorgemaßnahme. Die Terminvereinbarung erfolgt anschließend eigenverantwortlich durch den Patienten. Die Praxis verfolgt den Vorgang nicht weiter.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",     group: "Patient" },
+      { checkpointId: "kontrolle-aktuell",   group: "Prüfung" },
+      { checkpointId: "patient-informieren", group: "Abschluss" },
+    ],
+  },
+
+  "verschlechterung-gemeldet": {
+    id: "verschlechterung-gemeldet",
+    title: "Verschlechterung gemeldet",
+    // Endet mit der Einbestellungsentscheidung — Kontaktaufnahme folgt als eigener Prozess
+    description:
+      "Ein Patient meldet eine konkrete Zustandsverschlechterung. Verlauf wird erfasst, Dringlichkeit eingeschätzt und die Einbestellungsentscheidung getroffen. Der Fall endet mit dem festgelegten Zeitpunkt — die aktive Kontaktaufnahme und Terminvereinbarung gehören in den nachgelagerten Prozess.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                       group: "Patient" },
+      { checkpointId: "aktuellen-verlauf-erfassen",            group: "Verlauf" },
+      { checkpointId: "dringlichkeitsbedarf-erkennen",         group: "Einschätzung" },
+      { checkpointId: "anlass-der-einbestellung-pruefen",      group: "Entscheidung" },
+      { checkpointId: "zeitpunkt-der-einbestellung-festlegen", group: "Entscheidung" },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
