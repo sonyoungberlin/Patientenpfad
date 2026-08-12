@@ -210,6 +210,43 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "patient-informieren", group: "Abschluss" },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Befundkommunikation & Einbestellung
+  // ---------------------------------------------------------------------------
+
+  "patient-einbestellen": {
+    id: "patient-einbestellen",
+    title: "Patient einbestellen",
+    description: "Die Praxis entscheidet, einen Patienten aktiv einzubestellen. Die Kontaktaufnahme folgt als nachgelagerter Prozess.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                   group: "Patient" },
+      { checkpointId: "anlass-der-einbestellung-pruefen",  group: "Entscheidung" },
+      { checkpointId: "zeitpunkt-der-einbestellung-festlegen", group: "Entscheidung" },
+    ],
+  },
+
+  "laborbefund-mitteilen": {
+    id: "laborbefund-mitteilen",
+    title: "Laborbefund mitteilen",
+    description: "Der Arzt hat den Laborbefund ausgewertet. Das unauffällige Ergebnis wird dem Patienten mitgeteilt.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",               group: "Patient" },
+      { checkpointId: "laborbefund-fachlich-bewerten", group: "Auswertung" },
+      { checkpointId: "patient-informieren",           group: "Abschluss" },
+    ],
+  },
+
+  "patient-nicht-erreichbar": {
+    id: "patient-nicht-erreichbar",
+    title: "Patient nicht erreichbar",
+    description: "Alle Kontaktversuche sind gescheitert. Der offene Vorgang wird zur Wiedervorlage vorgemerkt.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                    group: "Patient" },
+      { checkpointId: "erneuten-kontaktversuch-durchfuehren", group: "Kontakt" },
+      { checkpointId: "zur-wiedervorlage-vormerken",        group: "Abschluss" },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
