@@ -9,13 +9,26 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     id: "rezeptanfrage-ohne-arzt",
     title: "Rezeptanfrage ohne Arzt",
     description:
-      "Ausstellung einer Folgeverordnung ohne persönliche Arztkonsultation.",
+      "Ausstellung einer Folgeverordnung für eine bekannte Dauermedikation ohne persönliche Arztkonsultation.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",           group: "Patientenstatus" },
+      { checkpointId: "dauermedikation-vorhanden", group: "Medizinische Prüfung" },
+      { checkpointId: "kontrolle-aktuell",         group: "Medizinische Prüfung" },
+      { checkpointId: "rezept-erstellen",          group: "Abschluss" },
+    ],
+  },
+
+  // Klärungsfall: Medikament ist neu, geändert oder extern empfohlen
+  "medikamentenaenderung": {
+    id: "medikamentenaenderung",
+    title: "Medikamentenänderung",
+    description:
+      "Anfrage für ein neues, geändertes oder extern empfohlenes Medikament, das ärztliche Prüfung erfordert.",
     checkpointRefs: [
       { checkpointId: "patient-bekannt",                group: "Patientenstatus" },
-      { checkpointId: "versicherungsnachweis-vorhanden", group: "Patientenstatus" },
-      { checkpointId: "dauermedikation-vorhanden",       group: "Medizinische Voraussetzungen" },
-      { checkpointId: "diagnose-dokumentiert",           group: "Medizinische Voraussetzungen" },
-      { checkpointId: "kontrolle-aktuell",               group: "Medizinische Voraussetzungen" },
+      { checkpointId: "angefragtes-medikament-pruefen", group: "Medizinische Prüfung" },
+      { checkpointId: "dauermedikation-abgleichen",     group: "Medizinische Prüfung" },
+      { checkpointId: "rezept-erstellen",               group: "Abschluss" },
     ],
   },
 
