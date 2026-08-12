@@ -167,6 +167,23 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     ],
   },
 
+  "facharztbericht-vorhanden": {
+    id: "facharztbericht-vorhanden",
+    title: "Facharztbericht vorhanden",
+    description:
+      "Ein Facharztbericht für den Patienten liegt vollständig vor.",
+    orientationAnchors: [
+      {
+        id: "facharztbericht-vorhanden-a1",
+        text: "Liegt ein vollständiger und lesbarer Facharztbericht vor?",
+      },
+      {
+        id: "facharztbericht-vorhanden-a2",
+        text: "Ist der Bericht dem richtigen Patienten zugeordnet?",
+      },
+    ],
+  },
+
   "termin-vorhanden": {
     id: "termin-vorhanden",
     title: "Termin vorhanden",

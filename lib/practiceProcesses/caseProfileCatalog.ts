@@ -56,6 +56,18 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "dokument-weiterleiten", group: "Abschluss" },
     ],
   },
+
+  "facharztbericht-eingegangen": {
+    id: "facharztbericht-eingegangen",
+    title: "Facharztbericht eingegangen",
+    description:
+      "Eingang eines Facharztberichts: Vollständigkeit prüfen und dem Arzt zur Einordnung weiterleiten.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",            group: "Patientenstatus" },
+      { checkpointId: "facharztbericht-vorhanden",  group: "Befundeingang" },
+      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
+    ],
+  },
   "patient-bringt-unterlagen": {
     id: "patient-bringt-unterlagen",
     title: "Patient bringt Unterlagen mit",
