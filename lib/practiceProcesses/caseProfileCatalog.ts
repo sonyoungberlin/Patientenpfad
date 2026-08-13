@@ -337,6 +337,45 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "zur-wiedervorlage-vormerken",   group: "Abschluss" },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Akteneinsicht & Drittanfragen
+  // ---------------------------------------------------------------------------
+
+  "akteneinsicht": {
+    id: "akteneinsicht",
+    title: "Akteneinsicht",
+    description:
+      "Der Patient fordert Einsicht in die vollständige eigene Akte oder Kopien davon an. Der Fall betrifft ausschließlich die Herausgabe der vollständigen Akte — nicht einzelne Dokumente für externe Zwecke.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                      group: "Patientenstatus" },
+      { checkpointId: "dokument-dem-patienten-bereitstellen", group: "Abschluss" },
+    ],
+  },
+
+  // Ausnahmefall: Anfrage endet immer mit Ablehnung — kein Abschluss-Checkpoint nötig
+  "angehoerige-ohne-berechtigung": {
+    id: "angehoerige-ohne-berechtigung",
+    title: "Angehörige ohne Berechtigung",
+    description:
+      "Eine dritte Person fragt nach einem Patienten, ohne eine ausreichende Berechtigung nachweisen zu können. Die Praxis prüft das Vorliegen einer Berechtigung und lehnt die Anfrage ab. Der Fall endet mit der Ablehnung.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",        group: "Patientenstatus" },
+      { checkpointId: "berechtigung-pruefen",   group: "Abschluss" },
+    ],
+  },
+
+  "unzustellbare-post": {
+    id: "unzustellbare-post",
+    title: "Unzustellbare Post",
+    description:
+      "Ausgehende Post der Praxis kommt als unzustellbar zurück. Die Praxis versucht einen geeigneten Kommunikationsweg zum Patienten herzustellen und vermerkt den Vorgang zur Nachverfolgung.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                  group: "Patientenstatus" },
+      { checkpointId: "patient-telefonisch-kontaktieren", group: "Kontakt" },
+      { checkpointId: "zur-wiedervorlage-vormerken",      group: "Abschluss" },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------

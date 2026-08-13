@@ -683,6 +683,27 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
       },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Berechtigung & Vertretung
+  // ---------------------------------------------------------------------------
+
+  "berechtigung-pruefen": {
+    id: "berechtigung-pruefen",
+    title: "Berechtigung prüfen",
+    description:
+      "Es wird geprüft, ob die handelnde Person berechtigt ist, im Namen des Patienten zu handeln oder Informationen über ihn zu erhalten.",
+    orientationAnchors: [
+      {
+        id: "berechtigung-pruefen-a1",
+        text: "Handelt die Person selbst oder im Namen eines Patienten?",
+      },
+      {
+        id: "berechtigung-pruefen-a2",
+        text: "Liegt für den konkreten Vorgang eine ausreichende Berechtigung oder gesetzliche Grundlage vor?",
+      },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
