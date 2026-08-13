@@ -296,6 +296,47 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       { checkpointId: "patient-informieren",   group: "Abschluss" },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // Administrative Praxisfälle
+  // ---------------------------------------------------------------------------
+
+  "unterlagen-aushaendigen": {
+    id: "unterlagen-aushaendigen",
+    title: "Unterlagen aushändigen",
+    description:
+      "Der Patient fordert eigene Unterlagen oder Dokumente an. Der Fall beschreibt ausschließlich den eigenständigen Herausgabevorgang, nicht die Dokumenterstellung innerhalb anderer Praxisfälle.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",                      group: "Patientenstatus" },
+      { checkpointId: "dokument-dem-patienten-bereitstellen", group: "Abschluss" },
+    ],
+  },
+
+  // Ausnahmefall: Patient war aufgefordert, Unterlagen mitzubringen — erscheint ohne sie
+  "patient-ohne-unterlagen": {
+    id: "patient-ohne-unterlagen",
+    title: "Patient ohne Unterlagen",
+    description:
+      "Der Patient erscheint zu einem Kontakt, obwohl er aufgefordert war, bestimmte Unterlagen mitzubringen. Die fehlenden Dokumente werden nachgefordert und der Vorgang zur Wiedervorlage vorgemerkt.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",             group: "Patientenstatus" },
+      { checkpointId: "unterlagen-anfordern",        group: "Nachforderung" },
+      { checkpointId: "zur-wiedervorlage-vormerken", group: "Abschluss" },
+    ],
+  },
+
+  // Ausnahmefall: Auslöser ist der Arbeitsauftrag der Praxis — unabhängig vom ursprünglichen Besuchsgrund
+  "versicherungsnachweis-fehlt": {
+    id: "versicherungsnachweis-fehlt",
+    title: "Versicherungsnachweis fehlt",
+    description:
+      "Bei einem Patientenkontakt fehlt der aktuelle Versicherungsnachweis. Der fehlende Nachweis erzeugt einen eigenständigen administrativen Arbeitsauftrag: dokumentieren und zur Wiedervorlage vormerken.",
+    checkpointRefs: [
+      { checkpointId: "patient-bekannt",               group: "Patientenstatus" },
+      { checkpointId: "versicherungsnachweis-vorhanden", group: "Prüfung" },
+      { checkpointId: "zur-wiedervorlage-vormerken",   group: "Abschluss" },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
