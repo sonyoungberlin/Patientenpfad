@@ -27,7 +27,7 @@ function buildM4Text(snapshot: PracticeWorkflowSnapshot): string {
     lines.push("Pflicht:");
     for (const cp of pflicht) {
       lines.push(`- ${cp.checkpointTitle}`);
-      if (cp.praxisprozess) lines.push(`  ${cp.praxisprozess}`);
+      if (cp.umsetzung) lines.push(`  ${cp.umsetzung}`);
     }
   }
 
@@ -36,7 +36,7 @@ function buildM4Text(snapshot: PracticeWorkflowSnapshot): string {
     lines.push("Optional:");
     for (const cp of optional) {
       lines.push(`- ${cp.checkpointTitle}`);
-      if (cp.praxisprozess) lines.push(`  ${cp.praxisprozess}`);
+      if (cp.umsetzung) lines.push(`  ${cp.umsetzung}`);
     }
   }
 

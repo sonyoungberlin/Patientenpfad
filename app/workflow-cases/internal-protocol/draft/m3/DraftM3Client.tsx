@@ -12,7 +12,7 @@ import type {
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import {
   setCheckpointDecision,
-  setPraxisprozess,
+  setUmsetzung,
   DRAFT_SNAPSHOT_KEY,
   DRAFT_SOURCE_ID_KEY,
   DRAFT_SOURCE_TITLE_KEY,
@@ -73,11 +73,11 @@ export default function DraftM3Client() {
     [],
   );
 
-  const handlePraxisprozess = useCallback(
+  const handleUmsetzung = useCallback(
     (checkpointId: string, value: string) => {
       setSnapshot((prev) => {
         if (!prev) return prev;
-        const next = setPraxisprozess(prev, checkpointId, value);
+        const next = setUmsetzung(prev, checkpointId, value);
         sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(next));
         return next;
       });
@@ -217,8 +217,8 @@ export default function DraftM3Client() {
 
           {(cp.decision === "PFLICHT" || cp.decision === "OPTIONAL") && (
             <textarea
-              value={cp.praxisprozess ?? ""}
-              onChange={(e) => handlePraxisprozess(cp.checkpointId, e.target.value)}
+              value={cp.umsetzung ?? ""}
+              onChange={(e) => handleUmsetzung(cp.checkpointId, e.target.value)}
               placeholder="Wie setzt unsere Praxis diesen Checkpoint konkret um?"
               rows={2}
               style={{

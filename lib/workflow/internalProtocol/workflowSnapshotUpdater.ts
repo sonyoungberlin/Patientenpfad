@@ -129,8 +129,8 @@ export function setCheckpointDecision(
   };
 }
 
-/** Setzt den praxisindividuellen Prozess für einen Checkpoint; leerer String entfernt das Feld. */
-export function setPraxisprozess(
+/** Setzt die Umsetzungsbeschreibung für einen Checkpoint; leerer String entfernt das Feld. */
+export function setUmsetzung(
   snapshot: PracticeWorkflowSnapshot,
   checkpointId: string,
   value: string,
@@ -139,7 +139,7 @@ export function setPraxisprozess(
     ...snapshot,
     checkpoints: snapshot.checkpoints.map((cp) =>
       cp.checkpointId === checkpointId
-        ? { ...cp, praxisprozess: value.trim() || undefined }
+        ? { ...cp, umsetzung: value.trim() || undefined }
         : cp,
     ),
   };

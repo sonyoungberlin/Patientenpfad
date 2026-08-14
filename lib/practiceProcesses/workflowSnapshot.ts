@@ -8,8 +8,8 @@ export interface PracticeWorkflowCheckpointState {
   checkpointTitle: string;
   orientationAnswers: Record<string, OrientationAnswer>;
   decision?: CheckpointDecision;
-  /** Kurze praxisindividuelle Festlegung: wie setzt diese Praxis den Checkpoint konkret um. */
-  praxisprozess?: string;
+  /** Kurze praxisindividuelle Beschreibung, wie diese Praxis den Checkpoint konkret umsetzt. */
+  umsetzung?: string;
 }
 
 export interface PracticeWorkflowSnapshot {
