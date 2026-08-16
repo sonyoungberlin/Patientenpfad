@@ -54,6 +54,7 @@ type AccountInfo = {
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
   office_cases_enabled: boolean;
+  arbeitsprozesse_enabled: boolean;
   current_practice?: { id: string } | null;
   memberships?: Array<{ practice_id: string; role: "OWNER" | "ADMIN" | "USER" | "INBOX_ONLY" }>;
 };
