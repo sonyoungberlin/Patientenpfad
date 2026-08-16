@@ -9,6 +9,7 @@ import {
   isProtocolWorkflowCheckpoint,
   type ProtocolWorkflowCheckpoint,
 } from "@/lib/workflow/internalProtocol/workflowAdapter";
+import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 export async function PATCH(
   req: NextRequest,
@@ -36,17 +37,54 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: "Sitzung nicht gefunden." }, { status: 404 });
   }
 
-  if (!isInternalProtocolWorkflowSnapshot(session.process_snapshot)) {
-    return NextResponse.json({ ok: false, error: "Keine interne Protokoll-Sitzung." }, { status: 400 });
-  }
-
-  let body: { checkpoints?: unknown };
+  let body: { checkpoints?: unknown; snapshot?: unknown; title?: unknown };
   try {
-    body = (await req.json()) as { checkpoints?: unknown };
+    body = (await req.json()) as { checkpoints?: unknown; snapshot?: unknown; title?: unknown };
   } catch {
     return NextResponse.json({ ok: false, error: "Ungültiger JSON-Body." }, { status: 400 });
   }
 
+  // --- Pfad P: Neuer PracticeWorkflow – voller Snapshot-Überschrieb ---
+  if (isPracticeWorkflowSnapshot(body.snapshot)) {
+    if (typeof body.title !== "string" || !body.title.trim()) {
+      return NextResponse.json({ ok: false, error: "Titel fehlt." }, { status: 400 });
+    }
+    await prisma.workflowSession.update({
+      where: { id },
+      data: {
+        title: body.title.trim(),
+        process_snapshot: body.snapshot as unknown as Prisma.InputJsonValue,
+        internal_saved_at: new Date(),
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  // --- Pfad I: Bestehender InternalProtocol ---
+  if (!isInternalProtocolWorkflowSnapshot(session.process_snapshot)) {
+    return NextResponse.json({ ok: false, error: "Keine interne Protokoll-Sitzung." }, { status: 400 });
+  }
+
+  // Pfad I-A: Voller Snapshot-Überschrieb (aus Draft-Save-Flow)
+  if (body.snapshot !== undefined) {
+    if (!isInternalProtocolWorkflowSnapshot(body.snapshot)) {
+      return NextResponse.json({ ok: false, error: "Ungültiger Snapshot." }, { status: 400 });
+    }
+    if (typeof body.title !== "string" || !body.title.trim()) {
+      return NextResponse.json({ ok: false, error: "Titel fehlt." }, { status: 400 });
+    }
+    await prisma.workflowSession.update({
+      where: { id },
+      data: {
+        title: body.title.trim(),
+        process_snapshot: body.snapshot as unknown as Prisma.InputJsonValue,
+        internal_saved_at: new Date(),
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Pfad I-B: Checkpoint-Merge (bestehende Nutzung durch die alten Editoren)
   if (!Array.isArray(body.checkpoints)) {
     return NextResponse.json({ ok: false, error: "checkpoints fehlt oder ist kein Array." }, { status: 400 });
   }
@@ -72,12 +110,33 @@ export async function PATCH(
     return update !== undefined ? { ...existing, ...update } : existing;
   });
 
+  // inheritedQuestionIds: Frage-IDs entfernen, deren Antwort sich geändert hat
+  const currentIds = session.process_snapshot.inheritedQuestionIds;
+  let updatedInheritedQuestionIds: string[] | undefined = currentIds
+    ? [...currentIds]
+    : undefined;
+  if (updatedInheritedQuestionIds && updatedInheritedQuestionIds.length > 0) {
+    for (const incomingCp of validCheckpoints) {
+      const oldCp = session.process_snapshot.checkpoints.find((c) => c.id === incomingCp.id);
+      if (!oldCp) continue;
+      for (const [qId, newAnswer] of Object.entries(incomingCp.answers)) {
+        const oldAnswer = oldCp.answers[qId];
+        if (JSON.stringify(oldAnswer) !== JSON.stringify(newAnswer)) {
+          updatedInheritedQuestionIds = updatedInheritedQuestionIds.filter((iId) => iId !== qId);
+        }
+      }
+    }
+  }
+
   await prisma.workflowSession.update({
     where: { id },
     data: {
       process_snapshot: {
         ...(session.process_snapshot as Record<string, unknown>),
         checkpoints: updatedCheckpoints,
+        ...(updatedInheritedQuestionIds !== undefined
+          ? { inheritedQuestionIds: updatedInheritedQuestionIds }
+          : {}),
       } as unknown as Prisma.InputJsonValue,
       internal_saved_at: new Date(),
     },

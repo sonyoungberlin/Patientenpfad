@@ -41,6 +41,7 @@ export type AppShellAccount = {
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
   office_cases_enabled: boolean;
+  arbeitsprozesse_enabled: boolean;
   // Optional: aktiver Praxis-Kontext + Mitgliedschaften des Accounts.
   // Werden vom `/api/auth/me`-Endpoint mitgeliefert (siehe lib/auth.ts
   // `SessionAccount`) und hier benötigt, um Praxis-Nav-Items anhand der
@@ -138,6 +139,7 @@ export default function AppShell({
   const isCommunication =
     inSection("/inquiries") || inSection("/questionnaires");
   const isOfficeCases = inSection("/office-cases");
+  const isWorkflowCases = inSection("/workflow-cases");
   const isPractice = inSection("/practice");
   const isWebsiteForms = inSection("/website-forms");
   const isDigitalRequests = inSection("/digital-requests");
@@ -184,6 +186,11 @@ export default function AppShell({
     );
   } else if (isOfficeCases && (account.office_cases_enabled || account.is_admin)) {
     sectionItems.push({ label: "Officefälle", href: "/office-cases" });
+  } else if (isWorkflowCases && (account.arbeitsprozesse_enabled || account.is_admin)) {
+    sectionItems.push(
+      { label: "Arbeitsprozesse", href: "/workflow-cases" },
+      { label: "Neue Sitzung", href: "/workflow-cases/internal-protocol/new" },
+    );
   } else if (isCommunication) {
     if (canUseInquiries) {
       sectionItems.push(

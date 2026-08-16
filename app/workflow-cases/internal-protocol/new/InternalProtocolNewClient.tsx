@@ -1,65 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { listCaseProfiles, getCheckpoint } from "@/lib/practiceProcesses";
+import type { PracticeCaseProfile } from "@/lib/practiceProcesses";
+import { buildInitialPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import {
+  DRAFT_SNAPSHOT_KEY,
+  DRAFT_SOURCE_ID_KEY,
+  DRAFT_SOURCE_TITLE_KEY,
+} from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 
 export default function InternalProtocolNewClient() {
   const router = useRouter();
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const profiles = useMemo(() => listCaseProfiles(), []);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  async function handleCreate() {
-    setCreating(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/workflow-cases/internal-protocol/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topicId: "patienten-ohne-termin" }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !(data as { ok?: boolean }).ok) {
-        setError((data as { error?: string }).error ?? "Erstellen fehlgeschlagen.");
-        return;
-      }
-      const sessionId = (data as { id?: string }).id;
-      if (!sessionId) {
-        setError("Keine Session-ID erhalten.");
-        return;
-      }
-      router.push(`/workflow-cases/${sessionId}/protocol`);
-    } catch {
-      setError("Netzwerkfehler beim Erstellen der Sitzung.");
-    } finally {
-      setCreating(false);
-    }
+  const filtered = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return profiles;
+    return profiles.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q),
+    );
+  }, [profiles, searchTerm]);
+
+  function handleStart(profile: PracticeCaseProfile) {
+    const snapshot = buildInitialPracticeWorkflowSnapshot(profile, getCheckpoint);
+    sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(snapshot));
+    sessionStorage.removeItem(DRAFT_SOURCE_ID_KEY);
+    sessionStorage.removeItem(DRAFT_SOURCE_TITLE_KEY);
+    router.push("/workflow-cases/internal-protocol/draft/m2");
   }
 
   return (
-    <article
-      className="card"
-      style={{ display: "grid", gap: "0.75rem", maxWidth: "36rem" }}
-    >
-      <h2 style={{ margin: 0 }}>Patienten ohne Termin</h2>
-      <p className="text-muted" style={{ margin: 0 }}>
-        Praxisinternes Regelungsdokument erstellen: Wie geht die Praxis strukturiert
-        mit Patienten ohne Termin um? Zuständigkeiten, Standardabläufe, Ausnahmen
-        und Dokumentation gemeinsam festlegen.
-      </p>
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-        <button
-          type="button"
-          onClick={() => void handleCreate()}
-          disabled={creating}
-        >
-          {creating ? "Sitzung wird erstellt…" : "Sitzung starten"}
-        </button>
-      </div>
-      {error && (
-        <p className="text-muted" style={{ margin: 0, color: "#c00" }}>
-          {error}
+    <div style={{ display: "grid", gap: "1.25rem" }}>
+      <div>
+        <h2 style={{ margin: 0 }}>Welchen Praxisfall möchten Sie bearbeiten?</h2>
+        <p className="text-small text-muted" style={{ margin: "0.35rem 0 0" }}>
+          Wählen Sie den Ablauf, für den Sie eine Prozessdokumentation erstellen möchten.
         </p>
+      </div>
+
+      <input
+        type="search"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Praxisfall suchen …"
+        aria-label="Praxisfall suchen"
+        style={{ width: "min(100%, 20rem)", maxWidth: "100%" }}
+      />
+
+      {filtered.length === 0 ? (
+        <p className="text-muted" style={{ margin: 0 }}>
+          Keine passenden Praxisfälle gefunden.
+        </p>
+      ) : (
+        <div style={{ display: "grid", gap: "0.75rem" }}>
+          {filtered.map((profile) => (
+            <button
+              key={profile.id}
+              type="button"
+              className="card"
+              onClick={() => handleStart(profile)}
+              style={{
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                cursor: "pointer",
+                whiteSpace: "normal",
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>{profile.title}</div>
+              {profile.description && (
+                <div className="text-small text-muted" style={{ marginTop: "0.2rem" }}>
+                  {profile.description}
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
       )}
-    </article>
+    </div>
   );
 }
+

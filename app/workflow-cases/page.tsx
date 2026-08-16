@@ -6,7 +6,14 @@ import { prisma } from "@/lib/prisma";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
 import { getWorkflowTopic, isWorkflowTopicId } from "@/lib/workflow/processCatalog";
 import { isValidProcessSnapshot } from "@/lib/workflow/types";
+import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import { isInternalProtocolWorkflowSnapshot } from "@/lib/workflow/internalProtocol/workflowAdapter";
+import {
+  deriveSessionStatus,
+  sessionStatusLabel,
+  deriveInternalProtocolSessionStatus,
+  internalProtocolSessionStatusLabel,
+} from "@/lib/workflow/internalProtocol/sessionStatus";
 import WorkflowCasesListClient from "./WorkflowCasesListClient";
 
 export default async function WorkflowCasesPage() {
@@ -27,23 +34,45 @@ export default async function WorkflowCasesPage() {
     select: {
       id: true,
       createdAt: true,
+      updatedAt: true,
       title: true,
       process_snapshot: true,
     },
   });
 
   const items = sessions.map((s) => {
-    // Internes Protokoll
-    if (isInternalProtocolWorkflowSnapshot(s.process_snapshot)) {
+    // Neuer Practice-Workflow
+    if (isPracticeWorkflowSnapshot(s.process_snapshot)) {
+      const status = deriveSessionStatus(s.process_snapshot);
       return {
         id: s.id,
         createdAt: s.createdAt.toISOString().slice(0, 10),
+        updatedAt: s.updatedAt.toISOString().slice(0, 10),
+        title: s.title,
+        topicTitle: s.process_snapshot.caseProfileTitle,
+        role: null,
+        pointCount: s.process_snapshot.checkpoints.length,
+        href: null,
+        kind: "practice-workflow" as const,
+        sessionStatus: sessionStatusLabel(status),
+        snapshotJson: JSON.stringify(s.process_snapshot),
+      };
+    }
+    // Älteres InternalProtocol (explizite Typerkennung)
+    if (isInternalProtocolWorkflowSnapshot(s.process_snapshot)) {
+      const ipStatus = deriveInternalProtocolSessionStatus(s.process_snapshot);
+      return {
+        id: s.id,
+        createdAt: s.createdAt.toISOString().slice(0, 10),
+        updatedAt: s.updatedAt.toISOString().slice(0, 10),
         title: s.title,
         topicTitle: "Patienten ohne Termin",
         role: null,
         pointCount: s.process_snapshot.checkpoints.length,
-        href: `/workflow-cases/${s.id}/protocol`,
+        href: `/workflow-cases/${s.id}/protocol` as string | null,
         kind: "internal-protocol" as const,
+        sessionStatus: internalProtocolSessionStatusLabel(ipStatus),
+        snapshotJson: JSON.stringify(s.process_snapshot),
       };
     }
     // Klinischer Workflow
@@ -57,11 +86,12 @@ export default async function WorkflowCasesPage() {
     return {
       id: s.id,
       createdAt: s.createdAt.toISOString().slice(0, 10),
+      updatedAt: s.updatedAt.toISOString().slice(0, 10),
       title: s.title,
       topicTitle,
       role,
       pointCount,
-      href: `/workflow-cases/${s.id}`,
+      href: `/workflow-cases/${s.id}` as string | null,
       kind: "clinical" as const,
     };
   });
@@ -74,7 +104,7 @@ export default async function WorkflowCasesPage() {
           Musterprozesse strukturiert dokumentieren.
         </p>
         <div style={{ marginTop: "0.75rem" }}>
-          <Link href="/workflow-cases/new">
+          <Link href="/workflow-cases/internal-protocol/new">
             <button type="button">Neue Sitzung starten</button>
           </Link>
         </div>
@@ -88,3 +118,4 @@ export default async function WorkflowCasesPage() {
     </main>
   );
 }
+

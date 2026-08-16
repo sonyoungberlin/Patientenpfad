@@ -8,7 +8,6 @@ import {
 import type {
   PracticeWorkflowSnapshot,
   CheckpointDecision,
-  OrientationAnswer,
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import {
   setCheckpointDecision,
@@ -26,19 +25,6 @@ const DECISION_OPTIONS: { value: CheckpointDecision; label: string }[] = [
   { value: "OPTIONAL", label: "Optional" },
   { value: "NICHT_RELEVANT", label: "Nicht relevant" },
 ];
-
-// Symbol + Label analog Patientenpfad-Prefill-Pattern
-function prefillAnswerText(answer: OrientationAnswer): string {
-  if (answer === "YES") return "✓ ja";
-  if (answer === "NO") return "✗ nein";
-  if (answer === "UNCLEAR") return "? unklar";
-  return "–";
-}
-function prefillAnswerColor(answer: OrientationAnswer): string {
-  if (answer === "YES") return "#1a6";
-  if (answer === "UNCLEAR") return "#c88";
-  return "var(--muted-foreground)";
-}
 
 export default function DraftM3Client() {
   const router = useRouter();
@@ -158,38 +144,27 @@ export default function DraftM3Client() {
             </p>
           )}
 
-          {/* Prefill: Orientierungsfragen mit Antworten, Fragetext — Symbol Label */}
+          {/* Ausgewählte Anchors aus M2 als Kontext */}
           {(() => {
             const cpDef = cpDefinitions[cp.checkpointId];
-            const anchors = cpDef?.orientationAnchors ?? [];
-            if (anchors.length === 0) return null;
+            const selectedIds = cp.selectedAnchorIds ?? [];
+            const selected = (cpDef?.orientationAnchors ?? []).filter((a) =>
+              selectedIds.includes(a.id),
+            );
+            if (selected.length === 0) return null;
             return (
-              <details open>
-                <summary
-                  className="text-small text-muted"
-                  style={{ cursor: "pointer", marginBottom: "0.35rem" }}
-                >
-                  Orientierung / Vorabfragen
-                </summary>
-                <div style={{ display: "grid", gap: "0.2rem", paddingLeft: "0.5rem" }}>
-                  {anchors.map((anchor) => {
-                    const answer = cp.orientationAnswers[anchor.id] ?? null;
-                    return (
-                      <div
-                        key={anchor.id}
-                        className="text-small"
-                        style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap", alignItems: "baseline" }}
-                      >
-                        <span>{anchor.text}</span>
-                        <span className="text-muted">—</span>
-                        <span style={{ color: prefillAnswerColor(answer), flexShrink: 0 }}>
-                          {prefillAnswerText(answer)}
-                        </span>
-                      </div>
-                    );
-                  })}
+              <div>
+                <div className="text-small text-muted" style={{ marginBottom: "0.35rem" }}>
+                  Für den Standard ausgewählt:
                 </div>
-              </details>
+                <div style={{ display: "grid", gap: "0.2rem", paddingLeft: "0.5rem" }}>
+                  {selected.map((anchor) => (
+                    <div key={anchor.id} className="text-small">
+                      – {anchor.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
             );
           })()}
 

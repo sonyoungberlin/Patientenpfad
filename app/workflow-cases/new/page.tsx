@@ -24,15 +24,14 @@ export default async function WorkflowNewPage() {
       </section>
       <WorkflowNewClient topics={listWorkflowTopics()} />
 
-      {/* Interne Regelungsdokumente */}
       <section style={{ display: "grid", gap: "0.75rem" }}>
-        <h2 style={{ margin: 0 }}>Interne Regelungsdokumente</h2>
+        <h2 style={{ margin: 0 }}>Praxisprozesse</h2>
         <p className="text-muted" style={{ margin: 0 }}>
-          Praxisinterne Prozessregelungen gemeinsam erarbeiten und festhalten.
+          Praxisinterne Abläufe gemeinsam festlegen und dokumentieren.
         </p>
         <div>
           <Link href="/workflow-cases/internal-protocol/new">
-            <button type="button">Patienten ohne Termin</button>
+            <button type="button">Praxisprozesse bearbeiten</button>
           </Link>
         </div>
       </section>

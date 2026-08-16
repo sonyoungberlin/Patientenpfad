@@ -7,29 +7,15 @@ import {
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import type {
   PracticeWorkflowSnapshot,
-  OrientationAnswer,
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import {
-  updateOrientationAnswer,
+  toggleAnchorSelection,
   DRAFT_SNAPSHOT_KEY,
   DRAFT_SOURCE_ID_KEY,
   DRAFT_SOURCE_TITLE_KEY,
 } from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
 import { getCheckpoint } from "@/lib/practiceProcesses";
-
-const ANSWER_OPTIONS: { value: OrientationAnswer; label: string }[] = [
-  { value: "YES", label: "Ja" },
-  { value: "NO", label: "Nein" },
-  { value: "UNCLEAR", label: "Unklar" },
-];
-
-function answerSymbol(answer: OrientationAnswer): string {
-  if (answer === "YES") return "✓";
-  if (answer === "NO") return "✗";
-  if (answer === "UNCLEAR") return "?";
-  return "–";
-}
 
 export default function DraftM2Client() {
   const router = useRouter();
@@ -65,11 +51,11 @@ export default function DraftM2Client() {
     [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(",")],
   );
 
-  const handleAnswer = useCallback(
-    (anchorId: string, answer: OrientationAnswer) => {
+  const handleToggle = useCallback(
+    (checkpointId: string, anchorId: string) => {
       setSnapshot((prev) => {
         if (!prev) return prev;
-        const next = updateOrientationAnswer(prev, anchorId, answer);
+        const next = toggleAnchorSelection(prev, checkpointId, anchorId);
         sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(next));
         return next;
       });
@@ -106,11 +92,11 @@ export default function DraftM2Client() {
   if (!snapshot) return null;
 
   return (
-    <article className="card" style={{ display: "grid", gap: "2rem", maxWidth: "44rem" }}>
+    <div style={{ display: "grid", gap: "1.5rem" }}>
       <div>
-        <h2 style={{ margin: 0 }}>Orientierungsfragen</h2>
+        <h2 style={{ margin: 0 }}>Praxisstandard festlegen</h2>
         <p className="text-small text-muted" style={{ margin: "0.35rem 0 0" }}>
-          Praxisfall: {snapshot.caseProfileTitle}
+          {snapshot.caseProfileTitle} – Wählen Sie aus, welche Punkte zu Ihrem Praxisstandard gehören sollen.
         </p>
       </div>
 
@@ -118,54 +104,33 @@ export default function DraftM2Client() {
         const cpDef = cpDefinitions[cp.checkpointId];
         const anchors = cpDef?.orientationAnchors ?? [];
         return (
-          <section key={cp.checkpointId} style={{ display: "grid", gap: "0.75rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-              {cp.checkpointTitle}
-            </h3>
+          <section key={cp.checkpointId} className="card" style={{ display: "grid", gap: "0.75rem" }}>
+            <div style={{ fontWeight: 600 }}>{cp.checkpointTitle}</div>
             {cpDef?.description && (
               <p className="text-small text-muted" style={{ margin: 0 }}>
                 {cpDef.description}
               </p>
             )}
-            {cpDef?.orientationHint && (
-              <p className="text-small" style={{ margin: 0, fontStyle: "italic", color: "var(--muted-foreground)" }}>
-                {cpDef.orientationHint}
-              </p>
-            )}
             {anchors.length > 0 ? (
-              <div style={{ display: "grid", gap: "0.75rem" }}>
-                {anchors.map((anchor) => {
-                  const answer = cp.orientationAnswers[anchor.id] ?? null;
-                  return (
-                    <div key={anchor.id} style={{ display: "grid", gap: "0.35rem" }}>
-                      <div className="text-small">{anchor.text}</div>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        {ANSWER_OPTIONS.map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => handleAnswer(anchor.id, opt.value)}
-                            style={{
-                              minWidth: "5rem",
-                              fontWeight: answer === opt.value ? 700 : 400,
-                              outline:
-                                answer === opt.value
-                                  ? "2px solid currentColor"
-                                  : "1px solid #d0d0d0",
-                              background: answer === opt.value ? "#f0f7ff" : "#fff",
-                            }}
-                          >
-                            {answerSymbol(opt.value)} {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div style={{ display: "grid", gap: "0.5rem" }}>
+                {anchors.map((anchor) => (
+                  <label
+                    key={anchor.id}
+                    style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", cursor: "pointer" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={(cp.selectedAnchorIds ?? []).includes(anchor.id)}
+                      onChange={() => handleToggle(cp.checkpointId, anchor.id)}
+                      style={{ marginTop: "0.25rem", flexShrink: 0, accentColor: "var(--primary)" }}
+                    />
+                    <span className="text-small">{anchor.text}</span>
+                  </label>
+                ))}
               </div>
             ) : (
               <p className="text-small text-muted" style={{ margin: 0 }}>
-                Keine Orientierungsfragen für diesen Bereich.
+                Keine Auswahlpunkte für diesen Bereich.
               </p>
             )}
           </section>
@@ -196,6 +161,6 @@ export default function DraftM2Client() {
           {saving ? "Speichern…" : "Weiter zu Entscheidungen →"}
         </button>
       </div>
-    </article>
+    </div>
   );
 }

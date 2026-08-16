@@ -92,26 +92,25 @@ export function setCheckpointJudgement(
 
 import type {
   PracticeWorkflowSnapshot,
-  OrientationAnswer,
   CheckpointDecision,
 } from "@/lib/practiceProcesses/workflowSnapshot";
 
-/** Setzt eine Orientierungsantwort idempotent; findet Checkpoint automatisch via anchorId. */
-export function updateOrientationAnswer(
+/** Fügt anchorId zu selectedAnchorIds hinzu oder entfernt sie (Toggle). */
+export function toggleAnchorSelection(
   snapshot: PracticeWorkflowSnapshot,
+  checkpointId: string,
   anchorId: string,
-  answer: OrientationAnswer,
 ): PracticeWorkflowSnapshot {
-  const owner = snapshot.checkpoints.find((cp) => anchorId in cp.orientationAnswers);
-  if (!owner) return snapshot;
-  if (owner.orientationAnswers[anchorId] === answer) return snapshot;
   return {
     ...snapshot,
-    checkpoints: snapshot.checkpoints.map((cp) =>
-      cp.checkpointId !== owner.checkpointId
-        ? cp
-        : { ...cp, orientationAnswers: { ...cp.orientationAnswers, [anchorId]: answer } },
-    ),
+    checkpoints: snapshot.checkpoints.map((cp) => {
+      if (cp.checkpointId !== checkpointId) return cp;
+      const current = cp.selectedAnchorIds ?? [];
+      const next = current.includes(anchorId)
+        ? current.filter((id) => id !== anchorId)
+        : [...current, anchorId];
+      return { ...cp, selectedAnchorIds: next };
+    }),
   };
 }
 
@@ -139,7 +138,7 @@ export function setUmsetzung(
     ...snapshot,
     checkpoints: snapshot.checkpoints.map((cp) =>
       cp.checkpointId === checkpointId
-        ? { ...cp, umsetzung: value.trim() || undefined }
+        ? { ...cp, umsetzung: value || undefined }
         : cp,
     ),
   };

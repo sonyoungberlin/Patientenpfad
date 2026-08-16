@@ -1,12 +1,11 @@
 import type { PracticeCaseProfile, PracticeCheckpoint } from "./types";
 
 export type CheckpointDecision = "PFLICHT" | "OPTIONAL" | "NICHT_RELEVANT";
-export type OrientationAnswer = "YES" | "NO" | "UNCLEAR" | null;
 
 export interface PracticeWorkflowCheckpointState {
   checkpointId: string;
   checkpointTitle: string;
-  orientationAnswers: Record<string, OrientationAnswer>;
+  selectedAnchorIds: string[];
   decision?: CheckpointDecision;
   /** Kurze praxisindividuelle Beschreibung, wie diese Praxis den Checkpoint konkret umsetzt. */
   umsetzung?: string;
@@ -47,9 +46,7 @@ export function buildInitialPracticeWorkflowSnapshot(
       return {
         checkpointId: ref.checkpointId,
         checkpointTitle: cp?.title ?? ref.checkpointId,
-        orientationAnswers: Object.fromEntries(
-          (cp?.orientationAnchors ?? []).map((a) => [a.id, null as OrientationAnswer]),
-        ),
+        selectedAnchorIds: [],
       };
     }),
   };

@@ -7,49 +7,13 @@ import {
   markSnapshotCompleted,
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import type { PracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { buildM4Text } from "@/lib/practiceProcesses/buildM4Text";
 import {
   DRAFT_SNAPSHOT_KEY,
   DRAFT_SOURCE_ID_KEY,
   DRAFT_SOURCE_TITLE_KEY,
 } from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
-
-function buildM4Text(snapshot: PracticeWorkflowSnapshot): string {
-  const lines: string[] = [];
-  lines.push(`Praxisfall: ${snapshot.caseProfileTitle}`);
-  lines.push("");
-
-  const pflicht = snapshot.checkpoints.filter((cp) => cp.decision === "PFLICHT");
-  const optional = snapshot.checkpoints.filter((cp) => cp.decision === "OPTIONAL");
-  const nichtRelevant = snapshot.checkpoints.filter((cp) => cp.decision === "NICHT_RELEVANT");
-
-  if (pflicht.length > 0) {
-    lines.push("Pflicht:");
-    for (const cp of pflicht) {
-      lines.push(`- ${cp.checkpointTitle}`);
-      if (cp.umsetzung) lines.push(`  ${cp.umsetzung}`);
-    }
-  }
-
-  if (optional.length > 0) {
-    if (pflicht.length > 0) lines.push("");
-    lines.push("Optional:");
-    for (const cp of optional) {
-      lines.push(`- ${cp.checkpointTitle}`);
-      if (cp.umsetzung) lines.push(`  ${cp.umsetzung}`);
-    }
-  }
-
-  if (nichtRelevant.length > 0) {
-    if (pflicht.length > 0 || optional.length > 0) lines.push("");
-    lines.push("Nicht relevant:");
-    for (const cp of nichtRelevant) {
-      lines.push(`- ${cp.checkpointTitle}`);
-    }
-  }
-
-  return lines.join("\n");
-}
 
 export default function PracticeWorkflowM4Client() {
   const router = useRouter();

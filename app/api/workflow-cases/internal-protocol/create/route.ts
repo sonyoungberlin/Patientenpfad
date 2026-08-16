@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 import { canAccessWorkflowCases } from "@/lib/authz";
 import { getWorkflowCreateOwnershipData } from "@/lib/workflow/scope";
-import { buildInitialInternalProtocolWorkflowSnapshot } from "@/lib/workflow/internalProtocol/workflowAdapter";
+import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 export async function POST(req: NextRequest) {
   const account = await getSessionAccount(req);
@@ -18,19 +18,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Arbeitsprozesse nicht freigeschaltet." }, { status: 403 });
   }
 
-  let body: { title?: unknown };
+  let body: { title?: unknown; snapshot?: unknown };
   try {
-    body = (await req.json()) as { title?: unknown };
+    body = (await req.json()) as { title?: unknown; snapshot?: unknown };
   } catch {
     body = {};
   }
 
-  const title =
-    typeof body.title === "string" && body.title.trim().length > 0
-      ? body.title.trim()
-      : null;
+  if (typeof body.title !== "string" || body.title.trim().length === 0) {
+    return NextResponse.json({ ok: false, error: "Titel fehlt." }, { status: 400 });
+  }
 
-  const snapshot = buildInitialInternalProtocolWorkflowSnapshot();
+  if (!isPracticeWorkflowSnapshot(body.snapshot)) {
+    return NextResponse.json({ ok: false, error: "Ungültiger Snapshot." }, { status: 400 });
+  }
+
+  const title = body.title.trim();
+  const snapshot = body.snapshot;
   const ownership = getWorkflowCreateOwnershipData(account);
 
   const session = await prisma.workflowSession.create({

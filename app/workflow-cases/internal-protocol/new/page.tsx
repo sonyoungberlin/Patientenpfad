@@ -15,9 +15,9 @@ export default async function InternalProtocolNewPage() {
   return (
     <main style={{ display: "grid", gap: "1.5rem" }}>
       <section>
-        <h1>Praxisinternes Regelungsdokument</h1>
+        <h1>Neue Sitzung</h1>
         <p className="text-muted">
-          Internen Prozess erfassen und als Regelungsdokument festhalten.
+          Arbeitsprozess auswählen und Sitzung starten.
         </p>
       </section>
       <InternalProtocolNewClient />
