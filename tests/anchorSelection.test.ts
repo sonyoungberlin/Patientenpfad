@@ -154,8 +154,8 @@ describe("Anchor-Auswahl: buildM4Text", () => {
     };
     const text = buildM4Text(snapshot);
     expect(text).toContain("Zu berücksichtigen:");
-    expect(text).toContain("Ist der Patient als Bestandspatient erfasst?");
-    expect(text).not.toContain("Sind alle Stammdaten");
+    expect(text).toContain("Patient ist im Praxissystem angelegt");
+    expect(text).not.toContain("Name ist erfasst");
   });
 
   it("T8: M4 erzeugt keinen leeren Zu-berücksichtigen-Block wenn nichts ausgewählt", () => {

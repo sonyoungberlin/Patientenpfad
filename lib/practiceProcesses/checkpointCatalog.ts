@@ -12,11 +12,35 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     orientationAnchors: [
       {
         id: "patient-bekannt-a1",
-        text: "Ist der Patient als Bestandspatient erfasst?",
+        text: "Patient ist im Praxissystem angelegt",
       },
       {
         id: "patient-bekannt-a2",
-        text: "Sind alle Stammdaten (Name, Adresse, Geburtsdatum) vollständig erfasst?",
+        text: "Name ist erfasst",
+      },
+      {
+        id: "patient-bekannt-a3",
+        text: "Geburtsdatum ist erfasst",
+      },
+      {
+        id: "patient-bekannt-a4",
+        text: "Adresse ist erfasst",
+      },
+      {
+        id: "patient-bekannt-a5",
+        text: "Telefonnummer ist erfasst",
+      },
+      {
+        id: "patient-bekannt-a6",
+        text: "Mobilnummer für SMS-Kommunikation ist erfasst",
+      },
+      {
+        id: "patient-bekannt-a7",
+        text: "E-Mail-Adresse ist erfasst",
+      },
+      {
+        id: "patient-bekannt-a8",
+        text: "Patient nutzt das von der Praxis eingesetzte digitale Kommunikations-/Terminportal",
       },
     ],
   },
@@ -25,15 +49,23 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "dauermedikation-vorhanden",
     title: "Dauermedikation vorhanden",
     description:
-      "Der Patient hat mindestens ein dauerhaft verordnetes Medikament.",
+      "Die Dauermedikation des Patienten ist in der Praxis bekannt und dokumentiert.",
     orientationAnchors: [
       {
         id: "dauermedikation-vorhanden-a1",
-        text: "Ist in der Akte eine Dauermedikation dokumentiert?",
+        text: "Dauermedikation wurde bereits durch die Praxis verordnet",
       },
       {
         id: "dauermedikation-vorhanden-a2",
-        text: "Liegt aktuell eine Dauermedikation vor?",
+        text: "Dauermedikation ist im Krankenblatt / in der Patientenakte dokumentiert",
+      },
+      {
+        id: "dauermedikation-vorhanden-a3",
+        text: "Dauermedikation ist im Praxissystem f\u00fcr den Patienten erkennbar hinterlegt",
+      },
+      {
+        id: "dauermedikation-vorhanden-a4",
+        text: "Dauermedikation aus externer Verordnung ist in der Patientenakte dokumentiert",
       },
     ],
   },
@@ -42,15 +74,39 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "dauermedikation-abgleichen",
     title: "Dauermedikation abgleichen",
     description:
-      "Die dokumentierte Dauermedikation wird mit externen Informationen abgeglichen (z. B. Krankenhausbrief, mitgebrachte Unterlagen).",
+      "Extern vorliegende Medikationsinformationen werden mit der in der Praxis dokumentierten Dauermedikation abgeglichen.",
     orientationAnchors: [
       {
         id: "dauermedikation-abgleichen-a1",
-        text: "Stimmt die dokumentierte Dauermedikation mit den vorliegenden externen Angaben überein?",
+        text: "Medikament / Wirkstoff wird abgeglichen",
       },
       {
         id: "dauermedikation-abgleichen-a2",
-        text: "Wurden Abweichungen erkannt und ärztlich geprüft?",
+        text: "Dosierung wird abgeglichen",
+      },
+      {
+        id: "dauermedikation-abgleichen-a3",
+        text: "Einnahmeschema wird abgeglichen",
+      },
+      {
+        id: "dauermedikation-abgleichen-a4",
+        text: "Verordnender / behandelnder Arzt wird abgeglichen",
+      },
+      {
+        id: "dauermedikation-abgleichen-a5",
+        text: "Abgleich mit Facharztberichten",
+      },
+      {
+        id: "dauermedikation-abgleichen-a6",
+        text: "Abgleich mit Krankenhaus-/Entlassunterlagen",
+      },
+      {
+        id: "dauermedikation-abgleichen-a7",
+        text: "Abgleich mit Pflegedokumentation / Pflegeeinrichtung",
+      },
+      {
+        id: "dauermedikation-abgleichen-a8",
+        text: "Abgleich mit E-Medikationsplan",
       },
     ],
   },
@@ -58,15 +114,24 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
   "kontrolle-aktuell": {
     id: "kontrolle-aktuell",
     title: "Kontrolle aktuell",
-    description: "Der Patient hat zuletzt eine Kontrolluntersuchung erhalten.",
+    description:
+      "Es ist geklärt, ob eine für den jeweiligen Praxisfall relevante Kontrolle ausreichend aktuell ist.",
     orientationAnchors: [
       {
         id: "kontrolle-aktuell-a1",
-        text: "Hat zuletzt eine Kontrolluntersuchung in unserer Praxis stattgefunden?",
+        text: "Kontrolle hat in der eigenen Praxis stattgefunden",
       },
       {
         id: "kontrolle-aktuell-a2",
-        text: "Liegt die letzte Kontrolle innerhalb des praxisüblichen Intervalls?",
+        text: "Kontrolle durch eine externe behandelnde Stelle wird berücksichtigt",
+      },
+      {
+        id: "kontrolle-aktuell-a3",
+        text: "Praxisübliches Kontrollintervall wird berücksichtigt",
+      },
+      {
+        id: "kontrolle-aktuell-a4",
+        text: "Datum der letzten Kontrolle ist dokumentiert",
       },
     ],
   },
@@ -75,24 +140,65 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "diagnose-dokumentiert",
     title: "Diagnose dokumentiert",
     description:
-      "Eine aktuelle Diagnose ist in der Patientenakte dokumentiert.",
+      "Eine relevante Diagnose des Patienten ist in der Praxis nachvollziehbar dokumentiert.",
     orientationAnchors: [
       {
         id: "diagnose-dokumentiert-a1",
-        text: "Ist eine aktuelle Diagnose in der Akte hinterlegt?",
+        text: "Diagnose ist in der Patientenakte dokumentiert",
+      },
+      {
+        id: "diagnose-dokumentiert-a2",
+        text: "Datum der Erstdiagnose ist dokumentiert",
+      },
+      {
+        id: "diagnose-dokumentiert-a3",
+        text: "Diagnose wurde fachärztlich bestätigt",
+      },
+      {
+        id: "diagnose-dokumentiert-a4",
+        text: "Fachärztlicher Bericht zur Diagnose liegt vor",
+      },
+    ],
+  },
+
+  "anamnese-dokumentiert": {
+    id: "anamnese-dokumentiert",
+    title: "Anamnese dokumentiert",
+    description:
+      "Eine für den jeweiligen Praxisprozess relevante Anamnese ist im Krankenblatt dokumentiert.",
+    orientationAnchors: [
+      {
+        id: "anamnese-dokumentiert-a1",
+        text: "Eigenangaben des Patienten sind erfasst",
+      },
+      {
+        id: "anamnese-dokumentiert-a2",
+        text: "Vorinformationen / Fremdangaben aus anderen Quellen sind erfasst",
+      },
+      {
+        id: "anamnese-dokumentiert-a3",
+        text: "Datum der Anamnese ist dokumentiert",
       },
     ],
   },
 
   "versicherungsnachweis-vorhanden": {
     id: "versicherungsnachweis-vorhanden",
-    title: "Versicherungsnachweis vorhanden",
+    title: "Versicherungs-/Abrechnungsstatus geklärt",
     description:
-      "Ein gültiger Versicherungsnachweis (eGK oder Ersatzbescheinigung) liegt vor.",
+      "Es ist grundsätzlich geklärt, auf welcher Grundlage der Patient behandelt bzw. abgerechnet wird.",
     orientationAnchors: [
       {
         id: "versicherungsnachweis-vorhanden-a1",
-        text: "Liegt ein gültiger Versicherungsnachweis für das aktuelle Quartal vor?",
+        text: "Status ist für das aktuelle Quartal geklärt",
+      },
+      {
+        id: "versicherungsnachweis-vorhanden-a2",
+        text: "Status aus dem vorherigen Quartal kann berücksichtigt werden",
+      },
+      {
+        id: "versicherungsnachweis-vorhanden-a3",
+        text: "Status ist innerhalb des von der Praxis festgelegten Zeitraums geklärt worden",
       },
     ],
   },
@@ -100,86 +206,49 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
   "einwilligung-vorhanden": {
     id: "einwilligung-vorhanden",
     title: "Einwilligung vorhanden",
-    description: "Eine relevante Einwilligung des Patienten liegt vor.",
+    // EXTERNAL_REVIEW_NEEDED: konkrete gesetzliche Formerfordernisse (z. B. Schriftformgebot)
+    description:
+      "Wenn für den jeweiligen Vorgang eine Einwilligung relevant ist, wird abgebildet, in welcher Form sie nach Praxisstandard vorliegen soll.",
     orientationAnchors: [
       {
         id: "einwilligung-vorhanden-a1",
-        text: "Liegt eine dokumentierte Einwilligung vor?",
+        text: "Mündliche Einwilligung liegt vor",
       },
       {
         id: "einwilligung-vorhanden-a2",
-        text: "Liegt die Einwilligung zur Verarbeitung der Patientendaten vor?",
-      },
-    ],
-  },
-
-  "laborbefund-vorhanden": {
-    id: "laborbefund-vorhanden",
-    title: "Laborbefund vorhanden",
-    description: "Ein Laborbefund für den Patienten liegt vor und ist in der Akte erfasst.",
-    orientationAnchors: [
-      {
-        id: "laborbefund-vorhanden-a1",
-        text: "Ist der Befund vollständig (alle angeforderten Parameter vorhanden)?",
+        text: "Schriftliche Einwilligung liegt vor",
       },
       {
-        id: "laborbefund-vorhanden-a2",
-        text: "Ist der Befund dem richtigen Patienten und Auftrag zugeordnet?",
+        id: "einwilligung-vorhanden-a3",
+        text: "Digitale / elektronische Einwilligung liegt vor",
+      },
+      {
+        id: "einwilligung-vorhanden-a4",
+        text: "Einwilligung ist im Krankenblatt dokumentiert",
       },
     ],
   },
 
   "unterlagen-vorhanden": {
     id: "unterlagen-vorhanden",
-    title: "Unterlagen vorhanden",
-    description:
-      "Vom Patienten mitgebrachte Unterlagen liegen der Praxis vor und sind der Akte zugeordnet.",
+    title: "Dokument vorhanden",
+    description: "Ein relevantes Dokument liegt der Praxis vor.",
     orientationAnchors: [
       {
         id: "unterlagen-vorhanden-a1",
-        text: "Sind alle mitgebrachten Unterlagen vollständig und lesbar?",
+        text: "Dokument ist lesbar",
       },
       {
         id: "unterlagen-vorhanden-a2",
-        text: "Sind die Unterlagen dem richtigen Patienten zugeordnet?",
+        text: "Dokument liegt in vollst\u00e4ndiger Fassung vor",
       },
       {
         id: "unterlagen-vorhanden-a3",
-        text: "Enthalten die Unterlagen diagnose- oder therapierelevante Informationen?",
-      },
-    ],
-  },
-
-  "krankenhausbrief-vorhanden": {
-    id: "krankenhausbrief-vorhanden",
-    title: "Krankenhausbrief vorhanden",
-    description:
-      "Ein aktueller Entlass- oder Arztbrief aus einer stationären Behandlung liegt vor.",
-    orientationAnchors: [
-      {
-        id: "krankenhausbrief-vorhanden-a1",
-        text: "Liegt ein aktueller Krankenhausbericht vor?",
+        text: "Dokumentdatum ist bekannt",
       },
       {
-        id: "krankenhausbrief-vorhanden-a2",
-        text: "Ist der Brief vollständig und lesbar?",
-      },
-    ],
-  },
-
-  "facharztbericht-vorhanden": {
-    id: "facharztbericht-vorhanden",
-    title: "Facharztbericht vorhanden",
-    description:
-      "Ein Facharztbericht für den Patienten liegt vollständig vor.",
-    orientationAnchors: [
-      {
-        id: "facharztbericht-vorhanden-a1",
-        text: "Liegt ein vollständiger und lesbarer Facharztbericht vor?",
-      },
-      {
-        id: "facharztbericht-vorhanden-a2",
-        text: "Ist der Bericht dem richtigen Patienten zugeordnet?",
+        id: "unterlagen-vorhanden-a4",
+        text: "Absender ist bekannt",
       },
     ],
   },
@@ -212,15 +281,23 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "patientenzuordnung-pruefen",
     title: "Patientenzuordnung prüfen",
     description:
-      "Ein eingehender Vorgang oder ein Dokument wird dem richtigen Patienten in der Praxissoftware zugeordnet.",
+      "Es wird gepr\u00fcft, ob das vorliegende Dokument bzw. die vorliegende Information eindeutig dem richtigen Patienten zugeordnet ist.",
     orientationAnchors: [
       {
         id: "patientenzuordnung-pruefen-a1",
-        text: "Ist der Vorgang dem richtigen Patienten zugeordnet?",
+        text: "Name stimmt \u00fcberein",
       },
       {
         id: "patientenzuordnung-pruefen-a2",
-        text: "Ist die Zuordnung anhand der im Dokument enthaltenen Angaben (Name, Geburtsdatum) eindeutig nachvollziehbar?",
+        text: "Geburtsdatum stimmt \u00fcberein",
+      },
+      {
+        id: "patientenzuordnung-pruefen-a3",
+        text: "Weitere Patientenkennung stimmt \u00fcberein",
+      },
+      {
+        id: "patientenzuordnung-pruefen-a4",
+        text: "Zuordnung im Praxissystem ist eindeutig",
       },
     ],
   },
@@ -268,36 +345,83 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "dokument-weiterleiten",
     title: "Dokument weiterleiten",
     description:
-      "Ein Vorgang oder Dokument wird zur weiteren Bearbeitung an die zuständige Person oder Stelle übergeben.",
-    orientationHint:
-      "Weitergeleitet bedeutet: Der Empfänger kennt den Vorgang und kann handeln — nicht nur, dass das Dokument übermittelt wurde.",
+      "Ein Dokument bzw. Vorgang wird an eine andere Person oder Stelle weitergeleitet.",
     orientationAnchors: [
       {
         id: "dokument-weiterleiten-a1",
-        text: "Wurde der Vorgang an die zuständige Person oder Stelle weitergeleitet?",
+        text: "Postalische Weiterleitung",
       },
       {
         id: "dokument-weiterleiten-a2",
-        text: "Hat die empfangende Person/Stelle Kenntnis vom Vorgang?",
+        text: "Weiterleitung per Fax",
+      },
+      {
+        id: "dokument-weiterleiten-a3",
+        text: "Weiterleitung per E-Mail",
+      },
+      {
+        id: "dokument-weiterleiten-a4",
+        text: "Weiterleitung über einen digitalen Übermittlungsweg / ein digitales System",
+      },
+      {
+        id: "dokument-weiterleiten-a5",
+        text: "Empfangsbestätigung/Rückmeldung ist erforderlich",
+      },
+      {
+        id: "dokument-weiterleiten-a6",
+        text: "Weiterleitung wird dokumentiert",
+      },
+      {
+        id: "dokument-weiterleiten-a7",
+        text: "Grund der Weiterleitung wird dokumentiert",
       },
     ],
   },
 
   "dokument-dem-patienten-bereitstellen": {
     id: "dokument-dem-patienten-bereitstellen",
-    title: "Dokument dem Patienten bereitstellen",
+    title: "Dokument bereitstellen",
     description:
-      "Ein Dokument wird dem Patienten zugänglich gemacht — digital (Portal, E-Mail) oder physisch (Ausdruck, Übergabe).",
+      "Ein Dokument wird einem vorgesehenen Empf\u00e4nger zug\u00e4nglich gemacht.",
+    // Abgrenzung: bereitstellen = zug\u00e4nglich machen; weiterleiten = zur weiteren Bearbeitung \u00fcbergeben
     orientationHint:
-      "Bezieht sich auf die Bereitstellung für den Patienten, nicht auf die interne Weiterleitung in der Praxis (→ Checkpoint Dokument weiterleiten).",
+      "Dokument bereitstellen: Empf\u00e4nger erh\u00e4lt Zugang zum Dokument. Dokument weiterleiten: Dokument/Vorgang wird im Prozess zur weiteren Bearbeitung weitergegeben.",
     orientationAnchors: [
       {
         id: "dokument-dem-patienten-bereitstellen-a1",
-        text: "Hat der Patient das Dokument erhalten oder kann er es abrufen?",
+        text: "Patient",
       },
       {
         id: "dokument-dem-patienten-bereitstellen-a2",
-        text: "Ist der Bereitstellungsweg für den Patienten zugänglich (erreichbar und lesbar)?",
+        text: "Weiterbehandelnder Arzt / andere Praxis",
+      },
+      {
+        id: "dokument-dem-patienten-bereitstellen-a3",
+        text: "Andere beteiligte Stelle",
+      },
+      {
+        id: "dokument-dem-patienten-bereitstellen-a4",
+        text: "Pers\u00f6nliche Aush\u00e4ndigung",
+      },
+      {
+        id: "dokument-dem-patienten-bereitstellen-a5",
+        text: "Postalischer Versand",
+      },
+      {
+        id: "dokument-dem-patienten-bereitstellen-a6",
+        text: "Bereitstellung per E-Mail",
+      },
+      {
+        id: "dokument-dem-patienten-bereitstellen-a7",
+        text: "Bereitstellung \u00fcber digitales Portal / Kommunikationssystem",
+      },
+      {
+        id: "dokument-dem-patienten-bereitstellen-a8",
+        text: "Bereitstellung \u00fcber die ePA",
+      },
+      {
+        id: "dokument-dem-patienten-bereitstellen-a9",
+        text: "Direkte digitale \u00dcbermittlung an andere Praxis / anderen Arzt",
       },
     ],
   },
@@ -329,15 +453,19 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "laborbefund-fachlich-bewerten",
     title: "Laborbefund fachlich bewerten",
     description:
-      "Die Befundwerte werden ärztlich auf klinische Relevanz bewertet.",
+      "Der Laborbefund wird fachlich bewertet und das Ergebnis der Bewertung nachvollziehbar dokumentiert.",
     orientationAnchors: [
       {
         id: "laborbefund-fachlich-bewerten-a1",
-        text: "Wurden alle Befundwerte ärztlich bewertet?",
+        text: "Fachliche Bewertung ist dokumentiert",
       },
       {
         id: "laborbefund-fachlich-bewerten-a2",
-        text: "Sind alle Befundwerte im klinischen Kontext des Patienten eingeordnet?",
+        text: "Handlungsbedarf ist dokumentiert",
+      },
+      {
+        id: "laborbefund-fachlich-bewerten-a3",
+        text: "Erforderliche weitere Handlung ist veranlasst",
       },
     ],
   },
@@ -363,17 +491,28 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "facharztbericht-einordnen",
     title: "Facharztbericht einordnen",
     description:
-      "Ein eingegangener Facharztbericht wird hausärztlich in den Behandlungskontext eingeordnet.",
-    orientationHint:
-      "Die fachärztliche Einschätzung steht bereits fest — es geht um die hausärztliche Einordnung der Empfehlungen, nicht um eine erneute Bewertung der Befunde.",
+      "Ein vorliegender Facharztbericht wird in den bestehenden Behandlungszusammenhang des Patienten eingeordnet.",
+    // Konkrete Folgehandlungen (Einbestellung, Medikationsabgleich etc.) gehören in separate Checkpoints
     orientationAnchors: [
       {
         id: "facharztbericht-einordnen-a1",
-        text: "Wurde die Einschätzung des Facharztes mit der Patientenakte abgeglichen?",
+        text: "Bericht wird mit der Patientenakte abgeglichen",
       },
       {
         id: "facharztbericht-einordnen-a2",
-        text: "Passen die Empfehlungen des Facharztes zur laufenden Behandlung?",
+        text: "Neue Diagnosen / Änderungen werden berücksichtigt",
+      },
+      {
+        id: "facharztbericht-einordnen-a3",
+        text: "Therapie- / Medikationsänderungen werden berücksichtigt",
+      },
+      {
+        id: "facharztbericht-einordnen-a4",
+        text: "Weiterer Handlungsbedarf wird dokumentiert",
+      },
+      {
+        id: "facharztbericht-einordnen-a5",
+        text: "Erforderliche weitere Handlung wird veranlasst",
       },
     ],
   },
@@ -386,15 +525,31 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "anlass-der-einbestellung-pruefen",
     title: "Anlass der Einbestellung prüfen",
     description:
-      "Vor der Einbestellung wird geprüft, aus welchem Grund der Patient in die Praxis kommen soll.",
+      "Es wird gekl\u00e4rt, warum der Patient in die Praxis kommen bzw. \u00e4rztlich gesehen werden soll.",
     orientationAnchors: [
       {
         id: "anlass-der-einbestellung-pruefen-a1",
-        text: "Ist klar, warum der Patient einbestellt werden soll?",
+        text: "Kontrolluntersuchung erforderlich",
       },
       {
         id: "anlass-der-einbestellung-pruefen-a2",
-        text: "Lässt sich der Anlass dem Patienten gut erklären?",
+        text: "Besprechung eines Befundes / Ergebnisses erforderlich",
+      },
+      {
+        id: "anlass-der-einbestellung-pruefen-a3",
+        text: "Medikamenten- / Therapiekontrolle erforderlich",
+      },
+      {
+        id: "anlass-der-einbestellung-pruefen-a4",
+        text: "\u00c4rztliche Beurteilung neuer Beschwerden erforderlich",
+      },
+      {
+        id: "anlass-der-einbestellung-pruefen-a5",
+        text: "Weiterf\u00fchrende Untersuchung erforderlich",
+      },
+      {
+        id: "anlass-der-einbestellung-pruefen-a6",
+        text: "Externe Empfehlung zur Wiedervorstellung liegt vor",
       },
     ],
   },
@@ -416,31 +571,88 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     ],
   },
 
-  "patient-telefonisch-kontaktieren": {
-    id: "patient-telefonisch-kontaktieren",
-    title: "Patient telefonisch kontaktieren",
-    description: "Der Patient wird telefonisch kontaktiert.",
+  // Konfiguriert den Standard: welche Kontaktform für diesen Vorgang erforderlich/ausreichend ist
+  "kontaktform-festlegen": {
+    id: "kontaktform-festlegen",
+    title: "Erforderliche Kontaktform festlegen",
+    description:
+      "Es ist festgelegt, welche Form des Kontakts für den jeweiligen Vorgang erforderlich oder ausreichend ist.",
     orientationAnchors: [
       {
-        id: "patient-telefonisch-kontaktieren-a1",
-        text: "Wurde der Patient telefonisch erreicht?",
+        id: "kontaktform-festlegen-a1",
+        text: "Persönlicher Kontakt in der Praxis",
       },
       {
-        id: "patient-telefonisch-kontaktieren-a2",
-        text: "Ist das Ergebnis des Telefonats nachvollziehbar festgehalten?",
+        id: "kontaktform-festlegen-a2",
+        text: "Telefonischer Kontakt",
+      },
+      {
+        id: "kontaktform-festlegen-a3",
+        text: "Videosprechstunde",
+      },
+      {
+        id: "kontaktform-festlegen-a4",
+        text: "Asynchroner digitaler Kontakt",
+      },
+      {
+        id: "kontaktform-festlegen-a5",
+        text: "Kein erneuter Kontakt erforderlich",
       },
     ],
   },
 
+  // Synchroner Kontakt: unmittelbar feststellbar, ob Patient erreicht wurde
+  "patient-telefonisch-kontaktieren": {
+    id: "patient-telefonisch-kontaktieren",
+    title: "Patient direkt kontaktieren",
+    description:
+      "Synchroner Kontakt, bei dem unmittelbar festgestellt werden kann, ob der Patient erreicht wurde und ein direkter Austausch möglich ist.",
+    orientationAnchors: [
+      {
+        id: "patient-telefonisch-kontaktieren-a1",
+        text: "Telefonischer Kontakt",
+      },
+      {
+        id: "patient-telefonisch-kontaktieren-a2",
+        text: "Kontaktversuch wird dokumentiert",
+      },
+      {
+        id: "patient-telefonisch-kontaktieren-a3",
+        text: "Gesprächsinhalt wird dokumentiert",
+      },
+    ],
+  },
+
+  // Asynchroner Kontakt: keine unmittelbare Kenntnisnahme oder direkte Reaktion gesichert
   "patient-digital-kontaktieren": {
     id: "patient-digital-kontaktieren",
-    title: "Patient digital kontaktieren",
+    title: "Patient asynchron kontaktieren",
     description:
-      "Der Patient wird über einen digitalen Kanal kontaktiert (z. B. Praxisportal, SMS, E-Mail).",
+      "Asynchroner Kontakt, bei dem eine Nachricht übermittelt wird, ohne dass unmittelbare Kenntnisnahme oder direkte Reaktion des Patienten gesichert ist.",
     orientationAnchors: [
       {
         id: "patient-digital-kontaktieren-a1",
-        text: "Wurde der Patient digital kontaktiert?",
+        text: "Kontakt per SMS",
+      },
+      {
+        id: "patient-digital-kontaktieren-a2",
+        text: "Kontakt per E-Mail",
+      },
+      {
+        id: "patient-digital-kontaktieren-a3",
+        text: "Kontakt über das digitale Kommunikations-/Patientenportal",
+      },
+      {
+        id: "patient-digital-kontaktieren-a4",
+        text: "Zustellbestätigung ist erforderlich",
+      },
+      {
+        id: "patient-digital-kontaktieren-a5",
+        text: "Lesebestätigung ist erforderlich",
+      },
+      {
+        id: "patient-digital-kontaktieren-a6",
+        text: "Kontaktaufnahme wird dokumentiert",
       },
     ],
   },
@@ -449,16 +661,40 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "erneuten-kontaktversuch-durchfuehren",
     title: "Erneuten Kontaktversuch durchführen",
     description:
-      "Nach einem erfolglosen Kontaktversuch wird ein weiterer Versuch unternommen, den Patienten zu erreichen.",
-    orientationHint: "Gilt nur, wenn ein früherer Kontaktversuch gescheitert ist.",
+      "Ein vorheriger Kontaktversuch ist nicht erfolgreich gewesen \u2014 es soll weiter versucht werden, den Patienten zu erreichen bzw. sicherzustellen, dass die notwendige Information ihn erreicht.",
+    orientationHint: "Gilt nur, wenn ein fr\u00fcherer Kontaktversuch gescheitert ist.",
     orientationAnchors: [
       {
         id: "erneuten-kontaktversuch-durchfuehren-a1",
-        text: "Wurde ein weiterer Kontaktversuch unternommen?",
+        text: "Erneuter direkter Kontaktversuch",
       },
       {
         id: "erneuten-kontaktversuch-durchfuehren-a2",
-        text: "Wurde der Patient beim erneuten Versuch erreicht?",
+        text: "Erneuter asynchroner Kontaktversuch",
+      },
+      {
+        id: "erneuten-kontaktversuch-durchfuehren-a3",
+        text: "Anderer Kontaktweg wird genutzt",
+      },
+      {
+        id: "erneuten-kontaktversuch-durchfuehren-a4",
+        text: "Kontaktversuch \u00fcber hinterlegte / bevollm\u00e4chtigte Kontaktperson",
+      },
+      {
+        id: "erneuten-kontaktversuch-durchfuehren-a5",
+        text: "Kontaktversuch \u00fcber Pflegedienst / Pflegeeinrichtung",
+      },
+      {
+        id: "erneuten-kontaktversuch-durchfuehren-a6",
+        text: "Weitere Kontaktversuche werden dokumentiert",
+      },
+      {
+        id: "erneuten-kontaktversuch-durchfuehren-a7",
+        text: "Zeitpunkt / Frist f\u00fcr n\u00e4chsten Kontaktversuch wird festgelegt",
+      },
+      {
+        id: "erneuten-kontaktversuch-durchfuehren-a8",
+        text: "Erfolglos ausgesch\u00f6pfte Kontaktversuche werden dokumentiert",
       },
     ],
   },
@@ -466,15 +702,27 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
   "termin-vereinbaren": {
     id: "termin-vereinbaren",
     title: "Termin vereinbaren",
-    description: "Mit dem Patienten wird ein Termin für die Praxis vereinbart.",
+    description: "F\u00fcr den vorgesehenen Anlass wird ein konkreter Termin vereinbart.",
     orientationAnchors: [
       {
         id: "termin-vereinbaren-a1",
-        text: "Wurde ein Termin mit dem Patienten vereinbart?",
+        text: "Terminart ist festgelegt",
       },
       {
         id: "termin-vereinbaren-a2",
-        text: "Steht der Termin mit dem Patienten fest?",
+        text: "Terminzeitpunkt ist festgelegt",
+      },
+      {
+        id: "termin-vereinbaren-a3",
+        text: "Termin ist im Praxissystem eingetragen",
+      },
+      {
+        id: "termin-vereinbaren-a4",
+        text: "Patient hat eine Terminbest\u00e4tigung erhalten",
+      },
+      {
+        id: "termin-vereinbaren-a5",
+        text: "Erforderliche Vorbereitungen / Hinweise zum Termin werden mitgeteilt",
       },
     ],
   },
@@ -487,15 +735,23 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "angefragtes-medikament-pruefen",
     title: "Angefragtes Medikament prüfen",
     description:
-      "Bei einer eingehenden Rezeptanfrage wird geprüft, welches Medikament gemeint ist und ob es zur bekannten Behandlung des Patienten passt.",
+      "Die für die Bearbeitung notwendigen Angaben zu einem angefragten Medikament werden eindeutig geklärt.",
     orientationAnchors: [
       {
         id: "angefragtes-medikament-pruefen-a1",
-        text: "Ist eindeutig klar, welches Medikament angefragt wird?",
+        text: "Medikament / Präparat ist eindeutig bezeichnet",
       },
       {
         id: "angefragtes-medikament-pruefen-a2",
-        text: "Passt die Anfrage zur bekannten Behandlung des Patienten?",
+        text: "Wirkstärke ist eindeutig",
+      },
+      {
+        id: "angefragtes-medikament-pruefen-a3",
+        text: "Darreichungsform ist eindeutig",
+      },
+      {
+        id: "angefragtes-medikament-pruefen-a4",
+        text: "Dosierung / Einnahme ist eindeutig",
       },
     ],
   },
@@ -503,15 +759,19 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
   "rezept-erstellen": {
     id: "rezept-erstellen",
     title: "Rezept erstellen",
-    description: "Für den Patienten wird eine ärztliche Verordnung erstellt.",
+    description: "Das Rezept wird auf Grundlage der zuvor gekl\u00e4rten Informationen erstellt.",
     orientationAnchors: [
       {
         id: "rezept-erstellen-a1",
-        text: "Wurde das Rezept ausgestellt?",
+        text: "Rezeptart ist festgelegt (z.\u202fB. Kassenrezept / Privatrezept)",
       },
       {
         id: "rezept-erstellen-a2",
-        text: "Hat der Arzt das Rezept freigegeben?",
+        text: "Erforderliche Angaben werden in das Rezept \u00fcbernommen",
+      },
+      {
+        id: "rezept-erstellen-a3",
+        text: "\u00c4rztliche Freigabe ist erforderlich",
       },
     ],
   },
@@ -519,15 +779,16 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
   "ueberweisung-erstellen": {
     id: "ueberweisung-erstellen",
     title: "Überweisung erstellen",
-    description: "Für den Patienten wird eine Überweisung ausgestellt.",
+    description:
+      "Die \u00dcberweisung wird auf Grundlage der zuvor gekl\u00e4rten Informationen erstellt.",
     orientationAnchors: [
       {
         id: "ueberweisung-erstellen-a1",
-        text: "Wurde die Überweisung erstellt?",
+        text: "Erforderliche Angaben werden in die \u00dcberweisung \u00fcbernommen",
       },
       {
         id: "ueberweisung-erstellen-a2",
-        text: "Hat der Arzt die Überweisung freigegeben?",
+        text: "\u00c4rztliche Freigabe ist erforderlich",
       },
     ],
   },
@@ -539,16 +800,23 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
   "anlass-einer-ueberweisung-pruefen": {
     id: "anlass-einer-ueberweisung-pruefen",
     title: "Anlass einer Überweisung prüfen",
-    description:
-      "Vor der Ausstellung einer Überweisung wird geprüft, welcher klinische Anlass die Überweisung begründet.",
+    description: "Es ist gekl\u00e4rt, warum die \u00dcberweisung erfolgt.",
     orientationAnchors: [
       {
         id: "anlass-einer-ueberweisung-pruefen-a1",
-        text: "Ist klar, aus welchem Grund der Patient überwiesen werden soll?",
+        text: "Anlass / Begr\u00fcndung der \u00dcberweisung ist dokumentiert",
       },
       {
         id: "anlass-einer-ueberweisung-pruefen-a2",
-        text: "Lässt sich der Überweisungsanlass eindeutig beschreiben?",
+        text: "Anlass ergibt sich aus einer \u00e4rztlichen Anordnung",
+      },
+      {
+        id: "anlass-einer-ueberweisung-pruefen-a3",
+        text: "Anlass ergibt sich aus dokumentiertem Befund / Behandlungsverlauf",
+      },
+      {
+        id: "anlass-einer-ueberweisung-pruefen-a4",
+        text: "Zweck / Art der \u00dcberweisung ist gekl\u00e4rt",
       },
     ],
   },
@@ -557,17 +825,30 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "fragestellung-der-ueberweisung-klaeren",
     title: "Fragestellung der Überweisung klären",
     description:
-      "Es wird geklärt, welche medizinische Frage durch die Überweisung beantwortet werden soll.",
+      "Es ist gekl\u00e4rt, welche konkrete Fragestellung bzw. welcher Auftrag mit der \u00dcberweisung verbunden ist.",
     orientationAnchors: [
       {
         id: "fragestellung-der-ueberweisung-klaeren-a1",
-        text: "Ist klar, welche Frage der Facharzt beantworten soll?",
+        text: "Konkrete Fragestellung / Auftrag ist dokumentiert",
       },
       {
         id: "fragestellung-der-ueberweisung-klaeren-a2",
-        text: "Passt die Fragestellung zum Überweisungsanlass?",
+        text: "Relevante Diagnose ist bekannt",
+      },
+      {
+        id: "fragestellung-der-ueberweisung-klaeren-a3",
+        text: "Relevante Vorinformationen / Befunde sind bekannt",
       },
     ],
+  },
+
+  // EXTERNAL_REVIEW_NEEDED: Anker erfordern Klärung der regulatorischen Voraussetzungen des Hausarztvermittlungsfalls
+  "hausarztvermittlungsfall": {
+    id: "hausarztvermittlungsfall",
+    title: "Hausarztvermittlungsfall",
+    description:
+      "Es wird geklärt, ob für diesen Vorgang die Terminvermittlung durch die Hausarztpraxis als Hausarztvermittlungsfall genutzt wird.",
+    orientationAnchors: [],
   },
 
   "kontrollinhalt-festlegen": {
@@ -591,15 +872,31 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "zur-wiedervorlage-vormerken",
     title: "Zur Wiedervorlage vormerken",
     description:
-      "Ein offener Vorgang wird vorgemerkt, damit er zu einem bestimmten Zeitpunkt wieder aufgegriffen werden kann.",
+      "Ein Vorgang soll zu einem sp\u00e4teren Zeitpunkt oder beim Eintritt einer bestimmten Bedingung erneut bearbeitet bzw. aufgegriffen werden.",
     orientationAnchors: [
       {
         id: "zur-wiedervorlage-vormerken-a1",
-        text: "Wurde der Vorgang zur Wiedervorlage vorgemerkt?",
+        text: "Wiedervorlage zu einem festen Zeitpunkt",
       },
       {
         id: "zur-wiedervorlage-vormerken-a2",
-        text: "Ist klar, wann oder unter welcher Bedingung der Vorgang wieder aufgegriffen werden soll?",
+        text: "Wiedervorlage nach festgelegter Frist",
+      },
+      {
+        id: "zur-wiedervorlage-vormerken-a3",
+        text: "Wiedervorlage bei Eintritt einer bestimmten Bedingung",
+      },
+      {
+        id: "zur-wiedervorlage-vormerken-a4",
+        text: "Wiedervorlage ist im Praxissystem dokumentiert",
+      },
+      {
+        id: "zur-wiedervorlage-vormerken-a5",
+        text: "Grund der Wiedervorlage ist dokumentiert",
+      },
+      {
+        id: "zur-wiedervorlage-vormerken-a6",
+        text: "Zust\u00e4ndigkeit f\u00fcr die Wiedervorlage ist festgelegt",
       },
     ],
   },
@@ -612,18 +909,41 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "patient-informieren",
     title: "Patient informieren",
     description:
-      "Dem Patienten wird eine relevante Information mitgeteilt — unabhängig vom Kommunikationskanal.",
-    // Kontaktweg und Dokumentbereitstellung sind eigenständige Checkpoints
+      "Eine relevante Information wird an den Patienten oder einen vorgesehenen Informationsempf\u00e4nger weitergegeben.",
     orientationHint:
-      "Bezieht sich ausschließlich auf den Informationsinhalt. Der Kontaktweg (telefonisch, digital) und die Bereitstellung eines Dokuments sind eigenständige Checkpoints.",
+      "Betrifft ausschlie\u00dflich Informationsinhalt und Informationsempf\u00e4nger. Kontaktwege (\u2192 direkter/asynchroner Patientenkontakt) und Dokumentbereitstellung (\u2192 Dokument bereitstellen) sind eigenst\u00e4ndige Checkpoints.",
     orientationAnchors: [
       {
         id: "patient-informieren-a1",
-        text: "Wurde der Patient informiert?",
+        text: "\u00dcber Eingang / Vorliegen eines Ergebnisses oder Befundes informieren",
       },
       {
         id: "patient-informieren-a2",
-        text: "Weiß der Patient, ob und wie er reagieren soll?",
+        text: "\u00dcber konkretes Ergebnis / konkreten Befund informieren",
+      },
+      {
+        id: "patient-informieren-a3",
+        text: "\u00dcber den n\u00e4chsten erforderlichen Schritt informieren",
+      },
+      {
+        id: "patient-informieren-a4",
+        text: "\u00dcber erforderliche \u00e4rztliche Besprechung informieren",
+      },
+      {
+        id: "patient-informieren-a5",
+        text: "\u00dcber \u00e4rztlich festgestellte Diagnose informieren",
+      },
+      {
+        id: "patient-informieren-a6",
+        text: "Patient direkt",
+      },
+      {
+        id: "patient-informieren-a7",
+        text: "Hinterlegte / bevollm\u00e4chtigte Kontaktperson",
+      },
+      {
+        id: "patient-informieren-a8",
+        text: "Pflegedienst / Pflegeeinrichtung",
       },
     ],
   },
@@ -632,33 +952,72 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "unterlagen-anfordern",
     title: "Unterlagen anfordern",
     description:
-      "Fehlende Unterlagen werden aktiv bei der zuständigen Stelle oder Person angefordert.",
+      "Es wird festgelegt bzw. durchgef\u00fchrt, wie ben\u00f6tigte externe Unterlagen beschafft werden.",
     orientationAnchors: [
       {
         id: "unterlagen-anfordern-a1",
-        text: "Ist klar, welche Unterlagen benötigt werden?",
+        text: "Praxis fordert die Unterlagen selbst an",
       },
       {
         id: "unterlagen-anfordern-a2",
-        text: "Wurden die benötigten Unterlagen angefordert?",
+        text: "Patient wird gebeten, die Unterlagen selbst anzufordern bzw. zu beschaffen",
+      },
+      {
+        id: "unterlagen-anfordern-a3",
+        text: "Vom Patienten",
+      },
+      {
+        id: "unterlagen-anfordern-a4",
+        text: "Von einer anderen Arztpraxis / einem Facharzt",
+      },
+      {
+        id: "unterlagen-anfordern-a5",
+        text: "Vom Krankenhaus",
+      },
+      {
+        id: "unterlagen-anfordern-a6",
+        text: "Von Pflegeeinrichtung / Pflegedienst",
+      },
+      {
+        id: "unterlagen-anfordern-a7",
+        text: "Von einer anderen beteiligten Stelle",
+      },
+      {
+        id: "unterlagen-anfordern-a8",
+        text: "Ben\u00f6tigte Unterlagen sind konkret benannt",
+      },
+      {
+        id: "unterlagen-anfordern-a9",
+        text: "Anforderung ist dokumentiert",
+      },
+      {
+        id: "unterlagen-anfordern-a10",
+        text: "Zeitpunkt / Frist zur Pr\u00fcfung des Eingangs ist festgelegt",
       },
     ],
   },
 
   "aktuellen-verlauf-erfassen": {
     id: "aktuellen-verlauf-erfassen",
-    title: "Aktuellen Verlauf erfassen",
+    title: "Aktuellen Verlauf dokumentieren",
     description:
-      "Der aktuelle Verlauf seit dem letzten relevanten Kontakt wird erfasst.",
-    orientationHint: "Auch 'keine Veränderung' ist ein relevantes Ergebnis.",
+      "Der aktuelle Verlauf eines bereits bekannten Problems bzw. Sachverhalts ist im Krankenblatt nachvollziehbar dokumentiert.",
     orientationAnchors: [
       {
         id: "aktuellen-verlauf-erfassen-a1",
-        text: "Hat sich seit dem letzten relevanten Kontakt etwas verändert?",
+        text: "Ver\u00e4nderung seit dem letzten Kontakt ist dokumentiert",
       },
       {
         id: "aktuellen-verlauf-erfassen-a2",
-        text: "Ist der aktuelle Verlauf ausreichend erfasst?",
+        text: "Neue Beschwerden / Ver\u00e4nderungen sind dokumentiert",
+      },
+      {
+        id: "aktuellen-verlauf-erfassen-a3",
+        text: "Wirkung bisheriger Ma\u00dfnahmen ist dokumentiert",
+      },
+      {
+        id: "aktuellen-verlauf-erfassen-a4",
+        text: "Zwischenzeitliche Behandlungen oder Therapie\u00e4nderungen sind dokumentiert",
       },
     ],
   },
@@ -691,16 +1050,54 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
   "berechtigung-pruefen": {
     id: "berechtigung-pruefen",
     title: "Berechtigung prüfen",
+    // EXTERNAL_REVIEW_NEEDED: rechtliche Anforderungen an Nachweis und Form der Bevollmächtigung
     description:
-      "Es wird geprüft, ob die handelnde Person berechtigt ist, im Namen des Patienten zu handeln oder Informationen über ihn zu erhalten.",
+      "Es wird geklärt, auf welcher Grundlage eine andere Person für den Patienten handeln oder Informationen erhalten kann, und ob beim konkreten Vorgang eine erneute Prüfung stattfindet.",
     orientationAnchors: [
       {
         id: "berechtigung-pruefen-a1",
-        text: "Handelt die Person selbst oder im Namen eines Patienten?",
+        text: "Generelle Berechtigung / Bevollmächtigung ist im Krankenblatt hinterlegt",
       },
       {
         id: "berechtigung-pruefen-a2",
-        text: "Liegt für den konkreten Vorgang eine ausreichende Berechtigung oder gesetzliche Grundlage vor?",
+        text: "Berechtigung für den konkreten Vorgang wird geprüft",
+      },
+      {
+        id: "berechtigung-pruefen-a3",
+        text: "Identität der handelnden Person wird beim konkreten Vorgang geprüft",
+      },
+      {
+        id: "berechtigung-pruefen-a4",
+        text: "Identitätsnachweis wird beim konkreten Vorgang verlangt",
+      },
+      {
+        id: "berechtigung-pruefen-a5",
+        text: "Gesetzliche Vertretung ist hinterlegt",
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // Praxisorganisation
+  // ---------------------------------------------------------------------------
+
+  "behandlerzuordnung-geklaert": {
+    id: "behandlerzuordnung-geklaert",
+    title: "Behandlerzuordnung geklärt",
+    description:
+      "Es ist festgelegt, ob bzw. welchem Arzt, Behandler oder Praxisteam der Patient organisatorisch zugeordnet ist.",
+    orientationAnchors: [
+      {
+        id: "behandlerzuordnung-geklaert-a1",
+        text: "Patient ist einem bestimmten Arzt / Behandler zugeordnet",
+      },
+      {
+        id: "behandlerzuordnung-geklaert-a2",
+        text: "Patient ist einem bestimmten Praxisteam zugeordnet",
+      },
+      {
+        id: "behandlerzuordnung-geklaert-a3",
+        text: "Zuordnung ist im Praxissystem dokumentiert",
       },
     ],
   },
