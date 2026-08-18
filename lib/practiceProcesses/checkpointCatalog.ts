@@ -266,10 +266,6 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
         id: "termin-vorhanden-a2",
         text: "Ist ein vom Krankenhaus empfohlener Folgetermin bereits vereinbart?",
       },
-      {
-        id: "termin-vorhanden-a3",
-        text: "Erfordern die mitgebrachten Unterlagen eine ärztliche Besprechung oder einen Folgetermin?",
-      },
     ],
   },
 
@@ -489,9 +485,9 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
 
   "facharztbericht-einordnen": {
     id: "facharztbericht-einordnen",
-    title: "Facharztbericht einordnen",
+    title: "Externen medizinischen Bericht einordnen",
     description:
-      "Ein vorliegender Facharztbericht wird in den bestehenden Behandlungszusammenhang des Patienten eingeordnet.",
+      "Ein vorliegender externer medizinischer Bericht wird in den bestehenden Behandlungszusammenhang des Patienten eingeordnet.",
     // Konkrete Folgehandlungen (Einbestellung, Medikationsabgleich etc.) gehören in separate Checkpoints
     orientationAnchors: [
       {

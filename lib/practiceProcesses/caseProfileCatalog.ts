@@ -65,9 +65,18 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     description:
       "Eingang eines Entlass- oder Arztbriefs nach stationärem Aufenthalt: Vollständigkeit prüfen und dem Arzt zur Einordnung weiterleiten.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",            group: "Patientenstatus" },
-      { checkpointId: "unterlagen-vorhanden", group: "Befundeingang" },
-      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
+      { checkpointId: "patient-bekannt",                 group: "Patientenstatus" },
+      { checkpointId: "patientenzuordnung-pruefen",      group: "Eingang" },
+      { checkpointId: "unterlagen-vorhanden",            group: "Eingang" },
+      { checkpointId: "dokument-digitalisieren",         group: "Verarbeitung" },
+      { checkpointId: "dokument-kennzeichnen",           group: "Verarbeitung" },
+      { checkpointId: "dringlichkeitsbedarf-erkennen",   group: "Einschätzung" },
+      { checkpointId: "bezug-zu-laufendem-fall-pruefen", group: "Einschätzung" },
+      { checkpointId: "dauermedikation-abgleichen",      group: "Einordnung" },
+      { checkpointId: "facharztbericht-einordnen",       group: "Einordnung" },
+      { checkpointId: "dokument-weiterleiten",           group: "Abschluss" },
+      { checkpointId: "unterlagen-anfordern",            group: "Abschluss" },
+      { checkpointId: "zur-wiedervorlage-vormerken",     group: "Abschluss" },
     ],
   },
   "laborbefund-eingegangen": {
@@ -76,9 +85,15 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     description:
       "Eingang eines Laborbefunds: Zuordnung prüfen und dem Arzt zur Bewertung weiterleiten.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",       group: "Patientenstatus" },
-      { checkpointId: "unterlagen-vorhanden", group: "Befundeingang" },
-      { checkpointId: "dokument-weiterleiten", group: "Abschluss" },
+      { checkpointId: "patientenzuordnung-pruefen",      group: "Eingang" },
+      { checkpointId: "unterlagen-vorhanden",            group: "Eingang" },
+      { checkpointId: "dokument-digitalisieren",         group: "Verarbeitung" },
+      { checkpointId: "dokument-kennzeichnen",           group: "Verarbeitung" },
+      { checkpointId: "dringlichkeitsbedarf-erkennen",   group: "Einschätzung" },
+      { checkpointId: "bezug-zu-laufendem-fall-pruefen", group: "Einschätzung" },
+      { checkpointId: "laborbefund-fachlich-bewerten",   group: "Befundbearbeitung" },
+      { checkpointId: "dokument-weiterleiten",           group: "Abschluss" },
+      { checkpointId: "zur-wiedervorlage-vormerken",     group: "Abschluss" },
     ],
   },
 
@@ -88,22 +103,35 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     description:
       "Eingang eines Facharztberichts: Vollständigkeit prüfen und dem Arzt zur Einordnung weiterleiten.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",            group: "Patientenstatus" },
-      { checkpointId: "unterlagen-vorhanden", group: "Befundeingang" },
-      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
+      { checkpointId: "patient-bekannt",                 group: "Patientenstatus" },
+      { checkpointId: "patientenzuordnung-pruefen",      group: "Eingang" },
+      { checkpointId: "unterlagen-vorhanden",            group: "Eingang" },
+      { checkpointId: "dokument-digitalisieren",         group: "Verarbeitung" },
+      { checkpointId: "dokument-kennzeichnen",           group: "Verarbeitung" },
+      { checkpointId: "dringlichkeitsbedarf-erkennen",   group: "Einschätzung" },
+      { checkpointId: "bezug-zu-laufendem-fall-pruefen", group: "Einschätzung" },
+      { checkpointId: "dokument-weiterleiten",           group: "Abschluss" },
+      { checkpointId: "unterlagen-anfordern",            group: "Abschluss" },
+      { checkpointId: "zur-wiedervorlage-vormerken",     group: "Abschluss" },
     ],
   },
 
-  // Klärungsfall: Facharztbericht hausärztlich einordnen und Patienten informieren
   "facharztbericht-bearbeiten": {
     id: "facharztbericht-bearbeiten",
     title: "Facharztbericht bearbeiten",
     description:
-      "Ein eingegangener Facharztbericht wird haustärztlich eingeordnet und der Patient über das Ergebnis informiert.",
+      "Ein eingegangener Facharztbericht wird hausärztlich eingeordnet und der Patient über das Ergebnis informiert.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",           group: "Patientenstatus" },
-      { checkpointId: "facharztbericht-einordnen", group: "Medizinische Einordnung" },
-      { checkpointId: "patient-informieren",       group: "Abschluss" },
+      { checkpointId: "dringlichkeitsbedarf-erkennen",        group: "Einschätzung" },
+      { checkpointId: "bezug-zu-laufendem-fall-pruefen",      group: "Einschätzung" },
+      { checkpointId: "dauermedikation-abgleichen",           group: "Medizinische Einordnung" },
+      { checkpointId: "facharztbericht-einordnen",            group: "Medizinische Einordnung" },
+      { checkpointId: "patient-informieren",                  group: "Patientenkommunikation" },
+      { checkpointId: "kontaktform-festlegen",                group: "Patientenkommunikation" },
+      { checkpointId: "dokument-dem-patienten-bereitstellen", group: "Patientenkommunikation" },
+      { checkpointId: "dokument-weiterleiten",                group: "Abschluss" },
+      { checkpointId: "unterlagen-anfordern",                 group: "Abschluss" },
+      { checkpointId: "zur-wiedervorlage-vormerken",          group: "Abschluss" },
     ],
   },
 
@@ -158,11 +186,18 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     id: "patient-bringt-unterlagen",
     title: "Patient bringt Unterlagen mit",
     description:
-      "Patient übergibt der Praxis Unterlagen, die in die Akte aufzunehmen und weiterzuleiten sind.",
+      "Patient übergibt der Praxis Unterlagen, die geprüft, in die Akte aufgenommen und bei Bedarf weitergeleitet werden.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",       group: "Patientenstatus" },
-      { checkpointId: "unterlagen-vorhanden",  group: "Eingang" },
-      { checkpointId: "dokument-weiterleiten", group: "Abschluss" },
+      { checkpointId: "patient-bekannt",                 group: "Patientenstatus" },
+      { checkpointId: "patientenzuordnung-pruefen",      group: "Eingang" },
+      { checkpointId: "unterlagen-vorhanden",            group: "Eingang" },
+      { checkpointId: "dokument-digitalisieren",         group: "Verarbeitung" },
+      { checkpointId: "dokument-kennzeichnen",           group: "Verarbeitung" },
+      { checkpointId: "dringlichkeitsbedarf-erkennen",   group: "Einschätzung" },
+      { checkpointId: "bezug-zu-laufendem-fall-pruefen", group: "Einschätzung" },
+      { checkpointId: "dokument-weiterleiten",           group: "Abschluss" },
+      { checkpointId: "unterlagen-anfordern",            group: "Abschluss" },
+      { checkpointId: "zur-wiedervorlage-vormerken",     group: "Abschluss" },
     ],
   },
   "neupatient": {
