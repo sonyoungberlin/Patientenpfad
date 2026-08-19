@@ -38,14 +38,22 @@ export default function DraftM2Client() {
     }
   }, [router]);
 
-  // Catalog lookup; only rebuilt when checkpoint set changes
+  // Checkpoint-Definitionen: Snapshot-Daten haben Vorrang (neue Sessions),
+  // statischer Katalog dient als Fallback für ältere Sessions ohne eingebettete Daten.
   const cpDefinitions = useMemo(
     () =>
       Object.fromEntries(
-        (snapshot?.checkpoints ?? []).map((cp) => [
-          cp.checkpointId,
-          getCheckpoint(cp.checkpointId),
-        ]),
+        (snapshot?.checkpoints ?? []).map((cp) => {
+          const catalogDef = getCheckpoint(cp.checkpointId);
+          return [
+            cp.checkpointId,
+            {
+              description: cp.checkpointDescription ?? catalogDef?.description,
+              orientationAnchors:
+                cp.checkpointAnchors ?? catalogDef?.orientationAnchors ?? [],
+            },
+          ];
+        }),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(",")],

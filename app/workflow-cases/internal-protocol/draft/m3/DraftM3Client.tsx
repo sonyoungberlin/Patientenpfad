@@ -102,10 +102,17 @@ export default function DraftM3Client() {
   const cpDefinitions = useMemo(
     () =>
       Object.fromEntries(
-        (snapshot?.checkpoints ?? []).map((cp) => [
-          cp.checkpointId,
-          getCheckpoint(cp.checkpointId),
-        ]),
+        (snapshot?.checkpoints ?? []).map((cp) => {
+          const catalogDef = getCheckpoint(cp.checkpointId);
+          return [
+            cp.checkpointId,
+            {
+              description: cp.checkpointDescription ?? catalogDef?.description,
+              orientationAnchors:
+                cp.checkpointAnchors ?? catalogDef?.orientationAnchors ?? [],
+            },
+          ];
+        }),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(",")],

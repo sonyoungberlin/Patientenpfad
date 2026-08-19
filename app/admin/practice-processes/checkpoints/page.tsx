@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import { listCheckpoints } from "@/lib/practiceProcesses";
+import { listCheckpointsFromLib } from "@/lib/practiceProcesses";
 import CheckpointsListClient from "./CheckpointsListClient";
 
 export default async function AdminCheckpointsPage() {
@@ -10,7 +10,7 @@ export default async function AdminCheckpointsPage() {
     redirect("/");
   }
 
-  const checkpoints = listCheckpoints();
+  const checkpoints = await listCheckpointsFromLib();
 
   return (
     <main style={{ display: "grid", gap: "1.5rem", maxWidth: "var(--main-max-width)" }}>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { canAccessWorkflowCases } from "@/lib/authz";
+import { listCaseProfilesFromLib } from "@/lib/practiceProcesses/caseProfileLibrary";
 import InternalProtocolNewClient from "./InternalProtocolNewClient";
 
 export default async function InternalProtocolNewPage() {
@@ -12,6 +13,8 @@ export default async function InternalProtocolNewPage() {
     redirect("/dashboard");
   }
 
+  const profiles = await listCaseProfilesFromLib();
+
   return (
     <main style={{ display: "grid", gap: "1.5rem" }}>
       <section>
@@ -20,7 +23,7 @@ export default async function InternalProtocolNewPage() {
           Arbeitsprozess auswählen und Sitzung starten.
         </p>
       </section>
-      <InternalProtocolNewClient />
+      <InternalProtocolNewClient profiles={profiles} />
     </main>
   );
 }

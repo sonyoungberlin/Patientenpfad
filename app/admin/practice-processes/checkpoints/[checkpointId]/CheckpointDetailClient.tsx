@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { PracticeCheckpointAnchor } from "@/lib/practiceProcesses";
 import { toLibraryId } from "@/lib/practiceProcesses";
@@ -12,12 +13,14 @@ type CheckpointDraft = {
   orientationAnchors: PracticeCheckpointAnchor[];
 };
 
-// finds the lowest free anchor slot id within the current checkpoint
-function nextAnchorId(existing: string[]): string {
+type SaveState = "idle" | "saving" | "success" | "error";
+
+/** Nächste freie Anker-ID im Format `{checkpointId}-aN`. */
+function nextAnchorId(checkpointId: string, existing: string[]): string {
   const taken = new Set(existing);
   let n = 1;
-  while (taken.has(`a${n}`)) n++;
-  return `a${n}`;
+  while (taken.has(`${checkpointId}-a${n}`)) n++;
+  return `${checkpointId}-a${n}`;
 }
 
 function moveItem<T>(arr: T[], from: number, to: number): T[] {
@@ -25,6 +28,10 @@ function moveItem<T>(arr: T[], from: number, to: number): T[] {
   const [item] = result.splice(from, 1);
   result.splice(to, 0, item);
   return result;
+}
+
+function draftsEqual(a: CheckpointDraft, b: CheckpointDraft): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 const textareaStyle: React.CSSProperties = {
@@ -49,7 +56,11 @@ export default function CheckpointDetailClient({
   existingIds?: string[];
   existingTitles?: string[];
 }) {
+  const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
+  const [savedDraft, setSavedDraft] = useState(initialDraft);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const pendingFocusIndex = useRef<number | null>(null);
 
   const displayId = fixedId ?? toLibraryId(draft.title);
@@ -60,6 +71,75 @@ export default function CheckpointDetailClient({
     isNew &&
     titleFilled &&
     existingTitles.some((t) => t.trim().toLowerCase() === draft.title.trim().toLowerCase());
+
+  const isDirty = !draftsEqual(draft, savedDraft);
+
+  const canSave =
+    titleFilled &&
+    !isDuplicateId &&
+    !isDuplicateTitle &&
+    draft.orientationAnchors.length > 0 &&
+    saveState !== "saving" &&
+    isDirty;
+
+  // Warnung beim Verlassen mit ungespeicherten Änderungen
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  async function handleSave() {
+    if (!canSave) return;
+    setSaveState("saving");
+    setSaveError(null);
+
+    const url = isNew
+      ? "/api/admin/checkpoints"
+      : `/api/admin/checkpoints/${fixedId}`;
+    const method = isNew ? "POST" : "PUT";
+    const payload = isNew
+      ? { id: displayId, ...draftPayload() }
+      : draftPayload();
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        checkpoint?: { id: string };
+      };
+      if (!res.ok || !json.ok) {
+        setSaveState("error");
+        setSaveError(json.error ?? "Speichern fehlgeschlagen.");
+        return;
+      }
+      setSaveState("success");
+      setSavedDraft(draft);
+      if (isNew && json.checkpoint) {
+        router.push(`/admin/practice-processes/checkpoints/${json.checkpoint.id}`);
+      }
+    } catch {
+      setSaveState("error");
+      setSaveError("Netzwerkfehler. Bitte erneut versuchen.");
+    }
+  }
+
+  function draftPayload() {
+    return {
+      title: draft.title.trim(),
+      description: draft.description,
+      orientationHint: draft.orientationHint,
+      orientationAnchors: draft.orientationAnchors,
+    };
+  }
 
   return (
     <main style={{ display: "grid", gap: "1.5rem", maxWidth: "var(--main-max-width)" }}>
@@ -229,13 +309,43 @@ export default function CheckpointDetailClient({
               ...prev,
               orientationAnchors: [
                 ...prev.orientationAnchors,
-                { id: nextAnchorId(prev.orientationAnchors.map((a) => a.id)), text: "" },
+                {
+                  id: nextAnchorId(displayId, prev.orientationAnchors.map((a) => a.id)),
+                  text: "",
+                },
               ],
             }));
           }}
         >
           + Orientierungsfrage
         </button>
+      </section>
+
+      {/* Speichern */}
+      <section style={{ display: "grid", gap: "0.5rem" }}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!canSave}
+          style={{ justifySelf: "start" }}
+        >
+          {saveState === "saving" ? "Wird gespeichert …" : "Speichern"}
+        </button>
+        {isDirty && saveState !== "saving" && saveState !== "success" && (
+          <p className="text-small text-muted" style={{ margin: 0 }}>
+            Ungespeicherte Änderungen.
+          </p>
+        )}
+        {saveState === "success" && !isDirty && (
+          <p className="text-small" style={{ margin: 0, color: "var(--success, green)" }}>
+            Erfolgreich gespeichert.
+          </p>
+        )}
+        {saveState === "error" && (
+          <p className="text-small text-error" style={{ margin: 0 }}>
+            {saveError}
+          </p>
+        )}
       </section>
     </main>
   );

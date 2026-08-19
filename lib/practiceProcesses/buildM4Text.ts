@@ -7,9 +7,10 @@ import type {
 function anchorTextsFor(cp: PracticeWorkflowCheckpointState): string[] {
   const ids = cp.selectedAnchorIds ?? [];
   if (ids.length === 0) return [];
-  return (getCheckpoint(cp.checkpointId)?.orientationAnchors ?? [])
-    .filter((a) => ids.includes(a.id))
-    .map((a) => a.text);
+  // Prefer embedded snapshot anchors, fall back to static catalog for old sessions
+  const anchors =
+    cp.checkpointAnchors ?? getCheckpoint(cp.checkpointId)?.orientationAnchors ?? [];
+  return anchors.filter((a) => ids.includes(a.id)).map((a) => a.text);
 }
 
 export function buildM4Text(snapshot: PracticeWorkflowSnapshot): string {

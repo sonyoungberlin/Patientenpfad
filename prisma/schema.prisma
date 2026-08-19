@@ -762,3 +762,30 @@ model DigitalRequest {
   @@index([owner_practice_id, createdAt])
   @@index([owner_account_id, createdAt])
 }
+
+/// Admin-verwaltete Überschreibungen der Checkpoint-Bibliothek.
+/// DB-Einträge überschreiben den statischen Katalog (checkpointCatalog.ts) zur Laufzeit.
+/// Anker werden als JSON gespeichert (analog zu active_checkpoints in CaseSession).
+model LibraryCheckpoint {
+  id               String   @id
+  title            String
+  description      String?
+  orientation_hint String?
+  /// Array<{ id: string; text: string }>
+  anchors          Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/// Admin-verwaltete Überschreibungen der Praxisfall-Bibliothek.
+/// DB-Einträge überschreiben den statischen Katalog (caseProfileCatalog.ts) zur Laufzeit.
+/// CheckpointRefs werden als JSON gespeichert.
+model LibraryCaseProfile {
+  id              String   @id
+  title           String
+  description     String?
+  /// Array<{ checkpointId: string; group?: string }>
+  checkpoint_refs Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

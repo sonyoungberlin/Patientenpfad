@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import { getCheckpoint } from "@/lib/practiceProcesses";
+import { getCheckpointFromLib } from "@/lib/practiceProcesses";
 import CheckpointDetailClient from "./CheckpointDetailClient";
 
 export default async function AdminCheckpointDetailPage({
@@ -14,7 +14,7 @@ export default async function AdminCheckpointDetailPage({
   }
 
   const { checkpointId } = await params;
-  const checkpoint = getCheckpoint(checkpointId);
+  const checkpoint = await getCheckpointFromLib(checkpointId);
   if (!checkpoint) {
     notFound();
   }

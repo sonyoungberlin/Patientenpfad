@@ -2,19 +2,24 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { listCaseProfiles, getCheckpoint } from "@/lib/practiceProcesses";
 import type { PracticeCaseProfile } from "@/lib/practiceProcesses";
-import { buildInitialPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import {
   DRAFT_SNAPSHOT_KEY,
   DRAFT_SOURCE_ID_KEY,
   DRAFT_SOURCE_TITLE_KEY,
 } from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 
-export default function InternalProtocolNewClient() {
+export default function InternalProtocolNewClient({
+  profiles,
+}: {
+  profiles: PracticeCaseProfile[];
+}) {
   const router = useRouter();
-  const profiles = useMemo(() => listCaseProfiles(), []);
   const [searchTerm, setSearchTerm] = useState("");
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -26,12 +31,35 @@ export default function InternalProtocolNewClient() {
     );
   }, [profiles, searchTerm]);
 
-  function handleStart(profile: PracticeCaseProfile) {
-    const snapshot = buildInitialPracticeWorkflowSnapshot(profile, getCheckpoint);
-    sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(snapshot));
-    sessionStorage.removeItem(DRAFT_SOURCE_ID_KEY);
-    sessionStorage.removeItem(DRAFT_SOURCE_TITLE_KEY);
-    router.push("/workflow-cases/internal-protocol/draft/m2");
+  async function handleStart(profile: PracticeCaseProfile) {
+    setStarting(true);
+    setStartError(null);
+    try {
+      const res = await fetch("/api/workflow-cases/internal-protocol/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseProfileId: profile.id }),
+      });
+      const data = (await res.json()) as { ok: boolean; snapshot?: unknown; error?: string };
+      if (!res.ok || !data.ok) {
+        setStartError(data.error ?? "Sitzung konnte nicht gestartet werden.");
+        setStarting(false);
+        return;
+      }
+      if (!isPracticeWorkflowSnapshot(data.snapshot)) {
+        setStartError("Ungültige Antwort vom Server.");
+        setStarting(false);
+        return;
+      }
+      const snapshot: PracticeWorkflowSnapshot = data.snapshot;
+      sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(snapshot));
+      sessionStorage.removeItem(DRAFT_SOURCE_ID_KEY);
+      sessionStorage.removeItem(DRAFT_SOURCE_TITLE_KEY);
+      router.push("/workflow-cases/internal-protocol/draft/m2");
+    } catch {
+      setStartError("Netzwerkfehler. Bitte erneut versuchen.");
+      setStarting(false);
+    }
   }
 
   return (
@@ -64,11 +92,12 @@ export default function InternalProtocolNewClient() {
               type="button"
               className="card"
               onClick={() => handleStart(profile)}
+              disabled={starting}
               style={{
                 display: "block",
                 width: "100%",
                 textAlign: "left",
-                cursor: "pointer",
+                cursor: starting ? "wait" : "pointer",
                 whiteSpace: "normal",
               }}
             >
@@ -82,7 +111,13 @@ export default function InternalProtocolNewClient() {
           ))}
         </div>
       )}
+      {startError && (
+        <p className="text-small text-error" style={{ margin: 0 }}>
+          {startError}
+        </p>
+      )}
     </div>
   );
 }
+
 

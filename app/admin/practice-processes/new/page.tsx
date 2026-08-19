@@ -1,41 +1,40 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { getCaseProfileFromLib, listCaseProfilesFromLib } from "@/lib/practiceProcesses/caseProfileLibrary";
 import { listCheckpointsFromLib } from "@/lib/practiceProcesses/checkpointLibrary";
-import CaseProfileDetailClient from "./CaseProfileDetailClient";
+import CaseProfileDetailClient from "../[profileId]/CaseProfileDetailClient";
 
-export default async function AdminPracticeProcessDetailPage({
-  params,
+export default async function AdminNewCaseProfilePage({
+  searchParams,
 }: {
-  params: Promise<{ profileId: string }>;
+  searchParams: Promise<{ copyFrom?: string }>;
 }) {
   const account = await getSessionAccountFromCookies();
   if (!account || !account.is_approved || !account.is_admin) {
     redirect("/");
   }
 
-  const { profileId } = await params;
-  const [profile, allCheckpoints, allProfiles] = await Promise.all([
-    getCaseProfileFromLib(profileId),
+  const { copyFrom } = await searchParams;
+  const [source, allCheckpoints, allProfiles] = await Promise.all([
+    copyFrom ? getCaseProfileFromLib(copyFrom) : Promise.resolve(null),
     listCheckpointsFromLib(),
     listCaseProfilesFromLib(),
   ]);
 
-  if (!profile) {
-    notFound();
-  }
-
-  return (
-    <CaseProfileDetailClient
-      initialDraft={{
-        title: profile.title,
-        description: profile.description ?? "",
-        checkpointRefs: profile.checkpointRefs.map((r) => ({
+  const initialDraft = source
+    ? {
+        title: `${source.title} (Kopie)`,
+        description: source.description ?? "",
+        checkpointRefs: source.checkpointRefs.map((r) => ({
           checkpointId: r.checkpointId,
           group: r.group ?? "",
         })),
-      }}
-      fixedId={profile.id}
+      }
+    : { title: "", description: "", checkpointRefs: [] };
+
+  return (
+    <CaseProfileDetailClient
+      initialDraft={initialDraft}
       availableCheckpoints={allCheckpoints.map((cp) => ({ id: cp.id, title: cp.title }))}
       existingIds={allProfiles.map((p) => p.id)}
       existingTitles={allProfiles.map((p) => p.title)}

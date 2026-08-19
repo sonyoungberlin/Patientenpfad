@@ -1,4 +1,4 @@
-import type { PracticeCaseProfile, PracticeCheckpoint } from "./types";
+import type { PracticeCaseProfile, PracticeCheckpoint, PracticeCheckpointAnchor } from "./types";
 
 export type CheckpointDecision = "PFLICHT" | "OPTIONAL" | "NICHT_RELEVANT";
 
@@ -9,6 +9,10 @@ export interface PracticeWorkflowCheckpointState {
   decision?: CheckpointDecision;
   /** Kurze praxisindividuelle Beschreibung, wie diese Praxis den Checkpoint konkret umsetzt. */
   umsetzung?: string;
+  /** Snapshot der verfügbaren Orientierungsanker zum Zeitpunkt der Session-Erstellung. */
+  checkpointAnchors?: PracticeCheckpointAnchor[];
+  /** Checkpoint-Beschreibung zum Zeitpunkt der Session-Erstellung. */
+  checkpointDescription?: string;
 }
 
 export interface PracticeWorkflowSnapshot {
@@ -47,6 +51,10 @@ export function buildInitialPracticeWorkflowSnapshot(
         checkpointId: ref.checkpointId,
         checkpointTitle: cp?.title ?? ref.checkpointId,
         selectedAnchorIds: [],
+        ...(cp?.description != null ? { checkpointDescription: cp.description } : {}),
+        ...(cp?.orientationAnchors != null
+          ? { checkpointAnchors: [...cp.orientationAnchors] }
+          : {}),
       };
     }),
   };
