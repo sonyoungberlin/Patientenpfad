@@ -142,9 +142,11 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     description:
       "Ein eingehender Vorgang kann nicht eindeutig klassifiziert oder zugeordnet werden — Dokumenttyp, Absender oder Patientenbezug sind unklar.",
     checkpointRefs: [
-      { checkpointId: "dokument-kennzeichnen",      group: "Identifikation" },
-      { checkpointId: "patientenzuordnung-pruefen", group: "Identifikation" },
-      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
+      { checkpointId: "dokument-kennzeichnen",            group: "Klärung" },
+      { checkpointId: "patientenzuordnung-pruefen",       group: "Klärung" },
+      { checkpointId: "bezug-zu-laufendem-fall-pruefen",  group: "Klärung" },
+      { checkpointId: "dokument-weiterleiten",            group: "Abschluss" },
+      { checkpointId: "zur-wiedervorlage-vormerken",      group: "Abschluss" },
     ],
   },
 
@@ -155,6 +157,8 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
       "Ein Dokument liegt vor, kann aber keinem Patienten in der Praxis zugeordnet werden.",
     checkpointRefs: [
       { checkpointId: "patientenzuordnung-pruefen",  group: "Klärung" },
+      { checkpointId: "dokument-kennzeichnen",        group: "Klärung" },
+      { checkpointId: "dokument-weiterleiten",        group: "Abschluss" },
       { checkpointId: "zur-wiedervorlage-vormerken", group: "Abschluss" },
     ],
   },
@@ -165,8 +169,9 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     description:
       "Ein Dokument ist einem falschen Patienten zugeordnet. Der korrekte Patient ist identifizierbar.",
     checkpointRefs: [
-      { checkpointId: "patientenzuordnung-pruefen", group: "Klärung" },
-      { checkpointId: "dokument-weiterleiten",      group: "Abschluss" },
+      { checkpointId: "patientenzuordnung-pruefen", group: "Korrektur" },
+      { checkpointId: "dokument-kennzeichnen",       group: "Korrektur" },
+      { checkpointId: "dokument-weiterleiten",       group: "Abschluss" },
     ],
   },
 
@@ -176,8 +181,8 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     description:
       "Ein eingegangenes Dokument ist mangelhaft — unvollständig, unleserlich, abgeschnitten oder fehlerhaft gescannt.",
     checkpointRefs: [
-      { checkpointId: "dokument-kennzeichnen",       group: "Mängelerfassung" },
       { checkpointId: "unterlagen-anfordern",        group: "Nachforderung" },
+      { checkpointId: "dokument-weiterleiten",        group: "Abschluss" },
       { checkpointId: "zur-wiedervorlage-vormerken", group: "Abschluss" },
     ],
   },
@@ -228,9 +233,8 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     title: "Terminanfrage",
     description: "Ein Patient fragt nach einem Termin in der Praxis.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",                    group: "Patient" },
-      { checkpointId: "anlass-der-einbestellung-pruefen",   group: "Klärung" },
-      { checkpointId: "termin-vereinbaren",                 group: "Abschluss" },
+      { checkpointId: "patient-bekannt",   group: "Patient" },
+      { checkpointId: "termin-vereinbaren", group: "Abschluss" },
     ],
   },
 
@@ -239,10 +243,12 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     title: "Überweisungsanfrage",
     description: "Ein Patient fragt nach einer Überweisung zu einem Facharzt.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",                      group: "Patient" },
-      { checkpointId: "anlass-einer-ueberweisung-pruefen",    group: "Klärung" },
-      { checkpointId: "fragestellung-der-ueberweisung-klaeren", group: "Klärung" },
-      { checkpointId: "ueberweisung-erstellen",               group: "Abschluss" },
+      { checkpointId: "patient-bekannt",                          group: "Patient" },
+      { checkpointId: "versicherungsnachweis-vorhanden",           group: "Voraussetzungen" },
+      { checkpointId: "anlass-einer-ueberweisung-pruefen",        group: "Klärung" },
+      { checkpointId: "fragestellung-der-ueberweisung-klaeren",   group: "Klärung" },
+      { checkpointId: "ueberweisung-erstellen",                   group: "Abschluss" },
+      { checkpointId: "dokument-dem-patienten-bereitstellen",     group: "Abschluss" },
     ],
   },
 
@@ -251,20 +257,18 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     title: "Verlaufskontakt",
     description: "Ein Patient meldet sich mit Rückmeldung zum aktuellen Krankheitsverlauf.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",         group: "Patient" },
-      { checkpointId: "aktuellen-verlauf-erfassen", group: "Verlauf" },
-      { checkpointId: "kontrolle-aktuell",       group: "Abschluss" },
+      { checkpointId: "aktuellen-verlauf-erfassen",  group: "Verlauf" },
+      { checkpointId: "zur-wiedervorlage-vormerken", group: "Abschluss" },
     ],
   },
 
   "rueckrufbitte": {
     id: "rueckrufbitte",
     title: "Rückrufbitte",
-    description: "Ein Patient bittet darum, von der Praxis zurückgerufen zu werden.",
+    description: "Ein Patient bittet um Rückontakt durch die Praxis.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",                  group: "Patient" },
-      { checkpointId: "zur-wiedervorlage-vormerken",      group: "Organisation" },
-      { checkpointId: "patient-telefonisch-kontaktieren", group: "Abschluss" },
+      { checkpointId: "kontaktform-festlegen",       group: "Konfiguration" },
+      { checkpointId: "zur-wiedervorlage-vormerken", group: "Organisation" },
     ],
   },
 
@@ -273,8 +277,9 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     title: "Befundanfrage",
     description: "Ein Patient fragt nach einem vorliegenden Befund.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",   group: "Patient" },
-      { checkpointId: "patient-informieren", group: "Abschluss" },
+      { checkpointId: "kontaktform-festlegen",                group: "Konfiguration" },
+      { checkpointId: "patient-informieren",                  group: "Abschluss" },
+      { checkpointId: "dokument-dem-patienten-bereitstellen", group: "Abschluss" },
     ],
   },
 
@@ -287,8 +292,7 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     title: "Patient einbestellen",
     description: "Die Praxis entscheidet, einen Patienten aktiv einzubestellen. Die Kontaktaufnahme folgt als nachgelagerter Prozess.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",                   group: "Patient" },
-      { checkpointId: "anlass-der-einbestellung-pruefen",  group: "Entscheidung" },
+      { checkpointId: "anlass-der-einbestellung-pruefen",      group: "Entscheidung" },
       { checkpointId: "zeitpunkt-der-einbestellung-festlegen", group: "Entscheidung" },
     ],
   },
@@ -296,22 +300,21 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
   "laborbefund-mitteilen": {
     id: "laborbefund-mitteilen",
     title: "Laborbefund mitteilen",
-    description: "Der Arzt hat den Laborbefund ausgewertet. Das unauffällige Ergebnis wird dem Patienten mitgeteilt.",
+    description: "Ein bereits fachlich bewerteter Laborbefund wird dem Patienten mitgeteilt.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",               group: "Patient" },
-      { checkpointId: "laborbefund-fachlich-bewerten", group: "Auswertung" },
-      { checkpointId: "patient-informieren",           group: "Abschluss" },
+      { checkpointId: "kontaktform-festlegen",                group: "Konfiguration" },
+      { checkpointId: "patient-informieren",                  group: "Abschluss" },
+      { checkpointId: "dokument-dem-patienten-bereitstellen", group: "Abschluss" },
     ],
   },
 
   "patient-nicht-erreichbar": {
     id: "patient-nicht-erreichbar",
     title: "Patient nicht erreichbar",
-    description: "Alle Kontaktversuche sind gescheitert. Der offene Vorgang wird zur Wiedervorlage vorgemerkt.",
+    description: "Ein notwendiger Kontakt zum Patienten ist nicht zustande gekommen. Die Praxis legt das weitere Vorgehen fest.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",                    group: "Patient" },
       { checkpointId: "erneuten-kontaktversuch-durchfuehren", group: "Kontakt" },
-      { checkpointId: "zur-wiedervorlage-vormerken",        group: "Abschluss" },
+      { checkpointId: "zur-wiedervorlage-vormerken",         group: "Abschluss" },
     ],
   },
 
@@ -322,28 +325,23 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
   "patient-erinnern": {
     id: "patient-erinnern",
     title: "Patient erinnern",
-    // Recall: Terminverantwortung liegt beim Patienten — kein Nachfassen, keine Eskalation
     description:
-      "Die Praxis erinnert den Patienten an eine fällige Kontrolle oder Vorsorgemaßnahme. Die Terminvereinbarung erfolgt anschließend eigenverantwortlich durch den Patienten. Die Praxis verfolgt den Vorgang nicht weiter.",
+      "Die Praxis erinnert den Patienten an eine fällige Kontrolle oder Vorsorgemaßnahme.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",     group: "Patient" },
-      { checkpointId: "kontrolle-aktuell",   group: "Prüfung" },
-      { checkpointId: "patient-informieren", group: "Abschluss" },
+      { checkpointId: "kontaktform-festlegen", group: "Konfiguration" },
+      { checkpointId: "patient-informieren",   group: "Abschluss" },
     ],
   },
 
   "verschlechterung-gemeldet": {
     id: "verschlechterung-gemeldet",
     title: "Verschlechterung gemeldet",
-    // Endet mit der Einbestellungsentscheidung — Kontaktaufnahme folgt als eigener Prozess
+    // Endet mit der Dringlichkeitseinschätzung — Einbestellungsentscheidung folgt als eigener Praxisfall
     description:
-      "Ein Patient meldet eine konkrete Zustandsverschlechterung. Verlauf wird erfasst, Dringlichkeit eingeschätzt und die Einbestellungsentscheidung getroffen. Der Fall endet mit dem festgelegten Zeitpunkt — die aktive Kontaktaufnahme und Terminvereinbarung gehören in den nachgelagerten Prozess.",
+      "Ein Patient meldet eine konkrete Zustandsverschlechterung. Verlauf wird erfasst und Dringlichkeit eingeschätzt.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",                       group: "Patient" },
-      { checkpointId: "aktuellen-verlauf-erfassen",            group: "Verlauf" },
-      { checkpointId: "dringlichkeitsbedarf-erkennen",         group: "Einschätzung" },
-      { checkpointId: "anlass-der-einbestellung-pruefen",      group: "Entscheidung" },
-      { checkpointId: "zeitpunkt-der-einbestellung-festlegen", group: "Entscheidung" },
+      { checkpointId: "aktuellen-verlauf-erfassen",    group: "Verlauf" },
+      { checkpointId: "dringlichkeitsbedarf-erkennen", group: "Einschätzung" },
     ],
   },
 
@@ -358,9 +356,9 @@ const CASE_PROFILE_CATALOG: Readonly<Record<string, PracticeCaseProfile>> = {
     description:
       "Auf Basis des individuellen Patientenprofils wird ein Impfbedarf medizinisch festgestellt und dem Patienten empfohlen. Der Fall endet mit der Empfehlung — Durchführung und Organisation sind nachgelagerte Prozesse.",
     checkpointRefs: [
-      { checkpointId: "patient-bekannt",       group: "Patient" },
-      { checkpointId: "impfbedarf-pruefen",    group: "Entscheidung" },
-      { checkpointId: "patient-informieren",   group: "Abschluss" },
+      { checkpointId: "patient-bekannt",     group: "Patient" },
+      { checkpointId: "impfbedarf-pruefen",  group: "Entscheidung" },
+      { checkpointId: "patient-informieren", group: "Abschluss" },
     ],
   },
 

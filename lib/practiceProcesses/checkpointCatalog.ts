@@ -432,7 +432,7 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     description:
       "Ein eingehender Vorgang wird daraufhin eingeschätzt, ob eine ärztliche Dringlichkeitsbeurteilung erforderlich ist.",
     orientationHint:
-      "Hier geht es nicht darum, einen Notfall einzuschätzen — sondern nur darum, ob der Arzt den Fall dringend prüfen muss.",
+      "Hier wird erkannt, ob zeitnah ärztlich geprüft oder gehandelt werden muss. Eine weitergehende Notfall- oder Eskalationsentscheidung ist damit nicht automatisch abgebildet.",
     orientationAnchors: [
       {
         id: "dringlichkeitsbedarf-erkennen-a1",
@@ -522,6 +522,8 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     title: "Anlass der Einbestellung prüfen",
     description:
       "Es wird gekl\u00e4rt, warum der Patient in die Praxis kommen bzw. \u00e4rztlich gesehen werden soll.",
+    orientationHint:
+      "Hier wird entschieden, ob eine Einbestellung erforderlich ist. Kontaktaufnahme und Terminvereinbarung erfolgen anschlie\u00dfend.",
     orientationAnchors: [
       {
         id: "anlass-der-einbestellung-pruefen-a1",
@@ -555,6 +557,8 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     title: "Zeitpunkt der Einbestellung festlegen",
     description:
       "Der Zeitpunkt für die Einbestellung wird festgelegt — so dass der Termin weder zu früh noch zu spät liegt.",
+    orientationHint:
+      "Hier wird der erforderliche Zeitraum bzw. die zeitliche Priorität festgelegt — nicht der konkrete Termin vereinbart.",
     orientationAnchors: [
       {
         id: "zeitpunkt-der-einbestellung-festlegen-a1",
@@ -573,6 +577,8 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     title: "Erforderliche Kontaktform festlegen",
     description:
       "Es ist festgelegt, welche Form des Kontakts für den jeweiligen Vorgang erforderlich oder ausreichend ist.",
+    orientationHint:
+      "Hier wird der Kontaktstandard für diesen Sachverhalt konfiguriert. Die tatsächliche Kontaktaufnahme ist ein eigener Prozessschritt.",
     orientationAnchors: [
       {
         id: "kontaktform-festlegen-a1",
@@ -699,6 +705,8 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "termin-vereinbaren",
     title: "Termin vereinbaren",
     description: "F\u00fcr den vorgesehenen Anlass wird ein konkreter Termin vereinbart.",
+    orientationHint:
+      "Hier wird ein konkreter Termin vereinbart. Ob eine Einbestellung erforderlich ist und in welchem Zeitraum sie erfolgen soll, wird separat festgelegt.",
     orientationAnchors: [
       {
         id: "termin-vereinbaren-a1",
@@ -797,6 +805,8 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "anlass-einer-ueberweisung-pruefen",
     title: "Anlass einer Überweisung prüfen",
     description: "Es ist gekl\u00e4rt, warum die \u00dcberweisung erfolgt.",
+    orientationHint:
+      "Hier wird gekl\u00e4rt, warum eine \u00dcberweisung ben\u00f6tigt wird. Die konkrete medizinische Fragestellung wird separat festgelegt.",
     orientationAnchors: [
       {
         id: "anlass-einer-ueberweisung-pruefen-a1",
@@ -822,6 +832,8 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     title: "Fragestellung der Überweisung klären",
     description:
       "Es ist gekl\u00e4rt, welche konkrete Fragestellung bzw. welcher Auftrag mit der \u00dcberweisung verbunden ist.",
+    orientationHint:
+      "Hier wird die konkrete medizinische Fragestellung der \u00dcberweisung festgelegt. Der grunds\u00e4tzliche Anlass der \u00dcberweisung wird separat gepr\u00fcft.",
     orientationAnchors: [
       {
         id: "fragestellung-der-ueberweisung-klaeren-a1",
