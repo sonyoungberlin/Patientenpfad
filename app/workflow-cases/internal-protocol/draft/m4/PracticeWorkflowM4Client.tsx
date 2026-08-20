@@ -21,6 +21,7 @@ export default function PracticeWorkflowM4Client() {
   const [copied, setCopied] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyPublished, setAlreadyPublished] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem(DRAFT_SNAPSHOT_KEY);
@@ -48,7 +49,7 @@ export default function PracticeWorkflowM4Client() {
     }
   }
 
-  async function handleAbschliessen() {
+  async function handlePublishToCatalog() {
     if (!snapshot) return;
     setFinishing(true);
     setError(null);
@@ -57,13 +58,54 @@ export default function PracticeWorkflowM4Client() {
     const sourceId = sessionStorage.getItem(DRAFT_SOURCE_ID_KEY);
     const title =
       sessionStorage.getItem(DRAFT_SOURCE_TITLE_KEY) ?? snapshot.caseProfileTitle;
-    const result = await savePracticeWorkflowDraft(completed, title, sourceId);
+
+    // 1. Entwurf speichern (PATCH oder POST)
+    const saveResult = await savePracticeWorkflowDraft(completed, title, sourceId);
+    if (!saveResult.ok) {
+      setFinishing(false);
+      setError(saveResult.error);
+      return;
+    }
+
+    // 2. In Praxiskatalog publizieren
+    let publishRes: Response;
+    try {
+      publishRes = await fetch("/api/practice-catalog/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: saveResult.id, title }),
+      });
+    } catch {
+      setFinishing(false);
+      setError("Netzwerkfehler beim Publizieren.");
+      return;
+    }
+
+    const publishData = await publishRes.json() as {
+      ok: boolean;
+      id?: string;
+      alreadyPublished?: boolean;
+      error?: string;
+    };
+
     setFinishing(false);
-    if (!result.ok) { setError(result.error); return; }
+
+    if (!publishRes.ok || !publishData.ok) {
+      setError(publishData.error ?? "Fehler beim Publizieren.");
+      return;
+    }
+
+    // Entwurfsdaten aus sessionStorage bereinigen
     sessionStorage.removeItem(DRAFT_SNAPSHOT_KEY);
     sessionStorage.removeItem(DRAFT_SOURCE_ID_KEY);
     sessionStorage.removeItem(DRAFT_SOURCE_TITLE_KEY);
-    router.push("/workflow-cases");
+
+    if (publishData.alreadyPublished) {
+      setAlreadyPublished(true);
+      return;
+    }
+
+    router.push(`/practice/catalog/${publishData.id}`);
   }
 
   if (!snapshot) return null;
@@ -107,6 +149,12 @@ export default function PracticeWorkflowM4Client() {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
+      {alreadyPublished && (
+        <p style={{ color: "#555", fontStyle: "italic", margin: 0 }}>
+          Dieser Prozess wurde bereits in Ihren Praxiskatalog aufgenommen.
+        </p>
+      )}
+
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
         <button
           type="button"
@@ -115,14 +163,16 @@ export default function PracticeWorkflowM4Client() {
           ← Zurück zu M3
         </button>
 
-        <button
-          type="button"
-          onClick={() => void handleAbschliessen()}
-          disabled={finishing}
-          style={{ marginLeft: "auto", fontWeight: 700 }}
-        >
-          {finishing ? "Wird gespeichert…" : "Abschließen"}
-        </button>
+        {!alreadyPublished && (
+          <button
+            type="button"
+            onClick={() => void handlePublishToCatalog()}
+            disabled={finishing}
+            style={{ marginLeft: "auto", fontWeight: 700 }}
+          >
+            {finishing ? "Wird veröffentlicht…" : "In Praxiskatalog aufnehmen"}
+          </button>
+        )}
       </div>
     </article>
   );

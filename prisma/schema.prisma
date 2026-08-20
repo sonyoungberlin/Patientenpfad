@@ -301,6 +301,14 @@ model WorkflowSession {
   owner_practice_id String?
   owner_practice    Practice? @relation("WorkflowSessionOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: SetNull)
 
+  /// Verknüpft diese Draft-Sitzung mit dem Katalogeintrag, aus dem sie erzeugt wurde (Revision).
+  /// Null = erste Fassung oder aus Bibliothek gestartet.
+  source_catalog_entry_id String?                @unique
+  source_catalog_entry    PracticeCatalogEntry?  @relation("WorkflowSessionSourceCatalogEntry", fields: [source_catalog_entry_id], references: [id], onDelete: SetNull)
+
+  /// Katalogeintrag, der aus dieser Sitzung publiziert wurde (max. einer).
+  practice_catalog_entries PracticeCatalogEntry[] @relation("PracticeCatalogEntrySourceSession")
+
   @@index([owner_account_id, createdAt])
   @@index([owner_practice_id, createdAt])
 }
@@ -650,6 +658,7 @@ model Practice {
   patient_questionnaire_sessions PatientQuestionnaireSession[] @relation("PatientQuestionnaireSessionOwnerPractice")
   practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
   digital_requests               DigitalRequest[]              @relation("DigitalRequestOwnerPractice")
+  practice_catalog_entries       PracticeCatalogEntry[]        @relation("PracticeCatalogEntryPractice")
 
   /// Option C (minimal): Accounts, die diese Practice als Standard-Praxis
   /// referenzieren. Gegenseite zu `Account.default_practice`.
@@ -788,4 +797,57 @@ model LibraryCaseProfile {
   checkpoint_refs Json
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+/// Stabiler, versionierter Praxiskatalog-Eintrag.
+/// Entsteht durch Publizieren einer abgeschlossenen WorkflowSession.
+/// Unveränderlich: Eine Revision erzeugt einen neuen Eintrag (neue Version).
+model PracticeCatalogEntry {
+  id String @id @default(cuid())
+
+  /// Stabile Gruppenkennung über alle Versionen eines Praxisfalls.
+  catalog_case_id String
+
+  /// Zugehörige Praxis (Pflichtfeld, darf nicht gelöscht werden solange Einträge existieren).
+  practice_id String
+  practice    Practice @relation("PracticeCatalogEntryPractice", fields: [practice_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  /// WorkflowSession, aus der dieser Eintrag publiziert wurde.
+  /// Null wenn die Session gelöscht wurde.
+  source_session_id String?         @unique
+  source_session    WorkflowSession? @relation("PracticeCatalogEntrySourceSession", fields: [source_session_id], references: [id], onDelete: SetNull)
+
+  /// WorkflowSession, die als Revision dieses Eintrags angelegt wurde.
+  revision_session WorkflowSession? @relation("WorkflowSessionSourceCatalogEntry")
+
+  /// Ursprünglicher Bibliotheksfall (optional, für Rückverfolgbarkeit).
+  source_case_profile_id String?
+
+  /// Titel des Eintrags (Kopie aus der WorkflowSession).
+  title String
+
+  /// Freitext-Beschreibung (optional).
+  description String?
+
+  /// Eingefrorer Snapshot der PracticeWorkflowSnapshot-Struktur.
+  snapshot Json
+
+  /// Versionsnummer innerhalb einer catalog_case_id-Gruppe (1, 2, 3 …).
+  version Int
+
+  /// Markiert die neueste aktive Version innerhalb einer catalog_case_id-Gruppe.
+  is_current_version Boolean @default(true)
+
+  /// Steuert ob der Eintrag im Praxiskatalog sichtbar ist.
+  is_catalog_active Boolean @default(true)
+
+  /// Zeitpunkt der Publikation.
+  published_at DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([catalog_case_id, version])
+  @@index([practice_id, is_catalog_active, is_current_version])
+  @@index([source_session_id])
 }

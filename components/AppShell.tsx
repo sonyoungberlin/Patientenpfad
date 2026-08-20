@@ -190,6 +190,7 @@ export default function AppShell({
     sectionItems.push(
       { label: "Arbeitsprozesse", href: "/workflow-cases" },
       { label: "Neue Sitzung", href: "/workflow-cases/internal-protocol/new" },
+      { label: "Praxiskatalog", href: "/practice/catalog" },
     );
   } else if (isCommunication) {
     if (canUseInquiries) {
@@ -205,6 +206,9 @@ export default function AppShell({
       });
     }
   } else if (isPractice) {
+    if (account.arbeitsprozesse_enabled || account.is_admin) {
+      sectionItems.push({ label: "Praxiskatalog", href: "/practice/catalog" });
+    }
     if (canManagePractice) {
       sectionItems.push({ label: "Mitglieder", href: "/practice/members" });
       sectionItems.push({ label: "Signatur", href: "/practice/signature" });
