@@ -917,9 +917,9 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
     id: "patient-informieren",
     title: "Patient informieren",
     description:
-      "Eine relevante Information wird an den Patienten oder einen vorgesehenen Informationsempf\u00e4nger weitergegeben.",
+      "Eine relevante Information wird in diesem Praxisprozess mitgeteilt.",
     orientationHint:
-      "Betrifft ausschlie\u00dflich Informationsinhalt und Informationsempf\u00e4nger. Kontaktwege (\u2192 direkter/asynchroner Patientenkontakt) und Dokumentbereitstellung (\u2192 Dokument bereitstellen) sind eigenst\u00e4ndige Checkpoints.",
+      "Betrifft ausschlie\u00dflich den Informationsinhalt. Empf\u00e4nger, Kontaktwege und Dokumentbereitstellung sind eigenst\u00e4ndige Checkpoints.",
     orientationAnchors: [
       {
         id: "patient-informieren-a1",
@@ -941,16 +941,27 @@ const CHECKPOINT_CATALOG: Readonly<Record<string, PracticeCheckpoint>> = {
         id: "patient-informieren-a5",
         text: "\u00dcber \u00e4rztlich festgestellte Diagnose informieren",
       },
+    ],
+  },
+
+  "informationsempfaenger-festlegen": {
+    id: "informationsempfaenger-festlegen",
+    title: "Informationsempf\u00e4nger festlegen",
+    description:
+      "Es ist festgelegt, an wen eine Information in diesem Praxisprozess weitergegeben wird.",
+    orientationHint:
+      "Hier wird festgelegt, wer die Information erh\u00e4lt \u2013 nicht wie der Kontakt erfolgt und nicht ob ein Dokument bereitgestellt wird.",
+    orientationAnchors: [
       {
-        id: "patient-informieren-a6",
+        id: "informationsempfaenger-festlegen-a1",
         text: "Patient direkt",
       },
       {
-        id: "patient-informieren-a7",
+        id: "informationsempfaenger-festlegen-a2",
         text: "Hinterlegte / bevollm\u00e4chtigte Kontaktperson",
       },
       {
-        id: "patient-informieren-a8",
+        id: "informationsempfaenger-festlegen-a3",
         text: "Pflegedienst / Pflegeeinrichtung",
       },
     ],
