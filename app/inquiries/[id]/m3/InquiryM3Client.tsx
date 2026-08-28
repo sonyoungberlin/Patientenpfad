@@ -20,7 +20,7 @@ import {
   inquiryOutputToPlainText,
   inquiryDocumentationToPlainText,
 } from "@/lib/inquiries/formatInquiryOutput";
-import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { BLOCK_CATALOG, BLOCK_IDS_SORTED, VOLLSTAENDIGE_ANAMNESE_PRESET } from "@/lib/questionnaire/blockCatalog";
 import { isBlockEnReady } from "@/lib/questionnaire/i18n";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
 
@@ -989,6 +989,26 @@ function QuestionnaireRequestSection({
             <div style={{ fontWeight: 500, marginBottom: "0.4rem", fontSize: "0.9rem" }}>
               Fragebogen-Blöcke auswählen
             </div>
+            <button
+              type="button"
+              disabled={loading || !!link || language === "en"}
+              title={
+                language === "en"
+                  ? "Die vollständige Anamnese ist vorerst nur auf Deutsch verfügbar."
+                  : undefined
+              }
+              onClick={() =>
+                setSelectedBlocks((prev) => {
+                  const next = { ...prev };
+                  for (const id of VOLLSTAENDIGE_ANAMNESE_PRESET) next[id] = true;
+                  return next;
+                })
+              }
+              data-q-preset-button="vollstaendige-anamnese"
+              style={{ marginBottom: "0.5rem" }}
+            >
+              Vollständige Anamnese auswählen
+            </button>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               {BLOCK_IDS_SORTED.map((blockId) => {
                 const block = BLOCK_CATALOG[blockId];
