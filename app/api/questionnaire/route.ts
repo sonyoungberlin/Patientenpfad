@@ -97,6 +97,13 @@ export async function POST(req: NextRequest) {
     }
 
     const ownership = getCreateOwnershipData(account);
+    // x-forwarded-host/-proto für Codespace/Proxy-Umgebungen (analog practice/members und website-forms/[id])
+    const fwdHost =
+      req.headers.get("x-forwarded-host") ??
+      req.headers.get("host") ??
+      "";
+    const fwdProto = req.headers.get("x-forwarded-proto") ?? "https";
+    const origin = fwdHost ? `${fwdProto}://${fwdHost}` : req.nextUrl.origin;
     const { tokenLink: link } = await createQuestionnaireSession({
       selectedBlockIds,
       patientReference,
@@ -104,7 +111,7 @@ export async function POST(req: NextRequest) {
       ownerAccountId: ownership.owner_account_id,
       ownerPracticeId: ownership.owner_practice_id ?? null,
       inquirySessionId,
-      origin: req.nextUrl.origin,
+      origin,
     });
 
     return NextResponse.json({ ok: true, link });

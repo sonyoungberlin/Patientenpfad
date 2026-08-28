@@ -431,6 +431,17 @@ model PatientQuestionnaireSession {
   /// abgelegter Krankenblatt-Eintrag erkennbar bleibt.
   pdf_downloaded_at DateTime? @db.Timestamp(6)
 
+  /// Phase 1 Conditional Logic: Beim Anlegen eingefrorene Regelstruktur.
+  /// NULL = keine Regeln (Bestandssessions und Sessions ohne Conditional-Blöcke).
+  /// Spätere Katalogänderungen verändern einen bestehenden Link nicht.
+  frozen_conditional_rules Json?
+
+  /// Phase 4: Vollständiger Snapshot aller Blöcke (Start- und Folgeblöcke).
+  /// Enthält FrozenBlock[]-Struktur mit eingefrorenen QuestionDefinitions,
+  /// GroupSchemas, ConditionalRules und initiallyVisible-Flag.
+  /// NULL = Bestandssession (Legacy-Pfad über BLOCK_CATALOG / QUESTION_CATALOG).
+  frozen_blocks Json?
+
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
   @@index([owner_account_id, createdAt])

@@ -77,6 +77,29 @@ const FREE_TEXT_QUESTION_TYPES: ReadonlySet<QuestionType> = new Set([
 ]);
 
 /**
+ * Prüft alle text/textarea-Unterfelder eines repeatable_group-JSON-Strings.
+ * Ungültiges JSON oder fehlendes Schema gilt als erlaubt (Sanitizer verwirft separat).
+ */
+function isRepeatableGroupTextAllowed(value: unknown, questionId: string): boolean {
+  if (typeof value !== "string" || value.length === 0) return true;
+  const def = QUESTION_CATALOG[questionId];
+  if (!def?.groupSchema) return true;
+  let parsed: unknown;
+  try { parsed = JSON.parse(value); } catch { return true; }
+  if (!Array.isArray(parsed)) return true;
+  for (const entry of parsed) {
+    if (typeof entry !== "object" || entry === null) continue;
+    for (const field of def.groupSchema) {
+      if (!FREE_TEXT_QUESTION_TYPES.has(field.type as QuestionType)) continue;
+      const fieldVal = (entry as Record<string, unknown>)[field.key];
+      if (typeof fieldVal !== "string" || fieldVal.length === 0) continue;
+      if (!ALLOWED_ANSWER_CHARACTERS_REGEX.test(fieldVal)) return false;
+    }
+  }
+  return true;
+}
+
+/**
  * Prüft, ob ein einzelner Antwortwert für den gegebenen Fragetyp ausschließlich
  * erlaubte Zeichen enthält.
  *
@@ -97,7 +120,9 @@ export function isAnswerTextAllowed(
   // FACHAERZTE hat type="textarea", aber Wert ist JSON-String mit Strukturzeichen
   // → wird serverseitig in sanitizeAnswers.ts separat validiert
   if (questionId === "FACHAERZTE") return true;
-  
+  if (type === "repeatable_group") {
+    return questionId ? isRepeatableGroupTextAllowed(value, questionId) : true;
+  }
   if (!FREE_TEXT_QUESTION_TYPES.has(type)) return true;
   if (typeof value !== "string") return true;
   if (value.length === 0) return true;
@@ -150,6 +175,12 @@ export function validateAnswerCharacters(
     
     const def = QUESTION_CATALOG[questionId];
     if (!def) continue;
+    if (def.type === "repeatable_group") {
+      if (!isRepeatableGroupTextAllowed(value, questionId)) {
+        invalidQuestionIds.push(questionId);
+      }
+      continue;
+    }
     if (!FREE_TEXT_QUESTION_TYPES.has(def.type)) continue;
     if (typeof value !== "string") continue;
     if (value.length === 0) continue;

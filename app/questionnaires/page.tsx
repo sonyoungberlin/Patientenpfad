@@ -12,6 +12,43 @@ import {
 import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
 import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
+import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
+import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
+import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
+
+/** Berechnet die Menge der sichtbaren Fragen-IDs für eine Session. */
+function buildVisibleQIds(
+  blockIds: string[],
+  answers: Record<string, string>,
+  derivedValues: DerivedValues,
+  frozenBlocks: FrozenBlock[] | null,
+): Set<string> {
+  const visible = new Set<string>();
+  if (frozenBlocks && frozenBlocks.length > 0) {
+    for (const block of frozenBlocks) {
+      computeVisibleQuestionIds(
+        block.conditionalRules,
+        block.questions.map((q) => q.id),
+        answers,
+        derivedValues as Record<string, number>,
+      ).forEach((id) => visible.add(id));
+    }
+  } else {
+    for (const blockId of blockIds) {
+      const block = BLOCK_CATALOG[blockId];
+      if (!block) continue;
+      computeVisibleQuestionIds(
+        block.conditionalRules ?? [],
+        block.questionIds,
+        answers,
+        derivedValues as Record<string, number>,
+      ).forEach((id) => visible.add(id));
+    }
+  }
+  return visible;
+}
 
 type SearchParams = Promise<{ view?: string | string[] }>;
 
@@ -75,6 +112,7 @@ export default async function QuestionnairesPage({
       identity_gate_completed_at: true,
       pdf_downloaded_at: true,
       deleted_at: true,
+      frozen_blocks: true,
     },
   });
 
@@ -183,10 +221,20 @@ export default async function QuestionnairesPage({
                 ? (s.answers as Record<string, string>)
                 : null;
 
+            const frozenBlocks = parseFrozenBlocks(s.frozen_blocks);
+            const derivedValues = computeAllDerivedValues(answers ?? {});
+            const visibleQuestionIds = buildVisibleQIds(
+              blockIds,
+              answers ?? {},
+              derivedValues,
+              frozenBlocks,
+            );
+
             const noteText = buildMedicalRecordNote({
               answers,
               selected_block_ids: blockIds,
               identity_gate_completed_at: s.identity_gate_completed_at,
+              frozenBlocks,
             });
 
             return (
@@ -203,6 +251,8 @@ export default async function QuestionnairesPage({
                 questions={questions}
                 answers={answers}
                 noteText={noteText}
+                derivedValues={derivedValues}
+                visibleQuestionIds={visibleQuestionIds}
                 pdfDownloadedAt={s.pdf_downloaded_at}
                 deletedAt={s.deleted_at}
                 isFromDigitalRequest={digitalRequestSessionIds.has(s.id)}

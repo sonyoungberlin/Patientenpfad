@@ -24,6 +24,7 @@
 
 import { QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionnaireLanguage } from "./i18n";
+import { ALLOWED_ANSWER_CHARACTERS_REGEX } from "./validateAnswerCharacters";
 
 /** Pro-Antwort-Längenlimit. Identisch zur Phase-2-Token-Flow-Konstante. */
 export const MAX_ANSWER_LENGTH = 2000;
@@ -79,6 +80,63 @@ function canonicalizeAnswerValue(
   }
 
   return value;
+}
+
+/**
+ * Validiert und bereinigt eine repeatable_group-Antwort.
+ * Verwendet die eingefrorene QuestionDefinition wenn vorhanden,
+ * sonst Fallback auf QUESTION_CATALOG (Legacy-Sessions).
+ *
+ * @returns JSON-String des bereinigten Arrays oder null bei komplettem Fehler
+ */
+function sanitizeRepeatableGroupArray(
+  questionId: string,
+  rawValue: string,
+  frozenDef?: import("./blockCatalog").QuestionDefinition,
+): string | null {
+  const def = frozenDef ?? QUESTION_CATALOG[questionId];
+  if (!def || def.type !== "repeatable_group" || !def.groupSchema) return null;
+
+  const maxEntries = def.maxEntries ?? 20;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawValue);
+  } catch {
+    return null;
+  }
+
+  if (!Array.isArray(parsed)) return null;
+
+  const result: Record<string, string>[] = [];
+
+  for (const entry of parsed.slice(0, maxEntries)) {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      continue;
+    }
+
+    const clean: Record<string, string> = {};
+    let entryInvalid = false;
+    for (const field of def.groupSchema) {
+      const val = (entry as Record<string, unknown>)[field.key];
+      if (typeof val !== "string") continue;
+      const sliced = val.slice(0, MAX_ANSWER_LENGTH);
+      // Freitextfelder: ungültige Zeichen → gesamte Antwort verwerfen (wie normale Freitexte)
+      if (field.type === "text" || field.type === "textarea") {
+        if (sliced.trim() !== "" && !ALLOWED_ANSWER_CHARACTERS_REGEX.test(sliced)) {
+          entryInvalid = true;
+          break;
+        }
+      }
+      clean[field.key] = sliced;
+    }
+
+    if (!entryInvalid && Object.values(clean).some((v) => v.trim() !== "")) {
+      result.push(clean);
+    }
+  }
+
+  return result.length > 0 ? JSON.stringify(result) : null;
 }
 
 /**
@@ -145,12 +203,16 @@ function sanitizeFacharztArray(
  * @param language        Optionale Sprache der Patientensicht. Bei "en" werden
  *                        select/multi_select-Antworten auf DE zurückgemappt.
  *                        Default "de" → keine Reverse-Mapping-Schritt.
+ * @param frozenQuestionMap Eingefrorene QuestionDefinition-Map (Phase 4);
+ *                          wird für repeatable_group-Lookup bevorzugt.
+ *                          Legacy-Sessions übergeben undefined.
  * @returns Map `questionId -> string` mit ausschließlich erlaubten Einträgen.
  */
 export function sanitizeAnswers(
   rawAnswers: unknown,
   deduplicatedQuestions: ReadonlyArray<{ id: string }>,
   language: QuestionnaireLanguage = "de",
+  frozenQuestionMap?: ReadonlyMap<string, import("./blockCatalog").QuestionDefinition>,
 ): Record<string, string> {
   if (
     !rawAnswers ||
@@ -167,19 +229,43 @@ export function sanitizeAnswers(
     rawAnswers as Record<string, unknown>,
   )) {
     if (!allowedQuestionIds.has(questionId)) continue;
-    if (!(questionId in QUESTION_CATALOG)) continue;
+    // Frozen-Map bevorzugen; Fallback auf QUESTION_CATALOG für Legacy-Sessions
+    const qDef = frozenQuestionMap?.get(questionId) ?? QUESTION_CATALOG[questionId];
+    if (!qDef) continue;
     if (typeof value !== "string") continue;
-    
+
     // Spezialfall: FACHAERZTE repeatable group
     if (questionId === "FACHAERZTE") {
       const validated = sanitizeFacharztArray(value);
       if (validated !== null && validated.length > 0) {
-        // Zurück zu String für Speicherung
         sanitized[questionId] = JSON.stringify(validated);
       }
       continue;
     }
-    
+
+    // Generischer repeatable_group-Typ (VOLLST_* und zukünftige Blöcke)
+    if (qDef.type === "repeatable_group") {
+      const validated = sanitizeRepeatableGroupArray(questionId, value, qDef);
+      if (validated !== null) {
+        sanitized[questionId] = validated;
+      }
+      continue;
+    }
+
+    // Phase 5: numerische Felder – nur gültige nicht-negative Zahlen akzeptieren
+    if (qDef.type === "number") {
+      if (value === "") {
+        sanitized[questionId] = "";
+      } else {
+        const normalized = value.replace(",", ".").trim();
+        const num = parseFloat(normalized);
+        if (!isNaN(num) && isFinite(num) && num >= 0) {
+          sanitized[questionId] = String(num);
+        }
+      }
+      continue;
+    }
+
     const sliced = value.slice(0, MAX_ANSWER_LENGTH);
     sanitized[questionId] =
       language === "en"

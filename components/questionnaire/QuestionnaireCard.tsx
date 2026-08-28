@@ -3,72 +3,50 @@ import { getStatusBadgeStyle } from "@/lib/questionnaire/displayStatus";
 import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
 import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
+import {
+  parseFacharztEntries,
+  parseRepeatableGroupEntries,
+  formatYesNoValue,
+  buildDerivedValueLines,
+} from "@/lib/questionnaire/formatAnswer";
+import type { RepGroupEntry } from "@/lib/questionnaire/formatAnswer";
+import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
+
+/**
+ * Zeigt eine Liste von repeatable-group-Einträgen strukturiert an.
+ */
+function RepeatableGroupAnswerDisplay({ entries }: { entries: RepGroupEntry[] }) {
+  if (entries.length === 0) return <span className="text-muted">–</span>;
+  return (
+    <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.25rem" }}>
+      {entries.map((entry) => (
+        <div
+          key={entry.index}
+          style={{ paddingLeft: "0.5rem", borderLeft: "2px solid var(--border)" }}
+        >
+          <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>
+            {entry.index}. Eintrag
+          </div>
+          {entry.fields.map((field, fi) => (
+            <div key={fi}>
+              <span style={{ fontWeight: 500 }}>{field.label}:</span>{" "}
+              {field.value}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * Formatiert FACHAERZTE-JSON für die Antwortanzeige im Posteingang.
+ * @deprecated Verwende RepeatableGroupAnswerDisplay mit parseFacharztEntries.
  */
 function FacharztAnswerDisplay({ value }: { value: string }) {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    return <span className="text-muted">ungültiges Format</span>;
-  }
-
-  if (!Array.isArray(parsed) || parsed.length === 0) {
-    return <span className="text-muted">–</span>;
-  }
-
-  return (
-    <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.25rem" }}>
-      {parsed.map((entry, idx) => {
-        if (typeof entry !== "object" || entry === null) return null;
-        
-        const erkrankung = (entry as Record<string, unknown>).erkrankung;
-        const bereich = (entry as Record<string, unknown>).bereich;
-        const name = (entry as Record<string, unknown>).name;
-        const adresse = (entry as Record<string, unknown>).adresse;
-
-        return (
-          <div
-            key={idx}
-            style={{
-              paddingLeft: "0.5rem",
-              borderLeft: "2px solid var(--border)",
-            }}
-          >
-            <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>
-              {idx + 1}. Eintrag
-            </div>
-            {typeof erkrankung === "string" && erkrankung.trim() && (
-              <div>
-                <span style={{ fontWeight: 500 }}>Erkrankung / Grund:</span>{" "}
-                {erkrankung.trim()}
-              </div>
-            )}
-            {typeof bereich === "string" && bereich.trim() && (
-              <div>
-                <span style={{ fontWeight: 500 }}>Facharztbereich:</span>{" "}
-                {bereich.trim()}
-              </div>
-            )}
-            {typeof name === "string" && name.trim() && (
-              <div>
-                <span style={{ fontWeight: 500 }}>Name Facharzt/Praxis:</span>{" "}
-                {name.trim()}
-              </div>
-            )}
-            {typeof adresse === "string" && adresse.trim() && (
-              <div>
-                <span style={{ fontWeight: 500 }}>Adresse:</span>{" "}
-                {adresse.trim()}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+  const entries = parseFacharztEntries(value);
+  if (entries.length === 0) return <span className="text-muted">–</span>;
+  return <RepeatableGroupAnswerDisplay entries={entries} />;
 }
 
 /**
@@ -113,11 +91,24 @@ export type QuestionnaireCardProps = {
    * wird ein „Gelöscht"-Badge angezeigt und der Lösch-Button durch einen
    * Wiederherstellen-Button ersetzt.
    */
-  deletedAt?: Date | null;  /**
-   * Zeigt ein „Digitale Anfrage“-Badge an, wenn die Session aus einer
+  deletedAt?: Date | null;
+  /**
+   * Zeigt ein „Digitale Anfrage"-Badge an, wenn die Session aus einer
    * DigitalRequest erzeugt wurde (Phase B Schritt 5).
    */
-  isFromDigitalRequest?: boolean;};
+  isFromDigitalRequest?: boolean;
+  /**
+   * Berechnete Werte (AGE, BMI, Pack-Years) für die Praxisanzeige.
+   * Wird von der übergeordneten Seite vorberechnet und übergeben.
+   * Nur im Status "completed" angezeigt.
+   */
+  derivedValues?: DerivedValues | null;  /**
+   * Menge der sichtbaren Fragen-IDs für diese Session.
+   * Wenn vorhanden: nicht sichtbare Fragen → „Nicht abgefragt";
+   * sichtbar aber unbeantwortet → „–".
+   * Wenn nicht vorhanden (Legacy): leere Antworten → „–".
+   */
+  visibleQuestionIds?: ReadonlySet<string>;};
 
 export default function QuestionnaireCard({
   id,
@@ -134,6 +125,8 @@ export default function QuestionnaireCard({
   pdfDownloadedAt = null,
   deletedAt = null,
   isFromDigitalRequest = false,
+  derivedValues = null,
+  visibleQuestionIds,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
   return (
@@ -258,6 +251,28 @@ export default function QuestionnaireCard({
         </div>
       )}
 
+      {/* Berechnete Werte (nur im completed-Status) */}
+      {displayStatus === "completed" && derivedValues && (() => {
+        const dvLines = buildDerivedValueLines(derivedValues);
+        if (dvLines.length === 0) return null;
+        return (
+          <div
+            data-q-derived-values={id}
+            style={{
+              padding: "0.4rem 0.6rem",
+              background: "var(--muted, #f1f5f9)",
+              borderRadius: "var(--radius)",
+              fontSize: "0.85rem",
+            }}
+          >
+            <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>Berechnete Werte</div>
+            {dvLines.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Answers */}
       {answers && questions.length > 0 && (
         <details style={{ marginTop: "0.5rem" }}>
@@ -284,15 +299,26 @@ export default function QuestionnaireCard({
                   className="text-small"
                   style={{ marginLeft: "0.5rem" }}
                 >
-                  {answers[q.id] !== undefined && answers[q.id] !== "" ? (
-                    q.id === "FACHAERZTE" ? (
-                      <FacharztAnswerDisplay value={answers[q.id]} />
-                    ) : (
-                      answers[q.id]
-                    )
-                  ) : (
-                    <span className="text-muted">–</span>
-                  )}
+                  {(() => {
+                    const isVisible = !visibleQuestionIds || visibleQuestionIds.has(q.id);
+                    if (!isVisible) {
+                      return <span className="text-muted">Nicht abgefragt</span>;
+                    }
+                    const val = answers?.[q.id];
+                    if (!val || val === "") {
+                      return <span className="text-muted">–</span>;
+                    }
+                    if (q.id === "FACHAERZTE") return <FacharztAnswerDisplay value={val} />;
+                    if (q.type === "repeatable_group") {
+                      return (
+                        <RepeatableGroupAnswerDisplay
+                          entries={parseRepeatableGroupEntries(val, q.id, q)}
+                        />
+                      );
+                    }
+                    if (q.type === "yes_no") return formatYesNoValue(val);
+                    return val;
+                  })()}
                 </div>
               </li>
             ))}

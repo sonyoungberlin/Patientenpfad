@@ -7,6 +7,14 @@ import {
   answerCharactersErrorMessage,
   validateAnswerCharacters,
 } from "@/lib/questionnaire/validateAnswerCharacters";
+import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import {
+  parseConditionalRules,
+  computeVisibleQuestionIds,
+  computeVisibleBlockIds,
+} from "@/lib/questionnaire/conditionalLogic";
+import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 
 export async function POST(
   req: NextRequest,
@@ -22,6 +30,8 @@ export async function POST(
         token_expires_at: true,
         status: true,
         deduplicated_questions: true,
+        frozen_blocks: true,
+        frozen_conditional_rules: true,
         patient_language: true,
         deleted_at: true,
       },
@@ -74,6 +84,13 @@ export async function POST(
       ? (session.deduplicated_questions as Array<{ id: string; type?: import("@/lib/questionnaire/blockCatalog").QuestionType }>)
       : [];
 
+    // Phase 4: frozen QuestionDefinitions für Sanitizer aufbauen (wenn vorhanden)
+    const frozenBlocks = parseFrozenBlocks(session.frozen_blocks);
+    const frozenQuestionMap: ReadonlyMap<string, QuestionDefinition> | undefined =
+      frozenBlocks
+        ? new Map(frozenBlocks.flatMap((b) => b.questions.map((q) => [q.id, q] as const)))
+        : undefined;
+
     // Zeichenvalidierung für Freitextantworten (text/textarea). Greift vor
     // dem Sanitisieren/Speichern, damit nicht-lateinische Eingaben (z. B.
     // kyrillisch, arabisch, CJK, Emojis) unabhängig vom Client zuverlässig
@@ -95,12 +112,54 @@ export async function POST(
       body.answers,
       deduplicatedQuestions,
       language,
+      frozenQuestionMap,
+    );
+
+    // Phase 5: Derived Values serverseitig aus bereinigten Antworten berechnen.
+    // Clientseitige Werte werden nie vertraut.
+    const derivedValues = computeAllDerivedValues(sanitizedAnswers);
+
+    // Phase 4+5: Nur Antworten sichtbarer Fragen speichern (Conditional Logic + Derived Values).
+    const frozenConditionalRules = parseConditionalRules(session.frozen_conditional_rules);
+    let visibleAnswerIds: Set<string>;
+
+    if (frozenBlocks) {
+      const visibleBlockIds = computeVisibleBlockIds(
+        frozenConditionalRules,
+        frozenBlocks,
+        sanitizedAnswers,
+        derivedValues,
+      );
+      visibleAnswerIds = new Set<string>();
+      for (const block of frozenBlocks) {
+        if (!visibleBlockIds.has(block.id)) continue;
+        const blockQIds = block.questions.map((q) => q.id);
+        const visibleQIds = computeVisibleQuestionIds(
+          frozenConditionalRules,
+          blockQIds,
+          sanitizedAnswers,
+          derivedValues,
+        );
+        for (const id of visibleQIds) visibleAnswerIds.add(id);
+      }
+    } else {
+      const allQIds = deduplicatedQuestions.map((q) => q.id);
+      visibleAnswerIds = computeVisibleQuestionIds(
+        frozenConditionalRules,
+        allQIds,
+        sanitizedAnswers,
+        derivedValues,
+      );
+    }
+
+    const filteredAnswers: Record<string, string> = Object.fromEntries(
+      Object.entries(sanitizedAnswers).filter(([id]) => visibleAnswerIds.has(id)),
     );
 
     await prisma.patientQuestionnaireSession.update({
       where: { id: session.id },
       data: {
-        answers: sanitizedAnswers as unknown as Prisma.InputJsonValue,
+        answers: filteredAnswers as unknown as Prisma.InputJsonValue,
         status: "completed",
         submitted_at: new Date(),
         token: null,

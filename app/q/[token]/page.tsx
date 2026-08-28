@@ -6,6 +6,14 @@ import {
   type QuestionnaireLanguage,
 } from "@/lib/questionnaire/i18n";
 import {
+  parseConditionalRules,
+  type ConditionalRule,
+} from "@/lib/questionnaire/conditionalLogic";
+import {
+  parseFrozenBlocks,
+  type FrozenBlock,
+} from "@/lib/questionnaire/frozenBlocks";
+import {
   PATIENT_QUESTIONNAIRE_INTRO_TEXT,
   PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN,
 } from "@/lib/questionnaire/patientIntro";
@@ -49,6 +57,8 @@ export default async function QuestionnairePage({
       token_expires_at: true,
       status: true,
       deduplicated_questions: true,
+      frozen_conditional_rules: true,
+      frozen_blocks: true,
       patient_language: true,
       deleted_at: true,
       owner_practice: {
@@ -92,9 +102,20 @@ export default async function QuestionnairePage({
     ? (session.deduplicated_questions as QuestionDefinition[])
     : [];
 
-  // Praxis-/interne Sichten ignorieren `patient_language` bewusst und bleiben
-  // deutsch. Nur die Patient-Renderschicht hier lokalisiert die Fragen.
   const questions = rawQuestions.map((q) => localizeQuestion(q, language));
+
+  const conditionalRules: ConditionalRule[] = parseConditionalRules(
+    session.frozen_conditional_rules,
+  );
+
+  // Phase 4: Frozen Blocks laden und lokalisieren
+  const rawFrozenBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const frozenBlocks: FrozenBlock[] | null = rawFrozenBlocks
+    ? rawFrozenBlocks.map((block) => ({
+        ...block,
+        questions: block.questions.map((q) => localizeQuestion(q, language)),
+      }))
+    : null;
 
   const practiceSignature = session.owner_practice?.message_signature ?? null;
   const introText =
@@ -109,6 +130,8 @@ export default async function QuestionnairePage({
       <QuestionnaireFormClient
         token={token}
         questions={questions}
+        conditionalRules={conditionalRules}
+        frozenBlocks={frozenBlocks}
         introText={introText}
         practiceSignature={practiceSignature}
         language={language}

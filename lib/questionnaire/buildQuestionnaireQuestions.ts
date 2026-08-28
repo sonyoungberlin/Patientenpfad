@@ -11,6 +11,7 @@ import {
   QUESTION_CATALOG,
   type QuestionDefinition,
 } from "./blockCatalog";
+import { type ConditionalRule } from "./conditionalLogic";
 
 /**
  * Berechnet die deduplizierte, geordnete Fragenliste für eine Kombination
@@ -52,4 +53,16 @@ export function buildQuestionnaireQuestions(
   }
 
   return result;
+}
+
+/**
+ * Sammelt alle Conditional Rules der gewählten Blöcke.
+ * Reine Funktion – kein DB-Zugriff, keine Seiteneffekte.
+ */
+export function collectConditionalRules(
+  selectedBlockIds: string[],
+): ConditionalRule[] {
+  return selectedBlockIds
+    .filter((id) => id in BLOCK_CATALOG)
+    .flatMap((id) => BLOCK_CATALOG[id].conditionalRules ?? []);
 }

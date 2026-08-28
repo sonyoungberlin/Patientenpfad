@@ -5,6 +5,15 @@ import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import {
+  parseRepeatableGroupEntries,
+  parseFacharztEntries,
+  formatYesNoValue,
+  buildDerivedValueLines,
+} from "@/lib/questionnaire/formatAnswer";
+import type { RepGroupEntry } from "@/lib/questionnaire/formatAnswer";
+import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -152,26 +161,43 @@ export async function GET(
     ? (session.selected_block_ids as string[])
     : [];
 
+  const derivedValues = computeAllDerivedValues(answers);
+
   // Build per-block question lists for structured output
-  const blockSections: { label: string; questions: QuestionDefinition[] }[] = [];
+  // Invisible questions are included and labelled "Nicht abgefragt" in the output.
+  const blockSections: {
+    label: string;
+    questions: QuestionDefinition[];
+    visibleQIds: Set<string>;
+  }[] = [];
   const assignedIds = new Set<string>();
 
   for (const blockId of selectedBlockIds) {
     const block = BLOCK_CATALOG[blockId];
     if (!block) continue;
+    const visibleQIds = computeVisibleQuestionIds(
+      block.conditionalRules ?? [],
+      block.questionIds,
+      answers,
+      derivedValues as Record<string, number>,
+    );
     const blockQuestions = block.questionIds
       .map((qid) => questions.find((q) => q.id === qid))
       .filter((q): q is QuestionDefinition => q !== undefined && !assignedIds.has(q.id));
     blockQuestions.forEach((q) => assignedIds.add(q.id));
     if (blockQuestions.length > 0) {
-      blockSections.push({ label: block.label, questions: blockQuestions });
+      blockSections.push({ label: block.label, questions: blockQuestions, visibleQIds });
     }
   }
+
+  // Global visibility set for remaining questions not assigned to a known block
+  const globalVisibleQIds = new Set<string>();
+  blockSections.forEach(({ visibleQIds }) => visibleQIds.forEach((id) => globalVisibleQIds.add(id)));
 
   // Any remaining questions not assigned to a block (e.g. deduplication edge cases)
   const remaining = questions.filter((q) => !assignedIds.has(q.id));
   if (remaining.length > 0) {
-    blockSections.push({ label: "Weitere Angaben", questions: remaining });
+    blockSections.push({ label: "Weitere Angaben", questions: remaining, visibleQIds: globalVisibleQIds });
   }
 
   // Build PDF
@@ -216,6 +242,46 @@ export async function GET(
       maxWidth: contentWidth,
     });
     y -= size + 4;
+  }
+
+  function drawRepGroupEntries(questionLabel: string, entries: RepGroupEntry[]) {
+    if (entries.length === 0) return;
+    const size = 9;
+    ensureSpace((size + 4) * 2);
+    page.drawText(questionLabel + ":", {
+      x: marginLeft,
+      y,
+      size,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+      maxWidth: contentWidth,
+    });
+    y -= size + 4;
+    for (const entry of entries) {
+      ensureSpace((size + 4) * (entry.fields.length + 1));
+      page.drawText(`${entry.index}. Eintrag`, {
+        x: marginLeft + 10,
+        y,
+        size: size + 1,
+        font: boldFont,
+        color: rgb(0.2, 0.2, 0.2),
+        maxWidth: contentWidth - 10,
+      });
+      y -= size + 4;
+      for (const field of entry.fields) {
+        page.drawText(`${field.label}: ${field.value}`, {
+          x: marginLeft + 20,
+          y,
+          size,
+          font,
+          color: rgb(0, 0, 0),
+          maxWidth: contentWidth - 20,
+        });
+        y -= size + 4;
+      }
+      y -= size / 2;
+    }
+    y -= sectionGap / 2;
   }
 
   function drawWrappedPair(label: string, value: string) {
@@ -293,6 +359,17 @@ export async function GET(
     );
   }
 
+  // Berechnete Werte
+  const derivedValueLines = buildDerivedValueLines(derivedValues);
+  if (derivedValueLines.length > 0) {
+    y -= sectionGap;
+    ensureSpace(lineHeight * 2);
+    drawText("Berechnete Werte", { size: 11, bold: true });
+    for (const dvLine of derivedValueLines) {
+      drawText(dvLine, { size: 9 });
+    }
+  }
+
   y -= sectionGap;
 
   // Sections
@@ -315,122 +392,36 @@ export async function GET(
 
     for (const q of section.questions) {
       const value = answers[q.id] ?? "";
-      
-      // Spezialfall: FACHAERZTE repeatable group
-      if (q.id === "FACHAERZTE" && value.trim() !== "") {
-        try {
-          const parsed = JSON.parse(value);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const size = 9;
-            ensureSpace((size + 4) * 2);
-            
-            page.drawText(q.text + ":", {
-              x: marginLeft,
-              y,
-              size,
-              font: boldFont,
-              color: rgb(0, 0, 0),
-              maxWidth: contentWidth,
-            });
-            y -= size + 4;
+      const isVisible = section.visibleQIds.has(q.id);
 
-            parsed.forEach((entry, idx) => {
-              if (typeof entry !== "object" || entry === null) return;
-              
-              ensureSpace((size + 4) * 6);
-              
-              page.drawText(`${idx + 1}. Eintrag`, {
-                x: marginLeft + 10,
-                y,
-                size: size + 1,
-                font: boldFont,
-                color: rgb(0.2, 0.2, 0.2),
-                maxWidth: contentWidth - 10,
-              });
-              y -= size + 4;
-
-              const erkrankung = (entry as Record<string, unknown>).erkrankung;
-              if (typeof erkrankung === "string" && erkrankung.trim() !== "") {
-                page.drawText("Erkrankung / Grund:", {
-                  x: marginLeft + 20,
-                  y,
-                  size,
-                  font,
-                  color: rgb(0, 0, 0),
-                  maxWidth: contentWidth - 20,
-                });
-                y -= size + 3;
-                page.drawText(erkrankung.trim(), {
-                  x: marginLeft + 25,
-                  y,
-                  size,
-                  font,
-                  color: rgb(0, 0, 0),
-                  maxWidth: contentWidth - 25,
-                });
-                y -= size + 4;
-              }
-
-              const bereich = (entry as Record<string, unknown>).bereich;
-              if (typeof bereich === "string" && bereich.trim() !== "") {
-                page.drawText(`Facharztbereich: ${bereich.trim()}`, {
-                  x: marginLeft + 20,
-                  y,
-                  size,
-                  font,
-                  color: rgb(0, 0, 0),
-                  maxWidth: contentWidth - 20,
-                });
-                y -= size + 4;
-              }
-
-              const name = (entry as Record<string, unknown>).name;
-              if (typeof name === "string" && name.trim() !== "") {
-                page.drawText(`Name: ${name.trim()}`, {
-                  x: marginLeft + 20,
-                  y,
-                  size,
-                  font,
-                  color: rgb(0, 0, 0),
-                  maxWidth: contentWidth - 20,
-                });
-                y -= size + 4;
-              }
-
-              const adresse = (entry as Record<string, unknown>).adresse;
-              if (typeof adresse === "string" && adresse.trim() !== "") {
-                page.drawText("Adresse:", {
-                  x: marginLeft + 20,
-                  y,
-                  size,
-                  font,
-                  color: rgb(0, 0, 0),
-                  maxWidth: contentWidth - 20,
-                });
-                y -= size + 3;
-                page.drawText(adresse.trim(), {
-                  x: marginLeft + 25,
-                  y,
-                  size,
-                  font,
-                  color: rgb(0, 0, 0),
-                  maxWidth: contentWidth - 25,
-                });
-                y -= size + 4;
-              }
-
-              y -= size / 2; // Abstand zwischen Einträgen
-            });
-
-            y -= sectionGap / 2;
-            continue;
-          }
-        } catch {
-          // Bei Parsing-Fehler Fallback zu normalem Rendering
-        }
+      if (!isVisible) {
+        drawWrappedPair(q.text, "Nicht abgefragt");
+        continue;
       }
-      
-      drawWrappedPair(q.text, value);
+
+      if (q.id === "FACHAERZTE") {
+        const entries = parseFacharztEntries(value);
+        if (entries.length > 0) {
+          drawRepGroupEntries(q.text, entries);
+        } else {
+          drawWrappedPair(q.text, "");
+        }
+        continue;
+      }
+
+      if (q.type === "repeatable_group") {
+        const entries = parseRepeatableGroupEntries(value, q.id, q);
+        if (entries.length > 0) {
+          drawRepGroupEntries(q.text, entries);
+        } else {
+          drawWrappedPair(q.text, "");
+        }
+        continue;
+      }
+
+      const displayValue =
+        q.type === "yes_no" && value ? formatYesNoValue(value) : value;
+      drawWrappedPair(q.text, displayValue);
     }
 
     y -= sectionGap;
