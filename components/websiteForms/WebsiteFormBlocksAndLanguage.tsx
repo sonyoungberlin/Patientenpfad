@@ -22,6 +22,7 @@
 
 import { useState } from "react";
 import { isBlockEnReady, type QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
+import { VOLLSTAENDIGE_ANAMNESE_PRESET } from "@/lib/questionnaire/blockCatalog";
 
 export type BlockChoice = {
   id: string;
@@ -84,6 +85,26 @@ export function WebsiteFormBlocksAndLanguage({
       </label>
       <fieldset style={{ display: "grid", gap: "0.25rem" }}>
         <legend>Fragebogen-Blöcke</legend>
+        <button
+          type="button"
+          disabled={language === "en"}
+          title={
+            language === "en"
+              ? "Die vollständige Anamnese ist vorerst nur auf Deutsch verfügbar."
+              : undefined
+          }
+          onClick={() =>
+            setSelected((prev) => {
+              const next = { ...prev };
+              for (const id of VOLLSTAENDIGE_ANAMNESE_PRESET) next[id] = true;
+              return next;
+            })
+          }
+          data-preset-button="vollstaendige-anamnese"
+          style={{ justifySelf: "start", marginBottom: "0.5rem" }}
+        >
+          Vollständige Anamnese auswählen
+        </button>
         {blocks.map((b) => {
           const blockedByLanguage = language === "en" && !b.enReady;
           const checked = !!selected[b.id] && !blockedByLanguage;

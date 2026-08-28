@@ -26,7 +26,9 @@ import {
   requireWebsiteFormsManagementAccessFromCookies,
 } from "@/lib/authz";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { isBlockEnReady } from "@/lib/questionnaire/i18n";
 import { getOwnershipFilter } from "@/lib/websiteForms/practiceScope";
+import { WebsiteFormBlocksAndLanguage } from "@/components/websiteForms/WebsiteFormBlocksAndLanguage";
 
 type SearchParams = Promise<{ error?: string | string[] }>;
 
@@ -67,6 +69,12 @@ export default async function WebsiteFormsPage({
       selected_block_ids: true,
     },
   });
+
+  const blockChoices = BLOCK_IDS_SORTED.map((blockId) => ({
+    id: blockId,
+    label: BLOCK_CATALOG[blockId]?.label ?? blockId,
+    enReady: isBlockEnReady(blockId),
+  }));
 
   return (
     <main>
@@ -163,26 +171,11 @@ export default async function WebsiteFormsPage({
             <span>Intro-Text (optional)</span>
             <textarea name="intro_text" rows={3} maxLength={2000} />
           </label>
-          <fieldset style={{ display: "grid", gap: "0.25rem" }}>
-            <legend>Fragebogen-Blöcke</legend>
-            {BLOCK_IDS_SORTED.map((id) => (
-              <label key={id} style={{ display: "flex", gap: "0.5rem" }}>
-                <input type="checkbox" name="selected_block_ids" value={id} />
-                <span>{BLOCK_CATALOG[id]?.label ?? id}</span>
-              </label>
-            ))}
-          </fieldset>
-          <label style={{ display: "grid", gap: "0.25rem" }}>
-            <span>Sprache der Patientensicht</span>
-            <select name="patient_language" defaultValue="de">
-              <option value="de">Deutsch</option>
-              <option value="en">Englisch</option>
-            </select>
-            <span className="text-muted" style={{ fontSize: "0.8rem" }}>
-              Bei Englisch dürfen nur vollständig übersetzte Blöcke ausgewählt
-              werden. Praxisoutput und PDF bleiben deutsch.
-            </span>
-          </label>
+          <WebsiteFormBlocksAndLanguage
+            blocks={blockChoices}
+            initialLanguage="de"
+            initialSelectedBlockIds={[]}
+          />
           <label style={{ display: "flex", gap: "0.5rem" }}>
             <input type="checkbox" name="is_active" value="true" defaultChecked />
             <span>Aktiv</span>
