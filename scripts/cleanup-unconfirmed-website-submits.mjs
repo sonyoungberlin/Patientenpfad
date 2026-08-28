@@ -17,8 +17,9 @@
  *   - bestätigte / completed Sessions (auch nicht versehentlich)
  *   - interne Sessions (source != "website")
  *   - Sessions, deren Token noch gültig ist
+ *   - normale pending/completed Sessions (→ Vercel Cron /api/internal/cleanup?apply=true)
  *
- * KEIN Cron-Trigger eingerichtet. Phase 3d sieht den Lauf nur manuell vor.
+ * KEIN Cron-Trigger. Dieses Script löscht NUR Website-unconfirmed Daten.
  *
  * Voraussetzung: DATABASE_URL muss gesetzt sein.
  */
@@ -26,13 +27,9 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
 const args = process.argv.slice(2);
 const apply = args.includes("--apply");
 
-// Strukturierte Logs — siehe docs/website-forms-operations.md.
-// Bewusst KEINE Session-IDs im Log: das Cleanup darf keine
-// Patient-Session-Identifier in Log-Aggregatoren tragen.
 const LOG_MARKER = "[website-form/cleanup]";
 
 function logCleanup(level, outcome, extra = {}) {
@@ -69,14 +66,13 @@ async function run() {
 
   if (!apply) {
     logCleanup("info", "dry_run", { mode: "dry_run", candidate_count });
-    // Operativer Dry-Run-Output (lokal, NICHT für Log-Aggregator gedacht):
     for (const c of candidates) {
       console.log(
         `  - id=${c.id} created=${c.createdAt.toISOString()} expired=${c.confirm_token_expires_at?.toISOString() ?? "?"} form=${c.practice_form_id ?? "?"}`,
       );
     }
     console.log(
-      "[cleanup] DRY-RUN — nichts gelöscht. Mit --apply ausführen, um die Einträge zu entfernen.",
+      "[website-form/cleanup] DRY-RUN — nichts gelöscht. Mit --apply ausführen, um die Einträge zu entfernen.",
     );
     return;
   }
@@ -88,8 +84,7 @@ async function run() {
 
   logCleanup("info", "apply_started", { mode: "apply", candidate_count });
 
-  // deleteMany verwendet exakt denselben Filter — defensiv gegen
-  // Race-Conditions zwischen findMany und delete.
+  // deleteMany verwendet exakt denselben Filter — defensiv gegen Race-Conditions.
   const result = await prisma.patientQuestionnaireSession.deleteMany({
     where: filter,
   });
@@ -109,3 +104,4 @@ run()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
