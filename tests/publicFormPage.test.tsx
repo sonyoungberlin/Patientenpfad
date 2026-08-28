@@ -25,6 +25,7 @@ jest.mock("next/navigation", () => ({
     throw new Error(`__REDIRECT__:${url}`);
   },
   notFound: () => notFoundMock(),
+  useRouter: jest.fn().mockReturnValue({ push: jest.fn(), refresh: jest.fn() }),
 }));
 
 jest.mock("@/lib/prisma", () => ({
@@ -228,12 +229,12 @@ describe("/p/[slug] public form page", () => {
     expect(m).not.toContain("data-practice-signature");
   });
 
-  it("postet an /api/p/[slug]/submit und enthält Honeypot-Feld", async () => {
+  it("enthält Formular-Element und Honeypot-Feld", async () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
     const r = await runPage("praxis-formular");
     const m = r.markup!;
-    expect(m).toMatch(/<form\b[^>]*\bmethod="POST"/);
-    expect(m).toContain('action="/api/p/praxis-formular/submit"');
+    // Client Component: kein method="POST", kein action-Attribut (fetch-basiert)
+    expect(m).toContain("data-public-form");
     // Honeypot-Feld vorhanden, aber off-screen versteckt
     expect(m).toContain('name="company_website"');
     expect(m).toContain('aria-hidden="true"');

@@ -1,63 +1,67 @@
+"use client";
+
 /**
- * Phase 3d: Präsentationale Server-Component für die öffentliche
- * Formularseite `/p/[slug]`.
+ * Öffentliche Formularseite `/p/[slug]` — Client Component.
  *
- * Bewusst **kein** Client-Component und **kein** State: das `<form>`
- * postet direkt an `/api/p/[slug]/submit` (HTML-Form-Submit). Der Server
- * antwortet mit einem 303-Redirect auf `/p/[slug]/eingereicht`.
+ * Nutzt dieselbe Questionnaire-Engine wie `/q/[token]`:
+ *   - conditionalLogic.ts  (computeVisibleQuestionIds)
+ *   - derivedValues.ts     (computeAllDerivedValues)
+ *   - QuestionField.tsx    (alle Fragetypen inkl. repeatable_group)
  *
- * Sicherheits-Details:
- *   - Honeypot-Feld `company_website` ist sichtgeschützt positioniert
- *     (kein `display:none`, damit auch naive Bots es nicht überspringen)
- *     und vor Hilfstechnologien sowie Tab-Reihenfolge versteckt.
- *   - `autoComplete="new-password"` am Honeypot, damit Browser-Autofill
- *     keinen Wert einträgt.
- *
- * Das Markup verwendet bewusst die gleichen `data-q-*`-Selektoren wie der
- * Token-Flow in `app/q/[token]/QuestionnaireFormClient.tsx`, damit spätere
- * E2E-Tests beide Pfade gemeinsam abdecken können.
+ * Submit: fetch POST als JSON an `/api/p/[slug]/submit`.
+ * Bei Erfolg (Server bestätigt 200 OK nach 303-Redirect-Follow) navigiert
+ * der Client nach `/p/[slug]/eingereicht`.
  */
 
-import type { QuestionDefinition, QuestionType } from "@/lib/questionnaire/blockCatalog";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import {
   PATIENT_QUESTIONNAIRE_INTRO_TEXT,
   PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN,
 } from "@/lib/questionnaire/patientIntro";
-import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
+import {
+  computeVisibleQuestionIds,
+  type ConditionalRule,
+} from "@/lib/questionnaire/conditionalLogic";
+import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import {
+  answerCharactersErrorMessage,
+  isAnswerTextAllowed,
+  validateAnswerCharacters,
+} from "@/lib/questionnaire/validateAnswerCharacters";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 import {
-  ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN,
-  answerCharactersErrorMessage,
-} from "@/lib/questionnaire/validateAnswerCharacters";
-import { PublicFormCharactersValidator } from "./PublicFormCharactersValidator";
+  QuestionField,
+  collectConditionQuestionIds,
+} from "@/components/questionnaire/QuestionField";
 
 const NOTICE_ID = "public-form-confirm-notice";
 
-// Lokalisierte UI-Strings für die öffentliche Patientensicht. Bewusst inline
-// statt i18n-Library, analog zu `app/q/[token]/QuestionnaireFormClient.tsx`.
 const UI_STRINGS = {
   de: {
     confirmNotice:
       "Nach dem Absenden erhalten Sie eine Bestätigungs-E-Mail. Erst nach Klick auf den Bestätigungslink werden Ihre Angaben an die Praxis übermittelt. Der Link ist 48 Stunden gültig.",
     emailLabel: "E-Mail-Adresse",
-    selectPlaceholder: "— bitte wählen —",
-    yes: "Ja",
-    no: "Nein",
     noQuestions: "Dieses Formular enthält aktuell keine Fragen.",
     submit: "Absenden",
+    submitting: "Wird gesendet…",
     honeypotLabel: "Bitte dieses Feld leer lassen.",
+    errorPrefix: "Fehler beim Senden: ",
+    requiredMissing: "Bitte füllen Sie alle Pflichtfelder aus.",
     intro: PATIENT_QUESTIONNAIRE_INTRO_TEXT,
   },
   en: {
     confirmNotice:
       "After submitting, you will receive a confirmation email. Your information will only be transmitted to the practice after you click the confirmation link. The link is valid for 48 hours.",
     emailLabel: "Email address",
-    selectPlaceholder: "— please choose —",
-    yes: "Yes",
-    no: "No",
     noQuestions: "This form currently contains no questions.",
     submit: "Submit",
+    submitting: "Submitting…",
     honeypotLabel: "Please leave this field empty.",
+    errorPrefix: "Submission error: ",
+    requiredMissing: "Please fill in all required fields.",
     intro: PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN,
   },
 } as const;
@@ -73,7 +77,7 @@ const baseInputStyle: React.CSSProperties = {
   color: "var(--foreground)",
 };
 
-/** Off-screen, aber NICHT display:none — damit naive Bots es ausfüllen. */
+/** Off-screen, aber NICHT display:none — damit naive Bots das Feld sehen. */
 const honeypotStyle: React.CSSProperties = {
   position: "absolute",
   left: "-9999px",
@@ -83,125 +87,6 @@ const honeypotStyle: React.CSSProperties = {
   overflow: "hidden",
 };
 
-function PublicQuestionField({
-  question,
-  language,
-}: {
-  question: QuestionDefinition;
-  language: QuestionnaireLanguage;
-}) {
-  const t = UI_STRINGS[language];
-  
-  switch (question.type as QuestionType) {
-    case "multi_select":
-      return (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }}>
-          {(question.options ?? []).map((opt) => (
-            <label
-              key={opt}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                padding: "0.25rem 0.6rem",
-                borderRadius: "var(--radius)",
-                border: "1px solid var(--border)",
-                background: "var(--background)",
-                fontSize: "0.9rem",
-              }}
-              data-q-multiselect={`${question.id}:${opt}`}
-            >
-              <input type="checkbox" name={question.id} value={opt} />
-              <span>{opt}</span>
-            </label>
-          ))}
-        </div>
-      );
-    case "select":
-      return (
-        <select
-          id={question.id}
-          name={question.id}
-          required={question.required}
-          defaultValue=""
-          style={baseInputStyle}
-        >
-          <option value="">{t.selectPlaceholder}</option>
-          {(question.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      );
-    case "textarea":
-      return (
-        <textarea
-          id={question.id}
-          name={question.id}
-          required={question.required}
-          rows={3}
-          defaultValue=""
-          data-q-freetext={question.id}
-          style={{ ...baseInputStyle, resize: "vertical" }}
-        />
-      );
-    case "date":
-      return (
-        <input
-          type="date"
-          id={question.id}
-          name={question.id}
-          required={question.required}
-          defaultValue=""
-          style={baseInputStyle}
-        />
-      );
-    case "yes_no":
-      return (
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-          {([
-            { val: "ja", label: t.yes },
-            { val: "nein", label: t.no },
-          ] as const).map(({ val, label }) => {
-            return (
-              <label
-                key={val}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                  padding: "0.25rem 0.6rem",
-                  borderRadius: "var(--radius)",
-                  border: "1px solid var(--border)",
-                  background: "var(--background)",
-                  fontSize: "0.9rem",
-                }}
-                data-q-yesno={`${question.id}:${val}`}
-              >
-                <input type="radio" name={question.id} value={val} />
-                <span>{label}</span>
-              </label>
-            );
-          })}
-        </div>
-      );
-    default:
-      return (
-        <input
-          type="text"
-          id={question.id}
-          name={question.id}
-          required={question.required}
-          defaultValue=""
-          pattern={ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN}
-          data-q-freetext={question.id}
-          style={baseInputStyle}
-        />
-      );
-  }
-}
-
 export function PublicFormView({
   slug,
   title,
@@ -209,6 +94,7 @@ export function PublicFormView({
   practiceSignature,
   questions,
   language = "de",
+  conditionalRules,
 }: {
   slug: string;
   title: string;
@@ -216,8 +102,117 @@ export function PublicFormView({
   practiceSignature: string | null;
   questions: QuestionDefinition[];
   language?: QuestionnaireLanguage;
+  /** Alle Conditional-Rules aus den gewählten Blöcken. */
+  conditionalRules: ConditionalRule[];
 }) {
   const t = UI_STRINGS[language];
+  const charErrorMessage = answerCharactersErrorMessage(language);
+  const router = useRouter();
+
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [missingRequired, setMissingRequired] = useState<Set<string>>(new Set());
+
+  // Gate-Fragen: Fragen, die in Bedingungen als Ziel auftreten
+  const gateQuestionIds = useMemo<Set<string>>(() => {
+    const ids = new Set<string>();
+    for (const rule of conditionalRules) {
+      for (const id of collectConditionQuestionIds(rule.condition)) ids.add(id);
+    }
+    return ids;
+  }, [conditionalRules]);
+
+  // Sichtbare Fragen basierend auf aktuellen Antworten
+  const derivedValues = useMemo(() => computeAllDerivedValues(values), [values]);
+  const allQuestionIds = useMemo(() => questions.map((q) => q.id), [questions]);
+
+  const visibleIds = useMemo(
+    () => computeVisibleQuestionIds(conditionalRules, allQuestionIds, values, derivedValues),
+    [conditionalRules, allQuestionIds, values, derivedValues]
+  );
+
+  const visibleQuestions = useMemo(
+    () => questions.filter((q) => visibleIds.has(q.id)),
+    [questions, visibleIds]
+  );
+
+  // Zeichenfehler pro Frage (nur sichtbare Felder)
+  const fieldHasCharError = useMemo<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    for (const q of visibleQuestions) {
+      const v = values[q.id] ?? "";
+      if (v) {
+        map[q.id] = !isAnswerTextAllowed(v, q.type as import("@/lib/questionnaire/blockCatalog").QuestionType, q.id);
+      }
+    }
+    return map;
+  }, [visibleQuestions, values]);
+
+  const handleChange = (id: string, value: string) => {
+    setValues((prev) => ({ ...prev, [id]: value }));
+    if (missingRequired.has(id)) {
+      setMissingRequired((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // Pflichtfeld-Validierung für sichtbare Felder
+    const missing = new Set<string>();
+    for (const q of visibleQuestions) {
+      if (q.required && !(values[q.id] ?? "").trim()) {
+        missing.add(q.id);
+      }
+    }
+    if (missing.size > 0) {
+      setMissingRequired(missing);
+      return;
+    }
+
+    // Zeichenfehler prüfen
+    const { invalidQuestionIds } = validateAnswerCharacters(values, visibleQuestions);
+    if (invalidQuestionIds.length > 0) return;
+
+    // Nur sichtbare Antworten senden
+    const visibleAnswers: Record<string, string> = {};
+    for (const q of visibleQuestions) {
+      if (values[q.id] !== undefined) {
+        visibleAnswers[q.id] = values[q.id];
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/p/${slug}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          [HONEYPOT_FIELD_NAME]: "",
+          answers: visibleAnswers,
+        }),
+      });
+      if (res.ok) {
+        router.push(`/p/${slug}/eingereicht`);
+      } else {
+        const text = await res.text().catch(() => String(res.status));
+        setError(t.errorPrefix + text);
+      }
+    } catch (err) {
+      setError(t.errorPrefix + String(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main lang={language}>
       <h1>{title}</h1>
@@ -264,19 +259,12 @@ export function PublicFormView({
       ) : null}
 
       <form
-        method="POST"
-        action={`/api/p/${slug}/submit`}
+        onSubmit={handleSubmit}
         data-public-form
         style={{ display: "block" }}
+        noValidate
       >
-        <PublicFormCharactersValidator
-          errorMessage={answerCharactersErrorMessage(language)}
-        />
-        {/*
-          Honeypot-Feld: für Menschen unsichtbar (off-screen, tabIndex=-1,
-          aria-hidden), naive Bots füllen es trotzdem aus → Submit wird
-          serverseitig still verworfen.
-        */}
+        {/* Honeypot: off-screen, kein tabIndex, aria-hidden */}
         <div aria-hidden="true" style={honeypotStyle}>
           <label htmlFor="public-form-hp">
             {t.honeypotLabel}
@@ -286,7 +274,8 @@ export function PublicFormView({
               name={HONEYPOT_FIELD_NAME}
               tabIndex={-1}
               autoComplete="new-password"
-              defaultValue=""
+              value=""
+              readOnly
             />
           </label>
         </div>
@@ -307,7 +296,8 @@ export function PublicFormView({
             type="email"
             required
             autoComplete="email"
-            defaultValue=""
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             style={baseInputStyle}
             data-q-email
           />
@@ -317,53 +307,113 @@ export function PublicFormView({
           <p data-q-empty>{t.noQuestions}</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {questions.map((q) => (
-              <li
-                key={q.id}
-                data-q-question={q.id}
-                className="card"
-                style={{ marginBottom: "0.75rem" }}
-              >
-                <label
-                  htmlFor={q.id}
-                  style={{ display: "block", fontWeight: 500, marginBottom: "0.4rem" }}
+            {visibleQuestions.map((q) => {
+              const isGate = gateQuestionIds.has(q.id);
+              const isMissing = missingRequired.has(q.id);
+              const hasCharErr = !!fieldHasCharError[q.id];
+              return (
+                <li
+                  key={q.id}
+                  data-q-question={q.id}
+                  className="card"
+                  style={{
+                    marginBottom: "0.75rem",
+                    ...(isGate
+                      ? {
+                          borderLeft: "3px solid var(--primary, #2563eb)",
+                          background: "var(--primary-bg, #eff6ff)",
+                        }
+                      : {}),
+                    ...(isMissing || hasCharErr
+                      ? { borderLeft: "3px solid var(--destructive, #dc2626)" }
+                      : {}),
+                  }}
                 >
-                  {q.text}
-                  {q.required && (
-                    <span
-                      aria-hidden="true"
-                      style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}
-                    >
-                      *
-                    </span>
-                  )}
-                </label>
-                <PublicQuestionField question={q} language={language} />
-                {q.helperText && (
-                  <p
-                    style={{
-                      margin: "0.25rem 0 0",
-                      fontSize: "0.85rem",
-                      color: "var(--muted-foreground, #6b7280)",
-                    }}
-                    data-q-helper={q.id}
+                  <label
+                    htmlFor={q.id}
+                    style={{ display: "block", fontWeight: 500, marginBottom: "0.4rem" }}
                   >
-                    {q.helperText}
-                  </p>
-                )}
-              </li>
-            ))}
+                    {q.text}
+                    {q.required && (
+                      <span
+                        aria-hidden="true"
+                        style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}
+                      >
+                        *
+                      </span>
+                    )}
+                  </label>
+                  <QuestionField
+                    question={q}
+                    value={values[q.id] ?? ""}
+                    onChange={handleChange}
+                    disabled={submitting}
+                    language={language}
+                    hasError={isMissing || hasCharErr}
+                  />
+                  {hasCharErr && (
+                    <p
+                      role="alert"
+                      style={{
+                        margin: "0.25rem 0 0",
+                        fontSize: "0.85rem",
+                        color: "var(--destructive, #dc2626)",
+                      }}
+                    >
+                      {charErrorMessage}
+                    </p>
+                  )}
+                  {isMissing && !hasCharErr && (
+                    <p
+                      role="alert"
+                      style={{
+                        margin: "0.25rem 0 0",
+                        fontSize: "0.85rem",
+                        color: "var(--destructive, #dc2626)",
+                      }}
+                    >
+                      {t.requiredMissing}
+                    </p>
+                  )}
+                  {q.helperText && (
+                    <p
+                      style={{
+                        margin: "0.25rem 0 0",
+                        fontSize: "0.85rem",
+                        color: "var(--muted-foreground, #6b7280)",
+                      }}
+                      data-q-helper={q.id}
+                    >
+                      {q.helperText}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
+        )}
+
+        {error && (
+          <p
+            role="alert"
+            style={{
+              color: "var(--destructive, #dc2626)",
+              marginTop: "0.5rem",
+            }}
+          >
+            {error}
+          </p>
         )}
 
         <button
           type="submit"
           className="btn-primary"
           data-q-submit
+          disabled={submitting}
           aria-describedby={NOTICE_ID}
           style={{ marginTop: "1rem" }}
         >
-          {t.submit}
+          {submitting ? t.submitting : t.submit}
         </button>
       </form>
     </main>

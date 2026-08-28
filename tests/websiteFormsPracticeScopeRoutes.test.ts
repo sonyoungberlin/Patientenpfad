@@ -26,6 +26,7 @@ const notFoundMock = jest.fn(() => {
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
   notFound: () => notFoundMock(),
+  useRouter: jest.fn().mockReturnValue({ push: jest.fn(), refresh: jest.fn() }),
 }));
 
 jest.mock("next/headers", () => ({

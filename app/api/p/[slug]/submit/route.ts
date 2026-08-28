@@ -33,9 +33,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
-import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
+import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
+import {
+  computeVisibleQuestionIds,
+} from "@/lib/questionnaire/conditionalLogic";
+import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import {
   answerCharactersErrorMessage,
   validateAnswerCharacters,
@@ -185,6 +189,7 @@ export async function POST(
     slugForRedirect = slugValidation.slug;
 
     // 2. Body parsen.
+    const isJsonRequest = (req.headers.get("content-type") ?? "").includes("application/json");
     const fields = await readSubmitFields(req);
     if (!fields) {
       logSubmit("invalid_body", { slug: slugValidation.slug });
@@ -280,7 +285,10 @@ export async function POST(
     const selectedBlockIds = Array.isArray(form.selected_block_ids)
       ? (form.selected_block_ids as string[])
       : [];
-    const deduplicatedQuestions = buildQuestionnaireQuestions(selectedBlockIds);
+    // Frozen-Snapshot: enthält Fragen + Conditional-Rules.
+    const frozenBlocks = buildFrozenBlocks(selectedBlockIds);
+    const deduplicatedQuestions = frozenBlocks.flatMap((b) => b.questions);
+    const conditionalRules = frozenBlocks.flatMap((b) => b.conditionalRules);
 
     // Zeichenvalidierung der Freitextantworten (text/textarea). Greift VOR
     // sanitizeAnswers/Speichern und VOR Mail-Versand: nicht-lateinische
@@ -308,6 +316,20 @@ export async function POST(
       formLanguage,
     );
 
+    // 8a. Sichtbarkeitsfilter: versteckte Antworten (conditional hide) nicht
+    // speichern. Analog zur Logik in `app/q/[token]/route.ts`.
+    const derivedValues = computeAllDerivedValues(sanitizedAnswers);
+    const allQIds = deduplicatedQuestions.map((q) => q.id);
+    const visibleQIds = computeVisibleQuestionIds(
+      conditionalRules,
+      allQIds,
+      sanitizedAnswers,
+      derivedValues,
+    );
+    const finalAnswers: Record<string, string> = Object.fromEntries(
+      Object.entries(sanitizedAnswers).filter(([id]) => visibleQIds.has(id))
+    );
+
     // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld spiegeln.
     // Falls der KONTAKT-Block (oder ein anderer Block, der CONTACT_EMAIL
     // enthält) aktiv ist, würde sonst dieselbe E-Mail-Adresse zweimal
@@ -318,7 +340,7 @@ export async function POST(
     // Hinweis: Gilt nur für den öffentlichen `/p/[slug]`-Submit; der
     // Token-Flow `/q/[token]` bleibt unberührt.
     if (deduplicatedQuestions.some((q) => q.id === "CONTACT_EMAIL")) {
-      sanitizedAnswers["CONTACT_EMAIL"] = emailCheck.email;
+      finalAnswers["CONTACT_EMAIL"] = emailCheck.email;
     }
 
     // 9. Bestätigungs-Token erzeugen.
@@ -341,7 +363,15 @@ export async function POST(
         selected_block_ids: selectedBlockIds as unknown as Prisma.InputJsonValue,
         deduplicated_questions:
           deduplicatedQuestions as unknown as Prisma.InputJsonValue,
-        answers: sanitizedAnswers as unknown as Prisma.InputJsonValue,
+        answers: finalAnswers as unknown as Prisma.InputJsonValue,
+        frozen_blocks:
+          frozenBlocks.length > 0
+            ? (frozenBlocks as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+        frozen_conditional_rules:
+          conditionalRules.length > 0
+            ? (conditionalRules as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         patient_language: formLanguage,
         status: STATUS_AWAITING_EMAIL_CONFIRMATION,
         // submitted_at bleibt absichtlich null bis zur Bestätigung.
@@ -379,7 +409,9 @@ export async function POST(
       // Antwort bleibt generisch (Erfolgs-Redirect), damit der Patient
       // weiß, dass etwas anzukommen versprochen ist; Retry-/Cleanup-
       // Mechanismus folgt später.
-      return successRedirect(req, slugValidation.slug);
+      return isJsonRequest
+        ? NextResponse.json({ ok: true })
+        : successRedirect(req, slugValidation.slug);
     }
 
     logSubmit("success", {
@@ -390,8 +422,10 @@ export async function POST(
       mailTransport: resolvedTransport,
     });
 
-    // 12. Erfolgs-Redirect.
-    return successRedirect(req, slugValidation.slug);
+    // 12. Erfolgs-Redirect (oder JSON-Antwort für fetch-basierte Clients).
+    return isJsonRequest
+      ? NextResponse.json({ ok: true })
+      : successRedirect(req, slugValidation.slug);
   } catch (err) {
     const detail = err instanceof Error ? err.message : "unknown";
     logSubmit("unexpected_error", {

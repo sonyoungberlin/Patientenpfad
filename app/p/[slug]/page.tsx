@@ -26,7 +26,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
-import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
+import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
 import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
 import {
   localizeQuestion,
@@ -102,10 +103,18 @@ export default async function PublicFormPage({
     ? (form.selected_block_ids as string[])
     : [];
   const language = normalizeQuestionnaireLanguage(form.patient_language);
-  const rawQuestions = buildQuestionnaireQuestions(selectedBlockIds);
+
+  // Frozen-Snapshot der Blöcke: enthält Fragen + Conditional-Rules.
+  // Analog zu `app/q/[token]/page.tsx` damit beide Flows dieselbe Engine nutzen.
+  const frozenBlocks = buildFrozenBlocks(selectedBlockIds);
   // Praxis-/interne Sichten ignorieren `patient_language` bewusst und bleiben
   // deutsch. Nur die Patient-Renderschicht hier lokalisiert die Fragen.
-  const questions = rawQuestions.map((q) => localizeQuestion(q, language));
+  const questions = frozenBlocks.flatMap((b) =>
+    b.questions.map((q) => localizeQuestion(q, language))
+  );
+  const conditionalRules: ConditionalRule[] = frozenBlocks.flatMap(
+    (b) => b.conditionalRules
+  );
 
   const practiceSignature = form.owner_practice?.message_signature ?? null;
 
@@ -117,6 +126,7 @@ export default async function PublicFormPage({
       practiceSignature={practiceSignature}
       questions={questions}
       language={language}
+      conditionalRules={conditionalRules}
     />
   );
 }
