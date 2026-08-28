@@ -32,6 +32,9 @@ jest.mock("@/lib/prisma", () => ({
     patientQuestionnaireSession: {
       findMany: jest.fn(),
     },
+    digitalRequest: {
+      findMany: jest.fn(),
+    },
   },
 }));
 
@@ -66,6 +69,7 @@ import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
   patientQuestionnaireSession: { findMany: jest.Mock };
+  digitalRequest: { findMany: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
 
@@ -103,6 +107,7 @@ const DELETED_SESSION = {
 
 beforeEach(() => {
   pm.patientQuestionnaireSession.findMany.mockReset();
+  pm.digitalRequest.findMany.mockResolvedValue([]);
 });
 
 function pickDeletedAtFilter(call: { where: { AND: unknown[] } }) {

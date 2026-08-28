@@ -133,7 +133,7 @@ describe("M3 Checkliste", () => {
 
     expect(prismaMock.caseSession.findUnique).toHaveBeenCalledWith({
       where: { id: "case-123" },
-      select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, m2_status: true, preparation_mode: true, doctor_confirmed: true, clinical_status: true },
+      select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, owner_practice_id: true, m2_status: true, preparation_mode: true, doctor_confirmed: true, clinical_status: true },
     });
   });
 

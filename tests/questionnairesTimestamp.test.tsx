@@ -32,6 +32,9 @@ jest.mock("@/lib/prisma", () => ({
     patientQuestionnaireSession: {
       findMany: jest.fn(),
     },
+    digitalRequest: {
+      findMany: jest.fn(),
+    },
   },
 }));
 
@@ -55,6 +58,7 @@ import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
   patientQuestionnaireSession: { findMany: jest.Mock };
+  digitalRequest: { findMany: jest.Mock };
 };
 const prismaMock = prisma as unknown as PrismaMock;
 
@@ -94,6 +98,7 @@ const PENDING_INTERNAL_SESSION = {
 describe("QuestionnairesPage – Zeitanzeige", () => {
   beforeEach(() => {
     prismaMock.patientQuestionnaireSession.findMany.mockReset();
+    prismaMock.digitalRequest.findMany.mockResolvedValue([]);
   });
 
   it("zeigt im Kopf submitted_at (Europe/Berlin), wenn vorhanden", async () => {

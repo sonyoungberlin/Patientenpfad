@@ -31,6 +31,7 @@ jest.mock("@/lib/auth", () => ({
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     practice: { findUnique: jest.fn() },
+    caseSession: { count: jest.fn() },
   },
 }));
 
@@ -40,6 +41,7 @@ import AdminPracticeDetailPage from "@/app/admin/practices/[id]/page";
 
 type PrismaMock = {
   practice: { findUnique: jest.Mock };
+  caseSession: { count: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
 const getCookies = getSessionAccountFromCookies as jest.Mock;
@@ -88,6 +90,7 @@ beforeEach(() => {
   notFoundMock.mockClear();
   getCookies.mockReset();
   pm.practice.findUnique.mockReset();
+  pm.caseSession.count.mockResolvedValue(0);
 });
 
 describe("/admin/practices/[id] detail page", () => {

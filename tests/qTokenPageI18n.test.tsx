@@ -173,6 +173,7 @@ describe("/q/[token] Mehrsprachigkeit", () => {
       "ADDRESS_POSTAL",
       // KURZANAMNESE
       "ANAMNESE_GP",
+      "ANAMNESE_GP_NAME",
       "ANAMNESE_HEIGHT",
       "ANAMNESE_WEIGHT",
       "ANAMNESE_CHRONIC",
@@ -191,7 +192,7 @@ describe("/q/[token] Mehrsprachigkeit", () => {
     expect(html).toContain("What is your phone number");
     expect(html).toContain("What is your postal address");
     expect(html).toContain("Required for billing and documents.");
-    expect(html).toContain("Do you have a general practitioner");
+    expect(html).toContain("Do you have a different general practitioner");
     expect(html).toContain("How tall are you");
     expect(html).toContain("Do you suffer from any chronic illnesses");
     expect(html).toContain("Is your vaccination status known");

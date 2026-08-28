@@ -176,7 +176,7 @@ describe("buildMedicalRecordNote – Kontakt-Block", () => {
     expect(lines).toContain("Kontaktdaten");
     expect(lines).toContain("Tel.: 0170 1234567");
     expect(lines).toContain("E-Mail: patient@example.com");
-    expect(lines).toContain("Doctolib: ja");
+    expect(lines).toContain("Doctolib: Ja");
   });
 });
 
@@ -453,17 +453,17 @@ describe("buildMedicalRecordNote – Kurzanamnese-Block (vollständig)", () => {
     });
     const lines = result.split("\n");
     expect(lines).toContain("Kurzanamnese");
-    expect(lines).toContain("Hausarzt: nein");
+    expect(lines).toContain("Hausarzt: Nein");
     expect(lines).toContain("Größe: 187");
     expect(lines).toContain("Gewicht: 90");
     expect(lines).toContain("Chronische Erkrankungen: keine");
     expect(lines).toContain("Erbkrankheiten: keine");
     expect(lines).toContain("Allergien: pollen");
     expect(lines).toContain("Medikamente: nix");
-    expect(lines).toContain("Rauchen: ja");
-    expect(lines).toContain("Alkohol: nein");
+    expect(lines).toContain("Rauchen: Ja");
+    expect(lines).toContain("Alkohol: Nein");
     expect(lines).toContain("Sonstige Substanzen: kaffee");
-    expect(lines).toContain("Impfstatus bekannt: ja");
+    expect(lines).toContain("Impfstatus bekannt: Ja");
   });
 
   it("zeigt Größe und Gewicht jeweils als eigene Zeile", () => {
@@ -573,6 +573,10 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
   });
 
   it("entspricht dem dokumentierten Soll-Output für Identität+Versicherung+Kontakt+Adresse+Kurzanamnese", () => {
+    // Fixer Testzeitpunkt: 2024-01-15. IDENTITY_BIRTHDATE 1999-01-05 → Alter 25.
+    // ANAMNESE_HEIGHT=187, ANAMNESE_WEIGHT=90 → BMI 25,7 kg/m²
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-01-15T12:00:00Z"));
     const result = buildMedicalRecordNote({
       answers: {
         IDENTITY_FIRST_NAME: "Son-Young",
@@ -605,6 +609,10 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
     const expected = [
       "Digitale Anfrage",
       "",
+      "Berechnete Werte",
+      "Alter: 25 Jahre",
+      "BMI: 25,7 kg/m²",
+      "",
       "Identität",
       "Vorname: Son-Young",
       "Nachname: Test",
@@ -612,7 +620,7 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
       "",
       "Kontaktdaten",
       "Tel.: 09043219875167",
-      "Doctolib: ja",
+      "Doctolib: Ja",
       "",
       "Adresse",
       "Adresse: Straße",
@@ -622,19 +630,20 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
       "Versicherungsart: gesetzlich versichert",
       "",
       "Kurzanamnese",
-      "Hausarzt: nein",
+      "Hausarzt: Nein",
       "Größe: 187",
       "Gewicht: 90",
       "Chronische Erkrankungen: keine",
       "Erbkrankheiten: keine",
       "Allergien: pollen",
       "Medikamente: nix",
-      "Rauchen: ja",
-      "Alkohol: nein",
+      "Rauchen: Ja",
+      "Alkohol: Nein",
       "Sonstige Substanzen: kaffee",
-      "Impfstatus bekannt: ja",
+      "Impfstatus bekannt: Ja",
     ].join("\n");
     expect(result).toBe(expected);
+    jest.useRealTimers();
   });
 });
 

@@ -24,6 +24,7 @@ const notFoundMock = jest.fn(() => {
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
   notFound: () => notFoundMock(),
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
 }));
 
 jest.mock("@/lib/auth", () => ({
@@ -34,6 +35,7 @@ jest.mock("@/lib/auth", () => ({
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     practice: { findUnique: jest.fn() },
+    caseSession: { count: jest.fn() },
   },
 }));
 
@@ -41,7 +43,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import AdminPracticeDetailPage from "@/app/admin/practices/[id]/page";
 
-type PrismaMock = { practice: { findUnique: jest.Mock } };
+type PrismaMock = { practice: { findUnique: jest.Mock }; caseSession: { count: jest.Mock } };
 const pm = prisma as unknown as PrismaMock;
 const getCookies = getSessionAccountFromCookies as jest.Mock;
 
@@ -95,6 +97,7 @@ beforeEach(() => {
   notFoundMock.mockClear();
   getCookies.mockReset();
   pm.practice.findUnique.mockReset();
+  pm.caseSession.count.mockResolvedValue(0);
   process.env.MAIL_SECRET_KEY = VALID_KEY;
 });
 afterEach(() => {

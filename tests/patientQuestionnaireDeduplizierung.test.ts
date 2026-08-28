@@ -131,13 +131,13 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     expect(postalIdx).toBeLessThan(gpIdx);
   });
 
-  it("Reihenfolge: IDENTITAET (order=5) kommt vor VERSICHERUNG (order=7) kommt vor KONTAKT (order=10)", () => {
+  it("Reihenfolge: IDENTITAET (order=10) kommt vor KONTAKT (order=20) kommt vor VERSICHERUNG (order=50)", () => {
     const result = buildQuestionnaireQuestions(["KONTAKT", "VERSICHERUNG", "IDENTITAET"]);
     const firstNameIdx = result.findIndex((q) => q.id === "IDENTITY_FIRST_NAME");
-    const insuranceTypeIdx = result.findIndex((q) => q.id === "IDENTITY_INSURANCE_TYPE");
     const phoneIdx = result.findIndex((q) => q.id === "CONTACT_PHONE");
-    expect(firstNameIdx).toBeLessThan(insuranceTypeIdx);
-    expect(insuranceTypeIdx).toBeLessThan(phoneIdx);
+    const insuranceTypeIdx = result.findIndex((q) => q.id === "IDENTITY_INSURANCE_TYPE");
+    expect(firstNameIdx).toBeLessThan(phoneIdx);
+    expect(phoneIdx).toBeLessThan(insuranceTypeIdx);
   });
 
   it("Reihenfolge: ARBEITSUNFAEHIGKEIT (order=40) kommt vor REZEPT (order=50)", () => {
@@ -248,13 +248,13 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     }
   });
 
-  it("HEILMITTELVERORDNUNG (order=9): kommt nach VERSICHERUNG (order=7) und vor KONTAKT (order=10)", () => {
+  it("HEILMITTELVERORDNUNG (order=100): kommt nach KONTAKT (order=20) und nach VERSICHERUNG (order=50)", () => {
     const result = buildQuestionnaireQuestions(["KONTAKT", "VERSICHERUNG", "HEILMITTELVERORDNUNG"]);
+    const phoneIdx = result.findIndex((q) => q.id === "CONTACT_PHONE");
     const insuranceIdx = result.findIndex((q) => q.id === "IDENTITY_INSURANCE_TYPE");
     const hmvIdx = result.findIndex((q) => q.id === "HMV_CATEGORY");
-    const phoneIdx = result.findIndex((q) => q.id === "CONTACT_PHONE");
+    expect(phoneIdx).toBeLessThan(insuranceIdx);
     expect(insuranceIdx).toBeLessThan(hmvIdx);
-    expect(hmvIdx).toBeLessThan(phoneIdx);
   });
 
   it("HEILMITTELVERORDNUNG kombiniert mit anderen Blöcken: keine Duplikate", () => {

@@ -41,15 +41,16 @@ describe("buildM1SnapshotInitial", () => {
     expect(snapshot.activated_checkpoint_ids).toEqual([]);
   });
 
-  it("enthält 9 block-aktivierte IDs wenn alle Blöcke unklar sind (K10/K11 always-present, K12 ASSESSMENT)", () => {
+  it("enthält 10 block-aktivierte IDs wenn alle Blöcke unklar sind (K10/K11 always-present, K12 ASSESSMENT)", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
-    expect(snapshot.activated_checkpoint_ids).toHaveLength(9);
+    expect(snapshot.activated_checkpoint_ids).toHaveLength(10);
     expect(snapshot.activated_checkpoint_ids).toContain("K01");
     expect(snapshot.activated_checkpoint_ids).toContain("K08");
     expect(snapshot.activated_checkpoint_ids).toContain("K09");
     expect(snapshot.activated_checkpoint_ids).toContain("K03");
     expect(snapshot.activated_checkpoint_ids).toContain("K04");
     expect(snapshot.activated_checkpoint_ids).toContain("K05");
+    expect(snapshot.activated_checkpoint_ids).toContain("K18");
     expect(snapshot.activated_checkpoint_ids).toContain("K02");
     expect(snapshot.activated_checkpoint_ids).toContain("K06");
     expect(snapshot.activated_checkpoint_ids).toContain("K07");
@@ -70,8 +71,8 @@ describe("buildM1SnapshotInitial", () => {
 });
 
 describe("CHECKPOINT_CATALOGUE", () => {
-  it("enthält genau 15 Einträge (K01–K09, K12–K17)", () => {
-    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(15);
+  it("enthält genau 16 Einträge (K01–K09, K12–K18)", () => {
+    expect(Object.keys(CHECKPOINT_CATALOGUE)).toHaveLength(16);
   });
 
   it("jeder Eintrag hat eine id, block_id und m4", () => {
@@ -116,11 +117,11 @@ describe("hydrateActiveCheckpointsFromSnapshot", () => {
     }
   });
 
-  it("hydratisiert alle 13 Checkpoints wenn alle DECISION-Blöcke unklar sind (+ always-present K10, K11, K12, K13)", () => {
+  it("hydratisiert alle 14 Checkpoints wenn alle DECISION-Blöcke unklar sind (+ always-present K10, K11, K12, K13)", () => {
     const snapshot = buildM1SnapshotInitial(ALL_UNKLAR);
     const checkpoints = hydrateActiveCheckpointsFromSnapshot(snapshot);
-    // 9 block-activated (K01–K09) + 4 always-present (K10, K11, K12, K13)
-    expect(checkpoints).toHaveLength(13);
+    // 10 block-activated (K01–K09 + K18) + 4 always-present (K10, K11, K12, K13)
+    expect(checkpoints).toHaveLength(14);
   });
 
   it("überspringt unbekannte IDs defensiv (K10, K11, K12, K13 still always-present)", () => {

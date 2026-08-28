@@ -201,7 +201,7 @@ describe("Prefill-Validierung – alle Option-IDs existieren im Katalog", () => 
 // 4. buildInitialInternalProtocolWorkflowSnapshot – nutzt Prefill
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("buildInitialInternalProtocolWorkflowSnapshot – nutzt Prefill für neue Sitzungen", () => {
+describe("buildInitialInternalProtocolWorkflowSnapshot – neue Sitzung mit null-Antworten und templateAnswers", () => {
   it("topicId ist 'patienten-ohne-termin' (Scope-Isolation)", () => {
     const snapshot = buildInitialInternalProtocolWorkflowSnapshot();
     expect(snapshot.topicId).toBe("patienten-ohne-termin");
@@ -212,13 +212,34 @@ describe("buildInitialInternalProtocolWorkflowSnapshot – nutzt Prefill für ne
     expect(snapshot.processKind).toBe("internal-protocol");
   });
 
-  it("enthält dieselben Prefill-Antworten wie buildPrefillProtocolWorkflowCheckpoints", () => {
-    const snapshotCheckpoints = buildInitialInternalProtocolWorkflowSnapshot().checkpoints;
-    const prefillCheckpoints = buildPrefillProtocolWorkflowCheckpoints();
-
-    for (let i = 0; i < snapshotCheckpoints.length; i++) {
-      expect(snapshotCheckpoints[i].answers).toEqual(prefillCheckpoints[i].answers);
+  it("alle checkpoints.answers sind null (keine vorkonfigurierten Benutzerantworten)", () => {
+    const snapshot = buildInitialInternalProtocolWorkflowSnapshot();
+    for (const cp of snapshot.checkpoints) {
+      for (const val of Object.values(cp.answers)) {
+        expect(val).toBeNull();
+      }
     }
+  });
+
+  it("templateAnswers ist vorhanden und enthält die Prozessvorlage-Vorschläge", () => {
+    const snapshot = buildInitialInternalProtocolWorkflowSnapshot();
+    expect(snapshot.templateAnswers).toBeDefined();
+    // templateAnswers enthält dieselben Werte wie buildPrefillProtocolWorkflowCheckpoints
+    const prefillCheckpoints = buildPrefillProtocolWorkflowCheckpoints();
+    for (const cp of prefillCheckpoints) {
+      for (const [qId, val] of Object.entries(cp.answers)) {
+        if (val !== null) {
+          expect(snapshot.templateAnswers?.[qId]).toEqual(val);
+        }
+      }
+    }
+  });
+
+  it("templateAnswers und checkpoints.answers sind unabhängige Daten", () => {
+    const snapshot = buildInitialInternalProtocolWorkflowSnapshot();
+    // Eine Benutzerantwort setzen darf templateAnswers nicht verändern
+    snapshot.checkpoints[0].answers["POT-Q-C01-01"] = ["BENUTZER-ANTWORT"];
+    expect(snapshot.templateAnswers?.["POT-Q-C01-01"]).not.toEqual(["BENUTZER-ANTWORT"]);
   });
 
   it("gibt bei jedem Aufruf eine unabhängige Kopie zurück (kein shared state)", () => {
