@@ -1,14 +1,16 @@
-# Workflow-Modul: Grundkonzept und Architektur
+# Klinische Workflows: Grundkonzept und Architektur
+
+> **Geltungsbereich:** Dieses Dokument beschreibt ausschließlich das **Klinische Workflow-Modul** (Rezept, Überweisung, AU, Heilmittel, Hilfsmittel, Krankentransport). Die verbindliche Architektur für **Arbeitsprozesse** (`lib/practiceProcesses`) ist in [docs/workflow/practice-processes-architecture.md](practice-processes-architecture.md) definiert.
 
 ---
 
 ## Zweck des Moduls
 
-Das Workflow-Modul unterstützt Praxisteams bei der strukturierten Dokumentation häufiger Musterprozesse.
+Das Klinische Workflow-Modul unterstützt Praxisteams bei der strukturierten Selbstreflexion über die Dokumentation klinischer Standardvorgänge.
 
 **Ziele:**
 - Selbst-Überprüfung der eigenen Dokumentation
-- Orientierungshilfe für MFA und Ärzte im Praxisalltag
+- Orientierungshilfe für MFA und Ärzte bei klinischen Dokumentationsaufgaben
 - Unterstützung der Nachvollziehbarkeit von Entscheidungen
 - Einarbeitungshilfe für neue Mitarbeiter
 
@@ -43,22 +45,22 @@ Das Workflow-Modul unterstützt Praxisteams bei der strukturierten Dokumentation
 - Persönliche Einschätzung zu vier definierten Bereichen
 
 **Eigenschaften:**
-- Immer dieselben vier Checkpoints je Musterprozess
+- Immer dieselben vier Checkpoints je klinischem Workflow
 - Kein Status wird automatisch aus M2 abgeleitet
 - Status wird ausschließlich manuell gesetzt
 
 ---
 
-## Standard-Checkpoints (M3)
+## Standard-Checkpoints (M3 – Klinische Workflows)
 
-Alle Musterprozesse verwenden dieselben vier Bereiche:
+Alle klinischen Workflows verwenden dieselben vier Bereiche:
 
 1. **Formale Angaben** – Sind die grundlegenden Angaben vorhanden?
 2. **Entscheidungsgrundlage** – Ist nachvollziehbar, worauf die Entscheidung basiert?
 3. **Verlauf und Kontext** – Gibt es relevante Vorgeschichte oder Begleitinformationen?
 4. **Weiteres Vorgehen** – Ist dokumentiert, was als nächstes folgen soll?
 
-> Diese Struktur soll für alle zukünftigen Musterprozesse beibehalten werden.
+> Diese vier Checkpoints gelten für die sechs klinischen Dokumentationsprozesse dieses Moduls. Arbeitsprozesse (Internal Protocol) verwenden stattdessen prozessspezifische Checkpoints nach der fachlichen Grammatik des Fachmodells v1.0.
 
 ---
 
@@ -102,4 +104,4 @@ Der Merkzettel dient ausschließlich als persönliche Erinnerung für ähnliche 
 
 Der größte Nutzen entsteht meist nicht durch Pflichtfelder, sondern durch fehlenden Kontext.
 
-Deshalb soll bei der Entwicklung neuer Musterprozesse besonders auf den Bereich **„Verlauf und Kontext"** geachtet werden. Dieser Bereich erfasst Informationen, die in der Praxis oft bekannt sind, aber nicht dokumentiert werden – und die bei späteren Rückfragen oder Folgefällen relevant werden können.
+Deshalb soll bei der Entwicklung neuer klinischer Workflows besonders auf den Bereich **„Verlauf und Kontext"** geachtet werden. Dieser Bereich erfasst Informationen, die in der Praxis oft bekannt sind, aber nicht dokumentiert werden – und die bei späteren Rückfragen oder Folgefällen relevant werden können.

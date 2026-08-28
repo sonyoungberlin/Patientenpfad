@@ -1,11 +1,81 @@
-# Checkpoint-Analyse: Pilotprozess „Patienten ohne Termin"
+# Arbeitsprozesse – Fachmodell und Architektur
 
-Stand: 2026-07-28  
-Geltungsbereich: Architekturvalidierung – kein abgeschlossenes Produktionsdokument
+**Version:** 1.0  
+**Status:** Konsolidiertes Fachmodell – Arbeitsgrundlage für die Implementierungsphase  
+**Datum:** 2026-07-29
 
-> Dieses Dokument beschreibt den aktuellen Erkenntnisstand auf Basis des ersten Pilotprozesses.
-> Formulierungen wie „Stand heute" oder „die Analyse deutet darauf hin" sind bewusst gewählt.
-> Architekturentscheidungen gelten als vorläufig und werden durch weitere Prozesse validiert.
+---
+
+## Fachmodell Version 1.0
+
+### Grunddefinition
+
+Ein **Arbeitsprozess** beschreibt einen **Denkrahmen für wiederkehrende Praxissituationen** — keinen Soll-Ablauf.
+
+Ziel ist nicht, vorgeschriebene Schritte abzuarbeiten. Ziel ist, bei einer konkreten Situation sicherzustellen, dass die fachlich relevanten Aspekte ausreichend geklärt sind, damit konsistentes Handeln möglich ist.
+
+### Phasenstruktur
+
+**M1 – Situationsauswahl**
+
+M1 beantwortet ausschließlich: *Über welche Art von Situation denken wir nach?*
+
+Der Nutzer wählt einen Arbeitsprozess. Damit ist der Klärungsrahmen für M2 und M3 festgelegt.
+
+**M2 – Konkretisierung**
+
+M2 übersetzt jeden M3-Klärungsaspekt in mehrere konkrete, leicht beantwortbare Teilfragen.
+
+Fragen können sich beziehen auf Beobachtungen, vorhandene Informationen, Erfahrungen, Zuständigkeiten, Regeln oder Unsicherheiten. Entscheidend: Die M2-Frage ist konkreter und leichter beantwortbar als der abstrakte M3-Checkpoint.
+
+**M3 – Klärungsstand bewerten**
+
+M3 verdichtet die M2-Antworten zu fachlichen Klärungsaspekten und bewertet deren Klärungsstand.
+
+Leitfrage: *Ist dieser Aspekt für die konkrete Situation ausreichend geklärt, damit konsistentes Handeln möglich ist?*
+
+Ein M3-Checkpoint ist kein To-do, keine Tätigkeit, keine Dokumentationspflicht und kein Checklisten-Punkt. Ein M3-Checkpoint beschreibt einen eigenständigen Klärungsaspekt.
+
+**M4 / M5 – Output**
+
+M4 und M5 erzeugen den Arbeitsoutput. Keine fachliche Beurteilung mehr.
+
+---
+
+### Fachliche Grammatik der M3-Checkpoints
+
+Die fachliche Grammatik dient als Entwurfsorientierung für neue Arbeitsprozesse. Sie ist keine Pflichtklassifikation. Kein Arbeitsprozess muss die Dimensionen vollständig oder explizit abbilden. Die Grammatik beschreibt wiederkehrende Rollen, die in Klärungsaspekten auftreten — sie schreibt weder Reihenfolge noch Vollständigkeit vor.
+
+**S – Situationsdimension**
+
+Beschreibt eine eigenständige, von außen eingebrachte Eigenschaft der Situation (patient- bzw. personbezogen). Inhalt ist vollständig situationsabhängig. Anzahl typischerweise 2–4 pro Arbeitsprozess.
+
+**R – Ressourcendimension**
+
+Beschreibt den Handlungsrahmen der Praxis: verfügbare Kapazität, geltende Regeln, realisierbare Optionen. Anzahl typischerweise 1.
+
+**SY – Synthesedimension**
+
+Führt S und R zu einer Schlussfolgerung zusammen, die explizites Urteil erfordert. Typische Inhalte: Zuständigkeit, unmittelbarer Handlungsbedarf. Anzahl 1–2.
+
+**Ü – Übergangsdimension**
+
+Beantwortet, ob der Übergang vom Denken zum Handeln ausreichend klar ist. Logisch immer letzter Checkpoint. Anzahl 1.
+
+Minimalstruktur: **2–4 S + 1 R + 1–2 SY + 1 Ü**
+
+### Fragestellungen für die Implementierungsphase
+
+Diese Punkte sind keine offenen theoretischen Widersprüche. Es sind Fragen, die bewusst erst durch reale Arbeitsprozesse in der Praxis validiert werden.
+
+- **Medizinisch-akute Situationen:** In Hochdrucksituationen kann die M2–M3-Trennschärfe sinken, wenn M2-Fragen selbst fachliche Expertise erfordern.
+- **Mehrtägige Prozesse:** Das Modell ist für begegnungsbasierte Einzelsituationen konzipiert, nicht für mehrphasige Vorgänge.
+
+---
+
+## Architekturanalyse: Pilotprozess „Patienten ohne Termin"
+
+Die folgenden Abschnitte dokumentieren die Architekturuntersuchung des ersten Pilotprozesses. Sie sind Referenzmaterial für die Implementierung und haben zur Ausformulierung des Fachmodells beigetragen.
 
 ---
 
