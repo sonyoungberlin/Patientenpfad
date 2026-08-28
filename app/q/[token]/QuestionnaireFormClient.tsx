@@ -959,6 +959,7 @@ export function QuestionnaireFormClient({
   introText,
   practiceSignature,
   language = "de",
+  context = "patient",
 }: {
   token: string;
   questions: QuestionDefinition[];
@@ -968,6 +969,7 @@ export function QuestionnaireFormClient({
   introText?: string | null;
   practiceSignature?: string | null;
   language?: QuestionnaireLanguage;
+  context?: string;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -1145,51 +1147,56 @@ export function QuestionnaireFormClient({
           {practiceSignature}
         </p>
       ) : null}
-      <IdentityGate language={language}>
-        <div>
-        {visibleQuestions.length === 0 ? (
-        <p>{t.noQuestions}</p>
-      ) : frozenBlocks && visibleBlockIds ? (
-        // Phase 4: blockbewusstes Rendering mit <section data-q-block> je Block
-        <>
-          {frozenBlocks
-            .filter((block) => visibleBlockIds.has(block.id))
-            .map((block) => {
-              const blockQSet = new Set(block.questions.map((q) => q.id));
-              const blockVisible = visibleQuestions.filter((q) => blockQSet.has(q.id));
-              if (blockVisible.length === 0) return null;
-              return (
-                <section key={block.id} data-q-block={block.id}>
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                    {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id)))}
-                  </ul>
-                </section>
-              );
-            })}
-        </>
-      ) : (
-        // Legacy-Pfad: flache Liste
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id)))}
-        </ul>
-      )}
-      {error ? (
-        <p className="text-error" role="alert" aria-live="polite">
-          {error}
-        </p>
-      ) : null}
-      <button
-        type="button"
-        className="btn-primary"
-        data-q-submit
-        onClick={() => void handleSubmit()}
-        disabled={saving || hasAnyCharError}
-        style={{ marginTop: "1rem" }}
-      >
-        {saving ? t.submitting : t.submit}
-      </button>
-    </div>
-    </IdentityGate>
+      {(() => {
+        const formDiv = (
+          <div>
+          {visibleQuestions.length === 0 ? (
+          <p>{t.noQuestions}</p>
+        ) : frozenBlocks && visibleBlockIds ? (
+          // Phase 4: blockbewusstes Rendering mit <section data-q-block> je Block
+          <>
+            {frozenBlocks
+              .filter((block) => visibleBlockIds.has(block.id))
+              .map((block) => {
+                const blockQSet = new Set(block.questions.map((q) => q.id));
+                const blockVisible = visibleQuestions.filter((q) => blockQSet.has(q.id));
+                if (blockVisible.length === 0) return null;
+                return (
+                  <section key={block.id} data-q-block={block.id}>
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id)))}
+                    </ul>
+                  </section>
+                );
+              })}
+          </>
+        ) : (
+          // Legacy-Pfad: flache Liste
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id)))}
+          </ul>
+        )}
+        {error ? (
+          <p className="text-error" role="alert" aria-live="polite">
+            {error}
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="btn-primary"
+          data-q-submit
+          onClick={() => void handleSubmit()}
+          disabled={saving || hasAnyCharError}
+          style={{ marginTop: "1rem" }}
+        >
+          {saving ? t.submitting : t.submit}
+        </button>
+        </div>
+        );
+        return context === "office" ? formDiv : (
+          <IdentityGate language={language}>{formDiv}</IdentityGate>
+        );
+      })()}
     </>
   );
 }

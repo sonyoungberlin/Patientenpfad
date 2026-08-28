@@ -621,3 +621,89 @@ export async function requireInquiriesAccessFromCookies(): Promise<SessionAccoun
   );
   return allowed ? account : null;
 }
+
+/**
+ * Office-Fragebogen-Guard: OWNER oder ADMIN + Office-Feature.
+ *
+ * Prüft `canAccessOfficeCases` (office_cases_enabled || is_admin) UND
+ * eine Praxisrolle von OWNER oder ADMIN. USER und INBOX_ONLY werden
+ * serverseitig abgelehnt.
+ *
+ * Antworten:
+ *   - 401 `Nicht angemeldet.`
+ *   - 403 `Account nicht freigeschaltet.`
+ *   - 403 `Office-Bereich nicht freigeschaltet.`
+ *   - 403 `Rolle nicht ausreichend.`
+ */
+export async function requireOfficeQuestionnaireAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const { canAccessOfficeCases } = await import("./office/scope");
+
+  const account = await getSessionAccount(req);
+  if (!account) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Nicht angemeldet." },
+        { status: 401 },
+      ),
+    };
+  }
+
+  if (!effectiveFlags(account).is_approved) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Account nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  if (!canAccessOfficeCases(account)) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Office-Bereich nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN],
+    { allowNoPracticeFallback: false },
+  );
+  if (!allowed) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { account, error: null };
+}
+
+/**
+ * Server-Component-Variante für `requireOfficeQuestionnaireAccess`.
+ */
+export async function requireOfficeQuestionnaireAccessFromCookies(): Promise<SessionAccount | null> {
+  const { canAccessOfficeCases } = await import("./office/scope");
+
+  const account = await getSessionAccountFromCookies();
+  if (!account) return null;
+  if (!effectiveFlags(account).is_approved) return null;
+  if (!canAccessOfficeCases(account)) return null;
+
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN],
+    { allowNoPracticeFallback: false },
+  );
+  return allowed ? account : null;
+}

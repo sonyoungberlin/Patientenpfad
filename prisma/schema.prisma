@@ -360,6 +360,14 @@ model PatientQuestionnaireSession {
   /// Deduplizierte Fragen (eingefroren beim Anlegen)
   deduplicated_questions Json
 
+  /// Phase 1 Conditional Logic: eingefrorene Regelstruktur beim Anlegen.
+  /// NULL = Legacy-Session ohne Regeln.
+  frozen_conditional_rules Json?
+
+  /// Phase 4: Vollständiger Block-Snapshot beim Anlegen.
+  /// NULL = Legacy-Session (bisheriges Verhalten).
+  frozen_blocks Json?
+
   /// Patientenantworten: Record<questionId, string> (nach Einreichung)
   answers Json?
 
@@ -398,6 +406,10 @@ model PatientQuestionnaireSession {
   practice_form_id String?
   practice_form    PracticeQuestionnaireForm? @relation(fields: [practice_form_id], references: [id], onDelete: Restrict)
 
+  /// Kontext der Session: "patient" (Default, bisheriges Verhalten) | "office".
+  /// Patientenseitige Abfragen müssen explizit auf context = "patient" einschränken.
+  context String @default("patient")
+
   /// Phase 3a: Einmaliger Bestätigungs-Token für die Doppel-Opt-In-Bestätigung
   /// einer Website-Einreichung (Phase 3b). NULL für interne Sessions.
   confirm_token            String?   @unique
@@ -430,17 +442,6 @@ model PatientQuestionnaireSession {
   /// Praxis-Liste als „bereits heruntergeladen"-Hinweis angezeigt, damit ein
   /// abgelegter Krankenblatt-Eintrag erkennbar bleibt.
   pdf_downloaded_at DateTime? @db.Timestamp(6)
-
-  /// Phase 1 Conditional Logic: Beim Anlegen eingefrorene Regelstruktur.
-  /// NULL = keine Regeln (Bestandssessions und Sessions ohne Conditional-Blöcke).
-  /// Spätere Katalogänderungen verändern einen bestehenden Link nicht.
-  frozen_conditional_rules Json?
-
-  /// Phase 4: Vollständiger Snapshot aller Blöcke (Start- und Folgeblöcke).
-  /// Enthält FrozenBlock[]-Struktur mit eingefrorenen QuestionDefinitions,
-  /// GroupSchemas, ConditionalRules und initiallyVisible-Flag.
-  /// NULL = Bestandssession (Legacy-Pfad über BLOCK_CATALOG / QUESTION_CATALOG).
-  frozen_blocks Json?
 
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).

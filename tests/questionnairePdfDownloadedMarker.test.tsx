@@ -101,6 +101,7 @@ const baseSession = {
   identity_gate_completed_at: new Date("2026-05-04T10:00:00Z"),
   identity_gate_method: "dob",
   deleted_at: null,
+  context: "patient",
 };
 
 beforeEach(() => {

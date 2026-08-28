@@ -23,6 +23,7 @@ import {
   BLOCK_CATALOG,
   QUESTION_CATALOG,
   type QuestionDefinition,
+  type QuestionnaireBlock,
 } from "./blockCatalog";
 import type { ConditionalRule } from "./conditionalLogic";
 
@@ -65,9 +66,13 @@ export type FrozenBlock = {
  *      buildQuestionnaireQuestions).
  *   5. Setzt initiallyVisible entsprechend der Praxisauswahl.
  */
-export function buildFrozenBlocks(selectedBlockIds: string[]): FrozenBlock[] {
+export function buildFrozenBlocks(
+  selectedBlockIds: string[],
+  blockCatalog: Record<string, QuestionnaireBlock> = BLOCK_CATALOG,
+  questionCatalog: Record<string, QuestionDefinition> = QUESTION_CATALOG,
+): FrozenBlock[] {
   const selectedSet = new Set(
-    selectedBlockIds.filter((id) => id in BLOCK_CATALOG),
+    selectedBlockIds.filter((id) => id in blockCatalog),
   );
 
   // BFS: alle erreichbaren Block-IDs sammeln
@@ -77,10 +82,10 @@ export function buildFrozenBlocks(selectedBlockIds: string[]): FrozenBlock[] {
   while (queue.length > 0) {
     const id = queue.shift()!;
     if (visited.has(id)) continue;
-    if (!(id in BLOCK_CATALOG)) continue;
+    if (!(id in blockCatalog)) continue;
     visited.add(id);
 
-    for (const rule of BLOCK_CATALOG[id].conditionalRules ?? []) {
+    for (const rule of blockCatalog[id].conditionalRules ?? []) {
       if (rule.action === "showBlock" && !visited.has(rule.targetId)) {
         queue.push(rule.targetId);
       }
@@ -89,7 +94,7 @@ export function buildFrozenBlocks(selectedBlockIds: string[]): FrozenBlock[] {
 
   // Sortierung nach displayOrder
   const orderedIds = [...visited].sort(
-    (a, b) => BLOCK_CATALOG[a].displayOrder - BLOCK_CATALOG[b].displayOrder,
+    (a, b) => blockCatalog[a].displayOrder - blockCatalog[b].displayOrder,
   );
 
   // Blöcke mit tiefen Question-Snapshots aufbauen; globale Deduplizierung
@@ -97,12 +102,12 @@ export function buildFrozenBlocks(selectedBlockIds: string[]): FrozenBlock[] {
   const result: FrozenBlock[] = [];
 
   for (const id of orderedIds) {
-    const block = BLOCK_CATALOG[id];
+    const block = blockCatalog[id];
     const questions: QuestionDefinition[] = [];
 
     for (const questionId of block.questionIds) {
       if (seenQuestionIds.has(questionId)) continue;
-      const q = QUESTION_CATALOG[questionId];
+      const q = questionCatalog[questionId];
       if (!q) continue;
       seenQuestionIds.add(questionId);
       // Tiefer Snapshot: keine Referenz auf mutable Catalog-Objekte

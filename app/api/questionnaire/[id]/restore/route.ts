@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
+import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 
 /**
  * POST /api/questionnaire/[id]/restore
@@ -34,6 +35,7 @@ export async function POST(
         status: true,
         confirmed_at: true,
         deleted_at: true,
+        context: true,
       },
     });
 
@@ -41,6 +43,7 @@ export async function POST(
       !session ||
       // Nur soft-gelöschte Sessions sind wiederherstellbar.
       session.deleted_at == null ||
+      !isPatientSession(session) ||
       !ownsSession(account, session) ||
       // Spiegelt die DELETE-Sichtbarkeit: unbestätigte Website-Sessions sind
       // weder löschbar noch wiederherstellbar (404, kein 403).

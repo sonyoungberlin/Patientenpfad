@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
+import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 
 export async function DELETE(
   req: NextRequest,
@@ -23,12 +24,14 @@ export async function DELETE(
         status: true,
         confirmed_at: true,
         deleted_at: true,
+        context: true,
       },
     });
 
     if (
       !session ||
       session.deleted_at != null ||
+      !isPatientSession(session) ||
       !ownsSession(account, session) ||
       !isQuestionnaireVisibleToPractice(session)
     ) {

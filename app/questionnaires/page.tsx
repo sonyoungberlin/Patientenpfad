@@ -10,6 +10,7 @@ import {
   deriveDisplayStatus,
 } from "@/lib/questionnaire/displayStatus";
 import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
+import { PATIENT_CONTEXT_FILTER } from "@/lib/questionnaire/contextFilter";
 import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
@@ -79,6 +80,8 @@ export default async function QuestionnairesPage({
         // hat). Mehrere Accounts derselben Praxis sehen damit dieselbe
         // Liste.
         getOwnershipFilter(account),
+        // Nur Patient-Sessions anzeigen (positiver Kontextfilter).
+        PATIENT_CONTEXT_FILTER,
         // Phase 3d: Website-Sessions erst sichtbar, wenn bestätigt.
         // Interne Sessions bleiben unverändert sichtbar.
         PRACTICE_VISIBLE_SESSION_FILTER,

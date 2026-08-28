@@ -114,6 +114,7 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
       deleted_at: null,
+      context: "patient",
     });
     const req = requestWithCookie("http://localhost/api/questionnaire/q-active/restore");
     const res = await restoreHandler(req, {
@@ -128,6 +129,7 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
       deleted_at: new Date("2026-05-01T10:00:00Z"),
+      context: "patient",
     });
     pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-deleted/restore");
@@ -150,6 +152,7 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
       deleted_at: new Date("2026-05-01T10:00:00Z"),
+      context: "patient",
     });
     pm.patientQuestionnaireSession.update.mockRejectedValue(new Error("DB error"));
     const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});

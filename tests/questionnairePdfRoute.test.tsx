@@ -55,6 +55,7 @@ function baseSession(overrides: Partial<Record<string, unknown>> = {}) {
     identity_gate_method: "dob",
     deleted_at: null,
     pdf_downloaded_at: null,
+    context: "patient",
     ...overrides,
   };
 }

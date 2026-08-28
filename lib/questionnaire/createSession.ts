@@ -23,6 +23,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import { OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
 
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 Stunden
@@ -47,6 +48,8 @@ export type CreateSessionInput = {
    * Wird für den zurückgegebenen `tokenLink` verwendet.
    */
   origin: string;
+  /** "patient" (Default) | "office". Bestimmt den genutzten Blockkatalog. */
+  context?: "patient" | "office";
 };
 
 export type CreateSessionResult = {
@@ -75,15 +78,16 @@ export async function createQuestionnaireSession(
     inquirySessionId,
     birthDateHash,
     origin,
+    context = "patient",
   } = input;
 
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
-  // Phase 4: FrozenBlocks einfrieren (Start- + transitive Folgeblöcke).
-  // deduplicated_questions und frozen_conditional_rules werden daraus abgeleitet,
-  // damit alle drei konsistent sind und alle erreichbaren Fragen/Regeln enthalten.
-  const frozenBlocks = buildFrozenBlocks(selectedBlockIds);
+  const frozenBlocks =
+    context === "office"
+      ? buildFrozenBlocks(selectedBlockIds, OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG)
+      : buildFrozenBlocks(selectedBlockIds);
   const deduplicatedQuestions = frozenBlocks.flatMap((b) => b.questions);
   const conditionalRules: ConditionalRule[] = frozenBlocks.flatMap(
     (b) => b.conditionalRules,
@@ -108,6 +112,7 @@ export async function createQuestionnaireSession(
         ? (frozenBlocks as unknown as Prisma.InputJsonValue)
         : Prisma.JsonNull,
       patient_language: patientLanguage,
+      context,
       status: "pending",
       ...(birthDateHash ? { birth_date_hash: birthDateHash } : {}),
     },

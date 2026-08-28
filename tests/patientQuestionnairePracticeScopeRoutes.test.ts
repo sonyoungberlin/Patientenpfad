@@ -140,9 +140,11 @@ describe("/questionnaires list — Practice-Scope", () => {
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND).toBeDefined();
     expect(args.where.AND[0]).toEqual({ owner_practice_id: "p-A" });
-    // Sichtbarkeitsfilter bleibt unangetastet.
-    expect(args.where.AND[1]).toBeDefined();
-    expect(args.where.AND[1].OR).toBeDefined();
+    // Positiver Context-Filter an Index 1 ("patient").
+    expect(args.where.AND[1]).toEqual({ context: "patient" });
+    // Sichtbarkeitsfilter (PRACTICE_VISIBLE_SESSION_FILTER) an Index 2.
+    expect(args.where.AND[2]).toBeDefined();
+    expect(args.where.AND[2].OR).toBeDefined();
     // Soft-Delete-Filter: archivierte Sessions tauchen in der Liste nicht auf.
     expect(args.where.AND).toEqual(
       expect.arrayContaining([{ deleted_at: null }]),
@@ -206,6 +208,7 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       status: "completed",
       confirmed_at: null,
       deleted_at: null,
+      context: "patient",
     });
     pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const res = await DeleteRoute(deleteReq(), {
@@ -302,6 +305,7 @@ describe("GET /api/questionnaire/[id]/pdf — Practice-Scope", () => {
       answers: {},
       identity_gate_completed_at: new Date(),
       identity_gate_method: "dob",
+      context: "patient",
     });
     const res = await PdfRoute(pdfReq(), {
       params: Promise.resolve({ id: "sess-1" }),
@@ -326,6 +330,7 @@ describe("GET /api/questionnaire/[id]/pdf — Practice-Scope", () => {
       identity_gate_completed_at: new Date(),
       identity_gate_method: "dob",
       pdf_downloaded_at: new Date(), // bereits markiert → kein erneutes update.
+      context: "patient",
     });
     const res = await PdfRoute(pdfReq(), {
       params: Promise.resolve({ id: "sess-1" }),

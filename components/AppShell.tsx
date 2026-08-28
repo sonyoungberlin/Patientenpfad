@@ -186,6 +186,9 @@ export default function AppShell({
     );
   } else if (isOfficeCases && (account.office_cases_enabled || account.is_admin)) {
     sectionItems.push({ label: "Officefälle", href: "/office-cases" });
+    if (canManagePractice) {
+      sectionItems.push({ label: "Fragebögen", href: "/office-cases/questionnaire" });
+    }
   } else if (isWorkflowCases && (account.arbeitsprozesse_enabled || account.is_admin)) {
     sectionItems.push(
       { label: "Arbeitsprozesse", href: "/workflow-cases" },

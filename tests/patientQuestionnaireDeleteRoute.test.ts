@@ -112,6 +112,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-other",
       deleted_at: null,
+      context: "patient",
     });
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-1" }) });
@@ -140,6 +141,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
       deleted_at: null,
+      context: "patient",
     });
     pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-completed");
@@ -164,6 +166,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
       deleted_at: null,
+      context: "patient",
     });
     pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-pending");
@@ -183,6 +186,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
       deleted_at: null,
+      context: "patient",
     });
     pm.patientQuestionnaireSession.update.mockRejectedValue(new Error("DB error"));
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1");
