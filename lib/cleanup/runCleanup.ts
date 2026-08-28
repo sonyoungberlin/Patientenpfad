@@ -77,8 +77,9 @@ async function countCandidates(
  *  3. DigitalRequest löschen
  */
 async function executeCleanup(now: Date, cutoff: Date): Promise<CleanupCounts> {
-  // Alle Session-IDs sammeln, die in diesem Lauf gelöscht werden.
-  // Wird für den defensiven Null-Out-Schritt benötigt.
+  // Vorab-Counts für das Reporting — müssen vor den Deletes stehen.
+  const preCounts = await countCandidates(now, cutoff);
+
   const sessionIdsToDelete = (
     await prisma.patientQuestionnaireSession.findMany({
       where: {
@@ -137,17 +138,12 @@ async function executeCleanup(now: Date, cutoff: Date): Promise<CleanupCounts> {
     where: { createdAt: { lt: cutoff } },
   });
 
-  // Einzelkategorien für den Abschlussbericht rekonstruieren.
-  // Nach dem Löschen können wir nur noch die Gesamtzahl des deleteMany nennen.
-  // Für Reporting teilen wir sie durch den Vorab-Count auf.
-  const counts = await countCandidates(now, cutoff);
-
   return {
     dryRun: false,
-    trashSessions: counts.trashSessions,
-    websiteUnconfirmedSessions: counts.websiteUnconfirmedSessions,
-    completedSessions: counts.completedSessions,
-    pendingSessions: counts.pendingSessions,
+    trashSessions: preCounts.trashSessions,
+    websiteUnconfirmedSessions: preCounts.websiteUnconfirmedSessions,
+    completedSessions: preCounts.completedSessions,
+    pendingSessions: preCounts.pendingSessions,
     totalSessions: sessionResult.count,
     nulledSessionRefs,
     digitalRequests: drResult.count,
