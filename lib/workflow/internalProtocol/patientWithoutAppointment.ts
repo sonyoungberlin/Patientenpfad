@@ -175,7 +175,7 @@ const SECTION_C01: ProtocolSection = {
   questions: [
     {
       id: "POT-Q-C01-01",
-      text: "In welchen Situationen gilt dieser Prozess?",
+      text: "Wann erscheinen bei Ihnen Patienten ohne Termin?",
       kind: "MULTI_SELECT",
       required: true,
       options: [
@@ -207,13 +207,13 @@ const SECTION_C01: ProtocolSection = {
     },
     {
       id: "POT-Q-C01-02",
-      text: "Gilt dieser Prozess für alle Mitarbeitenden der Praxis?",
+      text: "Gilt dieser Ablauf für alle Mitarbeitenden in der Praxis?",
       kind: "YES_NO_UNCLEAR",
       required: true,
     },
     {
       id: "POT-Q-C01-03",
-      text: "Sind Ausnahmen vom Anwendungsbereich schriftlich festgelegt?",
+      text: "Gibt es Ausnahmen, die schriftlich festgehalten sind?",
       kind: "YES_NO_UNCLEAR",
     },
   ],
@@ -245,7 +245,7 @@ const SECTION_C02: ProtocolSection = {
   questions: [
     {
       id: "POT-Q-C02-01",
-      text: "Wer ist primär für die Erstaufnahme von Patienten ohne Termin zuständig?",
+      text: "Wer kümmert sich als Erste Person um einen Patienten ohne Termin?",
       kind: "SINGLE_SELECT",
       required: true,
       options: [
@@ -271,7 +271,7 @@ const SECTION_C02: ProtocolSection = {
     },
     {
       id: "POT-Q-C02-02",
-      text: "Wer entscheidet bei Unklarheit über die Dringlichkeit einer Vorstellung?",
+      text: "Wenn die Dringlichkeit unklar ist – wer entscheidet dann?",
       kind: "SINGLE_SELECT",
       required: true,
       options: [
@@ -297,13 +297,13 @@ const SECTION_C02: ProtocolSection = {
     },
     {
       id: "POT-Q-C02-03",
-      text: "Sind die Zuständigkeiten für die Patientenaufnahme schriftlich festgelegt und dem Team bekannt?",
+      text: "Weiß das Team, wer wofür zuständig ist, und ist das schriftlich festgehalten?",
       kind: "YES_NO_UNCLEAR",
       required: true,
     },
     {
       id: "POT-Q-C02-04",
-      text: "Ist eine Vertretungsregelung für die Erstaufnahme bei Abwesenheit der zuständigen Person festgelegt?",
+      text: "Gibt es eine Regelung für den Fall, dass die zuständige Person nicht da ist?",
       kind: "YES_NO_UNCLEAR",
       required: true,
     },
@@ -336,7 +336,7 @@ const SECTION_C03: ProtocolSection = {
   questions: [
     {
       id: "POT-Q-C03-01",
-      text: "Welche Informationen werden bei der Erstaufnahme standardmäßig erhoben?",
+      text: "Was erfasst die Praxis standardmäßig, wenn jemand ohne Termin kommt?",
       kind: "MULTI_SELECT",
       required: true,
       options: [
@@ -368,7 +368,7 @@ const SECTION_C03: ProtocolSection = {
     },
     {
       id: "POT-Q-C03-02",
-      text: "Wie wird bei Patienten ohne Termin standardmäßig verfahren?",
+      text: "Wie geht es in der Regel weiter – welches Vorgehen hat sich bei Ihnen eingespielt?",
       kind: "SINGLE_SELECT",
       required: true,
       options: [
@@ -400,7 +400,7 @@ const SECTION_C03: ProtocolSection = {
     },
     {
       id: "POT-Q-C03-03",
-      text: "Wird das Anliegen des Patienten dokumentiert, bevor eine Entscheidung über die weitere Vorgehensweise getroffen wird?",
+      text: "Wird das Anliegen des Patienten festgehalten, bevor entschieden wird, wie es weitergeht?",
       kind: "YES_NO_UNCLEAR",
       required: true,
     },
@@ -433,7 +433,7 @@ const SECTION_C04: ProtocolSection = {
   questions: [
     {
       id: "POT-Q-C04-01",
-      text: "Anhand welcher Kriterien wird eine mögliche Notfallsituation erkannt?",
+      text: "Woran erkennt das Team, dass ein Patient sofort versorgt werden muss?",
       kind: "MULTI_SELECT",
       required: true,
       options: [
@@ -459,7 +459,7 @@ const SECTION_C04: ProtocolSection = {
     },
     {
       id: "POT-Q-C04-02",
-      text: "Wie wird bei erkanntem Notfallverdacht vorgegangen?",
+      text: "Was passiert, wenn der Verdacht besteht, dass es sich um einen Notfall handelt?",
       kind: "SINGLE_SELECT",
       required: true,
       options: [
@@ -485,14 +485,51 @@ const SECTION_C04: ProtocolSection = {
     },
     {
       id: "POT-Q-C04-03",
-      text: "In welchen Situationen empfiehlt die Praxis den Verweis an den KV-Bereitschaftsdienst (116 117)?",
+      text: "In welchen Situationen verweist die Praxis heute an den ärztlichen Bereitschaftsdienst (116 117)?",
       kind: "FREE_TEXT",
       placeholder:
-        "z. B. bei nicht lebensbedrohlichen Beschwerden außerhalb der Sprechzeiten oder bei erschöpfter Praxiskapazität …",
+        "z. B. bei nicht lebensbedrohlichen Beschwerden außerhalb der Sprechzeiten, wenn keine zeitnahe Versorgung in der Praxis möglich ist …",
+    },
+    {
+      id: "POT-Q-C04-05",
+      text: "Wie erfolgt die Weiterleitung heute?",
+      kind: "MULTI_SELECT",
+      options: [
+        {
+          id: "POT-Q-C04-05-A",
+          label: "Telefonnummer 116 117 wird genannt",
+          outputText:
+            "Die Telefonnummer des ärztlichen Bereitschaftsdienstes (116 117) wird dem Patienten genannt.",
+        },
+        {
+          id: "POT-Q-C04-05-B",
+          label: "Patient ruft selbst an",
+          outputText:
+            "Der Patient ruft den ärztlichen Bereitschaftsdienst (116 117) selbst an.",
+        },
+        {
+          id: "POT-Q-C04-05-C",
+          label: "Praxis stellt telefonischen Kontakt her",
+          outputText:
+            "Die Praxis stellt für den Patienten den telefonischen Kontakt zum ärztlichen Bereitschaftsdienst (116 117) her.",
+        },
+        {
+          id: "POT-Q-C04-05-D",
+          label: "Schriftlicher Hinweis wird mitgegeben",
+          outputText:
+            "Dem Patienten wird ein schriftlicher Hinweis auf den ärztlichen Bereitschaftsdienst (116 117) mitgegeben.",
+        },
+        {
+          id: "POT-Q-C04-05-E",
+          label: "Anderes Vorgehen",
+          outputText:
+            "Die Art der Weiterleitung zum ärztlichen Bereitschaftsdienst folgt dem individuellen Praxisvorgehen.",
+        },
+      ],
     },
     {
       id: "POT-Q-C04-04",
-      text: "Sind die Eskalationsstufen (erste Einschätzung → Arzt → Notruf 112) allen Mitarbeitenden bekannt und geübt?",
+      text: "Weiß das Team, wann der Arzt sofort dazu geholt werden muss und wann der Notruf (112) nötig ist?",
       kind: "YES_NO_UNCLEAR",
       required: true,
     },
@@ -525,13 +562,13 @@ const SECTION_C05: ProtocolSection = {
   questions: [
     {
       id: "POT-Q-C05-01",
-      text: "Werden Entscheidungen über Verweisung oder Behandlungsaufschub bei Patienten ohne Termin dokumentiert?",
+      text: "Hält die Praxis fest, wenn jemand ohne Termin weitergeleitet oder auf einen Termin verwiesen wird?",
       kind: "YES_NO_UNCLEAR",
       hint: "Bezieht sich auf die empfohlene Dokumentation von Nicht-Behandlungsentscheidungen. Durchgeführte Behandlungen sind nach §630f BGB gesetzlich immer zu dokumentieren.",
     },
     {
       id: "POT-Q-C05-02",
-      text: "Wie häufig wird dieser Prozess überprüft und ggf. angepasst?",
+      text: "Wann prüft die Praxis, ob dieser Ablauf noch passt?",
       kind: "MULTI_SELECT",
       required: true,
       options: [
@@ -563,7 +600,7 @@ const SECTION_C05: ProtocolSection = {
     },
     {
       id: "POT-Q-C05-03",
-      text: "Wer ist für die Überprüfung und Weiterentwicklung dieses Prozesses zuständig?",
+      text: "Wer ist dafür verantwortlich, dass dieser Ablauf aktuell bleibt?",
       kind: "SINGLE_SELECT",
       required: true,
       options: [
@@ -633,3 +670,32 @@ export function getPatientWithoutAppointmentSection(
   const found = PATIENT_WITHOUT_APPOINTMENT_SECTIONS.find((s) => s.id === id);
   return found !== undefined ? cloneSection(found) : undefined;
 }
+
+// ---------------------------------------------------------------------------
+// Modusabhängige Fragetexte (TARGET_STATE-Perspektive)
+// ---------------------------------------------------------------------------
+
+/**
+ * Überschreibungen der Fragetexte für den TARGET_STATE-Modus (Soll-Perspektive).
+ * Fragen, die hier nicht aufgeführt sind, verwenden den Standard-Text (CURRENT_STATE).
+ */
+export const TARGET_STATE_QUESTION_TEXTS: Readonly<Record<string, string>> = {
+  "POT-Q-C01-01": "Wann sollen Patienten ohne Termin künftig angenommen werden?",
+  "POT-Q-C01-02": "Soll dieser Ablauf für alle Mitarbeitenden in der Praxis gelten?",
+  "POT-Q-C01-03": "Soll es schriftlich festgehaltene Ausnahmen geben?",
+  "POT-Q-C02-01": "Wer soll sich künftig als Erste Person um Patienten ohne Termin kümmern?",
+  "POT-Q-C02-02": "Wenn die Dringlichkeit unklar ist – wer soll dann künftig entscheiden?",
+  "POT-Q-C02-03": "Soll das Team wissen, wer wofür zuständig ist, und soll das schriftlich festgehalten werden?",
+  "POT-Q-C02-04": "Soll es eine Regelung für den Fall geben, dass die zuständige Person nicht da ist?",
+  "POT-Q-C03-01": "Was soll die Praxis künftig standardmäßig erfassen, wenn jemand ohne Termin kommt?",
+  "POT-Q-C03-02": "Wie soll es künftig in der Regel weitergehen – welches Vorgehen soll verbindlich sein?",
+  "POT-Q-C03-03": "Soll das Anliegen des Patienten künftig festgehalten werden, bevor entschieden wird, wie es weitergeht?",
+  "POT-Q-C04-01": "Woran soll das Team künftig erkennen, dass ein Patient sofort versorgt werden muss?",
+  "POT-Q-C04-02": "Was soll passieren, wenn der Verdacht besteht, dass es sich um einen Notfall handelt?",
+  "POT-Q-C04-03": "In welchen Situationen soll die Praxis künftig an den ärztlichen Bereitschaftsdienst (116 117) verweisen?",
+  "POT-Q-C04-04": "Soll das Team wissen, wann der Arzt sofort dazu geholt werden muss und wann der Notruf (112) nötig ist?",
+  "POT-Q-C04-05": "Wie soll die Weiterleitung künftig erfolgen?",
+  "POT-Q-C05-01": "Soll die Praxis künftig festhalten, wenn jemand ohne Termin weitergeleitet oder auf einen Termin verwiesen wird?",
+  "POT-Q-C05-02": "Wann soll die Praxis prüfen, ob dieser Ablauf noch passt?",
+  "POT-Q-C05-03": "Wer soll dafür verantwortlich sein, dass dieser Ablauf aktuell bleibt?",
+};
