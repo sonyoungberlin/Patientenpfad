@@ -17,6 +17,7 @@ import {
 } from "@/lib/questionnaire/conditionalLogic";
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { MAIN_GATE_QUESTION_IDS } from "@/components/questionnaire/QuestionField";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -825,23 +826,6 @@ function FachaerzeField({
 }
 
 // ---------------------------------------------------------------------------
-// Hilfsfunktion: sammelt alle questionIds, die als Bedingungsziel in
-// Conditional Rules auftreten – diese gelten als Gate-Fragen.
-// ---------------------------------------------------------------------------
-
-function collectConditionQuestionIds(condition: import("@/lib/questionnaire/conditionalLogic").ConditionGroup): Set<string> {
-  const ids = new Set<string>();
-  if ("mode" in condition) {
-    for (const c of condition.conditions) {
-      for (const id of collectConditionQuestionIds(c)) ids.add(id);
-    }
-  } else if (condition.target.kind === "question") {
-    ids.add(condition.target.questionId);
-  }
-  return ids;
-}
-
-// ---------------------------------------------------------------------------
 // Hilfsfunktion: einzelnes Frage-<li>-Element (gemeinsam für Legacy + Phase 4)
 // ---------------------------------------------------------------------------
 
@@ -1008,14 +992,8 @@ export function QuestionnaireFormClient({
     [values],
   );
 
-  // Gate-Fragen: alle questionIds, die als Bedingungsziel in conditionalRules auftreten
-  const gateQuestionIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const rule of conditionalRules ?? []) {
-      for (const id of collectConditionQuestionIds(rule.condition)) ids.add(id);
-    }
-    return ids;
-  }, [conditionalRules]);
+  // Gate-Fragen: explizite Hauptpfad-Fragen aus zentraler Konstante
+  const gateQuestionIds = MAIN_GATE_QUESTION_IDS;
 
   // Sichtbare Blöcke (Phase 4: nur bei frozen_blocks-Sessions)
   const visibleBlockIds = useMemo(() => {

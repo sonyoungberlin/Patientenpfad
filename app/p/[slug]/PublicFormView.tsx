@@ -34,7 +34,7 @@ import {
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 import {
   QuestionField,
-  collectConditionQuestionIds,
+  MAIN_GATE_QUESTION_IDS,
 } from "@/components/questionnaire/QuestionField";
 
 const NOTICE_ID = "public-form-confirm-notice";
@@ -115,14 +115,8 @@ export function PublicFormView({
   const [error, setError] = useState<string | null>(null);
   const [missingRequired, setMissingRequired] = useState<Set<string>>(new Set());
 
-  // Gate-Fragen: Fragen, die in Bedingungen als Ziel auftreten
-  const gateQuestionIds = useMemo<Set<string>>(() => {
-    const ids = new Set<string>();
-    for (const rule of conditionalRules) {
-      for (const id of collectConditionQuestionIds(rule.condition)) ids.add(id);
-    }
-    return ids;
-  }, [conditionalRules]);
+  // Gate-Fragen: explizite Hauptpfad-Konstante (keine Ableitung aus conditionalRules)
+  const gateQuestionIds = MAIN_GATE_QUESTION_IDS;
 
   // Sichtbare Fragen basierend auf aktuellen Antworten
   const derivedValues = useMemo(() => computeAllDerivedValues(values), [values]);
@@ -320,12 +314,13 @@ export function PublicFormView({
                     marginBottom: "0.75rem",
                     ...(isGate
                       ? {
-                          borderLeft: "3px solid var(--primary, #2563eb)",
-                          background: "var(--primary-bg, #eff6ff)",
+                          marginTop: "1.5rem",
+                          background: "#f5f5f5",
+                          borderColor: "#c8cdd4",
                         }
                       : {}),
                     ...(isMissing || hasCharErr
-                      ? { borderLeft: "3px solid var(--destructive, #dc2626)" }
+                      ? { borderColor: "var(--destructive, #dc2626)" }
                       : {}),
                   }}
                 >

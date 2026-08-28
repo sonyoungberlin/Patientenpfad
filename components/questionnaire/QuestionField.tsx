@@ -42,6 +42,27 @@ export function collectConditionQuestionIds(condition: ConditionGroup): Set<stri
   return ids;
 }
 
+/**
+ * Echte Haupt-Pfadfragen, die Gate-Styling erhalten.
+ * Explizit pflegen statt automatisch aus conditionalRules ableiten,
+ * damit reine Detail-Folge-Fragen (z.B. VOLLST_GENDER → Freitext) nicht
+ * fälschlich hervorgehoben werden.
+ */
+export const MAIN_GATE_QUESTION_IDS: ReadonlySet<string> = new Set([
+  "VOLLST_ERKR_GATE",
+  "VOLLST_ALLERG_GATE",
+  "VOLLST_INFEKT_GATE",
+  "VOLLST_FAMIL_GATE",
+  "VOLLST_IMPF_BEKANNT",
+  "VOLLST_VERS_PFLEGEGRAD",
+  "VOLLST_VERS_GDB",
+  "VOLLST_VERS_PROTHESEN",
+  "NIKOTIN_GATE",
+  "ALKOHOL_GATE",
+  "SUBST_GATE",
+  "VOLLST_GEWICHT_VERAENDERN",
+]);
+
 // ---------------------------------------------------------------------------
 // FACHAERZTE-Spezialfall (Schema + Typen)
 // ---------------------------------------------------------------------------
