@@ -65,6 +65,10 @@ export default async function DashboardPage() {
   const showPracticeTile =
     myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
   const showOfficeTile = account.office_cases_enabled || account.is_admin;
+  const canOpenOfficeCases =
+    myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
+  const canOpenOfficeApplications =
+    canOpenOfficeCases || myRole === PracticeRole.USER;
   const showWorkflowTile = account.arbeitsprozesse_enabled || account.is_admin;
 
   return (
@@ -135,15 +139,22 @@ export default async function DashboardPage() {
           )}
 
           {showOfficeTile && (
-          <section className="card">
-            <h2 style={{ marginTop: 0 }}>Officepfad</h2>
-            <p>Organisatorische Snapshots strukturiert klären</p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Link href="/office-cases">
-                <button type="button">Officefälle öffnen</button>
-              </Link>
-            </div>
-          </section>
+            <section className="card" data-testid="office-path-tile">
+              <h2 style={{ marginTop: 0 }}>Officepfad</h2>
+              <p>Organisatorische Aufgaben strukturiert klären.</p>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {canOpenOfficeCases && (
+                  <Link href="/office-cases">
+                    <button type="button">Officefälle öffnen</button>
+                  </Link>
+                )}
+                {canOpenOfficeApplications && (
+                  <Link href="/office-cases/applications">
+                    <button type="button">Bewerbungsanfragen öffnen</button>
+                  </Link>
+                )}
+              </div>
+            </section>
           )}
 
           {showWorkflowTile && (

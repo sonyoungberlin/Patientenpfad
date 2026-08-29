@@ -51,7 +51,11 @@ function inboxOnlyAccount() {
   };
 }
 
-function makeAccount(role: string, patientCommunicationEnabled: boolean) {
+function makeAccount(
+  role: string,
+  patientCommunicationEnabled: boolean,
+  officeCasesEnabled = false,
+) {
   return {
     id: "acc-1",
     email: "user@example.com",
@@ -60,7 +64,7 @@ function makeAccount(role: string, patientCommunicationEnabled: boolean) {
     inquiry_assistant_enabled: true,
     patient_communication_enabled: patientCommunicationEnabled,
     website_forms_enabled: false,
-    office_cases_enabled: false,
+    office_cases_enabled: officeCasesEnabled,
     arbeitsprozesse_enabled: false,
     current_practice: {
       id: "p-1",
@@ -70,7 +74,7 @@ function makeAccount(role: string, patientCommunicationEnabled: boolean) {
       inquiry_assistant_enabled: true,
       patient_communication_enabled: patientCommunicationEnabled,
       website_forms_enabled: false,
-      office_cases_enabled: false,
+      office_cases_enabled: officeCasesEnabled,
       arbeitsprozesse_enabled: false,
     },
     memberships: [{ practice_id: "p-1", role }],
@@ -116,5 +120,49 @@ describe("Dashboard — Kachel 'Digitale Anfragen'", () => {
   it("INBOX_ONLY sieht die Kachel nicht (Redirect vor dem Render)", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
     await expect(DashboardPage()).rejects.toThrow("__REDIRECT__:/questionnaires");
+  });
+});
+
+describe("Dashboard — Kachel 'Officepfad'", () => {
+  beforeEach(() => {
+    redirectMock.mockClear();
+    getCookies.mockReset();
+  });
+
+  it.each(["OWNER", "ADMIN"])(
+    "%s sieht beide Officepfad-Aktionen mit korrekten Zielen",
+    async (role) => {
+      getCookies.mockResolvedValue(makeAccount(role, true, true));
+      const html = renderToStaticMarkup(await DashboardPage());
+
+      expect(html).toContain('data-testid="office-path-tile"');
+      expect(html).toContain("Organisatorische Aufgaben strukturiert klären.");
+      expect(html).not.toContain("Snapshots");
+      expect(html).toContain(
+        '<a href="/office-cases"><button type="button">Officefälle öffnen</button></a>',
+      );
+      expect(html).toContain(
+        '<a href="/office-cases/applications"><button type="button">Bewerbungsanfragen öffnen</button></a>',
+      );
+    },
+  );
+
+  it("USER sieht nur Bewerbungsanfragen", async () => {
+    getCookies.mockResolvedValue(makeAccount("USER", true, true));
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).toContain('data-testid="office-path-tile"');
+    expect(html).not.toContain("Officefälle öffnen");
+    expect(html).not.toContain('<a href="/office-cases">');
+    expect(html).toContain(
+      '<a href="/office-cases/applications"><button type="button">Bewerbungsanfragen öffnen</button></a>',
+    );
+  });
+
+  it("INBOX_ONLY sieht die Officepfad-Kachel nicht", async () => {
+    getCookies.mockResolvedValue(inboxOnlyAccount());
+
+    await expect(DashboardPage()).rejects.toThrow("__REDIRECT__:/questionnaires");
+    expect(redirectMock).toHaveBeenCalledWith("/questionnaires");
   });
 });
