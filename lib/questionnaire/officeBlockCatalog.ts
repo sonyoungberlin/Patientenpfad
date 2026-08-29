@@ -118,6 +118,95 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     required: false,
   },
 
+  // BEWERBER_ARZT_BASIS
+  OFF_ARZT_APPROBATION: {
+    id: "OFF_ARZT_APPROBATION",
+    text: "Wie ist Ihr aktueller Approbationsstatus?",
+    type: "select",
+    required: true,
+    options: [
+      "Deutsche Approbation vorhanden",
+      "Approbation in Deutschland beantragt",
+      "Berufserlaubnis vorhanden",
+      "Ausländische ärztliche Zulassung vorhanden",
+      "Noch keine ärztliche Zulassung",
+    ],
+  },
+  OFF_ARZT_FACHARZTSTATUS: {
+    id: "OFF_ARZT_FACHARZTSTATUS",
+    text: "Wie ist Ihr aktueller fachärztlicher Weiterbildungsstatus?",
+    type: "select",
+    required: true,
+    options: [
+      "Facharztanerkennung vorhanden",
+      "In fachärztlicher Weiterbildung",
+      "Noch keine fachärztliche Weiterbildung begonnen",
+    ],
+  },
+  OFF_ARZT_FACHGEBIET: {
+    id: "OFF_ARZT_FACHGEBIET",
+    text: "Facharztbezeichnung / angestrebte Facharztbezeichnung",
+    type: "text",
+    required: false,
+  },
+  OFF_ARZT_WEITERBILDUNGSJAHR: {
+    id: "OFF_ARZT_WEITERBILDUNGSJAHR",
+    text: "Falls Sie sich in Weiterbildung befinden: In welchem Weiterbildungsjahr sind Sie?",
+    type: "number",
+    required: false,
+    step: 1,
+  },
+  OFF_ARZT_BERUFSERFAHRUNG_JAHRE: {
+    id: "OFF_ARZT_BERUFSERFAHRUNG_JAHRE",
+    text: "Ärztliche Berufserfahrung insgesamt",
+    type: "number",
+    required: false,
+    step: 1,
+    unit: "Jahre",
+  },
+  OFF_ARZT_AMBULANTE_ERFAHRUNG: {
+    id: "OFF_ARZT_AMBULANTE_ERFAHRUNG",
+    text: "Haben Sie bereits ambulant ärztlich gearbeitet?",
+    type: "yes_no",
+    required: false,
+  },
+  OFF_ARZT_HAUSARZT_ERFAHRUNG: {
+    id: "OFF_ARZT_HAUSARZT_ERFAHRUNG",
+    text: "Haben Sie bereits in der hausärztlichen Versorgung gearbeitet?",
+    type: "yes_no",
+    required: false,
+  },
+  OFF_ARZT_TAETIGKEITSBEREICHE: {
+    id: "OFF_ARZT_TAETIGKEITSBEREICHE",
+    text: "In welchen ärztlichen Bereichen haben Sie bisher gearbeitet?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Hausarztpraxis",
+      "Facharztpraxis",
+      "MVZ",
+      "Krankenhaus / Klinik",
+      "Universitätsklinik",
+      "Notaufnahme",
+      "Bereitschaftsdienst",
+      "Rehabilitation",
+      "Öffentlicher Gesundheitsdienst",
+      "Sonstiges",
+    ],
+  },
+  OFF_ARZT_TAETIGKEITSBEREICHE_SONSTIGE: {
+    id: "OFF_ARZT_TAETIGKEITSBEREICHE_SONSTIGE",
+    text: "Weitere ärztliche Tätigkeitsbereiche",
+    type: "textarea",
+    required: false,
+  },
+  OFF_ARZT_TAETIGKEIT_BESCHREIBUNG: {
+    id: "OFF_ARZT_TAETIGKEIT_BESCHREIBUNG",
+    text: "Was waren Ihre bisherigen ärztlichen Tätigkeitsschwerpunkte?",
+    type: "textarea",
+    required: false,
+  },
+
   // BEWERBER_REZEPTION_BUERO – Teil 1: Organisatorische Tätigkeiten (Skala A)
   OFF_REZEPTION_TELEFON: {
     id: "OFF_REZEPTION_TELEFON",
@@ -661,6 +750,43 @@ export const OFFICE_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "OFF_BERUFSJAHRE",
       "OFF_TAETIGKEITSBEREICHE",
       "OFF_BERUF_BESCHREIBUNG",
+    ],
+  },
+  BEWERBER_ARZT_BASIS: {
+    id: "BEWERBER_ARZT_BASIS",
+    label: "Ärztliche Basisqualifikation",
+    displayOrder: 31,
+    questionIds: [
+      "OFF_ARZT_APPROBATION",
+      "OFF_ARZT_FACHARZTSTATUS",
+      "OFF_ARZT_FACHGEBIET",
+      "OFF_ARZT_WEITERBILDUNGSJAHR",
+      "OFF_ARZT_BERUFSERFAHRUNG_JAHRE",
+      "OFF_ARZT_AMBULANTE_ERFAHRUNG",
+      "OFF_ARZT_HAUSARZT_ERFAHRUNG",
+      "OFF_ARZT_TAETIGKEITSBEREICHE",
+      "OFF_ARZT_TAETIGKEITSBEREICHE_SONSTIGE",
+      "OFF_ARZT_TAETIGKEIT_BESCHREIBUNG",
+    ],
+    conditionalRules: [
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_ARZT_WEITERBILDUNGSJAHR",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_ARZT_FACHARZTSTATUS" },
+          operator: "equals" as const,
+          value: "In fachärztlicher Weiterbildung",
+        },
+      },
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_ARZT_TAETIGKEITSBEREICHE_SONSTIGE",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_ARZT_TAETIGKEITSBEREICHE" },
+          operator: "contains" as const,
+          value: "Sonstiges",
+        },
+      },
     ],
   },
   BEWERBER_MFA_KOMPETENZEN: {
