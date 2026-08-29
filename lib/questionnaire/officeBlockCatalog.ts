@@ -1151,6 +1151,26 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   },
 
   // BEWERBER_ARBEITSZEITEN
+  OFF_AKTUELLE_BERUFLICHE_SITUATION: {
+    id: "OFF_AKTUELLE_BERUFLICHE_SITUATION",
+    text: "Wie ist Ihre aktuelle berufliche Situation?",
+    type: "select",
+    required: false,
+    options: [
+      "Derzeit beschäftigt",
+      "In Ausbildung / Studium / Weiterbildung",
+      "Derzeit nicht beschäftigt",
+      "Selbstständig",
+      "Sonstiges",
+      "Möchte ich nicht angeben",
+    ],
+  },
+  OFF_AKTUELLE_BERUFLICHE_SITUATION_SONSTIGE: {
+    id: "OFF_AKTUELLE_BERUFLICHE_SITUATION_SONSTIGE",
+    text: "Bitte kurz beschreiben",
+    type: "textarea",
+    required: false,
+  },
   OFF_ARBEITSZEITMODELL: {
     id: "OFF_ARBEITSZEITMODELL",
     text: "Gewünschtes Arbeitszeitmodell",
@@ -1470,9 +1490,22 @@ export const OFFICE_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     label: "Arbeitszeiten",
     displayOrder: 60,
     questionIds: [
+      "OFF_AKTUELLE_BERUFLICHE_SITUATION",
+      "OFF_AKTUELLE_BERUFLICHE_SITUATION_SONSTIGE",
       "OFF_ARBEITSZEITMODELL",
       "OFF_ZEITEINSCHRAENKUNGEN",
       "OFF_FRUEHESTBEGINN",
+    ],
+    conditionalRules: [
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_AKTUELLE_BERUFLICHE_SITUATION_SONSTIGE",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_AKTUELLE_BERUFLICHE_SITUATION" },
+          operator: "equals" as const,
+          value: "Sonstiges",
+        },
+      },
     ],
   },
 };
