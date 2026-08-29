@@ -48,6 +48,7 @@ import {
 } from "@/lib/websiteForms/submitRateLimit";
 import { PracticeRole } from "@prisma/client";
 import { VALID_TOPICS } from "@/lib/digitalRequests/topics";
+import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ type SubmitOutcome =
   | "not_found"
   | "rate_limited_ip"
   | "rate_limited_email"
+  | "notification_mail_failed"
   | "unexpected_error";
 
 function logSubmit(
@@ -197,6 +199,7 @@ export async function POST(
         id: true,
         is_approved: true,
         patient_communication_enabled: true,
+        digital_request_notification_email: true,
         memberships: {
           where: { role: PracticeRole.OWNER },
           select: { account_id: true },
@@ -307,7 +310,23 @@ export async function POST(
 
     logSubmit("success", { slug: slugValidation.slug });
 
-    // 13. Redirect.
+    // 13. Benachrichtigungs-E-Mail (best-effort).
+    if (practice.digital_request_notification_email) {
+      try {
+        await sendDigitalRequestNotificationEmail({
+          to: practice.digital_request_notification_email,
+          variant: "patient",
+          practiceId: practice.id,
+        });
+      } catch (mailErr) {
+        logSubmit("notification_mail_failed", {
+          slug: slugValidation.slug,
+          detail: mailErr instanceof Error ? mailErr.message : "unknown",
+        });
+      }
+    }
+
+    // 14. Redirect.
     return successRedirect(req, slugValidation.slug);
   } catch (err) {
     console.error(LOG_MARKER, {

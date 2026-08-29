@@ -33,6 +33,7 @@ import {
 } from "@/lib/auth";
 import { requirePracticeRoleFromCookies } from "@/lib/authz";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
+import NotificationEmailField from "@/components/practice/NotificationEmailField";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -73,6 +74,15 @@ export default async function PracticeMembersPage({
   if (!practice) {
     notFound();
   }
+
+  // Notification-E-Mail-Einstellungen separat laden (neue Felder).
+  const notificationSettings = await prisma.practice.findUnique({
+    where: { id: practice.id },
+    select: {
+      digital_request_notification_email: true,
+      office_application_notification_email: true,
+    },
+  });
 
   const memberships = await prisma.practiceMembership.findMany({
     where: { practice_id: practice.id },
@@ -228,6 +238,12 @@ export default async function PracticeMembersPage({
             />
             <CopyPublicLinkButton link={anfrageLink} />
           </div>
+          <NotificationEmailField
+            initialValue={notificationSettings?.digital_request_notification_email ?? null}
+            variant="patient"
+            label="Benachrichtigungs-E-Mail bei neuer Anfrage"
+            hint="Wird bei jeder neuen öffentlichen Patientenanfrage benachrichtigt. Leer = keine Benachrichtigung."
+          />
         </section>
       )}
 
@@ -252,6 +268,12 @@ export default async function PracticeMembersPage({
             />
             <CopyPublicLinkButton link={bewerbenLink} />
           </div>
+          <NotificationEmailField
+            initialValue={notificationSettings?.office_application_notification_email ?? null}
+            variant="office"
+            label="Benachrichtigungs-E-Mail bei neuer Bewerbung"
+            hint="Wird bei jeder neuen öffentlichen Bewerbungsanfrage benachrichtigt. Leer = keine Benachrichtigung."
+          />
         </section>
       )}
     </main>

@@ -239,3 +239,58 @@ describe("POST /api/anfrage/[slug]", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Notification-E-Mail Tests
+// ---------------------------------------------------------------------------
+
+const sendNotificationMock = jest.fn();
+jest.mock("@/lib/mail/sendDigitalRequestNotificationEmail", () => ({
+  sendDigitalRequestNotificationEmail: (...args: unknown[]) =>
+    sendNotificationMock(...args),
+}));
+
+describe("POST /api/anfrage/[slug] – Notification-E-Mail", () => {
+  beforeEach(() => {
+    pm.practice.findUnique.mockReset();
+    pm.digitalRequest.create.mockReset();
+    pm.digitalRequest.create.mockResolvedValue({ id: "dr-new" });
+    sendNotificationMock.mockReset();
+    sendNotificationMock.mockResolvedValue("console");
+  });
+
+  it("sendet Notification-Mail wenn digital_request_notification_email gesetzt", async () => {
+    pm.practice.findUnique.mockResolvedValue({
+      ...activePractice(),
+      digital_request_notification_email: "notify@praxis.de",
+    });
+    const res = await POST(makeJsonReq("meine-praxis", validBody()), CTX("meine-praxis"));
+    expect(res.status).toBe(303);
+    expect(sendNotificationMock).toHaveBeenCalledTimes(1);
+    expect(sendNotificationMock).toHaveBeenCalledWith({
+      to: "notify@praxis.de",
+      variant: "patient",
+      practiceId: "p-1",
+    });
+  });
+
+  it("sendet KEINE Notification-Mail wenn digital_request_notification_email null", async () => {
+    pm.practice.findUnique.mockResolvedValue({
+      ...activePractice(),
+      digital_request_notification_email: null,
+    });
+    await POST(makeJsonReq("meine-praxis", validBody()), CTX("meine-praxis"));
+    expect(sendNotificationMock).not.toHaveBeenCalled();
+  });
+
+  it("gibt trotzdem 303 zurück wenn Notification-Mail fehlschlägt (best-effort)", async () => {
+    pm.practice.findUnique.mockResolvedValue({
+      ...activePractice(),
+      digital_request_notification_email: "notify@praxis.de",
+    });
+    sendNotificationMock.mockRejectedValue(new Error("SMTP down"));
+    const res = await POST(makeJsonReq("meine-praxis", validBody()), CTX("meine-praxis"));
+    expect(res.status).toBe(303);
+    expect(pm.digitalRequest.create).toHaveBeenCalledTimes(1);
+  });
+});

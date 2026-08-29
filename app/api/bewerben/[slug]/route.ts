@@ -37,6 +37,7 @@ import {
 } from "@/lib/websiteForms/submitRateLimit";
 import { PracticeRole } from "@prisma/client";
 import { VALID_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles";
+import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,7 @@ type SubmitOutcome =
   | "not_found"
   | "rate_limited_ip"
   | "rate_limited_email"
+  | "notification_mail_failed"
   | "unexpected_error";
 
 function logSubmit(
@@ -180,6 +182,7 @@ export async function POST(
         id: true,
         is_approved: true,
         office_cases_enabled: true,
+        office_application_notification_email: true,
         memberships: {
           where: { role: PracticeRole.OWNER },
           select: { account_id: true },
@@ -267,6 +270,22 @@ export async function POST(
     });
 
     logSubmit("success", { slug: slugValidation.slug });
+
+    // 13b. Benachrichtigungs-E-Mail (best-effort).
+    if (practice.office_application_notification_email) {
+      try {
+        await sendDigitalRequestNotificationEmail({
+          to: practice.office_application_notification_email,
+          variant: "office",
+          practiceId: practice.id,
+        });
+      } catch (mailErr) {
+        logSubmit("notification_mail_failed", {
+          slug: slugValidation.slug,
+          detail: mailErr instanceof Error ? mailErr.message : "unknown",
+        });
+      }
+    }
 
     // 13. Redirect.
     return successRedirect(req, slugValidation.slug);

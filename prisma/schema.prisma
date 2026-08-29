@@ -607,6 +607,14 @@ model Practice {
   /// Fälle ist davon unberührt. Admin-seitig setzbar über /admin/practices/[id].
   case_quota                    Int?
 
+  /// Benachrichtigungs-E-Mail bei neuer öffentlicher Patientenanfrage (/anfrage/[slug]).
+  /// NULL = keine Benachrichtigung. Genau eine Adresse.
+  digital_request_notification_email    String?
+
+  /// Benachrichtigungs-E-Mail bei neuer öffentlicher Bewerbungsanfrage (/bewerben/[slug]).
+  /// NULL = keine Benachrichtigung. Genau eine Adresse.
+  office_application_notification_email String?
+
   /// Praxis-spezifische SMTP-Konfiguration für Bestätigungs-E-Mails der
   /// Website-Formulare. Alle Felder sind nullable; eine Konfiguration gilt
   /// erst dann als „vollständig", wenn alle Pflichtfelder (Host, Port,

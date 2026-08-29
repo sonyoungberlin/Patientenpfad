@@ -39,6 +39,12 @@ jest.mock("@/components/websiteForms/CopyPublicLinkButton", () => ({
     (<button data-testid="copy-btn" data-link={link}>Link kopieren</button>) as unknown as React.JSX.Element,
 }));
 
+jest.mock("@/components/practice/NotificationEmailField", () => ({
+  __esModule: true,
+  default: ({ variant }: { variant: string }) =>
+    (<div data-testid={`notification-email-form-${variant}`} />) as unknown as React.JSX.Element,
+}));
+
 jest.mock("@/lib/auth", () => ({
   getSessionAccount: jest.fn(),
   getSessionAccountFromCookies: jest.fn(),
@@ -49,6 +55,9 @@ jest.mock("@/lib/prisma", () => ({
     practiceMembership: {
       findMany: jest.fn(),
     },
+    practice: {
+      findUnique: jest.fn(),
+    },
   },
 }));
 
@@ -58,6 +67,7 @@ import PracticeMembersPage from "@/app/practice/members/page";
 
 type PrismaMock = {
   practiceMembership: { findMany: jest.Mock };
+  practice: { findUnique: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
 const getCookies = getSessionAccountFromCookies as jest.Mock;
@@ -113,6 +123,11 @@ beforeEach(() => {
   notFoundMock.mockClear();
   getCookies.mockReset();
   pm.practiceMembership.findMany.mockReset();
+  pm.practice.findUnique.mockReset();
+  pm.practice.findUnique.mockResolvedValue({
+    digital_request_notification_email: null,
+    office_application_notification_email: null,
+  });
 });
 
 describe("/practice/members read-only page", () => {
