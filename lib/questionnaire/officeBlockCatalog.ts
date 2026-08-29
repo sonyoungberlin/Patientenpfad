@@ -118,6 +118,74 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     required: false,
   },
 
+  // BEWERBER_PVS_DIGITAL
+  OFF_PVS_ERFAHRUNG: {
+    id: "OFF_PVS_ERFAHRUNG",
+    text: "Haben Sie bereits mit einem Praxisverwaltungssystem (PVS) gearbeitet?",
+    type: "yes_no",
+    required: true,
+  },
+  OFF_PVS_SYSTEME: {
+    id: "OFF_PVS_SYSTEME",
+    text: "Mit welchen Praxisverwaltungssystemen haben Sie gearbeitet?",
+    type: "repeatable_group",
+    required: false,
+    addEntryLabel: "+ Weiteres PVS hinzufügen",
+    groupSchema: [
+      {
+        key: "system",
+        label: "Praxisverwaltungssystem",
+        type: "text",
+        required: true,
+      },
+      {
+        key: "niveau",
+        label: "Erfahrung",
+        type: "select",
+        required: true,
+        options: [
+          "Nur kurz genutzt",
+          "Grundkenntnisse",
+          "Sicher",
+          "Sehr sicher / tägliche Routine",
+        ],
+      },
+    ],
+  },
+  OFF_DIGITAL_SELBSTEINSCHAETZUNG: {
+    id: "OFF_DIGITAL_SELBSTEINSCHAETZUNG",
+    text: "Wie schätzen Sie sich im Umgang mit neuen digitalen Systemen ein?",
+    type: "select",
+    required: true,
+    options: [
+      "Digitale Systeme fallen mir eher schwer",
+      "Nach kurzer Einarbeitung komme ich gut zurecht",
+      "Ich arbeite sicher mit digitalen Systemen",
+      "Ich finde mich sehr schnell in neuer Software zurecht",
+    ],
+  },
+  OFF_DIGITAL_ANWENDUNGEN: {
+    id: "OFF_DIGITAL_ANWENDUNGEN",
+    text: "Mit welchen digitalen Anwendungen im Praxisalltag haben Sie bereits gearbeitet?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "eRezept",
+      "eAU",
+      "ePA",
+      "KIM",
+      "Online-Terminierung",
+      "Digitale Dokumentenverwaltung",
+      "Scanner / PDF / Dokumentenimport",
+    ],
+  },
+  OFF_DIGITAL_WEITERE_SYSTEME: {
+    id: "OFF_DIGITAL_WEITERE_SYSTEME",
+    text: "Weitere Programme oder digitale Systeme, mit denen Sie regelmäßig gearbeitet haben",
+    type: "textarea",
+    required: false,
+  },
+
   // BEWERBER_SPRACHKENNTNISSE
   OFF_SPRACHKENNTNISSE: {
     id: "OFF_SPRACHKENNTNISSE",
@@ -210,6 +278,29 @@ export const OFFICE_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "OFF_BERUFSJAHRE",
       "OFF_TAETIGKEITSBEREICHE",
       "OFF_BERUF_BESCHREIBUNG",
+    ],
+  },
+  BEWERBER_PVS_DIGITAL: {
+    id: "BEWERBER_PVS_DIGITAL",
+    label: "Praxissoftware & digitale Fähigkeiten",
+    displayOrder: 35,
+    questionIds: [
+      "OFF_PVS_ERFAHRUNG",
+      "OFF_PVS_SYSTEME",
+      "OFF_DIGITAL_SELBSTEINSCHAETZUNG",
+      "OFF_DIGITAL_ANWENDUNGEN",
+      "OFF_DIGITAL_WEITERE_SYSTEME",
+    ],
+    conditionalRules: [
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_PVS_SYSTEME",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_PVS_ERFAHRUNG" },
+          operator: "equals" as const,
+          value: "Ja",
+        },
+      },
     ],
   },
   BEWERBER_SPRACHKENNTNISSE: {
