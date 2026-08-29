@@ -91,6 +91,7 @@ export default async function PracticeMembersPage({
   const proto = h.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${proto}://${host}` : "";
   const anfrageLink = `${origin}/anfrage/${practice.slug}`;
+  const bewerbenLink = `${origin}/bewerben/${practice.slug}`;
 
   const sp = (await searchParams) ?? {};
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
@@ -226,6 +227,30 @@ export default async function PracticeMembersPage({
               data-testid="anfrage-link-input"
             />
             <CopyPublicLinkButton link={anfrageLink} />
+          </div>
+        </section>
+      )}
+
+      {practice.office_cases_enabled && (
+        <section
+          style={{ marginTop: "2.5rem" }}
+          data-testid="bewerben-link-section"
+        >
+          <h2>Bewerbungsanfrage — Öffentlicher Link</h2>
+          <p style={{ marginBottom: "0.75rem" }}>
+            Öffentlicher Einstieg für Bewerber:innen. Nach Eingang der Anfrage
+            stellt die Praxis den passenden Bewerbungsfragebogen zusammen.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <input
+              type="text"
+              readOnly
+              value={bewerbenLink}
+              style={{ flexGrow: 1, fontFamily: "monospace" }}
+              aria-label="Öffentlicher Bewerbungs-Link"
+              data-testid="bewerben-link-input"
+            />
+            <CopyPublicLinkButton link={bewerbenLink} />
           </div>
         </section>
       )}
