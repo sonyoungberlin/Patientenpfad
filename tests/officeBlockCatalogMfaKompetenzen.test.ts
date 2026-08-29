@@ -52,13 +52,14 @@ describe("BEWERBER_MFA_KOMPETENZEN – Katalog-Struktur", () => {
     }
   });
 
-  it("Block enthält Zusatzqualifikationen und Freitext-Folgefrage", () => {
+  it("Block enthält Zusatzqualifikationen und Freitext-Folgefragen", () => {
     const ids = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.questionIds ?? [];
     expect(ids).toContain("OFF_MFA_ZUSATZQUALIFIKATIONEN");
+    expect(ids).toContain("OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG");
     expect(ids).toContain("OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE");
   });
 
-  it("alle 14 Fragen sind im OFFICE_QUESTION_CATALOG definiert", () => {
+  it("alle 15 Fragen sind im OFFICE_QUESTION_CATALOG definiert", () => {
     const allIds = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.questionIds ?? [];
     for (const qid of allIds) {
       expect(OFFICE_QUESTION_CATALOG).toHaveProperty(qid);
@@ -93,6 +94,12 @@ describe("BEWERBER_MFA_KOMPETENZEN – Zusatzqualifikationen", () => {
     expect(q?.required).toBe(false);
   });
 
+  it("OFF_MFA_ZUSATZQUALIFIKATIONEN enthält Option 'Fachspezifische Fortbildung' statt 'Kardiologie'", () => {
+    const q = OFFICE_QUESTION_CATALOG["OFF_MFA_ZUSATZQUALIFIKATIONEN"];
+    expect(q?.options).toContain("Fachspezifische Fortbildung");
+    expect(q?.options).not.toContain("Kardiologie");
+  });
+
   it("OFF_MFA_ZUSATZQUALIFIKATIONEN enthält Option 'Sonstige'", () => {
     const q = OFFICE_QUESTION_CATALOG["OFF_MFA_ZUSATZQUALIFIKATIONEN"];
     expect(q?.options).toContain("Sonstige");
@@ -106,13 +113,25 @@ describe("BEWERBER_MFA_KOMPETENZEN – Zusatzqualifikationen", () => {
         "NäPA",
         "VERAH",
         "Wundmanagement",
-        "Kardiologie",
+        "Fachspezifische Fortbildung",
         "Medizinprodukte / Aufbereitung",
         "Praxismanagement",
         "Fachwirt/in für ambulante medizinische Versorgung",
         "Sonstige",
       ]),
     );
+  });
+
+  it("OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG ist vom Typ text und kein Pflichtfeld", () => {
+    const q = OFFICE_QUESTION_CATALOG["OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG"];
+    expect(q?.type).toBe("text");
+    expect(q?.required).toBe(false);
+  });
+
+  it("OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG hat korrekten Text und helperText", () => {
+    const q = OFFICE_QUESTION_CATALOG["OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG"];
+    expect(q?.text).toBe("Welche Fachrichtung / welcher Bereich?");
+    expect((q as { helperText?: string })?.helperText).toContain("Kardiologie");
   });
 
   it("OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE ist textarea und kein Pflichtfeld", () => {
@@ -123,13 +142,24 @@ describe("BEWERBER_MFA_KOMPETENZEN – Zusatzqualifikationen", () => {
 });
 
 describe("BEWERBER_MFA_KOMPETENZEN – Conditional Logic", () => {
-  it("Block hat genau eine conditionalRule", () => {
+  it("Block hat genau zwei conditionalRules", () => {
     const rules = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.conditionalRules ?? [];
-    expect(rules).toHaveLength(1);
+    expect(rules).toHaveLength(2);
   });
 
-  it("conditionalRule zeigt SONSTIGE-Textarea wenn multi_select 'Sonstige' enthält", () => {
+  it("conditionalRule[0] zeigt FACHSPEZIFISCHE-Textfeld wenn 'Fachspezifische Fortbildung' ausgewählt", () => {
     const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.conditionalRules?.[0];
+    expect(rule?.action).toBe("showQuestion");
+    expect(rule?.targetId).toBe("OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG");
+    expect(rule?.condition).toMatchObject({
+      target: { kind: "question", questionId: "OFF_MFA_ZUSATZQUALIFIKATIONEN" },
+      operator: "contains",
+      value: "Fachspezifische Fortbildung",
+    });
+  });
+
+  it("conditionalRule[1] zeigt SONSTIGE-Textarea wenn 'Sonstige' ausgewählt", () => {
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.conditionalRules?.[1];
     expect(rule?.action).toBe("showQuestion");
     expect(rule?.targetId).toBe("OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE");
     expect(rule?.condition).toMatchObject({
@@ -139,8 +169,44 @@ describe("BEWERBER_MFA_KOMPETENZEN – Conditional Logic", () => {
     });
   });
 
-  it("evaluateCondition: Sonstige allein → sichtbar", () => {
+  it("evaluateCondition: Fachspezifische Fortbildung allein → sichtbar", () => {
     const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![0]!;
+    const result = evaluateCondition(
+      rule.condition,
+      { OFF_MFA_ZUSATZQUALIFIKATIONEN: "Fachspezifische Fortbildung" },
+    );
+    expect(result).toBe(true);
+  });
+
+  it("evaluateCondition: Fachspezifische Fortbildung in Kombination → sichtbar", () => {
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![0]!;
+    const result = evaluateCondition(
+      rule.condition,
+      { OFF_MFA_ZUSATZQUALIFIKATIONEN: "NäPA, Fachspezifische Fortbildung, Sonstige" },
+    );
+    expect(result).toBe(true);
+  });
+
+  it("evaluateCondition: kein 'Fachspezifische Fortbildung' → nicht sichtbar", () => {
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![0]!;
+    const result = evaluateCondition(
+      rule.condition,
+      { OFF_MFA_ZUSATZQUALIFIKATIONEN: "NäPA, VERAH, Sonstige" },
+    );
+    expect(result).toBe(false);
+  });
+
+  it("evaluateCondition: leere Antwort → Fachspezifische-Frage nicht sichtbar", () => {
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![0]!;
+    const result = evaluateCondition(
+      rule.condition,
+      { OFF_MFA_ZUSATZQUALIFIKATIONEN: "" },
+    );
+    expect(result).toBe(false);
+  });
+
+  it("evaluateCondition: Sonstige allein → sichtbar", () => {
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![1]!;
     const result = evaluateCondition(
       rule.condition,
       { OFF_MFA_ZUSATZQUALIFIKATIONEN: "Sonstige" },
@@ -149,7 +215,7 @@ describe("BEWERBER_MFA_KOMPETENZEN – Conditional Logic", () => {
   });
 
   it("evaluateCondition: Sonstige in Kombination → sichtbar", () => {
-    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![0]!;
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![1]!;
     const result = evaluateCondition(
       rule.condition,
       { OFF_MFA_ZUSATZQUALIFIKATIONEN: "NäPA, Wundmanagement, Sonstige" },
@@ -158,7 +224,7 @@ describe("BEWERBER_MFA_KOMPETENZEN – Conditional Logic", () => {
   });
 
   it("evaluateCondition: kein Sonstige → nicht sichtbar", () => {
-    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![0]!;
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![1]!;
     const result = evaluateCondition(
       rule.condition,
       { OFF_MFA_ZUSATZQUALIFIKATIONEN: "NäPA, VERAH" },
@@ -167,7 +233,7 @@ describe("BEWERBER_MFA_KOMPETENZEN – Conditional Logic", () => {
   });
 
   it("evaluateCondition: leere Antwort → nicht sichtbar", () => {
-    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![0]!;
+    const rule = OFFICE_BLOCK_CATALOG[BLOCK_ID]!.conditionalRules![1]!;
     const result = evaluateCondition(
       rule.condition,
       { OFF_MFA_ZUSATZQUALIFIKATIONEN: "" },
@@ -189,7 +255,7 @@ describe("BEWERBER_MFA_KOMPETENZEN – buildFrozenBlocks", () => {
     expect(block.initiallyVisible).toBe(true);
   });
 
-  it("alle 14 Fragen sind im frozen Block enthalten", () => {
+  it("alle 15 Fragen sind im frozen Block enthalten", () => {
     const frozen = buildFrozenBlocks(
       [BLOCK_ID],
       OFFICE_BLOCK_CATALOG,

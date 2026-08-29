@@ -1013,12 +1013,19 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "NäPA",
       "VERAH",
       "Wundmanagement",
-      "Kardiologie",
+      "Fachspezifische Fortbildung",
       "Medizinprodukte / Aufbereitung",
       "Praxismanagement",
       "Fachwirt/in für ambulante medizinische Versorgung",
       "Sonstige",
     ],
+  },
+  OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG: {
+    id: "OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG",
+    text: "Welche Fachrichtung / welcher Bereich?",
+    type: "text",
+    required: false,
+    helperText: "z. B. Kardiologie, Diabetologie, Onkologie, Gynäkologie, Neurologie",
   },
   OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE: {
     id: "OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE",
@@ -1385,9 +1392,19 @@ export const OFFICE_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "OFF_MFA_ASSISTENZ",
       "OFF_MFA_NOTFALL",
       "OFF_MFA_ZUSATZQUALIFIKATIONEN",
+      "OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG",
       "OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE",
     ],
     conditionalRules: [
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_MFA_ZUSATZQUALIFIKATIONEN" },
+          operator: "contains" as const,
+          value: "Fachspezifische Fortbildung",
+        },
+      },
       {
         action: "showQuestion" as const,
         targetId: "OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE",

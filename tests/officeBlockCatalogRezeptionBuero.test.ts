@@ -205,9 +205,11 @@ describe("Bestehende Office-Blöcke – Regressionsprüfung", () => {
   });
 
   it("BEWERBER_MFA_KOMPETENZEN – ConditionalRule bleibt intakt", () => {
-    const rule = OFFICE_BLOCK_CATALOG["BEWERBER_MFA_KOMPETENZEN"]?.conditionalRules?.[0];
-    expect(rule?.action).toBe("showQuestion");
-    expect(rule?.targetId).toBe("OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE");
+    const rules = OFFICE_BLOCK_CATALOG["BEWERBER_MFA_KOMPETENZEN"]?.conditionalRules ?? [];
+    expect(rules).toHaveLength(2);
+    expect(rules[0]?.action).toBe("showQuestion");
+    expect(rules[0]?.targetId).toBe("OFF_MFA_FACHSPEZIFISCHE_FORTBILDUNG");
+    expect(rules[1]?.targetId).toBe("OFF_MFA_ZUSATZQUALIFIKATIONEN_SONSTIGE");
   });
 
   it("BEWERBER_FUEHRERSCHEIN – ConditionalRule bleibt intakt", () => {
