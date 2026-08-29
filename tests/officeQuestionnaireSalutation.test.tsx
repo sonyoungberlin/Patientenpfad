@@ -94,6 +94,30 @@ describe("/q/[token] – context=office, salutation=du", () => {
     );
     expect(markup).not.toContain(BEWERBER_INTRO_SIE.title);
   });
+
+  it("Titel erscheint in eigenem Element (data-application-intro-title)", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({ context: "office", salutation: "du" }),
+    );
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "tok" }) }),
+    );
+    expect(markup).toContain("data-application-intro-title");
+    expect(markup).toContain(BEWERBER_INTRO_DU.title);
+  });
+
+  it("Titel und Fließtext sind in getrennten Elementen", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({ context: "office", salutation: "du" }),
+    );
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "tok" }) }),
+    );
+    // Titel endet im ersten Element, Fließtext beginnt erst im nächsten
+    const titleEnd = markup.indexOf(BEWERBER_INTRO_DU.title) + BEWERBER_INTRO_DU.title.length;
+    const closingTag = markup.indexOf("</p>", titleEnd - BEWERBER_INTRO_DU.title.length);
+    expect(closingTag).toBeLessThan(markup.indexOf("Bevor wir uns", titleEnd));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -131,6 +155,29 @@ describe("/q/[token] – context=office, salutation=sie", () => {
     );
     expect(markup).not.toContain(BEWERBER_INTRO_DU.title);
   });
+
+  it("Titel erscheint in eigenem Element (data-application-intro-title)", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({ context: "office", salutation: "sie" }),
+    );
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "tok" }) }),
+    );
+    expect(markup).toContain("data-application-intro-title");
+    expect(markup).toContain(BEWERBER_INTRO_SIE.title);
+  });
+
+  it("Titel und Fließtext sind in getrennten Elementen", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({ context: "office", salutation: "sie" }),
+    );
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "tok" }) }),
+    );
+    const titleEnd = markup.indexOf(BEWERBER_INTRO_SIE.title) + BEWERBER_INTRO_SIE.title.length;
+    const closingTag = markup.indexOf("</p>", titleEnd - BEWERBER_INTRO_SIE.title.length);
+    expect(closingTag).toBeLessThan(markup.indexOf("Bevor wir uns", titleEnd));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -157,6 +204,16 @@ describe("/q/[token] – context=office, salutation=null", () => {
     );
     expect(markup).not.toContain("Bewerbungsanamnese");
   });
+
+  it("enthält kein data-application-intro-title", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({ context: "office", salutation: null }),
+    );
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "tok" }) }),
+    );
+    expect(markup).not.toContain("data-application-intro-title");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -173,6 +230,7 @@ describe("/q/[token] – context=patient (unverändert)", () => {
     );
     expect(markup).not.toContain("Bewerbungsanamnese");
     expect(markup).toContain("data-patient-intro");
+    expect(markup).not.toContain("data-application-intro-title");
   });
 
   it("zeigt Patienten-Intro auch wenn context fehlt (legacy)", async () => {

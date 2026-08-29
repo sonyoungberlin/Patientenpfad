@@ -127,10 +127,13 @@ export default async function QuestionnairePage({
   const practiceSignature = session.owner_practice?.message_signature ?? null;
   const isOfficeContext = session.context === "office";
   let introText: string;
+  let introTitle: string | undefined;
   if (isOfficeContext && session.salutation === "du") {
-    introText = `${BEWERBER_INTRO_DU.title}\n\n${BEWERBER_INTRO_DU.text}`;
+    introTitle = BEWERBER_INTRO_DU.title;
+    introText = BEWERBER_INTRO_DU.text;
   } else if (isOfficeContext && session.salutation === "sie") {
-    introText = `${BEWERBER_INTRO_SIE.title}\n\n${BEWERBER_INTRO_SIE.text}`;
+    introTitle = BEWERBER_INTRO_SIE.title;
+    introText = BEWERBER_INTRO_SIE.text;
   } else if (isOfficeContext) {
     introText = OFFICE_QUESTIONNAIRE_INTRO_TEXT;
   } else {
@@ -149,6 +152,7 @@ export default async function QuestionnairePage({
         conditionalRules={conditionalRules}
         frozenBlocks={frozenBlocks}
         introText={introText}
+        introTitle={introTitle}
         practiceSignature={practiceSignature}
         language={language}
         context={session.context}

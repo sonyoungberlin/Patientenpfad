@@ -957,6 +957,7 @@ export function QuestionnaireFormClient({
   conditionalRules,
   frozenBlocks,
   introText,
+  introTitle,
   practiceSignature,
   language = "de",
   context = "patient",
@@ -967,6 +968,7 @@ export function QuestionnaireFormClient({
   /** Phase 4: eingefrorene Blockstruktur für blockbewusstes Rendering. */
   frozenBlocks?: FrozenBlock[] | null;
   introText?: string | null;
+  introTitle?: string | null;
   practiceSignature?: string | null;
   language?: QuestionnaireLanguage;
   context?: string;
@@ -1134,8 +1136,13 @@ export function QuestionnaireFormClient({
 
   return (
     <>
+      {introTitle ? (
+        <p data-application-intro-title style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
+          {introTitle}
+        </p>
+      ) : null}
       {introText ? (
-        <p data-patient-intro style={{ marginBottom: "0.5rem" }}>
+        <p data-patient-intro style={{ whiteSpace: "pre-line", marginBottom: "0.5rem" }}>
           {introText}
         </p>
       ) : null}
