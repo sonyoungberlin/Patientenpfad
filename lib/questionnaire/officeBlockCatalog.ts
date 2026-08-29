@@ -809,18 +809,6 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Sehr sicher / tägliche Routine",
     ],
   },
-  OFF_BUERO_OUTLOOK: {
-    id: "OFF_BUERO_OUTLOOK",
-    text: "Outlook oder vergleichbare E-Mail-Programme",
-    type: "select",
-    required: false,
-    options: [
-      "Keine Erfahrung",
-      "Grundkenntnisse",
-      "Sicher",
-      "Sehr sicher / tägliche Routine",
-    ],
-  },
   OFF_BUERO_BROWSER: {
     id: "OFF_BUERO_BROWSER",
     text: "Browser und Internetrecherche",
@@ -845,18 +833,6 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Sehr sicher / tägliche Routine",
     ],
   },
-  OFF_BUERO_SCANNER: {
-    id: "OFF_BUERO_SCANNER",
-    text: "Scanner und digitale Dokumentenverwaltung",
-    type: "select",
-    required: false,
-    options: [
-      "Keine Erfahrung",
-      "Grundkenntnisse",
-      "Sicher",
-      "Sehr sicher / tägliche Routine",
-    ],
-  },
   OFF_BUERO_VIDEOKONFERENZ: {
     id: "OFF_BUERO_VIDEOKONFERENZ",
     text: "Videokonferenz- und Kommunikationsprogramme wie Teams oder Zoom",
@@ -868,12 +844,6 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Sicher",
       "Sehr sicher / tägliche Routine",
     ],
-  },
-  OFF_BUERO_WEITERE_PROGRAMME: {
-    id: "OFF_BUERO_WEITERE_PROGRAMME",
-    text: "Weitere Büroprogramme oder Systeme, mit denen Sie regelmäßig gearbeitet haben",
-    type: "textarea",
-    required: false,
   },
   OFF_REZEPTION_ABRECHNUNG: {
     id: "OFF_REZEPTION_ABRECHNUNG",
