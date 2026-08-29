@@ -3,13 +3,74 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireOfficeQuestionnaireAccessFromCookies } from "@/lib/authz";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
-import { OFFICE_BLOCK_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
+import {
+  OFFICE_BLOCK_CATALOG,
+  OFFICE_QUESTION_CATALOG,
+} from "@/lib/questionnaire/officeBlockCatalog";
+import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import {
   deriveDisplayStatus,
   getStatusBadgeStyle,
   STATUS_LABELS,
 } from "@/lib/questionnaire/displayStatus";
+import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
+import { computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
 import OfficeQuestionnaireDeleteButton from "@/components/office/OfficeQuestionnaireDeleteButton";
+import AnswersDisclosure from "@/components/questionnaire/AnswersDisclosure";
+
+function buildOfficeQuestions(
+  blockIds: string[],
+  frozenBlocks: FrozenBlock[] | null,
+): QuestionDefinition[] {
+  if (frozenBlocks && frozenBlocks.length > 0) {
+    return frozenBlocks.flatMap((b) => b.questions);
+  }
+  // Fallback für ältere Sessions ohne frozen_blocks
+  const seen = new Set<string>();
+  const questions: QuestionDefinition[] = [];
+  for (const blockId of blockIds) {
+    const block = OFFICE_BLOCK_CATALOG[blockId];
+    if (!block) continue;
+    for (const qId of block.questionIds) {
+      if (seen.has(qId)) continue;
+      seen.add(qId);
+      const q = OFFICE_QUESTION_CATALOG[qId];
+      if (q) questions.push(q);
+    }
+  }
+  return questions;
+}
+
+function buildOfficeVisibleQIds(
+  blockIds: string[],
+  answers: Record<string, string>,
+  frozenBlocks: FrozenBlock[] | null,
+): Set<string> {
+  const visible = new Set<string>();
+  if (frozenBlocks && frozenBlocks.length > 0) {
+    for (const block of frozenBlocks) {
+      computeVisibleQuestionIds(
+        block.conditionalRules,
+        block.questions.map((q) => q.id),
+        answers,
+        {},
+      ).forEach((id) => visible.add(id));
+    }
+    return visible;
+  }
+  for (const blockId of blockIds) {
+    const block = OFFICE_BLOCK_CATALOG[blockId];
+    if (!block) continue;
+    computeVisibleQuestionIds(
+      block.conditionalRules ?? [],
+      block.questionIds,
+      answers,
+      {},
+    ).forEach((id) => visible.add(id));
+  }
+  return visible;
+}
 
 export default async function OfficeQuestionnairePage() {
   const account = await requireOfficeQuestionnaireAccessFromCookies();
@@ -37,6 +98,8 @@ export default async function OfficeQuestionnairePage() {
       token_expires_at: true,
       submitted_at: true,
       pdf_downloaded_at: true,
+      answers: true,
+      frozen_blocks: true,
     },
   });
 
@@ -76,6 +139,16 @@ export default async function OfficeQuestionnairePage() {
             const statusLabel = STATUS_LABELS[displayStatus] ?? displayStatus;
             const badgeStyle = getStatusBadgeStyle(displayStatus);
             const displayedAt = s.submitted_at ?? s.createdAt;
+
+            const answers =
+              typeof s.answers === "object" && s.answers !== null
+                ? (s.answers as Record<string, string>)
+                : null;
+            const frozenBlocks = parseFrozenBlocks(s.frozen_blocks);
+            const questions = buildOfficeQuestions(blockIds, frozenBlocks);
+            const visibleQIds = answers
+              ? buildOfficeVisibleQIds(blockIds, answers, frozenBlocks)
+              : undefined;
 
             return (
               <div
@@ -140,6 +213,13 @@ export default async function OfficeQuestionnairePage() {
                     recipientReference={s.patient_reference}
                   />
                 </div>
+                {answers && (
+                  <AnswersDisclosure
+                    questions={questions}
+                    answers={answers}
+                    visibleQuestionIds={visibleQIds}
+                  />
+                )}
               </div>
             );
           })}
