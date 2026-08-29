@@ -118,6 +118,59 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     required: false,
   },
 
+  // BEWERBER_ARZT_ORGA_TECHNIK
+  OFF_ARZT_EHBA_STATUS: {
+    id: "OFF_ARZT_EHBA_STATUS",
+    text: "Wie ist der aktuelle Status Ihres elektronischen Heilberufsausweises (eHBA)?",
+    type: "select",
+    required: false,
+    options: [
+      "Vorhanden und einsatzbereit",
+      "Vorhanden, aber noch nicht vollständig eingerichtet / aktiviert",
+      "Beantragt / in Bearbeitung",
+      "Noch nicht beantragt",
+      "Keine Angabe",
+    ],
+  },
+  OFF_ARZT_LANR_STATUS: {
+    id: "OFF_ARZT_LANR_STATUS",
+    text: "Ist bereits eine Lebenslange Arztnummer (LANR) vorhanden?",
+    type: "select",
+    required: false,
+    options: [
+      "Ja, vorhanden",
+      "Noch nicht vorhanden",
+      "Unklar / muss geprüft werden",
+      "Keine Angabe",
+    ],
+  },
+  OFF_ARZT_VERTRAGSARZT_ERFAHRUNG: {
+    id: "OFF_ARZT_VERTRAGSARZT_ERFAHRUNG",
+    text: "Waren Sie bereits im vertragsärztlichen Bereich tätig?",
+    type: "yes_no",
+    required: false,
+  },
+  OFF_ARZT_AMBULANTE_STRUKTUR: {
+    id: "OFF_ARZT_AMBULANTE_STRUKTUR",
+    text: "Falls Sie bereits ambulant tätig waren: In welcher Struktur?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Hausarztpraxis",
+      "Facharztpraxis",
+      "MVZ",
+      "Eigene Niederlassung / BAG",
+      "Ambulante Tätigkeit im Krankenhaus",
+      "Sonstige",
+    ],
+  },
+  OFF_ARZT_AMBULANTE_STRUKTUR_SONSTIGE: {
+    id: "OFF_ARZT_AMBULANTE_STRUKTUR_SONSTIGE",
+    text: "Weitere ambulante Tätigkeitsstruktur",
+    type: "textarea",
+    required: false,
+  },
+
   // BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN
   OFF_ARZT_PSYCHOSOMATIK: {
     id: "OFF_ARZT_PSYCHOSOMATIK",
@@ -878,6 +931,38 @@ export const OFFICE_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "OFF_BERUFSJAHRE",
       "OFF_TAETIGKEITSBEREICHE",
       "OFF_BERUF_BESCHREIBUNG",
+    ],
+  },
+  BEWERBER_ARZT_ORGA_TECHNIK: {
+    id: "BEWERBER_ARZT_ORGA_TECHNIK",
+    label: "Ärztliche organisatorisch-technische Voraussetzungen",
+    displayOrder: 32.5,
+    questionIds: [
+      "OFF_ARZT_EHBA_STATUS",
+      "OFF_ARZT_LANR_STATUS",
+      "OFF_ARZT_VERTRAGSARZT_ERFAHRUNG",
+      "OFF_ARZT_AMBULANTE_STRUKTUR",
+      "OFF_ARZT_AMBULANTE_STRUKTUR_SONSTIGE",
+    ],
+    conditionalRules: [
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_ARZT_AMBULANTE_STRUKTUR",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_ARZT_VERTRAGSARZT_ERFAHRUNG" },
+          operator: "equals" as const,
+          value: "Ja",
+        },
+      },
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_ARZT_AMBULANTE_STRUKTUR_SONSTIGE",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_ARZT_AMBULANTE_STRUKTUR" },
+          operator: "contains" as const,
+          value: "Sonstige",
+        },
+      },
     ],
   },
   BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN: {
