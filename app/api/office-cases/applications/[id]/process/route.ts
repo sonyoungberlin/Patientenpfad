@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOfficeQuestionnaireAccess } from "@/lib/authz";
+import { requireOfficeApplicationsAccess } from "@/lib/authz";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { OFFICE_BLOCK_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
@@ -23,7 +23,7 @@ export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const { account, error } = await requireOfficeQuestionnaireAccess(req);
+  const { account, error } = await requireOfficeApplicationsAccess(req);
   if (error) return error;
 
   const { id } = await ctx.params;

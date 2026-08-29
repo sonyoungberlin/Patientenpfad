@@ -707,3 +707,79 @@ export async function requireOfficeQuestionnaireAccessFromCookies(): Promise<Ses
   );
   return allowed ? account : null;
 }
+
+/**
+ * Bewerbungsanfragen-Guard: OWNER, ADMIN oder USER + Office-Feature.
+ * INBOX_ONLY und nicht zugeordnete Accounts werden abgelehnt.
+ * DELETE bleibt weiterhin hinter requireOfficeQuestionnaireAccess (OWNER/ADMIN).
+ */
+export async function requireOfficeApplicationsAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const { canAccessOfficeCases } = await import("./office/scope");
+
+  const account = await getSessionAccount(req);
+  if (!account) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Nicht angemeldet." },
+        { status: 401 },
+      ),
+    };
+  }
+
+  if (!effectiveFlags(account).is_approved) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Account nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  if (!canAccessOfficeCases(account)) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Office-Bereich nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN, PracticeRole.USER],
+    { allowNoPracticeFallback: false },
+  );
+  if (!allowed) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { account, error: null };
+}
+
+/** Server-Component-Variante für `requireOfficeApplicationsAccess`. */
+export async function requireOfficeApplicationsAccessFromCookies(): Promise<SessionAccount | null> {
+  const { canAccessOfficeCases } = await import("./office/scope");
+
+  const account = await getSessionAccountFromCookies();
+  if (!account) return null;
+  if (!effectiveFlags(account).is_approved) return null;
+  if (!canAccessOfficeCases(account)) return null;
+
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN, PracticeRole.USER],
+    { allowNoPracticeFallback: false },
+  );
+  return allowed ? account : null;
+}

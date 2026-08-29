@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireOfficeQuestionnaireAccessFromCookies } from "@/lib/authz";
+import { requireOfficeApplicationsAccessFromCookies, getCurrentPracticeRole } from "@/lib/authz";
+import { PracticeRole } from "@prisma/client";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import {
   OFFICE_BLOCK_CATALOG,
@@ -52,7 +53,7 @@ export default async function OfficeApplicationDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const account = await requireOfficeQuestionnaireAccessFromCookies();
+  const account = await requireOfficeApplicationsAccessFromCookies();
   if (!account) redirect("/");
 
   const { id } = await params;
@@ -85,7 +86,12 @@ export default async function OfficeApplicationDetailPage({
   const isSent =
     application.status === "sent" || application.status === "closed";
   const isRejected = application.status === "rejected";
-  const canDelete = !isSent;
+
+  const role = getCurrentPracticeRole(account);
+  const isOwnerOrAdmin =
+    role === PracticeRole.OWNER || role === PracticeRole.ADMIN;
+  // USER darf nicht löschen
+  const canDelete = !isSent && isOwnerOrAdmin;
 
   const savedBlockIds: string[] = Array.isArray(application.selected_block_ids)
     ? (application.selected_block_ids as string[])
@@ -144,7 +150,7 @@ export default async function OfficeApplicationDetailPage({
               Versandzeitpunkt: {formatDate(application.sent_at)}
             </p>
           )}
-          {application.questionnaire_session_id && (
+          {application.questionnaire_session_id && isOwnerOrAdmin && (
             <p className="mt-2">
               <Link
                 href={`/office-cases/questionnaire/${application.questionnaire_session_id}`}

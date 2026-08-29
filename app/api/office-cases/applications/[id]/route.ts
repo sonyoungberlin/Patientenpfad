@@ -4,16 +4,17 @@
  *
  * Verwaltet eine einzelne Bewerbungsanfrage (request_type = "office").
  *
- * PATCH: Speichert selected_block_ids, setzt status → "in_review".
- * DELETE: Hard-Delete. Nur wenn status nicht "sent" oder "closed".
- *
- * Rechte: requireOfficeQuestionnaireAccess (OWNER/ADMIN, kein INBOX_ONLY).
+ * PATCH: OWNER / ADMIN / USER erlaubt (requireOfficeApplicationsAccess).
+ * DELETE: OWNER / ADMIN only (requireOfficeQuestionnaireAccess).
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireOfficeQuestionnaireAccess } from "@/lib/authz";
+import {
+  requireOfficeApplicationsAccess,
+  requireOfficeQuestionnaireAccess,
+} from "@/lib/authz";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { OFFICE_BLOCK_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
 
@@ -23,7 +24,7 @@ export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const { account, error } = await requireOfficeQuestionnaireAccess(req);
+  const { account, error } = await requireOfficeApplicationsAccess(req);
   if (error) return error;
 
   const { id } = await ctx.params;

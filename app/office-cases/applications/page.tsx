@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireOfficeQuestionnaireAccessFromCookies } from "@/lib/authz";
+import { requireOfficeApplicationsAccessFromCookies } from "@/lib/authz";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { applicationRoleLabel } from "@/lib/digitalRequests/applicationRoles";
 
@@ -43,7 +43,7 @@ function formatDate(date: Date): string {
 }
 
 export default async function OfficeApplicationsPage() {
-  const account = await requireOfficeQuestionnaireAccessFromCookies();
+  const account = await requireOfficeApplicationsAccessFromCookies();
   if (!account) redirect("/");
 
   const applications = await prisma.digitalRequest.findMany({
