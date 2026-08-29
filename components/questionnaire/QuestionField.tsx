@@ -61,6 +61,13 @@ export const MAIN_GATE_QUESTION_IDS: ReadonlySet<string> = new Set([
   "ALKOHOL_GATE",
   "SUBST_GATE",
   "VOLLST_GEWICHT_VERAENDERN",
+  // Adipositas / Gewichtsreduktion – Sektionsöffner
+  "ADIP_DAUER",
+  "ADIP_REDUKTION_VERSUCH",
+  "ADIP_BEWEGUNG",
+  "ADIP_MEDI_INTERESSE",
+  "ADIP_SICHERHEIT_PANKREATITIS",
+  "ADIP_BERATUNGSWUNSCH",
 ]);
 
 // ---------------------------------------------------------------------------

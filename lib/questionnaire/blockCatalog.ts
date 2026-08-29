@@ -1516,6 +1516,215 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "yes_no",
     required: false,
   },
+
+  // --- Adipositas / Gewichtsreduktion ---
+  ADIP_DAUER: {
+    id: "ADIP_DAUER",
+    text: "Seit wann besteht bei Ihnen Übergewicht bzw. eine deutliche Gewichtszunahme?",
+    type: "select",
+    required: false,
+    options: [
+      "Seit weniger als 1 Jahr",
+      "Seit 1\u20133 Jahren",
+      "Seit mehr als 3 Jahren",
+      "Seit Kindheit/Jugend",
+      "Wei\u00df ich nicht genau",
+    ],
+  },
+  ADIP_ZUNAHME_12M: {
+    id: "ADIP_ZUNAHME_12M",
+    text: "Hat Ihr Gewicht in den letzten 12 Monaten deutlich zugenommen?",
+    type: "yes_no",
+    required: false,
+  },
+  ADIP_ZUNAHME_AUSLOESER: {
+    id: "ADIP_ZUNAHME_AUSLOESER",
+    text: "Gab es ungef\u00e4hr in diesem Zeitraum eine gr\u00f6\u00dfere Ver\u00e4nderung?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Neue oder deutlich ver\u00e4nderte Medikamente",
+      "Neue Erkrankung",
+      "Schwangerschaft",
+      "Starke psychische Belastung",
+      "Weniger Bewegung",
+      "Deutliche Ver\u00e4nderung der Ern\u00e4hrung",
+      "Operation / l\u00e4ngere Immobilit\u00e4t",
+      "Anderer Ausl\u00f6ser",
+      "Nichts davon",
+    ],
+  },
+  ADIP_AUSLOESER_MEDIKAMENTE: {
+    id: "ADIP_AUSLOESER_MEDIKAMENTE",
+    text: "Welche Medikamente wurden neu begonnen oder deutlich ver\u00e4ndert?",
+    type: "textarea",
+    required: false,
+  },
+  ADIP_REDUKTION_VERSUCH: {
+    id: "ADIP_REDUKTION_VERSUCH",
+    text: "Haben Sie bereits versucht, Ihr Gewicht gezielt zu reduzieren?",
+    type: "select",
+    required: false,
+    options: [
+      "Nein",
+      "Ja, ohne professionelle Unterst\u00fctzung",
+      "Ja, mit professioneller Unterst\u00fctzung",
+    ],
+  },
+  ADIP_REDUKTION_UNTERSTUETZUNG: {
+    id: "ADIP_REDUKTION_UNTERSTUETZUNG",
+    text: "Welche Unterst\u00fctzung oder Behandlung haben Sie bereits genutzt?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Ern\u00e4hrungsberatung",
+      "Digitale Ern\u00e4hrungsberatung / App",
+      "\u00c4rztliche Beratung / Behandlung",
+      "Strukturiertes Abnehmprogramm",
+      "Psychologische / verhaltenstherapeutische Unterst\u00fctzung",
+      "Medikamente zur Gewichtsreduktion",
+      "Andere Unterst\u00fctzung",
+    ],
+  },
+  ADIP_REDUKTION_ERFOLG: {
+    id: "ADIP_REDUKTION_ERFOLG",
+    text: "Wie w\u00fcrden Sie den bisherigen Erfolg insgesamt einsch\u00e4tzen?",
+    type: "select",
+    required: false,
+    options: [
+      "Kein wesentlicher Gewichtsverlust",
+      "Gewicht verloren, sp\u00e4ter wieder zugenommen",
+      "Gewicht teilweise dauerhaft reduziert",
+      "Gewicht deutlich und dauerhaft reduziert",
+    ],
+  },
+  ADIP_BEWEGUNG: {
+    id: "ADIP_BEWEGUNG",
+    text: "Wie regelm\u00e4\u00dfig bewegen Sie sich derzeit?",
+    type: "select",
+    required: false,
+    options: [
+      "Regelm\u00e4\u00dfig",
+      "Eher unregelm\u00e4\u00dfig",
+      "Kaum / gar nicht",
+    ],
+  },
+  ADIP_BEWEGUNG_BARRIEREN: {
+    id: "ADIP_BEWEGUNG_BARRIEREN",
+    text: "Was erschwert Ihnen regelm\u00e4\u00dfige Bewegung?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Schmerzen / Gelenkbeschwerden",
+      "Atemnot / geringe Belastbarkeit",
+      "Zeitmangel",
+      "Berufliche oder famili\u00e4re Belastung",
+      "Fehlende Motivation",
+      "Andere gesundheitliche Gr\u00fcnde",
+      "Anderer Grund",
+    ],
+  },
+  ADIP_ESSVERHALTEN: {
+    id: "ADIP_ESSVERHALTEN",
+    text: "Haben Sie das Gef\u00fchl, dass Ihr Essverhalten wesentlich zu Ihrem Gewicht beitr\u00e4gt?",
+    type: "select",
+    required: false,
+    options: ["Ja", "Nein", "Wei\u00df ich nicht"],
+  },
+  ADIP_ESSVERHALTEN_MUSTER: {
+    id: "ADIP_ESSVERHALTEN_MUSTER",
+    text: "Was trifft ungef\u00e4hr auf Ihr Essverhalten zu?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "H\u00e4ufiges Snacken",
+      "Gro\u00dfe Portionen",
+      "H\u00e4ufig S\u00fc\u00dfigkeiten",
+      "H\u00e4ufig zuckerhaltige Getr\u00e4nke",
+      "H\u00e4ufig Fast Food / Fertiggerichte",
+      "H\u00e4ufiges Essen am Abend / in der Nacht",
+      "Essen bei Stress, Traurigkeit oder Langeweile",
+      "Manchmal Kontrollverlust beim Essen",
+      "Anderes",
+    ],
+  },
+  ADIP_MEDI_INTERESSE: {
+    id: "ADIP_MEDI_INTERESSE",
+    text: "Interessieren Sie sich aktuell f\u00fcr eine medikament\u00f6se Unterst\u00fctzung zur Gewichtsreduktion?",
+    type: "select",
+    required: false,
+    options: [
+      "Ja",
+      "Vielleicht / m\u00f6chte mich beraten lassen",
+      "Nein",
+    ],
+  },
+  ADIP_MEDI_WELCHES: {
+    id: "ADIP_MEDI_WELCHES",
+    text: "Gibt es ein bestimmtes Medikament, zu dem Sie sich informieren oder beraten lassen m\u00f6chten?",
+    type: "select",
+    required: false,
+    options: [
+      "Semaglutid (z.\u00a0B. Wegovy)",
+      "Tirzepatid (z.\u00a0B. Mounjaro)",
+      "Anderes",
+      "Wei\u00df ich noch nicht",
+    ],
+  },
+  ADIP_MEDI_FRUEHER: {
+    id: "ADIP_MEDI_FRUEHER",
+    text: "Haben Sie bereits Medikamente zur Gewichtsreduktion verwendet?",
+    type: "yes_no",
+    required: false,
+  },
+  ADIP_MEDI_FRUEHER_TEXT: {
+    id: "ADIP_MEDI_FRUEHER_TEXT",
+    text: "Welche Medikamente haben Sie bereits verwendet und wie war Ihre Erfahrung damit?",
+    type: "textarea",
+    required: false,
+  },
+  ADIP_SICHERHEIT_PANKREATITIS: {
+    id: "ADIP_SICHERHEIT_PANKREATITIS",
+    text: "Hatten Sie schon einmal eine Entz\u00fcndung der Bauchspeicheldr\u00fcse (Pankreatitis)?",
+    type: "select",
+    required: false,
+    options: ["Nein", "Ja", "Wei\u00df ich nicht"],
+  },
+  ADIP_SICHERHEIT_GALLENBLASE: {
+    id: "ADIP_SICHERHEIT_GALLENBLASE",
+    text: "Haben oder hatten Sie Gallensteine oder eine Erkrankung der Gallenblase?",
+    type: "select",
+    required: false,
+    options: ["Nein", "Ja", "Wei\u00df ich nicht"],
+  },
+  ADIP_SICHERHEIT_MAGEN_DARM: {
+    id: "ADIP_SICHERHEIT_MAGEN_DARM",
+    text: "Bestehen bei Ihnen ausgepr\u00e4gte Magen-Darm-Beschwerden oder ist bei Ihnen eine verz\u00f6gerte Magenentleerung bekannt?",
+    type: "select",
+    required: false,
+    options: ["Nein", "Ja", "Wei\u00df ich nicht"],
+  },
+  ADIP_SCHWANGERSCHAFT: {
+    id: "ADIP_SCHWANGERSCHAFT",
+    text: "Besteht aktuell eine Schwangerschaft, planen Sie eine Schwangerschaft oder stillen Sie?",
+    type: "select",
+    required: false,
+    options: ["Nein", "Ja", "Nicht zutreffend"],
+  },
+  ADIP_BERATUNGSWUNSCH: {
+    id: "ADIP_BERATUNGSWUNSCH",
+    text: "Was w\u00fcnschen Sie sich aktuell am ehesten von der \u00e4rztlichen Beratung?",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Einsch\u00e4tzung meines Gewichts und m\u00f6glicher Ursachen",
+      "Unterst\u00fctzung bei Ern\u00e4hrung und Bewegung",
+      "Beratung zu Medikamenten zur Gewichtsreduktion",
+      "Pr\u00fcfung, ob eine medikament\u00f6se Behandlung f\u00fcr mich infrage kommt",
+      "Weiterf\u00fchrende Behandlung / Adipositas-Sprechstunde",
+      "Etwas anderes",
+    ],
+  },
 };
 
 /**
@@ -2223,6 +2432,145 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "VOLLST_LUNGENSCREENING_BERATUNG",
       "VOLLST_GEWICHT_VERAENDERN",
       "VOLLST_GEWICHT_UNTERSTUETZUNG",
+    ],
+  },
+  ADIPOSITAS_GEWICHTSREDUKTION: {
+    id: "ADIPOSITAS_GEWICHTSREDUKTION",
+    label: "Adipositas / Gewichtsreduktion",
+    displayOrder: 310,
+    conditionalRules: [
+      // Rule 1: Auslöser nur bei deutlicher Zunahme
+      {
+        action: "showQuestion",
+        targetId: "ADIP_ZUNAHME_AUSLOESER",
+        condition: {
+          target: { kind: "question", questionId: "ADIP_ZUNAHME_12M" },
+          operator: "equals",
+          value: "ja",
+        },
+      },
+      // Rule 2: Medikamenten-Freitext bei Auslöser "Neue oder deutlich veränderte Medikamente"
+      {
+        action: "showQuestion",
+        targetId: "ADIP_AUSLOESER_MEDIKAMENTE",
+        condition: {
+          target: { kind: "question", questionId: "ADIP_ZUNAHME_AUSLOESER" },
+          operator: "contains",
+          value: "Neue oder deutlich ver\u00e4nderte Medikamente",
+        },
+      },
+      // Rule 3: Unterstützungsarten nur bei professioneller Unterstützung
+      {
+        action: "showQuestion",
+        targetId: "ADIP_REDUKTION_UNTERSTUETZUNG",
+        condition: {
+          target: { kind: "question", questionId: "ADIP_REDUKTION_VERSUCH" },
+          operator: "equals",
+          value: "Ja, mit professioneller Unterst\u00fctzung",
+        },
+      },
+      // Rule 4: Gesamterfolg bei jeder Ja-Variante
+      {
+        action: "showQuestion",
+        targetId: "ADIP_REDUKTION_ERFOLG",
+        condition: {
+          mode: "OR",
+          conditions: [
+            {
+              target: { kind: "question", questionId: "ADIP_REDUKTION_VERSUCH" },
+              operator: "equals",
+              value: "Ja, ohne professionelle Unterst\u00fctzung",
+            },
+            {
+              target: { kind: "question", questionId: "ADIP_REDUKTION_VERSUCH" },
+              operator: "equals",
+              value: "Ja, mit professioneller Unterst\u00fctzung",
+            },
+          ],
+        },
+      },
+      // Rule 5: Bewegungsbarrieren bei unregelmäßiger oder fehlender Bewegung
+      {
+        action: "showQuestion",
+        targetId: "ADIP_BEWEGUNG_BARRIEREN",
+        condition: {
+          mode: "OR",
+          conditions: [
+            {
+              target: { kind: "question", questionId: "ADIP_BEWEGUNG" },
+              operator: "equals",
+              value: "Eher unregelm\u00e4\u00dfig",
+            },
+            {
+              target: { kind: "question", questionId: "ADIP_BEWEGUNG" },
+              operator: "equals",
+              value: "Kaum / gar nicht",
+            },
+          ],
+        },
+      },
+      // Rule 6: Essverhaltensmuster nur bei Ja
+      {
+        action: "showQuestion",
+        targetId: "ADIP_ESSVERHALTEN_MUSTER",
+        condition: {
+          target: { kind: "question", questionId: "ADIP_ESSVERHALTEN" },
+          operator: "equals",
+          value: "Ja",
+        },
+      },
+      // Rule 7: Gewünschtes Medikament bei Ja oder Vielleicht
+      {
+        action: "showQuestion",
+        targetId: "ADIP_MEDI_WELCHES",
+        condition: {
+          mode: "OR",
+          conditions: [
+            {
+              target: { kind: "question", questionId: "ADIP_MEDI_INTERESSE" },
+              operator: "equals",
+              value: "Ja",
+            },
+            {
+              target: { kind: "question", questionId: "ADIP_MEDI_INTERESSE" },
+              operator: "equals",
+              value: "Vielleicht / m\u00f6chte mich beraten lassen",
+            },
+          ],
+        },
+      },
+      // Rule 8: Erfahrungs-Freitext bei früherer Medikamentennutzung
+      {
+        action: "showQuestion",
+        targetId: "ADIP_MEDI_FRUEHER_TEXT",
+        condition: {
+          target: { kind: "question", questionId: "ADIP_MEDI_FRUEHER" },
+          operator: "equals",
+          value: "ja",
+        },
+      },
+    ],
+    questionIds: [
+      "ADIP_DAUER",
+      "ADIP_ZUNAHME_12M",
+      "ADIP_ZUNAHME_AUSLOESER",
+      "ADIP_AUSLOESER_MEDIKAMENTE",
+      "ADIP_REDUKTION_VERSUCH",
+      "ADIP_REDUKTION_UNTERSTUETZUNG",
+      "ADIP_REDUKTION_ERFOLG",
+      "ADIP_BEWEGUNG",
+      "ADIP_BEWEGUNG_BARRIEREN",
+      "ADIP_ESSVERHALTEN",
+      "ADIP_ESSVERHALTEN_MUSTER",
+      "ADIP_MEDI_INTERESSE",
+      "ADIP_MEDI_WELCHES",
+      "ADIP_MEDI_FRUEHER",
+      "ADIP_MEDI_FRUEHER_TEXT",
+      "ADIP_SICHERHEIT_PANKREATITIS",
+      "ADIP_SICHERHEIT_GALLENBLASE",
+      "ADIP_SICHERHEIT_MAGEN_DARM",
+      "ADIP_SCHWANGERSCHAFT",
+      "ADIP_BERATUNGSWUNSCH",
     ],
   },
 };

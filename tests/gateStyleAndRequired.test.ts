@@ -71,6 +71,13 @@ describe("MAIN_GATE_QUESTION_IDS – Haupt-Gates enthalten", () => {
     "ALKOHOL_GATE",
     "SUBST_GATE",
     "VOLLST_GEWICHT_VERAENDERN",
+    // Adipositas-Sektionsöffner
+    "ADIP_DAUER",
+    "ADIP_REDUKTION_VERSUCH",
+    "ADIP_BEWEGUNG",
+    "ADIP_MEDI_INTERESSE",
+    "ADIP_SICHERHEIT_PANKREATITIS",
+    "ADIP_BERATUNGSWUNSCH",
   ];
 
   for (const id of expectedGates) {
@@ -204,6 +211,19 @@ describe("Detailfragen – kein Gate-Styling", () => {
 
   it("VOLLST_INFEKT_EINTRAEGE ist KEIN Haupt-Gate", () => {
     expect(MAIN_GATE_QUESTION_IDS.has("VOLLST_INFEKT_EINTRAEGE")).toBe(false);
+  });
+
+  // Adipositas – konditionale Detailfragen sind kein Gate
+  it("ADIP_ZUNAHME_AUSLOESER ist KEIN Haupt-Gate", () => {
+    expect(MAIN_GATE_QUESTION_IDS.has("ADIP_ZUNAHME_AUSLOESER")).toBe(false);
+  });
+
+  it("ADIP_AUSLOESER_MEDIKAMENTE ist KEIN Haupt-Gate", () => {
+    expect(MAIN_GATE_QUESTION_IDS.has("ADIP_AUSLOESER_MEDIKAMENTE")).toBe(false);
+  });
+
+  it("ADIP_MEDI_FRUEHER_TEXT ist KEIN Haupt-Gate", () => {
+    expect(MAIN_GATE_QUESTION_IDS.has("ADIP_MEDI_FRUEHER_TEXT")).toBe(false);
   });
 });
 
