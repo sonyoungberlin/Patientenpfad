@@ -28,6 +28,23 @@ export async function POST(
 
   const { id } = await ctx.params;
 
+  // --- salutation aus Body lesen ---
+  let salutation: "du" | "sie" = "sie";
+  try {
+    const body = (await req.json()) as Record<string, unknown>;
+    if ("salutation" in body) {
+      if (body.salutation !== "du" && body.salutation !== "sie") {
+        return NextResponse.json(
+          { ok: false, error: 'Ungültige Ansprache. Erlaubt: "du" oder "sie".' },
+          { status: 400 },
+        );
+      }
+      salutation = body.salutation as "du" | "sie";
+    }
+  } catch {
+    // Kein Body → Default "sie" beibehalten
+  }
+
   const dr = await prisma.digitalRequest.findFirst({
     where: {
       id,
@@ -106,6 +123,7 @@ export async function POST(
     birthDateHash: null,
     origin,
     context: "office",
+    salutation,
   });
 
   const practiceName = dr.owner_practice?.name ?? "Ihre Praxis";
@@ -119,6 +137,7 @@ export async function POST(
       practiceSignature,
       practiceId: dr.owner_practice_id ?? null,
       variant: "office",
+      salutation,
     });
   } catch (mailErr) {
     console.error(

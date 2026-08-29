@@ -50,6 +50,8 @@ export type CreateSessionInput = {
   origin: string;
   /** "patient" (Default) | "office". Bestimmt den genutzten Blockkatalog. */
   context?: "patient" | "office";
+  /** Ansprache für Bewerbungsanamnese. Nur im Bewerbungsflow gesetzt; sonst null. */
+  salutation?: "du" | "sie";
 };
 
 export type CreateSessionResult = {
@@ -79,6 +81,7 @@ export async function createQuestionnaireSession(
     birthDateHash,
     origin,
     context = "patient",
+    salutation,
   } = input;
 
   const token = crypto.randomUUID();
@@ -114,6 +117,7 @@ export async function createQuestionnaireSession(
       patient_language: patientLanguage,
       context,
       status: "pending",
+      ...(salutation ? { salutation } : {}),
       ...(birthDateHash ? { birth_date_hash: birthDateHash } : {}),
     },
     select: { id: true },

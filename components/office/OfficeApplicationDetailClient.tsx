@@ -46,6 +46,8 @@ export function OfficeApplicationDetailClient({
   const [sendError, setSendError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
+  const [salutation, setSalutation] = useState<"du" | "sie">("sie");
+
   const [rejecting, setRejecting] = useState(false);
   const [rejectError, setRejectError] = useState<string | null>(null);
   const [rejected, setRejected] = useState(false);
@@ -125,7 +127,11 @@ export function OfficeApplicationDetailClient({
       // 2. Fragebogen-Link erzeugen und per Mail senden.
       const processRes = await fetch(
         `/api/office-cases/applications/${applicationId}/process`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ salutation }),
+        },
       );
       const processData = (await processRes.json()) as {
         ok: boolean;
@@ -233,6 +239,42 @@ export function OfficeApplicationDetailClient({
           </p>
         )}
       </div>
+
+      {/* Ansprache-Auswahl */}
+      <fieldset
+        disabled={isReadOnly}
+        style={{ margin: "1.5rem 0", padding: 0, border: "none" }}
+      >
+        <legend style={{ marginBottom: "0.5rem", fontWeight: 500 }}>
+          Ansprache im Fragebogen
+        </legend>
+        <div style={{ display: "flex", gap: "1.5rem" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: isReadOnly ? "not-allowed" : "pointer" }}>
+            <input
+              type="radio"
+              name="salutation"
+              value="sie"
+              checked={salutation === "sie"}
+              onChange={() => setSalutation("sie")}
+              disabled={isReadOnly}
+              data-testid="salutation-sie"
+            />
+            Sie
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: isReadOnly ? "not-allowed" : "pointer" }}>
+            <input
+              type="radio"
+              name="salutation"
+              value="du"
+              checked={salutation === "du"}
+              onChange={() => setSalutation("du")}
+              disabled={isReadOnly}
+              data-testid="salutation-du"
+            />
+            Du
+          </label>
+        </div>
+      </fieldset>
 
       {/* Block-Auswahl */}
       <fieldset

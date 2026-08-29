@@ -422,6 +422,10 @@ model PatientQuestionnaireSession {
   /// (nie Klartext; für Spam-/Doppel-Schutz und Auditierung).
   submitter_email_hash String?
 
+  /// Ansprache für Bewerbungsanamnese-Fragebögen. NULL = kein Bewerbungsintro.
+  /// Whitelist: "du" | "sie". Nur von createQuestionnaireSession im Bewerbungsflow gesetzt.
+  salutation String?
+
   /// Sprache der Patientensicht beim Ausfüllen des Token-Fragebogens.
   /// Whitelist: "de" | "en". Default "de", damit Bestandszeilen und alle
   /// bestehenden Codepfade unverändert deutsch bleiben.

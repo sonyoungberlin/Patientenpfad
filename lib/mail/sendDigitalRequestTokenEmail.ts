@@ -46,6 +46,8 @@ export type DigitalRequestTokenMailInput = {
   practiceId?: string | null;
   /** "patient" (Standard) | "office" – steuert Betreff und Einleitungstext. */
   variant?: "patient" | "office";
+  /** Ansprache für Bewerbungsanamnese-Mails. Nur wenn variant="office" und Bewerbungsflow. */
+  salutation?: "du" | "sie";
 };
 
 export type ResolvedMailTransport =
@@ -78,18 +80,32 @@ export function buildDigitalRequestTokenEmailBody(input: {
   practiceName: string;
   practiceSignature?: string | null;
   variant?: "patient" | "office";
+  salutation?: "du" | "sie";
 }): { subject: string; text: string } {
   const signature = input.practiceSignature?.trim()
     ? `\n\n${input.practiceSignature.trim()}`
     : "";
 
   if (input.variant === "office") {
+    if (input.salutation === "du") {
+      return {
+        subject: `Bitte vervollständige deine Bewerbung – ${input.practiceName}`,
+        text:
+          `Vielen Dank für dein Interesse an einer Mitarbeit bei uns.\n\n` +
+          `Bitte öffne den folgenden Link und fülle deine digitale Bewerbungsanamnese aus:\n` +
+          `${input.questionnaireUrl}\n` +
+          `\nWir freuen uns darauf, dich kennenzulernen.` +
+          signature +
+          "\n",
+      };
+    }
     return {
       subject: `Bitte vervollständigen Sie Ihre Bewerbung – ${input.practiceName}`,
       text:
-        `Vielen Dank für Ihr Interesse an unserer Praxis.\n\n` +
-        `Bitte öffnen Sie den folgenden Link, um Ihre Bewerbung abzuschließen:\n` +
+        `Vielen Dank für Ihr Interesse an einer Mitarbeit bei uns.\n\n` +
+        `Bitte öffnen Sie den folgenden Link und füllen Sie Ihre digitale Bewerbungsanamnese aus:\n` +
         `${input.questionnaireUrl}\n` +
+        `\nWir freuen uns darauf, Sie kennenzulernen.` +
         signature +
         "\n",
     };
@@ -123,6 +139,7 @@ export async function sendDigitalRequestTokenEmail(
     practiceName: input.practiceName,
     practiceSignature: input.practiceSignature,
     variant: input.variant,
+    salutation: input.salutation,
   });
 
   // 1. Practice-First: Practice-SMTP hat Vorrang.

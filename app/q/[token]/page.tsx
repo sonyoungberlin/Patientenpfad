@@ -17,7 +17,11 @@ import {
   PATIENT_QUESTIONNAIRE_INTRO_TEXT,
   PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN,
 } from "@/lib/questionnaire/patientIntro";
-import { OFFICE_QUESTIONNAIRE_INTRO_TEXT } from "@/lib/questionnaire/officeIntro";
+import {
+  OFFICE_QUESTIONNAIRE_INTRO_TEXT,
+  BEWERBER_INTRO_DU,
+  BEWERBER_INTRO_SIE,
+} from "@/lib/questionnaire/officeIntro";
 import { QuestionnaireFormClient } from "./QuestionnaireFormClient";
 
 // Always render per-request so the page reads fresh token state from the DB
@@ -63,6 +67,7 @@ export default async function QuestionnairePage({
       patient_language: true,
       deleted_at: true,
       context: true,
+      salutation: true,
       owner_practice: {
         select: {
           message_signature: true,
@@ -121,11 +126,18 @@ export default async function QuestionnairePage({
 
   const practiceSignature = session.owner_practice?.message_signature ?? null;
   const isOfficeContext = session.context === "office";
-  const introText = isOfficeContext
-    ? OFFICE_QUESTIONNAIRE_INTRO_TEXT
-    : language === "en"
+  let introText: string;
+  if (isOfficeContext && session.salutation === "du") {
+    introText = `${BEWERBER_INTRO_DU.title}\n\n${BEWERBER_INTRO_DU.text}`;
+  } else if (isOfficeContext && session.salutation === "sie") {
+    introText = `${BEWERBER_INTRO_SIE.title}\n\n${BEWERBER_INTRO_SIE.text}`;
+  } else if (isOfficeContext) {
+    introText = OFFICE_QUESTIONNAIRE_INTRO_TEXT;
+  } else {
+    introText = language === "en"
       ? PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN
       : PATIENT_QUESTIONNAIRE_INTRO_TEXT;
+  }
   const pageTitle = language === "en" ? PAGE_TITLE_EN : PAGE_TITLE_DE;
 
   return (
