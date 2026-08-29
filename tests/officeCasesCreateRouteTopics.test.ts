@@ -38,7 +38,14 @@ const APPROVED_ACCOUNT = {
   is_admin: false,
   office_cases_enabled: true,
   arbeitsprozesse_enabled: false,
-  current_practice: null,
+  current_practice: {
+    id: "p-1",
+    is_approved: true,
+    patient_communication_enabled: false,
+    website_forms_enabled: false,
+    office_cases_enabled: true,
+  },
+  memberships: [{ practice_id: "p-1", role: "OWNER" as const }],
 };
 
 const NEW_TOPIC_IDS = [
@@ -75,7 +82,7 @@ describe("POST /api/office-cases/create topic validation", () => {
         title: "Titel",
         trigger_note: "Notiz",
         owner_account_id: "acc-1",
-        owner_practice_id: null,
+        owner_practice_id: "p-1",
         checkpoint_snapshot: {},
       });
 

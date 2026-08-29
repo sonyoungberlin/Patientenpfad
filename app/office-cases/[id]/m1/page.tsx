@@ -1,22 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSessionAccountFromCookies } from "@/lib/auth";
 import { getOfficeTopic, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { prisma } from "@/lib/prisma";
+import { requireOfficeCasesManagementAccessFromCookies } from "@/lib/authz";
 
 export default async function OfficeCaseM1Page({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) {
-    redirect("/");
-  }
-  if (!account.office_cases_enabled && !account.is_admin) {
-    redirect("/dashboard");
-  }
+  const account = await requireOfficeCasesManagementAccessFromCookies();
+  if (!account) redirect("/");
 
   const { id } = await params;
 

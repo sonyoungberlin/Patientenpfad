@@ -1,13 +1,13 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionAccount } from "@/lib/auth";
 import {
   buildInitialSnapshotForTopic,
   getOfficeTopic,
   isOfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 import { getOfficeCreateOwnershipData } from "@/lib/office/scope";
+import { requireOfficeCasesManagementAccess } from "@/lib/authz";
 
 type CreateOfficeCaseBody = {
   topicId?: unknown;
@@ -23,16 +23,8 @@ function isString(value: unknown): value is string {
 }
 
 export async function POST(req: NextRequest) {
-  const account = await getSessionAccount(req);
-  if (!account) {
-    return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-  }
-  if (!account.is_approved) {
-    return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-  }
-  if (!account.office_cases_enabled && !account.is_admin) {
-    return NextResponse.json({ ok: false, error: "Officepfad nicht freigeschaltet." }, { status: 403 });
-  }
+  const { account, error } = await requireOfficeCasesManagementAccess(req);
+  if (error) return error;
 
   let body: CreateOfficeCaseBody;
   try {

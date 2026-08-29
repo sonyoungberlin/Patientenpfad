@@ -185,8 +185,8 @@ export default function AppShell({
       { label: "Neuer Fall", href: "/" },
     );
   } else if (isOfficeCases && (account.office_cases_enabled || account.is_admin)) {
-    sectionItems.push({ label: "Officefälle", href: "/office-cases" });
     if (canManagePractice) {
+      sectionItems.push({ label: "Officefälle", href: "/office-cases" });
       sectionItems.push({ label: "Fragebögen", href: "/office-cases/questionnaire" });
     }
     // USER darf Bewerbungsanfragen bearbeiten, aber keine Fragebögen öffnen

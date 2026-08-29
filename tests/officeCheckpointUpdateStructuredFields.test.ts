@@ -36,7 +36,14 @@ const ACCOUNT = {
   is_admin: false,
   office_cases_enabled: true,
   arbeitsprozesse_enabled: false,
-  current_practice: null,
+  current_practice: {
+    id: "p-1",
+    is_approved: true,
+    patient_communication_enabled: false,
+    website_forms_enabled: false,
+    office_cases_enabled: true,
+  },
+  memberships: [{ practice_id: "p-1", role: "OWNER" as const }],
 };
 
 function makeRequest(body: unknown) {
@@ -59,7 +66,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
     prismaMock.officeCaseSession.findUnique.mockResolvedValue({
       id: "case-1",
       owner_account_id: "acc-1",
-      owner_practice_id: null,
+      owner_practice_id: "p-1",
       internal_saved_at: null,
       checkpoint_snapshot: {
         topicId: OFFICE_TOPIC_REGRESS,
@@ -120,7 +127,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
     prismaMock.officeCaseSession.findUnique.mockResolvedValue({
       id: "case-1",
       owner_account_id: "acc-1",
-      owner_practice_id: null,
+      owner_practice_id: "p-1",
       internal_saved_at: existingDate,
       checkpoint_snapshot: {
         topicId: OFFICE_TOPIC_REGRESS,
@@ -153,7 +160,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
     prismaMock.officeCaseSession.findUnique.mockResolvedValue({
       id: "case-1",
       owner_account_id: "acc-1",
-      owner_practice_id: null,
+      owner_practice_id: "p-1",
       internal_saved_at: null,
       checkpoint_snapshot: {
         topicId: OFFICE_TOPIC_REGRESS,
@@ -193,7 +200,7 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
     prismaMock.officeCaseSession.findUnique.mockResolvedValue({
       id: "case-1",
       owner_account_id: "acc-1",
-      owner_practice_id: null,
+      owner_practice_id: "p-1",
       internal_saved_at: null,
       checkpoint_snapshot: {
         topicId: OFFICE_TOPIC_REGRESS,

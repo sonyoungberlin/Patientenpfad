@@ -409,39 +409,46 @@ describe("AppShell-Navigation: Rollentrennung Bewerbungsanfragen vs. Fragebögen
     const canManagePractice = role === "OWNER" || role === "ADMIN";
     const items: string[] = [];
     if (officeCasesEnabled) {
-      items.push("Officefälle");
-      if (canManagePractice) items.push("Fragebögen");
+      if (canManagePractice) {
+        items.push("Officefälle");
+        items.push("Fragebögen");
+      }
       if (canManagePractice || role === "USER") items.push("Bewerbungsanfragen");
     }
     return items;
   }
 
-  it("OWNER sieht Fragebögen und Bewerbungsanfragen", () => {
+  it("OWNER sieht Officefälle, Fragebögen und Bewerbungsanfragen", () => {
     const items = navItems("OWNER", true);
+    expect(items).toContain("Officefälle");
     expect(items).toContain("Fragebögen");
     expect(items).toContain("Bewerbungsanfragen");
   });
 
-  it("ADMIN sieht Fragebögen und Bewerbungsanfragen", () => {
+  it("ADMIN sieht Officefälle, Fragebögen und Bewerbungsanfragen", () => {
     const items = navItems("ADMIN", true);
+    expect(items).toContain("Officefälle");
     expect(items).toContain("Fragebögen");
     expect(items).toContain("Bewerbungsanfragen");
   });
 
-  it("USER sieht Bewerbungsanfragen aber NICHT Fragebögen", () => {
+  it("USER sieht Bewerbungsanfragen aber NICHT Officefälle oder Fragebögen", () => {
     const items = navItems("USER", true);
     expect(items).toContain("Bewerbungsanfragen");
+    expect(items).not.toContain("Officefälle");
     expect(items).not.toContain("Fragebögen");
   });
 
-  it("INBOX_ONLY sieht weder Fragebögen noch Bewerbungsanfragen", () => {
+  it("INBOX_ONLY sieht weder Officefälle noch Fragebögen noch Bewerbungsanfragen", () => {
     const items = navItems("INBOX_ONLY", true);
+    expect(items).not.toContain("Officefälle");
     expect(items).not.toContain("Fragebögen");
     expect(items).not.toContain("Bewerbungsanfragen");
   });
 
   it("ohne office_cases_enabled werden keine Office-Links angezeigt", () => {
     const items = navItems("OWNER", false);
+    expect(items).not.toContain("Officefälle");
     expect(items).not.toContain("Fragebögen");
     expect(items).not.toContain("Bewerbungsanfragen");
   });

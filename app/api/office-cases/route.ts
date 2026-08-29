@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOfficeTopic, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
-import { getSessionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canAccessOfficeCases, getOfficeOwnershipFilter } from "@/lib/office/scope";
+import { getOfficeOwnershipFilter } from "@/lib/office/scope";
+import { requireOfficeCasesManagementAccess } from "@/lib/authz";
 
 type OfficeCaseSnapshotRecord = {
   topicId?: unknown;
@@ -16,16 +16,8 @@ function readSnapshot(value: unknown): OfficeCaseSnapshotRecord | null {
 }
 
 export async function GET(req: NextRequest) {
-  const account = await getSessionAccount(req);
-  if (!account) {
-    return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-  }
-  if (!account.is_approved) {
-    return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-  }
-  if (!canAccessOfficeCases(account)) {
-    return NextResponse.json({ ok: false, error: "Officepfad nicht freigeschaltet." }, { status: 403 });
-  }
+  const { account, error } = await requireOfficeCasesManagementAccess(req);
+  if (error) return error;
 
   const ownershipScope = getOfficeOwnershipFilter(account);
 

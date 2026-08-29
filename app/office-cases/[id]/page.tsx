@@ -1,19 +1,14 @@
 import { redirect } from "next/navigation";
-import { getSessionAccountFromCookies } from "@/lib/auth";
 import { buildOfficeCaseM1Path } from "@/lib/office/navigation";
+import { requireOfficeCasesManagementAccessFromCookies } from "@/lib/authz";
 
 export default async function OfficeCaseContinuePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) {
-    redirect("/");
-  }
-  if (!account.office_cases_enabled && !account.is_admin) {
-    redirect("/dashboard");
-  }
+  const account = await requireOfficeCasesManagementAccessFromCookies();
+  if (!account) redirect("/");
 
   const { id } = await params;
 

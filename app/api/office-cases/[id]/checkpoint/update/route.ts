@@ -1,13 +1,13 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
-import { canAccessOfficeCases, ownsOfficeCase } from "@/lib/office/scope";
+import { ownsOfficeCase } from "@/lib/office/scope";
 import {
   OfficeCheckpointState,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
+import { requireOfficeCasesManagementAccess } from "@/lib/authz";
 
 type OfficeCaseSnapshotRecord = {
   topicId?: unknown;
@@ -68,16 +68,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const account = await getSessionAccount(req);
-  if (!account) {
-    return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-  }
-  if (!account.is_approved) {
-    return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-  }
-  if (!canAccessOfficeCases(account)) {
-    return NextResponse.json({ ok: false, error: "Officepfad nicht freigeschaltet." }, { status: 403 });
-  }
+  const { account, error } = await requireOfficeCasesManagementAccess(req);
+  if (error) return error;
 
   const { id } = await params;
   let body: CheckpointUpdateBody;

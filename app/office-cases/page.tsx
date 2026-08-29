@@ -1,18 +1,13 @@
 import { redirect } from "next/navigation";
-import { getSessionAccountFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { getOfficeTopic, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import OfficeCasesClient, { type OfficeCaseListItem } from "./OfficeCasesClient";
+import { requireOfficeCasesManagementAccessFromCookies } from "@/lib/authz";
 
 export default async function OfficeCasesPage() {
-  const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) {
-    redirect("/");
-  }
-  if (!account.office_cases_enabled && !account.is_admin) {
-    redirect("/dashboard");
-  }
+  const account = await requireOfficeCasesManagementAccessFromCookies();
+  if (!account) redirect("/");
 
   const officeCases = await prisma.officeCaseSession.findMany({
     where: { ...getOfficeOwnershipFilter(account), internal_saved_at: { not: null } },
