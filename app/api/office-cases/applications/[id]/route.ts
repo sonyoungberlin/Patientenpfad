@@ -143,16 +143,8 @@ export async function DELETE(
     );
   }
 
-  if (existing.status === "sent" || existing.status === "closed") {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: `Bewerbungsanfrage hat bereits den Status "${existing.status}" und kann nicht gelöscht werden.`,
-      },
-      { status: 409 },
-    );
-  }
-
+  // questionnaire_session_id ist nur ein String-Verweis ohne FK-Constraint;
+  // die verknüpfte PatientQuestionnaireSession bleibt beim Löschen erhalten.
   await prisma.digitalRequest.delete({ where: { id: existing.id } });
 
   return NextResponse.json({ ok: true });

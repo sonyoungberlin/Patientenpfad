@@ -90,8 +90,7 @@ export default async function OfficeApplicationDetailPage({
   const role = getCurrentPracticeRole(account);
   const isOwnerOrAdmin =
     role === PracticeRole.OWNER || role === PracticeRole.ADMIN;
-  // USER darf nicht löschen
-  const canDelete = !isSent && isOwnerOrAdmin;
+  const canDelete = isOwnerOrAdmin;
 
   const savedBlockIds: string[] = Array.isArray(application.selected_block_ids)
     ? (application.selected_block_ids as string[])
@@ -150,17 +149,7 @@ export default async function OfficeApplicationDetailPage({
               Versandzeitpunkt: {formatDate(application.sent_at)}
             </p>
           )}
-          {application.questionnaire_session_id && isOwnerOrAdmin && (
-            <p className="mt-2">
-              <Link
-                href={`/office-cases/questionnaire/${application.questionnaire_session_id}`}
-                className="font-medium text-green-700 underline hover:text-green-900"
-                data-testid="questionnaire-link"
-              >
-                Zum erzeugten Fragebogen →
-              </Link>
-            </p>
-          )}
+
         </div>
       )}
 

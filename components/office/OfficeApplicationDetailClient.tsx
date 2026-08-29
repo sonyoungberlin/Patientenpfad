@@ -388,7 +388,7 @@ export function OfficeApplicationDetailClient({
         </div>
       )}
 
-      {canDelete && !isSent && (
+      {canDelete && (
         <div className="flex items-center gap-4">
           <button
             type="button"
