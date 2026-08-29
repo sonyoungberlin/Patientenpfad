@@ -22,10 +22,8 @@ const REZEPTION_FRAGEN = [
 const BUERO_SELECT_FRAGEN = [
   "OFF_BUERO_WORD",
   "OFF_BUERO_TABELLEN",
-  "OFF_BUERO_OUTLOOK",
   "OFF_BUERO_BROWSER",
   "OFF_BUERO_PDF",
-  "OFF_BUERO_SCANNER",
   "OFF_BUERO_VIDEOKONFERENZ",
 ] as const;
 
@@ -58,12 +56,12 @@ describe("BEWERBER_REZEPTION_BUERO – Katalog-Struktur", () => {
     expect(order).toBeLessThan(40);
   });
 
-  it("Block enthält alle 18 Fragen", () => {
+  it("Block enthält alle 15 Fragen", () => {
     const ids = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.questionIds ?? [];
-    expect(ids).toHaveLength(18);
+    expect(ids).toHaveLength(15);
   });
 
-  it("alle 18 Fragen sind im OFFICE_QUESTION_CATALOG definiert", () => {
+  it("alle 15 Fragen sind im OFFICE_QUESTION_CATALOG definiert", () => {
     const allIds = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.questionIds ?? [];
     for (const qid of allIds) {
       expect(OFFICE_QUESTION_CATALOG).toHaveProperty(qid);
@@ -97,28 +95,22 @@ describe("BEWERBER_REZEPTION_BUERO – Organisatorische Fragen (Skala A)", () =>
 });
 
 describe("BEWERBER_REZEPTION_BUERO – Office-/PC-Kompetenzen (Skala B)", () => {
-  it("alle 7 Büro-select-Fragen sind vom Typ select", () => {
+  it("alle 5 Büro-select-Fragen sind vom Typ select", () => {
     for (const qid of BUERO_SELECT_FRAGEN) {
       expect(OFFICE_QUESTION_CATALOG[qid]?.type).toBe("select");
     }
   });
 
-  it("alle 7 Büro-select-Fragen sind kein Pflichtfeld", () => {
+  it("alle 5 Büro-select-Fragen sind kein Pflichtfeld", () => {
     for (const qid of BUERO_SELECT_FRAGEN) {
       expect(OFFICE_QUESTION_CATALOG[qid]?.required).toBe(false);
     }
   });
 
-  it("alle 7 Büro-select-Fragen haben exakt die PC-Kompetenz-Skala", () => {
+  it("alle 5 Büro-select-Fragen haben exakt die PC-Kompetenz-Skala", () => {
     for (const qid of BUERO_SELECT_FRAGEN) {
       expect(OFFICE_QUESTION_CATALOG[qid]?.options).toEqual(SKALA_PC);
     }
-  });
-
-  it("OFF_BUERO_WEITERE_PROGRAMME ist textarea und kein Pflichtfeld", () => {
-    const q = OFFICE_QUESTION_CATALOG["OFF_BUERO_WEITERE_PROGRAMME"];
-    expect(q?.type).toBe("textarea");
-    expect(q?.required).toBe(false);
   });
 });
 
@@ -146,7 +138,7 @@ describe("BEWERBER_REZEPTION_BUERO – buildFrozenBlocks", () => {
     const block = frozen[0]!;
     expect(block.id).toBe(BLOCK_ID);
     expect(block.initiallyVisible).toBe(true);
-    expect(block.questions).toHaveLength(18);
+    expect(block.questions).toHaveLength(15);
   });
 
   it("alle Fragen-IDs sind im frozen Block enthalten", () => {
