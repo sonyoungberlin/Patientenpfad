@@ -67,6 +67,9 @@ export default async function WebsiteFormsPage({
       slug: true,
       is_active: true,
       selected_block_ids: true,
+      owner_practice: {
+        select: { public_slug: true },
+      },
     },
   });
 
@@ -120,7 +123,11 @@ export default async function WebsiteFormsPage({
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                     <div>
                       <strong>{f.title}</strong>{" "}
-                      <span className="text-muted">/p/{f.slug}</span>
+                      <span className="text-muted">
+                        {f.owner_practice?.public_slug
+                          ? `/formular/${f.owner_practice.public_slug}/${f.slug}`
+                          : `/p/${f.slug}`}
+                      </span>
                     </div>
                     <div>
                       {f.is_active ? (

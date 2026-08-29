@@ -95,6 +95,7 @@ export function PublicFormView({
   questions,
   language = "de",
   conditionalRules,
+  successPath,
 }: {
   slug: string;
   title: string;
@@ -104,6 +105,7 @@ export function PublicFormView({
   language?: QuestionnaireLanguage;
   /** Alle Conditional-Rules aus den gewählten Blöcken. */
   conditionalRules: ConditionalRule[];
+  successPath?: string;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -195,7 +197,7 @@ export function PublicFormView({
         }),
       });
       if (res.ok) {
-        router.push(`/p/${slug}/eingereicht`);
+        router.push(successPath ?? `/p/${slug}/eingereicht`);
       } else {
         const text = await res.text().catch(() => String(res.status));
         setError(t.errorPrefix + text);

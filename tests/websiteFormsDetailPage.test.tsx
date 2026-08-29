@@ -156,6 +156,27 @@ describe("/website-forms/[id] detail page", () => {
     expect(r.markup).toMatch(/aktiv/i);
   });
 
+  it("zeigt mit public_slug den praxisbezogenen Formularlink", async () => {
+    getCookies.mockResolvedValue(APPROVED);
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({
+      id: "form-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      owner_practice: { public_slug: "praxis-am-markt" },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      title: "Mein Formular",
+      slug: "mein-formular",
+      intro_text: null,
+      is_active: true,
+      selected_block_ids: ["REZEPT"],
+    });
+    const r = await runPage();
+    expect(r.markup).toContain(
+      "https://praxis.example.com/formular/praxis-am-markt/mein-formular",
+    );
+  });
+
   it("zeigt Status 'inaktiv' für deaktivierte Einträge", async () => {
     getCookies.mockResolvedValue(APPROVED);
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue({

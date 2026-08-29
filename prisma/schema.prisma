@@ -587,6 +587,11 @@ model Practice {
   /// strukturell ausgeschlossen sind.
   slug String @unique
 
+  /// Von OWNER/ADMIN gepflegter Name für dauerhaft öffentliche Praxislinks.
+  public_name String?
+  /// Beim ersten Speichern aus `public_name` erzeugt und danach stabil.
+  public_slug String? @unique
+
   /// Carry-Over aus `Account.is_approved`. Default `false` für neue Inserts.
   is_approved                   Boolean @default(false)
   /// Carry-Over aus `Account.inquiry_assistant_enabled`.

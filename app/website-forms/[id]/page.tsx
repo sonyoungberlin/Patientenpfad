@@ -74,6 +74,9 @@ export default async function WebsiteFormDetailPage({
       is_active: true,
       selected_block_ids: true,
       patient_language: true,
+      owner_practice: {
+        select: { public_slug: true },
+      },
     },
   });
 
@@ -98,7 +101,9 @@ export default async function WebsiteFormDetailPage({
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${proto}://${host}` : "";
-  const publicLink = `${origin}/p/${form.slug}`;
+  const publicLink = form.owner_practice?.public_slug
+    ? `${origin}/formular/${form.owner_practice.public_slug}/${form.slug}`
+    : `${origin}/p/${form.slug}`;
 
   return (
     <main>

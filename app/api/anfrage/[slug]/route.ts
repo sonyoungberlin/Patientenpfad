@@ -49,6 +49,7 @@ import {
 import { PracticeRole } from "@prisma/client";
 import { VALID_TOPICS } from "@/lib/digitalRequests/topics";
 import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
+import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 
 export const dynamic = "force-dynamic";
 
@@ -193,20 +194,24 @@ export async function POST(
     // Cascade: nicht gefunden / nicht freigegeben / patient_communication_enabled=false → 404.
     // website_forms_enabled wird bewusst NICHT geprüft.
     // is_active entfällt — die digitale Anfrage ist praxisweit, kein Formular-Feature.
-    const practice = await prisma.practice.findUnique({
-      where: { slug: slugValidation.slug },
-      select: {
-        id: true,
-        is_approved: true,
-        patient_communication_enabled: true,
-        digital_request_notification_email: true,
-        memberships: {
-          where: { role: PracticeRole.OWNER },
-          select: { account_id: true },
-          take: 1,
-        },
-      },
-    });
+    const practice = await resolvePracticeByPublicOrLegacySlug(
+      slugValidation.slug,
+      (where) =>
+        prisma.practice.findUnique({
+          where,
+          select: {
+            id: true,
+            is_approved: true,
+            patient_communication_enabled: true,
+            digital_request_notification_email: true,
+            memberships: {
+              where: { role: PracticeRole.OWNER },
+              select: { account_id: true },
+              take: 1,
+            },
+          },
+        }),
+    );
 
     if (
       !practice ||

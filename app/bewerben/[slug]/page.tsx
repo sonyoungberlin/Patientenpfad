@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 import { OFFICE_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles";
+import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,14 +28,18 @@ export default async function BewerbenPage({
     notFound();
   }
 
-  const practice = await prisma.practice.findUnique({
-    where: { slug: validation.slug },
-    select: {
-      is_approved: true,
-      office_cases_enabled: true,
-      name: true,
-    },
-  });
+  const practice = await resolvePracticeByPublicOrLegacySlug(
+    validation.slug,
+    (where) =>
+      prisma.practice.findUnique({
+        where,
+        select: {
+          is_approved: true,
+          office_cases_enabled: true,
+          name: true,
+        },
+      }),
+  );
 
   if (!practice || !practice.is_approved || !practice.office_cases_enabled) {
     notFound();

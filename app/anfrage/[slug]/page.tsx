@@ -26,6 +26,7 @@ import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 import { DIGITAL_REQUEST_TOPICS } from "@/lib/digitalRequests/topics";
+import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -44,14 +45,18 @@ export default async function AnfragePage({
   }
 
   // 2./3./4. Practice laden und Sichtbarkeits-Cascade prüfen.
-  const practice = await prisma.practice.findUnique({
-    where: { slug: validation.slug },
-    select: {
-      is_approved: true,
-      patient_communication_enabled: true,
-      message_signature: true,
-    },
-  });
+  const practice = await resolvePracticeByPublicOrLegacySlug(
+    validation.slug,
+    (where) =>
+      prisma.practice.findUnique({
+        where,
+        select: {
+          is_approved: true,
+          patient_communication_enabled: true,
+          message_signature: true,
+        },
+      }),
+  );
 
   if (!practice) {
     notFound();

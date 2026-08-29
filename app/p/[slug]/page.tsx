@@ -23,17 +23,7 @@
  * zum Token-Flow `app/q/[token]/page.tsx`.
  */
 
-import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { validateSlug } from "@/lib/websiteForms/slug";
-import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
-import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
-import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
-import {
-  localizeQuestion,
-  normalizeQuestionnaireLanguage,
-} from "@/lib/questionnaire/i18n";
-import { PublicFormView } from "./PublicFormView";
+import { renderPublicFormPage } from "@/app/p/PublicFormContent";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -44,89 +34,5 @@ export default async function PublicFormPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-
-  // 1. Slug-Format vor dem DB-Roundtrip prüfen.
-  const validation = validateSlug(slug);
-  if (!validation.ok) {
-    notFound();
-  }
-
-  // 2./3./4./5./6. Formular + Owner-Flags in einem Query laden.
-  // P3a: Practice-Flags überstimmen Account-Flags. Wenn das Form ein
-  // `owner_practice_id` hat, ist die Practice die Quelle der Wahrheit.
-  const form = await prisma.practiceQuestionnaireForm.findUnique({
-    where: { slug: validation.slug },
-    select: {
-      title: true,
-      intro_text: true,
-      is_active: true,
-      selected_block_ids: true,
-      patient_language: true,
-      owner_practice_id: true,
-      owner_practice: {
-        select: {
-          is_approved: true,
-          patient_communication_enabled: true,
-          website_forms_enabled: true,
-          message_signature: true,
-        },
-      },
-      owner_account: {
-        select: {
-          is_approved: true,
-          patient_communication_enabled: true,
-          website_forms_enabled: true,
-        },
-      },
-    },
-  });
-
-  if (!form) {
-    notFound();
-  }
-
-  if (!form.is_active) {
-    notFound();
-  }
-
-  const flags = getEffectivePracticeFlags(form);
-  if (
-    !flags ||
-    !flags.is_approved ||
-    !flags.patient_communication_enabled ||
-    !flags.website_forms_enabled
-  ) {
-    notFound();
-  }
-
-  const selectedBlockIds = Array.isArray(form.selected_block_ids)
-    ? (form.selected_block_ids as string[])
-    : [];
-  const language = normalizeQuestionnaireLanguage(form.patient_language);
-
-  // Frozen-Snapshot der Blöcke: enthält Fragen + Conditional-Rules.
-  // Analog zu `app/q/[token]/page.tsx` damit beide Flows dieselbe Engine nutzen.
-  const frozenBlocks = buildFrozenBlocks(selectedBlockIds);
-  // Praxis-/interne Sichten ignorieren `patient_language` bewusst und bleiben
-  // deutsch. Nur die Patient-Renderschicht hier lokalisiert die Fragen.
-  const questions = frozenBlocks.flatMap((b) =>
-    b.questions.map((q) => localizeQuestion(q, language))
-  );
-  const conditionalRules: ConditionalRule[] = frozenBlocks.flatMap(
-    (b) => b.conditionalRules
-  );
-
-  const practiceSignature = form.owner_practice?.message_signature ?? null;
-
-  return (
-    <PublicFormView
-      slug={validation.slug}
-      title={form.title}
-      introText={form.intro_text}
-      practiceSignature={practiceSignature}
-      questions={questions}
-      language={language}
-      conditionalRules={conditionalRules}
-    />
-  );
+  return renderPublicFormPage(slug);
 }

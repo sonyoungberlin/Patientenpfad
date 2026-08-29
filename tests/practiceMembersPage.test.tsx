@@ -23,6 +23,7 @@ const notFoundMock = jest.fn(() => {
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
   notFound: () => notFoundMock(),
+  useRouter: () => ({ refresh: jest.fn() }),
 }));
 
 jest.mock("next/headers", () => ({
@@ -80,6 +81,7 @@ const PRACTICE = {
   inquiry_assistant_enabled: false,
   patient_communication_enabled: true,
   website_forms_enabled: true,
+  office_cases_enabled: true,
 };
 
 function makeAccount(role: "OWNER" | "ADMIN" | "USER") {
@@ -298,5 +300,26 @@ describe("practice/members — Digitale Anfrage Link-Abschnitt", () => {
     const r = await runPage();
     expect(r.markup).toContain("data-testid=\"anfrage-link-section\"");
     expect(r.markup).toContain("/anfrage/p1");
+  });
+
+  it("nutzt public_slug für Anfrage- und Bewerbungslink", async () => {
+    getCookies.mockResolvedValue(makeAccount("OWNER"));
+    pm.practice.findUnique.mockResolvedValue({
+      digital_request_notification_email: null,
+      office_application_notification_email: null,
+      public_name: "Praxis am Markt",
+      public_slug: "praxis-am-markt",
+    });
+    const r = await runPage();
+    expect(r.markup).toContain("https://praxis.example.com/anfrage/praxis-am-markt");
+    expect(r.markup).toContain("https://praxis.example.com/bewerben/praxis-am-markt");
+    expect(r.markup).toContain("Stabile URL-Kennung");
+  });
+
+  it("verwendet ohne public_slug weiterhin beide technischen Links", async () => {
+    getCookies.mockResolvedValue(makeAccount("OWNER"));
+    const r = await runPage();
+    expect(r.markup).toContain("https://praxis.example.com/anfrage/p1");
+    expect(r.markup).toContain("https://praxis.example.com/bewerben/p1");
   });
 });

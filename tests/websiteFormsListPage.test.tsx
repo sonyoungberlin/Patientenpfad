@@ -164,6 +164,23 @@ describe("/website-forms list page", () => {
     expect(r.markup).toContain('name="selected_block_ids"');
   });
 
+  it("zeigt mit public_slug den praxisbezogenen öffentlichen Pfad", async () => {
+    getCookies.mockResolvedValue(APPROVED);
+    pm.practiceQuestionnaireForm.findMany.mockResolvedValue([
+      {
+        id: "form-1",
+        createdAt: new Date(),
+        title: "Aufnahme-Formular",
+        slug: "aufnahme",
+        is_active: true,
+        selected_block_ids: ["REZEPT"],
+        owner_practice: { public_slug: "praxis-am-markt" },
+      },
+    ]);
+    const r = await runPage();
+    expect(r.markup).toContain("/formular/praxis-am-markt/aufnahme");
+  });
+
   it("zeigt Hinweis wenn keine Formulare vorhanden", async () => {
     getCookies.mockResolvedValue(APPROVED);
     pm.practiceQuestionnaireForm.findMany.mockResolvedValue([]);

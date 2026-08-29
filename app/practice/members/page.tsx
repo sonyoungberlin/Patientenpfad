@@ -34,6 +34,7 @@ import {
 import { requirePracticeRoleFromCookies } from "@/lib/authz";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 import NotificationEmailField from "@/components/practice/NotificationEmailField";
+import PublicPracticeProfileForm from "@/components/practice/PublicPracticeProfileForm";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -75,12 +76,13 @@ export default async function PracticeMembersPage({
     notFound();
   }
 
-  // Notification-E-Mail-Einstellungen separat laden (neue Felder).
-  const notificationSettings = await prisma.practice.findUnique({
+  const practiceSettings = await prisma.practice.findUnique({
     where: { id: practice.id },
     select: {
       digital_request_notification_email: true,
       office_application_notification_email: true,
+      public_name: true,
+      public_slug: true,
     },
   });
 
@@ -100,8 +102,9 @@ export default async function PracticeMembersPage({
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${proto}://${host}` : "";
-  const anfrageLink = `${origin}/anfrage/${practice.slug}`;
-  const bewerbenLink = `${origin}/bewerben/${practice.slug}`;
+  const publicPracticeSlug = practiceSettings?.public_slug ?? practice.slug;
+  const anfrageLink = `${origin}/anfrage/${publicPracticeSlug}`;
+  const bewerbenLink = `${origin}/bewerben/${publicPracticeSlug}`;
 
   const sp = (await searchParams) ?? {};
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
@@ -216,6 +219,11 @@ export default async function PracticeMembersPage({
         </tbody>
       </table>
 
+      <PublicPracticeProfileForm
+        initialPublicName={practiceSettings?.public_name ?? ""}
+        initialPublicSlug={practiceSettings?.public_slug ?? null}
+      />
+
       {practice.patient_communication_enabled && (
         <section
           style={{ marginTop: "2.5rem" }}
@@ -239,7 +247,7 @@ export default async function PracticeMembersPage({
             <CopyPublicLinkButton link={anfrageLink} />
           </div>
           <NotificationEmailField
-            initialValue={notificationSettings?.digital_request_notification_email ?? null}
+            initialValue={practiceSettings?.digital_request_notification_email ?? null}
             variant="patient"
             label="Benachrichtigungs-E-Mail bei neuer Anfrage"
             hint="Wird bei jeder neuen öffentlichen Patientenanfrage benachrichtigt. Leer = keine Benachrichtigung."
@@ -269,7 +277,7 @@ export default async function PracticeMembersPage({
             <CopyPublicLinkButton link={bewerbenLink} />
           </div>
           <NotificationEmailField
-            initialValue={notificationSettings?.office_application_notification_email ?? null}
+            initialValue={practiceSettings?.office_application_notification_email ?? null}
             variant="office"
             label="Benachrichtigungs-E-Mail bei neuer Bewerbung"
             hint="Wird bei jeder neuen öffentlichen Bewerbungsanfrage benachrichtigt. Leer = keine Benachrichtigung."

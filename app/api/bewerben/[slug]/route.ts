@@ -38,6 +38,7 @@ import {
 import { PracticeRole } from "@prisma/client";
 import { VALID_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles";
 import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
+import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 
 export const dynamic = "force-dynamic";
 
@@ -176,20 +177,24 @@ export async function POST(
     }
 
     // 6. Practice + OWNER-Membership laden.
-    const practice = await prisma.practice.findUnique({
-      where: { slug: slugValidation.slug },
-      select: {
-        id: true,
-        is_approved: true,
-        office_cases_enabled: true,
-        office_application_notification_email: true,
-        memberships: {
-          where: { role: PracticeRole.OWNER },
-          select: { account_id: true },
-          take: 1,
-        },
-      },
-    });
+    const practice = await resolvePracticeByPublicOrLegacySlug(
+      slugValidation.slug,
+      (where) =>
+        prisma.practice.findUnique({
+          where,
+          select: {
+            id: true,
+            is_approved: true,
+            office_cases_enabled: true,
+            office_application_notification_email: true,
+            memberships: {
+              where: { role: PracticeRole.OWNER },
+              select: { account_id: true },
+              take: 1,
+            },
+          },
+        }),
+    );
 
     if (
       !practice ||

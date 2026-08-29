@@ -86,6 +86,33 @@ beforeEach(() => {
 });
 
 describe("POST /api/anfrage/[slug]", () => {
+  it("akzeptiert einen neuen öffentlichen Praxis-Slug", async () => {
+    pm.practice.findUnique.mockResolvedValueOnce(activePractice());
+    const res = await POST(
+      makeJsonReq("praxis-am-markt", validBody()),
+      CTX("praxis-am-markt"),
+    );
+    expect(res.status).toBe(303);
+    expect(pm.practice.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { public_slug: "praxis-am-markt" } }),
+    );
+  });
+
+  it("akzeptiert weiterhin den technischen Practice-Slug", async () => {
+    pm.practice.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(activePractice());
+    const res = await POST(
+      makeJsonReq("technischer-slug", validBody()),
+      CTX("technischer-slug"),
+    );
+    expect(res.status).toBe(303);
+    expect(pm.practice.findUnique).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { slug: "technischer-slug" } }),
+    );
+  });
+
   it("gibt 404 zurück wenn keine Practice mit diesem Slug existiert", async () => {
     pm.practice.findUnique.mockResolvedValue(null);
     const res = await POST(makeJsonReq("unbekannt", validBody()), CTX("unbekannt"));

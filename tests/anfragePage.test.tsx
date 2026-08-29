@@ -67,6 +67,27 @@ beforeEach(() => {
 });
 
 describe("AnfragePage — Sichtbarkeits-Cascade", () => {
+  it("löst einen neuen öffentlichen Praxis-Slug zuerst auf", async () => {
+    pm.practice.findUnique.mockResolvedValueOnce(activePractice());
+    const r = await runPage("praxis-am-markt");
+    expect(r.notFound).toBe(false);
+    expect(pm.practice.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { public_slug: "praxis-am-markt" } }),
+    );
+  });
+
+  it("fällt auf den technischen Practice-Slug zurück", async () => {
+    pm.practice.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(activePractice());
+    const r = await runPage("technischer-slug");
+    expect(r.notFound).toBe(false);
+    expect(pm.practice.findUnique).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { slug: "technischer-slug" } }),
+    );
+  });
+
   it("rendert das Formular für gültige aktive Practice", async () => {
     pm.practice.findUnique.mockResolvedValue(activePractice());
     const r = await runPage("meine-praxis");
