@@ -20,6 +20,7 @@ const ALL_QUESTION_IDS = [
   "OFF_ARZT_DMP_SONSTIGE",
   "OFF_ARZT_PALLIATIVMEDIZIN",
   "OFF_ARZT_NOTFALLMEDIZIN",
+  "OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION",
   "OFF_ARZT_WEITERE_ZUSATZQUALIFIKATIONEN",
 ] as const;
 
@@ -47,15 +48,15 @@ describe("BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN – Katalog-Struktur", () => {
     expect(order).toBeLessThan(33);
   });
 
-  it("Block enthält alle 12 Fragen", () => {
+  it("Block enthält alle 13 Fragen", () => {
     const ids = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.questionIds ?? [];
-    expect(ids).toHaveLength(12);
+    expect(ids).toHaveLength(13);
     for (const qid of ALL_QUESTION_IDS) {
       expect(ids).toContain(qid);
     }
   });
 
-  it("alle 12 Fragen sind im OFFICE_QUESTION_CATALOG definiert", () => {
+  it("alle 13 Fragen sind im OFFICE_QUESTION_CATALOG definiert", () => {
     for (const qid of ALL_QUESTION_IDS) {
       expect(OFFICE_QUESTION_CATALOG).toHaveProperty(qid);
     }
@@ -130,16 +131,27 @@ describe("BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN – Fragedefinitionen", () => {
     expect(OFFICE_QUESTION_CATALOG["OFF_ARZT_DMP_SONSTIGE"]?.type).toBe("textarea");
   });
 
-  it("OFF_ARZT_PALLIATIVMEDIZIN hat 5-stufige Skala", () => {
+  it("OFF_ARZT_PALLIATIVMEDIZIN hat Standard-Qualifikationsskala (4 Optionen)", () => {
     const q = OFFICE_QUESTION_CATALOG["OFF_ARZT_PALLIATIVMEDIZIN"];
-    expect(q?.options).toHaveLength(5);
-    expect(q?.options).toContain("Zusatzbezeichnung / formale Qualifikation vorhanden");
+    expect(q?.options).toHaveLength(4);
+    expect(q?.options).toEqual(SKALA_STANDARD);
   });
 
-  it("OFF_ARZT_NOTFALLMEDIZIN hat dieselbe Skala wie Palliativmedizin", () => {
-    expect(OFFICE_QUESTION_CATALOG["OFF_ARZT_NOTFALLMEDIZIN"]?.options).toEqual(
-      OFFICE_QUESTION_CATALOG["OFF_ARZT_PALLIATIVMEDIZIN"]?.options,
-    );
+  it("OFF_ARZT_NOTFALLMEDIZIN hat Standard-Qualifikationsskala (4 Optionen)", () => {
+    const q = OFFICE_QUESTION_CATALOG["OFF_ARZT_NOTFALLMEDIZIN"];
+    expect(q?.options).toHaveLength(4);
+    expect(q?.options).toEqual(SKALA_STANDARD);
+  });
+
+  it("OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION liegt in diesem Block (formale Qualifikation)", () => {
+    const ids = OFFICE_BLOCK_CATALOG[BLOCK_ID]?.questionIds ?? [];
+    expect(ids).toContain("OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION");
+    expect(OFFICE_QUESTION_CATALOG["OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION"]?.options).toEqual([
+      "Nicht vorhanden",
+      "Kurs / Weiterbildung begonnen",
+      "Kurs / Weiterbildung abgeschlossen",
+      "Zusatzbezeichnung / Qualifikation vorhanden",
+    ]);
   });
 
   it("OFF_ARZT_WEITERE_ZUSATZQUALIFIKATIONEN ist textarea", () => {
@@ -251,14 +263,14 @@ describe("BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN – Conditional Logic", () => {
 });
 
 describe("BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN – buildFrozenBlocks", () => {
-  it("friert Block korrekt ein mit allen 12 Fragen", () => {
+  it("friert Block korrekt ein mit allen 13 Fragen", () => {
     const frozen = buildFrozenBlocks(
       [BLOCK_ID],
       OFFICE_BLOCK_CATALOG,
       OFFICE_QUESTION_CATALOG,
     );
     expect(frozen).toHaveLength(1);
-    expect(frozen[0]!.questions).toHaveLength(12);
+    expect(frozen[0]!.questions).toHaveLength(13);
     expect(frozen[0]!.initiallyVisible).toBe(true);
   });
 

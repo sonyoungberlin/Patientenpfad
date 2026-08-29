@@ -36,8 +36,8 @@ const PRAKTISCHE_SKALA_IDS = [
 const ALL_QUESTION_IDS = [
   ...PRAKTISCHE_SKALA_IDS,
   "OFF_ARZT_REISEIMPFBERATUNG",
+  "OFF_ARZT_PALLIATIV_ERFAHRUNG",
   "OFF_ARZT_SUCHTMEDIZIN_ERFAHRUNG",
-  "OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION",
   "OFF_ARZT_SUBSTITUTION_ERFAHRUNG",
   "OFF_ARZT_BTM_ERFAHRUNG",
   "OFF_ARZT_DIGA_ERFAHRUNG",
@@ -130,14 +130,21 @@ describe("BEWERBER_ARZT_PRAKTISCHE_KOMPETENZEN – Kompetenzskalen", () => {
     ]);
   });
 
-  it("OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION hat Qualifikations-Skala (kein Pflichtfeld)", () => {
-    expect(OFFICE_QUESTION_CATALOG["OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION"]?.options).toEqual([
-      "Nicht vorhanden",
-      "Kurs / Weiterbildung begonnen",
-      "Kurs / Weiterbildung abgeschlossen",
-      "Zusatzbezeichnung / Qualifikation vorhanden",
+  // OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION liegt jetzt in BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN
+  it("OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION ist NICHT im Praktisch-Block", () => {
+    expect(OFFICE_BLOCK_CATALOG[BLOCK_ID]?.questionIds).not.toContain(
+      "OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION",
+    );
+  });
+
+  it("OFF_ARZT_PALLIATIV_ERFAHRUNG hat eigene praktische Skala (Keine Erfahrung…)", () => {
+    expect(OFFICE_QUESTION_CATALOG["OFF_ARZT_PALLIATIV_ERFAHRUNG"]?.options).toEqual([
+      "Keine Erfahrung",
+      "Mit Anleitung / wenig Erfahrung",
+      "Weitgehend selbstständig",
+      "Sicher und routiniert",
     ]);
-    expect(OFFICE_QUESTION_CATALOG["OFF_ARZT_SUCHTMEDIZIN_QUALIFIKATION"]?.required).toBe(false);
+    expect(OFFICE_QUESTION_CATALOG["OFF_ARZT_PALLIATIV_ERFAHRUNG"]?.required).toBe(false);
   });
 
   it("OFF_ARZT_SUBSTITUTION_ERFAHRUNG hat korrekte 4er-Skala", () => {
