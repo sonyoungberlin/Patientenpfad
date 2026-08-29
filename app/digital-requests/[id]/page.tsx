@@ -83,6 +83,7 @@ export default async function DigitalRequestDetailPage({
     where: {
       id,
       ...getOwnershipFilter(account),
+      request_type: "patient",
       deleted_at: null,
     },
     select: {

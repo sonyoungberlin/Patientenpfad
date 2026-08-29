@@ -40,6 +40,8 @@ export type DigitalRequestRejectionMailInput = {
    * andernfalls greift der ENV-Fallback.
    */
   practiceId?: string | null;
+  /** "patient" (Standard) | "office" – steuert Betreff und Bodytext. */
+  variant?: "patient" | "office";
 };
 
 export type ResolvedMailTransport =
@@ -70,10 +72,23 @@ function selectFallbackTransport(): MailTransport {
 export function buildDigitalRequestRejectionEmailBody(input: {
   practiceName: string;
   practiceSignature?: string | null;
+  variant?: "patient" | "office";
 }): { subject: string; text: string } {
   const signature = input.practiceSignature?.trim()
     ? `\n\n${input.practiceSignature.trim()}`
     : "";
+
+  if (input.variant === "office") {
+    return {
+      subject: `Ihre Bewerbungsanfrage bei ${input.practiceName}`,
+      text:
+        `Vielen Dank für Ihr Interesse an unserer Praxis.\n\n` +
+        `Leider können wir Ihre Bewerbung derzeit nicht berücksichtigen.\n\n` +
+        `Vielen Dank.` +
+        signature +
+        "\n",
+    };
+  }
 
   return {
     subject: `Ihre Anfrage bei der Praxis ${input.practiceName}`,
@@ -99,6 +114,7 @@ export async function sendDigitalRequestRejectionEmail(
   const { subject, text } = buildDigitalRequestRejectionEmailBody({
     practiceName: input.practiceName,
     practiceSignature: input.practiceSignature,
+    variant: input.variant,
   });
 
   // 1. Practice-First: Practice-SMTP hat Vorrang.

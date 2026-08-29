@@ -188,6 +188,7 @@ export default function AppShell({
     sectionItems.push({ label: "Officefälle", href: "/office-cases" });
     if (canManagePractice) {
       sectionItems.push({ label: "Fragebögen", href: "/office-cases/questionnaire" });
+      sectionItems.push({ label: "Bewerbungsanfragen", href: "/office-cases/applications" });
     }
   } else if (isWorkflowCases && (account.arbeitsprozesse_enabled || account.is_admin)) {
     sectionItems.push(

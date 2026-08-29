@@ -1,35 +1,24 @@
 /**
- * Phase A (aktualisiert): Submit-Endpoint für Digitale Anfragen
- * (POST `/api/anfrage/[slug]`).
+ * POST /api/bewerben/[slug]
  *
- * Slug-Quelle: `Practice.slug` — praxisweit, unabhängig von
- * `PracticeQuestionnaireForm`. `practice_form_id` ist beim Anlegen null.
+ * Submit-Endpoint für öffentliche Bewerbungsanfragen.
  *
  * Pipeline:
  *   1. Slug-Format validieren.
  *   2. Body parsen (FormData oder JSON).
- *   3. Honeypot prüfen → Treffer: identische Erfolgs-Antwort, KEINE DB-Schreibung.
- *   4. E-Mail validieren (Format).
- *   5. Rate-Limit (IP + Slug, best-effort in-memory).
- *   6. Practice + OWNER-Membership laden (Cascade: slug ungültig/deaktiviert → 404).
- *      Prüft nur `patient_communication_enabled`, NICHT `website_forms_enabled`.
- *      Keine `is_active`-Prüfung mehr (formularunabhängig).
- *   7. Rate-Limit (E-Mail-Hash, nach Practice-Lookup).
- *   8. Name validieren (min 1, max 100 Zeichen).
- *   9. E-Mail hashen (SHA-256).
- *  10. Geburtsdatum hashen (SHA-256, kein Klartext) – Pflichtfeld.
- *  11. Anliegen (requested_topics) validieren – Whitelist, mind. 1 Eintrag.
- *  12. DigitalRequest anlegen (status = "new", practice_form_id = null).
- *  13. 303-Redirect auf `/anfrage/[slug]/eingegangen`.
- *
- * Antwort-Codes:
- *   - 303 → Erfolg (und Honeypot-Treffer).
- *   - 400 → Validierungsfehler (E-Mail oder Name).
- *   - 404 → Slug-Cascade negativ oder Practice nicht konfiguriert.
- *   - 429 → Rate-Limit überschritten.
+ *   3. Honeypot prüfen → Treffer: identische Erfolgsantwort, keine DB-Schreibung.
+ *   4. E-Mail validieren.
+ *   5. Rate-Limit (IP + Slug).
+ *   6. Practice laden (slug, is_approved, office_cases_enabled, OWNER).
+ *   7. Rate-Limit (E-Mail-Hash).
+ *   8. Name validieren (min 1, max 100).
+ *   9. Rollen validieren (VALID_APPLICATION_ROLES, min 1).
+ *  10. E-Mail hashen.
+ *  11. Freitext bereinigen (optional, max 500).
+ *  12. DigitalRequest anlegen (request_type = "office").
+ *  13. 303-Redirect auf /bewerben/[slug]/eingegangen.
  */
 
-import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
@@ -47,22 +36,21 @@ import {
   getClientIp,
 } from "@/lib/websiteForms/submitRateLimit";
 import { PracticeRole } from "@prisma/client";
-import { VALID_TOPICS } from "@/lib/digitalRequests/topics";
+import { VALID_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles";
 
 export const dynamic = "force-dynamic";
 
 const ipSlugLimiter = createRateLimiter(IP_SLUG_RATE_LIMIT);
 const emailHashLimiter = createRateLimiter(EMAIL_HASH_RATE_LIMIT);
 
-const LOG_MARKER = "[anfrage/submit]";
+const LOG_MARKER = "[bewerben/submit]";
 
 type SubmitOutcome =
   | "success"
   | "invalid_body"
   | "invalid_email"
   | "invalid_name"
-  | "invalid_birth_date"
-  | "invalid_topics"
+  | "invalid_roles"
   | "honeypot"
   | "not_found"
   | "rate_limited_ip"
@@ -73,7 +61,7 @@ function logSubmit(
   outcome: SubmitOutcome,
   extra: Record<string, unknown> = {},
 ): void {
-  const payload = { event: "anfrage_submit", outcome, ...extra };
+  const payload = { event: "bewerben_submit", outcome, ...extra };
   if (outcome === "unexpected_error") {
     console.error(LOG_MARKER, payload);
   } else {
@@ -82,7 +70,7 @@ function logSubmit(
 }
 
 function successRedirect(req: NextRequest, slug: string): NextResponse {
-  const url = new URL(`/anfrage/${slug}/eingegangen`, req.url);
+  const url = new URL(`/bewerben/${slug}/eingegangen`, req.url);
   return NextResponse.redirect(url, { status: 303 });
 }
 
@@ -96,14 +84,12 @@ function notFoundHtml(): NextResponse {
 type SubmitFields = {
   email: unknown;
   name: unknown;
-  birth_date: unknown;
-  requested_topics: unknown;
+  requested_roles: unknown;
+  concern_text: unknown;
   honeypot: unknown;
 };
 
-async function parseFields(
-  req: NextRequest,
-): Promise<SubmitFields | null> {
+async function parseFields(req: NextRequest): Promise<SubmitFields | null> {
   const contentType = req.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
@@ -112,8 +98,8 @@ async function parseFields(
       return {
         email: body.email,
         name: body.submitter_name,
-        birth_date: body.birth_date,
-        requested_topics: body.requested_topics,
+        requested_roles: body.requested_roles,
+        concern_text: body.concern_text,
         honeypot: body[HONEYPOT_FIELD_NAME],
       };
     } catch {
@@ -126,9 +112,9 @@ async function parseFields(
     return {
       email: fd.get("email"),
       name: fd.get("submitter_name"),
-      birth_date: fd.get("birth_date"),
-      // Mehrere Checkboxen mit name="requested_topic"
-      requested_topics: fd.getAll("requested_topic"),
+      // Mehrere Checkboxen mit name="requested_role"
+      requested_roles: fd.getAll("requested_role"),
+      concern_text: fd.get("concern_text"),
       honeypot: fd.get(HONEYPOT_FIELD_NAME),
     };
   } catch {
@@ -188,15 +174,12 @@ export async function POST(
     }
 
     // 6. Practice + OWNER-Membership laden.
-    // Cascade: nicht gefunden / nicht freigegeben / patient_communication_enabled=false → 404.
-    // website_forms_enabled wird bewusst NICHT geprüft.
-    // is_active entfällt — die digitale Anfrage ist praxisweit, kein Formular-Feature.
     const practice = await prisma.practice.findUnique({
       where: { slug: slugValidation.slug },
       select: {
         id: true,
         is_approved: true,
-        patient_communication_enabled: true,
+        office_cases_enabled: true,
         memberships: {
           where: { role: PracticeRole.OWNER },
           select: { account_id: true },
@@ -208,7 +191,7 @@ export async function POST(
     if (
       !practice ||
       !practice.is_approved ||
-      !practice.patient_communication_enabled ||
+      !practice.office_cases_enabled ||
       practice.memberships.length === 0
     ) {
       logSubmit("not_found", { slug: slugValidation.slug });
@@ -217,7 +200,7 @@ export async function POST(
 
     const ownerAccountId = practice.memberships[0].account_id;
 
-    // 7. Rate-Limit (E-Mail-Hash) — nach Form-Lookup.
+    // 7. Rate-Limit (E-Mail-Hash).
     const submitterEmailHash = hashSubmitterEmail(emailCheck.email);
     if (!emailHashLimiter.check(submitterEmailHash).allowed) {
       logSubmit("rate_limited_email", { slug: slugValidation.slug });
@@ -241,65 +224,43 @@ export async function POST(
       );
     }
 
-    // 9. E-Mail-Hash bereits in Schritt 7 berechnet (submitterEmailHash).
-
-    // 10. Geburtsdatum ist Pflichtfeld — hashen, kein Klartext.
-    if (
-      typeof fields.birth_date !== "string" ||
-      fields.birth_date.trim().length === 0
-    ) {
-      logSubmit("invalid_birth_date", { slug: slugValidation.slug });
-      return new NextResponse(
-        "Bitte geben Sie Ihr Geburtsdatum ein.",
-        {
-          status: 400,
-          headers: { "content-type": "text/plain; charset=utf-8" },
-        },
-      );
-    }
-    let birthDateHash: string | null = null;
-    if (
-      typeof fields.birth_date === "string" &&
-      fields.birth_date.trim().length > 0
-    ) {
-      birthDateHash = createHash("sha256")
-        .update(fields.birth_date.trim())
-        .digest("hex");
-    }
-
-    // 11. Anliegen (requested_topics) validieren — Whitelist, mind. 1 Eintrag.
-    const rawTopics: unknown[] = Array.isArray(fields.requested_topics)
-      ? fields.requested_topics
+    // 9. Rollen validieren — ausschließlich gegen VALID_APPLICATION_ROLES.
+    const rawRoles: unknown[] = Array.isArray(fields.requested_roles)
+      ? fields.requested_roles
       : [];
-    const validTopics = rawTopics.filter(
-      (t): t is string => typeof t === "string" && VALID_TOPICS.has(t),
+    const validRoles = rawRoles.filter(
+      (r): r is string =>
+        typeof r === "string" && VALID_APPLICATION_ROLES.has(r),
     );
-    if (validTopics.length === 0) {
-      logSubmit("invalid_topics", { slug: slugValidation.slug });
+    if (validRoles.length === 0) {
+      logSubmit("invalid_roles", { slug: slugValidation.slug });
       return new NextResponse(
-        "Bitte wählen Sie mindestens ein Anliegen aus.",
+        "Bitte wählen Sie mindestens eine Rolle aus.",
         {
           status: 400,
           headers: { "content-type": "text/plain; charset=utf-8" },
         },
       );
     }
-    // Deduplizieren und sortieren für deterministischen JSON-Inhalt.
-    const topics = [...new Set(validTopics)].sort();
+    const roles = [...new Set(validRoles)].sort();
+
+    // 11. Freitext bereinigen.
+    const rawConcernText =
+      typeof fields.concern_text === "string"
+        ? fields.concern_text.trim().slice(0, 500)
+        : null;
 
     // 12. DigitalRequest anlegen.
     await prisma.digitalRequest.create({
       data: {
         owner_account_id: ownerAccountId,
         owner_practice_id: practice.id,
-        // practice_form_id bleibt null — kein Bezug zu einem einzelnen Formular.
         submitter_name: rawName,
         submitter_email: emailCheck.email,
         submitter_email_hash: submitterEmailHash,
-        birth_date: typeof fields.birth_date === "string" ? fields.birth_date.trim() : undefined,
-        ...(birthDateHash !== null ? { birth_date_hash: birthDateHash } : {}),
-        requested_topics: topics,
-        request_type: "patient",
+        requested_topics: roles,
+        concern_text: rawConcernText || null,
+        request_type: "office",
         status: "new",
       },
       select: { id: true },
@@ -311,7 +272,7 @@ export async function POST(
     return successRedirect(req, slugValidation.slug);
   } catch (err) {
     console.error(LOG_MARKER, {
-      event: "anfrage_submit",
+      event: "bewerben_submit",
       outcome: "unexpected_error",
       err,
     });

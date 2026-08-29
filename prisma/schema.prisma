@@ -737,6 +737,9 @@ model DigitalRequest {
   /// Optionaler kurzer Freitext zum Anliegen (max. 500 Zeichen, neutral gehalten).
   concern_text String?
 
+  /// "patient" = klassische Digitale Anfrage, "office" = Bewerbungsanfrage.
+  request_type String @default("patient")
+
   /// Status der Anfrage.
   /// Whitelist: "new" | "in_review" | "sent" | "closed" | "rejected"
   status String @default("new")
@@ -782,6 +785,7 @@ model DigitalRequest {
 
   @@index([owner_practice_id, createdAt])
   @@index([owner_account_id, createdAt])
+  @@index([request_type])
 }
 
 /// Admin-verwaltete Überschreibungen der Checkpoint-Bibliothek.

@@ -71,6 +71,7 @@ export default async function DigitalRequestsPage() {
   const requests = await prisma.digitalRequest.findMany({
     where: {
       ...getOwnershipFilter(account),
+      request_type: "patient",
       status: { in: ["new", "in_review"] },
       deleted_at: null,
     },

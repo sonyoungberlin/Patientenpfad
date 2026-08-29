@@ -101,7 +101,7 @@ export async function PATCH(
 
   // --- Eigentum + Existenz prüfen ---
   const existing = await prisma.digitalRequest.findFirst({
-    where: { id, ...getOwnershipFilter(account), deleted_at: null },
+    where: { id, ...getOwnershipFilter(account), request_type: "patient", deleted_at: null },
     select: { id: true, status: true },
   });
   if (!existing) {
@@ -160,7 +160,7 @@ export async function DELETE(
   const { id } = await ctx.params;
 
   const existing = await prisma.digitalRequest.findFirst({
-    where: { id, ...getOwnershipFilter(account), deleted_at: null },
+    where: { id, ...getOwnershipFilter(account), request_type: "patient", deleted_at: null },
     select: { id: true, status: true },
   });
   if (!existing) {

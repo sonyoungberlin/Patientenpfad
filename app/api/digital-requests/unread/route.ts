@@ -23,6 +23,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const count = await prisma.digitalRequest.count({
     where: {
       ...getOwnershipFilter(account),
+      request_type: "patient",
       status: "new",
       deleted_at: null,
     },

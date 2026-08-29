@@ -40,7 +40,7 @@ export async function POST(
 
   // --- DigitalRequest laden ---
   const dr = await prisma.digitalRequest.findFirst({
-    where: { id, ...getOwnershipFilter(account), deleted_at: null },
+    where: { id, ...getOwnershipFilter(account), request_type: "patient", deleted_at: null },
     select: {
       id: true,
       status: true,
