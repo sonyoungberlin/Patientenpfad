@@ -118,6 +118,134 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     required: false,
   },
 
+  // BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN
+  OFF_ARZT_PSYCHOSOMATIK: {
+    id: "OFF_ARZT_PSYCHOSOMATIK",
+    text: "Psychosomatische Grundversorgung",
+    type: "select",
+    required: false,
+    options: [
+      "Vorhanden",
+      "In Vorbereitung / Nachweis läuft",
+      "Nicht vorhanden",
+      "Nicht relevant / keine Angabe",
+    ],
+  },
+  OFF_ARZT_HAUTKREBSSCREENING: {
+    id: "OFF_ARZT_HAUTKREBSSCREENING",
+    text: "Qualifikation / Genehmigung für Hautkrebsscreening",
+    type: "select",
+    required: false,
+    options: [
+      "Vorhanden",
+      "In Vorbereitung / Nachweis läuft",
+      "Nicht vorhanden",
+      "Nicht relevant / keine Angabe",
+    ],
+  },
+  OFF_ARZT_LUNGENKREBS_BERATUNG: {
+    id: "OFF_ARZT_LUNGENKREBS_BERATUNG",
+    text: "Qualifikation für die Erstberatung zur Lungenkrebs-Früherkennung",
+    type: "select",
+    required: false,
+    options: [
+      "Vorhanden",
+      "In Vorbereitung / Nachweis läuft",
+      "Nicht vorhanden",
+      "Nicht relevant / keine Angabe",
+    ],
+  },
+  OFF_ARZT_SONOGRAPHIE: {
+    id: "OFF_ARZT_SONOGRAPHIE",
+    text: "Sonographie-Genehmigungen / sonographische Qualifikationen",
+    type: "select",
+    required: false,
+    options: [
+      "Vorhanden",
+      "Teilweise vorhanden",
+      "In Vorbereitung / Nachweis läuft",
+      "Nicht vorhanden",
+      "Nicht relevant / keine Angabe",
+    ],
+  },
+  OFF_ARZT_SONOGRAPHIE_BEREICHE: {
+    id: "OFF_ARZT_SONOGRAPHIE_BEREICHE",
+    text: "Für welche sonographischen Bereiche bestehen Qualifikationen oder Genehmigungen?",
+    type: "multi_select",
+    required: false,
+    options: ["Abdomen", "Schilddrüse", "Gefäße", "Echokardiographie", "Sonstige"],
+  },
+  OFF_ARZT_SONOGRAPHIE_SONSTIGE: {
+    id: "OFF_ARZT_SONOGRAPHIE_SONSTIGE",
+    text: "Weitere sonographische Bereiche",
+    type: "textarea",
+    required: false,
+  },
+  OFF_ARZT_LANGZEIT_EKG: {
+    id: "OFF_ARZT_LANGZEIT_EKG",
+    text: "Qualifikation zur Auswertung von Langzeit-EKG",
+    type: "select",
+    required: false,
+    options: [
+      "Vorhanden",
+      "In Vorbereitung / Nachweis läuft",
+      "Nicht vorhanden",
+      "Nicht relevant / keine Angabe",
+    ],
+  },
+  OFF_ARZT_DMP_ERFAHRUNG: {
+    id: "OFF_ARZT_DMP_ERFAHRUNG",
+    text: "Erfahrung mit Disease-Management-Programmen (DMP)",
+    type: "multi_select",
+    required: false,
+    options: [
+      "Diabetes mellitus Typ 2",
+      "KHK",
+      "Asthma",
+      "COPD",
+      "Sonstige",
+      "Keine Erfahrung",
+    ],
+  },
+  OFF_ARZT_DMP_SONSTIGE: {
+    id: "OFF_ARZT_DMP_SONSTIGE",
+    text: "Weitere DMP-Erfahrung",
+    type: "textarea",
+    required: false,
+  },
+  OFF_ARZT_PALLIATIVMEDIZIN: {
+    id: "OFF_ARZT_PALLIATIVMEDIZIN",
+    text: "Zusatzqualifikation / Erfahrung in Palliativmedizin",
+    type: "select",
+    required: false,
+    options: [
+      "Zusatzbezeichnung / formale Qualifikation vorhanden",
+      "Umfangreiche praktische Erfahrung",
+      "Grundkenntnisse",
+      "Keine besondere Erfahrung",
+      "Keine Angabe",
+    ],
+  },
+  OFF_ARZT_NOTFALLMEDIZIN: {
+    id: "OFF_ARZT_NOTFALLMEDIZIN",
+    text: "Zusatzqualifikation / Erfahrung in Notfallmedizin",
+    type: "select",
+    required: false,
+    options: [
+      "Zusatzbezeichnung / formale Qualifikation vorhanden",
+      "Umfangreiche praktische Erfahrung",
+      "Grundkenntnisse",
+      "Keine besondere Erfahrung",
+      "Keine Angabe",
+    ],
+  },
+  OFF_ARZT_WEITERE_ZUSATZQUALIFIKATIONEN: {
+    id: "OFF_ARZT_WEITERE_ZUSATZQUALIFIKATIONEN",
+    text: "Weitere Zusatzbezeichnungen, Genehmigungen oder besondere Qualifikationen",
+    type: "textarea",
+    required: false,
+  },
+
   // BEWERBER_ARZT_BASIS
   OFF_ARZT_APPROBATION: {
     id: "OFF_ARZT_APPROBATION",
@@ -750,6 +878,65 @@ export const OFFICE_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "OFF_BERUFSJAHRE",
       "OFF_TAETIGKEITSBEREICHE",
       "OFF_BERUF_BESCHREIBUNG",
+    ],
+  },
+  BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN: {
+    id: "BEWERBER_ARZT_ZUSATZQUALIFIKATIONEN",
+    label: "Ärztliche Zusatzqualifikationen & Genehmigungen",
+    displayOrder: 32,
+    questionIds: [
+      "OFF_ARZT_PSYCHOSOMATIK",
+      "OFF_ARZT_HAUTKREBSSCREENING",
+      "OFF_ARZT_LUNGENKREBS_BERATUNG",
+      "OFF_ARZT_SONOGRAPHIE",
+      "OFF_ARZT_SONOGRAPHIE_BEREICHE",
+      "OFF_ARZT_SONOGRAPHIE_SONSTIGE",
+      "OFF_ARZT_LANGZEIT_EKG",
+      "OFF_ARZT_DMP_ERFAHRUNG",
+      "OFF_ARZT_DMP_SONSTIGE",
+      "OFF_ARZT_PALLIATIVMEDIZIN",
+      "OFF_ARZT_NOTFALLMEDIZIN",
+      "OFF_ARZT_WEITERE_ZUSATZQUALIFIKATIONEN",
+    ],
+    conditionalRules: [
+      {
+        // OR: Bereiche anzeigen wenn Sonographie vorhanden oder teilweise vorhanden
+        action: "showQuestion" as const,
+        targetId: "OFF_ARZT_SONOGRAPHIE_BEREICHE",
+        condition: {
+          mode: "OR" as const,
+          conditions: [
+            {
+              target: { kind: "question" as const, questionId: "OFF_ARZT_SONOGRAPHIE" },
+              operator: "equals" as const,
+              value: "Vorhanden",
+            },
+            {
+              target: { kind: "question" as const, questionId: "OFF_ARZT_SONOGRAPHIE" },
+              operator: "equals" as const,
+              value: "Teilweise vorhanden",
+            },
+          ],
+        },
+      },
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_ARZT_SONOGRAPHIE_SONSTIGE",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_ARZT_SONOGRAPHIE_BEREICHE" },
+          operator: "contains" as const,
+          value: "Sonstige",
+        },
+      },
+      {
+        action: "showQuestion" as const,
+        targetId: "OFF_ARZT_DMP_SONSTIGE",
+        condition: {
+          target: { kind: "question" as const, questionId: "OFF_ARZT_DMP_ERFAHRUNG" },
+          operator: "contains" as const,
+          value: "Sonstige",
+        },
+      },
     ],
   },
   BEWERBER_ARZT_BASIS: {

@@ -229,12 +229,12 @@ describe("Bestehende Office-Blöcke – Regressionsprüfung", () => {
     "BEWERBER_ARBEITSZEITEN",
   ] as const;
 
-  it("OFFICE_BLOCK_CATALOG enthält jetzt 10 Blöcke", () => {
-    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(10);
+  it("OFFICE_BLOCK_CATALOG enthält jetzt 11 Blöcke", () => {
+    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(11);
   });
 
-  it("OFFICE_BLOCK_IDS_SORTED enthält alle 10 Blöcke in korrekter Reihenfolge", () => {
-    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(10);
+  it("OFFICE_BLOCK_IDS_SORTED enthält alle 11 Blöcke in korrekter Reihenfolge", () => {
+    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(11);
     const mfaIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_MFA_KOMPETENZEN");
     const berufsIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_BERUFSERFAHRUNG");
     const pvsIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_PVS_DIGITAL");
