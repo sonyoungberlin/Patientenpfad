@@ -9,6 +9,7 @@ Geltungsbereich:
 - `app/api/p/[slug]/submit/route.ts` (öffentlicher Submit)
 - `app/p/confirm/[token]/page.tsx` (Bestätigungs-Route)
 - `scripts/cleanup-unconfirmed-website-submits.mjs` (manuelles Cleanup)
+- `app/api/internal/cleanup/route.ts` (zentraler täglicher Retention-Cleanup)
 
 Nicht in Scope: andere Routen, Audit-Persistenz (kein dediziertes
 Audit-Schema), externer Log-Aggregator.
@@ -124,6 +125,18 @@ trifft, soll vorher den Dry-Run direkt am Server ansehen.
 
 ## Cleanup-Runbook
 
+Der reguläre Löschlauf wird täglich um 03:00 UTC durch den in `vercel.json`
+konfigurierten Vercel-Cron ausgeführt. Er ruft
+`/api/internal/cleanup?apply=true` mit `CRON_SECRET` auf. Der zentrale Lauf
+erfasst die 7-Tage-Retention für Fragebogen-Sessions und DigitalRequest sowie
+die 30-Tage-Retention für CaseSession und normale InquirySession. Start,
+letzter Erfolg und Fehlerstatus werden ohne Vorgangsinhalte in `CleanupStatus`
+festgehalten.
+
+Das folgende Skript ist ein zusätzliches enges Diagnose-/Fallback-Werkzeug. Es
+bearbeitet ausschließlich unbestätigte Website-Form-Submissions und ersetzt
+den zentralen Cron nicht.
+
 Voraussetzung: `DATABASE_URL` und `DIRECT_DATABASE_URL` korrekt gesetzt
 (siehe `.env.example`). Das Skript verwendet die normale Prisma-Verbindung.
 
@@ -148,8 +161,8 @@ Damit sind ausgeschlossen:
 - interne Sessions (`source != "website"`),
 - Sessions, deren Token noch gültig ist.
 
-Empfehlung für den Pilotbetrieb: einmal pro Woche manuell. **Kein** Cron-Job
-in dieser Phase.
+Der manuelle Lauf ist nur bei Diagnose- oder Nachholbedarf erforderlich. Der
+reguläre Betrieb erfolgt über den zentralen täglichen Cron.
 
 ## Verweise
 

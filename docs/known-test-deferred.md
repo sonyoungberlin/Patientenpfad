@@ -1,23 +1,24 @@
-# Bekannte zurückgestellte Test-Failures
+# Historische zurückgestellte Test-Failures
 
-Diese Datei dokumentiert Test-Suites, die aktuell fehlschlagen, aber bewusst nicht
-repariert werden. Die hier aufgeführten Failures sind:
+Diese Datei bewahrt die Ursachenanalyse der früher zurückgestellten Fehlergruppen.
+Alle unten aufgeführten Gruppen wurden am 30.08.2026 bereinigt. Sie sind keine
+aktuell akzeptierten Fehler und dürfen bei neuen Fehlschlägen nicht mehr als
+Ausnahme herangezogen werden.
 
-- **bekannt und lokalisiert**,
-- **kein Blocker für Build oder Deploy** (sofern nicht anders angegeben),
-- **nicht Gegenstand der laufenden Arbeit**,
-- **wieder zu untersuchen**, sobald am jeweiligen Produktbereich weitergearbeitet wird.
+Aktuell validierter Stand:
 
-Sie gelten **nicht** als akzeptierte dauerhafte Fehler und **nicht** automatisch als Bugs.
+- Jest: 324 von 324 Suites und 6.558 von 6.558 Tests bestanden
+- TypeScript: 0 Fehler
+- Prisma-Schema: gültig
+- Production Build: erfolgreich
 
-Status-Werte:
+Historische Status-Werte:
 - `DEFERRED` – Ursache bekannt, Produktbereich gerade nicht in aktiver Entwicklung
 - `NEEDS_DECISION` – Ursache bekannt, aber das korrekte Verhalten ist fachlich ungeklärt
 - `TDD` – Test dokumentiert eine noch nicht implementierte Funktion; läuft absichtlich rot
 
-> **Für Copilot-Analysen:** Vor der Bewertung neu auftretender Testfehler zuerst diese
-> Datei prüfen. Hier dokumentierte Failures dürfen **nicht** automatisch einer aktuellen
-> Änderung zugerechnet oder ohne expliziten Auftrag repariert werden.
+> **Für Copilot-Analysen:** Die folgenden Einträge sind nur noch historische
+> Begründungen. Neu auftretende Fehler müssen regulär untersucht werden.
 
 ---
 
@@ -248,5 +249,5 @@ Wenn die ONBOARDING-M2-Migration gestartet wird.
 
 ---
 
-*Zuletzt verifiziert: 2026-08-16*  
-*Jest: 89 failed / 5228 total · Build: ✓ · Typecheck: 14 Fehler in Tests*
+*Historischer Stand ursprünglich verifiziert: 2026-08-16*
+*Bereinigung und grüner Gesamtstand verifiziert: 2026-08-30*
