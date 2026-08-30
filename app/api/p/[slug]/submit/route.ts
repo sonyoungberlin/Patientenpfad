@@ -330,16 +330,15 @@ export async function POST(
       Object.entries(sanitizedAnswers).filter(([id]) => visibleQIds.has(id))
     );
 
-    // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld spiegeln.
-    // Falls der KONTAKT-Block (oder ein anderer Block, der CONTACT_EMAIL
-    // enthält) aktiv ist, würde sonst dieselbe E-Mail-Adresse zweimal
-    // erfragt. Wir übernehmen serverseitig die bereits validierte
-    // Bestätigungs-E-Mail; eine ggf. abweichende oder leere Eingabe im
-    // unteren CONTACT_EMAIL-Feld wird damit überschrieben. Single Source
-    // of Truth ist `emailCheck.email` (normalisiert/lowercased).
+    // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld ergänzen, falls der Client
+    // keinen Wert für die sichtbare Katalogfrage übermittelt hat. Vorhandene
+    // Werte einschließlich eines bewusst leeren Strings bleiben erhalten.
     // Hinweis: Gilt nur für den öffentlichen `/p/[slug]`-Submit; der
     // Token-Flow `/q/[token]` bleibt unberührt.
-    if (deduplicatedQuestions.some((q) => q.id === "CONTACT_EMAIL")) {
+    if (
+      deduplicatedQuestions.some((q) => q.id === "CONTACT_EMAIL") &&
+      !("CONTACT_EMAIL" in finalAnswers)
+    ) {
       finalAnswers["CONTACT_EMAIL"] = emailCheck.email;
     }
 

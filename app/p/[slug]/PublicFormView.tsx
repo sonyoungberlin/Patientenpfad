@@ -13,7 +13,7 @@
  * der Client nach `/p/[slug]/eingereicht`.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
@@ -113,6 +113,7 @@ export function PublicFormView({
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [email, setEmail] = useState("");
+  const contactEmailTouched = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [missingRequired, setMissingRequired] = useState<Set<string>>(new Set());
@@ -147,6 +148,9 @@ export function PublicFormView({
   }, [visibleQuestions, values]);
 
   const handleChange = (id: string, value: string) => {
+    if (id === "CONTACT_EMAIL") {
+      contactEmailTouched.current = true;
+    }
     setValues((prev) => ({ ...prev, [id]: value }));
     if (missingRequired.has(id)) {
       setMissingRequired((prev) => {
@@ -154,6 +158,16 @@ export function PublicFormView({
         next.delete(id);
         return next;
       });
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (
+      !contactEmailTouched.current &&
+      allQuestionIds.includes("CONTACT_EMAIL")
+    ) {
+      setValues((prev) => ({ ...prev, CONTACT_EMAIL: value }));
     }
   };
 
@@ -293,7 +307,7 @@ export function PublicFormView({
             required
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => handleEmailChange(e.target.value)}
             style={baseInputStyle}
             data-q-email
           />

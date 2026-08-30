@@ -20,9 +20,10 @@ import {
   isBlockEnReady,
   DEFAULT_QUESTIONNAIRE_LANGUAGE,
 } from "@/lib/questionnaire/i18n";
-import type {
-  QuestionDefinition,
-  QuestionnaireBlock,
+import {
+  QUESTION_CATALOG,
+  type QuestionDefinition,
+  type QuestionnaireBlock,
 } from "@/lib/questionnaire/blockCatalog";
 
 describe("normalizeQuestionnaireLanguage", () => {
@@ -248,8 +249,27 @@ describe("isQuestionEnReady / isBlockEnReady", () => {
     expect(isBlockEnReady("ADRESSE")).toBe(true);
   });
 
-  it("isBlockEnReady('KURZANAMNESE') === true (alle 12 Fragen übersetzt)", () => {
+  it("isBlockEnReady('KURZANAMNESE') === true (alle 16 Fragen übersetzt)", () => {
     expect(isBlockEnReady("KURZANAMNESE")).toBe(true);
+  });
+
+  it("lokalisiert die neuen Kurzanamnese-Gates und Details natürlich", () => {
+    const expectedEnglishTexts: Record<string, string> = {
+      ANAMNESE_GP: "Are you already registered with another GP practice?",
+      ANAMNESE_GP_NAME: "Name of the other GP practice",
+      ANAMNESE_CHRONIC_GATE: "Do you have any chronic conditions?",
+      ANAMNESE_CHRONIC: "Which chronic conditions do you have?",
+      ANAMNESE_ALLERGIES_GATE: "Do you have any allergies or intolerances?",
+      ANAMNESE_ALLERGIES: "Which allergies or intolerances do you have?",
+      ANAMNESE_MEDICATIONS_GATE: "Do you take any medication regularly?",
+      ANAMNESE_MEDICATIONS: "Which medications do you take regularly?",
+    };
+
+    for (const [id, text] of Object.entries(expectedEnglishTexts)) {
+      expect(localizeQuestion(QUESTION_CATALOG[id], "en").text).toBe(text);
+    }
+    expect(localizeQuestion(QUESTION_CATALOG.ANAMNESE_GP_NAME, "en").helperText)
+      .toBe("Alternatively, enter the name of the GP who treats you there.");
   });
 
   it("isBlockEnReady('ARBEITSUNFAEHIGKEIT') === false (AU_START_DATE etc. ohne text_en)", () => {

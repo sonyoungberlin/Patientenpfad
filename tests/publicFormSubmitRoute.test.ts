@@ -281,7 +281,7 @@ describe("POST /api/p/[slug]/submit", () => {
       expect(call.data.answers.CONTACT_EMAIL).toBe("patient1@example.com");
     });
 
-    it("KONTAKT-Block enthalten + CONTACT_EMAIL abweichend → wird von Bestätigungs-E-Mail überschrieben", async () => {
+    it("KONTAKT-Block enthalten + CONTACT_EMAIL abweichend → bleibt erhalten", async () => {
       pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
         makeForm({ selected_block_ids: ["KONTAKT"] }),
       );
@@ -299,9 +299,29 @@ describe("POST /api/p/[slug]/submit", () => {
       );
       expect(res.status).toBe(303);
       const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
-      expect(call.data.answers.CONTACT_EMAIL).toBe("patient2@example.com");
+      expect(call.data.answers.CONTACT_EMAIL).toBe("abweichend@example.org");
       // Andere Antworten unverändert.
       expect(call.data.answers.CONTACT_PHONE).toBe("+49 30 123");
+    });
+
+    it("KONTAKT-Block enthalten + CONTACT_EMAIL bewusst leer → bleibt leer", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["KONTAKT"] }),
+      );
+      const res = await POST(
+        formReq(
+          {
+            email: "patient-empty@example.com",
+            CONTACT_EMAIL: "",
+          },
+          SLUG,
+          "9.0.0.4",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+      expect(res.status).toBe(303);
+      const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
+      expect(call.data.answers.CONTACT_EMAIL).toBe("");
     });
 
     it("KONTAKT-Block nicht enthalten → CONTACT_EMAIL wird NICHT gesetzt", async () => {

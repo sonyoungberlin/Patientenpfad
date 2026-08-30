@@ -16,6 +16,7 @@ import {
   parseConditionalRules,
   type ConditionalRule,
 } from "@/lib/questionnaire/conditionalLogic";
+import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 
 // ---------------------------------------------------------------------------
 // evaluateCondition
@@ -124,6 +125,55 @@ describe("computeVisibleQuestionIds – Pilotregel", () => {
     expect("ANAMNESE_GP_NAME" in answersToSend).toBe(false);
     expect(answersToSend.ANAMNESE_GP).toBe("nein");
     expect(answersToSend.ANAMNESE_HEIGHT).toBe("175");
+  });
+});
+
+describe("computeVisibleQuestionIds – Kurzanamnese-Gates", () => {
+  const rules = BLOCK_CATALOG.KURZANAMNESE.conditionalRules ?? [];
+  const questionIds = BLOCK_CATALOG.KURZANAMNESE.questionIds;
+  const gateToDetail = [
+    ["ANAMNESE_GP", "ANAMNESE_GP_NAME"],
+    ["ANAMNESE_CHRONIC_GATE", "ANAMNESE_CHRONIC"],
+    ["ANAMNESE_ALLERGIES_GATE", "ANAMNESE_ALLERGIES"],
+    ["ANAMNESE_MEDICATIONS_GATE", "ANAMNESE_MEDICATIONS"],
+  ] as const;
+
+  it("blendet alle vier Detailfelder initial aus", () => {
+    const visible = computeVisibleQuestionIds(rules, questionIds, {});
+    for (const [, detailId] of gateToDetail) {
+      expect(visible.has(detailId)).toBe(false);
+    }
+  });
+
+  it.each(gateToDetail)("%s = ja zeigt %s", (gateId, detailId) => {
+    const visible = computeVisibleQuestionIds(rules, questionIds, {
+      [gateId]: "ja",
+    });
+    expect(visible.has(detailId)).toBe(true);
+  });
+
+  it.each(gateToDetail)("%s = nein verbirgt %s", (gateId, detailId) => {
+    const visible = computeVisibleQuestionIds(rules, questionIds, {
+      [gateId]: "nein",
+    });
+    expect(visible.has(detailId)).toBe(false);
+  });
+
+  it("übermittelt keine Antworten aus verneinten Detailzweigen", () => {
+    const answers = Object.fromEntries(
+      gateToDetail.flatMap(([gateId, detailId]) => [
+        [gateId, "nein"],
+        [detailId, "veraltete Antwort"],
+      ]),
+    );
+    const visible = computeVisibleQuestionIds(rules, questionIds, answers);
+    const answersToSend = Object.fromEntries(
+      Object.entries(answers).filter(([id]) => visible.has(id)),
+    );
+    for (const [gateId, detailId] of gateToDetail) {
+      expect(answersToSend[gateId]).toBe("nein");
+      expect(answersToSend[detailId]).toBeUndefined();
+    }
   });
 });
 

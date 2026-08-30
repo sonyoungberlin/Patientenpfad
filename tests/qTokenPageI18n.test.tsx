@@ -176,9 +176,12 @@ describe("/q/[token] Mehrsprachigkeit", () => {
       "ANAMNESE_GP_NAME",
       "ANAMNESE_HEIGHT",
       "ANAMNESE_WEIGHT",
+      "ANAMNESE_CHRONIC_GATE",
       "ANAMNESE_CHRONIC",
       "ANAMNESE_HEREDITARY",
+      "ANAMNESE_ALLERGIES_GATE",
       "ANAMNESE_ALLERGIES",
+      "ANAMNESE_MEDICATIONS_GATE",
       "ANAMNESE_MEDICATIONS",
       "ANAMNESE_SMOKING",
       "ANAMNESE_ALCOHOL",
@@ -192,9 +195,14 @@ describe("/q/[token] Mehrsprachigkeit", () => {
     expect(html).toContain("What is your phone number");
     expect(html).toContain("What is your postal address");
     expect(html).toContain("Required for billing and documents.");
-    expect(html).toContain("Do you have a different general practitioner");
+    expect(html).toContain("Are you already registered with another GP practice?");
     expect(html).toContain("How tall are you");
-    expect(html).toContain("Do you suffer from any chronic illnesses");
+    expect(html).toContain("Do you have any chronic conditions?");
+    expect(html).toContain("Which chronic conditions do you have?");
+    expect(html).toContain("Do you have any allergies or intolerances?");
+    expect(html).toContain("Which allergies or intolerances do you have?");
+    expect(html).toContain("Do you take any medication regularly?");
+    expect(html).toContain("Which medications do you take regularly?");
     expect(html).toContain("Is your vaccination status known");
     expect(html).toContain("What is your occupation");
 
@@ -213,13 +221,16 @@ describe("/q/[token] Mehrsprachigkeit", () => {
       "Haben Sie einen Doctolib-Account",
       "Wie lautet Ihre Postanschrift",
       "Wird für Abrechnung und Dokumente benötigt.",
-      "Haben Sie einen Hausarzt",
+      "Haben Sie bereits eine andere Hausarztpraxis",
       "Wie groß sind Sie",
       "Wie viel wiegen Sie",
-      "Leiden Sie an chronischen Erkrankungen",
+      "Bestehen bei Ihnen chronische Erkrankungen",
+      "Welche chronischen Erkrankungen bestehen",
       "Gibt es bekannte Erbkrankheiten",
-      "Haben Sie Allergien oder Unverträglichkeiten",
+      "Bestehen bei Ihnen Allergien oder Unverträglichkeiten",
+      "Welche Allergien oder Unverträglichkeiten bestehen",
       "Nehmen Sie regelmäßig Medikamente",
+      "Welche Medikamente nehmen Sie regelmäßig",
       "Rauchen Sie",
       "Trinken Sie Alkohol",
       "Nehmen Sie sonstige Substanzen",

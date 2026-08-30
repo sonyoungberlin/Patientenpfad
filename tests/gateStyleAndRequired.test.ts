@@ -53,12 +53,55 @@ describe("Pflichtfelder VOLLST_BASISDATEN", () => {
   });
 });
 
+describe("Pflichtfelder KURZANAMNESE", () => {
+  const requiredIds = [
+    "ANAMNESE_GP",
+    "ANAMNESE_GP_NAME",
+    "ANAMNESE_HEIGHT",
+    "ANAMNESE_WEIGHT",
+    "ANAMNESE_CHRONIC_GATE",
+    "ANAMNESE_CHRONIC",
+    "ANAMNESE_ALLERGIES_GATE",
+    "ANAMNESE_ALLERGIES",
+    "ANAMNESE_MEDICATIONS_GATE",
+    "ANAMNESE_MEDICATIONS",
+    "ANAMNESE_SMOKING",
+    "ANAMNESE_ALCOHOL",
+    "ANAMNESE_VACCINATION",
+  ];
+
+  it.each(requiredIds)("%s ist required", (id) => {
+    expect(QUESTION_CATALOG[id].required).toBe(true);
+  });
+
+  it.each([
+    "ANAMNESE_OCCUPATION",
+    "ANAMNESE_HEREDITARY",
+    "ANAMNESE_SUBSTANCES",
+  ])("%s bleibt optional", (id) => {
+    expect(QUESTION_CATALOG[id].required).toBe(false);
+  });
+
+  it("übernimmt die finale Required-Matrix in den Frozen Snapshot", () => {
+    const block = buildFrozenBlocks(["KURZANAMNESE"])[0];
+    const requiredById = new Map(
+      block.questions.map((question) => [question.id, question.required]),
+    );
+    for (const id of requiredIds) expect(requiredById.get(id)).toBe(true);
+    expect(requiredById.get("ANAMNESE_HEREDITARY")).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // 2. MAIN_GATE_QUESTION_IDS enthält alle echten Haupt-Gates
 // ---------------------------------------------------------------------------
 
 describe("MAIN_GATE_QUESTION_IDS – Haupt-Gates enthalten", () => {
   const expectedGates = [
+    "ANAMNESE_GP",
+    "ANAMNESE_CHRONIC_GATE",
+    "ANAMNESE_ALLERGIES_GATE",
+    "ANAMNESE_MEDICATIONS_GATE",
     "VOLLST_ERKR_GATE",
     "VOLLST_ALLERG_GATE",
     "VOLLST_INFEKT_GATE",

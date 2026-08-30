@@ -49,6 +49,10 @@ export function collectConditionQuestionIds(condition: ConditionGroup): Set<stri
  * fälschlich hervorgehoben werden.
  */
 export const MAIN_GATE_QUESTION_IDS: ReadonlySet<string> = new Set([
+  "ANAMNESE_GP",
+  "ANAMNESE_CHRONIC_GATE",
+  "ANAMNESE_ALLERGIES_GATE",
+  "ANAMNESE_MEDICATIONS_GATE",
   "VOLLST_ERKR_GATE",
   "VOLLST_ALLERG_GATE",
   "VOLLST_INFEKT_GATE",
