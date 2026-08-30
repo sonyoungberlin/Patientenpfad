@@ -10,7 +10,6 @@ import {
 } from "@/lib/questionnaire/i18n";
 import { PublicFormView } from "./[slug]/PublicFormView";
 import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
-import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 export async function renderPublicFormPage(
@@ -86,8 +85,8 @@ export async function renderPublicFormPage(
         language={language}
         conditionalRules={conditionalRules}
         successPath={successPath}
+        practice={publicPractice}
       />
-      {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </>
   );
 }

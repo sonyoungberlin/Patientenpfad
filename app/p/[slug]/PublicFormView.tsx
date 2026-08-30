@@ -36,6 +36,8 @@ import {
   QuestionField,
   MAIN_GATE_QUESTION_IDS,
 } from "@/components/questionnaire/QuestionField";
+import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import type { PublicPracticeIdentity } from "@/lib/practice/publicIdentity";
 
 const NOTICE_ID = "public-form-confirm-notice";
 
@@ -96,6 +98,7 @@ export function PublicFormView({
   language = "de",
   conditionalRules,
   successPath,
+  practice,
 }: {
   slug: string;
   title: string;
@@ -106,6 +109,7 @@ export function PublicFormView({
   /** Alle Conditional-Rules aus den gewählten Blöcken. */
   conditionalRules: ConditionalRule[];
   successPath?: string;
+  practice?: PublicPracticeIdentity | null;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -427,6 +431,7 @@ export function PublicFormView({
           {submitting ? t.submitting : t.submit}
         </button>
       </form>
+      {practice && <PublicPracticeFooter practice={practice} />}
     </main>
   );
 }
