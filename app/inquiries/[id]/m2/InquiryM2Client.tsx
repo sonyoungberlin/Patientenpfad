@@ -6,10 +6,7 @@ import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/t
 import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
 import { applyLabCheckpointCoupling } from "@/lib/inquiries/labCheckpointCoupling";
 import {
-  PROCESS_SHELF_GROUP_ORDER,
-  PROCESS_SHELF_GROUPS,
   getProcessShelfGroupForCheckpointId,
-  type ProcessShelfGroupId,
 } from "@/lib/inquiries/processShelfGroups";
 
 export type PlainCheckpoint = {
@@ -55,9 +52,6 @@ export type M2SectionData = {
 type Props = {
   sessionId: string;
   sections: M2SectionData[];
-  globalCheckpoints: PlainCheckpoint[];
-  /** Verfügbare Actions aus den gewählten Profilen (dedupliziert, ohne boundActionCheckpointIds). */
-  profileActionCheckpoints: PlainCheckpoint[];
   initialCheckpointStatuses: Record<string, string>;
   initialActionStatuses: Record<string, string>;
   /** M1B – Kommunikationsanlass-Auswahl pro Profil (menschliche Auswahl). Record<inquiryId, communicationReasonId> */
@@ -97,12 +91,6 @@ const GROUP_BADGE_STYLE = {
  * Diese Actions werden in M3 schubladen-gesteuert aktiviert (siehe processShelfGroups).
  * Reiner UI-Filter – kein Datenmodell-Eingriff, keine Logikänderung.
  */
-const HIDDEN_M2_ACTION_IDS = new Set<string>([
-  "DOCUMENT_UPLOAD",
-  "PROCESSING_DELAY",
-  "TECHNICAL_ISSUE",
-]);
-
 /**
  * Pilot „Schubladen"-Auswahl für M2 (AU / LAB / APPOINTMENT).
  *
@@ -414,7 +402,10 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
   AU: [
     {
       sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE",
-      checkpointIds: ["REQUIRED_INFORMATION_COMPLETE"],
+      checkpointIds: [
+        "REQUIRED_INFORMATION_COMPLETE",
+        "DOCUMENTS_RECEIVED_AND_ASSIGNED",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
@@ -431,6 +422,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "EAU_VALID_WITHOUT_SIGNATURE",
         "RETURN_TO_WORK_ALLOWED_DURING_AU",
         "AU_EXTENSION_REQUIRES_EXAMINATION",
+        "DIGITAL_REQUEST_MEDICAL_REVIEW",
       ],
     },
     {
@@ -583,7 +575,11 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     { sectionIntroId: "SECTION_INTRO_DOCS_COMPLETE", checkpointIds: [] },
     {
       sectionIntroId: "SECTION_INTRO_REVIEWED",
-      checkpointIds: ["ACUTE_PURPOSE", "ACUTE_APPOINTMENT_INFO"],
+      checkpointIds: [
+        "ACUTE_PURPOSE",
+        "ACUTE_APPOINTMENT_INFO",
+        "INFECTIOUS_PROTOCOL",
+      ],
     },
     { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_DOCS_MISSING", checkpointIds: [] },
@@ -3089,163 +3085,9 @@ function OnboardingSpecificSection({
 // Ende ONBOARDING M2 Gruppen-Prototyp
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Section „Weitere passende Hinweise" – standardmäßig eingeklappt. */
-function WeitereHinweiseSection({
-  profileActionCheckpoints,
-  statuses,
-  onChange,
-}: {
-  profileActionCheckpoints: PlainCheckpoint[];
-  statuses: Record<string, string>;
-  onChange: (id: string, val: string) => void;
-}) {
-  const hasAnswered = profileActionCheckpoints.some(
-    (cp) => statuses[cp.id] === "ACTIVE" || statuses[cp.id] === "INACTIVE",
-  );
-  const [isExpanded, setIsExpanded] = useState(hasAnswered);
-  return (
-    <section
-      style={{
-        marginBottom: "1.25rem",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "0.5rem 0.75rem",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div
-          className="text-muted text-small"
-          style={{ ...GROUP_BADGE_STYLE }}
-        >
-          <span aria-hidden="true">→ </span>Weitere passende Hinweise
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsExpanded((prev) => !prev)}
-          style={{
-            padding: "0.2rem 0.6rem",
-            borderRadius: "var(--radius)",
-            border: "1px solid var(--border)",
-            background: "var(--background)",
-            color: "var(--foreground)",
-            cursor: "pointer",
-            fontSize: "0.8rem",
-          }}
-        >
-          {isExpanded ? "Weniger" : "Mehr"}
-        </button>
-      </div>
-      {isExpanded && (
-        <div style={{ marginTop: "0.5rem" }}>
-          {profileActionCheckpoints.map((cp) => (
-            <BoundActionRow
-              key={cp.id}
-              checkpoint={cp}
-              value={statuses[cp.id]}
-              onChange={onChange}
-            />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-type GlobalProcessShelfGroup = {
-  id: ProcessShelfGroupId;
-  label: string;
-  checkpoints: PlainCheckpoint[];
-};
-
-export function buildGlobalProcessShelfGroups(
-  sections: M2SectionData[],
-  profileActionCheckpoints: PlainCheckpoint[],
-): GlobalProcessShelfGroup[] {
-  const checkpointById = new Map<string, PlainCheckpoint>();
-  for (const section of sections) {
-    // Profilbezogene Erklärungen werden bereits unter den Antwortkontexten
-    // oder im bestehenden Fallback gerendert. Sie bleiben in `sections` und
-    // damit für Status-/M3-Pfade erhalten, dürfen aber nicht zusätzlich im
-    // globalen Prozessregal erscheinen.
-    for (const cp of section.specificCheckpoints) {
-      if (cp.kind === InquiryCheckpointKind.EXPLANATION && cp.scope === InquiryCheckpointScope.SPECIFIC) continue;
-      checkpointById.set(cp.id, cp);
-    }
-    for (const cp of section.actionCheckpoints) checkpointById.set(cp.id, cp);
-    for (const cp of section.allBoundActionCheckpoints ?? []) checkpointById.set(cp.id, cp);
-    for (const cp of section.sectionIntroCheckpoints ?? []) checkpointById.set(cp.id, cp);
-  }
-  for (const cp of profileActionCheckpoints) checkpointById.set(cp.id, cp);
-
-  const grouped = new Map<ProcessShelfGroupId, PlainCheckpoint[]>();
-  for (const checkpoint of checkpointById.values()) {
-    const groupId = getProcessShelfGroupForCheckpointId(checkpoint.id);
-    if (!groupId) continue;
-    const entries = grouped.get(groupId) ?? [];
-    entries.push(checkpoint);
-    grouped.set(groupId, entries);
-  }
-
-  return PROCESS_SHELF_GROUP_ORDER.flatMap((id) => {
-    const checkpoints = grouped.get(id) ?? [];
-    if (checkpoints.length === 0) return [];
-    const label = id === "waitingProcessingTechnical"
-      ? "Warten / Technik"
-      : PROCESS_SHELF_GROUPS[id].label;
-    return [{ id, label, checkpoints }];
-  });
-}
-
-function ProcessShelfOrientationSection({
-  sections,
-  profileActionCheckpoints,
-  statuses,
-  onChange,
-}: {
-  sections: M2SectionData[];
-  profileActionCheckpoints: PlainCheckpoint[];
-  statuses: Record<string, string>;
-  onChange: (id: string, value: string) => void;
-}) {
-  const groups = buildGlobalProcessShelfGroups(sections, profileActionCheckpoints);
-  if (groups.length === 0) return null;
-
-  return (
-    <section style={{ marginBottom: "1.5rem" }} data-process-shelves>
-      <h2>Prozessregale</h2>
-      {groups.map((group) => (
-        <details key={group.id} style={{ borderBottom: "1px solid var(--border)", padding: "0.5rem 0" }}>
-          <summary style={{ fontWeight: 600 }}>{group.label}</summary>
-          <div style={{ marginTop: "0.5rem" }}>
-            {group.checkpoints.map((checkpoint) =>
-              checkpoint.kind === InquiryCheckpointKind.ACTION ? (
-                <BoundActionRow
-                  key={checkpoint.id}
-                  checkpoint={checkpoint}
-                  value={statuses[checkpoint.id]}
-                  onChange={onChange}
-                />
-              ) : (
-                <SwitchRow
-                  key={checkpoint.id}
-                  checkpoint={checkpoint}
-                  value={statuses[checkpoint.id]}
-                  onChange={onChange}
-                />
-              ),
-            )}
-          </div>
-        </details>
-      ))}
-    </section>
-  );
-}
-
 export default function InquiryM2Client({
   sessionId,
   sections,
-  globalCheckpoints,
-  profileActionCheckpoints,
   initialCheckpointStatuses,
   initialActionStatuses,
   initialCommunicationReasonSelection,
@@ -3329,45 +3171,6 @@ export default function InquiryM2Client({
 
   return (
     <div style={{ maxWidth: "42rem" }}>
-      {/* 1. GLOBAL Checkpoints – kompakter, optionaler Zusatzbereich oben.
-           Bewusst weniger dominant: keine massive graue Fläche, nur dezenter
-           Rahmen, damit der Fokus auf den Profil-Antwortkontexten bleibt. */}
-      {globalCheckpoints.length > 0 && (
-        <section
-          style={{
-            marginBottom: "1.25rem",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            padding: "0.6rem 0.8rem",
-          }}
-        >
-          <div
-            className="text-muted text-small"
-            style={{ ...GROUP_BADGE_STYLE, marginBottom: "0.25rem" }}
-          >
-            <span aria-hidden="true">ⓘ </span>Globale Hinweise
-          </div>
-          <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.25rem" }}>
-            Basisinformationen
-          </div>
-          {globalCheckpoints.map((cp) => (
-            <SwitchRow
-              key={cp.id}
-              checkpoint={cp}
-              value={statuses[cp.id]}
-              onChange={setStatus}
-            />
-          ))}
-        </section>
-      )}
-
-      <ProcessShelfOrientationSection
-        sections={sections}
-        profileActionCheckpoints={profileActionCheckpoints}
-        statuses={statuses}
-        onChange={setStatus}
-      />
-
       {profileSections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
@@ -3443,18 +3246,6 @@ export default function InquiryM2Client({
           />
         ),
       )}
-
-      {/* 4. Weitere passende Hinweise – nur für Profile ohne PRESCRIPTION / AU / REFERRAL / HOSPITAL_ADMISSION / LAB / IMMUNIZATION / ONBOARDING.
-           Globale Prozess-Actions (DOCUMENT_UPLOAD/PROCESSING_DELAY/TECHNICAL_ISSUE) werden hier ausgeblendet –
-           sie werden in M3 schubladen-gesteuert aktiviert. */}
-      {profileActionCheckpoints.filter((cp) => !HIDDEN_M2_ACTION_IDS.has(cp.id)).length > 0 &&
-        !sections.some((s) => s.inquiryId === "PRESCRIPTION" || s.inquiryId === "AU" || s.inquiryId === "REFERRAL" || s.inquiryId === "HOSPITAL_ADMISSION" || s.inquiryId === "LAB" || s.inquiryId === "APPOINTMENT" || s.inquiryId === "IMMUNIZATION" || s.inquiryId === "ONBOARDING") && (
-          <WeitereHinweiseSection
-            profileActionCheckpoints={profileActionCheckpoints.filter((cp) => !HIDDEN_M2_ACTION_IDS.has(cp.id))}
-            statuses={statuses}
-            onChange={setStatus}
-          />
-        )}
 
       {error && (
         <p style={{ color: "var(--destructive)", margin: "0 0 1rem" }}>{error}</p>
