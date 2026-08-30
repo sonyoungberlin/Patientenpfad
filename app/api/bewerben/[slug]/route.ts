@@ -39,6 +39,7 @@ import { PracticeRole } from "@prisma/client";
 import { VALID_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles";
 import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
+import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,13 @@ function successRedirect(req: NextRequest, slug: string): NextResponse {
 
 function notFoundHtml(): NextResponse {
   return new NextResponse("Not Found", {
+    status: 404,
+    headers: { "content-type": "text/plain; charset=utf-8" },
+  });
+}
+
+function unavailableHtml(): NextResponse {
+  return new NextResponse(PRACTICE_SERVICE_UNAVAILABLE_MESSAGE, {
     status: 404,
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
@@ -185,6 +193,7 @@ export async function POST(
           select: {
             id: true,
             is_approved: true,
+            disabled_at: true,
             office_cases_enabled: true,
             office_application_notification_email: true,
             memberships: {
@@ -196,9 +205,13 @@ export async function POST(
         }),
     );
 
+    if (practice?.disabled_at != null) {
+      return unavailableHtml();
+    }
     if (
       !practice ||
       !practice.is_approved ||
+      practice.disabled_at != null ||
       !practice.office_cases_enabled ||
       practice.memberships.length === 0
     ) {

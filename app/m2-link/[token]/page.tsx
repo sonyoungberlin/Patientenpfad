@@ -4,6 +4,7 @@ import { backfillPerspectives, ensureSelectionConditionalCheckpoints } from "@/l
 import { M2TokenFormClient } from "./M2TokenFormClient";
 import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import { isPracticeActive, PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 const EXPIRED_MESSAGE = "Dieser Link ist abgelaufen. Bitte wenden Sie sich an die Praxis.";
 
@@ -26,13 +27,16 @@ export default async function M2TokenPage({
   const isValid =
     session !== null &&
     session.m2_token_expires_at !== null &&
-    session.m2_token_expires_at >= new Date();
+    session.m2_token_expires_at >= new Date() &&
+    (!session.owner_practice ||
+      typeof session.owner_practice.is_approved !== "boolean" ||
+      isPracticeActive(session.owner_practice));
   const publicPractice = session?.owner_practice ?? null;
 
   if (!isValid) {
     return (
       <main>
-        <p data-m2-expired>{EXPIRED_MESSAGE}</p>
+        <p data-m2-expired>{session?.owner_practice && typeof session.owner_practice.is_approved === "boolean" && !isPracticeActive(session.owner_practice) ? PRACTICE_SERVICE_UNAVAILABLE_MESSAGE : EXPIRED_MESSAGE}</p>
         {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
       </main>
     );

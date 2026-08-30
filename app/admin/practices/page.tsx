@@ -28,6 +28,7 @@ export default async function AdminPracticesPage() {
       name: true,
       slug: true,
       is_approved: true,
+      disabled_at: true,
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
       website_forms_enabled: true,
@@ -81,7 +82,9 @@ export default async function AdminPracticesPage() {
             <th>Slug</th>
             <th>OWNER-E-Mail(s)</th>
             <th>Mitglieder</th>
-            <th>freigeschaltet</th>
+            <th>Status</th>
+            <th>Deaktiviert seit</th>
+            <th>Löschbar ab</th>
             <th>Anfrage-Assistent</th>
             <th>Patientenkommunikation</th>
             <th>Website-Formulare</th>
@@ -104,7 +107,9 @@ export default async function AdminPracticesPage() {
                   )}
                 </td>
                 <td>{p._count.memberships}</td>
-                <td>{p.is_approved ? "✓" : "–"}</td>
+                <td>{p.is_approved && !p.disabled_at ? "Aktiv" : "Deaktiviert"}</td>
+                <td>{p.disabled_at ? p.disabled_at.toLocaleDateString("de-DE") : "–"}</td>
+                <td>{p.disabled_at ? new Date(p.disabled_at.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("de-DE") : "–"}</td>
                 <td>{p.inquiry_assistant_enabled ? "✓" : "–"}</td>
                 <td>{p.patient_communication_enabled ? "✓" : "–"}</td>
                 <td>{p.website_forms_enabled ? "✓" : "–"}</td>
@@ -117,7 +122,7 @@ export default async function AdminPracticesPage() {
           })}
           {practices.length === 0 && (
             <tr>
-              <td colSpan={10} className="text-muted">
+              <td colSpan={12} className="text-muted">
                 Keine Praxen vorhanden.
               </td>
             </tr>

@@ -24,6 +24,9 @@ export default async function PracticeLegalProfilePage() {
       <p className="text-muted">
         Diese zentralen Vertrags- und Impressumsdaten können nur durch den Plattformbetreiber geändert werden.
       </p>
+      <p className="text-muted">
+        Die offiziellen Praxisdaten werden für die eindeutige Zuordnung Ihrer Praxis auf öffentlichen Patientenformularen verwendet. Änderungen erfolgen durch den Plattformbetreiber.
+      </p>
       {profile ? (
         <PracticeLegalProfileDetails profile={profile} />
       ) : (

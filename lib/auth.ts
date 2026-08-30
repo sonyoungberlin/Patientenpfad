@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { PracticeRole } from "@prisma/client";
 import { prisma } from "./prisma";
+import { isPracticeActive } from "./practice/lifecycle";
 
 export const SESSION_COOKIE = "pp_session";
 export const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -18,6 +19,7 @@ export type SessionPractice = {
   slug: string;
   name: string;
   is_approved: boolean;
+  disabled_at?: Date | null;
   inquiry_assistant_enabled: boolean;
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
@@ -81,6 +83,7 @@ type LoadedMembership = {
     slug: string;
     name: string;
     is_approved: boolean;
+    disabled_at: Date | null;
     inquiry_assistant_enabled: boolean;
     patient_communication_enabled: boolean;
     website_forms_enabled: boolean;
@@ -94,17 +97,18 @@ function pickCurrentMembership(
   defaultPracticeId: string | null | undefined,
 ): LoadedMembership | null {
   if (!memberships || memberships.length === 0) return null;
+  const activeMemberships = memberships.filter((membership) => isPracticeActive(membership.practice));
   if (defaultPracticeId) {
-    const def = memberships.find((m) => m.practice_id === defaultPracticeId);
+    const def = activeMemberships.find((m) => m.practice_id === defaultPracticeId);
     if (def) return def;
-    // Ungültiger Default → ignorieren, weiter zur OWNER-/ältesten-Heuristik.
+    // Deaktivierter Default → aktive Practice bevorzugen.
   }
-  const owner = memberships.find((m) => m.role === PracticeRole.OWNER);
+  const owner = activeMemberships.find((m) => m.role === PracticeRole.OWNER);
   if (owner) return owner;
-  const sorted = [...memberships].sort(
+  const sorted = [...activeMemberships].sort(
     (a, b) => a.created_at.getTime() - b.created_at.getTime(),
   );
-  return sorted[0] ?? null;
+  return sorted[0] ?? memberships[0] ?? null;
 }
 
 async function resolveAccount(token: string | undefined): Promise<SessionAccount | null> {
@@ -136,6 +140,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
                   slug: true,
                   name: true,
                   is_approved: true,
+                  disabled_at: true,
                   inquiry_assistant_enabled: true,
                   patient_communication_enabled: true,
                   website_forms_enabled: true,
@@ -176,6 +181,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
         slug: picked.practice.slug,
         name: picked.practice.name,
         is_approved: picked.practice.is_approved,
+        disabled_at: picked.practice.disabled_at,
         inquiry_assistant_enabled: picked.practice.inquiry_assistant_enabled,
         patient_communication_enabled:
           picked.practice.patient_communication_enabled,
@@ -205,7 +211,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
     | "arbeitsprozesse_enabled"
   > = current_practice
     ? {
-        is_approved: current_practice.is_approved,
+        is_approved: isPracticeActive(current_practice),
         inquiry_assistant_enabled: current_practice.inquiry_assistant_enabled,
         patient_communication_enabled:
           current_practice.patient_communication_enabled,

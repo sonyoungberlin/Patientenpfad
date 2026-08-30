@@ -15,7 +15,7 @@ export default async function PracticePrivacyPage({ params }: { params: Promise<
   const validation = validateSlug(slug);
   if (!validation.ok) notFound();
   const practice = await getPublicPracticeIdentityBySlug(validation.slug);
-  if (!practice || !practice.is_approved) notFound();
+  if (!practice) notFound();
   const profile = practice.legal_profile;
   const stableSlug = publicPracticeSlug(practice);
 
@@ -42,6 +42,13 @@ export default async function PracticePrivacyPage({ params }: { params: Promise<
         <p>Offizielle Kontaktdaten wurden für diese Praxis noch nicht hinterlegt.</p>
       )}
       <p><Link href={`/praxis/${stableSlug}/impressum`}>Zum Praxis-Impressum</Link></p>
+      {profile?.official_privacy_url && (
+        <p>
+          <a href={profile.official_privacy_url}>
+            Zur offiziellen Datenschutzerklärung der Praxis
+          </a>
+        </p>
+      )}
 
       <h2>Technischer Plattformbetrieb</h2>
       <p>

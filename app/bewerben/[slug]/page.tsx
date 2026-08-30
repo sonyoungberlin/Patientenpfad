@@ -14,6 +14,7 @@ import { OFFICE_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 import { getPublicPracticeIdentityById } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,7 +37,8 @@ export default async function BewerbenPage({
       prisma.practice.findUnique({
         where,
         select: {
-          is_approved: true,
+            is_approved: true,
+            disabled_at: true,
           id: true,
           office_cases_enabled: true,
           name: true,
@@ -44,6 +46,9 @@ export default async function BewerbenPage({
       }),
   );
 
+  if (practice?.disabled_at != null) {
+    return <main><p>{PRACTICE_SERVICE_UNAVAILABLE_MESSAGE}</p></main>;
+  }
   if (!practice || !practice.is_approved || !practice.office_cases_enabled) {
     notFound();
   }

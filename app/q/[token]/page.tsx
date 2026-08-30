@@ -25,6 +25,7 @@ import {
 import { QuestionnaireFormClient } from "./QuestionnaireFormClient";
 import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import { isPracticeActive, PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 // Always render per-request so the page reads fresh token state from the DB
 // and is never served from the Full Route Cache (would expose stale form HTML
@@ -89,6 +90,10 @@ export default async function QuestionnairePage({
 
   const language = normalizeQuestionnaireLanguage(session.patient_language);
   const publicPractice = session.owner_practice;
+
+  if (publicPractice && typeof publicPractice.is_approved === "boolean" && !isPracticeActive(publicPractice)) {
+    return <main><p data-q-unavailable>{PRACTICE_SERVICE_UNAVAILABLE_MESSAGE}</p></main>;
+  }
 
   if (session.token_expires_at < new Date()) {
     return (

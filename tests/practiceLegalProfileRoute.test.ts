@@ -97,3 +97,15 @@ it("verwirft eine manipulierte Praxis-ID aus dem Body", async () => {
   expect(response.status).toBe(400);
   expect(pm.practice.findUnique).not.toHaveBeenCalled();
 });
+
+it.each(["javascript:alert(1)", "ftp://praxis.example/impressum"]) (
+  "weist externe Rechtslinks mit nicht erlaubtem Protokoll ab: %s",
+  async (url) => {
+    requireAdminMock.mockResolvedValue({ account: { id: "platform-admin" }, error: null });
+    const response = await PUT(request({ ...valid, official_imprint_url: url }), {
+      params: Promise.resolve({ id: "p-1" }),
+    });
+    expect(response.status).toBe(400);
+    expect(pm.practice.findUnique).not.toHaveBeenCalled();
+  },
+);

@@ -15,6 +15,8 @@ const profile = (name: string, street: string) => ({
   country: "Deutschland",
   official_email: `${name.toLowerCase()}@example.test`,
   phone: "030 123456",
+  official_imprint_url: `https://${name.toLowerCase().replaceAll(" ", "-")}.example/impressum`,
+  official_privacy_url: `https://${name.toLowerCase().replaceAll(" ", "-")}.example/datenschutz`,
   medical_chamber: null,
   professional_title: null,
   professional_title_country: null,
@@ -38,6 +40,7 @@ const practice = (id: string, slug: string, name: string, street: string) => ({
   name,
   public_name: name,
   is_approved: true,
+  disabled_at: null,
   patient_communication_enabled: true,
   website_forms_enabled: true,
   office_cases_enabled: true,
@@ -52,8 +55,8 @@ describe("öffentliche Praxisidentität", () => {
     );
     expect(html).toContain("Praxis A");
     expect(html).toContain("A-Straße");
-    expect(html).toContain('/praxis/praxis-a/impressum');
-    expect(html).toContain('/praxis/praxis-a/datenschutz');
+    expect(html).toContain('https://praxis-a.example/impressum');
+    expect(html).toContain('https://praxis-a.example/datenschutz');
     expect(html).not.toContain("Praxis B");
   });
 
@@ -63,7 +66,7 @@ describe("öffentliche Praxisidentität", () => {
     );
     expect(html).toContain("Praxis B");
     expect(html).toContain("B-Straße");
-    expect(html).toContain('/praxis/praxis-b/impressum');
+    expect(html).toContain('https://praxis-b.example/impressum');
     expect(html).not.toContain("Praxis A");
   });
 });

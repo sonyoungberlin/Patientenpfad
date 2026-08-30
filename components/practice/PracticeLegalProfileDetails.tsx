@@ -10,6 +10,8 @@ type LegalProfile = {
   country: string;
   official_email: string;
   phone: string;
+  official_imprint_url?: string | null;
+  official_privacy_url?: string | null;
   medical_chamber: string | null;
   professional_title: string | null;
   professional_title_country: string | null;
@@ -48,6 +50,8 @@ export function PracticeLegalProfileDetails({ profile }: { profile: LegalProfile
       <dt>Anschrift</dt><dd>{profile.street} {profile.house_number}, {profile.postal_code} {profile.city}, {profile.country}</dd>
       <dt>E-Mail</dt><dd>{profile.official_email}</dd>
       <dt>Telefon</dt><dd>{profile.phone}</dd>
+      {profile.official_imprint_url && <><dt>Offizielles Impressum</dt><dd><a href={profile.official_imprint_url}>{profile.official_imprint_url}</a></dd></>}
+      {profile.official_privacy_url && <><dt>Offizielle Datenschutzerklärung</dt><dd><a href={profile.official_privacy_url}>{profile.official_privacy_url}</a></dd></>}
       {OPTIONAL_ROWS.map(([field, label]) => {
         const value = profile[field];
         if (!value) return null;

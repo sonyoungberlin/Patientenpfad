@@ -50,6 +50,6 @@ export default async function SubmittedPage({ params }: { params: Promise<{ slug
   });
   if (!form?.owner_practice_id) notFound();
   const practice = await getPublicPracticeIdentityById(form.owner_practice_id);
-  if (!practice || !practice.is_approved) notFound();
+  if (!practice || !practice.is_approved || practice.disabled_at != null) notFound();
   return <SubmittedContent practice={practice} />;
 }

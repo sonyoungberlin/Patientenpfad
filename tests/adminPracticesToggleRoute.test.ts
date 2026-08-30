@@ -12,6 +12,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     practice: {
       update: jest.fn(),
+      findUnique: jest.fn(),
     },
     account: {
       update: jest.fn(),
@@ -34,12 +35,25 @@ import { deletePracticeById } from "@/lib/adminActions";
 import { POST } from "@/app/api/admin/practices/[id]/route";
 
 type PrismaMock = {
-  practice: { update: jest.Mock };
+  practice: { update: jest.Mock; findUnique: jest.Mock };
   account: { update: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
 const getSessionAccountMock = getSessionAccount as jest.Mock;
 const deletePracticeByIdMock = deletePracticeById as jest.Mock;
+
+const completeLegalProfile = {
+  official_practice_name: "Praxis Eins",
+  street: "Musterweg",
+  house_number: "1",
+  postal_code: "12345",
+  city: "Musterstadt",
+  country: "Deutschland",
+  official_email: "praxis@example.test",
+  phone: "030 123",
+  official_imprint_url: "https://praxis.example/impressum",
+  official_privacy_url: "https://praxis.example/datenschutz",
+};
 
 function adminAccount(over: Partial<{ is_admin: boolean }> = {}) {
   return {
@@ -78,6 +92,7 @@ const ctx = (id: string) => ({ params: Promise.resolve({ id }) });
 
 beforeEach(() => {
   pm.practice.update.mockReset();
+  pm.practice.findUnique.mockReset();
   pm.account.update.mockReset();
   getSessionAccountMock.mockReset();
   deletePracticeByIdMock.mockReset();
@@ -149,6 +164,7 @@ describe("POST /api/admin/practices/[id] — Validierung", () => {
 describe("POST /api/admin/practices/[id] — Happy Path", () => {
   beforeEach(() => {
     getSessionAccountMock.mockResolvedValue(adminAccount());
+    pm.practice.findUnique.mockResolvedValue({ legal_profile: completeLegalProfile });
     pm.practice.update.mockResolvedValue({
       id: "p-1",
       is_approved: true,
@@ -168,7 +184,11 @@ describe("POST /api/admin/practices/[id] — Happy Path", () => {
     expect(res.status).toBe(200);
     const args = pm.practice.update.mock.calls[0][0];
     expect(args.where).toEqual({ id: "p-1" });
-    expect(args.data).toEqual({ [flag]: true });
+    if (flag === "is_approved") {
+      expect(args.data).toEqual({ is_approved: true, disabled_at: null });
+    } else {
+      expect(args.data).toEqual({ [flag]: true });
+    }
     // Bewusst keine Account-Spiegelung — Account-Spalten sind Legacy.
     expect(pm.account.update).not.toHaveBeenCalled();
   });
@@ -180,7 +200,8 @@ describe("POST /api/admin/practices/[id] — Happy Path", () => {
     );
     expect(res.status).toBe(200);
     const args = pm.practice.update.mock.calls[0][0];
-    expect(args.data).toEqual({ is_approved: false });
+    expect(args.data.is_approved).toBe(false);
+    expect(args.data.disabled_at).toBeInstanceOf(Date);
   });
 
   it('akzeptiert string "true" / "false" (Form-Pfad)', async () => {
@@ -190,7 +211,8 @@ describe("POST /api/admin/practices/[id] — Happy Path", () => {
     );
     expect(res.status).toBe(303);
     const args = pm.practice.update.mock.calls[0][0];
-    expect(args.data).toEqual({ is_approved: false });
+    expect(args.data.is_approved).toBe(false);
+    expect(args.data.disabled_at).toBeInstanceOf(Date);
   });
 
   it("Form-encoded: 303-Redirect mit ?toggled=<flag>", async () => {
@@ -202,6 +224,43 @@ describe("POST /api/admin/practices/[id] — Happy Path", () => {
     const loc = res.headers.get("location") ?? "";
     expect(loc).toContain("/admin/practices/p-1");
     expect(loc).toContain("toggled=website_forms_enabled");
+  });
+
+  it.each([
+    ["official_practice_name", "Praxisname"],
+    ["street", "Straße"],
+    ["house_number", "Hausnummer"],
+    ["postal_code", "PLZ"],
+    ["city", "Ort"],
+    ["country", "Land"],
+    ["official_email", "offizielle E-Mail-Adresse"],
+    ["phone", "Telefonnummer"],
+    ["official_imprint_url", "Impressums-URL"],
+    ["official_privacy_url", "Datenschutz-URL"],
+  ])("verhindert neue Freischaltung bei fehlendem Feld %s", async (field, label) => {
+    pm.practice.findUnique.mockResolvedValue({
+      legal_profile: { ...completeLegalProfile, [field]: null },
+    });
+    const res = await POST(jsonReq("p-1", { flag: "is_approved", value: true }), ctx("p-1"));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain(label);
+    expect(pm.practice.update).not.toHaveBeenCalled();
+  });
+
+  it("weist ungültige Rechts-URL bei neuer Freischaltung ab", async () => {
+    pm.practice.findUnique.mockResolvedValue({
+      legal_profile: { ...completeLegalProfile, official_privacy_url: "javascript:alert(1)" },
+    });
+    const res = await POST(jsonReq("p-1", { flag: "is_approved", value: true }), ctx("p-1"));
+    expect(res.status).toBe(400);
+    expect(pm.practice.update).not.toHaveBeenCalled();
+  });
+
+  it("deaktiviert eine bereits aktive Alt-Praxis trotz unvollständigem Profil weiterhin", async () => {
+    pm.practice.findUnique.mockResolvedValue({ legal_profile: { official_practice_name: "Praxis Eins" } });
+    const res = await POST(jsonReq("p-1", { flag: "is_approved", value: false }), ctx("p-1"));
+    expect(res.status).toBe(200);
+    expect(pm.practice.update).toHaveBeenCalled();
   });
 });
 

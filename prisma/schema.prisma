@@ -585,6 +585,9 @@ model Practice {
 
   /// Carry-Over aus `Account.is_approved`. Default `false` für neue Inserts.
   is_approved                   Boolean @default(false)
+  /// Zeitpunkt der manuellen Deaktivierung; NULL bedeutet nicht deaktiviert.
+  /// Wird bei Reaktivierung wieder auf NULL gesetzt.
+  disabled_at                   DateTime?
   /// Carry-Over aus `Account.inquiry_assistant_enabled`.
   inquiry_assistant_enabled     Boolean @default(false)
   /// Carry-Over aus `Account.patient_communication_enabled`.
@@ -712,6 +715,8 @@ model PracticeLegalProfile {
   country                String   @default("Deutschland")
   official_email         String
   phone                   String
+  official_imprint_url   String?
+  official_privacy_url   String?
 
   medical_chamber              String?
   professional_title           String?

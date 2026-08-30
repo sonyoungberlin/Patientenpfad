@@ -39,6 +39,7 @@ it.each(["OWNER", "ADMIN"])("%s kann das offizielle Profil lesen", async () => {
   });
   const html = renderToStaticMarkup(await PracticeLegalProfilePage());
   expect(html).toContain("Praxis Eins");
+  expect(html).toContain("eindeutige Zuordnung Ihrer Praxis");
   expect(html).not.toContain("<form");
 });
 

@@ -38,6 +38,7 @@ import {
 } from "@/lib/websiteForms/constants";
 import { PUBLIC_IDENTITY_SELECT, type PublicPracticeIdentity } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import { isPracticeActive } from "@/lib/practice/lifecycle";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -116,15 +117,21 @@ function AlreadyConfirmedView({ practice }: { practice?: PublicPracticeIdentity 
 function isOwnerCascadeValid(
   owner: {
     is_approved: boolean;
+    disabled_at?: Date | null;
     patient_communication_enabled: boolean;
     website_forms_enabled: boolean;
   } | null,
+  practice?: { is_approved: boolean; disabled_at?: Date | null } | null,
 ): boolean {
   return Boolean(
     owner &&
       owner.is_approved &&
+      owner.disabled_at == null &&
       owner.patient_communication_enabled &&
-      owner.website_forms_enabled,
+      owner.website_forms_enabled &&
+      (!practice ||
+        typeof practice.is_approved !== "boolean" ||
+        isPracticeActive(practice)),
   );
 }
 
@@ -189,7 +196,7 @@ export default async function ConfirmPage({
   if (
     session.status === "completed" &&
     session.confirmed_at !== null &&
-    isOwnerCascadeValid(session.owner_account) &&
+    isOwnerCascadeValid(session.owner_account, session.owner_practice) &&
     session.practice_form?.is_active === true
   ) {
     logConfirm("already_confirmed", { sessionId: session.id });
@@ -215,7 +222,7 @@ export default async function ConfirmPage({
 
   // 4. Owner-/Feature-Flags prüfen (Praxis kann zwischenzeitlich abgeschaltet
   //    worden sein). Identische Cascade wie `/p/[slug]/page.tsx`.
-  if (!isOwnerCascadeValid(session.owner_account)) {
+  if (!isOwnerCascadeValid(session.owner_account, session.owner_practice)) {
     logConfirm("owner_disabled");
     return <ErrorView practice={publicPractice} />;
   }

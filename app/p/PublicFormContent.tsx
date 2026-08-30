@@ -11,6 +11,7 @@ import {
 import { PublicFormView } from "./[slug]/PublicFormView";
 import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 export async function renderPublicFormPage(
   slug: string,
@@ -46,6 +47,10 @@ export async function renderPublicFormPage(
   });
 
   if (!form || !form.is_active) notFound();
+
+  if (form.owner_practice?.disabled_at != null) {
+    return <main><p>{PRACTICE_SERVICE_UNAVAILABLE_MESSAGE}</p></main>;
+  }
 
   const flags = getEffectivePracticeFlags(form);
   if (

@@ -19,6 +19,8 @@ const FIELDS: Array<{
   { name: "country", label: "Land", required: true },
   { name: "official_email", label: "Offizielle E-Mail-Adresse", required: true, type: "email" },
   { name: "phone", label: "Telefon", required: true },
+  { name: "official_imprint_url", label: "Offizielle Impressums-URL", type: "url" },
+  { name: "official_privacy_url", label: "Offizielle Datenschutz-URL", type: "url" },
   { name: "medical_chamber", label: "Zuständige Ärztekammer" },
   { name: "professional_title", label: "Gesetzliche Berufsbezeichnung" },
   { name: "professional_title_country", label: "Staat der Verleihung" },

@@ -25,7 +25,7 @@ type DeletePracticeResponse =
   | {
       ok: false;
       deleted: false;
-      code: "confirm_name_mismatch" | "practice_not_found" | "practice_not_empty";
+      code: "confirm_name_mismatch" | "practice_not_found" | "practice_not_empty" | "practice_not_deletable";
       error: string;
       blockers?: DeletePracticeBlocker[];
     };
@@ -47,9 +47,11 @@ function asFailure(
 export function DeletePracticeButton({
   practiceId,
   practiceName,
+  canDelete = true,
 }: {
   practiceId: string;
   practiceName: string;
+  canDelete?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -100,6 +102,7 @@ export function DeletePracticeButton({
       <button
         type="button"
         data-delete-practice-toggle={practiceId}
+        disabled={!canDelete}
         onClick={() => {
           setOpen(true);
           setConfirmName("");

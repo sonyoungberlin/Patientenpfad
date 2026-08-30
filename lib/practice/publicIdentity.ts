@@ -8,6 +8,7 @@ export const PUBLIC_IDENTITY_SELECT = {
   name: true,
   public_name: true,
   is_approved: true,
+  disabled_at: true,
   patient_communication_enabled: true,
   website_forms_enabled: true,
   office_cases_enabled: true,

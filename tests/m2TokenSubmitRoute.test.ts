@@ -159,6 +159,20 @@ describe("POST /api/m2-link/[token]", () => {
     expect(json.ok).toBe(false);
   });
 
+  it("blockiert den Rücklauf einer deaktivierten Praxis neutral", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      m2_token_expires_at: futureDate(14),
+      owner_practice: { is_approved: false, disabled_at: new Date() },
+    });
+    const response = await POST(makeRequest("disabled-token", { prefill: {} }), {
+      params: Promise.resolve({ token: "disabled-token" }),
+    });
+    expect(response.status).toBe(404);
+    expect((await response.json()).error).toContain("Praxisdienst ist derzeit nicht verfügbar");
+    expect(appendFrozenRunMock).not.toHaveBeenCalled();
+  });
+
   it("gibt 400 zurück bei fehlendem prefill-Feld", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       id: "case-1",

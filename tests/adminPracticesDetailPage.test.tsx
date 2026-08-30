@@ -212,6 +212,26 @@ describe("/admin/practices/[id] detail page", () => {
     expect(markup).toContain("Boom");
   });
 
+  it("warnt bei aktiver Praxis mit unvollständigem Altprofil", async () => {
+    getCookies.mockResolvedValue(adminAccount());
+    pm.practice.findUnique.mockResolvedValue({
+      id: "p-1",
+      name: "Praxis Eins",
+      slug: "p1",
+      is_approved: true,
+      legal_profile: { official_practice_name: "Praxis Eins" },
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled: false,
+      website_forms_enabled: false,
+      office_cases_enabled: false,
+      arbeitsprozesse_enabled: false,
+      created_at: new Date("2025-01-01"),
+      memberships: [],
+    });
+    const r = await runPage("p-1");
+    expect(r.markup).toContain("Warnung: Bereits freigeschaltete Praxis mit unvollständigem Praxisprofil.");
+  });
+
   it("Standard-Praxis: zeigt Setzen-Button für Mitglied ohne Default", async () => {
     getCookies.mockResolvedValue(adminAccount());
     pm.practice.findUnique.mockResolvedValue({

@@ -74,7 +74,9 @@ export type DeletePracticeBlocker = {
     | "InquirySession"
     | "CaseSession"
     | "OfficeCaseSession"
-    | "PracticeQuestionnaireForm";
+    | "PracticeQuestionnaireForm"
+    | "DigitalRequest"
+    | "PracticeCatalogEntry";
   count: number;
   reason: "not_empty";
 };
@@ -92,7 +94,7 @@ export type DeletePracticeFailure = {
   ok: false;
   deleted: false;
   status: 400 | 404 | 409;
-  code: "confirm_name_mismatch" | "practice_not_found" | "practice_not_empty";
+  code: "confirm_name_mismatch" | "practice_not_found" | "practice_not_empty" | "practice_not_deletable";
   error: string;
   blockers?: DeletePracticeBlocker[];
 };
@@ -512,19 +514,6 @@ export async function deleteAccount(
   };
 }
 
-function createPracticeCountBlocker(
-  model:
-    | "PatientQuestionnaireSession"
-    | "InquirySession"
-    | "CaseSession"
-    | "OfficeCaseSession"
-    | "PracticeQuestionnaireForm",
-  count: number,
-): DeletePracticeBlocker | null {
-  if (count <= 0) return null;
-  return { model, count, reason: "not_empty" };
-}
-
 /**
  * Löscht eine Practice nur dann hart, wenn keine produktiven Daten mehr
  * für diese Practice vorhanden sind.
@@ -535,7 +524,7 @@ export async function deletePracticeById(
 ): Promise<DeletePracticeResult> {
   const practice = await prisma.practice.findUnique({
     where: { id: practiceId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, disabled_at: true },
   });
 
   if (!practice) {
@@ -558,40 +547,33 @@ export async function deletePracticeById(
     };
   }
 
-  const [questionnaireCount, inquiryCount, caseCount, officeCaseCount, formCount] =
-    await Promise.all([
-      prisma.patientQuestionnaireSession.count({
-        where: { owner_practice_id: practice.id },
-      }),
-      prisma.inquirySession.count({ where: { owner_practice_id: practice.id } }),
-      prisma.caseSession.count({ where: { owner_practice_id: practice.id } }),
-      prisma.officeCaseSession.count({ where: { owner_practice_id: practice.id } }),
-      prisma.practiceQuestionnaireForm.count({
-        where: { owner_practice_id: practice.id },
-      }),
-    ]);
-
-  const blockers: DeletePracticeBlocker[] = [
-    createPracticeCountBlocker("PatientQuestionnaireSession", questionnaireCount),
-    createPracticeCountBlocker("InquirySession", inquiryCount),
-    createPracticeCountBlocker("CaseSession", caseCount),
-    createPracticeCountBlocker("OfficeCaseSession", officeCaseCount),
-    createPracticeCountBlocker("PracticeQuestionnaireForm", formCount),
-  ].filter((entry): entry is DeletePracticeBlocker => entry !== null);
-
-  if (blockers.length > 0) {
+  const deletableAt = practice.disabled_at
+    ? new Date(practice.disabled_at.getTime() + 30 * 24 * 60 * 60 * 1000)
+    : null;
+  if (!deletableAt || deletableAt > new Date()) {
     return {
       ok: false,
       deleted: false,
       status: 409,
-      code: "practice_not_empty",
-      error: "Praxis kann nicht gelöscht werden, solange noch Daten vorhanden sind.",
-      blockers,
+      code: "practice_not_deletable",
+      error: deletableAt
+        ? `Praxis ist erst ab ${deletableAt.toISOString()} endgültig löschbar.`
+        : "Eine aktive Praxis muss zuerst deaktiviert werden.",
     };
   }
 
   try {
-    await prisma.practice.delete({ where: { id: practice.id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.digitalRequest.deleteMany({ where: { owner_practice_id: practice.id } });
+      await tx.patientQuestionnaireSession.deleteMany({ where: { owner_practice_id: practice.id } });
+      await tx.practiceQuestionnaireForm.deleteMany({ where: { owner_practice_id: practice.id } });
+      await tx.inquirySession.deleteMany({ where: { owner_practice_id: practice.id } });
+      await tx.caseSession.deleteMany({ where: { owner_practice_id: practice.id } });
+      await tx.officeCaseSession.deleteMany({ where: { owner_practice_id: practice.id } });
+      await tx.workflowSession.deleteMany({ where: { owner_practice_id: practice.id } });
+      await tx.practiceCatalogEntry.deleteMany({ where: { practice_id: practice.id } });
+      await tx.practice.delete({ where: { id: practice.id } });
+    });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

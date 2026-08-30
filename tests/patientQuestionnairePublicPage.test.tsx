@@ -117,6 +117,8 @@ describe("/q/[token] Seite", () => {
           country: "Deutschland",
           official_email: "a@example.test",
           phone: "030 111",
+          official_imprint_url: "https://praxis-a.example/impressum",
+          official_privacy_url: "https://praxis-a.example/datenschutz",
         },
       },
     });
@@ -126,7 +128,7 @@ describe("/q/[token] Seite", () => {
     );
     expect(markup).toContain('data-public-practice-footer="practice-a"');
     expect(markup).toContain("Hausarztpraxis A");
-    expect(markup).toContain("/praxis/praxis-a/impressum");
+    expect(markup).toContain("https://praxis-a.example/impressum");
     expect(markup).not.toContain("Praxis B");
   });
 

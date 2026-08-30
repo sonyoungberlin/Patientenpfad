@@ -6,6 +6,7 @@ import {
   appendFrozenRun,
   type PrefillRunAnswers,
 } from "@/lib/server/prefillRuns";
+import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 export async function POST(
   req: NextRequest,
@@ -20,9 +21,16 @@ export async function POST(
         id: true,
         m2_token_expires_at: true,
         active_checkpoints: true,
+        owner_practice: { select: { is_approved: true, disabled_at: true } },
       },
     });
 
+    if (session?.owner_practice && (!session.owner_practice.is_approved || session.owner_practice.disabled_at != null)) {
+      return NextResponse.json(
+        { ok: false, error: PRACTICE_SERVICE_UNAVAILABLE_MESSAGE },
+        { status: 404 },
+      );
+    }
     if (!session || !session.m2_token_expires_at) {
       return NextResponse.json(
         { ok: false, error: "Link ungültig oder abgelaufen." },

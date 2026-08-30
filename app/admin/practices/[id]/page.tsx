@@ -22,6 +22,8 @@ import { PILOT_PRACTICE_INQUIRY_CONFIG } from "@/lib/inquiries/practiceConfig";
 import { DeletePracticeButton } from "./DeletePracticeButton";
 import { PracticeLegalProfileFields } from "@/components/admin/PracticeLegalProfileFields";
 import { PracticeLegalProfileDetails } from "@/components/practice/PracticeLegalProfileDetails";
+import { validateCompleteLegalProfileInput } from "@/lib/practice/legalProfile";
+import { isPracticeDeletable } from "@/lib/practice/lifecycle";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -76,6 +78,7 @@ export default async function AdminPracticeDetailPage({
       name: true,
       slug: true,
       is_approved: true,
+      disabled_at: true,
       inquiry_assistant_enabled: true,
       patient_communication_enabled: true,
       website_forms_enabled: true,
@@ -170,6 +173,7 @@ export default async function AdminPracticeDetailPage({
     ? sp.quotaError[0]
     : sp.quotaError;
   const legalSaved = Array.isArray(sp.legalSaved) ? sp.legalSaved[0] : sp.legalSaved;
+  const legalProfileValidation = validateCompleteLegalProfileInput(practice.legal_profile);
 
   const mailStatus = describePracticeSmtpStatus({
     id: practice.id,
@@ -202,6 +206,11 @@ export default async function AdminPracticeDetailPage({
         <Link href="/admin/practices">← Zurück zur Praxenliste</Link>
       </p>
       <h1>Praxis: {practice.name}</h1>
+      <p className="text-muted">
+        Status: {practice.is_approved && !practice.disabled_at ? "Aktiv" : "Deaktiviert"}
+        {practice.disabled_at && ` · Deaktiviert seit: ${practice.disabled_at.toLocaleDateString("de-DE")}`}
+        {practice.disabled_at && ` · Endgültig löschbar ab: ${new Date(practice.disabled_at.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("de-DE")}`}
+      </p>
 
       {errorMsg && (
         <p role="alert" style={{ color: "#a00", marginBottom: "1rem" }}>
@@ -248,6 +257,15 @@ export default async function AdminPracticeDetailPage({
           Änderungen sind ausschließlich Plattform-Admins möglich.
         </p>
         {legalSaved && <p role="status" style={{ color: "#0a6" }}>Offizielles Profil gespeichert.</p>}
+        {!legalProfileValidation.ok && (
+          <p role="alert" style={{ color: "#a00", fontWeight: 600 }}>
+            {practice.is_approved
+              ? "Warnung: Bereits freigeschaltete Praxis mit unvollständigem Praxisprofil."
+              : "Praxisprofil unvollständig – öffentliche Freischaltung erst nach vollständiger Praxisidentität möglich."}
+            <br />
+            {legalProfileValidation.error}
+          </p>
+        )}
         {practice.legal_profile && <PracticeLegalProfileDetails profile={practice.legal_profile} />}
         <form
           method="POST"
@@ -997,10 +1015,13 @@ export default async function AdminPracticeDetailPage({
       <section style={{ marginBottom: "2rem" }}>
         <h2>Gefahrenbereich</h2>
         <p className="text-muted" style={{ marginBottom: "0.75rem" }}>
-          Eine Praxis kann nur gelöscht werden, wenn keine produktiven Daten
-          vorhanden sind.
+          Endgültige Löschung ist erst 30 Tage nach Deaktivierung möglich.
         </p>
-        <DeletePracticeButton practiceId={practice.id} practiceName={practice.name} />
+        <DeletePracticeButton
+          practiceId={practice.id}
+          practiceName={practice.name}
+          canDelete={isPracticeDeletable(practice.disabled_at)}
+        />
       </section>
     </main>
   );

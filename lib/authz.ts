@@ -25,6 +25,7 @@ import {
   type SessionAccount,
   type SessionPractice,
 } from "./auth";
+import { isPracticeActive } from "./practice/lifecycle";
 
 export type RequireResult =
   | { account: SessionAccount; error: null }
@@ -49,7 +50,7 @@ function effectiveFlags(account: SessionAccount): {
   const p = account.current_practice;
   return p
     ? {
-        is_approved: p.is_approved,
+        is_approved: isPracticeActive(p),
         patient_communication_enabled: p.patient_communication_enabled,
         website_forms_enabled: p.website_forms_enabled,
       }

@@ -1,147 +1,85 @@
-/**
- * Tests für den Hard-Delete-Flow leerer Practices.
- */
+/** Tests für den 30-Tage-Lifecycle und den praxisbezogenen Hard Delete. */
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
-    practice: {
-      findUnique: jest.fn(),
-      delete: jest.fn(),
-    },
-    patientQuestionnaireSession: {
-      count: jest.fn(),
-    },
-    inquirySession: {
-      count: jest.fn(),
-    },
-    caseSession: {
-      count: jest.fn(),
-    },
-    officeCaseSession: {
-      count: jest.fn(),
-    },
-    practiceQuestionnaireForm: {
-      count: jest.fn(),
-    },
+    practice: { findUnique: jest.fn(), delete: jest.fn() },
+    patientQuestionnaireSession: { deleteMany: jest.fn() },
+    inquirySession: { deleteMany: jest.fn() },
+    caseSession: { deleteMany: jest.fn() },
+    officeCaseSession: { deleteMany: jest.fn() },
+    workflowSession: { deleteMany: jest.fn() },
+    practiceQuestionnaireForm: { deleteMany: jest.fn() },
+    digitalRequest: { deleteMany: jest.fn() },
+    practiceCatalogEntry: { deleteMany: jest.fn() },
+    $transaction: jest.fn(),
   },
 }));
 
 import { prisma } from "@/lib/prisma";
-import { deletePracticeById, type DeletePracticeFailure } from "@/lib/adminActions";
+import { deletePracticeById } from "@/lib/adminActions";
 
-type PrismaMock = {
-  practice: {
-    findUnique: jest.Mock;
-    delete: jest.Mock;
-  };
-  patientQuestionnaireSession: { count: jest.Mock };
-  inquirySession: { count: jest.Mock };
-  caseSession: { count: jest.Mock };
-  officeCaseSession: { count: jest.Mock };
-  practiceQuestionnaireForm: { count: jest.Mock };
+const pm = prisma as unknown as {
+  practice: { findUnique: jest.Mock; delete: jest.Mock };
+  patientQuestionnaireSession: { deleteMany: jest.Mock };
+  inquirySession: { deleteMany: jest.Mock };
+  caseSession: { deleteMany: jest.Mock };
+  officeCaseSession: { deleteMany: jest.Mock };
+  workflowSession: { deleteMany: jest.Mock };
+  practiceQuestionnaireForm: { deleteMany: jest.Mock };
+  digitalRequest: { deleteMany: jest.Mock };
+  practiceCatalogEntry: { deleteMany: jest.Mock };
+  $transaction: jest.Mock;
 };
 
-const pm = prisma as unknown as PrismaMock;
-
-function asFailure(result: unknown): DeletePracticeFailure {
-  return result as DeletePracticeFailure;
-}
-
-function mockEmptyPractice(name = "Praxis Eins") {
-  pm.practice.findUnique.mockResolvedValue({ id: "p-1", name });
-  pm.patientQuestionnaireSession.count.mockResolvedValue(0);
-  pm.inquirySession.count.mockResolvedValue(0);
-  pm.caseSession.count.mockResolvedValue(0);
-  pm.officeCaseSession.count.mockResolvedValue(0);
-  pm.practiceQuestionnaireForm.count.mockResolvedValue(0);
+function mockDeletablePractice() {
+  pm.practice.findUnique.mockResolvedValue({
+    id: "p-1",
+    name: "Praxis Eins",
+    disabled_at: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000),
+  });
+  pm.$transaction.mockImplementation((callback: (tx: typeof pm) => unknown) => callback(pm));
   pm.practice.delete.mockResolvedValue({});
 }
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
+beforeEach(() => jest.clearAllMocks());
 
 describe("deletePracticeById", () => {
-  it("löscht leere Practice", async () => {
-    mockEmptyPractice();
-
+  it("löscht praxisbezogene Daten und nur die Practice in einer Transaktion", async () => {
+    mockDeletablePractice();
     const result = await deletePracticeById("p-1", "Praxis Eins");
-
-    expect(result.ok).toBe(true);
-    expect(result.deleted).toBe(true);
+    expect(result).toMatchObject({ ok: true, deleted: true });
+    expect(pm.digitalRequest.deleteMany).toHaveBeenCalledWith({ where: { owner_practice_id: "p-1" } });
+    expect(pm.practiceCatalogEntry.deleteMany).toHaveBeenCalledWith({ where: { practice_id: "p-1" } });
     expect(pm.practice.delete).toHaveBeenCalledWith({ where: { id: "p-1" } });
   });
 
-  it("blockiert bei Fragebögen", async () => {
-    mockEmptyPractice();
-    pm.patientQuestionnaireSession.count.mockResolvedValue(2);
-
+  it("blockiert vor Ablauf der 30-Tage-Frist", async () => {
+    pm.practice.findUnique.mockResolvedValue({
+      id: "p-1",
+      name: "Praxis Eins",
+      disabled_at: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000),
+    });
     const result = await deletePracticeById("p-1", "Praxis Eins");
-
-    expect(result.ok).toBe(false);
-    expect(result.status).toBe(409);
-    expect(result.code).toBe("practice_not_empty");
-    expect(asFailure(result).blockers?.some((b) => b.model === "PatientQuestionnaireSession")).toBe(true);
-  });
-
-  it("blockiert bei Website-Formularen", async () => {
-    mockEmptyPractice();
-    pm.practiceQuestionnaireForm.count.mockResolvedValue(1);
-
-    const result = await deletePracticeById("p-1", "Praxis Eins");
-
-    expect(result.ok).toBe(false);
-    expect(asFailure(result).blockers?.some((b) => b.model === "PracticeQuestionnaireForm")).toBe(true);
-  });
-
-  it("blockiert bei Cases", async () => {
-    mockEmptyPractice();
-    pm.caseSession.count.mockResolvedValue(3);
-
-    const result = await deletePracticeById("p-1", "Praxis Eins");
-
-    expect(result.ok).toBe(false);
-    expect(asFailure(result).blockers?.some((b) => b.model === "CaseSession")).toBe(true);
-  });
-
-  it("blockiert bei Inquiries", async () => {
-    mockEmptyPractice();
-    pm.inquirySession.count.mockResolvedValue(4);
-
-    const result = await deletePracticeById("p-1", "Praxis Eins");
-
-    expect(result.ok).toBe(false);
-    expect(asFailure(result).blockers?.some((b) => b.model === "InquirySession")).toBe(true);
-  });
-
-  it("blockiert bei Office-Cases", async () => {
-    mockEmptyPractice();
-    pm.officeCaseSession.count.mockResolvedValue(5);
-
-    const result = await deletePracticeById("p-1", "Praxis Eins");
-
-    expect(result.ok).toBe(false);
-    expect(asFailure(result).blockers?.some((b) => b.model === "OfficeCaseSession")).toBe(true);
-  });
-
-  it("blockiert bei falschem confirmName", async () => {
-    mockEmptyPractice("Praxis Eins");
-
-    const result = await deletePracticeById("p-1", "Praxis Zwei");
-
-    expect(result.ok).toBe(false);
-    expect(result.status).toBe(400);
-    expect(result.code).toBe("confirm_name_mismatch");
+    expect(result).toMatchObject({ ok: false, code: "practice_not_deletable", status: 409 });
     expect(pm.practice.delete).not.toHaveBeenCalled();
   });
 
-  it("404 bei unbekannter Practice", async () => {
+  it("verlangt Deaktivierung vor einem Hard Delete", async () => {
+    pm.practice.findUnique.mockResolvedValue({ id: "p-1", name: "Praxis Eins", disabled_at: null });
+    const result = await deletePracticeById("p-1", "Praxis Eins");
+    expect(result).toMatchObject({ ok: false, code: "practice_not_deletable", status: 409 });
+  });
+
+  it("lehnt falsche Namensbestätigung ab", async () => {
+    mockDeletablePractice();
+    const result = await deletePracticeById("p-1", "Andere Praxis");
+    expect(result).toMatchObject({ ok: false, code: "confirm_name_mismatch", status: 400 });
+    expect(pm.practice.delete).not.toHaveBeenCalled();
+  });
+
+  it("liefert 404 für unbekannte Praxis", async () => {
     pm.practice.findUnique.mockResolvedValue(null);
-
     const result = await deletePracticeById("p-missing", "Praxis");
-
-    expect(result.ok).toBe(false);
-    expect(result.status).toBe(404);
-    expect(result.code).toBe("practice_not_found");
+    expect(result).toMatchObject({ ok: false, code: "practice_not_found", status: 404 });
   });
 });

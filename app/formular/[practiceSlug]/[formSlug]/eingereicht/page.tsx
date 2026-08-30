@@ -18,9 +18,9 @@ export default async function PublicPracticeFormSubmittedPage({
   if (!practiceValidation.ok || !formValidation.ok) notFound();
   const practice = await prisma.practice.findUnique({
     where: { public_slug: practiceValidation.slug },
-    select: { id: true, is_approved: true },
+    select: { id: true, is_approved: true, disabled_at: true },
   });
-  if (!practice?.is_approved) notFound();
+  if (!practice?.is_approved || practice.disabled_at != null) notFound();
   const form = await prisma.practiceQuestionnaireForm.findFirst({
     where: { slug: formValidation.slug, owner_practice_id: practice.id },
     select: { id: true },

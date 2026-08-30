@@ -1,13 +1,10 @@
-import Link from "next/link";
 import {
   publicPracticeName,
-  publicPracticeSlug,
   type PublicPracticeIdentity,
 } from "@/lib/practice/publicIdentity";
 
 export function PublicPracticeFooter({ practice }: { practice: PublicPracticeIdentity }) {
   const profile = practice.legal_profile;
-  const slug = publicPracticeSlug(practice);
   const address = profile
     ? `${profile.street} ${profile.house_number} · ${profile.postal_code} ${profile.city}`
     : null;
@@ -26,8 +23,12 @@ export function PublicPracticeFooter({ practice }: { practice: PublicPracticeIde
         </p>
       )}
       <nav style={{ display: "flex", gap: "0.75rem", marginTop: "0.35rem" }}>
-        <Link href={`/praxis/${slug}/impressum`}>Impressum</Link>
-        <Link href={`/praxis/${slug}/datenschutz`}>Datenschutz</Link>
+        {profile?.official_imprint_url && (
+          <a href={profile.official_imprint_url}>Impressum</a>
+        )}
+        {profile?.official_privacy_url && (
+          <a href={profile.official_privacy_url}>Datenschutz</a>
+        )}
       </nav>
     </footer>
   );

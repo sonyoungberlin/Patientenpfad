@@ -20,6 +20,8 @@ const profile = {
   country: "Deutschland",
   official_email: "a@example.test",
   phone: "030 111",
+  official_imprint_url: null,
+  official_privacy_url: "https://praxis-a.example/datenschutz",
   medical_chamber: null,
   professional_title: null,
   professional_title_country: null,
@@ -59,6 +61,7 @@ it("rendert Impressum und Datenschutz für die per Slug gefundene Praxis", async
   expect(imprint).toContain("A-Straße");
   expect(privacy).toContain("Empfangende Praxis");
   expect(privacy).toContain("30 Tage");
+  expect(privacy).toContain("https://praxis-a.example/datenschutz");
   expect(privacy).not.toContain("Praxis B");
   expect(prisma.practice.findUnique).toHaveBeenCalledWith(
     expect.objectContaining({ where: { public_slug: "praxis-a" } }),

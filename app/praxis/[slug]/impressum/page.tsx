@@ -11,7 +11,7 @@ export default async function PracticeImprintPage({ params }: { params: Promise<
   const validation = validateSlug(slug);
   if (!validation.ok) notFound();
   const practice = await getPublicPracticeIdentityBySlug(validation.slug);
-  if (!practice || !practice.is_approved) notFound();
+  if (!practice) notFound();
 
   return (
     <main className="static-page">

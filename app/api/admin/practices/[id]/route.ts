@@ -31,6 +31,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { deletePracticeById } from "@/lib/adminActions";
+import { validateCompleteLegalProfileInput } from "@/lib/practice/legalProfile";
 
 const FLAG_WHITELIST = [
   "is_approved",
@@ -155,11 +156,36 @@ export async function POST(
     );
   }
 
+  if (flag === "is_approved" && value) {
+    const practice = await prisma.practice.findUnique({
+      where: { id },
+      select: { legal_profile: true },
+    });
+    if (!practice) {
+      if (formMode) return redirectToDetail(req, id, { error: "Practice nicht gefunden." });
+      return NextResponse.json(
+        { ok: false, error: "Practice nicht gefunden." },
+        { status: 404 },
+      );
+    }
+    const profileValidation = validateCompleteLegalProfileInput(practice?.legal_profile);
+    if (!profileValidation.ok) {
+      if (formMode) return redirectToDetail(req, id, { error: profileValidation.error });
+      return NextResponse.json(
+        { ok: false, error: profileValidation.error },
+        { status: 400 },
+      );
+    }
+  }
+
   // 3) Direkt auf Practice schreiben — keine Account-Spiegelung.
   try {
+    const data = flag === "is_approved"
+      ? { is_approved: value, disabled_at: value ? null : new Date() }
+      : { [flag]: value };
     const updated = await prisma.practice.update({
       where: { id },
-      data: { [flag]: value },
+      data,
       select: {
         id: true,
         is_approved: true,

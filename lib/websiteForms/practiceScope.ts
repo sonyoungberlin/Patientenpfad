@@ -32,6 +32,7 @@ type FormOwnership = {
 
 type FlagSet = {
   is_approved: boolean;
+  disabled_at?: Date | null;
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
 };
@@ -94,7 +95,7 @@ export function getEffectivePracticeFlags(
 ): FlagSet | null {
   if (form.owner_practice) {
     return {
-      is_approved: form.owner_practice.is_approved,
+      is_approved: form.owner_practice.is_approved && form.owner_practice.disabled_at == null,
       patient_communication_enabled:
         form.owner_practice.patient_communication_enabled,
       website_forms_enabled: form.owner_practice.website_forms_enabled,

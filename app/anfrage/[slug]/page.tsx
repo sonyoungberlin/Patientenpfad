@@ -29,6 +29,7 @@ import { DIGITAL_REQUEST_TOPICS } from "@/lib/digitalRequests/topics";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 import { getPublicPracticeIdentityById } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -54,6 +55,7 @@ export default async function AnfragePage({
         where,
         select: {
           is_approved: true,
+          disabled_at: true,
           id: true,
           patient_communication_enabled: true,
           message_signature: true,
@@ -65,6 +67,9 @@ export default async function AnfragePage({
     notFound();
   }
 
+  if (practice.disabled_at != null) {
+    return <main><p>{PRACTICE_SERVICE_UNAVAILABLE_MESSAGE}</p></main>;
+  }
   if (!practice.is_approved || !practice.patient_communication_enabled) {
     notFound();
   }

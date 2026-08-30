@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { getPublicPracticeIdentityBySlug } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
+import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
 export default async function BewerbenEingegangePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const validation = validateSlug(slug);
   if (!validation.ok) notFound();
   const practice = await getPublicPracticeIdentityBySlug(validation.slug);
+  if (practice?.disabled_at != null) return <main><p>{PRACTICE_SERVICE_UNAVAILABLE_MESSAGE}</p></main>;
   if (!practice || !practice.is_approved || !practice.office_cases_enabled) notFound();
   return (
     <main className="mx-auto max-w-lg px-4 py-10">
