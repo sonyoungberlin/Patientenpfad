@@ -95,6 +95,7 @@ model Account {
   /// `OWNER` befüllt. App-Logik nutzt diese Beziehung in P1 noch nicht;
   /// `owner_account_id` bleibt führend.
   memberships PracticeMembership[]
+  password_reset_requests PasswordResetRequest[]
 
 
   /// Option C (minimal): Standard-Praxis dieses Accounts. Reine
@@ -119,6 +120,31 @@ model Session {
   account    Account  @relation(fields: [account_id], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   expiresAt  DateTime
+}
+
+model PasswordResetRequest {
+  id         String   @id @default(cuid())
+  account_id String
+  account    Account  @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  token_hash String   @unique
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime @default(now())
+
+  @@index([account_id, created_at])
+  @@index([expires_at])
+}
+
+model PasswordResetRateLimit {
+  id                 String   @id @default(cuid())
+  key_hash           String
+  key_type           String
+  window_started_at  DateTime
+  request_count      Int      @default(0)
+  updated_at         DateTime @updatedAt
+
+  @@unique([key_hash, key_type])
+  @@index([updated_at])
 }
 
 /// Ein einzelner Vorbereitungsdurchlauf eines Falls (MFA, Patientengespräch,

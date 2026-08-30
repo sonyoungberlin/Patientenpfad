@@ -25,8 +25,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { hashPassword, MIN_PASSWORD_LENGTH } from "@/lib/password";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password";
+import { consumePasswordReset } from "@/lib/auth/passwordReset";
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,35 +54,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const account = await prisma.account.findUnique({
-      where: { password_reset_token: token },
-      select: {
-        id: true,
-        password_reset_expires: true,
-      },
-    });
-
-    if (
-      !account ||
-      !account.password_reset_expires ||
-      account.password_reset_expires < new Date()
-    ) {
+    const result = await consumePasswordReset(token, password);
+    if (!result.ok) {
       return NextResponse.json(
         { ok: false, error: "Ungültiger oder abgelaufener Link." },
         { status: 400 },
       );
     }
-
-    const password_hash = await hashPassword(password);
-
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
-        password_hash,
-        password_reset_token: null,
-        password_reset_expires: null,
-      },
-    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -91,7 +91,6 @@ export async function sendPasswordSetupEmail(
     console.info("[mail:console] Passwort-Setup-E-Mail", {
       to: input.to,
       subject,
-      setupUrl: input.setupUrl,
       bodyPreview: text.slice(0, 80),
     });
     return "console";

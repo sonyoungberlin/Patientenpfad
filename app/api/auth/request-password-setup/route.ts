@@ -39,19 +39,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "crypto";
-import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
-import { sendPasswordSetupEmail } from "@/lib/mail/sendPasswordSetupEmail";
-
-// 1 Stunde Gültigkeit, exakt wie in der Aufgabenstellung gefordert.
-const TOKEN_TTL_MS = 60 * 60 * 1000;
-
-// 32 Byte → 64 hex-Zeichen. Enough entropy für einen Einmal-Token.
-const TOKEN_BYTES = 32;
+import {
+  issuePasswordReset,
+  PASSWORD_RESET_GENERIC_MESSAGE,
+} from "@/lib/auth/passwordReset";
 
 function genericOk(): NextResponse {
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, message: PASSWORD_RESET_GENERIC_MESSAGE });
 }
 
 export async function POST(req: NextRequest) {
@@ -70,71 +65,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const rawEmail: unknown = (body as Record<string, unknown>).email;
-    const email =
-      typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : null;
-
-    if (!email || !email.includes("@")) {
-      // Auch hier neutral antworten — keine Eingabevalidierung leakt
-      // Account-Existenz. Für Admin-Caller liefern wir `delivery: "none"`,
-      // damit die UI eine Statusmeldung anzeigen kann.
-      return isAdmin
-        ? NextResponse.json({ ok: true, delivery: "none" })
-        : genericOk();
+    const email = typeof rawEmail === "string" ? rawEmail : "";
+    const result = await issuePasswordReset(email, req.headers, req.nextUrl.origin);
+    if (!isAdmin) return genericOk();
+    if (result.kind === "none" || result.kind === "limited") {
+      return NextResponse.json({ ok: true, delivery: "none", message: PASSWORD_RESET_GENERIC_MESSAGE });
     }
-
-    const account = await prisma.account.findUnique({
-      where: { email },
-      select: { id: true, email: true },
-    });
-
-    if (!account) {
-      return isAdmin
-        ? NextResponse.json({ ok: true, delivery: "none" })
-        : genericOk();
-    }
-
-    const token = randomBytes(TOKEN_BYTES).toString("hex");
-    const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
-
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
-        password_reset_token: token,
-        password_reset_expires: expiresAt,
-      },
-    });
-
-    const setupUrl = `${req.nextUrl.origin}/account/set-password?token=${token}`;
-
-    let mailOk = true;
-    try {
-      await sendPasswordSetupEmail({ to: account.email, setupUrl });
-    } catch (err) {
-      mailOk = false;
-      // Bewusst nicht propagieren — sonst würde der Antwort-Status
-      // Account-Existenz leaken. Token bleibt in der DB; ein erneuter
-      // Aufruf überschreibt ihn mit frischem Wert. Wir loggen nur die
-      // Fehlerursache (kein Token, keine setupUrl).
-      const detail = err instanceof Error ? err.message : "unknown";
-      console.error("[auth/request-password-setup] mail_failed:", detail);
-    }
-
-    if (!isAdmin) {
-      // Nicht-Admin-Caller bekommen weiterhin nur eine generische Antwort,
-      // unabhängig vom Mail-Erfolg, damit Account-Existenz nicht leakt und
-      // insbesondere kein Token / setupUrl ausgegeben wird.
-      return genericOk();
-    }
-
-    if (mailOk) {
-      return NextResponse.json({ ok: true, delivery: "email" });
-    }
-
-    return NextResponse.json({
-      ok: true,
-      delivery: "manual",
-      setupUrl,
-    });
+    return NextResponse.json({ ok: true, delivery: result.delivery, ...(result.setupUrl ? { setupUrl: result.setupUrl } : {}) });
   } catch (err) {
     // Defensiv: auch bei unerwarteten Fehlern neutral antworten, damit
     // Account-Existenz nicht über Fehlerantworten beobachtbar wird.

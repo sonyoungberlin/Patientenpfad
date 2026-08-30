@@ -411,6 +411,9 @@ export default function HomePageClient() {
           {loginError && (
             <p className="text-error" style={{ marginTop: "0.5rem" }}>{loginError}</p>
           )}
+          <p style={{ marginTop: "0.5rem" }}>
+            <a href="/account/forgot-password">Passwort vergessen?</a>
+          </p>
         </div>
       </main>
     );
