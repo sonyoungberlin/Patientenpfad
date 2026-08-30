@@ -18,7 +18,11 @@ import {
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { MAIN_GATE_QUESTION_IDS } from "@/components/questionnaire/QuestionField";
-import { parseMultiSelectValue, toggleMultiSelectValue } from "@/lib/questionnaire/multiSelect";
+import {
+  buildOptionsByQuestionId,
+  parseMultiSelectValue,
+  toggleMultiSelectValue,
+} from "@/lib/questionnaire/multiSelect";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -562,18 +566,15 @@ function RepeatableGroupField({
                     data-rg-field={`${idx}:${field.key}`}
                   >
                     {(field.options ?? []).map((opt) => {
-                      const selected = fieldVal.split(",").map((s) => s.trim()).filter(Boolean).includes(opt);
+                      const options = field.options ?? [];
+                      const selected = parseMultiSelectValue(fieldVal, options).includes(opt);
                       return (
                         <button
                           key={opt}
                           type="button"
                           disabled={disabled}
                           onClick={() => {
-                            const current = fieldVal.split(",").map((s) => s.trim()).filter(Boolean);
-                            const next = selected
-                              ? current.filter((s) => s !== opt)
-                              : [...current, opt];
-                            updateField(idx, field.key, next.join(", "));
+                            updateField(idx, field.key, toggleMultiSelectValue(fieldVal, opt, options));
                           }}
                           data-rg-multiselect={`${idx}:${field.key}:${opt}`}
                           style={{
@@ -1030,6 +1031,13 @@ export function QuestionnaireFormClient({
     );
   }, [frozenBlocks, conditionalRules, values, derivedValues]);
 
+  const optionsByQuestionId = useMemo(() => {
+    return buildOptionsByQuestionId([
+      ...questions,
+      ...(frozenBlocks ?? []).flatMap((block) => block.questions),
+    ]);
+  }, [questions, frozenBlocks]);
+
   // Sichtbare Fragen: Conditional-Logic-Engine filtert anhand aktueller Antworten.
   // Wenn keine Regeln vorhanden sind, sind alle Fragen sichtbar (Rückwärtskompatibilität).
   const visibleQuestions = useMemo(() => {
@@ -1044,6 +1052,7 @@ export function QuestionnaireFormClient({
           blockQIds,
           values,
           derivedValues,
+          optionsByQuestionId,
         );
         result.push(...block.questions.filter((q) => visibleQIds.has(q.id)));
       }
@@ -1056,9 +1065,11 @@ export function QuestionnaireFormClient({
       questions.map((q) => q.id),
       values,
       derivedValues,
+      optionsByQuestionId,
     );
     return questions.filter((q) => visibleIds.has(q.id));
-  }, [frozenBlocks, visibleBlockIds, conditionalRules, questions, values, derivedValues]);
+  }, [frozenBlocks, visibleBlockIds, conditionalRules, questions, values, derivedValues, optionsByQuestionId]);
+
 
   // Per-Frage Live-Charactervalidierung. Gibt true zurück, wenn der aktuelle
   // Wert ungültige (nicht-lateinische) Zeichen enthält. Auswahl-/Datums-/

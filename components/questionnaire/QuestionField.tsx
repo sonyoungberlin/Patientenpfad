@@ -363,16 +363,15 @@ export function RepeatableGroupField({
                 ) : field.type === "multi_select" ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }} data-rg-field={`${idx}:${field.key}`}>
                     {(field.options ?? []).map((opt) => {
-                      const selected = fieldVal.split(",").map((s) => s.trim()).filter(Boolean).includes(opt);
+                      const options = field.options ?? [];
+                      const selected = parseMultiSelectValue(fieldVal, options).includes(opt);
                       return (
                         <button
                           key={opt}
                           type="button"
                           disabled={disabled}
                           onClick={() => {
-                            const current = fieldVal.split(",").map((s) => s.trim()).filter(Boolean);
-                            const next = selected ? current.filter((s) => s !== opt) : [...current, opt];
-                            updateField(idx, field.key, next.join(", "));
+                            updateField(idx, field.key, toggleMultiSelectValue(fieldVal, opt, options));
                           }}
                           data-rg-multiselect={`${idx}:${field.key}:${opt}`}
                           style={{

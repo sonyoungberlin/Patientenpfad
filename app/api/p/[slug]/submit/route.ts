@@ -40,6 +40,7 @@ import {
   computeVisibleQuestionIds,
 } from "@/lib/questionnaire/conditionalLogic";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import {
   answerCharactersErrorMessage,
   validateAnswerCharacters,
@@ -325,6 +326,7 @@ export async function POST(
       allQIds,
       sanitizedAnswers,
       derivedValues,
+      buildOptionsByQuestionId(deduplicatedQuestions),
     );
     const finalAnswers: Record<string, string> = Object.fromEntries(
       Object.entries(sanitizedAnswers).filter(([id]) => visibleQIds.has(id))

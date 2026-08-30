@@ -15,6 +15,7 @@ import {
   computeVisibleBlockIds,
 } from "@/lib/questionnaire/conditionalLogic";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import { isConfirmedAnswer } from "@/lib/questionnaire/confirmation";
 
 export async function POST(
@@ -123,6 +124,11 @@ export async function POST(
     // Phase 4+5: Nur Antworten sichtbarer Fragen speichern (Conditional Logic + Derived Values).
     const frozenConditionalRules = parseConditionalRules(session.frozen_conditional_rules);
     let visibleAnswerIds: Set<string>;
+    const optionsByQuestionId = buildOptionsByQuestionId(
+      frozenBlocks
+        ? frozenBlocks.flatMap((block) => block.questions)
+        : deduplicatedQuestions,
+    );
 
     if (frozenBlocks) {
       const visibleBlockIds = computeVisibleBlockIds(
@@ -140,6 +146,7 @@ export async function POST(
           blockQIds,
           sanitizedAnswers,
           derivedValues,
+          optionsByQuestionId,
         );
         for (const id of visibleQIds) visibleAnswerIds.add(id);
       }
@@ -150,6 +157,7 @@ export async function POST(
         allQIds,
         sanitizedAnswers,
         derivedValues,
+        optionsByQuestionId,
       );
     }
 

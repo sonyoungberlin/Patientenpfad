@@ -9,6 +9,7 @@ import {
 import type { RepGroupEntry } from "./formatAnswer";
 import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleQuestionIds } from "./conditionalLogic";
+import { buildOptionsByQuestionId } from "./multiSelect";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -109,6 +110,11 @@ export async function buildQuestionnairePdfBytes(
       block.questionIds,
       answers,
       derivedValues as Record<string, number>,
+      buildOptionsByQuestionId(
+        block.questionIds
+          .map((questionId) => questions.find((question) => question.id === questionId))
+          .filter((question): question is QuestionDefinition => question !== undefined),
+      ),
     );
     const blockQuestions = block.questionIds
       .map((qid) => questions.find((q) => q.id === qid))

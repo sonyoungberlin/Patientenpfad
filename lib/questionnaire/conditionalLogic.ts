@@ -1,3 +1,5 @@
+import { parseMultiSelectValue } from "./multiSelect";
+
 /**
  * Serialisierbare Conditional-Logic-Engine für Patientenfragebögen.
  *
@@ -43,10 +45,11 @@ export function evaluateCondition(
   condition: ConditionGroup,
   answers: Record<string, string>,
   derivedValues?: Record<string, number>,
+  optionsByQuestionId?: ReadonlyMap<string, readonly string[]>,
 ): boolean {
   if ("mode" in condition) {
     const results = condition.conditions.map((c) =>
-      evaluateCondition(c, answers, derivedValues),
+      evaluateCondition(c, answers, derivedValues, optionsByQuestionId),
     );
     return condition.mode === "AND"
       ? results.every(Boolean)
@@ -69,12 +72,14 @@ export function evaluateCondition(
     case "notEquals":
       return actual !== value;
     case "contains":
-      return typeof actual === "string" && typeof value === "string"
-        ? actual
-            .split(",")
-            .map((s) => s.trim())
-            .includes(value)
-        : false;
+      if (typeof actual !== "string" || typeof value !== "string") return false;
+      if (!optionsByQuestionId || target.kind !== "question") {
+        return actual.split(",").map((part) => part.trim()).includes(value);
+      }
+      return parseMultiSelectValue(
+        actual,
+        optionsByQuestionId.get(target.questionId) ?? [],
+      ).includes(value);
     case "isAnswered":
       return actual !== "" && actual !== undefined;
     case "isEmpty":
@@ -113,6 +118,7 @@ export function computeVisibleQuestionIds(
   allQuestionIds: string[],
   answers: Record<string, string>,
   derivedValues?: Record<string, number>,
+  optionsByQuestionId?: ReadonlyMap<string, readonly string[]>,
 ): Set<string> {
   // Alle Fragen-IDs, die durch mindestens eine showQuestion-Regel gesteuert werden
   const controlled = new Set<string>(
@@ -129,7 +135,7 @@ export function computeVisibleQuestionIds(
   // Kontrollierte Fragen hinzufügen, wenn ihre Bedingung erfüllt ist
   for (const rule of rules) {
     if (rule.action !== "showQuestion") continue;
-    if (evaluateCondition(rule.condition, answers, derivedValues)) {
+    if (evaluateCondition(rule.condition, answers, derivedValues, optionsByQuestionId)) {
       visible.add(rule.targetId);
     }
   }

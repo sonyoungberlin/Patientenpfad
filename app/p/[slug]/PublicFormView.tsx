@@ -26,6 +26,7 @@ import {
   type ConditionalRule,
 } from "@/lib/questionnaire/conditionalLogic";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import {
   answerCharactersErrorMessage,
   isAnswerTextAllowed,
@@ -128,10 +129,11 @@ export function PublicFormView({
   // Sichtbare Fragen basierend auf aktuellen Antworten
   const derivedValues = useMemo(() => computeAllDerivedValues(values), [values]);
   const allQuestionIds = useMemo(() => questions.map((q) => q.id), [questions]);
+  const optionsByQuestionId = useMemo(() => buildOptionsByQuestionId(questions), [questions]);
 
   const visibleIds = useMemo(
-    () => computeVisibleQuestionIds(conditionalRules, allQuestionIds, values, derivedValues),
-    [conditionalRules, allQuestionIds, values, derivedValues]
+    () => computeVisibleQuestionIds(conditionalRules, allQuestionIds, values, derivedValues, optionsByQuestionId),
+    [conditionalRules, allQuestionIds, values, derivedValues, optionsByQuestionId]
   );
 
   const visibleQuestions = useMemo(

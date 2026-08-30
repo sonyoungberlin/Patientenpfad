@@ -42,3 +42,13 @@ export function toggleMultiSelectValue(
     : [...current, option];
   return next.join(", ");
 }
+
+export function buildOptionsByQuestionId(
+  questions: ReadonlyArray<{ id: string; options?: readonly string[] }>,
+): ReadonlyMap<string, readonly string[]> {
+  return new Map(
+    questions.flatMap((question) =>
+      question.options ? [[question.id, question.options] as const] : [],
+    ),
+  );
+}

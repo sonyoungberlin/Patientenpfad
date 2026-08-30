@@ -336,7 +336,9 @@ describe("ADIPOSITAS_GEWICHTSREDUKTION – Conditional Logic", () => {
         evaluateCondition(rule!.condition, {
           ADIP_ZUNAHME_AUSLOESER:
             "Neue oder deutlich veränderte Medikamente, Neue Erkrankung",
-        }),
+        }, undefined, new Map([
+          ["ADIP_ZUNAHME_AUSLOESER", QUESTION_CATALOG.ADIP_ZUNAHME_AUSLOESER!.options!],
+        ])),
       ).toBe(true);
     });
 

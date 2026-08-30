@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccessFromCookies } from "@/lib/authz";
-import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { BLOCK_CATALOG, QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 import {
@@ -18,6 +18,7 @@ import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
+import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 
 /** Berechnet die Menge der sichtbaren Fragen-IDs für eine Session. */
 function buildVisibleQIds(
@@ -34,6 +35,7 @@ function buildVisibleQIds(
         block.questions.map((q) => q.id),
         answers,
         derivedValues as Record<string, number>,
+        buildOptionsByQuestionId(block.questions),
       ).forEach((id) => visible.add(id));
     }
   } else {
@@ -45,6 +47,7 @@ function buildVisibleQIds(
         block.questionIds,
         answers,
         derivedValues as Record<string, number>,
+        buildOptionsByQuestionId(block.questionIds.map((id) => QUESTION_CATALOG[id]).filter((q): q is QuestionDefinition => !!q)),
       ).forEach((id) => visible.add(id));
     }
   }

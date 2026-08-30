@@ -75,7 +75,10 @@ function canonicalizeAnswerValue(
 
   if (def.type === "multi_select") {
     // Format: kommagetrennte Liste; Kommas innerhalb eines Labels bleiben erhalten.
-    const parts = parseMultiSelectValue(value, def.options ?? []);
+    const parts = parseMultiSelectValue(
+      value,
+      [...(def.options ?? []), ...(def.options_en ?? [])],
+    );
     if (parts.length === 0) return value;
     const mapped = parts.map((p) => mapOptionToCanonical(questionId, p));
     return mapped.join(", ");

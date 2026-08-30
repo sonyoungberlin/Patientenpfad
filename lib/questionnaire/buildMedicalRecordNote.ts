@@ -28,6 +28,7 @@ import type { QuestionDefinition } from "./blockCatalog";
 import type { FrozenBlock } from "./frozenBlocks";
 import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleQuestionIds } from "./conditionalLogic";
+import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
@@ -423,6 +424,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         block.questions.map((q) => q.id),
         answers,
         derivedValues as Record<string, number>,
+        buildOptionsByQuestionId(block.questions),
       );
 
       for (const question of block.questions) {
