@@ -49,6 +49,7 @@ function renderAnswerValue(
     );
   }
   if (q.type === "yes_no") return formatYesNoValue(val);
+  if (q.type === "confirmation") return val === "true" ? "Bestätigt" : "–";
   return val;
 }
 

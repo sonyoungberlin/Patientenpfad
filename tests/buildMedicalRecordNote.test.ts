@@ -504,6 +504,35 @@ describe("buildMedicalRecordNote – Kurzanamnese-Block (vollständig)", () => {
   });
 });
 
+describe("buildMedicalRecordNote – Practice-Confirmations", () => {
+  it("zeigt den eingefrorenen Text verständlich statt ID oder true", () => {
+    const result = buildMedicalRecordNote({
+      answers: { PRACTICE_CONFIRMATION_1: "true" },
+      selected_block_ids: ["KONTAKT"],
+      frozenBlocks: [
+        {
+          id: "PRACTICE_CONFIRMATIONS",
+          label: "Bestätigungen",
+          displayOrder: 10_000,
+          initiallyVisible: true,
+          conditionalRules: [],
+          questions: [
+            {
+              id: "PRACTICE_CONFIRMATION_1",
+              text: "Ich bestätige den Praxistext.",
+              type: "confirmation",
+              required: true,
+            },
+          ],
+        },
+      ],
+    });
+    expect(result).toContain("Bestätigt: Ich bestätige den Praxistext.");
+    expect(result).not.toContain("PRACTICE_CONFIRMATION_1");
+    expect(result).not.toContain(": true");
+  });
+});
+
 describe("buildMedicalRecordNote – Deduplizierung", () => {
   it("zeigt Tel. nur einmal wenn KONTAKT mehrfach impliziert wird", () => {
     const result = buildMedicalRecordNote({

@@ -127,6 +127,9 @@ const DR_READY = {
     id: "p-1",
     name: "Hausarztpraxis Muster",
     message_signature: "Dr. Muster · Musterstraße 1",
+    questionnaire_confirmation_text_1: "Ich bestätige A.",
+    questionnaire_confirmation_text_2: null,
+    questionnaire_confirmation_text_3: "Ich bestätige C.",
   },
 };
 
@@ -140,10 +143,18 @@ const SESSION_RESULT = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeRequest(id: string) {
+function makeRequest(id: string, body?: Record<string, unknown>) {
   return new NextRequest(
     `http://localhost/api/digital-requests/${id}/process`,
-    { method: "POST" },
+    {
+      method: "POST",
+      ...(body
+        ? {
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        : {}),
+    },
   );
 }
 
@@ -279,6 +290,24 @@ describe("POST /api/digital-requests/[id]/process", () => {
     expect(input.patientLanguage).toBe("de");
     expect(input.ownerAccountId).toBe("account-1");
     expect(input.ownerPracticeId).toBe("p-1");
+  });
+
+  it("übergibt nur ausgewählte serverseitige Confirmation-Texte", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_READY);
+    createQuestionnaireSessionMock.mockResolvedValue(SESSION_RESULT);
+    sendDigitalRequestTokenEmailMock.mockResolvedValue("practice");
+    pm.digitalRequest.update.mockResolvedValue({});
+
+    const response = await POST(
+      makeRequest("dr-1", {
+        selected_confirmation_ids: ["PRACTICE_CONFIRMATION_3"],
+      }),
+      CTX("dr-1"),
+    );
+    expect(response.status).toBe(200);
+    expect(createQuestionnaireSessionMock.mock.calls[0][0].practiceConfirmations)
+      .toEqual([{ id: "PRACTICE_CONFIRMATION_3", text: "Ich bestätige C." }]);
   });
 
   it("sendet Mail an submitter_email mit tokenLink", async () => {

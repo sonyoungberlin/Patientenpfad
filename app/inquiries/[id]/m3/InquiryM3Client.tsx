@@ -22,6 +22,10 @@ import {
 } from "@/lib/inquiries/formatInquiryOutput";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED, VOLLSTAENDIGE_ANAMNESE_PRESET } from "@/lib/questionnaire/blockCatalog";
 import { isBlockEnReady } from "@/lib/questionnaire/i18n";
+import type {
+  PracticeConfirmationId,
+  PracticeConfirmationSlot,
+} from "@/lib/questionnaire/confirmation";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
 
 export type M3SpecificCheckpoint = {
@@ -106,6 +110,7 @@ type Props = {
   messageSignature?: string;
   /** Praxisspezifische Inquiry-Config – steuert den Checkpoint-Katalog für die Vorschau. */
   practiceConfig?: PracticeInquiryConfig;
+  practiceConfirmationSlots?: PracticeConfirmationSlot[];
 };
 
 const DECISION_OPTIONS = [
@@ -823,17 +828,22 @@ function composePatientMessageText(
 
 // ---------------------------------------------------------------------------
 
-function QuestionnaireRequestSection({
+export function QuestionnaireRequestSection({
   inquirySessionId,
   onLinkGenerated,
+  practiceConfirmationSlots,
 }: {
   inquirySessionId: string;
   onLinkGenerated: (link: string) => void;
+  practiceConfirmationSlots: PracticeConfirmationSlot[];
 }) {
   const [open, setOpen] = useState(false);
   const [patientRef, setPatientRef] = useState("");
   const [patientRefTouched, setPatientRefTouched] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
+  const [selectedConfirmations, setSelectedConfirmations] = useState<
+    Set<PracticeConfirmationId>
+  >(() => new Set());
   const [language, setLanguage] = useState<"de" | "en">("de");
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -892,6 +902,7 @@ function QuestionnaireRequestSection({
           selected_block_ids: blockIds,
           inquiry_session_id: inquirySessionId,
           language,
+          selected_confirmation_ids: Array.from(selectedConfirmations),
         }),
       });
       const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
@@ -1066,6 +1077,34 @@ function QuestionnaireRequestSection({
           </div>
 
           {/* Language selection */}
+          {practiceConfirmationSlots.length > 0 && (
+            <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+              <legend style={{ fontWeight: 500, marginBottom: "0.4rem", fontSize: "0.9rem" }}>
+                Bestätigungen
+              </legend>
+              <div style={{ display: "grid", gap: "0.5rem" }}>
+                {practiceConfirmationSlots.map((slot) => (
+                  <label key={slot.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedConfirmations.has(slot.id)}
+                      disabled={loading || !!link}
+                      onChange={(event) => {
+                        setSelectedConfirmations((previous) => {
+                          const next = new Set(previous);
+                          event.target.checked ? next.add(slot.id) : next.delete(slot.id);
+                          return next;
+                        });
+                      }}
+                      data-q-confirmation={slot.id}
+                    />
+                    <span style={{ whiteSpace: "pre-wrap" }}>{slot.text}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           <div>
             <label
               htmlFor="q-language"
@@ -1155,6 +1194,7 @@ export default function InquiryM3Client({
   isConfirmed,
   messageSignature = "",
   practiceConfig,
+  practiceConfirmationSlots = [],
 }: Props) {
   const actionIdSet = new Set(actionIds);
 
@@ -2233,7 +2273,11 @@ export default function InquiryM3Client({
           )}
 
           {/* Fragebogen anfordern – isolierter Bereich, keine Änderung an InquirySession */}
-          <QuestionnaireRequestSection inquirySessionId={sessionId} onLinkGenerated={setQuestionnaireLink} />
+          <QuestionnaireRequestSection
+            inquirySessionId={sessionId}
+            onLinkGenerated={setQuestionnaireLink}
+            practiceConfirmationSlots={practiceConfirmationSlots}
+          />
 
           {templateInfo && (
             <p

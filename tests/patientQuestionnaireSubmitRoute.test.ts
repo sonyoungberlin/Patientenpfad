@@ -58,6 +58,48 @@ const SESSION_BASE = {
   ],
 };
 
+const CONFIRMATION_SESSION = {
+  ...SESSION_BASE,
+  deduplicated_questions: [
+    ...SESSION_BASE.deduplicated_questions,
+    {
+      id: "PRACTICE_CONFIRMATION_1",
+      text: "Ich bestätige A.",
+      type: "confirmation",
+      required: true,
+    },
+    {
+      id: "PRACTICE_CONFIRMATION_2",
+      text: "Ich bestätige B.",
+      type: "confirmation",
+      required: true,
+    },
+  ],
+  frozen_blocks: [
+    {
+      id: "PRACTICE_CONFIRMATIONS",
+      label: "Bestätigungen",
+      displayOrder: 10_000,
+      questions: [
+        {
+          id: "PRACTICE_CONFIRMATION_1",
+          text: "Ich bestätige A.",
+          type: "confirmation",
+          required: true,
+        },
+        {
+          id: "PRACTICE_CONFIRMATION_2",
+          text: "Ich bestätige B.",
+          type: "confirmation",
+          required: true,
+        },
+      ],
+      conditionalRules: [],
+      initiallyVisible: true,
+    },
+  ],
+};
+
 describe("POST /api/q/[token]", () => {
   beforeEach(() => {
     prismaMock.patientQuestionnaireSession.findUnique.mockReset();
@@ -94,6 +136,47 @@ describe("POST /api/q/[token]", () => {
     const updateData = prismaMock.patientQuestionnaireSession.update.mock.calls[0][0].data;
     expect(updateData.answers).toEqual(answers);
   });
+
+  it("erlaubt mehrere Confirmations nur wenn alle exakt true sind", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      CONFIRMATION_SESSION,
+    );
+    const req = makeRequest("valid-token", {
+      answers: {
+        PRACTICE_CONFIRMATION_1: "true",
+        PRACTICE_CONFIRMATION_2: "true",
+      },
+    });
+    const res = await POST(req, {
+      params: Promise.resolve({ token: "valid-token" }),
+    });
+    expect(res.status).toBe(200);
+    expect(
+      prismaMock.patientQuestionnaireSession.update.mock.calls[0][0].data.answers,
+    ).toMatchObject({
+      PRACTICE_CONFIRMATION_1: "true",
+      PRACTICE_CONFIRMATION_2: "true",
+    });
+  });
+
+  it.each([undefined, "", "false", "ja", "nein"])(
+    "lehnt manipulierte Confirmation %p serverseitig ab",
+    async (value) => {
+      prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+        CONFIRMATION_SESSION,
+      );
+      const answers: Record<string, string> = {
+        PRACTICE_CONFIRMATION_1: "true",
+      };
+      if (value !== undefined) answers.PRACTICE_CONFIRMATION_2 = value;
+      const req = makeRequest("valid-token", { answers });
+      const res = await POST(req, {
+        params: Promise.resolve({ token: "valid-token" }),
+      });
+      expect(res.status).toBe(400);
+      expect(prismaMock.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    },
+  );
 
   it("Fremde questionIds werden verworfen (nur bekannte werden gespeichert)", async () => {
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(SESSION_BASE);

@@ -56,6 +56,9 @@ export default async function PracticeInquirySettingsPage() {
     inqInfoText1: "",
     inqInfoText2: "",
     inqInfoText3: "",
+    questionnaireConfirmationText1: "",
+    questionnaireConfirmationText2: "",
+    questionnaireConfirmationText3: "",
   };
 
   try {
@@ -79,6 +82,9 @@ export default async function PracticeInquirySettingsPage() {
         inq_info_text_1: true,
         inq_info_text_2: true,
         inq_info_text_3: true,
+        questionnaire_confirmation_text_1: true,
+        questionnaire_confirmation_text_2: true,
+        questionnaire_confirmation_text_3: true,
       },
     });
 
@@ -109,6 +115,12 @@ export default async function PracticeInquirySettingsPage() {
         inqInfoText1: data.inq_info_text_1 ?? "",
         inqInfoText2: data.inq_info_text_2 ?? "",
         inqInfoText3: data.inq_info_text_3 ?? "",
+        questionnaireConfirmationText1:
+          data.questionnaire_confirmation_text_1 ?? "",
+        questionnaireConfirmationText2:
+          data.questionnaire_confirmation_text_2 ?? "",
+        questionnaireConfirmationText3:
+          data.questionnaire_confirmation_text_3 ?? "",
       };
     }
   } catch {

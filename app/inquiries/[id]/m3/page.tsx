@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { getPracticeInquiryConfig } from "@/lib/inquiries/practiceConfig";
+import {
+  buildPracticeConfirmationSlots,
+  type PracticeConfirmationSlot,
+} from "@/lib/questionnaire/confirmation";
 import { GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
 import {
   getActiveProcessShelfGroupsFromStatuses,
@@ -115,14 +119,21 @@ export default async function InquiryM3Page({
   // Accounts – analog zu `app/cases/[id]/m3/page.tsx`. Reines Lesen, keine
   // neue Logik.
   let messageSignature = "";
+  let practiceConfirmationSlots: PracticeConfirmationSlot[] = [];
   const currentPracticeId = account.current_practice?.id;
   if (currentPracticeId) {
     try {
       const pr = await prisma.practice.findUnique({
         where: { id: currentPracticeId },
-        select: { message_signature: true },
+        select: {
+          message_signature: true,
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
+        },
       });
       messageSignature = pr?.message_signature ?? "";
+      if (pr) practiceConfirmationSlots = buildPracticeConfirmationSlots(pr);
     } catch {
       messageSignature = "";
     }
@@ -289,6 +300,7 @@ export default async function InquiryM3Page({
         isConfirmed={isConfirmed}
         messageSignature={messageSignature}
         practiceConfig={practiceConfig}
+        practiceConfirmationSlots={practiceConfirmationSlots}
       />
     </main>
   );

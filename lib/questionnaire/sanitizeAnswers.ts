@@ -23,6 +23,7 @@
  */
 
 import { QUESTION_CATALOG } from "./blockCatalog";
+import { isConfirmedAnswer } from "./confirmation";
 import type { QuestionnaireLanguage } from "./i18n";
 import { ALLOWED_ANSWER_CHARACTERS_REGEX } from "./validateAnswerCharacters";
 
@@ -233,6 +234,11 @@ export function sanitizeAnswers(
     const qDef = frozenQuestionMap?.get(questionId) ?? QUESTION_CATALOG[questionId];
     if (!qDef) continue;
     if (typeof value !== "string") continue;
+
+    if (qDef.type === "confirmation") {
+      if (isConfirmedAnswer(value)) sanitized[questionId] = value;
+      continue;
+    }
 
     // Spezialfall: FACHAERZTE repeatable group
     if (questionId === "FACHAERZTE") {

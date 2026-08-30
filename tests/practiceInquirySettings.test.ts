@@ -42,6 +42,9 @@ function validFullBody(): Record<string, unknown> {
     inqInfoText1:                  "Hinweis 1",
     inqInfoText2:                  "Hinweis 2",
     inqInfoText3:                  "Hinweis 3",
+    questionnaireConfirmationText1: "Bestätigung 1",
+    questionnaireConfirmationText2: "Bestätigung 2",
+    questionnaireConfirmationText3: "Bestätigung 3",
   };
 }
 
@@ -72,6 +75,9 @@ describe("validatePracticeInquirySettings – gültige Eingaben", () => {
     expect(d.inq_info_text_1).toBe("Hinweis 1");
     expect(d.inq_info_text_2).toBe("Hinweis 2");
     expect(d.inq_info_text_3).toBe("Hinweis 3");
+    expect(d.questionnaire_confirmation_text_1).toBe("Bestätigung 1");
+    expect(d.questionnaire_confirmation_text_2).toBe("Bestätigung 2");
+    expect(d.questionnaire_confirmation_text_3).toBe("Bestätigung 3");
   });
 
   it("akzeptiert time_unit = Werktage", () => {
@@ -159,6 +165,9 @@ describe("validatePracticeInquirySettings – Leerstring → null", () => {
     "inqInfoText1",
     "inqInfoText2",
     "inqInfoText3",
+    "questionnaireConfirmationText1",
+    "questionnaireConfirmationText2",
+    "questionnaireConfirmationText3",
   ] as const;
 
   const dbFieldMap: Record<string, keyof PracticeInquirySettingsData> = {
@@ -175,6 +184,9 @@ describe("validatePracticeInquirySettings – Leerstring → null", () => {
     inqInfoText1:                  "inq_info_text_1",
     inqInfoText2:                  "inq_info_text_2",
     inqInfoText3:                  "inq_info_text_3",
+    questionnaireConfirmationText1: "questionnaire_confirmation_text_1",
+    questionnaireConfirmationText2: "questionnaire_confirmation_text_2",
+    questionnaireConfirmationText3: "questionnaire_confirmation_text_3",
   };
 
   for (const bodyKey of emptyStringFields) {
@@ -217,6 +229,29 @@ describe("validatePracticeInquirySettings – Leerstring → null", () => {
 // ---------------------------------------------------------------------------
 
 describe("validatePracticeInquirySettings – Validierungsfehler", () => {
+  it("Bestätigung mit genau 300 Zeichen wird akzeptiert", () => {
+    const result = validatePracticeInquirySettings({
+      questionnaireConfirmationText1: "x".repeat(300),
+    });
+    expect(result.error).toBeNull();
+  });
+
+  it("Bestätigung mit 301 Zeichen wird abgelehnt", () => {
+    const result = validatePracticeInquirySettings({
+      questionnaireConfirmationText1: "x".repeat(301),
+    });
+    expect(result.data).toBeNull();
+    expect(result.error).toContain("300");
+  });
+
+  it("Bestätigung wird getrimmt und als Plaintext erhalten", () => {
+    const result = validatePracticeInquirySettings({
+      questionnaireConfirmationText1: "  <b>Text</b>\nZeile 2  ",
+    });
+    expect(result.data?.questionnaire_confirmation_text_1).toBe(
+      "<b>Text</b>\nZeile 2",
+    );
+  });
   it("String > 200 Zeichen → Fehler", () => {
     const result = validatePracticeInquirySettings({
       inqBookingCalendarName: "x".repeat(201),

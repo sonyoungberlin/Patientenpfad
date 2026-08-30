@@ -25,6 +25,9 @@ export interface InquirySettingsInitial {
   inqInfoText1: string;
   inqInfoText2: string;
   inqInfoText3: string;
+  questionnaireConfirmationText1: string;
+  questionnaireConfirmationText2: string;
+  questionnaireConfirmationText3: string;
 }
 
 type FormState = InquirySettingsInitial;
@@ -233,6 +236,9 @@ export default function InquirySettingsForm({
         inqInfoText1: values.inqInfoText1,
         inqInfoText2: values.inqInfoText2,
         inqInfoText3: values.inqInfoText3,
+        questionnaireConfirmationText1: values.questionnaireConfirmationText1,
+        questionnaireConfirmationText2: values.questionnaireConfirmationText2,
+        questionnaireConfirmationText3: values.questionnaireConfirmationText3,
       };
 
       // Ganzzahlfelder: nur senden wenn nicht leer
@@ -274,6 +280,12 @@ export default function InquirySettingsForm({
           inqInfoText1: values.inqInfoText1.trim(),
           inqInfoText2: values.inqInfoText2.trim(),
           inqInfoText3: values.inqInfoText3.trim(),
+          questionnaireConfirmationText1:
+            values.questionnaireConfirmationText1.trim(),
+          questionnaireConfirmationText2:
+            values.questionnaireConfirmationText2.trim(),
+          questionnaireConfirmationText3:
+            values.questionnaireConfirmationText3.trim(),
         };
         setSaved(trimmed);
         setValues(trimmed);
@@ -462,6 +474,32 @@ export default function InquirySettingsForm({
           label="Info 3"
           value={values.inqInfoText3}
           onChange={(v) => set("inqInfoText3", v)}
+        />
+      </FieldGroup>
+
+      <FieldGroup legend="Bestätigungen für Fragebögen">
+        <p style={{ fontSize: "0.83rem", color: "var(--muted, #666)", margin: 0 }}>
+          Diese Texte können beim Versenden eines Fragebogens ausgewählt werden.
+          Patientinnen und Patienten müssen ausgewählte Bestätigungen vor dem
+          Absenden aktiv bestätigen.
+        </p>
+        <TextAreaField
+          id="questionnaireConfirmationText1"
+          label="Bestätigung 1"
+          value={values.questionnaireConfirmationText1}
+          onChange={(v) => set("questionnaireConfirmationText1", v)}
+        />
+        <TextAreaField
+          id="questionnaireConfirmationText2"
+          label="Bestätigung 2"
+          value={values.questionnaireConfirmationText2}
+          onChange={(v) => set("questionnaireConfirmationText2", v)}
+        />
+        <TextAreaField
+          id="questionnaireConfirmationText3"
+          label="Bestätigung 3"
+          value={values.questionnaireConfirmationText3}
+          onChange={(v) => set("questionnaireConfirmationText3", v)}
         />
       </FieldGroup>
 

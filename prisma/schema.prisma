@@ -676,6 +676,13 @@ model Practice {
   inq_info_text_2  String?
   inq_info_text_3  String?
 
+  /// Vorkonfigurierte Bestätigungen für individuell versendete Patientenfragebögen.
+  /// Nullable; leere/NULL = Slot im Versanddialog nicht verfügbar.
+  /// Max. 300 Zeichen je Feld (Validierung im App-Layer).
+  questionnaire_confirmation_text_1 String?
+  questionnaire_confirmation_text_2 String?
+  questionnaire_confirmation_text_3 String?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

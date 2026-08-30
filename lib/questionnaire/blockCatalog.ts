@@ -46,6 +46,7 @@ export type QuestionType =
   | "text"
   | "date"
   | "yes_no"
+  | "confirmation"
   | "select"
   | "multi_select"
   | "textarea"

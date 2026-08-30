@@ -67,6 +67,37 @@ describe("/q/[token] Mehrsprachigkeit", () => {
     expect(html).not.toContain("Wie lautet Ihre Telefonnummer");
   });
 
+  it.each([
+    ["de", "Ich bestätige diese Erklärung."],
+    ["en", "I confirm this statement."],
+  ] as const)(
+    "rendert Confirmation-Systemlabel auf %s und lässt den Praxistext unverändert",
+    async (language, systemLabel) => {
+      const practiceText = "Ich bestätige den Praxistext.";
+      pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+        token_expires_at: FUTURE,
+        status: "pending",
+        deduplicated_questions: [
+          {
+            id: "PRACTICE_CONFIRMATION_1",
+            text: practiceText,
+            type: "confirmation",
+            required: true,
+          },
+        ],
+        patient_language: language,
+        owner_practice: { message_signature: null },
+      });
+      const ui = await QuestionnairePage({
+        params: Promise.resolve({ token: "tok-1" }),
+      });
+      const html = renderToStaticMarkup(ui as React.ReactElement);
+      expect(html).toContain(practiceText);
+      expect(html).toContain(systemLabel);
+      expect(html).toContain('type="checkbox"');
+    },
+  );
+
   it("rendert das korrigierte Versicherungsfeld in DE und EN mit Hilfetext", async () => {
     const deHtml = await render("de", ["INSURANCE_CARD_IDENTIFIER"]);
     expect(deHtml).toContain("Krankenkassen-Kennung / IK-Nummer");

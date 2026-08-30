@@ -13,6 +13,9 @@ import { POST } from "@/app/api/questionnaire/route";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    practice: {
+      findUnique: jest.fn(),
+    },
     patientQuestionnaireSession: {
       create: jest.fn(),
     },
@@ -27,6 +30,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 
 type PrismaMock = {
+  practice: { findUnique: jest.Mock };
   patientQuestionnaireSession: { create: jest.Mock };
 };
 const prismaMock = prisma as unknown as PrismaMock;
@@ -57,6 +61,11 @@ const INBOX_ONLY_ACCOUNT = {
   memberships: [{ practice_id: "p-1", role: "INBOX_ONLY" }],
 };
 
+const OWNER_ACCOUNT = {
+  ...INBOX_ONLY_ACCOUNT,
+  memberships: [{ practice_id: "p-1", role: "OWNER" }],
+};
+
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/questionnaire", {
     method: "POST",
@@ -68,6 +77,7 @@ function makeRequest(body: unknown) {
 describe("POST /api/questionnaire", () => {
   beforeEach(() => {
     prismaMock.patientQuestionnaireSession.create.mockReset();
+    prismaMock.practice.findUnique.mockReset();
     getSessionAccountMock.mockReset();
   });
 
@@ -108,6 +118,35 @@ describe("POST /api/questionnaire", () => {
     expect(Array.isArray(createCall.data.deduplicated_questions)).toBe(true);
     expect((createCall.data.deduplicated_questions as unknown[]).length).toBeGreaterThan(0);
     expect(createCall.data.status).toBe("pending");
+  });
+
+  it("friert nur ausgewählte Practice-Confirmations mit serverseitigem Text ein", async () => {
+    getSessionAccountMock.mockResolvedValue(OWNER_ACCOUNT);
+    prismaMock.practice.findUnique.mockResolvedValue({
+      questionnaire_confirmation_text_1: "Ich bestätige A.",
+      questionnaire_confirmation_text_2: null,
+      questionnaire_confirmation_text_3: "Ich bestätige C.",
+    });
+    prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-1" });
+
+    const res = await POST(makeRequest({
+      selected_block_ids: ["KONTAKT"],
+      patient_reference: "PAT-C",
+      selected_confirmation_ids: ["PRACTICE_CONFIRMATION_3"],
+    }));
+    expect(res.status).toBe(200);
+
+    const data = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0].data;
+    const confirmations = data.deduplicated_questions.filter(
+      (question: { type: string }) => question.type === "confirmation",
+    );
+    expect(confirmations).toEqual([{
+      id: "PRACTICE_CONFIRMATION_3",
+      text: "Ich bestätige C.",
+      type: "confirmation",
+      required: true,
+    }]);
+    expect(JSON.stringify(data.frozen_blocks)).not.toContain("Ich bestätige A.");
   });
 
   it("gibt 401 zurück wenn nicht angemeldet", async () => {

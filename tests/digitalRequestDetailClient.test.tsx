@@ -126,6 +126,19 @@ describe("DigitalRequestDetailClient — Button-Sichtbarkeit", () => {
     expect(btn).toBeNull();
     await cleanup(root, container);
   });
+
+  it("zeigt nur übergebene Confirmation-Texte als Checkboxen ohne Texteditor", async () => {
+    const { container, root } = await renderComponent(defaultProps({
+      practiceConfirmationSlots: [
+        { id: "PRACTICE_CONFIRMATION_1", text: "Erklärung 1" },
+        { id: "PRACTICE_CONFIRMATION_3", text: "Erklärung 3" },
+      ],
+    }));
+    expect(container.querySelectorAll("[data-confirmation-choice]")).toHaveLength(2);
+    expect(container.textContent).toContain("Erklärung 1");
+    expect(container.querySelector("textarea")).toBeNull();
+    await cleanup(root, container);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -162,6 +175,31 @@ describe("DigitalRequestDetailClient — Send-Interaktion", () => {
     expect(call2Url).toContain("/api/digital-requests/dr-1/process");
     expect(call2Opts.method).toBe("POST");
 
+    await cleanup(root, container);
+  });
+
+  it("sendet ausgewählte Confirmation-ID ohne editierbaren Text", async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, status: "sent" }) });
+    const { container, root } = await renderComponent(defaultProps({
+      practiceConfirmationSlots: [
+        { id: "PRACTICE_CONFIRMATION_1", text: "Servertext" },
+      ],
+    }));
+    const checkbox = container.querySelector<HTMLInputElement>(
+      '[data-confirmation-choice="PRACTICE_CONFIRMATION_1"]',
+    )!;
+    await act(async () => checkbox.click());
+    await act(async () => container.querySelector<HTMLButtonElement>(
+      '[data-testid="send-questionnaire-btn"]',
+    )!.click());
+
+    const processOptions = mockFetch.mock.calls[1][1] as RequestInit;
+    expect(JSON.parse(String(processOptions.body))).toEqual({
+      selected_confirmation_ids: ["PRACTICE_CONFIRMATION_1"],
+    });
+    expect(String(processOptions.body)).not.toContain("Servertext");
     await cleanup(root, container);
   });
 

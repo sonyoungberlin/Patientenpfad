@@ -448,6 +448,13 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           continue;
         }
 
+        if (question.type === "confirmation") {
+          if (raw === "true") {
+            blockLines.push(`Bestätigt: ${truncateLine(question.text)}`);
+          }
+          continue;
+        }
+
         blockLines.push(...renderQuestionLines(question.id, raw));
       }
 

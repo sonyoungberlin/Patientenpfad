@@ -49,6 +49,9 @@ const DB_SELECT = {
   inq_info_text_1:                   true,
   inq_info_text_2:                   true,
   inq_info_text_3:                   true,
+  questionnaire_confirmation_text_1: true,
+  questionnaire_confirmation_text_2: true,
+  questionnaire_confirmation_text_3: true,
 } as const;
 
 /**
@@ -89,6 +92,12 @@ export async function GET(req: NextRequest) {
     inqInfoText1:                  data?.inq_info_text_1                   ?? "",
     inqInfoText2:                  data?.inq_info_text_2                   ?? "",
     inqInfoText3:                  data?.inq_info_text_3                   ?? "",
+    questionnaireConfirmationText1:
+      data?.questionnaire_confirmation_text_1 ?? "",
+    questionnaireConfirmationText2:
+      data?.questionnaire_confirmation_text_2 ?? "",
+    questionnaireConfirmationText3:
+      data?.questionnaire_confirmation_text_3 ?? "",
   });
 }
 

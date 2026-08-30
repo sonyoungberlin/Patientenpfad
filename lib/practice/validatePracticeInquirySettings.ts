@@ -20,6 +20,7 @@
 
 const STRING_MAX = 200;
 const INFO_TEXT_MAX = 300;
+const CONFIRMATION_TEXT_MAX = 300;
 const INT_MIN = 1;
 const INT_MAX = 999;
 
@@ -59,6 +60,11 @@ export interface PracticeInquirySettingsData {
   inq_info_text_1?: string | null;
   inq_info_text_2?: string | null;
   inq_info_text_3?: string | null;
+
+  // Vorkonfigurierte Bestätigungen für Patientenfragebögen
+  questionnaire_confirmation_text_1?: string | null;
+  questionnaire_confirmation_text_2?: string | null;
+  questionnaire_confirmation_text_3?: string | null;
 }
 
 export interface ValidateSettingsResult {
@@ -148,6 +154,24 @@ export function validatePracticeInquirySettings(
       return {
         data: null,
         error: `Info-Text "${bodyKey}" darf maximal ${INFO_TEXT_MAX} Zeichen enthalten.`,
+      };
+    }
+    data[dbKey] = val;
+  }
+
+  const confirmationFields = [
+    ["questionnaireConfirmationText1", "questionnaire_confirmation_text_1"],
+    ["questionnaireConfirmationText2", "questionnaire_confirmation_text_2"],
+    ["questionnaireConfirmationText3", "questionnaire_confirmation_text_3"],
+  ] as const;
+
+  for (const [bodyKey, dbKey] of confirmationFields) {
+    const val = parseBodyString(body, bodyKey, CONFIRMATION_TEXT_MAX);
+    if (val === "MISSING") continue;
+    if (val === "ERR") {
+      return {
+        data: null,
+        error: `Bestätigung "${bodyKey}" darf maximal ${CONFIRMATION_TEXT_MAX} Zeichen enthalten.`,
       };
     }
     data[dbKey] = val;

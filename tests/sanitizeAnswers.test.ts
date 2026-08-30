@@ -13,6 +13,35 @@ const KNOWN_QUESTIONS = [
 ];
 
 describe("sanitizeAnswers", () => {
+  it("akzeptiert für confirmation ausschließlich exakt den String true", () => {
+    const questions = [
+      {
+        id: "PRACTICE_CONFIRMATION_1",
+        text: "Erklärung",
+        type: "confirmation" as const,
+        required: true,
+      },
+    ];
+    expect(
+      sanitizeAnswers(
+        { PRACTICE_CONFIRMATION_1: "true" },
+        questions,
+        "de",
+        new Map([[questions[0].id, questions[0]]]),
+      ),
+    ).toEqual({ PRACTICE_CONFIRMATION_1: "true" });
+
+    for (const value of ["false", "ja", "nein", "1", "TRUE", ""]) {
+      expect(
+        sanitizeAnswers(
+          { PRACTICE_CONFIRMATION_1: value },
+          questions,
+          "de",
+          new Map([[questions[0].id, questions[0]]]),
+        ),
+      ).toEqual({});
+    }
+  });
   it("akzeptiert nur questionIds aus deduplicated_questions UND aus QUESTION_CATALOG", () => {
     const out = sanitizeAnswers(
       {

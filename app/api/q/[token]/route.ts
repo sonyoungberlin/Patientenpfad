@@ -15,6 +15,7 @@ import {
   computeVisibleBlockIds,
 } from "@/lib/questionnaire/conditionalLogic";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { isConfirmedAnswer } from "@/lib/questionnaire/confirmation";
 
 export async function POST(
   req: NextRequest,
@@ -155,6 +156,27 @@ export async function POST(
     const filteredAnswers: Record<string, string> = Object.fromEntries(
       Object.entries(sanitizedAnswers).filter(([id]) => visibleAnswerIds.has(id)),
     );
+
+    const snapshotQuestions: QuestionDefinition[] = frozenBlocks
+      ? frozenBlocks.flatMap((block) => block.questions)
+      : (deduplicatedQuestions as QuestionDefinition[]);
+    const missingConfirmation = snapshotQuestions.some(
+      (question) =>
+        question.type === "confirmation" &&
+        !isConfirmedAnswer(filteredAnswers[question.id]),
+    );
+    if (missingConfirmation) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            language === "en"
+              ? "Please confirm all required statements."
+              : "Bitte bestätigen Sie alle erforderlichen Erklärungen.",
+        },
+        { status: 400 },
+      );
+    }
 
     await prisma.patientQuestionnaireSession.update({
       where: { id: session.id },

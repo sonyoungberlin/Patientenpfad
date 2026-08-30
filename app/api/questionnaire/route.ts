@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireSendAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import {
@@ -8,6 +9,12 @@ import {
 } from "@/lib/questionnaire/i18n";
 import { getCreateOwnershipData } from "@/lib/questionnaire/practiceScope";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
+import {
+  buildPracticeConfirmationSlots,
+  parseSelectedPracticeConfirmationIds,
+  selectPracticeConfirmationSlots,
+  type PracticeConfirmationSlot,
+} from "@/lib/questionnaire/confirmation";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -75,6 +82,15 @@ export async function POST(req: NextRequest) {
     // Optionale Sprache der Patientensicht. Whitelist "de" | "en", Default "de".
     // Praxis-/interne Sichten ignorieren dieses Feld.
     const patientLanguage = normalizeQuestionnaireLanguage(body.language);
+    const selectedConfirmationIds = parseSelectedPracticeConfirmationIds(
+      body.selected_confirmation_ids,
+    );
+    if (!selectedConfirmationIds) {
+      return NextResponse.json(
+        { ok: false, error: "Ungültige Bestätigungs-Auswahl." },
+        { status: 400 },
+      );
+    }
 
     // Variante A (keine gemischten Sprachen): bei language="en" dürfen
     // nur Blöcke versendet werden, deren Block- und Fragenfelder
@@ -97,6 +113,33 @@ export async function POST(req: NextRequest) {
     }
 
     const ownership = getCreateOwnershipData(account);
+    let practiceConfirmations: PracticeConfirmationSlot[] = [];
+    if (selectedConfirmationIds.length > 0) {
+      if (!ownership.owner_practice_id) {
+        return NextResponse.json(
+          { ok: false, error: "Keine Praxis für Bestätigungen verfügbar." },
+          { status: 400 },
+        );
+      }
+      const practice = await prisma.practice.findUnique({
+        where: { id: ownership.owner_practice_id },
+        select: {
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
+        },
+      });
+      practiceConfirmations = selectPracticeConfirmationSlots(
+        buildPracticeConfirmationSlots(practice ?? {}),
+        selectedConfirmationIds,
+      );
+      if (practiceConfirmations.length !== selectedConfirmationIds.length) {
+        return NextResponse.json(
+          { ok: false, error: "Eine ausgewählte Bestätigung ist nicht verfügbar." },
+          { status: 400 },
+        );
+      }
+    }
     // x-forwarded-host/-proto für Codespace/Proxy-Umgebungen (analog practice/members und website-forms/[id])
     const fwdHost =
       req.headers.get("x-forwarded-host") ??
@@ -111,6 +154,7 @@ export async function POST(req: NextRequest) {
       ownerAccountId: ownership.owner_account_id,
       ownerPracticeId: ownership.owner_practice_id ?? null,
       inquirySessionId,
+      practiceConfirmations,
       origin,
     });
 

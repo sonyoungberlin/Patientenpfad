@@ -254,6 +254,28 @@ function QuestionField({
           })}
         </div>
       );
+    case "confirmation":
+      return (
+        <label style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+          <input
+            type="checkbox"
+            id={question.id}
+            checked={value === "true"}
+            onChange={(event) =>
+              onChange(question.id, event.target.checked ? "true" : "")
+            }
+            disabled={disabled}
+            required
+            aria-invalid={hasError || undefined}
+            style={{ marginTop: "0.2rem" }}
+          />
+          <span>
+            {language === "en"
+              ? "I confirm this statement."
+              : "Ich bestätige diese Erklärung."}
+          </span>
+        </label>
+      );
     case "repeatable_group":
       return (
         <RepeatableGroupField
@@ -1077,7 +1099,11 @@ export function QuestionnaireFormClient({
 
     // Required-Validierung: nur sichtbare Pflichtfelder prüfen
     const missing = visibleQuestions.filter(
-      (q) => q.required && (answersToSend[q.id] ?? "").trim() === "",
+      (q) =>
+        q.required &&
+        (q.type === "confirmation"
+          ? answersToSend[q.id] !== "true"
+          : (answersToSend[q.id] ?? "").trim() === ""),
     );
     if (missing.length > 0) {
       setMissingRequiredIds(new Set(missing.map((q) => q.id)));

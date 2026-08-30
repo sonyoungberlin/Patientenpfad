@@ -25,6 +25,11 @@ import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { sendDigitalRequestTokenEmail } from "@/lib/mail/sendDigitalRequestTokenEmail";
+import {
+  buildPracticeConfirmationSlots,
+  parseSelectedPracticeConfirmationIds,
+  selectPracticeConfirmationSlots,
+} from "@/lib/questionnaire/confirmation";
 
 /** Status-Werte, bei denen kein erneuter Prozess erlaubt ist. */
 const TERMINAL_STATUSES = new Set(["sent", "closed", "rejected"]);
@@ -37,6 +42,16 @@ export async function POST(
   if (error) return error;
 
   const { id } = await ctx.params;
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const selectedConfirmationIds = parseSelectedPracticeConfirmationIds(
+    body.selected_confirmation_ids,
+  );
+  if (!selectedConfirmationIds) {
+    return NextResponse.json(
+      { ok: false, error: "Ungültige Bestätigungs-Auswahl." },
+      { status: 400 },
+    );
+  }
 
   // --- DigitalRequest laden ---
   const dr = await prisma.digitalRequest.findFirst({
@@ -55,6 +70,9 @@ export async function POST(
           id: true,
           name: true,
           message_signature: true,
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
         },
       },
     },
@@ -118,6 +136,17 @@ export async function POST(
     );
   }
 
+  const practiceConfirmations = selectPracticeConfirmationSlots(
+    buildPracticeConfirmationSlots(dr.owner_practice ?? {}),
+    selectedConfirmationIds,
+  );
+  if (practiceConfirmations.length !== selectedConfirmationIds.length) {
+    return NextResponse.json(
+      { ok: false, error: "Eine ausgewählte Bestätigung ist nicht verfügbar." },
+      { status: 400 },
+    );
+  }
+
   // --- Session erzeugen ---
   const origin = req.nextUrl.origin;
   const { sessionId, tokenLink } = await createQuestionnaireSession({
@@ -127,6 +156,7 @@ export async function POST(
     ownerAccountId: dr.owner_account_id,
     ownerPracticeId: dr.owner_practice_id ?? null,
     birthDateHash: dr.birth_date_hash ?? null,
+    practiceConfirmations,
     origin,
   });
 

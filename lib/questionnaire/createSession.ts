@@ -25,6 +25,10 @@ import { prisma } from "@/lib/prisma";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
+import {
+  buildPracticeConfirmationsFrozenBlock,
+  type PracticeConfirmationSlot,
+} from "@/lib/questionnaire/confirmation";
 
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 Stunden
 
@@ -52,6 +56,8 @@ export type CreateSessionInput = {
   context?: "patient" | "office";
   /** Ansprache für Bewerbungsanamnese. Nur im Bewerbungsflow gesetzt; sonst null. */
   salutation?: "du" | "sie";
+  /** Bereits serverseitig aufgelöste Practice-Texte für den Session-Snapshot. */
+  practiceConfirmations?: PracticeConfirmationSlot[];
 };
 
 export type CreateSessionResult = {
@@ -82,6 +88,7 @@ export async function createQuestionnaireSession(
     origin,
     context = "patient",
     salutation,
+    practiceConfirmations = [],
   } = input;
 
   const token = crypto.randomUUID();
@@ -91,6 +98,23 @@ export async function createQuestionnaireSession(
     context === "office"
       ? buildFrozenBlocks(selectedBlockIds, OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG)
       : buildFrozenBlocks(selectedBlockIds);
+  if (context === "patient") {
+    const confirmationBlock =
+      buildPracticeConfirmationsFrozenBlock(practiceConfirmations);
+    if (confirmationBlock) {
+      const existingQuestionIds = new Set(
+        frozenBlocks.flatMap((block) => block.questions.map((question) => question.id)),
+      );
+      if (
+        confirmationBlock.questions.some((question) =>
+          existingQuestionIds.has(question.id),
+        )
+      ) {
+        throw new Error("Practice-Confirmation-ID kollidiert mit Fragebogenfrage.");
+      }
+      frozenBlocks.push(confirmationBlock);
+    }
+  }
   const deduplicatedQuestions = frozenBlocks.flatMap((b) => b.questions);
   const conditionalRules: ConditionalRule[] = frozenBlocks.flatMap(
     (b) => b.conditionalRules,

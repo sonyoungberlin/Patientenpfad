@@ -25,6 +25,7 @@ import {
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 import { DigitalRequestDetailClient } from "@/components/DigitalRequestDetailClient";
 import { topicLabel } from "@/lib/digitalRequests/topics";
+import { buildPracticeConfirmationSlots } from "@/lib/questionnaire/confirmation";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,13 @@ export default async function DigitalRequestDetailPage({
       selected_block_ids: true,
       questionnaire_session_id: true,
       sent_at: true,
+      owner_practice: {
+        select: {
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
+        },
+      },
     },
   });
 
@@ -226,6 +234,9 @@ export default async function DigitalRequestDetailPage({
         isSent={isSent}
         isRejected={isRejected}
         canDelete={!isSent}
+        practiceConfirmationSlots={buildPracticeConfirmationSlots(
+          request.owner_practice ?? {},
+        )}
       />
     </main>
   );

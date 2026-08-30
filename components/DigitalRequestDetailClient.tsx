@@ -17,6 +17,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type {
+  PracticeConfirmationId,
+  PracticeConfirmationSlot,
+} from "@/lib/questionnaire/confirmation";
 
 export type BlockChoice = {
   id: string;
@@ -34,6 +38,7 @@ type Props = {
   isRejected?: boolean;
   /** Wenn true, darf die Anfrage nicht gelöscht werden (status = sent/closed). */
   canDelete?: boolean;
+  practiceConfirmationSlots?: PracticeConfirmationSlot[];
 };
 
 export function DigitalRequestDetailClient({
@@ -44,6 +49,7 @@ export function DigitalRequestDetailClient({
   isSent = false,
   isRejected: isRejectedProp = false,
   canDelete = false,
+  practiceConfirmationSlots = [],
 }: Props) {
   const router = useRouter();
   const [patientReference, setPatientReference] = useState(
@@ -54,6 +60,9 @@ export function DigitalRequestDetailClient({
     for (const id of initialSelectedBlockIds) init[id] = true;
     return init;
   });
+  const [selectedConfirmations, setSelectedConfirmations] = useState<
+    Set<PracticeConfirmationId>
+  >(() => new Set());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,7 +153,13 @@ export function DigitalRequestDetailClient({
       // 2. Fragebogen-Link erzeugen und per Mail senden.
       const processRes = await fetch(
         `/api/digital-requests/${requestId}/process`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            selected_confirmation_ids: Array.from(selectedConfirmations),
+          }),
+        },
       );
       const processData = (await processRes.json()) as {
         ok: boolean;
@@ -296,6 +311,34 @@ export function DigitalRequestDetailClient({
           ))}
         </div>
       </fieldset>
+
+      {practiceConfirmationSlots.length > 0 && (
+        <fieldset disabled={isReadOnly} style={{ margin: "1.5rem 0", padding: 0, border: "none" }}>
+          <legend style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
+            Bestätigungen
+          </legend>
+          <div style={{ display: "grid", gap: "0.75rem" }}>
+            {practiceConfirmationSlots.map((slot) => (
+              <label key={slot.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedConfirmations.has(slot.id)}
+                  disabled={isReadOnly}
+                  onChange={(event) => {
+                    setSelectedConfirmations((previous) => {
+                      const next = new Set(previous);
+                      event.target.checked ? next.add(slot.id) : next.delete(slot.id);
+                      return next;
+                    });
+                  }}
+                  data-confirmation-choice={slot.id}
+                />
+                <span style={{ whiteSpace: "pre-wrap" }}>{slot.text}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       {/* Feedback + Buttons — nur wenn nicht schreibgeschützt */}
       {!isReadOnly && (
