@@ -18,6 +18,7 @@ import {
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { MAIN_GATE_QUESTION_IDS } from "@/components/questionnaire/QuestionField";
+import { parseMultiSelectValue, toggleMultiSelectValue } from "@/lib/questionnaire/multiSelect";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -145,18 +146,15 @@ function QuestionField({
       return (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }}>
           {(question.options ?? []).map((opt) => {
-            const selected = value.split(",").map((s) => s.trim()).filter(Boolean).includes(opt);
+            const options = question.options ?? [];
+            const selected = parseMultiSelectValue(value, options).includes(opt);
             return (
               <button
                 key={opt}
                 type="button"
                 disabled={disabled}
                 onClick={() => {
-                  const current = value.split(",").map((s) => s.trim()).filter(Boolean);
-                  const next = selected
-                    ? current.filter((s) => s !== opt)
-                    : [...current, opt];
-                  onChange(question.id, next.join(", "));
+                  onChange(question.id, toggleMultiSelectValue(value, opt, options));
                 }}
                 style={{
                   padding: "0.25rem 0.75rem",

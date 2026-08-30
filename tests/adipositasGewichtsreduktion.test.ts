@@ -10,6 +10,10 @@ import {
   evaluateCondition,
   computeVisibleQuestionIds,
 } from "../lib/questionnaire/conditionalLogic";
+import {
+  parseMultiSelectValue,
+  toggleMultiSelectValue,
+} from "../lib/questionnaire/multiSelect";
 
 const BLOCK_ID = "ADIPOSITAS_GEWICHTSREDUKTION";
 
@@ -239,6 +243,43 @@ describe("ADIPOSITAS_GEWICHTSREDUKTION – Question-Definitionen", () => {
     for (const id of ALL_ADIP_IDS) {
       expect(QUESTION_CATALOG[id]?.required).toBe(false);
     }
+  });
+});
+
+describe("ADIPOSITAS_GEWICHTSREDUKTION – Multi-Select-Interaktion", () => {
+  const multiSelectIds = [
+    "ADIP_ZUNAHME_AUSLOESER",
+    "ADIP_REDUKTION_UNTERSTUETZUNG",
+    "ADIP_BEWEGUNG_BARRIEREN",
+    "ADIP_ESSVERHALTEN_MUSTER",
+    "ADIP_BERATUNGSWUNSCH",
+  ];
+
+  it.each(multiSelectIds)("%s kann jede Option auswählen und abwählen", (id) => {
+    const question = QUESTION_CATALOG[id]!;
+    for (const option of question.options ?? []) {
+      const selected = toggleMultiSelectValue("", option, question.options ?? []);
+      expect(parseMultiSelectValue(selected, question.options ?? [])).toEqual([option]);
+      expect(toggleMultiSelectValue(selected, option, question.options ?? [])).toBe("");
+    }
+  });
+
+  it("behält mehrere Optionen einschließlich Komma-Labeln und erlaubt Abwahl", () => {
+    const question = QUESTION_CATALOG.ADIP_ESSVERHALTEN_MUSTER!;
+    const options = question.options ?? [];
+    const first = options[0]!;
+    const commaLabel = "Essen bei Stress, Traurigkeit oder Langeweile";
+    const second = toggleMultiSelectValue("", first, options);
+    const both = toggleMultiSelectValue(second, commaLabel, options);
+    expect(parseMultiSelectValue(both, options)).toEqual([first, commaLabel]);
+    expect(parseMultiSelectValue(toggleMultiSelectValue(both, first, options), options)).toEqual([commaLabel]);
+  });
+
+  it("prüft die Beratungsoption mit Komma als vollständigen Wert", () => {
+    const question = QUESTION_CATALOG.ADIP_BERATUNGSWUNSCH!;
+    const option = "Prüfung, ob eine medikamentöse Behandlung für mich infrage kommt";
+    const value = toggleMultiSelectValue("", option, question.options ?? []);
+    expect(parseMultiSelectValue(value, question.options ?? [])).toEqual([option]);
   });
 });
 

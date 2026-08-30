@@ -20,6 +20,7 @@ import type {
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN } from "@/lib/questionnaire/validateAnswerCharacters";
 import type { ConditionGroup } from "@/lib/questionnaire/conditionalLogic";
+import { parseMultiSelectValue, toggleMultiSelectValue } from "@/lib/questionnaire/multiSelect";
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktion
@@ -665,16 +666,15 @@ export function QuestionField({
       return (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }}>
           {(question.options ?? []).map((opt) => {
-            const selected = value.split(",").map((s) => s.trim()).filter(Boolean).includes(opt);
+            const options = question.options ?? [];
+            const selected = parseMultiSelectValue(value, options).includes(opt);
             return (
               <button
                 key={opt}
                 type="button"
                 disabled={disabled}
                 onClick={() => {
-                  const current = value.split(",").map((s) => s.trim()).filter(Boolean);
-                  const next = selected ? current.filter((s) => s !== opt) : [...current, opt];
-                  onChange(question.id, next.join(", "));
+                  onChange(question.id, toggleMultiSelectValue(value, opt, options));
                 }}
                 style={{
                   padding: "0.25rem 0.75rem",

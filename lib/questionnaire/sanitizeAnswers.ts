@@ -26,6 +26,7 @@ import { QUESTION_CATALOG } from "./blockCatalog";
 import { isConfirmedAnswer } from "./confirmation";
 import type { QuestionnaireLanguage } from "./i18n";
 import { ALLOWED_ANSWER_CHARACTERS_REGEX } from "./validateAnswerCharacters";
+import { parseMultiSelectValue } from "./multiSelect";
 
 /** Pro-Antwort-Längenlimit. Identisch zur Phase-2-Token-Flow-Konstante. */
 export const MAX_ANSWER_LENGTH = 2000;
@@ -73,8 +74,8 @@ function canonicalizeAnswerValue(
   }
 
   if (def.type === "multi_select") {
-    // Format: kommagetrennte Liste (vgl. QuestionnaireFormClient).
-    const parts = value.split(",").map((s) => s.trim()).filter(Boolean);
+    // Format: kommagetrennte Liste; Kommas innerhalb eines Labels bleiben erhalten.
+    const parts = parseMultiSelectValue(value, def.options ?? []);
     if (parts.length === 0) return value;
     const mapped = parts.map((p) => mapOptionToCanonical(questionId, p));
     return mapped.join(", ");
