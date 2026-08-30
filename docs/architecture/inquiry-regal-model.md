@@ -36,6 +36,11 @@ Die Trennung nach Regalen reduziert Dopplung, stabilisiert Triggerketten und mac
 2. Prozesszustände sollen langfristig zentral im Prozess- und Action-Regal liegen.
 3. Dieselbe Checkpoint-ID darf im Patiententext nur einmal erscheinen.
 4. Trigger dürfen nicht entfernt werden, solange Actions oder Bedingungen davon abhängen.
+5. Profilbezogene EXPLANATION-Checkpoints werden in M2 ausschließlich unter
+	ihrem Antwortkontext beziehungsweise im bestehenden Profil-Fallback
+	angeboten. Sie dürfen nicht zusätzlich im globalen Prozessregal erscheinen.
+	Globale Actions/Prozesspunkte und echte globale Hinweise bleiben davon
+	getrennt; ihre Statuswerte bleiben für M3 erhalten.
 
 ## Aktuelle sichere Erkenntnisse
 

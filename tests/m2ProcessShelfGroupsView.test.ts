@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import { PROCESS_SHELF_GROUPS } from "@/lib/inquiries/processShelfGroups";
+import { buildGlobalProcessShelfGroups } from "@/app/inquiries/[id]/m2/InquiryM2Client";
+import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 
 function loadM2ClientSource(): string {
   return fs.readFileSync(
@@ -41,6 +43,34 @@ describe("M2 Prozessregale Sicht (global)", () => {
     expect(src).toContain("for (const cp of section.allBoundActionCheckpoints ?? [])");
     expect(src).toContain("for (const cp of section.sectionIntroCheckpoints ?? [])");
     expect(src).toContain("for (const cp of profileActionCheckpoints)");
+  });
+
+  it("zeigt profilbezogene AU-Explanations nicht zusätzlich im globalen Regal", () => {
+    const groups = buildGlobalProcessShelfGroups(
+      [{
+        inquiryId: "AU",
+        label: "AU",
+        decisionQuestions: [],
+        specificCheckpoints: [
+          {
+            id: "AU_MISSING_QUESTIONNAIRE",
+            label: "Angaben zur Erkrankung fehlen",
+            kind: InquiryCheckpointKind.EXPLANATION,
+            scope: InquiryCheckpointScope.SPECIFIC,
+          },
+        ],
+        actionCheckpoints: [],
+      }],
+      [{
+        id: "DIGITAL_REQUEST",
+        label: "Digitale Anfrage",
+        kind: InquiryCheckpointKind.ACTION,
+        scope: InquiryCheckpointScope.GLOBAL,
+      }],
+    );
+    const ids = groups.flatMap((group) => group.checkpoints.map((checkpoint) => checkpoint.id));
+    expect(ids).not.toContain("AU_MISSING_QUESTIONNAIRE");
+    expect(ids).toContain("DIGITAL_REQUEST");
   });
 
   it("laesst das bestehende Fach-Rendering ueber SpecificSection-Varianten bestehen", () => {

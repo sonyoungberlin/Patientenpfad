@@ -3163,7 +3163,14 @@ export function buildGlobalProcessShelfGroups(
 ): GlobalProcessShelfGroup[] {
   const checkpointById = new Map<string, PlainCheckpoint>();
   for (const section of sections) {
-    for (const cp of section.specificCheckpoints) checkpointById.set(cp.id, cp);
+    // Profilbezogene Erklärungen werden bereits unter den Antwortkontexten
+    // oder im bestehenden Fallback gerendert. Sie bleiben in `sections` und
+    // damit für Status-/M3-Pfade erhalten, dürfen aber nicht zusätzlich im
+    // globalen Prozessregal erscheinen.
+    for (const cp of section.specificCheckpoints) {
+      if (cp.kind === InquiryCheckpointKind.EXPLANATION && cp.scope === InquiryCheckpointScope.SPECIFIC) continue;
+      checkpointById.set(cp.id, cp);
+    }
     for (const cp of section.actionCheckpoints) checkpointById.set(cp.id, cp);
     for (const cp of section.allBoundActionCheckpoints ?? []) checkpointById.set(cp.id, cp);
     for (const cp of section.sectionIntroCheckpoints ?? []) checkpointById.set(cp.id, cp);
