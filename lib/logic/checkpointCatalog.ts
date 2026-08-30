@@ -358,6 +358,8 @@ export function ensureAlwaysPresentCheckpoints(
  * Kontext zuzuordnen.
  */
 const SELECTION_TRIGGER_CHECKPOINT_ID = "K11";
+const MEDICAL_AND_CARE_CONTEXT_IDS: readonly string[] = ["K03", "K04", "K05", "K06", "K07"];
+const JOB_CONTEXT_IDS: readonly string[] = ["K03", "K04", "K05", "K06"];
 const REHA_TRIGGER_SELECTION = "Reha-Antrag";
 const REHA_CONDITIONAL_IDS: readonly string[] = ["K14", "K15"];
 
@@ -415,6 +417,8 @@ export function ensureSelectionConditionalCheckpoints(
   const missing: ActiveCheckpoint[] = [];
 
   const conditionalIds = [
+    ...(hasReha || hasPflege ? MEDICAL_AND_CARE_CONTEXT_IDS : []),
+    ...(hasJobcenter ? JOB_CONTEXT_IDS : []),
     ...(hasReha ? REHA_CONDITIONAL_IDS : []),
     ...(hasPflege ? PFLEGE_CONDITIONAL_IDS : []),
     ...(hasJobcenter ? JOBCENTER_CONDITIONAL_IDS : []),

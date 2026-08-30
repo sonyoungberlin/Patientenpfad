@@ -25,7 +25,17 @@ const pm = prisma as unknown as PrismaMock;
 
 const SAME_PRACTICE_ACCOUNT = {
   id: "acc-1",
-  current_practice: { id: "practice-1" } as { id: string },
+  current_practice: {
+    id: "practice-1",
+    slug: "practice-1",
+    name: "Praxis 1",
+    is_approved: true,
+    inquiry_assistant_enabled: false,
+    patient_communication_enabled: false,
+    website_forms_enabled: false,
+    office_cases_enabled: false,
+    arbeitsprozesse_enabled: true,
+  },
 };
 
 beforeEach(() => pm.workflowSession.findFirst.mockReset());

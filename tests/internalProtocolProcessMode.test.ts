@@ -165,16 +165,12 @@ test("Test 9b: TARGET_STATE_KERNFRAGEN enthält 5 Einträge mit Soll-Perspektive
 // ---------------------------------------------------------------------------
 
 test("Test 10: getPracticeProcessMode ermöglicht modusabhängige M3-Texte", () => {
-  const currentMode: PracticeProcessMode = "CURRENT_STATE";
-  const targetMode: PracticeProcessMode = "TARGET_STATE";
-  const currentText =
-    currentMode === "TARGET_STATE"
+  const textForMode = (mode: PracticeProcessMode) =>
+    mode === "TARGET_STATE"
       ? "Ist für den zukünftigen Ablauf klar festgelegt…"
       : "Ist heute klar, wie Ihre Praxis in diesem Bereich vorgeht?";
-  const targetText =
-    targetMode === "TARGET_STATE"
-      ? "Ist für den zukünftigen Ablauf klar festgelegt…"
-      : "Ist heute klar, wie Ihre Praxis in diesem Bereich vorgeht?";
+  const currentText = textForMode("CURRENT_STATE");
+  const targetText = textForMode("TARGET_STATE");
   expect(currentText).toContain("heute");
   expect(targetText).toContain("zukünftigen");
 });

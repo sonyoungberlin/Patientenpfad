@@ -96,6 +96,7 @@ model Account {
   /// `owner_account_id` bleibt führend.
   memberships PracticeMembership[]
 
+
   /// Option C (minimal): Standard-Praxis dieses Accounts. Reine
   /// Auswahlhilfe für `current_practice` — gewinnt in
   /// `pickCurrentMembership` vor OWNER und vor der ältesten Membership,
@@ -160,10 +161,6 @@ model PrefillRun {
 
   /// Account, der den Run angelegt hat. NULL bei Patientenrücklauf via Token.
   created_by_account_id String?
-
-  /// Optionales Audit: Token-Wert, mit dem ein Patientenrücklauf zugeordnet
-  /// wurde. NULL bei MFA-/Conversation-Runs.
-  patient_token_used String?
 
   @@unique([case_id, sequence])
   @@index([case_id, frozen_at, sequence])
@@ -380,14 +377,8 @@ model PatientQuestionnaireSession {
   /// Wer den Fragebogen eingereicht hat: "patient" | "contact_person"
   submitted_by String @default("patient")
 
-  /// Optionaler Verifikations-Hash (SHA-256 des Geburtsdatums, nie Klartext)
+  /// Optionaler SHA-256-Hash des Geburtsdatums aus einer digitalen Anfrage.
   birth_date_hash String?
-
-  /// Zeitpunkt des erfolgreichen IdentityGate-Durchlaufs (nur Zeitstempel, keine Eingabewerte)
-  identity_gate_completed_at DateTime?
-
-  /// Methode der Identitätsabfrage (Audit-Merkmal, keine personenbezogenen Daten)
-  identity_gate_method String? @default("dob_lastname3")
 
   /// Phase 3a: Quelle der Session.
   /// Whitelist: "internal_link" (interner Praxis-Link, bisheriges Verhalten)
@@ -695,10 +686,61 @@ model Practice {
   practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
   digital_requests               DigitalRequest[]              @relation("DigitalRequestOwnerPractice")
   practice_catalog_entries       PracticeCatalogEntry[]        @relation("PracticeCatalogEntryPractice")
+  legal_profile                  PracticeLegalProfile?
+  legal_profile_audits           PracticeLegalProfileAudit[]
 
   /// Option C (minimal): Accounts, die diese Practice als Standard-Praxis
   /// referenzieren. Gegenseite zu `Account.default_practice`.
   default_for_accounts Account[] @relation("AccountDefaultPractice")
+}
+
+/// Offizielle, zentral vom Plattformbetreiber gepflegte Praxis- und
+/// Vertragsstammdaten. Practice.name/public_name bleiben reine Anzeigenamen.
+model PracticeLegalProfile {
+  id          String   @id @default(cuid())
+  practice_id String   @unique
+  practice    Practice @relation(fields: [practice_id], references: [id], onDelete: Cascade)
+
+  official_practice_name String
+  contract_party_name    String?
+  representative_name    String?
+  legal_form             String?
+  street                 String
+  house_number           String
+  postal_code            String
+  city                   String
+  country                String   @default("Deutschland")
+  official_email         String
+  phone                   String
+
+  medical_chamber              String?
+  professional_title           String?
+  professional_title_country   String?
+  supervisory_authority        String?
+  statutory_health_association String?
+  professional_rules_label     String?
+  professional_rules_url       String?
+  register_type                String?
+  register_court               String?
+  register_number              String?
+  vat_id                       String?
+  additional_legal_information String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+/// Änderungsnachweis ohne alte/neue Feldwerte oder sonstige Inhaltskopien.
+model PracticeLegalProfileAudit {
+  id                          String   @id @default(cuid())
+  practice_id                 String
+  practice                    Practice @relation(fields: [practice_id], references: [id], onDelete: Cascade)
+  changed_by_admin_account_id String
+  changed_fields              Json
+  changed_at                  DateTime @default(now())
+
+  @@index([practice_id, changed_at])
+  @@index([changed_by_admin_account_id])
 }
 
 /// Phase P1: Mitgliedschaft eines Accounts in einer Practice.
@@ -735,7 +777,7 @@ model PracticeMembership {
 /// Datenschutz: `submitter_email` wird im Klartext gespeichert, weil der
 /// Rückversand des Token-Links durch das System erfolgt (Zweckbindung).
 /// `submitter_email_hash` (SHA-256) dient nur Rate-Limit und Audit.
-/// `birth_date_hash` (SHA-256) dient dem späteren IdentityGate; kein Klartext.
+/// `birth_date_hash` speichert zusätzlich einen SHA-256-Hash des Geburtsdatums.
 model DigitalRequest {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -755,7 +797,8 @@ model DigitalRequest {
   birth_date String?
 
   /// SHA-256-Hash des Geburtsdatums, falls angegeben. Kein Klartext.
-  /// Wird in Phase B für das IdentityGate im Token-Fragebogen-Flow genutzt.
+  /// Wird an eine erzeugte Fragebogen-Session weitergegeben, ohne dort eine
+  /// zusätzliche Identitätsabfrage auszulösen.
   birth_date_hash String?
 
   /// Optionaler kurzer Freitext zum Anliegen (max. 500 Zeichen, neutral gehalten).
@@ -890,4 +933,15 @@ model PracticeCatalogEntry {
   @@unique([catalog_case_id, version])
   @@index([practice_id, is_catalog_active, is_current_version])
   @@index([source_session_id])
+}
+
+/// Datensparsame Betriebsstatuskontrolle für den automatischen Cleanup.
+/// Enthält keine Vorgangs-IDs, Patientendaten oder Fragebogeninhalte.
+model CleanupStatus {
+  id                String    @id
+  last_started_at   DateTime?
+  last_succeeded_at DateTime?
+  last_failed_at    DateTime?
+  last_error_code   String?
+  updated_at        DateTime  @updatedAt
 }

@@ -13,7 +13,7 @@ import {
 } from "@/lib/types";
 import { buildM1SnapshotInitial, isGatekeeperCase } from "@/lib/logic/m1Activation";
 import { hydrateActiveCheckpointsFromSnapshot } from "@/lib/logic/checkpointCatalog";
-import { getSessionAccount } from "@/lib/auth";
+import { requireCasesAccess } from "@/lib/authz";
 import { getCaseCreateOwnershipData } from "@/lib/cases/practiceScope";
 
 /**
@@ -111,21 +111,8 @@ const LEGACY_DEFAULT_CHECKPOINTS: ActiveCheckpoint[] = [
 
 export async function POST(req: NextRequest) {
   try {
-    const account = await getSessionAccount(req);
-
-    if (!account) {
-      return NextResponse.json(
-        { ok: false, error: "Nicht angemeldet." },
-        { status: 401 },
-      );
-    }
-
-    if (!account.is_approved) {
-      return NextResponse.json(
-        { ok: false, error: "Account nicht freigeschaltet. Bitte warten Sie auf die Freischaltung." },
-        { status: 403 },
-      );
-    }
+    const { account, error } = await requireCasesAccess(req);
+    if (error) return error;
 
     // Kontingent-Prüfung: nur für Accounts mit einer aktiven Praxis.
     // Accounts ohne current_practice (Edge-Case/Admin) sind ausgenommen.

@@ -7,7 +7,7 @@ import {
   type M2Answer,
   type M2PrefillData,
 } from "@/lib/logic/m2Questions";
-import { IdentityGate } from "@/components/IdentityGate";
+import { PersonalLinkNotice } from "@/components/PersonalLinkNotice";
 
 const ANSWER_OPTIONS: { value: M2Answer; label: string }[] = [
   { value: "ja", label: "Ja" },
@@ -80,7 +80,7 @@ export function M2TokenFormClient({
   }
 
   return (
-    <IdentityGate>
+    <PersonalLinkNotice>
       <div>
         {checkpoints.length === 0 ? (
         <p>Keine Fragen vorhanden.</p>
@@ -161,6 +161,6 @@ export function M2TokenFormClient({
         {saving ? "Wird übermittelt…" : "Absenden"}
       </button>
     </div>
-    </IdentityGate>
+    </PersonalLinkNotice>
   );
 }

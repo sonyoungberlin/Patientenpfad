@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { COMMUNICATION_RETENTION_DAYS, retentionCutoff } from "./retention";
+import {
+  COMMUNICATION_RETENTION_DAYS,
+  PROCESS_RETENTION_DAYS,
+  retentionCutoff,
+} from "./retention";
 import {
   STATUS_AWAITING_EMAIL_CONFIRMATION,
   WEBSITE_SESSION_SOURCE,
@@ -13,15 +17,19 @@ export type CleanupCounts = {
   pendingSessions: number;
   totalSessions: number;
   nulledSessionRefs: number;
+  nulledInquiryRefs: number;
   digitalRequests: number;
+  caseSessions: number;
+  inquirySessions: number;
 };
 
 /** Prüft, wie viele Kandidaten je Kategorie ohne Löschung gefunden werden. */
 async function countCandidates(
   now: Date,
   cutoff: Date,
-): Promise<Omit<CleanupCounts, "dryRun" | "nulledSessionRefs">> {
-  const [trash, unconfirmed, completed, pending, digitalRequests] =
+  processCutoff: Date,
+): Promise<Omit<CleanupCounts, "dryRun" | "nulledSessionRefs" | "nulledInquiryRefs">> {
+  const [trash, unconfirmed, completed, pending, digitalRequests, caseSessions, inquirySessions] =
     await Promise.all([
       prisma.patientQuestionnaireSession.count({
         where: { deleted_at: { lt: cutoff } },
@@ -55,6 +63,12 @@ async function countCandidates(
       prisma.digitalRequest.count({
         where: { createdAt: { lt: cutoff } },
       }),
+      prisma.caseSession.count({
+        where: { createdAt: { lte: processCutoff } },
+      }),
+      prisma.inquirySession.count({
+        where: { createdAt: { lte: processCutoff }, is_template: false },
+      }),
     ]);
 
   const totalSessions = trash + unconfirmed + completed + pending;
@@ -65,6 +79,8 @@ async function countCandidates(
     pendingSessions: pending,
     totalSessions,
     digitalRequests,
+    caseSessions,
+    inquirySessions,
   };
 }
 
@@ -76,9 +92,13 @@ async function countCandidates(
  *  2. PatientQuestionnaireSession löschen
  *  3. DigitalRequest löschen
  */
-async function executeCleanup(now: Date, cutoff: Date): Promise<CleanupCounts> {
+async function executeCleanup(
+  now: Date,
+  cutoff: Date,
+  processCutoff: Date,
+): Promise<CleanupCounts> {
   // Vorab-Counts für das Reporting — müssen vor den Deletes stehen.
-  const preCounts = await countCandidates(now, cutoff);
+  const preCounts = await countCandidates(now, cutoff, processCutoff);
 
   const sessionIdsToDelete = (
     await prisma.patientQuestionnaireSession.findMany({
@@ -138,6 +158,36 @@ async function executeCleanup(now: Date, cutoff: Date): Promise<CleanupCounts> {
     where: { createdAt: { lt: cutoff } },
   });
 
+  // 4. Inquiry-Referenzen auf alten Sessions lösen, danach Vorgänge löschen.
+  const inquiryIdsToDelete = (
+    await prisma.inquirySession.findMany({
+      where: { createdAt: { lte: processCutoff }, is_template: false },
+      select: { id: true },
+      take: 5000,
+    })
+  ).map((session) => session.id);
+
+  let nulledInquiryRefs = 0;
+  if (inquiryIdsToDelete.length > 0) {
+    const updateResult = await prisma.patientQuestionnaireSession.updateMany({
+      where: { inquiry_session_id: { in: inquiryIdsToDelete } },
+      data: { inquiry_session_id: null },
+    });
+    nulledInquiryRefs = updateResult.count;
+  }
+
+  const inquiryResult =
+    inquiryIdsToDelete.length > 0
+      ? await prisma.inquirySession.deleteMany({
+          where: { id: { in: inquiryIdsToDelete } },
+        })
+      : { count: 0 };
+
+  // 5. CaseSession-Hard-Delete löscht PrefillRun per DB-Cascade.
+  const caseResult = await prisma.caseSession.deleteMany({
+    where: { createdAt: { lte: processCutoff } },
+  });
+
   return {
     dryRun: false,
     trashSessions: preCounts.trashSessions,
@@ -146,7 +196,10 @@ async function executeCleanup(now: Date, cutoff: Date): Promise<CleanupCounts> {
     pendingSessions: preCounts.pendingSessions,
     totalSessions: sessionResult.count,
     nulledSessionRefs,
+    nulledInquiryRefs,
     digitalRequests: drResult.count,
+    caseSessions: caseResult.count,
+    inquirySessions: inquiryResult.count,
   };
 }
 
@@ -159,20 +212,24 @@ async function executeCleanup(now: Date, cutoff: Date): Promise<CleanupCounts> {
 export async function runCleanup({
   dryRun = false,
   retentionDays = COMMUNICATION_RETENTION_DAYS,
+  processRetentionDays = PROCESS_RETENTION_DAYS,
   now = new Date(),
 }: {
   dryRun?: boolean;
   /** Überschreibbar für Tests; Standard: COMMUNICATION_RETENTION_DAYS. */
   retentionDays?: number;
+  /** Überschreibbar für Tests; Standard: 30 Tage. */
+  processRetentionDays?: number;
   /** Überschreibbar für Tests; Standard: aktuelle Uhrzeit. */
   now?: Date;
 } = {}): Promise<CleanupCounts> {
   const cutoff = retentionCutoff(now, retentionDays);
+  const processCutoff = retentionCutoff(now, processRetentionDays);
 
   if (dryRun) {
-    const counts = await countCandidates(now, cutoff);
-    return { dryRun: true, nulledSessionRefs: 0, ...counts };
+    const counts = await countCandidates(now, cutoff, processCutoff);
+    return { dryRun: true, nulledSessionRefs: 0, nulledInquiryRefs: 0, ...counts };
   }
 
-  return executeCleanup(now, cutoff);
+  return executeCleanup(now, cutoff, processCutoff);
 }

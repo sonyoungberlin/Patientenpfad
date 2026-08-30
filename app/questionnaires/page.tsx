@@ -112,7 +112,6 @@ export default async function QuestionnairesPage({
       submitted_by: true,
       deduplicated_questions: true,
       answers: true,
-      identity_gate_completed_at: true,
       pdf_downloaded_at: true,
       deleted_at: true,
       frozen_blocks: true,
@@ -236,7 +235,6 @@ export default async function QuestionnairesPage({
             const noteText = buildMedicalRecordNote({
               answers,
               selected_block_ids: blockIds,
-              identity_gate_completed_at: s.identity_gate_completed_at,
               frozenBlocks,
             });
 
@@ -250,7 +248,6 @@ export default async function QuestionnairesPage({
                 displayStatus={displayStatus}
                 statusLabel={statusLabel}
                 submittedBy={s.submitted_by}
-                identityGateCompletedAt={s.identity_gate_completed_at}
                 questions={questions}
                 answers={answers}
                 noteText={noteText}

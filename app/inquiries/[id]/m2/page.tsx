@@ -10,10 +10,15 @@ import {
   type InquiryCheckpoint,
 } from "@/lib/inquiries/types";
 import { isStringRecord } from "@/lib/inquiries/inquirySessionService";
+import {
+  GLOBAL_ACTION_SHELF,
+  PROCESS_SHELF_PROFILE_BINDINGS,
+} from "@/lib/inquiries/processShelfProfileBindings";
 import InquiryM2Client, {
   type PlainCheckpoint,
   type M2SectionData,
 } from "./InquiryM2Client";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 
 function toPlain(cp: InquiryCheckpoint): PlainCheckpoint {
   return {
@@ -49,6 +54,7 @@ export default async function InquiryM2Page({
     where: { id },
     select: {
       owner_account_id: true,
+      owner_practice_id: true,
       status: true,
       is_template: true,
       selected_inquiry_ids: true,
@@ -58,7 +64,7 @@ export default async function InquiryM2Page({
     },
   });
 
-  if (!session || session.owner_account_id !== account.id || session.is_template) {
+  if (!session || !canAccessInquirySession(account, session) || session.is_template) {
     redirect("/inquiries");
   }
 
@@ -76,7 +82,10 @@ export default async function InquiryM2Page({
     const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
     if (!profile) continue;
     const decisionCp = INQUIRY_CHECKPOINT_CATALOG_V2[profile.decisionCheckpointId];
-    const specificCps = profile.specificCheckpointIds
+    const specificCps = Array.from(new Set([
+      ...profile.specificCheckpointIds,
+      ...(PROCESS_SHELF_PROFILE_BINDINGS[inquiryId] ?? []),
+    ]))
       .map((cpId) => INQUIRY_CHECKPOINT_CATALOG_V2[cpId])
       .filter((cp): cp is InquiryCheckpoint => !!cp);
     const actionCps = (profile.boundActionCheckpointIds ?? [])
@@ -115,6 +124,10 @@ export default async function InquiryM2Page({
   }
   // availableActionIds from selected profiles (deduplicated, excluding boundActionCheckpointIds)
   const profileAvailableActionIds = new Set<string>();
+  for (const cpId of GLOBAL_ACTION_SHELF) {
+    actionIds.add(cpId);
+    profileAvailableActionIds.add(cpId);
+  }
   for (const inquiryId of selectedIds) {
     const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
     if (!profile) continue;

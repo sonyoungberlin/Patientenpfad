@@ -20,6 +20,8 @@ import { describePracticeSmtpStatus } from "@/lib/mail/practiceSmtp";
 import { isMailSecretConfigured } from "@/lib/mail/smtpSecret";
 import { PILOT_PRACTICE_INQUIRY_CONFIG } from "@/lib/inquiries/practiceConfig";
 import { DeletePracticeButton } from "./DeletePracticeButton";
+import { PracticeLegalProfileFields } from "@/components/admin/PracticeLegalProfileFields";
+import { PracticeLegalProfileDetails } from "@/components/practice/PracticeLegalProfileDetails";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -50,6 +52,7 @@ type SearchParams = Promise<{
   inqConfigError?: string | string[];
   quotaSaved?: string | string[];
   quotaError?: string | string[];
+  legalSaved?: string | string[];
 }>;
 
 export default async function AdminPracticeDetailPage({
@@ -103,6 +106,17 @@ export default async function AdminPracticeDetailPage({
       inq_open_consultation_cap_limited: true,
       inq_billing_cycle_label: true,
       inq_video_support_contact: true,
+      legal_profile: true,
+      legal_profile_audits: {
+        select: {
+          id: true,
+          changed_at: true,
+          changed_fields: true,
+          changed_by_admin_account_id: true,
+        },
+        orderBy: { changed_at: "desc" },
+        take: 10,
+      },
       memberships: {
         select: {
           id: true,
@@ -155,6 +169,7 @@ export default async function AdminPracticeDetailPage({
   const quotaErrorMsg = Array.isArray(sp.quotaError)
     ? sp.quotaError[0]
     : sp.quotaError;
+  const legalSaved = Array.isArray(sp.legalSaved) ? sp.legalSaved[0] : sp.legalSaved;
 
   const mailStatus = describePracticeSmtpStatus({
     id: practice.id,
@@ -224,6 +239,36 @@ export default async function AdminPracticeDetailPage({
           <dt>Angelegt</dt>
           <dd>{practice.created_at.toISOString().slice(0, 10)}</dd>
         </dl>
+      </section>
+
+      <section style={{ marginBottom: "2rem" }} data-section="legal-profile">
+        <h2>Offizielles Praxis- und Vertragsprofil</h2>
+        <p className="text-muted">
+          Zentrale Quelle für Vertrag, öffentliche Praxisdarstellung und praxisbezogenes Impressum.
+          Änderungen sind ausschließlich Plattform-Admins möglich.
+        </p>
+        {legalSaved && <p role="status" style={{ color: "#0a6" }}>Offizielles Profil gespeichert.</p>}
+        {practice.legal_profile && <PracticeLegalProfileDetails profile={practice.legal_profile} />}
+        <form
+          method="POST"
+          action={`/api/admin/practices/${practice.id}/legal-profile`}
+          style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}
+        >
+          <PracticeLegalProfileFields values={practice.legal_profile ?? {}} />
+          <button type="submit" style={{ justifySelf: "start" }}>Offizielles Profil speichern</button>
+        </form>
+        {(practice.legal_profile_audits ?? []).length > 0 && (
+          <div style={{ marginTop: "1.5rem" }}>
+            <h3>Letzte Änderungen</h3>
+            <ul>
+              {(practice.legal_profile_audits ?? []).map((audit) => (
+                <li key={audit.id}>
+                  {audit.changed_at.toLocaleString("de-DE")} · Admin {audit.changed_by_admin_account_id} · {Array.isArray(audit.changed_fields) ? audit.changed_fields.join(", ") : "Felder aktualisiert"}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       <section style={{ marginBottom: "2rem" }}>

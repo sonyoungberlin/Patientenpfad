@@ -14,6 +14,7 @@ import { redirect } from "next/navigation";
 import { PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { PracticeLegalProfileFields } from "@/components/admin/PracticeLegalProfileFields";
 
 export default async function AdminPracticesPage() {
   const account = await getSessionAccountFromCookies();
@@ -54,6 +55,25 @@ export default async function AdminPracticesPage() {
         Detailseiten schreiben direkt auf die Praxis. Kein Admin-Bypass für
         normale Praxis-Routen.
       </p>
+      <section style={{ margin: "1.5rem 0 2rem" }}>
+        <h2>Neue Praxis anlegen</h2>
+        <p className="text-muted">
+          Praxis und offizielles Vertrags-/Praxisprofil werden gemeinsam angelegt.
+          Die Praxis startet gesperrt und kann anschließend auf der Detailseite freigeschaltet werden.
+        </p>
+        <form method="POST" action="/api/admin/practices" style={{ display: "grid", gap: "0.75rem" }}>
+          <label>
+            Anzeigename der Praxis *
+            <input name="display_name" required maxLength={120} style={{ display: "block", width: "100%" }} />
+          </label>
+          <label>
+            Bestehenden OWNER-Account zuordnen (optional)
+            <input name="owner_email" type="email" style={{ display: "block", width: "100%" }} />
+          </label>
+          <PracticeLegalProfileFields />
+          <button type="submit" style={{ justifySelf: "start" }}>Praxis anlegen</button>
+        </form>
+      </section>
       <table>
         <thead>
           <tr>

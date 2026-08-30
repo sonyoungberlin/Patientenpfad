@@ -270,7 +270,7 @@ describe("ensureSelectionConditionalCheckpoints: Zusammenspiel", () => {
         kommunikation: "unklar",
         medizinische_lage: "klar",
         versorgung_im_alltag: "klar",
-        pflegebeobachtung: null,
+        pflegebeobachtung: "klar",
       },
       activated_checkpoint_ids: ["K01", "K08", "K09"],
     };
@@ -303,7 +303,7 @@ describe("ensureSelectionConditionalCheckpoints: Zusammenspiel", () => {
         kommunikation: "klar",
         medizinische_lage: "unklar",
         versorgung_im_alltag: "klar",
-        pflegebeobachtung: null,
+        pflegebeobachtung: "klar",
       },
       activated_checkpoint_ids: ["K03", "K04", "K05"],
     };

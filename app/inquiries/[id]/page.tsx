@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 
 export default async function InquiryRoutingPage({
   params,
@@ -15,10 +16,10 @@ export default async function InquiryRoutingPage({
   const { id } = await params;
   const session = await prisma.inquirySession.findUnique({
     where: { id },
-    select: { status: true, owner_account_id: true, is_template: true },
+    select: { status: true, owner_account_id: true, owner_practice_id: true, is_template: true },
   });
 
-  if (!session || session.owner_account_id !== account.id || session.is_template) {
+  if (!session || !canAccessInquirySession(account, session) || session.is_template) {
     redirect("/inquiries");
   }
 

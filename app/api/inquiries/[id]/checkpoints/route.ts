@@ -6,6 +6,7 @@ import {
   isStringRecord,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 
 /**
  * PATCH /api/inquiries/[id]/checkpoints
@@ -52,7 +53,7 @@ export async function PATCH(
 
     // Ownership prüfen: Session muss dem anfragenden Account gehören.
     const existing = await getInquirySessionWithOutput(id, account.id);
-    if (!existing) {
+    if (!existing || !canAccessInquirySession(account, existing)) {
       return NextResponse.json(
         { ok: false, error: "Session nicht gefunden." },
         { status: 404 },

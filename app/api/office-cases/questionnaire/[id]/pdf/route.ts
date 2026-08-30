@@ -27,7 +27,6 @@ export async function GET(
       selected_block_ids: true,
       deduplicated_questions: true,
       answers: true,
-      identity_gate_completed_at: true,
       deleted_at: true,
       pdf_downloaded_at: true,
     },
@@ -63,7 +62,6 @@ export async function GET(
     {
       title: "Fragebogen – Bewerberangaben",
       referenceLabel: "Referenz",
-      showIdentityGate: false,
       blockCatalog: OFFICE_BLOCK_CATALOG,
     },
   );

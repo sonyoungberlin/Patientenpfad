@@ -118,8 +118,7 @@ describe("TECH_UPLOAD_FAILED – Wiederverwendung in dokumentenbezogenen Profile
   }
 
   it("TECH_SUPPORT-Flow bleibt unverändert: TECH_UPLOAD_FAILED weiterhin gebunden", () => {
-    const profile = INQUIRY_PROFILE_CATALOG_V2["TECH_SUPPORT"];
-    expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["TECH_SUPPORT"]).toContain("TECH_UPLOAD_FAILED");
   });
 
   it("AU + PRESCRIPTION mit TECH_UPLOAD_FAILED YES/SHOW in beiden Sections → Text genau einmal", () => {

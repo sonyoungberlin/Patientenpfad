@@ -9,6 +9,7 @@ jest.mock("@/lib/prisma", () => ({
     patientQuestionnaireSession: {
       count: jest.fn(),
       findMany: jest.fn(),
+      updateMany: jest.fn(),
       deleteMany: jest.fn(),
     },
     digitalRequest: {
@@ -16,6 +17,19 @@ jest.mock("@/lib/prisma", () => ({
       findMany: jest.fn(),
       updateMany: jest.fn(),
       deleteMany: jest.fn(),
+    },
+    caseSession: {
+      count: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    inquirySession: {
+      count: jest.fn(),
+      findMany: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    cleanupStatus: {
+      upsert: jest.fn(),
+      update: jest.fn(),
     },
   },
 }));
@@ -61,11 +75,29 @@ function setupPrismaMocks({
     count: sessionIds.length,
   });
   (digitalRequest.deleteMany as jest.Mock).mockResolvedValue({ count: drCount });
+  (prisma.patientQuestionnaireSession.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
+  (prisma.caseSession.count as jest.Mock).mockResolvedValue(0);
+  (prisma.caseSession.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+  (prisma.inquirySession.count as jest.Mock).mockResolvedValue(0);
+  (prisma.inquirySession.findMany as jest.Mock).mockResolvedValue([]);
+  (prisma.inquirySession.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
   process.env.CRON_SECRET = "test-secret-abc123";
+  (prisma.cleanupStatus.upsert as jest.Mock).mockResolvedValue({});
+  (prisma.cleanupStatus.update as jest.Mock).mockResolvedValue({
+    last_started_at: new Date(),
+    last_succeeded_at: new Date(),
+    last_failed_at: null,
+  });
+  (prisma.patientQuestionnaireSession.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
+  (prisma.caseSession.count as jest.Mock).mockResolvedValue(0);
+  (prisma.caseSession.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+  (prisma.inquirySession.count as jest.Mock).mockResolvedValue(0);
+  (prisma.inquirySession.findMany as jest.Mock).mockResolvedValue([]);
+  (prisma.inquirySession.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
 });
 
 // ── Retention-Konstante ───────────────────────────────────────────────────────
@@ -121,6 +153,90 @@ describe("runCleanup – DigitalRequest", () => {
     await runCleanup({ dryRun: false });
     const where = (prisma.digitalRequest.deleteMany as jest.Mock).mock.calls[0][0].where;
     expect(where).not.toHaveProperty("request_type");
+  });
+});
+
+describe("runCleanup – 30-Tage-Vorgänge", () => {
+  const now = new Date("2026-08-30T12:00:00.000Z");
+  const cutoff = new Date("2026-07-31T12:00:00.000Z");
+
+  it("verwendet exakt 30 Tage als inklusive Löschgrenze", async () => {
+    (prisma.patientQuestionnaireSession.count as jest.Mock).mockResolvedValue(0);
+    (prisma.digitalRequest.count as jest.Mock).mockResolvedValue(0);
+
+    await runCleanup({ dryRun: true, now });
+
+    expect(prisma.caseSession.count).toHaveBeenCalledWith({
+      where: { createdAt: { lte: cutoff } },
+    });
+    expect(prisma.inquirySession.count).toHaveBeenCalledWith({
+      where: { createdAt: { lte: cutoff }, is_template: false },
+    });
+  });
+
+  it("löscht Fälle und Inquiry-Sitzungen statusunabhängig und praxisübergreifend nach Alter", async () => {
+    setupPrismaMocks();
+    (prisma.caseSession.deleteMany as jest.Mock).mockResolvedValue({ count: 2 });
+    (prisma.inquirySession.findMany as jest.Mock).mockResolvedValue([
+      { id: "inq-a" },
+      { id: "inq-b" },
+    ]);
+    (prisma.inquirySession.deleteMany as jest.Mock).mockResolvedValue({ count: 2 });
+
+    const result = await runCleanup({ dryRun: false, now });
+
+    expect(prisma.caseSession.deleteMany).toHaveBeenCalledWith({
+      where: { createdAt: { lte: cutoff } },
+    });
+    expect(prisma.inquirySession.findMany).toHaveBeenCalledWith({
+      where: { createdAt: { lte: cutoff }, is_template: false },
+      select: { id: true },
+      take: 5000,
+    });
+    const caseWhere = (prisma.caseSession.deleteMany as jest.Mock).mock.calls[0][0].where;
+    const inquiryWhere = (prisma.inquirySession.findMany as jest.Mock).mock.calls[0][0].where;
+    expect(caseWhere).not.toHaveProperty("stage_status");
+    expect(caseWhere).not.toHaveProperty("owner_practice_id");
+    expect(inquiryWhere).not.toHaveProperty("status");
+    expect(inquiryWhere).not.toHaveProperty("owner_practice_id");
+    expect(result.caseSessions).toBe(2);
+    expect(result.inquirySessions).toBe(2);
+  });
+
+  it("bewahrt praxisweite Inquiry-Vorlagen", async () => {
+    (prisma.patientQuestionnaireSession.count as jest.Mock).mockResolvedValue(0);
+    (prisma.digitalRequest.count as jest.Mock).mockResolvedValue(0);
+    await runCleanup({ dryRun: true, now });
+    const where = (prisma.inquirySession.count as jest.Mock).mock.calls[0][0].where;
+    expect(where.is_template).toBe(false);
+  });
+
+  it("löst Fragebogenreferenzen vor dem Löschen alter Inquiry-Sitzungen", async () => {
+    setupPrismaMocks();
+    (prisma.inquirySession.findMany as jest.Mock).mockResolvedValue([{ id: "inq-1" }]);
+    (prisma.patientQuestionnaireSession.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+
+    const result = await runCleanup({ dryRun: false, now });
+
+    expect(prisma.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith({
+      where: { inquiry_session_id: { in: ["inq-1"] } },
+      data: { inquiry_session_id: null },
+    });
+    expect(result.nulledInquiryRefs).toBe(1);
+  });
+
+  it("29 Tage 23:59 alte Vorgänge liegen noch oberhalb der Löschgrenze", () => {
+    const almostExpired = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000 - 60_000));
+    expect(almostExpired.getTime()).toBeGreaterThan(cutoff.getTime());
+  });
+
+  it("PrefillRun wird laut Migration beim CaseSession-Delete kaskadiert", () => {
+    const migration = require("fs").readFileSync(
+      "prisma/migrations/20260423040000_add_prefill_run/migration.sql",
+      "utf8",
+    );
+    expect(migration).toContain('REFERENCES "CaseSession"("id")');
+    expect(migration).toContain("ON DELETE CASCADE");
   });
 });
 
@@ -409,6 +525,43 @@ describe("GET /api/internal/cleanup", () => {
     expect(body.dryRun).toBe(false);
     expect(prisma.patientQuestionnaireSession.deleteMany).toHaveBeenCalled();
     expect(prisma.digitalRequest.deleteMany).toHaveBeenCalled();
+    expect(prisma.cleanupStatus.upsert).toHaveBeenCalled();
+    expect(prisma.cleanupStatus.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ last_succeeded_at: expect.any(Date) }),
+      }),
+    );
+  });
+
+  it("protokolliert einen fehlgeschlagenen Lauf datensparsam", async () => {
+    setupAllZero();
+    (prisma.patientQuestionnaireSession.findMany as jest.Mock).mockRejectedValue(
+      new TypeError("database unavailable"),
+    );
+
+    const res = await GET(makeReq("Bearer test-secret-abc123", { apply: true }));
+
+    expect(res.status).toBe(500);
+    expect(prisma.cleanupStatus.update).toHaveBeenLastCalledWith({
+      where: { id: "communication-retention" },
+      data: {
+        last_failed_at: expect.any(Date),
+        last_error_code: "TypeError",
+      },
+    });
+  });
+
+  it("liefert 500 wenn bereits die Statuskontrolle nicht geschrieben werden kann", async () => {
+    setupAllZero();
+    (prisma.cleanupStatus.upsert as jest.Mock).mockRejectedValue(
+      new Error("status database unavailable"),
+    );
+
+    const res = await GET(makeReq("Bearer test-secret-abc123", { apply: true }));
+
+    expect(res.status).toBe(500);
+    expect(prisma.patientQuestionnaireSession.findMany).not.toHaveBeenCalled();
+    expect(prisma.digitalRequest.deleteMany).not.toHaveBeenCalled();
   });
 
   it("?apply=true ohne Authorization → 401, kein Delete", async () => {

@@ -193,7 +193,7 @@ describe("isProtocolQuestion – SINGLE_SELECT", () => {
 
   it("lehnt SINGLE_SELECT ohne options ab", () => {
     const { options: _options, ...rest } = makeSingleQ() as unknown as Record<string, unknown>;
-    expect(isProtocolQuestion(rest as ProtocolQuestion)).toBe(false);
+    expect(isProtocolQuestion(rest as unknown as ProtocolQuestion)).toBe(false);
   });
 
   it("lehnt SINGLE_SELECT mit leeren options ab", () => {
@@ -228,7 +228,7 @@ describe("isProtocolQuestion – MULTI_SELECT", () => {
 
   it("lehnt MULTI_SELECT ohne options ab", () => {
     const { options: _options, ...rest } = makeMultiQ() as unknown as Record<string, unknown>;
-    expect(isProtocolQuestion(rest as ProtocolQuestion)).toBe(false);
+    expect(isProtocolQuestion(rest as unknown as ProtocolQuestion)).toBe(false);
   });
 
   it("lehnt MULTI_SELECT mit leeren options ab", () => {

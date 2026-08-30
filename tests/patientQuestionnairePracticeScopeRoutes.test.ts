@@ -303,8 +303,6 @@ describe("GET /api/questionnaire/[id]/pdf — Practice-Scope", () => {
       selected_block_ids: ["KONTAKT"],
       deduplicated_questions: [],
       answers: {},
-      identity_gate_completed_at: new Date(),
-      identity_gate_method: "dob",
       context: "patient",
     });
     const res = await PdfRoute(pdfReq(), {
@@ -327,8 +325,6 @@ describe("GET /api/questionnaire/[id]/pdf — Practice-Scope", () => {
       selected_block_ids: ["KONTAKT"],
       deduplicated_questions: [],
       answers: {},
-      identity_gate_completed_at: new Date(),
-      identity_gate_method: "dob",
       pdf_downloaded_at: new Date(), // bereits markiert → kein erneutes update.
       context: "patient",
     });

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { getPracticeInquiryConfig } from "@/lib/inquiries/practiceConfig";
@@ -99,6 +100,7 @@ export default async function InquiryM3Page({
     where: { id },
     select: {
       owner_account_id: true,
+      owner_practice_id: true,
       status: true,
       is_template: true,
       selected_inquiry_ids: true,
@@ -110,7 +112,7 @@ export default async function InquiryM3Page({
     },
   });
 
-  if (!session || session.owner_account_id !== account.id || session.is_template) {
+  if (!session || !canAccessInquirySession(account, session) || session.is_template) {
     redirect("/inquiries");
   }
 

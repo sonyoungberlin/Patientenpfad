@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { QuestionDefinition, QuestionType, RepeatableGroupFieldDef } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
-import { IdentityGate } from "@/components/IdentityGate";
+import { PersonalLinkNotice } from "@/components/PersonalLinkNotice";
 import {
   ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN,
   answerCharactersErrorMessage,
@@ -1227,7 +1227,7 @@ export function QuestionnaireFormClient({
         </div>
         );
         return context === "office" ? formDiv : (
-          <IdentityGate language={language}>{formDiv}</IdentityGate>
+          <PersonalLinkNotice language={language}>{formDiv}</PersonalLinkNotice>
         );
       })()}
     </>

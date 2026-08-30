@@ -75,7 +75,6 @@ export async function POST(
       source: "patient",
       activeCheckpoints: activeCheckpointsSnapshot,
       answers: sanitizedPrefill as unknown as PrefillRunAnswers,
-      patientTokenUsed: token,
       // Schritt 2: Außenverhalten identisch.
       allowConfirmed: true,
     });

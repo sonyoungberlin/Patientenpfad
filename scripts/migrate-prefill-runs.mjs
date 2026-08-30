@@ -12,7 +12,6 @@
  *   - active_checkpoints  = CaseSession.active_checkpoints (Snapshot)
  *   - frozen_at           = CaseSession.updatedAt
  *   - created_by_account  = owner_account_id, außer bei source="patient" → null
- *   - patient_token_used  = null (historisch nicht rekonstruierbar)
  *
  * Nicht migriert werden Fälle ohne tatsächlich gespeicherte Antworten
  * (`ctx_prefill` null, leeres Array oder leeres Objekt). Auch Fälle mit
@@ -120,7 +119,6 @@ async function migrate({ apply, verbose }) {
           created_at: session.updatedAt,
           frozen_at: session.updatedAt,
           created_by_account_id: deriveCreatedBy(source, session.owner_account_id),
-          patient_token_used: null,
         };
 
         if (!apply) {

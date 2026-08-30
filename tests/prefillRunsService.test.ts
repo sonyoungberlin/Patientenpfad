@@ -19,7 +19,6 @@ type Run = {
   created_at: Date;
   frozen_at: Date | null;
   created_by_account_id: string | null;
-  patient_token_used: string | null;
 };
 
 type CaseRow = {
@@ -307,7 +306,6 @@ describe("appendFrozenRun (Regel 1: Patientenrücklauf bei offenem MFA-Run)", ()
         source: "patient",
         activeCheckpoints: [{ id: "K01" }],
         answers: { K01: { "M2-01": "ja" } },
-        patientTokenUsed: "tok-xyz",
       },
       stub.client,
     );
@@ -315,7 +313,6 @@ describe("appendFrozenRun (Regel 1: Patientenrücklauf bei offenem MFA-Run)", ()
     expect(patient.sequence).toBe(2);
     expect(patient.source).toBe("patient");
     expect(patient.frozen_at).toBeInstanceOf(Date);
-    expect(patient.patient_token_used).toBe("tok-xyz");
 
     const stillOpen = await getOpenRun("case-1", stub.client);
     expect(stillOpen?.id).toBe(mfaOpen.id);

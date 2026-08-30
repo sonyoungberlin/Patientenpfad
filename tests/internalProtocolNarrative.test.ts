@@ -908,8 +908,9 @@ describe("C04-03/C04-05 Aufspaltung Anlass / Art der Weiterleitung", () => {
     const q = c04Section.questions.find((q) => q.id === "POT-Q-C04-05")!;
     expect(q).toBeDefined();
     expect(q.kind).toBe("MULTI_SELECT");
+    if (q.kind !== "MULTI_SELECT") throw new Error("Frage ist nicht MULTI_SELECT");
     expect(q.options).toBeDefined();
-    expect(q.options!.length).toBeGreaterThan(0);
+    expect(q.options.length).toBeGreaterThan(0);
   });
 
   // 4. C04-05 hat keinen required-Flag (optional)

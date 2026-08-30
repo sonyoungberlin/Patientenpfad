@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionAccount } from "@/lib/auth";
+import { requireCasesAccess } from "@/lib/authz";
 import { getCaseOwnershipFilter } from "@/lib/cases/practiceScope";
 
 export async function GET(req: NextRequest) {
   try {
-    const account = await getSessionAccount(req);
-
-    if (!account) {
-      return NextResponse.json(
-        { ok: false, error: "Nicht angemeldet." },
-        { status: 401 },
-      );
-    }
+    const { account, error } = await requireCasesAccess(req);
+    if (error) return error;
 
     const sessions = await prisma.caseSession.findMany({
       where: getCaseOwnershipFilter(account),

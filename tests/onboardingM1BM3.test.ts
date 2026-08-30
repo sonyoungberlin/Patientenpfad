@@ -11,6 +11,7 @@
  */
 
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
+import { GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
@@ -570,7 +571,7 @@ describe("ONBOARDING Specific-Checkpoints – docByStatus", () => {
 describe("ONBOARDING – availableActionIds", () => {
   it("TECHNICAL_ISSUE ist in ONBOARDING.availableActionIds enthalten", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ONBOARDING"];
-    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(GLOBAL_ACTION_SHELF).toContain("TECHNICAL_ISSUE");
   });
 
   it("DIGITAL_REQUEST ist in ONBOARDING.availableActionIds enthalten", () => {

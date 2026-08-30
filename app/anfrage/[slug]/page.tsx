@@ -27,6 +27,8 @@ import { validateSlug } from "@/lib/websiteForms/slug";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 import { DIGITAL_REQUEST_TOPICS } from "@/lib/digitalRequests/topics";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
+import { getPublicPracticeIdentityById } from "@/lib/practice/publicIdentity";
+import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -52,6 +54,7 @@ export default async function AnfragePage({
         where,
         select: {
           is_approved: true,
+          id: true,
           patient_communication_enabled: true,
           message_signature: true,
         },
@@ -65,6 +68,7 @@ export default async function AnfragePage({
   if (!practice.is_approved || !practice.patient_communication_enabled) {
     notFound();
   }
+  const publicPractice = await getPublicPracticeIdentityById(practice.id);
 
   return (
     <main style={{ maxWidth: "38rem", margin: "0 auto", padding: "2.5rem 1rem" }}>
@@ -192,6 +196,7 @@ export default async function AnfragePage({
           {practice.message_signature}
         </div>
       )}
+      {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>
   );
 }

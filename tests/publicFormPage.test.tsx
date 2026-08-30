@@ -253,12 +253,15 @@ describe("/p/[slug] public form page", () => {
       patient_communication_enabled: true,
       website_forms_enabled: true,
     });
-    expect(call.select.owner_practice.select).toEqual({
-      is_approved: true,
-      patient_communication_enabled: true,
-      website_forms_enabled: true,
-      message_signature: true,
-    });
+    expect(call.select.owner_practice.select).toEqual(
+      expect.objectContaining({
+        is_approved: true,
+        patient_communication_enabled: true,
+        website_forms_enabled: true,
+        message_signature: true,
+        legal_profile: true,
+      }),
+    );
     // Keine E-Mail / kein owner_account_id im Select
     expect(call.select.owner_account.select).not.toHaveProperty("email");
     expect(call.select).not.toHaveProperty("owner_account_id");

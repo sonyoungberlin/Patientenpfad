@@ -12,6 +12,8 @@ import { validateSlug } from "@/lib/websiteForms/slug";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 import { OFFICE_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
+import { getPublicPracticeIdentityById } from "@/lib/practice/publicIdentity";
+import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -35,6 +37,7 @@ export default async function BewerbenPage({
         where,
         select: {
           is_approved: true,
+          id: true,
           office_cases_enabled: true,
           name: true,
         },
@@ -44,6 +47,7 @@ export default async function BewerbenPage({
   if (!practice || !practice.is_approved || !practice.office_cases_enabled) {
     notFound();
   }
+  const publicPractice = await getPublicPracticeIdentityById(practice.id);
 
   const roleEntries = Object.entries(OFFICE_APPLICATION_ROLES) as [
     string,
@@ -141,6 +145,7 @@ export default async function BewerbenPage({
 
         <button type="submit">Bewerbung absenden</button>
       </form>
+      {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>
   );
 }

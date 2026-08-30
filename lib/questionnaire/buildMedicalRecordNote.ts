@@ -34,7 +34,6 @@ import { buildDerivedValueLines } from "./formatAnswer";
 export type MedicalRecordNoteInput = {
   answers: Record<string, string> | null | undefined;
   selected_block_ids: string[];
-  identity_gate_completed_at?: Date | null;
   /** Phase 4: eingefrorene Block-Struktur. NULL = Legacy-Pfad. */
   frozenBlocks?: FrozenBlock[] | null;
 };
@@ -502,11 +501,6 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
       lines.push(block.label);
       lines.push(...blockLines);
     }
-  }
-
-  if (!hasIdentitaet && input.identity_gate_completed_at) {
-    lines.push("");
-    lines.push("Identitätsabfrage erfolgt");
   }
 
   return lines.join("\n");

@@ -272,23 +272,6 @@ describe("buildMedicalRecordNote – Identität-Block", () => {
     expect(lines.indexOf("Identität")).toBeLessThan(lines.indexOf("Kontaktdaten"));
   });
 
-  it("'Identitätsabfrage erfolgt' erscheint nicht wenn IDENTITAET-Block vorhanden", () => {
-    const result = buildMedicalRecordNote({
-      answers: { IDENTITY_FIRST_NAME: "Son-Young" },
-      selected_block_ids: ["IDENTITAET"],
-      identity_gate_completed_at: new Date(),
-    });
-    expect(result).not.toContain("Identitätsabfrage erfolgt");
-  });
-
-  it("'Identitätsabfrage erfolgt' wird als Fallback ausgegeben wenn IDENTITAET fehlt", () => {
-    const result = buildMedicalRecordNote({
-      answers: { AU_SYMPTOMS: "Husten" },
-      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
-      identity_gate_completed_at: new Date(),
-    });
-    expect(result).toContain("Identitätsabfrage erfolgt");
-  });
 });
 
 describe("buildMedicalRecordNote – Textkürzung", () => {

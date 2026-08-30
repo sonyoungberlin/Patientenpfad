@@ -78,7 +78,6 @@ const COMPLETED_SESSION = {
   submitted_by: "patient",
   deduplicated_questions: [],
   answers: null,
-  identity_gate_completed_at: null,
 };
 
 const PENDING_INTERNAL_SESSION = {
@@ -92,7 +91,6 @@ const PENDING_INTERNAL_SESSION = {
   submitted_by: null,
   deduplicated_questions: [],
   answers: null,
-  identity_gate_completed_at: null,
 };
 
 describe("QuestionnairesPage – Zeitanzeige", () => {

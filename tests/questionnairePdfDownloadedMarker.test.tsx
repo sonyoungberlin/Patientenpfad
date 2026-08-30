@@ -98,8 +98,6 @@ const baseSession = {
   selected_block_ids: ["KONTAKT"],
   deduplicated_questions: [],
   answers: {},
-  identity_gate_completed_at: new Date("2026-05-04T10:00:00Z"),
-  identity_gate_method: "dob",
   deleted_at: null,
   context: "patient",
 };
@@ -186,7 +184,6 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
     displayStatus: "completed",
     statusLabel: "Abgeschlossen",
     submittedBy: "patient",
-    identityGateCompletedAt: null,
     questions: [],
     answers: null,
     noteText: "",

@@ -129,6 +129,49 @@ describe("GET /api/cases/[id]", () => {
     expect(res.status).toBe(403);
   });
 
+  it("403 für INBOX_ONLY vor dem Laden des Falls", async () => {
+    pm.session.findUnique.mockResolvedValue({
+      token: "good-token",
+      expiresAt: new Date(Date.now() + 100_000),
+      account: {
+        id: "acc-inbox",
+        email: "inbox@example.com",
+        is_approved: true,
+        is_admin: false,
+        inquiry_assistant_enabled: false,
+        patient_communication_enabled: true,
+        website_forms_enabled: false,
+        office_cases_enabled: false,
+        arbeitsprozesse_enabled: false,
+        default_practice_id: "practice-1",
+        memberships: [
+          {
+            practice_id: "practice-1",
+            role: "INBOX_ONLY",
+            created_at: new Date(),
+            practice: {
+              id: "practice-1",
+              slug: "practice-1",
+              name: "Praxis 1",
+              is_approved: true,
+              inquiry_assistant_enabled: false,
+              patient_communication_enabled: true,
+              website_forms_enabled: false,
+              office_cases_enabled: false,
+              arbeitsprozesse_enabled: false,
+            },
+          },
+        ],
+      },
+    });
+
+    const req = requestWithCookie("http://localhost/api/cases/case-owner");
+    const res = await getCaseHandler(req, { params: Promise.resolve({ id: "case-owner" }) });
+
+    expect(res.status).toBe(403);
+    expect(pm.caseSession.findUnique).not.toHaveBeenCalled();
+  });
+
   it("404 bei fremdem Fall", async () => {
     mockSession(true);
     pm.caseSession.findUnique.mockResolvedValue(FOREIGN_CASE);

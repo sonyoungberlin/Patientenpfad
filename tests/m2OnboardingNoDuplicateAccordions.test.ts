@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { hasSectionIntroMapping } from "@/app/inquiries/[id]/m2/InquiryM2Client";
 
 /**
  * Regressionstest speziell für `ONBOARDING`:
@@ -44,13 +45,7 @@ describe("M2 ONBOARDING – keine doppelte Akkordeon-Struktur", () => {
   const src = loadM2ClientSource();
 
   it("ONBOARDING ist als Eintrag in SECTION_INTRO_GROUPS_BY_PROFILE registriert", () => {
-    // Block des Profil-Mappings extrahieren.
-    const mappingStart = src.indexOf(
-      "const SECTION_INTRO_GROUPS_BY_PROFILE",
-    );
-    expect(mappingStart).toBeGreaterThan(0);
-    const mappingBlock = src.slice(mappingStart, mappingStart + 12000);
-    expect(mappingBlock).toMatch(/^\s*ONBOARDING:\s*\[/m);
+    expect(hasSectionIntroMapping("ONBOARDING")).toBe(true);
   });
 
   it("OnboardingSpecificSection rendert die neue ProfileSectionIntroDrawers-Struktur", () => {

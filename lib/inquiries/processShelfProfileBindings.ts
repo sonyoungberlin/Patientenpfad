@@ -35,7 +35,7 @@ export const GLOBAL_PROCESS_SHELF: readonly string[] = onlyExplanations([
 export const PROCESS_SHELF_PROFILE_BINDINGS: Record<string, readonly string[]> = {
   AU: onlyExplanations([
     "AU_MISSING_QUESTIONNAIRE",
-    // "TECH_UPLOAD_FAILED" entfernt, da jetzt im GLOBAL_PROCESS_SHELF
+    "TECH_UPLOAD_FAILED",
   ]),
   PRESCRIPTION: onlyExplanations([
     "PRESCRIPTION_MEDICATION_UNCLEAR",
@@ -43,11 +43,11 @@ export const PROCESS_SHELF_PROFILE_BINDINGS: Record<string, readonly string[]> =
     "PRESCRIPTION_MEDICATION_NOT_DOCUMENTED",
     "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED",
     "HOSPITAL_DISCHARGE_REPORT_MISSING",
-    // "TECH_UPLOAD_FAILED" entfernt
+    "TECH_UPLOAD_FAILED",
   ]),
   REFERRAL: onlyExplanations([
     "REF_SPECIALTY_REQUIRED",
-    // "TECH_UPLOAD_FAILED" entfernt
+    "TECH_UPLOAD_FAILED",
   ]),
   LAB: onlyExplanations([
     "LAB_RESULTS_PENDING",
@@ -85,6 +85,6 @@ export const PROCESS_SHELF_PROFILE_BINDINGS: Record<string, readonly string[]> =
   ]),
   TECH_SUPPORT: onlyExplanations([
     "TECH_VIDEO_NOT_WORKING",
-    // "TECH_UPLOAD_FAILED" entfernt
+    "TECH_UPLOAD_FAILED",
   ]),
 };

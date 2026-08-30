@@ -5,6 +5,7 @@ import {
   deleteInquirySession,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 
 /**
  * GET /api/inquiries/[id]
@@ -24,7 +25,7 @@ export async function GET(
     const { id } = await params;
 
     const session = await getInquirySessionWithOutput(id, account.id);
-    if (!session) {
+    if (!session || !canAccessInquirySession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Session nicht gefunden." },
         { status: 404 },
@@ -74,6 +75,14 @@ export async function DELETE(
     if (error) return error;
 
     const { id } = await params;
+
+    const session = await getInquirySessionWithOutput(id, account.id);
+    if (!session || !canAccessInquirySession(account, session)) {
+      return NextResponse.json(
+        { ok: false, error: "Session nicht gefunden." },
+        { status: 404 },
+      );
+    }
 
     await deleteInquirySession(id, account.id);
 

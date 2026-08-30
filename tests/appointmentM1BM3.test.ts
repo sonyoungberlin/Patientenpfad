@@ -315,8 +315,8 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau zehn Specific-Checkpoints im Hauptfluss", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(10);
+  it("APPOINTMENT-Profil hat genau elf Specific-Checkpoints im Hauptfluss", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(11);
   });
 });
 
@@ -718,17 +718,26 @@ describe("APPOINTMENT – terminartspezifische Buchungs-Actions in boundActionCh
 
   it("APPOINTMENT_BOOK_FINDINGS_REVIEW hat showWhenAny [APPOINTMENT_BOOKING_CODE_REQUIRED=YES] in boundActionConditions", () => {
     const conditions = (APPOINTMENT as any).boundActionConditions;
-    expect(conditions?.APPOINTMENT_BOOK_FINDINGS_REVIEW?.showWhenAny).toEqual([{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }]);
+    expect(conditions?.APPOINTMENT_BOOK_FINDINGS_REVIEW?.showWhenAny).toEqual([
+      { APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" },
+      { APPOINTMENT_TYPE_QUESTION: "YES" },
+    ]);
   });
 
   it("APPOINTMENT_BOOK_CHECKUP_SECOND hat showWhenAny [APPOINTMENT_BOOKING_CODE_REQUIRED=YES] in boundActionConditions", () => {
     const conditions = (APPOINTMENT as any).boundActionConditions;
-    expect(conditions?.APPOINTMENT_BOOK_CHECKUP_SECOND?.showWhenAny).toEqual([{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }]);
+    expect(conditions?.APPOINTMENT_BOOK_CHECKUP_SECOND?.showWhenAny).toEqual([
+      { APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" },
+      { APPOINTMENT_TYPE_QUESTION: "YES" },
+    ]);
   });
 
   it("APPOINTMENT_BOOK_CHRONIC_CONTROL hat showWhenAny [APPOINTMENT_BOOKING_CODE_REQUIRED=YES] in boundActionConditions", () => {
     const conditions = (APPOINTMENT as any).boundActionConditions;
-    expect(conditions?.APPOINTMENT_BOOK_CHRONIC_CONTROL?.showWhenAny).toEqual([{ APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" }]);
+    expect(conditions?.APPOINTMENT_BOOK_CHRONIC_CONTROL?.showWhenAny).toEqual([
+      { APPOINTMENT_BOOKING_CODE_REQUIRED: "YES" },
+      { APPOINTMENT_TYPE_QUESTION: "YES" },
+    ]);
   });
 });
 

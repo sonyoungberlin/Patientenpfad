@@ -36,6 +36,8 @@ import {
   STATUS_AWAITING_EMAIL_CONFIRMATION,
   WEBSITE_SESSION_SOURCE,
 } from "@/lib/websiteForms/constants";
+import { PUBLIC_IDENTITY_SELECT, type PublicPracticeIdentity } from "@/lib/practice/publicIdentity";
+import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -68,7 +70,7 @@ function logConfirm(
 const GENERIC_ERROR_TEXT =
   "Bestätigungslink ungültig oder abgelaufen. Bitte senden Sie das Formular bei Bedarf erneut ab.";
 
-function ErrorView() {
+function ErrorView({ practice }: { practice?: PublicPracticeIdentity | null }) {
   return (
     <main>
       <h1>Bestätigung fehlgeschlagen</h1>
@@ -78,11 +80,12 @@ function ErrorView() {
         direkt aus der Bestätigungs-E-Mail. Falls das Problem bestehen bleibt,
         füllen Sie das Formular bitte erneut aus.
       </p>
+      {practice && <PublicPracticeFooter practice={practice} />}
     </main>
   );
 }
 
-function SuccessView() {
+function SuccessView({ practice }: { practice?: PublicPracticeIdentity | null }) {
   return (
     <main>
       <h1>Vielen Dank — Bestätigung erfolgreich</h1>
@@ -90,17 +93,19 @@ function SuccessView() {
         Ihre Angaben wurden bestätigt und an die Praxis übermittelt.
       </p>
       <p>Sie können dieses Fenster jetzt schließen.</p>
+      {practice && <PublicPracticeFooter practice={practice} />}
     </main>
   );
 }
 
-function AlreadyConfirmedView() {
+function AlreadyConfirmedView({ practice }: { practice?: PublicPracticeIdentity | null }) {
   return (
     <main>
       <h1>Bereits bestätigt</h1>
       <p data-public-confirm-already-confirmed>
         Ihre Angaben wurden bereits bestätigt und an die Praxis übermittelt.
       </p>
+      {practice && <PublicPracticeFooter practice={practice} />}
       <p>
         Sie müssen nichts weiter tun. Sie können dieses Fenster schließen.
       </p>
@@ -149,6 +154,8 @@ export default async function ConfirmPage({
       confirmed_at: true,
       practice_form_id: true,
       deleted_at: true,
+      owner_practice_id: true,
+      owner_practice: { select: PUBLIC_IDENTITY_SELECT },
       owner_account: {
         select: {
           is_approved: true,
@@ -168,6 +175,7 @@ export default async function ConfirmPage({
     logConfirm("not_found");
     return <ErrorView />;
   }
+  const publicPractice = session.owner_practice;
 
   // 3a. Source muss zwingend "website" sein.
   if (session.source !== WEBSITE_SESSION_SOURCE) {
@@ -185,7 +193,7 @@ export default async function ConfirmPage({
     session.practice_form?.is_active === true
   ) {
     logConfirm("already_confirmed", { sessionId: session.id });
-    return <AlreadyConfirmedView />;
+    return <AlreadyConfirmedView practice={publicPractice} />;
   }
 
   // 3c. Status / Expiry prüfen.
@@ -194,7 +202,7 @@ export default async function ConfirmPage({
     session.confirmed_at !== null
   ) {
     logConfirm("wrong_state");
-    return <ErrorView />;
+    return <ErrorView practice={publicPractice} />;
   }
 
   if (
@@ -202,19 +210,19 @@ export default async function ConfirmPage({
     session.confirm_token_expires_at < new Date()
   ) {
     logConfirm("expired");
-    return <ErrorView />;
+    return <ErrorView practice={publicPractice} />;
   }
 
   // 4. Owner-/Feature-Flags prüfen (Praxis kann zwischenzeitlich abgeschaltet
   //    worden sein). Identische Cascade wie `/p/[slug]/page.tsx`.
   if (!isOwnerCascadeValid(session.owner_account)) {
     logConfirm("owner_disabled");
-    return <ErrorView />;
+    return <ErrorView practice={publicPractice} />;
   }
 
   if (!session.practice_form || !session.practice_form.is_active) {
     logConfirm("form_inactive");
-    return <ErrorView />;
+    return <ErrorView practice={publicPractice} />;
   }
 
   // 5. Bestätigen.
@@ -234,12 +242,12 @@ export default async function ConfirmPage({
   } catch (err) {
     const detail = err instanceof Error ? err.message : "unknown";
     logConfirm("update_failed", { detail });
-    return <ErrorView />;
+    return <ErrorView practice={publicPractice} />;
   }
 
   logConfirm("success", {
     sessionId: session.id,
     practiceFormId: session.practice_form_id ?? null,
   });
-  return <SuccessView />;
+  return <SuccessView practice={publicPractice} />;
 }

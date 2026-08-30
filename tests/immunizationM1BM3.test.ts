@@ -406,7 +406,7 @@ describe("IMMUNIZATION Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("bisher durchgeführten Impfungen");
+    expect(paragraphs).toContain("bisherigen Impfungen");
   });
 
   it("IMMUNIZATION_PASS_MISSING YES + SHOW → kein Text (deprecated, nicht mehr im Profil)", () => {

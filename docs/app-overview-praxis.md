@@ -355,7 +355,7 @@ Diese Rolle eignet sich für Verwaltungsmitarbeitende, die Eingang und Ablage vo
 
 1. Praxis legt einen Website-Fragebogen an und verlinkt ihn auf der Praxiswebsite
 2. Patient öffnet den Link, füllt den Fragebogen aus
-3. Patient bestätigt per E-Mail (Identitätsprüfung)
+3. Patient bestätigt die Übermittlung über den Link in der E-Mail
 4. Eingang erscheint im Posteingang der Praxis
 5. Praxis liest die Antworten, kopiert den Krankenblatt-Text
 
@@ -455,8 +455,8 @@ Ein einmaliger, zeitlich begrenzter Link, den ein Patient zum Ausfüllen eines F
 **Slug / Praxislink**
 Die individuelle Webadresse einer Praxis für öffentliche Formulare — zum Beispiel `patientenpfad.de/anfrage/musterpraxis`. Wird von der Praxis eingerichtet und kann auf der Website eingebunden werden.
 
-**Identity Gate**
-Eine kurze Identitätsprüfung (z. B. Geburtsdatum), die Patienten nach dem Absenden eines Website-Fragebogens per E-Mail-Bestätigung durchlaufen. Erst danach erscheint der Eingang im Posteingang der Praxis.
+**Persönlicher Fragebogenlink**
+Ein zeitlich begrenzter individueller Link zu einem bestimmten Fragebogen. Der Link dient als Zugangsschlüssel und kann nach erfolgreicher Übermittlung nicht erneut verwendet werden. Vor dem Öffnen wird keine zusätzliche Identitätsabfrage durchgeführt.
 
 **Signatur**
 Ein fester Textbaustein, der automatisch an alle ausgehenden Patientennachrichten angehängt wird. Einzurichten unter Praxis → Signatur.

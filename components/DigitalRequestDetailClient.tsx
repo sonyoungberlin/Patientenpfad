@@ -278,6 +278,9 @@ export function DigitalRequestDetailClient({
             isReadOnly ? " cursor-not-allowed bg-gray-50 text-gray-500" : ""
           }`}
         />
+        <p className="text-muted text-small" style={{ marginTop: "0.35rem" }}>
+          Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
+        </p>
       </div>
 
       {/* Block-Auswahl */}

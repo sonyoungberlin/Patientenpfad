@@ -622,6 +622,29 @@ export async function requireInquiriesAccessFromCookies(): Promise<SessionAccoun
   return allowed ? account : null;
 }
 
+/** Patientenfälle: freigeschalteter Account mit OWNER-, ADMIN- oder USER-Rolle. */
+export async function requireCasesAccess(req: NextRequest): Promise<RequireResult> {
+  const result = await requireApprovedAccount(req);
+  if (result.error) return result;
+
+  const allowed = hasCurrentPracticeRole(
+    result.account,
+    [PracticeRole.OWNER, PracticeRole.ADMIN, PracticeRole.USER],
+    { allowNoPracticeFallback: true },
+  );
+  if (!allowed) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return result;
+}
+
 /**
  * Office-Fragebogen-Guard: OWNER oder ADMIN + Office-Feature.
  *

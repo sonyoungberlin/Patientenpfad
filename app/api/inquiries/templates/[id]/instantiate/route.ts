@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInquiriesAccess } from "@/lib/authz";
 import {
+  getInquirySessionWithOutput,
   instantiateFromTemplate,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 
 /**
  * POST /api/inquiries/templates/[id]/instantiate
@@ -26,6 +28,16 @@ export async function POST(
     if (error) return error;
 
     const { id } = await params;
+
+    const template = await getInquirySessionWithOutput(id, account.id, undefined, {
+      includeTemplates: true,
+    });
+    if (!template || !template.is_template || !canAccessInquirySession(account, template)) {
+      return NextResponse.json(
+        { ok: false, error: "Vorlage nicht gefunden." },
+        { status: 404 },
+      );
+    }
 
     const session = await instantiateFromTemplate(id, account.id);
 

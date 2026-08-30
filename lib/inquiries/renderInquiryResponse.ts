@@ -255,11 +255,15 @@ export function renderInquiryResponseFromSections(
   );
   const _allowedGlobalActionIds = getAllowedGlobalActionIds(_activeShelfGroups);
   for (const actionId of GLOBAL_ACTION_SHELF) {
-    if (!_allowedGlobalActionIds.has(actionId)) continue;
     const checkpoint = catalog[actionId];
     if (!checkpoint || checkpoint.kind !== InquiryCheckpointKind.ACTION) continue;
     const status = globalActionStatuses[actionId];
     if (status === undefined || status === ActionStatus.INACTIVE) continue;
+    // Neue UI bietet diese Actions nur bei aktivierter Prozess-Schublade an.
+    // Bereits explizit gespeicherte ACTIVE-Werte aus älteren Sessions bleiben
+    // jedoch ausgabewirksam, auch wenn der ursprüngliche Trigger nicht mehr
+    // im Snapshot vorhanden ist.
+    if (!_allowedGlobalActionIds.has(actionId) && status !== ActionStatus.ACTIVE) continue;
     const text = resolveCheckpointText(checkpoint, status, audience);
     if (!text) continue;
     if (!sharedBottomSeen.has(actionId)) {

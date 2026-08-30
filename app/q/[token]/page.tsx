@@ -23,6 +23,8 @@ import {
   BEWERBER_INTRO_SIE,
 } from "@/lib/questionnaire/officeIntro";
 import { QuestionnaireFormClient } from "./QuestionnaireFormClient";
+import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
+import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 
 // Always render per-request so the page reads fresh token state from the DB
 // and is never served from the Full Route Cache (would expose stale form HTML
@@ -69,9 +71,7 @@ export default async function QuestionnairePage({
       context: true,
       salutation: true,
       owner_practice: {
-        select: {
-          message_signature: true,
-        },
+        select: PUBLIC_IDENTITY_SELECT,
       },
     },
   });
@@ -88,11 +88,13 @@ export default async function QuestionnairePage({
   }
 
   const language = normalizeQuestionnaireLanguage(session.patient_language);
+  const publicPractice = session.owner_practice;
 
   if (session.token_expires_at < new Date()) {
     return (
       <main>
         <p data-q-expired>{expiredMessage(language)}</p>
+        {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
       </main>
     );
   }
@@ -101,6 +103,7 @@ export default async function QuestionnairePage({
     return (
       <main>
         <p data-q-completed>{completedMessage(language)}</p>
+        {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
       </main>
     );
   }
@@ -157,6 +160,7 @@ export default async function QuestionnairePage({
         language={language}
         context={session.context}
       />
+      {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>
   );
 }

@@ -1,7 +1,33 @@
 import {
+  containsInternalQuestionnaireLink,
   TextSmoothingError,
   smoothTextWithOpenAI,
 } from "@/lib/server/textSmoothing";
+
+describe("interne Fragebogenlinks", () => {
+  it.each([
+    "Bitte öffnen: https://example.test/q/550e8400-e29b-41d4-a716-446655440000",
+    "Link: /q/550e8400-e29b-41d4-a716-446655440000",
+    "https://example.test/m2-link/550e8400-e29b-41d4-a716-446655440000",
+  ])("erkennt und blockiert %s", async (text) => {
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    expect(containsInternalQuestionnaireLink(text)).toBe(true);
+    await expect(smoothTextWithOpenAI({ text })).rejects.toMatchObject({
+      code: "internal_link_detected",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("erlaubt normale Praxislinks", () => {
+    expect(
+      containsInternalQuestionnaireLink(
+        "Termin unter https://example.test/termine buchen.",
+      ),
+    ).toBe(false);
+  });
+});
 
 describe("textSmoothing helper", () => {
   const ORIG_API_KEY = process.env.OPENAI_API_KEY;

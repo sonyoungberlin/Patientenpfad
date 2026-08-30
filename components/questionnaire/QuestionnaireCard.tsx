@@ -27,7 +27,6 @@ export type QuestionnaireCardProps = {
   displayStatus: string;
   statusLabel: string;
   submittedBy: string | null;
-  identityGateCompletedAt: Date | null;
   questions: QuestionDefinition[];
   answers: Record<string, string> | null;
   /**
@@ -76,7 +75,6 @@ export default function QuestionnaireCard({
   displayStatus,
   statusLabel,
   submittedBy,
-  identityGateCompletedAt,
   questions,
   answers,
   noteText,
@@ -156,16 +154,6 @@ export default function QuestionnaireCard({
       <div className="text-muted text-small">
         Blöcke: {blockLabels || "–"}
       </div>
-
-      {identityGateCompletedAt && (
-        <div
-          className="text-small"
-          data-q-identity-gate={id}
-          style={{ color: "var(--muted-fg, #475569)" }}
-        >
-          Identitätsabfrage: erfolgt
-        </div>
-      )}
 
       {/* PDF download + Krankenblatt-Text */}
       {displayStatus === "completed" && (

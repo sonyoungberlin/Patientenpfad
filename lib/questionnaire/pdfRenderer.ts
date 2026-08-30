@@ -60,7 +60,6 @@ export type PdfSessionInput = {
   answers: unknown;
   source: string;
   practice_form: { title: string } | null;
-  identity_gate_completed_at: Date | null;
 };
 
 export type PdfRenderOptions = {
@@ -68,8 +67,6 @@ export type PdfRenderOptions = {
   title: string;
   /** Beschriftung der Referenzzeile (z. B. "Patientenreferenz" / "Referenz"). */
   referenceLabel: string;
-  /** Ob die Identitätsabfrage-Zeile ausgegeben wird. */
-  showIdentityGate: boolean;
   /** Blockkatalog zum Nachschlagen von Labels und Conditional Rules. */
   blockCatalog: Record<string, QuestionnaireBlock>;
 };
@@ -78,7 +75,7 @@ export async function buildQuestionnairePdfBytes(
   session: PdfSessionInput,
   opts: PdfRenderOptions,
 ): Promise<{ bytes: Uint8Array; filename: string }> {
-  const { title, referenceLabel, showIdentityGate, blockCatalog } = opts;
+  const { title, referenceLabel, blockCatalog } = opts;
 
   const questions = Array.isArray(session.deduplicated_questions)
     ? (session.deduplicated_questions as QuestionDefinition[])
@@ -214,19 +211,6 @@ export async function buildQuestionnairePdfBytes(
     : "–";
   drawText(`Datum: ${submittedStr}`, { size: 9, color: [0.3, 0.3, 0.3] });
   drawText(`${referenceLabel}: ${session.patient_reference ?? "–"}`, { size: 9, color: [0.3, 0.3, 0.3] });
-
-  if (showIdentityGate && session.identity_gate_completed_at) {
-    const gateStr = session.identity_gate_completed_at.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Berlin" });
-    drawText(
-      `Identitätsabfrage: erfolgt (Geburtsdatum + erste 3 Buchstaben Nachname) – ${gateStr}`,
-      { size: 9, color: [0.3, 0.3, 0.3] },
-    );
-  } else if (showIdentityGate) {
-    drawText(
-      "Identitätsabfrage: erfolgt (Geburtsdatum + erste 3 Buchstaben Nachname)",
-      { size: 9, color: [0.3, 0.3, 0.3] },
-    );
-  }
 
   const derivedValueLines = buildDerivedValueLines(derivedValues);
   if (derivedValueLines.length > 0) {

@@ -84,7 +84,6 @@ const ACTIVE_SESSION = {
   submitted_by: "patient",
   deduplicated_questions: [],
   answers: null,
-  identity_gate_completed_at: null,
   pdf_downloaded_at: null,
   deleted_at: null,
 };
@@ -100,7 +99,6 @@ const DELETED_SESSION = {
   submitted_by: "patient",
   deduplicated_questions: [],
   answers: null,
-  identity_gate_completed_at: null,
   pdf_downloaded_at: null,
   deleted_at: new Date("2026-05-04T09:00:00Z"),
 };

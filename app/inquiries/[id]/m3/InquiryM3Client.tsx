@@ -560,6 +560,7 @@ function OutputView({
   smoothedText = null,
   smoothingError = null,
   useSmoothed = false,
+  smoothingDisabled = false,
   onSmoothText,
   onToggleSmoothed,
 }: {
@@ -578,6 +579,7 @@ function OutputView({
   smoothedText?: string | null;
   smoothingError?: string | null;
   useSmoothed?: boolean;
+  smoothingDisabled?: boolean;
   onSmoothText?: (text: string) => Promise<void>;
   onToggleSmoothed?: (use: boolean) => void;
 }) {
@@ -730,21 +732,31 @@ function OutputView({
             <button
               type="button"
               onClick={() => onSmoothText(copyMessageText)}
-              disabled={isSmoothing}
+              disabled={isSmoothing || smoothingDisabled}
+              title={
+                smoothingDisabled
+                  ? "Bitte Text vor Erstellung des Fragebogenlinks glätten."
+                  : undefined
+              }
               style={{
                 padding: "0.5rem 1rem",
                 borderRadius: "var(--radius)",
                 border: "1px solid var(--border)",
                 background: "var(--background)",
                 color: "var(--foreground)",
-                cursor: isSmoothing ? "not-allowed" : "pointer",
+                cursor: isSmoothing || smoothingDisabled ? "not-allowed" : "pointer",
                 fontSize: "0.9rem",
                 fontWeight: 500,
-                opacity: isSmoothing ? 0.6 : 1,
+                opacity: isSmoothing || smoothingDisabled ? 0.6 : 1,
               }}
             >
               {isSmoothing ? "Wird geglättet…" : "Text glätten"}
             </button>
+          )}
+          {smoothingDisabled && (
+            <span className="text-muted text-small" data-smoothing-disabled-reason>
+              Textglättung ist nach Erstellung des Fragebogenlinks nicht mehr verfügbar.
+            </span>
           )}
           <CopyTextButton
             text={textForCopy}
@@ -788,6 +800,10 @@ export function appendQuestionnaireLinkToOutput(
   const paragraph =
     `Bitte füllen Sie den folgenden Fragebogen aus.\nKopieren Sie den Link in Ihren Browser:\n${link}`;
   return { ...output, sharedBottom: [...output.sharedBottom, paragraph] };
+}
+
+export function isInquirySmoothingDisabled(link: string | null): boolean {
+  return link !== null;
 }
 
 // ---------------------------------------------------------------------------
@@ -993,6 +1009,9 @@ export function QuestionnaireRequestSection({
                 color: "var(--foreground)",
               }}
             />
+            <p className="text-muted text-small" style={{ margin: "0.35rem 0 0" }}>
+              Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
+            </p>
           </div>
 
           {/* Block selection */}
@@ -1300,6 +1319,12 @@ export default function InquiryM3Client({
   }
 
   async function handleSmoothText(textToSmooth: string) {
+    if (isInquirySmoothingDisabled(questionnaireLink)) {
+      setSmoothingError(
+        "Textglättung ist nach Erstellung des Fragebogenlinks nicht mehr verfügbar.",
+      );
+      return;
+    }
     if (!textToSmooth.trim()) {
       setSmoothingError("Kein Text zum Glätten vorhanden.");
       return;
@@ -1613,6 +1638,7 @@ export default function InquiryM3Client({
                 smoothedText={smoothedText}
                 smoothingError={smoothingError}
                 useSmoothed={useSmoothed}
+                smoothingDisabled={isInquirySmoothingDisabled(questionnaireLink)}
                 onSmoothText={handleSmoothText}
                 onToggleSmoothed={setUseSmoothed}
               />
@@ -2262,6 +2288,7 @@ export default function InquiryM3Client({
                 smoothedText={smoothedText}
                 smoothingError={smoothingError}
                 useSmoothed={useSmoothed}
+                smoothingDisabled={isInquirySmoothingDisabled(questionnaireLink)}
                 onSmoothText={handleSmoothText}
                 onToggleSmoothed={setUseSmoothed}
               />

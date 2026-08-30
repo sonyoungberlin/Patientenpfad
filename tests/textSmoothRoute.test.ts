@@ -7,9 +7,9 @@ jest.mock("@/lib/auth", () => ({
 
 jest.mock("@/lib/server/textSmoothing", () => ({
   TextSmoothingError: class TextSmoothingError extends Error {
-    code: "missing_api_key" | "provider_error" | "invalid_response";
+    code: "missing_api_key" | "provider_error" | "invalid_response" | "internal_link_detected";
     constructor(
-      code: "missing_api_key" | "provider_error" | "invalid_response",
+      code: "missing_api_key" | "provider_error" | "invalid_response" | "internal_link_detected",
       message: string,
     ) {
       super(message);
@@ -155,6 +155,27 @@ describe("POST /api/text/smooth", () => {
 
     expect(response.status).toBe(500);
     expect(json.ok).toBe(false);
+  });
+
+  it("gibt 400 zurück und leitet interne Fragebogenlinks nicht weiter", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    smoothTextWithOpenAIMock.mockRejectedValue(
+      new TextSmoothingError(
+        "internal_link_detected",
+        "Interner Fragebogenlink erkannt",
+      ),
+    );
+
+    const response = await POST(
+      makeRequest({
+        text: "Bitte öffnen: https://example.test/q/550e8400-e29b-41d4-a716-446655440000",
+        context: "inquiry_patient_message",
+      }),
+    );
+    const json = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(json.code).toBe("internal_link_detected");
   });
 
   it("gibt error-code im Fehlerfall zur\u00fcck (diagnostisch)", async () => {

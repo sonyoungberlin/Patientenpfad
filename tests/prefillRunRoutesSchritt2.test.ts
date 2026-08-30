@@ -234,12 +234,12 @@ describe("Schritt 2 – Patient-Schreibpfad (m2-link/[token])", () => {
       expect.objectContaining({
         caseId: "c1",
         source: "patient",
-        patientTokenUsed: "tok-1",
         allowConfirmed: true,
         answers: { K01: { "M2-01": "ja" } },
         activeCheckpoints: [{ id: "K01" }],
       }),
     );
+    expect(appendFrozenRunMock.mock.calls[0][0]).not.toHaveProperty("patientTokenUsed");
 
     // Cache-Sync + Token-Invalidierung unverändert.
     const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;

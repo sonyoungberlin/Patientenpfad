@@ -99,7 +99,6 @@ function setRuns(
       frozen_at: new Date(),
       active_checkpoints: [],
       created_by_account_id: null,
-      patient_token_used: null,
     })),
   );
 }

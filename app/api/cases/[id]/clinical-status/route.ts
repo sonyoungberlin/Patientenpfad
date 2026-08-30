@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionAccount } from "@/lib/auth";
+import { requireCasesAccess } from "@/lib/authz";
 import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 
 const ALLOWED_STATUSES = ["prepared", "confirmed"] as const;
@@ -15,13 +15,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const account = await getSessionAccount(req);
-    if (!account) {
-      return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-    }
-    if (!account.is_approved) {
-      return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-    }
+    const { account, error } = await requireCasesAccess(req);
+    if (error) return error;
 
     const { id } = await params;
 

@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import { backfillPerspectives, ensureSelectionConditionalCheckpoints } from "@/lib/logic/checkpointCatalog";
 import { M2TokenFormClient } from "./M2TokenFormClient";
+import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
+import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 
 const EXPIRED_MESSAGE = "Dieser Link ist abgelaufen. Bitte wenden Sie sich an die Praxis.";
 
@@ -17,6 +19,7 @@ export default async function M2TokenPage({
     select: {
       active_checkpoints: true,
       m2_token_expires_at: true,
+      owner_practice: { select: PUBLIC_IDENTITY_SELECT },
     },
   });
 
@@ -24,11 +27,13 @@ export default async function M2TokenPage({
     session !== null &&
     session.m2_token_expires_at !== null &&
     session.m2_token_expires_at >= new Date();
+  const publicPractice = session?.owner_practice ?? null;
 
   if (!isValid) {
     return (
       <main>
         <p data-m2-expired>{EXPIRED_MESSAGE}</p>
+        {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
       </main>
     );
   }
@@ -45,6 +50,7 @@ export default async function M2TokenPage({
     <main>
       <h1>Patientenbefragung</h1>
       <M2TokenFormClient token={token} checkpoints={checkpoints} />
+      {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>
   );
 }

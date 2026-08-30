@@ -8,6 +8,7 @@
 import { evaluateActionGuidance } from "@/lib/inquiries/evaluateActionGuidance";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { GLOBAL_ACTION_SHELF } from "@/lib/inquiries/processShelfProfileBindings";
 import {
   DecisionStatus,
   ExplanationStatus,
@@ -402,6 +403,7 @@ describe("PRESCRIPTION actionGuidanceRules – Katalogstruktur", () => {
     const allActionIds = [
       ...prescriptionProfile.availableActionIds,
       ...(prescriptionProfile.boundActionCheckpointIds ?? []),
+      ...GLOBAL_ACTION_SHELF,
     ];
     for (const rule of prescriptionProfile.actionGuidanceRules!) {
       expect(allActionIds).toContain(rule.checkpointId);

@@ -969,7 +969,7 @@ describe("renderInquiryResponseFromSections – neutraler Follow-up-Baustein", (
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { InquiryCheckpointKind, InquiryCheckpointScope, InquiryCheckpointPlacement, ExplanationOutputStatus } from "@/lib/inquiries/types";
-import { PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
+import { GLOBAL_ACTION_SHELF, PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
 
 describe("AU-Profil – Checkpoint-Bindungen", () => {
   const auProfile = INQUIRY_PROFILE_CATALOG_V2["AU"];
@@ -1064,7 +1064,7 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
       }),
     ]);
     expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("ärztliche Konsultation")),
+      result.sections[0].attachedParagraphs.some((t) => t.includes("persönlicher Termin")),
     ).toBe(true);
   });
 
@@ -1078,7 +1078,7 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
       }),
     ]);
     expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("ärztliche Konsultation")),
+      result.sections[0].attachedParagraphs.some((t) => t.includes("persönlicher Termin")),
     ).toBe(false);
   });
 
@@ -1090,7 +1090,7 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
       }),
     ]);
     expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("ärztliche Konsultation")),
+      result.sections[0].attachedParagraphs.some((t) => t.includes("persönlicher Termin")),
     ).toBe(true);
   });
 
@@ -1108,7 +1108,7 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
     ]);
     const outputText = result.sections[0].attachedParagraphs.join(" ");
     // Text kommt unverändert aus dem Katalog
-    expect(outputText).toContain("ärztliche Konsultation");
+    expect(outputText).toContain("persönlicher Termin");
   });
 
   it("MCR textByStatus[YES] ist befüllt (zentraler Default-Text)", () => {
@@ -2042,8 +2042,8 @@ describe("PRESCRIPTION-Profil – neue Actions (E_RECIPE_USE, PHARMACY_INFORMATI
 
   it("PROCESSING_DELAY und TECHNICAL_ISSUE sind in PRESCRIPTION.availableActionIds", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["PRESCRIPTION"];
-    expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
-    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(GLOBAL_ACTION_SHELF).toContain("PROCESSING_DELAY");
+    expect(GLOBAL_ACTION_SHELF).toContain("TECHNICAL_ISSUE");
   });
 });
 
@@ -2081,7 +2081,7 @@ describe("LAB-Profil – Checkpoint-Bindungen", () => {
     expect(labProfile.specificCheckpointIds).toContain("LAB_SELF_PAYER_POSSIBLE");
     expect(labProfile.specificCheckpointIds).toContain("LAB_CONTROL_TIMING_NOT_DUE");
     expect(labProfile.specificCheckpointIds).toContain("LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED");
-    expect(labProfile.specificCheckpointIds).toHaveLength(12);
+    expect(labProfile.specificCheckpointIds).toHaveLength(13);
   });
 
   it("LAB-Profil bindet die alten Checkpoints nicht mehr", () => {
@@ -2462,8 +2462,8 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["SAMPLE_COLLECTION"];
     expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
     expect(profile.availableActionIds).not.toContain("OPEN_CONSULTATION");
-    expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
-    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(GLOBAL_ACTION_SHELF).toContain("PROCESSING_DELAY");
+    expect(GLOBAL_ACTION_SHELF).toContain("TECHNICAL_ISSUE");
     expect(profile.availableActionIds).toContain("DIGITAL_REQUEST");
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
@@ -2475,7 +2475,7 @@ describe("SAMPLE_COLLECTION-Profil – Struktur", () => {
       }),
     ]);
     expect(result.sections[0].attachedParagraphs).toContain(
-      "Die für Ihr Anliegen erforderlichen Informationen liegen vollständig vor.",
+      "Alle Angaben zu Ihrem Anliegen sind vollständig.",
     );
   });
 });
@@ -2609,7 +2609,7 @@ describe("SAMPLE_COLLECTION-Profil – SAMPLE_COLLECTION_ORDER_AVAILABLE (EXPLAN
       }),
     ]);
     const allText = result.sections[0].attachedParagraphs.join(" ");
-    expect(allText).toContain("Für die Probenabgabe liegt eine entsprechende Anordnung vor.");
+    expect(allText).toContain("Für die gewünschte Probenabgabe liegt bereits eine ärztliche Anordnung vor.");
   });
 
   it("SAMPLE_COLLECTION_INFORMATION_INCOMPLETE YES + SHOW → Text erscheint ohne dringend/akut und ohne sharedBottom-Nebeneffekt", () => {
@@ -2640,7 +2640,7 @@ describe("SAMPLE_COLLECTION-Profil – SAMPLE_COLLECTION_ORDER_AVAILABLE (EXPLAN
     ]);
 
     const text = result.sections[0].attachedParagraphs.join(" ");
-    expect(text).toContain("Uns liegt noch keine eindeutige Anordnung oder Information vor, welche Probe abgegeben oder untersucht werden soll.");
+    expect(text).toContain("Aktuell ist noch unklar, welche Probe abgegeben oder untersucht werden soll.");
     expect(text).not.toContain("dringend");
     expect(text).not.toContain("akut");
     expect(result.sharedBottom).toHaveLength(0);
@@ -2751,7 +2751,7 @@ describe("APPOINTMENT-Profil – externer Befund bei laengerem Praxisabstand", (
     ]);
 
     const text = result.sections[0].attachedParagraphs.join(" ");
-    expect(text).toContain("Die nachgereichten Unterlagen sind eingegangen und wurden der Patientenakte zugeordnet.");
+    expect(text).toContain("Ihre Unterlagen sind bei uns eingegangen.");
     expect(result.sharedBottom).toHaveLength(0);
   });
 
@@ -2874,14 +2874,14 @@ describe("REFERRAL-Profil – Struktur", () => {
       "REF_ORIGINAL_VS_PDF",
       "REF_BOOKING_CODE_PROCESS",
     ];
-    expect(profile.specificCheckpointIds).toHaveLength(7);
+    expect(profile.specificCheckpointIds).toHaveLength(6);
     expect(profile.specificCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REFERRAL_CAN_BE_ISSUED");
     expect(profile.specificCheckpointIds).toContain("REF_PSYCHOTHERAPY_FIRST_STEP");
     expect(profile.specificCheckpointIds).toContain("REF_SPECIALTY_REQUIRED");
     expect(profile.specificCheckpointIds).toContain("REF_HAV_CASE");
     expect(profile.specificCheckpointIds).toContain("REF_MEDICAL_CONSULTATION_REQUIRED");
-    expect(profile.specificCheckpointIds).toContain("TECH_UPLOAD_FAILED");
+    expect(PROCESS_SHELF_PROFILE_BINDINGS["REFERRAL"]).toContain("TECH_UPLOAD_FAILED");
     expect(profile.specificCheckpointIds).toContain("REFERRAL_INSURANCE_PROOF_MISSING");
     for (const id of ids) {
       expect(profile.specificCheckpointIds).not.toContain(id);
@@ -2921,9 +2921,9 @@ describe("REFERRAL-Profil – Struktur", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["REFERRAL"];
     expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
     expect(profile.availableActionIds).not.toContain("OPEN_CONSULTATION");
-    expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
-    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
-    expect(profile.availableActionIds).toContain("DOCUMENT_UPLOAD");
+    expect(GLOBAL_ACTION_SHELF).toContain("PROCESSING_DELAY");
+    expect(GLOBAL_ACTION_SHELF).toContain("TECHNICAL_ISSUE");
+    expect(GLOBAL_ACTION_SHELF).toContain("DOCUMENT_UPLOAD");
     expect(profile.availableActionIds).toContain("DIGITAL_REQUEST");
     expect(profile.specificCheckpointIds).toContain("REF_MEDICAL_CONSULTATION_REQUIRED");
   });
@@ -3286,8 +3286,8 @@ describe("ACUTE_CARE-Profil – Struktur", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2["ACUTE_CARE"];
     expect(profile.availableActionIds).toContain("BOOK_APPOINTMENT");
     expect(profile.availableActionIds).not.toContain("OPEN_CONSULTATION");
-    expect(profile.availableActionIds).toContain("PROCESSING_DELAY");
-    expect(profile.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(GLOBAL_ACTION_SHELF).toContain("PROCESSING_DELAY");
+    expect(GLOBAL_ACTION_SHELF).toContain("TECHNICAL_ISSUE");
     expect(profile.boundGlobalCheckpointIds).not.toContain("MEDICAL_CONSULTATION_REQUIRED");
   });
 });
@@ -3304,7 +3304,7 @@ describe("ACUTE_CARE-Profil – Decision", () => {
     const result = renderInquiryResponseFromSections([
       makeAcuteCareSection({ decisionStatus: DecisionStatus.NOT_POSSIBLE }),
     ]);
-    expect(result.sections[0].mainDecision).toContain("nicht geeignet");
+    expect(result.sections[0].mainDecision).toContain("andere Terminart vorgesehen");
   });
 });
 

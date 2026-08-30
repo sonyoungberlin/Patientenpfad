@@ -446,7 +446,7 @@ describe("MEDICAL_DOCUMENTS Renderer – Specific-Checkpoint-Texte", () => {
       },
     ]);
     const paragraphs = result.sections[0].attachedParagraphs.join(" ");
-    expect(paragraphs).toContain("ärztliche Konsultation");
+    expect(paragraphs).toContain("persönlicher Termin");
   });
 
   it("MEDICAL_DOCUMENT_CONSULTATION_REQUIRED YES + HIDE → kein Konsultations-Text erscheint", () => {

@@ -13,6 +13,7 @@
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
+import { GLOBAL_ACTION_SHELF, PROCESS_SHELF_PROFILE_BINDINGS } from "@/lib/inquiries/processShelfProfileBindings";
 import {
   DecisionStatus,
   ExplanationStatus,
@@ -308,7 +309,10 @@ describe("TECH_SUPPORT Specific-Checkpoints – Existenz und Struktur", () => {
   });
 
   it("TECH_SUPPORT-Profil referenziert genau die zwei verbleibenden Specific-Checkpoints", () => {
-    expect(TECH_SUPPORT.specificCheckpointIds).toEqual([...EXPECTED_SPECIFIC_CHECKPOINT_IDS]);
+    expect([...new Set([
+      ...TECH_SUPPORT.specificCheckpointIds,
+      ...(PROCESS_SHELF_PROFILE_BINDINGS.TECH_SUPPORT ?? []),
+    ])]).toEqual([...EXPECTED_SPECIFIC_CHECKPOINT_IDS]);
   });
 
   for (const id of REMOVED_CHECKPOINT_IDS) {
@@ -394,11 +398,11 @@ describe("TECH_SUPPORT Renderer – Specific-Checkpoint-Texte", () => {
 
 describe("TECH_SUPPORT – availableActionIds", () => {
   it("PROCESSING_DELAY ist in TECH_SUPPORT.availableActionIds enthalten", () => {
-    expect(TECH_SUPPORT.availableActionIds).toContain("PROCESSING_DELAY");
+    expect(GLOBAL_ACTION_SHELF).toContain("PROCESSING_DELAY");
   });
 
   it("TECHNICAL_ISSUE ist in TECH_SUPPORT.availableActionIds enthalten", () => {
-    expect(TECH_SUPPORT.availableActionIds).toContain("TECHNICAL_ISSUE");
+    expect(GLOBAL_ACTION_SHELF).toContain("TECHNICAL_ISSUE");
   });
 
   it("DIGITAL_REQUEST ist in TECH_SUPPORT.availableActionIds enthalten", () => {

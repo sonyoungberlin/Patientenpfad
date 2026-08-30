@@ -8,10 +8,10 @@ type SmoothTextArgs = {
 };
 
 export class TextSmoothingError extends Error {
-  code: "missing_api_key" | "provider_error" | "invalid_response";
+  code: "missing_api_key" | "provider_error" | "invalid_response" | "internal_link_detected";
 
   constructor(
-    code: "missing_api_key" | "provider_error" | "invalid_response",
+    code: "missing_api_key" | "provider_error" | "invalid_response" | "internal_link_detected",
     message: string,
   ) {
     super(message);
@@ -22,6 +22,11 @@ export class TextSmoothingError extends Error {
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-4.1-mini";
+const INTERNAL_TOKEN_PATH_PATTERN = /(?:^|[\s"'(<])(?:https?:\/\/[^\s"'<>]+)?\/(?:q|m2-link)\/[A-Za-z0-9_-]+(?:[/?#][^\s"'<>]*)?/i;
+
+export function containsInternalQuestionnaireLink(text: string): boolean {
+  return INTERNAL_TOKEN_PATH_PATTERN.test(text);
+}
 
 function buildSystemInstruction(context?: TextSmoothingContext): string {
   const contextHint =
@@ -119,6 +124,13 @@ export async function smoothTextWithOpenAI({
   text,
   context,
 }: SmoothTextArgs): Promise<string> {
+  if (containsInternalQuestionnaireLink(text)) {
+    throw new TextSmoothingError(
+      "internal_link_detected",
+      "Interner Fragebogenlink darf nicht an den Provider übertragen werden.",
+    );
+  }
+
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new TextSmoothingError(

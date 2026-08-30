@@ -124,11 +124,44 @@ describe("DELETE /api/inquiries/[id]", () => {
     expect(res.status).toBe(404);
   });
 
+  it("404 beim Lesen einer Session desselben Accounts aus einer anderen Praxis", async () => {
+    mockSessionAccount(true, true, "acc-owner");
+    pm.inquirySession.findUnique.mockResolvedValue({
+      id: "sess-foreign-practice",
+      owner_account_id: "acc-owner",
+      owner_practice_id: "p-2",
+    });
+    const req = new NextRequest("http://localhost/api/inquiries/sess-foreign-practice", {
+      method: "GET",
+      headers: { Cookie: `${SESSION_COOKIE}=good-token` },
+    });
+    const res = await getHandler(req, {
+      params: Promise.resolve({ id: "sess-foreign-practice" }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("404 ohne Delete bei einer Session aus einer anderen Praxis", async () => {
+    mockSessionAccount(true, true, "acc-owner");
+    pm.inquirySession.findUnique.mockResolvedValue({
+      id: "sess-foreign-practice",
+      owner_account_id: "acc-owner",
+      owner_practice_id: "p-2",
+    });
+    const req = requestWithCookie("http://localhost/api/inquiries/sess-foreign-practice");
+    const res = await deleteHandler(req, {
+      params: Promise.resolve({ id: "sess-foreign-practice" }),
+    });
+    expect(res.status).toBe(404);
+    expect(pm.inquirySession.delete).not.toHaveBeenCalled();
+  });
+
   it("200 und löscht die Session", async () => {
     mockSessionAccount(true, true, "acc-owner");
     pm.inquirySession.findUnique.mockResolvedValue({
       id: "sess-1",
       owner_account_id: "acc-owner",
+      owner_practice_id: "p-1",
     });
     pm.inquirySession.delete.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/inquiries/sess-1");
@@ -158,6 +191,7 @@ describe("DELETE /api/inquiries/[id]", () => {
     const existingSession = {
       id: "sess-existing",
       owner_account_id: "acc-owner",
+      owner_practice_id: "p-1",
       status: "DRAFT",
       selected_inquiry_ids: ["AU"],
       checkpoint_statuses: {},

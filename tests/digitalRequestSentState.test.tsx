@@ -309,7 +309,6 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
     displayStatus: "pending",
     statusLabel: "Ausstehend",
     submittedBy: null,
-    identityGateCompletedAt: null,
     questions: [],
     answers: null,
     noteText: "",

@@ -121,7 +121,13 @@ export default function OfficeComplianceFooter({
             <ul className="text-small" style={listStyle}>
               {compliance.legalSources.map((entry) => (
                 <li key={entry.id}>
-                  <span>{formatLegalSourceLabel(entry)}</span>
+                  {entry.sourceUrl ? (
+                    <a href={entry.sourceUrl} target="_blank" rel="noreferrer noopener">
+                      {formatLegalSourceLabel(entry)}
+                    </a>
+                  ) : (
+                    <span>{formatLegalSourceLabel(entry)}</span>
+                  )}
                   {entry.note ? (
                     <span className="text-small text-muted" style={noteStyle}>
                       {entry.note}
@@ -141,7 +147,13 @@ export default function OfficeComplianceFooter({
             <ul className="text-small" style={listStyle}>
               {compliance.authorities.map((entry) => (
                 <li key={entry.id}>
-                  <span>{entry.name}</span>
+                  {entry.sourceUrl ? (
+                    <a href={entry.sourceUrl} target="_blank" rel="noreferrer noopener">
+                      {entry.name}
+                    </a>
+                  ) : (
+                    <span>{entry.name}</span>
+                  )}
                   {entry.note ? (
                     <span className="text-small text-muted" style={noteStyle}>
                       {entry.note}

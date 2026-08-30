@@ -409,13 +409,13 @@ describe("buildMedicalRecordNote – frozen vs. legacy path", () => {
     expect(() =>
       buildMedicalRecordNote({
         answers,
-        language: "de",
+        selected_block_ids: ["block-x"],
         frozenBlocks: [block],
       }),
     ).not.toThrow();
     const note = buildMedicalRecordNote({
       answers,
-      language: "de",
+      selected_block_ids: ["block-x"],
       frozenBlocks: [block],
     });
     expect(note).toContain("Antwort");
@@ -430,7 +430,6 @@ describe("buildMedicalRecordNote – frozen vs. legacy path", () => {
     expect(() =>
       buildMedicalRecordNote({
         answers,
-        language: "de",
         frozenBlocks: null,
         selected_block_ids: [firstBlock.id],
       }),

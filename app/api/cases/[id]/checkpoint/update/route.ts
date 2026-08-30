@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint, isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
-import { getSessionAccount } from "@/lib/auth";
+import { requireCasesAccess } from "@/lib/authz";
 import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
@@ -50,13 +50,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const account = await getSessionAccount(req);
-    if (!account) {
-      return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-    }
-    if (!account.is_approved) {
-      return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-    }
+    const { account, error } = await requireCasesAccess(req);
+    if (error) return error;
 
     const { id } = await params;
     let body: Record<string, unknown>;

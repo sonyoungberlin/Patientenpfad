@@ -279,8 +279,10 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe("EingegangeneAnfragePage", () => {
-  it("rendert die Bestätigung", () => {
-    const markup = renderToStaticMarkup(EingegangeneAnfragePage());
+  it("rendert die Bestätigung für die serverseitig aufgelöste Praxis", async () => {
+    const markup = renderToStaticMarkup(
+      await EingegangeneAnfragePage({ params: Promise.resolve({ slug: SLUG }) }),
+    );
     expect(markup).toContain("Anfrage eingegangen");
     expect(markup).toContain("Vielen Dank");
   });

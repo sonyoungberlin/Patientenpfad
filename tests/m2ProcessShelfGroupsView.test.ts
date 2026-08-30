@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { PROCESS_SHELF_GROUPS } from "@/lib/inquiries/processShelfGroups";
 
 function loadM2ClientSource(): string {
   return fs.readFileSync(
@@ -18,16 +19,16 @@ describe("M2 Prozessregale Sicht (global)", () => {
   });
 
   it("enthaelt die geforderten sechs Prozessregal-Labels", () => {
-    expect(src).toContain("Fehlende Angaben / Unterlagen");
-    expect(src).toContain("Dokumente & Upload");
-    expect(src).toContain("Versicherungsdaten");
-    expect(src).toContain("Termine & Buchung");
-    expect(src).toContain("Digitale Anfrage");
+    expect(PROCESS_SHELF_GROUPS.missingInfoOrDocuments.label).toBe("Fehlende Angaben / Unterlagen");
+    expect(PROCESS_SHELF_GROUPS.documentsAndUpload.label).toBe("Dokumente & Upload");
+    expect(PROCESS_SHELF_GROUPS.insuranceData.label).toBe("Versicherungsdaten");
+    expect(PROCESS_SHELF_GROUPS.appointmentsAndBooking.label).toBe("Termine & Buchung");
+    expect(PROCESS_SHELF_GROUPS.digitalRequest.label).toBe("Digitale Anfrage");
     expect(src).toContain("Warten / Technik");
   });
 
   it("rendert Prozessregale genau einmal global und nicht pro Profil", () => {
-    const globalRenderRegex = /<ProcessShelfOrientationSection\s+sections=\{sections\}\s+profileActionCheckpoints=\{profileActionCheckpoints\}\s+statuses=\{statuses\}\s*\/?>/m;
+    const globalRenderRegex = /<ProcessShelfOrientationSection\s+sections=\{sections\}\s+profileActionCheckpoints=\{profileActionCheckpoints\}\s+statuses=\{statuses\}\s+onChange=\{setStatus\}\s*\/?>/m;
     expect(src).toMatch(globalRenderRegex);
     expect(src).not.toMatch(/<ProcessShelfOrientationSection\s+section=\{section\}/);
   });

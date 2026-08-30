@@ -31,7 +31,7 @@ describe("/m2-link/[token] Seite", () => {
     prismaMock.caseSession.findUnique.mockReset();
   });
 
-  it("rendert Gate und Datenschutzhinweis bei gültigem Token", async () => {
+  it("rendert persönlichen Link-Hinweis bei gültigem Token", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       active_checkpoints: [],
       m2_token_expires_at: futureDate(14),
@@ -43,10 +43,9 @@ describe("/m2-link/[token] Seite", () => {
 
     expect(markup).toContain("Patientenbefragung");
     expect(markup).not.toContain("abgelaufen");
-    // Gate und Datenschutzhinweis sind sichtbar
-    expect(markup).toContain("data-identity-gate");
-    expect(markup).toContain("data-identity-gate-notice");
-    expect(markup).toContain("verschlüsselt");
+    expect(markup).toContain("data-personal-link-notice");
+    expect(markup).toContain("Persönlicher Fragebogenlink");
+    expect(markup).not.toContain("Geburtsdatum");
   });
 
   it("zeigt Abgelaufen-Hinweis bei abgelaufenem Token", async () => {
@@ -90,7 +89,7 @@ describe("/m2-link/[token] Seite", () => {
     expect(markup).toContain("data-m2-expired");
   });
 
-  it("rendert Gate wenn Checkpoints vorhanden sind (Checkpoints initial hinter Gate)", async () => {
+  it("rendert Link-Hinweis wenn Checkpoints vorhanden sind", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       active_checkpoints: [
         {
@@ -111,9 +110,7 @@ describe("/m2-link/[token] Seite", () => {
       await M2TokenPage({ params: Promise.resolve({ token: "valid-token" }) }),
     );
 
-    // Gate ist sichtbar
-    expect(markup).toContain("data-identity-gate");
-    // Checkpoints sind initial hinter dem Gate versteckt
+    expect(markup).toContain("data-personal-link-notice");
     expect(markup).not.toContain('data-m2-checkpoint="K04"');
   });
 });

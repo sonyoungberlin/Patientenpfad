@@ -22,11 +22,9 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
-// IdentityGate rendert children unbedingt, damit Fragen im Markup auftauchen.
-jest.mock("@/components/IdentityGate", () => ({
-  // Wir rendern die echten EN-Strings hier nicht; die Lokalisierung
-  // des Gates ist separat in `tests/identityGateI18n.test.tsx` abgedeckt.
-  IdentityGate: ({ children }: { children: React.ReactNode }) => children,
+// PersonalLinkNotice rendert children unbedingt, damit Fragen im Markup auftauchen.
+jest.mock("@/components/PersonalLinkNotice", () => ({
+  PersonalLinkNotice: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 import { prisma } from "@/lib/prisma";

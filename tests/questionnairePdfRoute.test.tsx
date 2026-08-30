@@ -51,8 +51,6 @@ function baseSession(overrides: Partial<Record<string, unknown>> = {}) {
     answers: {},
     source: "internal_link",
     practice_form: null,
-    identity_gate_completed_at: new Date("2026-05-12T10:00:00.000Z"),
-    identity_gate_method: "dob",
     deleted_at: null,
     pdf_downloaded_at: null,
     context: "patient",

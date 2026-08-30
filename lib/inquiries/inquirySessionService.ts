@@ -309,6 +309,7 @@ export async function instantiateFromTemplate(
   return client.inquirySession.create({
     data: {
       owner_account_id: ownerAccountId,
+      owner_practice_id: template.owner_practice_id,
       status: "DRAFT",
       is_template: false,
       template_name: null,
@@ -400,6 +401,7 @@ export async function saveSessionAsTemplate(
   return client.inquirySession.create({
     data: {
       owner_account_id: ownerAccountId,
+      owner_practice_id: source.owner_practice_id,
       status: "DRAFT",
       is_template: true,
       template_name: trimmedName,

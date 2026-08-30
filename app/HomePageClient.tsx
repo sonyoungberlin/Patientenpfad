@@ -470,6 +470,9 @@ export default function HomePageClient() {
                 placeholder="z. B. P-2024-001"
                 style={{ marginTop: "0.5rem" }}
               />
+              <p className="text-muted text-small" style={{ marginTop: "0.35rem" }}>
+                Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
+              </p>
             </div>
           )}
         </div>

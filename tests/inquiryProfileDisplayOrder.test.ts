@@ -26,6 +26,7 @@ describe("INQUIRY_PROFILE_CATALOG_V2 – displayOrder", () => {
       "AU",
       "PRESCRIPTION",
       "MEDICAL_DOCUMENTS",
+      "HEILMITTELVERORDNUNG",
       "REFERRAL",
       "HOSPITAL_ADMISSION",
       "IMMUNIZATION",

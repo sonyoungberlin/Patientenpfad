@@ -67,7 +67,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "RETURN_TO_WORK_ALLOWED_DURING_AU",
       "AU_EXTENSION_REQUIRES_EXAMINATION",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "REQUIRED_INFORMATION_COMPLETE",
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    ],
     // Kein globalHints-Override nötig.
     globalHints: {},
     availableActionIds: [
@@ -267,7 +270,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "CONTRACEPTION_SPECIALIST_ONLY",
       "PRESCRIPTION_INSURANCE_PROOF_MISSING",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "REQUIRED_INFORMATION_COMPLETE",
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    ],
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
@@ -593,7 +599,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "LAB_RESULTS_PENDING",
       "LAB_SAMPLE_FOLLOWUP_APPOINTMENT_RECOMMENDED",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "REQUIRED_INFORMATION_COMPLETE",
+    ],
     // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
@@ -776,7 +784,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     specificCheckpointIds: [
       "SAMPLE_COLLECTION_ORDER_AVAILABLE",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "REQUIRED_INFORMATION_COMPLETE",
+    ],
     globalHints: {},
     boundActionCheckpointIds: [
       "URINE_SAMPLE_INSTRUCTIONS",
@@ -1044,7 +1054,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "REF_MEDICAL_CONSULTATION_REQUIRED",
       "REFERRAL_INSURANCE_PROOF_MISSING",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "REQUIRED_INFORMATION_COMPLETE",
+      "DIGITAL_REQUEST_MEDICAL_REVIEW",
+    ],
     // Kein globalHints-Override nötig.
     globalHints: {},
     boundActionCheckpointIds: [
@@ -1580,7 +1593,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_INSURANCE_PROOF_MISSING",
       "APPOINTMENT_INTERNAL_ORDER_EKG",
     ],
-    boundGlobalCheckpointIds: [],
+    boundGlobalCheckpointIds: [
+      "DOCUMENTS_RECEIVED_AND_ASSIGNED",
+    ],
     globalHints: {},
     availableActionIds: [
       "DIGITAL_REQUEST",

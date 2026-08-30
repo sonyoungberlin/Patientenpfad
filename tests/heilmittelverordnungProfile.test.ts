@@ -191,11 +191,11 @@ describe("HEILMITTELVERORDNUNG – Renderer-Ausgabe", () => {
     const attached = result.sections[0]?.attachedParagraphs ?? [];
     const output = attached.join("\n");
 
-    expect(output).toContain("Ihre Angaben zur Heilmittelverordnung liegen für die weitere Bearbeitung vor.");
-    expect(output).toContain("Für die Bearbeitung benötigen wir noch weitere Angaben.");
+    expect(output).toContain("Ihre Angaben zur Heilmittelverordnung sind eingegangen.");
+    expect(output).toContain("Wir benötigen noch weitere Angaben.");
     expect(output).toContain("Für die Prüfung benötigen wir noch Angaben zur bisherigen Verordnung oder relevante Unterlagen.");
     expect(output).toContain("Vor einer Entscheidung ist eine ärztliche Prüfung erforderlich.");
-    expect(output).toContain("Für die weitere Bearbeitung ist ein persönlicher Termin in der Praxis erforderlich.");
+    expect(output).toContain("Für die Heilmittelverordnung ist ein persönlicher Termin in der Praxis notwendig.");
     expect(output).toContain("Dieses Anliegen kann nicht vollständig digital abgeschlossen werden.");
   });
 });

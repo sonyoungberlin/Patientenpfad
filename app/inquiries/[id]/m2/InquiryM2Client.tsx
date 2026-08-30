@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { InquiryCheckpointKind, InquiryCheckpointScope } from "@/lib/inquiries/types";
 import { applySectionIntroToggle } from "@/lib/inquiries/sectionIntroToggle";
 import { applyLabCheckpointCoupling } from "@/lib/inquiries/labCheckpointCoupling";
+import {
+  PROCESS_SHELF_GROUP_ORDER,
+  PROCESS_SHELF_GROUPS,
+  getProcessShelfGroupForCheckpointId,
+  type ProcessShelfGroupId,
+} from "@/lib/inquiries/processShelfGroups";
 
 export type PlainCheckpoint = {
   id: string;
@@ -880,7 +886,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
  * rendern, wenn kein neues Antwortkontext-Mapping vorhanden ist – damit
  * die UI pro Profil immer nur eine Akkordeon-Struktur zeigt.
  */
-function hasSectionIntroMapping(inquiryId: string): boolean {
+export function hasSectionIntroMapping(inquiryId: string): boolean {
   return (SECTION_INTRO_GROUPS_BY_PROFILE[inquiryId]?.length ?? 0) > 0;
 }
 
@@ -3145,6 +3151,89 @@ function WeitereHinweiseSection({
   );
 }
 
+type GlobalProcessShelfGroup = {
+  id: ProcessShelfGroupId;
+  label: string;
+  checkpoints: PlainCheckpoint[];
+};
+
+export function buildGlobalProcessShelfGroups(
+  sections: M2SectionData[],
+  profileActionCheckpoints: PlainCheckpoint[],
+): GlobalProcessShelfGroup[] {
+  const checkpointById = new Map<string, PlainCheckpoint>();
+  for (const section of sections) {
+    for (const cp of section.specificCheckpoints) checkpointById.set(cp.id, cp);
+    for (const cp of section.actionCheckpoints) checkpointById.set(cp.id, cp);
+    for (const cp of section.allBoundActionCheckpoints ?? []) checkpointById.set(cp.id, cp);
+    for (const cp of section.sectionIntroCheckpoints ?? []) checkpointById.set(cp.id, cp);
+  }
+  for (const cp of profileActionCheckpoints) checkpointById.set(cp.id, cp);
+
+  const grouped = new Map<ProcessShelfGroupId, PlainCheckpoint[]>();
+  for (const checkpoint of checkpointById.values()) {
+    const groupId = getProcessShelfGroupForCheckpointId(checkpoint.id);
+    if (!groupId) continue;
+    const entries = grouped.get(groupId) ?? [];
+    entries.push(checkpoint);
+    grouped.set(groupId, entries);
+  }
+
+  return PROCESS_SHELF_GROUP_ORDER.flatMap((id) => {
+    const checkpoints = grouped.get(id) ?? [];
+    if (checkpoints.length === 0) return [];
+    const label = id === "waitingProcessingTechnical"
+      ? "Warten / Technik"
+      : PROCESS_SHELF_GROUPS[id].label;
+    return [{ id, label, checkpoints }];
+  });
+}
+
+function ProcessShelfOrientationSection({
+  sections,
+  profileActionCheckpoints,
+  statuses,
+  onChange,
+}: {
+  sections: M2SectionData[];
+  profileActionCheckpoints: PlainCheckpoint[];
+  statuses: Record<string, string>;
+  onChange: (id: string, value: string) => void;
+}) {
+  const groups = buildGlobalProcessShelfGroups(sections, profileActionCheckpoints);
+  if (groups.length === 0) return null;
+
+  return (
+    <section style={{ marginBottom: "1.5rem" }} data-process-shelves>
+      <h2>Prozessregale</h2>
+      {groups.map((group) => (
+        <details key={group.id} style={{ borderBottom: "1px solid var(--border)", padding: "0.5rem 0" }}>
+          <summary style={{ fontWeight: 600 }}>{group.label}</summary>
+          <div style={{ marginTop: "0.5rem" }}>
+            {group.checkpoints.map((checkpoint) =>
+              checkpoint.kind === InquiryCheckpointKind.ACTION ? (
+                <BoundActionRow
+                  key={checkpoint.id}
+                  checkpoint={checkpoint}
+                  value={statuses[checkpoint.id]}
+                  onChange={onChange}
+                />
+              ) : (
+                <SwitchRow
+                  key={checkpoint.id}
+                  checkpoint={checkpoint}
+                  value={statuses[checkpoint.id]}
+                  onChange={onChange}
+                />
+              ),
+            )}
+          </div>
+        </details>
+      ))}
+    </section>
+  );
+}
+
 export default function InquiryM2Client({
   sessionId,
   sections,
@@ -3189,6 +3278,16 @@ export default function InquiryM2Client({
   function toggleSectionIntro(clickedId: string) {
     setStatuses((prev) => applySectionIntroToggle(prev, clickedId, sectionIntroIds));
   }
+
+  const profileSections = sections.map((section) => ({
+    ...section,
+    specificCheckpoints: section.specificCheckpoints.filter(
+      (checkpoint) => getProcessShelfGroupForCheckpointId(checkpoint.id) === null,
+    ),
+    actionCheckpoints: section.actionCheckpoints.filter(
+      (checkpoint) => getProcessShelfGroupForCheckpointId(checkpoint.id) === null,
+    ),
+  }));
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -3255,7 +3354,14 @@ export default function InquiryM2Client({
         </section>
       )}
 
-      {sections.map((section) =>
+      <ProcessShelfOrientationSection
+        sections={sections}
+        profileActionCheckpoints={profileActionCheckpoints}
+        statuses={statuses}
+        onChange={setStatus}
+      />
+
+      {profileSections.map((section) =>
         section.inquiryId === "PRESCRIPTION" ? (
           <PrescriptionSpecificSection
             key={section.inquiryId}

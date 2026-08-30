@@ -76,7 +76,6 @@ type CreateOpenRunInput = {
   activeCheckpoints: PrefillRunActiveCheckpoints;
   answers?: PrefillRunAnswers;
   createdByAccountId?: string | null;
-  patientTokenUsed?: string | null;
   /**
    * Umgeht die Sperre für `doctor_confirmed` / `clinical_status="confirmed"`
    * (Regel 3). Wird in Schritt 2 der PrefillRun-Umstellung von den
@@ -175,7 +174,6 @@ export async function createOpenRun(
         active_checkpoints: toJsonInput(input.activeCheckpoints),
         answers: toJsonInput(input.answers ?? {}),
         created_by_account_id: input.createdByAccountId ?? null,
-        patient_token_used: input.patientTokenUsed ?? null,
         frozen_at: null,
       },
     });
@@ -256,7 +254,6 @@ export async function appendFrozenRun(
         active_checkpoints: toJsonInput(input.activeCheckpoints),
         answers: toJsonInput(input.answers),
         created_by_account_id: input.createdByAccountId ?? null,
-        patient_token_used: input.patientTokenUsed ?? null,
         frozen_at: new Date(),
       },
     });

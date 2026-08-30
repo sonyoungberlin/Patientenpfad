@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInquiriesAccess } from "@/lib/authz";
 import {
+  getInquirySessionWithOutput,
   saveSessionAsTemplate,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 
 /**
  * POST /api/inquiries/[id]/save-as-template
@@ -45,6 +47,14 @@ export async function POST(
 
     const templateName =
       typeof body?.templateName === "string" ? body.templateName : "";
+
+    const existing = await getInquirySessionWithOutput(id, account.id);
+    if (!existing || !canAccessInquirySession(account, existing)) {
+      return NextResponse.json(
+        { ok: false, error: "Session nicht gefunden." },
+        { status: 404 },
+      );
+    }
 
     const template = await saveSessionAsTemplate(id, account.id, templateName);
 

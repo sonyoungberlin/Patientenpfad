@@ -14,6 +14,7 @@
 
 import {
   appendQuestionnaireLinkToOutput,
+  isInquirySmoothingDisabled,
 } from "@/app/inquiries/[id]/m3/InquiryM3Client";
 import * as InquiryM3ClientModule from "@/app/inquiries/[id]/m3/InquiryM3Client";
 import type { InquiryResponseV2Output } from "@/lib/inquiries/types";
@@ -68,6 +69,16 @@ describe("appendQuestionnaireLinkToOutput", () => {
     const output = makeOutput(["Hinweis"]);
     appendQuestionnaireLinkToOutput(output, EXAMPLE_LINK);
     expect(output.sharedBottom).toEqual(["Hinweis"]);
+  });
+});
+
+describe("Inquiry-Textglättung", () => {
+  it("ist vor Erzeugung eines Fragebogenlinks verfügbar", () => {
+    expect(isInquirySmoothingDisabled(null)).toBe(false);
+  });
+
+  it("ist nach Erzeugung eines Fragebogenlinks deaktiviert", () => {
+    expect(isInquirySmoothingDisabled(EXAMPLE_LINK)).toBe(true);
   });
 });
 

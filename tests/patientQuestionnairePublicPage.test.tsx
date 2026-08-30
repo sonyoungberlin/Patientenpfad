@@ -95,6 +95,41 @@ describe("/q/[token] Seite", () => {
     expect(markup).toContain("white-space:pre-wrap");
   });
 
+  it("zeigt ausschließlich die über die Token-Session zugeordnete Praxis im Footer", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      token_expires_at: futureDate(48),
+      status: "pending",
+      deduplicated_questions: SAMPLE_QUESTIONS,
+      owner_practice: {
+        id: "practice-a",
+        slug: "technical-a",
+        public_slug: "praxis-a",
+        name: "Intern A",
+        public_name: "Praxis A",
+        is_approved: true,
+        message_signature: null,
+        legal_profile: {
+          official_practice_name: "Hausarztpraxis A",
+          street: "A-Straße",
+          house_number: "1",
+          postal_code: "11111",
+          city: "A-Stadt",
+          country: "Deutschland",
+          official_email: "a@example.test",
+          phone: "030 111",
+        },
+      },
+    });
+
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "token-for-a" }) }),
+    );
+    expect(markup).toContain('data-public-practice-footer="practice-a"');
+    expect(markup).toContain("Hausarztpraxis A");
+    expect(markup).toContain("/praxis/praxis-a/impressum");
+    expect(markup).not.toContain("Praxis B");
+  });
+
   it("Session-select fragt owner_practice.message_signature mit ab", async () => {
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
       token_expires_at: futureDate(48),
@@ -106,12 +141,16 @@ describe("/q/[token] Seite", () => {
     await QuestionnairePage({ params: Promise.resolve({ token: "valid-token" }) });
 
     const call = prismaMock.patientQuestionnaireSession.findUnique.mock.calls[0][0];
-    expect(call.select.owner_practice).toEqual({
-      select: { message_signature: true },
-    });
+    expect(call.select.owner_practice.select).toEqual(
+      expect.objectContaining({
+        id: true,
+        message_signature: true,
+        legal_profile: true,
+      }),
+    );
   });
 
-  it("zeigt Gate und Datenschutzhinweis bei gültigem Token statt direkter Fragen", async () => {
+  it("zeigt persönlichen Link-Hinweis bei gültigem Token statt direkter Fragen", async () => {
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
       token_expires_at: futureDate(48),
       status: "pending",
@@ -122,10 +161,9 @@ describe("/q/[token] Seite", () => {
       await QuestionnairePage({ params: Promise.resolve({ token: "valid-token" }) }),
     );
 
-    // Gate und Datenschutzhinweis sind sichtbar
-    expect(markup).toContain("data-identity-gate");
-    expect(markup).toContain("data-identity-gate-notice");
-    expect(markup).toContain("verschlüsselt");
+    expect(markup).toContain("data-personal-link-notice");
+    expect(markup).toContain("Persönlicher Fragebogenlink");
+    expect(markup).not.toContain("Geburtsdatum");
     // Fragen sind initial hinter dem Gate versteckt
     expect(markup).not.toContain('data-q-question="CONTACT_PHONE"');
     expect(markup).not.toContain('data-q-question="AU_SYMPTOMS"');

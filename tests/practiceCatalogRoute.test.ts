@@ -326,7 +326,7 @@ describe("GET /api/practice-catalog", () => {
     // Nur practiceCatalogEntry.findMany darf aufgerufen worden sein
     expect(mockPracticeCatalogEntry.findMany).toHaveBeenCalledTimes(1);
     expect(mockWorkflowSession.findFirst).not.toHaveBeenCalled();
-    expect(mockWorkflowSession.findMany).toBeUndefined();
+    expect((mockWorkflowSession as { findMany?: unknown }).findMany).toBeUndefined();
   });
 });
 

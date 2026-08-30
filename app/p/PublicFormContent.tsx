@@ -9,6 +9,8 @@ import {
   normalizeQuestionnaireLanguage,
 } from "@/lib/questionnaire/i18n";
 import { PublicFormView } from "./[slug]/PublicFormView";
+import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
+import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 
 export async function renderPublicFormPage(
   slug: string,
@@ -28,10 +30,9 @@ export async function renderPublicFormPage(
       owner_practice_id: true,
       owner_practice: {
         select: {
-          is_approved: true,
+          ...PUBLIC_IDENTITY_SELECT,
           patient_communication_enabled: true,
           website_forms_enabled: true,
-          message_signature: true,
         },
       },
       owner_account: {
@@ -67,17 +68,21 @@ export async function renderPublicFormPage(
   const conditionalRules: ConditionalRule[] = frozenBlocks.flatMap(
     (block) => block.conditionalRules,
   );
+  const publicPractice = form.owner_practice;
 
   return (
-    <PublicFormView
-      slug={validation.slug}
-      title={form.title}
-      introText={form.intro_text}
-      practiceSignature={form.owner_practice?.message_signature ?? null}
-      questions={questions}
-      language={language}
-      conditionalRules={conditionalRules}
-      successPath={successPath}
-    />
+    <>
+      <PublicFormView
+        slug={validation.slug}
+        title={form.title}
+        introText={form.intro_text}
+        practiceSignature={form.owner_practice?.message_signature ?? null}
+        questions={questions}
+        language={language}
+        conditionalRules={conditionalRules}
+        successPath={successPath}
+      />
+      {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
+    </>
   );
 }

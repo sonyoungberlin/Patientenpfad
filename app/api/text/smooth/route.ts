@@ -78,6 +78,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, smoothedText });
   } catch (err) {
     if (err instanceof TextSmoothingError) {
+      if (err.code === "internal_link_detected") {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Textglättung ist nach Erstellung des Fragebogenlinks nicht verfügbar.",
+            code: err.code,
+          },
+          { status: 400 },
+        );
+      }
       if (err.code === "missing_api_key") {
         return NextResponse.json(
           { ok: false, error: "Textglättung ist nicht konfiguriert.", code: "missing_api_key" },

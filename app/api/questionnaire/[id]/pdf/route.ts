@@ -34,8 +34,6 @@ export async function GET(
           title: true,
         },
       },
-      identity_gate_completed_at: true,
-      identity_gate_method: true,
       deleted_at: true,
       pdf_downloaded_at: true,
       context: true,
@@ -66,7 +64,6 @@ export async function GET(
   const { bytes, filename } = await buildQuestionnairePdfBytes(session, {
     title: "Fragebogen – Patientenangaben",
     referenceLabel: "Patientenreferenz",
-    showIdentityGate: true,
     blockCatalog: BLOCK_CATALOG,
   });
 

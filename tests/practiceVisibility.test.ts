@@ -166,7 +166,6 @@ describe("buildMedicalRecordNote – Nicht abgefragt NICHT im Krankenblatt", () 
     const note = buildMedicalRecordNote({
       answers,
       selected_block_ids: ["VOLLST_ALKOHOL"],
-      identity_gate_completed_at: null,
       frozenBlocks,
     });
 
@@ -194,7 +193,6 @@ describe("buildMedicalRecordNote – Nicht abgefragt NICHT im Krankenblatt", () 
     const note = buildMedicalRecordNote({
       answers,
       selected_block_ids: ["VOLLST_ALKOHOL"],
-      identity_gate_completed_at: null,
       frozenBlocks,
     });
 
