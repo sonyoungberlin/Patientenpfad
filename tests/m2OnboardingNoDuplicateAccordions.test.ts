@@ -1,6 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
-import { hasSectionIntroMapping } from "@/app/inquiries/[id]/m2/InquiryM2Client";
+import {
+  hasSectionIntroMapping,
+  isOnboardingDocsDrawerCheckpoint,
+} from "@/app/inquiries/[id]/m2/InquiryM2Client";
+import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 
 /**
  * Regressionstest speziell für `ONBOARDING`:
@@ -46,6 +50,28 @@ describe("M2 ONBOARDING – keine doppelte Akkordeon-Struktur", () => {
 
   it("ONBOARDING ist als Eintrag in SECTION_INTRO_GROUPS_BY_PROFILE registriert", () => {
     expect(hasSectionIntroMapping("ONBOARDING")).toBe(true);
+  });
+
+  it("SECTION_INTRO_DOCS_MISSING enthält die beiden aktiven ONBOARDING-Dokumenten-Checkpoints", () => {
+    expect(isOnboardingDocsDrawerCheckpoint("ONBOARDING_GKV_DOCUMENT_MISSING")).toBe(true);
+    expect(isOnboardingDocsDrawerCheckpoint("ONBOARDING_PKV_PAS_MISSING")).toBe(true);
+  });
+
+  it("ONBOARDING-Dokumenten-Checkpoints werden nur für den Dokumente-Drawer vom Shelf-Filter ausgenommen", () => {
+    expect(isOnboardingDocsDrawerCheckpoint("ONBOARDING_DATA_INCOMPLETE")).toBe(false);
+    expect(isOnboardingDocsDrawerCheckpoint("ONBOARDING_GKV_DOCUMENT_MISSING")).toBe(true);
+    expect(isOnboardingDocsDrawerCheckpoint("ONBOARDING_PKV_PAS_MISSING")).toBe(true);
+  });
+
+  it("die bestehenden ONBOARDING-Schubladen und die separate M3-Action bleiben unverändert", () => {
+    expect(src).toContain('sectionIntroId: "SECTION_INTRO_REVIEWED"');
+    expect(src).toContain('sectionIntroId: "SECTION_INTRO_INFO_MISSING"');
+    expect(src).toContain('sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE"');
+    expect(INQUIRY_PROFILE_CATALOG_V2.ONBOARDING.availableActionIds).toContain(
+      "SPECIALIST_PRACTICES_INFO",
+    );
+    expect(src).not.toContain("Globale Hinweise");
+    expect(src).not.toContain("Prozessregale");
   });
 
   it("OnboardingSpecificSection rendert die neue ProfileSectionIntroDrawers-Struktur", () => {

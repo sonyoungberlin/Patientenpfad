@@ -886,6 +886,14 @@ export function hasSectionIntroMapping(inquiryId: string): boolean {
   return (SECTION_INTRO_GROUPS_BY_PROFILE[inquiryId]?.length ?? 0) > 0;
 }
 
+export function isOnboardingDocsDrawerCheckpoint(checkpointId: string): boolean {
+  return SECTION_INTRO_GROUPS_BY_PROFILE.ONBOARDING.some(
+    (group) =>
+      group.sectionIntroId === "SECTION_INTRO_DOCS_MISSING" &&
+      group.checkpointIds.includes(checkpointId),
+  );
+}
+
 /**
  * Rendert pro Profil die Section-Intros als M2-Schubladen-Akkordeon.
  *
@@ -3131,7 +3139,10 @@ export default function InquiryM2Client({
   const profileSections = sections.map((section) => ({
     ...section,
     specificCheckpoints: section.specificCheckpoints.filter(
-      (checkpoint) => getProcessShelfGroupForCheckpointId(checkpoint.id) === null,
+      (checkpoint) =>
+        getProcessShelfGroupForCheckpointId(checkpoint.id) === null ||
+        (section.inquiryId === "ONBOARDING" &&
+          isOnboardingDocsDrawerCheckpoint(checkpoint.id)),
     ),
     actionCheckpoints: section.actionCheckpoints.filter(
       (checkpoint) => getProcessShelfGroupForCheckpointId(checkpoint.id) === null,
