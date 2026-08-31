@@ -247,6 +247,11 @@ export async function buildQuestionnairePdfBytes(
       const value = answers[q.id] ?? "";
       const isVisible = section.visibleQIds.has(q.id);
 
+      if (q.type === "confirmation" && value === "true") {
+        drawWrappedPair("Bestätigt", q.text);
+        continue;
+      }
+
       if (!isVisible) {
         drawWrappedPair(q.text, "Nicht abgefragt");
         continue;
