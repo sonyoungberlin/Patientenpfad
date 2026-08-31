@@ -432,7 +432,7 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       // TECH_UPLOAD_FAILED: Dokument unleserlich – erneuter Upload erforderlich
-      checkpointIds: ["AU_MISSING_EGK"],
+      checkpointIds: ["AU_MISSING_EGK", "HOSPITAL_DISCHARGE_REPORT_MISSING"],
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
@@ -613,7 +613,11 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
-      checkpointIds: ["REFERRAL_INSURANCE_PROOF_MISSING"],
+      checkpointIds: [
+        "REFERRAL_INSURANCE_PROOF_MISSING",
+        "HOSPITAL_DISCHARGE_REPORT_MISSING",
+        "MEDICAL_REPORTS_MISSING",
+      ],
     },
     { sectionIntroId: "SECTION_INTRO_IN_PROGRESS", checkpointIds: [] },
     { sectionIntroId: "SECTION_INTRO_NOT_RESPONSIBLE", checkpointIds: [] },
@@ -734,7 +738,11 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
     {
       sectionIntroId: "SECTION_INTRO_DOCS_MISSING",
       // Trigger für SHARED_BOTTOM-Action `INSURANCE_DATA_APP_TRANSFER`.
-      checkpointIds: ["APPOINTMENT_INSURANCE_PROOF_MISSING"],
+      checkpointIds: [
+        "APPOINTMENT_INSURANCE_PROOF_MISSING",
+        "HOSPITAL_DISCHARGE_REPORT_MISSING",
+        "MEDICAL_REPORTS_MISSING",
+      ],
     },
     {
       sectionIntroId: "SECTION_INTRO_IN_PROGRESS",
@@ -792,6 +800,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
       checkpointIds: [
         "ONBOARDING_GKV_DOCUMENT_MISSING",
         "ONBOARDING_PKV_PAS_MISSING",
+        "HOSPITAL_DISCHARGE_REPORT_MISSING",
+        "MEDICAL_REPORTS_MISSING",
       ],
     },
     {
@@ -886,12 +896,19 @@ export function hasSectionIntroMapping(inquiryId: string): boolean {
   return (SECTION_INTRO_GROUPS_BY_PROFILE[inquiryId]?.length ?? 0) > 0;
 }
 
-export function isOnboardingDocsDrawerCheckpoint(checkpointId: string): boolean {
-  return SECTION_INTRO_GROUPS_BY_PROFILE.ONBOARDING.some(
+export function isSectionIntroDrawerCheckpoint(
+  inquiryId: string,
+  checkpointId: string,
+): boolean {
+  return (SECTION_INTRO_GROUPS_BY_PROFILE[inquiryId] ?? []).some(
     (group) =>
       group.sectionIntroId === "SECTION_INTRO_DOCS_MISSING" &&
       group.checkpointIds.includes(checkpointId),
   );
+}
+
+export function isOnboardingDocsDrawerCheckpoint(checkpointId: string): boolean {
+  return isSectionIntroDrawerCheckpoint("ONBOARDING", checkpointId);
 }
 
 /**
@@ -3141,8 +3158,7 @@ export default function InquiryM2Client({
     specificCheckpoints: section.specificCheckpoints.filter(
       (checkpoint) =>
         getProcessShelfGroupForCheckpointId(checkpoint.id) === null ||
-        (section.inquiryId === "ONBOARDING" &&
-          isOnboardingDocsDrawerCheckpoint(checkpoint.id)),
+        isSectionIntroDrawerCheckpoint(section.inquiryId, checkpoint.id),
     ),
     actionCheckpoints: section.actionCheckpoints.filter(
       (checkpoint) => getProcessShelfGroupForCheckpointId(checkpoint.id) === null,

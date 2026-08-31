@@ -315,8 +315,8 @@ describe("APPOINTMENT Specific-Checkpoints – Existenz und Struktur", () => {
     }
   });
 
-  it("APPOINTMENT-Profil hat genau elf Specific-Checkpoints im Hauptfluss", () => {
-    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(11);
+  it("APPOINTMENT-Profil hat genau dreizehn Specific-Checkpoints im Hauptfluss", () => {
+    expect(APPOINTMENT.specificCheckpointIds).toHaveLength(13);
   });
 });
 

@@ -641,6 +641,26 @@ export function getInquiryCheckpointCatalog(
     },
   },
 
+  MEDICAL_REPORTS_MISSING: {
+    id: "MEDICAL_REPORTS_MISSING",
+    label: "Facharztbefunde / Arztberichte fehlen",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "MISSING_DOCUMENT" as SpecificRole,
+    questions: [
+      { id: "MEDICAL_REPORTS_MISSING-Q1", text: "Fehlen relevante Facharztbefunde oder Arztberichte?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Uns fehlen noch relevante Facharztbefunde oder Arztberichte.",
+      // NO: bewusst still – keine Erklärung nötig
+    },
+    docByStatus: {
+      [ExplanationStatus.YES]: "Facharztbefunde / Arztberichte fehlen",
+    },
+  },
+
   PRESCRIPTION_BTM_ADHS_RULES: {
     id: "PRESCRIPTION_BTM_ADHS_RULES",
     label: "BtM / ADHS / Facharztpflicht",

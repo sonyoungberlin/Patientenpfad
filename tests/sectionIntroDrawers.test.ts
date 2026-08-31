@@ -222,4 +222,57 @@ describe("Antwortkontext-Reihenfolge (M2)", () => {
     expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_REVIEWED"');
     expect(profileBlock).toContain('"ONBOARDING_PRIMARY_CARE_CONFIRMATION"');
   });
+
+  it("MEDICAL_REPORTS_MISSING ist ein eindeutiger aktiver MISSING_DOCUMENT-Checkpoint", () => {
+    const matches = Object.keys(INQUIRY_CHECKPOINT_CATALOG_V2).filter(
+      (id) => id === "MEDICAL_REPORTS_MISSING",
+    );
+    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2.MEDICAL_REPORTS_MISSING;
+
+    expect(matches).toHaveLength(1);
+    expect(checkpoint.label).toBe("Facharztbefunde / Arztberichte fehlen");
+    expect(checkpoint.questions?.[0]?.text).toBe(
+      "Fehlen relevante Facharztbefunde oder Arztberichte?",
+    );
+    expect(checkpoint.textByStatus.YES).toBe(
+      "Uns fehlen noch relevante Facharztbefunde oder Arztberichte.",
+    );
+    expect(checkpoint.kind).toBe("EXPLANATION");
+    expect(checkpoint.specificRole).toBe("MISSING_DOCUMENT");
+  });
+
+  it.each(["AU", "PRESCRIPTION", "REFERRAL", "APPOINTMENT", "ONBOARDING"])(
+    "%s: SECTION_INTRO_DOCS_MISSING enthält den Krankenhaus-/Entlassbericht",
+    (profileId) => {
+      const profileBlockStart = src.indexOf(`  ${profileId}: [`);
+      const profileBlockEnd = src.indexOf("\n  ],", profileBlockStart);
+      const profileBlock = src.slice(profileBlockStart, profileBlockEnd);
+
+      expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_DOCS_MISSING"');
+      expect(profileBlock).toContain('"HOSPITAL_DISCHARGE_REPORT_MISSING"');
+    },
+  );
+
+  it.each(["REFERRAL", "APPOINTMENT", "ONBOARDING"])(
+    "%s: SECTION_INTRO_DOCS_MISSING enthält allgemeine Facharzt-/Vorbefunde",
+    (profileId) => {
+      const profileBlockStart = src.indexOf(`  ${profileId}: [`);
+      const profileBlockEnd = src.indexOf("\n  ],", profileBlockStart);
+      const profileBlock = src.slice(profileBlockStart, profileBlockEnd);
+
+      expect(profileBlock).toContain('sectionIntroId: "SECTION_INTRO_DOCS_MISSING"');
+      expect(profileBlock).toContain('"MEDICAL_REPORTS_MISSING"');
+    },
+  );
+
+  it("die neuen Checkpoints sind nur in ihren jeweiligen Dokumenten-Schubladen gemappt", () => {
+    const mappingStart = src.indexOf("const SECTION_INTRO_GROUPS_BY_PROFILE");
+    const mappingEnd = src.indexOf("\n};", mappingStart);
+    const mapping = src.slice(mappingStart, mappingEnd);
+    const hospitalOccurrences = mapping.match(/"HOSPITAL_DISCHARGE_REPORT_MISSING"/g) ?? [];
+    const medicalReportOccurrences = mapping.match(/"MEDICAL_REPORTS_MISSING"/g) ?? [];
+
+    expect(hospitalOccurrences).toHaveLength(5);
+    expect(medicalReportOccurrences).toHaveLength(3);
+  });
 });
