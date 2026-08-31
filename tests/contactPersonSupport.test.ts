@@ -57,12 +57,20 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
     }
   });
 
-  it("bindet Facharzt-Information an Patientenaufnahme, Überweisung und Termin", () => {
-    for (const profileId of ["ONBOARDING", "REFERRAL", "APPOINTMENT"]) {
-      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].availableActionIds).toContain(
-        "SPECIALIST_PRACTICES_INFO",
-      );
-    }
+  it("bindet Facharzt-Information nur an Patientenaufnahme, Rezept, Überweisung und Termin", () => {
+    const expectedProfiles = ["ONBOARDING", "PRESCRIPTION", "REFERRAL", "APPOINTMENT"];
+    const actualProfiles = Object.values(INQUIRY_PROFILE_CATALOG_V2)
+      .filter((profile) => profile.availableActionIds.includes("SPECIALIST_PRACTICES_INFO"))
+      .map((profile) => profile.id);
+    expect(actualProfiles.sort()).toEqual([...expectedProfiles].sort());
+  });
+
+  it("bindet Kontaktpersonen-Support weiterhin exakt an die fünf vorgesehenen Profile", () => {
+    const expectedProfiles = ["AU", "PRESCRIPTION", "REFERRAL", "APPOINTMENT", "ONBOARDING"];
+    const actualProfiles = Object.values(INQUIRY_PROFILE_CATALOG_V2)
+      .filter((profile) => profile.availableActionIds.includes("CONTACT_PERSON_SUPPORT"))
+      .map((profile) => profile.id);
+    expect(actualProfiles.sort()).toEqual([...expectedProfiles].sort());
   });
 
   it("rendert beide Actions bei Mehrfachzuordnung nur einmal", () => {

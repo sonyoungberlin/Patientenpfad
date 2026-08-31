@@ -281,6 +281,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "CONTROL_APPOINTMENT_RECOMMENDED",
       "CONTACT_PERSON_INFO",
       "CONTACT_PERSON_SUPPORT",
+      "SPECIALIST_PRACTICES_INFO",
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
