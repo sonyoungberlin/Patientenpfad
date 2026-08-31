@@ -76,6 +76,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "CONTACT_PERSON_INFO",
+      "CONTACT_PERSON_SUPPORT",
     ],
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
@@ -279,6 +280,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BOOK_APPOINTMENT",
       "CONTROL_APPOINTMENT_RECOMMENDED",
       "CONTACT_PERSON_INFO",
+      "CONTACT_PERSON_SUPPORT",
     ],
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
@@ -1087,6 +1089,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BOOK_APPOINTMENT",
       "DIGITAL_REQUEST",
       "CONTACT_PERSON_INFO",
+      "CONTACT_PERSON_SUPPORT",
+      "SPECIALIST_PRACTICES_INFO",
     ],
 
     actionGuidanceRules: [
@@ -1599,6 +1603,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     availableActionIds: [
       "DIGITAL_REQUEST",
+      "CONTACT_PERSON_SUPPORT",
+      "SPECIALIST_PRACTICES_INFO",
     ],
     boundActionCheckpointIds: [
       "ACUTE_OPEN_CONSULTATION_ACTION",
@@ -1918,6 +1924,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "CONTACT_PERSON_INFO",
+      "CONTACT_PERSON_SUPPORT",
+      "SPECIALIST_PRACTICES_INFO",
     ],
     actionGuidanceRules: [
       // DOCUMENT_UPLOAD empfehlen, wenn GKV-Versicherungsnachweis fehlt

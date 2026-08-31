@@ -1495,6 +1495,40 @@ export function getInquiryCheckpointCatalog(
     },
   },
 
+  CONTACT_PERSON_SUPPORT: {
+    id: "CONTACT_PERSON_SUPPORT",
+    label: "Unterstützung durch eine Kontaktperson",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Sie lassen sich bei Ihren Anliegen durch eine Kontaktperson unterstützen.",
+    },
+    textByAudience: {
+      contact_person:
+        "Sie unterstützen die Patientin / den Patienten bei ihren bzw. seinen Anliegen.",
+    },
+  },
+
+  SPECIALIST_PRACTICES_INFO: {
+    id: "SPECIALIST_PRACTICES_INFO",
+    label: "Regelmäßig behandelnde Facharztpraxen",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "INFO",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte informieren Sie uns über Facharztpraxen, bei denen Sie regelmäßig behandelt werden.",
+    },
+    textByAudience: {
+      contact_person:
+        "Bitte informieren Sie uns über Facharztpraxen, bei denen die Patientin / der Patient regelmäßig behandelt wird.",
+    },
+  },
+
   DIGITAL_REQUEST_PROCESSING_TIME: {
     id: "DIGITAL_REQUEST_PROCESSING_TIME",
     label: "Bearbeitungszeit digitale Anfrage",
