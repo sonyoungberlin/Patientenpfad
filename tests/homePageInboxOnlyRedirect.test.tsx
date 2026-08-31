@@ -17,6 +17,11 @@ jest.mock("@/app/HomePageClient", () => ({
   default: () => "HOME_CLIENT",
 }));
 
+jest.mock("@/app/dashboard/page", () => ({
+  __esModule: true,
+  default: () => "DASHBOARD_CLIENT",
+}));
+
 import HomePage from "@/app/page";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 
@@ -48,17 +53,18 @@ function inboxOnlyAccount() {
   };
 }
 
-describe("HomePage INBOX_ONLY", () => {
+describe("HomePage", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     getCookies.mockReset();
   });
 
-  it("leitet freigeschaltete INBOX_ONLY-Accounts nach /questionnaires um", async () => {
+  it("zeigt für freigeschaltete Accounts das Dashboard", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
 
-    await expect(HomePage()).rejects.toThrow("__REDIRECT__:/questionnaires");
-    expect(redirectMock).toHaveBeenCalledWith("/questionnaires");
+    const html = renderToStaticMarkup(await HomePage());
+    expect(html).toContain("DASHBOARD_CLIENT");
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 
   it("rendert für andere Aufrufer die Client-Startseite", async () => {

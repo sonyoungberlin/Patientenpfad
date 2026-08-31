@@ -1,11 +1,11 @@
+import { redirect } from "next/navigation";
 import HomePageClient from "@/app/HomePageClient";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import DashboardPage from "@/app/dashboard/page";
 
-export default async function HomePage() {
+export default async function NewCasePage() {
   const account = await getSessionAccountFromCookies();
-  if (account && account.is_approved) {
-    return <DashboardPage />;
+  if (!account || !account.is_approved) {
+    redirect("/");
   }
 
   return <HomePageClient />;

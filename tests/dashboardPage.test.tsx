@@ -87,11 +87,14 @@ describe("Dashboard INBOX_ONLY", () => {
     getCookies.mockReset();
   });
 
-  it("leitet INBOX_ONLY direkt nach /questionnaires um", async () => {
+  it("zeigt nur den erlaubten Fragebogen-Einstieg", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
 
-    await expect(DashboardPage()).rejects.toThrow("__REDIRECT__:/questionnaires");
-    expect(redirectMock).toHaveBeenCalledWith("/questionnaires");
+    const html = renderToStaticMarkup(await DashboardPage());
+    expect(html).toContain("Fragebögen");
+    expect(html).not.toContain("Patientenkommunikation");
+    expect(html).not.toContain("Patientenfälle");
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 });
 
@@ -117,9 +120,10 @@ describe("Dashboard — Kachel 'Digitale Anfragen'", () => {
     expect(html).not.toContain("data-testid=\"digital-requests-tile\"");
   });
 
-  it("INBOX_ONLY sieht die Kachel nicht (Redirect vor dem Render)", async () => {
+  it("INBOX_ONLY sieht die Kachel nicht", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
-    await expect(DashboardPage()).rejects.toThrow("__REDIRECT__:/questionnaires");
+    const html = renderToStaticMarkup(await DashboardPage());
+    expect(html).not.toContain('data-testid="digital-requests-tile"');
   });
 });
 
@@ -162,7 +166,7 @@ describe("Dashboard — Kachel 'Officepfad'", () => {
   it("INBOX_ONLY sieht die Officepfad-Kachel nicht", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
 
-    await expect(DashboardPage()).rejects.toThrow("__REDIRECT__:/questionnaires");
-    expect(redirectMock).toHaveBeenCalledWith("/questionnaires");
+    const html = renderToStaticMarkup(await DashboardPage());
+    expect(html).not.toContain('data-testid="office-path-tile"');
   });
 });

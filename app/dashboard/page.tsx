@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PracticeRole } from "@prisma/client";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import { getCurrentPracticeRole } from "@/lib/authz";
 import AppShell from "@/components/AppShell";
 
 /**
@@ -23,12 +22,9 @@ import AppShell from "@/components/AppShell";
  */
 export default async function DashboardPage() {
   const account = await getSessionAccountFromCookies();
+
   if (!account || !account.is_approved) {
     redirect("/");
-  }
-
-  if (getCurrentPracticeRole(account) === PracticeRole.INBOX_ONLY) {
-    redirect("/questionnaires");
   }
 
   const myRole =
@@ -75,7 +71,10 @@ export default async function DashboardPage() {
     <>
       <AppShell />
       <main>
-        <h1>Was möchten Sie tun?</h1>
+        <h1>Hallo.</h1>
+        <p style={{ fontSize: "1.125rem", marginBottom: "1.5rem" }}>
+          Welchen nächsten Schritt möchten Sie gehen?
+        </p>
         <div
           style={{
             display: "grid",
@@ -87,7 +86,7 @@ export default async function DashboardPage() {
           {canUseQuestionnaireInbox && (
             <section className="card">
               <h2 style={{ marginTop: 0 }}>Fragebögen</h2>
-              <p>Eingegangene Fragebögen bearbeiten</p>
+              <p>Fragebögen versenden und Rückläufe bearbeiten.</p>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <Link href="/questionnaires">
                   <button type="button">Posteingang öffnen</button>
@@ -99,7 +98,7 @@ export default async function DashboardPage() {
           {canUseInquiries && (
             <section className="card">
               <h2 style={{ marginTop: 0 }}>Patientenkommunikation</h2>
-              <p>Nachrichten formulieren</p>
+              <p>Anfragen strukturiert klären und beantworten.</p>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <Link href="/inquiries">
                   <button type="button">Vorlagen öffnen</button>
@@ -114,12 +113,12 @@ export default async function DashboardPage() {
           {canUseCases && (
             <section className="card">
               <h2 style={{ marginTop: 0 }}>Patientenfälle</h2>
-              <p>Fehlende Informationen sammeln und dokumentieren</p>
+              <p>Offene und bearbeitete Fälle aufrufen.</p>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <Link href="/cases">
                   <button type="button">Fallliste öffnen</button>
                 </Link>
-                <Link href="/">
+                <Link href="/cases/new">
                   <button type="button">Neuer Fall</button>
                 </Link>
               </div>

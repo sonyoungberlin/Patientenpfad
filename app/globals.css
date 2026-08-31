@@ -250,6 +250,48 @@ main {
   padding: 2rem 1.5rem;
 }
 
+.landing-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  gap: 3rem;
+  max-width: 68rem;
+}
+
+.landing-copy {
+  max-width: 44rem;
+}
+
+.landing-copy h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.landing-subheadline {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.landing-auth {
+  align-self: start;
+  border-left: 1px solid var(--border);
+  padding-left: 2rem;
+}
+
+@media (max-width: 767px) {
+  .landing-page {
+    display: block;
+  }
+
+  .landing-auth {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+    padding-left: 0;
+    padding-top: 2rem;
+  }
+}
+
 /* M3 (ärztlicher Bereich): leicht hellblauer Seitenhintergrund,
    damit der Arbeitsbereich des Arztes sofort erkennbar ist.
    Gilt ausschließlich für die M3-Seite (Klasse `.m3-page` auf <main>).

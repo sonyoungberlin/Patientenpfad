@@ -313,20 +313,27 @@ export default function HomePageClient() {
 
   if (!account) {
     return (
-      <main style={{ maxWidth: "500px" }}>
-        <h1>Struktur im Praxisalltag</h1>
-        <p style={{ fontSize: "1.125rem", marginBottom: "0.5rem" }}>
-          Offene Fragen sichtbar machen – klare Zuordnung ermöglichen.
-        </p>
-        <p className="text-muted text-small" style={{ marginBottom: "1.5rem" }}>
-          Die medizinische Entscheidung bleibt beim Arzt.
-        </p>
-        <p style={{ marginBottom: "1.5rem" }}>
-          Im Praxisalltag gibt es immer wieder Situationen, in denen unklar ist, was noch fehlt oder wie es weitergeht.
-          Die Anwendung macht diese offenen Fragen sichtbar und unterstützt dabei, die nächsten Schritte klar zuzuordnen.
-          Aktuell testen wir dies im Rahmen einer Pilotphase.
-        </p>
-
+      <main className="landing-page">
+        <div className="landing-copy">
+          <h1>Struktur, die den Praxisalltag leichter macht.</h1>
+          <p className="landing-subheadline">Weiterarbeiten wie bisher. Nur strukturierter.</p>
+          <p>Nicht jeder Vorgang braucht einen neuen digitalen Prozess. Manchmal muss einfach nur klar werden: Was wissen wir? Was fehlt? Was ist unklar? Und was ist der nächste konkrete Schritt?</p>
+          <p>Unsere Plattform hilft Praxen, genau das schnell zu klären. Sie zerlegt unübersichtliche Vorgänge in kleine, konkrete Schritte und macht vorhandenes Praxiswissen dort nutzbar, wo es gerade gebraucht wird.</p>
+          <p><strong>Nicht ersetzen, sondern unterstützen.</strong><br />
+            <strong>Nicht automatisieren, sondern klären.</strong><br />
+            <strong>Nicht mehr Daten sammeln, sondern gezielt das Fehlende erfragen.</strong>
+          </p>
+          <p>Dabei bleibt die ärztliche Entscheidung immer beim Arzt. Vorbereitende Informationen können von MFA, Patienten, Angehörigen oder anderen Beteiligten beigesteuert werden. So landet beim Arzt nicht erst ein ungeklärter Informationshaufen, sondern eine konkrete Entscheidungsgrundlage – und wertvolle Arztzeit wird dort eingesetzt, wo sie wirklich gebraucht wird.</p>
+          <h2>Einfach anfangen – ohne Umstellung.</h2>
+          <p>Es braucht keine Datenmigration, keinen Systemwechsel und keinen festen Starttermin, an dem plötzlich die ganze Praxis anders arbeiten muss. Bestehende Patienten- oder Praxisdaten müssen nicht erst in ein neues System übertragen werden.</p>
+          <p><strong>Sie können einfach mit dem ersten passenden Vorgang anfangen.</strong></p>
+          <p>Heute bei einem Patienten. Morgen bei drei anderen. Einen anderen Fall klären Sie weiterhin am Telefon oder persönlich – genau so, wie es in diesem Moment am sinnvollsten ist.</p>
+          <p>Ob PVS, Telefon, persönliches Gespräch, Papier oder digitale Kommunikation: Die Plattform gibt keinen neuen Arbeitsweg vor. <strong>Sie ergänzt den laufenden Betrieb, ohne ihn für die Einführung unterbrechen oder neu organisieren zu müssen.</strong></p>
+          <p>So entsteht Struktur Schritt für Schritt – dort, wo sie gerade hilft, und ohne einen zweiten Datenbestand oder einen neuen Prozess, der anschließend dauerhaft gepflegt werden muss.</p>
+          <p><strong>Weiterarbeiten wie bisher – mit mehr Klarheit, wenn es darauf ankommt.</strong></p>
+          <p><strong>So viel Struktur wie nötig. So wenig Prozesszwang wie möglich.</strong></p>
+        </div>
+        <div className="landing-auth">
         <h2>Für Pilotphase registrieren</h2>
         {regSuccess ? (
           <div className="banner-warning" style={{ marginBottom: "1rem" }}>
@@ -414,6 +421,7 @@ export default function HomePageClient() {
           <p style={{ marginTop: "0.5rem" }}>
             <a href="/account/forgot-password">Passwort vergessen?</a>
           </p>
+        </div>
         </div>
       </main>
     );
