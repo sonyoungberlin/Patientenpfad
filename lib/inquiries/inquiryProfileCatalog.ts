@@ -77,6 +77,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "VIDEO_CONSULTATION_BOOK",
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
       "CONTACT_PERSON_INFO",
       "CONTACT_PERSON_SUPPORT",
     ],
@@ -285,6 +286,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
       "VIDEO_CONSULTATION_BOOK",
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
       "CONTROL_APPOINTMENT_RECOMMENDED",
       "CONTACT_PERSON_INFO",
       "CONTACT_PERSON_SUPPORT",
@@ -678,6 +680,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
       "VIDEO_CONSULTATION_BOOK",
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
     ],
 
     // -----------------------------------------------------------------------
@@ -1116,6 +1119,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "BOOK_APPOINTMENT",
       "VIDEO_CONSULTATION_BOOK",
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
       "DIGITAL_REQUEST",
       "CONTACT_PERSON_INFO",
       "CONTACT_PERSON_SUPPORT",
@@ -1635,6 +1639,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "VIDEO_CONSULTATION_BOOK",
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
       "CONTACT_PERSON_SUPPORT",
       "SPECIALIST_PRACTICES_INFO",
     ],
@@ -2277,7 +2282,10 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [],
     globalHints: {},
-    availableActionIds: ["VIDEO_CONSULTATION_BOOK"],
+    availableActionIds: [
+      "VIDEO_CONSULTATION_BOOK",
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
+    ],
     boundActionCheckpointIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",

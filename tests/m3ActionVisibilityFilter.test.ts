@@ -304,6 +304,7 @@ describe("M3 VIDEO_CONSULTATION_BOOK", () => {
     expect(videoSelected).toEqual({
       BOOK_APPOINTMENT: ActionStatus.INACTIVE,
       VIDEO_CONSULTATION_BOOK: ActionStatus.ACTIVE,
+      APPOINTMENT_OR_VIDEO_CONSULTATION: ActionStatus.INACTIVE,
     });
 
     const bookingSelected = applyM3ActionExclusivity(
@@ -314,6 +315,7 @@ describe("M3 VIDEO_CONSULTATION_BOOK", () => {
     expect(bookingSelected).toEqual({
       BOOK_APPOINTMENT: ActionStatus.ACTIVE,
       VIDEO_CONSULTATION_BOOK: ActionStatus.INACTIVE,
+      APPOINTMENT_OR_VIDEO_CONSULTATION: ActionStatus.INACTIVE,
     });
   });
 
@@ -324,6 +326,94 @@ describe("M3 VIDEO_CONSULTATION_BOOK", () => {
       ActionStatus.INACTIVE,
     );
     expect(statuses).toEqual({ VIDEO_CONSULTATION_BOOK: ActionStatus.INACTIVE });
+  });
+});
+
+describe("M3 APPOINTMENT_OR_VIDEO_CONSULTATION", () => {
+  const combinedProfiles = ["AU", "PRESCRIPTION", "REFERRAL", "APPOINTMENT", "LAB", "MEDICAL_DOCUMENTS"];
+
+  it("ist als globale ACTION mit dem exakten Label und Patiententext definiert", () => {
+    const action = INQUIRY_CHECKPOINT_CATALOG_V2.APPOINTMENT_OR_VIDEO_CONSULTATION;
+    expect(action.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(action.scope).toBe("GLOBAL");
+    expect(action.placement).toBe("SHARED_BOTTOM");
+    expect(action.label).toBe("Persönlicher Termin oder Videosprechstunde");
+    expect(action.textByStatus[ActionStatus.ACTIVE]).toBe(
+      "Bitte vereinbaren Sie einen persönlichen Termin oder einen Termin zur Videosprechstunde.",
+    );
+  });
+
+  it("ist nur in den sechs vorgesehenen Profilen als Action verfügbar", () => {
+    for (const profileId of combinedProfiles) {
+      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].availableActionIds).toContain(
+        "APPOINTMENT_OR_VIDEO_CONSULTATION",
+      );
+    }
+    for (const profileId of ["ACUTE_CARE", "ONBOARDING", "TECH_SUPPORT"]) {
+      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].availableActionIds).not.toContain(
+        "APPOINTMENT_OR_VIDEO_CONSULTATION",
+      );
+    }
+  });
+
+  it("ist nicht in M2 gebunden und wird nicht automatisch durch M2-Status aktiviert", () => {
+    for (const profileId of combinedProfiles) {
+      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].boundActionCheckpointIds ?? []).not.toContain(
+        "APPOINTMENT_OR_VIDEO_CONSULTATION",
+      );
+      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].boundActionConditions?.APPOINTMENT_OR_VIDEO_CONSULTATION).toBeUndefined();
+    }
+  });
+
+  it("setzt bei jeder Auswahl die beiden anderen Terminwege auf INACTIVE", () => {
+    const combined = applyM3ActionExclusivity(
+      {
+        BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+        VIDEO_CONSULTATION_BOOK: ActionStatus.ACTIVE,
+      },
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
+      ActionStatus.ACTIVE,
+    );
+    expect(combined).toEqual({
+      BOOK_APPOINTMENT: ActionStatus.INACTIVE,
+      VIDEO_CONSULTATION_BOOK: ActionStatus.INACTIVE,
+      APPOINTMENT_OR_VIDEO_CONSULTATION: ActionStatus.ACTIVE,
+    });
+
+    const video = applyM3ActionExclusivity(
+      combined,
+      "VIDEO_CONSULTATION_BOOK",
+      ActionStatus.ACTIVE,
+    );
+    expect(video).toEqual({
+      BOOK_APPOINTMENT: ActionStatus.INACTIVE,
+      VIDEO_CONSULTATION_BOOK: ActionStatus.ACTIVE,
+      APPOINTMENT_OR_VIDEO_CONSULTATION: ActionStatus.INACTIVE,
+    });
+  });
+
+  it("rendert die kombinierte Action genau einmal", () => {
+    const result = renderInquiryResponseFromSections([{
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: {
+        APPOINTMENT_OR_VIDEO_CONSULTATION: ActionStatus.ACTIVE,
+      },
+    }]);
+    expect(result.sharedBottom).toEqual([
+      "Bitte vereinbaren Sie einen persönlichen Termin oder einen Termin zur Videosprechstunde.",
+    ]);
+  });
+
+  it("lässt CARE_CHANNEL_CHOICE und den persönlichen AU-Checkpoint unverändert", () => {
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.CARE_CHANNEL_CHOICE.textByStatus[ActionStatus.ACTIVE]).toContain(
+      "Alternativ können Sie eine digitale Anfrage stellen.",
+    );
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_MEDICAL_CONSULTATION_REQUIRED.textByStatus.YES).toBe(
+      "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
+    );
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.APPOINTMENT_VIDEO_LIMITATIONS).toBeDefined();
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.APPOINTMENT_VIDEO_REQUIREMENTS).toBeDefined();
   });
 });
 

@@ -169,7 +169,11 @@ const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
   },
   {
     label: "Termin & Behandlung",
-    ids: ["BOOK_APPOINTMENT", "VIDEO_CONSULTATION_BOOK"],
+    ids: [
+      "BOOK_APPOINTMENT",
+      "VIDEO_CONSULTATION_BOOK",
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
+    ],
   },
   {
     label: "Rezept & Einlösung",
@@ -264,11 +268,14 @@ const PRESCRIPTION_ALL_ACTION_IDS = [
  * Gegenseitige Ausschlusstabelle für PRESCRIPTION-Actions in M3.
  * Wird eine auf ACTIVE gesetzt, wird die andere automatisch INACTIVE.
  */
-const ACTION_EXCLUSIVE_PAIRS: Record<string, string> = {
-  E_RECIPE_USE: "DIGITAL_REQUEST_REQUIRED",
-  BOOK_APPOINTMENT: "VIDEO_CONSULTATION_BOOK",
-  VIDEO_CONSULTATION_BOOK: "BOOK_APPOINTMENT",
-};
+const ACTION_EXCLUSIVE_GROUPS: readonly (readonly string[])[] = [
+  ["E_RECIPE_USE", "DIGITAL_REQUEST_REQUIRED"],
+  [
+    "BOOK_APPOINTMENT",
+    "APPOINTMENT_OR_VIDEO_CONSULTATION",
+    "VIDEO_CONSULTATION_BOOK",
+  ],
+];
 
 export function applyM3ActionExclusivity(
   statuses: Record<string, string>,
@@ -276,8 +283,12 @@ export function applyM3ActionExclusivity(
   value: string,
 ): Record<string, string> {
   const next = { ...statuses, [actionId]: value };
-  if (value !== "ACTIVE" || !ACTION_EXCLUSIVE_PAIRS[actionId]) return next;
-  next[ACTION_EXCLUSIVE_PAIRS[actionId]] = "INACTIVE";
+  if (value !== "ACTIVE") return next;
+  const group = ACTION_EXCLUSIVE_GROUPS.find((ids) => ids.includes(actionId));
+  if (!group) return next;
+  for (const id of group) {
+    if (id !== actionId) next[id] = "INACTIVE";
+  }
   return next;
 }
 
@@ -1508,7 +1519,7 @@ export default function InquiryM3Client({
   }, [currentMessageText, smoothedSourceText]);
 
   function setStatus(checkpointId: string, value: string) {
-    if (value === "ACTIVE" && ACTION_EXCLUSIVE_PAIRS[checkpointId]) {
+    if (value === "ACTIVE" && ACTION_EXCLUSIVE_GROUPS.some((ids) => ids.includes(checkpointId))) {
       setStatuses((prev) => applyM3ActionExclusivity(prev, checkpointId, value));
     } else if (value === "ACTIVE" && VERSORGUNGSWEG_CONFLICT_GROUP.has(checkpointId)) {
       setStatuses((prev) => {
