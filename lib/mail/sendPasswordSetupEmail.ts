@@ -5,22 +5,14 @@
  * eine E-Mail mit einem Einmal-Link, über den der Empfänger sein Passwort
  * setzen kann.
  *
- * Transport-Auswahl analog zu `sendWebsiteFormConfirmationEmail` — aber
- * **ohne** Practice-First-Pfad: ein Account ist nicht zwingend an genau
- * eine Practice gebunden, und der Setup-Flow ist konzeptionell ein
- * Plattform-Mail (Admin → Account-Inhaber), kein Praxis-Mail.
- *
- *   - `MAIL_TRANSPORT=console` (Default): loggt Empfänger, Subject und URL
- *     über `console.info`. Erlaubt vollständiges Durchspielen ohne SMTP-Provider.
- *   - `MAIL_TRANSPORT=smtp`: versendet via Nodemailer mit der GLOBAL aus
- *     den ENV-Variablen `SMTP_*` gelesenen Konfiguration.
- *   - `MAIL_TRANSPORT=practice_only`: WIRD GEWORFEN — der Setup-Flow ist
- *     bewusst nicht an eine Practice gebunden, daher kein Versand möglich.
- *   - andere Werte: defensives Fallback auf `console`.
+ * Account-Mails verwenden immer den globalen Plattform-SMTP aus `SMTP_*`.
+ * `MAIL_TRANSPORT` steuert ausschließlich die bestehenden praxisbezogenen
+ * Mailpfade und wird hier bewusst nicht ausgewertet. Dadurch blockiert
+ * `practice_only` keine Account-Sicherheitsmail.
  *
  * Sicherheits-/Logging-Invarianten:
- *   - Klartext-Token erscheint nur in der Mail-URL und (bei console-Transport)
- *     im lokalen Log — niemals in produktiven SMTP-Fehlern.
+ *   - Klartext-Token erscheint nur in der Mail-URL, niemals in Logs oder
+ *     produktiven SMTP-Fehlern.
  *   - Kein Klartext-Passwort fließt durch diesen Pfad.
  */
 
@@ -37,20 +29,7 @@ export type PasswordSetupMailInput = {
 };
 
 export type ResolvedPasswordSetupMailTransport =
-  | "smtp_env"
-  | "console"
-  | "none";
-
-function selectTransport(): "console" | "smtp" | "practice_only" {
-  const raw = process.env.MAIL_TRANSPORT?.trim().toLowerCase();
-  if (!raw || raw === "console") return "console";
-  if (raw === "smtp") return "smtp";
-  if (raw === "practice_only") return "practice_only";
-  console.warn(
-    `[mail] Unbekannter MAIL_TRANSPORT="${raw}" – fällt auf console zurück.`,
-  );
-  return "console";
-}
+  | "smtp_env";
 
 export function buildPasswordSetupEmailBody(setupUrl: string): {
   subject: string;
@@ -69,39 +48,16 @@ export function buildPasswordSetupEmailBody(setupUrl: string): {
 }
 
 /**
- * Versendet die Setup-E-Mail. Liefert den tatsächlich verwendeten Transport
- * für strukturierte Logs zurück. Wirft im `practice_only`-Modus sowie bei
- * jedem echten SMTP-Übertragungsfehler — der Aufrufer behandelt das
- * (im Setup-Flow) als unauffälligen Server-Fehler, ohne Account-Existenz
- * zu leaken.
+ * Versendet die Setup-E-Mail über den Plattform-SMTP. Liefert erst nach
+ * erfolgreicher SMTP-Übertragung zurück. Fehlende Konfiguration und echte
+ * Übertragungsfehler werden geworfen; der Aufrufer behandelt beides ohne
+ * Account-Existenz zu leaken.
  */
 export async function sendPasswordSetupEmail(
   input: PasswordSetupMailInput,
 ): Promise<ResolvedPasswordSetupMailTransport> {
   const { subject, text } = buildPasswordSetupEmailBody(input.setupUrl);
-  const transport = selectTransport();
-
-  if (transport === "practice_only") {
-    throw new Error(
-      "MAIL_TRANSPORT=practice_only: Account-Passwort-Setup-Mail nicht möglich.",
-    );
-  }
-
-  if (transport === "console") {
-    console.info("[mail:console] Passwort-Setup-E-Mail", {
-      to: input.to,
-      subject,
-      bodyPreview: text.slice(0, 80),
-    });
-    return "console";
-  }
-
-  if (transport === "smtp") {
-    const cfg: SmtpConfig = readSmtpConfigFromEnv();
-    await sendViaSmtp(cfg, { to: input.to, subject, text });
-    return "smtp_env";
-  }
-
-  const exhaustive: never = transport;
-  throw new Error(`Unsupported MAIL_TRANSPORT: ${String(exhaustive)}`);
+  const cfg: SmtpConfig = readSmtpConfigFromEnv();
+  await sendViaSmtp(cfg, { to: input.to, subject, text });
+  return "smtp_env";
 }

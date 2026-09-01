@@ -15,11 +15,15 @@ export default function ForgotPasswordPage() {
     if (pending) return;
     setPending(true);
     try {
-      await fetch("/api/auth/request-password-setup", {
+      const response = await fetch("/api/auth/request-password-setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      if (!response.ok) throw new Error("password_reset_request_failed");
+    } catch {
+      // Die Antwort bleibt absichtlich neutral: Weder Account-Existenz noch
+      // Zustellstatus dürfen über die öffentliche UI erkennbar sein.
     } finally {
       setEmail("");
       setDone(true);

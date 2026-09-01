@@ -94,6 +94,32 @@ describe("POST /api/auth/request-password-setup", () => {
     expect(pm.passwordResetRequest.create).not.toHaveBeenCalled();
   });
 
+  it("meldet Admins delivery=email nur nach erfolgreichem Mailhelper-Aufruf", async () => {
+    sessionMock.mockResolvedValue({ is_admin: true });
+    pm.account.findUnique.mockResolvedValue({ id: "acc-1", email: "user@example.com" });
+    pm.passwordResetRequest.create.mockResolvedValue({});
+    mailMock.mockResolvedValueOnce("smtp_env");
+
+    const response = await requestHandler(jsonRequest({ email: "user@example.com" }));
+
+    expect(await response.json()).toEqual({ ok: true, delivery: "email" });
+    expect(mailMock).toHaveBeenCalledWith(expect.objectContaining({ to: "user@example.com" }));
+  });
+
+  it("meldet Admins ohne realen Mailtransport manual statt delivery=email", async () => {
+    sessionMock.mockResolvedValue({ is_admin: true });
+    pm.account.findUnique.mockResolvedValue({ id: "acc-1", email: "user@example.com" });
+    pm.passwordResetRequest.create.mockResolvedValue({});
+    mailMock.mockRejectedValueOnce(new Error("platform smtp unavailable"));
+
+    const response = await requestHandler(jsonRequest({ email: "user@example.com" }));
+    const body = await response.json();
+
+    expect(body.delivery).toBe("manual");
+    expect(body.delivery).not.toBe("email");
+    expect(body.setupUrl).toContain("/account/set-password?token=");
+  });
+
   it("begrenzt Rate-Limit-Anfragen weiterhin neutral", async () => {
     pm.passwordResetRateLimit.findUnique.mockImplementation(async ({ where }: { where: { key_hash_key_type: { key_type: string } } }) =>
       where.key_hash_key_type.key_type === "email"
@@ -112,7 +138,10 @@ describe("POST /api/auth/request-password-setup", () => {
     pm.passwordResetRequest.create.mockResolvedValue({});
     mailMock.mockRejectedValueOnce(new Error("smtp down"));
     const publicResponse = await requestHandler(jsonRequest({ email: "user@example.com" }));
-    expect(await publicResponse.json()).toEqual({ ok: true, message: PASSWORD_RESET_GENERIC_MESSAGE });
+    const publicBody = await publicResponse.json();
+    expect(publicBody).toEqual({ ok: true, message: PASSWORD_RESET_GENERIC_MESSAGE });
+    expect(publicBody).not.toHaveProperty("setupUrl");
+    expect(publicBody).not.toHaveProperty("delivery");
 
     sessionMock.mockResolvedValue({ is_admin: true });
     mailMock.mockRejectedValueOnce(new Error("smtp down"));
