@@ -88,6 +88,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "CARE_CHANNEL_CHOICE",
       "CONTROL_APPOINTMENT_RECOMMENDED",
       "INSURANCE_DATA_APP_TRANSFER",
+      "DOCUMENT_UPLOAD",
     ],
     boundActionConditions: {
       AU_NEW_PATIENT_3DAY_LIMIT: {
@@ -110,6 +111,9 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       INSURANCE_DATA_APP_TRANSFER: {
         showWhenAny: [{ AU_MISSING_EGK: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [{ HOSPITAL_DISCHARGE_REPORT_MISSING: "YES" }],
       },
     },
     boundCheckpointPairs: [

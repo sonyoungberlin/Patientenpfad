@@ -199,6 +199,7 @@ function matchesAnyActionCondition(
 
 describe("M3 DOCUMENT_UPLOAD bei fehlenden Befunden", () => {
   it.each([
+    ["AU", "HOSPITAL_DISCHARGE_REPORT_MISSING"],
     ["REFERRAL", "MEDICAL_REPORTS_MISSING"],
     ["REFERRAL", "HOSPITAL_DISCHARGE_REPORT_MISSING"],
     ["ONBOARDING", "MEDICAL_REPORTS_MISSING"],
@@ -207,6 +208,19 @@ describe("M3 DOCUMENT_UPLOAD bei fehlenden Befunden", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
     expect(profile.boundActionCheckpointIds).toContain("DOCUMENT_UPLOAD");
     expect(matchesAnyActionCondition(profileId, "DOCUMENT_UPLOAD", { [triggerId]: "YES" })).toBe(true);
+  });
+
+  it("bindet DOCUMENT_UPLOAD im AU-Profil exakt an den fehlenden Entlassbericht", () => {
+    expect(INQUIRY_PROFILE_CATALOG_V2.AU.boundActionConditions?.DOCUMENT_UPLOAD?.showWhenAny).toEqual([
+      { HOSPITAL_DISCHARGE_REPORT_MISSING: "YES" },
+    ]);
+  });
+
+  it("zeigt DOCUMENT_UPLOAD im AU-Profil bei NO oder ohne Status nicht", () => {
+    expect(matchesAnyActionCondition("AU", "DOCUMENT_UPLOAD", {
+      HOSPITAL_DISCHARGE_REPORT_MISSING: "NO",
+    })).toBe(false);
+    expect(matchesAnyActionCondition("AU", "DOCUMENT_UPLOAD", {})).toBe(false);
   });
 
   it("zeigt DOCUMENT_UPLOAD ohne fehlende Befunde nicht neu an", () => {
