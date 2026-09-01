@@ -55,6 +55,21 @@ function baseSession(overrides: Record<string, unknown> = {}) {
   };
 }
 
+const PUBLIC_PRACTICE = {
+  id: "practice-1",
+  slug: "praxis-muster",
+  public_slug: "praxis-muster",
+  name: "Praxis intern",
+  public_name: "Hausarztpraxis Muster",
+  is_approved: true,
+  disabled_at: null,
+  patient_communication_enabled: true,
+  website_forms_enabled: true,
+  office_cases_enabled: true,
+  message_signature: null,
+  legal_profile: null,
+};
+
 beforeEach(() => {
   prismaMock.patientQuestionnaireSession.findUnique.mockReset();
 });
@@ -64,6 +79,32 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("/q/[token] – context=office, salutation=du", () => {
+  it("zeigt den öffentlichen Praxisnamen in der Bewerbungsüberschrift", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({ context: "office", salutation: "du", owner_practice: PUBLIC_PRACTICE }),
+    );
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "tok" }) }),
+    );
+    expect(markup).toContain("<h1>Bewerben bei Hausarztpraxis Muster</h1>");
+    expect(markup).not.toContain("Praxis intern</h1>");
+  });
+
+  it("verwendet im Header und Footer denselben Fallback-Namen", async () => {
+    const practiceWithoutPublicName = {
+      ...PUBLIC_PRACTICE,
+      public_name: null,
+    };
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({ context: "office", salutation: "du", owner_practice: practiceWithoutPublicName }),
+    );
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "tok" }) }),
+    );
+    expect(markup).toContain("<h1>Bewerben bei Praxis intern</h1>");
+    expect(markup).toContain("<p style=\"margin:0\">Praxis intern</p>");
+  });
+
   it("zeigt Du-Titel in der Seite", async () => {
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
       baseSession({ context: "office", salutation: "du" }),

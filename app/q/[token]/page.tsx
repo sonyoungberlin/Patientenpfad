@@ -23,7 +23,10 @@ import {
   BEWERBER_INTRO_SIE,
 } from "@/lib/questionnaire/officeIntro";
 import { QuestionnaireFormClient } from "./QuestionnaireFormClient";
-import { PUBLIC_IDENTITY_SELECT } from "@/lib/practice/publicIdentity";
+import {
+  PUBLIC_IDENTITY_SELECT,
+  publicPracticeName,
+} from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import { isPracticeActive, PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
@@ -149,7 +152,9 @@ export default async function QuestionnairePage({
       ? PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN
       : PATIENT_QUESTIONNAIRE_INTRO_TEXT;
   }
-  const pageTitle = language === "en" ? PAGE_TITLE_EN : PAGE_TITLE_DE;
+  const pageTitle = isOfficeContext && publicPractice
+    ? `Bewerben bei ${publicPracticeName(publicPractice)}`
+    : language === "en" ? PAGE_TITLE_EN : PAGE_TITLE_DE;
 
   return (
     <main>

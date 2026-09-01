@@ -12,7 +12,10 @@ import { validateSlug } from "@/lib/websiteForms/slug";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
 import { OFFICE_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
-import { getPublicPracticeIdentityById } from "@/lib/practice/publicIdentity";
+import {
+  getPublicPracticeIdentityById,
+  publicPracticeName,
+} from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
 
@@ -61,7 +64,7 @@ export default async function BewerbenPage({
 
   return (
     <main style={{ maxWidth: "38rem", margin: "0 auto", padding: "2.5rem 1rem" }}>
-      <h1>Bewerbung bei {practice.name}</h1>
+      <h1>Bewerben bei {publicPractice ? publicPracticeName(publicPractice) : practice.name}</h1>
       <p style={{ marginBottom: "2rem", color: "#555" }}>
         Füllen Sie das Formular aus. Die Praxis meldet sich nach Prüfung Ihrer
         Angaben bei Ihnen.
