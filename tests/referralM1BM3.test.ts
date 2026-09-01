@@ -11,7 +11,12 @@
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import {
+  applyReferralAppointmentStatus,
+  REFERRAL_APPOINTMENT_STATUS_IDS,
+} from "@/app/inquiries/[id]/m2/InquiryM2Client";
+import {
   DecisionStatus,
+  ExplanationStatus,
   type SpecificRole,
   type ExplanationOutputStatus,
 } from "@/lib/inquiries/types";
@@ -129,6 +134,72 @@ describe("REFERRAL – M3 responseGoals", () => {
     for (const goal of REFERRAL.responseGoals!) {
       expect(goal.relevantSpecificRoles.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("REFERRAL – Facharztterminstatus", () => {
+  it("bindet beide Terminstatus-Checkpoints unter Anliegen geprüft", () => {
+    expect(REFERRAL.specificCheckpointIds).toEqual(
+      expect.arrayContaining(REFERRAL_APPOINTMENT_STATUS_IDS),
+    );
+  });
+
+  it.each([
+    ["REF_SPECIALIST_APPOINTMENT_EXISTS", "Ein Termin in der Facharztpraxis ist bereits vereinbart."],
+    ["REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED", "Ein Termin in der Facharztpraxis ist noch nicht vereinbart."],
+  ])("%s rendert den neutralen YES-Text", (checkpointId, expectedText) => {
+    const result = renderInquiryResponseFromSections([{
+      inquiryId: "REFERRAL",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: { [checkpointId]: ExplanationStatus.YES },
+      explanationOutputStatuses: { [checkpointId]: "SHOW" as ExplanationOutputStatus },
+    }]);
+    expect(result.sections[0].attachedParagraphs).toContain(expectedText);
+  });
+
+  it("macht die beiden YES-Statuswerte in beide Richtungen exklusiv", () => {
+    const existing = applyReferralAppointmentStatus(
+      {},
+      "REF_SPECIALIST_APPOINTMENT_EXISTS",
+      "YES",
+    );
+    expect(existing).toMatchObject({
+      REF_SPECIALIST_APPOINTMENT_EXISTS: "YES",
+      REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED: "NO",
+    });
+
+    const notScheduled = applyReferralAppointmentStatus(
+      existing,
+      "REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED",
+      "YES",
+    );
+    expect(notScheduled).toMatchObject({
+      REF_SPECIALIST_APPOINTMENT_EXISTS: "NO",
+      REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED: "YES",
+    });
+  });
+
+  it("rendert bei NO keine positive Terminstatus-Aussage", () => {
+    const result = renderInquiryResponseFromSections([{
+      inquiryId: "REFERRAL",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: {
+        REF_SPECIALIST_APPOINTMENT_EXISTS: ExplanationStatus.NO,
+        REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED: ExplanationStatus.NO,
+      },
+      explanationOutputStatuses: {
+        REF_SPECIALIST_APPOINTMENT_EXISTS: "HIDE" as ExplanationOutputStatus,
+        REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED: "HIDE" as ExplanationOutputStatus,
+      },
+    }]);
+    expect(result.sections[0].attachedParagraphs).toEqual([]);
+  });
+
+  it("löst keine automatische 116117- oder Praxis-Termin-Action aus", () => {
+    expect(REFERRAL.boundActionConditions?.REF_BOOKING_CODE_PROCESS?.showWhenAny).toEqual([
+      { REF_HAV_CASE: "YES" },
+    ]);
+    expect(REFERRAL.boundActionConditions?.BOOK_APPOINTMENT).toBeUndefined();
   });
 });
 

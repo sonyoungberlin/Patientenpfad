@@ -607,6 +607,8 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         "REF_PSYCHOTHERAPY_FIRST_STEP",
         "REF_HAV_CASE",
         "REF_MEDICAL_CONSULTATION_REQUIRED",
+        "REF_SPECIALIST_APPOINTMENT_EXISTS",
+        "REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED",
       ],
     },
     { sectionIntroId: "SECTION_INTRO_INFO_MISSING", checkpointIds: [] },
@@ -2164,9 +2166,34 @@ const REFERRAL_SHORT_LABELS: Record<string, string> = {
   REFERRAL_INSURANCE_PROOF_MISSING: "Versicherungsnachweis/eGK fehlt",
   REF_SPECIALTY_REQUIRED: "Fachrichtung fehlt",
   REF_MEDICAL_CONSULTATION_REQUIRED: "Ärztliche Einschätzung",
+  REF_SPECIALIST_APPOINTMENT_EXISTS: "Facharzttermin vorhanden",
+  REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED: "Facharzttermin noch nicht vereinbart",
   REF_PSYCHOTHERAPY_FIRST_STEP: "Psychotherapie Erstvorstellung",
   REF_HAV_CASE: "Hausarztvermittlungsfall",
 };
+
+export const REFERRAL_APPOINTMENT_STATUS_IDS = [
+  "REF_SPECIALIST_APPOINTMENT_EXISTS",
+  "REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED",
+] as const;
+
+export function applyReferralAppointmentStatus(
+  statuses: Record<string, string>,
+  checkpointId: string,
+  value: string,
+): Record<string, string> {
+  const next = { ...statuses, [checkpointId]: value };
+  if (value !== "YES" || !REFERRAL_APPOINTMENT_STATUS_IDS.includes(checkpointId as (typeof REFERRAL_APPOINTMENT_STATUS_IDS)[number])) {
+    return next;
+  }
+
+  const conflictingId =
+    checkpointId === REFERRAL_APPOINTMENT_STATUS_IDS[0]
+      ? REFERRAL_APPOINTMENT_STATUS_IDS[1]
+      : REFERRAL_APPOINTMENT_STATUS_IDS[0];
+  next[conflictingId] = "NO";
+  return next;
+}
 
 /**
  * Decision-Klärungsfragen, die in REFERRAL-M2 nicht angezeigt werden sollen.
@@ -3132,7 +3159,13 @@ export default function InquiryM2Client({
   const [error, setError] = useState<string | null>(null);
 
   function setStatus(checkpointId: string, value: string) {
-    setStatuses((prev) => applyLabCheckpointCoupling(prev, checkpointId, value));
+    setStatuses((prev) =>
+      applyReferralAppointmentStatus(
+        applyLabCheckpointCoupling(prev, checkpointId, value),
+        checkpointId,
+        value,
+      ),
+    );
   }
 
   // Pilot: globale Liste aller in dieser Session verfügbaren Section-Intro-IDs

@@ -2421,6 +2421,38 @@ export function getInquiryCheckpointCatalog(
     },
   },
 
+  REF_SPECIALIST_APPOINTMENT_EXISTS: {
+    id: "REF_SPECIALIST_APPOINTMENT_EXISTS",
+    label: "Facharzttermin vorhanden",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "REF_SPECIALIST_APPOINTMENT_EXISTS-Q1", text: "Ist bereits ein Termin in der Facharztpraxis vereinbart?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ein Termin in der Facharztpraxis ist bereits vereinbart.",
+    },
+  },
+
+  REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED: {
+    id: "REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED",
+    label: "Facharzttermin noch nicht vereinbart",
+    kind: InquiryCheckpointKind.EXPLANATION,
+    scope: InquiryCheckpointScope.SPECIFIC,
+    placement: InquiryCheckpointPlacement.ATTACHED,
+    specificRole: "PROCESS_INFO" as SpecificRole,
+    questions: [
+      { id: "REF_SPECIALIST_APPOINTMENT_NOT_SCHEDULED-Q1", text: "Ist noch kein Termin in der Facharztpraxis vereinbart?" },
+    ],
+    textByStatus: {
+      [ExplanationStatus.YES]:
+        "Ein Termin in der Facharztpraxis ist noch nicht vereinbart.",
+    },
+  },
+
   REF_BOOKING_CODE_PROCESS: {
     id: "REF_BOOKING_CODE_PROCESS",
     label: "Vermittlungs- / Buchungscode",
