@@ -4272,16 +4272,16 @@ export function getInquiryCheckpointCatalog(
 
   AU_MEDICAL_CONSULTATION_REQUIRED: {
     id: "AU_MEDICAL_CONSULTATION_REQUIRED",
-    label: "Ärztliche Konsultation erforderlich (AU)",
+    label: "Ärztliche Beurteilung erforderlich",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
     specificRole: "MEDICAL_REVIEW_REQUIRED" as SpecificRole,
     m5Code: "NEED_VISIT" as M5ReasonCode,
-    question: "Ist für dieses Anliegen eine ärztliche Konsultation erforderlich?",
+    question: "Ist für dieses Anliegen eine ärztliche Beurteilung erforderlich?",
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
+        "Für die weitere Bearbeitung ist zunächst eine ärztliche Beurteilung erforderlich.",
     },
   },
 

@@ -1063,9 +1063,9 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
         } as Record<string, ExplanationOutputStatus>,
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("persönlicher Termin")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Für die weitere Bearbeitung ist zunächst eine ärztliche Beurteilung erforderlich.",
+    );
   });
 
   it("MCR YES + outputStatus HIDE → kein Text in attachedParagraphs", () => {
@@ -1077,9 +1077,9 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
         } as Record<string, ExplanationOutputStatus>,
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("persönlicher Termin")),
-    ).toBe(false);
+    expect(result.sections[0].attachedParagraphs).not.toContain(
+      "Für die weitere Bearbeitung ist zunächst eine ärztliche Beurteilung erforderlich.",
+    );
   });
 
   it("MCR YES + kein explanationOutputStatuses → Text erscheint (Backward-Compat)", () => {
@@ -1089,9 +1089,9 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
         // explanationOutputStatuses nicht gesetzt
       }),
     ]);
-    expect(
-      result.sections[0].attachedParagraphs.some((t) => t.includes("persönlicher Termin")),
-    ).toBe(true);
+    expect(result.sections[0].attachedParagraphs).toContain(
+      "Für die weitere Bearbeitung ist zunächst eine ärztliche Beurteilung erforderlich.",
+    );
   });
 
   it("MCR Text kommt aus textByStatus – profilspezifischer Specific-Checkpoint AU_MEDICAL_CONSULTATION_REQUIRED", () => {
@@ -1108,7 +1108,7 @@ describe("GLOBAL MODULAR EXPLANATION – Renderer Section C (MCR/AOC)", () => {
     ]);
     const outputText = result.sections[0].attachedParagraphs.join(" ");
     // Text kommt unverändert aus dem Katalog
-    expect(outputText).toContain("persönlicher Termin");
+    expect(outputText).toContain("ärztliche Beurteilung erforderlich");
   });
 
   it("MCR textByStatus[YES] ist befüllt (zentraler Default-Text)", () => {

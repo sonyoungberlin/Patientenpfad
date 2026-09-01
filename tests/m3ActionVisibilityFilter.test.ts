@@ -10,7 +10,12 @@ import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpoint
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
 import { applyM3ActionExclusivity } from "@/app/inquiries/[id]/m3/InquiryM3Client";
-import { ActionStatus, DecisionStatus, InquiryCheckpointKind } from "@/lib/inquiries/types";
+import {
+  ActionStatus,
+  DecisionStatus,
+  ExplanationStatus,
+  InquiryCheckpointKind,
+} from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
 // Helpers – mirror the filter logic used in InquiryM3Client.tsx
@@ -405,15 +410,60 @@ describe("M3 APPOINTMENT_OR_VIDEO_CONSULTATION", () => {
     ]);
   });
 
-  it("lässt CARE_CHANNEL_CHOICE und den persönlichen AU-Checkpoint unverändert", () => {
+  it("lässt CARE_CHANNEL_CHOICE und die spezifischen AU-Checkpoints unverändert", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2.CARE_CHANNEL_CHOICE.textByStatus[ActionStatus.ACTIVE]).toContain(
       "Alternativ können Sie eine digitale Anfrage stellen.",
     );
     expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_MEDICAL_CONSULTATION_REQUIRED.textByStatus.YES).toBe(
-      "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
+      "Für die weitere Bearbeitung ist zunächst eine ärztliche Beurteilung erforderlich.",
+    );
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_FOLLOWUP_REQUIRES_VISIT.textByStatus.YES).toContain(
+      "persönliche Vorstellung",
+    );
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_EXTENSION_REQUIRES_EXAMINATION.textByStatus.YES).toContain(
+      "körperliche Untersuchung",
     );
     expect(INQUIRY_CHECKPOINT_CATALOG_V2.APPOINTMENT_VIDEO_LIMITATIONS).toBeDefined();
     expect(INQUIRY_CHECKPOINT_CATALOG_V2.APPOINTMENT_VIDEO_REQUIREMENTS).toBeDefined();
+  });
+});
+
+describe("AU – kanalneutrale ärztliche Beurteilung", () => {
+  const reviewText =
+    "Für die weitere Bearbeitung ist zunächst eine ärztliche Beurteilung erforderlich.";
+
+  it.each([
+    ["BOOK_APPOINTMENT", "Termine können über den Online-Kalender vereinbart werden."],
+    [
+      "APPOINTMENT_OR_VIDEO_CONSULTATION",
+      "Bitte vereinbaren Sie einen persönlichen Termin oder einen Termin zur Videosprechstunde.",
+    ],
+    ["VIDEO_CONSULTATION_BOOK", "Bitte vereinbaren Sie einen Termin zur Videosprechstunde."],
+  ])("rendert Beurteilung plus %s ohne persönlichen Kanalzwang", (actionId, actionText) => {
+    const result = renderInquiryResponseFromSections([{
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: {
+        AU_MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+        [actionId]: ActionStatus.ACTIVE,
+      },
+    }]);
+    expect(result.sections[0].attachedParagraphs).toContain(reviewText);
+    expect(result.sharedBottom).toContain(actionText);
+    expect(result.sections[0].attachedParagraphs.join(" ")).not.toContain(
+      "Für dieses Anliegen ist ein persönlicher Termin in der Praxis nötig.",
+    );
+  });
+
+  it("aktiviert durch den neutralen M2-Sachverhalt keine Termin-Action automatisch", () => {
+    const result = renderInquiryResponseFromSections([{
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: {
+        AU_MEDICAL_CONSULTATION_REQUIRED: ExplanationStatus.YES,
+      },
+    }]);
+    expect(result.sharedBottom).toEqual([]);
   });
 });
 
