@@ -287,6 +287,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "E_RECIPE_USE",
       "PHARMACY_INFORMATION",
+      "DOCUMENT_UPLOAD",
       "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
@@ -295,6 +296,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       PHARMACY_INFORMATION: {
         hideWhenAny: [{ PRESCRIPTION_NO_PRESCRIPTION_REQUIRED: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [
+          { PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: "YES" },
+          { HOSPITAL_DISCHARGE_REPORT_MISSING: "YES" },
+        ],
       },
       INSURANCE_DATA_APP_TRANSFER: {
         showWhenAny: [{ PRESCRIPTION_INSURANCE_PROOF_MISSING: "YES" }],

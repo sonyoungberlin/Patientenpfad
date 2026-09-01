@@ -214,7 +214,11 @@ describe("M3 DOCUMENT_UPLOAD bei fehlenden Befunden", () => {
 
   it("lässt die PRESCRIPTION-Trigger für DOCUMENT_UPLOAD unverändert", () => {
     const prescription = INQUIRY_PROFILE_CATALOG_V2.PRESCRIPTION;
-    expect(prescription.boundActionCheckpointIds).not.toContain("DOCUMENT_UPLOAD");
+    expect(prescription.boundActionCheckpointIds).toContain("DOCUMENT_UPLOAD");
+    expect(prescription.boundActionConditions?.DOCUMENT_UPLOAD?.showWhenAny).toEqual([
+      { PRESCRIPTION_SPECIALIST_REPORT_REQUIRED: "YES" },
+      { HOSPITAL_DISCHARGE_REPORT_MISSING: "YES" },
+    ]);
     expect(prescription.actionGuidanceRules).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
