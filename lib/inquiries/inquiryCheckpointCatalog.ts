@@ -1610,6 +1610,19 @@ export function getInquiryCheckpointCatalog(
     },
   },
 
+  VIDEO_CONSULTATION_BOOK: {
+    id: "VIDEO_CONSULTATION_BOOK",
+    label: "Videosprechstunde vereinbaren",
+    kind: InquiryCheckpointKind.ACTION,
+    scope: InquiryCheckpointScope.GLOBAL,
+    placement: InquiryCheckpointPlacement.SHARED_BOTTOM,
+    actionCategory: "NEXT_STEP",
+    textByStatus: {
+      [ActionStatus.ACTIVE]:
+        "Bitte vereinbaren Sie einen Termin zur Videosprechstunde.",
+    },
+  },
+
   PROCESSING_DELAY: {
     id: "PROCESSING_DELAY",
     label: "Bearbeitungsverzögerung",

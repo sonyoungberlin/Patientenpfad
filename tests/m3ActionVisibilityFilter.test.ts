@@ -8,7 +8,9 @@
 
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
-import { InquiryCheckpointKind } from "@/lib/inquiries/types";
+import { renderInquiryResponseFromSections } from "@/lib/inquiries/renderInquiryResponse";
+import { applyM3ActionExclusivity } from "@/app/inquiries/[id]/m3/InquiryM3Client";
+import { ActionStatus, DecisionStatus, InquiryCheckpointKind } from "@/lib/inquiries/types";
 
 // ---------------------------------------------------------------------------
 // Helpers – mirror the filter logic used in InquiryM3Client.tsx
@@ -231,6 +233,83 @@ describe("M3 DOCUMENT_UPLOAD bei fehlenden Befunden", () => {
         }),
       ]),
     );
+  });
+});
+
+describe("M3 VIDEO_CONSULTATION_BOOK", () => {
+  const videoProfiles = ["AU", "PRESCRIPTION", "REFERRAL", "APPOINTMENT", "LAB", "MEDICAL_DOCUMENTS"];
+
+  it("ist als globale ACTION mit dem exakten Patiententext definiert", () => {
+    const action = INQUIRY_CHECKPOINT_CATALOG_V2.VIDEO_CONSULTATION_BOOK;
+    expect(action.kind).toBe(InquiryCheckpointKind.ACTION);
+    expect(action.scope).toBe("GLOBAL");
+    expect(action.placement).toBe("SHARED_BOTTOM");
+    expect(action.textByStatus[ActionStatus.ACTIVE]).toBe(
+      "Bitte vereinbaren Sie einen Termin zur Videosprechstunde.",
+    );
+  });
+
+  it("ist nur in den vorgesehenen Profilen als M3-Action verfügbar", () => {
+    for (const profileId of videoProfiles) {
+      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].availableActionIds).toContain("VIDEO_CONSULTATION_BOOK");
+    }
+    for (const profileId of ["ONBOARDING", "TECH_SUPPORT", "ACUTE_CARE"]) {
+      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].availableActionIds).not.toContain("VIDEO_CONSULTATION_BOOK");
+    }
+  });
+
+  it("ist nicht in M2 gebunden", () => {
+    for (const profileId of videoProfiles) {
+      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].boundActionCheckpointIds ?? []).not.toContain("VIDEO_CONSULTATION_BOOK");
+      expect(buildM2ActionCps(profileId)).not.toContain("VIDEO_CONSULTATION_BOOK");
+    }
+  });
+
+  it("rendert den Videotext allein und BOOK_APPOINTMENT bleibt unverändert", () => {
+    const videoResult = renderInquiryResponseFromSections([{
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: { VIDEO_CONSULTATION_BOOK: ActionStatus.ACTIVE },
+    }]);
+    expect(videoResult.sharedBottom).toContain("Bitte vereinbaren Sie einen Termin zur Videosprechstunde.");
+
+    const bookingResult = renderInquiryResponseFromSections([{
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: { BOOK_APPOINTMENT: ActionStatus.ACTIVE },
+    }]);
+    expect(bookingResult.sharedBottom).toContain("Termine können über den Online-Kalender vereinbart werden.");
+  });
+
+  it("macht BOOK_APPOINTMENT und Video-Action gegenseitig exklusiv", () => {
+    const videoSelected = applyM3ActionExclusivity(
+      { BOOK_APPOINTMENT: ActionStatus.ACTIVE },
+      "VIDEO_CONSULTATION_BOOK",
+      ActionStatus.ACTIVE,
+    );
+    expect(videoSelected).toEqual({
+      BOOK_APPOINTMENT: ActionStatus.INACTIVE,
+      VIDEO_CONSULTATION_BOOK: ActionStatus.ACTIVE,
+    });
+
+    const bookingSelected = applyM3ActionExclusivity(
+      videoSelected,
+      "BOOK_APPOINTMENT",
+      ActionStatus.ACTIVE,
+    );
+    expect(bookingSelected).toEqual({
+      BOOK_APPOINTMENT: ActionStatus.ACTIVE,
+      VIDEO_CONSULTATION_BOOK: ActionStatus.INACTIVE,
+    });
+  });
+
+  it("aktiviert keine Action automatisch durch die neue Action selbst", () => {
+    const statuses = applyM3ActionExclusivity(
+      {},
+      "VIDEO_CONSULTATION_BOOK",
+      ActionStatus.INACTIVE,
+    );
+    expect(statuses).toEqual({ VIDEO_CONSULTATION_BOOK: ActionStatus.INACTIVE });
   });
 });
 

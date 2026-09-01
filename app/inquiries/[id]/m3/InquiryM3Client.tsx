@@ -169,7 +169,7 @@ const ACTION_GROUPS: Array<{ label: string; ids: string[] }> = [
   },
   {
     label: "Termin & Behandlung",
-    ids: ["BOOK_APPOINTMENT"],
+    ids: ["BOOK_APPOINTMENT", "VIDEO_CONSULTATION_BOOK"],
   },
   {
     label: "Rezept & Einlösung",
@@ -264,9 +264,22 @@ const PRESCRIPTION_ALL_ACTION_IDS = [
  * Gegenseitige Ausschlusstabelle für PRESCRIPTION-Actions in M3.
  * Wird eine auf ACTIVE gesetzt, wird die andere automatisch INACTIVE.
  */
-const PRESCRIPTION_EXCLUSIVE_ACTIONS: Record<string, string> = {
+const ACTION_EXCLUSIVE_PAIRS: Record<string, string> = {
   E_RECIPE_USE: "DIGITAL_REQUEST_REQUIRED",
+  BOOK_APPOINTMENT: "VIDEO_CONSULTATION_BOOK",
+  VIDEO_CONSULTATION_BOOK: "BOOK_APPOINTMENT",
 };
+
+export function applyM3ActionExclusivity(
+  statuses: Record<string, string>,
+  actionId: string,
+  value: string,
+): Record<string, string> {
+  const next = { ...statuses, [actionId]: value };
+  if (value !== "ACTIVE" || !ACTION_EXCLUSIVE_PAIRS[actionId]) return next;
+  next[ACTION_EXCLUSIVE_PAIRS[actionId]] = "INACTIVE";
+  return next;
+}
 
 /**
  * Versorgungsweg-Konfliktgruppe in M3 (AU und weitere Profile).
@@ -1495,9 +1508,8 @@ export default function InquiryM3Client({
   }, [currentMessageText, smoothedSourceText]);
 
   function setStatus(checkpointId: string, value: string) {
-    if (value === "ACTIVE" && PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId]) {
-      const conflicting = PRESCRIPTION_EXCLUSIVE_ACTIONS[checkpointId];
-      setStatuses((prev) => ({ ...prev, [checkpointId]: value, [conflicting]: "INACTIVE" }));
+    if (value === "ACTIVE" && ACTION_EXCLUSIVE_PAIRS[checkpointId]) {
+      setStatuses((prev) => applyM3ActionExclusivity(prev, checkpointId, value));
     } else if (value === "ACTIVE" && VERSORGUNGSWEG_CONFLICT_GROUP.has(checkpointId)) {
       setStatuses((prev) => {
         const next: Record<string, string> = { ...prev, [checkpointId]: value };

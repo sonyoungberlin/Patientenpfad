@@ -76,6 +76,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     availableActionIds: [
       "BOOK_APPOINTMENT",
+      "VIDEO_CONSULTATION_BOOK",
       "CONTACT_PERSON_INFO",
       "CONTACT_PERSON_SUPPORT",
     ],
@@ -279,6 +280,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
+      "VIDEO_CONSULTATION_BOOK",
       "CONTROL_APPOINTMENT_RECOMMENDED",
       "CONTACT_PERSON_INFO",
       "CONTACT_PERSON_SUPPORT",
@@ -671,6 +673,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
+      "VIDEO_CONSULTATION_BOOK",
     ],
 
     // -----------------------------------------------------------------------
@@ -814,6 +817,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
+      "VIDEO_CONSULTATION_BOOK",
     ],
 
     // -----------------------------------------------------------------------
@@ -1107,6 +1111,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     availableActionIds: [
       "BOOK_APPOINTMENT",
+      "VIDEO_CONSULTATION_BOOK",
       "DIGITAL_REQUEST",
       "CONTACT_PERSON_INFO",
       "CONTACT_PERSON_SUPPORT",
@@ -1625,6 +1630,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     globalHints: {},
     availableActionIds: [
       "DIGITAL_REQUEST",
+      "VIDEO_CONSULTATION_BOOK",
       "CONTACT_PERSON_SUPPORT",
       "SPECIALIST_PRACTICES_INFO",
     ],
@@ -2267,7 +2273,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     ],
     boundGlobalCheckpointIds: [],
     globalHints: {},
-    availableActionIds: [],
+    availableActionIds: ["VIDEO_CONSULTATION_BOOK"],
     boundActionCheckpointIds: [
       "DIGITAL_REQUEST",
       "BOOK_APPOINTMENT",
