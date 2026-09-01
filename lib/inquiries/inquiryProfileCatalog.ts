@@ -1069,6 +1069,7 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     boundActionCheckpointIds: [
       "REF_BOOKING_CODE_PROCESS",
       "REF_ORIGINAL_VS_PDF",
+      "DOCUMENT_UPLOAD",
       "INSURANCE_DATA_APP_TRANSFER",
     ],
     boundActionConditions: {
@@ -1080,6 +1081,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       // REF_BOOKING_CODE_PROCESS: nur anzeigen, wenn Hausarztvermittlungsfall (mit Buchungscode).
       REF_BOOKING_CODE_PROCESS: {
         showWhenAny: [{ REF_HAV_CASE: "YES" }],
+      },
+      DOCUMENT_UPLOAD: {
+        showWhenAny: [
+          { MEDICAL_REPORTS_MISSING: "YES" },
+          { HOSPITAL_DISCHARGE_REPORT_MISSING: "YES" },
+        ],
       },
       INSURANCE_DATA_APP_TRANSFER: {
         showWhenAny: [{ REFERRAL_INSURANCE_PROOF_MISSING: "YES" }],
@@ -1987,6 +1994,8 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
         showWhenAny: [
           { ONBOARDING_GKV_DOCUMENT_MISSING: "YES" },
           { ONBOARDING_PKV_PAS_MISSING: "YES" },
+          { MEDICAL_REPORTS_MISSING: "YES" },
+          { HOSPITAL_DISCHARGE_REPORT_MISSING: "YES" },
         ],
       },
       INSURANCE_DATA_APP_TRANSFER: {

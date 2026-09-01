@@ -180,6 +180,56 @@ describe("M2 boundActionCheckpointIds filter", () => {
   });
 });
 
+function matchesAnyActionCondition(
+  profileId: string,
+  actionId: string,
+  statuses: Record<string, string>,
+): boolean {
+  const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
+  const condition = profile?.boundActionConditions?.[actionId];
+  if (!condition?.showWhenAny) return false;
+  return condition.showWhenAny.some((conditionSet) =>
+    Object.entries(conditionSet).every(
+      ([checkpointId, expectedStatus]) => statuses[checkpointId] === expectedStatus,
+    ),
+  );
+}
+
+describe("M3 DOCUMENT_UPLOAD bei fehlenden Befunden", () => {
+  it.each([
+    ["REFERRAL", "MEDICAL_REPORTS_MISSING"],
+    ["REFERRAL", "HOSPITAL_DISCHARGE_REPORT_MISSING"],
+    ["ONBOARDING", "MEDICAL_REPORTS_MISSING"],
+    ["ONBOARDING", "HOSPITAL_DISCHARGE_REPORT_MISSING"],
+  ])("zeigt DOCUMENT_UPLOAD bei %s + %s", (profileId, triggerId) => {
+    const profile = INQUIRY_PROFILE_CATALOG_V2[profileId];
+    expect(profile.boundActionCheckpointIds).toContain("DOCUMENT_UPLOAD");
+    expect(matchesAnyActionCondition(profileId, "DOCUMENT_UPLOAD", { [triggerId]: "YES" })).toBe(true);
+  });
+
+  it("zeigt DOCUMENT_UPLOAD ohne fehlende Befunde nicht neu an", () => {
+    expect(matchesAnyActionCondition("REFERRAL", "DOCUMENT_UPLOAD", {})).toBe(false);
+    expect(matchesAnyActionCondition("ONBOARDING", "DOCUMENT_UPLOAD", {})).toBe(false);
+  });
+
+  it("lässt die PRESCRIPTION-Trigger für DOCUMENT_UPLOAD unverändert", () => {
+    const prescription = INQUIRY_PROFILE_CATALOG_V2.PRESCRIPTION;
+    expect(prescription.boundActionCheckpointIds).not.toContain("DOCUMENT_UPLOAD");
+    expect(prescription.actionGuidanceRules).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          checkpointId: "DOCUMENT_UPLOAD",
+          when: {
+            allOf: [
+              { checkpointId: "PRESCRIPTION_SPECIALIST_REPORT_REQUIRED", status: "YES" },
+            ],
+          },
+        }),
+      ]),
+    );
+  });
+});
+
 describe("Profile binding – LAB und SAMPLE_COLLECTION", () => {
   it("LAB bindet den neuen Follow-up-Baustein", () => {
     const profile = INQUIRY_PROFILE_CATALOG_V2.LAB;
