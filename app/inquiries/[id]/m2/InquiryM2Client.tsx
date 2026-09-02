@@ -421,7 +421,6 @@ const SECTION_INTRO_GROUPS_BY_PROFILE: Record<string, readonly SectionIntroGroup
         // Prozessinformationen / Ergebnisse nach Prüfung
         "EAU_VALID_WITHOUT_SIGNATURE",
         "RETURN_TO_WORK_ALLOWED_DURING_AU",
-        "AU_EXTENSION_REQUIRES_EXAMINATION",
         "DIGITAL_REQUEST_MEDICAL_REVIEW",
       ],
     },

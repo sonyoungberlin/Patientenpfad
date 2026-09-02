@@ -10,7 +10,7 @@ function section(inquiryId: string) {
     inquiryId,
     decisionStatus: DecisionStatus.POSSIBLE,
     checkpointStatuses: {
-      CONTACT_PERSON_SUPPORT: ActionStatus.ACTIVE,
+      CONTACT_PERSON_INFO: ActionStatus.ACTIVE,
       SPECIALIST_PRACTICES_INFO: ActionStatus.ACTIVE,
     },
   };
@@ -49,12 +49,12 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
     );
   });
 
-  it("bindet Support an AU, Rezept, Überweisung, Termin und Patientenaufnahme", () => {
-    for (const profileId of ["AU", "PRESCRIPTION", "REFERRAL", "APPOINTMENT", "ONBOARDING"]) {
-      expect(INQUIRY_PROFILE_CATALOG_V2[profileId].availableActionIds).toContain(
-        "CONTACT_PERSON_SUPPORT",
-      );
-    }
+  it("hält Kontaktperson dokumentieren in den vorgesehenen Profilen verfügbar", () => {
+    const expectedProfiles = ["AU", "PRESCRIPTION", "REFERRAL", "ONBOARDING"];
+    const actualProfiles = Object.values(INQUIRY_PROFILE_CATALOG_V2)
+      .filter((profile) => profile.availableActionIds.includes("CONTACT_PERSON_INFO"))
+      .map((profile) => profile.id);
+    expect(actualProfiles.sort()).toEqual([...expectedProfiles].sort());
   });
 
   it("bindet Facharzt-Information nur an Patientenaufnahme, Rezept, Überweisung und Termin", () => {
@@ -65,15 +65,14 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
     expect(actualProfiles.sort()).toEqual([...expectedProfiles].sort());
   });
 
-  it("bindet Kontaktpersonen-Support weiterhin exakt an die fünf vorgesehenen Profile", () => {
-    const expectedProfiles = ["AU", "PRESCRIPTION", "REFERRAL", "APPOINTMENT", "ONBOARDING"];
+  it("bindet Kontaktpersonen-Support an kein aktives Profil", () => {
     const actualProfiles = Object.values(INQUIRY_PROFILE_CATALOG_V2)
       .filter((profile) => profile.availableActionIds.includes("CONTACT_PERSON_SUPPORT"))
       .map((profile) => profile.id);
-    expect(actualProfiles.sort()).toEqual([...expectedProfiles].sort());
+    expect(actualProfiles).toEqual([]);
   });
 
-  it("rendert beide Actions bei Mehrfachzuordnung nur einmal", () => {
+  it("rendert die Kontaktperson-Dokumentation bei Mehrfachzuordnung nur einmal", () => {
     const result = renderInquiryResponseFromSections([
       section("ONBOARDING"),
       section("REFERRAL"),
@@ -81,7 +80,7 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
     ]);
     expect(
       result.sharedBottom.filter((text) =>
-        text.includes("Sie lassen sich bei Ihren Anliegen durch eine Kontaktperson unterstützen."),
+        text.includes("Wenn eine andere Person organisatorische Anliegen für Sie übernehmen"),
       ),
     ).toHaveLength(1);
     expect(
@@ -91,7 +90,7 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
     ).toHaveLength(1);
   });
 
-  it("löst beide Nachrichtentexte audience-abhängig auf", () => {
+  it("löst Kontaktperson-Dokumentation audience-abhängig auf", () => {
     const patient = renderInquiryResponseFromSections([section("REFERRAL")], {
       audience: "patient",
     });
@@ -99,10 +98,10 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
       audience: "contact_person",
     });
     expect(patient.sharedBottom).toContain(
-      "Sie lassen sich bei Ihren Anliegen durch eine Kontaktperson unterstützen.",
+      "Wenn eine andere Person organisatorische Anliegen für Sie übernehmen oder Rezepte/Unterlagen abholen soll, möchten wir das kurz dokumentieren.",
     );
     expect(contact.sharedBottom).toContain(
-      "Sie unterstützen die Patientin / den Patienten bei ihren bzw. seinen Anliegen.",
+      "Wenn Sie organisatorische Anliegen für die Patientin / den Patienten übernehmen oder Rezepte/Unterlagen abholen möchten, bitten wir um eine kurze Dokumentation.",
     );
     expect(patient.sharedBottom).toContain(
       "Bitte informieren Sie uns über Facharztpraxen, bei denen Sie regelmäßig behandelt werden.",
@@ -110,5 +109,14 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
     expect(contact.sharedBottom).toContain(
       "Bitte informieren Sie uns über Facharztpraxen, bei denen die Patientin / der Patient regelmäßig behandelt wird.",
     );
+  });
+
+  it("aktiviert keine Kontaktpersonen-Action automatisch", () => {
+    const result = renderInquiryResponseFromSections([{
+      inquiryId: "AU",
+      decisionStatus: DecisionStatus.DISABLED,
+      checkpointStatuses: {},
+    }]);
+    expect(result.sharedBottom).toEqual([]);
   });
 });

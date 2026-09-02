@@ -66,7 +66,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "AU_FOLLOWUP_REQUIRES_VISIT",
       "EAU_VALID_WITHOUT_SIGNATURE",
       "RETURN_TO_WORK_ALLOWED_DURING_AU",
-      "AU_EXTENSION_REQUIRES_EXAMINATION",
     ],
     boundGlobalCheckpointIds: [
       "REQUIRED_INFORMATION_COMPLETE",
@@ -79,7 +78,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "VIDEO_CONSULTATION_BOOK",
       "APPOINTMENT_OR_VIDEO_CONSULTATION",
       "CONTACT_PERSON_INFO",
-      "CONTACT_PERSON_SUPPORT",
     ],
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
@@ -289,7 +287,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_OR_VIDEO_CONSULTATION",
       "CONTROL_APPOINTMENT_RECOMMENDED",
       "CONTACT_PERSON_INFO",
-      "CONTACT_PERSON_SUPPORT",
       "SPECIALIST_PRACTICES_INFO",
     ],
     boundActionCheckpointIds: [
@@ -1122,7 +1119,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "APPOINTMENT_OR_VIDEO_CONSULTATION",
       "DIGITAL_REQUEST",
       "CONTACT_PERSON_INFO",
-      "CONTACT_PERSON_SUPPORT",
       "SPECIALIST_PRACTICES_INFO",
     ],
 
@@ -1640,7 +1636,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "DIGITAL_REQUEST",
       "VIDEO_CONSULTATION_BOOK",
       "APPOINTMENT_OR_VIDEO_CONSULTATION",
-      "CONTACT_PERSON_SUPPORT",
       "SPECIALIST_PRACTICES_INFO",
     ],
     boundActionCheckpointIds: [
@@ -1963,7 +1958,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
     availableActionIds: [
       "DIGITAL_REQUEST",
       "CONTACT_PERSON_INFO",
-      "CONTACT_PERSON_SUPPORT",
       "SPECIALIST_PRACTICES_INFO",
     ],
     actionGuidanceRules: [

@@ -67,4 +67,8 @@ describe("M2 kompakte Darstellung (CompactExplanationRow) für alle Profile", ()
       expect({ profile, found }).toEqual({ profile, found: true });
     }
   });
+
+  it("führt den entfernten AU-Härtecheckpoint nicht mehr im AU-M2-Mapping", () => {
+    expect(src).not.toContain('"AU_EXTENSION_REQUIRES_EXAMINATION"');
+  });
 });

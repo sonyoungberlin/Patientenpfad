@@ -24,6 +24,18 @@ import {
 
 const AU = INQUIRY_PROFILE_CATALOG_V2["AU"];
 
+describe("AU_EXTENSION_REQUIRES_EXAMINATION – historischer Katalogeintrag", () => {
+  it("ist nicht mehr im aktiven AU-Profil gebunden", () => {
+    expect(AU.specificCheckpointIds).not.toContain("AU_EXTENSION_REQUIRES_EXAMINATION");
+  });
+
+  it("bleibt für historische Statuswerte im Katalog auflösbar", () => {
+    const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2.AU_EXTENSION_REQUIRES_EXAMINATION;
+    expect(checkpoint).toBeDefined();
+    expect(checkpoint.textByStatus[ExplanationStatus.YES]).toContain("körperliche Untersuchung");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Bekannte AU-M1B-IDs (lokal definiert, kein Import aus types.ts nötig)
 // ---------------------------------------------------------------------------

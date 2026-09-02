@@ -1515,6 +1515,7 @@ export function getInquiryCheckpointCatalog(
     },
   },
 
+  /** @deprecated Redundanter Informationsbaustein; für neue Sessions nicht mehr profilgebunden. */
   CONTACT_PERSON_SUPPORT: {
     id: "CONTACT_PERSON_SUPPORT",
     label: "Unterstützung durch eine Kontaktperson",
@@ -4738,6 +4739,7 @@ export function getInquiryCheckpointCatalog(
     },
   },
 
+  /** @deprecated Die konkrete Versorgungskanalentscheidung erfolgt in M3. Historische Statuswerte bleiben auflösbar. */
   AU_EXTENSION_REQUIRES_EXAMINATION: {
     id: "AU_EXTENSION_REQUIRES_EXAMINATION",
     label: "AU-Verlängerung – Untersuchung erforderlich",
