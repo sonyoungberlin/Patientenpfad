@@ -146,60 +146,128 @@ export async function buildQuestionnairePdfBytes(
   const contentWidth = pageWidth - marginLeft - marginRight;
   const marginTop = 50;
   const marginBottom = 50;
-  const lineHeight = 15;
+  const lineHeight = 13;
   const sectionGap = 10;
 
   let page = pdfDoc.addPage([pageWidth, pageHeight]);
   let y = pageHeight - marginTop;
 
+  function startNewPage() {
+    page = pdfDoc.addPage([pageWidth, pageHeight]);
+    y = pageHeight - marginTop;
+  }
+
   function ensureSpace(needed: number) {
-    if (y - needed < marginBottom) {
-      page = pdfDoc.addPage([pageWidth, pageHeight]);
-      y = pageHeight - marginTop;
+    if (y - needed < marginBottom && y !== pageHeight - marginTop) startNewPage();
+  }
+
+  function wrapText(text: string, usedFont: typeof font, size: number, maxWidth: number): string[] {
+    const lines: string[] = [];
+    for (const paragraph of text.replaceAll("\r\n", "\n").split("\n")) {
+      if (paragraph === "") {
+        lines.push("");
+        continue;
+      }
+      let current = "";
+      for (const token of paragraph.split(/(\s+)/).filter(Boolean)) {
+        if (usedFont.widthOfTextAtSize(current + token, size) <= maxWidth) {
+          current += token;
+          continue;
+        }
+        if (current.trim() !== "") lines.push(current.trimEnd());
+        current = "";
+        for (const character of [...token.trim()]) {
+          if (current && usedFont.widthOfTextAtSize(current + character, size) > maxWidth) {
+            lines.push(current);
+            current = "";
+          }
+          current += character;
+        }
+      }
+      lines.push(current.trimEnd());
     }
+    return lines.length > 0 ? lines : [""];
+  }
+
+  function drawTextBlock(
+    text: string,
+    textOpts: {
+      size?: number;
+      bold?: boolean;
+      color?: [number, number, number];
+      x?: number;
+      maxWidth?: number;
+      lineHeight?: number;
+      preflight?: number;
+    } = {},
+  ) {
+    const size = textOpts.size ?? 10;
+    const usedFont = textOpts.bold ? boldFont : font;
+    const [r, g, b] = textOpts.color ?? [0, 0, 0];
+    const blockLineHeight = textOpts.lineHeight ?? lineHeight;
+    const x = textOpts.x ?? marginLeft;
+    const maxWidth = textOpts.maxWidth ?? pageWidth - marginRight - x;
+    const lines = wrapText(text, usedFont, size, maxWidth);
+    ensureSpace(textOpts.preflight ?? blockLineHeight);
+    for (const line of lines) {
+      if (y - blockLineHeight < marginBottom && y !== pageHeight - marginTop) startNewPage();
+      page.drawText(line, {
+        x,
+        y,
+        size,
+        font: usedFont,
+        color: rgb(r, g, b),
+        lineHeight: blockLineHeight,
+      });
+      y -= blockLineHeight;
+    }
+    return y;
   }
 
   function drawText(
     text: string,
     textOpts: { size?: number; bold?: boolean; color?: [number, number, number] } = {},
   ) {
-    const size = textOpts.size ?? 10;
-    const usedFont = textOpts.bold ? boldFont : font;
-    const [r, g, b] = textOpts.color ?? [0, 0, 0];
-    ensureSpace(size + 4);
-    page.drawText(text, { x: marginLeft, y, size, font: usedFont, color: rgb(r, g, b), maxWidth: contentWidth });
-    y -= size + 4;
+    drawTextBlock(text, textOpts);
+  }
+
+  function drawWrappedPair(label: string, value: string, keepTogether = true) {
+    const size = 9;
+    const labelLines = wrapText(`${label}:`, boldFont, size, contentWidth);
+    const displayValue = value && value.trim() !== "" ? value : "–";
+    const valueLines = wrapText(displayValue, font, size, contentWidth - 12);
+    const pairHeight = labelLines.length * lineHeight + 3 + valueLines.length * lineHeight + 5;
+    if (keepTogether && pairHeight <= pageHeight - marginTop - marginBottom) ensureSpace(pairHeight);
+    drawTextBlock(`${label}:`, { size, bold: true, maxWidth: contentWidth, lineHeight });
+    y -= 3;
+    drawTextBlock(displayValue, {
+      size,
+      x: marginLeft + 12,
+      maxWidth: contentWidth - 12,
+      lineHeight,
+      color: displayValue === "–" ? [0.5, 0.5, 0.5] : [0, 0, 0],
+    });
+    y -= 5;
   }
 
   function drawRepGroupEntries(questionLabel: string, entries: RepGroupEntry[]) {
     if (entries.length === 0) return;
-    const size = 9;
-    ensureSpace((size + 4) * 2);
-    page.drawText(questionLabel + ":", { x: marginLeft, y, size, font: boldFont, color: rgb(0, 0, 0), maxWidth: contentWidth });
-    y -= size + 4;
+    drawTextBlock(`${questionLabel}:`, { size: 9, bold: true, lineHeight });
+    y -= 2;
     for (const entry of entries) {
-      ensureSpace((size + 4) * (entry.fields.length + 1));
-      page.drawText(`${entry.index}. Eintrag`, { x: marginLeft + 10, y, size: size + 1, font: boldFont, color: rgb(0.2, 0.2, 0.2), maxWidth: contentWidth - 10 });
-      y -= size + 4;
-      for (const field of entry.fields) {
-        page.drawText(`${field.label}: ${field.value}`, { x: marginLeft + 20, y, size, font, color: rgb(0, 0, 0), maxWidth: contentWidth - 20 });
-        y -= size + 4;
-      }
-      y -= size / 2;
+      drawTextBlock(`${entry.index}. Eintrag`, {
+        size: 10,
+        bold: true,
+        color: [0.2, 0.2, 0.2],
+        x: marginLeft + 10,
+        maxWidth: contentWidth - 10,
+        lineHeight,
+      });
+      y -= 1;
+      for (const field of entry.fields) drawWrappedPair(field.label, field.value);
+      y -= 3;
     }
     y -= sectionGap / 2;
-  }
-
-  function drawWrappedPair(label: string, value: string) {
-    const size = 9;
-    const charsPerLine = Math.floor(contentWidth / (size * 0.52));
-    const valueLines = Math.ceil((value.length || 1) / charsPerLine);
-    ensureSpace((1 + valueLines) * (size + 4));
-    page.drawText(`${label}:`, { x: marginLeft, y, size, font: boldFont, color: rgb(0, 0, 0), maxWidth: contentWidth });
-    y -= size + 3;
-    const displayValue = value && value.trim() !== "" ? value : "–";
-    page.drawText(displayValue, { x: marginLeft + 12, y, size, font, color: displayValue === "–" ? rgb(0.5, 0.5, 0.5) : rgb(0, 0, 0), maxWidth: contentWidth - 12 });
-    y -= size + 5;
   }
 
   drawText(title, { size: 16, bold: true });

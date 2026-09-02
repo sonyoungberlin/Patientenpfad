@@ -269,4 +269,93 @@ describe("questionnaire PDF confirmations", () => {
     expect(text).toContain("Fachärzte:");
     expect(text).toContain("Dr. Beispiel");
   });
+
+  it("rendert lange Inhalte mehrseitig ohne Abschneiden oder Überlappen", async () => {
+    const longQuestion =
+      "Bitte beschreiben Sie möglichst genau, welche Beschwerden aktuell bestehen, seit wann sie bestehen und welche Veränderungen Sie im Alltag beobachten";
+    const longAnswer = Array.from(
+      { length: 90 },
+      (_, index) => `Zeile ${index + 1}: Ausführliche Angaben mit Umlauten Ä ö ü und Sonderzeichen §`,
+    ).join("\n");
+    const longMultiSelect = [
+      "Gehen nur wenige Schritte möglich",
+      "Medizinische Betreuung während der Fahrt erforderlich",
+      "Starkes Übergewicht / besondere Transportanforderung",
+      "Andere Einschränkung mit zusätzlicher ausführlicher Beschreibung",
+    ].join(", ");
+    const questions: QuestionDefinition[] = [
+      { id: "LONG_TEXT", text: longQuestion, type: "textarea", required: false },
+      { id: "LONG_MULTI", text: "Welche Einschränkungen liegen vor?", type: "multi_select", required: false },
+      {
+        id: "LONG_GROUP",
+        text: "Weitere Angaben",
+        type: "repeatable_group",
+        required: false,
+        groupSchema: [
+          { key: "name", label: "Name und ausführliche Bezeichnung", type: "text", required: false },
+          { key: "details", label: "Zusätzliche ausführliche Beschreibung", type: "textarea", required: false },
+        ],
+      },
+      ...Array.from({ length: 8 }, (_, index) => ({
+        id: `FOLLOWUP_${index}`,
+        text: `Direkt folgende Frage ${index + 1}`,
+        type: "text" as const,
+        required: false,
+      })),
+      { id: "AFTER_SECTION", text: "Frage im anschließenden Abschnitt", type: "text", required: false },
+    ];
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        selected_block_ids: ["STRESS_FIRST", "STRESS_SECOND"],
+        deduplicated_questions: questions,
+        answers: {
+          LONG_TEXT: longAnswer,
+          LONG_MULTI: longMultiSelect,
+          LONG_GROUP: JSON.stringify([
+            {
+              name: "Sehr langer Name mit Umlauten ÄÖÜ",
+              details: "Langer Feldwert mit mehreren Angaben und einem expliziten\nZeilenumbruch, der vollständig erhalten bleiben muss.",
+            },
+          ]),
+          ...Object.fromEntries(
+            Array.from({ length: 8 }, (_, index) => [`FOLLOWUP_${index}`, `Antwort ${index + 1}`]),
+          ),
+          AFTER_SECTION: "Antwort nach dem Seitenumbruch",
+        },
+      }),
+      {
+        title: "Fragebogen",
+        referenceLabel: "Referenz",
+        blockCatalog: {
+          STRESS_FIRST: {
+            id: "STRESS_FIRST",
+            label: "Erster Abschnitt",
+            displayOrder: 1,
+            questionIds: questions.slice(0, -1).map((question) => question.id),
+          },
+          STRESS_SECOND: {
+            id: "STRESS_SECOND",
+            label: "Anschließender Abschnitt",
+            displayOrder: 2,
+            questionIds: ["AFTER_SECTION"],
+          },
+        },
+      },
+    );
+
+    const pdf = await PDFDocument.load(result.bytes);
+    const text = await extractPdfText(result.bytes);
+    expect(pdf.getPageCount()).toBeGreaterThan(1);
+    expect(text).toContain("Bitte beschreiben Sie möglichst genau");
+    expect(text).toContain("welche");
+    expect(text).toContain("Alltag");
+    expect(text).toContain("beobachten");
+    for (const line of longAnswer.split("\n")) expect(text).toContain(line);
+    for (const option of ["Gehen", "Medizinische", "Starkes", "Andere"]) {
+      expect(text).toContain(option);
+    }
+    expect(text).toContain("Sehr langer Name mit Umlauten ÄÖÜ");
+    expect(text).toContain("Zeilenumbruch, der vollständig erhalten bleiben muss.");
+    expect(text).toContain("Antwort nach dem Seitenumbruch");
+  });
 });
