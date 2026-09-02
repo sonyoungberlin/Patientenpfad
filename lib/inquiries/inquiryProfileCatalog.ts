@@ -77,15 +77,12 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       "BOOK_APPOINTMENT",
       "VIDEO_CONSULTATION_BOOK",
       "APPOINTMENT_OR_VIDEO_CONSULTATION",
-      "CONTACT_PERSON_INFO",
     ],
     boundActionCheckpointIds: [
       "AU_NEW_PATIENT_3DAY_LIMIT",
       "DIGITAL_REQUEST",
       "DIGITAL_REQUEST_PROCESSING_TIME",
       "ACUTE_OPEN_CONSULTATION_ACTION",
-      "CARE_CHANNEL_CHOICE",
-      "CONTROL_APPOINTMENT_RECOMMENDED",
       "INSURANCE_DATA_APP_TRANSFER",
       "DOCUMENT_UPLOAD",
     ],
@@ -101,12 +98,6 @@ export const INQUIRY_PROFILE_CATALOG_V2: Record<string, InquiryProfileV2> = {
       },
       ACUTE_OPEN_CONSULTATION_ACTION: {
         showWhenAny: [{ AU_NO_APPOINTMENT_ACUTE: "YES" }],
-      },
-      CARE_CHANNEL_CHOICE: {
-        hideWhenAny: [],
-      },
-      CONTROL_APPOINTMENT_RECOMMENDED: {
-        hideWhenAny: [],
       },
       INSURANCE_DATA_APP_TRANSFER: {
         showWhenAny: [{ AU_MISSING_EGK: "YES" }],

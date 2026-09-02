@@ -10,6 +10,7 @@ import InquiryM3Client, {
   type M3SectionData,
 } from "@/app/inquiries/[id]/m3/InquiryM3Client";
 import { INQUIRY_CHECKPOINT_CATALOG_V2 } from "@/lib/inquiries/inquiryCheckpointCatalog";
+import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
   .IS_REACT_ACT_ENVIRONMENT = true;
@@ -30,8 +31,21 @@ function actionData(id: string): M3ActionData {
 }
 
 function sectionData(inquiryId: "AU" | "APPOINTMENT"): M3SectionData {
-  const boundId = inquiryId === "AU" ? "CARE_CHANNEL_CHOICE" : "ACUTE_OPEN_CONSULTATION_ACTION";
-  const bound = INQUIRY_CHECKPOINT_CATALOG_V2[boundId];
+  const profile = INQUIRY_PROFILE_CATALOG_V2[inquiryId];
+  const boundActionCheckpoints = (profile.boundActionCheckpointIds ?? [])
+    .map((id) => {
+      const checkpoint = INQUIRY_CHECKPOINT_CATALOG_V2[id];
+      const conditions = profile.boundActionConditions?.[id];
+      if (!checkpoint) return null;
+      return {
+        id,
+        label: checkpoint.label,
+        actionCategory: checkpoint.actionCategory,
+        showWhenAny: conditions?.showWhenAny,
+        hideWhenAny: conditions?.hideWhenAny,
+      };
+    })
+    .filter((checkpoint): checkpoint is NonNullable<typeof checkpoint> => checkpoint !== null);
   return {
     inquiryId,
     label: inquiryId,
@@ -39,12 +53,7 @@ function sectionData(inquiryId: "AU" | "APPOINTMENT"): M3SectionData {
     decisionLabel: "",
     decisionQuestions: [],
     specificCheckpoints: [],
-    boundActionCheckpoints: [{
-      id: boundId,
-      label: bound.label,
-      actionCategory: bound.actionCategory,
-      hideWhenAny: [],
-    }],
+    boundActionCheckpoints,
   };
 }
 
@@ -101,6 +110,11 @@ describe("InquiryM3Client – manuelle Single-Origin-Actions", () => {
 
       expect(container.textContent).toContain("Videosprechstunde vereinbaren");
       expect(container.textContent).toContain("Persönlicher Termin oder Videosprechstunde");
+      if (inquiryId === "AU") {
+        expect(container.textContent).not.toContain("Kontaktperson dokumentieren");
+        expect(container.textContent).not.toContain("Versorgungsweg – persönlich oder digital");
+        expect(container.textContent).not.toContain("Kontrolltermin empfehlen");
+      }
       expect(rowForLabel(container, "Videosprechstunde vereinbaren").querySelectorAll("button")).toHaveLength(2);
       expect(rowForLabel(container, "Persönlicher Termin oder Videosprechstunde").querySelectorAll("button")).toHaveLength(2);
 

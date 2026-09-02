@@ -50,7 +50,7 @@ describe("neutrale Kontaktpersonen- und Facharzt-Hinweise", () => {
   });
 
   it("hält Kontaktperson dokumentieren in den vorgesehenen Profilen verfügbar", () => {
-    const expectedProfiles = ["AU", "PRESCRIPTION", "REFERRAL", "ONBOARDING"];
+    const expectedProfiles = ["PRESCRIPTION", "REFERRAL", "ONBOARDING"];
     const actualProfiles = Object.values(INQUIRY_PROFILE_CATALOG_V2)
       .filter((profile) => profile.availableActionIds.includes("CONTACT_PERSON_INFO"))
       .map((profile) => profile.id);
