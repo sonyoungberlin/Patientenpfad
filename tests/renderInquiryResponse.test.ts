@@ -3924,7 +3924,7 @@ describe("boundCheckpointPairs – B: Überweisung ausgestellt → Original/PDF 
 });
 
 describe("boundCheckpointPairs – C: Persönliche Vorstellung → Termin buchen (AU)", () => {
-  const VISIT_TEXT = "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.";
+  const REVIEW_TEXT = "Für eine Folgebescheinigung ist eine ärztliche Beurteilung erforderlich.";
   const APPT_TEXT = "Termine können über den Online-Kalender vereinbart werden.";
 
   it("AU_FOLLOWUP_REQUIRES_VISIT YES + BOOK_APPOINTMENT ACTIVE → Paar in attachedParagraphs (backward-compat)", () => {
@@ -3937,7 +3937,7 @@ describe("boundCheckpointPairs – C: Persönliche Vorstellung → Termin buchen
       }),
     ]);
     const paragraphs = result.sections[0].attachedParagraphs;
-    expect(paragraphs.some((p) => p.includes(VISIT_TEXT))).toBe(true);
+    expect(paragraphs.some((p) => p.includes(REVIEW_TEXT))).toBe(true);
     expect(paragraphs.some((p) => p.includes(APPT_TEXT))).toBe(true);
   });
 
@@ -3964,13 +3964,31 @@ describe("boundCheckpointPairs – C: Persönliche Vorstellung → Termin buchen
       }),
     ]);
     const paragraphs = result.sections[0].attachedParagraphs;
-    expect(paragraphs.some((p) => p.includes(VISIT_TEXT))).toBe(true);
+    expect(paragraphs.some((p) => p.includes(REVIEW_TEXT))).toBe(true);
     expect(paragraphs.some((p) => p.includes(APPT_TEXT))).toBe(false);
+  });
+
+  it.each([
+    ["APPOINTMENT_OR_VIDEO_CONSULTATION", "Bitte vereinbaren Sie einen persönlichen Termin oder einen Termin zur Videosprechstunde."],
+    ["VIDEO_CONSULTATION_BOOK", "Bitte vereinbaren Sie einen Termin zur Videosprechstunde."],
+  ])("rendert die neutrale Beurteilung widerspruchsfrei mit %s", (actionId, actionText) => {
+    const result = renderInquiryResponseFromSections([
+      makeAuSection({
+        checkpointStatuses: {
+          AU_FOLLOWUP_REQUIRES_VISIT: ExplanationStatus.YES,
+          [actionId]: ActionStatus.ACTIVE,
+        },
+      }),
+    ]);
+    expect(result.sections[0].attachedParagraphs).toContain(REVIEW_TEXT);
+    expect(result.sharedBottom).toContain(actionText);
+    const output = [...result.sections[0].attachedParagraphs, ...result.sharedBottom].join(" ");
+    expect(output).not.toContain("persönliche Vorstellung in der Praxis erforderlich");
   });
 });
 
 describe("boundCheckpointPairs – D: Multi-Profil-Dedup BOOK_APPOINTMENT", () => {
-  const AU_VISIT_TEXT = "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.";
+  const AU_REVIEW_TEXT = "Für eine Folgebescheinigung ist eine ärztliche Beurteilung erforderlich.";
   const PRESC_VISIT_TEXT = "Ohne vorherigen persönlichen Arzttermin in der Praxis kann die Dauermedikation nicht weiter verordnet werden.";
   const APPT_TEXT = "Termine können über den Online-Kalender vereinbart werden.";
 
@@ -4019,7 +4037,7 @@ describe("boundCheckpointPairs – D: Multi-Profil-Dedup BOOK_APPOINTMENT", () =
 
   it("Beide Erklärungstexte (AU + PRESCRIPTION) erscheinen in ihren jeweiligen Sections", () => {
     const result = makeMultiSectionResult();
-    expect(result.sections[0].attachedParagraphs.some((p) => p.includes(AU_VISIT_TEXT))).toBe(true);
+    expect(result.sections[0].attachedParagraphs.some((p) => p.includes(AU_REVIEW_TEXT))).toBe(true);
     expect(result.sections[1].attachedParagraphs.some((p) => p.includes(PRESC_VISIT_TEXT))).toBe(true);
   });
 });

@@ -346,7 +346,8 @@ describe("AU_FOLLOWUP_REQUIRES_VISIT – Checkpoint-Struktur", () => {
   it("hat YES-Text mit Folgebescheinigung-Inhalt", () => {
     const text = (cp.textByStatus as Record<string, string>)[ExplanationStatus.YES];
     expect(text).toContain("Folgebescheinigung");
-    expect(text).toContain("persönliche Vorstellung");
+    expect(text).toContain("ärztliche Beurteilung");
+    expect(text).not.toMatch(/persönlicher? Termin|persönliche Vorstellung|körperliche Untersuchung|Videosprechstunde/);
   });
 
   it("ist in AU.specificCheckpointIds referenziert", () => {

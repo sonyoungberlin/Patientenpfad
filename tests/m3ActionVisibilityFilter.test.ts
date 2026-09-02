@@ -417,8 +417,11 @@ describe("M3 APPOINTMENT_OR_VIDEO_CONSULTATION", () => {
     expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_MEDICAL_CONSULTATION_REQUIRED.textByStatus.YES).toBe(
       "Für die weitere Bearbeitung ist zunächst eine ärztliche Beurteilung erforderlich.",
     );
-    expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_FOLLOWUP_REQUIRES_VISIT.textByStatus.YES).toContain(
-      "persönliche Vorstellung",
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_FOLLOWUP_REQUIRES_VISIT.label).toBe(
+      "Folgebescheinigung – ärztliche Beurteilung erforderlich",
+    );
+    expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_FOLLOWUP_REQUIRES_VISIT.textByStatus.YES).toBe(
+      "Für eine Folgebescheinigung ist eine ärztliche Beurteilung erforderlich.",
     );
     expect(INQUIRY_CHECKPOINT_CATALOG_V2.AU_EXTENSION_REQUIRES_EXAMINATION.textByStatus.YES).toContain(
       "körperliche Untersuchung",

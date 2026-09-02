@@ -332,7 +332,7 @@ export function getInquiryCheckpointCatalog(
 
   AU_FOLLOWUP_REQUIRES_VISIT: {
     id: "AU_FOLLOWUP_REQUIRES_VISIT",
-    label: "Folgebescheinigung – persönliche Vorstellung erforderlich",
+    label: "Folgebescheinigung – ärztliche Beurteilung erforderlich",
     kind: InquiryCheckpointKind.EXPLANATION,
     scope: InquiryCheckpointScope.SPECIFIC,
     placement: InquiryCheckpointPlacement.ATTACHED,
@@ -340,7 +340,7 @@ export function getInquiryCheckpointCatalog(
     m5Code: "NEED_VISIT" as M5ReasonCode,
     textByStatus: {
       [ExplanationStatus.YES]:
-        "Für eine Folgebescheinigung ist eine persönliche Vorstellung in der Praxis erforderlich.",
+        "Für eine Folgebescheinigung ist eine ärztliche Beurteilung erforderlich.",
     },
   },
 
