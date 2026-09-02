@@ -2071,7 +2071,7 @@ export default function InquiryM3Client({
                     if (actionOrigins[cp.id]?.[0] !== sec.inquiryId) return false;
                     if (M3_HIDDEN_BOUND_ACTION_IDS.has(cp.id)) return false;
                     if (sec.inquiryId === PRESCRIPTION_INQUIRY_ID) return prescriptionRenderedActionIds.has(cp.id);
-                    return statuses[cp.id] === "ACTIVE";
+                    return true;
                   });
 
                   if (setCps.length === 0 && singleOriginCpsHere.length === 0) continue;
