@@ -180,7 +180,11 @@ function confirmationQuestion(id: string, text: string): QuestionDefinition {
 }
 
 describe("questionnaire PDF confirmations", () => {
-  async function render(questions: QuestionDefinition[], answers: Record<string, string>) {
+  async function render(
+    questions: QuestionDefinition[],
+    answers: Record<string, string>,
+    patientCopy?: { returnEmail: string },
+  ) {
     const result = await buildQuestionnairePdfBytes(
       baseSession({
         selected_block_ids: ["PRACTICE_CONFIRMATIONS"],
@@ -198,6 +202,7 @@ describe("questionnaire PDF confirmations", () => {
             questionIds: questions.map((question) => question.id),
           },
         },
+        ...(patientCopy ? { patientCopy } : {}),
       },
     );
     return extractPdfText(result.bytes);
@@ -268,6 +273,47 @@ describe("questionnaire PDF confirmations", () => {
     expect(text).toContain("Antwort");
     expect(text).toContain("Fachärzte:");
     expect(text).toContain("Dr. Beispiel");
+  });
+
+  it("entfernt PATIENT_COPY_EMAIL vollständig aus der PDF-Ausgabe", async () => {
+    const text = await render(
+      [
+        { id: "NORMAL_TEXT", text: "Normale Frage", type: "text", required: false },
+        { id: "PATIENT_COPY_EMAIL", text: "E-Mail-Adresse für Ihre Kopie", type: "text", required: true },
+      ],
+      {
+        NORMAL_TEXT: "Antwort",
+        PATIENT_COPY_EMAIL: "patient@example.com",
+      },
+    );
+    expect(text).toContain("Normale Frage:");
+    expect(text).toContain("Antwort");
+    expect(text).not.toContain("patient@example.com");
+    expect(text).not.toContain("E-Mail-Adresse für Ihre Kopie");
+    expect(text).not.toContain("Nicht abgefragt");
+  });
+
+  it("blendet PATIENT_COPY_EMAIL auch ohne Wert vollständig aus", async () => {
+    const text = await render(
+      [{ id: "PATIENT_COPY_EMAIL", text: "E-Mail-Adresse für Ihre Kopie", type: "text", required: true }],
+      {},
+    );
+    expect(text).not.toContain("PATIENT_COPY_EMAIL");
+    expect(text).not.toContain("E-Mail-Adresse für Ihre Kopie");
+    expect(text).not.toContain("Nicht abgefragt");
+  });
+
+  it("behält den Patientenkopie-Rückgabeabschnitt bei", async () => {
+    const text = await render(
+      [{ id: "PATIENT_COPY_EMAIL", text: "E-Mail-Adresse für Ihre Kopie", type: "text", required: true }],
+      { PATIENT_COPY_EMAIL: "patient@example.com" },
+      { returnEmail: "praxis@example.com" },
+    );
+    expect(text).toContain("Unterschrift Patient/in");
+    expect(text).toContain("Datum");
+    expect(text).toContain("praxis@example.com");
+    expect(text).toContain("Bitte senden Sie das unterschriebene Dokument an");
+    expect(text).not.toContain("patient@example.com");
   });
 
   it("rendert lange Inhalte mehrseitig ohne Abschneiden oder Überlappen", async () => {

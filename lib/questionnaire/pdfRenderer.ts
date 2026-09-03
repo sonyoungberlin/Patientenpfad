@@ -80,7 +80,9 @@ export async function buildQuestionnairePdfBytes(
   const { title, referenceLabel, blockCatalog } = opts;
 
   const questions = Array.isArray(session.deduplicated_questions)
-    ? (session.deduplicated_questions as QuestionDefinition[])
+    ? (session.deduplicated_questions as QuestionDefinition[]).filter(
+        (question) => question.id !== "PATIENT_COPY_EMAIL",
+      )
     : [];
 
   const answers =
