@@ -16,6 +16,11 @@ jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
 }));
 
+jest.mock(
+  "@/components/questionnaire/QuestionnaireAutoDownloadController",
+  () => () => null,
+);
+
 jest.mock("@/lib/auth", () => ({
   getSessionAccountFromCookies: jest.fn().mockResolvedValue({
     id: "acc-admin",

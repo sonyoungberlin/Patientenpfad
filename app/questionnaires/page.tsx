@@ -19,6 +19,7 @@ import { computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic"
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
+import QuestionnaireAutoDownloadController from "@/components/questionnaire/QuestionnaireAutoDownloadController";
 
 /** Berechnet die Menge der sichtbaren Fragen-IDs für eine Session. */
 function buildVisibleQIds(
@@ -200,6 +201,8 @@ export default async function QuestionnairesPage({
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         {sessions.length} Fragebogen{sessions.length !== 1 ? "" : ""}
       </p>
+
+      {view === "active" && <QuestionnaireAutoDownloadController />}
 
       {sessions.length === 0 ? (
         <p className="text-muted">{emptyMessage}</p>

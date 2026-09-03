@@ -35,6 +35,7 @@ import { requirePracticeRoleFromCookies } from "@/lib/authz";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 import NotificationEmailField from "@/components/practice/NotificationEmailField";
 import PublicPracticeProfileForm from "@/components/practice/PublicPracticeProfileForm";
+import QuestionnaireAutoDownloadDeviceSettings from "@/components/practice/QuestionnaireAutoDownloadDeviceSettings";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -218,6 +219,8 @@ export default async function PracticeMembersPage({
           })}
         </tbody>
       </table>
+
+      <QuestionnaireAutoDownloadDeviceSettings />
 
       <PublicPracticeProfileForm
         initialPublicName={practiceSettings?.public_name ?? ""}

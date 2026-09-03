@@ -469,6 +469,11 @@ model PatientQuestionnaireSession {
   /// abgelegter Krankenblatt-Eintrag erkennbar bleibt.
   pdf_downloaded_at DateTime? @db.Timestamp(6)
 
+  /// Markiert die einmalige Verarbeitung durch den automatischen PDF-Download.
+  /// Unabhängig von `pdf_downloaded_at`, das ausschließlich den manuellen Pfad
+  /// abbildet.
+  auto_pdf_download_claimed_at DateTime? @db.Timestamp(6)
+
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
   @@index([owner_account_id, createdAt])
@@ -714,6 +719,13 @@ model Practice {
   questionnaire_confirmation_send_copy_1 Boolean @default(false)
   questionnaire_confirmation_send_copy_2 Boolean @default(false)
   questionnaire_confirmation_send_copy_3 Boolean @default(false)
+
+  /// SHA-256-Hash der lokalen Browser-Geräte-ID für automatische
+  /// Fragebogen-PDF-Downloads. NULL = Auto-Download deaktiviert.
+  questionnaire_auto_pdf_device_hash String?
+  /// Beginn der Auto-Download-Queue. Bleibt bei einem Gerätewechsel erhalten
+  /// und wird beim Deaktivieren auf NULL gesetzt.
+  questionnaire_auto_pdf_enabled_at DateTime? @db.Timestamp(6)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

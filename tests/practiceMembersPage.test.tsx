@@ -188,6 +188,10 @@ describe("/practice/members read-only page", () => {
     expect(r.markup).toContain("Praxis Eins");
     expect(r.markup).toContain("self@example.com");
     expect(r.markup).toContain("kollege@example.com");
+    expect(r.markup).toContain("Automatischer Fragebogen-Download");
+    expect(r.markup).toContain(
+      "Chrome muss automatische Downloads für Patientenpfad erlauben",
+    );
     // Eigene Zeile markiert
     expect(r.markup).toContain("(Du)");
     // Filter strikt auf eigene Practice
