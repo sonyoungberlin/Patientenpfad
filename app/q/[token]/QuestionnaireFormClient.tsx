@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { QuestionDefinition, QuestionType, RepeatableGroupFieldDef } from "@/lib/questionnaire/blockCatalog";
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { PersonalLinkNotice } from "@/components/PersonalLinkNotice";
@@ -1010,6 +1010,7 @@ export function QuestionnaireFormClient({
   const [missingRequiredIds, setMissingRequiredIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const patientCopyEmailTouched = useRef(false);
 
   // Phase 5: Derived Values aus aktuellem Antwort-State live berechnen
   const derivedValues = useMemo(
@@ -1086,7 +1087,12 @@ export function QuestionnaireFormClient({
   const hasAnyCharError = Object.values(fieldHasCharError).some(Boolean);
 
   function handleChange(id: string, val: string) {
+    if (id === "PATIENT_COPY_EMAIL") patientCopyEmailTouched.current = true;
     setValues((prev) => ({ ...prev, [id]: val }));
+    if (id === "CONTACT_EMAIL" && !patientCopyEmailTouched.current &&
+        questions.some((question) => question.id === "PATIENT_COPY_EMAIL")) {
+      setValues((prev) => ({ ...prev, PATIENT_COPY_EMAIL: val }));
+    }
     if (missingRequiredIds.has(id)) {
       setMissingRequiredIds((prev) => {
         const next = new Set(prev);

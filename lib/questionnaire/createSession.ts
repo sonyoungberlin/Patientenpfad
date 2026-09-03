@@ -58,6 +58,7 @@ export type CreateSessionInput = {
   salutation?: "du" | "sie";
   /** Bereits serverseitig aufgelöste Practice-Texte für den Session-Snapshot. */
   practiceConfirmations?: PracticeConfirmationSlot[];
+  patientCopyReturnEmail?: string | null;
 };
 
 export type CreateSessionResult = {
@@ -89,6 +90,7 @@ export async function createQuestionnaireSession(
     context = "patient",
     salutation,
     practiceConfirmations = [],
+    patientCopyReturnEmail,
   } = input;
 
   const token = crypto.randomUUID();
@@ -143,6 +145,7 @@ export async function createQuestionnaireSession(
       status: "pending",
       ...(salutation ? { salutation } : {}),
       ...(birthDateHash ? { birth_date_hash: birthDateHash } : {}),
+      patient_copy_return_email: patientCopyReturnEmail ?? null,
     },
     select: { id: true },
   });

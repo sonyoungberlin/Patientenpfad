@@ -77,6 +77,8 @@ export type QuestionDefinition = {
   type: QuestionType;
   /** Ob das Feld Pflichtfeld ist. */
   required: boolean;
+  /** Nur für praxisindividuelle Bestätigungen: Kopie versenden. */
+  send_patient_copy?: boolean;
   /** Auswahloptionen für select / multi_select (Deutsch, kanonisch). */
   options?: string[];
   /** Erläuternder Hilfetext unterhalb des Feldes (Deutsch, kanonisch). */

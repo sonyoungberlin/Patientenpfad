@@ -119,6 +119,7 @@ export function PublicFormView({
   const [values, setValues] = useState<Record<string, string>>({});
   const [email, setEmail] = useState("");
   const contactEmailTouched = useRef(false);
+  const patientCopyEmailTouched = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [missingRequired, setMissingRequired] = useState<Set<string>>(new Set());
@@ -157,6 +158,9 @@ export function PublicFormView({
     if (id === "CONTACT_EMAIL") {
       contactEmailTouched.current = true;
     }
+    if (id === "PATIENT_COPY_EMAIL") {
+      patientCopyEmailTouched.current = true;
+    }
     setValues((prev) => ({ ...prev, [id]: value }));
     if (missingRequired.has(id)) {
       setMissingRequired((prev) => {
@@ -174,6 +178,9 @@ export function PublicFormView({
       allQuestionIds.includes("CONTACT_EMAIL")
     ) {
       setValues((prev) => ({ ...prev, CONTACT_EMAIL: value }));
+    }
+    if (!patientCopyEmailTouched.current && allQuestionIds.includes("PATIENT_COPY_EMAIL")) {
+      setValues((prev) => ({ ...prev, PATIENT_COPY_EMAIL: value }));
     }
   };
 

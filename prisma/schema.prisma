@@ -400,6 +400,11 @@ model PatientQuestionnaireSession {
   /// Zeitpunkt der Einreichung durch den Patienten
   submitted_at DateTime?
 
+  patient_copy_email String?
+  patient_copy_return_email String?
+  patient_copy_sent_at DateTime?
+  patient_copy_failed_at DateTime?
+
   /// Wer den Fragebogen eingereicht hat: "patient" | "contact_person"
   submitted_by String @default("patient")
 
@@ -706,6 +711,9 @@ model Practice {
   questionnaire_confirmation_text_1 String?
   questionnaire_confirmation_text_2 String?
   questionnaire_confirmation_text_3 String?
+  questionnaire_confirmation_send_copy_1 Boolean @default(false)
+  questionnaire_confirmation_send_copy_2 Boolean @default(false)
+  questionnaire_confirmation_send_copy_3 Boolean @default(false)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

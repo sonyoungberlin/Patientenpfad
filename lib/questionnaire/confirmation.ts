@@ -13,7 +13,10 @@ export type PracticeConfirmationId =
 export type PracticeConfirmationSlot = {
   id: PracticeConfirmationId;
   text: string;
+  send_patient_copy?: boolean;
 };
+
+export const PATIENT_COPY_EMAIL_ID = "PATIENT_COPY_EMAIL";
 
 export const PRACTICE_CONFIRMATIONS_BLOCK_ID = "PRACTICE_CONFIRMATIONS";
 export const CONFIRMATION_ANSWER_VALUE = "true";
@@ -51,15 +54,29 @@ export function buildPracticeConfirmationSlots(input: {
   questionnaire_confirmation_text_1?: string | null;
   questionnaire_confirmation_text_2?: string | null;
   questionnaire_confirmation_text_3?: string | null;
+  questionnaire_confirmation_send_copy_1?: boolean | null;
+  questionnaire_confirmation_send_copy_2?: boolean | null;
+  questionnaire_confirmation_send_copy_3?: boolean | null;
 }): PracticeConfirmationSlot[] {
   const texts = [
     input.questionnaire_confirmation_text_1,
     input.questionnaire_confirmation_text_2,
     input.questionnaire_confirmation_text_3,
   ];
+  const sendCopies = [
+    input.questionnaire_confirmation_send_copy_1,
+    input.questionnaire_confirmation_send_copy_2,
+    input.questionnaire_confirmation_send_copy_3,
+  ];
   return PRACTICE_CONFIRMATION_IDS.flatMap((id, index) => {
     const text = texts[index]?.trim() ?? "";
-    return text ? [{ id, text }] : [];
+    return text
+      ? {
+          id,
+          text,
+          ...(sendCopies[index] === true ? { send_patient_copy: true } : {}),
+        }
+      : [];
   });
 }
 
@@ -76,12 +93,21 @@ export function buildPracticeConfirmationsFrozenBlock(
 ): FrozenBlock | null {
   if (slots.length === 0) return null;
 
-  const questions: QuestionDefinition[] = slots.map(({ id, text }) => ({
+  const questions: QuestionDefinition[] = slots.map(({ id, text, send_patient_copy }) => ({
     id,
     text,
     type: "confirmation",
     required: true,
+    ...(send_patient_copy ? { send_patient_copy: true } : {}),
   }));
+  if (slots.some((slot) => slot.send_patient_copy)) {
+    questions.push({
+      id: PATIENT_COPY_EMAIL_ID,
+      text: "E-Mail-Adresse für Ihre Kopie",
+      type: "text",
+      required: true,
+    });
+  }
 
   return {
     id: PRACTICE_CONFIRMATIONS_BLOCK_ID,

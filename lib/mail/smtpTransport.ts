@@ -197,6 +197,11 @@ export type SmtpSendInput = {
   to: string;
   subject: string;
   text: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | Uint8Array;
+    contentType?: string;
+  }>;
 };
 
 /**
@@ -215,6 +220,10 @@ export async function sendViaSmtp(
       to: input.to,
       subject: input.subject,
       text: input.text,
+      attachments: input.attachments?.map((attachment) => ({
+        ...attachment,
+        content: Buffer.from(attachment.content),
+      })),
     });
   } catch (err) {
     // Bewusst nur Klasse + Message ohne Adressen / Tokens propagieren.

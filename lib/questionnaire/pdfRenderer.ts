@@ -70,6 +70,7 @@ export type PdfRenderOptions = {
   referenceLabel: string;
   /** Blockkatalog zum Nachschlagen von Labels und Conditional Rules. */
   blockCatalog: Record<string, QuestionnaireBlock>;
+  patientCopy?: { returnEmail: string };
 };
 
 export async function buildQuestionnairePdfBytes(
@@ -339,6 +340,19 @@ export async function buildQuestionnairePdfBytes(
     }
 
     y -= sectionGap;
+  }
+
+  if (opts.patientCopy) {
+    ensureSpace(lineHeight * 8);
+    y -= sectionGap;
+    drawText("Unterschrift Patient/in", { size: 10, bold: true });
+    drawText("______________________________", { size: 10 });
+    y -= 3;
+    drawText("Datum", { size: 10, bold: true });
+    drawText("______________________________", { size: 10 });
+    y -= 3;
+    drawText(`Bitte senden Sie das unterschriebene Dokument an: ${opts.patientCopy.returnEmail}`, { size: 9 });
+    drawText("oder bringen Sie das unterschriebene Formular zu Ihrem Termin mit.", { size: 9 });
   }
 
   const bytes = await pdfDoc.save();

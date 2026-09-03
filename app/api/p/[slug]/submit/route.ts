@@ -71,6 +71,7 @@ import {
 } from "@/lib/websiteForms/submitRateLimit";
 import { sendWebsiteFormConfirmationEmail } from "@/lib/mail/sendWebsiteFormConfirmationEmail";
 import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
+import { isValidPatientCopyEmail, sendPatientQuestionnaireCopyIfRequired } from "@/lib/questionnaire/sendPatientQuestionnaireCopy";
 
 export const dynamic = "force-dynamic";
 
@@ -249,6 +250,10 @@ export async function POST(
             questionnaire_confirmation_text_1: true,
             questionnaire_confirmation_text_2: true,
             questionnaire_confirmation_text_3: true,
+            questionnaire_confirmation_send_copy_1: true,
+            questionnaire_confirmation_send_copy_2: true,
+            questionnaire_confirmation_send_copy_3: true,
+            legal_profile: { select: { official_email: true } },
             is_approved: true,
             patient_communication_enabled: true,
             website_forms_enabled: true,
@@ -368,6 +373,12 @@ export async function POST(
       });
     }
 
+    if (deduplicatedQuestions.some((question) => question.id === "PATIENT_COPY_EMAIL") &&
+        !isValidPatientCopyEmail(sanitizedAnswers.PATIENT_COPY_EMAIL)) {
+      logSubmit("invalid_body", { slug: slugValidation.slug, practiceFormId: form.id });
+      return new NextResponse("Bitte geben Sie eine gültige E-Mail-Adresse für Ihre Kopie an.", { status: 400 });
+    }
+
     // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld ergänzen, falls der Client
     // keinen Wert für die sichtbare Katalogfrage übermittelt hat. Vorhandene
     // Werte einschließlich eines bewusst leeren Strings bleiben erhalten.
@@ -415,6 +426,10 @@ export async function POST(
         confirm_token: token.hash,
         confirm_token_expires_at: token.expiresAt,
         submitter_email_hash: submitterEmailHash,
+        patient_copy_email: finalAnswers.PATIENT_COPY_EMAIL ?? null,
+        patient_copy_return_email: confirmationBlock?.questions.some((question) => question.send_patient_copy)
+          ? form.owner_practice?.legal_profile?.official_email ?? null
+          : null,
         // Kein Patientenlink-Flow: token / token_expires_at bleiben null.
       },
       select: { id: true },

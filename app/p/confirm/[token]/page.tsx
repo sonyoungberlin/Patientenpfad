@@ -39,6 +39,7 @@ import {
 import { PUBLIC_IDENTITY_SELECT, type PublicPracticeIdentity } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import { isPracticeActive } from "@/lib/practice/lifecycle";
+import { sendPatientQuestionnaireCopyIfRequired } from "@/lib/questionnaire/sendPatientQuestionnaireCopy";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -256,5 +257,6 @@ export default async function ConfirmPage({
     sessionId: session.id,
     practiceFormId: session.practice_form_id ?? null,
   });
+  await sendPatientQuestionnaireCopyIfRequired(session.id);
   return <SuccessView practice={publicPractice} />;
 }

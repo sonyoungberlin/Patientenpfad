@@ -17,6 +17,7 @@ import {
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import { isConfirmedAnswer } from "@/lib/questionnaire/confirmation";
+import { isValidPatientCopyEmail, sendPatientQuestionnaireCopyIfRequired } from "@/lib/questionnaire/sendPatientQuestionnaireCopy";
 
 export async function POST(
   req: NextRequest,
@@ -36,6 +37,7 @@ export async function POST(
         frozen_conditional_rules: true,
         patient_language: true,
         deleted_at: true,
+        patient_copy_email: true,
       },
     });
 
@@ -186,16 +188,23 @@ export async function POST(
       );
     }
 
+    const copyQuestion = snapshotQuestions.find((question) => question.id === "PATIENT_COPY_EMAIL");
+    if (copyQuestion && !isValidPatientCopyEmail(filteredAnswers[copyQuestion.id])) {
+      return NextResponse.json({ ok: false, error: "Bitte geben Sie eine gültige E-Mail-Adresse für Ihre Kopie an." }, { status: 400 });
+    }
+
     await prisma.patientQuestionnaireSession.update({
       where: { id: session.id },
       data: {
         answers: filteredAnswers as unknown as Prisma.InputJsonValue,
         status: "completed",
         submitted_at: new Date(),
+        patient_copy_email: copyQuestion ? filteredAnswers[copyQuestion.id].trim() : null,
         token: null,
         token_expires_at: null,
       },
     });
+    await sendPatientQuestionnaireCopyIfRequired(session.id);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

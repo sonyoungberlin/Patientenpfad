@@ -28,6 +28,9 @@ export interface InquirySettingsInitial {
   questionnaireConfirmationText1: string;
   questionnaireConfirmationText2: string;
   questionnaireConfirmationText3: string;
+  questionnaireConfirmationSendCopy1: boolean;
+  questionnaireConfirmationSendCopy2: boolean;
+  questionnaireConfirmationSendCopy3: boolean;
 }
 
 type FormState = InquirySettingsInitial;
@@ -239,6 +242,9 @@ export default function InquirySettingsForm({
         questionnaireConfirmationText1: values.questionnaireConfirmationText1,
         questionnaireConfirmationText2: values.questionnaireConfirmationText2,
         questionnaireConfirmationText3: values.questionnaireConfirmationText3,
+        questionnaireConfirmationSendCopy1: values.questionnaireConfirmationSendCopy1,
+        questionnaireConfirmationSendCopy2: values.questionnaireConfirmationSendCopy2,
+        questionnaireConfirmationSendCopy3: values.questionnaireConfirmationSendCopy3,
       };
 
       // Ganzzahlfelder: nur senden wenn nicht leer
@@ -286,6 +292,9 @@ export default function InquirySettingsForm({
             values.questionnaireConfirmationText2.trim(),
           questionnaireConfirmationText3:
             values.questionnaireConfirmationText3.trim(),
+          questionnaireConfirmationSendCopy1: values.questionnaireConfirmationSendCopy1,
+          questionnaireConfirmationSendCopy2: values.questionnaireConfirmationSendCopy2,
+          questionnaireConfirmationSendCopy3: values.questionnaireConfirmationSendCopy3,
         };
         setSaved(trimmed);
         setValues(trimmed);
@@ -489,18 +498,42 @@ export default function InquirySettingsForm({
           value={values.questionnaireConfirmationText1}
           onChange={(v) => set("questionnaireConfirmationText1", v)}
         />
+        <label>
+          <input
+            type="checkbox"
+            checked={values.questionnaireConfirmationSendCopy1}
+            onChange={(e) => set("questionnaireConfirmationSendCopy1", e.target.checked)}
+          />{" "}
+          Patientenkopie zum Unterschreiben senden
+        </label>
         <TextAreaField
           id="questionnaireConfirmationText2"
           label="Bestätigung 2"
           value={values.questionnaireConfirmationText2}
           onChange={(v) => set("questionnaireConfirmationText2", v)}
         />
+        <label>
+          <input
+            type="checkbox"
+            checked={values.questionnaireConfirmationSendCopy2}
+            onChange={(e) => set("questionnaireConfirmationSendCopy2", e.target.checked)}
+          />{" "}
+          Patientenkopie zum Unterschreiben senden
+        </label>
         <TextAreaField
           id="questionnaireConfirmationText3"
           label="Bestätigung 3"
           value={values.questionnaireConfirmationText3}
           onChange={(v) => set("questionnaireConfirmationText3", v)}
         />
+        <label>
+          <input
+            type="checkbox"
+            checked={values.questionnaireConfirmationSendCopy3}
+            onChange={(e) => set("questionnaireConfirmationSendCopy3", e.target.checked)}
+          />{" "}
+          Patientenkopie zum Unterschreiben senden
+        </label>
       </FieldGroup>
 
       {/* ---- Speicher-Zeile --------------------------------------------- */}

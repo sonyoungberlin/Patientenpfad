@@ -65,6 +65,9 @@ export interface PracticeInquirySettingsData {
   questionnaire_confirmation_text_1?: string | null;
   questionnaire_confirmation_text_2?: string | null;
   questionnaire_confirmation_text_3?: string | null;
+  questionnaire_confirmation_send_copy_1?: boolean;
+  questionnaire_confirmation_send_copy_2?: boolean;
+  questionnaire_confirmation_send_copy_3?: boolean;
 }
 
 export interface ValidateSettingsResult {
@@ -175,6 +178,19 @@ export function validatePracticeInquirySettings(
       };
     }
     data[dbKey] = val;
+  }
+
+  const copyFields = [
+    ["questionnaireConfirmationSendCopy1", "questionnaire_confirmation_send_copy_1"],
+    ["questionnaireConfirmationSendCopy2", "questionnaire_confirmation_send_copy_2"],
+    ["questionnaireConfirmationSendCopy3", "questionnaire_confirmation_send_copy_3"],
+  ] as const;
+  for (const [bodyKey, dbKey] of copyFields) {
+    if (!(bodyKey in body)) continue;
+    if (typeof body[bodyKey] !== "boolean") {
+      return { data: null, error: `Feld "${bodyKey}" muss boolean sein.` };
+    }
+    data[dbKey] = body[bodyKey];
   }
 
   // ---- Ganzzahl-Felder -----------------------------------------------------

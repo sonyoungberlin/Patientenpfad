@@ -127,6 +127,10 @@ export async function POST(req: NextRequest) {
           questionnaire_confirmation_text_1: true,
           questionnaire_confirmation_text_2: true,
           questionnaire_confirmation_text_3: true,
+          questionnaire_confirmation_send_copy_1: true,
+          questionnaire_confirmation_send_copy_2: true,
+          questionnaire_confirmation_send_copy_3: true,
+          legal_profile: { select: { official_email: true } },
         },
       });
       practiceConfirmations = selectPracticeConfirmationSlots(
@@ -155,6 +159,12 @@ export async function POST(req: NextRequest) {
       ownerPracticeId: ownership.owner_practice_id ?? null,
       inquirySessionId,
       practiceConfirmations,
+      patientCopyReturnEmail: practiceConfirmations.some((slot) => slot.send_patient_copy)
+        ? (await prisma.practice.findUnique({
+            where: { id: ownership.owner_practice_id ?? "" },
+            select: { legal_profile: { select: { official_email: true } } },
+          }))?.legal_profile?.official_email ?? null
+        : null,
       origin,
     });
 
