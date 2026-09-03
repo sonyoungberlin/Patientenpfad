@@ -12,6 +12,8 @@
  *   40 BEWERBER_SPRACHKENNTNISSE – Sprache + Niveau (repeatable_group)
  *   50 BEWERBER_FUEHRERSCHEIN    – Führerschein ja/nein + Klassen (conditional)
  *   60 BEWERBER_ARBEITSZEITEN    – Modell, Einschränkungen, Frühestbeginn
+ *   70 BEWERBER_FAMULATUR        – Studium und gewünschter Famulaturzeitraum
+ *   80 BEWERBER_SCHUELERPRAKTIKUM – Schulform und gewünschter Praktikumszeitraum
  */
 
 import type { QuestionnaireBlock, QuestionDefinition } from "./blockCatalog";
@@ -1182,6 +1184,115 @@ export const OFFICE_QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     type: "date",
     required: false,
   },
+
+  // BEWERBER_FAMULATUR
+  OFF_FAMULATUR_UNIVERSITAET_STUDIENORT: {
+    id: "OFF_FAMULATUR_UNIVERSITAET_STUDIENORT",
+    text: "An welcher Universität und an welchem Studienort studierst du?",
+    type: "text",
+    required: true,
+  },
+  OFF_FAMULATUR_FACHSEMESTER: {
+    id: "OFF_FAMULATUR_FACHSEMESTER",
+    text: "In welchem Fachsemester bist du aktuell?",
+    type: "select",
+    required: true,
+    options: ["1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10.", "11.", "12.", "13.", "14.", "15.", "16."],
+  },
+  OFF_FAMULATUR_VON: {
+    id: "OFF_FAMULATUR_VON",
+    text: "Von wann bis wann möchtest du deine Famulatur machen? Von",
+    type: "date",
+    required: true,
+  },
+  OFF_FAMULATUR_BIS: {
+    id: "OFF_FAMULATUR_BIS",
+    text: "Von wann bis wann möchtest du deine Famulatur machen? Bis",
+    type: "date",
+    required: true,
+  },
+  OFF_FAMULATUR_FLEXIBILITAET: {
+    id: "OFF_FAMULATUR_FLEXIBILITAET",
+    text: "Bist du beim Zeitraum flexibel oder gibt es einen möglichen Alternativzeitraum?",
+    type: "textarea",
+    required: false,
+  },
+  OFF_FAMULATUR_PRAKTISCHE_ERFAHRUNG: {
+    id: "OFF_FAMULATUR_PRAKTISCHE_ERFAHRUNG",
+    text: "Hast du bereits Famulaturen oder andere praktische medizinische Erfahrungen gemacht?",
+    type: "yes_no",
+    required: false,
+  },
+  OFF_FAMULATUR_LERNZIELE: {
+    id: "OFF_FAMULATUR_LERNZIELE",
+    text: "Was möchtest du während deiner Famulatur bei uns besonders kennenlernen oder lernen?",
+    type: "textarea",
+    required: false,
+  },
+  OFF_FAMULATUR_WEITERE_HINWEISE: {
+    id: "OFF_FAMULATUR_WEITERE_HINWEISE",
+    text: "Gibt es noch etwas, das wir für deine Famulatur wissen sollten?",
+    type: "textarea",
+    required: false,
+  },
+
+  // BEWERBER_SCHUELERPRAKTIKUM
+  OFF_SCHUELERPRAKTIKUM_SCHULFORM: {
+    id: "OFF_SCHUELERPRAKTIKUM_SCHULFORM",
+    text: "Welche Schulform besuchst du?",
+    type: "select",
+    required: true,
+    options: ["Gymnasium", "Gesamtschule", "Realschule", "Hauptschule", "Berufliche Schule", "Andere"],
+  },
+  OFF_SCHUELERPRAKTIKUM_KLASSENSTUFE: {
+    id: "OFF_SCHUELERPRAKTIKUM_KLASSENSTUFE",
+    text: "In welcher Klassenstufe bist du?",
+    type: "select",
+    required: true,
+    options: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],
+  },
+  OFF_SCHUELERPRAKTIKUM_VON: {
+    id: "OFF_SCHUELERPRAKTIKUM_VON",
+    text: "Von wann bis wann möchtest du dein Praktikum machen? Von",
+    type: "date",
+    required: true,
+  },
+  OFF_SCHUELERPRAKTIKUM_BIS: {
+    id: "OFF_SCHUELERPRAKTIKUM_BIS",
+    text: "Von wann bis wann möchtest du dein Praktikum machen? Bis",
+    type: "date",
+    required: true,
+  },
+  OFF_SCHUELERPRAKTIKUM_FLEXIBILITAET: {
+    id: "OFF_SCHUELERPRAKTIKUM_FLEXIBILITAET",
+    text: "Bist du beim Zeitraum flexibel oder gibt es einen möglichen Alternativzeitraum?",
+    type: "textarea",
+    required: false,
+  },
+  OFF_SCHUELERPRAKTIKUM_PFLICHTPRAKTIKUM: {
+    id: "OFF_SCHUELERPRAKTIKUM_PFLICHTPRAKTIKUM",
+    text: "Handelt es sich um ein verpflichtendes Schulpraktikum?",
+    type: "yes_no",
+    required: true,
+  },
+  OFF_SCHUELERPRAKTIKUM_MOTIVATION: {
+    id: "OFF_SCHUELERPRAKTIKUM_MOTIVATION",
+    text: "Warum möchtest du ein Praktikum in einer Hausarztpraxis machen?",
+    type: "textarea",
+    required: false,
+  },
+  OFF_SCHUELERPRAKTIKUM_INTERESSE: {
+    id: "OFF_SCHUELERPRAKTIKUM_INTERESSE",
+    text: "Was möchtest du bei uns gerne kennenlernen?",
+    type: "textarea",
+    required: false,
+  },
+  OFF_SCHUELERPRAKTIKUM_WEITERE_HINWEISE: {
+    id: "OFF_SCHUELERPRAKTIKUM_WEITERE_HINWEISE",
+    text: "Gibt es noch etwas, das wir für die Planung deines Praktikums wissen sollten?",
+    type: "textarea",
+    required: false,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -1505,6 +1616,37 @@ export const OFFICE_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
           value: "Sonstiges",
         },
       },
+    ],
+  },
+  BEWERBER_FAMULATUR: {
+    id: "BEWERBER_FAMULATUR",
+    label: "Famulatur / Medizinstudium",
+    displayOrder: 70,
+    questionIds: [
+      "OFF_FAMULATUR_UNIVERSITAET_STUDIENORT",
+      "OFF_FAMULATUR_FACHSEMESTER",
+      "OFF_FAMULATUR_VON",
+      "OFF_FAMULATUR_BIS",
+      "OFF_FAMULATUR_FLEXIBILITAET",
+      "OFF_FAMULATUR_PRAKTISCHE_ERFAHRUNG",
+      "OFF_FAMULATUR_LERNZIELE",
+      "OFF_FAMULATUR_WEITERE_HINWEISE",
+    ],
+  },
+  BEWERBER_SCHUELERPRAKTIKUM: {
+    id: "BEWERBER_SCHUELERPRAKTIKUM",
+    label: "Schülerpraktikum",
+    displayOrder: 80,
+    questionIds: [
+      "OFF_SCHUELERPRAKTIKUM_SCHULFORM",
+      "OFF_SCHUELERPRAKTIKUM_KLASSENSTUFE",
+      "OFF_SCHUELERPRAKTIKUM_VON",
+      "OFF_SCHUELERPRAKTIKUM_BIS",
+      "OFF_SCHUELERPRAKTIKUM_FLEXIBILITAET",
+      "OFF_SCHUELERPRAKTIKUM_PFLICHTPRAKTIKUM",
+      "OFF_SCHUELERPRAKTIKUM_MOTIVATION",
+      "OFF_SCHUELERPRAKTIKUM_INTERESSE",
+      "OFF_SCHUELERPRAKTIKUM_WEITERE_HINWEISE",
     ],
   },
 };

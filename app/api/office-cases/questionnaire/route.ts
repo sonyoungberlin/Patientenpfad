@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const salutation: "du" | "sie" = body.salutation === "du" ? "du" : "sie";
+
     const ownership = getCreateOwnershipData(account);
     const fwdHost = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
     const fwdProto = req.headers.get("x-forwarded-proto") ?? "https";
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest) {
       ownerPracticeId: ownership.owner_practice_id ?? null,
       origin,
       context: "office",
+      salutation,
     });
 
     return NextResponse.json({ ok: true, link });

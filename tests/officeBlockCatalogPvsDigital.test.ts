@@ -178,7 +178,7 @@ describe("Bestehende Office-Blöcke – Regressionsprüfung", () => {
   });
 
   it("OFFICE_BLOCK_IDS_SORTED enthält jetzt 13 Blöcke in displayOrder-Reihenfolge", () => {
-    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(13);
+    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(15);
     const pvsIndex = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_PVS_DIGITAL");
     const berufsIndex = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_BERUFSERFAHRUNG");
     const sprachIndex = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_SPRACHKENNTNISSE");

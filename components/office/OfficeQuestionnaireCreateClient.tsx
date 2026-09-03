@@ -19,6 +19,7 @@ export default function OfficeQuestionnaireCreateClient({ blocks }: Props) {
     // Alle Blöcke standardmäßig ausgewählt
     () => new Set(blocks.map((b) => b.id)),
   );
+  const [salutation, setSalutation] = useState<"du" | "sie">("sie");
   const [recipientReference, setRecipientReference] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export default function OfficeQuestionnaireCreateClient({ blocks }: Props) {
         body: JSON.stringify({
           selected_block_ids: ids,
           recipient_reference: recipientReference.trim(),
+          salutation,
         }),
       });
       const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
@@ -161,6 +163,43 @@ export default function OfficeQuestionnaireCreateClient({ blocks }: Props) {
           required
         />
       </div>
+
+      <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+        <legend
+          style={{
+            fontWeight: 500,
+            marginBottom: "0.5rem",
+            paddingBottom: "0.25rem",
+            display: "block",
+          }}
+        >
+          Ansprache im Fragebogen
+        </legend>
+        <div style={{ display: "flex", gap: "1.5rem" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+            <input
+              type="radio"
+              name="salutation"
+              value="sie"
+              checked={salutation === "sie"}
+              onChange={() => setSalutation("sie")}
+              data-testid="salutation-sie"
+            />
+            Sie
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+            <input
+              type="radio"
+              name="salutation"
+              value="du"
+              checked={salutation === "du"}
+              onChange={() => setSalutation("du")}
+              data-testid="salutation-du"
+            />
+            Du
+          </label>
+        </div>
+      </fieldset>
 
       <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
         <legend

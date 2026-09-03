@@ -155,15 +155,18 @@ describe("BEWERBER_ARBEITSZEITEN – buildFrozenBlocks", () => {
   });
 
   it("Gesamtkatalog hat weiterhin 13 Blöcke", () => {
-    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(13);
+    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(15);
   });
 
   it("OFFICE_BLOCK_IDS_SORTED hat weiterhin 13 Einträge", () => {
-    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(13);
+    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(15);
   });
 
-  it("BEWERBER_ARBEITSZEITEN ist letzter Block in OFFICE_BLOCK_IDS_SORTED", () => {
-    const last = OFFICE_BLOCK_IDS_SORTED[OFFICE_BLOCK_IDS_SORTED.length - 1];
-    expect(last).toBe("BEWERBER_ARBEITSZEITEN");
+  it("BEWERBER_ARBEITSZEITEN liegt vor den neuen Bewerbungsblöcken", () => {
+    const arbeitszeitenIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_ARBEITSZEITEN");
+    const famulaturIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_FAMULATUR");
+    const schuelerpraktikumIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_SCHUELERPRAKTIKUM");
+    expect(arbeitszeitenIdx).toBeLessThan(famulaturIdx);
+    expect(famulaturIdx).toBeLessThan(schuelerpraktikumIdx);
   });
 });

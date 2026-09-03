@@ -155,4 +155,23 @@ describe("POST /api/bewerben/[slug] – Notification-E-Mail", () => {
     expect(call.variant).toBe("office");
     expect(call.to).toBe("bewerbung@praxis.de");
   });
+
+  it.each([
+    ["FAMULATUR", "Famulatur"],
+    ["SCHUELERPRAKTIKUM", "Schülerpraktikum"],
+  ])("speichert die Bewerbungsart %s in requested_topics", async (role) => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ requested_roles: [role] })),
+      CTX("meine-praxis"),
+    );
+
+    expect(res.status).toBe(303);
+    expect(pm.digitalRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ requested_topics: [role] }),
+      }),
+    );
+  });
 });

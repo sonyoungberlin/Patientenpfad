@@ -290,11 +290,11 @@ describe("Bestehende Office-Blöcke – Regressionsprüfung", () => {
   ] as const;
 
   it("OFFICE_BLOCK_CATALOG enthält jetzt 13 Blöcke", () => {
-    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(13);
+    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(15);
   });
 
   it("OFFICE_BLOCK_IDS_SORTED enthält alle 13 Blöcke in korrekter Reihenfolge", () => {
-    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(13);
+    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(15);
     const arztIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_ARZT_BASIS");
     const berufsIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_BERUFSERFAHRUNG");
     const mfaIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_MFA_KOMPETENZEN");

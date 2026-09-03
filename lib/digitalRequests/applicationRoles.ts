@@ -9,6 +9,8 @@ export const OFFICE_APPLICATION_ROLES = {
   MFA: "MFA",
   RECEPTION_OFFICE: "Rezeption / Büro",
   PHYSICIAN: "Arzt / Ärztin",
+  FAMULATUR: "Famulatur",
+  SCHUELERPRAKTIKUM: "Schülerpraktikum",
 } as const;
 
 export type OfficeApplicationRole = keyof typeof OFFICE_APPLICATION_ROLES;

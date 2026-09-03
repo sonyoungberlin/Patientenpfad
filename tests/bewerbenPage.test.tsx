@@ -55,4 +55,17 @@ describe("/bewerben/[slug]", () => {
       expect.objectContaining({ where: { slug: "technischer-slug" } }),
     );
   });
+
+  it("zeigt Famulatur und Schülerpraktikum als Bewerbungsarten", async () => {
+    findUnique.mockResolvedValueOnce(ACTIVE_PRACTICE).mockResolvedValueOnce(ACTIVE_PRACTICE);
+    const node = await BewerbenPage({
+      params: Promise.resolve({ slug: "praxis-am-markt" }),
+    });
+    const markup = renderToStaticMarkup(node);
+
+    expect(markup).toContain('value="FAMULATUR"');
+    expect(markup).toContain("Famulatur");
+    expect(markup).toContain('value="SCHUELERPRAKTIKUM"');
+    expect(markup).toContain("Schülerpraktikum");
+  });
 });

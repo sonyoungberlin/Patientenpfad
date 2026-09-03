@@ -179,11 +179,11 @@ describe("Bestehende Office-Blöcke – Regressionsprüfung", () => {
   ] as const;
 
   it("OFFICE_BLOCK_CATALOG enthält jetzt 13 Blöcke", () => {
-    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(13);
+    expect(Object.keys(OFFICE_BLOCK_CATALOG)).toHaveLength(15);
   });
 
   it("OFFICE_BLOCK_IDS_SORTED enthält alle 13 Blöcke in korrekter Reihenfolge", () => {
-    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(13);
+    expect(OFFICE_BLOCK_IDS_SORTED).toHaveLength(15);
     const rezIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_REZEPTION_BUERO");
     const pvsIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_PVS_DIGITAL");
     const sprachIdx = OFFICE_BLOCK_IDS_SORTED.indexOf("BEWERBER_SPRACHKENNTNISSE");
