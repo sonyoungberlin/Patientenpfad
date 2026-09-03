@@ -2,6 +2,12 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import {
+  buildPracticeConfirmationSlots,
+  buildPracticeConfirmationsFrozenBlock,
+  parseSelectedPracticeConfirmationIds,
+  selectPracticeConfirmationSlots,
+} from "@/lib/questionnaire/confirmation";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
 import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
 import {
@@ -26,11 +32,15 @@ export async function renderPublicFormPage(
       intro_text: true,
       is_active: true,
       selected_block_ids: true,
+      selected_confirmation_ids: true,
       patient_language: true,
       owner_practice_id: true,
       owner_practice: {
         select: {
           ...PUBLIC_IDENTITY_SELECT,
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
           patient_communication_enabled: true,
           website_forms_enabled: true,
         },
@@ -66,6 +76,16 @@ export async function renderPublicFormPage(
     : [];
   const language = normalizeQuestionnaireLanguage(form.patient_language);
   const frozenBlocks = buildFrozenBlocks(selectedBlockIds);
+  const selectedConfirmationIds = parseSelectedPracticeConfirmationIds(
+    form.selected_confirmation_ids,
+  ) ?? [];
+  const confirmationBlock = buildPracticeConfirmationsFrozenBlock(
+    selectPracticeConfirmationSlots(
+      buildPracticeConfirmationSlots(form.owner_practice ?? {}),
+      selectedConfirmationIds,
+    ),
+  );
+  if (confirmationBlock) frozenBlocks.push(confirmationBlock);
   const questions = frozenBlocks.flatMap((block) =>
     block.questions.map((question) => localizeQuestion(question, language)),
   );

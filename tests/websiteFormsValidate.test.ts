@@ -28,6 +28,7 @@ describe("validateWebsiteFormInput", () => {
         slug: "praxis-mueller",
         intro_text: "Bitte ausfüllen.",
         selected_block_ids: [VALID_BLOCK],
+        selected_confirmation_ids: [],
         is_active: true,
         patient_language: "de",
       });

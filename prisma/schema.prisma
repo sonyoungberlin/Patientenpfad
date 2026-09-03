@@ -501,6 +501,10 @@ model PracticeQuestionnaireForm {
   /// Gewählte Block-IDs analog `PatientQuestionnaireSession.selected_block_ids`.
   selected_block_ids Json
 
+  /// Ausgewählte, praxisindividuelle Bestätigungs-Slot-IDs.
+  /// NULL für Bestandsformulare ohne Confirmation-Auswahl.
+  selected_confirmation_ids Json?
+
   /// Optionaler Einleitungstext, der über dem Formular angezeigt wird.
   intro_text String?
 

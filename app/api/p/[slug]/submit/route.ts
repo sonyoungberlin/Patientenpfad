@@ -34,6 +34,12 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import {
+  buildPracticeConfirmationSlots,
+  buildPracticeConfirmationsFrozenBlock,
+  parseSelectedPracticeConfirmationIds,
+  selectPracticeConfirmationSlots,
+} from "@/lib/questionnaire/confirmation";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import {
@@ -234,11 +240,15 @@ export async function POST(
         id: true,
         is_active: true,
         selected_block_ids: true,
+        selected_confirmation_ids: true,
         patient_language: true,
         owner_account_id: true,
         owner_practice_id: true,
         owner_practice: {
           select: {
+            questionnaire_confirmation_text_1: true,
+            questionnaire_confirmation_text_2: true,
+            questionnaire_confirmation_text_3: true,
             is_approved: true,
             patient_communication_enabled: true,
             website_forms_enabled: true,
@@ -288,6 +298,16 @@ export async function POST(
       : [];
     // Frozen-Snapshot: enthält Fragen + Conditional-Rules.
     const frozenBlocks = buildFrozenBlocks(selectedBlockIds);
+    const selectedConfirmationIds = parseSelectedPracticeConfirmationIds(
+      form.selected_confirmation_ids,
+    ) ?? [];
+    const confirmationBlock = buildPracticeConfirmationsFrozenBlock(
+      selectPracticeConfirmationSlots(
+        buildPracticeConfirmationSlots(form.owner_practice ?? {}),
+        selectedConfirmationIds,
+      ),
+    );
+    if (confirmationBlock) frozenBlocks.push(confirmationBlock);
     const deduplicatedQuestions = frozenBlocks.flatMap((b) => b.questions);
     const conditionalRules = frozenBlocks.flatMap((b) => b.conditionalRules);
 
@@ -331,6 +351,21 @@ export async function POST(
     const finalAnswers: Record<string, string> = Object.fromEntries(
       Object.entries(sanitizedAnswers).filter(([id]) => visibleQIds.has(id))
     );
+
+    const missingConfirmation = deduplicatedQuestions.some(
+      (question) =>
+        question.type === "confirmation" &&
+        question.required &&
+        visibleQIds.has(question.id) &&
+        !(finalAnswers[question.id] ?? "").trim(),
+    );
+    if (missingConfirmation) {
+      logSubmit("invalid_body", { slug: slugValidation.slug });
+      return new NextResponse("Bitte füllen Sie alle Pflichtfelder aus.", {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
 
     // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld ergänzen, falls der Client
     // keinen Wert für die sichtbare Katalogfrage übermittelt hat. Vorhandene

@@ -29,6 +29,7 @@ import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalo
 import { isBlockEnReady } from "@/lib/questionnaire/i18n";
 import { getOwnershipFilter } from "@/lib/websiteForms/practiceScope";
 import { WebsiteFormBlocksAndLanguage } from "@/components/websiteForms/WebsiteFormBlocksAndLanguage";
+import { buildPracticeConfirmationSlots } from "@/lib/questionnaire/confirmation";
 
 type SearchParams = Promise<{ error?: string | string[] }>;
 
@@ -67,6 +68,7 @@ export default async function WebsiteFormsPage({
       slug: true,
       is_active: true,
       selected_block_ids: true,
+      selected_confirmation_ids: true,
       owner_practice: {
         select: { public_slug: true },
       },
@@ -78,6 +80,16 @@ export default async function WebsiteFormsPage({
     label: BLOCK_CATALOG[blockId]?.label ?? blockId,
     enReady: isBlockEnReady(blockId),
   }));
+  const practice = account.current_practice?.id
+    ? await prisma.practice?.findUnique({
+        where: { id: account.current_practice.id },
+        select: {
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
+        },
+      })
+    : null;
 
   return (
     <main>
@@ -182,6 +194,8 @@ export default async function WebsiteFormsPage({
             blocks={blockChoices}
             initialLanguage="de"
             initialSelectedBlockIds={[]}
+            confirmationSlots={buildPracticeConfirmationSlots(practice ?? {})}
+            initialSelectedConfirmationIds={[]}
           />
           <label style={{ display: "flex", gap: "0.5rem" }}>
             <input type="checkbox" name="is_active" value="true" defaultChecked />

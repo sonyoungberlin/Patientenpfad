@@ -30,11 +30,21 @@ export function isPracticeConfirmationId(
 export function parseSelectedPracticeConfirmationIds(
   value: unknown,
 ): PracticeConfirmationId[] | null {
-  if (value === undefined) return [];
+  if (value === undefined || value === null) return [];
   if (!Array.isArray(value) || !value.every(isPracticeConfirmationId)) {
     return null;
   }
   return [...new Set(value)];
+}
+
+export function validateSelectedPracticeConfirmationIds(
+  value: unknown,
+  available: readonly PracticeConfirmationSlot[],
+): PracticeConfirmationId[] | null {
+  const selected = parseSelectedPracticeConfirmationIds(value);
+  if (selected === null) return null;
+  const availableIds = new Set(available.map((slot) => slot.id));
+  return selected.every((id) => availableIds.has(id)) ? selected : null;
 }
 
 export function buildPracticeConfirmationSlots(input: {

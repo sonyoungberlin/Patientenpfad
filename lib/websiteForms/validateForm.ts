@@ -14,6 +14,10 @@
 
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import {
+  parseSelectedPracticeConfirmationIds,
+  type PracticeConfirmationSlot,
+} from "@/lib/questionnaire/confirmation";
+import {
   isBlockEnReady,
   type QuestionnaireLanguage,
 } from "@/lib/questionnaire/i18n";
@@ -28,6 +32,7 @@ export type WebsiteFormFieldErrors = Partial<{
   slug: string;
   intro_text: string;
   selected_block_ids: string;
+  selected_confirmation_ids: string;
   is_active: string;
   patient_language: string;
 }>;
@@ -37,6 +42,7 @@ export type ValidatedWebsiteFormInput = {
   slug: string;
   intro_text: string | null;
   selected_block_ids: string[];
+  selected_confirmation_ids: string[];
   is_active: boolean;
   patient_language: QuestionnaireLanguage;
 };
@@ -53,6 +59,7 @@ export type RawWebsiteFormInput = {
   slug?: unknown;
   intro_text?: unknown;
   selected_block_ids?: unknown;
+  selected_confirmation_ids?: unknown;
   is_active?: unknown;
   patient_language?: unknown;
 };
@@ -81,6 +88,7 @@ function normalizeBoolean(value: unknown, fallback: boolean): boolean {
  */
 export function validateWebsiteFormInput(
   raw: RawWebsiteFormInput,
+  availableConfirmations: readonly PracticeConfirmationSlot[] = [],
 ):
   | { ok: true; value: ValidatedWebsiteFormInput }
   | { ok: false; fieldErrors: WebsiteFormFieldErrors } {
@@ -149,6 +157,23 @@ export function validateWebsiteFormInput(
     }
   }
 
+  const parsedConfirmations = parseSelectedPracticeConfirmationIds(
+    raw.selected_confirmation_ids,
+  );
+  let selectedConfirmationIds: string[] = [];
+  if (parsedConfirmations === null) {
+    fieldErrors.selected_confirmation_ids =
+      "Ungültige Bestätigung ausgewählt.";
+  } else {
+    const availableIds = new Set(availableConfirmations.map((slot) => slot.id));
+    if (parsedConfirmations.some((id) => !availableIds.has(id))) {
+      fieldErrors.selected_confirmation_ids =
+        "Die ausgewählte Bestätigung ist nicht konfiguriert.";
+    } else {
+      selectedConfirmationIds = parsedConfirmations;
+    }
+  }
+
   // ---- patient_language ----
   // Strikte Validierung: Wenn der Aufrufer einen Wert übergibt, muss er
   // exakt "de" oder "en" sein. Andernfalls Feldfehler — kein stilles
@@ -195,6 +220,7 @@ export function validateWebsiteFormInput(
       slug,
       intro_text: introText,
       selected_block_ids: selectedBlockIds,
+      selected_confirmation_ids: selectedConfirmationIds,
       is_active: isActive,
       patient_language: patientLanguage,
     },

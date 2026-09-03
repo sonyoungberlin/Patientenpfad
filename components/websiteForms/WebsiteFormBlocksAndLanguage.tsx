@@ -23,6 +23,7 @@
 import { useState } from "react";
 import { isBlockEnReady, type QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { VOLLSTAENDIGE_ANAMNESE_PRESET } from "@/lib/questionnaire/blockCatalog";
+import type { PracticeConfirmationSlot } from "@/lib/questionnaire/confirmation";
 
 export type BlockChoice = {
   id: string;
@@ -34,17 +35,26 @@ export function WebsiteFormBlocksAndLanguage({
   blocks,
   initialLanguage,
   initialSelectedBlockIds,
+  confirmationSlots,
+  initialSelectedConfirmationIds,
 }: {
   blocks: BlockChoice[];
   initialLanguage: QuestionnaireLanguage;
   initialSelectedBlockIds: string[];
+  confirmationSlots?: readonly PracticeConfirmationSlot[];
+  initialSelectedConfirmationIds?: string[];
 }) {
+  confirmationSlots = confirmationSlots ?? [];
+  initialSelectedConfirmationIds = initialSelectedConfirmationIds ?? [];
   const [language, setLanguage] = useState<QuestionnaireLanguage>(initialLanguage);
   const [selected, setSelected] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     for (const id of initialSelectedBlockIds) init[id] = true;
     return init;
   });
+  const [selectedConfirmations, setSelectedConfirmations] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(initialSelectedConfirmationIds.map((id) => [id, true])),
+  );
 
   function handleLanguageChange(next: QuestionnaireLanguage) {
     setLanguage(next);
@@ -143,6 +153,29 @@ export function WebsiteFormBlocksAndLanguage({
           );
         })}
       </fieldset>
+      {confirmationSlots.length > 0 && (
+        <fieldset style={{ display: "grid", gap: "0.25rem" }}>
+          <legend>Bestätigungen</legend>
+          {confirmationSlots.map((slot) => (
+            <label key={slot.id} style={{ display: "flex", gap: "0.5rem" }}>
+              <input
+                type="checkbox"
+                name="selected_confirmation_ids"
+                value={slot.id}
+                checked={!!selectedConfirmations[slot.id]}
+                onChange={() =>
+                  setSelectedConfirmations((prev) => ({
+                    ...prev,
+                    [slot.id]: !prev[slot.id],
+                  }))
+                }
+                data-confirmation-choice={slot.id}
+              />
+              <span>{slot.text}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
     </>
   );
 }

@@ -30,6 +30,7 @@ import { isBlockEnReady, normalizeQuestionnaireLanguage } from "@/lib/questionna
 import { ownsForm } from "@/lib/websiteForms/practiceScope";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 import { WebsiteFormBlocksAndLanguage } from "@/components/websiteForms/WebsiteFormBlocksAndLanguage";
+import { buildPracticeConfirmationSlots } from "@/lib/questionnaire/confirmation";
 
 type SearchParams = Promise<{ error?: string | string[] }>;
 
@@ -73,9 +74,15 @@ export default async function WebsiteFormDetailPage({
       intro_text: true,
       is_active: true,
       selected_block_ids: true,
+      selected_confirmation_ids: true,
       patient_language: true,
       owner_practice: {
-        select: { public_slug: true },
+        select: {
+          public_slug: true,
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
+        },
       },
     },
   });
@@ -89,6 +96,10 @@ export default async function WebsiteFormDetailPage({
   const selectedBlockIds = Array.isArray(form.selected_block_ids)
     ? (form.selected_block_ids as string[])
     : [];
+  const selectedConfirmationIds = Array.isArray(form.selected_confirmation_ids)
+    ? (form.selected_confirmation_ids as string[])
+    : [];
+  const confirmationSlots = buildPracticeConfirmationSlots(form.owner_practice ?? {});
   const patientLanguage = normalizeQuestionnaireLanguage(form.patient_language);
   const blockChoices = BLOCK_IDS_SORTED.map((blockId) => ({
     id: blockId,
@@ -200,6 +211,8 @@ export default async function WebsiteFormDetailPage({
             blocks={blockChoices}
             initialLanguage={patientLanguage}
             initialSelectedBlockIds={selectedBlockIds}
+            confirmationSlots={confirmationSlots}
+            initialSelectedConfirmationIds={selectedConfirmationIds}
           />
           <label style={{ display: "flex", gap: "0.5rem" }}>
             <input

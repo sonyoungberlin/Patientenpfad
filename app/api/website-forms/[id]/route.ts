@@ -31,6 +31,7 @@ import {
   type RawWebsiteFormInput,
 } from "@/lib/websiteForms/validateForm";
 import { ownsForm } from "@/lib/websiteForms/practiceScope";
+import { buildPracticeConfirmationSlots } from "@/lib/questionnaire/confirmation";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -59,6 +60,9 @@ async function readInput(req: NextRequest): Promise<ParsedInput | null> {
             ? (fd.get("intro_text") as string)
             : undefined,
         selected_block_ids: fd.getAll("selected_block_ids").filter(
+          (v): v is string => typeof v === "string",
+        ),
+        selected_confirmation_ids: fd.getAll("selected_confirmation_ids").filter(
           (v): v is string => typeof v === "string",
         ),
         is_active:
@@ -117,6 +121,17 @@ export async function POST(
     );
   }
 
+  const practice = existing.owner_practice_id
+    ? await prisma.practice?.findUnique({
+        where: { id: existing.owner_practice_id },
+        select: {
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
+        },
+      })
+    : null;
+
   const parsed = await readInput(req);
   if (parsed === null) {
     return NextResponse.json(
@@ -141,7 +156,10 @@ export async function POST(
   }
 
   // ---- Voll-Update ----
-  const result = validateWebsiteFormInput(parsed.raw);
+  const result = validateWebsiteFormInput(
+    parsed.raw,
+    buildPracticeConfirmationSlots(practice ?? {}),
+  );
   if (!result.ok) {
     if (formMode) {
       const msg = encodeURIComponent(firstFieldError(result.fieldErrors));
@@ -168,6 +186,8 @@ export async function POST(
         slug: result.value.slug,
         intro_text: result.value.intro_text,
         selected_block_ids: result.value.selected_block_ids as Prisma.InputJsonValue,
+        selected_confirmation_ids:
+          result.value.selected_confirmation_ids as Prisma.InputJsonValue,
         is_active: result.value.is_active,
         patient_language: result.value.patient_language,
       },

@@ -31,6 +31,7 @@ import {
   type RawWebsiteFormInput,
 } from "@/lib/websiteForms/validateForm";
 import { getCreateOwnershipData } from "@/lib/websiteForms/practiceScope";
+import { buildPracticeConfirmationSlots } from "@/lib/questionnaire/confirmation";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -51,6 +52,9 @@ async function readRawInput(req: NextRequest): Promise<RawWebsiteFormInput | nul
           ? (fd.get("intro_text") as string)
           : undefined,
       selected_block_ids: fd.getAll("selected_block_ids").filter(
+        (v): v is string => typeof v === "string",
+      ),
+      selected_confirmation_ids: fd.getAll("selected_confirmation_ids").filter(
         (v): v is string => typeof v === "string",
       ),
       is_active:
@@ -94,7 +98,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = validateWebsiteFormInput(raw);
+  const practice = account.current_practice?.id
+    ? await prisma.practice?.findUnique({
+        where: { id: account.current_practice.id },
+        select: {
+          questionnaire_confirmation_text_1: true,
+          questionnaire_confirmation_text_2: true,
+          questionnaire_confirmation_text_3: true,
+        },
+      })
+    : null;
+  const result = validateWebsiteFormInput(
+    raw,
+    buildPracticeConfirmationSlots(practice ?? {}),
+  );
   if (!result.ok) {
     if (formMode) {
       // Im HTML-Form-Pfad zeigen wir den ersten Fehler als Query-Parameter
@@ -124,6 +141,8 @@ export async function POST(req: NextRequest) {
         slug: result.value.slug,
         intro_text: result.value.intro_text,
         selected_block_ids: result.value.selected_block_ids as Prisma.InputJsonValue,
+        selected_confirmation_ids:
+          result.value.selected_confirmation_ids as Prisma.InputJsonValue,
         is_active: result.value.is_active,
         patient_language: result.value.patient_language,
       },
