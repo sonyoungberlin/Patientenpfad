@@ -771,6 +771,34 @@ export function QuestionField({
           })}
         </div>
       );
+    case "confirmation":
+      return (
+        <label style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+          <input
+            type="checkbox"
+            id={question.id}
+            checked={value === "true"}
+            onChange={(event) =>
+              onChange(question.id, event.target.checked ? "true" : "")
+            }
+            disabled={disabled}
+            required={question.required}
+            aria-invalid={hasError || undefined}
+            style={{ marginTop: "0.2rem" }}
+          />
+          <span>
+            {question.text}
+            {question.required && (
+              <span
+                aria-hidden="true"
+                style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}
+              >
+                *
+              </span>
+            )}
+          </span>
+        </label>
+      );
     case "repeatable_group":
       return (
         <RepeatableGroupField

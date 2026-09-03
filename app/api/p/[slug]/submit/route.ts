@@ -335,6 +335,7 @@ export async function POST(
       fields.answers,
       deduplicatedQuestions,
       formLanguage,
+      new Map(deduplicatedQuestions.map((question) => [question.id, question])),
     );
 
     // 8a. Sichtbarkeitsfilter: versteckte Antworten (conditional hide) nicht

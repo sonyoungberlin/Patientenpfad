@@ -346,20 +346,22 @@ export function PublicFormView({
                       : {}),
                   }}
                 >
-                  <label
-                    htmlFor={q.id}
-                    style={{ display: "block", fontWeight: 500, marginBottom: "0.4rem" }}
-                  >
-                    {q.text}
-                    {q.required && (
-                      <span
-                        aria-hidden="true"
-                        style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}
-                      >
-                        *
-                      </span>
-                    )}
-                  </label>
+                  {q.type !== "confirmation" && (
+                    <label
+                      htmlFor={q.id}
+                      style={{ display: "block", fontWeight: 500, marginBottom: "0.4rem" }}
+                    >
+                      {q.text}
+                      {q.required && (
+                        <span
+                          aria-hidden="true"
+                          style={{ color: "var(--destructive)", marginLeft: "0.25rem" }}
+                        >
+                          *
+                        </span>
+                      )}
+                    </label>
+                  )}
                   <QuestionField
                     question={q}
                     value={values[q.id] ?? ""}

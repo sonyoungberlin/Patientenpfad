@@ -55,8 +55,14 @@ function makeForm(overrides: Partial<{
   intro_text: string | null;
   is_active: boolean;
   selected_block_ids: string[];
+  selected_confirmation_ids: string[];
   owner_account: typeof ENABLED_OWNER | null;
-  owner_practice: (typeof ENABLED_OWNER & { message_signature?: string | null }) | null;
+  owner_practice: (typeof ENABLED_OWNER & {
+    message_signature?: string | null;
+    questionnaire_confirmation_text_1?: string | null;
+    questionnaire_confirmation_text_2?: string | null;
+    questionnaire_confirmation_text_3?: string | null;
+  }) | null;
   patient_language: string;
 }> = {}) {
   return {
@@ -64,6 +70,7 @@ function makeForm(overrides: Partial<{
     intro_text: "Bitte füllen Sie das Formular aus.",
     is_active: true,
     selected_block_ids: ["KONTAKT", "REZEPT"],
+    selected_confirmation_ids: [],
     patient_language: "de",
     owner_account: ENABLED_OWNER,
     owner_practice: null as
@@ -227,6 +234,33 @@ describe("/p/[slug] public form page", () => {
     expect(m).toContain("data-patient-intro");
     // Aber kein Signaturblock
     expect(m).not.toContain("data-practice-signature");
+  });
+
+  it("rendert eine ausgewählte Praxisbestätigung als Checkbox mit Originaltext", async () => {
+    const text = "Ich bestätige den bestehenden deutschen Praxistext.";
+    pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+      makeForm({
+        selected_block_ids: [],
+        selected_confirmation_ids: ["PRACTICE_CONFIRMATION_1"],
+        owner_practice: {
+          ...ENABLED_OWNER,
+          questionnaire_confirmation_text_1: text,
+          questionnaire_confirmation_text_2: null,
+          questionnaire_confirmation_text_3: null,
+        },
+      }),
+    );
+
+    const r = await runPage();
+    const m = r.markup!;
+    expect(m).toContain('data-q-question="PRACTICE_CONFIRMATION_1"');
+    expect(m).toMatch(
+      /<input[^>]*type="checkbox"[^>]*id="PRACTICE_CONFIRMATION_1"/,
+    );
+    expect(m).not.toMatch(
+      /<input[^>]*type="text"[^>]*id="PRACTICE_CONFIRMATION_1"/,
+    );
+    expect(m).toContain(text);
   });
 
   it("enthält Formular-Element und Honeypot-Feld", async () => {

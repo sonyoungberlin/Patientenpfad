@@ -59,18 +59,40 @@ const ENABLED_OWNER = {
 function makeForm(overrides: Partial<{
   is_active: boolean;
   selected_block_ids: string[];
+  selected_confirmation_ids: string[];
   owner_account: typeof ENABLED_OWNER | null;
+  owner_practice: (typeof ENABLED_OWNER & {
+    questionnaire_confirmation_text_1: string | null;
+    questionnaire_confirmation_text_2: string | null;
+    questionnaire_confirmation_text_3: string | null;
+  }) | null;
   patient_language: string;
 }> = {}) {
   return {
     id: "form-1",
     is_active: true,
     selected_block_ids: ["KONTAKT"],
+    selected_confirmation_ids: [],
     patient_language: "de",
     owner_account_id: "acc-1",
+    owner_practice_id: null,
+    owner_practice: null,
     owner_account: ENABLED_OWNER,
     ...overrides,
   };
+}
+
+function makeFormWithConfirmation(selectedBlockIds: string[] = []) {
+  return makeForm({
+    selected_block_ids: selectedBlockIds,
+    selected_confirmation_ids: ["PRACTICE_CONFIRMATION_1"],
+    owner_practice: {
+      ...ENABLED_OWNER,
+      questionnaire_confirmation_text_1: "Ich bestätige den Praxistext.",
+      questionnaire_confirmation_text_2: null,
+      questionnaire_confirmation_text_3: null,
+    },
+  });
 }
 
 function formReq(
@@ -246,6 +268,96 @@ describe("POST /api/p/[slug]/submit", () => {
     expect(pm.patientQuestionnaireSession.create).toHaveBeenCalledTimes(1);
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
     expect(consoleErrorSpy).toHaveBeenCalled();
+  });
+
+  describe("Praxisbestätigung", () => {
+    it.each([undefined, "", "x", "yes", "1", "on"])(
+      "lehnt den nicht bestätigten Wert %s ab",
+      async (value) => {
+        pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+          makeFormWithConfirmation(),
+        );
+        const suffix = value ?? "missing";
+        const answers: Record<string, string> = {
+          email: `confirm-${suffix}@example.com`,
+        };
+        if (value !== undefined) answers.PRACTICE_CONFIRMATION_1 = value;
+
+        const res = await POST(
+          formReq(answers, SLUG, `6.1.0.${Math.floor(Math.random() * 200) + 1}`),
+          { params: Promise.resolve({ slug: SLUG }) },
+        );
+
+        expect(res.status).toBe(400);
+        expect(await res.text()).toContain("Pflichtfelder");
+        expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it("speichert exakt true und friert den Praxistext ein", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeFormWithConfirmation(),
+      );
+
+      const res = await POST(
+        formReq(
+          {
+            email: "confirm-true@example.com",
+            PRACTICE_CONFIRMATION_1: "true",
+          },
+          SLUG,
+          "6.2.0.1",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+
+      expect(res.status).toBe(303);
+      const data = pm.patientQuestionnaireSession.create.mock.calls[0][0].data;
+      expect(data.answers.PRACTICE_CONFIRMATION_1).toBe("true");
+      const frozenBlocks = data.frozen_blocks as Array<{
+        questions: Array<{ id: string; text: string; type: string }>;
+      }>;
+      expect(frozenBlocks.flatMap((block) => block.questions)).toContainEqual(
+        expect.objectContaining({
+          id: "PRACTICE_CONFIRMATION_1",
+          text: "Ich bestätige den Praxistext.",
+          type: "confirmation",
+        }),
+      );
+    });
+
+    it("speichert FACHAERZTE und Confirmation gemeinsam", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeFormWithConfirmation(["FACHAERZTE"]),
+      );
+      const specialists = JSON.stringify([
+        {
+          erkrankung: "Diabetes",
+          bereich: "Innere Medizin",
+          name: "Praxis Beispiel",
+          adresse: "",
+        },
+      ]);
+
+      const res = await POST(
+        formReq(
+          {
+            email: "confirm-specialist@example.com",
+            FACHAERZTE: specialists,
+            PRACTICE_CONFIRMATION_1: "true",
+          },
+          SLUG,
+          "6.3.0.1",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+
+      expect(res.status).toBe(303);
+      const answers =
+        pm.patientQuestionnaireSession.create.mock.calls[0][0].data.answers;
+      expect(answers.FACHAERZTE).toBe(specialists);
+      expect(answers.PRACTICE_CONFIRMATION_1).toBe("true");
+    });
   });
 
   it("Rate-Limit IP+Slug: greift nach mehrfachen Submits derselben IP", async () => {
