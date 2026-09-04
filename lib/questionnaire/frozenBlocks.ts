@@ -22,6 +22,7 @@
 import {
   BLOCK_CATALOG,
   QUESTION_CATALOG,
+  resolveQuestionIdsForBlocks,
   type QuestionDefinition,
   type QuestionnaireBlock,
 } from "./blockCatalog";
@@ -100,12 +101,13 @@ export function buildFrozenBlocks(
   // Blöcke mit tiefen Question-Snapshots aufbauen; globale Deduplizierung
   const seenQuestionIds = new Set<string>();
   const result: FrozenBlock[] = [];
+  const resolvedQuestionIds = resolveQuestionIdsForBlocks(selectedBlockIds, blockCatalog);
 
   for (const id of orderedIds) {
     const block = blockCatalog[id];
     const questions: QuestionDefinition[] = [];
 
-    for (const questionId of block.questionIds) {
+    for (const questionId of resolvedQuestionIds.get(id) ?? block.questionIds) {
       if (seenQuestionIds.has(questionId)) continue;
       const q = questionCatalog[questionId];
       if (!q) continue;

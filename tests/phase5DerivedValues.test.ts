@@ -29,6 +29,11 @@ import {
   computeVisibleBlockIds,
   type ConditionalRule,
 } from "../lib/questionnaire/conditionalLogic";
+import {
+  normalizeSmokingPair,
+  parseStrictIntegerAnswer,
+  synchronizeSmokingPair,
+} from "../lib/questionnaire/smokingInput";
 
 // ---------------------------------------------------------------------------
 // parseNumericAnswer
@@ -378,6 +383,59 @@ describe("computePackYears", () => {
       NIKOTIN_DAUER_JAHRE: "10",
     };
     expect(computePackYears(answers)).toBeNull();
+  });
+});
+
+describe("gekoppelte Rauchbeginn-/Rauchstopp-Werte", () => {
+  const today = new Date("2026-06-15T12:00:00Z");
+
+  it.each([
+    ["2021", "", 2021, 5],
+    ["", "5", 2021, 5],
+    ["2019", "", 2019, 7],
+    ["", "7", 2019, 7],
+  ])("normalisiert %s / %s zu Jahr %s und %s Jahren", (year, ago, expectedYear, expectedAgo) => {
+    expect(normalizeSmokingPair(year, ago, today)).toEqual({ year: expectedYear, yearsAgo: expectedAgo });
+  });
+
+    it("akzeptiert und verwirft Rauchstopp-Paare mit Bezugsjahr 2026", () => {
+      expect(normalizeSmokingPair("2021", "5", today)).toEqual({ year: 2021, yearsAgo: 5 });
+      expect(normalizeSmokingPair("2021", "9", today)).toBeNull();
+    });
+
+  it("berechnet 5 Pack-Years für aktuellen Raucher ab 2021", () => {
+    expect(computePackYears({
+      NIKOTIN_GATE: "Ja, aktuell",
+      NIKOTIN_PRODUKT: "Zigaretten",
+      NIKOTIN_BEGINN_JAHR: "2021",
+      NIKOTIN_ZIG_PRO_TAG: "20",
+    }, { today })).toBe(5);
+  });
+
+  it("berechnet 15 Pack-Years für ehemaligen Raucher aus Jahresangaben", () => {
+    const answers = {
+      NIKOTIN_GATE: "Früher, inzwischen aufgehört",
+      NIKOTIN_PRODUKT: "Zigaretten",
+      NIKOTIN_BEGINN_VOR: "20",
+      NIKOTIN_AUFGEHOERT_VOR: "5",
+      NIKOTIN_ZIG_PRO_TAG: "20",
+    };
+    expect(computePackYears(answers, { today })).toBe(15);
+    expect(computePackYears({ ...answers, NIKOTIN_BEGINN_JAHR: "2006", NIKOTIN_AUFGEHOERT_JAHR: "2021" }, { today })).toBe(15);
+  });
+
+  it("verwirft nicht-numerische und zukünftige Werte", () => {
+    for (const value of ["5 Jahre", "seit 2021", "20 Stück", "ca. 20", "~20"]) {
+      expect(parseStrictIntegerAnswer(value)).toBeNull();
+    }
+    expect(normalizeSmokingPair("2027", "", today)).toBeNull();
+  });
+
+  it("synchronisiert beide Richtungen ohne widersprüchliche Werte", () => {
+    const fromYear = synchronizeSmokingPair("NIKOTIN_BEGINN_JAHR", "2021", {}, today);
+    expect(fromYear).toMatchObject({ NIKOTIN_BEGINN_JAHR: "2021", NIKOTIN_BEGINN_VOR: "5" });
+    const fromAgo = synchronizeSmokingPair("NIKOTIN_BEGINN_VOR", "7", fromYear, today);
+    expect(fromAgo).toMatchObject({ NIKOTIN_BEGINN_JAHR: "2019", NIKOTIN_BEGINN_VOR: "7" });
   });
 });
 

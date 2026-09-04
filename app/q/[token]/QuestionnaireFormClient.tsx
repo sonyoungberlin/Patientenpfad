@@ -23,6 +23,7 @@ import {
   parseMultiSelectValue,
   toggleMultiSelectValue,
 } from "@/lib/questionnaire/multiSelect";
+import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -1088,7 +1089,7 @@ export function QuestionnaireFormClient({
 
   function handleChange(id: string, val: string) {
     if (id === "PATIENT_COPY_EMAIL") patientCopyEmailTouched.current = true;
-    setValues((prev) => ({ ...prev, [id]: val }));
+    setValues((prev) => synchronizeSmokingPair(id, val, prev));
     if (id === "CONTACT_EMAIL" && !patientCopyEmailTouched.current &&
         questions.some((question) => question.id === "PATIENT_COPY_EMAIL")) {
       setValues((prev) => ({ ...prev, PATIENT_COPY_EMAIL: val }));

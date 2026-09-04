@@ -98,7 +98,8 @@ describe("VOLLST_NIKOTIN \u2013 Conditional Logic", () => {
     });
     expect(visible.has("NIKOTIN_GATE")).toBe(true);
     expect(visible.has("NIKOTIN_PRODUKT")).toBe(false);
-    expect(visible.has("NIKOTIN_DAUER_JAHRE")).toBe(false);
+    expect(visible.has("NIKOTIN_BEGINN_JAHR")).toBe(false);
+    expect(visible.has("NIKOTIN_BEGINN_VOR")).toBe(false);
     expect(visible.has("NIKOTIN_AUFHOERVERSUCH")).toBe(false);
     expect(visible.has("NIKOTIN_MOTIVATION")).toBe(false);
     expect(visible.has("NIKOTIN_UNTERSTUETZUNG")).toBe(false);
@@ -108,7 +109,8 @@ describe("VOLLST_NIKOTIN \u2013 Conditional Logic", () => {
   it('Gate "Ja, aktuell" \u2192 Rauchdaten sichtbar', () => {
     const visible = computeVisibleQuestionIds(rules, allIds, { NIKOTIN_GATE: "Ja, aktuell" });
     expect(visible.has("NIKOTIN_PRODUKT")).toBe(true);
-    expect(visible.has("NIKOTIN_DAUER_JAHRE")).toBe(true);
+    expect(visible.has("NIKOTIN_BEGINN_JAHR")).toBe(true);
+    expect(visible.has("NIKOTIN_BEGINN_VOR")).toBe(true);
     expect(visible.has("NIKOTIN_AUFHOERVERSUCH")).toBe(true);
     expect(visible.has("NIKOTIN_MOTIVATION")).toBe(true);
     expect(visible.has("NIKOTIN_UNTERSTUETZUNG")).toBe(true);
@@ -124,8 +126,10 @@ describe("VOLLST_NIKOTIN \u2013 Conditional Logic", () => {
       NIKOTIN_GATE: "Fr\u00fcher, inzwischen aufgeh\u00f6rt",
     });
     expect(visible.has("NIKOTIN_PRODUKT")).toBe(true);
-    expect(visible.has("NIKOTIN_DAUER_JAHRE")).toBe(true);
+    expect(visible.has("NIKOTIN_BEGINN_JAHR")).toBe(true);
+    expect(visible.has("NIKOTIN_BEGINN_VOR")).toBe(true);
     expect(visible.has("NIKOTIN_AUFGEHOERT_VOR")).toBe(true);
+    expect(visible.has("NIKOTIN_AUFGEHOERT_JAHR")).toBe(true);
   });
 
   it('Gate "Fr\u00fcher" \u2192 MOTIVATION und UNTERSTUETZUNG NICHT sichtbar', () => {

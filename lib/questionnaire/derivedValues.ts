@@ -7,6 +7,10 @@
  */
 
 import { parseISODate, parseNumericAnswer, parseHeightToCm } from "./parseNumericAnswer";
+import {
+  getCurrentYear,
+  normalizeSmokingPair,
+} from "./smokingInput";
 
 export type DerivedValueId =
   | "AGE"
@@ -104,7 +108,10 @@ const NIKOTIN_GATE_SMOKING_VALUES = new Set([
  * Nur für expliziten Zigarettenkonsum (NIKOTIN_PRODUKT = "Zigaretten").
  * Leeres oder anderes Produkt → null.
  */
-export function computePackYears(answers: Record<string, string>): number | null {
+export function computePackYears(
+  answers: Record<string, string>,
+  options?: { today?: Date },
+): number | null {
   const gate = answers["NIKOTIN_GATE"] ?? "";
   if (!NIKOTIN_GATE_SMOKING_VALUES.has(gate)) return null;
 
@@ -112,9 +119,9 @@ export function computePackYears(answers: Record<string, string>): number | null
   if ((answers["NIKOTIN_PRODUKT"] ?? "") !== "Zigaretten") return null;
 
   const zigProTag = parseNumericAnswer(answers["NIKOTIN_ZIG_PRO_TAG"] ?? "");
-  const dauerJahre = parseNumericAnswer(answers["NIKOTIN_DAUER_JAHRE"] ?? "");
+  const dauerJahre = computeSmokingDurationYears(answers, options);
 
-  if (zigProTag === null || dauerJahre === null) return null;
+  if (zigProTag === null || zigProTag < 0 || dauerJahre === null || dauerJahre < 0) return null;
 
   return (zigProTag / 20) * dauerJahre;
 }
@@ -124,10 +131,40 @@ export function computePackYears(answers: Record<string, string>): number | null
 // ---------------------------------------------------------------------------
 
 /** Numerisch geparste Rauchdauer aus NIKOTIN_DAUER_JAHRE. */
-export function computeSmokingDurationYears(answers: Record<string, string>): number | null {
+export function computeSmokingDurationYears(
+  answers: Record<string, string>,
+  options?: { today?: Date },
+): number | null {
   const gate = answers["NIKOTIN_GATE"] ?? "";
   if (!NIKOTIN_GATE_SMOKING_VALUES.has(gate)) return null;
-  return parseNumericAnswer(answers["NIKOTIN_DAUER_JAHRE"] ?? "");
+  const today = options?.today ?? new Date();
+  const start = normalizeSmokingPair(
+    answers["NIKOTIN_BEGINN_JAHR"] ?? "",
+    answers["NIKOTIN_BEGINN_VOR"] ?? "",
+    today,
+  );
+  const hasNewStart =
+    answers["NIKOTIN_BEGINN_JAHR"] !== undefined ||
+    answers["NIKOTIN_BEGINN_VOR"] !== undefined;
+  const hasNewStop =
+    answers["NIKOTIN_AUFGEHOERT_JAHR"] !== undefined ||
+    answers["NIKOTIN_AUFGEHOERT_VOR"] !== undefined;
+  if (hasNewStart && !start) return null;
+
+  if (start) {
+    if (gate === "Ja, aktuell") return getCurrentYear(today) - start.year;
+    const stop = normalizeSmokingPair(
+      answers["NIKOTIN_AUFGEHOERT_JAHR"] ?? "",
+      answers["NIKOTIN_AUFGEHOERT_VOR"] ?? "",
+      today,
+    );
+    if (hasNewStop && !stop) return null;
+    if (stop && stop.year >= start.year) return stop.year - start.year;
+    if (stop) return null;
+  }
+  if (hasNewStop) return null;
+  const legacyDuration = parseNumericAnswer(answers["NIKOTIN_DAUER_JAHRE"] ?? "");
+  return legacyDuration !== null && legacyDuration >= 0 ? legacyDuration : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -135,9 +172,18 @@ export function computeSmokingDurationYears(answers: Record<string, string>): nu
 // ---------------------------------------------------------------------------
 
 /** Numerisch geparste "Vor wie vielen Jahren aufgehört" aus NIKOTIN_AUFGEHOERT_VOR. */
-export function computeSmokingStoppedYearsAgo(answers: Record<string, string>): number | null {
+export function computeSmokingStoppedYearsAgo(
+  answers: Record<string, string>,
+  options?: { today?: Date },
+): number | null {
   if ((answers["NIKOTIN_GATE"] ?? "") !== "Früher, inzwischen aufgehört") return null;
-  return parseNumericAnswer(answers["NIKOTIN_AUFGEHOERT_VOR"] ?? "");
+  const today = options?.today ?? new Date();
+  const stop = normalizeSmokingPair(
+    answers["NIKOTIN_AUFGEHOERT_JAHR"] ?? "",
+    answers["NIKOTIN_AUFGEHOERT_VOR"] ?? "",
+    today,
+  );
+  return stop?.yearsAgo ?? parseNumericAnswer(answers["NIKOTIN_AUFGEHOERT_VOR"] ?? "");
 }
 
 // ---------------------------------------------------------------------------
@@ -163,13 +209,13 @@ export function computeAllDerivedValues(
   const bmi = computeBMI(answers);
   if (bmi !== null) result.BMI = bmi;
 
-  const packYears = computePackYears(answers);
+  const packYears = computePackYears(answers, options);
   if (packYears !== null) result.PACK_YEARS = packYears;
 
-  const smokingDuration = computeSmokingDurationYears(answers);
+  const smokingDuration = computeSmokingDurationYears(answers, options);
   if (smokingDuration !== null) result.SMOKING_DURATION_YEARS = smokingDuration;
 
-  const stoppedYearsAgo = computeSmokingStoppedYearsAgo(answers);
+  const stoppedYearsAgo = computeSmokingStoppedYearsAgo(answers, options);
   if (stoppedYearsAgo !== null) result.SMOKING_STOPPED_YEARS_AGO = stoppedYearsAgo;
 
   return result;

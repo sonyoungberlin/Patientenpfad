@@ -126,6 +126,8 @@ export type QuestionnaireBlock = {
   hint_en?: string;
   /** Conditional Rules, die beim Einfrieren der Session gesammelt werden. */
   conditionalRules?: ConditionalRule[];
+  /** Alternative Einstiegsfragen, die bei Bedarf mit aufgenommen werden. */
+  prerequisiteQuestionIds?: string[];
 };
 
 // ---------------------------------------------------------------------------
@@ -1209,6 +1211,22 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     required: false,
     helperText: "Bitte beschreiben Sie das Produkt kurz.",
   },
+  NIKOTIN_BEGINN_JAHR: {
+    id: "NIKOTIN_BEGINN_JAHR",
+    text: "Seit wann rauchen Sie? Kalenderjahr",
+    type: "number",
+    required: false,
+    step: 1,
+    helperText: "Bitte nur das Jahr eingeben, z. B. 2021.",
+  },
+  NIKOTIN_BEGINN_VOR: {
+    id: "NIKOTIN_BEGINN_VOR",
+    text: "Seit wann rauchen Sie? Vor wie vielen Jahren",
+    type: "number",
+    required: false,
+    step: 1,
+    helperText: "Bitte nur eine Zahl eingeben, z. B. 5.",
+  },
   NIKOTIN_DAUER_JAHRE: {
     id: "NIKOTIN_DAUER_JAHRE",
     text: "Ungefähr wie viele Jahre insgesamt rauchen bzw. rauchten Sie regelmäßig?",
@@ -1219,16 +1237,26 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
   NIKOTIN_ZIG_PRO_TAG: {
     id: "NIKOTIN_ZIG_PRO_TAG",
     text: "Wie viele Zigaretten rauchen bzw. rauchten Sie durchschnittlich pro Tag?",
-    type: "text",
+    type: "number",
     required: false,
-    helperText: "Bitte eine Zahl eingeben, z.\u00a0B. 10 oder ca. 15.",
+    step: 1,
+    helperText: "Bitte nur eine Zahl eingeben, z. B. 20.",
   },
   NIKOTIN_AUFGEHOERT_VOR: {
     id: "NIKOTIN_AUFGEHOERT_VOR",
     text: "Vor wie vielen Jahren haben Sie aufgehört zu rauchen?",
-    type: "text",
+    type: "number",
     required: false,
-    helperText: "Bitte eine Zahl eingeben, z.\u00a0B. 5 oder ca. 10.",
+    step: 1,
+    helperText: "Bitte nur eine Zahl eingeben, z. B. 5.",
+  },
+  NIKOTIN_AUFGEHOERT_JAHR: {
+    id: "NIKOTIN_AUFGEHOERT_JAHR",
+    text: "Wann haben Sie aufgehört zu rauchen? Kalenderjahr",
+    type: "number",
+    required: false,
+    step: 1,
+    helperText: "Bitte nur das Jahr eingeben, z. B. 2021.",
   },
   NIKOTIN_AUFHOERVERSUCH: {
     id: "NIKOTIN_AUFHOERVERSUCH",
@@ -2130,8 +2158,9 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     id: "VOLLST_NIKOTIN",
     label: "Nikotin / Tabak (vollständig)",
     displayOrder: 200,
+    prerequisiteQuestionIds: ["VOLLST_AGE", "IDENTITY_BIRTHDATE"],
     conditionalRules: [
-      // Produkt + Dauer: bei aktuell oder früher
+      // Produkt: bei aktuell oder früher
       {
         action: "showQuestion",
         targetId: "NIKOTIN_PRODUKT",
@@ -2154,7 +2183,18 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       },
       {
         action: "showQuestion",
-        targetId: "NIKOTIN_DAUER_JAHRE",
+        targetId: "NIKOTIN_BEGINN_JAHR",
+        condition: {
+          mode: "OR",
+          conditions: [
+            { target: { kind: "question", questionId: "NIKOTIN_GATE" }, operator: "equals", value: "Ja, aktuell" },
+            { target: { kind: "question", questionId: "NIKOTIN_GATE" }, operator: "equals", value: "Früher, inzwischen aufgehört" },
+          ],
+        },
+      },
+      {
+        action: "showQuestion",
+        targetId: "NIKOTIN_BEGINN_VOR",
         condition: {
           mode: "OR",
           conditions: [
@@ -2177,6 +2217,15 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       {
         action: "showQuestion",
         targetId: "NIKOTIN_AUFGEHOERT_VOR",
+        condition: {
+          target: { kind: "question", questionId: "NIKOTIN_GATE" },
+          operator: "equals",
+          value: "Früher, inzwischen aufgehört",
+        },
+      },
+      {
+        action: "showQuestion",
+        targetId: "NIKOTIN_AUFGEHOERT_JAHR",
         condition: {
           target: { kind: "question", questionId: "NIKOTIN_GATE" },
           operator: "equals",
@@ -2231,18 +2280,52 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
           value: "Ja, aktuell",
         },
       },
+      {
+        action: "showQuestion",
+        targetId: "VOLLST_LUNGENSCREENING_BERATUNG",
+        condition: {
+          mode: "AND",
+          conditions: [
+            { target: { kind: "derived", derivedId: "AGE" }, operator: "greaterThanOrEqual", value: 50 },
+            { target: { kind: "derived", derivedId: "AGE" }, operator: "lessThanOrEqual", value: 75 },
+            { target: { kind: "derived", derivedId: "PACK_YEARS" }, operator: "greaterThanOrEqual", value: 15 },
+            { target: { kind: "derived", derivedId: "SMOKING_DURATION_YEARS" }, operator: "greaterThanOrEqual", value: 25 },
+            { target: { kind: "question", questionId: "NIKOTIN_GATE" }, operator: "equals", value: "Ja, aktuell" },
+            { target: { kind: "question", questionId: "NIKOTIN_PRODUKT" }, operator: "equals", value: "Zigaretten" },
+          ],
+        },
+      },
+      {
+        action: "showQuestion",
+        targetId: "VOLLST_LUNGENSCREENING_BERATUNG",
+        condition: {
+          mode: "AND",
+          conditions: [
+            { target: { kind: "derived", derivedId: "AGE" }, operator: "greaterThanOrEqual", value: 50 },
+            { target: { kind: "derived", derivedId: "AGE" }, operator: "lessThanOrEqual", value: 75 },
+            { target: { kind: "derived", derivedId: "PACK_YEARS" }, operator: "greaterThanOrEqual", value: 15 },
+            { target: { kind: "derived", derivedId: "SMOKING_DURATION_YEARS" }, operator: "greaterThanOrEqual", value: 25 },
+            { target: { kind: "derived", derivedId: "SMOKING_STOPPED_YEARS_AGO" }, operator: "lessThan", value: 10 },
+            { target: { kind: "question", questionId: "NIKOTIN_GATE" }, operator: "equals", value: "Früher, inzwischen aufgehört" },
+            { target: { kind: "question", questionId: "NIKOTIN_PRODUKT" }, operator: "equals", value: "Zigaretten" },
+          ],
+        },
+      },
     ],
     questionIds: [
       "NIKOTIN_GATE",
       "NIKOTIN_PRODUKT",
       "NIKOTIN_PRODUKT_ANDERE",
-      "NIKOTIN_DAUER_JAHRE",
+      "NIKOTIN_BEGINN_JAHR",
+      "NIKOTIN_BEGINN_VOR",
       "NIKOTIN_ZIG_PRO_TAG",
       "NIKOTIN_AUFGEHOERT_VOR",
+      "NIKOTIN_AUFGEHOERT_JAHR",
       "NIKOTIN_AUFHOERVERSUCH",
       "NIKOTIN_RAUCHFREI_DAUER",
       "NIKOTIN_MOTIVATION",
       "NIKOTIN_UNTERSTUETZUNG",
+      "VOLLST_LUNGENSCREENING_BERATUNG",
     ],
   },
   VOLLST_ALKOHOL: {
@@ -2410,6 +2493,7 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     id: "VOLLST_PRAEVENTION",
     label: "Pr\u00e4vention und Beratungsw\u00fcnsche",
     displayOrder: 230,
+    prerequisiteQuestionIds: ["VOLLST_AGE", "IDENTITY_BIRTHDATE"],
     conditionalRules: [
       // Check-up-Status: nur ab Alter 35 (Derived Value AGE)
       {
@@ -2434,60 +2518,10 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
           ],
         },
       },
-      // Lungenkrebs-Beratungsangebot – G-BA-Kriterien seit April 2026 (konservative Vorauswahl):
-      // Alter 50–75, ≥15 Pack-Years, ≥25 Rauchjahre, Zigaretten, aktuell rauchend.
-      {
-        action: "showQuestion",
-        targetId: "VOLLST_LUNGENSCREENING_BERATUNG",
-        condition: {
-          mode: "AND",
-          conditions: [
-            { target: { kind: "derived", derivedId: "AGE" }, operator: "greaterThanOrEqual", value: 50 },
-            { target: { kind: "derived", derivedId: "AGE" }, operator: "lessThanOrEqual", value: 75 },
-            { target: { kind: "derived", derivedId: "PACK_YEARS" }, operator: "greaterThanOrEqual", value: 15 },
-            { target: { kind: "derived", derivedId: "SMOKING_DURATION_YEARS" }, operator: "greaterThanOrEqual", value: 25 },
-            { target: { kind: "question", questionId: "NIKOTIN_GATE" }, operator: "equals", value: "Ja, aktuell" },
-            { target: { kind: "question", questionId: "NIKOTIN_PRODUKT" }, operator: "equals", value: "Zigaretten" },
-          ],
-        },
-      },
-      // Zweite Regel (implizites OR): ehemalige Raucher, vor weniger als 10 Jahren aufgehört.
-      {
-        action: "showQuestion",
-        targetId: "VOLLST_LUNGENSCREENING_BERATUNG",
-        condition: {
-          mode: "AND",
-          conditions: [
-            { target: { kind: "derived", derivedId: "AGE" }, operator: "greaterThanOrEqual", value: 50 },
-            { target: { kind: "derived", derivedId: "AGE" }, operator: "lessThanOrEqual", value: 75 },
-            { target: { kind: "derived", derivedId: "PACK_YEARS" }, operator: "greaterThanOrEqual", value: 15 },
-            { target: { kind: "derived", derivedId: "SMOKING_DURATION_YEARS" }, operator: "greaterThanOrEqual", value: 25 },
-            { target: { kind: "derived", derivedId: "SMOKING_STOPPED_YEARS_AGO" }, operator: "lessThan", value: 10 },
-            { target: { kind: "question", questionId: "NIKOTIN_GATE" }, operator: "equals", value: "Fr\u00fcher, inzwischen aufgeh\u00f6rt" },
-            { target: { kind: "question", questionId: "NIKOTIN_PRODUKT" }, operator: "equals", value: "Zigaretten" },
-          ],
-        },
-      },
-      // Unterst\u00fctzungswunsch Gewicht: bei jeglichem Ver\u00e4nderungswunsch oder Unsicherheit
-      {
-        action: "showQuestion",
-        targetId: "VOLLST_GEWICHT_UNTERSTUETZUNG",
-        condition: {
-          mode: "OR",
-          conditions: [
-            { target: { kind: "question", questionId: "VOLLST_GEWICHT_VERAENDERN" }, operator: "equals", value: "Ja, ich m\u00f6chte Gewicht reduzieren" },
-            { target: { kind: "question", questionId: "VOLLST_GEWICHT_VERAENDERN" }, operator: "equals", value: "Ja, ich m\u00f6chte Gewicht zunehmen" },
-            { target: { kind: "question", questionId: "VOLLST_GEWICHT_VERAENDERN" }, operator: "equals", value: "Ich bin mir unsicher" },
-          ],
-        },
-      },
     ],
     questionIds: [
       "VOLLST_CHECKUP_STATUS",
       "VOLLST_CHECKUP_BERATUNG",
-      "VOLLST_LUNGENSCREENING_BERATUNG",
-      "VOLLST_GEWICHT_VERAENDERN",
-      "VOLLST_GEWICHT_UNTERSTUETZUNG",
     ],
   },
   ADIPOSITAS_GEWICHTSREDUKTION: {
@@ -2632,6 +2666,31 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
 };
 
 /** Sortierte Block-IDs nach displayOrder. */
+export function resolveQuestionIdsForBlocks(
+  selectedBlockIds: string[],
+  blockCatalog: Record<string, QuestionnaireBlock> = BLOCK_CATALOG,
+): Map<string, string[]> {
+  const validBlocks = selectedBlockIds
+    .filter((id) => id in blockCatalog)
+    .map((id) => blockCatalog[id])
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+  const seen = new Set(validBlocks.flatMap((block) => block.questionIds));
+  const resolved = new Map<string, string[]>(
+    validBlocks.map((block) => [block.id, [...block.questionIds]]),
+  );
+
+  for (const block of validBlocks) {
+    const prerequisites = block.prerequisiteQuestionIds ?? [];
+    if (prerequisites.some((questionId) => seen.has(questionId))) continue;
+    const fallbackQuestionId = prerequisites[0];
+    if (!fallbackQuestionId) continue;
+    resolved.get(block.id)?.push(fallbackQuestionId);
+    seen.add(fallbackQuestionId);
+  }
+
+  return resolved;
+}
+
 export const BLOCK_IDS_SORTED: string[] = Object.values(BLOCK_CATALOG)
   .sort((a, b) => a.displayOrder - b.displayOrder)
   .map((b) => b.id);

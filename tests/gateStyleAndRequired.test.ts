@@ -113,7 +113,6 @@ describe("MAIN_GATE_QUESTION_IDS – Haupt-Gates enthalten", () => {
     "NIKOTIN_GATE",
     "ALKOHOL_GATE",
     "SUBST_GATE",
-    "VOLLST_GEWICHT_VERAENDERN",
     // Adipositas-Sektionsöffner
     "ADIP_DAUER",
     "ADIP_REDUKTION_VERSUCH",

@@ -450,6 +450,25 @@ describe("buildMedicalRecordNote – Berechnete Werte", () => {
     expect(lines).toContain("Berechnete Werte");
     expect(lines).toContain("Pack-Years: 15");
   });
+
+  it("gibt neue Rauchbeginn-/Rauchstopp-Werte zusammengefasst aus", () => {
+    const result = buildMedicalRecordNote({
+      answers: {
+        NIKOTIN_GATE: "Früher, inzwischen aufgehört",
+        NIKOTIN_PRODUKT: "Zigaretten",
+        NIKOTIN_BEGINN_JAHR: "2021",
+        NIKOTIN_BEGINN_VOR: "3",
+        NIKOTIN_AUFGEHOERT_JAHR: "2024",
+        NIKOTIN_AUFGEHOERT_VOR: "0",
+        NIKOTIN_ZIG_PRO_TAG: "20",
+      },
+      selected_block_ids: ["VOLLST_NIKOTIN"],
+    });
+    expect(result).toContain("Rauchbeginn: 2021 (vor 3 Jahren)");
+    expect(result).toContain("Rauchstopp: 2024 (vor 0 Jahren)");
+    expect(result).toContain("Pack-Years: 3");
+    expect(result).not.toContain("Rauchbeginn (Jahr):");
+  });
 });
 
 // ---------------------------------------------------------------------------

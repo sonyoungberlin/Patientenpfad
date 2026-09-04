@@ -13,6 +13,31 @@ const KNOWN_QUESTIONS = [
 ];
 
 describe("sanitizeAnswers", () => {
+  it("validiert neue Nikotin-Zahlen strikt und verwirft Einheiten/Präfixe", () => {
+    const questions = [
+      { id: "NIKOTIN_BEGINN_JAHR" },
+      { id: "NIKOTIN_BEGINN_VOR" },
+      { id: "NIKOTIN_AUFGEHOERT_JAHR" },
+      { id: "NIKOTIN_AUFGEHOERT_VOR" },
+      { id: "NIKOTIN_ZIG_PRO_TAG" },
+    ];
+    const out = sanitizeAnswers({
+      NIKOTIN_BEGINN_JAHR: "2021",
+      NIKOTIN_BEGINN_VOR: "5 Jahre",
+      NIKOTIN_AUFGEHOERT_JAHR: "seit 2021",
+      NIKOTIN_AUFGEHOERT_VOR: "ca. 5",
+      NIKOTIN_ZIG_PRO_TAG: "20 Stück",
+    }, questions);
+    expect(out).toEqual({ NIKOTIN_BEGINN_JAHR: "2021" });
+  });
+
+  it("behält den Legacy-Parser für alte textbasierte Sessions bei", () => {
+    const out = sanitizeAnswers(
+      { NIKOTIN_DAUER_JAHRE: "ca. 15" },
+      [{ id: "NIKOTIN_DAUER_JAHRE" }],
+    );
+    expect(out.NIKOTIN_DAUER_JAHRE).toBe("ca. 15");
+  });
   it("akzeptiert für confirmation ausschließlich exakt den String true", () => {
     const questions = [
       {

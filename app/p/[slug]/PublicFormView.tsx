@@ -39,6 +39,7 @@ import {
 } from "@/components/questionnaire/QuestionField";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import type { PublicPracticeIdentity } from "@/lib/practice/publicIdentity";
+import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
 
 const NOTICE_ID = "public-form-confirm-notice";
 
@@ -161,7 +162,7 @@ export function PublicFormView({
     if (id === "PATIENT_COPY_EMAIL") {
       patientCopyEmailTouched.current = true;
     }
-    setValues((prev) => ({ ...prev, [id]: value }));
+    setValues((prev) => synchronizeSmokingPair(id, value, prev));
     if (missingRequired.has(id)) {
       setMissingRequired((prev) => {
         const next = new Set(prev);

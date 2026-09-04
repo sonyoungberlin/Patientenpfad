@@ -245,7 +245,7 @@ describe("Geänderte Patiententexte", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 16–18. SHORT_LABELS
+// 16. SHORT_LABELS
 // ---------------------------------------------------------------------------
 
 describe("SHORT_LABELS der Pr\u00e4ventionsfragen", () => {
@@ -257,21 +257,4 @@ describe("SHORT_LABELS der Pr\u00e4ventionsfragen", () => {
     expect(note).toContain("Check-up-Beratung");
   });
 
-  it("17. VOLLST_GEWICHT_VERAENDERN → 'Gewicht verändern'", () => {
-    const note = buildMedicalRecordNote({
-      answers: { VOLLST_GEWICHT_VERAENDERN: "Nein" },
-      selected_block_ids: ["VOLLST_PRAEVENTION"],
-    });
-    expect(note).toContain("Gewicht ver\u00e4ndern");
-  });
-
-  it("18. VOLLST_GEWICHT_UNTERSTUETZUNG kürzer als vorher", () => {
-    const note = buildMedicalRecordNote({
-      answers: { VOLLST_GEWICHT_UNTERSTUETZUNG: "ja" },
-      selected_block_ids: ["VOLLST_PRAEVENTION"],
-    });
-    // Altes Label war "Unterstützung Gewicht durch Praxis gewünscht" (44 Zeichen)
-    expect(note).not.toContain("durch Praxis");
-    expect(note).toContain("Unterst\u00fctzung Gewicht");
-  });
 });

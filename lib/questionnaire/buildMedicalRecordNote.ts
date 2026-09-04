@@ -30,6 +30,7 @@ import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
+import { normalizeSmokingPair } from "./smokingInput";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -161,9 +162,12 @@ const SHORT_LABELS: Record<string, string> = {
   NIKOTIN_GATE: "Rauchstatus",
   NIKOTIN_PRODUKT: "Produkt",
   NIKOTIN_PRODUKT_ANDERE: "Produkt (Freitext)",
+  NIKOTIN_BEGINN_JAHR: "Rauchbeginn (Jahr)",
+  NIKOTIN_BEGINN_VOR: "Rauchbeginn (vor Jahren)",
   NIKOTIN_DAUER_JAHRE: "Rauchdauer (ca. Jahre)",
   NIKOTIN_ZIG_PRO_TAG: "Zigaretten/Tag",
   NIKOTIN_AUFGEHOERT_VOR: "Aufgehört vor (ca. Jahren)",
+  NIKOTIN_AUFGEHOERT_JAHR: "Rauchstopp (Jahr)",
   NIKOTIN_AUFHOERVERSUCH: "Aufhörversuch(e)",
   NIKOTIN_RAUCHFREI_DAUER: "Längste Rauchfreiheit",
   NIKOTIN_MOTIVATION: "Aufhörwunsch",
@@ -370,6 +374,39 @@ function renderQuestionLines(questionId: string, rawValue: string): string[] {
   return lines;
 }
 
+const SMOKING_PAIR_IDS = new Set([
+  "NIKOTIN_BEGINN_JAHR",
+  "NIKOTIN_BEGINN_VOR",
+  "NIKOTIN_AUFGEHOERT_JAHR",
+  "NIKOTIN_AUFGEHOERT_VOR",
+]);
+
+function renderSmokingSummary(answers: Record<string, string>): string[] {
+  const start = normalizeSmokingPair(
+    answers.NIKOTIN_BEGINN_JAHR ?? "",
+    answers.NIKOTIN_BEGINN_VOR ?? "",
+  );
+  if (!start) return [];
+
+  const lines = [`Rauchbeginn: ${start.year} (vor ${start.yearsAgo} Jahren)`];
+  if (answers.NIKOTIN_GATE === "Früher, inzwischen aufgehört") {
+    const stop = normalizeSmokingPair(
+      answers.NIKOTIN_AUFGEHOERT_JAHR ?? "",
+      answers.NIKOTIN_AUFGEHOERT_VOR ?? "",
+    );
+    if (stop) lines.push(`Rauchstopp: ${stop.year} (vor ${stop.yearsAgo} Jahren)`);
+  }
+  return lines;
+}
+
+function hasNewSmokingStructure(answers: Record<string, string>): boolean {
+  return [
+    "NIKOTIN_BEGINN_JAHR",
+    "NIKOTIN_BEGINN_VOR",
+    "NIKOTIN_AUFGEHOERT_JAHR",
+  ].some((id) => (answers[id] ?? "").trim() !== "");
+}
+
 /**
  * Erzeugt einen blockbasierten Krankenblatt-Notiz-Text.
  *
@@ -431,6 +468,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         if (!frozenVisibleIds.has(question.id)) continue;
         if (seenQuestionIds.has(question.id)) continue;
         seenQuestionIds.add(question.id);
+        if (block.id === "VOLLST_NIKOTIN" && hasNewSmokingStructure(answers) && SMOKING_PAIR_IDS.has(question.id)) continue;
         const raw = (answers[question.id] ?? "").trim();
         if (raw === "") continue;
 
@@ -459,6 +497,10 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         blockLines.push(...renderQuestionLines(question.id, raw));
       }
 
+      if (block.id === "VOLLST_NIKOTIN") {
+        blockLines.push(...renderSmokingSummary(answers));
+      }
+
       if (blockLines.length === 0) continue;
       lines.push("");
       lines.push(block.label);
@@ -477,6 +519,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
       for (const questionId of block.questionIds) {
         if (seenQuestionIds.has(questionId)) continue;
         seenQuestionIds.add(questionId);
+        if (block.id === "VOLLST_NIKOTIN" && hasNewSmokingStructure(answers) && SMOKING_PAIR_IDS.has(questionId)) continue;
         if (!(questionId in QUESTION_CATALOG)) continue;
         const raw = (answers[questionId] ?? "").trim();
         if (raw === "") continue;
@@ -497,6 +540,9 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         }
 
         blockLines.push(...renderQuestionLines(questionId, raw));
+      }
+      if (block.id === "VOLLST_NIKOTIN") {
+        blockLines.push(...renderSmokingSummary(answers));
       }
       if (blockLines.length === 0) continue;
       lines.push("");

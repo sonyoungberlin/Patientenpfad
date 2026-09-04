@@ -9,6 +9,7 @@
 import {
   BLOCK_CATALOG,
   QUESTION_CATALOG,
+  resolveQuestionIdsForBlocks,
   type QuestionDefinition,
 } from "./blockCatalog";
 import { type ConditionalRule } from "./conditionalLogic";
@@ -41,9 +42,10 @@ export function buildQuestionnaireQuestions(
   // 2. Fragen dedupliziert sammeln (erster Auftritt gewinnt).
   const seen = new Set<string>();
   const result: QuestionDefinition[] = [];
+  const resolvedQuestionIds = resolveQuestionIdsForBlocks(selectedBlockIds);
 
   for (const block of validBlocks) {
-    for (const questionId of block.questionIds) {
+    for (const questionId of resolvedQuestionIds.get(block.id) ?? block.questionIds) {
       if (seen.has(questionId)) continue;
       const question = QUESTION_CATALOG[questionId];
       if (!question) continue;

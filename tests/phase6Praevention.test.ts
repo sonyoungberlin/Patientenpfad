@@ -5,7 +5,7 @@
  *  - VOLLST_PRAEVENTION-Block im Katalog
  *  - Check-up: AGE-gesteuerte Sichtbarkeit (Derived Condition)
  *  - Lungenkrebs-Beratungsangebot: G-BA-Kriterien (kein Anspruchsentscheid)
- *  - Gewicht: Unterstützungsfrage conditional auf Veränderungswunsch
+ *  - schlanker Check-up-/Präventionsumfang
  *  - Impfstatus: bestehende Logik unverändert
  *  - Nikotin/Alkohol/Substanzen: keine doppelten Questions
  *  - Frozen: Präventionsblock in neuer Session eingefroren
@@ -25,6 +25,7 @@ import {
 } from "../lib/questionnaire/conditionalLogic";
 import { buildMedicalRecordNote } from "../lib/questionnaire/buildMedicalRecordNote";
 import { buildFrozenBlocks } from "../lib/questionnaire/frozenBlocks";
+import { buildQuestionnaireQuestions } from "../lib/questionnaire/buildQuestionnaireQuestions";
 import {
   computeSmokingDurationYears,
   computeSmokingStoppedYearsAgo,
@@ -38,6 +39,9 @@ import {
 const PRAEV_BLOCK = BLOCK_CATALOG["VOLLST_PRAEVENTION"];
 const PRAEV_RULES = PRAEV_BLOCK?.conditionalRules ?? [];
 const PRAEV_QS = PRAEV_BLOCK?.questionIds ?? [];
+const NIKOTIN_BLOCK = BLOCK_CATALOG["VOLLST_NIKOTIN"];
+const NIKOTIN_RULES = NIKOTIN_BLOCK?.conditionalRules ?? [];
+const NIKOTIN_QS = NIKOTIN_BLOCK?.questionIds ?? [];
 
 function visibleIds(
   rules: ConditionalRule[],
@@ -67,7 +71,7 @@ function lungVisible(
   answers: Record<string, string>,
   dv: Record<string, number>,
 ): boolean {
-  return visibleIds(PRAEV_RULES, PRAEV_QS, answers, dv).has("VOLLST_LUNGENSCREENING_BERATUNG");
+  return visibleIds(NIKOTIN_RULES, NIKOTIN_QS, answers, dv).has("VOLLST_LUNGENSCREENING_BERATUNG");
 }
 
 // ---------------------------------------------------------------------------
@@ -92,11 +96,12 @@ describe("VOLLST_PRAEVENTION – Katalog", () => {
       expect.arrayContaining([
         "VOLLST_CHECKUP_STATUS",
         "VOLLST_CHECKUP_BERATUNG",
-        "VOLLST_LUNGENSCREENING_BERATUNG",
-        "VOLLST_GEWICHT_VERAENDERN",
-        "VOLLST_GEWICHT_UNTERSTUETZUNG",
       ]),
     );
+  });
+
+  it("enthält das Lungenscreening nicht", () => {
+    expect(PRAEV_QS).not.toContain("VOLLST_LUNGENSCREENING_BERATUNG");
   });
 
   it("ist Bestandteil von VOLLSTAENDIGE_ANAMNESE_PRESET", () => {
@@ -107,6 +112,25 @@ describe("VOLLST_PRAEVENTION – Katalog", () => {
     for (const qid of PRAEV_QS) {
       expect(QUESTION_CATALOG[qid]).toBeDefined();
     }
+  });
+
+  it("zieht VOLLST_AGE bei Standalone und Kurzanamnese automatisch mit", () => {
+    expect(buildQuestionnaireQuestions(["VOLLST_PRAEVENTION"]).map((q) => q.id))
+      .toContain("VOLLST_AGE");
+    expect(buildQuestionnaireQuestions(["KURZANAMNESE", "VOLLST_PRAEVENTION"]).map((q) => q.id))
+      .toContain("VOLLST_AGE");
+  });
+
+  it("verwendet eine vorhandene AGE-Quelle ohne zusätzliche Altersfrage", () => {
+    const ids = buildQuestionnaireQuestions(["IDENTITAET", "VOLLST_PRAEVENTION"])
+      .map((q) => q.id);
+    expect(ids.filter((id) => id === "IDENTITY_BIRTHDATE")).toHaveLength(1);
+    expect(ids).not.toContain("VOLLST_AGE");
+  });
+
+  it("entfernt Gewichtsfragen aus neuem Präventionsblock", () => {
+    expect(PRAEV_QS).not.toContain("VOLLST_GEWICHT_VERAENDERN");
+    expect(PRAEV_QS).not.toContain("VOLLST_GEWICHT_UNTERSTUETZUNG");
   });
 });
 
@@ -306,7 +330,7 @@ describe("Lungenkrebs-Beratungsangebot – G-BA-Kriterien April 2026", () => {
   it("15. Krankenblatt enthält keine Anspruchs-/Diagnoseformulierung", () => {
     const note = buildMedicalRecordNote({
       answers: { VOLLST_LUNGENSCREENING_BERATUNG: "ja" },
-      selected_block_ids: ["VOLLST_PRAEVENTION"],
+      selected_block_ids: ["VOLLST_NIKOTIN"],
     });
     expect(note).not.toMatch(/Anspruch|berechtigt|erf\u00fcllt|indiziert|Screening empfohlen/i);
     expect(note).toContain("Ja");
@@ -324,58 +348,22 @@ describe("Lungenkrebs-Beratungsangebot – G-BA-Kriterien April 2026", () => {
     const noPackYearsDV = lungDV(60, 0, 30); // PACK_YEARS = 0 → < 15
     expect(lungVisible(answersNoProduct, noPackYearsDV)).toBe(false);
   });
-});
 
-// ---------------------------------------------------------------------------
-// 6. Gewicht – Sichtbarkeit der Unterstützungsfrage
-// ---------------------------------------------------------------------------
-
-describe("Gewicht – Conditional Logic", () => {
-  it("'Nein' → Unterstützungsfrage verborgen", () => {
-    const answers = { VOLLST_GEWICHT_VERAENDERN: "Nein" };
-    const visible = visibleIds(PRAEV_RULES, PRAEV_QS, answers);
-    expect(visible.has("VOLLST_GEWICHT_UNTERSTUETZUNG")).toBe(false);
+  it("liegt im VOLLST_NIKOTIN-Block und ergänzt dessen Prerequisites", () => {
+    expect(NIKOTIN_QS).toContain("VOLLST_LUNGENSCREENING_BERATUNG");
+    expect(NIKOTIN_BLOCK.prerequisiteQuestionIds).toEqual(["VOLLST_AGE", "IDENTITY_BIRTHDATE"]);
+    expect(PRAEV_QS).not.toContain("VOLLST_LUNGENSCREENING_BERATUNG");
   });
 
-  it("'Gewicht reduzieren' → Unterstützungsfrage sichtbar", () => {
-    const answers = { VOLLST_GEWICHT_VERAENDERN: "Ja, ich möchte Gewicht reduzieren" };
-    const visible = visibleIds(PRAEV_RULES, PRAEV_QS, answers);
-    expect(visible.has("VOLLST_GEWICHT_UNTERSTUETZUNG")).toBe(true);
-  });
-
-  it("'Gewicht zunehmen' → Unterstützungsfrage sichtbar", () => {
-    const answers = { VOLLST_GEWICHT_VERAENDERN: "Ja, ich möchte Gewicht zunehmen" };
-    const visible = visibleIds(PRAEV_RULES, PRAEV_QS, answers);
-    expect(visible.has("VOLLST_GEWICHT_UNTERSTUETZUNG")).toBe(true);
-  });
-
-  it("'Ich bin mir unsicher' → Unterstützungsfrage sichtbar", () => {
-    const answers = { VOLLST_GEWICHT_VERAENDERN: "Ich bin mir unsicher" };
-    const visible = visibleIds(PRAEV_RULES, PRAEV_QS, answers);
-    expect(visible.has("VOLLST_GEWICHT_UNTERSTUETZUNG")).toBe(true);
-  });
-
-  it("Änderung zurück auf 'Nein' → Antwort wird nicht submitted", () => {
-    const answers = { VOLLST_GEWICHT_VERAENDERN: "Nein", VOLLST_GEWICHT_UNTERSTUETZUNG: "ja" };
-    const visible = visibleIds(PRAEV_RULES, PRAEV_QS, answers);
-    expect(visible.has("VOLLST_GEWICHT_UNTERSTUETZUNG")).toBe(false);
-  });
-
-  it("BMI allein löst keine Beratungsfrage aus (keine BMI-Regel im Block)", () => {
-    // Kein BMI-gesteuertes showQuestion für Gewichtsfragen
-    const bmiRuleExists = PRAEV_RULES.some(
-      (r) =>
-        "mode" in r.condition
-          ? false
-          : r.condition.target.kind === "derived" &&
-            r.condition.target.derivedId === "BMI",
-    );
-    expect(bmiRuleExists).toBe(false);
+  it("VOLLST_NIKOTIN bringt die AGE-Frage standalone mit", () => {
+    const ids = buildQuestionnaireQuestions(["VOLLST_NIKOTIN"]).map((q) => q.id);
+    expect(ids).toContain("VOLLST_AGE");
+    expect(ids).toContain("VOLLST_LUNGENSCREENING_BERATUNG");
   });
 });
 
 // ---------------------------------------------------------------------------
-// 7. Impfstatus – bestehende Logik unverändert
+// 6. Impfstatus – bestehende Logik unverändert
 // ---------------------------------------------------------------------------
 
 describe("VOLLST_IMPFSTATUS – bestehende Logik", () => {
@@ -470,6 +458,11 @@ describe("Frozen Sessions – Phase 6", () => {
     expect(hasAgeRule).toBe(true);
   });
 
+  it("Frozen Präventionsblock enthält die automatisch ergänzte AGE-Frage", () => {
+    const frozen = buildFrozenBlocks(["VOLLST_PRAEVENTION"]);
+    expect(frozen[0].questions.map((q) => q.id)).toContain("VOLLST_AGE");
+  });
+
   it("eingefrorene Questions sind tiefe Kopien – Mutation ändert nicht Frozen", () => {
     const frozen = buildFrozenBlocks(["VOLLST_PRAEVENTION"]);
     const checkupQ = frozen[0].questions.find((q) => q.id === "VOLLST_CHECKUP_STATUS");
@@ -505,20 +498,8 @@ describe("Krankenblatt – Beratungswünsche", () => {
   it("Lungenkrebs-Beratungswunsch erscheint lesbar", () => {
     const note = buildMedicalRecordNote({
       answers: { VOLLST_LUNGENSCREENING_BERATUNG: "ja" },
-      selected_block_ids: ["VOLLST_PRAEVENTION"],
+      selected_block_ids: ["VOLLST_NIKOTIN"],
     });
-    expect(note).toContain("Ja");
-  });
-
-  it("Gewicht-Veränderungswunsch erscheint im Krankenblatt", () => {
-    const note = buildMedicalRecordNote({
-      answers: {
-        VOLLST_GEWICHT_VERAENDERN: "Ja, ich möchte Gewicht reduzieren",
-        VOLLST_GEWICHT_UNTERSTUETZUNG: "ja",
-      },
-      selected_block_ids: ["VOLLST_PRAEVENTION"],
-    });
-    expect(note).toContain("reduzieren");
     expect(note).toContain("Ja");
   });
 
@@ -528,7 +509,7 @@ describe("Krankenblatt – Beratungswünsche", () => {
         VOLLST_CHECKUP_STATUS: "Noch nie",
         VOLLST_LUNGENSCREENING_BERATUNG: "ja",
       },
-      selected_block_ids: ["VOLLST_PRAEVENTION"],
+      selected_block_ids: ["VOLLST_PRAEVENTION", "VOLLST_NIKOTIN"],
     });
     expect(note).not.toMatch(/indiziert|Anspruch|berechtigt|Adipositas|Übergewicht|Abhängigkeit/i);
   });

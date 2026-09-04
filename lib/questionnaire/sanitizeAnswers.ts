@@ -27,6 +27,18 @@ import { isConfirmedAnswer } from "./confirmation";
 import type { QuestionnaireLanguage } from "./i18n";
 import { ALLOWED_ANSWER_CHARACTERS_REGEX } from "./validateAnswerCharacters";
 import { parseMultiSelectValue } from "./multiSelect";
+import {
+  isPlausibleCalendarYear,
+  isPlausibleYearsAgo,
+  normalizeSmokingPair,
+  parseStrictIntegerAnswer,
+  parseStrictNumericAnswer,
+  SMOKING_NUMERIC_QUESTION_IDS,
+  SMOKING_START_YEAR_ID,
+  SMOKING_START_YEARS_AGO_ID,
+  SMOKING_STOP_YEAR_ID,
+  SMOKING_STOP_YEARS_AGO_ID,
+} from "./smokingInput";
 
 /** Pro-Antwort-Längenlimit. Identisch zur Phase-2-Token-Flow-Konstante. */
 export const MAX_ANSWER_LENGTH = 2000;
@@ -267,9 +279,17 @@ export function sanitizeAnswers(
       if (value === "") {
         sanitized[questionId] = "";
       } else {
-        const normalized = value.replace(",", ".").trim();
-        const num = parseFloat(normalized);
-        if (!isNaN(num) && isFinite(num) && num >= 0) {
+        const num = parseStrictNumericAnswer(value);
+        const integer = parseStrictIntegerAnswer(value);
+        const today = new Date();
+        const valid = SMOKING_NUMERIC_QUESTION_IDS.has(questionId)
+          ? questionId.endsWith("_JAHR")
+            ? integer !== null && isPlausibleCalendarYear(integer, today)
+            : questionId.endsWith("_VOR")
+              ? integer !== null && isPlausibleYearsAgo(integer, today)
+              : num !== null
+          : num !== null;
+        if (valid && num !== null) {
           sanitized[questionId] = String(num);
         }
       }
@@ -281,6 +301,22 @@ export function sanitizeAnswers(
       language === "en"
         ? canonicalizeAnswerValue(questionId, sliced)
         : sliced;
+  }
+
+  const today = new Date();
+  const smokingPairs = [
+    [SMOKING_START_YEAR_ID, SMOKING_START_YEARS_AGO_ID],
+    [SMOKING_STOP_YEAR_ID, SMOKING_STOP_YEARS_AGO_ID],
+  ] as const;
+  for (const [yearId, yearsAgoId] of smokingPairs) {
+    if (
+      sanitized[yearId] !== undefined &&
+      sanitized[yearsAgoId] !== undefined &&
+      normalizeSmokingPair(sanitized[yearId], sanitized[yearsAgoId], today) === null
+    ) {
+      delete sanitized[yearId];
+      delete sanitized[yearsAgoId];
+    }
   }
 
   return sanitized;

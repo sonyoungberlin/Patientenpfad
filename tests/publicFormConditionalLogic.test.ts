@@ -209,16 +209,16 @@ describe("11. AGE-derived Conditional (computeAllDerivedValues)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 12. VOLLST_PRAEVENTION Lungenkrebs-Beratungs-Conditional
+// 12. VOLLST_NIKOTIN Lungenkrebs-Beratungs-Conditional
 // ---------------------------------------------------------------------------
 
-describe("12. VOLLST_PRAEVENTION – Lungenkrebs-Beratungsangebot Conditional", () => {
+describe("12. VOLLST_NIKOTIN – Lungenkrebs-Beratungsangebot Conditional", () => {
   it("Block ist im Katalog vorhanden", () => {
-    expect(BLOCK_CATALOG["VOLLST_PRAEVENTION"]).toBeDefined();
+    expect(BLOCK_CATALOG["VOLLST_NIKOTIN"]).toBeDefined();
   });
 
-  it("buildFrozenBlocks liefert Conditional-Rules für VOLLST_PRAEVENTION", () => {
-    const blocks = buildFrozenBlocks(["VOLLST_PRAEVENTION"]);
+  it("buildFrozenBlocks liefert Conditional-Rules für VOLLST_NIKOTIN", () => {
+    const blocks = buildFrozenBlocks(["VOLLST_NIKOTIN"]);
     const rules = blocks.flatMap((b) => b.conditionalRules);
     // Block hat mindestens eine Conditional-Rule (Beratungsthemen-Gate)
     expect(rules.length).toBeGreaterThan(0);
