@@ -131,6 +131,28 @@ describe("questionnaire pdf filename", () => {
     await expect(getFilename()).resolves.toBe("20260512_4711_Versicherungsdaten.pdf");
   });
 
+  it("puts contact details first regardless of selected block order", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({
+        patient_reference: "4711",
+        selected_block_ids: ["VERSICHERUNG", "KONTAKT", "IDENTITAET"],
+      }),
+    );
+
+    await expect(getFilename()).resolves.toBe("20260512_4711_Kontaktdaten_Versicherungsdaten.pdf");
+  });
+
+  it("does not duplicate contact details when they are the first block", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({
+        patient_reference: "4711",
+        selected_block_ids: ["KONTAKT", "VERSICHERUNG"],
+      }),
+    );
+
+    await expect(getFilename()).resolves.toBe("20260512_4711_Kontaktdaten.pdf");
+  });
+
   it("uses public practice form title for website sessions", async () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
       baseSession({
@@ -142,6 +164,19 @@ describe("questionnaire pdf filename", () => {
     );
 
     await expect(getFilename()).resolves.toBe("20260512_Test_Neupatient.pdf");
+  });
+
+  it("puts contact details first for public practice forms", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({
+        patient_reference: "Test",
+        source: "website",
+        practice_form: { title: "Neupatient" },
+        selected_block_ids: ["VERSICHERUNG", "KONTAKT"],
+      }),
+    );
+
+    await expect(getFilename()).resolves.toBe("20260512_Test_Kontaktdaten_Neupatient.pdf");
   });
 
   it("sanitizes special characters in public practice form title", async () => {

@@ -54,6 +54,18 @@ function getFirstBlockLabel(
   return sanitized.length > 0 ? sanitized : null;
 }
 
+function prioritizeContactBlock(
+  questionnairePart: string | null,
+  selectedBlockIds: string[],
+  blockCatalog: Record<string, QuestionnaireBlock>,
+): string | null {
+  if (!selectedBlockIds.includes("KONTAKT")) return questionnairePart;
+
+  const contactPart = sanitizeFilenamePart(blockCatalog.KONTAKT?.label ?? "");
+  if (!contactPart || questionnairePart === contactPart) return questionnairePart ?? contactPart;
+  return questionnairePart ? `${contactPart}_${questionnairePart}` : contactPart;
+}
+
 export type PdfSessionInput = {
   patient_reference: string | null;
   submitted_at: Date | null;
@@ -414,10 +426,15 @@ export async function buildQuestionnairePdfBytes(
   const bytes = await pdfDoc.save();
 
   const datePart = formatDateYyyyMmDd(session.submitted_at ?? new Date());
-  const questionnairePart =
+  const questionnairePartWithoutContact =
     session.source === "website"
       ? sanitizeFilenamePart(session.practice_form?.title ?? "") || null
       : getFirstBlockLabel(selectedBlockIds, blockCatalog);
+  const questionnairePart = prioritizeContactBlock(
+    questionnairePartWithoutContact,
+    selectedBlockIds,
+    blockCatalog,
+  );
 
   let filename: string;
   if (session.patient_reference) {
