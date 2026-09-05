@@ -54,6 +54,8 @@ export type QuestionnaireCardProps = {
    * DigitalRequest erzeugt wurde (Phase B Schritt 5).
    */
   isFromDigitalRequest?: boolean;
+  /** Technischer Entstehungsweg der Fragebogensession. */
+  source?: string | null;
   /**
    * Berechnete Werte (AGE, BMI, Pack-Years) für die Praxisanzeige.
    * Wird von der übergeordneten Seite vorberechnet und übergeben.
@@ -81,10 +83,16 @@ export default function QuestionnaireCard({
   pdfDownloadedAt = null,
   deletedAt = null,
   isFromDigitalRequest = false,
+  source = null,
   derivedValues = null,
   visibleQuestionIds,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
+  const sourceLabel = isFromDigitalRequest
+    ? "Digitale Anfrage"
+    : source === "practice_direct"
+      ? "Sofort-Abfrage"
+      : null;
   return (
     <div
       className="card"
@@ -117,7 +125,7 @@ export default function QuestionnaireCard({
         <span style={getStatusBadgeStyle(displayStatus)}>{statusLabel}</span>
       </div>
 
-      {isFromDigitalRequest && (
+      {sourceLabel && (
         <div
           className="text-small"
           data-q-source-badge={id}
@@ -130,7 +138,7 @@ export default function QuestionnaireCard({
             width: "fit-content",
           }}
         >
-          Digitale Anfrage
+          {sourceLabel}
         </div>
       )}
 

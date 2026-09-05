@@ -123,6 +123,9 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
     const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain("Krankenblatt-Text kopieren");
     expect(markup).toContain(`data-q-copy-note="session-completed-1"`);
+    expect(prismaMock.patientQuestionnaireSession.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ select: expect.objectContaining({ source: true }) }),
+    );
   });
 
   it("zeigt keinen sichtbaren Krankenblatt-Text-Inhalt bei completed Session", async () => {

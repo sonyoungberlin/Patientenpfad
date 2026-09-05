@@ -127,6 +127,7 @@ export default async function QuestionnairesPage({
       pdf_downloaded_at: true,
       deleted_at: true,
       frozen_blocks: true,
+      source: true,
     },
   });
 
@@ -270,6 +271,7 @@ export default async function QuestionnairesPage({
                 pdfDownloadedAt={s.pdf_downloaded_at}
                 deletedAt={s.deleted_at}
                 isFromDigitalRequest={digitalRequestSessionIds.has(s.id)}
+                source={s.source}
               />
             );
           })}

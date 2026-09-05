@@ -1843,6 +1843,7 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Neurologische Erkrankung",
       "Geschwächtes Immunsystem oder immunsuppressive Behandlung",
       "Andere schwere chronische Erkrankung",
+      "Nichts davon",
     ],
   },
   IMPFBERATUNG_REISELAND: {

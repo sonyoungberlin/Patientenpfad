@@ -37,9 +37,12 @@ export function toggleMultiSelectValue(
 ): string {
   const current = parseMultiSelectValue(value, options);
   const selected = current.includes(option);
+  const noneOptions = new Set(["Nichts davon", "None of the above"]);
+  if (!selected && noneOptions.has(option)) return option;
+
   const next = selected
     ? current.filter((entry) => entry !== option)
-    : [...current, option];
+    : [...current.filter((entry) => !noneOptions.has(entry)), option];
   return next.join(", ");
 }
 

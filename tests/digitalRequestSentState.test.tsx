@@ -321,6 +321,14 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
     expect(markup).toContain("Digitale Anfrage");
   });
 
+  it("zeigt Badge 'Sofort-Abfrage' bei source=practice_direct", () => {
+    const markup = renderToStaticMarkup(
+      QuestionnaireCard({ ...BASE_PROPS, source: "practice_direct" }),
+    );
+    expect(markup).toContain("Sofort-Abfrage");
+    expect(markup).not.toContain("Digitale Anfrage");
+  });
+
   it("kein Badge wenn isFromDigitalRequest=false", () => {
     const markup = renderToStaticMarkup(
       QuestionnaireCard({ ...BASE_PROPS, isFromDigitalRequest: false }),
@@ -331,5 +339,6 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
   it("kein Badge wenn isFromDigitalRequest nicht übergeben (Default)", () => {
     const markup = renderToStaticMarkup(QuestionnaireCard(BASE_PROPS));
     expect(markup).not.toContain("Digitale Anfrage");
+    expect(markup).not.toContain("Sofort-Abfrage");
   });
 });

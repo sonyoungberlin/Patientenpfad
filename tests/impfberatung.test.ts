@@ -92,4 +92,11 @@ describe("IMPFBERATUNG – reduzierter Gate-Baum", () => {
     expect(QUESTION_CATALOG.IMPFBERATUNG_REISELAND.type).toBe("select");
     expect(QUESTION_CATALOG).not.toHaveProperty("IMPFBERATUNG_REISEREGION");
   });
+
+  it("bietet bei der Pflichtfrage zu Risikokonstellationen 'Nichts davon' an", () => {
+    const question = QUESTION_CATALOG.IMPFBERATUNG_RISIKOGRUPPEN;
+
+    expect(question.required).toBe(true);
+    expect(question.options).toContain("Nichts davon");
+  });
 });

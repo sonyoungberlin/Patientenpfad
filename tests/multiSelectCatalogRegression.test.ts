@@ -50,6 +50,9 @@ describe("Multi-Select-Katalogregression", () => {
     const serializedValues = new Map<string, string>();
 
     for (const selectedOptions of combinations(options, maxSize)) {
+      if (selectedOptions.includes("Nichts davon") && selectedOptions.length > 1) {
+        continue;
+      }
       let serialized = "";
       for (const option of selectedOptions) {
         serialized = toggleMultiSelectValue(serialized, option, options);
@@ -107,5 +110,12 @@ describe("Multi-Select-Katalogregression", () => {
         new Map([["ADIP_ZUNAHME_AUSLOESER", QUESTION_CATALOG.ADIP_ZUNAHME_AUSLOESER!.options!]]),
       ),
     ).toBe(true);
+  });
+
+  it("behandelt 'Nichts davon' generisch als exklusive Option", () => {
+    const options = ["Risiko A", "Risiko B", "Nichts davon"];
+
+    expect(toggleMultiSelectValue("Risiko A, Risiko B", "Nichts davon", options)).toBe("Nichts davon");
+    expect(toggleMultiSelectValue("Nichts davon", "Risiko A", options)).toBe("Risiko A");
   });
 });
