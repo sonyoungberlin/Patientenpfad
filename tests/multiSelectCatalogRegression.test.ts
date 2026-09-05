@@ -40,7 +40,7 @@ describe("Multi-Select-Katalogregression", () => {
   const definitions = collectMultiSelectDefinitions();
 
   it("erfasst alle eigenständigen und verschachtelten Multi-Selects", () => {
-    expect(definitions.length).toBe(11);
+    expect(definitions.length).toBe(13);
     expect(definitions.map((definition) => definition.id)).toContain("VOLLST_FAMIL_EINTRAEGE.verwandtschaft");
     expect(definitions.map((definition) => definition.id)).toContain("ADIP_ESSVERHALTEN_MUSTER");
   });

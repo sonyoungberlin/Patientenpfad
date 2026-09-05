@@ -67,7 +67,7 @@ describe("Pflichtfelder KURZANAMNESE", () => {
     "ANAMNESE_MEDICATIONS",
     "ANAMNESE_SMOKING",
     "ANAMNESE_ALCOHOL",
-    "ANAMNESE_VACCINATION",
+    "VOLLST_IMPF_BEKANNT",
   ];
 
   it.each(requiredIds)("%s ist required", (id) => {

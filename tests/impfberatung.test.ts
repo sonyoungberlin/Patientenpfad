@@ -3,6 +3,9 @@ import { computeVisibleBlockIds, computeVisibleQuestionIds } from "@/lib/questio
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
+import { buildQuestionnaireQuestions } from "@/lib/questionnaire/buildQuestionnaireQuestions";
+import { parseMultiSelectValue } from "@/lib/questionnaire/multiSelect";
+import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 
 describe("IMPFBERATUNG – reduzierter Gate-Baum", () => {
   it("hat nur den Startblock als direkt auswählbaren Impfberatungsblock", () => {
@@ -98,5 +101,68 @@ describe("IMPFBERATUNG – reduzierter Gate-Baum", () => {
 
     expect(question.required).toBe(true);
     expect(question.options).toContain("Nichts davon");
+  });
+
+  it("verwendet die gemeinsame Impfstatusfrage und dedupliziert sie global", () => {
+    expect(BLOCK_CATALOG.KURZANAMNESE.questionIds).toContain("VOLLST_IMPF_BEKANNT");
+    expect(BLOCK_CATALOG.IMPFBERATUNG.questionIds).toContain("VOLLST_IMPF_BEKANNT");
+    expect(QUESTION_CATALOG.ANAMNESE_VACCINATION).toBeDefined();
+    expect(QUESTION_CATALOG.VOLLST_IMPF_BEKANNT.options).toEqual(["Ja", "Nein", "Unsicher"]);
+  });
+
+  it.each([
+    ["KURZANAMNESE"],
+    ["VOLLST_IMPFSTATUS"],
+    ["IMPFBERATUNG"],
+    ["KURZANAMNESE", "VOLLST_IMPFSTATUS"],
+    ["KURZANAMNESE", "IMPFBERATUNG"],
+    ["VOLLST_IMPFSTATUS", "IMPFBERATUNG"],
+    ["KURZANAMNESE", "VOLLST_IMPFSTATUS", "IMPFBERATUNG"],
+  ])("liefert für %s genau eine kanonische Impfstatusfrage", (...blockIds) => {
+    const vaccinationQuestions = buildQuestionnaireQuestions(blockIds).filter(
+      (question) => question.text === "Ist Ihr Impfstatus bekannt?",
+    );
+
+    expect(vaccinationQuestions).toHaveLength(1);
+    expect(vaccinationQuestions[0].id).toBe("VOLLST_IMPF_BEKANNT");
+  });
+
+  it("verwendet dieselbe Antwort bei kombinierter Blockauswahl und akzeptiert Unsicher", () => {
+    const questions = buildQuestionnaireQuestions(["KURZANAMNESE", "IMPFBERATUNG"]);
+    const statusQuestions = questions.filter((question) => question.id === "VOLLST_IMPF_BEKANNT");
+
+    expect(statusQuestions).toHaveLength(1);
+    expect(statusQuestions[0].options).toContain("Unsicher");
+    expect(sanitizeAnswers(
+      { VOLLST_IMPF_BEKANNT: "Unsicher" },
+      questions,
+    )).toEqual({ VOLLST_IMPF_BEKANNT: "Unsicher" });
+  });
+
+  it("bietet konkrete Impfungen und Impulsquellen als optionale Multi-Selects an", () => {
+    const vaccinations = QUESTION_CATALOG.IMPFBERATUNG_IMPFUNGEN;
+    const sources = QUESTION_CATALOG.IMPFBERATUNG_IMPULSQUELLE;
+
+    expect(vaccinations.type).toBe("multi_select");
+    expect(vaccinations.required).toBe(false);
+    expect(vaccinations.options).toContain("Ich weiß es nicht genau");
+    expect(sources.type).toBe("multi_select");
+    expect(sources.required).toBe(false);
+    expect(sources.options).toContain("Ich weiß es nicht mehr / nicht genau");
+    expect(parseMultiSelectValue("Pneumokokken, FSME, COVID-19", vaccinations.options ?? [])).toEqual([
+      "Pneumokokken",
+      "FSME",
+      "COVID-19",
+    ]);
+    expect(parseMultiSelectValue("Facharzt / Fachärztin, Apotheke", sources.options ?? [])).toEqual([
+      "Facharzt / Fachärztin",
+      "Apotheke",
+    ]);
+  });
+
+  it("zeigt beide neuen Fragen im Einstiegsblock unabhängig vom Anlass", () => {
+    const questionIds = buildFrozenBlocks(["IMPFBERATUNG"])[0].questions.map((q) => q.id);
+    expect(questionIds).toContain("IMPFBERATUNG_IMPFUNGEN");
+    expect(questionIds).toContain("IMPFBERATUNG_IMPULSQUELLE");
   });
 });

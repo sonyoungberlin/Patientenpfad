@@ -13,6 +13,7 @@
  */
 
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
+import { QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
 
 describe("buildMedicalRecordNote – Titel", () => {
   it("liefert 'AU-Anfrage (digital)' wenn nur ARBEITSUNFAEHIGKEIT gewählt", () => {
@@ -430,7 +431,7 @@ describe("buildMedicalRecordNote – Kurzanamnese-Block (vollständig)", () => {
         ANAMNESE_SMOKING: "ja",
         ANAMNESE_ALCOHOL: "nein",
         ANAMNESE_SUBSTANCES: "kaffee",
-        ANAMNESE_VACCINATION: "ja",
+        VOLLST_IMPF_BEKANNT: "Ja",
       },
       selected_block_ids: ["KURZANAMNESE"],
     });
@@ -608,7 +609,7 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
         ANAMNESE_SMOKING: "ja",
         ANAMNESE_ALCOHOL: "nein",
         ANAMNESE_SUBSTANCES: "kaffee",
-        ANAMNESE_VACCINATION: "ja",
+        VOLLST_IMPF_BEKANNT: "Ja",
       },
       selected_block_ids: [
         "IDENTITAET",
@@ -656,6 +657,24 @@ describe("buildMedicalRecordNote – Block-Reihenfolge nach displayOrder", () =>
     ].join("\n");
     expect(result).toBe(expected);
     jest.useRealTimers();
+  });
+
+  it("rendert eine bestehende Frozen Session mit der Legacy-ID weiter", () => {
+    const legacyQuestion = QUESTION_CATALOG.ANAMNESE_VACCINATION;
+    const result = buildMedicalRecordNote({
+      answers: { ANAMNESE_VACCINATION: "ja" },
+      selected_block_ids: ["KURZANAMNESE"],
+      frozenBlocks: [{
+        id: "KURZANAMNESE",
+        label: "Kurzanamnese",
+        displayOrder: 60,
+        questions: [legacyQuestion],
+        conditionalRules: [],
+        initiallyVisible: true,
+      }],
+    });
+
+    expect(result).toContain("Impfstatus bekannt: Ja");
   });
 });
 

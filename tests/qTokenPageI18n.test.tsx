@@ -215,7 +215,7 @@ describe("/q/[token] Mehrsprachigkeit", () => {
       "ANAMNESE_SMOKING",
       "ANAMNESE_ALCOHOL",
       "ANAMNESE_SUBSTANCES",
-      "ANAMNESE_VACCINATION",
+      "VOLLST_IMPF_BEKANNT",
       "ANAMNESE_OCCUPATION",
     ]);
 

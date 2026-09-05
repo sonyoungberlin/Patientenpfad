@@ -74,7 +74,8 @@ describe("buildQuestionnaireQuestions – Deduplizierung", () => {
     expect(ids).toContain("ANAMNESE_SMOKING");
     expect(ids).toContain("ANAMNESE_ALCOHOL");
     expect(ids).toContain("ANAMNESE_SUBSTANCES");
-    expect(ids).toContain("ANAMNESE_VACCINATION");
+    expect(ids).toContain("VOLLST_IMPF_BEKANNT");
+    expect(ids).not.toContain("ANAMNESE_VACCINATION");
     expect(ids).toContain("ANAMNESE_OCCUPATION");
   });
 
