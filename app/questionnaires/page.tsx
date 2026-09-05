@@ -15,7 +15,7 @@ import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
-import { computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
+import { computeVisibleBlockIds, computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
@@ -30,7 +30,15 @@ function buildVisibleQIds(
 ): Set<string> {
   const visible = new Set<string>();
   if (frozenBlocks && frozenBlocks.length > 0) {
+    const allRules = frozenBlocks.flatMap((block) => block.conditionalRules);
+    const visibleBlockIds = computeVisibleBlockIds(
+      allRules,
+      frozenBlocks,
+      answers,
+      derivedValues,
+    );
     for (const block of frozenBlocks) {
+      if (!visibleBlockIds.has(block.id)) continue;
       computeVisibleQuestionIds(
         block.conditionalRules,
         block.questions.map((q) => q.id),

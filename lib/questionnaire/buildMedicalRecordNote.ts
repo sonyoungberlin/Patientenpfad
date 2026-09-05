@@ -27,7 +27,7 @@ import { BLOCK_CATALOG, QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
 import type { FrozenBlock } from "./frozenBlocks";
 import { computeAllDerivedValues } from "./derivedValues";
-import { computeVisibleQuestionIds } from "./conditionalLogic";
+import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
 import { normalizeSmokingPair } from "./smokingInput";
@@ -452,8 +452,15 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     const frozenByOrder = [...input.frozenBlocks].sort(
       (a, b) => a.displayOrder - b.displayOrder,
     );
+    const visibleBlockIds = computeVisibleBlockIds(
+      frozenByOrder.flatMap((block) => block.conditionalRules),
+      frozenByOrder,
+      answers,
+      derivedValues as Record<string, number>,
+    );
 
     for (const block of frozenByOrder) {
+      if (!visibleBlockIds.has(block.id)) continue;
       const blockLines: string[] = [];
 
       const frozenVisibleIds = computeVisibleQuestionIds(

@@ -143,7 +143,9 @@ export function validateWebsiteFormInput(
     const stringIds = raw.selected_block_ids.filter(
       (id): id is string => typeof id === "string",
     );
-    const known = stringIds.filter((id) => id in BLOCK_CATALOG);
+    const known = stringIds.filter(
+      (id) => id in BLOCK_CATALOG && BLOCK_CATALOG[id].selectable !== false,
+    );
     // Duplikate dedupliziert, Reihenfolge des ersten Auftretens beibehalten.
     const seen = new Set<string>();
     selectedBlockIds = known.filter((id) => {

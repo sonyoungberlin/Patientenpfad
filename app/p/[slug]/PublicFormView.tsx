@@ -16,12 +16,14 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import {
   PATIENT_QUESTIONNAIRE_INTRO_TEXT,
   PATIENT_QUESTIONNAIRE_INTRO_TEXT_EN,
 } from "@/lib/questionnaire/patientIntro";
 import {
+  computeVisibleBlockIds,
   computeVisibleQuestionIds,
   type ConditionalRule,
 } from "@/lib/questionnaire/conditionalLogic";
@@ -97,6 +99,7 @@ export function PublicFormView({
   introText,
   practiceSignature,
   questions,
+  frozenBlocks,
   language = "de",
   conditionalRules,
   successPath,
@@ -107,6 +110,7 @@ export function PublicFormView({
   introText: string | null;
   practiceSignature: string | null;
   questions: QuestionDefinition[];
+  frozenBlocks?: FrozenBlock[];
   language?: QuestionnaireLanguage;
   /** Alle Conditional-Rules aus den gewählten Blöcken. */
   conditionalRules: ConditionalRule[];
@@ -138,10 +142,30 @@ export function PublicFormView({
     [conditionalRules, allQuestionIds, values, derivedValues, optionsByQuestionId]
   );
 
-  const visibleQuestions = useMemo(
-    () => questions.filter((q) => visibleIds.has(q.id)),
-    [questions, visibleIds]
-  );
+  const visibleBlockIds = useMemo(() => {
+    if (!frozenBlocks || frozenBlocks.length === 0) return new Set<string>();
+    const ids = computeVisibleBlockIds(
+      conditionalRules,
+      frozenBlocks,
+      values,
+      derivedValues,
+    );
+    return ids;
+  }, [conditionalRules, frozenBlocks, values, derivedValues]);
+
+  const visibleQuestions = useMemo(() => {
+    if (!frozenBlocks || frozenBlocks.length === 0) {
+      return questions.filter((q) => visibleIds.has(q.id));
+    }
+    const visibleQuestionIds = new Set<string>();
+    for (const block of frozenBlocks) {
+      if (!visibleBlockIds.has(block.id)) continue;
+      for (const question of block.questions) {
+        if (visibleIds.has(question.id)) visibleQuestionIds.add(question.id);
+      }
+    }
+    return questions.filter((q) => visibleQuestionIds.has(q.id));
+  }, [questions, frozenBlocks, visibleBlockIds, visibleIds]);
 
   // Zeichenfehler pro Frage (nur sichtbare Felder)
   const fieldHasCharError = useMemo<Record<string, boolean>>(() => {

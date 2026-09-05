@@ -9,6 +9,7 @@ import {
   selectPracticeConfirmationSlots,
 } from "@/lib/questionnaire/confirmation";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
+import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
 import {
   localizeQuestion,
@@ -105,6 +106,7 @@ export async function renderPublicFormPage(
         introText={form.intro_text}
         practiceSignature={form.owner_practice?.message_signature ?? null}
         questions={questions}
+        frozenBlocks={frozenBlocks}
         language={language}
         conditionalRules={conditionalRules}
         successPath={successPath}

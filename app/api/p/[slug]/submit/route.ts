@@ -44,6 +44,7 @@ import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import {
   computeVisibleQuestionIds,
+  computeVisibleBlockIds,
 } from "@/lib/questionnaire/conditionalLogic";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
@@ -347,13 +348,24 @@ export async function POST(
     // speichern. Analog zur Logik in `app/q/[token]/route.ts`.
     const derivedValues = computeAllDerivedValues(sanitizedAnswers);
     const allQIds = deduplicatedQuestions.map((q) => q.id);
-    const visibleQIds = computeVisibleQuestionIds(
+    const visibleBlockIds = computeVisibleBlockIds(
       conditionalRules,
-      allQIds,
+      frozenBlocks,
       sanitizedAnswers,
       derivedValues,
-      buildOptionsByQuestionId(deduplicatedQuestions),
     );
+    const visibleQIds = new Set<string>();
+    for (const block of frozenBlocks) {
+      if (!visibleBlockIds.has(block.id)) continue;
+      const blockQIds = block.questions.map((question) => question.id);
+      computeVisibleQuestionIds(
+        conditionalRules,
+        blockQIds,
+        sanitizedAnswers,
+        derivedValues,
+        buildOptionsByQuestionId(block.questions),
+      ).forEach((id) => visibleQIds.add(id));
+    }
     const finalAnswers: Record<string, string> = Object.fromEntries(
       Object.entries(sanitizedAnswers).filter(([id]) => visibleQIds.has(id))
     );

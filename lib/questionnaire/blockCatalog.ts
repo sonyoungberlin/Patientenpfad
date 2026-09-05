@@ -41,6 +41,7 @@
 // ---------------------------------------------------------------------------
 
 import { type ConditionalRule } from "./conditionalLogic";
+import { IMPFBERATUNG_COUNTRY_OPTIONS } from "./countryOptions";
 
 export type QuestionType =
   | "text"
@@ -128,6 +129,8 @@ export type QuestionnaireBlock = {
   conditionalRules?: ConditionalRule[];
   /** Alternative Einstiegsfragen, die bei Bedarf mit aufgenommen werden. */
   prerequisiteQuestionIds?: string[];
+  /** Folgeblöcke werden nur über showBlock geöffnet, nicht direkt ausgewählt. */
+  selectable?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -1779,6 +1782,121 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
       "Etwas anderes",
     ],
   },
+  IMPFBERATUNG_ANLASS: {
+    id: "IMPFBERATUNG_ANLASS",
+    text: "Warum möchten Sie sich zu Ihrem Impfschutz beraten lassen?",
+    type: "multi_select",
+    required: true,
+    options: [
+      "Vorsorge / Impfschutz überprüfen",
+      "Reise / geplanter Aufenthalt",
+      "Schwangerschaft / Kinderwunsch",
+      "Erkrankung / medizinische Behandlung",
+      "Beruf / Ausbildung / neue Tätigkeit",
+      "Akute Situation",
+      "Anderer besonderer Anlass",
+    ],
+  },
+  IMPFBERATUNG_NACHWEIS_BEDARF: {
+    id: "IMPFBERATUNG_NACHWEIS_BEDARF",
+    text: "Benötigen Sie einen Nachweis über eine Impfung oder Immunität?",
+    type: "select",
+    required: true,
+    options: ["Ja", "Nein", "Weiß ich nicht"],
+  },
+  IMPFBERATUNG_NACHWEIS_ZWECK: {
+    id: "IMPFBERATUNG_NACHWEIS_ZWECK",
+    text: "Wofür benötigen Sie den Nachweis?",
+    type: "select",
+    required: true,
+    options: [
+      "Beruf / Arbeitgeber",
+      "Ausbildung / Studium / Praktikum",
+      "Einreisebestimmung",
+      "Einrichtung / Behörde",
+      "Anderer formaler Anlass",
+    ],
+  },
+  IMPFBERATUNG_NACHWEIS_ART: {
+    id: "IMPFBERATUNG_NACHWEIS_ART",
+    text: "Wissen Sie, welcher Nachweis verlangt wird?",
+    type: "select",
+    required: true,
+    options: ["Impfnachweis", "Immunitätsnachweis / Laborwert", "Beides", "Weiß ich nicht"],
+  },
+  IMPFBERATUNG_NACHWEIS_FRIST: {
+    id: "IMPFBERATUNG_NACHWEIS_FRIST",
+    text: "Bis wann benötigen Sie den Nachweis?",
+    type: "date",
+    required: true,
+  },
+  IMPFBERATUNG_RISIKOGRUPPEN: {
+    id: "IMPFBERATUNG_RISIKOGRUPPEN",
+    text: "Welche dieser Risikokonstellationen treffen auf Sie zu?",
+    type: "multi_select",
+    required: true,
+    options: [
+      "Herz- oder Kreislauferkrankung",
+      "Chronische Atemwegserkrankung",
+      "Stoffwechselerkrankung",
+      "Nieren- oder Lebererkrankung",
+      "Neurologische Erkrankung",
+      "Geschwächtes Immunsystem oder immunsuppressive Behandlung",
+      "Andere schwere chronische Erkrankung",
+    ],
+  },
+  IMPFBERATUNG_REISELAND: {
+    id: "IMPFBERATUNG_REISELAND",
+    text: "Wohin reisen Sie?",
+    type: "select",
+    required: true,
+    options: [...IMPFBERATUNG_COUNTRY_OPTIONS],
+  },
+  IMPFBERATUNG_REISE_ABREISE: {
+    id: "IMPFBERATUNG_REISE_ABREISE",
+    text: "Wann reisen Sie ab?",
+    type: "date",
+    required: true,
+  },
+  IMPFBERATUNG_SCHWANGERSCHAFT_STATUS: {
+    id: "IMPFBERATUNG_SCHWANGERSCHAFT_STATUS",
+    text: "Was trifft auf Sie zu?",
+    type: "select",
+    required: true,
+    options: ["Schwanger", "Kinderwunsch / Schwangerschaft geplant"],
+  },
+  IMPFBERATUNG_BERUF_EXPOSITION: {
+    id: "IMPFBERATUNG_BERUF_EXPOSITION",
+    text: "Welche berufliche oder ausbildungsbezogene Situation trifft auf Sie zu?",
+    type: "multi_select",
+    required: true,
+    options: [
+      "Gesundheitswesen / Pflege",
+      "Betreuung von Kindern / Gemeinschaftseinrichtung",
+      "Möglicher Kontakt zu Blut / Körperflüssigkeiten",
+      "Tätigkeit mit Tieren",
+      "Tätigkeit überwiegend im Freien / in der Natur",
+      "Anderer Bereich",
+    ],
+  },
+  IMPFBERATUNG_AKUT_ART: {
+    id: "IMPFBERATUNG_AKUT_ART",
+    text: "Worum geht es?",
+    type: "select",
+    required: true,
+    options: [
+      "Verletzung / Wunde",
+      "Möglicher Kontakt mit einer Infektionskrankheit",
+      "Tierbiss / relevanter Tierkontakt",
+      "Andere akute Situation",
+    ],
+  },
+  IMPFBERATUNG_AKUT_DATUM: {
+    id: "IMPFBERATUNG_AKUT_DATUM",
+    text: "Wann ist die Verletzung passiert?",
+    type: "date",
+    required: true,
+  },
 };
 
 /**
@@ -1913,6 +2031,157 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       "ANAMNESE_SUBSTANCES",
       "ANAMNESE_VACCINATION",
     ],
+  },
+  IMPFBERATUNG: {
+    id: "IMPFBERATUNG",
+    label: "Impfberatung",
+    displayOrder: 240,
+    conditionalRules: [
+      {
+        action: "showBlock",
+        targetId: "IMPFBERATUNG_VORSORGE",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_ANLASS" },
+          operator: "contains",
+          value: "Vorsorge / Impfschutz überprüfen",
+        },
+      },
+      {
+        action: "showBlock",
+        targetId: "IMPFBERATUNG_RISIKO",
+        condition: {
+          mode: "OR",
+          conditions: [
+            {
+              target: { kind: "question", questionId: "IMPFBERATUNG_ANLASS" },
+              operator: "contains",
+              value: "Vorsorge / Impfschutz überprüfen",
+            },
+            {
+              target: { kind: "question", questionId: "IMPFBERATUNG_ANLASS" },
+              operator: "contains",
+              value: "Erkrankung / medizinische Behandlung",
+            },
+          ],
+        },
+      },
+      {
+        action: "showBlock",
+        targetId: "IMPFBERATUNG_REISE",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_ANLASS" },
+          operator: "contains",
+          value: "Reise / geplanter Aufenthalt",
+        },
+      },
+      {
+        action: "showBlock",
+        targetId: "IMPFBERATUNG_SCHWANGERSCHAFT",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_ANLASS" },
+          operator: "contains",
+          value: "Schwangerschaft / Kinderwunsch",
+        },
+      },
+      {
+        action: "showBlock",
+        targetId: "IMPFBERATUNG_BERUF",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_ANLASS" },
+          operator: "contains",
+          value: "Beruf / Ausbildung / neue Tätigkeit",
+        },
+      },
+      {
+        action: "showBlock",
+        targetId: "IMPFBERATUNG_AKUT",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_ANLASS" },
+          operator: "contains",
+          value: "Akute Situation",
+        },
+      },
+      {
+        action: "showQuestion",
+        targetId: "IMPFBERATUNG_NACHWEIS_ZWECK",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_NACHWEIS_BEDARF" },
+          operator: "equals",
+          value: "Ja",
+        },
+      },
+      {
+        action: "showQuestion",
+        targetId: "IMPFBERATUNG_NACHWEIS_ART",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_NACHWEIS_ZWECK" },
+          operator: "isAnswered",
+        },
+      },
+      {
+        action: "showQuestion",
+        targetId: "IMPFBERATUNG_NACHWEIS_FRIST",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_NACHWEIS_ZWECK" },
+          operator: "isAnswered",
+        },
+      },
+    ],
+    questionIds: ["IMPFBERATUNG_ANLASS", "IMPFBERATUNG_NACHWEIS_BEDARF", "IMPFBERATUNG_NACHWEIS_ZWECK", "IMPFBERATUNG_NACHWEIS_ART", "IMPFBERATUNG_NACHWEIS_FRIST"],
+  },
+  IMPFBERATUNG_VORSORGE: {
+    id: "IMPFBERATUNG_VORSORGE",
+    label: "Impfberatung: Vorsorge",
+    displayOrder: 241,
+    selectable: false,
+    prerequisiteQuestionIds: ["VOLLST_AGE", "IDENTITY_BIRTHDATE"],
+    questionIds: [],
+  },
+  IMPFBERATUNG_RISIKO: {
+    id: "IMPFBERATUNG_RISIKO",
+    label: "Impfberatung: Risikokonstellationen",
+    displayOrder: 242,
+    selectable: false,
+    questionIds: ["IMPFBERATUNG_RISIKOGRUPPEN"],
+  },
+  IMPFBERATUNG_REISE: {
+    id: "IMPFBERATUNG_REISE",
+    label: "Impfberatung: Reise",
+    displayOrder: 243,
+    selectable: false,
+    questionIds: ["IMPFBERATUNG_REISELAND", "IMPFBERATUNG_REISE_ABREISE"],
+  },
+  IMPFBERATUNG_SCHWANGERSCHAFT: {
+    id: "IMPFBERATUNG_SCHWANGERSCHAFT",
+    label: "Impfberatung: Schwangerschaft und Kinderwunsch",
+    displayOrder: 244,
+    selectable: false,
+    questionIds: ["IMPFBERATUNG_SCHWANGERSCHAFT_STATUS"],
+  },
+  IMPFBERATUNG_BERUF: {
+    id: "IMPFBERATUNG_BERUF",
+    label: "Impfberatung: Beruf und Ausbildung",
+    displayOrder: 245,
+    selectable: false,
+    questionIds: ["IMPFBERATUNG_BERUF_EXPOSITION"],
+  },
+  IMPFBERATUNG_AKUT: {
+    id: "IMPFBERATUNG_AKUT",
+    label: "Impfberatung: Akute Situation",
+    displayOrder: 246,
+    selectable: false,
+    conditionalRules: [
+      {
+        action: "showQuestion",
+        targetId: "IMPFBERATUNG_AKUT_DATUM",
+        condition: {
+          target: { kind: "question", questionId: "IMPFBERATUNG_AKUT_ART" },
+          operator: "equals",
+          value: "Verletzung / Wunde",
+        },
+      },
+    ],
+    questionIds: ["IMPFBERATUNG_AKUT_ART", "IMPFBERATUNG_AKUT_DATUM"],
   },
   ARBEITSUNFAEHIGKEIT: {
     id: "ARBEITSUNFAEHIGKEIT",
@@ -2670,7 +2939,23 @@ export function resolveQuestionIdsForBlocks(
   selectedBlockIds: string[],
   blockCatalog: Record<string, QuestionnaireBlock> = BLOCK_CATALOG,
 ): Map<string, string[]> {
-  const validBlocks = selectedBlockIds
+  const selectedSet = new Set(
+    selectedBlockIds.filter((id) => id in blockCatalog),
+  );
+  const visited = new Set<string>();
+  const queue = [...selectedSet];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (visited.has(id) || !(id in blockCatalog)) continue;
+    visited.add(id);
+    for (const rule of blockCatalog[id].conditionalRules ?? []) {
+      if (rule.action === "showBlock" && !visited.has(rule.targetId)) {
+        queue.push(rule.targetId);
+      }
+    }
+  }
+
+  const validBlocks = [...visited]
     .filter((id) => id in blockCatalog)
     .map((id) => blockCatalog[id])
     .sort((a, b) => a.displayOrder - b.displayOrder);
@@ -2692,6 +2977,7 @@ export function resolveQuestionIdsForBlocks(
 }
 
 export const BLOCK_IDS_SORTED: string[] = Object.values(BLOCK_CATALOG)
+  .filter((block) => block.selectable !== false)
   .sort((a, b) => a.displayOrder - b.displayOrder)
   .map((b) => b.id);
 

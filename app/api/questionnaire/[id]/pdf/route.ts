@@ -28,6 +28,7 @@ export async function GET(
       selected_block_ids: true,
       deduplicated_questions: true,
       answers: true,
+      frozen_blocks: true,
       source: true,
       practice_form: {
         select: {

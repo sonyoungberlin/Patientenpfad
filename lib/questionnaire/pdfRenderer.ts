@@ -8,8 +8,9 @@ import {
 } from "./formatAnswer";
 import type { RepGroupEntry } from "./formatAnswer";
 import { computeAllDerivedValues } from "./derivedValues";
-import { computeVisibleQuestionIds } from "./conditionalLogic";
+import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
+import { parseFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -61,6 +62,7 @@ export type PdfSessionInput = {
   answers: unknown;
   source: string;
   practice_form: { title: string } | null;
+  frozen_blocks?: unknown;
 };
 
 export type PdfRenderOptions = {
@@ -97,6 +99,7 @@ export async function buildQuestionnairePdfBytes(
     : [];
 
   const derivedValues = computeAllDerivedValues(answers);
+  const snapshotBlocks = parseFrozenBlocks(session.frozen_blocks);
 
   const blockSections: {
     label: string;
@@ -105,23 +108,45 @@ export async function buildQuestionnairePdfBytes(
   }[] = [];
   const assignedIds = new Set<string>();
 
-  for (const blockId of selectedBlockIds) {
-    const block = blockCatalog[blockId];
-    if (!block) continue;
+  const renderBlocks: Array<{
+    id: string;
+    label: string;
+    displayOrder: number;
+    questions: QuestionDefinition[];
+    conditionalRules: import("./conditionalLogic").ConditionalRule[];
+    initiallyVisible: boolean;
+  }> = snapshotBlocks
+    ? snapshotBlocks
+    : selectedBlockIds
+        .map((blockId) => blockCatalog[blockId])
+        .filter((block): block is QuestionnaireBlock => block !== undefined)
+        .map((block) => ({
+          ...block,
+          questions: block.questionIds
+            .map((questionId) => questions.find((question) => question.id === questionId))
+            .filter((question): question is QuestionDefinition => question !== undefined),
+          conditionalRules: block.conditionalRules ?? [],
+          initiallyVisible: true,
+        }));
+  const allBlockRules = renderBlocks.flatMap((block) => block.conditionalRules);
+  const visibleBlockIds = computeVisibleBlockIds(
+    allBlockRules,
+    renderBlocks,
+    answers,
+    derivedValues,
+  );
+
+  for (const block of renderBlocks) {
+    if (!visibleBlockIds.has(block.id)) continue;
     const visibleQIds = computeVisibleQuestionIds(
-      block.conditionalRules ?? [],
-      block.questionIds,
+      allBlockRules,
+      block.questions.map((question) => question.id),
       answers,
       derivedValues as Record<string, number>,
-      buildOptionsByQuestionId(
-        block.questionIds
-          .map((questionId) => questions.find((question) => question.id === questionId))
-          .filter((question): question is QuestionDefinition => question !== undefined),
-      ),
+      buildOptionsByQuestionId(block.questions),
     );
-    const blockQuestions = block.questionIds
-      .map((qid) => questions.find((q) => q.id === qid))
-      .filter((q): q is QuestionDefinition => q !== undefined && !assignedIds.has(q.id));
+    const blockQuestions = block.questions
+      .filter((q) => !assignedIds.has(q.id));
     blockQuestions.forEach((q) => assignedIds.add(q.id));
     if (blockQuestions.length > 0) {
       blockSections.push({ label: block.label, questions: blockQuestions, visibleQIds });

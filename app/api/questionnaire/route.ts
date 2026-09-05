@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     const selectedBlockIds = (rawBlockIds as string[]).filter(
-      (id) => id in BLOCK_CATALOG,
+      (id) => id in BLOCK_CATALOG && BLOCK_CATALOG[id].selectable !== false,
     );
     if (selectedBlockIds.length === 0) {
       return NextResponse.json(

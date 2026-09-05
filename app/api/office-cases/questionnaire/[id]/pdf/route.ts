@@ -27,6 +27,7 @@ export async function GET(
       selected_block_ids: true,
       deduplicated_questions: true,
       answers: true,
+      frozen_blocks: true,
       deleted_at: true,
       pdf_downloaded_at: true,
     },
