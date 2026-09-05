@@ -79,6 +79,14 @@ export async function POST(req: NextRequest) {
         ? body.inquiry_session_id.trim()
         : null;
 
+    const mode = body.mode === "direct" ? "direct" : "link";
+    if (body.mode !== undefined && body.mode !== "direct" && body.mode !== "link") {
+      return NextResponse.json(
+        { ok: false, error: "Ungültiger Fragebogenmodus." },
+        { status: 400 },
+      );
+    }
+
     // Optionale Sprache der Patientensicht. Whitelist "de" | "en", Default "de".
     // Praxis-/interne Sichten ignorieren dieses Feld.
     const patientLanguage = normalizeQuestionnaireLanguage(body.language);
@@ -165,6 +173,7 @@ export async function POST(req: NextRequest) {
             select: { legal_profile: { select: { official_email: true } } },
           }))?.legal_profile?.official_email ?? null
         : null,
+      ...(mode === "direct" ? { source: "practice_direct" as const } : {}),
       origin,
     });
 

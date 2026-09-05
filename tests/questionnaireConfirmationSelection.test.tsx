@@ -23,7 +23,12 @@ function setInputValue(input: HTMLInputElement, value: string) {
 }
 
 describe("M3 Questionnaire-Confirmation-Auswahl", () => {
-  beforeEach(() => fetchMock.mockReset());
+  beforeEach(() => {
+    fetchMock.mockReset();
+    jest.spyOn(window, "open").mockImplementation(() => null);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
 
   it("zeigt nur konfigurierte read-only Slottexte als unabhängig auswählbare Checkboxen", async () => {
     const container = document.createElement("div");
@@ -108,7 +113,90 @@ describe("M3 Questionnaire-Confirmation-Auswahl", () => {
     const options = fetchMock.mock.calls[0][1] as RequestInit;
     const body = JSON.parse(String(options.body));
     expect(body.selected_confirmation_ids).toEqual(["PRACTICE_CONFIRMATION_1"]);
+    expect(body.mode).toBeUndefined();
     expect(String(options.body)).not.toContain("Geheimer Servertext");
+    await act(async () => root.unmount());
+  });
+
+  it("sendet beim Direktstart dieselben Daten und öffnet den Formularpfad", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, link: "https://example.test/q/direct-token" }),
+    });
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireRequestSection
+          inquirySessionId="inquiry-direct"
+          onLinkGenerated={jest.fn()}
+          practiceConfirmationSlots={[
+            { id: "PRACTICE_CONFIRMATION_1", text: "Bestätigung" },
+          ]}
+        />,
+      );
+    });
+    await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
+    await act(async () => {
+      setInputValue(container.querySelector<HTMLInputElement>("#q-patient-ref")!, "PAT-DIRECT");
+      container.querySelector<HTMLInputElement>('[data-q-block="KONTAKT"]')!.click();
+      container.querySelector<HTMLInputElement>("[data-q-confirmation]")!.click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-direct-fill]")!.click();
+    });
+
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(String(options.body));
+    expect(body).toEqual({
+      patient_reference: "PAT-DIRECT",
+      selected_block_ids: ["KONTAKT"],
+      inquiry_session_id: "inquiry-direct",
+      language: "de",
+      selected_confirmation_ids: ["PRACTICE_CONFIRMATION_1"],
+      mode: "direct",
+    });
+    expect(window.open).toHaveBeenCalledWith("https://example.test/q/direct-token", "_self");
+    await act(async () => root.unmount());
+  });
+
+  it("öffnet den eigenständigen Direktmodus sofort und sendet ohne InquirySession", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, link: "https://example.test/q/direct-only-token" }),
+    });
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireRequestSection
+          practiceConfirmationSlots={[]}
+          initialOpen
+          mode="direct"
+        />,
+      );
+    });
+
+    expect(container.querySelector("#q-patient-ref")).not.toBeNull();
+    expect(container.querySelector("[data-q-create-link]")).toBeNull();
+
+    await act(async () => {
+      setInputValue(container.querySelector<HTMLInputElement>("#q-patient-ref")!, "PAT-DIRECT-ONLY");
+      container.querySelector<HTMLInputElement>('[data-q-block="KONTAKT"]')!.click();
+      container.querySelector<HTMLButtonElement>("[data-q-direct-fill]")!.click();
+    });
+
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(String(options.body));
+    expect(body).toEqual({
+      patient_reference: "PAT-DIRECT-ONLY",
+      selected_block_ids: ["KONTAKT"],
+      language: "de",
+      selected_confirmation_ids: [],
+      mode: "direct",
+    });
+    expect(body.inquiry_session_id).toBeUndefined();
+    expect(window.open).toHaveBeenCalledWith("https://example.test/q/direct-only-token", "_self");
     await act(async () => root.unmount());
   });
 });

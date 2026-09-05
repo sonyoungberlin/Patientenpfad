@@ -118,6 +118,27 @@ describe("POST /api/questionnaire", () => {
     expect(Array.isArray(createCall.data.deduplicated_questions)).toBe(true);
     expect((createCall.data.deduplicated_questions as unknown[]).length).toBeGreaterThan(0);
     expect(createCall.data.status).toBe("pending");
+    expect(createCall.data.source).toBe("internal_link");
+  });
+
+  it("erzeugt im Direktmodus eine pending Session mit practice_direct", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-direct" });
+
+    const res = await POST(makeRequest({
+      selected_block_ids: ["KONTAKT"],
+      patient_reference: "PAT-DIRECT",
+      inquiry_session_id: "inquiry-direct",
+      mode: "direct",
+    }));
+
+    expect(res.status).toBe(200);
+    const data = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0].data;
+    expect(data.status).toBe("pending");
+    expect(data.source).toBe("practice_direct");
+    expect(data.selected_block_ids).toEqual(["KONTAKT"]);
+    expect(data.patient_reference).toBe("PAT-DIRECT");
+    expect(data.inquiry_session_id).toBe("inquiry-direct");
   });
 
   it("friert nur ausgewählte Practice-Confirmations mit serverseitigem Text ein", async () => {

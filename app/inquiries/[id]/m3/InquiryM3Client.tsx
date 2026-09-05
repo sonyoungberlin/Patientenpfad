@@ -859,12 +859,16 @@ export function QuestionnaireRequestSection({
   inquirySessionId,
   onLinkGenerated,
   practiceConfirmationSlots,
+  initialOpen = false,
+  mode = "message",
 }: {
-  inquirySessionId: string;
-  onLinkGenerated: (link: string) => void;
+  inquirySessionId?: string;
+  onLinkGenerated?: (link: string) => void;
   practiceConfirmationSlots: PracticeConfirmationSlot[];
+  initialOpen?: boolean;
+  mode?: "message" | "direct";
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [patientRef, setPatientRef] = useState("");
   const [patientRefTouched, setPatientRefTouched] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
@@ -904,7 +908,7 @@ export function QuestionnaireRequestSection({
   const trimmedPatientRef = patientRef.trim();
   const hasPatientRef = trimmedPatientRef.length > 0;
 
-  async function handleCreate() {
+  async function handleCreate(mode: "link" | "direct") {
     // Pflichtprüfung clientseitig: Ohne Patientennummer / Referenz darf
     // kein Fragebogenlink erzeugt werden. Leerzeichen allein zählen nicht.
     if (!hasPatientRef) {
@@ -927,9 +931,10 @@ export function QuestionnaireRequestSection({
         body: JSON.stringify({
           patient_reference: trimmedPatientRef,
           selected_block_ids: blockIds,
-          inquiry_session_id: inquirySessionId,
           language,
           selected_confirmation_ids: Array.from(selectedConfirmations),
+          ...(inquirySessionId ? { inquiry_session_id: inquirySessionId } : {}),
+          ...(mode === "direct" ? { mode } : {}),
         }),
       });
       const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
@@ -937,8 +942,12 @@ export function QuestionnaireRequestSection({
         setReqError(data.error ?? "Fragebogen konnte nicht erstellt werden.");
         return;
       }
-      setLink(data.link);
-      onLinkGenerated(data.link);
+      if (mode === "direct") {
+        window.open(data.link, "_self");
+      } else {
+        setLink(data.link);
+        onLinkGenerated?.(data.link);
+      }
     } catch {
       setReqError("Netzwerkfehler. Bitte erneut versuchen.");
     } finally {
@@ -1170,19 +1179,34 @@ export function QuestionnaireRequestSection({
           )}
 
           {!link && (
-            <div>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {mode === "message" && (
+                <button
+                  type="button"
+                  onClick={() => void handleCreate("link")}
+                  disabled={loading || !anyBlockSelected || !hasPatientRef}
+                  title={
+                    !hasPatientRef
+                      ? "Bitte Patientennummer / Referenz eintragen, bevor ein Fragebogenlink erzeugt wird."
+                      : undefined
+                  }
+                  data-q-create-link
+                >
+                  {loading ? "Wird erzeugt…" : "Link erzeugen"}
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => void handleCreate()}
+                onClick={() => void handleCreate("direct")}
                 disabled={loading || !anyBlockSelected || !hasPatientRef}
                 title={
                   !hasPatientRef
-                    ? "Bitte Patientennummer / Referenz eintragen, bevor ein Fragebogenlink erzeugt wird."
+                    ? "Bitte Patientennummer / Referenz eintragen, bevor der Fragebogen geöffnet wird."
                     : undefined
                 }
-                data-q-create-link
+                data-q-direct-fill
               >
-                {loading ? "Wird erzeugt…" : "Link erzeugen"}
+                {loading ? "Wird erzeugt…" : "Direkt ausfüllen"}
               </button>
             </div>
           )}

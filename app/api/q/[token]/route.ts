@@ -18,6 +18,7 @@ import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import { isConfirmedAnswer } from "@/lib/questionnaire/confirmation";
 import { isValidPatientCopyEmail, sendPatientQuestionnaireCopyIfRequired } from "@/lib/questionnaire/sendPatientQuestionnaireCopy";
+import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 
 export async function POST(
   req: NextRequest,
@@ -32,6 +33,9 @@ export async function POST(
         id: true,
         token_expires_at: true,
         status: true,
+        source: true,
+        inquiry_session_id: true,
+        selected_block_ids: true,
         deduplicated_questions: true,
         frozen_blocks: true,
         frozen_conditional_rules: true,
@@ -205,6 +209,23 @@ export async function POST(
       },
     });
     await sendPatientQuestionnaireCopyIfRequired(session.id);
+
+    if (session.source === "practice_direct") {
+      const selectedBlockIds = Array.isArray(session.selected_block_ids)
+        ? (session.selected_block_ids as string[])
+        : [];
+      const noteText = buildMedicalRecordNote({
+        answers: filteredAnswers,
+        selected_block_ids: selectedBlockIds,
+        frozenBlocks,
+      });
+      return NextResponse.json({
+        ok: true,
+        noteText,
+        sessionId: session.id,
+        inquiry_session_id: session.inquiry_session_id,
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

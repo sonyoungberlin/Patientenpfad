@@ -67,6 +67,8 @@ export default async function QuestionnairePage({
     select: {
       token_expires_at: true,
       status: true,
+      source: true,
+      inquiry_session_id: true,
       deduplicated_questions: true,
       frozen_conditional_rules: true,
       frozen_blocks: true,
@@ -169,6 +171,8 @@ export default async function QuestionnairePage({
         practiceSignature={practiceSignature}
         language={language}
         context={session.context}
+        source={session.source}
+        inquirySessionId={session.inquiry_session_id}
       />
       {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>

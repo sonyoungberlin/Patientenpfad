@@ -59,6 +59,8 @@ export type CreateSessionInput = {
   /** Bereits serverseitig aufgelöste Practice-Texte für den Session-Snapshot. */
   practiceConfirmations?: PracticeConfirmationSlot[];
   patientCopyReturnEmail?: string | null;
+  /** Herkunft der internen Session; Default bleibt der bisherige Link-Workflow. */
+  source?: "internal_link" | "practice_direct";
 };
 
 export type CreateSessionResult = {
@@ -91,6 +93,7 @@ export async function createQuestionnaireSession(
     salutation,
     practiceConfirmations = [],
     patientCopyReturnEmail,
+    source,
   } = input;
 
   const token = crypto.randomUUID();
@@ -143,6 +146,7 @@ export async function createQuestionnaireSession(
       patient_language: patientLanguage,
       context,
       status: "pending",
+      source: source ?? "internal_link",
       ...(salutation ? { salutation } : {}),
       ...(birthDateHash ? { birth_date_hash: birthDateHash } : {}),
       patient_copy_return_email: patientCopyReturnEmail ?? null,

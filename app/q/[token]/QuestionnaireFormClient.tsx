@@ -24,6 +24,7 @@ import {
   toggleMultiSelectValue,
 } from "@/lib/questionnaire/multiSelect";
 import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
+import MedicalRecordNoteCopyButton from "@/components/questionnaire/MedicalRecordNoteCopyButton";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -959,6 +960,11 @@ const UI_STRINGS = {
     submit: "Absenden",
     submitting: "Wird übermittelt…",
     submitted: "Vielen Dank, Ihre Angaben wurden übermittelt.",
+      directCompletedTitle: "Fragebogen abgeschlossen",
+      directCompletedDescription:
+        "Die Angaben wurden gespeichert und stehen wie gewohnt zur weiteren Bearbeitung zur Verfügung.",
+      backToInquiry: "Zur Anfrage zurück",
+      toQuestionnaires: "Zum Fragebogen-Eingang",
     submitError:
       "Angaben konnten nicht übermittelt werden. Bitte versuchen Sie es erneut.",
   },
@@ -968,6 +974,11 @@ const UI_STRINGS = {
     submit: "Submit",
     submitting: "Submitting…",
     submitted: "Thank you, your information has been submitted.",
+      directCompletedTitle: "Questionnaire completed",
+      directCompletedDescription:
+        "The information was saved and is available for further processing as usual.",
+      backToInquiry: "Return to inquiry",
+      toQuestionnaires: "Go to questionnaire inbox",
     submitError:
       "Your information could not be submitted. Please try again.",
   },
@@ -983,6 +994,8 @@ export function QuestionnaireFormClient({
   practiceSignature,
   language = "de",
   context = "patient",
+  source,
+  inquirySessionId,
 }: {
   token: string;
   questions: QuestionDefinition[];
@@ -994,6 +1007,8 @@ export function QuestionnaireFormClient({
   practiceSignature?: string | null;
   language?: QuestionnaireLanguage;
   context?: string;
+  source?: string | null;
+  inquirySessionId?: string | null;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -1008,6 +1023,11 @@ export function QuestionnaireFormClient({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [directCompletion, setDirectCompletion] = useState<{
+    noteText: string;
+    sessionId: string;
+    inquirySessionId: string | null;
+  } | null>(null);
   const [missingRequiredIds, setMissingRequiredIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -1149,17 +1169,34 @@ export function QuestionnaireFormClient({
         body: JSON.stringify({ answers: answersToSend }),
       });
 
+      const data = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+        noteText?: string;
+        sessionId?: string;
+        inquiry_session_id?: string | null;
+      } | null;
+
       if (!response.ok) {
         // Fehlermeldungen vom Server sind aktuell deutsch; wir verwenden
         // sie nur, wenn die Patient:in deutsch ausgewählt hat. Sonst
         // einheitlich englischer Fallback.
-        const data = await response.json().catch(() => null);
-        const serverError =
-          (data as { error?: string } | null)?.error ?? null;
+        const serverError = data?.error ?? null;
         setError(language === "de" && serverError ? serverError : t.submitError);
         return;
       }
 
+      if (
+        source === "practice_direct" &&
+        data?.noteText &&
+        data.sessionId
+      ) {
+        setDirectCompletion({
+          noteText: data.noteText,
+          sessionId: data.sessionId,
+          inquirySessionId: data.inquiry_session_id ?? inquirySessionId ?? null,
+        });
+      }
       setSubmitted(true);
     } catch {
       setError(t.submitError);
@@ -1169,6 +1206,26 @@ export function QuestionnaireFormClient({
   }
 
   if (submitted) {
+    if (source === "practice_direct" && directCompletion) {
+      return (
+        <section data-q-direct-completion style={{ marginTop: "1.5rem" }}>
+          <h2>{t.directCompletedTitle}</h2>
+          <p>{t.directCompletedDescription}</p>
+          <MedicalRecordNoteCopyButton
+            noteText={directCompletion.noteText}
+            sessionId={directCompletion.sessionId}
+          />
+          <nav aria-label="Fragebogen-Navigation" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "1rem" }}>
+            {directCompletion.inquirySessionId && (
+              <a href={`/inquiries/${encodeURIComponent(directCompletion.inquirySessionId)}/m3`}>
+                {t.backToInquiry}
+              </a>
+            )}
+            <a href="/questionnaires">{t.toQuestionnaires}</a>
+          </nav>
+        </section>
+      );
+    }
     return (
       <p data-q-submitted style={{ marginTop: "1.5rem" }}>
         {t.submitted}

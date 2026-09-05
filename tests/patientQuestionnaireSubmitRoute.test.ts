@@ -26,6 +26,7 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 import { prisma } from "@/lib/prisma";
+import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 
 type PrismaMock = {
   patientQuestionnaireSession: { findUnique: jest.Mock; update: jest.Mock };
@@ -135,6 +136,37 @@ describe("POST /api/q/[token]", () => {
 
     const updateData = prismaMock.patientQuestionnaireSession.update.mock.calls[0][0].data;
     expect(updateData.answers).toEqual(answers);
+  });
+
+  it("liefert für practice_direct den bestehenden Krankenblatt-Text", async () => {
+    const directSession = {
+      ...SESSION_BASE,
+      source: "practice_direct",
+      inquiry_session_id: "inquiry-1",
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    };
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(directSession);
+
+    const answers = { CONTACT_PHONE: "0171 123456", AU_SYMPTOMS: "Husten" };
+    const res = await POST(
+      makeRequest("valid-token", { answers }),
+      { params: Promise.resolve({ token: "valid-token" }) },
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({
+      ok: true,
+      sessionId: "qs-1",
+      inquiry_session_id: "inquiry-1",
+    });
+    expect(json.noteText).toBe(
+      buildMedicalRecordNote({
+        answers,
+        selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+        frozenBlocks: null,
+      }),
+    );
   });
 
   it("erlaubt mehrere Confirmations nur wenn alle exakt true sind", async () => {
