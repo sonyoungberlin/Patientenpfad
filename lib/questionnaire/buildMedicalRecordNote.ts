@@ -25,11 +25,13 @@
 
 import { BLOCK_CATALOG, QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
-import type { FrozenBlock } from "./frozenBlocks";
+import { buildFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
+import { buildAttentionHintLines } from "./formatAnswer";
+import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
@@ -437,10 +439,54 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
   // --- Berechnete Werte (AGE, BMI, Pack-Years) ---
   const derivedValueLines = buildDerivedValueLines(derivedValues);
-  if (derivedValueLines.length > 0) {
+  const visibleQuestionIds = new Set<string>();
+  if (input.frozenBlocks && input.frozenBlocks.length > 0) {
+    const frozenByOrder = [...input.frozenBlocks].sort(
+      (a, b) => a.displayOrder - b.displayOrder,
+    );
+    const visibleBlockIds = computeVisibleBlockIds(
+      frozenByOrder.flatMap((block) => block.conditionalRules),
+      frozenByOrder,
+      answers,
+      derivedValues as Record<string, number>,
+    );
+    for (const block of frozenByOrder) {
+      if (!visibleBlockIds.has(block.id)) continue;
+      computeVisibleQuestionIds(
+        block.conditionalRules,
+        block.questions.map((question) => question.id),
+        answers,
+        derivedValues as Record<string, number>,
+        buildOptionsByQuestionId(block.questions),
+      ).forEach((id) => visibleQuestionIds.add(id));
+    }
+  } else {
+    const legacyBlocks = buildFrozenBlocks(input.selected_block_ids);
+    const visibleBlockIds = computeVisibleBlockIds(
+      legacyBlocks.flatMap((block) => block.conditionalRules),
+      legacyBlocks,
+      answers,
+      derivedValues as Record<string, number>,
+    );
+    for (const block of legacyBlocks) {
+      if (!visibleBlockIds.has(block.id)) continue;
+      computeVisibleQuestionIds(
+        block.conditionalRules ?? [],
+        block.questions.map((question) => question.id),
+        answers,
+        derivedValues as Record<string, number>,
+        buildOptionsByQuestionId(block.questions),
+      ).forEach((id) => visibleQuestionIds.add(id));
+    }
+  }
+  const attentionHintLines = buildAttentionHintLines(
+    computeQuestionnaireAttentionHints(answers, visibleQuestionIds),
+  );
+  if (derivedValueLines.length > 0 || attentionHintLines.length > 0) {
     lines.push("");
     lines.push("Berechnete Werte");
     lines.push(...derivedValueLines);
+    lines.push(...attentionHintLines);
   }
 
   const seenQuestionIds = new Set<string>();

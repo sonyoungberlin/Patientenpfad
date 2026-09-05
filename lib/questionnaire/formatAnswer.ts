@@ -13,6 +13,7 @@
 import { QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
 import type { DerivedValues } from "./derivedValues";
+import type { QuestionnaireAttentionHint } from "./attentionHints";
 
 // ---------------------------------------------------------------------------
 // yes_no-Normalisierung
@@ -209,4 +210,10 @@ export function buildDerivedValueLines(dv: DerivedValues): string[] {
     lines.push(`Pack-Years: ${formatPackYears(dv.PACK_YEARS)}`);
   }
   return lines;
+}
+
+export function buildAttentionHintLines(
+  hints: QuestionnaireAttentionHint[],
+): string[] {
+  return hints.map((hint) => hint.label);
 }

@@ -10,7 +10,8 @@ import type { RepGroupEntry } from "./formatAnswer";
 import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
-import { parseFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
+import { buildFrozenBlocks, parseFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
+import { computeQuestionnaireAttentionHints } from "./attentionHints";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -135,6 +136,7 @@ export async function buildQuestionnairePdfBytes(
     answers,
     derivedValues,
   );
+  const visibleQuestionIds = new Set<string>();
 
   for (const block of renderBlocks) {
     if (!visibleBlockIds.has(block.id)) continue;
@@ -145,11 +147,31 @@ export async function buildQuestionnairePdfBytes(
       derivedValues as Record<string, number>,
       buildOptionsByQuestionId(block.questions),
     );
+    visibleQIds.forEach((id) => visibleQuestionIds.add(id));
     const blockQuestions = block.questions
       .filter((q) => !assignedIds.has(q.id));
     blockQuestions.forEach((q) => assignedIds.add(q.id));
     if (blockQuestions.length > 0) {
       blockSections.push({ label: block.label, questions: blockQuestions, visibleQIds });
+    }
+  }
+  if (!snapshotBlocks) {
+    const legacyBlocks = buildFrozenBlocks(selectedBlockIds);
+    const legacyVisibleBlockIds = computeVisibleBlockIds(
+      legacyBlocks.flatMap((block) => block.conditionalRules),
+      legacyBlocks,
+      answers,
+      derivedValues,
+    );
+    for (const block of legacyBlocks) {
+      if (!legacyVisibleBlockIds.has(block.id)) continue;
+      computeVisibleQuestionIds(
+        block.conditionalRules,
+        block.questions.map((question) => question.id),
+        answers,
+        derivedValues as Record<string, number>,
+        buildOptionsByQuestionId(block.questions),
+      ).forEach((id) => visibleQuestionIds.add(id));
     }
   }
 
@@ -315,12 +337,19 @@ export async function buildQuestionnairePdfBytes(
   drawText(`${referenceLabel}: ${session.patient_reference ?? "–"}`, { size: 9, color: [0.3, 0.3, 0.3] });
 
   const derivedValueLines = buildDerivedValueLines(derivedValues);
-  if (derivedValueLines.length > 0) {
+  const attentionHintLines = computeQuestionnaireAttentionHints(
+    answers,
+    visibleQuestionIds,
+  ).map((hint) => hint.label);
+  if (derivedValueLines.length > 0 || attentionHintLines.length > 0) {
     y -= sectionGap;
     ensureSpace(lineHeight * 2);
     drawText("Berechnete Werte", { size: 11, bold: true });
     for (const dvLine of derivedValueLines) {
       drawText(dvLine, { size: 9 });
+    }
+    for (const hintLine of attentionHintLines) {
+      drawText(hintLine, { size: 9 });
     }
   }
 

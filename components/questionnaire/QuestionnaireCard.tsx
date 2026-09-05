@@ -5,6 +5,7 @@ import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
 import { buildDerivedValueLines } from "@/lib/questionnaire/formatAnswer";
 import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
+import type { QuestionnaireAttentionHint } from "@/lib/questionnaire/attentionHints";
 import AnswersDisclosure from "./AnswersDisclosure";
 
 /**
@@ -61,7 +62,9 @@ export type QuestionnaireCardProps = {
    * Wird von der übergeordneten Seite vorberechnet und übergeben.
    * Nur im Status "completed" angezeigt.
    */
-  derivedValues?: DerivedValues | null;  /**
+  derivedValues?: DerivedValues | null;
+  attentionHints?: QuestionnaireAttentionHint[];
+  /**
    * Menge der sichtbaren Fragen-IDs für diese Session.
    * Wenn vorhanden: nicht sichtbare Fragen → „Nicht abgefragt";
    * sichtbar aber unbeantwortet → „–".
@@ -85,6 +88,7 @@ export default function QuestionnaireCard({
   isFromDigitalRequest = false,
   source = null,
   derivedValues = null,
+  attentionHints = [],
   visibleQuestionIds,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
@@ -208,7 +212,7 @@ export default function QuestionnaireCard({
       {/* Berechnete Werte (nur im completed-Status) */}
       {displayStatus === "completed" && derivedValues && (() => {
         const dvLines = buildDerivedValueLines(derivedValues);
-        if (dvLines.length === 0) return null;
+        if (dvLines.length === 0 && attentionHints.length === 0) return null;
         return (
           <div
             data-q-derived-values={id}
@@ -222,6 +226,9 @@ export default function QuestionnaireCard({
             <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>Berechnete Werte</div>
             {dvLines.map((line, i) => (
               <div key={i}>{line}</div>
+            ))}
+            {attentionHints.map((hint) => (
+              <div key={hint.id}>⚠ {hint.label}</div>
             ))}
           </div>
         );

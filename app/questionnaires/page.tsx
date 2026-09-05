@@ -15,6 +15,7 @@ import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { computeQuestionnaireAttentionHints } from "@/lib/questionnaire/attentionHints";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
@@ -246,6 +247,10 @@ export default async function QuestionnairesPage({
               derivedValues,
               frozenBlocks,
             );
+            const attentionHints = computeQuestionnaireAttentionHints(
+              answers ?? {},
+              visibleQuestionIds,
+            );
 
             const noteText = buildMedicalRecordNote({
               answers,
@@ -267,6 +272,7 @@ export default async function QuestionnairesPage({
                 answers={answers}
                 noteText={noteText}
                 derivedValues={derivedValues}
+                attentionHints={attentionHints}
                 visibleQuestionIds={visibleQuestionIds}
                 pdfDownloadedAt={s.pdf_downloaded_at}
                 deletedAt={s.deleted_at}
