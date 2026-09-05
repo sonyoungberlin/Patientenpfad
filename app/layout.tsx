@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import TourController from '@/components/TourController';
@@ -7,13 +7,25 @@ import ScrollToTop from '@/components/ScrollToTop';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Patientenpfad",
-  description: "Unklarheiten klären und strukturiert dokumentieren.",
+  title: "teamwork.contact",
+  description: "Digitale Zusammenarbeit und strukturierte Kommunikation.",
+  applicationName: "teamwork.contact",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/teamwork-contact-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/teamwork-contact-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
   openGraph: {
-    title: "Patientenpfad",
-    description: "Unklarheiten klären und strukturiert dokumentieren.",
+    title: "teamwork.contact",
+    description: "Digitale Zusammenarbeit und strukturierte Kommunikation.",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b1d36",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
