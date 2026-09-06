@@ -19,6 +19,7 @@ import {
   getInquirySessionWithOutput,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
+import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
 
 type MockClient = {
   inquirySession: {
@@ -37,6 +38,18 @@ function makeClient(): MockClient {
     $transaction: jest.fn(),
   };
 }
+
+const testPractice = {
+  id: "practice-1",
+  slug: "practice-1",
+  name: "Testpraxis",
+  is_approved: true,
+  inquiry_assistant_enabled: true,
+  patient_communication_enabled: true,
+  website_forms_enabled: true,
+  office_cases_enabled: true,
+  arbeitsprozesse_enabled: true,
+};
 
 describe("createInquirySession – Vorlagen", () => {
   it("legt is_template=true und template_name an, wenn asTemplate=true", async () => {
@@ -135,6 +148,65 @@ describe("instantiateFromTemplate", () => {
     expect(data.selected_inquiry_ids).toEqual(["AU"]);
     expect(data.checkpoint_statuses).toEqual({ foo: "bar" });
     expect(data.communication_reason_selection).toEqual({ AU: "REASON_A" });
+  });
+
+  it("erlaubt ein Template mit passendem Account- und Praxis-Scope", async () => {
+    const client = makeClient();
+    client.inquirySession.findUnique.mockResolvedValue({
+      ...template,
+      owner_practice_id: "practice-1",
+    });
+    client.inquirySession.create.mockImplementation(({ data }) => ({
+      id: "sess-scoped",
+      ...data,
+    }));
+
+    expect(
+      canAccessInquirySession(
+        { id: "acc-1", current_practice: testPractice },
+        { owner_account_id: "acc-1", owner_practice_id: "practice-1" },
+      ),
+    ).toBe(true);
+    await expect(
+      instantiateFromTemplate("tpl-1", "acc-1", client as never),
+    ).resolves.toMatchObject({ id: "sess-scoped" });
+  });
+
+  it("reproduziert das Legacy-Verhalten bei fehlender Praxis-Zuordnung", async () => {
+    const client = makeClient();
+    client.inquirySession.findUnique.mockResolvedValue({
+      ...template,
+      owner_practice_id: null,
+    });
+    client.inquirySession.create.mockImplementation(({ data }) => ({
+      id: "sess-legacy",
+      ...data,
+    }));
+
+    expect(
+      canAccessInquirySession(
+        { id: "acc-1", current_practice: testPractice },
+        { owner_account_id: "acc-1", owner_practice_id: null },
+      ),
+    ).toBe(false);
+    expect(
+      canAccessInquirySession(
+        { id: "acc-1", current_practice: null },
+        { owner_account_id: "acc-1", owner_practice_id: null },
+      ),
+    ).toBe(true);
+    await expect(
+      instantiateFromTemplate("tpl-1", "acc-1", client as never),
+    ).resolves.toMatchObject({ owner_practice_id: null });
+  });
+
+  it("verweigert ein Template aus einer anderen Praxis weiterhin", async () => {
+    expect(
+      canAccessInquirySession(
+        { id: "acc-1", current_practice: testPractice },
+        { owner_account_id: "acc-1", owner_practice_id: "practice-2" },
+      ),
+    ).toBe(false);
   });
 
   it("fremde Vorlage → session_not_found", async () => {

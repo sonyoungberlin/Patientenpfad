@@ -76,7 +76,9 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const session = await getInquirySessionWithOutput(id, account.id);
+    const session = await getInquirySessionWithOutput(id, account.id, undefined, {
+      includeTemplates: true,
+    });
     if (!session || !canAccessInquirySession(account, session)) {
       return NextResponse.json(
         { ok: false, error: "Session nicht gefunden." },

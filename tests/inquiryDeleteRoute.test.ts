@@ -174,6 +174,61 @@ describe("DELETE /api/inquiries/[id]", () => {
     });
   });
 
+  it("200 und löscht ein Template mit passendem Account- und Praxis-Scope", async () => {
+    mockSessionAccount(true, true, "acc-owner");
+    pm.inquirySession.findUnique.mockResolvedValue({
+      id: "tpl-1",
+      owner_account_id: "acc-owner",
+      owner_practice_id: "p-1",
+      is_template: true,
+    });
+    pm.inquirySession.delete.mockResolvedValue({});
+
+    const req = requestWithCookie("http://localhost/api/inquiries/tpl-1");
+    const res = await deleteHandler(req, { params: Promise.resolve({ id: "tpl-1" }) });
+
+    expect(res.status).toBe(200);
+    expect(pm.inquirySession.delete).toHaveBeenCalledWith({
+      where: { id: "tpl-1" },
+    });
+  });
+
+  it("404 und löscht kein Template eines anderen Accounts", async () => {
+    mockSessionAccount(true, true, "acc-owner");
+    pm.inquirySession.findUnique.mockResolvedValue({
+      id: "tpl-other-account",
+      owner_account_id: "acc-other",
+      owner_practice_id: "p-1",
+      is_template: true,
+    });
+
+    const req = requestWithCookie("http://localhost/api/inquiries/tpl-other-account");
+    const res = await deleteHandler(req, {
+      params: Promise.resolve({ id: "tpl-other-account" }),
+    });
+
+    expect(res.status).toBe(404);
+    expect(pm.inquirySession.delete).not.toHaveBeenCalled();
+  });
+
+  it("404 und löscht kein Template aus einer anderen Praxis", async () => {
+    mockSessionAccount(true, true, "acc-owner");
+    pm.inquirySession.findUnique.mockResolvedValue({
+      id: "tpl-other-practice",
+      owner_account_id: "acc-owner",
+      owner_practice_id: "p-2",
+      is_template: true,
+    });
+
+    const req = requestWithCookie("http://localhost/api/inquiries/tpl-other-practice");
+    const res = await deleteHandler(req, {
+      params: Promise.resolve({ id: "tpl-other-practice" }),
+    });
+
+    expect(res.status).toBe(404);
+    expect(pm.inquirySession.delete).not.toHaveBeenCalled();
+  });
+
   it("gelöschte Session erscheint nicht mehr in GET", async () => {
     // GET gibt 404 wenn Session nicht gefunden (simuliert gelöschten Zustand)
     mockSessionAccount(true, true, "acc-owner");
