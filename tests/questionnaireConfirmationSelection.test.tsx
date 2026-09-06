@@ -218,4 +218,35 @@ describe("M3 Questionnaire-Confirmation-Auswahl", () => {
     expect(window.open).toHaveBeenCalledWith("https://example.test/q/direct-only-token", "_self");
     await act(async () => root.unmount());
   });
+
+  it("sendet im Kiosk-Direktmodus nur die dedizierte Nutzlast an den Kiosk-Endpoint", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: async () => ({ ok: false, error: "Testabbruch vor Navigation" }),
+    });
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireRequestSection
+          practiceConfirmationSlots={[]}
+          initialOpen
+          mode="direct"
+          createEndpoint="/api/questionnaire-kiosk/direct"
+        />,
+      );
+    });
+
+    await act(async () => {
+      setInputValue(container.querySelector<HTMLInputElement>("#q-patient-ref")!, "PAT-KIOSK");
+      container.querySelector<HTMLInputElement>('[data-q-block="KONTAKT"]')!.click();
+      container.querySelector<HTMLButtonElement>("[data-q-direct-fill]")!.click();
+    });
+
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/questionnaire-kiosk/direct");
+    const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(body.mode).toBeUndefined();
+    expect(body.inquiry_session_id).toBeUndefined();
+    await act(async () => root.unmount());
+  });
 });

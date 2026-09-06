@@ -81,14 +81,15 @@ model Account {
   /// Kein Backfill — die Funktion startet für alle Accounts deaktiviert.
   arbeitsprozesse_enabled Boolean @default(false)
 
-  cases                          CaseSession[]
-  office_case_sessions           OfficeCaseSession[] @relation("OfficeCaseSessionOwnerAccount")
-  workflow_sessions              WorkflowSession[]   @relation("WorkflowSessionOwnerAccount")
-  sessions                       Session[]
-  inquiry_sessions               InquirySession[]
-  patient_questionnaire_sessions PatientQuestionnaireSession[]
-  practice_questionnaire_forms   PracticeQuestionnaireForm[]
-  digital_requests               DigitalRequest[]
+  cases                               CaseSession[]
+  office_case_sessions                OfficeCaseSession[] @relation("OfficeCaseSessionOwnerAccount")
+  workflow_sessions                  WorkflowSession[]   @relation("WorkflowSessionOwnerAccount")
+  sessions                            Session[]
+  inquiry_sessions                    InquirySession[]
+  patient_questionnaire_sessions      PatientQuestionnaireSession[]
+  practice_questionnaire_forms        PracticeQuestionnaireForm[]
+  digital_requests                    DigitalRequest[]
+  created_questionnaire_kiosk_devices QuestionnaireKioskDevice[] @relation("QuestionnaireKioskDeviceCreatedByAccount")
 
   /// Phase P1: Mitgliedschaften des Accounts in Practices.
   /// Wird per Backfill zunächst genau einmal pro Account mit Rolle
@@ -356,20 +357,24 @@ model PatientQuestionnaireSession {
   /// Ablaufzeitpunkt des Tokens
   token_expires_at DateTime?
 
-  /// Ersteller (Praxis-Account, Pflichtfeld).
-  /// Phase 2: NOT NULL, damit jede Session eindeutig einer Praxis zugeordnet bleibt.
+  /// Ersteller-Account. NULL ausschließlich für Sessions eines autorisierten
+  /// Praxis-Kioskgeräts; dessen Practice ist dann der fachliche Owner.
   /// onDelete: Restrict → Account-Löschung wird blockiert, solange Sessions existieren.
   /// Vor einem zukünftigen Account-Lösch-Workflow müssen die Sessions explizit
   /// gelöscht oder umgehängt werden; es gibt absichtlich kein automatisches Cascade,
   /// damit medizinisch dokumentationspflichtige Daten nicht still verschwinden.
-  owner_account_id String
-  owner_account    Account @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
+  owner_account_id String?
+  owner_account    Account? @relation(fields: [owner_account_id], references: [id], onDelete: Restrict)
 
   /// Phase P1 (additiv): Verknüpfung zum Mandanten (Practice). Nullable in
   /// P1, damit die Migration mit Bestandsdaten bedingungslos kompatibel ist;
   /// `NOT NULL` folgt in P5. App-Logik nutzt dieses Feld in P1 nicht.
   owner_practice_id String?
   owner_practice    Practice? @relation("PatientQuestionnaireSessionOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: Restrict)
+
+  /// Erzeugendes Kioskgerät. Nur für `source = "kiosk_direct"` gesetzt.
+  created_by_kiosk_device_id String?
+  created_by_kiosk_device    QuestionnaireKioskDevice? @relation(fields: [created_by_kiosk_device_id], references: [id], onDelete: Restrict)
 
   /// Interne Patientenreferenz (wird nie in den Link kodiert)
   patient_reference String?
@@ -413,7 +418,8 @@ model PatientQuestionnaireSession {
 
   /// Phase 3a: Quelle der Session.
   /// Whitelist: "internal_link" (interner Praxis-Link, bisheriges Verhalten)
-  /// | "website" (öffentliches Website-Formular, ab Phase 3b genutzt).
+  /// | "website" (öffentliches Website-Formular, ab Phase 3b genutzt)
+  /// | "kiosk_direct" (direkt auf einem autorisierten Praxisgerät).
   /// Default ist "internal_link", damit Bestandszeilen und alle bestehenden
   /// Codepfade unverändert klassifiziert sind. Kein DB-Enum, konsistent zu
   /// `PrefillRun.source` und `CaseSession.preparation_mode`.
@@ -481,7 +487,34 @@ model PatientQuestionnaireSession {
   /// spätere Pfad-Umstellungen ohne Schema-Touch direkt performant filtern
   /// können. Wird in P1 noch nicht genutzt.
   @@index([owner_practice_id, createdAt])
+  @@index([created_by_kiosk_device_id, createdAt])
 }
+
+model QuestionnaireKioskDevice {
+  id                    String    @id @default(cuid())
+  practice_id           String
+  practice              Practice  @relation(fields: [practice_id], references: [id], onDelete: Restrict)
+  name                  String
+  credential_hash       String    @unique
+  pin_hash              String
+  is_active             Boolean   @default(true)
+  created_by_account_id String
+  created_by_account    Account   @relation("QuestionnaireKioskDeviceCreatedByAccount", fields: [created_by_account_id], references: [id], onDelete: Restrict)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+  last_seen_at          DateTime?
+  revoked_at            DateTime?
+  failed_pin_attempts   Int       @default(0)
+  locked_until          DateTime?
+  unlock_token_hash     String?   @unique
+  unlock_expires_at     DateTime?
+
+  questionnaire_sessions PatientQuestionnaireSession[]
+
+  @@index([practice_id, created_at])
+  @@index([practice_id, is_active, revoked_at])
+}
+
 /// Wird in Phase 3a nur als Datenstruktur eingeführt; es gibt noch keine
 /// öffentliche Route `/p/[slug]`, keinen Submit-Endpoint und keine
 /// Praxis-UI zum Anlegen. In Phase 3a sind Datensätze ausschließlich
@@ -745,6 +778,7 @@ model Practice {
   /// Option C (minimal): Accounts, die diese Practice als Standard-Praxis
   /// referenzieren. Gegenseite zu `Account.default_practice`.
   default_for_accounts Account[] @relation("AccountDefaultPractice")
+  questionnaire_kiosk_devices QuestionnaireKioskDevice[]
 }
 
 /// Offizielle, zentral vom Plattformbetreiber gepflegte Praxis- und

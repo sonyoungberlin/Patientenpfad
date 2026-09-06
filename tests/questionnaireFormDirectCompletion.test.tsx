@@ -80,6 +80,24 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
     expect(container.textContent).not.toContain("Die Angaben wurden gespeichert");
     expect(container.querySelector("[data-q-copy-note]")).toBeNull();
     expect(container.querySelector("nav")).toBeNull();
+    expect(container.querySelector("[data-q-kiosk-next]")).toBeNull();
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("zeigt den Neustart ausschließlich bei echter Kiosk-Provenienz", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    const { container, root } = await renderForm("kiosk_direct", null, "K-001");
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector("[data-q-kiosk-next]")).not.toBeNull();
+    expect(container.textContent).toContain("Nächsten Fragebogen starten");
 
     await act(async () => root.unmount());
     document.body.removeChild(container);

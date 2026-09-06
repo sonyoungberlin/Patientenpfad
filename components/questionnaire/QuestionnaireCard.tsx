@@ -94,7 +94,9 @@ export default function QuestionnaireCard({
   const isDeleted = deletedAt != null;
   const sourceLabel = isFromDigitalRequest
     ? "Digitale Anfrage"
-    : source === "practice_direct"
+    : source === "kiosk_direct"
+      ? "Kiosk"
+      : source === "practice_direct"
       ? "Sofort-Abfrage"
       : null;
   return (

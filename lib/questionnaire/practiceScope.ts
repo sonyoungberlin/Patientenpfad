@@ -28,7 +28,7 @@ import type { SessionAccount } from "@/lib/auth";
 type AccountScope = Pick<SessionAccount, "id" | "current_practice">;
 
 type SessionOwnership = {
-  owner_account_id: string;
+  owner_account_id: string | null;
   owner_practice_id?: string | null;
 };
 

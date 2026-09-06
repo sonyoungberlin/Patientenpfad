@@ -862,12 +862,14 @@ export function QuestionnaireRequestSection({
   practiceConfirmationSlots,
   initialOpen = false,
   mode = "message",
+  createEndpoint = "/api/questionnaire",
 }: {
   inquirySessionId?: string;
   onLinkGenerated?: (link: string) => void;
   practiceConfirmationSlots: PracticeConfirmationSlot[];
   initialOpen?: boolean;
   mode?: "message" | "direct";
+  createEndpoint?: string;
 }) {
   const [open, setOpen] = useState(initialOpen);
   const [patientRef, setPatientRef] = useState("");
@@ -927,7 +929,7 @@ export function QuestionnaireRequestSection({
       (id) => selectedBlocks[id] && (language !== "en" || isBlockEnReady(id)),
     );
     try {
-      const res = await fetch("/api/questionnaire", {
+      const res = await fetch(createEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -937,7 +939,9 @@ export function QuestionnaireRequestSection({
           selected_confirmation_ids: Array.from(selectedConfirmations),
           ...(selfCheckInQrEnabled ? { self_check_in_qr: true } : {}),
           ...(inquirySessionId ? { inquiry_session_id: inquirySessionId } : {}),
-          ...(mode === "direct" ? { mode } : {}),
+          ...(mode === "direct" && createEndpoint === "/api/questionnaire"
+            ? { mode }
+            : {}),
         }),
       });
       const data = (await res.json()) as { ok: boolean; link?: string; error?: string };
@@ -946,7 +950,11 @@ export function QuestionnaireRequestSection({
         return;
       }
       if (mode === "direct") {
-        window.open(data.link, "_self");
+        if (createEndpoint === "/api/questionnaire-kiosk/direct") {
+          window.location.replace(data.link);
+        } else {
+          window.open(data.link, "_self");
+        }
       } else {
         setLink(data.link);
         onLinkGenerated?.(data.link);
@@ -1012,6 +1020,8 @@ export function QuestionnaireRequestSection({
             <input
               id="q-patient-ref"
               type="text"
+              name="patient_reference"
+              autoComplete="off"
               value={patientRef}
               onChange={(e) => {
                 const nextValue = e.target.value;

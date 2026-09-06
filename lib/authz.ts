@@ -305,12 +305,12 @@ export async function requireWebsiteFormsManagementAccessFromCookies(): Promise<
  * Verhalten identisch zum bisherigen Inline-Check
  * (`session.owner_account_id !== account.id`).
  *
- * Phase 2: `owner_account_id` ist im Schema NOT NULL. Der Parametertyp
- * spiegelt das wider; ein nachgelagerter Admin-Bypass bleibt bewusst aus.
+ * Kiosk-Sessions besitzen keinen Account-Owner und sind über dieses historische
+ * Account-Predicate daher nie sichtbar.
  */
 export function canSeeQuestionnaire(
   account: Pick<SessionAccount, "id" | "is_admin">,
-  session: { owner_account_id: string },
+  session: { owner_account_id: string | null },
 ): boolean {
   // TODO(Phase 1): Admin-Bypass (`account.is_admin === true`) zulassen.
   return session.owner_account_id === account.id;

@@ -329,6 +329,14 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
     expect(markup).not.toContain("Digitale Anfrage");
   });
 
+  it("zeigt Badge 'Kiosk' nur bei source=kiosk_direct", () => {
+    const markup = renderToStaticMarkup(
+      QuestionnaireCard({ ...BASE_PROPS, source: "kiosk_direct" }),
+    );
+    expect(markup).toContain("Kiosk");
+    expect(markup).not.toContain("Sofort-Abfrage");
+  });
+
   it("kein Badge wenn isFromDigitalRequest=false", () => {
     const markup = renderToStaticMarkup(
       QuestionnaireCard({ ...BASE_PROPS, isFromDigitalRequest: false }),

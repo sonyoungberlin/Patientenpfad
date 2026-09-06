@@ -1026,6 +1026,15 @@ export function QuestionnaireFormClient({
   );
   const patientCopyEmailTouched = useRef(false);
 
+  useEffect(() => {
+    if (source !== "kiosk_direct") return;
+    const reloadRestoredPage = (event: PageTransitionEvent) => {
+      if (event.persisted) window.location.reload();
+    };
+    window.addEventListener("pageshow", reloadRestoredPage);
+    return () => window.removeEventListener("pageshow", reloadRestoredPage);
+  }, [source]);
+
   // Phase 5: Derived Values aus aktuellem Antwort-State live berechnen
   const derivedValues = useMemo(
     () => computeAllDerivedValues(values),
@@ -1203,6 +1212,16 @@ export function QuestionnaireFormClient({
           <SelfCheckInQrCode reference={selfCheckInQrReference} />
         ) : null}
         <PatientReferenceSummary reference={patientReference} />
+        {source === "kiosk_direct" ? (
+          <button
+            type="button"
+            data-q-kiosk-next
+            onClick={() => window.location.replace("/questionnaire-kiosk/direct")}
+            style={{ marginTop: "1.25rem" }}
+          >
+            Nächsten Fragebogen starten
+          </button>
+        ) : null}
       </section>
     );
   }

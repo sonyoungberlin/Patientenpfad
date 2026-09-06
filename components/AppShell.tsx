@@ -218,6 +218,9 @@ export default function AppShell({
     }
     if (canManagePractice) {
       sectionItems.push({ label: "Mitglieder", href: "/practice/members" });
+      if (practiceRole === "OWNER") {
+        sectionItems.push({ label: "Kiosk-Geräte", href: "/practice/questionnaire-kiosk" });
+      }
       sectionItems.push({ label: "Offizielle Praxisdaten", href: "/practice/legal-profile" });
       sectionItems.push({ label: "Signatur", href: "/practice/signature" });
       sectionItems.push({ label: "Anfrage-Einstellungen", href: "/practice/inquiry-settings" });

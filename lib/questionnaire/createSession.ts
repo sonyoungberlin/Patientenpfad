@@ -32,6 +32,20 @@ import {
 
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 Stunden
 
+type AccountSessionCreator = {
+  ownerAccountId: string;
+  ownerPracticeId?: string | null;
+  createdByKioskDeviceId?: never;
+};
+
+type KioskSessionCreator = {
+  ownerAccountId?: never;
+  ownerPracticeId: string;
+  createdByKioskDeviceId: string;
+  inquirySessionId?: never;
+  source: "kiosk_direct";
+};
+
 export type CreateSessionInput = {
   /** Bereits validierte und gefilterte Block-IDs (min. 1 Eintrag). */
   selectedBlockIds: string[];
@@ -39,10 +53,6 @@ export type CreateSessionInput = {
   patientReference: string;
   /** "de" | "en", nach `normalizeQuestionnaireLanguage` normalisiert. */
   patientLanguage: string;
-  /** Pflicht-FK (Doppelschreiben-Konvention). */
-  ownerAccountId: string;
-  /** Optionaler Mandanten-FK (Practice-first). */
-  ownerPracticeId?: string | null;
   /** Optionale Verknüpfung zur auslösenden InquirySession. */
   inquirySessionId?: string | null;
   /** Optionaler SHA-256-Hash des Geburtsdatums (kein Klartext). */
@@ -60,8 +70,8 @@ export type CreateSessionInput = {
   practiceConfirmations?: PracticeConfirmationSlot[];
   patientCopyReturnEmail?: string | null;
   /** Herkunft der internen Session; Default bleibt der bisherige Link-Workflow. */
-  source?: "internal_link" | "practice_direct";
-};
+  source?: "internal_link" | "practice_direct" | "kiosk_direct";
+} & (AccountSessionCreator | KioskSessionCreator);
 
 export type CreateSessionResult = {
   sessionId: string;
@@ -86,6 +96,7 @@ export async function createQuestionnaireSession(
     patientLanguage,
     ownerAccountId,
     ownerPracticeId,
+    createdByKioskDeviceId,
     inquirySessionId,
     birthDateHash,
     origin,
@@ -129,8 +140,11 @@ export async function createQuestionnaireSession(
     data: {
       token,
       token_expires_at: expiresAt,
-      owner_account_id: ownerAccountId,
+      owner_account_id: ownerAccountId ?? null,
       ...(ownerPracticeId ? { owner_practice_id: ownerPracticeId } : {}),
+      ...(createdByKioskDeviceId
+        ? { created_by_kiosk_device_id: createdByKioskDeviceId }
+        : {}),
       patient_reference: patientReference,
       inquiry_session_id: inquirySessionId ?? null,
       selected_block_ids: selectedBlockIds as Prisma.InputJsonValue,
