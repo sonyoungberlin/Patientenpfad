@@ -101,6 +101,15 @@ const CONFIRMATION_SESSION = {
   ],
 };
 
+const FULL_CONTACT_SESSION = {
+  ...SESSION_BASE,
+  deduplicated_questions: [
+    { id: "CONTACT_PHONE", text: "Telefon?", type: "text", required: false },
+    { id: "CONTACT_EMAIL", text: "E-Mail?", type: "text", required: false },
+    { id: "CONTACT_DOCTOLIB", text: "Doctolib?", type: "yes_no", required: false },
+  ],
+};
+
 describe("POST /api/q/[token]", () => {
   beforeEach(() => {
     prismaMock.patientQuestionnaireSession.findUnique.mockReset();
@@ -112,7 +121,7 @@ describe("POST /api/q/[token]", () => {
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(SESSION_BASE);
 
     const req = makeRequest("valid-token", {
-      answers: { CONTACT_PHONE: "0171 123456", AU_SYMPTOMS: "Husten" },
+      answers: { CONTACT_PHONE: "0171123456", AU_SYMPTOMS: "Husten" },
     });
     const res = await POST(req, { params: Promise.resolve({ token: "valid-token" }) });
     const json = await res.json();
@@ -130,12 +139,46 @@ describe("POST /api/q/[token]", () => {
   it("Antworten werden korrekt gespeichert", async () => {
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(SESSION_BASE);
 
-    const answers = { CONTACT_PHONE: "0171 123456", AU_SYMPTOMS: "Kopfschmerzen" };
+    const answers = { CONTACT_PHONE: "0171123456", AU_SYMPTOMS: "Kopfschmerzen" };
     const req = makeRequest("valid-token", { answers });
     await POST(req, { params: Promise.resolve({ token: "valid-token" }) });
 
     const updateData = prismaMock.patientQuestionnaireSession.update.mock.calls[0][0].data;
     expect(updateData.answers).toEqual(answers);
+  });
+
+  it("validiert den gesamten KONTAKT-Block serverseitig trotz altem Frozen-required-Flag", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      FULL_CONTACT_SESSION,
+    );
+
+    const invalidResponse = await POST(
+      makeRequest("valid-token", {
+        answers: {
+          CONTACT_PHONE: "0170 1234567",
+          CONTACT_EMAIL: "not-an-email",
+          CONTACT_DOCTOLIB: "",
+        },
+      }),
+      { params: Promise.resolve({ token: "valid-token" }) },
+    );
+    expect(invalidResponse.status).toBe(400);
+    expect(prismaMock.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      FULL_CONTACT_SESSION,
+    );
+    const validResponse = await POST(
+      makeRequest("valid-token", {
+        answers: {
+          CONTACT_PHONE: "+491701234567",
+          CONTACT_EMAIL: "max@example.de",
+          CONTACT_DOCTOLIB: "false",
+        },
+      }),
+      { params: Promise.resolve({ token: "valid-token" }) },
+    );
+    expect(validResponse.status).toBe(200);
   });
 
   it("liefert für practice_direct den bestehenden Krankenblatt-Text", async () => {
@@ -147,7 +190,7 @@ describe("POST /api/q/[token]", () => {
     };
     prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue(directSession);
 
-    const answers = { CONTACT_PHONE: "0171 123456", AU_SYMPTOMS: "Husten" };
+    const answers = { CONTACT_PHONE: "0171123456", AU_SYMPTOMS: "Husten" };
     const res = await POST(
       makeRequest("valid-token", { answers }),
       { params: Promise.resolve({ token: "valid-token" }) },
@@ -354,7 +397,10 @@ describe("POST /api/q/[token]", () => {
       );
 
       const req = makeRequest("valid-token", {
-        answers: { CONTACT_PHONE: "+49 30 1234, Müller-Str. 5 (Hinterhof) & Co." },
+        answers: {
+          CONTACT_PHONE: "+4930123456",
+          AU_SYMPTOMS: "Müller-Str. 5 (Hinterhof) & Co.",
+        },
       });
       const res = await POST(req, {
         params: Promise.resolve({ token: "valid-token" }),

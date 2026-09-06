@@ -26,6 +26,7 @@ import {
 import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
 import { SelfCheckInQrCode } from "@/components/SelfCheckInQrCode";
 import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
+import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -1143,6 +1144,13 @@ export function QuestionnaireFormClient({
       return;
     }
     setMissingRequiredIds(new Set());
+
+    const contactErrors = validateContactAnswers(answersToSend, visibleQuestions);
+    if (contactErrors.length > 0) {
+      setMissingRequiredIds(new Set(contactErrors.map((error) => error.questionId)));
+      setError(contactErrors[0].message);
+      return;
+    }
 
     // Clientseitige Validierung der Freitext-Antworten gegen erlaubte Zeichen.
     // Block submit, falls verletzt — Server validiert zusätzlich (Bypass-Schutz).

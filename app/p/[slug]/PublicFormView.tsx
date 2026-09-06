@@ -42,6 +42,7 @@ import {
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import type { PublicPracticeIdentity } from "@/lib/practice/publicIdentity";
 import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
+import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
 
 const NOTICE_ID = "public-form-confirm-notice";
 
@@ -222,6 +223,13 @@ export function PublicFormView({
     }
     if (missing.size > 0) {
       setMissingRequired(missing);
+      return;
+    }
+
+    const contactErrors = validateContactAnswers(values, visibleQuestions);
+    if (contactErrors.length > 0) {
+      setMissingRequired(new Set(contactErrors.map((error) => error.questionId)));
+      setError(contactErrors[0].message);
       return;
     }
 

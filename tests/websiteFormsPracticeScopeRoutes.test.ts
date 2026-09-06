@@ -465,7 +465,11 @@ function submitFormReq(slug: string, ip = "8.8.8.8"): NextRequest {
       "content-type": "application/x-www-form-urlencoded",
       "x-forwarded-for": ip,
     },
-    body: new URLSearchParams({ email: "patient@example.com" }).toString(),
+    body: new URLSearchParams({
+      email: "patient@example.com",
+      CONTACT_PHONE: "01701234567",
+      CONTACT_DOCTOLIB: "false",
+    }).toString(),
   });
 }
 

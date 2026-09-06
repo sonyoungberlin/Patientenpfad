@@ -241,14 +241,14 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     text: "Wie lautet Ihre E-Mail-Adresse?",
     text_en: "What is your email address?",
     type: "text",
-    required: false,
+    required: true,
   },
   CONTACT_DOCTOLIB: {
     id: "CONTACT_DOCTOLIB",
     text: "Haben Sie einen Doctolib-Account?",
     text_en: "Do you have a Doctolib account?",
     type: "yes_no",
-    required: false,
+    required: true,
   },
 
   // --- Kontaktperson ---

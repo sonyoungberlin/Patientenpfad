@@ -20,7 +20,7 @@ global.fetch = fetchMock;
 
 const QUESTIONS = [
   {
-    id: "CONTACT_PHONE",
+    id: "AU_SYMPTOMS",
     text: "Telefon",
     type: "text" as const,
     required: false,

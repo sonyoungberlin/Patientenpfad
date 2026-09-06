@@ -202,7 +202,8 @@ describe("POST /api/p/[slug]/submit", () => {
       formReq(
         {
           email: "Patient@Example.COM",
-          CONTACT_PHONE: "+49 30 123",
+          CONTACT_PHONE: "+4930123",
+          CONTACT_DOCTOLIB: "false",
           UNKNOWN_FIELD: "wird verworfen",
         },
         SLUG,
@@ -244,8 +245,9 @@ describe("POST /api/p/[slug]/submit", () => {
     // Antworten: nur whitelisted questionId; CONTACT_EMAIL wird aus der
     // Bestätigungs-E-Mail gespiegelt, weil KONTAKT im Formular ist.
     expect(call.data.answers).toEqual({
-      CONTACT_PHONE: "+49 30 123",
+      CONTACT_PHONE: "+4930123",
       CONTACT_EMAIL: "patient@example.com",
+      CONTACT_DOCTOLIB: "false",
     });
 
     // Mail wurde mit Klartext-URL und normalisierter Empfänger-Adresse aufgerufen.
@@ -262,7 +264,7 @@ describe("POST /api/p/[slug]/submit", () => {
   it("Mailfehler: Session bleibt bestehen, KEIN delete, generischer Erfolgs-Redirect", async () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
     sendMailMock.mockRejectedValueOnce(new Error("smtp blew up"));
-    const res = await POST(formReq({ email: "a@b.de" }, SLUG, "6.0.0.1"), {
+    const res = await POST(formReq({ email: "a@b.de", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "6.0.0.1"), {
       params: Promise.resolve({ slug: SLUG }),
     });
     expect(res.status).toBe(303);
@@ -367,7 +369,7 @@ describe("POST /api/p/[slug]/submit", () => {
     // 5 erlaubte Submits, der 6. soll 429 sein.
     for (let i = 0; i < 5; i++) {
       const res = await POST(
-        formReq({ email: `u${i}@b.de` }, SLUG, ip),
+        formReq({ email: `u${i}@b.de`, CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, ip),
         { params: Promise.resolve({ slug: SLUG }) },
       );
       expect(res.status).toBe(303);
@@ -384,7 +386,7 @@ describe("POST /api/p/[slug]/submit", () => {
         makeForm({ selected_block_ids: ["KONTAKT"] }),
       );
       const res = await POST(
-        formReq({ email: "Patient1@Example.COM" }, SLUG, "9.0.0.1"),
+        formReq({ email: "Patient1@Example.COM", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "9.0.0.1"),
         { params: Promise.resolve({ slug: SLUG }) },
       );
       expect(res.status).toBe(303);
@@ -403,7 +405,8 @@ describe("POST /api/p/[slug]/submit", () => {
           {
             email: "patient2@example.com",
             CONTACT_EMAIL: "abweichend@example.org",
-            CONTACT_PHONE: "+49 30 123",
+            CONTACT_PHONE: "+4930123",
+            CONTACT_DOCTOLIB: "false",
           },
           SLUG,
           "9.0.0.2",
@@ -414,7 +417,7 @@ describe("POST /api/p/[slug]/submit", () => {
       const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
       expect(call.data.answers.CONTACT_EMAIL).toBe("abweichend@example.org");
       // Andere Antworten unverändert.
-      expect(call.data.answers.CONTACT_PHONE).toBe("+49 30 123");
+      expect(call.data.answers.CONTACT_PHONE).toBe("+4930123");
     });
 
     it("KONTAKT-Block enthalten + CONTACT_EMAIL bewusst leer → bleibt leer", async () => {
@@ -426,15 +429,16 @@ describe("POST /api/p/[slug]/submit", () => {
           {
             email: "patient-empty@example.com",
             CONTACT_EMAIL: "",
+            CONTACT_PHONE: "01701234567",
+            CONTACT_DOCTOLIB: "false",
           },
           SLUG,
           "9.0.0.4",
         ),
         { params: Promise.resolve({ slug: SLUG }) },
       );
-      expect(res.status).toBe(303);
-      const call = pm.patientQuestionnaireSession.create.mock.calls[0][0];
-      expect(call.data.answers.CONTACT_EMAIL).toBe("");
+      expect(res.status).toBe(400);
+      expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
     });
 
     it("KONTAKT-Block nicht enthalten → CONTACT_EMAIL wird NICHT gesetzt", async () => {
@@ -536,7 +540,7 @@ describe("POST /api/p/[slug]/submit", () => {
         id: "sess-xyz",
       });
       const res = await POST(
-        formReq({ email: "patient@example.com" }, SLUG, "8.0.0.1"),
+        formReq({ email: "patient@example.com", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "8.0.0.1"),
         { params: Promise.resolve({ slug: SLUG }) },
       );
       expect(res.status).toBe(303);
@@ -582,7 +586,7 @@ describe("POST /api/p/[slug]/submit", () => {
         id: "sess-mail-failed",
       });
       sendMailMock.mockRejectedValueOnce(new Error("smtp blew up"));
-      await POST(formReq({ email: "a@b.de" }, SLUG, "8.0.4.1"), {
+      await POST(formReq({ email: "a@b.de", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "8.0.4.1"), {
         params: Promise.resolve({ slug: SLUG }),
       });
       const errCall = consoleErrorSpy.mock.calls.find(
@@ -603,7 +607,7 @@ describe("POST /api/p/[slug]/submit", () => {
   describe("Zeichenvalidierung Freitext (Bypass-Schutz)", () => {
     it("400 bei kyrillischer Eingabe in einem Freitext-Block — KEINE Session, KEINE Mail", async () => {
       pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
-        makeForm({ selected_block_ids: ["KONTAKT"] }),
+        makeForm({ selected_block_ids: ["KONTAKT", "ARBEITSUNFAEHIGKEIT"] }),
       );
       const res = await POST(
         formReq(
@@ -661,7 +665,9 @@ describe("POST /api/p/[slug]/submit", () => {
         formReq(
           {
             email: "char4@b.de",
-            CONTACT_PHONE: "+49 30 1234, Müller-Str. 5 (Hinterhof) & Co.",
+            CONTACT_PHONE: "+4930123456",
+            CONTACT_DOCTOLIB: "false",
+            AU_CURRENT_COMPLAINT: "Müller-Str. 5 (Hinterhof) & Co.",
           },
           SLUG,
           "20.0.0.4",

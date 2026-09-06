@@ -73,6 +73,7 @@ import {
 import { sendWebsiteFormConfirmationEmail } from "@/lib/mail/sendWebsiteFormConfirmationEmail";
 import { getEffectivePracticeFlags } from "@/lib/websiteForms/practiceScope";
 import { isValidPatientCopyEmail, sendPatientQuestionnaireCopyIfRequired } from "@/lib/questionnaire/sendPatientQuestionnaireCopy";
+import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
 
 export const dynamic = "force-dynamic";
 
@@ -370,6 +371,23 @@ export async function POST(
       Object.entries(sanitizedAnswers).filter(([id]) => visibleQIds.has(id))
     );
 
+    // Das Top-Level-E-Mail-Feld ist der bestehende Prefill für CONTACT_EMAIL.
+    if (
+      deduplicatedQuestions.some((q) => q.id === "CONTACT_EMAIL") &&
+      !("CONTACT_EMAIL" in finalAnswers)
+    ) {
+      finalAnswers["CONTACT_EMAIL"] = emailCheck.email;
+    }
+
+    const contactErrors = validateContactAnswers(finalAnswers, deduplicatedQuestions);
+    if (contactErrors.length > 0) {
+      logSubmit("invalid_body", { slug: slugValidation.slug, practiceFormId: form.id });
+      return new NextResponse(contactErrors[0].message, {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+
     const missingConfirmation = deduplicatedQuestions.some(
       (question) =>
         question.type === "confirmation" &&
@@ -389,18 +407,6 @@ export async function POST(
         !isValidPatientCopyEmail(sanitizedAnswers.PATIENT_COPY_EMAIL)) {
       logSubmit("invalid_body", { slug: slugValidation.slug, practiceFormId: form.id });
       return new NextResponse("Bitte geben Sie eine gültige E-Mail-Adresse für Ihre Kopie an.", { status: 400 });
-    }
-
-    // 8b. CONTACT_EMAIL aus dem oberen Pflichtfeld ergänzen, falls der Client
-    // keinen Wert für die sichtbare Katalogfrage übermittelt hat. Vorhandene
-    // Werte einschließlich eines bewusst leeren Strings bleiben erhalten.
-    // Hinweis: Gilt nur für den öffentlichen `/p/[slug]`-Submit; der
-    // Token-Flow `/q/[token]` bleibt unberührt.
-    if (
-      deduplicatedQuestions.some((q) => q.id === "CONTACT_EMAIL") &&
-      !("CONTACT_EMAIL" in finalAnswers)
-    ) {
-      finalAnswers["CONTACT_EMAIL"] = emailCheck.email;
     }
 
     // 9. Bestätigungs-Token erzeugen.

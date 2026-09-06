@@ -19,6 +19,7 @@ import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import { isConfirmedAnswer } from "@/lib/questionnaire/confirmation";
 import { isValidPatientCopyEmail, sendPatientQuestionnaireCopyIfRequired } from "@/lib/questionnaire/sendPatientQuestionnaireCopy";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
+import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
 
 export async function POST(
   req: NextRequest,
@@ -174,6 +175,17 @@ export async function POST(
     const snapshotQuestions: QuestionDefinition[] = frozenBlocks
       ? frozenBlocks.flatMap((block) => block.questions)
       : (deduplicatedQuestions as QuestionDefinition[]);
+    const contactErrors = validateContactAnswers(filteredAnswers, snapshotQuestions);
+    if (contactErrors.length > 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: contactErrors[0].message,
+          invalidQuestionIds: contactErrors.map((error) => error.questionId),
+        },
+        { status: 400 },
+      );
+    }
     const missingConfirmation = snapshotQuestions.some(
       (question) =>
         question.type === "confirmation" &&
