@@ -223,4 +223,22 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
     expect(html).not.toContain("PDF erneut herunterladen");
     expect(html).not.toContain("PDF heruntergeladen");
   });
+
+  it("zeigt Patient zuordnen nur für nicht zugeordnete Website-Submissions", () => {
+    const websiteHtml = renderToStaticMarkup(
+      QuestionnaireCard({ ...baseProps, patientReference: null, source: "website" }),
+    );
+    expect(websiteHtml).toContain("Patient zuordnen");
+    expect(websiteHtml).toContain('data-q-assign="sess-1"');
+
+    const internalHtml = renderToStaticMarkup(
+      QuestionnaireCard({ ...baseProps, patientReference: null, source: "internal_link" }),
+    );
+    expect(internalHtml).not.toContain("Patient zuordnen");
+
+    const assignedHtml = renderToStaticMarkup(
+      QuestionnaireCard({ ...baseProps, source: "website" }),
+    );
+    expect(assignedHtml).not.toContain("Patient zuordnen");
+  });
 });

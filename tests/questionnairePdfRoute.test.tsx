@@ -192,6 +192,29 @@ describe("questionnaire pdf filename", () => {
   });
 });
 
+describe("questionnaire PDF patient reference", () => {
+  it("uses the assigned patient reference in the existing PDF renderer", async () => {
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({ patient_reference: "004711" }),
+      {
+        title: "Fragebogen",
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: {
+          VERSICHERUNG: {
+            id: "VERSICHERUNG",
+            label: "Versicherungsdaten",
+            displayOrder: 1,
+            questionIds: [],
+          },
+        },
+      },
+    );
+
+    expect(await extractPdfText(result.bytes)).toContain("Patientenreferenz: 004711");
+    expect(result.filename).toBe("20260512_004711_Versicherungsdaten.pdf");
+  });
+});
+
 async function extractPdfText(bytes: Uint8Array): Promise<string> {
   await PDFDocument.load(bytes);
   const raw = Buffer.from(bytes).toString("latin1");

@@ -3,6 +3,7 @@ import { getStatusBadgeStyle } from "@/lib/questionnaire/displayStatus";
 import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
 import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
+import QuestionnairePatientAssignment from "./QuestionnairePatientAssignment";
 import { buildDerivedValueLines } from "@/lib/questionnaire/formatAnswer";
 import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
 import type { QuestionnaireAttentionHint } from "@/lib/questionnaire/attentionHints";
@@ -99,6 +100,8 @@ export default function QuestionnaireCard({
       : source === "practice_direct"
       ? "Sofort-Abfrage"
       : null;
+  const canAssignWebsitePatient =
+    !isDeleted && displayStatus === "completed" && source === "website" && patientReference == null;
   return (
     <div
       className="card"
@@ -195,6 +198,8 @@ export default function QuestionnaireCard({
           <MedicalRecordNoteCopyButton sessionId={id} noteText={noteText} />
         </>
       )}
+
+      {canAssignWebsitePatient && <QuestionnairePatientAssignment sessionId={id} />}
 
       {/* Kontexthinweis bei Einreichung durch Kontaktperson */}
       {submittedBy === "contact_person" && (
