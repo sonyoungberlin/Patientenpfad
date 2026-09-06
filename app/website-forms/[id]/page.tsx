@@ -25,7 +25,8 @@ import {
   requirePracticeRoleFromCookies,
   requireWebsiteFormsManagementAccessFromCookies,
 } from "@/lib/authz";
-import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { QUESTIONNAIRE_BLOCK_IDS_PRESENTATION } from "@/lib/questionnaire/blockPresentation";
 import { isBlockEnReady, normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { ownsForm } from "@/lib/websiteForms/practiceScope";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
@@ -101,7 +102,7 @@ export default async function WebsiteFormDetailPage({
     : [];
   const confirmationSlots = buildPracticeConfirmationSlots(form.owner_practice ?? {});
   const patientLanguage = normalizeQuestionnaireLanguage(form.patient_language);
-  const blockChoices = BLOCK_IDS_SORTED.map((blockId) => ({
+  const blockChoices = QUESTIONNAIRE_BLOCK_IDS_PRESENTATION.map((blockId) => ({
     id: blockId,
     label: BLOCK_CATALOG[blockId]?.label ?? blockId,
     enReady: isBlockEnReady(blockId),

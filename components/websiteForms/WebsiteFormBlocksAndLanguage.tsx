@@ -23,6 +23,7 @@
 import { useState } from "react";
 import { isBlockEnReady, type QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { VOLLSTAENDIGE_ANAMNESE_PRESET } from "@/lib/questionnaire/blockCatalog";
+import { groupQuestionnaireBlocks } from "@/lib/questionnaire/blockPresentation";
 import type { PracticeConfirmationSlot } from "@/lib/questionnaire/confirmation";
 
 export type BlockChoice = {
@@ -55,6 +56,7 @@ export function WebsiteFormBlocksAndLanguage({
   const [selectedConfirmations, setSelectedConfirmations] = useState<Record<string, boolean>>(
     () => Object.fromEntries(initialSelectedConfirmationIds.map((id) => [id, true])),
   );
+  const blockGroups = groupQuestionnaireBlocks(blocks);
 
   function handleLanguageChange(next: QuestionnaireLanguage) {
     setLanguage(next);
@@ -115,43 +117,50 @@ export function WebsiteFormBlocksAndLanguage({
         >
           Vollständige Anamnese auswählen
         </button>
-        {blocks.map((b) => {
-          const blockedByLanguage = language === "en" && !b.enReady;
-          const checked = !!selected[b.id] && !blockedByLanguage;
-          return (
-            <label
-              key={b.id}
-              style={{
-                display: "flex",
-                gap: "0.5rem",
-                opacity: blockedByLanguage ? 0.5 : 1,
-              }}
-              data-block-choice={b.id}
-              data-block-en-ready={b.enReady ? "true" : "false"}
-              data-block-blocked={blockedByLanguage ? "true" : "false"}
-            >
-              <input
-                type="checkbox"
-                name="selected_block_ids"
-                value={b.id}
-                checked={checked}
-                disabled={blockedByLanguage}
-                onChange={() => toggleBlock(b.id, b.enReady)}
-              />
-              <span>
-                {b.label}
-                {!b.enReady && (
-                  <span
-                    className="text-muted"
-                    style={{ marginLeft: "0.4rem", fontSize: "0.8rem" }}
-                  >
-                    (nur Deutsch verfügbar)
+        {blockGroups.map((group) => (
+          <fieldset key={group.id} style={{ display: "grid", gap: "0.25rem", border: 0, padding: 0 }}>
+            <legend style={{ fontWeight: 500, fontSize: "0.9rem", marginTop: "0.5rem" }}>
+              {group.label}
+            </legend>
+            {group.blocks.map((b) => {
+              const blockedByLanguage = language === "en" && !b.enReady;
+              const checked = !!selected[b.id] && !blockedByLanguage;
+              return (
+                <label
+                  key={b.id}
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    opacity: blockedByLanguage ? 0.5 : 1,
+                  }}
+                  data-block-choice={b.id}
+                  data-block-en-ready={b.enReady ? "true" : "false"}
+                  data-block-blocked={blockedByLanguage ? "true" : "false"}
+                >
+                  <input
+                    type="checkbox"
+                    name="selected_block_ids"
+                    value={b.id}
+                    checked={checked}
+                    disabled={blockedByLanguage}
+                    onChange={() => toggleBlock(b.id, b.enReady)}
+                  />
+                  <span>
+                    {b.label}
+                    {!b.enReady && (
+                      <span
+                        className="text-muted"
+                        style={{ marginLeft: "0.4rem", fontSize: "0.8rem" }}
+                      >
+                        (nur Deutsch verfügbar)
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-            </label>
-          );
-        })}
+                </label>
+              );
+            })}
+          </fieldset>
+        ))}
       </fieldset>
       {confirmationSlots.length > 0 && (
         <fieldset style={{ display: "grid", gap: "0.25rem" }}>

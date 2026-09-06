@@ -21,6 +21,7 @@ import {
   inquiryDocumentationToPlainText,
 } from "@/lib/inquiries/formatInquiryOutput";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED, VOLLSTAENDIGE_ANAMNESE_PRESET } from "@/lib/questionnaire/blockCatalog";
+import { groupQuestionnaireBlocks } from "@/lib/questionnaire/blockPresentation";
 import { isBlockEnReady } from "@/lib/questionnaire/i18n";
 import type {
   PracticeConfirmationId,
@@ -884,6 +885,9 @@ export function QuestionnaireRequestSection({
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [reqError, setReqError] = useState<string | null>(null);
+  const blockGroups = groupQuestionnaireBlocks(
+    BLOCK_IDS_SORTED.map((blockId) => BLOCK_CATALOG[blockId]),
+  );
 
   function toggleBlock(blockId: string) {
     setSelectedBlocks((prev) => ({ ...prev, [blockId]: !prev[blockId] }));
@@ -1076,59 +1080,68 @@ export function QuestionnaireRequestSection({
             >
               Vollständige Anamnese auswählen
             </button>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              {BLOCK_IDS_SORTED.map((blockId) => {
-                const block = BLOCK_CATALOG[blockId];
-                const enReady = isBlockEnReady(blockId);
-                const blockedByLanguage = language === "en" && !enReady;
-                const checked = !!selectedBlocks[blockId] && !blockedByLanguage;
-                const disabled = loading || !!link || blockedByLanguage;
-                return (
-                  <label
-                    key={blockId}
-                    title={
-                      blockedByLanguage
-                        ? "Dieser Block ist noch nicht vollständig auf Englisch übersetzt."
-                        : undefined
-                    }
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.35rem",
-                      padding: "0.25rem 0.6rem",
-                      border: `1px solid ${checked ? "var(--primary, #2563eb)" : "var(--border)"}`,
-                      borderRadius: "var(--radius)",
-                      background: checked ? "var(--primary-subtle, #eff6ff)" : "var(--background)",
-                      cursor: disabled ? "not-allowed" : "pointer",
-                      fontSize: "0.85rem",
-                      opacity: disabled ? 0.5 : 1,
-                    }}
-                    data-q-block-label={blockId}
-                    data-q-block-en-ready={enReady ? "true" : "false"}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleBlock(blockId)}
-                      disabled={disabled}
-                      data-q-block={blockId}
-                      style={{ accentColor: "var(--primary, #2563eb)" }}
-                    />
-                    {block.label}
-                    {blockedByLanguage && (
-                      <>
-                        <span aria-hidden="true" style={{ fontSize: "0.75rem", opacity: 0.7 }}>
-                          (nur DE)
-                        </span>
-                        <span className="sr-only">
-                          {" "}
-                          – Dieser Block ist noch nicht vollständig auf Englisch übersetzt.
-                        </span>
-                      </>
-                    )}
-                  </label>
-                );
-              })}
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {blockGroups.map((group) => (
+                <fieldset key={group.id} style={{ border: 0, padding: 0, margin: 0 }}>
+                  <legend style={{ fontWeight: 500, fontSize: "0.85rem", marginBottom: "0.35rem" }}>
+                    {group.label}
+                  </legend>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                    {group.blocks.map((block) => {
+                      const blockId = block.id;
+                      const enReady = isBlockEnReady(blockId);
+                      const blockedByLanguage = language === "en" && !enReady;
+                      const checked = !!selectedBlocks[blockId] && !blockedByLanguage;
+                      const disabled = loading || !!link || blockedByLanguage;
+                      return (
+                        <label
+                          key={blockId}
+                          title={
+                            blockedByLanguage
+                              ? "Dieser Block ist noch nicht vollständig auf Englisch übersetzt."
+                              : undefined
+                          }
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.35rem",
+                            padding: "0.25rem 0.6rem",
+                            border: `1px solid ${checked ? "var(--primary, #2563eb)" : "var(--border)"}`,
+                            borderRadius: "var(--radius)",
+                            background: checked ? "var(--primary-subtle, #eff6ff)" : "var(--background)",
+                            cursor: disabled ? "not-allowed" : "pointer",
+                            fontSize: "0.85rem",
+                            opacity: disabled ? 0.5 : 1,
+                          }}
+                          data-q-block-label={blockId}
+                          data-q-block-en-ready={enReady ? "true" : "false"}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleBlock(blockId)}
+                            disabled={disabled}
+                            data-q-block={blockId}
+                            style={{ accentColor: "var(--primary, #2563eb)" }}
+                          />
+                          {block.label}
+                          {blockedByLanguage && (
+                            <>
+                              <span aria-hidden="true" style={{ fontSize: "0.75rem", opacity: 0.7 }}>
+                                (nur DE)
+                              </span>
+                              <span className="sr-only">
+                                {" "}
+                                – Dieser Block ist noch nicht vollständig auf Englisch übersetzt.
+                              </span>
+                            </>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ))}
             </div>
           </div>
 

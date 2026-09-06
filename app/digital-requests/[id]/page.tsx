@@ -20,8 +20,8 @@ import {
 } from "@/lib/authz";
 import {
   BLOCK_CATALOG,
-  BLOCK_IDS_SORTED,
 } from "@/lib/questionnaire/blockCatalog";
+import { QUESTIONNAIRE_BLOCK_IDS_PRESENTATION } from "@/lib/questionnaire/blockPresentation";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 import { DigitalRequestDetailClient } from "@/components/DigitalRequestDetailClient";
 import { topicLabel } from "@/lib/digitalRequests/topics";
@@ -121,7 +121,7 @@ export default async function DigitalRequestDetailPage({
     ? (request.selected_block_ids as string[])
     : [];
 
-  const blocks = BLOCK_IDS_SORTED.map((bid) => ({
+  const blocks = QUESTIONNAIRE_BLOCK_IDS_PRESENTATION.map((bid) => ({
     id: bid,
     label: BLOCK_CATALOG[bid]?.label ?? bid,
   }));

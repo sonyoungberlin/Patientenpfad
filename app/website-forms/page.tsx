@@ -25,7 +25,8 @@ import {
   requirePracticeRoleFromCookies,
   requireWebsiteFormsManagementAccessFromCookies,
 } from "@/lib/authz";
-import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
+import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { QUESTIONNAIRE_BLOCK_IDS_PRESENTATION } from "@/lib/questionnaire/blockPresentation";
 import { isBlockEnReady } from "@/lib/questionnaire/i18n";
 import { getOwnershipFilter } from "@/lib/websiteForms/practiceScope";
 import { WebsiteFormBlocksAndLanguage } from "@/components/websiteForms/WebsiteFormBlocksAndLanguage";
@@ -75,7 +76,7 @@ export default async function WebsiteFormsPage({
     },
   });
 
-  const blockChoices = BLOCK_IDS_SORTED.map((blockId) => ({
+  const blockChoices = QUESTIONNAIRE_BLOCK_IDS_PRESENTATION.map((blockId) => ({
     id: blockId,
     label: BLOCK_CATALOG[blockId]?.label ?? blockId,
     enReady: isBlockEnReady(blockId),

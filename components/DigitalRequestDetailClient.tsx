@@ -22,6 +22,7 @@ import type {
   PracticeConfirmationSlot,
 } from "@/lib/questionnaire/confirmation";
 import { SelfCheckInQrOption } from "@/components/SelfCheckInQrOption";
+import { groupQuestionnaireBlocks } from "@/lib/questionnaire/blockPresentation";
 
 export type BlockChoice = {
   id: string;
@@ -93,6 +94,7 @@ export function DigitalRequestDetailClient({
   const currentSelectedBlockIds = blocks
     .map((b) => b.id)
     .filter((id) => selected[id]);
+  const blockGroups = groupQuestionnaireBlocks(blocks);
 
   const canSend =
     !isReadOnly &&
@@ -304,28 +306,35 @@ export function DigitalRequestDetailClient({
           Fragebogen-Blöcke
         </legend>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {blocks.map((b) => (
-            <label
-              key={b.id}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "0.75rem",
-                cursor: isReadOnly ? "not-allowed" : "pointer",
-                color: isReadOnly ? "#9ca3af" : undefined,
-                fontWeight: 400,
-              }}
-              data-block-choice={b.id}
-            >
-              <input
-                type="checkbox"
-                checked={!!selected[b.id]}
-                onChange={() => { if (!isReadOnly) toggleBlock(b.id); }}
-                disabled={isReadOnly}
-                style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
-              />
-              <span>{b.label}</span>
-            </label>
+          {blockGroups.map((group) => (
+            <fieldset key={group.id} style={{ border: 0, padding: 0, margin: 0 }}>
+              <legend style={{ fontWeight: 500, marginBottom: "0.35rem" }}>{group.label}</legend>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {group.blocks.map((b) => (
+                  <label
+                    key={b.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.75rem",
+                      cursor: isReadOnly ? "not-allowed" : "pointer",
+                      color: isReadOnly ? "#9ca3af" : undefined,
+                      fontWeight: 400,
+                    }}
+                    data-block-choice={b.id}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!selected[b.id]}
+                      onChange={() => { if (!isReadOnly) toggleBlock(b.id); }}
+                      disabled={isReadOnly}
+                      style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
+                    />
+                    <span>{b.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           ))}
         </div>
       </fieldset>
