@@ -21,6 +21,7 @@ import type {
   PracticeConfirmationId,
   PracticeConfirmationSlot,
 } from "@/lib/questionnaire/confirmation";
+import { SelfCheckInQrOption } from "@/components/SelfCheckInQrOption";
 
 export type BlockChoice = {
   id: string;
@@ -55,6 +56,7 @@ export function DigitalRequestDetailClient({
   const [patientReference, setPatientReference] = useState(
     initialPatientReference ?? "",
   );
+  const [selfCheckInQrEnabled, setSelfCheckInQrEnabled] = useState(false);
   const [selected, setSelected] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     for (const id of initialSelectedBlockIds) init[id] = true;
@@ -96,6 +98,7 @@ export function DigitalRequestDetailClient({
     !isReadOnly &&
     patientReference.trim() !== "" &&
     currentSelectedBlockIds.length > 0;
+  const hasPatientReference = patientReference.trim() !== "";
 
   async function handleSave() {
     setSaving(true);
@@ -158,6 +161,9 @@ export function DigitalRequestDetailClient({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             selected_confirmation_ids: Array.from(selectedConfirmations),
+            ...(hasPatientReference && selfCheckInQrEnabled
+              ? { self_check_in_qr: true }
+              : {}),
           }),
         },
       );
@@ -268,7 +274,9 @@ export function DigitalRequestDetailClient({
           value={patientReference}
           onChange={(e) => {
             if (isReadOnly) return;
-            setPatientReference(e.target.value);
+            const nextValue = e.target.value;
+            setPatientReference(nextValue);
+            if (nextValue.trim() === "") setSelfCheckInQrEnabled(false);
             setSaved(false);
           }}
           readOnly={isReadOnly}
@@ -282,6 +290,13 @@ export function DigitalRequestDetailClient({
           Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
         </p>
       </div>
+
+      <SelfCheckInQrOption
+        reference={patientReference}
+        checked={selfCheckInQrEnabled}
+        disabled={isReadOnly}
+        onChange={setSelfCheckInQrEnabled}
+      />
 
       {/* Block-Auswahl */}
       <fieldset disabled={isReadOnly} style={{ margin: "1.5rem 0", padding: 0, border: "none" }}>

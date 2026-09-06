@@ -221,6 +221,7 @@ describe("POST /api/p/[slug]/submit", () => {
     expect(call.data.submitted_by).toBe("patient");
     expect(call.data.owner_account_id).toBe("acc-1");
     expect(call.data.practice_form_id).toBe("form-1");
+    expect(call.data.patient_reference).toBeUndefined();
     expect(call.data.submitted_at).toBeUndefined();
 
     // E-Mail-Hash, KEIN Klartext (außerhalb von `answers`, wo CONTACT_EMAIL

@@ -10,15 +10,19 @@ const EXPIRED_MESSAGE = "Dieser Link ist abgelaufen. Bitte wenden Sie sich an di
 
 export default async function M2TokenPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams?: Promise<{ selfCheckInQr?: string }>;
 }) {
   const { token } = await params;
+  const { selfCheckInQr } = (await searchParams) ?? {};
 
   const session = await prisma.caseSession.findUnique({
     where: { m2_token: token },
     select: {
       active_checkpoints: true,
+      patient_reference: true,
       m2_token_expires_at: true,
       owner_practice: { select: PUBLIC_IDENTITY_SELECT },
     },
@@ -53,7 +57,16 @@ export default async function M2TokenPage({
   return (
     <main>
       <h1>Patientenbefragung</h1>
-      <M2TokenFormClient token={token} checkpoints={checkpoints} />
+      <M2TokenFormClient
+        token={token}
+        checkpoints={checkpoints}
+        patientReference={session.patient_reference}
+        selfCheckInQrReference={
+          selfCheckInQr === "1" && session.patient_reference
+            ? session.patient_reference
+            : null
+        }
+      />
       {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>
   );

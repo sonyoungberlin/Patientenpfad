@@ -57,16 +57,20 @@ function completedMessage(language: QuestionnaireLanguage): string {
 
 export default async function QuestionnairePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams?: Promise<{ selfCheckInQr?: string }>;
 }) {
   const { token } = await params;
+  const { selfCheckInQr } = (await searchParams) ?? {};
 
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { token },
     select: {
       token_expires_at: true,
       status: true,
+      patient_reference: true,
       source: true,
       inquiry_session_id: true,
       deduplicated_questions: true,
@@ -173,6 +177,12 @@ export default async function QuestionnairePage({
         context={session.context}
         source={session.source}
         inquirySessionId={session.inquiry_session_id}
+        patientReference={session.patient_reference}
+        selfCheckInQrReference={
+          selfCheckInQr === "1" && session.patient_reference
+            ? session.patient_reference
+            : null
+        }
       />
       {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>

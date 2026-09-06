@@ -15,6 +15,7 @@ import {
   selectPracticeConfirmationSlots,
   type PracticeConfirmationSlot,
 } from "@/lib/questionnaire/confirmation";
+import { appendSelfCheckInQrFlag } from "@/lib/selfCheckInQr";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -73,6 +74,8 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    const selfCheckInQr = body.self_check_in_qr === true;
 
     const inquirySessionId =
       typeof body.inquiry_session_id === "string" && body.inquiry_session_id.trim() !== ""
@@ -159,7 +162,7 @@ export async function POST(req: NextRequest) {
       "";
     const fwdProto = req.headers.get("x-forwarded-proto") ?? "https";
     const origin = fwdHost ? `${fwdProto}://${fwdHost}` : req.nextUrl.origin;
-    const { tokenLink: link } = await createQuestionnaireSession({
+    const { tokenLink } = await createQuestionnaireSession({
       selectedBlockIds,
       patientReference,
       patientLanguage,
@@ -176,8 +179,10 @@ export async function POST(req: NextRequest) {
       ...(mode === "direct" ? { source: "practice_direct" as const } : {}),
       origin,
     });
-
-    return NextResponse.json({ ok: true, link });
+    return NextResponse.json({
+      ok: true,
+      link: appendSelfCheckInQrFlag(tokenLink, patientReference, selfCheckInQr),
+    });
   } catch (err) {
     // Always log the full error server-side for observability.
     console.error("questionnaire create failed", err);

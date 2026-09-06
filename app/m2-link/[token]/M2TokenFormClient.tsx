@@ -8,6 +8,8 @@ import {
   type M2PrefillData,
 } from "@/lib/logic/m2Questions";
 import { PersonalLinkNotice } from "@/components/PersonalLinkNotice";
+import { SelfCheckInQrCode } from "@/components/SelfCheckInQrCode";
+import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
 
 const ANSWER_OPTIONS: { value: M2Answer; label: string }[] = [
   { value: "ja", label: "Ja" },
@@ -18,9 +20,13 @@ const ANSWER_OPTIONS: { value: M2Answer; label: string }[] = [
 export function M2TokenFormClient({
   token,
   checkpoints,
+  patientReference,
+  selfCheckInQrReference,
 }: {
   token: string;
   checkpoints: ActiveCheckpoint[];
+  patientReference?: string | null;
+  selfCheckInQrReference?: string | null;
 }) {
   const [values, setValues] = useState<M2PrefillData>(() => {
     const init: M2PrefillData = {};
@@ -73,9 +79,14 @@ export function M2TokenFormClient({
 
   if (submitted) {
     return (
-      <p data-m2-submitted style={{ marginTop: "1.5rem" }}>
-        Vielen Dank, Ihre Angaben wurden übermittelt.
-      </p>
+      <section data-m2-submitted style={{ marginTop: "1.5rem" }}>
+        <h2>Fragebogen abgeschlossen</h2>
+        <p>Vielen Dank.</p>
+        {selfCheckInQrReference ? (
+          <SelfCheckInQrCode reference={selfCheckInQrReference} />
+        ) : null}
+        <PatientReferenceSummary reference={patientReference} />
+      </section>
     );
   }
 

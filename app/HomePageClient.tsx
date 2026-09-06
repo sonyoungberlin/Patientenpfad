@@ -11,6 +11,7 @@ import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
 import AppShell from "@/components/AppShell";
+import { SelfCheckInQrOption } from "@/components/SelfCheckInQrOption";
 import {
   ALWAYS_PRESENT_ASSESSMENT_IDS,
   CHECKPOINT_CATALOGUE,
@@ -70,6 +71,7 @@ export default function HomePageClient() {
   );
   const [mode, setMode] = useState<CaseMode>("guest");
   const [patientReference, setPatientReference] = useState("");
+  const [selfCheckInQrEnabled, setSelfCheckInQrEnabled] = useState(false);
   const [gatekeeper, setGatekeeper] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -236,7 +238,11 @@ export default function HomePageClient() {
       }
       const redirectPath = getCreateSuccessRedirectPath(data);
       if (redirectPath) {
-        router.push(redirectPath);
+        router.push(
+          selfCheckInQrEnabled && patientReference.trim()
+            ? `${redirectPath}?selfCheckInQr=1`
+            : redirectPath,
+        );
       } else {
         setError("Fall-ID fehlt in der Antwort. Bitte erneut versuchen.");
       }
@@ -463,7 +469,10 @@ export default function HomePageClient() {
                   name="mode"
                   value={m}
                   checked={mode === m}
-                  onChange={() => setMode(m)}
+                  onChange={() => {
+                    setMode(m);
+                    if (m !== "practice") setSelfCheckInQrEnabled(false);
+                  }}
                   style={{ marginRight: "0.3rem" }}
                 />
                 {m === "guest" ? "Als Gast starten" : "Mit Praxiszuordnung starten"}
@@ -477,13 +486,22 @@ export default function HomePageClient() {
                 id="patient_reference"
                 type="text"
                 value={patientReference}
-                onChange={(e) => setPatientReference(e.target.value)}
+                onChange={(e) => {
+                  const nextValue = e.target.value;
+                  setPatientReference(nextValue);
+                  if (!nextValue.trim()) setSelfCheckInQrEnabled(false);
+                }}
                 placeholder="z. B. P-2024-001"
                 style={{ marginTop: "0.5rem" }}
               />
               <p className="text-muted text-small" style={{ marginTop: "0.35rem" }}>
                 Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
               </p>
+              <SelfCheckInQrOption
+                reference={patientReference}
+                checked={selfCheckInQrEnabled}
+                onChange={setSelfCheckInQrEnabled}
+              />
             </div>
           )}
         </div>

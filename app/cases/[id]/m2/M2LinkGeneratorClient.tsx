@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
+import { SelfCheckInQrOption } from "@/components/SelfCheckInQrOption";
 
 const MESSAGE_INTRO =
   "Liebe Patientin, lieber Patient,\n" +
@@ -14,7 +15,15 @@ export function buildMessageText(generatedLink: string, signature: string): stri
   return parts.join("\n\n");
 }
 
-export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
+export function M2LinkGeneratorClient({
+  caseId,
+  patientReference,
+  initialSelfCheckInQrEnabled = false,
+}: {
+  caseId: string;
+  patientReference: string | null;
+  initialSelfCheckInQrEnabled?: boolean;
+}) {
   const router = useRouter();
   const [link, setLink] = useState<string | null>(null);
   const [messageText, setMessageText] = useState<string>("");
@@ -23,6 +32,9 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState(false);
+  const [selfCheckInQrEnabled, setSelfCheckInQrEnabled] = useState(
+    initialSelfCheckInQrEnabled && !!patientReference?.trim(),
+  );
 
   useEffect(() => {
     fetch("/api/practice/signature")
@@ -52,6 +64,12 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
     try {
       const response = await fetch(`/api/cases/${caseId}/m2-link`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          patientReference?.trim() && selfCheckInQrEnabled
+            ? { self_check_in_qr: true }
+            : {},
+        ),
       });
       const data = (await response.json()) as { link?: string };
 
@@ -105,6 +123,12 @@ export function M2LinkGeneratorClient({ caseId }: { caseId: string }) {
         minWidth: 0,
       }}
     >
+      <SelfCheckInQrOption
+        reference={patientReference}
+        checked={selfCheckInQrEnabled}
+        disabled={loading || !!link}
+        onChange={setSelfCheckInQrEnabled}
+      />
       <button
         type="button"
         data-generate-m2-link

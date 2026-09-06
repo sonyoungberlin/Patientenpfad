@@ -16,6 +16,12 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
+jest.mock("@/components/SelfCheckInQrCode", () => ({
+  SelfCheckInQrCode: ({ reference }: { reference: string }) => (
+    <div data-self-check-in-qr data-reference={reference} />
+  ),
+}));
+
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     patientQuestionnaireSession: {
@@ -71,6 +77,50 @@ describe("/q/[token] Seite", () => {
     );
     // Ohne Practice keine Signatur
     expect(markup).not.toContain("data-practice-signature");
+  });
+
+  it("zeigt vor dem Öffnen auch bei aktiviertem Versandflag keinen QR", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      token_expires_at: futureDate(48),
+      status: "pending",
+      patient_reference: "001234",
+      deduplicated_questions: SAMPLE_QUESTIONS,
+      owner_practice: null,
+    });
+
+    const withoutFlag = renderToStaticMarkup(
+      await QuestionnairePage({ params: Promise.resolve({ token: "valid-token" }) }),
+    );
+    const withFlag = renderToStaticMarkup(
+      await QuestionnairePage({
+        params: Promise.resolve({ token: "valid-token" }),
+        searchParams: Promise.resolve({ selfCheckInQr: "1" }),
+      }),
+    );
+
+    expect(withoutFlag).not.toContain("data-self-check-in-qr");
+    expect(withFlag).not.toContain("data-self-check-in-qr");
+    expect(withFlag).not.toContain("Self-Check-in");
+    expect(withFlag).toContain("data-personal-link-notice");
+  });
+
+  it("zeigt trotz Flag keinen QR ohne Patientenzuordnung", async () => {
+    prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      token_expires_at: futureDate(48),
+      status: "pending",
+      patient_reference: null,
+      deduplicated_questions: SAMPLE_QUESTIONS,
+      owner_practice: null,
+    });
+
+    const markup = renderToStaticMarkup(
+      await QuestionnairePage({
+        params: Promise.resolve({ token: "valid-token" }),
+        searchParams: Promise.resolve({ selfCheckInQr: "1" }),
+      }),
+    );
+
+    expect(markup).not.toContain("data-self-check-in-qr");
   });
 
   it("rendert die Praxis-Signatur unverändert zwischen Überschrift und Formular, wenn vorhanden", async () => {

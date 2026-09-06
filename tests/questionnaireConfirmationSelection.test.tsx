@@ -30,6 +30,25 @@ describe("M3 Questionnaire-Confirmation-Auswahl", () => {
 
   afterEach(() => jest.restoreAllMocks());
 
+  it("aktiviert die QR-Option erst mit vorhandener Patientennummer", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<QuestionnaireRequestSection practiceConfirmationSlots={[]} initialOpen />);
+    });
+
+    const qrOption = container.querySelector<HTMLInputElement>("[data-self-check-in-qr]");
+    expect(qrOption).not.toBeNull();
+    expect(qrOption!.disabled).toBe(true);
+    expect(container.textContent).toContain("Patientennummer / Referenz erforderlich");
+    await act(async () => {
+      setInputValue(container.querySelector<HTMLInputElement>("#q-patient-ref")!, "PAT-1");
+    });
+    expect(qrOption!.disabled).toBe(false);
+
+    await act(async () => root.unmount());
+  });
+
   it("zeigt nur konfigurierte read-only Slottexte als unabhängig auswählbare Checkboxen", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);

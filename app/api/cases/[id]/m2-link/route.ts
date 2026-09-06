@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCasesAccess } from "@/lib/authz";
 import { canAccessCaseSession } from "@/lib/cases/practiceScope";
+import { appendSelfCheckInQrFlag } from "@/lib/selfCheckInQr";
 
 const TOKEN_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
@@ -14,10 +15,12 @@ export async function POST(
     if (error) return error;
 
     const { id } = await params;
+    const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    const selfCheckInQr = body.self_check_in_qr === true;
 
     const session = await prisma.caseSession.findUnique({
       where: { id },
-      select: { owner_account_id: true, owner_practice_id: true },
+      select: { patient_reference: true, owner_account_id: true, owner_practice_id: true },
     });
 
     if (!session || !canAccessCaseSession(account, session)) {
@@ -41,7 +44,11 @@ export async function POST(
     });
 
     const origin = req.nextUrl.origin;
-    const link = `${origin}/m2-link/${token}`;
+    const link = appendSelfCheckInQrFlag(
+      `${origin}/m2-link/${token}`,
+      session.patient_reference,
+      selfCheckInQr,
+    );
 
     return NextResponse.json({ ok: true, link });
   } catch (err) {

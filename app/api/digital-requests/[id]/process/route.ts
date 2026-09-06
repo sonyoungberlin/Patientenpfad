@@ -30,6 +30,7 @@ import {
   parseSelectedPracticeConfirmationIds,
   selectPracticeConfirmationSlots,
 } from "@/lib/questionnaire/confirmation";
+import { appendSelfCheckInQrFlag } from "@/lib/selfCheckInQr";
 
 /** Status-Werte, bei denen kein erneuter Prozess erlaubt ist. */
 const TERMINAL_STATUSES = new Set(["sent", "closed", "rejected"]);
@@ -43,6 +44,7 @@ export async function POST(
 
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const requestedSelfCheckInQr = body.self_check_in_qr === true;
   const selectedConfirmationIds = parseSelectedPracticeConfirmationIds(
     body.selected_confirmation_ids,
   );
@@ -159,6 +161,11 @@ export async function POST(
     practiceConfirmations,
     origin,
   });
+  const questionnaireUrl = appendSelfCheckInQrFlag(
+    tokenLink,
+    dr.patient_reference,
+    requestedSelfCheckInQr,
+  );
 
   // --- Mail senden (vor DB-Update; bei Fehler kein Status-Update) ---
   const practiceName = dr.owner_practice?.name ?? "Ihre Praxis";
@@ -167,7 +174,7 @@ export async function POST(
   try {
     await sendDigitalRequestTokenEmail({
       to: dr.submitter_email,
-      questionnaireUrl: tokenLink,
+      questionnaireUrl,
       practiceName,
       practiceSignature,
       practiceId: dr.owner_practice_id ?? null,

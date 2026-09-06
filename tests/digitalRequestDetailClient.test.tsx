@@ -108,6 +108,19 @@ describe("DigitalRequestDetailClient — Button-Sichtbarkeit", () => {
     await cleanup(root, container);
   });
 
+  it("aktiviert die QR-Option nur mit Patientennummer", async () => {
+    const withReference = await renderComponent(defaultProps());
+    expect(withReference.container.querySelector<HTMLInputElement>("[data-self-check-in-qr]")!.disabled).toBe(false);
+    await cleanup(withReference.root, withReference.container);
+
+    const withoutReference = await renderComponent(
+      defaultProps({ initialPatientReference: "" }),
+    );
+    expect(withoutReference.container.querySelector<HTMLInputElement>("[data-self-check-in-qr]")!.disabled).toBe(true);
+    expect(withoutReference.container.textContent).toContain("Patientennummer / Referenz erforderlich");
+    await cleanup(withoutReference.root, withoutReference.container);
+  });
+
   it("Button ist deaktiviert wenn keine Blöcke ausgewählt", async () => {
     const { container, root } = await renderComponent(
       defaultProps({ initialSelectedBlockIds: [] }),
@@ -200,6 +213,21 @@ describe("DigitalRequestDetailClient — Send-Interaktion", () => {
       selected_confirmation_ids: ["PRACTICE_CONFIRMATION_1"],
     });
     expect(String(processOptions.body)).not.toContain("Servertext");
+    await cleanup(root, container);
+  });
+
+  it("sendet das QR-Flag bei vorhandener Patientennummer", async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, status: "sent" }) });
+    const { container, root } = await renderComponent(defaultProps());
+    await act(async () => {
+      container.querySelector<HTMLInputElement>("[data-self-check-in-qr]")!.click();
+      container.querySelector<HTMLButtonElement>("[data-testid=\"send-questionnaire-btn\"]")!.click();
+    });
+
+    const processOptions = mockFetch.mock.calls[1][1] as RequestInit;
+    expect(JSON.parse(String(processOptions.body)).self_check_in_qr).toBe(true);
     await cleanup(root, container);
   });
 

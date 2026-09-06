@@ -328,6 +328,40 @@ describe("POST /api/digital-requests/[id]/process", () => {
     expect(mailInput.practiceId).toBe("p-1");
   });
 
+  it("aktiviert QR bei externer Anfrage mit gespeicherter Patientennummer", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_READY);
+    createQuestionnaireSessionMock.mockResolvedValue(SESSION_RESULT);
+    sendDigitalRequestTokenEmailMock.mockResolvedValue("practice");
+    pm.digitalRequest.update.mockResolvedValue({});
+
+    await POST(
+      makeRequest("dr-1", { self_check_in_qr: true }),
+      CTX("dr-1"),
+    );
+
+    const [mailInput] = sendDigitalRequestTokenEmailMock.mock.calls[0];
+    expect(mailInput.questionnaireUrl).toBe(
+      `${SESSION_RESULT.tokenLink}?selfCheckInQr=1`,
+    );
+  });
+
+  it("aktiviert QR nicht ohne gespeicherte Patientennummer", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      ...DR_READY,
+      patient_reference: null,
+    });
+
+    const response = await POST(
+      makeRequest("dr-1", { self_check_in_qr: true }),
+      CTX("dr-1"),
+    );
+
+    expect(response.status).toBe(400);
+    expect(sendDigitalRequestTokenEmailMock).not.toHaveBeenCalled();
+  });
+
   it("setzt status = 'sent', questionnaire_session_id und sent_at nach erfolgreichem Versand", async () => {
     getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
     pm.digitalRequest.findFirst.mockResolvedValue(DR_READY);

@@ -96,6 +96,40 @@ describe("POST /api/questionnaire", () => {
     expect(json.ok).toBe(true);
     expect(typeof json.link).toBe("string");
     expect(json.link).toContain("/q/");
+    expect(json.link).not.toContain("selfCheckInQr=1");
+  });
+
+  it("aktiviert die patientenseitige QR-Anzeige nur bei aktivierter Option", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-qr" });
+
+    const res = await POST(makeRequest({
+      selected_block_ids: ["KONTAKT"],
+      patient_reference: "001234",
+      self_check_in_qr: true,
+    }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.link).toContain("selfCheckInQr=1");
+    expect(json.link).not.toContain("001234");
+  });
+
+  it("aktiviert QR in einer Patientennachricht unabhängig von der Blockauswahl", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-message" });
+
+    const res = await POST(makeRequest({
+      selected_block_ids: ["REZEPT"],
+      patient_reference: "001234",
+      inquiry_session_id: "inquiry-1",
+      self_check_in_qr: true,
+    }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.link).toContain("selfCheckInQr=1");
+    expect(json.link).not.toContain("001234");
   });
 
   it("speichert Token, deduplizierte Fragen und owner_account_id", async () => {
@@ -139,6 +173,24 @@ describe("POST /api/questionnaire", () => {
     expect(data.selected_block_ids).toEqual(["KONTAKT"]);
     expect(data.patient_reference).toBe("PAT-DIRECT");
     expect(data.inquiry_session_id).toBe("inquiry-direct");
+  });
+
+  it("aktiviert QR auch im Direktmodus mit derselben Referenz", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.patientQuestionnaireSession.create.mockResolvedValue({ id: "session-direct-qr" });
+
+    const res = await POST(makeRequest({
+      selected_block_ids: ["KONTAKT"],
+      patient_reference: "001234",
+      mode: "direct",
+      self_check_in_qr: true,
+    }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.link).toContain("selfCheckInQr=1");
+    const data = prismaMock.patientQuestionnaireSession.create.mock.calls[0][0].data;
+    expect(data.patient_reference).toBe("001234");
   });
 
   it("friert nur ausgewählte Practice-Confirmations mit serverseitigem Text ein", async () => {

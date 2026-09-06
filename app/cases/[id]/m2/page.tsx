@@ -14,8 +14,10 @@ import { M2MfaModeClient } from "./M2MfaModeClient";
 
 export default async function M2Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ selfCheckInQr?: string }>;
 }) {
   const account = await getSessionAccountFromCookies();
   if (!account || !account.is_approved) {
@@ -23,10 +25,11 @@ export default async function M2Page({
   }
 
   const { id } = await params;
+  const { selfCheckInQr } = (await searchParams) ?? {};
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
-    select: { active_checkpoints: true, ctx_prefill: true, owner_account_id: true, owner_practice_id: true, doctor_confirmed: true, preparation_mode: true },
+    select: { active_checkpoints: true, ctx_prefill: true, patient_reference: true, owner_account_id: true, owner_practice_id: true, doctor_confirmed: true, preparation_mode: true },
   });
 
   if (!session || !canAccessCaseSession(account, session)) {
@@ -135,7 +138,11 @@ export default async function M2Page({
             alignItems: "flex-start",
           }}
         >
-          <M2LinkGeneratorClient caseId={id} />
+          <M2LinkGeneratorClient
+            caseId={id}
+            patientReference={session.patient_reference}
+            initialSelfCheckInQrEnabled={selfCheckInQr === "1"}
+          />
           <M2PatientConversationClient />
           <M2MfaModeClient />
         </div>

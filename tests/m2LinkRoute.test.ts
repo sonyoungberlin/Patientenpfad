@@ -34,9 +34,11 @@ const APPROVED_ACCOUNT = {
   is_admin: false,
 };
 
-function makeRequest(id: string) {
+function makeRequest(id: string, body: Record<string, unknown> = {}) {
   return new NextRequest(`http://localhost/api/cases/${id}/m2-link`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 }
 
@@ -51,6 +53,7 @@ describe("POST /api/cases/[id]/m2-link", () => {
     getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
+      patient_reference: "PAT-001",
     });
     prismaMock.caseSession.update.mockResolvedValue({});
 
@@ -76,6 +79,39 @@ describe("POST /api/cases/[id]/m2-link", () => {
     const expiresIn = updateCall.data.m2_token_expires_at.getTime() - Date.now();
     expect(expiresIn).toBeGreaterThan(13 * 24 * 60 * 60 * 1000);
     expect(expiresIn).toBeLessThanOrEqual(14 * 24 * 60 * 60 * 1000 + 1000);
+  });
+
+  it("aktiviert QR nur mit angeforderter Option und gespeicherter Referenz", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      patient_reference: "001234",
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    const response = await POST(makeRequest("case-qr", { self_check_in_qr: true }), {
+      params: Promise.resolve({ id: "case-qr" }),
+    });
+    const json = await response.json();
+
+    expect(json.link).toMatch(/\/m2-link\/[0-9a-f-]{36}\?selfCheckInQr=1$/);
+    expect(json.link).not.toContain("001234");
+  });
+
+  it("ignoriert die QR-Anforderung ohne gespeicherte Referenz", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      patient_reference: null,
+    });
+    prismaMock.caseSession.update.mockResolvedValue({});
+
+    const response = await POST(makeRequest("case-no-ref", { self_check_in_qr: true }), {
+      params: Promise.resolve({ id: "case-no-ref" }),
+    });
+    const json = await response.json();
+
+    expect(json.link).not.toContain("selfCheckInQr=1");
   });
 
   it("gibt 401 zurück wenn nicht eingeloggt", async () => {

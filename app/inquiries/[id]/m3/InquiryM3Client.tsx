@@ -27,6 +27,7 @@ import type {
   PracticeConfirmationSlot,
 } from "@/lib/questionnaire/confirmation";
 import CopyTextButton from "@/components/inquiries/CopyTextButton";
+import { SelfCheckInQrOption } from "@/components/SelfCheckInQrOption";
 
 export type M3SpecificCheckpoint = {
   id: string;
@@ -871,6 +872,7 @@ export function QuestionnaireRequestSection({
   const [open, setOpen] = useState(initialOpen);
   const [patientRef, setPatientRef] = useState("");
   const [patientRefTouched, setPatientRefTouched] = useState(false);
+  const [selfCheckInQrEnabled, setSelfCheckInQrEnabled] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
   const [selectedConfirmations, setSelectedConfirmations] = useState<
     Set<PracticeConfirmationId>
@@ -933,6 +935,7 @@ export function QuestionnaireRequestSection({
           selected_block_ids: blockIds,
           language,
           selected_confirmation_ids: Array.from(selectedConfirmations),
+          ...(selfCheckInQrEnabled ? { self_check_in_qr: true } : {}),
           ...(inquirySessionId ? { inquiry_session_id: inquirySessionId } : {}),
           ...(mode === "direct" ? { mode } : {}),
         }),
@@ -1010,7 +1013,11 @@ export function QuestionnaireRequestSection({
               id="q-patient-ref"
               type="text"
               value={patientRef}
-              onChange={(e) => setPatientRef(e.target.value)}
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                setPatientRef(nextValue);
+                if (nextValue.trim() === "") setSelfCheckInQrEnabled(false);
+              }}
               onBlur={() => setPatientRefTouched(true)}
               disabled={loading || !!link}
               placeholder="z.B. PAT-12345"
@@ -1114,6 +1121,13 @@ export function QuestionnaireRequestSection({
               })}
             </div>
           </div>
+
+          <SelfCheckInQrOption
+            reference={patientRef}
+            checked={selfCheckInQrEnabled}
+            disabled={loading || !!link}
+            onChange={setSelfCheckInQrEnabled}
+          />
 
           {/* Language selection */}
           {practiceConfirmationSlots.length > 0 && (
