@@ -69,6 +69,21 @@ export type RepeatableGroupFieldDef = {
   conditionalValues?: string[];
 };
 
+export type VaccinationItemDefinition = {
+  id: string;
+  label: string;
+  optional?: boolean;
+  categoryId?: string;
+  documentationMode?: "component_group" | "dose_stages" | "season" | "single" | "dose_count" | "subtype" | "free_text";
+  doseOptions?: string[];
+  subtypeOptions?: string[];
+  componentFields?: Array<{
+    key: string;
+    label: string;
+    options: string[];
+  }>;
+};
+
 export type QuestionDefinition = {
   /** Globale, stabile ID – darf nie geändert werden. */
   id: string;
@@ -106,13 +121,15 @@ export type QuestionDefinition = {
   unit?: string;
   /** Eng begrenzte workflow-spezifische Darstellung innerhalb des bestehenden Typs. */
   presentation?: "vaccination_matrix";
-  /** Feste Impfzeilen für die workflow-spezifische Impfmatrix. */
-  vaccinationItems?: Array<{
+  /** Version des vollständig eingefrorenen Dokumentationsschemas der Impfmatrix. */
+  vaccinationSchemaVersion?: number;
+  /** Sichtbare Navigationsgruppen der Impfmatrix. */
+  vaccinationCategories?: Array<{
     id: string;
     label: string;
-    optional?: boolean;
-    doseOptions?: string[];
   }>;
+  /** Feste Impfzeilen für die workflow-spezifische Impfmatrix. */
+  vaccinationItems?: VaccinationItemDefinition[];
 };
 
 export type QuestionnaireBlock = {

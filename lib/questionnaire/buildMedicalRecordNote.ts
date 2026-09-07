@@ -54,6 +54,7 @@ const MAX_LINE_LENGTH = 80;
  * auf die lange Patientenfrage zurückgefallen.
  */
 const SHORT_LABELS: Record<string, string> = {
+  VACCINATION_REVIEW_ITEMS: "Impfungen",
   // Identität
   IDENTITY_FIRST_NAME: "Vorname",
   IDENTITY_LAST_NAME: "Nachname",
@@ -257,6 +258,9 @@ function formatRepeatableGroupEntries(
       : `  ${idx + 1}. Eintrag:`);
 
     for (const field of def.groupSchema!) {
+      if (def.presentation === "vaccination_matrix" && (field.key === "vaccination_id" || field.key === "custom_label")) {
+        continue;
+      }
       // Bedingte Felder ausblenden, wenn Gate-Feld nicht zutrifft
       if (field.conditionalOn) {
         const cv = (e[field.conditionalOn] as string) ?? "";

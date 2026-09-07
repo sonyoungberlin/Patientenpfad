@@ -321,7 +321,7 @@ export async function buildQuestionnairePdfBytes(
     drawTextBlock(`${questionLabel}:`, { size: 9, bold: true, lineHeight });
     y -= 2;
     for (const entry of entries) {
-      drawTextBlock(`${entry.index}. Eintrag`, {
+      drawTextBlock(entry.title ?? `${entry.index}. Eintrag`, {
         size: 10,
         bold: true,
         color: [0.2, 0.2, 0.2],

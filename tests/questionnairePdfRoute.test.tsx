@@ -24,7 +24,8 @@ import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { PDFDocument } from "pdf-lib";
 import { inflateSync } from "node:zlib";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
-import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
+import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
+import { VACCINATION_REVIEW_BLOCK_CATALOG, VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 
 type PrismaMock = {
   patientQuestionnaireSession: {
@@ -248,6 +249,60 @@ describe("questionnaire PDF patient reference", () => {
 
     expect(await extractPdfText(result.bytes)).toContain("Patientenreferenz: 004711");
     expect(result.filename).toBe("20260512_004711_Versicherungsdaten.pdf");
+  });
+
+  it("renders a normalized v2 vaccination answer without technical, untouched, or stale values", async () => {
+    const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+    const normalized = normalizeVaccinationReviewAnswers({
+      VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+        vaccination_id: "tdap_ipv_group",
+        documented_status: "Teilweise vorhanden",
+        tetanus_doses: "Grunddosis 1",
+        pertussis_doses: "Impfung dokumentiert",
+        documented_subtypes: "stale-subtype",
+        further_action: "Impfung ärztlich empfohlen",
+        note: "Impfpass erneut prüfen",
+      }]),
+    }, question);
+    expect(normalized.ok).toBe(true);
+    if (!normalized.ok) return;
+
+    const frozenBlock = {
+      ...VACCINATION_REVIEW_BLOCK_CATALOG.VACCINATION_REVIEW,
+      questions: [question],
+      conditionalRules: [],
+      initiallyVisible: true,
+    };
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        patient_reference: "123545",
+        selected_block_ids: ["VACCINATION_REVIEW"],
+        deduplicated_questions: [question],
+        frozen_blocks: [frozenBlock],
+        answers: normalized.answers,
+      }),
+      {
+        title: "Impfpassprüfung und Beratung",
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: VACCINATION_REVIEW_BLOCK_CATALOG,
+        omitUnanswered: true,
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Tetanus / Diphtherie / Pertussis / Poliomyelitis");
+    expect(text).toContain("Dokumentierter Impfstatus:");
+    expect(text).toContain("Teilweise vorhanden");
+    expect(text).toContain("Tetanus:");
+    expect(text).toContain("Grunddosis 1");
+    expect(text).toContain("Pertussis:");
+    expect(text).toContain("Impfung dokumentiert");
+    expect(text).toContain("Bemerkung:");
+    expect(text).toContain("Impfpass erneut prüfen");
+    expect(text).not.toContain("tdap_ipv_group");
+    expect(text).not.toContain("vaccination_id");
+    expect(text).not.toContain("COVID-19");
+    expect(text).not.toContain("stale-subtype");
   });
 });
 

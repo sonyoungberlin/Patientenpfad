@@ -66,9 +66,59 @@ function allowedItemMap(question: QuestionDefinition): Map<string, VaccinationIt
   return new Map((question.vaccinationItems ?? []).map((item) => [item.id, item as VaccinationItem]));
 }
 
+function schemaOptions(question: QuestionDefinition, key: string, fallback: readonly string[]): string[] {
+  if (question.vaccinationSchemaVersion !== 2) return [...fallback];
+  return question.groupSchema?.find((field) => field.key === key)?.options ?? [];
+}
+
+function normalizeSelection(raw: unknown, options: string[], unclearValue = "unklar"): string | null {
+  const value = typeof raw === "string" ? raw : "";
+  const allowed = new Set(options);
+  const selected = [...new Set(parseMultiSelectValue(value, options).filter((option) => allowed.has(option)))];
+  if (selected.includes(unclearValue)) return unclearValue;
+  return selected.length > 0 ? selected.join(", ") : null;
+}
+
+function copyV2Documentation(
+  source: Record<string, unknown>,
+  entry: VaccinationEntry,
+  item: VaccinationItem,
+): boolean {
+  if (item.documentationMode === "component_group") {
+    for (const component of item.componentFields ?? []) {
+      const value = normalizeSelection(source[component.key], component.options);
+      if (value) entry[component.key] = value;
+    }
+    return true;
+  }
+  if (item.documentationMode === "season") {
+    const season = typeof source.documented_season === "string"
+      ? source.documented_season.trim().slice(0, 30)
+      : "";
+    const date = typeof source.documented_date === "string" ? source.documented_date : "";
+    if (season) entry.documented_season = season;
+    if (date) {
+      if (!isValidDate(date)) return false;
+      entry.documented_date = date;
+    }
+    return true;
+  }
+  if (item.documentationMode === "subtype") {
+    const subtypes = normalizeSelection(source.documented_subtypes, item.subtypeOptions ?? [], "Serogruppe unklar");
+    if (subtypes) entry.documented_subtypes = subtypes;
+    return true;
+  }
+  if (item.documentationMode === "free_text") return true;
+
+  const doses = normalizeSelection(source.documented_doses, item.doseOptions ?? []);
+  if (doses) entry.documented_doses = doses;
+  return true;
+}
+
 function cleanEntry(
   raw: unknown,
   items: Map<string, VaccinationItem>,
+  question: QuestionDefinition,
 ): VaccinationEntry | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
   const source = raw as Record<string, unknown>;
@@ -77,7 +127,8 @@ function cleanEntry(
   if (!item) return null;
 
   const status = typeof source.documented_status === "string" ? source.documented_status : "";
-  if (!VACCINATION_STATUS_OPTIONS.includes(status as (typeof VACCINATION_STATUS_OPTIONS)[number])) return null;
+  const statusOptions = schemaOptions(question, "documented_status", VACCINATION_STATUS_OPTIONS);
+  if (!statusOptions.includes(status)) return null;
 
   const entry: VaccinationEntry = {
     vaccination_id: vaccinationId,
@@ -90,23 +141,28 @@ function cleanEntry(
   }
 
   if (status === "Teilweise vorhanden") {
-    const rawDoses = typeof source.documented_doses === "string" ? source.documented_doses : "";
-    const doses = parseMultiSelectValue(rawDoses, [...(item.doseOptions ?? VACCINATION_DOSE_OPTIONS)]);
-    const uniqueDoses = [...new Set(doses)];
-    if (uniqueDoses.includes("unklar")) {
-      entry.documented_doses = "unklar";
-    } else if (uniqueDoses.length > 0) {
-      entry.documented_doses = uniqueDoses.join(", ");
+    if (question.vaccinationSchemaVersion === 2) {
+      if (!copyV2Documentation(source, entry, item)) return null;
+    } else {
+      const doses = normalizeSelection(
+        source.documented_doses,
+        item.doseOptions ?? [...VACCINATION_DOSE_OPTIONS],
+      );
+      if (doses) entry.documented_doses = doses;
     }
   }
 
   const rawAction = typeof source.further_action === "string" ? source.further_action : "";
   if (status !== "Vollständig vorhanden" && rawAction) {
-    if (!VACCINATION_ACTION_OPTIONS.includes(rawAction as (typeof VACCINATION_ACTION_OPTIONS)[number])) return null;
+    const actionOptions = schemaOptions(question, "further_action", VACCINATION_ACTION_OPTIONS);
+    if (!actionOptions.includes(rawAction)) return null;
     entry.further_action = rawAction;
   }
 
-  if (entry.further_action && PLANNING_ACTIONS.has(entry.further_action)) {
+  const planningActions = question.vaccinationSchemaVersion === 2
+    ? new Set(question.groupSchema?.find((field) => field.key === "note")?.conditionalValues ?? [])
+    : PLANNING_ACTIONS;
+  if (entry.further_action && planningActions.has(entry.further_action)) {
     const note = typeof source.note === "string" ? source.note.trim().slice(0, 2000) : "";
     const referenceDate = typeof source.reference_date === "string" ? source.reference_date : "";
     const intervalValue = typeof source.interval_value === "string" ? source.interval_value : "";
@@ -117,7 +173,10 @@ function cleanEntry(
       entry.reference_date = referenceDate;
     }
     if (intervalValue || intervalUnit) {
-      if (!/^[1-9]\d{0,4}$/.test(intervalValue) || !UNITS.has(intervalUnit)) return null;
+      const units = question.vaccinationSchemaVersion === 2
+        ? new Set(schemaOptions(question, "interval_unit", []))
+        : UNITS;
+      if (!/^[1-9]\d{0,4}$/.test(intervalValue) || !units.has(intervalUnit)) return null;
       entry.interval_value = intervalValue;
       entry.interval_unit = intervalUnit;
       if (!referenceDate) return null;
@@ -149,7 +208,7 @@ export function normalizeVaccinationReviewAnswers(
   const seen = new Set<string>();
   const cleaned: VaccinationEntry[] = [];
   for (const rawEntry of parsed) {
-    const entry = cleanEntry(rawEntry, items);
+    const entry = cleanEntry(rawEntry, items, question);
     if (!entry) return { ok: false, error: "Die Impfungsdaten enthalten ungültige Werte." };
     if (seen.has(entry.vaccination_id)) return { ok: false, error: "Eine Impfung wurde mehrfach angegeben." };
     seen.add(entry.vaccination_id);

@@ -43,7 +43,30 @@ describe("internal documentation workflow registry", () => {
       id: "VACCINATION_REVIEW_ITEMS",
       type: "repeatable_group",
       presentation: "vaccination_matrix",
+      vaccinationSchemaVersion: 2,
     });
-    expect(blocks[0].questions[0].vaccinationItems).toHaveLength(15);
+    expect(blocks[0].questions[0].vaccinationItems).toHaveLength(14);
+    expect(blocks[0].questions[0].vaccinationItems?.[0]).toMatchObject({
+      id: "tdap_ipv_group",
+      label: "Tetanus / Diphtherie / Pertussis / Poliomyelitis",
+      documentationMode: "component_group",
+    });
+    expect(blocks[0].questions[0].vaccinationItems?.[0].componentFields).toHaveLength(4);
+  });
+
+  it("deep-copies nested vaccination v2 metadata into the frozen snapshot", () => {
+    const workflow = getInternalWorkflow("vaccination_review_v1")!;
+    const catalogQuestion = workflow.questionCatalog.VACCINATION_REVIEW_ITEMS;
+    const component = catalogQuestion.vaccinationItems?.[0].componentFields?.[0];
+    const originalOption = component?.options[0];
+    const frozen = buildInternalWorkflowBlocks("vaccination_review_v1");
+
+    expect(originalOption).toBe("Grunddosis 1");
+    component!.options[0] = "Katalog nach Snapshot verändert";
+    try {
+      expect(frozen[0].questions[0].vaccinationItems?.[0].componentFields?.[0].options[0]).toBe("Grunddosis 1");
+    } finally {
+      component!.options[0] = originalOption!;
+    }
   });
 });

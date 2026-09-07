@@ -57,6 +57,8 @@ export type RepGroupField = {
 export type RepGroupEntry = {
   /** 1-basierter Index. */
   index: number;
+  /** Optionale fachliche Überschrift für spezialisierte Darstellungen. */
+  title?: string;
   fields: RepGroupField[];
 };
 
@@ -98,6 +100,9 @@ export function parseRepeatableGroupEntries(
     const fields: RepGroupField[] = [];
 
     for (const field of schema) {
+      if (def.presentation === "vaccination_matrix" && (field.key === "vaccination_id" || field.key === "custom_label")) {
+        continue;
+      }
       // Bedingte Sichtbarkeit innerhalb des Eintrags prüfen
       if (field.conditionalOn) {
         const cv = (entry[field.conditionalOn] as string) ?? "";
@@ -124,7 +129,12 @@ export function parseRepeatableGroupEntries(
     }
 
     if (fields.length > 0) {
-      result.push({ index: idx + 1, fields });
+      const title = def.presentation === "vaccination_matrix"
+        ? entry.vaccination_id === "other"
+          ? typeof entry.custom_label === "string" ? entry.custom_label : "Weitere Impfung"
+          : def.vaccinationItems?.find((vaccination) => vaccination.id === entry.vaccination_id)?.label
+        : undefined;
+      result.push({ index: idx + 1, ...(title ? { title } : {}), fields });
     }
   });
 

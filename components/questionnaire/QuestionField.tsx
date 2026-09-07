@@ -160,7 +160,7 @@ export const FACHAERZTE_SCHEMA: Array<{
 
 export type RepeatableEntry = Record<string, string> & { _id?: string };
 
-export function VaccinationMatrixField({
+function LegacyVaccinationMatrixField({
   question,
   value,
   onChange,
@@ -234,6 +234,165 @@ export function VaccinationMatrixField({
     );
   };
   return <div style={{ display: "grid", gap: "0.25rem" }}><div>{coreItems.map(renderRow)}</div><details><summary>Weitere Impfungen</summary>{optionalItems.map((item) => <label key={item.id} style={{ display: "block", margin: "0.5rem 0" }}><input type="checkbox" checked={activeIds.has(item.id)} disabled={disabled} onChange={() => toggleOptional(item.id)} /> {item.label}</label>)}{optionalItems.filter((item) => activeIds.has(item.id)).map(renderRow)}</details></div>;
+}
+
+function VaccinationMatrixV2Field({
+  question,
+  value,
+  onChange,
+  disabled,
+}: {
+  question: QuestionDefinition;
+  value: string;
+  onChange: (jsonValue: string) => void;
+  disabled: boolean;
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [entries, setEntries] = useState<RepeatableEntry[]>(() => {
+    try {
+      const parsed = value ? JSON.parse(value) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+  const items = question.vaccinationItems ?? [];
+  const schema = question.groupSchema ?? [];
+  const statusOptions = schema.find((field) => field.key === "documented_status")?.options ?? [];
+  const furtherActionField = schema.find((field) => field.key === "further_action");
+  const noteField = schema.find((field) => field.key === "note");
+  const referenceDateField = schema.find((field) => field.key === "reference_date");
+  const intervalValueField = schema.find((field) => field.key === "interval_value");
+  const intervalUnitField = schema.find((field) => field.key === "interval_unit");
+  const actionOptions = furtherActionField?.options ?? [];
+  const intervalUnits = intervalUnitField?.options ?? [];
+  const entryById = new Map(entries.map((entry) => [entry.vaccination_id, entry]));
+
+  const fieldIsVisible = (field: RepeatableGroupFieldDef | undefined, entry: RepeatableEntry) => {
+    if (!field) return false;
+    if (!field.conditionalOn) return true;
+    const controllingValue = entry[field.conditionalOn] ?? "";
+    return field.conditionalValues
+      ? field.conditionalValues.includes(controllingValue)
+      : controllingValue === field.conditionalValue;
+  };
+
+  const commit = (next: RepeatableEntry[]) => {
+    setEntries(next);
+    onChange(next.length > 0 ? JSON.stringify(next) : "");
+  };
+  const replaceEntry = (id: string, nextEntry: RepeatableEntry) => {
+    commit(entries.some((entry) => entry.vaccination_id === id)
+      ? entries.map((entry) => entry.vaccination_id === id ? nextEntry : entry)
+      : [...entries, nextEntry]);
+  };
+  const update = (id: string, key: string, fieldValue: string) => {
+    const current = entryById.get(id) ?? { vaccination_id: id };
+    replaceEntry(id, { ...current, [key]: fieldValue });
+  };
+  const setStatus = (id: string, status: string) => {
+    const current = entryById.get(id);
+    replaceEntry(id, {
+      vaccination_id: id,
+      documented_status: status,
+      ...(id === "other" && current?.custom_label ? { custom_label: current.custom_label } : {}),
+    });
+  };
+  const reset = (id: string) => commit(entries.filter((entry) => entry.vaccination_id !== id));
+  const updateSelection = (id: string, key: string, option: string, options: string[]) => {
+    const current = entryById.get(id)?.[key] ?? "";
+    const unclear = options.find((candidate) => candidate === "unklar" || candidate === "Serogruppe unklar");
+    const withoutUnclear = unclear && option !== unclear
+      ? parseMultiSelectValue(current, options).filter((candidate) => candidate !== unclear).join(", ")
+      : current;
+    update(id, key, option === unclear ? option : toggleMultiSelectValue(withoutUnclear, option, options));
+  };
+  const choiceButtons = (id: string, key: string, options: string[]) => {
+    const selected = parseMultiSelectValue(entryById.get(id)?.[key] ?? "", options);
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem" }}>
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            disabled={disabled}
+            aria-pressed={selected.includes(option)}
+            onClick={() => updateSelection(id, key, option, options)}
+            style={{ minHeight: "2.75rem", padding: "0.55rem 0.65rem", borderRadius: "var(--radius)", border: "1px solid var(--border)", background: selected.includes(option) ? "var(--primary, #2563eb)" : "var(--background)", color: selected.includes(option) ? "#fff" : "var(--foreground)", fontWeight: 600, whiteSpace: "normal" }}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    );
+  };
+  const summary = (entry?: RepeatableEntry) => {
+    if (!entry?.documented_status) return "Nicht bearbeitet";
+    const details = [
+      entry.documented_doses,
+      entry.documented_subtypes,
+      entry.documented_season,
+      entry.documented_date,
+      entry.tetanus_doses,
+      entry.diphtheria_doses,
+      entry.pertussis_doses,
+      entry.polio_doses,
+    ].filter(Boolean);
+    return [entry.documented_status, ...details].join(" · ");
+  };
+  const renderDetails = (item: NonNullable<QuestionDefinition["vaccinationItems"]>[number], entry: RepeatableEntry) => {
+    if (entry.documented_status !== "Teilweise vorhanden") return null;
+    if (item.documentationMode === "component_group") {
+      return <div style={{ display: "grid", gap: "0.8rem" }}>{(item.componentFields ?? []).map((component) => <div key={component.key} style={{ display: "grid", gap: "0.4rem" }}><strong>{component.label}</strong>{choiceButtons(item.id, component.key, component.options)}</div>)}</div>;
+    }
+    if (item.documentationMode === "season") {
+      return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 10rem), 1fr))", gap: "0.5rem" }}><input value={entry.documented_season ?? ""} placeholder="Saison, z. B. 2025/26" disabled={disabled} onChange={(event) => update(item.id, "documented_season", event.target.value)} style={{ minWidth: 0, padding: "0.65rem" }} /><input type="date" aria-label={`${item.label} Impfdatum`} value={entry.documented_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "documented_date", event.target.value)} style={{ minWidth: 0, padding: "0.65rem" }} /></div>;
+    }
+    if (item.documentationMode === "subtype") return choiceButtons(item.id, "documented_subtypes", item.subtypeOptions ?? []);
+    if (item.documentationMode === "free_text") return null;
+    return choiceButtons(item.id, "documented_doses", item.doseOptions ?? []);
+  };
+  const renderRow = (item: NonNullable<QuestionDefinition["vaccinationItems"]>[number]) => {
+    const entry = entryById.get(item.id) ?? { vaccination_id: item.id };
+    const isOpen = openId === item.id;
+    const planning = fieldIsVisible(furtherActionField, entry);
+    const showNote = planning && fieldIsVisible(noteField, entry);
+    const showReferenceDate = planning && fieldIsVisible(referenceDateField, entry);
+    const showIntervalValue = planning && fieldIsVisible(intervalValueField, entry);
+    const showIntervalUnit = planning && fieldIsVisible(intervalUnitField, entry);
+    return (
+      <div key={item.id} data-vaccination-row={item.id} style={{ borderTop: "1px solid var(--border)" }}>
+        <button type="button" aria-expanded={isOpen} disabled={disabled} onClick={() => setOpenId(isOpen ? null : item.id)} style={{ width: "100%", minHeight: "3.5rem", padding: "0.7rem 0", display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: "0.75rem", alignItems: "center", textAlign: "left", border: 0, background: "transparent", color: "inherit" }}>
+          <span style={{ minWidth: 0 }}><strong style={{ display: "block" }}>{item.label}</strong><span style={{ display: "block", marginTop: "0.15rem", color: "var(--muted-foreground, #6b7280)", fontSize: "0.82rem", overflowWrap: "anywhere" }}>{summary(entryById.get(item.id))}</span></span>
+          <span aria-hidden="true" style={{ fontSize: "1.25rem" }}>{isOpen ? "−" : "+"}</span>
+        </button>
+        {isOpen && <div style={{ display: "grid", gap: "0.85rem", padding: "0.25rem 0 1rem" }}>
+          {item.id === "other" && <input value={entry.custom_label ?? ""} placeholder="Bezeichnung" disabled={disabled} onChange={(event) => update(item.id, "custom_label", event.target.value)} style={{ minWidth: 0, padding: "0.65rem" }} />}
+          <div data-vaccination-status-gates style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem" }}>
+            {statusOptions.map((status) => <button key={status} type="button" disabled={disabled} aria-pressed={entry.documented_status === status} onClick={() => setStatus(item.id, status)} style={{ minHeight: "3rem", padding: "0.65rem", borderRadius: "var(--radius)", border: "1px solid var(--border)", background: entry.documented_status === status ? "var(--primary, #2563eb)" : "var(--background)", color: entry.documented_status === status ? "#fff" : "var(--foreground)", fontWeight: 600, whiteSpace: "normal" }}>{status}</button>)}
+          </div>
+          {renderDetails(item, entry)}
+          {planning && <select aria-label={`${item.label} ${furtherActionField?.label ?? "Weiteres Vorgehen"}`} value={entry.further_action ?? ""} disabled={disabled} onChange={(event) => update(item.id, "further_action", event.target.value)}><option value="">{furtherActionField?.label ?? "Weiteres Vorgehen"}</option>{actionOptions.map((option) => <option key={option}>{option}</option>)}</select>}
+          {showNote && <label style={{ display: "grid", gap: "0.4rem", minWidth: 0 }}><strong>{noteField?.label}</strong><textarea aria-label={`${item.label} ${noteField?.label}`} value={entry.note ?? ""} disabled={disabled} onChange={(event) => update(item.id, "note", event.target.value)} style={{ minWidth: 0, minHeight: "5.5rem", padding: "0.65rem", resize: "vertical" }} /></label>}
+          {(showReferenceDate || showIntervalValue || showIntervalUnit) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem", minWidth: 0 }}>{showReferenceDate && <input type="date" aria-label={`${item.label} ${referenceDateField?.label}`} value={entry.reference_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "reference_date", event.target.value)} style={{ minWidth: 0, minHeight: "2.75rem" }} />}{showIntervalValue && <input inputMode="numeric" aria-label={`${item.label} ${intervalValueField?.label}`} value={entry.interval_value ?? ""} placeholder={intervalValueField?.label ?? "Intervall"} disabled={disabled} onChange={(event) => update(item.id, "interval_value", event.target.value)} style={{ minWidth: 0, minHeight: "2.75rem" }} />}{showIntervalUnit && <select aria-label={`${item.label} ${intervalUnitField?.label}`} value={entry.interval_unit ?? ""} disabled={disabled} onChange={(event) => update(item.id, "interval_unit", event.target.value)} style={{ minWidth: 0, minHeight: "2.75rem" }}><option value="">{intervalUnitField?.label ?? "Einheit"}</option>{intervalUnits.map((unit) => <option key={unit}>{unit}</option>)}</select>}</div>}
+          {entryById.has(item.id) && <button type="button" disabled={disabled} onClick={() => reset(item.id)} style={{ justifySelf: "start", minHeight: "2.75rem", padding: "0.55rem 0.8rem" }}>Zurücksetzen</button>}
+        </div>}
+      </div>
+    );
+  };
+
+  return <div style={{ display: "grid", gap: "1.25rem", minWidth: 0 }}>{(question.vaccinationCategories ?? []).map((category) => <section key={category.id} data-vaccination-category={category.id} style={{ minWidth: 0 }}><h3 style={{ margin: "0 0 0.35rem", fontSize: "1rem" }}>{category.label}</h3>{items.filter((item) => item.categoryId === category.id).map(renderRow)}</section>)}</div>;
+}
+
+export function VaccinationMatrixField(props: {
+  question: QuestionDefinition;
+  value: string;
+  onChange: (jsonValue: string) => void;
+  disabled: boolean;
+}) {
+  return props.question.vaccinationSchemaVersion === 2
+    ? <VaccinationMatrixV2Field {...props} />
+    : <LegacyVaccinationMatrixField {...props} />;
 }
 
 export function RepeatableGroupField({
