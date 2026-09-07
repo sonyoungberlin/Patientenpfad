@@ -17,7 +17,10 @@ import {
 } from "@/lib/questionnaire/conditionalLogic";
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
-import { MAIN_GATE_QUESTION_IDS } from "@/components/questionnaire/QuestionField";
+import {
+  MAIN_GATE_QUESTION_IDS,
+  VaccinationMatrixField,
+} from "@/components/questionnaire/QuestionField";
 import {
   buildOptionsByQuestionId,
   parseMultiSelectValue,
@@ -283,6 +286,16 @@ function QuestionField({
         </label>
       );
     case "repeatable_group":
+      if (question.presentation === "vaccination_matrix") {
+        return (
+          <VaccinationMatrixField
+            question={question}
+            value={value}
+            onChange={(jsonValue) => onChange(question.id, jsonValue)}
+            disabled={disabled}
+          />
+        );
+      }
       return (
         <RepeatableGroupField
           question={question}

@@ -160,7 +160,7 @@ export const FACHAERZTE_SCHEMA: Array<{
 
 export type RepeatableEntry = Record<string, string> & { _id?: string };
 
-function VaccinationMatrixField({
+export function VaccinationMatrixField({
   question,
   value,
   onChange,
