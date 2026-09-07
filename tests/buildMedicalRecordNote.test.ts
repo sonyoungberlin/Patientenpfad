@@ -14,6 +14,20 @@
 
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 import { QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import { normalizeTextForPvs } from "@/lib/questionnaire/normalizeTextForPvs";
+
+describe("normalizeTextForPvs", () => {
+  it("ersetzt nur die bekannten typografischen Sonderzeichen", () => {
+    expect(normalizeTextForPvs("– — … “Zitat” „Zitat“ «Zitat» ‘Zitat’ ’Zitat’\u00a0•"))
+      .toBe('- - ... "Zitat" "Zitat" "Zitat" \'Zitat\' \'Zitat\' -');
+  });
+
+  it("erhält deutsche Buchstaben, echte Fragezeichen und normalen Text", () => {
+    const text = "Ä Ö Ü ä ö ü ß: Weiß? Größe – Ende";
+    expect(normalizeTextForPvs(text)).toBe("Ä Ö Ü ä ö ü ß: Weiß? Größe - Ende");
+  });
+});
 
 describe("buildMedicalRecordNote – Titel", () => {
   it("liefert 'AU-Anfrage (digital)' wenn nur ARBEITSUNFAEHIGKEIT gewählt", () => {
@@ -283,10 +297,10 @@ describe("buildMedicalRecordNote – Textkürzung", () => {
       selected_block_ids: ["REZEPT"],
     });
     const medLine = result.split("\n").find((l) => l.startsWith("Medikament:")) ?? "";
-    // Label "Medikament: " is 12 chars; content should be 80 chars (79 + …)
+    // Label "Medikament: " is 12 chars; content should be 80 chars (77 + ...)
     const content = medLine.replace("Medikament: ", "");
     expect(content.length).toBeLessThanOrEqual(80);
-    expect(content.endsWith("…")).toBe(true);
+    expect(content.endsWith("...")).toBe(true);
   });
 
   it("erhält mehrzeiligen Text als Folgezeilen unterhalb des Labels", () => {
@@ -298,6 +312,23 @@ describe("buildMedicalRecordNote – Textkürzung", () => {
     const idx = lines.findIndex((l) => l === "Medikament: Zeile 1");
     expect(idx).toBeGreaterThanOrEqual(0);
     expect(lines[idx + 1]).toBe("Zeile 2");
+  });
+});
+
+describe("buildMedicalRecordNote – PVS-Kompatibilität", () => {
+  it("normalisiert den tatsächlichen IMPFBERATUNG-Hinweis vor dem Kopieren", () => {
+    const note = buildMedicalRecordNote({
+      answers: {
+        IMPFBERATUNG_ANLASS: "Vorsorge / Impfschutz überprüfen",
+        IMPFBERATUNG_NACHWEIS_BEDARF: "Ja",
+        IMPFBERATUNG_NACHWEIS_ZWECK: "Einreisebestimmung",
+      },
+      selected_block_ids: ["IMPFBERATUNG"],
+      frozenBlocks: buildFrozenBlocks(["IMPFBERATUNG"]),
+    });
+
+    expect(note).toContain("Nachweis erforderlich - Einreisebestimmung");
+    expect(note).not.toContain("\u2013");
   });
 });
 

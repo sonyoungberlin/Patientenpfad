@@ -33,6 +33,7 @@ import { buildDerivedValueLines } from "./formatAnswer";
 import { buildAttentionHintLines } from "./formatAnswer";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
+import { normalizeTextForPvs } from "./normalizeTextForPvs";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -219,7 +220,7 @@ const VALUE_TRANSFORMS: Record<string, Record<string, string>> = {
 
 function truncateLine(value: string): string {
   if (value.length <= MAX_LINE_LENGTH) return value;
-  return value.slice(0, MAX_LINE_LENGTH - 1) + "…";
+  return value.slice(0, MAX_LINE_LENGTH - 3) + "...";
 }
 
 /**
@@ -604,5 +605,5 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     }
   }
 
-  return lines.join("\n");
+  return normalizeTextForPvs(lines.join("\n"));
 }
