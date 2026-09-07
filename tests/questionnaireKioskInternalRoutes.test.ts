@@ -95,6 +95,16 @@ describe("interne Kiosk-Dokumentation", () => {
     expect(input).not.toHaveProperty("practiceConfirmations");
   });
 
+  it("weist unbekannte interne Workflows serverseitig ab", async () => {
+    const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
+      workflow_id: "__proto__",
+      patient_reference: "PAT-1",
+    }));
+
+    expect(response.status).toBe(400);
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
   it("weist eine Session eines anderen Kioskgeräts ab", async () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
@@ -111,6 +121,26 @@ describe("interne Kiosk-Dokumentation", () => {
     );
 
     expect(response.status).toBe(404);
+    expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+  });
+
+  it("weist eine Session mit unbekannter Workflow-ID ab", async () => {
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      internal_workflow_id: "unknown_workflow",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deduplicated_questions: [],
+      frozen_blocks: [],
+    });
+
+    const response = await submitInternal(
+      request("/api/questionnaire-kiosk/internal/session-1", { answers: { note: "Inhalt" } }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+
+    expect(response.status).toBe(400);
     expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 

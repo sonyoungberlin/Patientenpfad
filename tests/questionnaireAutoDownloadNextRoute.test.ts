@@ -155,6 +155,30 @@ it("rendert abgeschlossene interne Dokumentationen für den Auto-Download", asyn
   );
 });
 
+it("rendert Impfpassprüfungen mit deren Workflowtitel im Auto-Download", async () => {
+  sessionMock.findFirst.mockResolvedValue({
+    ...SESSION,
+    source: "kiosk_direct",
+    session_kind: "internal_documentation",
+    internal_workflow_id: "vaccination_review_v1",
+  });
+
+  const response = await GET(request());
+
+  expect(response.status).toBe(200);
+  expect(pdfMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      session_kind: "internal_documentation",
+      internal_workflow_id: "vaccination_review_v1",
+    }),
+    expect.objectContaining({
+      title: "Impfpassprüfung und Beratung",
+      filenameLabel: "Impfpassprüfung und Beratung",
+      omitUnanswered: true,
+    }),
+  );
+});
+
 it("lässt nur abgeschlossene und noch nicht geclaimte interne Dokumentationen zu", async () => {
   await GET(request());
   const eligibility = sessionMock.findFirst.mock.calls[0][0].where.AND;

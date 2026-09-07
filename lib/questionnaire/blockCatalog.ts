@@ -58,7 +58,7 @@ export type QuestionType =
 export type RepeatableGroupFieldDef = {
   key: string;
   label: string;
-  type: "text" | "select" | "yes_no" | "textarea" | "checkbox" | "multi_select";
+  type: "text" | "date" | "select" | "yes_no" | "textarea" | "checkbox" | "multi_select";
   required: boolean;
   options?: string[];
   helperText?: string;
@@ -104,6 +104,15 @@ export type QuestionDefinition = {
   step?: number;
   /** Anzeigeeinheit für type "number"-Felder, z. B. "cm" oder "kg". */
   unit?: string;
+  /** Eng begrenzte workflow-spezifische Darstellung innerhalb des bestehenden Typs. */
+  presentation?: "vaccination_matrix";
+  /** Feste Impfzeilen für die workflow-spezifische Impfmatrix. */
+  vaccinationItems?: Array<{
+    id: string;
+    label: string;
+    optional?: boolean;
+    doseOptions?: string[];
+  }>;
 };
 
 export type QuestionnaireBlock = {

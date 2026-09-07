@@ -160,6 +160,82 @@ export const FACHAERZTE_SCHEMA: Array<{
 
 export type RepeatableEntry = Record<string, string> & { _id?: string };
 
+function VaccinationMatrixField({
+  question,
+  value,
+  onChange,
+  disabled,
+}: {
+  question: QuestionDefinition;
+  value: string;
+  onChange: (jsonValue: string) => void;
+  disabled: boolean;
+}) {
+  const items = question.vaccinationItems ?? [];
+  const [entries, setEntries] = useState<RepeatableEntry[]>(() => {
+    try {
+      const parsed = value ? JSON.parse(value) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+  const entryById = new Map(entries.map((entry) => [entry.vaccination_id, entry]));
+  const activeIds = new Set(entries.map((entry) => entry.vaccination_id));
+  const coreItems = items.filter((item) => !item.optional);
+  const optionalItems = items.filter((item) => item.optional);
+  const update = (id: string, key: string, fieldValue: string) => {
+    const current = entryById.get(id) ?? { vaccination_id: id };
+    const nextEntry = { ...current, [key]: fieldValue };
+    const next = entries.some((entry) => entry.vaccination_id === id)
+      ? entries.map((entry) => entry.vaccination_id === id ? nextEntry : entry)
+      : [...entries, nextEntry];
+    setEntries(next);
+    onChange(JSON.stringify(next));
+  };
+  const toggleOptional = (id: string) => {
+    const next = activeIds.has(id)
+      ? entries.filter((entry) => entry.vaccination_id !== id)
+      : [...entries, { vaccination_id: id }];
+    setEntries(next);
+    onChange(JSON.stringify(next));
+  };
+  const remove = (id: string) => {
+    const next = entries.filter((entry) => entry.vaccination_id !== id);
+    setEntries(next);
+    onChange(JSON.stringify(next));
+  };
+  const renderRow = (item: NonNullable<QuestionDefinition["vaccinationItems"]>[number]) => {
+    const entry = entryById.get(item.id) ?? { vaccination_id: item.id };
+    const status = entry.documented_status ?? "";
+    const planning = status && status !== "Vollständig vorhanden";
+    return (
+      <div key={item.id} style={{ display: "grid", gap: "0.5rem", padding: "0.75rem 0", borderTop: "1px solid var(--border)" }} data-vaccination-row={item.id}>
+        <strong>{item.label}</strong>
+        {item.id === "other" && (
+          <input value={entry.custom_label ?? ""} placeholder="Bezeichnung" disabled={disabled} onChange={(event) => update(item.id, "custom_label", event.target.value)} />
+        )}
+        <select value={status} disabled={disabled} onChange={(event) => update(item.id, "documented_status", event.target.value)}>
+          <option value="">— bitte wählen —</option>
+          <option>Vollständig vorhanden</option><option>Teilweise vorhanden</option><option>Nicht vorhanden</option><option>Unklar</option>
+        </select>
+        {status === "Teilweise vorhanden" && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {(item.doseOptions ?? []).map((dose) => {
+              const selected = parseMultiSelectValue(entry.documented_doses ?? "", item.doseOptions ?? []).includes(dose);
+              return <button key={dose} type="button" disabled={disabled} onClick={() => update(item.id, "documented_doses", toggleMultiSelectValue(entry.documented_doses ?? "", dose, item.doseOptions ?? []))} style={{ padding: "0.2rem 0.5rem", border: "1px solid var(--border)", background: selected ? "var(--primary, #2563eb)" : "var(--background)", color: selected ? "#fff" : "var(--foreground)" }}>{dose}</button>;
+            })}
+          </div>
+        )}
+        {planning && <select value={entry.further_action ?? ""} disabled={disabled} onChange={(event) => update(item.id, "further_action", event.target.value)}><option value="">Weiteres Vorgehen</option><option>Impfung ärztlich empfohlen</option><option>Durchführung geplant / vereinbart</option><option>Derzeit kein weiteres Vorgehen</option></select>}
+        {planning && (entry.further_action === "Impfung ärztlich empfohlen" || entry.further_action === "Durchführung geplant / vereinbart") && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(9rem, 1fr))", gap: "0.5rem" }}><input type="date" value={entry.reference_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "reference_date", event.target.value)} /><input inputMode="numeric" value={entry.interval_value ?? ""} placeholder="Intervall" disabled={disabled} onChange={(event) => update(item.id, "interval_value", event.target.value)} /><select value={entry.interval_unit ?? ""} disabled={disabled} onChange={(event) => update(item.id, "interval_unit", event.target.value)}><option value="">Einheit</option><option>Tage</option><option>Wochen</option><option>Monate</option></select></div>}
+        {activeIds.has(item.id) && <button type="button" disabled={disabled} onClick={() => remove(item.id)} style={{ justifySelf: "start" }}>Zeile entfernen</button>}
+      </div>
+    );
+  };
+  return <div style={{ display: "grid", gap: "0.25rem" }}><div>{coreItems.map(renderRow)}</div><details><summary>Weitere Impfungen</summary>{optionalItems.map((item) => <label key={item.id} style={{ display: "block", margin: "0.5rem 0" }}><input type="checkbox" checked={activeIds.has(item.id)} disabled={disabled} onChange={() => toggleOptional(item.id)} /> {item.label}</label>)}{optionalItems.filter((item) => activeIds.has(item.id)).map(renderRow)}</details></div>;
+}
+
 export function RepeatableGroupField({
   question,
   value,
@@ -326,6 +402,15 @@ export function RepeatableGroupField({
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
+                ) : field.type === "date" ? (
+                  <input
+                    type="date"
+                    value={fieldVal}
+                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    disabled={disabled}
+                    style={baseFieldStyle}
+                    data-rg-field={`${idx}:${field.key}`}
+                  />
                 ) : field.type === "textarea" ? (
                   <textarea
                     value={fieldVal}
@@ -800,6 +885,9 @@ export function QuestionField({
         </label>
       );
     case "repeatable_group":
+      if (question.presentation === "vaccination_matrix") {
+        return <VaccinationMatrixField question={question} value={value} onChange={(jsonValue) => onChange(question.id, jsonValue)} disabled={disabled} />;
+      }
       return (
         <RepeatableGroupField
           question={question}

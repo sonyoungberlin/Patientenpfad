@@ -34,6 +34,7 @@ import { buildAttentionHintLines } from "./formatAnswer";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
+import { getVaccinationLabel } from "./vaccinationReview";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -41,6 +42,7 @@ export type MedicalRecordNoteInput = {
   selected_block_ids: string[];
   /** Phase 4: eingefrorene Block-Struktur. NULL = Legacy-Pfad. */
   frozenBlocks?: FrozenBlock[] | null;
+  internalWorkflowId?: string | null;
 };
 
 const MAX_LINE_LENGTH = 80;
@@ -250,7 +252,9 @@ function formatRepeatableGroupEntries(
     if (typeof entry !== "object" || entry === null) return;
     const e = entry as Record<string, unknown>;
 
-    lines.push(`  ${idx + 1}. Eintrag:`);
+    lines.push(def.presentation === "vaccination_matrix"
+      ? `  ${getVaccinationLabel(e as Record<string, string>, def)}:`
+      : `  ${idx + 1}. Eintrag:`);
 
     for (const field of def.groupSchema!) {
       // Bedingte Felder ausblenden, wenn Gate-Feld nicht zutrifft
@@ -426,7 +430,11 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const hasIdentitaet = blockIds.has("IDENTITAET");
 
   let title: string;
-  if (hasAU && !hasRezept && !hasUeberweisung) {
+  if (input.internalWorkflowId === "vaccination_review_v1") {
+    title = "Impfpassprüfung und Beratung";
+  } else if (input.internalWorkflowId === "care_plan_v1") {
+    title = "Persönlicher Versorgungsplan";
+  } else if (hasAU && !hasRezept && !hasUeberweisung) {
     title = "AU-Anfrage (digital)";
   } else if (hasRezept && !hasAU && !hasUeberweisung) {
     title = "Rezeptanfrage (digital)";

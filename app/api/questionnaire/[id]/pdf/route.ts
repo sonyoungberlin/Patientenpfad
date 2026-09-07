@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
-import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG } from "@/lib/questionnaire/internalDocumentationCatalog";
+import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 
@@ -40,6 +40,7 @@ export async function GET(
       pdf_downloaded_at: true,
       context: true,
       session_kind: true,
+      internal_workflow_id: true,
     },
   });
 
@@ -64,11 +65,19 @@ export async function GET(
     );
   }
 
+  const workflow = session.session_kind === "internal_documentation" ? resolveInternalWorkflow(session.internal_workflow_id) : null;
+  if (session.session_kind === "internal_documentation" && !workflow) {
+    return new Response(JSON.stringify({ ok: false, error: "Unbekannter interner Workflow." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const { bytes, filename } = await buildQuestionnairePdfBytes(session, {
-    title: session.session_kind === "internal_documentation" ? "Persönlicher Versorgungsplan" : "Fragebogen – Patientenangaben",
+    title: workflow?.title ?? "Fragebogen – Patientenangaben",
     referenceLabel: "Patientenreferenz",
-    blockCatalog: session.session_kind === "internal_documentation" ? INTERNAL_DOCUMENTATION_BLOCK_CATALOG : BLOCK_CATALOG,
-    ...(session.session_kind === "internal_documentation" ? { filenameLabel: "Persönlicher Versorgungsplan" } : {}),
+    blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
+    ...(workflow ? { omitUnanswered: workflow.omitUnansweredInPdf } : {}),
+    ...(workflow ? { filenameLabel: workflow.filenameLabel } : {}),
   });
 
   if (session.pdf_downloaded_at == null) {

@@ -24,6 +24,7 @@ import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { PDFDocument } from "pdf-lib";
 import { inflateSync } from "node:zlib";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 
 type PrismaMock = {
   patientQuestionnaireSession: {
@@ -178,6 +179,26 @@ describe("questionnaire pdf filename", () => {
 
     await expect(getFilename()).resolves.toBe(
       "20260512_123545_Persoenlicher_Versorgungsplan.pdf",
+    );
+  });
+
+  it("uses the vaccination review workflow title and filename", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({
+        patient_reference: "123545",
+        session_kind: "internal_documentation",
+        internal_workflow_id: "vaccination_review_v1",
+        selected_block_ids: ["VACCINATION_REVIEW"],
+        deduplicated_questions: [VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS],
+        frozen_blocks: [],
+      }),
+    );
+
+    const response = await PdfRoute(pdfRequest(), { params: Promise.resolve({ id: "sess-1" }) });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-disposition")).toContain(
+      "20260512_123545_Impfpasspruefung_und_Beratung.pdf",
     );
   });
 

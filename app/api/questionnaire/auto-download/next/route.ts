@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
-import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG } from "@/lib/questionnaire/internalDocumentationCatalog";
+import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { PATIENT_CONTEXT_FILTER } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import {
@@ -76,6 +76,7 @@ export async function GET(req: NextRequest) {
       answers: true,
       source: true,
       session_kind: true,
+      internal_workflow_id: true,
       practice_form: { select: { title: true } },
     },
   });
@@ -83,11 +84,16 @@ export async function GET(req: NextRequest) {
 
   let pdf: Awaited<ReturnType<typeof buildQuestionnairePdfBytes>>;
   try {
+    const workflow = session.session_kind === "internal_documentation" ? resolveInternalWorkflow(session.internal_workflow_id) : null;
+    if (session.session_kind === "internal_documentation" && !workflow) {
+      throw new Error("Unbekannter interner Workflow.");
+    }
     pdf = await buildQuestionnairePdfBytes(session, {
-      title: session.session_kind === "internal_documentation" ? "Persönlicher Versorgungsplan" : "Fragebogen – Patientenangaben",
+      title: workflow?.title ?? "Fragebogen – Patientenangaben",
       referenceLabel: "Patientenreferenz",
-      blockCatalog: session.session_kind === "internal_documentation" ? INTERNAL_DOCUMENTATION_BLOCK_CATALOG : BLOCK_CATALOG,
-      ...(session.session_kind === "internal_documentation" ? { filenameLabel: "Persönlicher Versorgungsplan" } : {}),
+      blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
+      ...(workflow ? { omitUnanswered: workflow.omitUnansweredInPdf } : {}),
+      ...(workflow ? { filenameLabel: workflow.filenameLabel } : {}),
     });
   } catch (buildError) {
     console.error("[questionnaire auto-download] pdf_build_failed", {

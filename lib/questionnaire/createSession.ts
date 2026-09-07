@@ -172,6 +172,9 @@ export async function createQuestionnaireSession(
       status: "pending",
       source: source ?? "internal_link",
       session_kind: sessionKind,
+      ...(sessionKind === "internal_documentation"
+        ? { internal_workflow_id: internalWorkflowId! }
+        : {}),
       ...(salutation ? { salutation } : {}),
       ...(birthDateHash ? { birth_date_hash: birthDateHash } : {}),
       patient_copy_return_email: patientCopyReturnEmail ?? null,

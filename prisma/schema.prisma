@@ -427,6 +427,8 @@ model PatientQuestionnaireSession {
   /// Fachliche Art der Session: patient_communication (Bestand) oder
   /// internal_documentation (kiosk-only, interne Praxisdokumentation).
   session_kind String @default("patient_communication")
+  /// Interner Workflow. NULL ist der Legacy-Fallback auf care_plan_v1.
+  internal_workflow_id String?
   /// Phase 3a: Optionale Verknüpfung zum öffentlichen Praxis-Formular.
   /// NULL für `source = "internal_link"`. Für `source = "website"` wird die
   /// Verknüpfung in Phase 3b (Submit-Flow) durch die Service-Schicht

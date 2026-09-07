@@ -87,6 +87,8 @@ export type PdfRenderOptions = {
   blockCatalog: Record<string, QuestionnaireBlock>;
   /** Optionaler fachlicher Dateiname; ohne Angabe bleibt die Bestandslogik unverändert. */
   filenameLabel?: string;
+  /** Interne Workflows dürfen unbeantwortete Fragen ausblenden. */
+  omitUnanswered?: boolean;
   patientCopy?: { returnEmail: string };
 };
 
@@ -392,9 +394,11 @@ export async function buildQuestionnairePdfBytes(
       }
 
       if (!isVisible) {
+        if (opts.omitUnanswered) continue;
         drawWrappedPair(q.text, "Nicht abgefragt");
         continue;
       }
+      if (opts.omitUnanswered && value.trim() === "") continue;
       if (q.id === "FACHAERZTE") {
         const entries = parseFacharztEntries(value);
         entries.length > 0 ? drawRepGroupEntries(q.text, entries) : drawWrappedPair(q.text, "");

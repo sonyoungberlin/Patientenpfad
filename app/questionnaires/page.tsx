@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG, QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
-import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG } from "@/lib/questionnaire/internalDocumentationCatalog";
+import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 import {
@@ -131,6 +131,7 @@ export default async function QuestionnairesPage({
       frozen_blocks: true,
       source: true,
       session_kind: true,
+      internal_workflow_id: true,
     },
   });
 
@@ -225,9 +226,10 @@ export default async function QuestionnairesPage({
               ? (s.selected_block_ids as string[])
               : [];
             const frozenBlocks = parseFrozenBlocks(s.frozen_blocks);
-            const blockCatalog = s.session_kind === "internal_documentation"
-              ? INTERNAL_DOCUMENTATION_BLOCK_CATALOG
-              : BLOCK_CATALOG;
+            const workflow = s.session_kind === "internal_documentation"
+              ? resolveInternalWorkflow(s.internal_workflow_id)
+              : null;
+            const blockCatalog = workflow?.blockCatalog ?? BLOCK_CATALOG;
             const blockLabels = (frozenBlocks?.map((block) => block.label) ?? blockIds
               .map((id) => blockCatalog[id]?.label ?? id))
               .join(", ");
@@ -261,6 +263,9 @@ export default async function QuestionnairesPage({
               answers,
               selected_block_ids: blockIds,
               frozenBlocks,
+              internalWorkflowId: s.session_kind === "internal_documentation"
+                ? resolveInternalWorkflow(s.internal_workflow_id)?.id ?? null
+                : null,
             });
 
             return (
