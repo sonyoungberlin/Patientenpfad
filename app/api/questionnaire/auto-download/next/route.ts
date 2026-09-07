@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
       PRACTICE_VISIBLE_SESSION_FILTER,
       { deleted_at: null },
       { status: "completed" },
+      { session_kind: "patient_communication" },
       { submitted_at: { gte: enabledAt } },
       { auto_pdf_download_claimed_at: null },
     ],

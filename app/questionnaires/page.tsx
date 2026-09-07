@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG, QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG } from "@/lib/questionnaire/internalDocumentationCatalog";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 import {
@@ -129,6 +130,7 @@ export default async function QuestionnairesPage({
       deleted_at: true,
       frozen_blocks: true,
       source: true,
+      session_kind: true,
     },
   });
 
@@ -222,8 +224,12 @@ export default async function QuestionnairesPage({
             const blockIds = Array.isArray(s.selected_block_ids)
               ? (s.selected_block_ids as string[])
               : [];
-            const blockLabels = blockIds
-              .map((id) => BLOCK_CATALOG[id]?.label ?? id)
+            const frozenBlocks = parseFrozenBlocks(s.frozen_blocks);
+            const blockCatalog = s.session_kind === "internal_documentation"
+              ? INTERNAL_DOCUMENTATION_BLOCK_CATALOG
+              : BLOCK_CATALOG;
+            const blockLabels = (frozenBlocks?.map((block) => block.label) ?? blockIds
+              .map((id) => blockCatalog[id]?.label ?? id))
               .join(", ");
 
             const displayStatus = deriveDisplayStatus(s);
@@ -239,7 +245,6 @@ export default async function QuestionnairesPage({
                 ? (s.answers as Record<string, string>)
                 : null;
 
-            const frozenBlocks = parseFrozenBlocks(s.frozen_blocks);
             const derivedValues = computeAllDerivedValues(answers ?? {});
             const visibleQuestionIds = buildVisibleQIds(
               blockIds,
@@ -278,6 +283,7 @@ export default async function QuestionnairesPage({
                 deletedAt={s.deleted_at}
                 isFromDigitalRequest={digitalRequestSessionIds.has(s.id)}
                 source={s.source}
+                sessionKind={s.session_kind}
               />
             );
           })}

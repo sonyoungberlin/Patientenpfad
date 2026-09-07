@@ -21,7 +21,7 @@
  *     Server bleibt die letzte Instanz (Bypass-Schutz).
  */
 
-import { QUESTION_CATALOG, type QuestionType } from "./blockCatalog";
+import { QUESTION_CATALOG, type QuestionType, type RepeatableGroupFieldDef } from "./blockCatalog";
 import type { QuestionnaireLanguage } from "./i18n";
 
 /**
@@ -152,6 +152,7 @@ export type AnswerCharactersValidationResult = {
 export function validateAnswerCharacters(
   rawAnswers: unknown,
   questions: ReadonlyArray<{ id: string; type?: QuestionType }>,
+  definitions?: ReadonlyMap<string, { type: QuestionType; groupSchema?: RepeatableGroupFieldDef[] }>,
 ): AnswerCharactersValidationResult {
   if (
     !rawAnswers ||
@@ -173,10 +174,18 @@ export function validateAnswerCharacters(
     // → wird serverseitig in sanitizeAnswers.ts separat validiert
     if (questionId === "FACHAERZTE") continue;
     
-    const def = QUESTION_CATALOG[questionId];
+    const def = definitions?.get(questionId) ?? QUESTION_CATALOG[questionId];
     if (!def) continue;
     if (def.type === "repeatable_group") {
-      if (!isRepeatableGroupTextAllowed(value, questionId)) {
+      if (definitions?.has(questionId)) {
+        let parsed: unknown;
+        try { parsed = JSON.parse(String(value)); } catch { parsed = null; }
+        const schema = def.groupSchema ?? [];
+        if (Array.isArray(parsed) && parsed.some((entry) => typeof entry === "object" && entry !== null && schema.some((field) => {
+          const fieldValue = (entry as Record<string, unknown>)[field.key];
+          return (field.type === "text" || field.type === "textarea") && typeof fieldValue === "string" && fieldValue.length > 0 && !ALLOWED_ANSWER_CHARACTERS_REGEX.test(fieldValue);
+        }))) invalidQuestionIds.push(questionId);
+      } else if (!isRepeatableGroupTextAllowed(value, questionId)) {
         invalidQuestionIds.push(questionId);
       }
       continue;

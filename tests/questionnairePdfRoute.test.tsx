@@ -166,6 +166,21 @@ describe("questionnaire pdf filename", () => {
     await expect(getFilename()).resolves.toBe("20260512_Test_Neupatient.pdf");
   });
 
+  it("uses the internal care plan filename while keeping the existing date format", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      baseSession({
+        patient_reference: "123545",
+        session_kind: "internal_documentation",
+        selected_block_ids: ["CARE_PLAN_HA"],
+        frozen_blocks: [],
+      }),
+    );
+
+    await expect(getFilename()).resolves.toBe(
+      "20260512_123545_Persoenlicher_Versorgungsplan.pdf",
+    );
+  });
+
   it("puts contact details first for public practice forms", async () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
       baseSession({

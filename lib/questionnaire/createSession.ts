@@ -24,6 +24,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
+import { buildInternalWorkflowBlocks, type InternalWorkflowId } from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
 import {
   buildPracticeConfirmationsFrozenBlock,
@@ -71,6 +72,8 @@ export type CreateSessionInput = {
   patientCopyReturnEmail?: string | null;
   /** Herkunft der internen Session; Default bleibt der bisherige Link-Workflow. */
   source?: "internal_link" | "practice_direct" | "kiosk_direct";
+  sessionKind?: "patient_communication" | "internal_documentation";
+  internalWorkflowId?: InternalWorkflowId;
 } & (AccountSessionCreator | KioskSessionCreator);
 
 export type CreateSessionResult = {
@@ -105,13 +108,20 @@ export async function createQuestionnaireSession(
     practiceConfirmations = [],
     patientCopyReturnEmail,
     source,
+    sessionKind = "patient_communication",
+    internalWorkflowId,
   } = input;
 
-  const token = crypto.randomUUID();
+  if (sessionKind === "internal_documentation" && !internalWorkflowId) {
+    throw new Error("Interner Workflow fehlt.");
+  }
+  const token = sessionKind === "internal_documentation" ? null : crypto.randomUUID();
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
   const frozenBlocks =
-    context === "office"
+    sessionKind === "internal_documentation"
+      ? buildInternalWorkflowBlocks(internalWorkflowId!)
+      : context === "office"
       ? buildFrozenBlocks(selectedBlockIds, OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG)
       : buildFrozenBlocks(selectedBlockIds);
   if (context === "patient") {
@@ -139,7 +149,7 @@ export async function createQuestionnaireSession(
   const session = await prisma.patientQuestionnaireSession.create({
     data: {
       token,
-      token_expires_at: expiresAt,
+      token_expires_at: sessionKind === "internal_documentation" ? null : expiresAt,
       owner_account_id: ownerAccountId ?? null,
       ...(ownerPracticeId ? { owner_practice_id: ownerPracticeId } : {}),
       ...(createdByKioskDeviceId
@@ -161,6 +171,7 @@ export async function createQuestionnaireSession(
       context,
       status: "pending",
       source: source ?? "internal_link",
+      session_kind: sessionKind,
       ...(salutation ? { salutation } : {}),
       ...(birthDateHash ? { birth_date_hash: birthDateHash } : {}),
       patient_copy_return_email: patientCopyReturnEmail ?? null,
@@ -168,7 +179,9 @@ export async function createQuestionnaireSession(
     select: { id: true },
   });
 
-  const tokenLink = `${origin}/q/${token}`;
+  const tokenLink = sessionKind === "internal_documentation"
+    ? `${origin}/questionnaire-kiosk/internal/${session.id}`
+    : `${origin}/q/${token}`;
 
-  return { sessionId: session.id, token, tokenLink };
+  return { sessionId: session.id, token: token ?? "", tokenLink };
 }

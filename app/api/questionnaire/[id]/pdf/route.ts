@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG } from "@/lib/questionnaire/internalDocumentationCatalog";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 
@@ -38,6 +39,7 @@ export async function GET(
       deleted_at: true,
       pdf_downloaded_at: true,
       context: true,
+      session_kind: true,
     },
   });
 
@@ -63,9 +65,10 @@ export async function GET(
   }
 
   const { bytes, filename } = await buildQuestionnairePdfBytes(session, {
-    title: "Fragebogen – Patientenangaben",
+    title: session.session_kind === "internal_documentation" ? "Persönlicher Versorgungsplan" : "Fragebogen – Patientenangaben",
     referenceLabel: "Patientenreferenz",
-    blockCatalog: BLOCK_CATALOG,
+    blockCatalog: session.session_kind === "internal_documentation" ? INTERNAL_DOCUMENTATION_BLOCK_CATALOG : BLOCK_CATALOG,
+    ...(session.session_kind === "internal_documentation" ? { filenameLabel: "Persönlicher Versorgungsplan" } : {}),
   });
 
   if (session.pdf_downloaded_at == null) {

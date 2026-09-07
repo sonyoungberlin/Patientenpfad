@@ -58,6 +58,7 @@ export type QuestionnaireCardProps = {
   isFromDigitalRequest?: boolean;
   /** Technischer Entstehungsweg der Fragebogensession. */
   source?: string | null;
+  sessionKind?: string | null;
   /**
    * Berechnete Werte (AGE, BMI, Pack-Years) für die Praxisanzeige.
    * Wird von der übergeordneten Seite vorberechnet und übergeben.
@@ -88,12 +89,15 @@ export default function QuestionnaireCard({
   deletedAt = null,
   isFromDigitalRequest = false,
   source = null,
+  sessionKind = null,
   derivedValues = null,
   attentionHints = [],
   visibleQuestionIds,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
-  const sourceLabel = isFromDigitalRequest
+  const sourceLabel = sessionKind === "internal_documentation"
+    ? "Interne Dokumentation"
+    : isFromDigitalRequest
     ? "Digitale Anfrage"
     : source === "kiosk_direct"
       ? "Kiosk"

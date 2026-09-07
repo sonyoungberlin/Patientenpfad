@@ -11,7 +11,26 @@ export type QuestionnaireKioskIdentity = {
   deviceId: string;
   practiceId: string;
   deviceName: string;
+  capabilities?: QuestionnaireKioskCapability[];
 };
+
+export type QuestionnaireKioskCapability = "questionnaires" | "internal_documentation";
+
+export function hasQuestionnaireKioskCapability(
+  identity: QuestionnaireKioskIdentity,
+  capability: QuestionnaireKioskCapability,
+): boolean {
+  return identity.capabilities?.includes(capability) ?? false;
+}
+
+function parseCapabilities(raw: unknown): QuestionnaireKioskCapability[] {
+  if (!Array.isArray(raw)) return ["questionnaires"];
+  const capabilities = raw.filter(
+    (value): value is QuestionnaireKioskCapability =>
+      value === "questionnaires" || value === "internal_documentation",
+  );
+  return capabilities.length > 0 ? [...new Set(capabilities)] : ["questionnaires"];
+}
 
 export function createKioskSecret(): string {
   return randomBytes(32).toString("base64url");
@@ -50,6 +69,7 @@ async function resolveDevice(
       revoked_at: true,
       unlock_token_hash: true,
       unlock_expires_at: true,
+        capabilities: true,
       practice: { select: { is_approved: true, disabled_at: true } },
     },
   });
@@ -75,7 +95,13 @@ async function resolveDevice(
     where: { id: device.id },
     data: { last_seen_at: new Date() },
   });
-  return { deviceId: device.id, practiceId: device.practice_id, deviceName: device.name };
+  const identity: QuestionnaireKioskIdentity = {
+    deviceId: device.id,
+    practiceId: device.practice_id,
+    deviceName: device.name,
+  };
+  if (Array.isArray(device.capabilities)) identity.capabilities = parseCapabilities(device.capabilities);
+  return identity;
 }
 
 export async function requireQuestionnaireKioskDevice(req: NextRequest) {

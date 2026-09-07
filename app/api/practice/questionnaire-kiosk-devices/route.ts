@@ -28,12 +28,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { account, error } = await requirePracticeRole(req, [PracticeRole.OWNER]);
   if (error) return error;
-  const body = await req.json().catch(() => null) as { name?: unknown; pin?: unknown; pin_confirmation?: unknown } | null;
+  const body = await req.json().catch(() => null) as { name?: unknown; pin?: unknown; pin_confirmation?: unknown; capabilities?: unknown } | null;
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const pin = typeof body?.pin === "string" ? body.pin : "";
   if (!name || name.length > 100 || !PIN_PATTERN.test(pin) || pin !== body?.pin_confirmation) {
     return NextResponse.json({ ok: false, error: "Name und übereinstimmende sechsstellige PIN sind erforderlich." }, { status: 400 });
   }
+  const capabilities = Array.isArray(body?.capabilities)
+    ? [...new Set(body.capabilities.filter((value): value is "questionnaires" | "internal_documentation" => value === "questionnaires" || value === "internal_documentation"))]
+    : ["questionnaires"];
   const credential = createKioskSecret();
   const device = await prisma.questionnaireKioskDevice.create({
     data: {
@@ -42,6 +45,7 @@ export async function POST(req: NextRequest) {
       credential_hash: hashKioskSecret(credential),
       pin_hash: await hashPassword(pin),
       created_by_account_id: account.id,
+      capabilities,
     },
     select: { id: true, name: true },
   });

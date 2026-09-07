@@ -980,6 +980,7 @@ const UI_STRINGS = {
 
 export function QuestionnaireFormClient({
   token,
+  submitEndpoint,
   questions,
   conditionalRules,
   frozenBlocks,
@@ -994,6 +995,7 @@ export function QuestionnaireFormClient({
   selfCheckInQrReference,
 }: {
   token: string;
+  submitEndpoint?: string;
   questions: QuestionDefinition[];
   conditionalRules?: ConditionalRule[] | null;
   /** Phase 4: eingefrorene Blockstruktur für blockbewusstes Rendering. */
@@ -1172,7 +1174,7 @@ export function QuestionnaireFormClient({
     setSaving(true);
 
     try {
-      const response = await fetch(`/api/q/${token}`, {
+      const response = await fetch(submitEndpoint ?? `/api/q/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: answersToSend }),

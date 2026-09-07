@@ -85,6 +85,8 @@ export type PdfRenderOptions = {
   referenceLabel: string;
   /** Blockkatalog zum Nachschlagen von Labels und Conditional Rules. */
   blockCatalog: Record<string, QuestionnaireBlock>;
+  /** Optionaler fachlicher Dateiname; ohne Angabe bleibt die Bestandslogik unverändert. */
+  filenameLabel?: string;
   patientCopy?: { returnEmail: string };
 };
 
@@ -426,7 +428,9 @@ export async function buildQuestionnairePdfBytes(
   const bytes = await pdfDoc.save();
 
   const datePart = formatDateYyyyMmDd(session.submitted_at ?? new Date());
-  const questionnairePartWithoutContact =
+  const questionnairePartWithoutContact = opts.filenameLabel
+    ? sanitizeFilenamePart(opts.filenameLabel)
+    :
     session.source === "website"
       ? sanitizeFilenamePart(session.practice_form?.title ?? "") || null
       : getFirstBlockLabel(selectedBlockIds, blockCatalog);

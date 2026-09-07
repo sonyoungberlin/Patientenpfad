@@ -424,7 +424,9 @@ model PatientQuestionnaireSession {
   /// Codepfade unverändert klassifiziert sind. Kein DB-Enum, konsistent zu
   /// `PrefillRun.source` und `CaseSession.preparation_mode`.
   source String @default("internal_link")
-
+  /// Fachliche Art der Session: patient_communication (Bestand) oder
+  /// internal_documentation (kiosk-only, interne Praxisdokumentation).
+  session_kind String @default("patient_communication")
   /// Phase 3a: Optionale Verknüpfung zum öffentlichen Praxis-Formular.
   /// NULL für `source = "internal_link"`. Für `source = "website"` wird die
   /// Verknüpfung in Phase 3b (Submit-Flow) durch die Service-Schicht
@@ -508,6 +510,9 @@ model QuestionnaireKioskDevice {
   locked_until          DateTime?
   unlock_token_hash     String?   @unique
   unlock_expires_at     DateTime?
+  /// Erlaubte Einstiege dieses Geräts. Bestandsgeräte erhalten ausschließlich
+  /// questionnaires; weitere Fähigkeiten werden additiv vergeben.
+  capabilities          Json      @default("[\"questionnaires\"]")
 
   questionnaire_sessions PatientQuestionnaireSession[]
 
