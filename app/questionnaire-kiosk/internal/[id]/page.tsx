@@ -14,5 +14,5 @@ export default async function InternalDocumentationPage({ params }: { params: Pr
   if (!session || session.status !== "pending" || session.session_kind !== "internal_documentation" || session.owner_practice_id !== device.practiceId || session.created_by_kiosk_device_id !== device.deviceId) notFound();
   const frozenBlocks = parseFrozenBlocks(session.frozen_blocks);
   const questions = frozenBlocks?.flatMap((block) => block.questions) ?? [];
-  return <main><h1>Persönlicher Versorgungsplan</h1><p className="text-muted">Patientenreferenz: {session.patient_reference}</p><QuestionnaireFormClient token={id} submitEndpoint={`/api/questionnaire-kiosk/internal/${id}`} questions={questions} frozenBlocks={frozenBlocks} context="patient" source="kiosk_direct" introText="Interne Dokumentation für die Praxis." patientReference={session.patient_reference} /></main>;
+  return <main><h1>Persönlicher Versorgungsplan</h1><p className="text-muted">Patientenreferenz: {session.patient_reference}</p><QuestionnaireFormClient token={id} submitEndpoint={`/api/questionnaire-kiosk/internal/${id}`} questions={questions} frozenBlocks={frozenBlocks} context="patient" source="kiosk_direct" introText="Interne Dokumentation für die Praxis." patientReference={session.patient_reference} kioskRestartPath="/questionnaire-kiosk/internal" /></main>;
 }

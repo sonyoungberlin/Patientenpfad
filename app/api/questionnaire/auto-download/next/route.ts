@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG } from "@/lib/questionnaire/internalDocumentationCatalog";
 import { PATIENT_CONTEXT_FILTER } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import {
@@ -56,7 +57,6 @@ export async function GET(req: NextRequest) {
       PRACTICE_VISIBLE_SESSION_FILTER,
       { deleted_at: null },
       { status: "completed" },
-      { session_kind: "patient_communication" },
       { submitted_at: { gte: enabledAt } },
       { auto_pdf_download_claimed_at: null },
     ],
@@ -72,8 +72,10 @@ export async function GET(req: NextRequest) {
       submitted_by: true,
       selected_block_ids: true,
       deduplicated_questions: true,
+      frozen_blocks: true,
       answers: true,
       source: true,
+      session_kind: true,
       practice_form: { select: { title: true } },
     },
   });
@@ -82,9 +84,10 @@ export async function GET(req: NextRequest) {
   let pdf: Awaited<ReturnType<typeof buildQuestionnairePdfBytes>>;
   try {
     pdf = await buildQuestionnairePdfBytes(session, {
-      title: "Fragebogen – Patientenangaben",
+      title: session.session_kind === "internal_documentation" ? "Persönlicher Versorgungsplan" : "Fragebogen – Patientenangaben",
       referenceLabel: "Patientenreferenz",
-      blockCatalog: BLOCK_CATALOG,
+      blockCatalog: session.session_kind === "internal_documentation" ? INTERNAL_DOCUMENTATION_BLOCK_CATALOG : BLOCK_CATALOG,
+      ...(session.session_kind === "internal_documentation" ? { filenameLabel: "Persönlicher Versorgungsplan" } : {}),
     });
   } catch (buildError) {
     console.error("[questionnaire auto-download] pdf_build_failed", {

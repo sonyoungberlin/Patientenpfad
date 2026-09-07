@@ -47,8 +47,10 @@ const SESSION = {
   submitted_by: "patient",
   selected_block_ids: ["VERSICHERUNG"],
   deduplicated_questions: [],
+  frozen_blocks: null,
   answers: {},
   source: "internal_link",
+  session_kind: "patient_communication",
   practice_form: null,
 };
 
@@ -122,6 +124,45 @@ it("wendet Practice-, Sichtbarkeits-, Zeit- und Claim-Filter an", async () => {
     ]),
   );
   expect(where.AND.some((part: { OR?: unknown }) => part.OR)).toBe(true);
+  expect(where.AND).not.toContainEqual({ session_kind: "patient_communication" });
+});
+
+it("rendert normale Fragebögen weiterhin für den Auto-Download", async () => {
+  await GET(request());
+
+  expect(pdfMock).toHaveBeenCalledWith(
+    expect.objectContaining({ session_kind: "patient_communication" }),
+    expect.objectContaining({ title: "Fragebogen – Patientenangaben" }),
+  );
+});
+
+it("rendert abgeschlossene interne Dokumentationen für den Auto-Download", async () => {
+  sessionMock.findFirst.mockResolvedValue({
+    ...SESSION,
+    source: "kiosk_direct",
+    session_kind: "internal_documentation",
+  });
+
+  const response = await GET(request());
+
+  expect(response.status).toBe(200);
+  expect(pdfMock).toHaveBeenCalledWith(
+    expect.objectContaining({ session_kind: "internal_documentation" }),
+    expect.objectContaining({
+      title: "Persönlicher Versorgungsplan",
+      filenameLabel: "Persönlicher Versorgungsplan",
+    }),
+  );
+});
+
+it("lässt nur abgeschlossene und noch nicht geclaimte interne Dokumentationen zu", async () => {
+  await GET(request());
+  const eligibility = sessionMock.findFirst.mock.calls[0][0].where.AND;
+
+  expect(eligibility).toEqual(expect.arrayContaining([
+    { status: "completed" },
+    { auto_pdf_download_claimed_at: null },
+  ]));
 });
 
 it("claimt nicht, wenn die PDF-Erzeugung fehlschlägt", async () => {

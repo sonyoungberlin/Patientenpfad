@@ -32,6 +32,7 @@ async function renderForm(
   inquirySessionId?: string | null,
   patientReference?: string | null,
   selfCheckInQrReference?: string | null,
+  kioskRestartPath?: string,
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -45,6 +46,7 @@ async function renderForm(
         inquirySessionId={inquirySessionId}
         patientReference={patientReference}
         selfCheckInQrReference={selfCheckInQrReference}
+        kioskRestartPath={kioskRestartPath}
         context="office"
       />,
     );
@@ -98,6 +100,31 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
 
     expect(container.querySelector("[data-q-kiosk-next]")).not.toBeNull();
     expect(container.textContent).toContain("Nächsten Fragebogen starten");
+    expect(container.querySelector("[data-q-kiosk-next]")?.getAttribute("data-q-kiosk-next"))
+      .toBe("/questionnaire-kiosk/direct");
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("startet nach interner Dokumentation wieder den internen Kioskworkflow", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    const { container, root } = await renderForm(
+      "kiosk_direct",
+      null,
+      "K-001",
+      null,
+      "/questionnaire-kiosk/internal",
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector("[data-q-kiosk-next]")?.getAttribute("data-q-kiosk-next"))
+      .toBe("/questionnaire-kiosk/internal");
 
     await act(async () => root.unmount());
     document.body.removeChild(container);

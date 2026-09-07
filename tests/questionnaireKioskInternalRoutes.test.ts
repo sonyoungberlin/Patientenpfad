@@ -90,6 +90,9 @@ describe("interne Kiosk-Dokumentation", () => {
       sessionKind: "internal_documentation",
       internalWorkflowId: "care_plan_v1",
     }));
+    const input = createSession.mock.calls[0][0];
+    expect(input).not.toHaveProperty("patientCopyReturnEmail");
+    expect(input).not.toHaveProperty("practiceConfirmations");
   });
 
   it("weist eine Session eines anderen Kioskgeräts ab", async () => {

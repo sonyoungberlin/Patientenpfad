@@ -993,6 +993,7 @@ export function QuestionnaireFormClient({
   inquirySessionId,
   patientReference,
   selfCheckInQrReference,
+  kioskRestartPath = "/questionnaire-kiosk/direct",
 }: {
   token: string;
   submitEndpoint?: string;
@@ -1009,6 +1010,7 @@ export function QuestionnaireFormClient({
   inquirySessionId?: string | null;
   patientReference?: string | null;
   selfCheckInQrReference?: string | null;
+  kioskRestartPath?: string;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -1217,8 +1219,8 @@ export function QuestionnaireFormClient({
         {source === "kiosk_direct" ? (
           <button
             type="button"
-            data-q-kiosk-next
-            onClick={() => window.location.replace("/questionnaire-kiosk/direct")}
+            data-q-kiosk-next={kioskRestartPath}
+            onClick={() => window.location.replace(kioskRestartPath)}
             style={{ marginTop: "1.25rem" }}
           >
             Nächsten Fragebogen starten
