@@ -18,6 +18,7 @@ import {
   isAnswerTextAllowed,
   validateAnswerCharacters,
 } from "@/lib/questionnaire/validateAnswerCharacters";
+import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 
 describe("ALLOWED_ANSWER_CHARACTERS_REGEX", () => {
   it("akzeptiert lateinische Buchstaben, Umlaute, ß, Ziffern und Satzzeichen", () => {
@@ -199,6 +200,36 @@ describe("validateAnswerCharacters", () => {
       [{ id: "FACHAERZTE" }],
     );
     expect(out).toEqual({ ok: true, invalidQuestionIds: [] });
+  });
+
+  it("prüft in der Frozen-Impfmatrix nur Nutzereingaben und keine technische vaccination_id", () => {
+    const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+    const definitions = new Map([[question.id, question]]);
+    const valid = validateAnswerCharacters(
+      {
+        VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+          vaccination_id: "tdap_ipv_group",
+          documented_status: "Teilweise vorhanden",
+          note: "Kontrolle in vier Wochen",
+        }]),
+      },
+      [question],
+      definitions,
+    );
+    expect(valid).toEqual({ ok: true, invalidQuestionIds: [] });
+
+    const invalid = validateAnswerCharacters(
+      {
+        VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+          vaccination_id: "other",
+          documented_status: "Unklar",
+          custom_label: "Импфунг",
+        }]),
+      },
+      [question],
+      definitions,
+    );
+    expect(invalid).toEqual({ ok: false, invalidQuestionIds: ["VACCINATION_REVIEW_ITEMS"] });
   });
 
   it("überspringt FACHAERZTE mit leerem JSON-Array", () => {

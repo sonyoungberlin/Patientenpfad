@@ -49,12 +49,7 @@ async function clickButton(container: HTMLElement, rowId: string, label: string)
 }
 
 async function selectAction(container: HTMLElement, rowId: string, value: string) {
-  const select = container.querySelector<HTMLSelectElement>(`[data-vaccination-row="${rowId}"] select`);
-  expect(select).not.toBeNull();
-  await act(async () => {
-    select!.value = value;
-    select!.dispatchEvent(new Event("change", { bubbles: true }));
-  });
+  await clickButton(container, rowId, value);
 }
 
 function cloneQuestion(question: QuestionDefinition): QuestionDefinition {
@@ -168,7 +163,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
 
     for (const status of ["Teilweise vorhanden", "Nicht vorhanden", "Unklar"]) {
       await clickButton(container, "rsv", status);
-      expect(container.querySelector('select[aria-label="RSV Weiteres Vorgehen"]')).not.toBeNull();
+      expect(container.querySelector('[data-vaccination-row="rsv"] [data-vaccination-further-action]')).not.toBeNull();
     }
 
     for (const action of ["Impfung ärztlich empfohlen", "Durchführung geplant / vereinbart"]) {
@@ -202,13 +197,71 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="rsv"] button[aria-expanded]')!.click());
 
     await clickButton(container, "rsv", "Nicht vorhanden");
-    expect(container.querySelector('[data-vaccination-row="rsv"] select')).toBeNull();
+    expect(container.querySelector('[data-vaccination-row="rsv"] [data-vaccination-further-action]')).toBeNull();
     await clickButton(container, "rsv", "Unklar");
-    expect(container.querySelector('select[aria-label="RSV Weiteres Vorgehen"]')).not.toBeNull();
+    expect(container.querySelector('[data-vaccination-row="rsv"] [data-vaccination-further-action]')).not.toBeNull();
     await selectAction(container, "rsv", "Derzeit kein weiteres Vorgehen");
     expect(container.querySelector('textarea[aria-label="RSV Bemerkung"]')).not.toBeNull();
     expect(container.querySelector('input[aria-label="RSV Bezugsdatum"]')).toBeNull();
     await act(async () => root.unmount());
+  });
+
+  it("erzeugt für Weitere Impfung durch Öffnen, Schließen oder Kartenwechsel kein Phantom-Unklar", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    const onChange = jest.fn();
+    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={onChange} disabled={false} />));
+
+    const otherToggle = container.querySelector<HTMLButtonElement>('[data-vaccination-row="other"] button[aria-expanded]')!;
+    const rsvToggle = container.querySelector<HTMLButtonElement>('[data-vaccination-row="rsv"] button[aria-expanded]')!;
+    await act(async () => otherToggle.click());
+    await act(async () => otherToggle.click());
+    await act(async () => otherToggle.click());
+    await act(async () => rsvToggle.click());
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-vaccination-row="other"]')?.textContent).toContain("Nicht bearbeitet");
+    expect(container.querySelector('[data-vaccination-row="other"]')?.textContent).not.toContain("Unklar");
+    await act(async () => root.unmount());
+  });
+
+  it("verwendet für Status und weiteres Vorgehen den bestehenden Auswahlbutton-State", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={jest.fn()} disabled={false} />));
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="rsv"] button[aria-expanded]')!.click());
+
+    const partial = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-vaccination-status-gates] button')).find((button) => button.textContent === "Teilweise vorhanden")!;
+    expect(partial.style.background).toBe("var(--background)");
+    await act(async () => partial.click());
+    expect(partial.style.background).toBe("var(--primary, #2563eb)");
+    const action = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-vaccination-further-action] button')).find((button) => button.textContent === "Impfung ärztlich empfohlen")!;
+    expect(action.style.background).toBe("var(--background)");
+    await act(async () => action.click());
+    expect(action.style.background).toBe("var(--primary, #2563eb)");
+    await act(async () => root.unmount());
+  });
+
+  it("ignoriert technische Impf-IDs, zeigt aber den bestehenden Fehlerzustand für ungültigen Freitext", async () => {
+    const { container, root } = await renderForm(
+      VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS,
+      true,
+    );
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="tdap_ipv_group"] button[aria-expanded]')!.click());
+    await clickButton(container, "tdap_ipv_group", "Vollständig vorhanden");
+    expect(container.querySelector('[data-q-charerror="VACCINATION_REVIEW_ITEMS"]')).toBeNull();
+
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="other"] button[aria-expanded]')!.click());
+    await clickButton(container, "other", "Unklar");
+    const label = container.querySelector<HTMLInputElement>('[data-vaccination-row="other"] input[placeholder="Bezeichnung"]')!;
+    await act(async () => {
+      const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      valueSetter.call(label, "Импфунг");
+      label.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(container.querySelector('[data-q-charerror="VACCINATION_REVIEW_ITEMS"]')?.textContent).toContain("lateinische Buchstaben");
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
   });
 
   it("zeigt bei stale vollständigen Daten keine Planungsfelder", async () => {

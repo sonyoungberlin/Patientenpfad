@@ -152,7 +152,7 @@ export type AnswerCharactersValidationResult = {
 export function validateAnswerCharacters(
   rawAnswers: unknown,
   questions: ReadonlyArray<{ id: string; type?: QuestionType }>,
-  definitions?: ReadonlyMap<string, { type: QuestionType; groupSchema?: RepeatableGroupFieldDef[] }>,
+  definitions?: ReadonlyMap<string, { type: QuestionType; groupSchema?: RepeatableGroupFieldDef[]; presentation?: "vaccination_matrix" }>,
 ): AnswerCharactersValidationResult {
   if (
     !rawAnswers ||
@@ -182,6 +182,7 @@ export function validateAnswerCharacters(
         try { parsed = JSON.parse(String(value)); } catch { parsed = null; }
         const schema = def.groupSchema ?? [];
         if (Array.isArray(parsed) && parsed.some((entry) => typeof entry === "object" && entry !== null && schema.some((field) => {
+          if (def.presentation === "vaccination_matrix" && field.key === "vaccination_id") return false;
           const fieldValue = (entry as Record<string, unknown>)[field.key];
           return (field.type === "text" || field.type === "textarea") && typeof fieldValue === "string" && fieldValue.length > 0 && !ALLOWED_ANSWER_CHARACTERS_REGEX.test(fieldValue);
         }))) invalidQuestionIds.push(questionId);

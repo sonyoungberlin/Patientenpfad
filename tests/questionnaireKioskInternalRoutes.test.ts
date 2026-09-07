@@ -24,6 +24,7 @@ import {
   hasQuestionnaireKioskCapability,
   requireUnlockedQuestionnaireKioskDevice,
 } from "@/lib/questionnaireKiosk/auth";
+import { buildInternalWorkflowBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 
 const guard = requireUnlockedQuestionnaireKioskDevice as jest.Mock;
 const hasCapability = hasQuestionnaireKioskCapability as jest.Mock;
@@ -173,5 +174,107 @@ describe("interne Kiosk-Dokumentation", () => {
         submitted_at: expect.any(Date),
       }),
     });
+  });
+
+  it("akzeptiert technische v2-Impf-IDs ohne falschen Zeichenfehler", async () => {
+    const frozenBlocks = buildInternalWorkflowBlocks("vaccination_review_v1");
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      internal_workflow_id: "vaccination_review_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+      frozen_blocks: frozenBlocks,
+    });
+
+    const response = await submitInternal(
+      request("/api/questionnaire-kiosk/internal/session-1", {
+        answers: {
+          VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+            vaccination_id: "tdap_ipv_group",
+            documented_status: "Vollständig vorhanden",
+          }]),
+        },
+      }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(db.patientQuestionnaireSession.update).toHaveBeenCalledWith({
+      where: { id: "session-1", status: "pending" },
+      data: expect.objectContaining({
+        answers: {
+          VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+            vaccination_id: "tdap_ipv_group",
+            documented_status: "Vollständig vorhanden",
+          }]),
+        },
+      }),
+    });
+  });
+
+  it("lehnt eine manipulierte v2-Impf-ID nach Sanitizing über die Frozen-Allowlist ab", async () => {
+    const frozenBlocks = buildInternalWorkflowBlocks("vaccination_review_v1");
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      internal_workflow_id: "vaccination_review_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+      frozen_blocks: frozenBlocks,
+    });
+
+    const response = await submitInternal(
+      request("/api/questionnaire-kiosk/internal/session-1", {
+        answers: {
+          VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+            vaccination_id: "foo_bar",
+            documented_status: "Vollständig vorhanden",
+          }]),
+        },
+      }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "Die Impfungsdaten enthalten ungültige Werte.",
+    });
+    expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+  });
+
+  it("lehnt echten ungültigen v2-Impf-Freitext weiterhin bei der Zeichenprüfung ab", async () => {
+    const frozenBlocks = buildInternalWorkflowBlocks("vaccination_review_v1");
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      internal_workflow_id: "vaccination_review_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+      frozen_blocks: frozenBlocks,
+    });
+
+    const response = await submitInternal(
+      request("/api/questionnaire-kiosk/internal/session-1", {
+        answers: {
+          VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+            vaccination_id: "other",
+            documented_status: "Unklar",
+            custom_label: "Импфунг",
+          }]),
+        },
+      }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "Bitte verwenden Sie lateinische Buchstaben.",
+      invalidQuestionIds: ["VACCINATION_REVIEW_ITEMS"],
+    });
+    expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 });

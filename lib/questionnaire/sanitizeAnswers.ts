@@ -139,7 +139,8 @@ function sanitizeRepeatableGroupArray(
       if (typeof val !== "string") continue;
       const sliced = val.slice(0, MAX_ANSWER_LENGTH);
       // Freitextfelder: ungültige Zeichen → gesamte Antwort verwerfen (wie normale Freitexte)
-      if (field.type === "text" || field.type === "textarea") {
+      const technicalVaccinationId = def.presentation === "vaccination_matrix" && field.key === "vaccination_id";
+      if (!technicalVaccinationId && (field.type === "text" || field.type === "textarea")) {
         if (sliced.trim() !== "" && !ALLOWED_ANSWER_CHARACTERS_REGEX.test(sliced)) {
           entryInvalid = true;
           break;

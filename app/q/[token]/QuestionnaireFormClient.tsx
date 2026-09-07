@@ -7,7 +7,6 @@ import { PersonalLinkNotice } from "@/components/PersonalLinkNotice";
 import {
   ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN,
   answerCharactersErrorMessage,
-  isAnswerTextAllowed,
   validateAnswerCharacters,
 } from "@/lib/questionnaire/validateAnswerCharacters";
 import {
@@ -1114,12 +1113,13 @@ export function QuestionnaireFormClient({
 
   // Per-Frage Live-Charactervalidierung. Gibt true zurück, wenn der aktuelle
   // Wert ungültige (nicht-lateinische) Zeichen enthält. Auswahl-/Datums-/
-  // Yes-No-Felder liefern immer false (siehe `isAnswerTextAllowed`).
+  // Yes-No-Felder werden vom gemeinsamen Validator nicht als Freitext geprüft.
   const fieldHasCharError = useMemo(() => {
     const map: Record<string, boolean> = {};
+    const definitions = new Map(visibleQuestions.map((question) => [question.id, question]));
     for (const q of visibleQuestions) {
       const v = values[q.id] ?? "";
-      map[q.id] = !isAnswerTextAllowed(v, q.type as QuestionType, q.id);
+      map[q.id] = !validateAnswerCharacters({ [q.id]: v }, [q], definitions).ok;
     }
     return map;
   }, [values, visibleQuestions]);
@@ -1180,7 +1180,8 @@ export function QuestionnaireFormClient({
 
     // Clientseitige Validierung der Freitext-Antworten gegen erlaubte Zeichen.
     // Block submit, falls verletzt — Server validiert zusätzlich (Bypass-Schutz).
-    const charCheck = validateAnswerCharacters(answersToSend, visibleQuestions);
+    const visibleDefinitions = new Map(visibleQuestions.map((question) => [question.id, question]));
+    const charCheck = validateAnswerCharacters(answersToSend, visibleQuestions, visibleDefinitions);
     if (!charCheck.ok) {
       setError(charErrorMessage);
       return;

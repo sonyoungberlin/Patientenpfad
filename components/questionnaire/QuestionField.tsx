@@ -30,6 +30,20 @@ export function generateLocalId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
+function answerChoiceStyle(selected: boolean, disabled: boolean): React.CSSProperties {
+  return {
+    padding: "0.25rem 0.75rem",
+    borderRadius: "var(--radius)",
+    border: "1px solid var(--border)",
+    background: selected ? "var(--primary, #2563eb)" : "var(--background)",
+    color: selected ? "#fff" : "var(--foreground)",
+    fontWeight: selected ? 600 : 400,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.6 : 1,
+    fontSize: "0.9rem",
+  };
+}
+
 /** Alle questionIds, die als Bedingungsziel in einer ConditionGroup auftreten. */
 export function collectConditionQuestionIds(condition: ConditionGroup): Set<string> {
   const ids = new Set<string>();
@@ -267,6 +281,18 @@ function VaccinationMatrixV2Field({
   const actionOptions = furtherActionField?.options ?? [];
   const intervalUnits = intervalUnitField?.options ?? [];
   const entryById = new Map(entries.map((entry) => [entry.vaccination_id, entry]));
+  const fieldStyle: React.CSSProperties = {
+    width: "100%",
+    minWidth: 0,
+    minHeight: "2.75rem",
+    padding: "0.5rem 0.75rem",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius)",
+    background: "var(--input-background)",
+    color: "var(--foreground)",
+    fontFamily: "inherit",
+    fontSize: "1rem",
+  };
 
   const fieldIsVisible = (field: RepeatableGroupFieldDef | undefined, entry: RepeatableEntry) => {
     if (!field) return false;
@@ -318,7 +344,7 @@ function VaccinationMatrixV2Field({
             disabled={disabled}
             aria-pressed={selected.includes(option)}
             onClick={() => updateSelection(id, key, option, options)}
-            style={{ minHeight: "2.75rem", padding: "0.55rem 0.65rem", borderRadius: "var(--radius)", border: "1px solid var(--border)", background: selected.includes(option) ? "var(--primary, #2563eb)" : "var(--background)", color: selected.includes(option) ? "#fff" : "var(--foreground)", fontWeight: 600, whiteSpace: "normal" }}
+            style={{ ...answerChoiceStyle(selected.includes(option), disabled), minWidth: 0, minHeight: "2.75rem", padding: "0.55rem 0.65rem", whiteSpace: "normal", overflowWrap: "anywhere" }}
           >
             {option}
           </button>
@@ -346,7 +372,7 @@ function VaccinationMatrixV2Field({
       return <div style={{ display: "grid", gap: "0.8rem" }}>{(item.componentFields ?? []).map((component) => <div key={component.key} style={{ display: "grid", gap: "0.4rem" }}><strong>{component.label}</strong>{choiceButtons(item.id, component.key, component.options)}</div>)}</div>;
     }
     if (item.documentationMode === "season") {
-      return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 10rem), 1fr))", gap: "0.5rem" }}><input value={entry.documented_season ?? ""} placeholder="Saison, z. B. 2025/26" disabled={disabled} onChange={(event) => update(item.id, "documented_season", event.target.value)} style={{ minWidth: 0, padding: "0.65rem" }} /><input type="date" aria-label={`${item.label} Impfdatum`} value={entry.documented_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "documented_date", event.target.value)} style={{ minWidth: 0, padding: "0.65rem" }} /></div>;
+      return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 10rem), 1fr))", gap: "0.5rem", minWidth: 0 }}><input value={entry.documented_season ?? ""} placeholder="Saison, z. B. 2025/26" disabled={disabled} onChange={(event) => update(item.id, "documented_season", event.target.value)} style={fieldStyle} /><input type="date" aria-label={`${item.label} Impfdatum`} value={entry.documented_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "documented_date", event.target.value)} style={fieldStyle} /></div>;
     }
     if (item.documentationMode === "subtype") return choiceButtons(item.id, "documented_subtypes", item.subtypeOptions ?? []);
     if (item.documentationMode === "free_text") return null;
@@ -362,19 +388,19 @@ function VaccinationMatrixV2Field({
     const showIntervalUnit = planning && fieldIsVisible(intervalUnitField, entry);
     return (
       <div key={item.id} data-vaccination-row={item.id} style={{ borderTop: "1px solid var(--border)" }}>
-        <button type="button" aria-expanded={isOpen} disabled={disabled} onClick={() => setOpenId(isOpen ? null : item.id)} style={{ width: "100%", minHeight: "3.5rem", padding: "0.7rem 0", display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: "0.75rem", alignItems: "center", textAlign: "left", border: 0, background: "transparent", color: "inherit" }}>
-          <span style={{ minWidth: 0 }}><strong style={{ display: "block" }}>{item.label}</strong><span style={{ display: "block", marginTop: "0.15rem", color: "var(--muted-foreground, #6b7280)", fontSize: "0.82rem", overflowWrap: "anywhere" }}>{summary(entryById.get(item.id))}</span></span>
-          <span aria-hidden="true" style={{ fontSize: "1.25rem" }}>{isOpen ? "−" : "+"}</span>
+        <button type="button" aria-expanded={isOpen} disabled={disabled} onClick={() => setOpenId(isOpen ? null : item.id)} style={{ width: "100%", minWidth: 0, minHeight: "3.5rem", padding: "0.7rem 0", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 1.5rem", gap: "0.75rem", alignItems: "center", textAlign: "left", border: 0, background: "transparent", color: "inherit" }}>
+          <span style={{ minWidth: 0, overflowWrap: "anywhere" }}><strong style={{ display: "block" }}>{item.label}</strong><span style={{ display: "block", marginTop: "0.15rem", color: "var(--muted-foreground, #6b7280)", fontSize: "0.82rem", overflowWrap: "anywhere" }}>{summary(entryById.get(item.id))}</span></span>
+          <span aria-hidden="true" style={{ width: "1.5rem", textAlign: "center", fontSize: "1.25rem" }}>{isOpen ? "−" : "+"}</span>
         </button>
         {isOpen && <div style={{ display: "grid", gap: "0.85rem", padding: "0.25rem 0 1rem" }}>
-          {item.id === "other" && <input value={entry.custom_label ?? ""} placeholder="Bezeichnung" disabled={disabled} onChange={(event) => update(item.id, "custom_label", event.target.value)} style={{ minWidth: 0, padding: "0.65rem" }} />}
+          {item.id === "other" && <input value={entry.custom_label ?? ""} placeholder="Bezeichnung" disabled={disabled} onChange={(event) => update(item.id, "custom_label", event.target.value)} style={fieldStyle} />}
           <div data-vaccination-status-gates style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem" }}>
-            {statusOptions.map((status) => <button key={status} type="button" disabled={disabled} aria-pressed={entry.documented_status === status} onClick={() => setStatus(item.id, status)} style={{ minHeight: "3rem", padding: "0.65rem", borderRadius: "var(--radius)", border: "1px solid var(--border)", background: entry.documented_status === status ? "var(--primary, #2563eb)" : "var(--background)", color: entry.documented_status === status ? "#fff" : "var(--foreground)", fontWeight: 600, whiteSpace: "normal" }}>{status}</button>)}
+            {statusOptions.map((status) => <button key={status} type="button" disabled={disabled} aria-pressed={entry.documented_status === status} onClick={() => setStatus(item.id, status)} style={{ ...answerChoiceStyle(entry.documented_status === status, disabled), minWidth: 0, minHeight: "3rem", padding: "0.65rem", whiteSpace: "normal", overflowWrap: "anywhere" }}>{status}</button>)}
           </div>
           {renderDetails(item, entry)}
-          {planning && <select aria-label={`${item.label} ${furtherActionField?.label ?? "Weiteres Vorgehen"}`} value={entry.further_action ?? ""} disabled={disabled} onChange={(event) => update(item.id, "further_action", event.target.value)}><option value="">{furtherActionField?.label ?? "Weiteres Vorgehen"}</option>{actionOptions.map((option) => <option key={option}>{option}</option>)}</select>}
-          {showNote && <label style={{ display: "grid", gap: "0.4rem", minWidth: 0 }}><strong>{noteField?.label}</strong><textarea aria-label={`${item.label} ${noteField?.label}`} value={entry.note ?? ""} disabled={disabled} onChange={(event) => update(item.id, "note", event.target.value)} style={{ minWidth: 0, minHeight: "5.5rem", padding: "0.65rem", resize: "vertical" }} /></label>}
-          {(showReferenceDate || showIntervalValue || showIntervalUnit) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem", minWidth: 0 }}>{showReferenceDate && <input type="date" aria-label={`${item.label} ${referenceDateField?.label}`} value={entry.reference_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "reference_date", event.target.value)} style={{ minWidth: 0, minHeight: "2.75rem" }} />}{showIntervalValue && <input inputMode="numeric" aria-label={`${item.label} ${intervalValueField?.label}`} value={entry.interval_value ?? ""} placeholder={intervalValueField?.label ?? "Intervall"} disabled={disabled} onChange={(event) => update(item.id, "interval_value", event.target.value)} style={{ minWidth: 0, minHeight: "2.75rem" }} />}{showIntervalUnit && <select aria-label={`${item.label} ${intervalUnitField?.label}`} value={entry.interval_unit ?? ""} disabled={disabled} onChange={(event) => update(item.id, "interval_unit", event.target.value)} style={{ minWidth: 0, minHeight: "2.75rem" }}><option value="">{intervalUnitField?.label ?? "Einheit"}</option>{intervalUnits.map((unit) => <option key={unit}>{unit}</option>)}</select>}</div>}
+          {planning && <fieldset style={{ minWidth: 0, margin: 0, padding: 0, border: 0 }}><legend style={{ marginBottom: "0.4rem", fontWeight: 500 }}>{furtherActionField?.label ?? "Weiteres Vorgehen"}</legend><div data-vaccination-further-action style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 12rem), 1fr))", gap: "0.5rem" }}>{actionOptions.map((option) => <button key={option} type="button" disabled={disabled} aria-pressed={entry.further_action === option} onClick={() => update(item.id, "further_action", option)} style={{ ...answerChoiceStyle(entry.further_action === option, disabled), minWidth: 0, minHeight: "3rem", padding: "0.65rem", whiteSpace: "normal", overflowWrap: "anywhere" }}>{option}</button>)}</div></fieldset>}
+          {showNote && <label style={{ display: "grid", gap: "0.4rem", minWidth: 0 }}><strong>{noteField?.label}</strong><textarea aria-label={`${item.label} ${noteField?.label}`} value={entry.note ?? ""} disabled={disabled} onChange={(event) => update(item.id, "note", event.target.value)} style={{ ...fieldStyle, minHeight: "5.5rem", resize: "vertical" }} /></label>}
+          {(showReferenceDate || showIntervalValue || showIntervalUnit) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem", minWidth: 0 }}>{showReferenceDate && <input type="date" aria-label={`${item.label} ${referenceDateField?.label}`} value={entry.reference_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "reference_date", event.target.value)} style={fieldStyle} />}{showIntervalValue && <input inputMode="numeric" aria-label={`${item.label} ${intervalValueField?.label}`} value={entry.interval_value ?? ""} placeholder={intervalValueField?.label ?? "Intervall"} disabled={disabled} onChange={(event) => update(item.id, "interval_value", event.target.value)} style={fieldStyle} />}{showIntervalUnit && <select aria-label={`${item.label} ${intervalUnitField?.label}`} value={entry.interval_unit ?? ""} disabled={disabled} onChange={(event) => update(item.id, "interval_unit", event.target.value)} style={fieldStyle}><option value="">{intervalUnitField?.label ?? "Einheit"}</option>{intervalUnits.map((unit) => <option key={unit}>{unit}</option>)}</select>}</div>}
           {entryById.has(item.id) && <button type="button" disabled={disabled} onClick={() => reset(item.id)} style={{ justifySelf: "start", minHeight: "2.75rem", padding: "0.55rem 0.8rem" }}>Zurücksetzen</button>}
         </div>}
       </div>
@@ -919,17 +945,7 @@ export function QuestionField({
                 onClick={() => {
                   onChange(question.id, toggleMultiSelectValue(value, opt, options));
                 }}
-                style={{
-                  padding: "0.25rem 0.75rem",
-                  borderRadius: "var(--radius)",
-                  border: "1px solid var(--border)",
-                  background: selected ? "var(--primary, #2563eb)" : "var(--background)",
-                  color: selected ? "#fff" : "var(--foreground)",
-                  fontWeight: selected ? 600 : 400,
-                  cursor: disabled ? "not-allowed" : "pointer",
-                  opacity: disabled ? 0.6 : 1,
-                  fontSize: "0.9rem",
-                }}
+                style={answerChoiceStyle(selected, disabled)}
                 data-q-multiselect={`${question.id}:${opt}`}
               >
                 {opt}
@@ -996,17 +1012,7 @@ export function QuestionField({
                 type="button"
                 disabled={disabled}
                 onClick={() => onChange(question.id, val)}
-                style={{
-                  padding: "0.25rem 0.75rem",
-                  borderRadius: "var(--radius)",
-                  border: "1px solid var(--border)",
-                  background: value === val ? "var(--primary, #2563eb)" : "var(--background)",
-                  color: value === val ? "#fff" : "var(--foreground)",
-                  fontWeight: value === val ? 600 : 400,
-                  cursor: disabled ? "not-allowed" : "pointer",
-                  opacity: disabled ? 0.6 : 1,
-                  fontSize: "0.9rem",
-                }}
+                style={answerChoiceStyle(value === val, disabled)}
                 data-q-yesno={`${question.id}:${val}`}
               >
                 {label}
