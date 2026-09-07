@@ -9,7 +9,11 @@ const ALLOWED_PREFIXES = [
   "/_next/",
   "/icons/",
 ];
-const ALLOWED_EXACT = new Set(["/manifest.webmanifest", "/favicon.ico"]);
+const ALLOWED_EXACT = new Set([
+  "/manifest.webmanifest",
+  "/favicon.ico",
+  "/api/questionnaire-kiosk-recovery",
+]);
 
 export function middleware(req: NextRequest) {
   if (!req.cookies.has(KIOSK_DEVICE_COOKIE)) return NextResponse.next();

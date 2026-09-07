@@ -39,6 +39,12 @@ describe("Questionnaire Kiosk Route-Isolation", () => {
     expect(middleware(request(path, "pp_questionnaire_kiosk_device=device")).status).toBe(200);
   });
 
+  it("lässt ausschließlich den dedizierten Recovery-Pfad aus den normalen APIs passieren", () => {
+    expect(middleware(request("/api/questionnaire-kiosk-recovery", "pp_questionnaire_kiosk_device=device")).status).toBe(200);
+    expect(middleware(request("/api/auth/login", "pp_questionnaire_kiosk_device=device")).status).toBe(403);
+    expect(middleware(request("/api/practice/questionnaire-kiosk-devices", "pp_questionnaire_kiosk_device=device")).status).toBe(403);
+  });
+
   it("verändert normale Browser ohne Kiosk-Cookie nicht", () => {
     expect(middleware(request("/dashboard", "pp_session=valid-account")).status).toBe(200);
   });
