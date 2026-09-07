@@ -1,4 +1,5 @@
 const PVS_TEXT_REPLACEMENTS: Readonly<Record<string, string>> = {
+  "?": "",
   "\u2013": "-", // En dash
   "\u2014": "-", // Em dash
   "\u2026": "...", // Ellipsis

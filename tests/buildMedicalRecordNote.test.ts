@@ -23,9 +23,9 @@ describe("normalizeTextForPvs", () => {
       .toBe('- - ... "Zitat" "Zitat" "Zitat" \'Zitat\' \'Zitat\' -');
   });
 
-  it("erhält deutsche Buchstaben, echte Fragezeichen und normalen Text", () => {
+  it("erhält deutsche Buchstaben und entfernt Fragezeichen", () => {
     const text = "Ä Ö Ü ä ö ü ß: Weiß? Größe – Ende";
-    expect(normalizeTextForPvs(text)).toBe("Ä Ö Ü ä ö ü ß: Weiß? Größe - Ende");
+    expect(normalizeTextForPvs(text)).toBe("Ä Ö Ü ä ö ü ß: Weiß Größe - Ende");
   });
 });
 
@@ -327,8 +327,12 @@ describe("buildMedicalRecordNote – PVS-Kompatibilität", () => {
       frozenBlocks: buildFrozenBlocks(["IMPFBERATUNG"]),
     });
 
+    expect(note).toContain(
+      "Warum möchten Sie sich zu Ihrem Impfschutz beraten lassen: Vorsorge / Impfschutz überprüfen",
+    );
     expect(note).toContain("Nachweis erforderlich - Einreisebestimmung");
     expect(note).not.toContain("\u2013");
+    expect(note).not.toContain("?");
   });
 });
 

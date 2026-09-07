@@ -9,12 +9,12 @@ describe("normalizeTextForPvs", () => {
     ["\u2018\u2019\u201a\u201b", "''''"],
     ["\u00a0\u202f", "  "],
     ["\u2022", "-"],
+    ["Was ist das?", "Was ist das"],
   ])("mappt %j nach %j", (input, expected) => {
     expect(normalizeTextForPvs(input)).toBe(expected);
   });
 
-  it("verändert Umlaute, ß und echte Fragezeichen nicht", () => {
-    const input = "ÄÖÜ äöü ß Weiß?";
-    expect(normalizeTextForPvs(input)).toBe(input);
+  it("verändert Umlaute und ß nicht", () => {
+    expect(normalizeTextForPvs("ÄÖÜ äöü ß Weiß")).toBe("ÄÖÜ äöü ß Weiß");
   });
 });
