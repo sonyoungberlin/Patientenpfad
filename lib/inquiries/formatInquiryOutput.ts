@@ -1,4 +1,5 @@
 import type { InquiryResponseV2Output } from "./types";
+import { normalizeTextForPvs } from "@/lib/questionnaire/normalizeTextForPvs";
 
 /**
  * Wandelt einen `InquiryResponseV2Output` in einen Klartext um, der die
@@ -52,8 +53,10 @@ export function inquiryOutputToPlainText(output: InquiryResponseV2Output): strin
  * Eine leere Eingabe (oder rein leere Zeilen) ergibt einen leeren String.
  */
 export function inquiryDocumentationToPlainText(lines: string[]): string {
-  return lines
-    .map((line) => (typeof line === "string" ? line.trim() : ""))
-    .filter((line) => line.length > 0)
-    .join("\n");
+  return normalizeTextForPvs(
+    lines
+      .map((line) => (typeof line === "string" ? line.trim() : ""))
+      .filter((line) => line.length > 0)
+      .join("\n"),
+  );
 }

@@ -21,8 +21,7 @@ function emptyAnswers(): CarePlanAnswers {
   return answers;
 }
 
-// En-Dash wie im Renderer (U+2013)
-const DASH = "\u2013";
+const DASH = "-";
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -229,5 +228,15 @@ describe("buildCarePlanText", () => {
     expect(result).toContain("Überweisungen digital möglich");
     expect(result).toContain("Facharztberichte werden regelmäßig nachgereicht");
     expect(result).toContain("Digitale Praxiswege werden bevorzugt genutzt");
+  });
+
+  it("normalisiert ausschließlich bekannte X-Komfort-Zeichen im finalen Output", () => {
+    const answers = emptyAnswers();
+    answers["ha_notizen"] = "Ärztliche Frage? – “Zitat” …\u00a0• Weiß";
+
+    const result = buildCarePlanText(answers);
+
+    expect(result).toContain('Ärztliche Frage - "Zitat" ... - Weiß');
+    expect(result).not.toContain("?");
   });
 });

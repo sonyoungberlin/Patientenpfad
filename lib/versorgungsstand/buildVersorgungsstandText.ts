@@ -1,4 +1,5 @@
 import type { CarePlanField } from "@/lib/carePlan/carePlanCatalog";
+import { normalizeTextForPvs } from "@/lib/questionnaire/normalizeTextForPvs";
 import {
   VERSORGUNGSSTAND_SECTIONS,
   ALLG_INFO_CHECKBOX_IDS,
@@ -156,5 +157,5 @@ export function buildVersorgungsstandText(answers: VersorgungsstandAnswers): str
     outputLines.push(...sectionLines);
   }
 
-  return outputLines.join("\n");
+  return normalizeTextForPvs(outputLines.join("\n"));
 }

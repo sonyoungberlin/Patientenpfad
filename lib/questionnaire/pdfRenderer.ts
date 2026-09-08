@@ -12,6 +12,7 @@ import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditional
 import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildFrozenBlocks, parseFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
+import { normalizeTextForPvs } from "./normalizeTextForPvs";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -229,7 +230,8 @@ export async function buildQuestionnairePdfBytes(
 
   function wrapText(text: string, usedFont: typeof font, size: number, maxWidth: number): string[] {
     const lines: string[] = [];
-    for (const paragraph of text.replaceAll("\r\n", "\n").split("\n")) {
+    const normalizedText = normalizeTextForPvs(text);
+    for (const paragraph of normalizedText.replaceAll("\r\n", "\n").split("\n")) {
       if (paragraph === "") {
         lines.push("");
         continue;

@@ -18,6 +18,7 @@
  */
 
 import { CARE_PLAN_SECTIONS, type CarePlanField } from "./carePlanCatalog";
+import { normalizeTextForPvs } from "@/lib/questionnaire/normalizeTextForPvs";
 
 // ---------------------------------------------------------------------------
 // State-Typ
@@ -134,5 +135,5 @@ export function buildCarePlanText(answers: CarePlanAnswers): string {
     }
   }
 
-  return outputLines.join("\n");
+  return normalizeTextForPvs(outputLines.join("\n"));
 }

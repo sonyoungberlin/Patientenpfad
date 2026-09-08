@@ -15,7 +15,7 @@ export const INTERNAL_WORKFLOWS = {
   vaccination_review_v1: {
     id: "vaccination_review_v1",
     title: "Impfpassprüfung und Beratung",
-    filenameLabel: "Impfpassprüfung und Beratung",
+    filenameLabel: "DOKU Impfberatung",
     blockIds: Object.keys(VACCINATION_REVIEW_BLOCK_CATALOG),
     blockCatalog: VACCINATION_REVIEW_BLOCK_CATALOG,
     questionCatalog: VACCINATION_REVIEW_QUESTION_CATALOG,

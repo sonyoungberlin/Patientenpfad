@@ -199,7 +199,7 @@ describe("questionnaire pdf filename", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-disposition")).toContain(
-      "20260512_123545_Impfpasspruefung_und_Beratung.pdf",
+      "20260512_123545_DOKU_Impfberatung.pdf",
     );
   });
 
@@ -303,6 +303,62 @@ describe("questionnaire PDF patient reference", () => {
     expect(text).not.toContain("vaccination_id");
     expect(text).not.toContain("COVID-19");
     expect(text).not.toContain("stale-subtype");
+  });
+
+  it("normalisiert Titel, Fragen, Antworten und Repeatable Groups für X-Komfort", async () => {
+    const questions: QuestionDefinition[] = [
+      {
+        id: "TEXT",
+        text: "Ärztliche Frage? – “Zitat”",
+        type: "text",
+        required: false,
+      },
+      {
+        id: "GROUP",
+        text: "Weitere Angaben?",
+        type: "repeatable_group",
+        required: false,
+        groupSchema: [
+          { key: "details", label: "Beschreibung?", type: "textarea", required: false },
+        ],
+      },
+    ];
+    const frozenBlock = {
+      id: "TEST",
+      label: "Übersicht? — „Block“",
+      displayOrder: 1,
+      questions,
+      conditionalRules: [],
+      initiallyVisible: true,
+    };
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        patient_reference: "ÄÖÜ-ß",
+        selected_block_ids: ["TEST"],
+        deduplicated_questions: questions,
+        frozen_blocks: [frozenBlock],
+        answers: {
+          TEXT: "Antwort? – ‘Ja’ …\u00a0• Straße",
+          GROUP: JSON.stringify([{ details: "Gruppe? — “Wert”" }]),
+        },
+      }),
+      {
+        title: "Titel? — „Dokument“",
+        referenceLabel: "Patientenreferenz?",
+        blockCatalog: {},
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).not.toContain("?");
+    expect(text).toContain('Titel - "Dokument"');
+    expect(text).toContain('Übersicht - "Block"');
+    expect(text).toContain('Ärztliche Frage - "Zitat":');
+    expect(text).toContain("Antwort - 'Ja' ... - Straße");
+    expect(text).toContain("Weitere Angaben:");
+    expect(text).toContain("Beschreibung:");
+    expect(text).toContain('Gruppe - "Wert"');
+    expect(text).toContain("Patientenreferenz: ÄÖÜ-ß");
   });
 });
 

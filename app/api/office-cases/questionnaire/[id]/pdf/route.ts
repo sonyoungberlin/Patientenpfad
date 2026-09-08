@@ -64,6 +64,7 @@ export async function GET(
       title: "Fragebogen – Bewerberangaben",
       referenceLabel: "Referenz",
       blockCatalog: OFFICE_BLOCK_CATALOG,
+      filenameLabel: "Bewerbung",
     },
   );
 

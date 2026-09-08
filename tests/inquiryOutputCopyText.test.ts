@@ -121,4 +121,11 @@ describe("inquiryDocumentationToPlainText", () => {
   it("liefert leeren String, wenn nur leere Zeilen enthalten sind", () => {
     expect(inquiryDocumentationToPlainText(["", "   ", ""])).toBe("");
   });
+
+  it("normalisiert ausschließlich bekannte X-Komfort-Zeichen im finalen Output", () => {
+    expect(inquiryDocumentationToPlainText([
+      "Ärztliche Frage?",
+      "– “Zitat” …\u00a0• Weiß",
+    ])).toBe('Ärztliche Frage\n- "Zitat" ... - Weiß');
+  });
 });

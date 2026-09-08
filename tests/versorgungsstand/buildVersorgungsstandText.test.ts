@@ -115,7 +115,7 @@ describe("buildVersorgungsstandText", () => {
         fa_1_befund: "ja",
       });
       expect(result).toContain("Facharzt 1");
-      expect(result).toContain("Fachrichtung / Praxis: Kardiologie – Dr. Müller");
+      expect(result).toContain("Fachrichtung / Praxis: Kardiologie - Dr. Müller");
       expect(result).toContain("Letzter Kontakt: 12.05.2026");
       expect(result).toContain("Befund vorhanden: ja");
     });
@@ -192,5 +192,14 @@ describe("buildVersorgungsstandText", () => {
       expect(result).toContain("  Zeile A");
       expect(result).toContain("  Zeile B");
     });
+  });
+
+  it("normalisiert ausschließlich bekannte X-Komfort-Zeichen im finalen Output", () => {
+    const result = buildVersorgungsstandText({
+      komm_stand: "Ärztliche Frage? — ‘Zitat’ …\u202f• Straße",
+    });
+
+    expect(result).toContain("Ärztliche Frage - 'Zitat' ... - Straße");
+    expect(result).not.toContain("?");
   });
 });

@@ -162,10 +162,17 @@ it("rendert Impfpassprüfungen mit deren Workflowtitel im Auto-Download", async 
     session_kind: "internal_documentation",
     internal_workflow_id: "vaccination_review_v1",
   });
+  pdfMock.mockResolvedValue({
+    bytes: new Uint8Array([37, 80, 68, 70]),
+    filename: "20260903_4711_DOKU_Impfberatung.pdf",
+  });
 
   const response = await GET(request());
 
   expect(response.status).toBe(200);
+  expect(response.headers.get("content-disposition")).toContain(
+    "20260903_4711_DOKU_Impfberatung.pdf",
+  );
   expect(pdfMock).toHaveBeenCalledWith(
     expect.objectContaining({
       session_kind: "internal_documentation",
@@ -173,7 +180,7 @@ it("rendert Impfpassprüfungen mit deren Workflowtitel im Auto-Download", async 
     }),
     expect.objectContaining({
       title: "Impfpassprüfung und Beratung",
-      filenameLabel: "Impfpassprüfung und Beratung",
+      filenameLabel: "DOKU Impfberatung",
       omitUnanswered: true,
     }),
   );

@@ -210,7 +210,7 @@ describe("VOLLST_ERKRANKUNGEN – Krankenblatt-Ausgabe", () => {
     expect(note).toContain("Erkrankung / Diagnose: Arterielle Hypertonie");
     expect(note).toContain("Fachrichtung: Kardiologie");
     expect(note).toContain("Name des Facharztes / der Praxis: Dr. Herz");
-    expect(note).toContain("Welche Medikamente?");
+    expect(note).toContain("Welche Medikamente:");
     expect(note).toContain("Ramipril 5 mg");
   });
 
