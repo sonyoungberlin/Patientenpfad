@@ -13,7 +13,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
-      update: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -32,7 +32,7 @@ const createSession = createQuestionnaireSession as jest.Mock;
 const db = prisma as unknown as {
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
-    update: jest.Mock;
+    updateMany: jest.Mock;
   };
 };
 
@@ -61,7 +61,7 @@ describe("interne Kiosk-Dokumentation", () => {
       tokenLink: "http://localhost/questionnaire-kiosk/internal/session-1",
     });
     db.patientQuestionnaireSession.findUnique.mockReset();
-    db.patientQuestionnaireSession.update.mockReset().mockResolvedValue({});
+    db.patientQuestionnaireSession.updateMany.mockReset().mockResolvedValue({ count: 1 });
   });
 
   it("verlangt die interne Capability vor dem Erstellen", async () => {
@@ -110,8 +110,10 @@ describe("interne Kiosk-Dokumentation", () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
       session_kind: "internal_documentation",
+      source: "kiosk_direct",
       owner_practice_id: "practice-1",
       created_by_kiosk_device_id: "device-2",
+      deleted_at: null,
       deduplicated_questions: [],
       frozen_blocks: [],
     });
@@ -122,16 +124,18 @@ describe("interne Kiosk-Dokumentation", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(db.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("weist eine Session mit unbekannter Workflow-ID ab", async () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
       session_kind: "internal_documentation",
+      source: "kiosk_direct",
       internal_workflow_id: "unknown_workflow",
       owner_practice_id: "practice-1",
       created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
       deduplicated_questions: [],
       frozen_blocks: [],
     });
@@ -142,15 +146,17 @@ describe("interne Kiosk-Dokumentation", () => {
     );
 
     expect(response.status).toBe(400);
-    expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(db.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("schließt eine eigene interne Session mit validierten Antworten ab", async () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
       session_kind: "internal_documentation",
+      source: "kiosk_direct",
       owner_practice_id: "practice-1",
       created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
       deduplicated_questions: [{ id: "note", type: "textarea" }],
       frozen_blocks: [{
         id: "CARE",
@@ -166,8 +172,16 @@ describe("interne Kiosk-Dokumentation", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(db.patientQuestionnaireSession.update).toHaveBeenCalledWith({
-      where: { id: "session-1", status: "pending" },
+    expect(db.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: "session-1",
+        status: "pending",
+        source: "kiosk_direct",
+        session_kind: "internal_documentation",
+        owner_practice_id: "practice-1",
+        created_by_kiosk_device_id: "device-1",
+        deleted_at: null,
+      }),
       data: expect.objectContaining({
         answers: { note: "  Inhalt  " },
         status: "completed",
@@ -181,9 +195,11 @@ describe("interne Kiosk-Dokumentation", () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
       session_kind: "internal_documentation",
+      source: "kiosk_direct",
       internal_workflow_id: "vaccination_review_v1",
       owner_practice_id: "practice-1",
       created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
       deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
       frozen_blocks: frozenBlocks,
     });
@@ -201,8 +217,8 @@ describe("interne Kiosk-Dokumentation", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(db.patientQuestionnaireSession.update).toHaveBeenCalledWith({
-      where: { id: "session-1", status: "pending" },
+    expect(db.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: "session-1", status: "pending" }),
       data: expect.objectContaining({
         answers: {
           VACCINATION_REVIEW_ITEMS: JSON.stringify([{
@@ -219,9 +235,11 @@ describe("interne Kiosk-Dokumentation", () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
       session_kind: "internal_documentation",
+      source: "kiosk_direct",
       internal_workflow_id: "vaccination_review_v1",
       owner_practice_id: "practice-1",
       created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
       deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
       frozen_blocks: frozenBlocks,
     });
@@ -242,7 +260,7 @@ describe("interne Kiosk-Dokumentation", () => {
     await expect(response.json()).resolves.toMatchObject({
       error: "Die Impfungsdaten enthalten ungültige Werte.",
     });
-    expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(db.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("lehnt echten ungültigen v2-Impf-Freitext weiterhin bei der Zeichenprüfung ab", async () => {
@@ -250,9 +268,11 @@ describe("interne Kiosk-Dokumentation", () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
       session_kind: "internal_documentation",
+      source: "kiosk_direct",
       internal_workflow_id: "vaccination_review_v1",
       owner_practice_id: "practice-1",
       created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
       deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
       frozen_blocks: frozenBlocks,
     });
@@ -275,6 +295,6 @@ describe("interne Kiosk-Dokumentation", () => {
       error: "Bitte verwenden Sie lateinische Buchstaben.",
       invalidQuestionIds: ["VACCINATION_REVIEW_ITEMS"],
     });
-    expect(db.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(db.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 });

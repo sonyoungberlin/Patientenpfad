@@ -1,33 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUnlockedQuestionnaireKioskDevice, hasQuestionnaireKioskCapability } from "@/lib/questionnaireKiosk/auth";
+import { requireInternalDocumentationAccess } from "@/lib/authz";
 import {
   createInternalDocumentationSession,
   InternalDocumentationError,
 } from "@/lib/questionnaire/internalDocumentationService";
 
 export async function POST(req: NextRequest) {
-  const { device, error } = await requireUnlockedQuestionnaireKioskDevice(req);
+  const { account, error } = await requireInternalDocumentationAccess(req);
   if (error) return error;
-  if (!hasQuestionnaireKioskCapability(device, "internal_documentation")) return NextResponse.json({ ok: false, error: "Interne Dokumentation ist auf diesem Gerät nicht freigeschaltet." }, { status: 403 });
+  const practice = account.current_practice;
+  if (!practice) {
+    return NextResponse.json({ ok: false, error: "Kein Praxiszugriff." }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
   const protocol = req.headers.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${protocol}://${host}` : req.nextUrl.origin;
+
   try {
     const result = await createInternalDocumentationSession({
       workflowId: body?.workflow_id,
       patientReference: body?.patient_reference,
       origin,
       context: {
-        kind: "kiosk",
-        practiceId: device.practiceId,
-        deviceId: device.deviceId,
+        kind: "practice",
+        practiceId: practice.id,
+        accountId: account.id,
       },
     });
     return NextResponse.json({
       ok: true,
       sessionId: result.sessionId,
-      link: `${origin}/questionnaire-kiosk/internal/${result.sessionId}`,
+      link: `${origin}/cases/internal-documentation/${result.sessionId}`,
     });
   } catch (cause) {
     if (cause instanceof InternalDocumentationError) {

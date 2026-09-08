@@ -533,6 +533,48 @@ export async function requireQuestionnaireInboxAccessFromCookies(): Promise<Sess
   return allowed ? account : null;
 }
 
+export function canAccessInternalDocumentation(
+  account: Pick<
+    SessionAccount,
+    | "is_approved"
+    | "patient_communication_enabled"
+    | "current_practice"
+    | "memberships"
+  >,
+): boolean {
+  if (!account.is_approved || !account.patient_communication_enabled) return false;
+  if (!account.current_practice) return false;
+  const role = getCurrentPracticeRoleInternal(account);
+  return (
+    role === PracticeRole.ADMIN ||
+    role === PracticeRole.OWNER ||
+    role === PracticeRole.USER
+  );
+}
+
+export async function requireInternalDocumentationAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const result = await requirePatientCommunicationAccess(req);
+  if (result.error) return result;
+  if (!canAccessInternalDocumentation(result.account)) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Kein Praxiszugriff." },
+        { status: 403 },
+      ),
+    };
+  }
+  return result;
+}
+
+export async function requireInternalDocumentationAccessFromCookies(): Promise<SessionAccount | null> {
+  const account = await requirePatientCommunicationAccessFromCookies();
+  if (!account) return null;
+  return canAccessInternalDocumentation(account) ? account : null;
+}
+
 export async function requireQuestionnaireSendAccess(
   req: NextRequest,
 ): Promise<RequireResult> {
