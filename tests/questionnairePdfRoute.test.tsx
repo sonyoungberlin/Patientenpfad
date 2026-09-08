@@ -26,6 +26,7 @@ import { inflateSync } from "node:zlib";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
 import { VACCINATION_REVIEW_BLOCK_CATALOG, VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
+import { buildInternalWorkflowBlocks, getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 
 type PrismaMock = {
   patientQuestionnaireSession: {
@@ -249,6 +250,61 @@ describe("questionnaire PDF patient reference", () => {
 
     expect(await extractPdfText(result.bytes)).toContain("Patientenreferenz: 004711");
     expect(result.filename).toBe("20260512_004711_Versicherungsdaten.pdf");
+  });
+
+  it("rendert den Care Plan ohne doppelte Labels und behält leere Blocküberschriften", async () => {
+    const workflow = getInternalWorkflow("care_plan_v1")!;
+    const frozenBlocks = buildInternalWorkflowBlocks("care_plan_v1");
+    const questions = frozenBlocks.flatMap((block) => block.questions);
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        session_kind: "internal_documentation",
+        internal_workflow_id: "care_plan_v1",
+        selected_block_ids: frozenBlocks.map((block) => block.id),
+        deduplicated_questions: questions,
+        frozen_blocks: frozenBlocks,
+        answers: {
+          CARE_PLAN_HA_REASON: "test",
+          CARE_PLAN_SPECIALISTS: JSON.stringify([{
+            specialty: "Diabetologie",
+            practice: "Dr. Zucker",
+            interval: "jährlich",
+            note: "Befund bitte an Hausarzt senden",
+          }]),
+          CARE_PLAN_SUPPLY: "Rezepte digital möglich, Digitale Praxiswege werden bevorzugt genutzt.",
+          CARE_PLAN_SUPPLY_NOTES: "doctolib",
+          CARE_PLAN_AGREEMENT_TEXT: "Facharzttermine einhalten",
+        },
+      }),
+      {
+        title: workflow.title,
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: workflow.blockCatalog,
+        omitUnanswered: workflow.omitUnansweredInPdf,
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    for (const heading of [
+      "Hausärztliche Betreuung",
+      "Fachärztliche Betreuung",
+      "Versorgung und Organisation",
+      "Unterstützende Personen",
+      "Gemeinsame Vereinbarung",
+    ]) {
+      expect(text.match(new RegExp(heading, "g"))).toHaveLength(1);
+    }
+    expect(text).toContain("1. Eintrag");
+    expect(text).toContain("Fachrichtung:");
+    expect(text).toContain("Diabetologie");
+    expect(text).toContain("Hinweis:");
+    expect(text).toContain("Befund bitte an Hausarzt senden");
+    expect(text).toContain("Notizen / Offene Punkte:");
+    expect(text).toContain("Facharzttermine einhalten");
+    expect(text).not.toContain("Fachärztliche Betreuung:");
+    expect(text).not.toContain("Unterstützende Personen:");
+    expect(text).not.toContain("CARE_PLAN_");
+    expect(text).not.toContain("?");
   });
 
   it("renders a normalized v2 vaccination answer without technical, untouched, or stale values", async () => {

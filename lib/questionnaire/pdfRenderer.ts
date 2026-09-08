@@ -13,6 +13,7 @@ import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildFrozenBlocks, parseFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
+import { resolveInternalWorkflow } from "./internalWorkflowRegistry";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -75,6 +76,8 @@ export type PdfSessionInput = {
   deduplicated_questions: unknown;
   answers: unknown;
   source: string;
+  session_kind?: string;
+  internal_workflow_id?: unknown;
   practice_form: { title: string } | null;
   frozen_blocks?: unknown;
 };
@@ -90,6 +93,8 @@ export type PdfRenderOptions = {
   filenameLabel?: string;
   /** Interne Workflows dürfen unbeantwortete Fragen ausblenden. */
   omitUnanswered?: boolean;
+  /** Unterdrückt ein Fragenlabel, wenn es exakt der Blocküberschrift entspricht. */
+  omitMatchingBlockQuestionLabels?: boolean;
   patientCopy?: { returnEmail: string };
 };
 
@@ -118,6 +123,12 @@ export async function buildQuestionnairePdfBytes(
 
   const derivedValues = computeAllDerivedValues(answers);
   const snapshotBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const internalWorkflow = session.session_kind === "internal_documentation"
+    ? resolveInternalWorkflow(session.internal_workflow_id)
+    : null;
+  const omitMatchingBlockQuestionLabels = opts.omitMatchingBlockQuestionLabels
+    ?? internalWorkflow?.omitMatchingBlockQuestionLabels
+    ?? false;
 
   const blockSections: {
     label: string;
@@ -318,10 +329,17 @@ export async function buildQuestionnairePdfBytes(
     y -= 5;
   }
 
-  function drawRepGroupEntries(questionLabel: string, entries: RepGroupEntry[]) {
+  function drawWrappedValue(value: string) {
+    drawTextBlock(value, { size: 9, lineHeight });
+    y -= 5;
+  }
+
+  function drawRepGroupEntries(questionLabel: string, entries: RepGroupEntry[], showQuestionLabel = true) {
     if (entries.length === 0) return;
-    drawTextBlock(`${questionLabel}:`, { size: 9, bold: true, lineHeight });
-    y -= 2;
+    if (showQuestionLabel) {
+      drawTextBlock(`${questionLabel}:`, { size: 9, bold: true, lineHeight });
+      y -= 2;
+    }
     for (const entry of entries) {
       drawTextBlock(entry.title ?? `${entry.index}. Eintrag`, {
         size: 10,
@@ -389,6 +407,7 @@ export async function buildQuestionnairePdfBytes(
     for (const q of section.questions) {
       const value = answers[q.id] ?? "";
       const isVisible = section.visibleQIds.has(q.id);
+      const omitQuestionLabel = omitMatchingBlockQuestionLabels && q.text === section.label;
 
       if (q.type === "confirmation" && value === "true") {
         drawWrappedPair("Bestätigt", q.text);
@@ -408,11 +427,13 @@ export async function buildQuestionnairePdfBytes(
       }
       if (q.type === "repeatable_group") {
         const entries = parseRepeatableGroupEntries(value, q.id, q);
-        entries.length > 0 ? drawRepGroupEntries(q.text, entries) : drawWrappedPair(q.text, "");
+        entries.length > 0
+          ? drawRepGroupEntries(q.text, entries, !omitQuestionLabel)
+          : drawWrappedPair(q.text, "");
         continue;
       }
       const displayValue = q.type === "yes_no" && value ? formatYesNoValue(value) : value;
-      drawWrappedPair(q.text, displayValue);
+      omitQuestionLabel ? drawWrappedValue(displayValue) : drawWrappedPair(q.text, displayValue);
     }
 
     y -= sectionGap;

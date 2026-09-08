@@ -14,7 +14,8 @@
  *     gefallen.
  *
  * Regeln:
- *   - Nur Felder mit Wert werden ausgegeben.
+ *   - Nur Felder mit Wert werden ausgegeben; interne Workflows können
+ *     leere Blocküberschriften ausdrücklich beibehalten.
  *   - Newlines in Textarea-Werten (insbesondere ADDRESS_POSTAL) bleiben
  *     erhalten und werden als Folgezeilen unterhalb des Labels emittiert.
  *   - Gespeicherte Inhalte werden vollständig ausgegeben.
@@ -34,6 +35,7 @@ import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
 import { getVaccinationLabel } from "./vaccinationReview";
+import { getInternalWorkflow } from "./internalWorkflowRegistry";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -226,6 +228,7 @@ function formatRepeatableGroupEntries(
   questionId: string,
   jsonValue: string,
   questionDef?: QuestionDefinition,
+  omitEntryHeadingColon = false,
 ): string[] {
   const def = questionDef ?? QUESTION_CATALOG[questionId];
   if (!def?.groupSchema) return [];
@@ -247,7 +250,7 @@ function formatRepeatableGroupEntries(
 
     lines.push(def.presentation === "vaccination_matrix"
       ? `  ${getVaccinationLabel(e as Record<string, string>, def)}:`
-      : `  ${idx + 1}. Eintrag:`);
+      : `  ${idx + 1}. Eintrag${omitEntryHeadingColon ? "" : ":"}`);
 
     for (const field of def.groupSchema!) {
       if (def.presentation === "vaccination_matrix" && (field.key === "vaccination_id" || field.key === "custom_label")) {
@@ -365,6 +368,7 @@ function renderQuestionLines(
   questionId: string,
   rawValue: string,
   questionDef?: QuestionDefinition,
+  omitLabel = false,
 ): string[] {
   const transformed = transformValue(questionId, rawValue, questionDef);
   const parts = transformed
@@ -374,7 +378,7 @@ function renderQuestionLines(
   if (parts.length === 0) return [];
 
   const label = getLabel(questionId, questionDef);
-  const lines: string[] = [`${label}: ${parts[0]}`];
+  const lines: string[] = [omitLabel ? parts[0] : `${label}: ${parts[0]}`];
   for (let i = 1; i < parts.length; i++) {
     lines.push(parts[i]);
   }
@@ -423,6 +427,9 @@ function hasNewSmokingStructure(answers: Record<string, string>): boolean {
 export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const answers: Record<string, string> = input.answers ?? {};
   const blockIds = new Set(input.selected_block_ids);
+  const internalWorkflow = getInternalWorkflow(input.internalWorkflowId);
+  const omitMatchingBlockQuestionLabels = internalWorkflow?.omitMatchingBlockQuestionLabels ?? false;
+  const includeEmptyBlocks = internalWorkflow?.includeEmptyBlocksInCopyText ?? false;
 
   const hasAU = blockIds.has("ARBEITSUNFAEHIGKEIT");
   const hasRezept = blockIds.has("REZEPT");
@@ -533,6 +540,8 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         if (block.id === "VOLLST_NIKOTIN" && hasNewSmokingStructure(answers) && SMOKING_PAIR_IDS.has(question.id)) continue;
         const raw = (answers[question.id] ?? "").trim();
         if (raw === "") continue;
+        const omitQuestionLabel = omitMatchingBlockQuestionLabels
+          && getLabel(question.id, question) === block.label;
 
         if (question.id === "FACHAERZTE") {
           const formatted = formatFacharztEntries(raw);
@@ -541,9 +550,9 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         }
 
         if (question.type === "repeatable_group") {
-          const formatted = formatRepeatableGroupEntries(question.id, raw, question);
+          const formatted = formatRepeatableGroupEntries(question.id, raw, question, omitQuestionLabel);
           if (formatted.length > 0) {
-            blockLines.push(`${getLabel(question.id, question)}:`);
+            if (!omitQuestionLabel) blockLines.push(`${getLabel(question.id, question)}:`);
             blockLines.push(...formatted);
           }
           continue;
@@ -556,14 +565,14 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           continue;
         }
 
-        blockLines.push(...renderQuestionLines(question.id, raw, question));
+        blockLines.push(...renderQuestionLines(question.id, raw, question, omitQuestionLabel));
       }
 
       if (block.id === "VOLLST_NIKOTIN") {
         blockLines.push(...renderSmokingSummary(answers));
       }
 
-      if (blockLines.length === 0) continue;
+      if (blockLines.length === 0 && !includeEmptyBlocks) continue;
       lines.push("");
       lines.push(block.label);
       lines.push(...blockLines);

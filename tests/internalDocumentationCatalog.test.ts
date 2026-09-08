@@ -5,6 +5,9 @@ describe("internal documentation workflow registry", () => {
     expect(getInternalWorkflow("care_plan_v1")).toMatchObject({
       id: "care_plan_v1",
       title: "Persönlicher Versorgungsplan",
+      omitUnansweredInPdf: true,
+      omitMatchingBlockQuestionLabels: true,
+      includeEmptyBlocksInCopyText: true,
     });
     expect(getInternalWorkflow("patient_block")).toBeNull();
     expect(getInternalWorkflow("__proto__")).toBeNull();
@@ -22,18 +25,19 @@ describe("internal documentation workflow registry", () => {
     expect(specialist.type).toBe("repeatable_group");
     expect(specialist.maxEntries).toBe(3);
     expect(specialist.groupSchema?.map((field) => [field.key, field.maxLength])).toEqual([
-      ["specialty", 200],
-      ["practice", 200],
+      ["specialty", 120],
+      ["practice", 120],
       ["interval", undefined],
+      ["note", 120],
     ]);
     expect(blocks.flatMap((block) => block.questions)
       .filter((question) => question.type === "textarea")
       .map((question) => [question.id, question.maxLength])).toEqual([
-      ["CARE_PLAN_HA_REASON", 200],
-      ["CARE_PLAN_HA_NOTES", 200],
-      ["CARE_PLAN_SUPPLY_NOTES", 200],
-      ["CARE_PLAN_SUPPORT_NOTES", 200],
-      ["CARE_PLAN_AGREEMENT_TEXT", 200],
+      ["CARE_PLAN_HA_REASON", 120],
+      ["CARE_PLAN_HA_NOTES", 120],
+      ["CARE_PLAN_SUPPLY_NOTES", 120],
+      ["CARE_PLAN_SUPPORT_NOTES", 120],
+      ["CARE_PLAN_AGREEMENT_TEXT", 120],
     ]);
     expect(blocks[2].questions[0].type).toBe("multi_select");
     expect(blocks[2].questions[0].required).toBe(false);
@@ -67,7 +71,7 @@ describe("internal documentation workflow registry", () => {
     });
     expect(blocks[0].questions[0].vaccinationItems?.[0].componentFields).toHaveLength(4);
     const schema = blocks[0].questions[0].groupSchema ?? [];
-    expect(schema.filter((field) => field.maxLength === 200).map((field) => field.key)).toEqual([
+    expect(schema.filter((field) => field.maxLength === 120).map((field) => field.key)).toEqual([
       "custom_label",
       "documented_season",
       "note",

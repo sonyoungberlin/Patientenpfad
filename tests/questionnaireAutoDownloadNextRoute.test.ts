@@ -151,6 +151,7 @@ it("rendert abgeschlossene interne Dokumentationen für den Auto-Download", asyn
     expect.objectContaining({
       title: "Persönlicher Versorgungsplan",
       filenameLabel: "Persönlicher Versorgungsplan",
+      omitUnanswered: true,
     }),
   );
 });

@@ -15,6 +15,7 @@
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 import { QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import { buildInternalWorkflowBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { normalizeTextForPvs } from "@/lib/questionnaire/normalizeTextForPvs";
 
 describe("normalizeTextForPvs", () => {
@@ -324,39 +325,79 @@ describe("buildMedicalRecordNote – vollständige Inhalte", () => {
 });
 
 describe("buildMedicalRecordNote – care_plan_v1 Frozen Labels", () => {
-  it("verwendet fachliche Frozen-Labels und vollständige Gruppenwerte", () => {
-    const questions = [{
-      id: "CARE_PLAN_HA_NOTES",
-      text: "Notizen / Vereinbarungen?",
-      type: "textarea" as const,
-      required: false,
-      maxLength: 200,
-    }, {
-      id: "CARE_PLAN_SPECIALISTS",
-      text: "Fachärztliche Betreuung?",
-      type: "repeatable_group" as const,
-      required: false,
-      groupSchema: [
-        { key: "specialty", label: "Fachrichtung", type: "text" as const, required: false, maxLength: 200 },
-        { key: "practice", label: "Praxis / Arzt", type: "text" as const, required: false, maxLength: 200 },
-      ],
-    }];
+  it("gibt den vollständigen Versorgungsplan ohne redundante Überschriften aus", () => {
+    const fullLengthNote = "a".repeat(120);
     const note = buildMedicalRecordNote({
       answers: {
-        CARE_PLAN_HA_NOTES: "a".repeat(200),
-        CARE_PLAN_SPECIALISTS: JSON.stringify([{ specialty: "Diabetologie", practice: "Dr Zucker" }]),
+        CARE_PLAN_HA_DATE: "2026-09-08",
+        CARE_PLAN_HA_REASON: "test",
+        CARE_PLAN_HA_MEDICAL_INTERVAL: "1x im Quartal",
+        CARE_PLAN_HA_LAB_INTERVAL: "1x im Quartal",
+        CARE_PLAN_HA_NOTES: fullLengthNote,
+        CARE_PLAN_SPECIALISTS: JSON.stringify([{
+          specialty: "Diabetologie",
+          practice: "Dr. Zucker",
+          interval: "jährlich",
+          note: "Befund bitte an Hausarzt senden",
+        }]),
+        CARE_PLAN_SUPPLY: "Rezepte digital möglich, Digitale Praxiswege werden bevorzugt genutzt.",
+        CARE_PLAN_SUPPLY_NOTES: "doctolib",
+        CARE_PLAN_SUPPORT: "Angehörige / Bezugsperson informiert",
+        CARE_PLAN_SUPPORT_NOTES: "Tochter ist dabei",
+        CARE_PLAN_AGREEMENT: "Warnsymptome erklärt, Notfallplan besprochen, Eigenverantwortung und Mitwirkung besprochen",
+        CARE_PLAN_AGREEMENT_TEXT: "Facharzttermine einhalten",
+        CARE_PLAN_AGREEMENT_DATE: "2026-09-01",
       },
-      selected_block_ids: ["CARE_PLAN_HA", "CARE_PLAN_SPECIALIST"],
+      selected_block_ids: buildInternalWorkflowBlocks("care_plan_v1").map((block) => block.id),
       internalWorkflowId: "care_plan_v1",
-      frozenBlocks: [{ id: "CARE_PLAN_HA", label: "Hausärztliche Betreuung", displayOrder: 10, questions: [questions[0]], conditionalRules: [], initiallyVisible: true }, { id: "CARE_PLAN_SPECIALIST", label: "Fachärztliche Betreuung", displayOrder: 20, questions: [questions[1]], conditionalRules: [], initiallyVisible: true }],
+      frozenBlocks: buildInternalWorkflowBlocks("care_plan_v1"),
     });
 
-    expect(note).toContain(`Notizen / Vereinbarungen: ${"a".repeat(200)}`);
-    expect(note).toContain("Fachärztliche Betreuung:");
-    expect(note).toContain("Fachrichtung: Diabetologie");
-    expect(note).toContain("Praxis / Arzt: Dr Zucker");
+    expect(note).toBe([
+      "Persönlicher Versorgungsplan",
+      "",
+      "Hausärztliche Betreuung",
+      "Datum des Gesprächs: 2026-09-08",
+      "Anlass / Diagnose: test",
+      "Ärztliche Kontrolle: 1x im Quartal",
+      "Laborkontrolle: 1x im Quartal",
+      `Notizen / Vereinbarungen: ${fullLengthNote}`,
+      "",
+      "Fachärztliche Betreuung",
+      "  1. Eintrag",
+      "     Fachrichtung: Diabetologie",
+      "     Praxis / Arzt: Dr. Zucker",
+      "     Kontrollintervall: jährlich",
+      "     Hinweis: Befund bitte an Hausarzt senden",
+      "",
+      "Versorgung und Organisation",
+      "Rezepte digital möglich, Digitale Praxiswege werden bevorzugt genutzt.",
+      "Notizen / Offene Punkte: doctolib",
+      "",
+      "Unterstützende Personen",
+      "Angehörige / Bezugsperson informiert",
+      "Notizen: Tochter ist dabei",
+      "",
+      "Gemeinsame Vereinbarung",
+      "Warnsymptome erklärt, Notfallplan besprochen, Eigenverantwortung und Mitwirkung besprochen",
+      "Individuelle Vereinbarung: Facharzttermine einhalten",
+      "Datum der Vereinbarung: 2026-09-01",
+    ].join("\n"));
     expect(note).not.toContain("CARE_PLAN_");
     expect(note).not.toContain("?");
+  });
+
+  it("behält vollständig leere Care-Plan-Blöcke als Überschrift bei", () => {
+    const note = buildMedicalRecordNote({
+      answers: { CARE_PLAN_HA_REASON: "test" },
+      selected_block_ids: buildInternalWorkflowBlocks("care_plan_v1").map((block) => block.id),
+      internalWorkflowId: "care_plan_v1",
+      frozenBlocks: buildInternalWorkflowBlocks("care_plan_v1"),
+    });
+
+    expect(note).toContain("Unterstützende Personen\n\nGemeinsame Vereinbarung");
+    expect(note.match(/Unterstützende Personen/g)).toHaveLength(1);
+    expect(note).toContain("Anlass / Diagnose: test");
   });
 
   it("behält SHORT_LABELS vor dem Frozen-Fragetext", () => {

@@ -10,7 +10,9 @@ export const INTERNAL_WORKFLOWS = {
     blockIds: Object.keys(INTERNAL_DOCUMENTATION_BLOCK_CATALOG),
     blockCatalog: INTERNAL_DOCUMENTATION_BLOCK_CATALOG,
     questionCatalog: INTERNAL_DOCUMENTATION_QUESTION_CATALOG,
-    omitUnansweredInPdf: false,
+    omitUnansweredInPdf: true,
+    omitMatchingBlockQuestionLabels: true,
+    includeEmptyBlocksInCopyText: true,
   },
   vaccination_review_v1: {
     id: "vaccination_review_v1",
@@ -20,6 +22,8 @@ export const INTERNAL_WORKFLOWS = {
     blockCatalog: VACCINATION_REVIEW_BLOCK_CATALOG,
     questionCatalog: VACCINATION_REVIEW_QUESTION_CATALOG,
     omitUnansweredInPdf: true,
+    omitMatchingBlockQuestionLabels: false,
+    includeEmptyBlocksInCopyText: false,
   },
 } as const;
 

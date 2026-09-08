@@ -127,7 +127,7 @@ describe("interne Kiosk-Dokumentation", () => {
     expect(db.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
-  it("antwortet bei 201 Zeichen in einem begrenzten Feld mit HTTP 400", async () => {
+  it("antwortet bei 121 Zeichen in einem begrenzten Feld mit HTTP 400", async () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",
       session_kind: "internal_documentation",
@@ -141,7 +141,7 @@ describe("interne Kiosk-Dokumentation", () => {
 
     const response = await submitInternal(
       request("/api/questionnaire-kiosk/internal/session-1", {
-        answers: { CARE_PLAN_HA_NOTES: "a".repeat(201) },
+        answers: { CARE_PLAN_HA_NOTES: "a".repeat(121) },
       }),
       { params: Promise.resolve({ id: "session-1" }) },
     );
