@@ -60,6 +60,8 @@ export type RepeatableGroupFieldDef = {
   label: string;
   type: "text" | "date" | "select" | "yes_no" | "textarea" | "checkbox" | "multi_select";
   required: boolean;
+  /** Maximale Länge für nutzereditierbare Freitext-Unterfelder. */
+  maxLength?: number;
   options?: string[];
   helperText?: string;
   /** Dieses Feld nur anzeigen, wenn `conditionalOn`-Feld gleich `conditionalValue` ist. */
@@ -93,6 +95,8 @@ export type QuestionDefinition = {
   type: QuestionType;
   /** Ob das Feld Pflichtfeld ist. */
   required: boolean;
+  /** Maximale Länge für nutzereditierbare Freitextfelder. */
+  maxLength?: number;
   /** Nur für praxisindividuelle Bestätigungen: Kopie versenden. */
   send_patient_copy?: boolean;
   /** Auswahloptionen für select / multi_select (Deutsch, kanonisch). */

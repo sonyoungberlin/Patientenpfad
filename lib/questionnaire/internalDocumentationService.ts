@@ -8,6 +8,7 @@ import {
 } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { validateAnswerCharacters } from "@/lib/questionnaire/validateAnswerCharacters";
+import { validateAnswerLengths } from "@/lib/questionnaire/validateAnswerLengths";
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
 
 export class InternalDocumentationError extends Error {
@@ -133,6 +134,15 @@ export async function submitInternalDocumentationSession(input: {
   const frozenQuestionMap = new Map(
     questions.map((question) => [question.id, question]),
   );
+  const lengthCheck = validateAnswerLengths(input.answers, frozenQuestionMap);
+  if (!lengthCheck.ok) {
+    const error = new InternalDocumentationError(
+      "Die maximale Zeichenanzahl wurde überschritten.",
+      400,
+    ) as InternalDocumentationError & { invalidQuestionIds?: string[] };
+    error.invalidQuestionIds = lengthCheck.invalidQuestionIds;
+    throw error;
+  }
   const characterCheck = validateAnswerCharacters(
     input.answers,
     questions,

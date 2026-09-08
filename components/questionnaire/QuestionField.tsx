@@ -30,6 +30,22 @@ export function generateLocalId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
+export function TextLengthCounter({ value, maxLength }: { value: string; maxLength?: number }) {
+  if (maxLength === undefined) return null;
+  return (
+    <span
+      data-text-length-counter
+      style={{ display: "block", marginTop: "0.25rem", fontSize: "0.8rem", color: "var(--muted-foreground, #6b7280)", textAlign: "right" }}
+    >
+      {value.length} / {maxLength}
+    </span>
+  );
+}
+
+export function limitTextLength(value: string, maxLength?: number): string {
+  return maxLength === undefined ? value : value.slice(0, maxLength);
+}
+
 function answerChoiceStyle(selected: boolean, disabled: boolean): React.CSSProperties {
   return {
     padding: "0.25rem 0.75rem",
@@ -372,7 +388,9 @@ function VaccinationMatrixV2Field({
       return <div style={{ display: "grid", gap: "0.8rem" }}>{(item.componentFields ?? []).map((component) => <div key={component.key} style={{ display: "grid", gap: "0.4rem" }}><strong>{component.label}</strong>{choiceButtons(item.id, component.key, component.options)}</div>)}</div>;
     }
     if (item.documentationMode === "season") {
-      return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 10rem), 1fr))", gap: "0.5rem", minWidth: 0 }}><input value={entry.documented_season ?? ""} placeholder="Saison, z. B. 2025/26" disabled={disabled} onChange={(event) => update(item.id, "documented_season", event.target.value)} style={fieldStyle} /><input type="date" aria-label={`${item.label} Impfdatum`} value={entry.documented_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "documented_date", event.target.value)} style={fieldStyle} /></div>;
+      const seasonField = schema.find((field) => field.key === "documented_season");
+      const season = entry.documented_season ?? "";
+      return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 10rem), 1fr))", gap: "0.5rem", minWidth: 0 }}><div><input value={season} maxLength={seasonField?.maxLength} placeholder="Saison, z. B. 2025/26" disabled={disabled} onChange={(event) => update(item.id, "documented_season", limitTextLength(event.target.value, seasonField?.maxLength))} style={fieldStyle} /><TextLengthCounter value={season} maxLength={seasonField?.maxLength} /></div><input type="date" aria-label={`${item.label} Impfdatum`} value={entry.documented_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "documented_date", event.target.value)} style={fieldStyle} /></div>;
     }
     if (item.documentationMode === "subtype") return choiceButtons(item.id, "documented_subtypes", item.subtypeOptions ?? []);
     if (item.documentationMode === "free_text") return null;
@@ -393,14 +411,14 @@ function VaccinationMatrixV2Field({
           <span aria-hidden="true" style={{ width: "1.5rem", textAlign: "center", fontSize: "1.25rem" }}>{isOpen ? "−" : "+"}</span>
         </button>
         {isOpen && <div style={{ display: "grid", gap: "0.85rem", padding: "0.25rem 0 1rem" }}>
-          {item.id === "other" && <input value={entry.custom_label ?? ""} placeholder="Bezeichnung" disabled={disabled} onChange={(event) => update(item.id, "custom_label", event.target.value)} style={fieldStyle} />}
+          {item.id === "other" && (() => { const field = schema.find((candidate) => candidate.key === "custom_label"); const fieldValue = entry.custom_label ?? ""; return <div><input value={fieldValue} maxLength={field?.maxLength} placeholder="Bezeichnung" disabled={disabled} onChange={(event) => update(item.id, "custom_label", limitTextLength(event.target.value, field?.maxLength))} style={fieldStyle} /><TextLengthCounter value={fieldValue} maxLength={field?.maxLength} /></div>; })()}
           <div data-vaccination-status-gates style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem" }}>
             {statusOptions.map((status) => <button key={status} type="button" disabled={disabled} aria-pressed={entry.documented_status === status} onClick={() => setStatus(item.id, status)} style={{ ...answerChoiceStyle(entry.documented_status === status, disabled), minWidth: 0, minHeight: "3rem", padding: "0.65rem", whiteSpace: "normal", overflowWrap: "anywhere" }}>{status}</button>)}
           </div>
           {renderDetails(item, entry)}
           {planning && <fieldset style={{ minWidth: 0, margin: 0, padding: 0, border: 0 }}><legend style={{ marginBottom: "0.4rem", fontWeight: 500 }}>{furtherActionField?.label ?? "Weiteres Vorgehen"}</legend><div data-vaccination-further-action style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 12rem), 1fr))", gap: "0.5rem" }}>{actionOptions.map((option) => <button key={option} type="button" disabled={disabled} aria-pressed={entry.further_action === option} onClick={() => update(item.id, "further_action", option)} style={{ ...answerChoiceStyle(entry.further_action === option, disabled), minWidth: 0, minHeight: "3rem", padding: "0.65rem", whiteSpace: "normal", overflowWrap: "anywhere" }}>{option}</button>)}</div></fieldset>}
-          {showNote && <label style={{ display: "grid", gap: "0.4rem", minWidth: 0 }}><strong>{noteField?.label}</strong><textarea aria-label={`${item.label} ${noteField?.label}`} value={entry.note ?? ""} disabled={disabled} onChange={(event) => update(item.id, "note", event.target.value)} style={{ ...fieldStyle, minHeight: "5.5rem", resize: "vertical" }} /></label>}
-          {(showReferenceDate || showIntervalValue || showIntervalUnit) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem", minWidth: 0 }}>{showReferenceDate && <input type="date" aria-label={`${item.label} ${referenceDateField?.label}`} value={entry.reference_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "reference_date", event.target.value)} style={fieldStyle} />}{showIntervalValue && <input inputMode="numeric" aria-label={`${item.label} ${intervalValueField?.label}`} value={entry.interval_value ?? ""} placeholder={intervalValueField?.label ?? "Intervall"} disabled={disabled} onChange={(event) => update(item.id, "interval_value", event.target.value)} style={fieldStyle} />}{showIntervalUnit && <select aria-label={`${item.label} ${intervalUnitField?.label}`} value={entry.interval_unit ?? ""} disabled={disabled} onChange={(event) => update(item.id, "interval_unit", event.target.value)} style={fieldStyle}><option value="">{intervalUnitField?.label ?? "Einheit"}</option>{intervalUnits.map((unit) => <option key={unit}>{unit}</option>)}</select>}</div>}
+          {showNote && <label style={{ display: "grid", gap: "0.4rem", minWidth: 0 }}><strong>{noteField?.label}</strong><textarea aria-label={`${item.label} ${noteField?.label}`} value={entry.note ?? ""} maxLength={noteField?.maxLength} disabled={disabled} onChange={(event) => update(item.id, "note", limitTextLength(event.target.value, noteField?.maxLength))} style={{ ...fieldStyle, minHeight: "5.5rem", resize: "vertical" }} /><TextLengthCounter value={entry.note ?? ""} maxLength={noteField?.maxLength} /></label>}
+          {(showReferenceDate || showIntervalValue || showIntervalUnit) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))", gap: "0.5rem", minWidth: 0 }}>{showReferenceDate && <input type="date" aria-label={`${item.label} ${referenceDateField?.label}`} value={entry.reference_date ?? ""} disabled={disabled} onChange={(event) => update(item.id, "reference_date", event.target.value)} style={fieldStyle} />}{showIntervalValue && <div><input inputMode="numeric" aria-label={`${item.label} ${intervalValueField?.label}`} value={entry.interval_value ?? ""} maxLength={intervalValueField?.maxLength} placeholder={intervalValueField?.label ?? "Intervall"} disabled={disabled} onChange={(event) => update(item.id, "interval_value", limitTextLength(event.target.value, intervalValueField?.maxLength))} style={fieldStyle} /><TextLengthCounter value={entry.interval_value ?? ""} maxLength={intervalValueField?.maxLength} /></div>}{showIntervalUnit && <select aria-label={`${item.label} ${intervalUnitField?.label}`} value={entry.interval_unit ?? ""} disabled={disabled} onChange={(event) => update(item.id, "interval_unit", event.target.value)} style={fieldStyle}><option value="">{intervalUnitField?.label ?? "Einheit"}</option>{intervalUnits.map((unit) => <option key={unit}>{unit}</option>)}</select>}</div>}
           {entryById.has(item.id) && <button type="button" disabled={disabled} onClick={() => reset(item.id)} style={{ justifySelf: "start", minHeight: "2.75rem", padding: "0.55rem 0.8rem" }}>Zurücksetzen</button>}
         </div>}
       </div>
@@ -597,14 +615,15 @@ export function RepeatableGroupField({
                     data-rg-field={`${idx}:${field.key}`}
                   />
                 ) : field.type === "textarea" ? (
-                  <textarea
+                  <><textarea
                     value={fieldVal}
-                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    maxLength={field.maxLength}
+                    onChange={(e) => updateField(idx, field.key, limitTextLength(e.target.value, field.maxLength))}
                     disabled={disabled}
                     rows={2}
                     style={{ ...baseFieldStyle, resize: "vertical" }}
                     data-rg-field={`${idx}:${field.key}`}
-                  />
+                  /><TextLengthCounter value={fieldVal} maxLength={field.maxLength} /></>
                 ) : field.type === "yes_no" ? (
                   <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }} data-rg-field={`${idx}:${field.key}`}>
                     {(["ja", "nein"] as const).map((val) => (
@@ -662,15 +681,16 @@ export function RepeatableGroupField({
                     })}
                   </div>
                 ) : (
-                  <input
+                  <><input
                     type="text"
                     value={fieldVal}
-                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    maxLength={field.maxLength}
+                    onChange={(e) => updateField(idx, field.key, limitTextLength(e.target.value, field.maxLength))}
                     disabled={disabled}
                     pattern={ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN}
                     style={baseFieldStyle}
                     data-rg-field={`${idx}:${field.key}`}
-                  />
+                  /><TextLengthCounter value={fieldVal} maxLength={field.maxLength} /></>
                 )}
                 {field.helperText && (
                   <span style={{ display: "block", fontSize: "0.8rem", color: "var(--muted-foreground, #6b7280)", marginTop: "0.25rem" }}>
@@ -974,17 +994,18 @@ export function QuestionField({
       );
     case "textarea":
       return (
-        <textarea
+        <><textarea
           id={question.id}
           value={value}
-          onChange={(e) => onChange(question.id, e.target.value)}
+          maxLength={question.maxLength}
+          onChange={(e) => onChange(question.id, limitTextLength(e.target.value, question.maxLength))}
           disabled={disabled}
           required={question.required}
           rows={3}
           aria-invalid={hasError || undefined}
           aria-describedby={hasError ? `${question.id}-charerror` : undefined}
           style={{ ...baseStyle, resize: "vertical" }}
-        />
+        /><TextLengthCounter value={value} maxLength={question.maxLength} /></>
       );
     case "date":
       return (
@@ -1084,18 +1105,19 @@ export function QuestionField({
       );
     default:
       return (
-        <input
+        <><input
           type="text"
           id={question.id}
           value={value}
-          onChange={(e) => onChange(question.id, e.target.value)}
+          maxLength={question.maxLength}
+          onChange={(e) => onChange(question.id, limitTextLength(e.target.value, question.maxLength))}
           disabled={disabled}
           required={question.required}
           pattern={ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN}
           aria-invalid={hasError || undefined}
           aria-describedby={hasError ? `${question.id}-charerror` : undefined}
           style={baseStyle}
-        />
+        /><TextLengthCounter value={value} maxLength={question.maxLength} /></>
       );
   }
 }

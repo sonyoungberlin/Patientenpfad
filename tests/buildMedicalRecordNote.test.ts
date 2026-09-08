@@ -9,7 +9,7 @@
  * - Leere Werte werden weggelassen
  * - Mehrzeilige Textarea-Werte (z.B. ADDRESS_POSTAL) erhalten ihre
  *   Newlines als Folgezeilen unterhalb des Labels
- * - Pro Zeile wird auf 80 Zeichen gekürzt (mit „…")
+ * - Gespeicherte Inhalte werden vollständig ausgegeben
  */
 
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
@@ -289,18 +289,26 @@ describe("buildMedicalRecordNote – Identität-Block", () => {
 
 });
 
-describe("buildMedicalRecordNote – Textkürzung", () => {
-  it("kürzt Freitexte auf max. 80 Zeichen inkl. Auslassungszeichen", () => {
-    const longText = "a".repeat(100);
+describe("buildMedicalRecordNote – vollständige Inhalte", () => {
+  it("gibt gespeicherten Freitext ohne Output-Kürzung aus", () => {
+    const longText = "a".repeat(200);
     const result = buildMedicalRecordNote({
       answers: { PRESCRIPTION_MEDICATION: longText },
       selected_block_ids: ["REZEPT"],
     });
     const medLine = result.split("\n").find((l) => l.startsWith("Medikament:")) ?? "";
-    // Label "Medikament: " is 12 chars; content should be 80 chars (77 + ...)
     const content = medLine.replace("Medikament: ", "");
-    expect(content.length).toBeLessThanOrEqual(80);
-    expect(content.endsWith("...")).toBe(true);
+    expect(content).toBe(longText);
+    expect(content.endsWith("...")).toBe(false);
+  });
+
+  it("gibt lange Multi-Select-Antworten vollständig aus", () => {
+    const value = ("Option A, " + "Option B ".repeat(20)).trimEnd();
+    const result = buildMedicalRecordNote({
+      answers: { AU_SYMPTOMS: value },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    expect(result).toContain(`Beschwerden: ${value}`);
   });
 
   it("erhält mehrzeiligen Text als Folgezeilen unterhalb des Labels", () => {
@@ -312,6 +320,54 @@ describe("buildMedicalRecordNote – Textkürzung", () => {
     const idx = lines.findIndex((l) => l === "Medikament: Zeile 1");
     expect(idx).toBeGreaterThanOrEqual(0);
     expect(lines[idx + 1]).toBe("Zeile 2");
+  });
+});
+
+describe("buildMedicalRecordNote – care_plan_v1 Frozen Labels", () => {
+  it("verwendet fachliche Frozen-Labels und vollständige Gruppenwerte", () => {
+    const questions = [{
+      id: "CARE_PLAN_HA_NOTES",
+      text: "Notizen / Vereinbarungen?",
+      type: "textarea" as const,
+      required: false,
+      maxLength: 200,
+    }, {
+      id: "CARE_PLAN_SPECIALISTS",
+      text: "Fachärztliche Betreuung?",
+      type: "repeatable_group" as const,
+      required: false,
+      groupSchema: [
+        { key: "specialty", label: "Fachrichtung", type: "text" as const, required: false, maxLength: 200 },
+        { key: "practice", label: "Praxis / Arzt", type: "text" as const, required: false, maxLength: 200 },
+      ],
+    }];
+    const note = buildMedicalRecordNote({
+      answers: {
+        CARE_PLAN_HA_NOTES: "a".repeat(200),
+        CARE_PLAN_SPECIALISTS: JSON.stringify([{ specialty: "Diabetologie", practice: "Dr Zucker" }]),
+      },
+      selected_block_ids: ["CARE_PLAN_HA", "CARE_PLAN_SPECIALIST"],
+      internalWorkflowId: "care_plan_v1",
+      frozenBlocks: [{ id: "CARE_PLAN_HA", label: "Hausärztliche Betreuung", displayOrder: 10, questions: [questions[0]], conditionalRules: [], initiallyVisible: true }, { id: "CARE_PLAN_SPECIALIST", label: "Fachärztliche Betreuung", displayOrder: 20, questions: [questions[1]], conditionalRules: [], initiallyVisible: true }],
+    });
+
+    expect(note).toContain(`Notizen / Vereinbarungen: ${"a".repeat(200)}`);
+    expect(note).toContain("Fachärztliche Betreuung:");
+    expect(note).toContain("Fachrichtung: Diabetologie");
+    expect(note).toContain("Praxis / Arzt: Dr Zucker");
+    expect(note).not.toContain("CARE_PLAN_");
+    expect(note).not.toContain("?");
+  });
+
+  it("behält SHORT_LABELS vor dem Frozen-Fragetext", () => {
+    const question = { ...QUESTION_CATALOG.PRESCRIPTION_MEDICATION, text: "Frozen Langtext" };
+    const note = buildMedicalRecordNote({
+      answers: { PRESCRIPTION_MEDICATION: "Metformin" },
+      selected_block_ids: ["REZEPT"],
+      frozenBlocks: [{ id: "REZEPT", label: "Rezept", displayOrder: 80, questions: [question], conditionalRules: [], initiallyVisible: true }],
+    });
+    expect(note).toContain("Medikament: Metformin");
+    expect(note).not.toContain("Frozen Langtext");
   });
 });
 

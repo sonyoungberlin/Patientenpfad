@@ -21,6 +21,20 @@ describe("internal documentation workflow registry", () => {
     const specialist = blocks[1].questions[0];
     expect(specialist.type).toBe("repeatable_group");
     expect(specialist.maxEntries).toBe(3);
+    expect(specialist.groupSchema?.map((field) => [field.key, field.maxLength])).toEqual([
+      ["specialty", 200],
+      ["practice", 200],
+      ["interval", undefined],
+    ]);
+    expect(blocks.flatMap((block) => block.questions)
+      .filter((question) => question.type === "textarea")
+      .map((question) => [question.id, question.maxLength])).toEqual([
+      ["CARE_PLAN_HA_REASON", 200],
+      ["CARE_PLAN_HA_NOTES", 200],
+      ["CARE_PLAN_SUPPLY_NOTES", 200],
+      ["CARE_PLAN_SUPPORT_NOTES", 200],
+      ["CARE_PLAN_AGREEMENT_TEXT", 200],
+    ]);
     expect(blocks[2].questions[0].type).toBe("multi_select");
     expect(blocks[2].questions[0].required).toBe(false);
   });
@@ -52,6 +66,14 @@ describe("internal documentation workflow registry", () => {
       documentationMode: "component_group",
     });
     expect(blocks[0].questions[0].vaccinationItems?.[0].componentFields).toHaveLength(4);
+    const schema = blocks[0].questions[0].groupSchema ?? [];
+    expect(schema.filter((field) => field.maxLength === 200).map((field) => field.key)).toEqual([
+      "custom_label",
+      "documented_season",
+      "note",
+      "interval_value",
+    ]);
+    expect(schema.find((field) => field.key === "vaccination_id")?.maxLength).toBeUndefined();
   });
 
   it("deep-copies nested vaccination v2 metadata into the frozen snapshot", () => {

@@ -17,8 +17,7 @@
  *   - Nur Felder mit Wert werden ausgegeben.
  *   - Newlines in Textarea-Werten (insbesondere ADDRESS_POSTAL) bleiben
  *     erhalten und werden als Folgezeilen unterhalb des Labels emittiert.
- *   - Pro Zeile werden Inhalte > {@link MAX_LINE_LENGTH} Zeichen mit „…"
- *     abgeschnitten – Mehrzeiligkeit wird dabei nicht zerstört.
+ *   - Gespeicherte Inhalte werden vollständig ausgegeben.
  *   - Keine medizinische Bewertung, keine Empfehlung.
  *   - Keine HTML-Ausgabe, nur Plaintext.
  */
@@ -44,8 +43,6 @@ export type MedicalRecordNoteInput = {
   frozenBlocks?: FrozenBlock[] | null;
   internalWorkflowId?: string | null;
 };
-
-const MAX_LINE_LENGTH = 80;
 
 /**
  * Kurz-Labels für die Krankenblatt-Ausgabe. Diese sind bewusst von
@@ -221,11 +218,6 @@ const VALUE_TRANSFORMS: Record<string, Record<string, string>> = {
   AU_IS_FOLLOWUP: { ja: "Ja", nein: "Nein" },
 };
 
-function truncateLine(value: string): string {
-  if (value.length <= MAX_LINE_LENGTH) return value;
-  return value.slice(0, MAX_LINE_LENGTH - 3) + "...";
-}
-
 /**
  * Formatiert eine repeatable_group-Antwort für die Krankenblatt-Ausgabe.
  * Verwendet die übergebene QuestionDefinition (eingefroren oder aus Catalog).
@@ -279,9 +271,9 @@ function formatRepeatableGroupEntries(
           .split(/\r?\n/)
           .filter((l) => l.trim() !== "");
         lines.push(`     ${field.label}:`);
-        for (const p of parts) lines.push(`       ${truncateLine(p.trim())}`);
+        for (const p of parts) lines.push(`       ${p.trim()}`);
       } else {
-        lines.push(`     ${field.label}: ${truncateLine(trimmed)}`);
+        lines.push(`     ${field.label}: ${trimmed}`);
       }
     }
   });
@@ -319,18 +311,18 @@ function formatFacharztEntries(jsonValue: string): string[] {
         .filter((line) => line.trim() !== "");
       lines.push("     Erkrankung / Grund:");
       parts.forEach((line) => {
-        lines.push(`       ${truncateLine(line.trim())}`);
+        lines.push(`       ${line.trim()}`);
       });
     }
 
     const bereich = (entry as Record<string, unknown>).bereich;
     if (typeof bereich === "string" && bereich.trim() !== "") {
-      lines.push(`     Facharztbereich: ${truncateLine(bereich.trim())}`);
+      lines.push(`     Facharztbereich: ${bereich.trim()}`);
     }
 
     const name = (entry as Record<string, unknown>).name;
     if (typeof name === "string" && name.trim() !== "") {
-      lines.push(`     Name: ${truncateLine(name.trim())}`);
+      lines.push(`     Name: ${name.trim()}`);
     }
 
     const adresse = (entry as Record<string, unknown>).adresse;
@@ -341,7 +333,7 @@ function formatFacharztEntries(jsonValue: string): string[] {
         .filter((line) => line.trim() !== "");
       lines.push("     Adresse:");
       parts.forEach((line) => {
-        lines.push(`       ${truncateLine(line.trim())}`);
+        lines.push(`       ${line.trim()}`);
       });
     }
   });
@@ -349,15 +341,15 @@ function formatFacharztEntries(jsonValue: string): string[] {
   return lines;
 }
 
-function getLabel(questionId: string): string {
-  return SHORT_LABELS[questionId] ?? QUESTION_CATALOG[questionId]?.text ?? questionId;
+function getLabel(questionId: string, questionDef?: QuestionDefinition): string {
+  return SHORT_LABELS[questionId] ?? questionDef?.text ?? QUESTION_CATALOG[questionId]?.text ?? questionId;
 }
 
-function transformValue(questionId: string, raw: string): string {
+function transformValue(questionId: string, raw: string, questionDef?: QuestionDefinition): string {
   const transform = VALUE_TRANSFORMS[questionId];
   if (transform && raw in transform) return transform[raw];
   // yes_no-Felder geben "ja"/"nein" zurück – für die Praxis groß schreiben
-  if (QUESTION_CATALOG[questionId]?.type === "yes_no" && raw.length > 0) {
+  if ((questionDef ?? QUESTION_CATALOG[questionId])?.type === "yes_no" && raw.length > 0) {
     return raw.charAt(0).toUpperCase() + raw.slice(1);
   }
   return raw;
@@ -369,18 +361,22 @@ function transformValue(questionId: string, raw: string): string {
  * ADDRESS_POSTAL). Liefert ein leeres Array, wenn nach dem Trim
  * nichts übrigbleibt.
  */
-function renderQuestionLines(questionId: string, rawValue: string): string[] {
-  const transformed = transformValue(questionId, rawValue);
+function renderQuestionLines(
+  questionId: string,
+  rawValue: string,
+  questionDef?: QuestionDefinition,
+): string[] {
+  const transformed = transformValue(questionId, rawValue, questionDef);
   const parts = transformed
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line !== "");
   if (parts.length === 0) return [];
 
-  const label = getLabel(questionId);
-  const lines: string[] = [`${label}: ${truncateLine(parts[0])}`];
+  const label = getLabel(questionId, questionDef);
+  const lines: string[] = [`${label}: ${parts[0]}`];
   for (let i = 1; i < parts.length; i++) {
-    lines.push(truncateLine(parts[i]));
+    lines.push(parts[i]);
   }
   return lines;
 }
@@ -547,7 +543,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         if (question.type === "repeatable_group") {
           const formatted = formatRepeatableGroupEntries(question.id, raw, question);
           if (formatted.length > 0) {
-            blockLines.push(`${getLabel(question.id)}:`);
+            blockLines.push(`${getLabel(question.id, question)}:`);
             blockLines.push(...formatted);
           }
           continue;
@@ -555,12 +551,12 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
         if (question.type === "confirmation") {
           if (raw === "true") {
-            blockLines.push(`Bestätigt: ${truncateLine(question.text)}`);
+            blockLines.push(`Bestätigt: ${question.text}`);
           }
           continue;
         }
 
-        blockLines.push(...renderQuestionLines(question.id, raw));
+        blockLines.push(...renderQuestionLines(question.id, raw, question));
       }
 
       if (block.id === "VOLLST_NIKOTIN") {

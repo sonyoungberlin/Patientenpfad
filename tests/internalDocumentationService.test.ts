@@ -106,7 +106,7 @@ describe("internal documentation service", () => {
 
     await submitInternalDocumentationSession({
       sessionId: "session-1",
-      answers: { CARE_PLAN_HA_NOTES: "Praxis A" },
+      answers: { CARE_PLAN_HA_NOTES: "a".repeat(200) },
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
     });
 
@@ -123,6 +123,91 @@ describe("internal documentation service", () => {
       },
       data: expect.objectContaining({ status: "completed", submitted_at: expect.any(Date) }),
     });
+    expect(db.updateMany.mock.calls[0][0].data.answers.CARE_PLAN_HA_NOTES).toHaveLength(200);
+  });
+
+  it("weist im Praxisweg 201 Zeichen vor dem Speichern ab", async () => {
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: "care_plan_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      frozen_blocks: buildInternalWorkflowBlocks("care_plan_v1"),
+    });
+
+    await expect(submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: { CARE_PLAN_HA_NOTES: "a".repeat(201) },
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    })).rejects.toMatchObject({ status: 400, invalidQuestionIds: ["CARE_PLAN_HA_NOTES"] });
+    expect(db.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("akzeptiert im Kioskweg 200 Zeichen in einem Repeatable-Unterfeld", async () => {
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "kiosk_direct",
+      internal_workflow_id: "care_plan_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
+      frozen_blocks: buildInternalWorkflowBlocks("care_plan_v1"),
+    });
+
+    await submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: { CARE_PLAN_SPECIALISTS: JSON.stringify([{ specialty: "a".repeat(200) }]) },
+      context: { kind: "kiosk", practiceId: "practice-1", deviceId: "device-1" },
+    });
+    const stored = JSON.parse(db.updateMany.mock.calls[0][0].data.answers.CARE_PLAN_SPECIALISTS);
+    expect(stored[0].specialty).toHaveLength(200);
+  });
+
+  it("weist im Kioskweg 201 Zeichen in einem Repeatable-Unterfeld ab", async () => {
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "kiosk_direct",
+      internal_workflow_id: "care_plan_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
+      frozen_blocks: buildInternalWorkflowBlocks("care_plan_v1"),
+    });
+
+    await expect(submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: { CARE_PLAN_SPECIALISTS: JSON.stringify([{ specialty: "a".repeat(201) }]) },
+      context: { kind: "kiosk", practiceId: "practice-1", deviceId: "device-1" },
+    })).rejects.toMatchObject({ status: 400, invalidQuestionIds: ["CARE_PLAN_SPECIALISTS"] });
+    expect(db.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("interpretiert einen alten Frozen Snapshot ohne maxLength nicht neu", async () => {
+    const frozenBlocks = buildInternalWorkflowBlocks("care_plan_v1");
+    const notes = frozenBlocks[0].questions.find((question) => question.id === "CARE_PLAN_HA_NOTES")!;
+    delete notes.maxLength;
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: "care_plan_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      frozen_blocks: frozenBlocks,
+    });
+
+    await submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: { CARE_PLAN_HA_NOTES: "a".repeat(201) },
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+    expect(db.updateMany.mock.calls[0][0].data.answers.CARE_PLAN_HA_NOTES).toHaveLength(201);
   });
 
   it.each([
@@ -195,6 +280,7 @@ describe("internal documentation service", () => {
           reference_date: "2026-01-31",
           interval_value: "1",
           interval_unit: "Monate",
+          note: "a".repeat(200),
           next_date: "2099-12-31",
         }]),
       },
@@ -205,5 +291,33 @@ describe("internal documentation service", () => {
       db.updateMany.mock.calls[0][0].data.answers.VACCINATION_REVIEW_ITEMS,
     );
     expect(stored[0].next_date).toBe("2026-02-28");
+    expect(stored[0].note).toHaveLength(200);
+  });
+
+  it("weist 201 Zeichen in einem Impfmatrix-Freitextfeld ab", async () => {
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: "vaccination_review_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      frozen_blocks: buildInternalWorkflowBlocks("vaccination_review_v1"),
+    });
+
+    await expect(submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: {
+        VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+          vaccination_id: "rsv",
+          documented_status: "Unklar",
+          further_action: "Impfung ärztlich empfohlen",
+          note: "a".repeat(201),
+        }]),
+      },
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    })).rejects.toMatchObject({ status: 400, invalidQuestionIds: ["VACCINATION_REVIEW_ITEMS"] });
+    expect(db.updateMany).not.toHaveBeenCalled();
   });
 });

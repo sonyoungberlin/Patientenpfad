@@ -137,7 +137,7 @@ function sanitizeRepeatableGroupArray(
     for (const field of def.groupSchema) {
       const val = (entry as Record<string, unknown>)[field.key];
       if (typeof val !== "string") continue;
-      const sliced = val.slice(0, MAX_ANSWER_LENGTH);
+      const sliced = val.slice(0, field.maxLength ?? MAX_ANSWER_LENGTH);
       // Freitextfelder: ungültige Zeichen → gesamte Antwort verwerfen (wie normale Freitexte)
       const technicalVaccinationId = def.presentation === "vaccination_matrix" && field.key === "vaccination_id";
       if (!technicalVaccinationId && (field.type === "text" || field.type === "textarea")) {
@@ -297,7 +297,7 @@ export function sanitizeAnswers(
       continue;
     }
 
-    const sliced = value.slice(0, MAX_ANSWER_LENGTH);
+    const sliced = value.slice(0, qDef.maxLength ?? MAX_ANSWER_LENGTH);
     sanitized[questionId] =
       language === "en"
         ? canonicalizeAnswerValue(questionId, sliced)

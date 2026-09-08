@@ -127,6 +127,32 @@ describe("interne Kiosk-Dokumentation", () => {
     expect(db.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
+  it("antwortet bei 201 Zeichen in einem begrenzten Feld mit HTTP 400", async () => {
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "kiosk_direct",
+      internal_workflow_id: "care_plan_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
+      frozen_blocks: buildInternalWorkflowBlocks("care_plan_v1"),
+    });
+
+    const response = await submitInternal(
+      request("/api/questionnaire-kiosk/internal/session-1", {
+        answers: { CARE_PLAN_HA_NOTES: "a".repeat(201) },
+      }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      invalidQuestionIds: ["CARE_PLAN_HA_NOTES"],
+    });
+    expect(db.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
+  });
+
   it("weist eine Session mit unbekannter Workflow-ID ab", async () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({
       status: "pending",

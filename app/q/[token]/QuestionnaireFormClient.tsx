@@ -18,6 +18,8 @@ import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import {
   MAIN_GATE_QUESTION_IDS,
+  limitTextLength,
+  TextLengthCounter,
   VaccinationMatrixField,
 } from "@/components/questionnaire/QuestionField";
 import {
@@ -205,17 +207,18 @@ function QuestionField({
       );
     case "textarea":
       return (
-        <textarea
+        <><textarea
           id={question.id}
           value={value}
-          onChange={(e) => onChange(question.id, e.target.value)}
+          maxLength={question.maxLength}
+          onChange={(e) => onChange(question.id, limitTextLength(e.target.value, question.maxLength))}
           disabled={disabled}
           required={question.required}
           rows={3}
           aria-invalid={hasError || undefined}
           aria-describedby={hasError ? `${question.id}-charerror` : undefined}
           style={{ ...baseStyle, resize: "vertical" }}
-        />
+        /><TextLengthCounter value={value} maxLength={question.maxLength} /></>
       );
     case "date":
       return (
@@ -329,18 +332,19 @@ function QuestionField({
       );
     default:
       return (
-        <input
+        <><input
           type="text"
           id={question.id}
           value={value}
-          onChange={(e) => onChange(question.id, e.target.value)}
+          maxLength={question.maxLength}
+          onChange={(e) => onChange(question.id, limitTextLength(e.target.value, question.maxLength))}
           disabled={disabled}
           required={question.required}
           pattern={ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN}
           aria-invalid={hasError || undefined}
           aria-describedby={hasError ? `${question.id}-charerror` : undefined}
           style={baseStyle}
-        />
+        /><TextLengthCounter value={value} maxLength={question.maxLength} /></>
       );
   }
 }
@@ -537,14 +541,15 @@ function RepeatableGroupField({
                     ))}
                   </select>
                 ) : field.type === "textarea" ? (
-                  <textarea
+                  <><textarea
                     value={fieldVal}
-                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    maxLength={field.maxLength}
+                    onChange={(e) => updateField(idx, field.key, limitTextLength(e.target.value, field.maxLength))}
                     disabled={disabled}
                     rows={2}
                     style={{ ...baseFieldStyle, resize: "vertical" }}
                     data-rg-field={`${idx}:${field.key}`}
-                  />
+                  /><TextLengthCounter value={fieldVal} maxLength={field.maxLength} /></>
                 ) : field.type === "yes_no" ? (
                   <div
                     style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}
@@ -611,15 +616,16 @@ function RepeatableGroupField({
                     })}
                   </div>
                 ) : (
-                  <input
+                  <><input
                     type="text"
                     value={fieldVal}
-                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    maxLength={field.maxLength}
+                    onChange={(e) => updateField(idx, field.key, limitTextLength(e.target.value, field.maxLength))}
                     disabled={disabled}
                     pattern={ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN}
                     style={baseFieldStyle}
                     data-rg-field={`${idx}:${field.key}`}
-                  />
+                  /><TextLengthCounter value={fieldVal} maxLength={field.maxLength} /></>
                 )}
                 {field.helperText && (
                   <span
