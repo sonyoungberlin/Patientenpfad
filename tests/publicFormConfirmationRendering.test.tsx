@@ -174,7 +174,7 @@ describe("PublicFormView Praxisbestätigung", () => {
 
     expect(container.querySelector('#TEXT[type="text"]')).not.toBeNull();
     expect(container.querySelector("textarea#AREA")).not.toBeNull();
-    expect(container.querySelector("select#SELECT")).not.toBeNull();
+    expect(container.querySelector('[data-q-select="SELECT:A"]')).not.toBeNull();
     expect(container.querySelector('[data-rg-add="GROUP"]')).not.toBeNull();
 
     await cleanup(root, container);

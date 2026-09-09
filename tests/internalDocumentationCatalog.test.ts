@@ -41,8 +41,29 @@ describe("internal documentation workflow registry", () => {
       ["CARE_PLAN_SUPPORT_NOTES", 120],
       ["CARE_PLAN_AGREEMENT_TEXT", 120],
     ]);
-    expect(blocks[2].questions[0].type).toBe("multi_select");
-    expect(blocks[2].questions[0].required).toBe(false);
+    expect(blocks[2].questions.map((question) => question.id)).toEqual([
+      "CARE_PLAN_SPECIALIST_REPORTS",
+      "CARE_PLAN_PRESCRIPTION_RENEWAL",
+      "CARE_PLAN_REFERRAL",
+      "CARE_PLAN_SUPPLY_NOTES",
+    ]);
+    expect(blocks[2].questions.slice(0, 3).map((question) => question.type)).toEqual([
+      "select",
+      "select",
+      "select",
+    ]);
+    expect(blocks[2].questions[0].options).toEqual([
+      "Patientin / Patient",
+      "Praxis",
+      "Patientin / Patient und Praxis",
+      "Keine Anforderung erforderlich",
+    ]);
+    expect(blocks[2].questions[1].options).toEqual([
+      "Ohne vorherige ärztliche Rücksprache",
+      "Nach vorheriger ärztlicher Rücksprache",
+    ]);
+    expect(blocks[2].questions[2].options).toEqual(blocks[2].questions[1].options);
+    expect(blocks[2].questions[3]).toMatchObject({ type: "textarea", maxLength: 120 });
   });
 
   it("uses the care-plan fallback only for a missing workflow ID", () => {

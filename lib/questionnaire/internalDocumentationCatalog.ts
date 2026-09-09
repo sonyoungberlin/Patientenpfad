@@ -18,9 +18,19 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
       { key: "note", label: "Hinweis", type: "text", required: false, maxLength: 120 },
     ],
   },
-  CARE_PLAN_SUPPLY: { id: "CARE_PLAN_SUPPLY", text: "Versorgung und Organisation", type: "multi_select", required: false, options: [
-    "Rezepte digital möglich", "Überweisungen digital möglich", "Facharztberichte werden regelmäßig nachgereicht oder angefordert.",
-    "Medikamentenplan wird regelmäßig aktualisiert.", "Digitale Praxiswege werden bevorzugt genutzt.",
+  CARE_PLAN_SPECIALIST_REPORTS: { id: "CARE_PLAN_SPECIALIST_REPORTS", text: "Facharztberichte – Anforderung", type: "select", required: false, options: [
+    "Patientin / Patient",
+    "Praxis",
+    "Patientin / Patient und Praxis",
+    "Keine Anforderung erforderlich",
+  ] },
+  CARE_PLAN_PRESCRIPTION_RENEWAL: { id: "CARE_PLAN_PRESCRIPTION_RENEWAL", text: "Rezepte für Dauermedikation", type: "select", required: false, options: [
+    "Ohne vorherige ärztliche Rücksprache",
+    "Nach vorheriger ärztlicher Rücksprache",
+  ] },
+  CARE_PLAN_REFERRAL: { id: "CARE_PLAN_REFERRAL", text: "Überweisungen", type: "select", required: false, options: [
+    "Ohne vorherige ärztliche Rücksprache",
+    "Nach vorheriger ärztlicher Rücksprache",
   ] },
   CARE_PLAN_SUPPLY_NOTES: { id: "CARE_PLAN_SUPPLY_NOTES", text: "Notizen / Offene Punkte", type: "textarea", required: false, maxLength: 120 },
   CARE_PLAN_SUPPORT: { id: "CARE_PLAN_SUPPORT", text: "Unterstützende Personen", type: "multi_select", required: false, options: [
@@ -37,7 +47,7 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
 export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   CARE_PLAN_HA: { id: "CARE_PLAN_HA", label: "Hausärztliche Betreuung", displayOrder: 10, questionIds: ["CARE_PLAN_HA_DATE", "CARE_PLAN_HA_REASON", "CARE_PLAN_HA_MEDICAL_INTERVAL", "CARE_PLAN_HA_LAB_INTERVAL", "CARE_PLAN_HA_NOTES"] },
   CARE_PLAN_SPECIALIST: { id: "CARE_PLAN_SPECIALIST", label: "Fachärztliche Betreuung", displayOrder: 20, questionIds: ["CARE_PLAN_SPECIALISTS"] },
-  CARE_PLAN_SUPPLY_BLOCK: { id: "CARE_PLAN_SUPPLY_BLOCK", label: "Versorgung und Organisation", displayOrder: 30, questionIds: ["CARE_PLAN_SUPPLY", "CARE_PLAN_SUPPLY_NOTES"] },
+  CARE_PLAN_SUPPLY_BLOCK: { id: "CARE_PLAN_SUPPLY_BLOCK", label: "Versorgung und Organisation", displayOrder: 30, questionIds: ["CARE_PLAN_SPECIALIST_REPORTS", "CARE_PLAN_PRESCRIPTION_RENEWAL", "CARE_PLAN_REFERRAL", "CARE_PLAN_SUPPLY_NOTES"] },
   CARE_PLAN_SUPPORT_BLOCK: { id: "CARE_PLAN_SUPPORT_BLOCK", label: "Unterstützende Personen", displayOrder: 40, questionIds: ["CARE_PLAN_SUPPORT", "CARE_PLAN_SUPPORT_NOTES"] },
   CARE_PLAN_AGREEMENT_BLOCK: { id: "CARE_PLAN_AGREEMENT_BLOCK", label: "Gemeinsame Vereinbarung", displayOrder: 50, questionIds: ["CARE_PLAN_AGREEMENT", "CARE_PLAN_AGREEMENT_TEXT", "CARE_PLAN_AGREEMENT_DATE"] },
 };

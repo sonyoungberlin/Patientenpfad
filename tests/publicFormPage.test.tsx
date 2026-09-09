@@ -355,7 +355,6 @@ describe("/p/[slug] public form page", () => {
       expect(m).toContain("confirmation email");
       expect(m).toContain("Submit");
       expect(m).toContain("Email address");
-      expect(m).toContain("— please choose —");
       // Patient-Intro englisch
       expect(m).toContain(
         "Please fill in the following information completely.",

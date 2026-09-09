@@ -976,21 +976,27 @@ export function QuestionField({
       );
     case "select":
       return (
-        <select
+        <div
           id={question.id}
-          value={value}
-          onChange={(e) => onChange(question.id, e.target.value)}
-          disabled={disabled}
-          required={question.required}
-          style={baseStyle}
+          role="radiogroup"
+          aria-label={question.text}
+          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 14rem), 1fr))", gap: "0.5rem", marginTop: "0.25rem" }}
         >
-          <option value="">
-            {language === "en" ? "— please choose —" : "— bitte wählen —"}
-          </option>
           {(question.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
+            <button
+              key={opt}
+              type="button"
+              role="radio"
+              aria-checked={value === opt}
+              disabled={disabled}
+              onClick={() => onChange(question.id, opt)}
+              style={{ ...answerChoiceStyle(value === opt, disabled), minHeight: "2.75rem", textAlign: "left" }}
+              data-q-select={`${question.id}:${opt}`}
+            >
+              {opt}
+            </button>
           ))}
-        </select>
+        </div>
       );
     case "textarea":
       return (
