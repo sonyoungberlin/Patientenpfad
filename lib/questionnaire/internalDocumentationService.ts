@@ -10,6 +10,8 @@ import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { validateAnswerCharacters } from "@/lib/questionnaire/validateAnswerCharacters";
 import { validateAnswerLengths } from "@/lib/questionnaire/validateAnswerLengths";
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
+import { isDocumentedContentSnapshot } from "@/lib/questionnaire/documentedContent";
+import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -174,13 +176,23 @@ export async function submitInternalDocumentationSession(input: {
     "de",
     frozenQuestionMap,
   );
-  if (workflow.id === "vaccination_review_v1") {
-    const vaccinationQuestion = questions.find(
-      (question) => question.id === "VACCINATION_REVIEW_ITEMS",
-    );
-    if (!vaccinationQuestion) {
-      throw new InternalDocumentationError("Impfworkflow ist unvollständig.", 400);
+  if (isDocumentedContentSnapshot(frozenBlocks)) {
+    const validation = validateFrozenAnswers(answers, frozenBlocks ?? []);
+    if (!validation.ok) {
+      const error = new InternalDocumentationError(
+        "Bitte prüfen Sie die Pflichtfelder und Auswahlwerte.",
+        400,
+      ) as InternalDocumentationError & { invalidQuestionIds?: string[] };
+      error.invalidQuestionIds = validation.invalidQuestionIds;
+      throw error;
     }
+  }
+  const vaccinationQuestion = questions.find(
+    (question) =>
+      question.type === "repeatable_group" &&
+      question.presentation === "vaccination_matrix",
+  );
+  if (vaccinationQuestion) {
     const normalized = normalizeVaccinationReviewAnswers(
       answers,
       vaccinationQuestion,
@@ -190,7 +202,7 @@ export async function submitInternalDocumentationSession(input: {
     }
     answers = normalized.answers;
   }
-  if (workflow.id === "health_check_v1") {
+  if (!isDocumentedContentSnapshot(frozenBlocks) && workflow.id === "health_check_v1") {
     validateHealthCheckAnswers(answers);
   }
 

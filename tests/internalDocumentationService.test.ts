@@ -349,6 +349,40 @@ describe("internal documentation service", () => {
     expect(stored[0].note).toHaveLength(120);
   });
 
+  it("normalisiert die Impfmatrix anhand der Frozen QuestionDefinition", async () => {
+    const frozenBlocks = buildInternalWorkflowBlocks("vaccination_review_v1");
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: "care_plan_v1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      frozen_blocks: frozenBlocks,
+    });
+
+    await submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: {
+        VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+          vaccination_id: "rsv",
+          documented_status: "Unklar",
+          next_date: "2099-12-31",
+        }]),
+      },
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    const stored = JSON.parse(
+      db.updateMany.mock.calls[0][0].data.answers.VACCINATION_REVIEW_ITEMS,
+    );
+    expect(stored).toEqual([{
+      vaccination_id: "rsv",
+      documented_status: "Unklar",
+    }]);
+  });
+
   it("weist 121 Zeichen in einem Impfmatrix-Freitextfeld ab", async () => {
     db.findUnique.mockResolvedValue({
       status: "pending",

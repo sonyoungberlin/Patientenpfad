@@ -14,6 +14,7 @@ import { buildFrozenBlocks, parseFrozenBlocks, type FrozenBlock } from "./frozen
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
 import { resolveInternalWorkflow } from "./internalWorkflowRegistry";
+import { hasDocumentedBlockContent, isDocumentedContentSnapshot } from "./documentedContent";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -125,14 +126,17 @@ export async function buildQuestionnairePdfBytes(
 
   const derivedValues = computeAllDerivedValues(answers);
   const snapshotBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const useDocumentedContent = session.session_kind === "internal_documentation" &&
+    isDocumentedContentSnapshot(snapshotBlocks);
   const internalWorkflow = session.session_kind === "internal_documentation"
     ? resolveInternalWorkflow(session.internal_workflow_id)
     : null;
   const omitMatchingBlockQuestionLabels = opts.omitMatchingBlockQuestionLabels
-    ?? internalWorkflow?.omitMatchingBlockQuestionLabels
+    ?? internalWorkflow?.legacyOutputPolicy.omitMatchingBlockQuestionLabels
     ?? false;
 
   const blockSections: {
+    id: string;
     label: string;
     questions: QuestionDefinition[];
     visibleQIds: Set<string>;
@@ -182,7 +186,7 @@ export async function buildQuestionnairePdfBytes(
       .filter((q) => !assignedIds.has(q.id));
     blockQuestions.forEach((q) => assignedIds.add(q.id));
     if (blockQuestions.length > 0) {
-      blockSections.push({ label: block.label, questions: blockQuestions, visibleQIds });
+      blockSections.push({ id: block.id, label: block.label, questions: blockQuestions, visibleQIds });
     }
   }
   if (!snapshotBlocks) {
@@ -209,7 +213,7 @@ export async function buildQuestionnairePdfBytes(
   blockSections.forEach(({ visibleQIds }) => visibleQIds.forEach((id) => globalVisibleQIds.add(id)));
   const remaining = questions.filter((q) => !assignedIds.has(q.id));
   if (remaining.length > 0) {
-    blockSections.push({ label: "Weitere Angaben", questions: remaining, visibleQIds: globalVisibleQIds });
+    blockSections.push({ id: "__remaining__", label: "Weitere Angaben", questions: remaining, visibleQIds: globalVisibleQIds });
   }
 
   // ---------------------------------------------------------------------------
@@ -394,7 +398,14 @@ export async function buildQuestionnairePdfBytes(
   y -= sectionGap;
 
   for (const section of blockSections) {
+    const snapshotBlock = renderBlocks.find((block) => block.id === section.id);
     if (
+      useDocumentedContent &&
+      snapshotBlock &&
+      !hasDocumentedBlockContent(snapshotBlock, answers, section.visibleQIds)
+    ) continue;
+    if (
+      !useDocumentedContent &&
       opts.omitEmptyBlocksInPdf &&
       section.questions.every((question) => {
         if (!section.visibleQIds.has(question.id)) return true;
@@ -417,14 +428,20 @@ export async function buildQuestionnairePdfBytes(
     for (const q of section.questions) {
       const value = answers[q.id] ?? "";
       const isVisible = section.visibleQIds.has(q.id);
-      const omitQuestionLabel = omitMatchingBlockQuestionLabels && q.text === section.label;
+      const omitQuestionLabel = (useDocumentedContent || omitMatchingBlockQuestionLabels) && q.text === section.label;
+      const useLegacyHealthCheckOutput = !useDocumentedContent &&
+        session.internal_workflow_id === "health_check_v1";
 
       if (q.type === "confirmation" && value === "true") {
         drawWrappedPair("Bestätigt", q.text);
         continue;
       }
 
-      if (session.internal_workflow_id === "health_check_v1" && q.id === "HEALTH_CHECK_FOLLOW_UP_REQUIRED" && value.trim() !== "") {
+      if (
+        (q.presentation === "health_check_follow_up" ||
+          (useLegacyHealthCheckOutput && q.id === "HEALTH_CHECK_FOLLOW_UP_REQUIRED")) &&
+        value.trim() !== ""
+      ) {
         drawText(
           value === "nein"
             ? "Keine weitere Abklärung oder Kontrolle erforderlich."
@@ -440,7 +457,7 @@ export async function buildQuestionnairePdfBytes(
         drawWrappedPair(q.text, "Nicht abgefragt");
         continue;
       }
-      if (opts.omitUnanswered && value.trim() === "") continue;
+      if ((useDocumentedContent || opts.omitUnanswered) && value.trim() === "") continue;
       if (q.id === "FACHAERZTE") {
         const entries = parseFacharztEntries(value);
         entries.length > 0 ? drawRepGroupEntries(q.text, entries) : drawWrappedPair(q.text, "");
@@ -451,6 +468,14 @@ export async function buildQuestionnairePdfBytes(
         entries.length > 0
           ? drawRepGroupEntries(q.text, entries, !omitQuestionLabel)
           : drawWrappedPair(q.text, "");
+        continue;
+      }
+      if (
+        useLegacyHealthCheckOutput &&
+        q.type === "yes_no" &&
+        q.options?.includes(value)
+      ) {
+        drawWrappedPair(q.text, value);
         continue;
       }
       const displayValue = q.type === "yes_no" && value ? formatYesNoValue(value) : value;

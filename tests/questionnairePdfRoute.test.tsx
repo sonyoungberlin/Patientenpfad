@@ -252,7 +252,7 @@ describe("questionnaire PDF patient reference", () => {
     expect(result.filename).toBe("20260512_004711_Versicherungsdaten.pdf");
   });
 
-  it("rendert den Care Plan ohne doppelte Labels und behält leere Blocküberschriften", async () => {
+  it("rendert den Care Plan ohne doppelte Labels und lässt leere Blocks aus", async () => {
     const workflow = getInternalWorkflow("care_plan_v1")!;
     const frozenBlocks = buildInternalWorkflowBlocks("care_plan_v1");
     const questions = frozenBlocks.flatMap((block) => block.questions);
@@ -280,7 +280,7 @@ describe("questionnaire PDF patient reference", () => {
         title: workflow.title,
         referenceLabel: "Patientenreferenz",
         blockCatalog: workflow.blockCatalog,
-        omitUnanswered: workflow.omitUnansweredInPdf,
+        omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf,
       },
     );
 
@@ -289,11 +289,11 @@ describe("questionnaire PDF patient reference", () => {
       "Hausärztliche Betreuung",
       "Fachärztliche Betreuung",
       "Versorgung und Organisation",
-      "Unterstützende Personen",
       "Gemeinsame Vereinbarung",
     ]) {
       expect(text.match(new RegExp(heading, "g"))).toHaveLength(1);
     }
+    expect(text).not.toContain("Unterstützende Personen");
     expect(text).toContain("1. Eintrag");
     expect(text).toContain("Fachrichtung:");
     expect(text).toContain("Diabetologie");
@@ -327,8 +327,8 @@ describe("questionnaire PDF patient reference", () => {
         title: workflow.title,
         referenceLabel: "Patientenreferenz",
         blockCatalog: workflow.blockCatalog,
-        omitUnanswered: workflow.omitUnansweredInPdf,
-        omitEmptyBlocksInPdf: workflow.omitEmptyBlocksInPdf,
+        omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf,
+        omitEmptyBlocksInPdf: workflow.legacyOutputPolicy.omitEmptyBlocksInPdf,
       },
     );
 
@@ -360,8 +360,8 @@ describe("questionnaire PDF patient reference", () => {
         title: workflow.title,
         referenceLabel: "Patientenreferenz",
         blockCatalog: workflow.blockCatalog,
-        omitUnanswered: workflow.omitUnansweredInPdf,
-        omitEmptyBlocksInPdf: workflow.omitEmptyBlocksInPdf,
+        omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf,
+        omitEmptyBlocksInPdf: workflow.legacyOutputPolicy.omitEmptyBlocksInPdf,
       },
     );
 
@@ -369,6 +369,60 @@ describe("questionnaire PDF patient reference", () => {
     expect(text).toContain("Labor");
     expect(text).toContain("Lipidprofil");
     expect(text).toContain("unauffällig");
+  });
+
+  it("behält die Follow-up-Negation in historischen markerlosen Health-Check Blocks", async () => {
+    const workflow = getInternalWorkflow("health_check_v1")!;
+    const currentBlocks = buildInternalWorkflowBlocks("health_check_v1");
+    const frozenBlocks = currentBlocks.map(({ outputSemantics: _outputSemantics, ...block }) => ({
+      ...block,
+      questions: block.questions.map(({ presentation: _presentation, ...question }) => question),
+    }));
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        session_kind: "internal_documentation",
+        internal_workflow_id: "health_check_v1",
+        selected_block_ids: frozenBlocks.map((block) => block.id),
+        deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+        frozen_blocks: frozenBlocks,
+        answers: { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein" },
+      }),
+      {
+        title: workflow.title,
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: workflow.blockCatalog,
+        omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf,
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+  });
+
+  it("behält leere Blocküberschriften im historischen Care Plan", async () => {
+    const workflow = getInternalWorkflow("care_plan_v1")!;
+    const currentBlocks = buildInternalWorkflowBlocks("care_plan_v1");
+    const frozenBlocks = currentBlocks.map(({ outputSemantics: _outputSemantics, ...block }) => block);
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        session_kind: "internal_documentation",
+        internal_workflow_id: "care_plan_v1",
+        selected_block_ids: frozenBlocks.map((block) => block.id),
+        deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+        frozen_blocks: frozenBlocks,
+        answers: { CARE_PLAN_HA_REASON: "test" },
+      }),
+      {
+        title: workflow.title,
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: workflow.blockCatalog,
+        omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf,
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Unterstützende Personen");
+    expect(text).toContain("Gemeinsame Vereinbarung");
   });
 
   it("renders a normalized v2 vaccination answer without technical, untouched, or stale values", async () => {

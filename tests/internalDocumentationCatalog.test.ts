@@ -5,9 +5,11 @@ describe("internal documentation workflow registry", () => {
     expect(getInternalWorkflow("care_plan_v1")).toMatchObject({
       id: "care_plan_v1",
       title: "Persönlicher Versorgungsplan",
-      omitUnansweredInPdf: true,
-      omitMatchingBlockQuestionLabels: true,
-      includeEmptyBlocksInCopyText: true,
+      legacyOutputPolicy: {
+        omitUnansweredInPdf: true,
+        omitMatchingBlockQuestionLabels: true,
+        includeEmptyBlocksInCopyText: true,
+      },
     });
     expect(getInternalWorkflow("patient_block")).toBeNull();
     expect(getInternalWorkflow("__proto__")).toBeNull();
@@ -53,7 +55,7 @@ describe("internal documentation workflow registry", () => {
     expect(getInternalWorkflow("vaccination_review_v1")).toMatchObject({
       id: "vaccination_review_v1",
       title: "Impfpassprüfung und Beratung",
-      omitUnansweredInPdf: true,
+      legacyOutputPolicy: { omitUnansweredInPdf: true },
     });
     const blocks = buildInternalWorkflowBlocks("vaccination_review_v1");
     expect(blocks).toHaveLength(1);
@@ -84,9 +86,11 @@ describe("internal documentation workflow registry", () => {
     expect(getInternalWorkflow("health_check_v1")).toMatchObject({
       id: "health_check_v1",
       title: "Gesundheitsuntersuchung",
-      omitUnansweredInPdf: true,
-      includeEmptyBlocksInCopyText: false,
-      omitEmptyBlocksInPdf: true,
+      legacyOutputPolicy: {
+        omitUnansweredInPdf: true,
+        includeEmptyBlocksInCopyText: false,
+        omitEmptyBlocksInPdf: true,
+      },
     });
     const blocks = buildInternalWorkflowBlocks("health_check_v1");
     expect(blocks.map((block) => block.label)).toEqual([

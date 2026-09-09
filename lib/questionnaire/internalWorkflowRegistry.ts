@@ -11,10 +11,13 @@ export const INTERNAL_WORKFLOWS = {
     blockIds: Object.keys(INTERNAL_DOCUMENTATION_BLOCK_CATALOG),
     blockCatalog: INTERNAL_DOCUMENTATION_BLOCK_CATALOG,
     questionCatalog: INTERNAL_DOCUMENTATION_QUESTION_CATALOG,
-    omitUnansweredInPdf: true,
-    omitMatchingBlockQuestionLabels: true,
-    includeEmptyBlocksInCopyText: true,
-    omitEmptyBlocksInPdf: false,
+    /** LEGACY ONLY: gilt nur für Snapshots ohne outputSemantics. */
+    legacyOutputPolicy: {
+      omitUnansweredInPdf: true,
+      omitMatchingBlockQuestionLabels: true,
+      includeEmptyBlocksInCopyText: true,
+      omitEmptyBlocksInPdf: false,
+    },
   },
   vaccination_review_v1: {
     id: "vaccination_review_v1",
@@ -23,10 +26,13 @@ export const INTERNAL_WORKFLOWS = {
     blockIds: Object.keys(VACCINATION_REVIEW_BLOCK_CATALOG),
     blockCatalog: VACCINATION_REVIEW_BLOCK_CATALOG,
     questionCatalog: VACCINATION_REVIEW_QUESTION_CATALOG,
-    omitUnansweredInPdf: true,
-    omitMatchingBlockQuestionLabels: false,
-    includeEmptyBlocksInCopyText: false,
-    omitEmptyBlocksInPdf: false,
+    /** LEGACY ONLY: gilt nur für Snapshots ohne outputSemantics. */
+    legacyOutputPolicy: {
+      omitUnansweredInPdf: true,
+      omitMatchingBlockQuestionLabels: false,
+      includeEmptyBlocksInCopyText: false,
+      omitEmptyBlocksInPdf: false,
+    },
   },
   health_check_v1: {
     id: "health_check_v1",
@@ -35,10 +41,13 @@ export const INTERNAL_WORKFLOWS = {
     blockIds: Object.keys(HEALTH_CHECK_BLOCK_CATALOG),
     blockCatalog: HEALTH_CHECK_BLOCK_CATALOG,
     questionCatalog: HEALTH_CHECK_QUESTION_CATALOG,
-    omitUnansweredInPdf: true,
-    omitMatchingBlockQuestionLabels: false,
-    includeEmptyBlocksInCopyText: false,
-    omitEmptyBlocksInPdf: true,
+    /** LEGACY ONLY: gilt nur für Snapshots ohne outputSemantics. */
+    legacyOutputPolicy: {
+      omitUnansweredInPdf: true,
+      omitMatchingBlockQuestionLabels: false,
+      includeEmptyBlocksInCopyText: false,
+      omitEmptyBlocksInPdf: true,
+    },
   },
 } as const;
 
@@ -59,7 +68,7 @@ export function buildInternalWorkflowBlocks(workflowId: InternalWorkflowId): Fro
     workflow.blockIds,
     workflow.blockCatalog,
     workflow.questionCatalog,
-  );
+  ).map((block) => ({ ...block, outputSemantics: "documented-content-v1" as const }));
 }
 
 export function resolveInternalWorkflow(workflowId: unknown): InternalWorkflow | null {

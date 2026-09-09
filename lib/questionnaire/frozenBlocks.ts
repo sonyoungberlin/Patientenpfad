@@ -47,6 +47,8 @@ export type FrozenBlock = {
   conditionalRules: ConditionalRule[];
   /** true = von der Praxis ausgewählt; false = nur via showBlock erreichbar. */
   initiallyVisible: boolean;
+  /** Neue interne Sessions verwenden die gemeinsame Output-/Validierungssemantik. */
+  outputSemantics?: "documented-content-v1";
 };
 
 // ---------------------------------------------------------------------------

@@ -36,6 +36,7 @@ import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
 import { getVaccinationLabel } from "./vaccinationReview";
 import { getInternalWorkflow } from "./internalWorkflowRegistry";
+import { hasDocumentedBlockContent, isDocumentedContentSnapshot } from "./documentedContent";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -428,8 +429,14 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const answers: Record<string, string> = input.answers ?? {};
   const blockIds = new Set(input.selected_block_ids);
   const internalWorkflow = getInternalWorkflow(input.internalWorkflowId);
-  const omitMatchingBlockQuestionLabels = internalWorkflow?.omitMatchingBlockQuestionLabels ?? false;
-  const includeEmptyBlocks = internalWorkflow?.includeEmptyBlocksInCopyText ?? false;
+  const useDocumentedContent = isDocumentedContentSnapshot(input.frozenBlocks);
+  const legacyOutputPolicy = internalWorkflow?.legacyOutputPolicy;
+  const omitMatchingBlockQuestionLabels = useDocumentedContent
+    ? true
+    : legacyOutputPolicy?.omitMatchingBlockQuestionLabels ?? false;
+  const includeEmptyBlocks = useDocumentedContent
+    ? false
+    : legacyOutputPolicy?.includeEmptyBlocksInCopyText ?? false;
 
   const hasAU = blockIds.has("ARBEITSUNFAEHIGKEIT");
   const hasRezept = blockIds.has("REZEPT");
@@ -544,6 +551,8 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         if (raw === "") continue;
         const omitQuestionLabel = omitMatchingBlockQuestionLabels
           && getLabel(question.id, question) === block.label;
+        const useLegacyHealthCheckOutput = !useDocumentedContent
+          && input.internalWorkflowId === "health_check_v1";
 
         if (question.id === "FACHAERZTE") {
           const formatted = formatFacharztEntries(raw);
@@ -567,7 +576,10 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           continue;
         }
 
-        if (input.internalWorkflowId === "health_check_v1" && question.id === "HEALTH_CHECK_FOLLOW_UP_REQUIRED") {
+        if (
+          question.presentation === "health_check_follow_up" ||
+          (useLegacyHealthCheckOutput && question.id === "HEALTH_CHECK_FOLLOW_UP_REQUIRED")
+        ) {
           blockLines.push(
             raw === "nein"
               ? "Keine weitere Abklärung oder Kontrolle erforderlich."
@@ -577,7 +589,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         }
 
         if (
-          input.internalWorkflowId === "health_check_v1" &&
+          useLegacyHealthCheckOutput &&
           question.type === "yes_no" &&
           question.options?.includes(raw)
         ) {
@@ -592,7 +604,11 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         blockLines.push(...renderSmokingSummary(answers));
       }
 
-      if (blockLines.length === 0 && !includeEmptyBlocks) continue;
+      if (
+        useDocumentedContent
+          ? !hasDocumentedBlockContent(block, answers, frozenVisibleIds)
+          : blockLines.length === 0 && !includeEmptyBlocks
+      ) continue;
       lines.push("");
       lines.push(block.label);
       lines.push(...blockLines);

@@ -21,7 +21,7 @@
  *     Server bleibt die letzte Instanz (Bypass-Schutz).
  */
 
-import { QUESTION_CATALOG, type QuestionType, type RepeatableGroupFieldDef } from "./blockCatalog";
+import { QUESTION_CATALOG, type QuestionDefinition, type QuestionType } from "./blockCatalog";
 import type { QuestionnaireLanguage } from "./i18n";
 
 /**
@@ -152,7 +152,7 @@ export type AnswerCharactersValidationResult = {
 export function validateAnswerCharacters(
   rawAnswers: unknown,
   questions: ReadonlyArray<{ id: string; type?: QuestionType }>,
-  definitions?: ReadonlyMap<string, { type: QuestionType; groupSchema?: RepeatableGroupFieldDef[]; presentation?: "vaccination_matrix" }>,
+  definitions?: ReadonlyMap<string, QuestionDefinition>,
 ): AnswerCharactersValidationResult {
   if (
     !rawAnswers ||

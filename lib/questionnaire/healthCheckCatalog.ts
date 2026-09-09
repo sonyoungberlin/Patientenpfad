@@ -43,7 +43,7 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
   },
   HEALTH_CHECK_OTHER_NOTE: { id: "HEALTH_CHECK_OTHER_NOTE", text: "Sonstiger Hinweis", type: "textarea", required: false, maxLength: 120 },
 
-  HEALTH_CHECK_FOLLOW_UP_REQUIRED: { id: "HEALTH_CHECK_FOLLOW_UP_REQUIRED", text: "Weitere Abklärung oder Kontrolle erforderlich", type: "yes_no", required: true, options: FOLLOW_UP_OPTIONS },
+  HEALTH_CHECK_FOLLOW_UP_REQUIRED: { id: "HEALTH_CHECK_FOLLOW_UP_REQUIRED", text: "Weitere Abklärung oder Kontrolle erforderlich", type: "yes_no", required: true, options: FOLLOW_UP_OPTIONS, presentation: "health_check_follow_up" },
   HEALTH_CHECK_NEXT_STEPS: { id: "HEALTH_CHECK_NEXT_STEPS", text: "Maßnahmen", type: "multi_select", required: false, options: NEXT_STEP_OPTIONS },
   HEALTH_CHECK_NEXT_STEPS_NOTE: { id: "HEALTH_CHECK_NEXT_STEPS_NOTE", text: "Kurzer Hinweis", type: "textarea", required: false, maxLength: 120 },
 };

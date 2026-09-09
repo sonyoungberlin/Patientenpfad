@@ -124,7 +124,7 @@ export type QuestionDefinition = {
   /** Anzeigeeinheit für type "number"-Felder, z. B. "cm" oder "kg". */
   unit?: string;
   /** Eng begrenzte workflow-spezifische Darstellung innerhalb des bestehenden Typs. */
-  presentation?: "vaccination_matrix";
+  presentation?: "vaccination_matrix" | "health_check_follow_up";
   /** Version des vollständig eingefrorenen Dokumentationsschemas der Impfmatrix. */
   vaccinationSchemaVersion?: number;
   /** Sichtbare Navigationsgruppen der Impfmatrix. */

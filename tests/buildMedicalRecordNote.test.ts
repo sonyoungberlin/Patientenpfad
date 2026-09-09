@@ -340,7 +340,7 @@ describe("buildMedicalRecordNote – health_check_v1", () => {
       frozenBlocks,
     });
 
-    expect(note).toContain("Allgemeinzustand: unauffällig");
+    expect(note).toContain("Allgemeinzustand: Unauffällig");
     expect(note).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
     expect(note).toContain("Kurzer Hinweis: Keine Kontrolle aktuell erforderlich");
     expect(note).not.toContain("Labor\n");
@@ -408,6 +408,54 @@ describe("buildMedicalRecordNote – health_check_v1", () => {
     expect(note).toContain("Labor\n");
     expect(note).toContain("Lipidprofil: unauffällig");
   });
+
+  it("behält die Follow-up-Negation für historische markerlose Frozen Blocks", () => {
+    const legacyBlocks = frozenBlocks.map(({ outputSemantics: _outputSemantics, ...block }) => ({
+      ...block,
+      questions: block.questions.map(({ presentation: _presentation, ...question }) => question),
+    }));
+    const note = buildMedicalRecordNote({
+      answers: { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein" },
+      selected_block_ids: selectedBlockIds,
+      internalWorkflowId: "health_check_v1",
+      frozenBlocks: legacyBlocks,
+    });
+
+    expect(note).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+  });
+
+  it("behält die rohe Yes-No-Ausgabe für historische Health-Check Blocks", () => {
+    const legacyBlocks = frozenBlocks.map(({ outputSemantics: _outputSemantics, ...block }) => ({
+      ...block,
+      questions: block.questions.map(({ presentation: _presentation, ...question }) => question),
+    }));
+    const note = buildMedicalRecordNote({
+      answers: { HEALTH_CHECK_GENERAL_STATUS: "unauffällig" },
+      selected_block_ids: selectedBlockIds,
+      internalWorkflowId: "health_check_v1",
+      frozenBlocks: legacyBlocks,
+    });
+
+    expect(note).toContain("Allgemeinzustand: unauffällig");
+    expect(note).not.toContain("Allgemeinzustand: Unauffällig");
+  });
+});
+
+describe("buildMedicalRecordNote – legacy care plan", () => {
+  it("behält leere Blocküberschriften in historischen Sessions", () => {
+    const legacyBlocks = buildInternalWorkflowBlocks("care_plan_v1").map(
+      ({ outputSemantics: _outputSemantics, ...block }) => block,
+    );
+    const note = buildMedicalRecordNote({
+      answers: { CARE_PLAN_HA_REASON: "test" },
+      selected_block_ids: legacyBlocks.map((block) => block.id),
+      internalWorkflowId: "care_plan_v1",
+      frozenBlocks: legacyBlocks,
+    });
+
+    expect(note).toContain("Unterstützende Personen");
+    expect(note).toContain("Gemeinsame Vereinbarung");
+  });
 });
 
 describe("buildMedicalRecordNote – care_plan_v1 Frozen Labels", () => {
@@ -473,7 +521,7 @@ describe("buildMedicalRecordNote – care_plan_v1 Frozen Labels", () => {
     expect(note).not.toContain("?");
   });
 
-  it("behält vollständig leere Care-Plan-Blöcke als Überschrift bei", () => {
+  it("lässt vollständig leere Care-Plan-Blöcke aus", () => {
     const note = buildMedicalRecordNote({
       answers: { CARE_PLAN_HA_REASON: "test" },
       selected_block_ids: buildInternalWorkflowBlocks("care_plan_v1").map((block) => block.id),
@@ -481,8 +529,8 @@ describe("buildMedicalRecordNote – care_plan_v1 Frozen Labels", () => {
       frozenBlocks: buildInternalWorkflowBlocks("care_plan_v1"),
     });
 
-    expect(note).toContain("Unterstützende Personen\n\nGemeinsame Vereinbarung");
-    expect(note.match(/Unterstützende Personen/g)).toHaveLength(1);
+    expect(note).not.toContain("Unterstützende Personen");
+    expect(note).not.toContain("Gemeinsame Vereinbarung");
     expect(note).toContain("Anlass / Diagnose: test");
   });
 

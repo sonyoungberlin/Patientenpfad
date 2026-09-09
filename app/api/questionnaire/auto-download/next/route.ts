@@ -5,6 +5,8 @@ import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { PATIENT_CONTEXT_FILTER } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
+import { isDocumentedContentSnapshot } from "@/lib/questionnaire/documentedContent";
+import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import {
   hashQuestionnaireAutoDeviceId,
   isValidQuestionnaireAutoDeviceId,
@@ -92,8 +94,12 @@ export async function GET(req: NextRequest) {
       title: workflow?.title ?? "Fragebogen – Patientenangaben",
       referenceLabel: "Patientenreferenz",
       blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
-      ...(workflow ? { omitUnanswered: workflow.omitUnansweredInPdf } : {}),
-      ...(workflow?.omitEmptyBlocksInPdf ? { omitEmptyBlocksInPdf: true } : {}),
+      ...(!isDocumentedContentSnapshot(parseFrozenBlocks(session.frozen_blocks)) && workflow
+        ? { omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf }
+        : {}),
+      ...(!isDocumentedContentSnapshot(parseFrozenBlocks(session.frozen_blocks)) && workflow?.legacyOutputPolicy.omitEmptyBlocksInPdf
+        ? { omitEmptyBlocksInPdf: true }
+        : {}),
       ...(workflow ? { filenameLabel: workflow.filenameLabel } : {}),
     });
   } catch (buildError) {
