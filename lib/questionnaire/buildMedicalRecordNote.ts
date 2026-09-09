@@ -441,6 +441,8 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     title = "Impfpassprüfung und Beratung";
   } else if (input.internalWorkflowId === "care_plan_v1") {
     title = "Persönlicher Versorgungsplan";
+  } else if (input.internalWorkflowId === "health_check_v1") {
+    title = "Gesundheitsuntersuchung";
   } else if (hasAU && !hasRezept && !hasUeberweisung) {
     title = "AU-Anfrage (digital)";
   } else if (hasRezept && !hasAU && !hasUeberweisung) {
@@ -562,6 +564,24 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           if (raw === "true") {
             blockLines.push(`Bestätigt: ${question.text}`);
           }
+          continue;
+        }
+
+        if (input.internalWorkflowId === "health_check_v1" && question.id === "HEALTH_CHECK_FOLLOW_UP_REQUIRED") {
+          blockLines.push(
+            raw === "nein"
+              ? "Keine weitere Abklärung oder Kontrolle erforderlich."
+              : "Weiteres Vorgehen erforderlich",
+          );
+          continue;
+        }
+
+        if (
+          input.internalWorkflowId === "health_check_v1" &&
+          question.type === "yes_no" &&
+          question.options?.includes(raw)
+        ) {
+          blockLines.push(`${getLabel(question.id, question)}: ${raw}`);
           continue;
         }
 

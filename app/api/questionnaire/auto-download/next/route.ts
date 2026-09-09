@@ -93,6 +93,7 @@ export async function GET(req: NextRequest) {
       referenceLabel: "Patientenreferenz",
       blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
       ...(workflow ? { omitUnanswered: workflow.omitUnansweredInPdf } : {}),
+      ...(workflow?.omitEmptyBlocksInPdf ? { omitEmptyBlocksInPdf: true } : {}),
       ...(workflow ? { filenameLabel: workflow.filenameLabel } : {}),
     });
   } catch (buildError) {

@@ -10,6 +10,7 @@ import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { validateAnswerCharacters } from "@/lib/questionnaire/validateAnswerCharacters";
 import { validateAnswerLengths } from "@/lib/questionnaire/validateAnswerLengths";
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
+import { HEALTH_CHECK_NEXT_STEP_OPTIONS } from "@/lib/questionnaire/healthCheckCatalog";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -34,6 +35,34 @@ type PracticeContext = {
 };
 
 export type InternalDocumentationContext = KioskContext | PracticeContext;
+
+function validateHealthCheckAnswers(answers: Record<string, string>) {
+  const followUp = answers.HEALTH_CHECK_FOLLOW_UP_REQUIRED ?? "";
+  const nextSteps = answers.HEALTH_CHECK_NEXT_STEPS ?? "";
+  const note = answers.HEALTH_CHECK_NEXT_STEPS_NOTE ?? "";
+  const selectedSteps = nextSteps
+    .split(", ")
+    .filter((value) => HEALTH_CHECK_NEXT_STEP_OPTIONS.includes(value));
+
+  if (followUp !== "nein" && followUp !== "ja") {
+    throw new InternalDocumentationError(
+      "Bitte „ja“ oder „nein“ für das weitere Vorgehen auswählen.",
+      400,
+    );
+  }
+  if (followUp === "nein" && selectedSteps.length > 0) {
+    throw new InternalDocumentationError(
+      "Bei „nein“ dürfen keine weiteren Maßnahmen ausgewählt werden.",
+      400,
+    );
+  }
+  if (followUp === "ja" && selectedSteps.length === 0 && note.trim() === "") {
+    throw new InternalDocumentationError(
+      "Bei „ja“ muss eine Maßnahme oder ein Hinweis dokumentiert werden.",
+      400,
+    );
+  }
+}
 
 export async function createInternalDocumentationSession(input: {
   workflowId: unknown;
@@ -178,6 +207,9 @@ export async function submitInternalDocumentationSession(input: {
       throw new InternalDocumentationError(normalized.error, 400);
     }
     answers = normalized.answers;
+  }
+  if (workflow.id === "health_check_v1") {
+    validateHealthCheckAnswers(answers);
   }
 
   const meaningful = Object.values(answers).some(

@@ -324,6 +324,61 @@ describe("buildMedicalRecordNote – vollständige Inhalte", () => {
   });
 });
 
+describe("buildMedicalRecordNote – health_check_v1", () => {
+  const frozenBlocks = buildInternalWorkflowBlocks("health_check_v1");
+  const selectedBlockIds = frozenBlocks.map((block) => block.id);
+
+  it("gibt bewusste Negation und optionale Hinweise vollständig aus", () => {
+    const note = buildMedicalRecordNote({
+      answers: {
+        HEALTH_CHECK_GENERAL_STATUS: "unauffällig",
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+        HEALTH_CHECK_NEXT_STEPS_NOTE: "Keine Kontrolle aktuell erforderlich",
+      },
+      selected_block_ids: selectedBlockIds,
+      internalWorkflowId: "health_check_v1",
+      frozenBlocks,
+    });
+
+    expect(note).toContain("Allgemeinzustand: unauffällig");
+    expect(note).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+    expect(note).toContain("Kurzer Hinweis: Keine Kontrolle aktuell erforderlich");
+    expect(note).not.toContain("Labor\n");
+    expect(note).not.toContain("Urinstatus\n");
+  });
+
+  it("gibt bei ja die aktive Maßnahme aus und erfindet keine Negation", () => {
+    const note = buildMedicalRecordNote({
+      answers: {
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja",
+        HEALTH_CHECK_NEXT_STEPS: "Fachärztliche Abklärung empfohlen",
+      },
+      selected_block_ids: selectedBlockIds,
+      internalWorkflowId: "health_check_v1",
+      frozenBlocks,
+    });
+
+    expect(note).toContain("Weiteres Vorgehen erforderlich");
+    expect(note).toContain("Maßnahmen: Fachärztliche Abklärung empfohlen");
+    expect(note).not.toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+  });
+
+  it("gibt ein ausgefülltes Labor mit Heading und beantworteten Werten aus", () => {
+    const note = buildMedicalRecordNote({
+      answers: {
+        HEALTH_CHECK_LIPID_PROFILE_STATUS: "unauffällig",
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+      },
+      selected_block_ids: selectedBlockIds,
+      internalWorkflowId: "health_check_v1",
+      frozenBlocks,
+    });
+
+    expect(note).toContain("Labor\n");
+    expect(note).toContain("Lipidprofil: unauffällig");
+  });
+});
+
 describe("buildMedicalRecordNote – care_plan_v1 Frozen Labels", () => {
   it("gibt den vollständigen Versorgungsplan ohne redundante Überschriften aus", () => {
     const fullLengthNote = "a".repeat(120);

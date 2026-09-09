@@ -1,6 +1,7 @@
 import { buildFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG, INTERNAL_DOCUMENTATION_QUESTION_CATALOG } from "./internalDocumentationCatalog";
 import { VACCINATION_REVIEW_BLOCK_CATALOG, VACCINATION_REVIEW_QUESTION_CATALOG } from "./vaccinationReviewCatalog";
+import { HEALTH_CHECK_BLOCK_CATALOG, HEALTH_CHECK_QUESTION_CATALOG } from "./healthCheckCatalog";
 
 export const INTERNAL_WORKFLOWS = {
   care_plan_v1: {
@@ -13,6 +14,7 @@ export const INTERNAL_WORKFLOWS = {
     omitUnansweredInPdf: true,
     omitMatchingBlockQuestionLabels: true,
     includeEmptyBlocksInCopyText: true,
+    omitEmptyBlocksInPdf: false,
   },
   vaccination_review_v1: {
     id: "vaccination_review_v1",
@@ -24,6 +26,19 @@ export const INTERNAL_WORKFLOWS = {
     omitUnansweredInPdf: true,
     omitMatchingBlockQuestionLabels: false,
     includeEmptyBlocksInCopyText: false,
+    omitEmptyBlocksInPdf: false,
+  },
+  health_check_v1: {
+    id: "health_check_v1",
+    title: "Gesundheitsuntersuchung",
+    filenameLabel: "Gesundheitsuntersuchung",
+    blockIds: Object.keys(HEALTH_CHECK_BLOCK_CATALOG),
+    blockCatalog: HEALTH_CHECK_BLOCK_CATALOG,
+    questionCatalog: HEALTH_CHECK_QUESTION_CATALOG,
+    omitUnansweredInPdf: true,
+    omitMatchingBlockQuestionLabels: false,
+    includeEmptyBlocksInCopyText: false,
+    omitEmptyBlocksInPdf: true,
   },
 } as const;
 

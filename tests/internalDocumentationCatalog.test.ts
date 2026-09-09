@@ -80,6 +80,77 @@ describe("internal documentation workflow registry", () => {
     expect(schema.find((field) => field.key === "vaccination_id")?.maxLength).toBeUndefined();
   });
 
+  it("exposes health_check_v1 with six modular blocks", () => {
+    expect(getInternalWorkflow("health_check_v1")).toMatchObject({
+      id: "health_check_v1",
+      title: "Gesundheitsuntersuchung",
+      omitUnansweredInPdf: true,
+      includeEmptyBlocksInCopyText: false,
+      omitEmptyBlocksInPdf: true,
+    });
+    const blocks = buildInternalWorkflowBlocks("health_check_v1");
+    expect(blocks.map((block) => block.label)).toEqual([
+      "Klinischer Status",
+      "Messwerte",
+      "Labor",
+      "Urinstatus",
+      "Prävention / Empfehlungen",
+      "Weiteres Vorgehen",
+    ]);
+    const clinical = blocks[0].questions;
+    expect(clinical.slice(0, 9).every((question) =>
+      question.type === "yes_no" &&
+      question.options?.join("|") === "unauffällig|auffällig",
+    )).toBe(true);
+    expect(clinical[9]).toMatchObject({
+      id: "HEALTH_CHECK_CLINICAL_NOTE",
+      type: "textarea",
+      maxLength: 120,
+    });
+    const followUp = blocks[5].questions[0];
+    expect(followUp).toMatchObject({
+      id: "HEALTH_CHECK_FOLLOW_UP_REQUIRED",
+      type: "yes_no",
+      required: true,
+      options: ["nein", "ja"],
+    });
+    expect(blocks[5].questions[1].options).toEqual([
+      "Verlaufskontrolle in unserer Praxis",
+      "Weitere Untersuchung in unserer Praxis geplant",
+      "Weitere Abklärung beim zuständigen Hausarzt empfohlen",
+      "Fachärztliche Abklärung empfohlen",
+    ]);
+    expect(blocks.flatMap((block) => block.questions)
+      .filter((question) => question.type === "textarea")
+      .every((question) => question.maxLength === 120)).toBe(true);
+
+    expect(blocks.map((block) => block.questions.map((question) => question.id))).toEqual([
+      ["HEALTH_CHECK_GENERAL_STATUS", "HEALTH_CHECK_HEART_STATUS", "HEALTH_CHECK_LUNG_STATUS", "HEALTH_CHECK_ABDOMEN_STATUS", "HEALTH_CHECK_VESSELS_PULSES_STATUS", "HEALTH_CHECK_MUSCULOSKELETAL_STATUS", "HEALTH_CHECK_NEUROLOGICAL_STATUS", "HEALTH_CHECK_SKIN_STATUS", "HEALTH_CHECK_PSYCH_STATUS", "HEALTH_CHECK_CLINICAL_NOTE"],
+      ["HEALTH_CHECK_BP_SYSTOLIC", "HEALTH_CHECK_BP_DIASTOLIC", "HEALTH_CHECK_WEIGHT_KG", "HEALTH_CHECK_HEIGHT_CM"],
+      ["HEALTH_CHECK_LIPID_PROFILE_STATUS", "HEALTH_CHECK_FASTING_GLUCOSE_STATUS", "HEALTH_CHECK_LAB_NOTE"],
+      ["HEALTH_CHECK_URINE_STATUS", "HEALTH_CHECK_URINE_NOTE"],
+      ["HEALTH_CHECK_PREVENTION_TOPICS", "HEALTH_CHECK_OTHER_NOTE"],
+      ["HEALTH_CHECK_FOLLOW_UP_REQUIRED", "HEALTH_CHECK_NEXT_STEPS", "HEALTH_CHECK_NEXT_STEPS_NOTE"],
+    ]);
+    expect(blocks[1].questions.map((question) => [question.text, question.unit])).toEqual([
+      ["RR systolisch", "mmHg"],
+      ["RR diastolisch", "mmHg"],
+      ["Gewicht", "kg"],
+      ["Größe", "cm"],
+    ]);
+    expect(blocks[4].questions[0].options).toEqual([
+      "Herz-Kreislauf", "Gewicht", "Ernährung", "Bewegung", "Nikotin", "Alkohol",
+      "Psychische / psychosoziale Belastung", "Familiäre Risiken", "Vorsorge / Früherkennung",
+      "Impfstatus", "Sonstiges",
+    ]);
+    expect(JSON.stringify(blocks)).not.toMatch(/BMI|Hepatitis|vaccination_matrix|LDL|HDL|Triglyceride/);
+
+    const workflow = getInternalWorkflow("health_check_v1")!;
+    const catalogOptions = workflow.questionCatalog.HEALTH_CHECK_GENERAL_STATUS.options!;
+    expect(blocks[0].questions[0].options).toEqual(["unauffällig", "auffällig"]);
+    expect(blocks[0].questions[0].options).not.toBe(catalogOptions);
+  });
+
   it("deep-copies nested vaccination v2 metadata into the frozen snapshot", () => {
     const workflow = getInternalWorkflow("vaccination_review_v1")!;
     const catalogQuestion = workflow.questionCatalog.VACCINATION_REVIEW_ITEMS;

@@ -17,5 +17,5 @@ export default async function InternalDocumentationPage({ params }: { params: Pr
   const questions = frozenBlocks?.flatMap((block) => block.questions) ?? [];
   const workflow = resolveInternalWorkflow(session.internal_workflow_id);
   if (!workflow) notFound();
-  return <main><h1>{workflow.title}</h1><p className="text-muted">Patientenreferenz: {session.patient_reference}</p><QuestionnaireFormClient token={id} submitEndpoint={`/api/questionnaire-kiosk/internal/${id}`} questions={questions} frozenBlocks={frozenBlocks} context="patient" source="kiosk_direct" introText="Interne Dokumentation für die Praxis." patientReference={session.patient_reference} kioskRestartPath="/questionnaire-kiosk/internal" /></main>;
+  return <main><h1>{workflow.title}</h1><p className="text-muted">Patientenreferenz: {session.patient_reference}</p><QuestionnaireFormClient token={id} submitEndpoint={`/api/questionnaire-kiosk/internal/${id}`} questions={questions} frozenBlocks={frozenBlocks} context="patient" source="kiosk_direct" introText="Interne Dokumentation für die Praxis." patientReference={session.patient_reference} kioskRestartPath="/questionnaire-kiosk/internal" internalWorkflowId={workflow.id} /></main>;
 }

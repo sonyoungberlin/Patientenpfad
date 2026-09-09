@@ -77,6 +77,7 @@ export async function GET(
     referenceLabel: "Patientenreferenz",
     blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
     ...(workflow ? { omitUnanswered: workflow.omitUnansweredInPdf } : {}),
+    ...(workflow?.omitEmptyBlocksInPdf ? { omitEmptyBlocksInPdf: true } : {}),
     ...(workflow ? { filenameLabel: workflow.filenameLabel } : {}),
   });
 

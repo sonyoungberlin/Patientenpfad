@@ -307,6 +307,70 @@ describe("questionnaire PDF patient reference", () => {
     expect(text).not.toContain("?");
   });
 
+  it("rendert Health-Check-Negation und lässt leere optionale Blocks aus", async () => {
+    const workflow = getInternalWorkflow("health_check_v1")!;
+    const frozenBlocks = buildInternalWorkflowBlocks("health_check_v1");
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        session_kind: "internal_documentation",
+        internal_workflow_id: "health_check_v1",
+        selected_block_ids: frozenBlocks.map((block) => block.id),
+        deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+        frozen_blocks: frozenBlocks,
+        answers: {
+          HEALTH_CHECK_GENERAL_STATUS: "unauffällig",
+          HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+          HEALTH_CHECK_NEXT_STEPS_NOTE: "Keine Kontrolle aktuell erforderlich",
+        },
+      }),
+      {
+        title: workflow.title,
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: workflow.blockCatalog,
+        omitUnanswered: workflow.omitUnansweredInPdf,
+        omitEmptyBlocksInPdf: workflow.omitEmptyBlocksInPdf,
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Allgemeinzustand");
+    expect(text).toContain("unauffällig");
+    expect(text).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+    expect(text).toContain("Keine Kontrolle aktuell erforderlich");
+    expect(text).not.toContain("Labor");
+    expect(text).not.toContain("Urinstatus");
+  });
+
+  it("rendert ein ausgefülltes Health-Check-Labor mit beantworteten Werten", async () => {
+    const workflow = getInternalWorkflow("health_check_v1")!;
+    const frozenBlocks = buildInternalWorkflowBlocks("health_check_v1");
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        session_kind: "internal_documentation",
+        internal_workflow_id: "health_check_v1",
+        selected_block_ids: frozenBlocks.map((block) => block.id),
+        deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+        frozen_blocks: frozenBlocks,
+        answers: {
+          HEALTH_CHECK_LIPID_PROFILE_STATUS: "unauffällig",
+          HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+        },
+      }),
+      {
+        title: workflow.title,
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: workflow.blockCatalog,
+        omitUnanswered: workflow.omitUnansweredInPdf,
+        omitEmptyBlocksInPdf: workflow.omitEmptyBlocksInPdf,
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Labor");
+    expect(text).toContain("Lipidprofil");
+    expect(text).toContain("unauffällig");
+  });
+
   it("renders a normalized v2 vaccination answer without technical, untouched, or stale values", async () => {
     const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
     const normalized = normalizeVaccinationReviewAnswers({

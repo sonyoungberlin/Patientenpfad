@@ -233,12 +233,15 @@ function QuestionField({
         />
       );
     case "yes_no":
-      return (
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-          {([
+      const yesNoOptions = question.options?.length === 2
+        ? question.options.map((option) => ({ val: option, labelDe: option, labelEn: option }))
+        : [
             { val: "ja", labelDe: "Ja", labelEn: "Yes" },
             { val: "nein", labelDe: "Nein", labelEn: "No" },
-          ] as const).map(({ val, labelDe, labelEn }) => {
+          ];
+      return (
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+          {yesNoOptions.map(({ val, labelDe, labelEn }) => {
             const label = language === "en" ? labelEn : labelDe;
             return (
               <button
@@ -1012,6 +1015,7 @@ export function QuestionnaireFormClient({
   patientReference,
   selfCheckInQrReference,
   kioskRestartPath = "/questionnaire-kiosk/direct",
+  internalWorkflowId,
 }: {
   token: string;
   submitEndpoint?: string;
@@ -1029,6 +1033,7 @@ export function QuestionnaireFormClient({
   patientReference?: string | null;
   selfCheckInQrReference?: string | null;
   kioskRestartPath?: string;
+  internalWorkflowId?: string | null;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -1176,6 +1181,27 @@ export function QuestionnaireFormClient({
       return;
     }
     setMissingRequiredIds(new Set());
+
+    if (internalWorkflowId === "health_check_v1") {
+      const followUp = answersToSend.HEALTH_CHECK_FOLLOW_UP_REQUIRED ?? "";
+      const nextSteps = answersToSend.HEALTH_CHECK_NEXT_STEPS ?? "";
+      const nextStepsNote = answersToSend.HEALTH_CHECK_NEXT_STEPS_NOTE ?? "";
+      const hasNextStep = nextSteps.trim() !== "" && nextSteps !== "[]";
+      const hasNextStepNote = nextStepsNote.trim() !== "";
+      const healthCheckError = followUp === "nein"
+        ? nextSteps.trim() !== ""
+          ? "Bei „nein“ dürfen keine weiteren Maßnahmen ausgewählt werden."
+          : null
+        : followUp === "ja"
+          ? hasNextStep || hasNextStepNote
+            ? null
+            : "Bei „ja“ muss eine Maßnahme oder ein Hinweis dokumentiert werden."
+          : "Bitte „ja“ oder „nein“ auswählen.";
+      if (healthCheckError) {
+        setError(healthCheckError);
+        return;
+      }
+    }
 
     const contactErrors = validateContactAnswers(answersToSend, visibleQuestions);
     if (contactErrors.length > 0) {

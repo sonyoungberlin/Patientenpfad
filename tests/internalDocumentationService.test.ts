@@ -257,6 +257,67 @@ describe("internal documentation service", () => {
     })).rejects.toMatchObject({ status: 409 });
   });
 
+  describe("health_check_v1 Follow-up-Konsistenz", () => {
+    function prepareHealthCheckSession() {
+      db.findUnique.mockResolvedValue({
+        status: "pending",
+        session_kind: "internal_documentation",
+        source: "practice_direct",
+        internal_workflow_id: "health_check_v1",
+        owner_practice_id: "practice-1",
+        created_by_kiosk_device_id: null,
+        deleted_at: null,
+        frozen_blocks: buildInternalWorkflowBlocks("health_check_v1"),
+      });
+    }
+
+    async function submitHealthCheck(answers: Record<string, string>) {
+      prepareHealthCheckSession();
+      return submitInternalDocumentationSession({
+        sessionId: "session-1",
+        answers,
+        context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+      });
+    }
+
+    it("weist ein leeres Pflichtfeld ab", async () => {
+      await expect(submitHealthCheck({})).rejects.toMatchObject({ status: 400 });
+      expect(db.updateMany).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["nein ohne Maßnahmen", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein" }],
+      ["nein mit Hinweis", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein", HEALTH_CHECK_NEXT_STEPS_NOTE: "Hinweis" }],
+      ["ja mit Maßnahme", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja", HEALTH_CHECK_NEXT_STEPS: "Verlaufskontrolle in unserer Praxis" }],
+      ["ja nur mit Hinweis", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja", HEALTH_CHECK_NEXT_STEPS_NOTE: "Hinweis" }],
+    ])("akzeptiert %s", async (_label, answers) => {
+      await submitHealthCheck(answers);
+      expect(db.updateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ["nein mit Maßnahme", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein", HEALTH_CHECK_NEXT_STEPS: "Verlaufskontrolle in unserer Praxis" }],
+      ["ja ohne Maßnahme oder Hinweis", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja" }],
+    ])("weist %s ab", async (_label, answers) => {
+      await expect(submitHealthCheck(answers)).rejects.toMatchObject({ status: 400 });
+      expect(db.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("speichert klinische und Follow-up-Custom-Werte exakt", async () => {
+      await submitHealthCheck({
+        HEALTH_CHECK_GENERAL_STATUS: "unauffällig",
+        HEALTH_CHECK_HEART_STATUS: "auffällig",
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+      });
+
+      expect(db.updateMany.mock.calls[0][0].data.answers).toMatchObject({
+        HEALTH_CHECK_GENERAL_STATUS: "unauffällig",
+        HEALTH_CHECK_HEART_STATUS: "auffällig",
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+      });
+    });
+  });
+
   it("berechnet Impf-next_date serverseitig und verwirft den Clientwert", async () => {
     const frozenBlocks = buildInternalWorkflowBlocks("vaccination_review_v1");
     db.findUnique.mockResolvedValue({

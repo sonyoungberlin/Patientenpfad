@@ -95,6 +95,8 @@ export type PdfRenderOptions = {
   omitUnanswered?: boolean;
   /** Unterdrückt ein Fragenlabel, wenn es exakt der Blocküberschrift entspricht. */
   omitMatchingBlockQuestionLabels?: boolean;
+  /** Interne Workflows können vollständig leere Blocks gezielt auslassen. */
+  omitEmptyBlocksInPdf?: boolean;
   patientCopy?: { returnEmail: string };
 };
 
@@ -392,6 +394,14 @@ export async function buildQuestionnairePdfBytes(
   y -= sectionGap;
 
   for (const section of blockSections) {
+    if (
+      opts.omitEmptyBlocksInPdf &&
+      section.questions.every((question) => {
+        if (!section.visibleQIds.has(question.id)) return true;
+        const value = answers[question.id] ?? "";
+        return value.trim() === "" || value === "[]";
+      })
+    ) continue;
     ensureSpace(lineHeight * 3);
     y -= 4;
     drawText(section.label, { size: 11, bold: true });
@@ -411,6 +421,17 @@ export async function buildQuestionnairePdfBytes(
 
       if (q.type === "confirmation" && value === "true") {
         drawWrappedPair("Bestätigt", q.text);
+        continue;
+      }
+
+      if (session.internal_workflow_id === "health_check_v1" && q.id === "HEALTH_CHECK_FOLLOW_UP_REQUIRED" && value.trim() !== "") {
+        drawText(
+          value === "nein"
+            ? "Keine weitere Abklärung oder Kontrolle erforderlich."
+            : "Weiteres Vorgehen erforderlich",
+          { size: 9 },
+        );
+        y -= 5;
         continue;
       }
 
