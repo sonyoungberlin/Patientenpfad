@@ -49,17 +49,27 @@ function validateHealthCheckAnswers(answers: Record<string, string>) {
 }
 
 export async function createInternalDocumentationSession(input: {
-  workflowId: unknown;
+  workflowId?: unknown;
+  selectedBlockIds?: unknown;
   patientReference: unknown;
   origin: string;
   context: InternalDocumentationContext;
 }) {
-  const workflow = getInternalWorkflow(input.workflowId);
+  const workflow = input.workflowId === undefined
+    ? null
+    : getInternalWorkflow(input.workflowId);
+  const selectedBlockIds = input.selectedBlockIds === undefined
+    ? workflow?.blockIds
+    : input.selectedBlockIds;
   const patientReference =
     typeof input.patientReference === "string"
       ? input.patientReference.trim()
       : "";
-  if (!workflow || !patientReference) {
+  if (
+    !patientReference ||
+    !Array.isArray(selectedBlockIds) ||
+    !selectedBlockIds.every((blockId): blockId is string => typeof blockId === "string")
+  ) {
     throw new InternalDocumentationError(
       "Workflow und Patientenreferenz sind erforderlich.",
       400,
@@ -80,16 +90,16 @@ export async function createInternalDocumentationSession(input: {
         };
 
   const result = await createQuestionnaireSession({
-    selectedBlockIds: [...workflow.blockIds],
+    selectedBlockIds: [...selectedBlockIds],
     patientReference,
     patientLanguage: "de",
     sessionKind: "internal_documentation",
-    internalWorkflowId: workflow.id,
+    internalWorkflowId: workflow?.id ?? null,
     origin: input.origin,
     ...creator,
   });
 
-  return { sessionId: result.sessionId, workflowId: workflow.id };
+  return { sessionId: result.sessionId, workflowId: workflow?.id ?? null };
 }
 
 export async function submitInternalDocumentationSession(input: {

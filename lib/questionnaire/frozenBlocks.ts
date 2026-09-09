@@ -73,6 +73,7 @@ export function buildFrozenBlocks(
   selectedBlockIds: string[],
   blockCatalog: Record<string, QuestionnaireBlock> = BLOCK_CATALOG,
   questionCatalog: Record<string, QuestionDefinition> = QUESTION_CATALOG,
+  blockOrder?: readonly string[],
 ): FrozenBlock[] {
   const selectedSet = new Set(
     selectedBlockIds.filter((id) => id in blockCatalog),
@@ -96,9 +97,16 @@ export function buildFrozenBlocks(
   }
 
   // Sortierung nach displayOrder
-  const orderedIds = [...visited].sort(
-    (a, b) => blockCatalog[a].displayOrder - blockCatalog[b].displayOrder,
-  );
+  const orderIndex = blockOrder
+    ? new Map(blockOrder.map((id, index) => [id, index]))
+    : null;
+  const orderedIds = [...visited].sort((a, b) => {
+    if (orderIndex) {
+      return (orderIndex.get(a) ?? Number.MAX_SAFE_INTEGER)
+        - (orderIndex.get(b) ?? Number.MAX_SAFE_INTEGER);
+    }
+    return blockCatalog[a].displayOrder - blockCatalog[b].displayOrder;
+  });
 
   // Blöcke mit tiefen Question-Snapshots aufbauen; globale Deduplizierung
   const seenQuestionIds = new Set<string>();

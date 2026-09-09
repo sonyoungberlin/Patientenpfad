@@ -24,7 +24,11 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
-import { buildInternalWorkflowBlocks, type InternalWorkflowId } from "@/lib/questionnaire/internalWorkflowRegistry";
+import {
+  buildInternalDocumentationFrozenBlocks,
+  getInternalWorkflow,
+  type InternalWorkflowId,
+} from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
 import {
   buildPracticeConfirmationsFrozenBlock,
@@ -73,7 +77,7 @@ export type CreateSessionInput = {
   /** Herkunft der internen Session; Default bleibt der bisherige Link-Workflow. */
   source?: "internal_link" | "practice_direct" | "kiosk_direct";
   sessionKind?: "patient_communication" | "internal_documentation";
-  internalWorkflowId?: InternalWorkflowId;
+  internalWorkflowId?: InternalWorkflowId | null;
 } & (AccountSessionCreator | KioskSessionCreator);
 
 export type CreateSessionResult = {
@@ -112,15 +116,20 @@ export async function createQuestionnaireSession(
     internalWorkflowId,
   } = input;
 
-  if (sessionKind === "internal_documentation" && !internalWorkflowId) {
-    throw new Error("Interner Workflow fehlt.");
+  const internalSelectedBlockIds = sessionKind === "internal_documentation" &&
+    internalWorkflowId && selectedBlockIds.length === 0
+    ? getInternalWorkflow(internalWorkflowId)?.blockIds ?? selectedBlockIds
+    : selectedBlockIds;
+
+  if (sessionKind === "internal_documentation" && internalSelectedBlockIds.length === 0) {
+    throw new Error("Interne Blocks fehlen.");
   }
   const token = sessionKind === "internal_documentation" ? null : crypto.randomUUID();
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
   const frozenBlocks =
     sessionKind === "internal_documentation"
-      ? buildInternalWorkflowBlocks(internalWorkflowId!)
+      ? buildInternalDocumentationFrozenBlocks(internalSelectedBlockIds)
       : context === "office"
       ? buildFrozenBlocks(selectedBlockIds, OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG)
       : buildFrozenBlocks(selectedBlockIds);
@@ -145,6 +154,9 @@ export async function createQuestionnaireSession(
   const conditionalRules: ConditionalRule[] = frozenBlocks.flatMap(
     (b) => b.conditionalRules,
   );
+  const persistedSelectedBlockIds = sessionKind === "internal_documentation"
+    ? frozenBlocks.filter((block) => block.initiallyVisible).map((block) => block.id)
+    : internalSelectedBlockIds;
 
   const session = await prisma.patientQuestionnaireSession.create({
     data: {
@@ -157,7 +169,7 @@ export async function createQuestionnaireSession(
         : {}),
       patient_reference: patientReference,
       inquiry_session_id: inquirySessionId ?? null,
-      selected_block_ids: selectedBlockIds as Prisma.InputJsonValue,
+      selected_block_ids: persistedSelectedBlockIds as Prisma.InputJsonValue,
       deduplicated_questions:
         deduplicatedQuestions as unknown as Prisma.InputJsonValue,
       frozen_conditional_rules:
@@ -172,7 +184,7 @@ export async function createQuestionnaireSession(
       status: "pending",
       source: source ?? "internal_link",
       session_kind: sessionKind,
-      ...(sessionKind === "internal_documentation"
+      ...(sessionKind === "internal_documentation" && internalWorkflowId
         ? { internal_workflow_id: internalWorkflowId! }
         : {}),
       ...(salutation ? { salutation } : {}),
