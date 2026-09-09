@@ -4,6 +4,74 @@ import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
+import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
+import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
+import {
+  activeQuestionnaireLifecycleFilter,
+  trashQuestionnaireLifecycleFilter,
+} from "@/lib/questionnaire/lifecycle";
+import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { account, error } = await requireQuestionnaireInboxAccess(req);
+    if (error) return error;
+
+    const { id } = await params;
+    const now = new Date();
+    const session = await prisma.patientQuestionnaireSession.findFirst({
+      where: {
+        AND: [
+          { id },
+          getOwnershipFilter(account),
+          { context: "patient" },
+          PRACTICE_VISIBLE_SESSION_FILTER,
+          { status: "completed" },
+          {
+            OR: [
+              {
+                deleted_at: null,
+                AND: [activeQuestionnaireLifecycleFilter(now)],
+              },
+              trashQuestionnaireLifecycleFilter(now),
+            ],
+          },
+        ],
+      },
+      select: {
+        selected_block_ids: true,
+        deduplicated_questions: true,
+        answers: true,
+        frozen_blocks: true,
+        session_kind: true,
+        internal_workflow_id: true,
+      },
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { ok: false, error: "Fragebogen nicht gefunden." },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      detail: buildQuestionnaireInboxDetail(session),
+    });
+  } catch (err) {
+    console.error("[GET questionnaire/[id]]", {
+      message: err instanceof Error ? err.message : "UnknownError",
+    });
+    return NextResponse.json(
+      { ok: false, error: "Antworten konnten nicht geladen werden." },
+      { status: 500 },
+    );
+  }
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -116,6 +184,7 @@ export async function DELETE(
         owner_practice_id: true,
         source: true,
         status: true,
+        submitted_at: true,
         confirmed_at: true,
         deleted_at: true,
         context: true,
@@ -127,7 +196,9 @@ export async function DELETE(
       session.deleted_at != null ||
       !isPatientSession(session) ||
       !ownsSession(account, session) ||
-      !isQuestionnaireVisibleToPractice(session)
+      !isQuestionnaireVisibleToPractice(session) ||
+      session.status !== "completed" ||
+      session.submitted_at == null
     ) {
       return NextResponse.json({ ok: false, error: "Fragebogen nicht gefunden." }, { status: 404 });
     }

@@ -21,7 +21,7 @@ jest.mock("@/lib/prisma", () => ({
     },
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
-      update: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -34,7 +34,7 @@ type PrismaMock = {
   session: { findUnique: jest.Mock };
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
-    update: jest.Mock;
+    updateMany: jest.Mock;
   };
 };
 
@@ -77,7 +77,7 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     });
     const res = await restoreHandler(req, { params: Promise.resolve({ id: "q-1" }) });
     expect(res.status).toBe(401);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("403 wenn Account nicht freigeschaltet", async () => {
@@ -85,7 +85,7 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1/restore");
     const res = await restoreHandler(req, { params: Promise.resolve({ id: "q-1" }) });
     expect(res.status).toBe(403);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("404 wenn Fragebogen nicht existiert", async () => {
@@ -94,7 +94,7 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1/restore");
     const res = await restoreHandler(req, { params: Promise.resolve({ id: "q-1" }) });
     expect(res.status).toBe(404);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("404 bei fremdem Account (auch wenn soft-gelöscht)", async () => {
@@ -106,13 +106,16 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1/restore");
     const res = await restoreHandler(req, { params: Promise.resolve({ id: "q-1" }) });
     expect(res.status).toBe(404);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("404 wenn Session NICHT soft-gelöscht ist", async () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
+      source: "internal_link",
+      status: "completed",
+      confirmed_at: null,
       deleted_at: null,
       context: "patient",
     });
@@ -121,17 +124,20 @@ describe("POST /api/questionnaire/[id]/restore", () => {
       params: Promise.resolve({ id: "q-active" }),
     });
     expect(res.status).toBe(404);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("200 + Restore (setzt deleted_at zurück auf null) für Owner", async () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
-      deleted_at: new Date("2026-05-01T10:00:00Z"),
+      source: "internal_link",
+      status: "completed",
+      confirmed_at: null,
+      deleted_at: new Date(Date.now() - 47 * 60 * 60 * 1000),
       context: "patient",
     });
-    pm.patientQuestionnaireSession.update.mockResolvedValue({});
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
     const req = requestWithCookie("http://localhost/api/questionnaire/q-deleted/restore");
     const res = await restoreHandler(req, {
       params: Promise.resolve({ id: "q-deleted" }),
@@ -139,22 +145,50 @@ describe("POST /api/questionnaire/[id]/restore", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledTimes(1);
-    const call = pm.patientQuestionnaireSession.update.mock.calls[0][0];
-    expect(call.where).toEqual({ id: "q-deleted" });
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
+    const call = pm.patientQuestionnaireSession.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual(expect.objectContaining({
+      id: "q-deleted",
+      context: "patient",
+      status: "completed",
+      deleted_at: { gt: expect.any(Date) },
+    }));
     expect(call.data).toEqual({ deleted_at: null });
     // Es darf KEIN anderes Feld stillschweigend mitgeschrieben werden.
     expect(Object.keys(call.data)).toEqual(["deleted_at"]);
+  });
+
+  it("404 nach Ablauf der 48 Stunden", async () => {
+    mockSession(true, "acc-owner");
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      source: "internal_link",
+      status: "completed",
+      confirmed_at: null,
+      deleted_at: new Date(Date.now() - 49 * 60 * 60 * 1000),
+      context: "patient",
+    });
+
+    const req = requestWithCookie("http://localhost/api/questionnaire/q-expired/restore");
+    const res = await restoreHandler(req, {
+      params: Promise.resolve({ id: "q-expired" }),
+    });
+
+    expect(res.status).toBe(404);
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("500 bei Datenbankfehler im Update", async () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
-      deleted_at: new Date("2026-05-01T10:00:00Z"),
+      source: "internal_link",
+      status: "completed",
+      confirmed_at: null,
+      deleted_at: new Date(Date.now() - 47 * 60 * 60 * 1000),
       context: "patient",
     });
-    pm.patientQuestionnaireSession.update.mockRejectedValue(new Error("DB error"));
+    pm.patientQuestionnaireSession.updateMany.mockRejectedValue(new Error("DB error"));
     const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1/restore");
     const res = await restoreHandler(req, { params: Promise.resolve({ id: "q-1" }) });

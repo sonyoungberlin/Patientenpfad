@@ -2,10 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccessFromCookies } from "@/lib/authz";
-import { BLOCK_CATALOG, QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
-import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
-import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 import {
   STATUS_LABELS,
   deriveDisplayStatus,
@@ -14,56 +12,11 @@ import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisi
 import { PATIENT_CONTEXT_FILTER } from "@/lib/questionnaire/contextFilter";
 import { getOwnershipFilter } from "@/lib/questionnaire/practiceScope";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
-import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
-import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
-import { computeQuestionnaireAttentionHints } from "@/lib/questionnaire/attentionHints";
-import { computeVisibleBlockIds, computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
-import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
-import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
-import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import QuestionnaireAutoDownloadController from "@/components/questionnaire/QuestionnaireAutoDownloadController";
-
-/** Berechnet die Menge der sichtbaren Fragen-IDs für eine Session. */
-function buildVisibleQIds(
-  blockIds: string[],
-  answers: Record<string, string>,
-  derivedValues: DerivedValues,
-  frozenBlocks: FrozenBlock[] | null,
-): Set<string> {
-  const visible = new Set<string>();
-  if (frozenBlocks && frozenBlocks.length > 0) {
-    const allRules = frozenBlocks.flatMap((block) => block.conditionalRules);
-    const visibleBlockIds = computeVisibleBlockIds(
-      allRules,
-      frozenBlocks,
-      answers,
-      derivedValues,
-    );
-    for (const block of frozenBlocks) {
-      if (!visibleBlockIds.has(block.id)) continue;
-      computeVisibleQuestionIds(
-        block.conditionalRules,
-        block.questions.map((q) => q.id),
-        answers,
-        derivedValues as Record<string, number>,
-        buildOptionsByQuestionId(block.questions),
-      ).forEach((id) => visible.add(id));
-    }
-  } else {
-    for (const blockId of blockIds) {
-      const block = BLOCK_CATALOG[blockId];
-      if (!block) continue;
-      computeVisibleQuestionIds(
-        block.conditionalRules ?? [],
-        block.questionIds,
-        answers,
-        derivedValues as Record<string, number>,
-        buildOptionsByQuestionId(block.questionIds.map((id) => QUESTION_CATALOG[id]).filter((q): q is QuestionDefinition => !!q)),
-      ).forEach((id) => visible.add(id));
-    }
-  }
-  return visible;
-}
+import {
+  activeQuestionnaireLifecycleFilter,
+  trashQuestionnaireLifecycleFilter,
+} from "@/lib/questionnaire/lifecycle";
 
 type SearchParams = Promise<{ view?: string | string[] }>;
 
@@ -85,6 +38,7 @@ export default async function QuestionnairesPage({
   const sp = (await searchParams) ?? {};
   const rawView = Array.isArray(sp.view) ? sp.view[0] : sp.view;
   const view: "active" | "trash" = rawView === "trash" ? "trash" : "active";
+  const now = new Date();
 
   const sessions = await prisma.patientQuestionnaireSession.findMany({
     where: {
@@ -102,8 +56,13 @@ export default async function QuestionnairesPage({
         // Soft-Delete: aktive Liste blendet archivierte Sessions aus,
         // Papierkorb zeigt ausschließlich archivierte.
         view === "trash"
-          ? { deleted_at: { not: null } }
-          : { deleted_at: null },
+          ? trashQuestionnaireLifecycleFilter(now)
+          : {
+              AND: [
+                { deleted_at: null },
+                activeQuestionnaireLifecycleFilter(now),
+              ],
+            },
       ],
     },
     orderBy: [
@@ -124,11 +83,8 @@ export default async function QuestionnairesPage({
       token_expires_at: true,
       submitted_at: true,
       submitted_by: true,
-      deduplicated_questions: true,
-      answers: true,
       pdf_downloaded_at: true,
       deleted_at: true,
-      frozen_blocks: true,
       source: true,
       session_kind: true,
       internal_workflow_id: true,
@@ -225,48 +181,16 @@ export default async function QuestionnairesPage({
             const blockIds = Array.isArray(s.selected_block_ids)
               ? (s.selected_block_ids as string[])
               : [];
-            const frozenBlocks = parseFrozenBlocks(s.frozen_blocks);
             const workflow = s.session_kind === "internal_documentation"
               ? resolveInternalWorkflow(s.internal_workflow_id)
               : null;
             const blockCatalog = workflow?.blockCatalog ?? BLOCK_CATALOG;
-            const blockLabels = (frozenBlocks?.map((block) => block.label) ?? blockIds
-              .map((id) => blockCatalog[id]?.label ?? id))
+            const blockLabels = blockIds
+              .map((id) => blockCatalog[id]?.label ?? id)
               .join(", ");
 
             const displayStatus = deriveDisplayStatus(s);
             const statusLabel = STATUS_LABELS[displayStatus] ?? displayStatus;
-
-            const questions = Array.isArray(s.deduplicated_questions)
-              ? (s.deduplicated_questions as QuestionDefinition[])
-              : [];
-            const answers =
-              s.answers !== null &&
-              typeof s.answers === "object" &&
-              !Array.isArray(s.answers)
-                ? (s.answers as Record<string, string>)
-                : null;
-
-            const derivedValues = computeAllDerivedValues(answers ?? {});
-            const visibleQuestionIds = buildVisibleQIds(
-              blockIds,
-              answers ?? {},
-              derivedValues,
-              frozenBlocks,
-            );
-            const attentionHints = computeQuestionnaireAttentionHints(
-              answers ?? {},
-              visibleQuestionIds,
-            );
-
-            const noteText = buildMedicalRecordNote({
-              answers,
-              selected_block_ids: blockIds,
-              frozenBlocks,
-              internalWorkflowId: s.session_kind === "internal_documentation"
-                ? resolveInternalWorkflow(s.internal_workflow_id)?.id ?? null
-                : null,
-            });
 
             return (
               <QuestionnaireCard
@@ -278,12 +202,6 @@ export default async function QuestionnairesPage({
                 displayStatus={displayStatus}
                 statusLabel={statusLabel}
                 submittedBy={s.submitted_by}
-                questions={questions}
-                answers={answers}
-                noteText={noteText}
-                derivedValues={derivedValues}
-                attentionHints={attentionHints}
-                visibleQuestionIds={visibleQuestionIds}
                 pdfDownloadedAt={s.pdf_downloaded_at}
                 deletedAt={s.deleted_at}
                 isFromDigitalRequest={digitalRequestSessionIds.has(s.id)}

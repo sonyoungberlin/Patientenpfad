@@ -150,8 +150,9 @@ describe("/questionnaires list — Practice-Scope", () => {
     // Sichtbarkeitsfilter (PRACTICE_VISIBLE_SESSION_FILTER) an Index 2.
     expect(args.where.AND[2]).toBeDefined();
     expect(args.where.AND[2].OR).toBeDefined();
-    // Soft-Delete-Filter: archivierte Sessions tauchen in der Liste nicht auf.
-    expect(args.where.AND).toEqual(
+    // Soft-Delete- und Lifecycle-Filter: archivierte bzw. abgelaufene
+    // Sessions tauchen in der aktiven Liste nicht auf.
+    expect(args.where.AND[3].AND).toEqual(
       expect.arrayContaining([{ deleted_at: null }]),
     );
   });
@@ -193,6 +194,7 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       owner_practice_id: "p-A",
       source: "internal",
       status: "completed",
+      submitted_at: new Date(),
       confirmed_at: null,
       deleted_at: null,
     });
@@ -211,6 +213,7 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       owner_practice_id: "p-A",
       source: "internal",
       status: "completed",
+      submitted_at: new Date(),
       confirmed_at: null,
       deleted_at: null,
       context: "patient",

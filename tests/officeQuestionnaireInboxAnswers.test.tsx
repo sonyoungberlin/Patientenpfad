@@ -9,7 +9,7 @@
  * - repeatable_group-Antworten werden strukturiert angezeigt
  * - konditionale Fragen nicht abgefragt → „Nicht abgefragt"
  * - PDF-Button erscheint nur bei completed
- * - Löschen-Button immer vorhanden
+ * - Löschen-Button nur bei completed
  * - Zugriff nur für OWNER/ADMIN (requireOfficeQuestionnaireAccessFromCookies)
  */
 
@@ -126,12 +126,12 @@ describe("OfficeQuestionnairePage – Zugriff", () => {
   it("leitet weiter wenn nicht eingeloggt", async () => {
     authMock.mockResolvedValue(null);
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    await expect(OfficeQuestionnairePage()).rejects.toThrow("__REDIRECT__:/");
+    await expect(OfficeQuestionnairePage({})).rejects.toThrow("__REDIRECT__:/");
   });
 
   it("rendert Seite für OWNER", async () => {
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain("Bewerber-Fragebögen");
   });
 });
@@ -153,7 +153,7 @@ describe("OfficeQuestionnairePage – Antworten anzeigen", () => {
         ]),
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain("Antworten anzeigen");
   });
 
@@ -161,7 +161,7 @@ describe("OfficeQuestionnairePage – Antworten anzeigen", () => {
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([
       baseSession({ id: "s-pending", status: "pending" }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).not.toContain("Antworten anzeigen");
   });
 
@@ -177,7 +177,7 @@ describe("OfficeQuestionnairePage – Antworten anzeigen", () => {
         ]),
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).not.toContain("Antworten anzeigen");
   });
 });
@@ -199,7 +199,7 @@ describe("OfficeQuestionnairePage – Antwortinhalt", () => {
         ]),
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain("Vorname");
     expect(markup).toContain("Nachname");
     expect(markup).toContain("Anna");
@@ -218,7 +218,7 @@ describe("OfficeQuestionnairePage – Antwortinhalt", () => {
         ]),
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     // Leere Antwort rendert das Dash-Zeichen
     expect(markup).toContain("–");
   });
@@ -234,7 +234,7 @@ describe("OfficeQuestionnairePage – Antwortinhalt", () => {
         ]),
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain("Führerschein vorhanden?");
     expect(markup).toContain("Ja");
     expect(markup).not.toMatch(/>ja</);
@@ -259,7 +259,7 @@ describe("OfficeQuestionnairePage – Antwortinhalt", () => {
         ]),
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain("Sprachkenntnisse");
     expect(markup).toContain("Eintrag");
   });
@@ -297,7 +297,7 @@ describe("OfficeQuestionnairePage – konditionale Fragen", () => {
         ),
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain("Nicht abgefragt");
   });
 });
@@ -321,19 +321,19 @@ describe("OfficeQuestionnairePage – PDF und Löschen", () => {
         status: "pending",
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain(`data-office-q-pdf="s-comp"`);
     expect(markup).not.toContain(`data-office-q-pdf="s-pend"`);
   });
 
-  it("zeigt Löschen-Button für alle Sessions", async () => {
+  it("zeigt Löschen-Button nur für completed Sessions", async () => {
     pm.patientQuestionnaireSession.findMany.mockResolvedValue([
       baseSession({ id: "s-1", status: "completed", submitted_at: new Date() }),
       baseSession({ id: "s-2", status: "pending" }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain(`data-office-q-delete="s-1"`);
-    expect(markup).toContain(`data-office-q-delete="s-2"`);
+    expect(markup).not.toContain(`data-office-q-delete="s-2"`);
   });
 });
 
@@ -352,7 +352,7 @@ describe("OfficeQuestionnairePage – Catalog-Fallback", () => {
         frozen_blocks: null,
       }),
     ]);
-    const markup = renderToStaticMarkup(await OfficeQuestionnairePage());
+    const markup = renderToStaticMarkup(await OfficeQuestionnairePage({}));
     expect(markup).toContain("Antworten anzeigen");
     expect(markup).toContain("Karl");
   });

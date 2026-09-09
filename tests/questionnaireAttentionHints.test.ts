@@ -7,8 +7,6 @@ import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
 import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
-import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
-import { renderToStaticMarkup } from "react-dom/server";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 
 jest.mock("next/navigation", () => ({
@@ -127,7 +125,7 @@ describe("QuestionnaireAttentionHints output", () => {
     IMPFBERATUNG_REISELAND: "Japan",
   };
 
-  it("erscheint im Krankenblatt und in der Praxis-Karte unter Berechnete Werte", () => {
+  it("erscheint im Krankenblatt", () => {
     const note = buildMedicalRecordNote({
       answers,
       selected_block_ids: ["IMPFBERATUNG"],
@@ -136,22 +134,6 @@ describe("QuestionnaireAttentionHints output", () => {
     expect(note).toContain("Berechnete Werte");
     expect(note).toContain("Reise: länderspezifische Prüfung erforderlich");
 
-    const markup = renderToStaticMarkup(QuestionnaireCard({
-      id: "session-1",
-      displayedAt: TODAY,
-      patientReference: null,
-      blockLabels: "Impfberatung",
-      displayStatus: "completed",
-      statusLabel: "Abgeschlossen",
-      submittedBy: "patient",
-      questions: [],
-      answers,
-      noteText: note,
-      derivedValues: {},
-      attentionHints: hints(answers),
-    }));
-    expect(markup).toContain("Berechnete Werte");
-    expect(markup).toContain("Reise: länderspezifische Prüfung erforderlich");
   });
 
   it("enthält den Hinweis im PDF", async () => {

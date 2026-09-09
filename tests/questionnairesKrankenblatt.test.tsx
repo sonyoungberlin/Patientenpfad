@@ -1,7 +1,6 @@
 /**
  * UI-Tests für die /questionnaires-Seite (Praxis-Funktion):
- * Prüft dass bei completed Sessions der Krankenblatt-Copy-Button angezeigt
- * wird und der lange Text nicht dauerhaft sichtbar ist.
+ * Prüft, dass completed Sessions ihre Detaildaten erst nach Interaktion laden.
  */
 
 import { renderToStaticMarkup } from "react-dom/server";
@@ -37,26 +36,6 @@ jest.mock("@/lib/prisma", () => ({
     },
   },
 }));
-
-// MedicalRecordNoteCopyButton is a client component; mock it for SSR tests
-jest.mock(
-  "@/components/questionnaire/MedicalRecordNoteCopyButton",
-  () =>
-    function MockCopyButton({
-      sessionId,
-    }: {
-      noteText: string;
-      sessionId: string;
-    }) {
-      return (
-        <div data-q-record-note-section={sessionId}>
-          <button type="button" data-q-copy-note={sessionId}>
-            Krankenblatt-Text kopieren
-          </button>
-        </div>
-      );
-    },
-);
 
 // QuestionnaireDeleteButton is a client component; mock it for SSR tests
 jest.mock(
@@ -115,17 +94,19 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
     prismaMock.digitalRequest.findMany.mockResolvedValue([]);
   });
 
-  it("zeigt 'Krankenblatt-Text kopieren'-Button bei completed Session", async () => {
+  it("rendert bei completed nur den Auslöser für den Detailabruf", async () => {
     prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
       COMPLETED_SESSION,
     ]);
 
     const markup = renderToStaticMarkup(await QuestionnairesPage({}));
-    expect(markup).toContain("Krankenblatt-Text kopieren");
-    expect(markup).toContain(`data-q-copy-note="session-completed-1"`);
-    expect(prismaMock.patientQuestionnaireSession.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ select: expect.objectContaining({ source: true }) }),
-    );
+    expect(markup).toContain("Antworten anzeigen");
+    expect(markup).not.toContain("Krankenblatt-Text kopieren");
+    const query = prismaMock.patientQuestionnaireSession.findMany.mock.calls[0][0];
+    expect(query.select).toEqual(expect.objectContaining({ source: true }));
+    expect(query.select).not.toHaveProperty("answers");
+    expect(query.select).not.toHaveProperty("deduplicated_questions");
+    expect(query.select).not.toHaveProperty("frozen_blocks");
   });
 
   it("zeigt keinen sichtbaren Krankenblatt-Text-Inhalt bei completed Session", async () => {
@@ -148,15 +129,15 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
     expect(markup).not.toContain("data-q-copy-note");
   });
 
-  it("zeigt Krankenblatt-Text nur für completed, nicht für pending in gemischter Liste", async () => {
+  it("zeigt den Detailauslöser nur für completed, nicht für pending", async () => {
     prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
       COMPLETED_SESSION,
       PENDING_SESSION,
     ]);
 
     const markup = renderToStaticMarkup(await QuestionnairesPage({}));
-    expect(markup).toContain(`data-q-copy-note="session-completed-1"`);
-    expect(markup).not.toContain(`data-q-copy-note="session-pending-1"`);
+    expect(markup).toContain(`data-q-details="session-completed-1"`);
+    expect(markup).not.toContain(`data-q-details="session-pending-1"`);
   });
 
   it("zeigt keinen Krankenblatt-Text bei abgelaufener Session", async () => {
@@ -190,17 +171,17 @@ describe("QuestionnairesPage – Löschen-Button", () => {
     expect(markup).toContain(`data-q-delete="session-completed-1"`);
   });
 
-  it("zeigt Löschen-Button bei pending Session", async () => {
+  it("zeigt keinen Löschen-Button bei pending Session", async () => {
     prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
       PENDING_SESSION,
     ]);
 
     const markup = renderToStaticMarkup(await QuestionnairesPage({}));
-    expect(markup).toContain("Löschen");
-    expect(markup).toContain(`data-q-delete="session-pending-1"`);
+    expect(markup).not.toContain("Löschen");
+    expect(markup).not.toContain(`data-q-delete="session-pending-1"`);
   });
 
-  it("zeigt Löschen-Button bei abgelaufener Session", async () => {
+  it("zeigt keinen Löschen-Button bei abgelaufener pending Session", async () => {
     const expiredSession = {
       ...PENDING_SESSION,
       id: "session-expired-2",
@@ -211,11 +192,11 @@ describe("QuestionnairesPage – Löschen-Button", () => {
     ]);
 
     const markup = renderToStaticMarkup(await QuestionnairesPage({}));
-    expect(markup).toContain("Löschen");
-    expect(markup).toContain(`data-q-delete="session-expired-2"`);
+    expect(markup).not.toContain("Löschen");
+    expect(markup).not.toContain(`data-q-delete="session-expired-2"`);
   });
 
-  it("zeigt pro Session genau einen Löschen-Button", async () => {
+  it("zeigt den Löschen-Button nur für completed Sessions", async () => {
     prismaMock.patientQuestionnaireSession.findMany.mockResolvedValue([
       COMPLETED_SESSION,
       PENDING_SESSION,
@@ -223,6 +204,6 @@ describe("QuestionnairesPage – Löschen-Button", () => {
 
     const markup = renderToStaticMarkup(await QuestionnairesPage({}));
     expect(markup).toContain(`data-q-delete="session-completed-1"`);
-    expect(markup).toContain(`data-q-delete="session-pending-1"`);
+    expect(markup).not.toContain(`data-q-delete="session-pending-1"`);
   });
 });

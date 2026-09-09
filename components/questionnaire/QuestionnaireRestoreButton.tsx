@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 type Props = {
   sessionId: string;
+  restoreUrl?: string;
 };
 
 /**
@@ -14,14 +15,17 @@ type Props = {
  * geladen, wodurch der Eintrag aus der Papierkorb-Ansicht in die aktive
  * Liste wandert.
  */
-export default function QuestionnaireRestoreButton({ sessionId }: Props) {
+export default function QuestionnaireRestoreButton({
+  sessionId,
+  restoreUrl = `/api/questionnaire/${sessionId}/restore`,
+}: Props) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
   async function handleRestore() {
     setPending(true);
     try {
-      const res = await fetch(`/api/questionnaire/${sessionId}/restore`, {
+      const res = await fetch(restoreUrl, {
         method: "POST",
       });
       if (res.ok) {

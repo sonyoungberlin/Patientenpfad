@@ -4,6 +4,7 @@ import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
+import { questionnaireTrashCutoff } from "@/lib/questionnaire/lifecycle";
 
 /**
  * POST /api/questionnaire/[id]/restore
@@ -25,6 +26,7 @@ export async function POST(
     if (error) return error;
 
     const { id } = await params;
+    const trashCutoff = questionnaireTrashCutoff(new Date());
 
     const session = await prisma.patientQuestionnaireSession.findUnique({
       where: { id },
@@ -43,6 +45,8 @@ export async function POST(
       !session ||
       // Nur soft-gelöschte Sessions sind wiederherstellbar.
       session.deleted_at == null ||
+      session.deleted_at <= trashCutoff ||
+      session.status !== "completed" ||
       !isPatientSession(session) ||
       !ownsSession(account, session) ||
       // Spiegelt die DELETE-Sichtbarkeit: unbestätigte Website-Sessions sind
@@ -58,10 +62,22 @@ export async function POST(
     // Restore: nur `deleted_at` zurücksetzen. Antworten und alle anderen
     // Felder bleiben unangetastet, damit die Wiederherstellung exakt den
     // Zustand vor dem Soft-Delete reproduziert.
-    await prisma.patientQuestionnaireSession.update({
-      where: { id },
+    const result = await prisma.patientQuestionnaireSession.updateMany({
+      where: {
+        id,
+        context: "patient",
+        status: "completed",
+        deleted_at: { gt: trashCutoff },
+      },
       data: { deleted_at: null },
     });
+
+    if (result.count !== 1) {
+      return NextResponse.json(
+        { ok: false, error: "Fragebogen nicht gefunden." },
+        { status: 404 },
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

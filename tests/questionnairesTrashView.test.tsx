@@ -113,14 +113,31 @@ beforeEach(() => {
   pm.digitalRequest.findMany.mockResolvedValue([]);
 });
 
-function pickDeletedAtFilter(call: { where: { AND: unknown[] } }) {
-  // Suche das `deleted_at`-Fragment im AND-Array, ohne dessen Position fest
-  // zu verdrahten.
-  const and = call.where.AND;
-  return and.find(
-    (f): f is { deleted_at: unknown } =>
-      typeof f === "object" && f !== null && "deleted_at" in f,
-  );
+function pickDeletedAtFilter(value: unknown): {
+  deleted_at: unknown;
+  status?: unknown;
+  session_kind?: unknown;
+} | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  if ("deleted_at" in value) {
+    return value as {
+      deleted_at: unknown;
+      status?: unknown;
+      session_kind?: unknown;
+    };
+  }
+  for (const child of Object.values(value)) {
+    if (Array.isArray(child)) {
+      for (const entry of child) {
+        const found = pickDeletedAtFilter(entry);
+        if (found) return found;
+      }
+    } else {
+      const found = pickDeletedAtFilter(child);
+      if (found) return found;
+    }
+  }
+  return undefined;
 }
 
 describe("QuestionnairesPage – Papierkorb-Toggle", () => {
@@ -152,7 +169,9 @@ describe("QuestionnairesPage – Papierkorb-Toggle", () => {
 
     const call = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(pickDeletedAtFilter(call)).toEqual({
-      deleted_at: { not: null },
+      status: "completed",
+      session_kind: "patient_communication",
+      deleted_at: { gt: expect.any(Date) },
     });
 
     expect(markup).toContain('data-q-view-toggle="trash"');

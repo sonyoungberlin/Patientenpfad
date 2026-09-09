@@ -140,6 +140,10 @@ describe("DELETE /api/questionnaire/[id]", () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
+      source: "internal_link",
+      status: "completed",
+      submitted_at: new Date(),
+      confirmed_at: null,
       deleted_at: null,
       context: "patient",
     });
@@ -161,30 +165,34 @@ describe("DELETE /api/questionnaire/[id]", () => {
     expect(Object.keys(call.data)).toEqual(["deleted_at"]);
   });
 
-  it("200 und Soft Delete für pending Session", async () => {
+  it("404 und kein Soft Delete für pending Session", async () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
+      source: "internal_link",
+      status: "pending",
+      submitted_at: null,
+      confirmed_at: null,
       deleted_at: null,
       context: "patient",
     });
-    pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-pending");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-pending" }) });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(404);
     const json = await res.json();
-    expect(json.ok).toBe(true);
+    expect(json.ok).toBe(false);
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
-    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledWith({
-      where: { id: "q-pending" },
-      data: { deleted_at: expect.any(Date) },
-    });
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 
   it("500 bei Datenbankfehler", async () => {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-owner",
+      source: "internal_link",
+      status: "completed",
+      submitted_at: new Date(),
+      confirmed_at: null,
       deleted_at: null,
       context: "patient",
     });

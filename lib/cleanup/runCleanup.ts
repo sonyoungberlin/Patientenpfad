@@ -8,6 +8,11 @@ import {
   STATUS_AWAITING_EMAIL_CONFIRMATION,
   WEBSITE_SESSION_SOURCE,
 } from "@/lib/websiteForms/constants";
+import {
+  expiredCompletedQuestionnaireFilter,
+  expiredPendingQuestionnaireFilter,
+  expiredTrashQuestionnaireFilter,
+} from "@/lib/questionnaire/lifecycle";
 
 export type CleanupCounts = {
   dryRun: boolean;
@@ -32,7 +37,7 @@ async function countCandidates(
   const [trash, unconfirmed, completed, pending, digitalRequests, caseSessions, inquirySessions] =
     await Promise.all([
       prisma.patientQuestionnaireSession.count({
-        where: { deleted_at: { lt: cutoff } },
+        where: expiredTrashQuestionnaireFilter(now),
       }),
       prisma.patientQuestionnaireSession.count({
         where: {
@@ -44,21 +49,10 @@ async function countCandidates(
         },
       }),
       prisma.patientQuestionnaireSession.count({
-        where: {
-          deleted_at: null,
-          status: "completed",
-          // null submitted_at wird durch SQL-Semantik von lt ausgeschlossen
-          submitted_at: { lt: cutoff },
-          NOT: { submitted_at: null },
-        },
+        where: expiredCompletedQuestionnaireFilter(now),
       }),
-      // Explizit nur "pending" — unbekannte Statuswerte werden NICHT gelöscht.
       prisma.patientQuestionnaireSession.count({
-        where: {
-          deleted_at: null,
-          status: "pending",
-          createdAt: { lt: cutoff },
-        },
+        where: expiredPendingQuestionnaireFilter(now),
       }),
       prisma.digitalRequest.count({
         where: { createdAt: { lt: cutoff } },
@@ -88,8 +82,8 @@ async function countCandidates(
  * Führt den physischen Cleanup durch.
  *
  * Reihenfolge:
- *  1. DR.questionnaire_session_id → null (wo DR überlebt, Session aber gelöscht wird)
- *  2. PatientQuestionnaireSession löschen
+ *  1. PatientQuestionnaireSession mit erneutem Lifecycle-Check löschen
+ *  2. DR.questionnaire_session_id → null (wo DR überlebt und Session gelöscht wurde)
  *  3. DigitalRequest löschen
  */
 async function executeCleanup(
@@ -100,43 +94,67 @@ async function executeCleanup(
   // Vorab-Counts für das Reporting — müssen vor den Deletes stehen.
   const preCounts = await countCandidates(now, cutoff, processCutoff);
 
+  const questionnaireDeletionConditions = [
+    expiredTrashQuestionnaireFilter(now),
+    {
+      deleted_at: null,
+      source: WEBSITE_SESSION_SOURCE,
+      status: STATUS_AWAITING_EMAIL_CONFIRMATION,
+      confirmed_at: null,
+      confirm_token_expires_at: { lte: now },
+    },
+    expiredCompletedQuestionnaireFilter(now),
+    expiredPendingQuestionnaireFilter(now),
+  ];
+
   const sessionIdsToDelete = (
     await prisma.patientQuestionnaireSession.findMany({
       where: {
-        OR: [
-          { deleted_at: { lt: cutoff } },
-          {
-            deleted_at: null,
-            source: WEBSITE_SESSION_SOURCE,
-            status: STATUS_AWAITING_EMAIL_CONFIRMATION,
-            confirmed_at: null,
-            confirm_token_expires_at: { lt: now },
-          },
-          {
-            deleted_at: null,
-            status: "completed",
-            submitted_at: { lt: cutoff },
-            NOT: { submitted_at: null },
-          },
-          // Explizit nur "pending" — kein Catch-all für unbekannte Statuswerte.
-          {
-            deleted_at: null,
-            status: "pending",
-            createdAt: { lt: cutoff },
-          },
-        ],
+        OR: questionnaireDeletionConditions,
       },
       select: { id: true },
       take: 5000,
     })
   ).map((s) => s.id);
 
-  // 1. DR.questionnaire_session_id null setzen für DRs, die NICHT ebenfalls gelöscht werden.
+  // 1. Sessions physisch löschen. Der Lifecycle-Filter wird hier erneut
+  // geprüft, damit eine parallel eingereichte Session erhalten bleibt.
+  const sessionResult =
+    sessionIdsToDelete.length > 0
+      ? await prisma.patientQuestionnaireSession.deleteMany({
+          where: {
+            id: { in: sessionIdsToDelete },
+            OR: questionnaireDeletionConditions,
+          },
+        })
+      : { count: 0 };
+
+  // 2. Nur Referenzen tatsächlich gelöschter Sessions lösen. Wenn der
+  // Lifecycle-Check einzelne Kandidaten wegen eines Race verworfen hat,
+  // bleiben deren Verknüpfungen erhalten.
+  let deletedSessionIds = sessionIdsToDelete;
+  if (
+    sessionResult.count > 0 &&
+    sessionResult.count < sessionIdsToDelete.length
+  ) {
+    const survivingIds = new Set(
+      (
+        await prisma.patientQuestionnaireSession.findMany({
+          where: { id: { in: sessionIdsToDelete } },
+          select: { id: true },
+        })
+      ).map((session) => session.id),
+    );
+    deletedSessionIds = sessionIdsToDelete.filter((id) => !survivingIds.has(id));
+  } else if (sessionResult.count === 0) {
+    deletedSessionIds = [];
+  }
+
   let nulledSessionRefs = 0;
-  if (sessionIdsToDelete.length > 0) {
+  if (deletedSessionIds.length > 0) {
     const updateResult = await prisma.digitalRequest.updateMany({
       where: {
-        questionnaire_session_id: { in: sessionIdsToDelete },
+        questionnaire_session_id: { in: deletedSessionIds },
         // DR bleibt erhalten (wird nicht im selben Lauf gelöscht)
         NOT: { createdAt: { lt: cutoff } },
       },
@@ -144,14 +162,6 @@ async function executeCleanup(
     });
     nulledSessionRefs = updateResult.count;
   }
-
-  // 2. Sessions physisch löschen.
-  const sessionResult =
-    sessionIdsToDelete.length > 0
-      ? await prisma.patientQuestionnaireSession.deleteMany({
-          where: { id: { in: sessionIdsToDelete } },
-        })
-      : { count: 0 };
 
   // 3. DigitalRequests physisch löschen (alle, unabhängig vom Status).
   const drResult = await prisma.digitalRequest.deleteMany({

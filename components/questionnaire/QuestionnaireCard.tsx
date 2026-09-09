@@ -1,13 +1,8 @@
-import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { getStatusBadgeStyle } from "@/lib/questionnaire/displayStatus";
-import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
 import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
 import QuestionnairePatientAssignment from "./QuestionnairePatientAssignment";
-import { buildDerivedValueLines } from "@/lib/questionnaire/formatAnswer";
-import type { DerivedValues } from "@/lib/questionnaire/derivedValues";
-import type { QuestionnaireAttentionHint } from "@/lib/questionnaire/attentionHints";
-import AnswersDisclosure from "./AnswersDisclosure";
+import QuestionnaireDetailsDisclosure from "./QuestionnaireDetailsDisclosure";
 
 /**
  * Reine Präsentations-Komponente (Server Component) für eine einzelne
@@ -29,14 +24,6 @@ export type QuestionnaireCardProps = {
   displayStatus: string;
   statusLabel: string;
   submittedBy: string | null;
-  questions: QuestionDefinition[];
-  answers: Record<string, string> | null;
-  /**
-   * Vorberechneter Krankenblatt-Text. Wird nur bei `displayStatus === "completed"`
-   * angezeigt; in allen anderen Fällen ignoriert. Der Aufrufer kann daher für
-   * nicht-completed Sessions einen leeren String übergeben.
-   */
-  noteText: string;
   /**
    * Zeitpunkt des ersten erfolgreichen PDF-Downloads (oder `null`, falls noch
    * nie heruntergeladen). Steuert nur die Beschriftung des PDF-Buttons sowie
@@ -59,20 +46,7 @@ export type QuestionnaireCardProps = {
   /** Technischer Entstehungsweg der Fragebogensession. */
   source?: string | null;
   sessionKind?: string | null;
-  /**
-   * Berechnete Werte (AGE, BMI, Pack-Years) für die Praxisanzeige.
-   * Wird von der übergeordneten Seite vorberechnet und übergeben.
-   * Nur im Status "completed" angezeigt.
-   */
-  derivedValues?: DerivedValues | null;
-  attentionHints?: QuestionnaireAttentionHint[];
-  /**
-   * Menge der sichtbaren Fragen-IDs für diese Session.
-   * Wenn vorhanden: nicht sichtbare Fragen → „Nicht abgefragt";
-   * sichtbar aber unbeantwortet → „–".
-   * Wenn nicht vorhanden (Legacy): leere Antworten → „–".
-   */
-  visibleQuestionIds?: ReadonlySet<string>;};
+};
 
 export default function QuestionnaireCard({
   id,
@@ -82,17 +56,11 @@ export default function QuestionnaireCard({
   displayStatus,
   statusLabel,
   submittedBy,
-  questions,
-  answers,
-  noteText,
   pdfDownloadedAt = null,
   deletedAt = null,
   isFromDigitalRequest = false,
   source = null,
   sessionKind = null,
-  derivedValues = null,
-  attentionHints = [],
-  visibleQuestionIds,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
   const sourceLabel = sessionKind === "internal_documentation"
@@ -199,7 +167,6 @@ export default function QuestionnaireCard({
               ✓ PDF heruntergeladen
             </div>
           )}
-          <MedicalRecordNoteCopyButton sessionId={id} noteText={noteText} />
         </>
       )}
 
@@ -220,50 +187,18 @@ export default function QuestionnaireCard({
         </div>
       )}
 
-      {/* Berechnete Werte (nur im completed-Status) */}
-      {displayStatus === "completed" && derivedValues && (() => {
-        const dvLines = buildDerivedValueLines(derivedValues);
-        if (dvLines.length === 0 && attentionHints.length === 0) return null;
-        return (
-          <div
-            data-q-derived-values={id}
-            style={{
-              padding: "0.4rem 0.6rem",
-              background: "var(--muted, #f1f5f9)",
-              borderRadius: "var(--radius)",
-              fontSize: "0.85rem",
-            }}
-          >
-            <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>Berechnete Werte</div>
-            {dvLines.map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
-            {attentionHints.map((hint) => (
-              <div key={hint.id}>⚠ {hint.label}</div>
-            ))}
-          </div>
-        );
-      })()}
-
-      {/* Answers */}
-      {answers && questions.length > 0 && (
-        <AnswersDisclosure
-          questions={questions}
-          answers={answers}
-          visibleQuestionIds={visibleQuestionIds}
-        />
-      )}
+      {displayStatus === "completed" && <QuestionnaireDetailsDisclosure sessionId={id} />}
 
       {/* Delete bzw. Restore — Papierkorb-Einträge bekommen den
           Wiederherstellen-Button statt eines weiteren Lösch-Buttons. */}
       {isDeleted ? (
         <QuestionnaireRestoreButton sessionId={id} />
-      ) : (
+      ) : displayStatus === "completed" ? (
         <QuestionnaireDeleteButton
           sessionId={id}
           patientReference={patientReference}
         />
-      )}
+      ) : null}
     </div>
   );
 }

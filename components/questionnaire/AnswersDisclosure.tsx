@@ -57,19 +57,17 @@ export type AnswersDisclosureProps = {
   questions: QuestionDefinition[];
   answers: Record<string, string>;
   visibleQuestionIds?: ReadonlySet<string>;
+  showSummary?: boolean;
 };
 
 export default function AnswersDisclosure({
   questions,
   answers,
   visibleQuestionIds,
+  showSummary = true,
 }: AnswersDisclosureProps) {
   if (questions.length === 0) return null;
-  return (
-    <details style={{ marginTop: "0.5rem" }}>
-      <summary style={{ cursor: "pointer", fontWeight: 500, fontSize: "0.9rem" }}>
-        Antworten anzeigen
-      </summary>
+  const answersList = (
       <ul
         style={{
           listStyle: "none",
@@ -90,6 +88,14 @@ export default function AnswersDisclosure({
           </li>
         ))}
       </ul>
+  );
+  if (!showSummary) return answersList;
+  return (
+    <details style={{ marginTop: "0.5rem" }}>
+      <summary style={{ cursor: "pointer", fontWeight: 500, fontSize: "0.9rem" }}>
+        Antworten anzeigen
+      </summary>
+      {answersList}
     </details>
   );
 }

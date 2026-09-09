@@ -18,6 +18,11 @@ import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { computeVisibleQuestionIds } from "@/lib/questionnaire/conditionalLogic";
 import OfficeQuestionnaireDeleteButton from "@/components/office/OfficeQuestionnaireDeleteButton";
 import AnswersDisclosure from "@/components/questionnaire/AnswersDisclosure";
+import QuestionnaireRestoreButton from "@/components/questionnaire/QuestionnaireRestoreButton";
+import {
+  activeQuestionnaireLifecycleFilter,
+  trashQuestionnaireLifecycleFilter,
+} from "@/lib/questionnaire/lifecycle";
 
 function buildOfficeQuestions(
   blockIds: string[],
@@ -72,16 +77,32 @@ function buildOfficeVisibleQIds(
   return visible;
 }
 
-export default async function OfficeQuestionnairePage() {
+type SearchParams = Promise<{ view?: string | string[] }>;
+
+export default async function OfficeQuestionnairePage({
+  searchParams,
+}: { searchParams?: SearchParams }) {
   const account = await requireOfficeQuestionnaireAccessFromCookies();
   if (!account) redirect("/");
+
+  const sp = (await searchParams) ?? {};
+  const rawView = Array.isArray(sp.view) ? sp.view[0] : sp.view;
+  const view: "active" | "trash" = rawView === "trash" ? "trash" : "active";
+  const now = new Date();
 
   const sessions = await prisma.patientQuestionnaireSession.findMany({
     where: {
       AND: [
         getOfficeOwnershipFilter(account),
         { context: "office" },
-        { deleted_at: null },
+        view === "trash"
+          ? trashQuestionnaireLifecycleFilter(now)
+          : {
+              AND: [
+                { deleted_at: null },
+                activeQuestionnaireLifecycleFilter(now),
+              ],
+            },
       ],
     },
     orderBy: [
@@ -100,6 +121,7 @@ export default async function OfficeQuestionnairePage() {
       pdf_downloaded_at: true,
       answers: true,
       frozen_blocks: true,
+      deleted_at: true,
     },
   });
 
@@ -119,12 +141,31 @@ export default async function OfficeQuestionnairePage() {
         </Link>
       </section>
 
+      <nav aria-label="Fragebogenansicht" style={{ display: "flex", gap: "0.5rem" }}>
+        <Link
+          href="/office-cases/questionnaire"
+          className={view === "active" ? "btn" : "btn-secondary"}
+          data-office-q-view="active"
+        >
+          Aktiv
+        </Link>
+        <Link
+          href="/office-cases/questionnaire?view=trash"
+          className={view === "trash" ? "btn" : "btn-secondary"}
+          data-office-q-view="trash"
+        >
+          Papierkorb
+        </Link>
+      </nav>
+
       <p className="text-muted" style={{ marginBottom: "0.5rem" }}>
         {sessions.length} Eintr{sessions.length !== 1 ? "äge" : "ag"}
       </p>
 
       {sessions.length === 0 ? (
-        <p className="text-muted">Noch keine Bewerber-Fragebögen erstellt.</p>
+        <p className="text-muted">
+          {view === "trash" ? "Papierkorb ist leer." : "Noch keine Bewerber-Fragebögen erstellt."}
+        </p>
       ) : (
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {sessions.map((s) => {
@@ -171,6 +212,11 @@ export default async function OfficeQuestionnairePage() {
                 >
                   <strong>{s.patient_reference ?? "–"}</strong>
                   <span style={badgeStyle}>{statusLabel}</span>
+                  {s.deleted_at && (
+                    <span className="text-muted text-small" data-office-q-deleted={s.id}>
+                      Gelöscht
+                    </span>
+                  )}
                   <span className="text-muted text-small">
                     {displayedAt.toLocaleDateString("de-DE", {
                       day: "2-digit",
@@ -208,10 +254,17 @@ export default async function OfficeQuestionnairePage() {
                       PDF herunterladen
                     </a>
                   )}
-                  <OfficeQuestionnaireDeleteButton
-                    sessionId={s.id}
-                    recipientReference={s.patient_reference}
-                  />
+                  {s.deleted_at ? (
+                    <QuestionnaireRestoreButton
+                      sessionId={s.id}
+                      restoreUrl={`/api/office-cases/questionnaire/${s.id}/restore`}
+                    />
+                  ) : displayStatus === "completed" ? (
+                    <OfficeQuestionnaireDeleteButton
+                      sessionId={s.id}
+                      recipientReference={s.patient_reference}
+                    />
+                  ) : null}
                 </div>
                 {answers && (
                   <AnswersDisclosure

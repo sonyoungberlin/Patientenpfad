@@ -263,14 +263,15 @@ describe("runCleanup – pending Sessions", () => {
     expect(result.pendingSessions).toBe(2);
   });
 
-  it("pending WHERE-Bedingung enthält createdAt, kein token_expires_at", async () => {
+  it("pending WHERE-Bedingung löscht ab token_expires_at und schützt Sonder-Sessions", async () => {
     setupPrismaMocks({ sessionIds: ["s1"] });
 
     await runCleanup({ dryRun: false });
     const findCall = (prisma.patientQuestionnaireSession.findMany as jest.Mock).mock.calls[0][0];
     const pendingBranch = findCall.where.OR[3]; // letzter OR-Zweig = pending
-    expect(pendingBranch).toHaveProperty("createdAt");
-    expect(pendingBranch).not.toHaveProperty("token_expires_at");
+    expect(pendingBranch.token_expires_at).toHaveProperty("lte");
+    expect(pendingBranch.session_kind).toBe("patient_communication");
+    expect(pendingBranch.token).toEqual({ not: null });
   });
 
   it("pending WHERE verwendet explizit status: 'pending', kein notIn-Catch-all", async () => {
@@ -312,7 +313,8 @@ describe("runCleanup – completed Sessions", () => {
     const findCall = (prisma.patientQuestionnaireSession.findMany as jest.Mock).mock.calls[0][0];
     const completedBranch = findCall.where.OR[2];
     expect(completedBranch.NOT).toEqual({ submitted_at: null });
-    expect(completedBranch.submitted_at).toHaveProperty("lt");
+    expect(completedBranch.session_kind).toBe("patient_communication");
+    expect(completedBranch.submitted_at).toHaveProperty("lte");
   });
 });
 
@@ -339,12 +341,16 @@ describe("runCleanup – Trash", () => {
     expect(result.trashSessions).toBe(2);
   });
 
-  it("trash WHERE nutzt deleted_at lt cutoff", async () => {
+  it("trash WHERE nutzt deleted_at lte 48-Stunden-Cutoff", async () => {
     setupPrismaMocks({ sessionIds: ["s1"] });
     await runCleanup({ dryRun: false });
     const findCall = (prisma.patientQuestionnaireSession.findMany as jest.Mock).mock.calls[0][0];
     const trashBranch = findCall.where.OR[0];
-    expect(trashBranch).toEqual({ deleted_at: { lt: expect.any(Date) } });
+    expect(trashBranch).toEqual({
+      status: "completed",
+      session_kind: "patient_communication",
+      deleted_at: { lte: expect.any(Date) },
+    });
   });
 });
 
@@ -363,12 +369,12 @@ describe("runCleanup – website-unconfirmed", () => {
     expect(result.websiteUnconfirmedSessions).toBe(1);
   });
 
-  it("unconfirmed WHERE enthält confirm_token_expires_at lt now", async () => {
+  it("unconfirmed WHERE enthält confirm_token_expires_at lte now", async () => {
     setupPrismaMocks({ sessionIds: ["s1"] });
     await runCleanup({ dryRun: false });
     const findCall = (prisma.patientQuestionnaireSession.findMany as jest.Mock).mock.calls[0][0];
     const unconfirmedBranch = findCall.where.OR[1];
-    expect(unconfirmedBranch.confirm_token_expires_at).toHaveProperty("lt");
+    expect(unconfirmedBranch.confirm_token_expires_at).toHaveProperty("lte");
     expect(unconfirmedBranch.source).toBe("website");
     expect(unconfirmedBranch.status).toBe("awaiting_email_confirmation");
   });
@@ -394,6 +400,23 @@ describe("runCleanup – questionnaire_session_id-Referenzen", () => {
     (prisma.digitalRequest.count as jest.Mock).mockResolvedValue(0);
 
     await runCleanup({ dryRun: true });
+    expect(prisma.digitalRequest.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("löst keine Referenz, wenn der finale Lifecycle-Check die Löschung verwirft", async () => {
+    setupPrismaMocks({ sessionIds: ["session-1"] });
+    (prisma.patientQuestionnaireSession.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+
+    await runCleanup({ dryRun: false });
+
+    const deleteCall = (prisma.patientQuestionnaireSession.deleteMany as jest.Mock).mock.calls[0][0];
+    expect(deleteCall.where).toEqual({
+      id: { in: ["session-1"] },
+      OR: expect.arrayContaining([
+        expect.objectContaining({ status: "pending" }),
+        expect.objectContaining({ status: "completed" }),
+      ]),
+    });
     expect(prisma.digitalRequest.updateMany).not.toHaveBeenCalled();
   });
 
@@ -620,19 +643,20 @@ describe("runCleanup – explizite Statusregeln", () => {
     );
     expect(pendingBranch).toBeDefined();
     expect(pendingBranch!.deleted_at).toBeNull();
-    expect(pendingBranch!.createdAt).toHaveProperty("lt");
+    expect((pendingBranch!.token_expires_at as Record<string, unknown>).lte).toBeInstanceOf(Date);
+    expect(pendingBranch!.session_kind).toBe("patient_communication");
   });
 
-  it("Trash-Branch hat KEIN status-Feld (greift für alle Status)", async () => {
+  it("Trash-Branch greift nur für completed", async () => {
     setupPrismaMocks({ sessionIds: [] });
 
     await runCleanup({ dryRun: false });
     const findCall = (prisma.patientQuestionnaireSession.findMany as jest.Mock).mock.calls[0][0];
     const trashBranch = (findCall.where.OR as Record<string, unknown>[]).find(
-      (c) => (c.deleted_at as Record<string, unknown>)?.lt !== undefined,
+      (c) => (c.deleted_at as Record<string, unknown>)?.lte !== undefined,
     );
     expect(trashBranch).toBeDefined();
-    expect(trashBranch!.status).toBeUndefined();
+    expect(trashBranch!.status).toBe("completed");
   });
 });
 
@@ -656,7 +680,7 @@ describe("runCleanup – Trash-Priorität", () => {
     expect(result.totalSessions).toBe(0);
   });
 
-  it("Trash WHERE prüft deleted_at lt cutoff (nicht lt now)", async () => {
+  it("Trash WHERE prüft deleted_at lte 48-Stunden-Cutoff", async () => {
     setupPrismaMocks({ sessionIds: [] });
 
     await runCleanup({ dryRun: false });
@@ -664,10 +688,10 @@ describe("runCleanup – Trash-Priorität", () => {
     const trashBranch = findCall.where.OR[0];
 
     // deleted_at muss den cutoff-Wert verwenden, nicht now
-    const lt: Date = trashBranch.deleted_at.lt;
+    const lte: Date = trashBranch.deleted_at.lte;
     const now = new Date();
-    // cutoff liegt ~7 Tage vor now → muss klar kleiner als now sein
-    expect(lt.getTime()).toBeLessThan(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+    expect(lte.getTime()).toBeLessThanOrEqual(now.getTime() - 47 * 60 * 60 * 1000);
+    expect(lte.getTime()).toBeGreaterThan(now.getTime() - 49 * 60 * 60 * 1000);
   });
 
   it("completed Session sehr alt, aber erst 2 Tage im Trash → pending/completed-Regeln greifen nicht", async () => {
