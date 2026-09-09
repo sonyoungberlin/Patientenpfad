@@ -3,7 +3,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccessFromCookies } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
-import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
+import { INTERNAL_BLOCK_CATALOG, resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
+import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedContent";
+import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import {
   STATUS_LABELS,
   deriveDisplayStatus,
@@ -88,6 +90,7 @@ export default async function QuestionnairesPage({
       source: true,
       session_kind: true,
       internal_workflow_id: true,
+      frozen_blocks: true,
     },
   });
 
@@ -181,12 +184,20 @@ export default async function QuestionnairesPage({
             const blockIds = Array.isArray(s.selected_block_ids)
               ? (s.selected_block_ids as string[])
               : [];
-            const workflow = s.session_kind === "internal_documentation"
+            const frozenBlocks = parseFrozenBlocks(s.frozen_blocks);
+            const isNewBlockBased = isNewBlockBasedInternalSession({
+              sessionKind: s.session_kind,
+              internalWorkflowId: s.internal_workflow_id,
+              frozenBlocks,
+            });
+            const workflow = s.session_kind === "internal_documentation" && !isNewBlockBased
               ? resolveInternalWorkflow(s.internal_workflow_id)
               : null;
-            const blockCatalog = workflow?.blockCatalog ?? BLOCK_CATALOG;
+            const blockCatalog = isNewBlockBased
+              ? INTERNAL_BLOCK_CATALOG
+              : workflow?.blockCatalog ?? BLOCK_CATALOG;
             const blockLabels = blockIds
-              .map((id) => blockCatalog[id]?.label ?? id)
+              .map((id) => frozenBlocks?.find((block) => block.id === id)?.label ?? blockCatalog[id]?.label ?? id)
               .join(", ");
 
             const displayStatus = deriveDisplayStatus(s);

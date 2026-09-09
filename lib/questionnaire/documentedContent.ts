@@ -49,3 +49,16 @@ export function isDocumentedContentSnapshot(
 ): boolean {
   return blocks?.some((block) => block.outputSemantics === "documented-content-v1") ?? false;
 }
+
+export function isNewBlockBasedInternalSession(input: {
+  sessionKind: string;
+  internalWorkflowId: unknown;
+  frozenBlocks: ReadonlyArray<FrozenBlock> | null | undefined;
+}): boolean {
+  const blocks = input.frozenBlocks;
+  return input.sessionKind === "internal_documentation" &&
+    input.internalWorkflowId === null &&
+    Array.isArray(blocks) &&
+    blocks.length > 0 &&
+    blocks.every((block) => block.outputSemantics === "documented-content-v1");
+}

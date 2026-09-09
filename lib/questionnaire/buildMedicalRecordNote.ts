@@ -444,7 +444,9 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const hasIdentitaet = blockIds.has("IDENTITAET");
 
   let title: string;
-  if (input.internalWorkflowId === "vaccination_review_v1") {
+  if (useDocumentedContent && input.internalWorkflowId == null) {
+    title = "Interne Dokumentation";
+  } else if (input.internalWorkflowId === "vaccination_review_v1") {
     title = "Impfpassprüfung und Beratung";
   } else if (input.internalWorkflowId === "care_plan_v1") {
     title = "Persönlicher Versorgungsplan";

@@ -10,7 +10,10 @@ import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
 import { validateAnswerCharacters } from "@/lib/questionnaire/validateAnswerCharacters";
 import { validateAnswerLengths } from "@/lib/questionnaire/validateAnswerLengths";
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
-import { isDocumentedContentSnapshot } from "@/lib/questionnaire/documentedContent";
+import {
+  isDocumentedContentSnapshot,
+  isNewBlockBasedInternalSession,
+} from "@/lib/questionnaire/documentedContent";
 import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
 
 export class InternalDocumentationError extends Error {
@@ -129,6 +132,15 @@ export async function submitInternalDocumentationSession(input: {
       session.owner_practice_id === input.context.practiceId &&
       session.created_by_kiosk_device_id === null;
 
+  const frozenBlocks = parseFrozenBlocks(session?.frozen_blocks);
+  const isNewBlockBased = session
+    ? isNewBlockBasedInternalSession({
+        sessionKind: session.session_kind,
+        internalWorkflowId: session.internal_workflow_id,
+        frozenBlocks,
+      })
+    : false;
+
   if (
     !session ||
     session.status !== "pending" ||
@@ -141,18 +153,22 @@ export async function submitInternalDocumentationSession(input: {
       404,
     );
   }
+  if (session.internal_workflow_id === null && !isNewBlockBased) {
+    throw new InternalDocumentationError("Ungültiger interner Snapshot.", 400);
+  }
 
-  const workflow = input.context.kind === "kiosk"
-    ? resolveInternalWorkflow(session.internal_workflow_id)
-    : getInternalWorkflow(session.internal_workflow_id);
-  if (!workflow) {
+  const workflow = isNewBlockBased
+    ? null
+    : input.context.kind === "kiosk"
+      ? resolveInternalWorkflow(session.internal_workflow_id)
+      : getInternalWorkflow(session.internal_workflow_id);
+  if (!isNewBlockBased && !workflow) {
     throw new InternalDocumentationError("Unbekannter interner Workflow.", 400);
   }
   if (!input.answers || typeof input.answers !== "object" || Array.isArray(input.answers)) {
     throw new InternalDocumentationError("answers muss ein Objekt sein.", 400);
   }
 
-  const frozenBlocks = parseFrozenBlocks(session.frozen_blocks);
   const questions = frozenBlocks?.flatMap((block) => block.questions) ?? [];
   const frozenQuestionMap = new Map(
     questions.map((question) => [question.id, question]),
@@ -186,7 +202,7 @@ export async function submitInternalDocumentationSession(input: {
     "de",
     frozenQuestionMap,
   );
-  if (isDocumentedContentSnapshot(frozenBlocks)) {
+  if (isNewBlockBased || isDocumentedContentSnapshot(frozenBlocks)) {
     const validation = validateFrozenAnswers(answers, frozenBlocks ?? []);
     if (!validation.ok) {
       const error = new InternalDocumentationError(
@@ -212,7 +228,7 @@ export async function submitInternalDocumentationSession(input: {
     }
     answers = normalized.answers;
   }
-  if (!isDocumentedContentSnapshot(frozenBlocks) && workflow.id === "health_check_v1") {
+  if (!isNewBlockBased && workflow?.id === "health_check_v1") {
     validateHealthCheckAnswers(answers);
   }
 

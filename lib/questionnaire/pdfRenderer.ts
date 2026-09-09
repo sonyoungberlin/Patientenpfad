@@ -14,7 +14,11 @@ import { buildFrozenBlocks, parseFrozenBlocks, type FrozenBlock } from "./frozen
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
 import { resolveInternalWorkflow } from "./internalWorkflowRegistry";
-import { hasDocumentedBlockContent, isDocumentedContentSnapshot } from "./documentedContent";
+import {
+  hasDocumentedBlockContent,
+  isDocumentedContentSnapshot,
+  isNewBlockBasedInternalSession,
+} from "./documentedContent";
 
 function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
@@ -126,9 +130,14 @@ export async function buildQuestionnairePdfBytes(
 
   const derivedValues = computeAllDerivedValues(answers);
   const snapshotBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const isNewBlockBased = isNewBlockBasedInternalSession({
+    sessionKind: session.session_kind ?? "",
+    internalWorkflowId: session.internal_workflow_id,
+    frozenBlocks: snapshotBlocks,
+  });
   const useDocumentedContent = session.session_kind === "internal_documentation" &&
-    isDocumentedContentSnapshot(snapshotBlocks);
-  const internalWorkflow = session.session_kind === "internal_documentation"
+    (isNewBlockBased || isDocumentedContentSnapshot(snapshotBlocks));
+  const internalWorkflow = session.session_kind === "internal_documentation" && !isNewBlockBased
     ? resolveInternalWorkflow(session.internal_workflow_id)
     : null;
   const omitMatchingBlockQuestionLabels = opts.omitMatchingBlockQuestionLabels

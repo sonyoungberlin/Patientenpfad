@@ -106,7 +106,7 @@ describe("QuestionnairesPage – Krankenblatt-Text", () => {
     expect(query.select).toEqual(expect.objectContaining({ source: true }));
     expect(query.select).not.toHaveProperty("answers");
     expect(query.select).not.toHaveProperty("deduplicated_questions");
-    expect(query.select).not.toHaveProperty("frozen_blocks");
+    expect(query.select).toEqual(expect.objectContaining({ frozen_blocks: true }));
   });
 
   it("zeigt keinen sichtbaren Krankenblatt-Text-Inhalt bei completed Session", async () => {

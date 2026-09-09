@@ -6,7 +6,10 @@ import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
-import { isDocumentedContentSnapshot } from "@/lib/questionnaire/documentedContent";
+import {
+  isDocumentedContentSnapshot,
+  isNewBlockBasedInternalSession,
+} from "@/lib/questionnaire/documentedContent";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 
 export async function GET(
@@ -67,24 +70,34 @@ export async function GET(
     );
   }
 
-  const workflow = session.session_kind === "internal_documentation" ? resolveInternalWorkflow(session.internal_workflow_id) : null;
-  if (session.session_kind === "internal_documentation" && !workflow) {
+  const frozenBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const isNewBlockBased = isNewBlockBasedInternalSession({
+    sessionKind: session.session_kind,
+    internalWorkflowId: session.internal_workflow_id,
+    frozenBlocks,
+  });
+  const workflow = session.session_kind === "internal_documentation" && !isNewBlockBased
+    ? resolveInternalWorkflow(session.internal_workflow_id)
+    : null;
+  if (session.session_kind === "internal_documentation" && !isNewBlockBased && !workflow) {
     return new Response(JSON.stringify({ ok: false, error: "Unbekannter interner Workflow." }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
   const { bytes, filename } = await buildQuestionnairePdfBytes(session, {
-    title: workflow?.title ?? "Fragebogen – Patientenangaben",
+    title: isNewBlockBased ? "Interne Dokumentation" : workflow?.title ?? "Fragebogen – Patientenangaben",
     referenceLabel: "Patientenreferenz",
     blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
     ...(!isDocumentedContentSnapshot(parseFrozenBlocks(session.frozen_blocks)) && workflow
-      ? { omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf }
+      ? { omitUnanswered: workflow!.legacyOutputPolicy.omitUnansweredInPdf }
       : {}),
-    ...(!isDocumentedContentSnapshot(parseFrozenBlocks(session.frozen_blocks)) && workflow?.legacyOutputPolicy.omitEmptyBlocksInPdf
+    ...(!isNewBlockBased && !isDocumentedContentSnapshot(frozenBlocks) && workflow?.legacyOutputPolicy.omitEmptyBlocksInPdf
       ? { omitEmptyBlocksInPdf: true }
       : {}),
-    ...(workflow ? { filenameLabel: workflow.filenameLabel } : {}),
+    ...(isNewBlockBased
+      ? { filenameLabel: "Interne Dokumentation" }
+      : workflow ? { filenameLabel: workflow.filenameLabel } : {}),
   });
 
   if (session.pdf_downloaded_at == null) {

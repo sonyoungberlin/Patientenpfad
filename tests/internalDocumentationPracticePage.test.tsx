@@ -67,4 +67,20 @@ describe("practice internal documentation page", () => {
     })).rejects.toThrow("not-found");
     expect(notFoundMock).toHaveBeenCalled();
   });
+
+  it("rendert neue blockbasierte Sessions ohne Workflowtitel", async () => {
+    const frozenBlocks = buildInternalWorkflowBlocks("care_plan_v1");
+    findFirst.mockResolvedValue({
+      internal_workflow_id: null,
+      frozen_blocks: frozenBlocks,
+      patient_reference: "PAT-2B",
+    });
+
+    const html = renderToStaticMarkup(await InternalDocumentationPage({
+      params: Promise.resolve({ id: "session-2b" }),
+    }));
+
+    expect(html).toContain("Interne Dokumentation");
+    expect(html).not.toContain("Persönlicher Versorgungsplan");
+  });
 });

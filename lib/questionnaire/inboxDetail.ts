@@ -7,7 +7,7 @@ import { computeAllDerivedValues } from "./derivedValues";
 import type { DerivedValues } from "./derivedValues";
 import { parseFrozenBlocks } from "./frozenBlocks";
 import type { FrozenBlock } from "./frozenBlocks";
-import { resolveInternalWorkflow } from "./internalWorkflowRegistry";
+import { isNewBlockBasedInternalSession } from "./documentedContent";
 import { buildOptionsByQuestionId } from "./multiSelect";
 
 export type QuestionnaireInboxDetailSource = {
@@ -88,6 +88,11 @@ export function buildQuestionnaireInboxDetail(
       ? session.answers as Record<string, string>
       : {};
   const frozenBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const isNewBlockBased = isNewBlockBasedInternalSession({
+    sessionKind: session.session_kind,
+    internalWorkflowId: session.internal_workflow_id,
+    frozenBlocks,
+  });
   const derivedValues = computeAllDerivedValues(answers);
   const visibleQuestionIds = buildVisibleQuestionIds(
     blockIds,
@@ -103,9 +108,11 @@ export function buildQuestionnaireInboxDetail(
       answers,
       selected_block_ids: blockIds,
       frozenBlocks,
-      internalWorkflowId: session.session_kind === "internal_documentation"
-        ? resolveInternalWorkflow(session.internal_workflow_id)?.id ?? null
-        : null,
+      internalWorkflowId: isNewBlockBased
+        ? null
+        : session.session_kind === "internal_documentation"
+          ? session.internal_workflow_id
+          : null,
     }),
     derivedValues,
     attentionHints: computeQuestionnaireAttentionHints(answers, visibleQuestionIds),

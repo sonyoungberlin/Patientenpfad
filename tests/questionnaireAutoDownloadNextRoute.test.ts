@@ -156,6 +156,38 @@ it("rendert abgeschlossene interne Dokumentationen für den Auto-Download", asyn
   );
 });
 
+it("rendert neue blockbasierte Dokumentationen neutral im Auto-Download", async () => {
+  sessionMock.findFirst.mockResolvedValue({
+    ...SESSION,
+    source: "practice_direct",
+    session_kind: "internal_documentation",
+    internal_workflow_id: null,
+    frozen_blocks: [{
+      id: "CARE_PLAN_HA",
+      label: "Hausärztliche Betreuung",
+      displayOrder: 10,
+      questions: [],
+      conditionalRules: [],
+      initiallyVisible: true,
+      outputSemantics: "documented-content-v1",
+    }],
+  });
+
+  const response = await GET(request());
+
+  expect(response.status).toBe(200);
+  expect(pdfMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      session_kind: "internal_documentation",
+      internal_workflow_id: null,
+    }),
+    expect.objectContaining({
+      title: "Interne Dokumentation",
+      filenameLabel: "Interne Dokumentation",
+    }),
+  );
+});
+
 it("rendert Impfpassprüfungen mit deren Workflowtitel im Auto-Download", async () => {
   sessionMock.findFirst.mockResolvedValue({
     ...SESSION,

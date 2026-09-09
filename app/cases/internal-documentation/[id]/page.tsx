@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireInternalDocumentationAccessFromCookies } from "@/lib/authz";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedContent";
 import { getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 
@@ -36,14 +37,19 @@ export default async function InternalDocumentationPage({
   });
   if (!session) notFound();
 
-  const workflow = getInternalWorkflow(session.internal_workflow_id);
-  if (!workflow) notFound();
   const frozenBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const isNewBlockBased = isNewBlockBasedInternalSession({
+    sessionKind: "internal_documentation",
+    internalWorkflowId: session.internal_workflow_id,
+    frozenBlocks,
+  });
+  const workflow = isNewBlockBased ? null : getInternalWorkflow(session.internal_workflow_id);
+  if (!isNewBlockBased && !workflow) notFound();
   const questions = frozenBlocks?.flatMap((block) => block.questions) ?? [];
 
   return (
     <main>
-      <h1>{workflow.title}</h1>
+      <h1>{isNewBlockBased ? "Interne Dokumentation" : workflow!.title}</h1>
       <p className="text-muted">Patientenreferenz: {session.patient_reference}</p>
       <QuestionnaireFormClient
         token={id}
@@ -54,7 +60,7 @@ export default async function InternalDocumentationPage({
         source="practice_direct"
         introText="Interne Dokumentation für die Praxis."
         patientReference={session.patient_reference}
-        internalWorkflowId={workflow.id}
+        internalWorkflowId={workflow?.id ?? null}
       />
     </main>
   );
