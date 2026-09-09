@@ -24,8 +24,8 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
 
   HEALTH_CHECK_BP_SYSTOLIC: { id: "HEALTH_CHECK_BP_SYSTOLIC", text: "RR systolisch", type: "number", required: false, unit: "mmHg", step: 1 },
   HEALTH_CHECK_BP_DIASTOLIC: { id: "HEALTH_CHECK_BP_DIASTOLIC", text: "RR diastolisch", type: "number", required: false, unit: "mmHg", step: 1 },
-  HEALTH_CHECK_WEIGHT_KG: { id: "HEALTH_CHECK_WEIGHT_KG", text: "Gewicht", type: "number", required: false, unit: "kg", step: 0.1 },
   HEALTH_CHECK_HEIGHT_CM: { id: "HEALTH_CHECK_HEIGHT_CM", text: "Größe", type: "number", required: false, unit: "cm", step: 0.1 },
+  HEALTH_CHECK_WEIGHT_KG: { id: "HEALTH_CHECK_WEIGHT_KG", text: "Gewicht", type: "number", required: false, unit: "kg", step: 0.1 },
 
   HEALTH_CHECK_LIPID_PROFILE_STATUS: { id: "HEALTH_CHECK_LIPID_PROFILE_STATUS", text: "Lipidprofil", type: "select", required: false, options: LAB_STATUS_OPTIONS },
   HEALTH_CHECK_FASTING_GLUCOSE_STATUS: { id: "HEALTH_CHECK_FASTING_GLUCOSE_STATUS", text: "Nüchternplasmaglukose", type: "select", required: false, options: LAB_STATUS_OPTIONS },
@@ -43,14 +43,14 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
   },
   HEALTH_CHECK_OTHER_NOTE: { id: "HEALTH_CHECK_OTHER_NOTE", text: "Sonstiger Hinweis", type: "textarea", required: false, maxLength: 120 },
 
-  HEALTH_CHECK_FOLLOW_UP_REQUIRED: { id: "HEALTH_CHECK_FOLLOW_UP_REQUIRED", text: "Weiteres Vorgehen erforderlich", type: "yes_no", required: true, options: FOLLOW_UP_OPTIONS },
+  HEALTH_CHECK_FOLLOW_UP_REQUIRED: { id: "HEALTH_CHECK_FOLLOW_UP_REQUIRED", text: "Weitere Abklärung oder Kontrolle erforderlich", type: "yes_no", required: true, options: FOLLOW_UP_OPTIONS },
   HEALTH_CHECK_NEXT_STEPS: { id: "HEALTH_CHECK_NEXT_STEPS", text: "Maßnahmen", type: "multi_select", required: false, options: NEXT_STEP_OPTIONS },
   HEALTH_CHECK_NEXT_STEPS_NOTE: { id: "HEALTH_CHECK_NEXT_STEPS_NOTE", text: "Kurzer Hinweis", type: "textarea", required: false, maxLength: 120 },
 };
 
 export const HEALTH_CHECK_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   HEALTH_CHECK_CLINICAL_STATUS: { id: "HEALTH_CHECK_CLINICAL_STATUS", label: "Klinischer Status", displayOrder: 10, questionIds: ["HEALTH_CHECK_GENERAL_STATUS", "HEALTH_CHECK_HEART_STATUS", "HEALTH_CHECK_LUNG_STATUS", "HEALTH_CHECK_ABDOMEN_STATUS", "HEALTH_CHECK_VESSELS_PULSES_STATUS", "HEALTH_CHECK_MUSCULOSKELETAL_STATUS", "HEALTH_CHECK_NEUROLOGICAL_STATUS", "HEALTH_CHECK_SKIN_STATUS", "HEALTH_CHECK_PSYCH_STATUS", "HEALTH_CHECK_CLINICAL_NOTE"] },
-  HEALTH_CHECK_MEASUREMENTS: { id: "HEALTH_CHECK_MEASUREMENTS", label: "Messwerte", displayOrder: 20, questionIds: ["HEALTH_CHECK_BP_SYSTOLIC", "HEALTH_CHECK_BP_DIASTOLIC", "HEALTH_CHECK_WEIGHT_KG", "HEALTH_CHECK_HEIGHT_CM"] },
+  HEALTH_CHECK_MEASUREMENTS: { id: "HEALTH_CHECK_MEASUREMENTS", label: "Messwerte", displayOrder: 20, questionIds: ["HEALTH_CHECK_BP_SYSTOLIC", "HEALTH_CHECK_BP_DIASTOLIC", "HEALTH_CHECK_HEIGHT_CM", "HEALTH_CHECK_WEIGHT_KG"] },
   HEALTH_CHECK_LAB: { id: "HEALTH_CHECK_LAB", label: "Labor", displayOrder: 30, questionIds: ["HEALTH_CHECK_LIPID_PROFILE_STATUS", "HEALTH_CHECK_FASTING_GLUCOSE_STATUS", "HEALTH_CHECK_LAB_NOTE"] },
   HEALTH_CHECK_URINE: { id: "HEALTH_CHECK_URINE", label: "Urinstatus", displayOrder: 40, questionIds: ["HEALTH_CHECK_URINE_STATUS", "HEALTH_CHECK_URINE_NOTE"] },
   HEALTH_CHECK_PREVENTION: { id: "HEALTH_CHECK_PREVENTION", label: "Prävention / Empfehlungen", displayOrder: 50, questionIds: ["HEALTH_CHECK_PREVENTION_TOPICS", "HEALTH_CHECK_OTHER_NOTE"] },

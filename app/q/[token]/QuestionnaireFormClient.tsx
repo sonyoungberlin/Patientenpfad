@@ -15,7 +15,8 @@ import {
   type ConditionalRule,
 } from "@/lib/questionnaire/conditionalLogic";
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
-import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
+import { computeAllDerivedValues, type DerivedValues } from "@/lib/questionnaire/derivedValues";
+import { buildDerivedValueLines } from "@/lib/questionnaire/formatAnswer";
 import {
   MAIN_GATE_QUESTION_IDS,
   limitTextLength,
@@ -156,7 +157,7 @@ function QuestionField({
   switch (question.type as QuestionType) {
     case "multi_select":
       return (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem", width: "100%", minWidth: 0 }}>
           {(question.options ?? []).map((opt) => {
             const options = question.options ?? [];
             const selected = parseMultiSelectValue(value, options).includes(opt);
@@ -178,6 +179,10 @@ function QuestionField({
                   cursor: disabled ? "not-allowed" : "pointer",
                   opacity: disabled ? 0.6 : 1,
                   fontSize: "0.9rem",
+                  maxWidth: "100%",
+                  minWidth: 0,
+                  whiteSpace: "normal",
+                  overflowWrap: "anywhere",
                 }}
                 data-q-multiselect={`${question.id}:${opt}`}
               >
@@ -240,7 +245,7 @@ function QuestionField({
             { val: "nein", labelDe: "Nein", labelEn: "No" },
           ];
       return (
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.25rem", width: "100%", minWidth: 0 }}>
           {yesNoOptions.map(({ val, labelDe, labelEn }) => {
             const label = language === "en" ? labelEn : labelDe;
             return (
@@ -259,6 +264,10 @@ function QuestionField({
                   cursor: disabled ? "not-allowed" : "pointer",
                   opacity: disabled ? 0.6 : 1,
                   fontSize: "0.9rem",
+                  maxWidth: "100%",
+                  minWidth: 0,
+                  whiteSpace: "normal",
+                  overflowWrap: "anywhere",
                 }}
                 data-q-yesno={`${question.id}:${val}`}
               >
@@ -311,7 +320,7 @@ function QuestionField({
       );
     case "number":
       return (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%", minWidth: 0 }}>
           <input
             type="number"
             id={question.id}
@@ -321,7 +330,7 @@ function QuestionField({
             required={question.required}
             step={question.step ?? "any"}
             min={0}
-            style={baseStyle}
+            style={{ ...baseStyle, flex: "1 1 auto", minWidth: 0 }}
           />
           {question.unit && (
             <span
@@ -886,6 +895,7 @@ function renderQuestionLi(
   t: { requiredAriaSuffix: string },
   isGate: boolean,
   hasMissingRequired: boolean,
+  derivedValues: DerivedValues,
 ) {
   const gateStyle: React.CSSProperties = isGate
     ? {
@@ -904,7 +914,7 @@ function renderQuestionLi(
       data-q-question={q.id}
       data-q-gate={isGate || undefined}
       className="card"
-      style={{ marginBottom: "0.75rem", ...gateStyle, ...requiredErrStyle }}
+      style={{ marginBottom: "0.75rem", minWidth: 0, ...gateStyle, ...requiredErrStyle }}
     >
       <label
         htmlFor={q.id}
@@ -928,6 +938,11 @@ function renderQuestionLi(
         language={language}
         hasError={fieldHasCharError[q.id] === true}
       />
+      {q.id === "HEALTH_CHECK_WEIGHT_KG" && derivedValues.BMI !== undefined ? (
+        <p data-q-derived="BMI" style={{ margin: "0.4rem 0 0", fontSize: "0.9rem" }}>
+          {buildDerivedValueLines({ BMI: derivedValues.BMI })[0]}
+        </p>
+      ) : null}
       {hasMissingRequired && (
         <p
           data-q-requirederror={q.id}
@@ -1182,27 +1197,6 @@ export function QuestionnaireFormClient({
     }
     setMissingRequiredIds(new Set());
 
-    if (internalWorkflowId === "health_check_v1") {
-      const followUp = answersToSend.HEALTH_CHECK_FOLLOW_UP_REQUIRED ?? "";
-      const nextSteps = answersToSend.HEALTH_CHECK_NEXT_STEPS ?? "";
-      const nextStepsNote = answersToSend.HEALTH_CHECK_NEXT_STEPS_NOTE ?? "";
-      const hasNextStep = nextSteps.trim() !== "" && nextSteps !== "[]";
-      const hasNextStepNote = nextStepsNote.trim() !== "";
-      const healthCheckError = followUp === "nein"
-        ? nextSteps.trim() !== ""
-          ? "Bei „nein“ dürfen keine weiteren Maßnahmen ausgewählt werden."
-          : null
-        : followUp === "ja"
-          ? hasNextStep || hasNextStepNote
-            ? null
-            : "Bei „ja“ muss eine Maßnahme oder ein Hinweis dokumentiert werden."
-          : "Bitte „ja“ oder „nein“ auswählen.";
-      if (healthCheckError) {
-        setError(healthCheckError);
-        return;
-      }
-    }
-
     const contactErrors = validateContactAnswers(answersToSend, visibleQuestions);
     if (contactErrors.length > 0) {
       setMissingRequiredIds(new Set(contactErrors.map((error) => error.questionId)));
@@ -1298,7 +1292,7 @@ export function QuestionnaireFormClient({
       ) : null}
       {(() => {
         const formDiv = (
-          <div>
+          <div style={{ minWidth: 0, maxWidth: "100%" }}>
           {visibleQuestions.length === 0 ? (
           <p>{t.noQuestions}</p>
         ) : frozenBlocks && visibleBlockIds ? (
@@ -1313,7 +1307,7 @@ export function QuestionnaireFormClient({
                 return (
                   <section key={block.id} data-q-block={block.id}>
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id)))}
+                      {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues))}
                     </ul>
                   </section>
                 );
@@ -1322,7 +1316,7 @@ export function QuestionnaireFormClient({
         ) : (
           // Legacy-Pfad: flache Liste
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id)))}
+            {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues))}
           </ul>
         )}
         {error ? (

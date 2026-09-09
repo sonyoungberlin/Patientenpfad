@@ -287,20 +287,14 @@ describe("internal documentation service", () => {
 
     it.each([
       ["nein ohne Maßnahmen", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein" }],
+      ["nein mit Maßnahme", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein", HEALTH_CHECK_NEXT_STEPS: "Verlaufskontrolle in unserer Praxis" }],
       ["nein mit Hinweis", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein", HEALTH_CHECK_NEXT_STEPS_NOTE: "Hinweis" }],
+      ["ja ohne Maßnahme oder Hinweis", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja" }],
       ["ja mit Maßnahme", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja", HEALTH_CHECK_NEXT_STEPS: "Verlaufskontrolle in unserer Praxis" }],
       ["ja nur mit Hinweis", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja", HEALTH_CHECK_NEXT_STEPS_NOTE: "Hinweis" }],
     ])("akzeptiert %s", async (_label, answers) => {
       await submitHealthCheck(answers);
       expect(db.updateMany).toHaveBeenCalledTimes(1);
-    });
-
-    it.each([
-      ["nein mit Maßnahme", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein", HEALTH_CHECK_NEXT_STEPS: "Verlaufskontrolle in unserer Praxis" }],
-      ["ja ohne Maßnahme oder Hinweis", { HEALTH_CHECK_FOLLOW_UP_REQUIRED: "ja" }],
-    ])("weist %s ab", async (_label, answers) => {
-      await expect(submitHealthCheck(answers)).rejects.toMatchObject({ status: 400 });
-      expect(db.updateMany).not.toHaveBeenCalled();
     });
 
     it("speichert klinische und Follow-up-Custom-Werte exakt", async () => {

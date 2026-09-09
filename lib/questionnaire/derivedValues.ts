@@ -71,19 +71,21 @@ export function computeAge(
 /**
  * Berechnet den BMI als rohe Zahl (nicht gerundet).
  *
- * Bevorzugt strukturierte Felder VOLLST_HEIGHT/VOLLST_WEIGHT (type "number",
- * bereits in cm/kg); fällt auf ANAMNESE_HEIGHT/ANAMNESE_WEIGHT zurück
- * (Freitext, mit robustem Parser).
+ * Bevorzugt strukturierte Felder aus dem vollständigen Patientenfragebogen
+ * und dem Gesundheitscheck; fällt auf Anamnese-Freitext zurück.
  */
 export function computeBMI(answers: Record<string, string>): number | null {
-  // Strukturierte Eingabe bevorzugen; Fallback auf Kurzanamnese-Freitext
-  const heightCm =
-    parseNumericAnswer(answers["VOLLST_HEIGHT"] ?? "") ??
-    parseHeightToCm(answers["ANAMNESE_HEIGHT"] ?? "");
-
-  const weightKg =
-    parseNumericAnswer(answers["VOLLST_WEIGHT"] ?? "") ??
-    parseNumericAnswer(answers["ANAMNESE_WEIGHT"] ?? "");
+  const hasHealthCheckMeasurements =
+    Object.prototype.hasOwnProperty.call(answers, "HEALTH_CHECK_HEIGHT_CM") ||
+    Object.prototype.hasOwnProperty.call(answers, "HEALTH_CHECK_WEIGHT_KG");
+  const heightCm = hasHealthCheckMeasurements
+    ? parseNumericAnswer(answers["HEALTH_CHECK_HEIGHT_CM"] ?? "")
+    : parseNumericAnswer(answers["VOLLST_HEIGHT"] ?? "") ??
+      parseHeightToCm(answers["ANAMNESE_HEIGHT"] ?? "");
+  const weightKg = hasHealthCheckMeasurements
+    ? parseNumericAnswer(answers["HEALTH_CHECK_WEIGHT_KG"] ?? "")
+    : parseNumericAnswer(answers["VOLLST_WEIGHT"] ?? "") ??
+      parseNumericAnswer(answers["ANAMNESE_WEIGHT"] ?? "");
 
   if (heightCm === null || heightCm <= 0) return null;
   if (weightKg === null || weightKg <= 0) return null;

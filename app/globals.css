@@ -114,6 +114,13 @@ button {
   white-space: nowrap;
 }
 
+.questionnaire-kiosk-page {
+  width: 100%;
+  min-width: 0;
+  max-width: var(--main-max-width);
+  overflow-x: clip;
+}
+
 button:hover {
   background: var(--accent);
 }

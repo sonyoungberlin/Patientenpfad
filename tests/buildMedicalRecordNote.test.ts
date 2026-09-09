@@ -363,6 +363,37 @@ describe("buildMedicalRecordNote – health_check_v1", () => {
     expect(note).not.toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
   });
 
+  it("gibt bei nein zusätzlich dokumentierte Maßnahmen aus", () => {
+    const note = buildMedicalRecordNote({
+      answers: {
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+        HEALTH_CHECK_NEXT_STEPS: "Fachärztliche Abklärung empfohlen",
+      },
+      selected_block_ids: selectedBlockIds,
+      internalWorkflowId: "health_check_v1",
+      frozenBlocks,
+    });
+
+    expect(note).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+    expect(note).toContain("Maßnahmen: Fachärztliche Abklärung empfohlen");
+  });
+
+  it("gibt den Health-Check-BMI mathematisch formatiert aus", () => {
+    const note = buildMedicalRecordNote({
+      answers: {
+        HEALTH_CHECK_HEIGHT_CM: "175",
+        HEALTH_CHECK_WEIGHT_KG: "70",
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+      },
+      selected_block_ids: selectedBlockIds,
+      internalWorkflowId: "health_check_v1",
+      frozenBlocks,
+    });
+
+    expect(note).toContain("BMI: 22,9 kg/m²");
+    expect(note).not.toMatch(/Normalbereich|Kategorie|Warnung|Empfehlung/);
+  });
+
   it("gibt ein ausgefülltes Labor mit Heading und beantworteten Werten aus", () => {
     const note = buildMedicalRecordNote({
       answers: {

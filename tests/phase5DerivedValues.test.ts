@@ -247,6 +247,14 @@ describe("computeBMI", () => {
     expect(bmi!).toBeCloseTo(22.857, 2);
   });
 
+  it("Health-Check-Größe und -Gewicht → korrekter BMI", () => {
+    const bmi = computeBMI({
+      HEALTH_CHECK_HEIGHT_CM: "175",
+      HEALTH_CHECK_WEIGHT_KG: "70",
+    });
+    expect(bmi).toBeCloseTo(22.857, 2);
+  });
+
   it("Dezimalgewicht mit Komma (Legacy-Parser via ANAMNESE_WEIGHT)", () => {
     const answers = { ANAMNESE_HEIGHT: "175 cm", ANAMNESE_WEIGHT: "70,5" };
     const bmi = computeBMI(answers);
@@ -293,6 +301,22 @@ describe("computeBMI", () => {
 
   it("fehlende Gewicht → null", () => {
     expect(computeBMI({ VOLLST_HEIGHT: "175" })).toBeNull();
+  });
+
+  it("Health-Check ohne ausreichende Werte → null", () => {
+    expect(computeBMI({ HEALTH_CHECK_HEIGHT_CM: "175" })).toBeNull();
+    expect(computeBMI({ HEALTH_CHECK_WEIGHT_KG: "70" })).toBeNull();
+  });
+
+  it("mischt Health-Check-Messwerte nicht mit anderen BMI-Quellen", () => {
+    expect(computeBMI({
+      HEALTH_CHECK_HEIGHT_CM: "175",
+      VOLLST_WEIGHT: "70",
+    })).toBeNull();
+    expect(computeBMI({
+      VOLLST_HEIGHT: "175",
+      HEALTH_CHECK_WEIGHT_KG: "70",
+    })).toBeNull();
   });
 });
 

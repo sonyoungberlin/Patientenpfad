@@ -110,6 +110,7 @@ describe("internal documentation workflow registry", () => {
     const followUp = blocks[5].questions[0];
     expect(followUp).toMatchObject({
       id: "HEALTH_CHECK_FOLLOW_UP_REQUIRED",
+      text: "Weitere Abklärung oder Kontrolle erforderlich",
       type: "yes_no",
       required: true,
       options: ["nein", "ja"],
@@ -126,7 +127,7 @@ describe("internal documentation workflow registry", () => {
 
     expect(blocks.map((block) => block.questions.map((question) => question.id))).toEqual([
       ["HEALTH_CHECK_GENERAL_STATUS", "HEALTH_CHECK_HEART_STATUS", "HEALTH_CHECK_LUNG_STATUS", "HEALTH_CHECK_ABDOMEN_STATUS", "HEALTH_CHECK_VESSELS_PULSES_STATUS", "HEALTH_CHECK_MUSCULOSKELETAL_STATUS", "HEALTH_CHECK_NEUROLOGICAL_STATUS", "HEALTH_CHECK_SKIN_STATUS", "HEALTH_CHECK_PSYCH_STATUS", "HEALTH_CHECK_CLINICAL_NOTE"],
-      ["HEALTH_CHECK_BP_SYSTOLIC", "HEALTH_CHECK_BP_DIASTOLIC", "HEALTH_CHECK_WEIGHT_KG", "HEALTH_CHECK_HEIGHT_CM"],
+      ["HEALTH_CHECK_BP_SYSTOLIC", "HEALTH_CHECK_BP_DIASTOLIC", "HEALTH_CHECK_HEIGHT_CM", "HEALTH_CHECK_WEIGHT_KG"],
       ["HEALTH_CHECK_LIPID_PROFILE_STATUS", "HEALTH_CHECK_FASTING_GLUCOSE_STATUS", "HEALTH_CHECK_LAB_NOTE"],
       ["HEALTH_CHECK_URINE_STATUS", "HEALTH_CHECK_URINE_NOTE"],
       ["HEALTH_CHECK_PREVENTION_TOPICS", "HEALTH_CHECK_OTHER_NOTE"],
@@ -135,8 +136,8 @@ describe("internal documentation workflow registry", () => {
     expect(blocks[1].questions.map((question) => [question.text, question.unit])).toEqual([
       ["RR systolisch", "mmHg"],
       ["RR diastolisch", "mmHg"],
-      ["Gewicht", "kg"],
       ["Größe", "cm"],
+      ["Gewicht", "kg"],
     ]);
     expect(blocks[4].questions[0].options).toEqual([
       "Herz-Kreislauf", "Gewicht", "Ernährung", "Bewegung", "Nikotin", "Alkohol",
