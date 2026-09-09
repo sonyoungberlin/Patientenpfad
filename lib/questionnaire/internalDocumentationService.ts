@@ -4,6 +4,7 @@ import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import {
   getInternalWorkflow,
+  resolveInternalBlocks,
   resolveInternalWorkflow,
 } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
@@ -52,29 +53,33 @@ function validateHealthCheckAnswers(answers: Record<string, string>) {
 }
 
 export async function createInternalDocumentationSession(input: {
-  workflowId?: unknown;
-  selectedBlockIds?: unknown;
+  selectedBlockIds: unknown;
   patientReference: unknown;
   origin: string;
   context: InternalDocumentationContext;
 }) {
-  const workflow = input.workflowId === undefined
-    ? null
-    : getInternalWorkflow(input.workflowId);
-  const selectedBlockIds = input.selectedBlockIds === undefined
-    ? workflow?.blockIds
-    : input.selectedBlockIds;
+  const requestedBlockIds = input.selectedBlockIds;
   const patientReference =
     typeof input.patientReference === "string"
       ? input.patientReference.trim()
       : "";
   if (
     !patientReference ||
-    !Array.isArray(selectedBlockIds) ||
-    !selectedBlockIds.every((blockId): blockId is string => typeof blockId === "string")
+    !Array.isArray(requestedBlockIds) ||
+    requestedBlockIds.length === 0 ||
+    !requestedBlockIds.every((blockId): blockId is string => typeof blockId === "string")
   ) {
     throw new InternalDocumentationError(
-      "Workflow und Patientenreferenz sind erforderlich.",
+      "Mindestens ein gültiger Abschnitt und eine Patientenreferenz sind erforderlich.",
+      400,
+    );
+  }
+  let selectedBlockIds: string[];
+  try {
+    selectedBlockIds = resolveInternalBlocks(requestedBlockIds).map((block) => block.id);
+  } catch (cause) {
+    throw new InternalDocumentationError(
+      cause instanceof Error ? cause.message : "Ungültige interne Abschnitte.",
       400,
     );
   }
@@ -97,12 +102,12 @@ export async function createInternalDocumentationSession(input: {
     patientReference,
     patientLanguage: "de",
     sessionKind: "internal_documentation",
-    internalWorkflowId: workflow?.id ?? null,
+    internalWorkflowId: null,
     origin: input.origin,
     ...creator,
   });
 
-  return { sessionId: result.sessionId, workflowId: workflow?.id ?? null };
+  return { sessionId: result.sessionId };
 }
 
 export async function submitInternalDocumentationSession(input: {

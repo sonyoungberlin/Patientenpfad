@@ -32,11 +32,9 @@ describe("internal documentation service", () => {
     db.updateMany.mockReset().mockResolvedValue({ count: 1 });
   });
 
-  it.each(["care_plan_v1", "vaccination_review_v1"])(
-    "erstellt %s im Praxiskontext mit festem Ownership-Scope",
-    async (workflowId) => {
+  it("erstellt ausgewählte Blocks im Praxiskontext mit festem Ownership-Scope", async () => {
       await createInternalDocumentationSession({
-        workflowId,
+        selectedBlockIds: ["CARE_PLAN_HA"],
         patientReference: " PAT-1 ",
         origin: "https://example.test",
         context: {
@@ -52,18 +50,17 @@ describe("internal documentation service", () => {
         ownerPracticeId: "practice-1",
         source: "practice_direct",
         sessionKind: "internal_documentation",
-        internalWorkflowId: workflowId,
+        internalWorkflowId: null,
       }));
       const input = createSession.mock.calls[0][0];
       expect(input).not.toHaveProperty("createdByKioskDeviceId");
       expect(input).not.toHaveProperty("patientCopyReturnEmail");
       expect(input).not.toHaveProperty("practiceConfirmations");
-    },
-  );
+  });
 
   it("erstellt den Kioskkontext weiterhin ohne Account-Owner", async () => {
     await createInternalDocumentationSession({
-      workflowId: "care_plan_v1",
+      selectedBlockIds: ["CARE_PLAN_HA"],
       patientReference: "PAT-1",
       origin: "https://example.test",
       context: {
@@ -77,13 +74,14 @@ describe("internal documentation service", () => {
       ownerPracticeId: "practice-1",
       createdByKioskDeviceId: "device-1",
       source: "kiosk_direct",
+      internalWorkflowId: null,
     }));
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("ownerAccountId");
   });
 
-  it("weist unbekannte Workflows vor der Session-Erzeugung ab", async () => {
+  it("weist unbekannte Blocks vor der Session-Erzeugung ab", async () => {
     await expect(createInternalDocumentationSession({
-      workflowId: "unknown",
+      selectedBlockIds: ["unknown"],
       patientReference: "PAT-1",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },

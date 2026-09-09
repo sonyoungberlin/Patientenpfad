@@ -76,30 +76,56 @@ describe("interne Kiosk-Dokumentation", () => {
     expect(createSession).not.toHaveBeenCalled();
   });
 
-  it("erstellt care_plan_v1 ausschließlich als interne practice-owned Kiosk-Session", async () => {
+  it("erstellt ausgewählte Blocks als interne practice-owned Kiosk-Session", async () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
-      workflow_id: "care_plan_v1",
-      patient_reference: " PAT-1 ",
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: " PAT-1 ",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       patientReference: "PAT-1",
+      selectedBlockIds: ["CARE_PLAN_HA"],
       ownerPracticeId: "practice-1",
       createdByKioskDeviceId: "device-1",
       source: "kiosk_direct",
       sessionKind: "internal_documentation",
-      internalWorkflowId: "care_plan_v1",
+      internalWorkflowId: null,
     }));
     const input = createSession.mock.calls[0][0];
     expect(input).not.toHaveProperty("patientCopyReturnEmail");
     expect(input).not.toHaveProperty("practiceConfirmations");
   });
 
-  it("weist unbekannte interne Workflows serverseitig ab", async () => {
+  it.each([
+    { workflow_id: "care_plan_v1", patientReference: "PAT-1" },
+    { selectedBlockIds: ["CARE_PLAN_HA"], workflow_id: "care_plan_v1", patientReference: "PAT-1" },
+    { selectedBlockIds: ["CARE_PLAN_HA"], patient_reference: "PAT-1" },
+  ])("weist Legacy-Create-Felder ab: %j", async (body) => {
+    const response = await createInternal(request("/api/questionnaire-kiosk/internal", body));
+    expect(response.status).toBe(400);
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("erstellt Cross-Group-Blocks ohne Workflow-ID", async () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
-      workflow_id: "__proto__",
-      patient_reference: "PAT-1",
+      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
+      patientReference: "PAT-2C",
+    }));
+
+    expect(response.status).toBe(200);
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
+      patientReference: "PAT-2C",
+      internalWorkflowId: null,
+    }));
+    expect(createSession.mock.calls[0][0]).not.toHaveProperty("workflowId");
+  });
+
+  it("weist unbekannte interne Blocks serverseitig ab", async () => {
+    const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
+      selectedBlockIds: ["__proto__"],
+      patientReference: "PAT-1",
     }));
 
     expect(response.status).toBe(400);

@@ -2,25 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import InternalDocumentationBlockSelector from "@/components/InternalDocumentationBlockSelector";
 
-type WorkflowOption = {
-  id: string;
-  title: string;
-};
-
-export default function InternalDocumentationLauncher({
-  workflows,
-}: {
-  workflows: WorkflowOption[];
-}) {
+export default function InternalDocumentationLauncher() {
   const router = useRouter();
-  const [workflowId, setWorkflowId] = useState(workflows[0]?.id ?? "");
+  const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
   const [patientReference, setPatientReference] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function start(event: React.FormEvent) {
     event.preventDefault();
+    const blockIds = Array.from(selectedBlockIds);
+    if (blockIds.length === 0) {
+      setError("Bitte mindestens einen Abschnitt auswählen.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -28,8 +25,8 @@ export default function InternalDocumentationLauncher({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          workflow_id: workflowId,
-          patient_reference: patientReference,
+          selectedBlockIds: blockIds,
+          patientReference: patientReference.trim(),
         }),
       });
       const data = await response.json() as { link?: string; error?: string };
@@ -45,26 +42,38 @@ export default function InternalDocumentationLauncher({
     }
   }
 
+  function toggleBlock(blockId: string) {
+    setSelectedBlockIds((current) => {
+      const next = new Set(current);
+      if (next.has(blockId)) next.delete(blockId);
+      else next.add(blockId);
+      return next;
+    });
+  }
+
+  function toggleGroup(blockIds: string[]) {
+    setSelectedBlockIds((current) => {
+      const next = new Set(current);
+      const select = blockIds.some((blockId) => !next.has(blockId));
+      for (const blockId of blockIds) {
+        if (select) next.add(blockId);
+        else next.delete(blockId);
+      }
+      return next;
+    });
+  }
+
   return (
     <form
       onSubmit={start}
       style={{ display: "grid", gap: "0.75rem", maxWidth: "28rem" }}
     >
-      <label>
-        Workflow
-        <select
-          value={workflowId}
-          onChange={(event) => setWorkflowId(event.target.value)}
-          disabled={saving}
-          style={{ marginTop: "0.5rem" }}
-        >
-          {workflows.map((workflow) => (
-            <option key={workflow.id} value={workflow.id}>
-              {workflow.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      <InternalDocumentationBlockSelector
+        selectedBlockIds={selectedBlockIds}
+        onToggleBlock={toggleBlock}
+        onToggleGroup={toggleGroup}
+        disabled={saving}
+      />
       <label>
         Patientenreferenz
         <input
@@ -81,7 +90,7 @@ export default function InternalDocumentationLauncher({
         Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
       </p>
       {error && <p className="text-error" role="alert">{error}</p>}
-      <button type="submit" disabled={saving || !workflowId || !patientReference.trim()}>
+      <button type="submit" disabled={saving || selectedBlockIds.size === 0 || !patientReference.trim()}>
         {saving ? "Wird gestartet…" : "Starten"}
       </button>
     </form>

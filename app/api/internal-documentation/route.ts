@@ -14,21 +14,26 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
+  if (body && (Object.prototype.hasOwnProperty.call(body, "workflow_id") || Object.prototype.hasOwnProperty.call(body, "patient_reference"))) {
+    return NextResponse.json({ ok: false, error: "Legacy-Create-Felder werden nicht mehr unterstützt." }, { status: 400 });
+  }
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
   const protocol = req.headers.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${protocol}://${host}` : req.nextUrl.origin;
 
   try {
-    const result = await createInternalDocumentationSession({
-      workflowId: body?.workflow_id,
-      patientReference: body?.patient_reference,
+    const patientReference = body?.patientReference;
+    const createInput = {
+      selectedBlockIds: body?.selectedBlockIds,
+      patientReference: typeof patientReference === "string" ? patientReference.trim() : patientReference,
       origin,
       context: {
-        kind: "practice",
+        kind: "practice" as const,
         practiceId: practice.id,
         accountId: account.id,
       },
-    });
+    };
+    const result = await createInternalDocumentationSession(createInput);
     return NextResponse.json({
       ok: true,
       sessionId: result.sessionId,

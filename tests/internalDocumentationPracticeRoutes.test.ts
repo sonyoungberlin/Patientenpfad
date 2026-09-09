@@ -44,17 +44,17 @@ describe("practice internal documentation routes", () => {
     submitSession.mockReset().mockResolvedValue(undefined);
   });
 
-  it("leitet Account und aktive Praxis serverseitig an Create weiter", async () => {
+  it("leitet Blockauswahl und aktive Praxis serverseitig an Create weiter", async () => {
     const response = await createRoute(request("/api/internal-documentation", {
-      workflow_id: "care_plan_v1",
-      patient_reference: "PAT-1",
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: " PAT-1 ",
       owner_practice_id: "practice-evil",
       source: "kiosk_direct",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
-      workflowId: "care_plan_v1",
+      selectedBlockIds: ["CARE_PLAN_HA"],
       patientReference: "PAT-1",
       context: {
         kind: "practice",
@@ -67,6 +67,16 @@ describe("practice internal documentation routes", () => {
     });
   });
 
+  it.each([
+    { workflow_id: "care_plan_v1", patientReference: "PAT-1" },
+    { selectedBlockIds: ["CARE_PLAN_HA"], workflow_id: "care_plan_v1", patientReference: "PAT-1" },
+    { selectedBlockIds: ["CARE_PLAN_HA"], patient_reference: "PAT-1" },
+  ])("weist Legacy-Create-Felder ab: %j", async (body) => {
+    const response = await createRoute(request("/api/internal-documentation", body));
+    expect(response.status).toBe(400);
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
   it("blockiert nicht eingeloggte oder unzulässige Accounts vor Create", async () => {
     guard.mockResolvedValue({
       account: null,
@@ -75,6 +85,20 @@ describe("practice internal documentation routes", () => {
     const response = await createRoute(request("/api/internal-documentation", {}));
     expect(response.status).toBe(401);
     expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("leitet frei kombinierte Blocks ohne Workflow-ID weiter", async () => {
+    const response = await createRoute(request("/api/internal-documentation", {
+      selectedBlockIds: ["HEALTH_CHECK_MEASUREMENTS", "VACCINATION_REVIEW", "CARE_PLAN_HA"],
+      patientReference: " PAT-2C ",
+    }));
+
+    expect(response.status).toBe(200);
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      selectedBlockIds: ["HEALTH_CHECK_MEASUREMENTS", "VACCINATION_REVIEW", "CARE_PLAN_HA"],
+      patientReference: "PAT-2C",
+    }));
+    expect(createSession.mock.calls[0][0]).not.toHaveProperty("workflowId");
   });
 
   it("delegiert Submit erneut mit aktiver Praxis", async () => {
