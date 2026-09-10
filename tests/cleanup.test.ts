@@ -48,10 +48,14 @@ function daysAgo(n: number): Date {
 function setupPrismaMocks({
   sessionCounts = { trash: 0, unconfirmed: 0, completed: 0, pending: 0 },
   drCount = 0,
+  officeDrCount = drCount,
+  otherDrCount = 0,
   sessionIds = [] as string[],
 }: {
   sessionCounts?: { trash: number; unconfirmed: number; completed: number; pending: number };
   drCount?: number;
+  officeDrCount?: number;
+  otherDrCount?: number;
   sessionIds?: string[];
 } = {}) {
   const { patientQuestionnaireSession, digitalRequest } = prisma;
@@ -66,7 +70,11 @@ function setupPrismaMocks({
     ];
     return Promise.resolve(order[callIndex++ % order.length] ?? 0);
   });
-  (digitalRequest.count as jest.Mock).mockResolvedValue(drCount);
+  let digitalRequestCountIndex = 0;
+  (digitalRequest.count as jest.Mock).mockImplementation(() => {
+    const count = digitalRequestCountIndex++ === 0 ? officeDrCount : otherDrCount;
+    return Promise.resolve(count);
+  });
   (patientQuestionnaireSession.findMany as jest.Mock).mockResolvedValue(
     sessionIds.map((id) => ({ id })),
   );
@@ -74,7 +82,9 @@ function setupPrismaMocks({
   (patientQuestionnaireSession.deleteMany as jest.Mock).mockResolvedValue({
     count: sessionIds.length,
   });
-  (digitalRequest.deleteMany as jest.Mock).mockResolvedValue({ count: drCount });
+  (digitalRequest.deleteMany as jest.Mock).mockImplementation(({ where }: { where: unknown }) =>
+    Promise.resolve({ count: (where as { request_type?: unknown }).request_type === "office" ? officeDrCount : otherDrCount }),
+  );
   (prisma.patientQuestionnaireSession.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
   (prisma.caseSession.count as jest.Mock).mockResolvedValue(0);
   (prisma.caseSession.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
@@ -122,8 +132,7 @@ describe("runCleanup – DigitalRequest", () => {
   });
 
   it("DR älter als 7 Tage erscheint im Dry-Run als Kandidat", async () => {
-    (prisma.patientQuestionnaireSession.count as jest.Mock).mockResolvedValue(0);
-    (prisma.digitalRequest.count as jest.Mock).mockResolvedValue(3);
+    setupPrismaMocks({ officeDrCount: 0, otherDrCount: 3 });
 
     const result = await runCleanup({ dryRun: true });
     expect(result.digitalRequests).toBe(3);
@@ -131,29 +140,44 @@ describe("runCleanup – DigitalRequest", () => {
     expect(prisma.digitalRequest.deleteMany).not.toHaveBeenCalled();
   });
 
-  it("DR mit status=new wird nach 7 Tagen gelöscht – kein Status-Ausnahme", async () => {
+  it("Office-DR mit status=new wird nach 48 Stunden gelöscht", async () => {
     setupPrismaMocks({ drCount: 1, sessionIds: [] });
 
     const result = await runCleanup({ dryRun: false });
     expect(result.digitalRequests).toBe(1);
     const deleteCall = (prisma.digitalRequest.deleteMany as jest.Mock).mock.calls[0][0];
-    // WHERE hat nur createdAt-Bedingung, keinen Status-Filter
-    expect(deleteCall.where).toEqual({ createdAt: { lt: expect.any(Date) } });
+    expect(deleteCall.where).toEqual({
+      request_type: "office",
+      createdAt: { lt: expect.any(Date) },
+    });
   });
 
-  it("deleteMany-WHERE enthält für alle Status denselben createdAt-Filter", async () => {
-    setupPrismaMocks({ drCount: 4, sessionIds: [] });
+  it("löscht Office- und andere DigitalRequests mit getrennten Cutoffs", async () => {
+    setupPrismaMocks({ officeDrCount: 2, otherDrCount: 3, sessionIds: [] });
     await runCleanup({ dryRun: false });
-    const where = (prisma.digitalRequest.deleteMany as jest.Mock).mock.calls[0][0].where;
-    expect(Object.keys(where)).toEqual(["createdAt"]);
+    const calls = (prisma.digitalRequest.deleteMany as jest.Mock).mock.calls;
+    expect(calls).toHaveLength(2);
+    expect(calls[0][0].where).toEqual({
+      request_type: "office",
+      createdAt: { lt: expect.any(Date) },
+    });
+    expect(calls[1][0].where).toEqual({
+      request_type: { not: "office" },
+      createdAt: { lt: expect.any(Date) },
+    });
   });
 
-  it("patient- und office-DRs werden durch denselben Filter erfasst (kein request_type-Check)", async () => {
-    setupPrismaMocks({ drCount: 2, sessionIds: [] });
-    await runCleanup({ dryRun: false });
-    const where = (prisma.digitalRequest.deleteMany as jest.Mock).mock.calls[0][0].where;
-    expect(where).not.toHaveProperty("request_type");
+  it("andere DigitalRequest-Typen behalten die 7-Tage-Aufbewahrung", async () => {
+    setupPrismaMocks({ officeDrCount: 0, otherDrCount: 2, sessionIds: [] });
+    const result = await runCleanup({ dryRun: false });
+    expect(result.officeDigitalRequests).toBe(0);
+    expect(result.otherDigitalRequests).toBe(2);
+    expect((prisma.digitalRequest.deleteMany as jest.Mock).mock.calls[1][0].where).toEqual({
+      request_type: { not: "office" },
+      createdAt: { lt: expect.any(Date) },
+    });
   });
+
 });
 
 describe("runCleanup – 30-Tage-Vorgänge", () => {

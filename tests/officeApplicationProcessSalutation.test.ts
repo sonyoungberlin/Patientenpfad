@@ -226,3 +226,34 @@ describe("POST process – salutation-Durchreichung", () => {
     expect(mailInput.salutation).toBe("sie");
   });
 });
+
+describe("POST process – Request-Lifecycle", () => {
+  it("verknüpft die Anfrage nach erfolgreichem Versand mit der bestehenden Session", async () => {
+    const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
+
+    expect(res.status).toBe(200);
+    expect(pm.digitalRequest.update).toHaveBeenCalledWith({
+      where: { id: "dr-1" },
+      data: expect.objectContaining({
+        status: "sent",
+        questionnaire_session_id: "session-uuid-1",
+        sent_at: expect.any(Date),
+      }),
+    });
+    expect(createQuestionnaireSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ context: "office" }),
+    );
+  });
+
+  it("lässt die Anfrage bei Mailfehler unverändert sichtbar", async () => {
+    sendDigitalRequestTokenEmailMock.mockRejectedValueOnce(
+      new Error("SMTP connection refused"),
+    );
+
+    const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
+
+    expect(res.status).toBe(500);
+    expect(pm.digitalRequest.update).not.toHaveBeenCalled();
+    expect(createQuestionnaireSessionMock).toHaveBeenCalledTimes(1);
+  });
+});

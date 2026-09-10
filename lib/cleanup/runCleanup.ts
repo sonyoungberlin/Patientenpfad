@@ -13,6 +13,9 @@ import {
   expiredPendingQuestionnaireFilter,
   expiredTrashQuestionnaireFilter,
 } from "@/lib/questionnaire/lifecycle";
+import {
+  expiredOfficeApplicationFilter,
+} from "@/lib/digitalRequests/officeApplicationLifecycle";
 
 export type CleanupCounts = {
   dryRun: boolean;
@@ -24,6 +27,8 @@ export type CleanupCounts = {
   nulledSessionRefs: number;
   nulledInquiryRefs: number;
   digitalRequests: number;
+  officeDigitalRequests: number;
+  otherDigitalRequests: number;
   caseSessions: number;
   inquirySessions: number;
 };
@@ -34,7 +39,16 @@ async function countCandidates(
   cutoff: Date,
   processCutoff: Date,
 ): Promise<Omit<CleanupCounts, "dryRun" | "nulledSessionRefs" | "nulledInquiryRefs">> {
-  const [trash, unconfirmed, completed, pending, digitalRequests, caseSessions, inquirySessions] =
+  const [
+    trash,
+    unconfirmed,
+    completed,
+    pending,
+    officeDigitalRequests,
+    otherDigitalRequests,
+    caseSessions,
+    inquirySessions,
+  ] =
     await Promise.all([
       prisma.patientQuestionnaireSession.count({
         where: expiredTrashQuestionnaireFilter(now),
@@ -55,7 +69,13 @@ async function countCandidates(
         where: expiredPendingQuestionnaireFilter(now),
       }),
       prisma.digitalRequest.count({
-        where: { createdAt: { lt: cutoff } },
+        where: expiredOfficeApplicationFilter(now),
+      }),
+      prisma.digitalRequest.count({
+        where: {
+          request_type: { not: "office" },
+          createdAt: { lt: cutoff },
+        },
       }),
       prisma.caseSession.count({
         where: { createdAt: { lte: processCutoff } },
@@ -72,7 +92,9 @@ async function countCandidates(
     completedSessions: completed,
     pendingSessions: pending,
     totalSessions,
-    digitalRequests,
+    digitalRequests: officeDigitalRequests + otherDigitalRequests,
+    officeDigitalRequests,
+    otherDigitalRequests,
     caseSessions,
     inquirySessions,
   };
@@ -164,9 +186,17 @@ async function executeCleanup(
   }
 
   // 3. DigitalRequests physisch löschen (alle, unabhängig vom Status).
-  const drResult = await prisma.digitalRequest.deleteMany({
-    where: { createdAt: { lt: cutoff } },
-  });
+  const [officeDrResult, otherDrResult] = await Promise.all([
+    prisma.digitalRequest.deleteMany({
+      where: expiredOfficeApplicationFilter(now),
+    }),
+    prisma.digitalRequest.deleteMany({
+      where: {
+        request_type: { not: "office" },
+        createdAt: { lt: cutoff },
+      },
+    }),
+  ]);
 
   // 4. Inquiry-Referenzen auf alten Sessions lösen, danach Vorgänge löschen.
   const inquiryIdsToDelete = (
@@ -207,7 +237,9 @@ async function executeCleanup(
     totalSessions: sessionResult.count,
     nulledSessionRefs,
     nulledInquiryRefs,
-    digitalRequests: drResult.count,
+    digitalRequests: officeDrResult.count + otherDrResult.count,
+    officeDigitalRequests: officeDrResult.count,
+    otherDigitalRequests: otherDrResult.count,
     caseSessions: caseResult.count,
     inquirySessions: inquiryResult.count,
   };

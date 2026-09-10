@@ -64,6 +64,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       nulledSessionRefs: result.nulledSessionRefs,
       nulledInquiryRefs: result.nulledInquiryRefs,
       digitalRequests: result.digitalRequests,
+      officeDigitalRequests: result.officeDigitalRequests,
+      otherDigitalRequests: result.otherDigitalRequests,
       caseSessions: result.caseSessions,
       inquirySessions: result.inquirySessions,
     });

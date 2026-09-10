@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireOfficeApplicationsAccessFromCookies } from "@/lib/authz";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { applicationRoleLabel } from "@/lib/digitalRequests/applicationRoles";
+import { activeOfficeApplicationFilter } from "@/lib/digitalRequests/officeApplicationLifecycle";
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +47,11 @@ export default async function OfficeApplicationsPage() {
   const account = await requireOfficeApplicationsAccessFromCookies();
   if (!account) redirect("/");
 
+  const now = new Date();
   const applications = await prisma.digitalRequest.findMany({
     where: {
       ...getOfficeOwnershipFilter(account),
-      request_type: "office",
-      deleted_at: null,
+      ...activeOfficeApplicationFilter(now),
     },
     orderBy: { createdAt: "desc" },
     take: 100,
