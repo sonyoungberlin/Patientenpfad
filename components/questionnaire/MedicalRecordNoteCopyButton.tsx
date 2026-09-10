@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { buildAppTextXml } from "@/lib/questionnaire/appTextXml";
 
 type Props = {
   noteText: string;
   sessionId: string;
+  xmlFilename?: string | null;
 };
 
-export default function MedicalRecordNoteCopyButton({ noteText, sessionId }: Props) {
+export default function MedicalRecordNoteCopyButton({
+  noteText,
+  sessionId,
+  xmlFilename = null,
+}: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -33,6 +39,23 @@ export default function MedicalRecordNoteCopyButton({ noteText, sessionId }: Pro
     }
   }
 
+  function handleXmlDownload() {
+    if (!xmlFilename) return;
+
+    const blob = new Blob([buildAppTextXml(noteText)], {
+      type: "application/xml;charset=utf-8",
+    });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = xmlFilename;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   return (
     <div
       style={{ marginTop: "0.5rem", display: "grid", gap: "0.4rem" }}
@@ -47,6 +70,17 @@ export default function MedicalRecordNoteCopyButton({ noteText, sessionId }: Pro
       >
         {copied ? "Kopiert ✓" : "Krankenblatt-Text kopieren"}
       </button>
+      {xmlFilename && (
+        <button
+          type="button"
+          onClick={handleXmlDownload}
+          className="btn-secondary text-small"
+          data-q-download-xml={sessionId}
+          style={{ display: "inline-block", width: "fit-content" }}
+        >
+          XML herunterladen
+        </button>
+      )}
       <textarea
         readOnly
         aria-hidden="true"

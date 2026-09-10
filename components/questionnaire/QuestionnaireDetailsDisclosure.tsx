@@ -77,7 +77,11 @@ export default function QuestionnaireDetailsDisclosure({ sessionId }: Props) {
 
       {detail && (
         <div data-q-details-loaded={sessionId}>
-          <MedicalRecordNoteCopyButton sessionId={sessionId} noteText={detail.noteText} />
+          <MedicalRecordNoteCopyButton
+            sessionId={sessionId}
+            noteText={detail.noteText}
+            xmlFilename={detail.xmlFilename}
+          />
           {(derivedLines.length > 0 || detail.attentionHints.length > 0) && (
             <div
               data-q-derived-values={sessionId}

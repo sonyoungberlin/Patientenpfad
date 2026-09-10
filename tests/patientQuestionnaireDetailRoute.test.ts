@@ -71,6 +71,7 @@ it("liefert genau die aufbereiteten Details eines Fragebogens derselben Praxis",
   expect(body.ok).toBe(true);
   expect(body.detail.questions).toEqual(detailSession.deduplicated_questions);
   expect(body.detail.answers).toEqual(detailSession.answers);
+  expect(body.detail.xmlFilename).toBeNull();
   expect(body.detail).not.toHaveProperty("frozen_blocks");
   expect(body.detail).not.toHaveProperty("owner_practice_id");
 
@@ -82,10 +83,13 @@ it("liefert genau die aufbereiteten Details eines Fragebogens derselben Praxis",
     { status: "completed" },
   ]));
   expect(query.select).toEqual({
+    patient_reference: true,
+    submitted_at: true,
     selected_block_ids: true,
     deduplicated_questions: true,
     answers: true,
     frozen_blocks: true,
+    source: true,
     session_kind: true,
     internal_workflow_id: true,
   });

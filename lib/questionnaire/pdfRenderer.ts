@@ -19,59 +19,12 @@ import {
   isDocumentedContentSnapshot,
   isNewBlockBasedInternalSession,
 } from "./documentedContent";
+import {
+  buildQuestionnaireExportFilename,
+  sanitizeFilenamePart,
+} from "./questionnaireExportFilename";
 
-function formatDateYyyyMmDd(date: Date): string {
-  const formatter = new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const parts = formatter.formatToParts(date);
-  const year = parts.find((p) => p.type === "year")?.value ?? "";
-  const month = parts.find((p) => p.type === "month")?.value ?? "";
-  const day = parts.find((p) => p.type === "day")?.value ?? "";
-  return `${year}${month}${day}`;
-}
-
-export function sanitizeFilenamePart(value: string): string {
-  return value
-    .replaceAll("Ä", "Ae")
-    .replaceAll("Ö", "Oe")
-    .replaceAll("Ü", "Ue")
-    .replaceAll("ä", "ae")
-    .replaceAll("ö", "oe")
-    .replaceAll("ü", "ue")
-    .replaceAll("ß", "ss")
-    .replace(/\s+/g, "_")
-    .replace(/[^A-Za-z0-9_]/g, "")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
-}
-
-function getFirstBlockLabel(
-  selectedBlockIds: string[],
-  blockCatalog: Record<string, QuestionnaireBlock>,
-): string | null {
-  const firstBlockId = selectedBlockIds[0];
-  if (!firstBlockId) return null;
-  const label = blockCatalog[firstBlockId]?.label;
-  if (!label) return null;
-  const sanitized = sanitizeFilenamePart(label);
-  return sanitized.length > 0 ? sanitized : null;
-}
-
-function prioritizeContactBlock(
-  questionnairePart: string | null,
-  selectedBlockIds: string[],
-  blockCatalog: Record<string, QuestionnaireBlock>,
-): string | null {
-  if (!selectedBlockIds.includes("KONTAKT")) return questionnairePart;
-
-  const contactPart = sanitizeFilenamePart(blockCatalog.KONTAKT?.label ?? "");
-  if (!contactPart || questionnairePart === contactPart) return questionnairePart ?? contactPart;
-  return questionnairePart ? `${contactPart}_${questionnairePart}` : contactPart;
-}
+export { sanitizeFilenamePart } from "./questionnaireExportFilename";
 
 export type PdfSessionInput = {
   patient_reference: string | null;
@@ -509,33 +462,11 @@ export async function buildQuestionnairePdfBytes(
 
   const bytes = await pdfDoc.save();
 
-  const datePart = formatDateYyyyMmDd(session.submitted_at ?? new Date());
-  const questionnairePartWithoutContact = opts.filenameLabel
-    ? sanitizeFilenamePart(opts.filenameLabel)
-    :
-    session.source === "website"
-      ? sanitizeFilenamePart(session.practice_form?.title ?? "") || null
-      : getFirstBlockLabel(selectedBlockIds, blockCatalog);
-  const questionnairePart = prioritizeContactBlock(
-    questionnairePartWithoutContact,
-    selectedBlockIds,
+  const filename = buildQuestionnaireExportFilename(session, {
     blockCatalog,
-  );
-
-  let filename: string;
-  if (session.patient_reference) {
-    const refPart = sanitizeFilenamePart(session.patient_reference);
-    filename = questionnairePart ? `${datePart}_${refPart}_${questionnairePart}.pdf` : `${datePart}_${refPart}.pdf`;
-  } else {
-    const lastName = sanitizeFilenamePart((answers as Record<string, string>).IDENTITY_LAST_NAME ?? "");
-    const firstName = sanitizeFilenamePart((answers as Record<string, string>).IDENTITY_FIRST_NAME ?? "");
-    if (lastName && firstName) {
-      const namePart = `${lastName}_${firstName}`;
-      filename = questionnairePart ? `${datePart}_${namePart}_${questionnairePart}.pdf` : `${datePart}_${namePart}.pdf`;
-    } else {
-      filename = questionnairePart ? `${datePart}_Fragebogen_${questionnairePart}.pdf` : `${datePart}_Fragebogen.pdf`;
-    }
-  }
+    filenameLabel: opts.filenameLabel,
+    extension: "pdf",
+  });
 
   return { bytes, filename };
 }

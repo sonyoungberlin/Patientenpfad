@@ -125,10 +125,13 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     }));
 
     const detail = buildQuestionnaireInboxDetail({
+      patient_reference: "PAT-2B",
+      submitted_at: new Date("2026-09-09T10:00:00.000Z"),
       selected_block_ids: selectedBlockIds,
       deduplicated_questions: questions,
       answers,
       frozen_blocks: frozenBlocks,
+      source: "practice_direct",
       session_kind: "internal_documentation",
       internal_workflow_id: null,
     });
@@ -136,6 +139,7 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(detail.noteText).toContain("Versorgung abstimmen");
     expect(detail.noteText).toContain("Impfungen");
     expect(detail.noteText).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+    expect(detail.xmlFilename).toBe("20260909_PAT2B_Interne_Dokumentation.xml");
   });
 
   it("rendert Cross-Module-PDF neutral und Frozen-basiert", async () => {

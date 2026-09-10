@@ -42,10 +42,13 @@ export async function GET(
         ],
       },
       select: {
+        patient_reference: true,
+        submitted_at: true,
         selected_block_ids: true,
         deduplicated_questions: true,
         answers: true,
         frozen_blocks: true,
+        source: true,
         session_kind: true,
         internal_workflow_id: true,
       },

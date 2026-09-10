@@ -9,12 +9,20 @@ import { parseFrozenBlocks } from "./frozenBlocks";
 import type { FrozenBlock } from "./frozenBlocks";
 import { isNewBlockBasedInternalSession } from "./documentedContent";
 import { buildOptionsByQuestionId } from "./multiSelect";
+import {
+  INTERNAL_BLOCK_CATALOG,
+  resolveInternalWorkflow,
+} from "./internalWorkflowRegistry";
+import { buildQuestionnaireExportFilename } from "./questionnaireExportFilename";
 
 export type QuestionnaireInboxDetailSource = {
+  patient_reference: string | null;
+  submitted_at: Date | null;
   selected_block_ids: unknown;
   deduplicated_questions: unknown;
   answers: unknown;
   frozen_blocks: unknown;
+  source: string;
   session_kind: string;
   internal_workflow_id: string | null;
 };
@@ -23,6 +31,7 @@ export type QuestionnaireInboxDetail = {
   questions: QuestionDefinition[];
   answers: Record<string, string>;
   noteText: string;
+  xmlFilename: string | null;
   derivedValues: DerivedValues;
   attentionHints: ReturnType<typeof computeQuestionnaireAttentionHints>;
   visibleQuestionIds: string[];
@@ -93,6 +102,9 @@ export function buildQuestionnaireInboxDetail(
     internalWorkflowId: session.internal_workflow_id,
     frozenBlocks,
   });
+  const internalWorkflow = session.session_kind === "internal_documentation" && !isNewBlockBased
+    ? resolveInternalWorkflow(session.internal_workflow_id)
+    : null;
   const derivedValues = computeAllDerivedValues(answers);
   const visibleQuestionIds = buildVisibleQuestionIds(
     blockIds,
@@ -117,5 +129,26 @@ export function buildQuestionnaireInboxDetail(
     derivedValues,
     attentionHints: computeQuestionnaireAttentionHints(answers, visibleQuestionIds),
     visibleQuestionIds: [...visibleQuestionIds],
+    xmlFilename: session.session_kind === "internal_documentation" && (isNewBlockBased || internalWorkflow)
+      ? buildQuestionnaireExportFilename(
+          {
+            patient_reference: session.patient_reference,
+            submitted_at: session.submitted_at,
+            selected_block_ids: blockIds,
+            answers,
+            source: session.source,
+            practice_form: null,
+          },
+          {
+            blockCatalog: isNewBlockBased
+              ? INTERNAL_BLOCK_CATALOG
+              : internalWorkflow!.blockCatalog,
+            filenameLabel: isNewBlockBased
+              ? "Interne Dokumentation"
+              : internalWorkflow!.filenameLabel,
+            extension: "xml",
+          },
+        )
+      : null,
   };
 }
