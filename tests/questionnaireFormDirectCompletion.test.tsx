@@ -176,6 +176,8 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
 
     const downloadButton = container.querySelector<HTMLButtonElement>("[data-q-download-xml]");
     expect(downloadButton?.textContent).toBe("XML für Word herunterladen");
+    expect(container.textContent).not.toContain("Fragebogen abgeschlossen");
+    expect(container.textContent).toContain("Vielen Dank.");
     await act(async () => downloadButton!.click());
 
     const blob = (URL.createObjectURL as jest.Mock).mock.calls[0][0] as Blob;

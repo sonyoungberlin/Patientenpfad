@@ -1259,7 +1259,7 @@ export function QuestionnaireFormClient({
   if (submitted) {
     return (
       <section data-q-submitted style={{ marginTop: "1.5rem" }}>
-        <h2>{t.completedTitle}</h2>
+        {xmlExport ? null : <h2>{t.completedTitle}</h2>}
         <p>{t.completedThanks}</p>
         {selfCheckInQrReference ? (
           <SelfCheckInQrCode reference={selfCheckInQrReference} />
