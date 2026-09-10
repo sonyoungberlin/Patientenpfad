@@ -39,7 +39,7 @@ describe("InternalDocumentationBlockSelector", () => {
     );
   }
 
-  it("gruppiert EKG, Stellungnahme und Dokumente / Befunde wie vorgesehen", async () => {
+  it("gruppiert EKG, Stellungnahme, Fachärzte, Einwilligung und Dokumente wie vorgesehen", async () => {
     expect(INTERNAL_BLOCK_GROUPS.find((group) => group.id === "health_check")?.blockIds)
       .toContain("EKG");
     expect(INTERNAL_BLOCK_GROUPS.find((group) => group.id === "medical_statement")).toEqual({
@@ -52,6 +52,16 @@ describe("InternalDocumentationBlockSelector", () => {
       label: "Weitere Dokumentation",
       blockIds: ["DOCUMENT_HANDLING"],
     });
+    expect(INTERNAL_BLOCK_GROUPS.find((group) => group.id === "specialists")).toEqual({
+      id: "specialists",
+      label: "Fachärzte",
+      blockIds: ["SPECIALISTS"],
+    });
+    expect(INTERNAL_BLOCK_GROUPS.find((group) => group.id === "consent")).toEqual({
+      id: "consent",
+      label: "Einwilligungserklärung",
+      blockIds: ["INTERNAL_CONSENT"],
+    });
 
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -60,7 +70,7 @@ describe("InternalDocumentationBlockSelector", () => {
       root.render(<Harness />);
     });
 
-    expect(container.textContent).toContain("0 von 15 Abschnitten ausgewählt");
+    expect(container.textContent).toContain("0 von 17 Abschnitten ausgewählt");
     const ekgCheckbox = container.querySelector<HTMLInputElement>(
       '[data-internal-block="EKG"]',
     )!;
@@ -70,15 +80,27 @@ describe("InternalDocumentationBlockSelector", () => {
     const documentCheckbox = container.querySelector<HTMLInputElement>(
       '[data-internal-block="DOCUMENT_HANDLING"]',
     )!;
+    const specialistsCheckbox = container.querySelector<HTMLInputElement>(
+      '[data-internal-block="SPECIALISTS"]',
+    )!;
+    const consentCheckbox = container.querySelector<HTMLInputElement>(
+      '[data-internal-block="INTERNAL_CONSENT"]',
+    )!;
     expect(ekgCheckbox).not.toBeNull();
     expect(statementCheckbox).not.toBeNull();
     expect(documentCheckbox).not.toBeNull();
+    expect(specialistsCheckbox).not.toBeNull();
+    expect(consentCheckbox).not.toBeNull();
 
     await act(async () => ekgCheckbox.click());
     await act(async () => statementCheckbox.click());
+    await act(async () => specialistsCheckbox.click());
+    await act(async () => consentCheckbox.click());
     expect(ekgCheckbox.checked).toBe(true);
     expect(statementCheckbox.checked).toBe(true);
     expect(documentCheckbox.checked).toBe(false);
+    expect(specialistsCheckbox.checked).toBe(true);
+    expect(consentCheckbox.checked).toBe(true);
 
     const healthSection = [...container.querySelectorAll("section")]
       .find((section) => section.textContent?.includes("Gesundheitsuntersuchung"))!;
@@ -94,6 +116,8 @@ describe("InternalDocumentationBlockSelector", () => {
     )).toBe(true);
     expect(statementCheckbox.checked).toBe(true);
     expect(documentCheckbox.checked).toBe(false);
+    expect(specialistsCheckbox.checked).toBe(true);
+    expect(consentCheckbox.checked).toBe(true);
 
     await act(async () => root.unmount());
     document.body.removeChild(container);

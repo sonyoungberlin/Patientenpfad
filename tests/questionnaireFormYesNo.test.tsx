@@ -288,6 +288,115 @@ describe("QuestionnaireFormClient yes_no-Werte", () => {
     document.body.removeChild(container);
   });
 
+  it("verwendet intern die bestehende FACHAERZTE-UI mit Hinzufügen, Entfernen und maximal zehn Einträgen", async () => {
+    const question = INTERNAL_QUESTION_CATALOG.FACHAERZTE;
+    const frozenBlocks = [{
+      id: "SPECIALISTS",
+      label: "Fachärzte",
+      displayOrder: 90,
+      questions: [question],
+      conditionalRules: [],
+      initiallyVisible: true,
+      outputSemantics: "documented-content-v1" as const,
+    }];
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireFormClient
+          token="session-1"
+          questions={[question]}
+          frozenBlocks={frozenBlocks}
+          source="practice_direct"
+          context="office"
+          internalWorkflowId={null}
+        />,
+      );
+    });
+
+    const section = container.querySelector<HTMLElement>('[data-q-block="SPECIALISTS"]')!;
+    for (let index = 0; index < 10; index += 1) {
+      await act(async () => {
+        [...section.querySelectorAll("button")]
+          .find((button) => button.textContent === "+ Weiteren Facharzt hinzufügen")!
+          .click();
+      });
+    }
+    expect(section.textContent).toContain("Erkrankung / Grund der fachärztlichen Behandlung");
+    expect(section.textContent).toContain("Facharztbereich");
+    expect(section.textContent).toContain("Name des Facharztes oder der Praxis");
+    expect(section.textContent).toContain("Adresse der Praxis");
+    expect([...section.querySelectorAll("strong")].filter((node) => node.textContent?.startsWith("Eintrag ")))
+      .toHaveLength(10);
+    expect([...section.querySelectorAll("button")].some((button) => button.textContent === "+ Weiteren Facharzt hinzufügen"))
+      .toBe(false);
+
+    await act(async () => {
+      [...section.querySelectorAll("button")]
+        .find((button) => button.textContent === "Entfernen")!
+        .click();
+    });
+    expect([...section.querySelectorAll("strong")].filter((node) => node.textContent?.startsWith("Eintrag ")))
+      .toHaveLength(9);
+    expect([...section.querySelectorAll("button")].some((button) => button.textContent === "+ Weiteren Facharzt hinzufügen"))
+      .toBe(true);
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("sendet Einwilligung nur als technischen Aufnahme-Wert ohne Confirmation-Checkbox", async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });
+    const question = INTERNAL_QUESTION_CATALOG.INTERNAL_CONSENT_INCLUDE;
+    const frozenBlocks = [{
+      id: "INTERNAL_CONSENT",
+      label: "Einwilligungserklärung",
+      displayOrder: 100,
+      questions: [question],
+      conditionalRules: [],
+      initiallyVisible: true,
+      outputSemantics: "documented-content-v1" as const,
+      paperSignature: { label: "Datum / Unterschrift Patient/in" },
+    }];
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireFormClient
+          token="session-1"
+          questions={[question]}
+          frozenBlocks={frozenBlocks}
+          source="practice_direct"
+          context="office"
+          internalWorkflowId={null}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("Einwilligungserklärung aufnehmen");
+    expect(container.textContent).not.toContain("Ich willige ein, dass");
+    expect(container.querySelector('input[type="checkbox"]')).toBeNull();
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(
+        '[data-q-multiselect="INTERNAL_CONSENT_INCLUDE:include_in_print"]',
+      )!.click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    const request = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(request.body as string).answers).toEqual({
+      INTERNAL_CONSENT_INCLUDE: "include_in_print",
+    });
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
   it("aktualisiert den Health-Check-BMI unmittelbar aus Größe und Gewicht", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);

@@ -52,6 +52,8 @@ export type FrozenBlock = {
   outputSemantics?: "documented-content-v1";
   /** Eingefrorene, optionale Darstellung der dokumentierten Antworten. */
   documentationPresentation?: BlockDocumentationPresentation;
+  /** Eingefrorener leerer Unterschriftsbereich für Papierdokumente. */
+  paperSignature?: { label: string };
 };
 
 // ---------------------------------------------------------------------------
@@ -144,6 +146,9 @@ export function buildFrozenBlocks(
     if (block.hint_en !== undefined) frozenBlock.hint_en = block.hint_en;
     if (block.documentationPresentation !== undefined) {
       frozenBlock.documentationPresentation = structuredClone(block.documentationPresentation);
+    }
+    if (block.paperSignature !== undefined) {
+      frozenBlock.paperSignature = structuredClone(block.paperSignature);
     }
 
     result.push(frozenBlock);

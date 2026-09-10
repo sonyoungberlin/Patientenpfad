@@ -1,8 +1,11 @@
-import type { QuestionnaireBlock, QuestionDefinition } from "./blockCatalog";
+import { QUESTION_CATALOG, type QuestionnaireBlock, type QuestionDefinition } from "./blockCatalog";
+
+export const INTERNAL_CONSENT_DOCUMENTATION_TEXT = "Ich willige ein, dass meine Hausarztpraxis MVZ Kreuzberg, Skalitzer Str. 33, 10999 Berlin erforderliche Befunde und medizinische Unterlagen bei den von mir genannten Ärzten/Praxen/Einrichtungen anfordert und diese meine Gesundheitsdaten und Unterlagen an meine Hausarztpraxis übermitteln dürfen.";
 
 const INTERVAL_OPTIONS = ["1x im Quartal", "halbjährlich", "jährlich", "individuell"];
 
 const QUESTIONS: Record<string, QuestionDefinition> = {
+  FACHAERZTE: QUESTION_CATALOG.FACHAERZTE,
   CARE_PLAN_HA_DATE: { id: "CARE_PLAN_HA_DATE", text: "Datum des Gesprächs", type: "date", required: false },
   CARE_PLAN_HA_REASON: { id: "CARE_PLAN_HA_REASON", text: "Anlass / Diagnose", type: "textarea", required: false, maxLength: 120 },
   CARE_PLAN_HA_MEDICAL_INTERVAL: { id: "CARE_PLAN_HA_MEDICAL_INTERVAL", text: "Ärztliche Kontrolle", type: "select", required: false, options: INTERVAL_OPTIONS },
@@ -126,6 +129,17 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
       { value: "social_medical_assessment", label: "Sozialmedizinische Begutachtung", documentationText: "Eine weiterführende sozialmedizinische Begutachtung kann sinnvoll sein." },
     ],
   },
+  INTERNAL_CONSENT_INCLUDE: {
+    id: "INTERNAL_CONSENT_INCLUDE",
+    text: "Einwilligungserklärung",
+    type: "multi_select",
+    required: false,
+    options: [{
+      value: "include_in_print",
+      label: "Einwilligungserklärung aufnehmen",
+      documentationText: INTERNAL_CONSENT_DOCUMENTATION_TEXT,
+    }],
+  },
 };
 
 export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
@@ -158,6 +172,19 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
     label: "Stellungnahme",
     displayOrder: 80,
     questionIds: ["MEDICAL_STATEMENT_IMPAIRMENT_TYPE", "MEDICAL_STATEMENT_TIME_ASSESSMENT", "MEDICAL_STATEMENT_RECOMMENDATIONS"],
+  },
+  SPECIALISTS: {
+    id: "SPECIALISTS",
+    label: "Fachärzte",
+    displayOrder: 90,
+    questionIds: ["FACHAERZTE"],
+  },
+  INTERNAL_CONSENT: {
+    id: "INTERNAL_CONSENT",
+    label: "Einwilligungserklärung",
+    displayOrder: 100,
+    questionIds: ["INTERNAL_CONSENT_INCLUDE"],
+    paperSignature: { label: "Datum / Unterschrift Patient/in" },
   },
 };
 

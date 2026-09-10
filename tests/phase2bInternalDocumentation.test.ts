@@ -24,6 +24,7 @@ import { buildInternalDocumentationFrozenBlocks } from "@/lib/questionnaire/inte
 import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedContent";
 import { submitInternalDocumentationSession } from "@/lib/questionnaire/internalDocumentationService";
 import { GET as PdfRoute } from "@/app/api/questionnaire/[id]/pdf/route";
+import { INTERNAL_CONSENT_DOCUMENTATION_TEXT } from "@/lib/questionnaire/internalDocumentationCatalog";
 
 const sessionDb = prisma.patientQuestionnaireSession as unknown as {
   findUnique: jest.Mock;
@@ -64,6 +65,21 @@ async function extractPdfText(bytes: Uint8Array): Promise<string> {
     .replace(/<([0-9A-F]+)>\s+Tj/g, (_, hex: string) =>
       Buffer.from(hex, "hex").toString("latin1"),
     );
+}
+
+function extractPdfTextRuns(bytes: Uint8Array): string {
+  const raw = Buffer.from(bytes).toString("latin1");
+  const streams: string[] = [];
+  for (const match of raw.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
+    try {
+      streams.push(inflateSync(Buffer.from(match[1]!, "latin1")).toString("latin1"));
+    } catch {
+      streams.push(match[1]!);
+    }
+  }
+  return [...streams.join(" ").matchAll(/<([0-9A-F]+)>\s+Tj/g)]
+    .map((match) => Buffer.from(match[1]!, "hex").toString("latin1"))
+    .join(" ");
 }
 
 function session(overrides: Record<string, unknown> = {}) {
@@ -495,6 +511,152 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
       blockCatalog: {},
     });
     expect(await extractPdfText(emptyPdf.bytes)).not.toContain("Stellungnahme");
+  });
+
+  it("verwendet FACHAERZTE intern mit bestehender Struktur in Copy, PDF und Submit", async () => {
+    const specialistBlocks = buildInternalDocumentationFrozenBlocks(["SPECIALISTS"]);
+    const rawSpecialists = JSON.stringify([
+      { erkrankung: "Hypertonie", bereich: "Kardiologie", name: "Dr. Herz", adresse: "Herzweg 1" },
+      { erkrankung: "Rückenschmerzen", bereich: "Orthopädie", name: "Praxis Orthomed", adresse: "" },
+    ]);
+    const specialistAnswers = { FACHAERZTE: rawSpecialists };
+    const note = buildMedicalRecordNote({
+      answers: specialistAnswers,
+      selected_block_ids: ["SPECIALISTS"],
+      frozenBlocks: specialistBlocks,
+      internalWorkflowId: null,
+    });
+
+    expect(note).toContain("Fachärzte");
+    expect(note).toContain("1. Eintrag");
+    expect(note).toContain("2. Eintrag");
+    expect(note).toContain("Kardiologie");
+    expect(note).toContain("Praxis Orthomed");
+
+    const pdf = await buildQuestionnairePdfBytes(session({
+      selected_block_ids: ["SPECIALISTS"],
+      deduplicated_questions: specialistBlocks.flatMap((block) => block.questions),
+      frozen_blocks: specialistBlocks,
+      answers: specialistAnswers,
+    }), {
+      title: "Interne Dokumentation",
+      filenameLabel: "Interne Dokumentation",
+      referenceLabel: "Patientenreferenz",
+      blockCatalog: {},
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+    expect(pdfText).toContain("Fachärzte");
+    expect(pdfText).toContain("Dr. Herz");
+    expect(pdfText).toContain("Praxis Orthomed");
+
+    sessionDb.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: null,
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      frozen_blocks: specialistBlocks,
+    });
+    await submitInternalDocumentationSession({
+      sessionId: "phase-2b-session",
+      answers: { FACHAERZTE: JSON.stringify([
+        { erkrankung: " Hypertonie ", bereich: "Kardiologie", name: " Dr. Herz ", adresse: "", ignored: "x" },
+      ]) },
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+    const stored = JSON.parse(sessionDb.updateMany.mock.calls[0][0].data.answers.FACHAERZTE);
+    expect(stored).toEqual([{ erkrankung: "Hypertonie", bereich: "Kardiologie", name: "Dr. Herz", adresse: "" }]);
+  });
+
+  it("lässt leere Fachärzte und nicht ausgewählte Einwilligung vollständig aus", async () => {
+    const blocks = buildInternalDocumentationFrozenBlocks(["SPECIALISTS", "INTERNAL_CONSENT"]);
+    const note = buildMedicalRecordNote({
+      answers: { FACHAERZTE: "[]" },
+      selected_block_ids: blocks.map((block) => block.id),
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    });
+    expect(note).not.toContain("Fachärzte");
+    expect(note).not.toContain("Einwilligungserklärung");
+    expect(note).not.toContain(INTERNAL_CONSENT_DOCUMENTATION_TEXT);
+
+    const pdf = await buildQuestionnairePdfBytes(session({
+      selected_block_ids: blocks.map((block) => block.id),
+      deduplicated_questions: blocks.flatMap((block) => block.questions),
+      frozen_blocks: blocks,
+      answers: { FACHAERZTE: "[]" },
+    }), {
+      title: "Interne Dokumentation",
+      filenameLabel: "Interne Dokumentation",
+      referenceLabel: "Patientenreferenz",
+      blockCatalog: {},
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+    expect(pdfText).not.toContain("Fachärzte");
+    expect(pdfText).not.toContain("Einwilligungserklärung");
+    expect(pdfText).not.toContain("Datum / Unterschrift Patient/in");
+  });
+
+  it("gibt die ausgewählte Einwilligung ohne Bestätigungsbehauptung mit Papierzeile aus", async () => {
+    const blocks = buildInternalDocumentationFrozenBlocks(["INTERNAL_CONSENT"]);
+    const consentAnswers = { INTERNAL_CONSENT_INCLUDE: "include_in_print" };
+    const note = buildMedicalRecordNote({
+      answers: consentAnswers,
+      selected_block_ids: ["INTERNAL_CONSENT"],
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    });
+    expect(note).toContain("Einwilligungserklärung");
+    expect(note).toContain(INTERNAL_CONSENT_DOCUMENTATION_TEXT);
+    expect(note).not.toContain("Bestätigt");
+    expect(note).not.toContain("Unterschrift erfolgt");
+
+    const pdf = await buildQuestionnairePdfBytes(session({
+      selected_block_ids: ["INTERNAL_CONSENT"],
+      deduplicated_questions: blocks.flatMap((block) => block.questions),
+      frozen_blocks: blocks,
+      answers: consentAnswers,
+    }), {
+      title: "Interne Dokumentation",
+      filenameLabel: "Interne Dokumentation",
+      referenceLabel: "Patientenreferenz",
+      blockCatalog: {},
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+    expect(extractPdfTextRuns(pdf.bytes).replace(/\s+/g, " "))
+      .toContain(INTERNAL_CONSENT_DOCUMENTATION_TEXT);
+    expect(pdfText).toContain("____________________________");
+    expect(pdfText).toContain("Datum / Unterschrift Patient/in");
+    expect(pdfText).not.toContain("Bestätigt");
+    expect(pdfText).not.toContain("Bitte senden Sie das unterschriebene Dokument an");
+  });
+
+  it("kombiniert Gesundheitsuntersuchung, Fachärzte und Einwilligung unabhängig", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks([
+      "INTERNAL_CONSENT",
+      "HEALTH_CHECK_CLINICAL_STATUS",
+      "SPECIALISTS",
+    ]);
+    expect(blocks.map((block) => block.id)).toEqual([
+      "SPECIALISTS",
+      "INTERNAL_CONSENT",
+      "HEALTH_CHECK_CLINICAL_STATUS",
+    ]);
+    const note = buildMedicalRecordNote({
+      answers: {
+        HEALTH_CHECK_GENERAL_STATUS: "unauffällig",
+        FACHAERZTE: JSON.stringify([{ erkrankung: "Kontrolle", bereich: "Kardiologie", name: "Dr. Herz", adresse: "" }]),
+        INTERNAL_CONSENT_INCLUDE: "include_in_print",
+      },
+      selected_block_ids: blocks.map((block) => block.id),
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    });
+    expect(note).toContain("Klinischer Status");
+    expect(note).toContain("Dr. Herz");
+    expect(note).toContain(INTERNAL_CONSENT_DOCUMENTATION_TEXT);
   });
 
   it("liefert die neue Session über die normale PDF-Route ohne Workflow", async () => {

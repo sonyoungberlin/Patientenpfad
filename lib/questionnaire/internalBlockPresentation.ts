@@ -46,6 +46,16 @@ export const INTERNAL_BLOCK_GROUPS: readonly InternalBlockGroup[] = [
     label: "Stellungnahme",
     blockIds: ["MEDICAL_STATEMENT"],
   },
+  {
+    id: "specialists",
+    label: "Fachärzte",
+    blockIds: ["SPECIALISTS"],
+  },
+  {
+    id: "consent",
+    label: "Einwilligungserklärung",
+    blockIds: ["INTERNAL_CONSENT"],
+  },
 ] as const;
 
 const registeredBlockIds = new Set(INTERNAL_BLOCK_ORDER);

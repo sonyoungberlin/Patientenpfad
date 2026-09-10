@@ -121,6 +121,7 @@ export async function buildQuestionnairePdfBytes(
     conditionalRules: import("./conditionalLogic").ConditionalRule[];
     initiallyVisible: boolean;
     documentationPresentation?: BlockDocumentationPresentation;
+    paperSignature?: { label: string };
   }> = snapshotBlocks
     ? snapshotBlocks
     : selectedBlockIds
@@ -479,6 +480,13 @@ export async function buildQuestionnairePdfBytes(
           : resolved.fallbackValue;
         omitQuestionLabel ? drawWrappedValue(fallbackValue) : drawWrappedPair(q.text, fallbackValue);
       }
+    }
+
+    if (snapshotBlock?.paperSignature) {
+      ensureSpace(lineHeight * 4);
+      y -= sectionGap;
+      drawText("____________________________", { size: 10 });
+      drawText(snapshotBlock.paperSignature.label, { size: 9 });
     }
 
     y -= sectionGap;

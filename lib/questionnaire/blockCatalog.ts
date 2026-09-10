@@ -163,6 +163,10 @@ export type BlockDocumentationPresentation = {
   items: InlineDocumentationItem[];
 };
 
+export type PaperSignaturePresentation = {
+  label: string;
+};
+
 export type QuestionnaireBlock = {
   /** Stabile Block-ID, z.B. "KONTAKT". */
   id: string;
@@ -190,6 +194,8 @@ export type QuestionnaireBlock = {
   selectable?: boolean;
   /** Optionale, rein darstellende Auflösung für kompakte Dokumentation. */
   documentationPresentation?: BlockDocumentationPresentation;
+  /** Optionaler leerer Unterschriftsbereich für ein auszudruckendes Dokument. */
+  paperSignature?: PaperSignaturePresentation;
 };
 
 // ---------------------------------------------------------------------------

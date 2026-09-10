@@ -8,6 +8,8 @@ import {
   INTERNAL_QUESTION_CATALOG,
   resolveInternalBlocks,
 } from "@/lib/questionnaire/internalWorkflowRegistry";
+import { QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import { INTERNAL_CONSENT_DOCUMENTATION_TEXT } from "@/lib/questionnaire/internalDocumentationCatalog";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -22,10 +24,10 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
     create.mockReset().mockResolvedValue({ id: "session-2a" });
   });
 
-  it("registriert alle 15 Blocks und global eindeutige Fragen", () => {
-    expect(INTERNAL_BLOCK_ORDER).toHaveLength(15);
-    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(15);
-    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(15);
+  it("registriert alle 17 Blocks und global eindeutige Fragen", () => {
+    expect(INTERNAL_BLOCK_ORDER).toHaveLength(17);
+    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(17);
+    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(17);
     expect(INTERNAL_BLOCK_CATALOG.DOCUMENT_HANDLING).toMatchObject({
       label: "Dokumente / Befunde",
       questionIds: ["DOCUMENT_HANDLING_ACTIONS"],
@@ -43,6 +45,16 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
         "MEDICAL_STATEMENT_RECOMMENDATIONS",
       ],
     });
+    expect(INTERNAL_BLOCK_CATALOG.SPECIALISTS).toMatchObject({
+      label: "Fachärzte",
+      questionIds: ["FACHAERZTE"],
+    });
+    expect(INTERNAL_BLOCK_CATALOG.INTERNAL_CONSENT).toMatchObject({
+      label: "Einwilligungserklärung",
+      questionIds: ["INTERNAL_CONSENT_INCLUDE"],
+      paperSignature: { label: "Datum / Unterschrift Patient/in" },
+    });
+    expect(INTERNAL_QUESTION_CATALOG.FACHAERZTE).toBe(QUESTION_CATALOG.FACHAERZTE);
     expect(Object.values(INTERNAL_BLOCK_CATALOG).flatMap((block) => block.questionIds))
       .toHaveLength(new Set(Object.values(INTERNAL_BLOCK_CATALOG).flatMap((block) => block.questionIds)).size);
     for (const block of Object.values(INTERNAL_BLOCK_CATALOG)) {
@@ -131,6 +143,39 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
         ],
       }),
     ]);
+  });
+
+  it("friert Fachärzte und Einwilligung vollständig und unabhängig ein", () => {
+    const specialists = buildInternalDocumentationFrozenBlocks(["SPECIALISTS"]);
+    const consent = buildInternalDocumentationFrozenBlocks(["INTERNAL_CONSENT"]);
+
+    expect(specialists).toHaveLength(1);
+    expect(specialists[0]).toMatchObject({
+      id: "SPECIALISTS",
+      outputSemantics: "documented-content-v1",
+      questions: [expect.objectContaining({
+        id: "FACHAERZTE",
+        type: "textarea",
+        text: "Behandelnde Fachärzte",
+      })],
+    });
+    expect(consent).toHaveLength(1);
+    expect(consent[0]).toMatchObject({
+      id: "INTERNAL_CONSENT",
+      outputSemantics: "documented-content-v1",
+      paperSignature: { label: "Datum / Unterschrift Patient/in" },
+      questions: [expect.objectContaining({
+        id: "INTERNAL_CONSENT_INCLUDE",
+        type: "multi_select",
+        options: [{
+          value: "include_in_print",
+          label: "Einwilligungserklärung aufnehmen",
+          documentationText: INTERNAL_CONSENT_DOCUMENTATION_TEXT,
+        }],
+      })],
+    });
+    expect(consent[0].questions[0]).not.toHaveProperty("send_patient_copy");
+    expect(consent[0].questions[0].type).not.toBe("confirmation");
   });
 
   it("friert Messwert- und EKG-Inline-Metadaten mit allen Fragen ein", () => {
