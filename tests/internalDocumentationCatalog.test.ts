@@ -17,6 +17,7 @@ describe("internal documentation workflow registry", () => {
 
     const blocks = buildInternalWorkflowBlocks("care_plan_v1");
     expect(blocks).toHaveLength(5);
+    expect(blocks.map((block) => block.id)).not.toContain("DOCUMENT_HANDLING");
     expect(blocks.map((block) => block.label)).toEqual([
       "Hausärztliche Betreuung",
       "Fachärztliche Betreuung",
@@ -201,6 +202,7 @@ describe("internal documentation workflow registry", () => {
       ["Größe", "cm"],
       ["Gewicht", "kg"],
     ]);
+    expect(blocks[1].documentationPresentation).toBeUndefined();
     expect(blocks[4].questions[0].options).toEqual([
       "Herz-Kreislauf", "Gewicht", "Ernährung", "Bewegung", "Nikotin", "Alkohol",
       "Psychische / psychosoziale Belastung", "Familiäre Risiken", "Vorsorge / Früherkennung",

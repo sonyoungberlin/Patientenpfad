@@ -22,10 +22,19 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
     create.mockReset().mockResolvedValue({ id: "session-2a" });
   });
 
-  it("registriert alle 12 Blocks und global eindeutige Fragen", () => {
-    expect(INTERNAL_BLOCK_ORDER).toHaveLength(12);
-    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(12);
-    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(12);
+  it("registriert alle 14 Blocks und global eindeutige Fragen", () => {
+    expect(INTERNAL_BLOCK_ORDER).toHaveLength(14);
+    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(14);
+    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(14);
+    expect(INTERNAL_BLOCK_CATALOG.DOCUMENT_HANDLING).toMatchObject({
+      label: "Dokumente / Befunde",
+      questionIds: ["DOCUMENT_HANDLING_ACTIONS"],
+    });
+    expect(INTERNAL_BLOCK_CATALOG.EKG).toMatchObject({
+      label: "EKG",
+      questionIds: ["EKG_RHYTHM", "EKG_HEART_RATE", "EKG_AXIS", "EKG_QTC", "EKG_BLOCK_PATTERNS", "EKG_ERBS"],
+      documentationPresentation: { layout: "inline", separator: " – " },
+    });
     expect(Object.values(INTERNAL_BLOCK_CATALOG).flatMap((block) => block.questionIds))
       .toHaveLength(new Set(Object.values(INTERNAL_BLOCK_CATALOG).flatMap((block) => block.questionIds)).size);
     for (const block of Object.values(INTERNAL_BLOCK_CATALOG)) {
@@ -43,12 +52,14 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
   });
 
   it("sortiert Einzelblocks und Kombinationen unabhängig von der Eingabereihenfolge", () => {
-    const ids = ["VACCINATION_REVIEW", "HEALTH_CHECK_NEXT_STEPS", "CARE_PLAN_HA"];
+    const ids = ["VACCINATION_REVIEW", "HEALTH_CHECK_NEXT_STEPS", "EKG", "DOCUMENT_HANDLING", "CARE_PLAN_HA"];
     const first = buildInternalDocumentationFrozenBlocks(ids);
     const second = buildInternalDocumentationFrozenBlocks([...ids].reverse());
 
     expect(first.map((block) => block.id)).toEqual([
       "CARE_PLAN_HA",
+      "DOCUMENT_HANDLING",
+      "EKG",
       "VACCINATION_REVIEW",
       "HEALTH_CHECK_NEXT_STEPS",
     ]);
@@ -57,9 +68,68 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
     expect(first.flatMap((block) => block.questions).map((question) => question.id))
       .toEqual(expect.arrayContaining([
         "CARE_PLAN_HA_DATE",
+        "DOCUMENT_HANDLING_ACTIONS",
+        "EKG_RHYTHM",
         "HEALTH_CHECK_FOLLOW_UP_REQUIRED",
         "VACCINATION_REVIEW_ITEMS",
       ]));
+  });
+
+  it("friert Messwert- und EKG-Inline-Metadaten mit allen Fragen ein", () => {
+    const frozen = buildInternalDocumentationFrozenBlocks(["EKG", "HEALTH_CHECK_MEASUREMENTS"]);
+    const ekg = frozen.find((block) => block.id === "EKG")!;
+    const measurements = frozen.find((block) => block.id === "HEALTH_CHECK_MEASUREMENTS")!;
+
+    expect(ekg.questions.map((question) => question.id)).toEqual([
+      "EKG_RHYTHM",
+      "EKG_HEART_RATE",
+      "EKG_AXIS",
+      "EKG_QTC",
+      "EKG_BLOCK_PATTERNS",
+      "EKG_ERBS",
+    ]);
+    expect(ekg.questions.filter((question) => question.type === "text"))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: "EKG_RHYTHM", maxLength: 120 }),
+        expect.objectContaining({ id: "EKG_AXIS", maxLength: 120 }),
+        expect.objectContaining({ id: "EKG_BLOCK_PATTERNS", maxLength: 120 }),
+        expect.objectContaining({ id: "EKG_ERBS", maxLength: 120 }),
+      ]));
+    expect(ekg.documentationPresentation?.items).toHaveLength(6);
+    expect(measurements.questions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "HEALTH_CHECK_HEART_RATE", unit: "/min", unitSeparator: "" }),
+      expect.objectContaining({ id: "HEALTH_CHECK_BLOOD_GLUCOSE", unit: "mg/dl" }),
+    ]));
+    expect(measurements.documentationPresentation).toMatchObject({
+      layout: "inline",
+      separator: " – ",
+    });
+    expect(measurements.documentationPresentation?.items[0]).toMatchObject({
+      questionIds: ["HEALTH_CHECK_BP_SYSTOLIC", "HEALTH_CHECK_BP_DIASTOLIC"],
+      valueSeparator: "/",
+    });
+  });
+
+  it("friert die strukturierten Dokumentoptionen vollständig ein", () => {
+    const frozen = buildInternalDocumentationFrozenBlocks(["DOCUMENT_HANDLING"]);
+
+    expect(frozen).toHaveLength(1);
+    expect(frozen[0]).toMatchObject({
+      id: "DOCUMENT_HANDLING",
+      label: "Dokumente / Befunde",
+      outputSemantics: "documented-content-v1",
+    });
+    expect(frozen[0].questions).toEqual([expect.objectContaining({
+      id: "DOCUMENT_HANDLING_ACTIONS",
+      type: "multi_select",
+      required: false,
+      options: [
+        { value: "attached", label: "sind beigefügt", documentationText: "Dokumente / Befunde sind beigefügt." },
+        { value: "handed_out", label: "wurden mitgegeben", documentationText: "Dokumente / Befunde wurden mitgegeben." },
+        { value: "requested", label: "wurden angefordert", documentationText: "Dokumente / Befunde wurden angefordert." },
+        { value: "pending_submission", label: "werden nachgereicht", documentationText: "Dokumente / Befunde werden nachgereicht." },
+      ],
+    })]);
   });
 
   it.each([

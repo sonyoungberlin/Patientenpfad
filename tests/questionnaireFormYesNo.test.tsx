@@ -6,7 +6,10 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
-import { getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
+import {
+  getInternalWorkflow,
+  INTERNAL_QUESTION_CATALOG,
+} from "@/lib/questionnaire/internalWorkflowRegistry";
 
 jest.mock("@/components/SelfCheckInQrCode", () => ({
   SelfCheckInQrCode: () => null,
@@ -153,6 +156,51 @@ describe("QuestionnaireFormClient yes_no-Werte", () => {
     expect(button?.style.whiteSpace).toBe("normal");
     expect(button?.style.overflowWrap).toBe("anywhere");
     expect(button?.parentElement?.style.minWidth).toBe("0");
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("zeigt beim Dokumentblock nur Kurzlabels und sendet technische Multi-Select-Werte", async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });
+    const question = INTERNAL_QUESTION_CATALOG.DOCUMENT_HANDLING_ACTIONS;
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireFormClient
+          token="token-1"
+          questions={[question]}
+          source="practice_direct"
+          context="office"
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("sind beigefügt");
+    expect(container.textContent).toContain("wurden angefordert");
+    expect(container.textContent).not.toContain("Dokumente / Befunde sind beigefügt.");
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(
+        '[data-q-multiselect="DOCUMENT_HANDLING_ACTIONS:attached"]',
+      )!.click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(
+        '[data-q-multiselect="DOCUMENT_HANDLING_ACTIONS:requested"]',
+      )!.click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const request = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(request.body as string).answers).toEqual({
+      DOCUMENT_HANDLING_ACTIONS: "attached, requested",
+    });
 
     await act(async () => root.unmount());
     document.body.removeChild(container);

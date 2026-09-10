@@ -118,4 +118,25 @@ describe("documentationText für Antwortoptionen", () => {
     expect(note).toContain("Rezepte für Dauermedikation werden ohne vorherige ärztliche Rücksprache ausgestellt.");
     expect(note).toContain("Überweisungen werden nach vorheriger ärztlicher Rücksprache ausgestellt.");
   });
+
+  it("erzeugt für mehrere Dokumentaktionen je einen Satz und bleibt unbenutzt leer", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks(["DOCUMENT_HANDLING"]);
+    const selected = buildMedicalRecordNote({
+      answers: { DOCUMENT_HANDLING_ACTIONS: "attached, requested" },
+      selected_block_ids: ["DOCUMENT_HANDLING"],
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    });
+    const empty = buildMedicalRecordNote({
+      answers: {},
+      selected_block_ids: ["DOCUMENT_HANDLING"],
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    });
+
+    expect(selected).toContain("Dokumente / Befunde sind beigefügt.");
+    expect(selected).toContain("Dokumente / Befunde wurden angefordert.");
+    expect(selected).not.toContain("sind beigefügt, wurden angefordert");
+    expect(empty).not.toContain("Dokumente / Befunde");
+  });
 });

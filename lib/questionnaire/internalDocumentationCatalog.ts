@@ -74,6 +74,24 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
   ] },
   CARE_PLAN_AGREEMENT_TEXT: { id: "CARE_PLAN_AGREEMENT_TEXT", text: "Individuelle Vereinbarung", type: "textarea", required: false, maxLength: 120 },
   CARE_PLAN_AGREEMENT_DATE: { id: "CARE_PLAN_AGREEMENT_DATE", text: "Datum der Vereinbarung", type: "date", required: false },
+  DOCUMENT_HANDLING_ACTIONS: {
+    id: "DOCUMENT_HANDLING_ACTIONS",
+    text: "Dokumente / Befunde",
+    type: "multi_select",
+    required: false,
+    options: [
+      { value: "attached", label: "sind beigefügt", documentationText: "Dokumente / Befunde sind beigefügt." },
+      { value: "handed_out", label: "wurden mitgegeben", documentationText: "Dokumente / Befunde wurden mitgegeben." },
+      { value: "requested", label: "wurden angefordert", documentationText: "Dokumente / Befunde wurden angefordert." },
+      { value: "pending_submission", label: "werden nachgereicht", documentationText: "Dokumente / Befunde werden nachgereicht." },
+    ],
+  },
+  EKG_RHYTHM: { id: "EKG_RHYTHM", text: "Rhythmus", type: "text", required: false, maxLength: 120 },
+  EKG_HEART_RATE: { id: "EKG_HEART_RATE", text: "Herzfrequenz", type: "number", required: false, unit: "/min", unitSeparator: "", step: 1 },
+  EKG_AXIS: { id: "EKG_AXIS", text: "Lagetyp", type: "text", required: false, maxLength: 120 },
+  EKG_QTC: { id: "EKG_QTC", text: "QTc", type: "number", required: false, unit: "ms", step: 1 },
+  EKG_BLOCK_PATTERNS: { id: "EKG_BLOCK_PATTERNS", text: "Blockbilder", type: "text", required: false, maxLength: 120 },
+  EKG_ERBS: { id: "EKG_ERBS", text: "ERBS", type: "text", required: false, maxLength: 120 },
 };
 
 export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
@@ -82,6 +100,25 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
   CARE_PLAN_SUPPLY_BLOCK: { id: "CARE_PLAN_SUPPLY_BLOCK", label: "Versorgung und Organisation", displayOrder: 30, questionIds: ["CARE_PLAN_SPECIALIST_REPORTS", "CARE_PLAN_PRESCRIPTION_RENEWAL", "CARE_PLAN_REFERRAL", "CARE_PLAN_SUPPLY_NOTES"] },
   CARE_PLAN_SUPPORT_BLOCK: { id: "CARE_PLAN_SUPPORT_BLOCK", label: "Unterstützende Personen", displayOrder: 40, questionIds: ["CARE_PLAN_SUPPORT", "CARE_PLAN_SUPPORT_NOTES"] },
   CARE_PLAN_AGREEMENT_BLOCK: { id: "CARE_PLAN_AGREEMENT_BLOCK", label: "Gemeinsame Vereinbarung", displayOrder: 50, questionIds: ["CARE_PLAN_AGREEMENT", "CARE_PLAN_AGREEMENT_TEXT", "CARE_PLAN_AGREEMENT_DATE"] },
+  DOCUMENT_HANDLING: { id: "DOCUMENT_HANDLING", label: "Dokumente / Befunde", displayOrder: 60, questionIds: ["DOCUMENT_HANDLING_ACTIONS"] },
+  EKG: {
+    id: "EKG",
+    label: "EKG",
+    displayOrder: 70,
+    questionIds: ["EKG_RHYTHM", "EKG_HEART_RATE", "EKG_AXIS", "EKG_QTC", "EKG_BLOCK_PATTERNS", "EKG_ERBS"],
+    documentationPresentation: {
+      layout: "inline",
+      separator: " – ",
+      items: [
+        { questionIds: ["EKG_RHYTHM"], label: "Rhythmus" },
+        { questionIds: ["EKG_HEART_RATE"], label: "HF" },
+        { questionIds: ["EKG_AXIS"], label: "Lagetyp" },
+        { questionIds: ["EKG_QTC"], label: "QTc" },
+        { questionIds: ["EKG_BLOCK_PATTERNS"], label: "Blockbilder" },
+        { questionIds: ["EKG_ERBS"], label: "ERBS" },
+      ],
+    },
+  },
 };
 
 export const INTERNAL_DOCUMENTATION_QUESTION_CATALOG = QUESTIONS;

@@ -23,6 +23,7 @@ import {
   BLOCK_CATALOG,
   QUESTION_CATALOG,
   resolveQuestionIdsForBlocks,
+  type BlockDocumentationPresentation,
   type QuestionDefinition,
   type QuestionnaireBlock,
 } from "./blockCatalog";
@@ -49,6 +50,8 @@ export type FrozenBlock = {
   initiallyVisible: boolean;
   /** Neue interne Sessions verwenden die gemeinsame Output-/Validierungssemantik. */
   outputSemantics?: "documented-content-v1";
+  /** Eingefrorene, optionale Darstellung der dokumentierten Antworten. */
+  documentationPresentation?: BlockDocumentationPresentation;
 };
 
 // ---------------------------------------------------------------------------
@@ -139,6 +142,9 @@ export function buildFrozenBlocks(
     if (block.description_en !== undefined) frozenBlock.description_en = block.description_en;
     if (block.hint !== undefined) frozenBlock.hint = block.hint;
     if (block.hint_en !== undefined) frozenBlock.hint_en = block.hint_en;
+    if (block.documentationPresentation !== undefined) {
+      frozenBlock.documentationPresentation = structuredClone(block.documentationPresentation);
+    }
 
     result.push(frozenBlock);
   }

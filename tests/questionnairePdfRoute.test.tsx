@@ -359,6 +359,8 @@ describe("questionnaire PDF patient reference", () => {
         frozen_blocks: frozenBlocks,
         answers: {
           HEALTH_CHECK_GENERAL_STATUS: "unauffällig",
+          HEALTH_CHECK_HEIGHT_CM: "175",
+          HEALTH_CHECK_WEIGHT_KG: "80",
           HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
           HEALTH_CHECK_NEXT_STEPS_NOTE: "Keine Kontrolle aktuell erforderlich",
         },
@@ -373,6 +375,9 @@ describe("questionnaire PDF patient reference", () => {
     );
 
     const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Gesundheitsuntersuchung");
+    expect(text).toContain("Berechnete Werte");
+    expect(text).toContain("BMI: 26,1 kg/m²");
     expect(text).toContain("Allgemeinzustand unauffällig.");
     expect(text).not.toContain("Allgemeinzustand:");
     expect(text).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");

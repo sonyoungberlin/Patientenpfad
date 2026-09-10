@@ -35,6 +35,11 @@ export const INTERNAL_BLOCK_GROUPS: readonly InternalBlockGroup[] = [
     label: "Impfberatung",
     blockIds: ["VACCINATION_REVIEW"],
   },
+  {
+    id: "additional_documentation",
+    label: "Weitere Dokumentation",
+    blockIds: ["DOCUMENT_HANDLING", "EKG"],
+  },
 ] as const;
 
 const registeredBlockIds = new Set(INTERNAL_BLOCK_ORDER);

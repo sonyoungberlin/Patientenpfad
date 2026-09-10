@@ -1,5 +1,9 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import type { QuestionDefinition, QuestionnaireBlock } from "./blockCatalog";
+import type {
+  BlockDocumentationPresentation,
+  QuestionDefinition,
+  QuestionnaireBlock,
+} from "./blockCatalog";
 import {
   parseRepeatableGroupEntries,
   parseFacharztEntries,
@@ -25,6 +29,7 @@ import {
   buildQuestionnaireExportFilename,
   sanitizeFilenamePart,
 } from "./questionnaireExportFilename";
+import { resolveInlineDocumentation } from "./inlineDocumentation";
 
 export { sanitizeFilenamePart } from "./questionnaireExportFilename";
 
@@ -104,6 +109,7 @@ export async function buildQuestionnairePdfBytes(
     label: string;
     questions: QuestionDefinition[];
     visibleQIds: Set<string>;
+    documentationPresentation?: BlockDocumentationPresentation;
   }[] = [];
   const assignedIds = new Set<string>();
 
@@ -114,6 +120,7 @@ export async function buildQuestionnairePdfBytes(
     questions: QuestionDefinition[];
     conditionalRules: import("./conditionalLogic").ConditionalRule[];
     initiallyVisible: boolean;
+    documentationPresentation?: BlockDocumentationPresentation;
   }> = snapshotBlocks
     ? snapshotBlocks
     : selectedBlockIds
@@ -150,7 +157,13 @@ export async function buildQuestionnairePdfBytes(
       .filter((q) => !assignedIds.has(q.id));
     blockQuestions.forEach((q) => assignedIds.add(q.id));
     if (blockQuestions.length > 0) {
-      blockSections.push({ id: block.id, label: block.label, questions: blockQuestions, visibleQIds });
+      blockSections.push({
+        id: block.id,
+        label: block.label,
+        questions: blockQuestions,
+        visibleQIds,
+        documentationPresentation: block.documentationPresentation,
+      });
     }
   }
   if (!snapshotBlocks) {
@@ -326,8 +339,10 @@ export async function buildQuestionnairePdfBytes(
     y -= sectionGap / 2;
   }
 
-  drawText(title, { size: 16, bold: true });
-  y -= 4;
+  if (!isNewBlockBased) {
+    drawText(title, { size: 16, bold: true });
+    y -= 4;
+  }
 
   if (session.submitted_by === "contact_person") {
     drawText(
@@ -347,7 +362,7 @@ export async function buildQuestionnairePdfBytes(
     answers,
     visibleQuestionIds,
   ).map((hint) => hint.label);
-  if (derivedValueLines.length > 0 || attentionHintLines.length > 0) {
+  if (!isNewBlockBased && (derivedValueLines.length > 0 || attentionHintLines.length > 0)) {
     y -= sectionGap;
     ensureSpace(lineHeight * 2);
     drawText("Berechnete Werte", { size: 11, bold: true });
@@ -363,6 +378,12 @@ export async function buildQuestionnairePdfBytes(
 
   for (const section of blockSections) {
     const snapshotBlock = renderBlocks.find((block) => block.id === section.id);
+    const useInlineDocumentation = isNewBlockBased &&
+      section.documentationPresentation?.layout === "inline";
+    const inlineDocumentation = useInlineDocumentation
+      ? resolveInlineDocumentation(section, answers, section.visibleQIds)
+      : null;
+    if (useInlineDocumentation && !inlineDocumentation) continue;
     if (
       useDocumentedContent &&
       snapshotBlock &&
@@ -388,6 +409,12 @@ export async function buildQuestionnairePdfBytes(
       color: rgb(0.7, 0.7, 0.7),
     });
     y -= 6;
+
+    if (inlineDocumentation) {
+      drawWrappedValue(inlineDocumentation);
+      y -= sectionGap;
+      continue;
+    }
 
     for (const q of section.questions) {
       const value = answers[q.id] ?? "";
@@ -442,7 +469,9 @@ export async function buildQuestionnairePdfBytes(
         drawWrappedPair(q.text, value);
         continue;
       }
-      const resolved = resolveQuestionDocumentation(q, value);
+      const resolved = resolveQuestionDocumentation(q, value, {
+        includeUnit: isNewBlockBased,
+      });
       for (const documentationText of resolved.documentationTexts) drawWrappedValue(documentationText);
       if (resolved.fallbackValue !== undefined) {
         const fallbackValue = q.type === "yes_no"

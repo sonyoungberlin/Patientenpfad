@@ -43,9 +43,13 @@ export function formatYesNoValue(raw: string): string {
 export function formatQuestionValue(
   question: QuestionDefinition | undefined,
   rawValue: string,
+  includeUnit = false,
 ): string {
   if (!rawValue || rawValue.trim() === "") return "";
   if (question?.type === "yes_no") return formatYesNoValue(rawValue);
+  if (includeUnit && question?.type === "number" && question.unit) {
+    return `${rawValue}${question.unitSeparator ?? " "}${question.unit}`;
+  }
   return rawValue;
 }
 
@@ -57,9 +61,13 @@ export type ResolvedQuestionDocumentation = {
 export function resolveQuestionDocumentation(
   question: QuestionDefinition | undefined,
   rawValue: string,
+  options: { includeUnit?: boolean } = {},
 ): ResolvedQuestionDocumentation {
   if (!question?.options?.length) {
-    return { documentationTexts: [], fallbackValue: formatQuestionValue(question, rawValue) };
+    return {
+      documentationTexts: [],
+      fallbackValue: formatQuestionValue(question, rawValue, options.includeUnit),
+    };
   }
 
   const selectedValues = question.type === "multi_select"

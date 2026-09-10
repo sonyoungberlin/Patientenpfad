@@ -37,7 +37,12 @@ import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
 import { getVaccinationLabel } from "./vaccinationReview";
 import { getInternalWorkflow } from "./internalWorkflowRegistry";
-import { hasDocumentedBlockContent, isDocumentedContentSnapshot } from "./documentedContent";
+import { resolveInlineDocumentation } from "./inlineDocumentation";
+import {
+  hasDocumentedBlockContent,
+  isDocumentedContentSnapshot,
+  isNewBlockBasedInternalSession,
+} from "./documentedContent";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -431,6 +436,11 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const blockIds = new Set(input.selected_block_ids);
   const internalWorkflow = getInternalWorkflow(input.internalWorkflowId);
   const useDocumentedContent = isDocumentedContentSnapshot(input.frozenBlocks);
+  const isNewBlockBased = isNewBlockBasedInternalSession({
+    sessionKind: "internal_documentation",
+    internalWorkflowId: input.internalWorkflowId,
+    frozenBlocks: input.frozenBlocks,
+  });
   const legacyOutputPolicy = internalWorkflow?.legacyOutputPolicy;
   const omitMatchingBlockQuestionLabels = useDocumentedContent
     ? true
@@ -463,7 +473,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
   const derivedValues = computeAllDerivedValues(answers);
 
-  const lines: string[] = [title];
+  const lines: string[] = isNewBlockBased ? [] : [title];
 
   // --- Berechnete Werte (AGE, BMI, Pack-Years) ---
   const derivedValueLines = buildDerivedValueLines(derivedValues);
@@ -510,7 +520,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const attentionHintLines = buildAttentionHintLines(
     computeQuestionnaireAttentionHints(answers, visibleQuestionIds),
   );
-  if (derivedValueLines.length > 0 || attentionHintLines.length > 0) {
+  if (!isNewBlockBased && (derivedValueLines.length > 0 || attentionHintLines.length > 0)) {
     lines.push("");
     lines.push("Berechnete Werte");
     lines.push(...derivedValueLines);
@@ -545,7 +555,19 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         buildOptionsByQuestionId(block.questions),
       );
 
-      for (const question of block.questions) {
+      const useInlineDocumentation = isNewBlockBased &&
+        block.documentationPresentation?.layout === "inline";
+      if (useInlineDocumentation) {
+        const inlineDocumentation = resolveInlineDocumentation(
+          block,
+          answers,
+          frozenVisibleIds,
+        );
+        if (inlineDocumentation) blockLines.push(inlineDocumentation);
+        for (const question of block.questions) {
+          if (frozenVisibleIds.has(question.id)) seenQuestionIds.add(question.id);
+        }
+      } else for (const question of block.questions) {
         if (!frozenVisibleIds.has(question.id)) continue;
         if (seenQuestionIds.has(question.id)) continue;
         seenQuestionIds.add(question.id);
@@ -600,7 +622,9 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           continue;
         }
 
-        const resolved = resolveQuestionDocumentation(question, raw);
+        const resolved = resolveQuestionDocumentation(question, raw, {
+          includeUnit: isNewBlockBased,
+        });
         blockLines.push(...resolved.documentationTexts);
         if (resolved.fallbackValue !== undefined) {
           blockLines.push(...renderQuestionLines(question.id, resolved.fallbackValue, question, omitQuestionLabel));
@@ -613,10 +637,12 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
       if (
         useDocumentedContent
-          ? !hasDocumentedBlockContent(block, answers, frozenVisibleIds)
+          ? useInlineDocumentation
+            ? blockLines.length === 0
+            : !hasDocumentedBlockContent(block, answers, frozenVisibleIds)
           : blockLines.length === 0 && !includeEmptyBlocks
       ) continue;
-      lines.push("");
+      if (lines.length > 0) lines.push("");
       lines.push(block.label);
       lines.push(...blockLines);
     }

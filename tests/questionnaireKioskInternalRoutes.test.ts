@@ -314,7 +314,7 @@ describe("interne Kiosk-Dokumentation", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.noteText).toContain("Interne Dokumentation");
+    expect(body.noteText).not.toContain("Interne Dokumentation");
     expect(body.noteText).toContain("Impfungen");
     expect(body.xmlFilename).toMatch(/^\d{8}_PAT1_Interne_Dokumentation\.xml$/);
   });

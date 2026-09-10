@@ -131,6 +131,8 @@ export type QuestionDefinition = {
   step?: number;
   /** Anzeigeeinheit für type "number"-Felder, z. B. "cm" oder "kg". */
   unit?: string;
+  /** Trennzeichen zwischen Zahlenwert und Einheit. Default: Leerzeichen. */
+  unitSeparator?: string;
   /** Eng begrenzte workflow-spezifische Darstellung innerhalb des bestehenden Typs. */
   presentation?: "vaccination_matrix" | "health_check_follow_up";
   /** Version des vollständig eingefrorenen Dokumentationsschemas der Impfmatrix. */
@@ -142,6 +144,23 @@ export type QuestionDefinition = {
   }>;
   /** Feste Impfzeilen für die workflow-spezifische Impfmatrix. */
   vaccinationItems?: VaccinationItemDefinition[];
+};
+
+export type InlineDocumentationItem = {
+  questionIds: string[];
+  label: string;
+  /** Default: ": ". */
+  labelSeparator?: string;
+  /** Trennzeichen zwischen gemeinsam dargestellten Werten. */
+  valueSeparator?: string;
+  /** Bei mehreren Fragen nur ausgeben, wenn alle Werte vorhanden sind. */
+  requireAll?: boolean;
+};
+
+export type BlockDocumentationPresentation = {
+  layout: "inline";
+  separator: string;
+  items: InlineDocumentationItem[];
 };
 
 export type QuestionnaireBlock = {
@@ -169,6 +188,8 @@ export type QuestionnaireBlock = {
   prerequisiteQuestionIds?: string[];
   /** Folgeblöcke werden nur über showBlock geöffnet, nicht direkt ausgewählt. */
   selectable?: boolean;
+  /** Optionale, rein darstellende Auflösung für kompakte Dokumentation. */
+  documentationPresentation?: BlockDocumentationPresentation;
 };
 
 // ---------------------------------------------------------------------------

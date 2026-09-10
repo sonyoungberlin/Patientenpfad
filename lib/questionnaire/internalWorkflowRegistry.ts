@@ -4,12 +4,32 @@ import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG, INTERNAL_DOCUMENTATION_QUESTION_C
 import { VACCINATION_REVIEW_BLOCK_CATALOG, VACCINATION_REVIEW_QUESTION_CATALOG } from "./vaccinationReviewCatalog";
 import { HEALTH_CHECK_BLOCK_CATALOG, HEALTH_CHECK_QUESTION_CATALOG } from "./healthCheckCatalog";
 
+const LEGACY_HEALTH_CHECK_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
+  ...HEALTH_CHECK_BLOCK_CATALOG,
+  HEALTH_CHECK_MEASUREMENTS: {
+    ...HEALTH_CHECK_BLOCK_CATALOG.HEALTH_CHECK_MEASUREMENTS,
+    questionIds: [
+      "HEALTH_CHECK_BP_SYSTOLIC",
+      "HEALTH_CHECK_BP_DIASTOLIC",
+      "HEALTH_CHECK_HEIGHT_CM",
+      "HEALTH_CHECK_WEIGHT_KG",
+    ],
+    documentationPresentation: undefined,
+  },
+};
+
 export const INTERNAL_WORKFLOWS = {
   care_plan_v1: {
     id: "care_plan_v1",
     title: "Persönlicher Versorgungsplan",
     filenameLabel: "Persönlicher Versorgungsplan",
-    blockIds: Object.keys(INTERNAL_DOCUMENTATION_BLOCK_CATALOG),
+    blockIds: [
+      "CARE_PLAN_HA",
+      "CARE_PLAN_SPECIALIST",
+      "CARE_PLAN_SUPPLY_BLOCK",
+      "CARE_PLAN_SUPPORT_BLOCK",
+      "CARE_PLAN_AGREEMENT_BLOCK",
+    ],
     blockCatalog: INTERNAL_DOCUMENTATION_BLOCK_CATALOG,
     questionCatalog: INTERNAL_DOCUMENTATION_QUESTION_CATALOG,
     /** LEGACY ONLY: gilt nur für Snapshots ohne outputSemantics. */
@@ -39,8 +59,8 @@ export const INTERNAL_WORKFLOWS = {
     id: "health_check_v1",
     title: "Gesundheitsuntersuchung",
     filenameLabel: "Gesundheitsuntersuchung",
-    blockIds: Object.keys(HEALTH_CHECK_BLOCK_CATALOG),
-    blockCatalog: HEALTH_CHECK_BLOCK_CATALOG,
+    blockIds: Object.keys(LEGACY_HEALTH_CHECK_BLOCK_CATALOG),
+    blockCatalog: LEGACY_HEALTH_CHECK_BLOCK_CATALOG,
     questionCatalog: HEALTH_CHECK_QUESTION_CATALOG,
     /** LEGACY ONLY: gilt nur für Snapshots ohne outputSemantics. */
     legacyOutputPolicy: {
@@ -164,7 +184,7 @@ export function getInternalWorkflow(workflowId: unknown) {
 export function buildInternalWorkflowBlocks(workflowId: InternalWorkflowId): FrozenBlock[] {
   const workflow = INTERNAL_WORKFLOWS[workflowId];
   return buildFrozenBlocks(
-    workflow.blockIds,
+    Array.from(workflow.blockIds),
     workflow.blockCatalog,
     workflow.questionCatalog,
   ).map((block) => ({ ...block, outputSemantics: "documented-content-v1" as const }));

@@ -410,6 +410,8 @@ describe("buildMedicalRecordNote – health_check_v1", () => {
       frozenBlocks,
     });
 
+    expect(note).toContain("Gesundheitsuntersuchung");
+    expect(note).toContain("Berechnete Werte");
     expect(note).toContain("BMI: 22,9 kg/m²");
     expect(note).not.toMatch(/Normalbereich|Kategorie|Warnung|Empfehlung/);
   });

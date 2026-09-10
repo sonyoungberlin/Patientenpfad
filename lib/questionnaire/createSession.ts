@@ -129,7 +129,7 @@ export async function createQuestionnaireSession(
 
   const frozenBlocks =
     sessionKind === "internal_documentation"
-      ? buildInternalDocumentationFrozenBlocks(internalSelectedBlockIds)
+      ? buildInternalDocumentationFrozenBlocks(Array.from(internalSelectedBlockIds))
       : context === "office"
       ? buildFrozenBlocks(selectedBlockIds, OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG)
       : buildFrozenBlocks(selectedBlockIds);
