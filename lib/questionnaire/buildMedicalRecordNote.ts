@@ -31,7 +31,11 @@ import { sortFrozenBlocksByLayout } from "./internalBlockLayout";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
-import { buildAttentionHintLines, resolveQuestionDocumentation } from "./formatAnswer";
+import {
+  buildAttentionHintLines,
+  joinMedicalStatementSentences,
+  resolveQuestionDocumentation,
+} from "./formatAnswer";
 import { getQuestionOptionValues } from "./questionOptions";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
@@ -543,6 +547,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     for (const block of frozenByOrder) {
       if (!visibleBlockIds.has(block.id)) continue;
       const blockLines: string[] = [];
+      const medicalStatementSentences: string[] = [];
 
       const frozenVisibleIds = computeVisibleQuestionIds(
         block.conditionalRules,
@@ -622,7 +627,11 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         const resolved = resolveQuestionDocumentation(question, raw, {
           includeUnit: isNewBlockBased,
         });
-        blockLines.push(...resolved.documentationTexts);
+        if (block.id === "MEDICAL_STATEMENT") {
+          medicalStatementSentences.push(...resolved.documentationTexts);
+        } else {
+          blockLines.push(...resolved.documentationTexts);
+        }
         if (resolved.fallbackValue !== undefined) {
           blockLines.push(...renderQuestionLines(question.id, resolved.fallbackValue, question, omitQuestionLabel));
         }
@@ -641,6 +650,9 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
       ) continue;
       if (lines.length > 0) lines.push("");
       lines.push(block.label);
+      if (medicalStatementSentences.length > 0) {
+        lines.push(joinMedicalStatementSentences(medicalStatementSentences));
+      }
       lines.push(...blockLines);
     }
   } else {

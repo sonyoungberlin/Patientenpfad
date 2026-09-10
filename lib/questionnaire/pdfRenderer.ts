@@ -9,6 +9,7 @@ import {
   parseFacharztEntries,
   formatYesNoValue,
   buildDerivedValueLines,
+  joinMedicalStatementSentences,
   resolveQuestionDocumentation,
 } from "./formatAnswer";
 import { getQuestionOptionValues } from "./questionOptions";
@@ -417,6 +418,7 @@ export async function buildQuestionnairePdfBytes(
       continue;
     }
 
+    const medicalStatementSentences: string[] = [];
     for (const q of section.questions) {
       const value = answers[q.id] ?? "";
       const isVisible = section.visibleQIds.has(q.id);
@@ -473,13 +475,21 @@ export async function buildQuestionnairePdfBytes(
       const resolved = resolveQuestionDocumentation(q, value, {
         includeUnit: isNewBlockBased,
       });
-      for (const documentationText of resolved.documentationTexts) drawWrappedValue(documentationText);
+      if (section.id === "MEDICAL_STATEMENT") {
+        medicalStatementSentences.push(...resolved.documentationTexts);
+      } else {
+        for (const documentationText of resolved.documentationTexts) drawWrappedValue(documentationText);
+      }
       if (resolved.fallbackValue !== undefined) {
         const fallbackValue = q.type === "yes_no"
           ? formatYesNoValue(resolved.fallbackValue)
           : resolved.fallbackValue;
         omitQuestionLabel ? drawWrappedValue(fallbackValue) : drawWrappedPair(q.text, fallbackValue);
       }
+    }
+
+    if (medicalStatementSentences.length > 0) {
+      drawWrappedValue(joinMedicalStatementSentences(medicalStatementSentences));
     }
 
     if (snapshotBlock?.paperSignature) {

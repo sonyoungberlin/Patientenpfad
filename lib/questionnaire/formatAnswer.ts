@@ -58,6 +58,10 @@ export type ResolvedQuestionDocumentation = {
   fallbackValue?: string;
 };
 
+export function joinMedicalStatementSentences(sentences: readonly string[]): string {
+  return sentences.filter((sentence) => sentence.trim() !== "").join(" ");
+}
+
 export function resolveQuestionDocumentation(
   question: QuestionDefinition | undefined,
   rawValue: string,

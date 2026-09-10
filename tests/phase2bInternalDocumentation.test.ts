@@ -26,6 +26,7 @@ import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedCo
 import { submitInternalDocumentationSession } from "@/lib/questionnaire/internalDocumentationService";
 import { GET as PdfRoute } from "@/app/api/questionnaire/[id]/pdf/route";
 import { INTERNAL_CONSENT_DOCUMENTATION_TEXT } from "@/lib/questionnaire/internalDocumentationCatalog";
+import { joinMedicalStatementSentences } from "@/lib/questionnaire/formatAnswer";
 
 const sessionDb = prisma.patientQuestionnaireSession as unknown as {
   findUnique: jest.Mock;
@@ -115,6 +116,13 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     accessMock.mockReset().mockResolvedValue({
       account: { id: "account-1", current_practice: { id: "practice-1" } },
     });
+  });
+
+  it("verbindet Stellungnahme-Bausteine, ohne bewusste Absatzumbrüche zu entfernen", () => {
+    expect(joinMedicalStatementSentences([
+      "Erster Satz.\n\nBewusster Absatz.",
+      "Zweiter Satz.",
+    ])).toBe("Erster Satz.\n\nBewusster Absatz. Zweiter Satz.");
   });
 
   it("erkennt nur vollständige null-Workflow-Snapshots als neuen Pfad", () => {
@@ -474,6 +482,8 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
 
     expect(note).toContain("Stellungnahme");
     expectedSentences.forEach((sentence) => expect(note).toContain(sentence));
+    expect(note).toContain(`Stellungnahme\n${expectedSentences.join(" ")}`);
+    expect(note).not.toContain(`${expectedSentences[0]}\n${expectedSentences[1]}`);
     expect(expectedSentences.map((sentence) => note.indexOf(sentence)))
       .toEqual([...expectedSentences].map((_, index) => note.indexOf(expectedSentences[index]))
         .sort((left, right) => left - right));
@@ -490,7 +500,7 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
       referenceLabel: "Patientenreferenz",
       blockCatalog: {},
     });
-    const pdfText = await extractPdfText(result.bytes);
+    const pdfText = extractPdfTextRuns(result.bytes);
     expect(pdfText).toContain("Stellungnahme");
     expect(pdfText).toContain("Es liegen körperliche Beschwerden vor");
     expect(pdfText).toContain("Die weitere gesundheitliche Entwicklung bleibt abzuwarten");
