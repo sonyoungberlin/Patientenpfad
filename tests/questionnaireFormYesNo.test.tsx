@@ -6,6 +6,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import { getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 
 jest.mock("@/components/SelfCheckInQrCode", () => ({
   SelfCheckInQrCode: () => null,
@@ -63,14 +64,12 @@ describe("QuestionnaireFormClient yes_no-Werte", () => {
   });
 
   it.each(["unauffällig", "auffällig"])("sendet klinischen Custom-Wert %s unverändert", async (value) => {
-    const { answers } = await submitYesNo({
-      id: "HEALTH_CHECK_GENERAL_STATUS",
-      text: "Allgemeinzustand",
-      type: "yes_no",
-      required: false,
-      options: ["unauffällig", "auffällig"],
-    }, value);
+    const question = getInternalWorkflow("health_check_v1")!.questionCatalog.HEALTH_CHECK_GENERAL_STATUS;
+    const { answers, renderedText } = await submitYesNo(question, value);
 
+    expect(renderedText).toContain("unauffällig");
+    expect(renderedText).toContain("auffällig");
+    expect(renderedText).not.toContain("Allgemeinzustand unauffällig.");
     expect(answers.HEALTH_CHECK_GENERAL_STATUS).toBe(value);
   });
 

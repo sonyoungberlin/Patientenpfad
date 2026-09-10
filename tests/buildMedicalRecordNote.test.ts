@@ -17,6 +17,7 @@ import { QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { buildInternalWorkflowBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { normalizeTextForPvs } from "@/lib/questionnaire/normalizeTextForPvs";
+import { getQuestionOptionValues } from "@/lib/questionnaire/questionOptions";
 
 describe("normalizeTextForPvs", () => {
   it("ersetzt nur die bekannten typografischen Sonderzeichen", () => {
@@ -328,6 +329,24 @@ describe("buildMedicalRecordNote – health_check_v1", () => {
   const frozenBlocks = buildInternalWorkflowBlocks("health_check_v1");
   const selectedBlockIds = frozenBlocks.map((block) => block.id);
 
+  it("verwendet für jede klinische Option den eingefrorenen Dokumentationstext", () => {
+    for (const question of frozenBlocks[0].questions.slice(0, 9)) {
+      for (const option of question.options ?? []) {
+        expect(typeof option).toBe("object");
+        if (typeof option === "string") continue;
+        const note = buildMedicalRecordNote({
+          answers: { [question.id]: option.value },
+          selected_block_ids: selectedBlockIds,
+          internalWorkflowId: "health_check_v1",
+          frozenBlocks,
+        });
+
+        expect(note).toContain(option.documentationText);
+        expect(note).not.toContain(`${question.text}:`);
+      }
+    }
+  });
+
   it("gibt bewusste Negation und optionale Hinweise vollständig aus", () => {
     const note = buildMedicalRecordNote({
       answers: {
@@ -340,7 +359,8 @@ describe("buildMedicalRecordNote – health_check_v1", () => {
       frozenBlocks,
     });
 
-    expect(note).toContain("Allgemeinzustand: Unauffällig");
+    expect(note).toContain("Allgemeinzustand unauffällig.");
+    expect(note).not.toContain("Allgemeinzustand:");
     expect(note).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
     expect(note).toContain("Kurzer Hinweis: Keine Kontrolle aktuell erforderlich");
     expect(note).not.toContain("Labor\n");
@@ -427,7 +447,10 @@ describe("buildMedicalRecordNote – health_check_v1", () => {
   it("behält die rohe Yes-No-Ausgabe für historische Health-Check Blocks", () => {
     const legacyBlocks = frozenBlocks.map(({ outputSemantics: _outputSemantics, ...block }) => ({
       ...block,
-      questions: block.questions.map(({ presentation: _presentation, ...question }) => question),
+      questions: block.questions.map(({ presentation: _presentation, ...question }) => ({
+        ...question,
+        ...(question.options ? { options: getQuestionOptionValues(question) } : {}),
+      })),
     }));
     const note = buildMedicalRecordNote({
       answers: { HEALTH_CHECK_GENERAL_STATUS: "unauffällig" },

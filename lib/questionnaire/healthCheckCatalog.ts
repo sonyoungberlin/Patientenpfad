@@ -1,6 +1,5 @@
 import type { QuestionnaireBlock, QuestionDefinition } from "./blockCatalog";
 
-const CLINICAL_STATUS_OPTIONS = ["unauffällig", "auffällig"];
 const LAB_STATUS_OPTIONS = ["unauffällig", "auffällig", "ausstehend"];
 const FOLLOW_UP_OPTIONS = ["nein", "ja"];
 const NEXT_STEP_OPTIONS = [
@@ -11,15 +10,42 @@ const NEXT_STEP_OPTIONS = [
 ];
 
 const QUESTIONS: Record<string, QuestionDefinition> = {
-  HEALTH_CHECK_GENERAL_STATUS: { id: "HEALTH_CHECK_GENERAL_STATUS", text: "Allgemeinzustand", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_HEART_STATUS: { id: "HEALTH_CHECK_HEART_STATUS", text: "Herz", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_LUNG_STATUS: { id: "HEALTH_CHECK_LUNG_STATUS", text: "Lunge", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_ABDOMEN_STATUS: { id: "HEALTH_CHECK_ABDOMEN_STATUS", text: "Abdomen", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_VESSELS_PULSES_STATUS: { id: "HEALTH_CHECK_VESSELS_PULSES_STATUS", text: "Gefäße / Pulse", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_MUSCULOSKELETAL_STATUS: { id: "HEALTH_CHECK_MUSCULOSKELETAL_STATUS", text: "Bewegungsapparat", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_NEUROLOGICAL_STATUS: { id: "HEALTH_CHECK_NEUROLOGICAL_STATUS", text: "Neurologisch", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_SKIN_STATUS: { id: "HEALTH_CHECK_SKIN_STATUS", text: "Haut", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
-  HEALTH_CHECK_PSYCH_STATUS: { id: "HEALTH_CHECK_PSYCH_STATUS", text: "Psychisch", type: "yes_no", required: false, options: CLINICAL_STATUS_OPTIONS },
+  HEALTH_CHECK_GENERAL_STATUS: { id: "HEALTH_CHECK_GENERAL_STATUS", text: "Allgemeinzustand", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Allgemeinzustand unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälligkeit des Allgemeinzustands." },
+  ] },
+  HEALTH_CHECK_HEART_STATUS: { id: "HEALTH_CHECK_HEART_STATUS", text: "Herz", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Herz klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger klinischer Herzbefund." },
+  ] },
+  HEALTH_CHECK_LUNG_STATUS: { id: "HEALTH_CHECK_LUNG_STATUS", text: "Lunge", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Lunge klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger klinischer Lungenbefund." },
+  ] },
+  HEALTH_CHECK_ABDOMEN_STATUS: { id: "HEALTH_CHECK_ABDOMEN_STATUS", text: "Abdomen", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Abdomen klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger klinischer Abdominalbefund." },
+  ] },
+  HEALTH_CHECK_VESSELS_PULSES_STATUS: { id: "HEALTH_CHECK_VESSELS_PULSES_STATUS", text: "Gefäße / Pulse", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Gefäß- und Pulsstatus klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger Gefäß- oder Pulsbefund." },
+  ] },
+  HEALTH_CHECK_MUSCULOSKELETAL_STATUS: { id: "HEALTH_CHECK_MUSCULOSKELETAL_STATUS", text: "Bewegungsapparat", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Bewegungsapparat klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger klinischer Befund des Bewegungsapparats." },
+  ] },
+  HEALTH_CHECK_NEUROLOGICAL_STATUS: { id: "HEALTH_CHECK_NEUROLOGICAL_STATUS", text: "Neurologisch", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Neurologischer Status klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger neurologischer Befund." },
+  ] },
+  HEALTH_CHECK_SKIN_STATUS: { id: "HEALTH_CHECK_SKIN_STATUS", text: "Haut", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Haut klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger Hautbefund." },
+  ] },
+  HEALTH_CHECK_PSYCH_STATUS: { id: "HEALTH_CHECK_PSYCH_STATUS", text: "Psychisch", type: "yes_no", required: false, options: [
+    { value: "unauffällig", label: "unauffällig", documentationText: "Psychischer Befund klinisch unauffällig." },
+    { value: "auffällig", label: "auffällig", documentationText: "Auffälliger psychischer Befund." },
+  ] },
   HEALTH_CHECK_CLINICAL_NOTE: { id: "HEALTH_CHECK_CLINICAL_NOTE", text: "Kurzer Hinweis", type: "textarea", required: false, maxLength: 120 },
 
   HEALTH_CHECK_BP_SYSTOLIC: { id: "HEALTH_CHECK_BP_SYSTOLIC", text: "RR systolisch", type: "number", required: false, unit: "mmHg", step: 1 },

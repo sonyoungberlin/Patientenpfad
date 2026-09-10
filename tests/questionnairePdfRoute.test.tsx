@@ -373,12 +373,50 @@ describe("questionnaire PDF patient reference", () => {
     );
 
     const text = await extractPdfText(result.bytes);
-    expect(text).toContain("Allgemeinzustand");
-    expect(text).toContain("unauffällig");
+    expect(text).toContain("Allgemeinzustand unauffällig.");
+    expect(text).not.toContain("Allgemeinzustand:");
     expect(text).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
     expect(text).toContain("Keine Kontrolle aktuell erforderlich");
     expect(text).not.toContain("Labor");
     expect(text).not.toContain("Urinstatus");
+  });
+
+  it("verwendet im PDF alle eingefrorenen klinischen Dokumentationstexte", async () => {
+    const workflow = getInternalWorkflow("health_check_v1")!;
+    const frozenBlocks = buildInternalWorkflowBlocks("health_check_v1");
+    const clinicalQuestions = frozenBlocks[0].questions.slice(0, 9);
+
+    for (const status of ["unauffällig", "auffällig"]) {
+      const answers = Object.fromEntries(
+        clinicalQuestions.map((question) => [question.id, status]),
+      );
+      const result = await buildQuestionnairePdfBytes(
+        baseSession({
+          session_kind: "internal_documentation",
+          internal_workflow_id: "health_check_v1",
+          selected_block_ids: frozenBlocks.map((block) => block.id),
+          deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+          frozen_blocks: frozenBlocks,
+          answers,
+        }),
+        {
+          title: workflow.title,
+          referenceLabel: "Patientenreferenz",
+          blockCatalog: workflow.blockCatalog,
+          omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf,
+          omitEmptyBlocksInPdf: workflow.legacyOutputPolicy.omitEmptyBlocksInPdf,
+        },
+      );
+
+      const text = await extractPdfText(result.bytes);
+      for (const question of clinicalQuestions) {
+        const option = question.options?.find((candidate) =>
+          typeof candidate !== "string" && candidate.value === status,
+        );
+        expect(option).toEqual(expect.objectContaining({ documentationText: expect.any(String) }));
+        if (typeof option !== "string") expect(text).toContain(option?.documentationText);
+      }
+    }
   });
 
   it("rendert ein ausgefülltes Health-Check-Labor mit beantworteten Werten", async () => {
@@ -437,6 +475,41 @@ describe("questionnaire PDF patient reference", () => {
 
     const text = await extractPdfText(result.bytes);
     expect(text).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+  });
+
+  it("behält für historische klinische String-Optionen die alte PDF-Ausgabe", async () => {
+    const workflow = getInternalWorkflow("health_check_v1")!;
+    const currentBlocks = buildInternalWorkflowBlocks("health_check_v1");
+    const frozenBlocks = currentBlocks.map(({ outputSemantics: _outputSemantics, ...block }) => ({
+      ...block,
+      questions: block.questions.map((question) => ({
+        ...question,
+        ...(question.id === "HEALTH_CHECK_GENERAL_STATUS"
+          ? { options: ["unauffällig", "auffällig"] }
+          : {}),
+      })),
+    }));
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        session_kind: "internal_documentation",
+        internal_workflow_id: "health_check_v1",
+        selected_block_ids: frozenBlocks.map((block) => block.id),
+        deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+        frozen_blocks: frozenBlocks,
+        answers: { HEALTH_CHECK_GENERAL_STATUS: "unauffällig" },
+      }),
+      {
+        title: workflow.title,
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: workflow.blockCatalog,
+        omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf,
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Allgemeinzustand:");
+    expect(text).toContain("unauffällig");
+    expect(text).not.toContain("Allgemeinzustand unauffällig.");
   });
 
   it("behält leere Blocküberschriften im historischen Care Plan", async () => {

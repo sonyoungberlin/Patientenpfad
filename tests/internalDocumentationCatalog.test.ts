@@ -139,10 +139,31 @@ describe("internal documentation workflow registry", () => {
       "Weiteres Vorgehen",
     ]);
     const clinical = blocks[0].questions;
-    expect(clinical.slice(0, 9).every((question) =>
-      question.type === "yes_no" &&
-      question.options?.join("|") === "unauffällig|auffällig",
-    )).toBe(true);
+    const expectedClinicalDocumentation = [
+      ["HEALTH_CHECK_GENERAL_STATUS", "Allgemeinzustand unauffällig.", "Auffälligkeit des Allgemeinzustands."],
+      ["HEALTH_CHECK_HEART_STATUS", "Herz klinisch unauffällig.", "Auffälliger klinischer Herzbefund."],
+      ["HEALTH_CHECK_LUNG_STATUS", "Lunge klinisch unauffällig.", "Auffälliger klinischer Lungenbefund."],
+      ["HEALTH_CHECK_ABDOMEN_STATUS", "Abdomen klinisch unauffällig.", "Auffälliger klinischer Abdominalbefund."],
+      ["HEALTH_CHECK_VESSELS_PULSES_STATUS", "Gefäß- und Pulsstatus klinisch unauffällig.", "Auffälliger Gefäß- oder Pulsbefund."],
+      ["HEALTH_CHECK_MUSCULOSKELETAL_STATUS", "Bewegungsapparat klinisch unauffällig.", "Auffälliger klinischer Befund des Bewegungsapparats."],
+      ["HEALTH_CHECK_NEUROLOGICAL_STATUS", "Neurologischer Status klinisch unauffällig.", "Auffälliger neurologischer Befund."],
+      ["HEALTH_CHECK_SKIN_STATUS", "Haut klinisch unauffällig.", "Auffälliger Hautbefund."],
+      ["HEALTH_CHECK_PSYCH_STATUS", "Psychischer Befund klinisch unauffällig.", "Auffälliger psychischer Befund."],
+    ];
+    expect(clinical.slice(0, 9).map((question) => [
+      question.id,
+      question.options?.map((option) => typeof option === "string" ? option : {
+        value: option.value,
+        label: option.label,
+        documentationText: option.documentationText,
+      }),
+    ])).toEqual(expectedClinicalDocumentation.map(([id, unremarkable, remarkable]) => [
+      id,
+      [
+        { value: "unauffällig", label: "unauffällig", documentationText: unremarkable },
+        { value: "auffällig", label: "auffällig", documentationText: remarkable },
+      ],
+    ]));
     expect(clinical[9]).toMatchObject({
       id: "HEALTH_CHECK_CLINICAL_NOTE",
       type: "textarea",
@@ -189,7 +210,7 @@ describe("internal documentation workflow registry", () => {
 
     const workflow = getInternalWorkflow("health_check_v1")!;
     const catalogOptions = workflow.questionCatalog.HEALTH_CHECK_GENERAL_STATUS.options!;
-    expect(blocks[0].questions[0].options).toEqual(["unauffällig", "auffällig"]);
+    expect(getQuestionOptionValues(blocks[0].questions[0])).toEqual(["unauffällig", "auffällig"]);
     expect(blocks[0].questions[0].options).not.toBe(catalogOptions);
   });
 
