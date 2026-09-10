@@ -32,6 +32,7 @@ import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
 import { SelfCheckInQrCode } from "@/components/SelfCheckInQrCode";
 import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
 import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
+import AppTextXmlDownloadButton from "@/components/questionnaire/AppTextXmlDownloadButton";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -1063,6 +1064,10 @@ export function QuestionnaireFormClient({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [xmlExport, setXmlExport] = useState<{
+    noteText: string;
+    filename: string;
+  } | null>(null);
   const [missingRequiredIds, setMissingRequiredIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -1226,6 +1231,7 @@ export function QuestionnaireFormClient({
         ok?: boolean;
         error?: string;
         noteText?: string;
+        xmlFilename?: string | null;
         sessionId?: string;
         inquiry_session_id?: string | null;
       } | null;
@@ -1239,6 +1245,9 @@ export function QuestionnaireFormClient({
         return;
       }
 
+      if (data?.noteText && data.xmlFilename) {
+        setXmlExport({ noteText: data.noteText, filename: data.xmlFilename });
+      }
       setSubmitted(true);
     } catch {
       setError(t.submitError);
@@ -1256,6 +1265,14 @@ export function QuestionnaireFormClient({
           <SelfCheckInQrCode reference={selfCheckInQrReference} />
         ) : null}
         <PatientReferenceSummary reference={patientReference} />
+        {xmlExport ? (
+          <AppTextXmlDownloadButton
+            noteText={xmlExport.noteText}
+            filename={xmlExport.filename}
+            label="XML für Word herunterladen"
+            sessionId={token}
+          />
+        ) : null}
         {source === "kiosk_direct" ? (
           <button
             type="button"

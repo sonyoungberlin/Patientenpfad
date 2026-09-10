@@ -12,7 +12,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const body = await req.json().catch(() => null) as { answers?: unknown } | null;
   try {
-    await submitInternalDocumentationSession({
+    const exportData = await submitInternalDocumentationSession({
       sessionId: id,
       answers: body?.answers,
       context: {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         deviceId: device.deviceId,
       },
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, ...exportData });
   } catch (cause) {
     if (cause instanceof InternalDocumentationError) {
       const invalidQuestionIds = (cause as InternalDocumentationError & {

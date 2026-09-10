@@ -16,6 +16,7 @@ import {
   isNewBlockBasedInternalSession,
 } from "@/lib/questionnaire/documentedContent";
 import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
+import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -114,7 +115,7 @@ export async function submitInternalDocumentationSession(input: {
   sessionId: string;
   answers: unknown;
   context: InternalDocumentationContext;
-}): Promise<void> {
+}): Promise<{ noteText: string; xmlFilename: string | null } | null> {
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { id: input.sessionId },
     select: {
@@ -126,6 +127,9 @@ export async function submitInternalDocumentationSession(input: {
       created_by_kiosk_device_id: true,
       deleted_at: true,
       frozen_blocks: true,
+      patient_reference: true,
+      selected_block_ids: true,
+      deduplicated_questions: true,
     },
   });
 
@@ -250,6 +254,7 @@ export async function submitInternalDocumentationSession(input: {
   const deviceFilter = input.context.kind === "kiosk"
     ? input.context.deviceId
     : null;
+  const submittedAt = new Date();
   const result = await prisma.patientQuestionnaireSession.updateMany({
     where: {
       id: input.sessionId,
@@ -264,7 +269,7 @@ export async function submitInternalDocumentationSession(input: {
     data: {
       answers: answers as unknown as Prisma.InputJsonValue,
       status: "completed",
-      submitted_at: new Date(),
+      submitted_at: submittedAt,
     },
   });
   if (result.count !== 1) {
@@ -273,4 +278,19 @@ export async function submitInternalDocumentationSession(input: {
       409,
     );
   }
+
+  if (input.context.kind !== "kiosk") return null;
+
+  const detail = buildQuestionnaireInboxDetail({
+    patient_reference: session.patient_reference,
+    submitted_at: submittedAt,
+    selected_block_ids: session.selected_block_ids,
+    deduplicated_questions: session.deduplicated_questions,
+    answers,
+    frozen_blocks: session.frozen_blocks,
+    source: session.source,
+    session_kind: session.session_kind,
+    internal_workflow_id: session.internal_workflow_id,
+  });
+  return { noteText: detail.noteText, xmlFilename: detail.xmlFilename };
 }

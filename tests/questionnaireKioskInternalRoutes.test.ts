@@ -24,7 +24,10 @@ import {
   hasQuestionnaireKioskCapability,
   requireUnlockedQuestionnaireKioskDevice,
 } from "@/lib/questionnaireKiosk/auth";
-import { buildInternalWorkflowBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
+import {
+  buildInternalDocumentationFrozenBlocks,
+  buildInternalWorkflowBlocks,
+} from "@/lib/questionnaire/internalWorkflowRegistry";
 
 const guard = requireUnlockedQuestionnaireKioskDevice as jest.Mock;
 const hasCapability = hasQuestionnaireKioskCapability as jest.Mock;
@@ -280,6 +283,40 @@ describe("interne Kiosk-Dokumentation", () => {
         },
       }),
     });
+  });
+
+  it("liefert nach blockbasierter Impfberatung kanonischen Text und XML-Dateinamen", async () => {
+    const frozenBlocks = buildInternalDocumentationFrozenBlocks(["VACCINATION_REVIEW"]);
+    const answers = {
+      VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+        vaccination_id: "influenza",
+        documented_status: "Vollständig vorhanden",
+      }]),
+    };
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "kiosk_direct",
+      internal_workflow_id: null,
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: "device-1",
+      deleted_at: null,
+      patient_reference: "PAT-1",
+      selected_block_ids: ["VACCINATION_REVIEW"],
+      deduplicated_questions: frozenBlocks.flatMap((block) => block.questions),
+      frozen_blocks: frozenBlocks,
+    });
+
+    const response = await submitInternal(
+      request("/api/questionnaire-kiosk/internal/session-1", { answers }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.noteText).toContain("Interne Dokumentation");
+    expect(body.noteText).toContain("Impfungen");
+    expect(body.xmlFilename).toMatch(/^\d{8}_PAT1_Interne_Dokumentation\.xml$/);
   });
 
   it("lehnt eine manipulierte v2-Impf-ID nach Sanitizing über die Frozen-Allowlist ab", async () => {

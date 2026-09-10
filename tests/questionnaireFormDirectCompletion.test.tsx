@@ -18,6 +18,15 @@ jest.mock("@/components/SelfCheckInQrCode", () => ({
 const fetchMock = jest.fn();
 global.fetch = fetchMock;
 
+function readBlob(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(blob, "UTF-8");
+  });
+}
+
 const QUESTIONS = [
   {
     id: "AU_SYMPTOMS",
@@ -128,6 +137,59 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
 
     await act(async () => root.unmount());
     document.body.removeChild(container);
+  });
+
+  it("zeigt nach interner Kiosk-Dokumentation den Word-XML-Download", async () => {
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: jest.fn(() => "blob:kiosk-xml"),
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: jest.fn(),
+    });
+    let downloadedFilename = "";
+    jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+      downloadedFilename = this.download;
+    });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        noteText: "Interne Dokumentation\n\nImpfberatung\nStatus: A & B",
+        xmlFilename: "20260910_PAT1_Interne_Dokumentation.xml",
+      }),
+    });
+    const { container, root } = await renderForm(
+      "kiosk_direct",
+      null,
+      "PAT-1",
+      null,
+      "/questionnaire-kiosk/internal",
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const downloadButton = container.querySelector<HTMLButtonElement>("[data-q-download-xml]");
+    expect(downloadButton?.textContent).toBe("XML für Word herunterladen");
+    await act(async () => downloadButton!.click());
+
+    const blob = (URL.createObjectURL as jest.Mock).mock.calls[0][0] as Blob;
+    await expect(readBlob(blob)).resolves.toBe(
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+      "<appExport version=\"1.0\"><section id=\"APP_TEXT\">" +
+      "Interne Dokumentation\n\nImpfberatung\nStatus: A &amp; B" +
+      "</section></appExport>",
+    );
+    expect(downloadedFilename).toBe("20260910_PAT1_Interne_Dokumentation.xml");
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+    jest.restoreAllMocks();
   });
 
   it("zeigt QR beim Direkteinstieg erst nach erfolgreichem Submit", async () => {
