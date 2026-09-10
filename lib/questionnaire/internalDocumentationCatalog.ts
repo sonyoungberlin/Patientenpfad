@@ -92,6 +92,40 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
   EKG_QTC: { id: "EKG_QTC", text: "QTc", type: "number", required: false, unit: "ms", step: 1 },
   EKG_BLOCK_PATTERNS: { id: "EKG_BLOCK_PATTERNS", text: "Blockbilder", type: "text", required: false, maxLength: 120 },
   EKG_ERBS: { id: "EKG_ERBS", text: "ERBS", type: "text", required: false, maxLength: 120 },
+  MEDICAL_STATEMENT_IMPAIRMENT_TYPE: {
+    id: "MEDICAL_STATEMENT_IMPAIRMENT_TYPE",
+    text: "Art der Beeinträchtigung",
+    type: "select",
+    required: false,
+    options: [
+      { value: "physical", label: "Körperlich", documentationText: "Es liegen körperliche Beschwerden vor, die die berufliche Belastbarkeit derzeit einschränken." },
+      { value: "psychological", label: "Psychisch", documentationText: "Es bestehen psychische Belastungen bzw. eine psychische Erkrankung, die aktuell mit einer eingeschränkten Belastbarkeit, Konzentrationsfähigkeit und Stresstoleranz einhergeht." },
+      { value: "combined", label: "Kombiniert", documentationText: "Es bestehen sowohl körperliche als auch psychische gesundheitliche Einschränkungen, die sich gegenseitig verstärken und die berufliche Belastbarkeit derzeit deutlich reduzieren." },
+    ],
+  },
+  MEDICAL_STATEMENT_TIME_ASSESSMENT: {
+    id: "MEDICAL_STATEMENT_TIME_ASSESSMENT",
+    text: "Zeitliche Einschätzung",
+    type: "select",
+    required: false,
+    options: [
+      { value: "short_medium_term", label: "Kurz-/mittelfristig", documentationText: "Diese Einschätzung gilt vorerst und sollte im Verlauf erneut überprüft werden." },
+      { value: "uncertain_course", label: "Verlauf unklar", documentationText: "Die weitere gesundheitliche Entwicklung bleibt abzuwarten; eine erneute ärztliche Beurteilung ist erforderlich." },
+      { value: "longer_term", label: "Längerfristig", documentationText: "Aus aktueller medizinischer Sicht ist eine Rückkehr in die bisherige Tätigkeit absehbar nicht möglich." },
+    ],
+  },
+  MEDICAL_STATEMENT_RECOMMENDATIONS: {
+    id: "MEDICAL_STATEMENT_RECOMMENDATIONS",
+    text: "Weitere Einschätzung / Empfehlung",
+    type: "multi_select",
+    required: false,
+    options: [
+      { value: "current_activity_not_recommended", label: "Aktuelle Tätigkeit nicht empfehlenswert", documentationText: "Die Fortführung der aktuellen Tätigkeit erscheint aus ärztlicher Sicht derzeit nicht empfehlenswert, da eine Verschlechterung des Gesundheitszustands zu erwarten ist." },
+      { value: "medical_reassessment", label: "Erneute ärztliche Beurteilung", documentationText: "Eine erneute ärztliche Beurteilung im weiteren Verlauf wird empfohlen." },
+      { value: "alternative_measures", label: "Alternative Maßnahmen prüfen", documentationText: "Aus hausärztlicher Sicht wird empfohlen, alternative Maßnahmen (z. B. berufliche Neuorientierung, Rehabilitationsmaßnahmen oder sozialmedizinische Abklärung) zu prüfen." },
+      { value: "social_medical_assessment", label: "Sozialmedizinische Begutachtung", documentationText: "Eine weiterführende sozialmedizinische Begutachtung kann sinnvoll sein." },
+    ],
+  },
 };
 
 export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
@@ -118,6 +152,12 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
         { questionIds: ["EKG_ERBS"], label: "ERBS" },
       ],
     },
+  },
+  MEDICAL_STATEMENT: {
+    id: "MEDICAL_STATEMENT",
+    label: "Stellungnahme",
+    displayOrder: 80,
+    questionIds: ["MEDICAL_STATEMENT_IMPAIRMENT_TYPE", "MEDICAL_STATEMENT_TIME_ASSESSMENT", "MEDICAL_STATEMENT_RECOMMENDATIONS"],
   },
 };
 

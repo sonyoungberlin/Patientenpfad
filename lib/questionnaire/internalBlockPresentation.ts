@@ -17,6 +17,7 @@ export const INTERNAL_BLOCK_GROUPS: readonly InternalBlockGroup[] = [
       "HEALTH_CHECK_URINE",
       "HEALTH_CHECK_PREVENTION",
       "HEALTH_CHECK_NEXT_STEPS",
+      "EKG",
     ],
   },
   {
@@ -38,7 +39,12 @@ export const INTERNAL_BLOCK_GROUPS: readonly InternalBlockGroup[] = [
   {
     id: "additional_documentation",
     label: "Weitere Dokumentation",
-    blockIds: ["DOCUMENT_HANDLING", "EKG"],
+    blockIds: ["DOCUMENT_HANDLING"],
+  },
+  {
+    id: "medical_statement",
+    label: "Stellungnahme",
+    blockIds: ["MEDICAL_STATEMENT"],
   },
 ] as const;
 

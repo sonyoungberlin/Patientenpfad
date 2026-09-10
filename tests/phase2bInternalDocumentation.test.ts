@@ -392,6 +392,111 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(await extractPdfText(emptyResult.bytes)).not.toContain("Dokumente / Befunde");
   });
 
+  it("rendert Stellungnahme in Fragen- und gespeicherter C-Reihenfolge", async () => {
+    const statementBlocks = buildInternalDocumentationFrozenBlocks(["MEDICAL_STATEMENT"]);
+    const statementAnswers = {
+      MEDICAL_STATEMENT_IMPAIRMENT_TYPE: "physical",
+      MEDICAL_STATEMENT_TIME_ASSESSMENT: "uncertain_course",
+      MEDICAL_STATEMENT_RECOMMENDATIONS: "alternative_measures, medical_reassessment",
+    };
+    const expectedSentences = [
+      "Es liegen körperliche Beschwerden vor, die die berufliche Belastbarkeit derzeit einschränken.",
+      "Die weitere gesundheitliche Entwicklung bleibt abzuwarten; eine erneute ärztliche Beurteilung ist erforderlich.",
+      "Aus hausärztlicher Sicht wird empfohlen, alternative Maßnahmen (z. B. berufliche Neuorientierung, Rehabilitationsmaßnahmen oder sozialmedizinische Abklärung) zu prüfen.",
+      "Eine erneute ärztliche Beurteilung im weiteren Verlauf wird empfohlen.",
+    ];
+    const note = buildMedicalRecordNote({
+      answers: statementAnswers,
+      selected_block_ids: ["MEDICAL_STATEMENT"],
+      frozenBlocks: statementBlocks,
+      internalWorkflowId: null,
+    });
+
+    expect(note).toContain("Stellungnahme");
+    expectedSentences.forEach((sentence) => expect(note).toContain(sentence));
+    expect(expectedSentences.map((sentence) => note.indexOf(sentence)))
+      .toEqual([...expectedSentences].map((_, index) => note.indexOf(expectedSentences[index]))
+        .sort((left, right) => left - right));
+    expect(note.match(/Die weitere gesundheitliche Entwicklung bleibt abzuwarten/g)).toHaveLength(1);
+
+    const result = await buildQuestionnairePdfBytes(session({
+      selected_block_ids: ["MEDICAL_STATEMENT"],
+      deduplicated_questions: statementBlocks.flatMap((block) => block.questions),
+      frozen_blocks: statementBlocks,
+      answers: statementAnswers,
+    }), {
+      title: "Interne Dokumentation",
+      filenameLabel: "Interne Dokumentation",
+      referenceLabel: "Patientenreferenz",
+      blockCatalog: {},
+    });
+    const pdfText = await extractPdfText(result.bytes);
+    expect(pdfText).toContain("Stellungnahme");
+    expect(pdfText).toContain("Es liegen körperliche Beschwerden vor");
+    expect(pdfText).toContain("Die weitere gesundheitliche Entwicklung bleibt abzuwarten");
+    expect(pdfText).toContain("Aus hausärztlicher Sicht wird empfohlen, alternative Maßnahmen");
+    expect(pdfText).toContain("Eine erneute ärztliche Beurteilung im weiteren Verlauf wird empfohlen.");
+
+    sessionDb.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: null,
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      frozen_blocks: statementBlocks,
+    });
+    await submitInternalDocumentationSession({
+      sessionId: "phase-2b-session",
+      answers: statementAnswers,
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+    expect(sessionDb.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ answers: statementAnswers }),
+    }));
+  });
+
+  it("lässt leere Stellungnahme aus und kombiniert sie kanonisch mit EKG", async () => {
+    const combinedBlocks = buildInternalDocumentationFrozenBlocks(["MEDICAL_STATEMENT", "EKG"]);
+    expect(combinedBlocks.map((block) => block.id)).toEqual(["EKG", "MEDICAL_STATEMENT"]);
+
+    const combinedNote = buildMedicalRecordNote({
+      answers: {
+        EKG_RHYTHM: "Sinusrhythmus",
+        MEDICAL_STATEMENT_IMPAIRMENT_TYPE: "combined",
+      },
+      selected_block_ids: ["MEDICAL_STATEMENT", "EKG"],
+      frozenBlocks: combinedBlocks,
+      internalWorkflowId: null,
+    });
+    expect(combinedNote.indexOf("EKG\n")).toBeLessThan(combinedNote.indexOf("Stellungnahme\n"));
+    expect(combinedNote).toContain("Rhythmus: Sinusrhythmus");
+    expect(combinedNote).toContain("Es bestehen sowohl körperliche als auch psychische gesundheitliche Einschränkungen");
+
+    const statementBlocks = buildInternalDocumentationFrozenBlocks(["MEDICAL_STATEMENT"]);
+    const emptyNote = buildMedicalRecordNote({
+      answers: {},
+      selected_block_ids: ["MEDICAL_STATEMENT"],
+      frozenBlocks: statementBlocks,
+      internalWorkflowId: null,
+    });
+    expect(emptyNote).not.toContain("Stellungnahme");
+
+    const emptyPdf = await buildQuestionnairePdfBytes(session({
+      selected_block_ids: ["MEDICAL_STATEMENT"],
+      deduplicated_questions: statementBlocks.flatMap((block) => block.questions),
+      frozen_blocks: statementBlocks,
+      answers: {},
+    }), {
+      title: "Interne Dokumentation",
+      filenameLabel: "Interne Dokumentation",
+      referenceLabel: "Patientenreferenz",
+      blockCatalog: {},
+    });
+    expect(await extractPdfText(emptyPdf.bytes)).not.toContain("Stellungnahme");
+  });
+
   it("liefert die neue Session über die normale PDF-Route ohne Workflow", async () => {
     sessionDb.findUnique.mockResolvedValue(session());
     const response = await PdfRoute(

@@ -206,6 +206,88 @@ describe("QuestionnaireFormClient yes_no-Werte", () => {
     document.body.removeChild(container);
   });
 
+  it("verwendet für Stellungnahme bestehende Auswahlbuttons und sendet nur technische Values", async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });
+    const questions = [
+      INTERNAL_QUESTION_CATALOG.MEDICAL_STATEMENT_IMPAIRMENT_TYPE,
+      INTERNAL_QUESTION_CATALOG.MEDICAL_STATEMENT_TIME_ASSESSMENT,
+      INTERNAL_QUESTION_CATALOG.MEDICAL_STATEMENT_RECOMMENDATIONS,
+    ];
+    const frozenBlocks = [{
+      id: "MEDICAL_STATEMENT",
+      label: "Stellungnahme",
+      displayOrder: 80,
+      questions,
+      conditionalRules: [],
+      initiallyVisible: true,
+      outputSemantics: "documented-content-v1" as const,
+    }];
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireFormClient
+          token="token-1"
+          questions={questions}
+          frozenBlocks={frozenBlocks}
+          source="practice_direct"
+          context="office"
+          internalWorkflowId={null}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("Körperlich");
+    expect(container.textContent).toContain("Verlauf unklar");
+    expect(container.textContent).toContain("Alternative Maßnahmen prüfen");
+    expect(container.textContent).not.toContain("Es liegen körperliche Beschwerden vor");
+    expect(container.textContent).not.toContain("Eine erneute ärztliche Beurteilung im weiteren Verlauf");
+
+    const physical = container.querySelector<HTMLButtonElement>(
+      '[data-q-select="MEDICAL_STATEMENT_IMPAIRMENT_TYPE:physical"]',
+    )!;
+    const psychological = container.querySelector<HTMLButtonElement>(
+      '[data-q-select="MEDICAL_STATEMENT_IMPAIRMENT_TYPE:psychological"]',
+    )!;
+    await act(async () => physical.click());
+    expect(physical.getAttribute("aria-checked")).toBe("true");
+    await act(async () => psychological.click());
+    expect(physical.getAttribute("aria-checked")).toBe("false");
+    expect(psychological.getAttribute("aria-checked")).toBe("true");
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(
+        '[data-q-select="MEDICAL_STATEMENT_TIME_ASSESSMENT:uncertain_course"]',
+      )!.click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(
+        '[data-q-multiselect="MEDICAL_STATEMENT_RECOMMENDATIONS:social_medical_assessment"]',
+      )!.click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(
+        '[data-q-multiselect="MEDICAL_STATEMENT_RECOMMENDATIONS:alternative_measures"]',
+      )!.click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const request = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(request.body as string).answers).toEqual({
+      MEDICAL_STATEMENT_IMPAIRMENT_TYPE: "psychological",
+      MEDICAL_STATEMENT_TIME_ASSESSMENT: "uncertain_course",
+      MEDICAL_STATEMENT_RECOMMENDATIONS: "social_medical_assessment, alternative_measures",
+    });
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
   it("aktualisiert den Health-Check-BMI unmittelbar aus Größe und Gewicht", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);

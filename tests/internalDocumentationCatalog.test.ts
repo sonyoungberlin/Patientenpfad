@@ -18,6 +18,7 @@ describe("internal documentation workflow registry", () => {
     const blocks = buildInternalWorkflowBlocks("care_plan_v1");
     expect(blocks).toHaveLength(5);
     expect(blocks.map((block) => block.id)).not.toContain("DOCUMENT_HANDLING");
+    expect(blocks.map((block) => block.id)).not.toContain("MEDICAL_STATEMENT");
     expect(blocks.map((block) => block.label)).toEqual([
       "Hausärztliche Betreuung",
       "Fachärztliche Betreuung",

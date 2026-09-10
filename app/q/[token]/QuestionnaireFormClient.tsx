@@ -19,6 +19,7 @@ import { computeAllDerivedValues, type DerivedValues } from "@/lib/questionnaire
 import { buildDerivedValueLines } from "@/lib/questionnaire/formatAnswer";
 import {
   MAIN_GATE_QUESTION_IDS,
+  QuestionField as ChoiceButtonQuestionField,
   limitTextLength,
   TextLengthCounter,
   VaccinationMatrixField,
@@ -905,6 +906,7 @@ function renderQuestionLi(
   isGate: boolean,
   hasMissingRequired: boolean,
   derivedValues: DerivedValues,
+  useChoiceButtonSelect: boolean,
 ) {
   const gateStyle: React.CSSProperties = isGate
     ? {
@@ -939,14 +941,23 @@ function renderQuestionLi(
           </>
         )}
       </label>
-      <QuestionField
+      {useChoiceButtonSelect && q.type === "select" ? (
+        <ChoiceButtonQuestionField
+          question={q}
+          value={values[q.id] ?? ""}
+          onChange={handleChange}
+          disabled={saving}
+          language={language}
+          hasError={fieldHasCharError[q.id] === true}
+        />
+      ) : <QuestionField
         question={q}
         value={values[q.id] ?? ""}
         onChange={handleChange}
         disabled={saving}
         language={language}
         hasError={fieldHasCharError[q.id] === true}
-      />
+      />}
       {q.id === "HEALTH_CHECK_WEIGHT_KG" && derivedValues.BMI !== undefined ? (
         <p data-q-derived="BMI" style={{ margin: "0.4rem 0 0", fontSize: "0.9rem" }}>
           {buildDerivedValueLines({ BMI: derivedValues.BMI })[0]}
@@ -1164,6 +1175,11 @@ export function QuestionnaireFormClient({
   }, [values, visibleQuestions]);
 
   const hasAnyCharError = Object.values(fieldHasCharError).some(Boolean);
+  const useChoiceButtonSelect = internalWorkflowId === null &&
+    frozenBlocks !== null &&
+    frozenBlocks !== undefined &&
+    frozenBlocks.length > 0 &&
+    frozenBlocks.every((block) => block.outputSemantics === "documented-content-v1");
 
   function handleChange(id: string, val: string) {
     if (id === "PATIENT_COPY_EMAIL") patientCopyEmailTouched.current = true;
@@ -1332,7 +1348,7 @@ export function QuestionnaireFormClient({
                 return (
                   <section key={block.id} data-q-block={block.id}>
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues))}
+                      {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues, useChoiceButtonSelect))}
                     </ul>
                   </section>
                 );
@@ -1341,7 +1357,7 @@ export function QuestionnaireFormClient({
         ) : (
           // Legacy-Pfad: flache Liste
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues))}
+            {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues, useChoiceButtonSelect))}
           </ul>
         )}
         {error ? (

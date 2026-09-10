@@ -22,10 +22,10 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
     create.mockReset().mockResolvedValue({ id: "session-2a" });
   });
 
-  it("registriert alle 14 Blocks und global eindeutige Fragen", () => {
-    expect(INTERNAL_BLOCK_ORDER).toHaveLength(14);
-    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(14);
-    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(14);
+  it("registriert alle 15 Blocks und global eindeutige Fragen", () => {
+    expect(INTERNAL_BLOCK_ORDER).toHaveLength(15);
+    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(15);
+    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(15);
     expect(INTERNAL_BLOCK_CATALOG.DOCUMENT_HANDLING).toMatchObject({
       label: "Dokumente / Befunde",
       questionIds: ["DOCUMENT_HANDLING_ACTIONS"],
@@ -34,6 +34,14 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
       label: "EKG",
       questionIds: ["EKG_RHYTHM", "EKG_HEART_RATE", "EKG_AXIS", "EKG_QTC", "EKG_BLOCK_PATTERNS", "EKG_ERBS"],
       documentationPresentation: { layout: "inline", separator: " – " },
+    });
+    expect(INTERNAL_BLOCK_CATALOG.MEDICAL_STATEMENT).toMatchObject({
+      label: "Stellungnahme",
+      questionIds: [
+        "MEDICAL_STATEMENT_IMPAIRMENT_TYPE",
+        "MEDICAL_STATEMENT_TIME_ASSESSMENT",
+        "MEDICAL_STATEMENT_RECOMMENDATIONS",
+      ],
     });
     expect(Object.values(INTERNAL_BLOCK_CATALOG).flatMap((block) => block.questionIds))
       .toHaveLength(new Set(Object.values(INTERNAL_BLOCK_CATALOG).flatMap((block) => block.questionIds)).size);
@@ -52,7 +60,7 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
   });
 
   it("sortiert Einzelblocks und Kombinationen unabhängig von der Eingabereihenfolge", () => {
-    const ids = ["VACCINATION_REVIEW", "HEALTH_CHECK_NEXT_STEPS", "EKG", "DOCUMENT_HANDLING", "CARE_PLAN_HA"];
+    const ids = ["VACCINATION_REVIEW", "HEALTH_CHECK_NEXT_STEPS", "MEDICAL_STATEMENT", "EKG", "DOCUMENT_HANDLING", "CARE_PLAN_HA"];
     const first = buildInternalDocumentationFrozenBlocks(ids);
     const second = buildInternalDocumentationFrozenBlocks([...ids].reverse());
 
@@ -60,6 +68,7 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
       "CARE_PLAN_HA",
       "DOCUMENT_HANDLING",
       "EKG",
+      "MEDICAL_STATEMENT",
       "VACCINATION_REVIEW",
       "HEALTH_CHECK_NEXT_STEPS",
     ]);
@@ -70,9 +79,58 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
         "CARE_PLAN_HA_DATE",
         "DOCUMENT_HANDLING_ACTIONS",
         "EKG_RHYTHM",
+        "MEDICAL_STATEMENT_IMPAIRMENT_TYPE",
         "HEALTH_CHECK_FOLLOW_UP_REQUIRED",
         "VACCINATION_REVIEW_ITEMS",
       ]));
+  });
+
+  it("friert die Stellungnahme mit technischen Values und Dokumentationssätzen ein", () => {
+    const frozen = buildInternalDocumentationFrozenBlocks(["MEDICAL_STATEMENT"]);
+
+    expect(frozen).toHaveLength(1);
+    expect(frozen[0]).toMatchObject({
+      id: "MEDICAL_STATEMENT",
+      label: "Stellungnahme",
+      outputSemantics: "documented-content-v1",
+    });
+    expect(frozen[0]).not.toHaveProperty("documentationPresentation");
+    expect(frozen[0].questions).toEqual([
+      expect.objectContaining({
+        id: "MEDICAL_STATEMENT_IMPAIRMENT_TYPE",
+        text: "Art der Beeinträchtigung",
+        type: "select",
+        required: false,
+        options: [
+          { value: "physical", label: "Körperlich", documentationText: "Es liegen körperliche Beschwerden vor, die die berufliche Belastbarkeit derzeit einschränken." },
+          { value: "psychological", label: "Psychisch", documentationText: "Es bestehen psychische Belastungen bzw. eine psychische Erkrankung, die aktuell mit einer eingeschränkten Belastbarkeit, Konzentrationsfähigkeit und Stresstoleranz einhergeht." },
+          { value: "combined", label: "Kombiniert", documentationText: "Es bestehen sowohl körperliche als auch psychische gesundheitliche Einschränkungen, die sich gegenseitig verstärken und die berufliche Belastbarkeit derzeit deutlich reduzieren." },
+        ],
+      }),
+      expect.objectContaining({
+        id: "MEDICAL_STATEMENT_TIME_ASSESSMENT",
+        text: "Zeitliche Einschätzung",
+        type: "select",
+        required: false,
+        options: [
+          { value: "short_medium_term", label: "Kurz-/mittelfristig", documentationText: "Diese Einschätzung gilt vorerst und sollte im Verlauf erneut überprüft werden." },
+          { value: "uncertain_course", label: "Verlauf unklar", documentationText: "Die weitere gesundheitliche Entwicklung bleibt abzuwarten; eine erneute ärztliche Beurteilung ist erforderlich." },
+          { value: "longer_term", label: "Längerfristig", documentationText: "Aus aktueller medizinischer Sicht ist eine Rückkehr in die bisherige Tätigkeit absehbar nicht möglich." },
+        ],
+      }),
+      expect.objectContaining({
+        id: "MEDICAL_STATEMENT_RECOMMENDATIONS",
+        text: "Weitere Einschätzung / Empfehlung",
+        type: "multi_select",
+        required: false,
+        options: [
+          { value: "current_activity_not_recommended", label: "Aktuelle Tätigkeit nicht empfehlenswert", documentationText: "Die Fortführung der aktuellen Tätigkeit erscheint aus ärztlicher Sicht derzeit nicht empfehlenswert, da eine Verschlechterung des Gesundheitszustands zu erwarten ist." },
+          { value: "medical_reassessment", label: "Erneute ärztliche Beurteilung", documentationText: "Eine erneute ärztliche Beurteilung im weiteren Verlauf wird empfohlen." },
+          { value: "alternative_measures", label: "Alternative Maßnahmen prüfen", documentationText: "Aus hausärztlicher Sicht wird empfohlen, alternative Maßnahmen (z. B. berufliche Neuorientierung, Rehabilitationsmaßnahmen oder sozialmedizinische Abklärung) zu prüfen." },
+          { value: "social_medical_assessment", label: "Sozialmedizinische Begutachtung", documentationText: "Eine weiterführende sozialmedizinische Begutachtung kann sinnvoll sein." },
+        ],
+      }),
+    ]);
   });
 
   it("friert Messwert- und EKG-Inline-Metadaten mit allen Fragen ein", () => {
