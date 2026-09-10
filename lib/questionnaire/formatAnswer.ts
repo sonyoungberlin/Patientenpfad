@@ -14,6 +14,12 @@ import { QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
 import type { DerivedValues } from "./derivedValues";
 import type { QuestionnaireAttentionHint } from "./attentionHints";
+import { parseMultiSelectValue } from "./multiSelect";
+import {
+  getQuestionOptionValues,
+  resolveQuestionOptionDocumentation,
+  resolveQuestionOptionLabel,
+} from "./questionOptions";
 
 // ---------------------------------------------------------------------------
 // yes_no-Normalisierung
@@ -41,6 +47,37 @@ export function formatQuestionValue(
   if (!rawValue || rawValue.trim() === "") return "";
   if (question?.type === "yes_no") return formatYesNoValue(rawValue);
   return rawValue;
+}
+
+export type ResolvedQuestionDocumentation = {
+  documentationTexts: string[];
+  fallbackValue?: string;
+};
+
+export function resolveQuestionDocumentation(
+  question: QuestionDefinition | undefined,
+  rawValue: string,
+): ResolvedQuestionDocumentation {
+  if (!question?.options?.length) {
+    return { documentationTexts: [], fallbackValue: formatQuestionValue(question, rawValue) };
+  }
+
+  const selectedValues = question.type === "multi_select"
+    ? parseMultiSelectValue(rawValue, getQuestionOptionValues(question))
+    : [rawValue];
+  const documentationTexts: string[] = [];
+  const fallbackLabels: string[] = [];
+
+  for (const selectedValue of selectedValues) {
+    const documentationText = resolveQuestionOptionDocumentation(question, selectedValue);
+    if (documentationText) documentationTexts.push(documentationText);
+    else fallbackLabels.push(resolveQuestionOptionLabel(question, selectedValue));
+  }
+
+  return {
+    documentationTexts,
+    ...(fallbackLabels.length > 0 ? { fallbackValue: fallbackLabels.join(", ") } : {}),
+  };
 }
 
 // ---------------------------------------------------------------------------

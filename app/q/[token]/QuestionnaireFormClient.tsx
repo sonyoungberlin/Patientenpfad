@@ -28,6 +28,7 @@ import {
   parseMultiSelectValue,
   toggleMultiSelectValue,
 } from "@/lib/questionnaire/multiSelect";
+import { getQuestionOptionLabel, getQuestionOptionValue } from "@/lib/questionnaire/questionOptions";
 import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
 import { SelfCheckInQrCode } from "@/components/SelfCheckInQrCode";
 import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
@@ -161,14 +162,15 @@ function QuestionField({
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem", width: "100%", minWidth: 0 }}>
           {(question.options ?? []).map((opt) => {
             const options = question.options ?? [];
-            const selected = parseMultiSelectValue(value, options).includes(opt);
+            const optionValue = getQuestionOptionValue(opt);
+            const selected = parseMultiSelectValue(value, options).includes(optionValue);
             return (
               <button
-                key={opt}
+                key={optionValue}
                 type="button"
                 disabled={disabled}
                 onClick={() => {
-                  onChange(question.id, toggleMultiSelectValue(value, opt, options));
+                  onChange(question.id, toggleMultiSelectValue(value, optionValue, options));
                 }}
                 style={{
                   padding: "0.25rem 0.75rem",
@@ -185,9 +187,9 @@ function QuestionField({
                   whiteSpace: "normal",
                   overflowWrap: "anywhere",
                 }}
-                data-q-multiselect={`${question.id}:${opt}`}
+                data-q-multiselect={`${question.id}:${optionValue}`}
               >
-                {opt}
+                {getQuestionOptionLabel(opt)}
               </button>
             );
           })}
@@ -207,7 +209,9 @@ function QuestionField({
             {language === "en" ? "— please choose —" : "— bitte wählen —"}
           </option>
           {(question.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
+            <option key={getQuestionOptionValue(opt)} value={getQuestionOptionValue(opt)}>
+              {getQuestionOptionLabel(opt)}
+            </option>
           ))}
         </select>
       );
@@ -240,7 +244,11 @@ function QuestionField({
       );
     case "yes_no":
       const yesNoOptions = question.options?.length === 2
-        ? question.options.map((option) => ({ val: option, labelDe: option, labelEn: option }))
+        ? question.options.map((option) => ({
+            val: getQuestionOptionValue(option),
+            labelDe: getQuestionOptionLabel(option),
+            labelEn: getQuestionOptionLabel(option),
+          }))
         : [
             { val: "ja", labelDe: "Ja", labelEn: "Yes" },
             { val: "nein", labelDe: "Nein", labelEn: "No" },

@@ -7,6 +7,7 @@ import { computeAllDerivedValues } from "./derivedValues";
 import { buildOptionsByQuestionId, parseMultiSelectValue } from "./multiSelect";
 import { hasDocumentedAnswer } from "./documentedContent";
 import type { FrozenBlock } from "./frozenBlocks";
+import { getQuestionOptionValues } from "./questionOptions";
 
 export type FrozenAnswersValidationResult = {
   ok: boolean;
@@ -14,12 +15,13 @@ export type FrozenAnswersValidationResult = {
 };
 
 function isAllowedOptionAnswer(question: QuestionDefinition, value: string): boolean {
+  const optionValues = getQuestionOptionValues(question);
   if (question.type === "select" || question.type === "yes_no") {
-    return question.options?.includes(value) ?? false;
+    return optionValues.includes(value);
   }
   if (question.type === "multi_select") {
-    const selected = parseMultiSelectValue(value, question.options ?? []);
-    return selected.length > 0 && selected.every((option) => question.options?.includes(option));
+    const selected = parseMultiSelectValue(value, optionValues);
+    return selected.length > 0 && selected.every((option) => optionValues.includes(option));
   }
   return true;
 }

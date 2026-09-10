@@ -30,7 +30,8 @@ import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
-import { buildAttentionHintLines } from "./formatAnswer";
+import { buildAttentionHintLines, resolveQuestionDocumentation } from "./formatAnswer";
+import { getQuestionOptionValues } from "./questionOptions";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
@@ -593,13 +594,17 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         if (
           useLegacyHealthCheckOutput &&
           question.type === "yes_no" &&
-          question.options?.includes(raw)
+          getQuestionOptionValues(question).includes(raw)
         ) {
           blockLines.push(`${getLabel(question.id, question)}: ${raw}`);
           continue;
         }
 
-        blockLines.push(...renderQuestionLines(question.id, raw, question, omitQuestionLabel));
+        const resolved = resolveQuestionDocumentation(question, raw);
+        blockLines.push(...resolved.documentationTexts);
+        if (resolved.fallbackValue !== undefined) {
+          blockLines.push(...renderQuestionLines(question.id, resolved.fallbackValue, question, omitQuestionLabel));
+        }
       }
 
       if (block.id === "VOLLST_NIKOTIN") {

@@ -1,4 +1,5 @@
 import { buildInternalWorkflowBlocks, getInternalWorkflow, resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
+import { getQuestionOptionValues } from "@/lib/questionnaire/questionOptions";
 
 describe("internal documentation workflow registry", () => {
   it("exposes only care_plan_v1 with five frozen blocks", () => {
@@ -52,17 +53,32 @@ describe("internal documentation workflow registry", () => {
       "select",
       "select",
     ]);
-    expect(blocks[2].questions[0].options).toEqual([
+    expect(getQuestionOptionValues(blocks[2].questions[0])).toEqual([
       "Patientin / Patient",
       "Praxis",
       "Patientin / Patient und Praxis",
       "Keine Anforderung erforderlich",
     ]);
-    expect(blocks[2].questions[1].options).toEqual([
+    expect(getQuestionOptionValues(blocks[2].questions[1])).toEqual([
       "Ohne vorherige ärztliche Rücksprache",
       "Nach vorheriger ärztlicher Rücksprache",
     ]);
-    expect(blocks[2].questions[2].options).toEqual(blocks[2].questions[1].options);
+    expect(getQuestionOptionValues(blocks[2].questions[2])).toEqual(
+      getQuestionOptionValues(blocks[2].questions[1]),
+    );
+    expect(blocks[2].questions.slice(0, 3).flatMap((question) => question.options ?? []))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          value: "Patientin / Patient",
+          label: "Patientin / Patient",
+          documentationText: "Die erforderlichen Facharztberichte werden durch die Patientin bzw. den Patienten angefordert.",
+        }),
+        expect.objectContaining({
+          value: "Nach vorheriger ärztlicher Rücksprache",
+          label: "Nach vorheriger ärztlicher Rücksprache",
+          documentationText: expect.any(String),
+        }),
+      ]));
     expect(blocks[2].questions[3]).toMatchObject({ type: "textarea", maxLength: 120 });
   });
 

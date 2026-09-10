@@ -1,6 +1,7 @@
 import { BLOCK_CATALOG, QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { parseMultiSelectValue, toggleMultiSelectValue } from "@/lib/questionnaire/multiSelect";
 import { evaluateCondition } from "@/lib/questionnaire/conditionalLogic";
+import { getQuestionOptionValues } from "@/lib/questionnaire/questionOptions";
 
 function collectMultiSelectDefinitions() {
   const definitions: Array<{ id: string; options: string[] }> = [];
@@ -8,7 +9,7 @@ function collectMultiSelectDefinitions() {
 
   for (const question of Object.values(QUESTION_CATALOG)) {
     if (question.type === "multi_select" && question.options && !seen.has(question.id)) {
-      definitions.push({ id: question.id, options: question.options });
+      definitions.push({ id: question.id, options: getQuestionOptionValues(question) });
       seen.add(question.id);
     }
     for (const field of question.groupSchema ?? []) {
@@ -107,7 +108,7 @@ describe("Multi-Select-Katalogregression", () => {
         rule.condition,
         { ADIP_ZUNAHME_AUSLOESER: "Neue oder deutlich veränderte Medikamente, Neue Erkrankung" },
         undefined,
-        new Map([["ADIP_ZUNAHME_AUSLOESER", QUESTION_CATALOG.ADIP_ZUNAHME_AUSLOESER!.options!]]),
+        new Map([["ADIP_ZUNAHME_AUSLOESER", getQuestionOptionValues(QUESTION_CATALOG.ADIP_ZUNAHME_AUSLOESER!)]]),
       ),
     ).toBe(true);
   });

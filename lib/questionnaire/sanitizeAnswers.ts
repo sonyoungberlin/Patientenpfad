@@ -27,6 +27,7 @@ import { isConfirmedAnswer } from "./confirmation";
 import type { QuestionnaireLanguage } from "./i18n";
 import { ALLOWED_ANSWER_CHARACTERS_REGEX } from "./validateAnswerCharacters";
 import { parseMultiSelectValue } from "./multiSelect";
+import { getQuestionOptionValues } from "./questionOptions";
 import {
   isPlausibleCalendarYear,
   isPlausibleYearsAgo,
@@ -58,13 +59,14 @@ function mapOptionToCanonical(
   const def = QUESTION_CATALOG[questionId];
   if (!def || !def.options || !def.options_en) return rawOption;
   if (def.options_en.length !== def.options.length) return rawOption;
+  const optionValues = getQuestionOptionValues(def);
 
   // Bereits ein DE-Originalwert? Dann unverändert lassen.
-  if (def.options.includes(trimmed)) return trimmed;
+  if (optionValues.includes(trimmed)) return trimmed;
 
   const enIndex = def.options_en.indexOf(trimmed);
   if (enIndex >= 0) {
-    return def.options[enIndex];
+    return optionValues[enIndex];
   }
   return rawOption;
 }
@@ -89,7 +91,7 @@ function canonicalizeAnswerValue(
     // Format: kommagetrennte Liste; Kommas innerhalb eines Labels bleiben erhalten.
     const parts = parseMultiSelectValue(
       value,
-      [...(def.options ?? []), ...(def.options_en ?? [])],
+      [...getQuestionOptionValues(def), ...(def.options_en ?? [])],
     );
     if (parts.length === 0) return value;
     const mapped = parts.map((p) => mapOptionToCanonical(questionId, p));

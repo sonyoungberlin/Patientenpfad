@@ -14,6 +14,7 @@ import {
   parseMultiSelectValue,
   toggleMultiSelectValue,
 } from "../lib/questionnaire/multiSelect";
+import { getQuestionOptionValues } from "../lib/questionnaire/questionOptions";
 
 const BLOCK_ID = "ADIPOSITAS_GEWICHTSREDUKTION";
 
@@ -337,7 +338,7 @@ describe("ADIPOSITAS_GEWICHTSREDUKTION – Conditional Logic", () => {
           ADIP_ZUNAHME_AUSLOESER:
             "Neue oder deutlich veränderte Medikamente, Neue Erkrankung",
         }, undefined, new Map([
-          ["ADIP_ZUNAHME_AUSLOESER", QUESTION_CATALOG.ADIP_ZUNAHME_AUSLOESER!.options!],
+          ["ADIP_ZUNAHME_AUSLOESER", getQuestionOptionValues(QUESTION_CATALOG.ADIP_ZUNAHME_AUSLOESER!)],
         ])),
       ).toBe(true);
     });

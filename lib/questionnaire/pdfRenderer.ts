@@ -5,7 +5,9 @@ import {
   parseFacharztEntries,
   formatYesNoValue,
   buildDerivedValueLines,
+  resolveQuestionDocumentation,
 } from "./formatAnswer";
+import { getQuestionOptionValues } from "./questionOptions";
 import type { RepGroupEntry } from "./formatAnswer";
 import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
@@ -435,13 +437,19 @@ export async function buildQuestionnairePdfBytes(
       if (
         useLegacyHealthCheckOutput &&
         q.type === "yes_no" &&
-        q.options?.includes(value)
+        getQuestionOptionValues(q).includes(value)
       ) {
         drawWrappedPair(q.text, value);
         continue;
       }
-      const displayValue = q.type === "yes_no" && value ? formatYesNoValue(value) : value;
-      omitQuestionLabel ? drawWrappedValue(displayValue) : drawWrappedPair(q.text, displayValue);
+      const resolved = resolveQuestionDocumentation(q, value);
+      for (const documentationText of resolved.documentationTexts) drawWrappedValue(documentationText);
+      if (resolved.fallbackValue !== undefined) {
+        const fallbackValue = q.type === "yes_no"
+          ? formatYesNoValue(resolved.fallbackValue)
+          : resolved.fallbackValue;
+        omitQuestionLabel ? drawWrappedValue(fallbackValue) : drawWrappedPair(q.text, fallbackValue);
+      }
     }
 
     y -= sectionGap;

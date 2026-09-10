@@ -252,6 +252,40 @@ describe("questionnaire PDF patient reference", () => {
     expect(result.filename).toBe("20260512_004711_Versicherungsdaten.pdf");
   });
 
+  it("behält die yes_no-Normalisierung bei expliziten String-Optionen bei", async () => {
+    const question: QuestionDefinition = {
+      id: "YES_NO_WITH_OPTIONS",
+      text: "Antwort",
+      type: "yes_no",
+      required: false,
+      options: ["ja", "nein"],
+    };
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        selected_block_ids: ["TEST"],
+        deduplicated_questions: [question],
+        frozen_blocks: [{
+          id: "TEST",
+          label: "Test",
+          displayOrder: 1,
+          questions: [question],
+          conditionalRules: [],
+          initiallyVisible: true,
+        }],
+        answers: { YES_NO_WITH_OPTIONS: "ja" },
+      }),
+      {
+        title: "Fragebogen",
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: {},
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Antwort:");
+    expect(text).toContain("Ja");
+  });
+
   it("rendert den Care Plan ohne doppelte Labels und lässt leere Blocks aus", async () => {
     const workflow = getInternalWorkflow("care_plan_v1")!;
     const frozenBlocks = buildInternalWorkflowBlocks("care_plan_v1");
@@ -301,9 +335,13 @@ describe("questionnaire PDF patient reference", () => {
     expect(text).toContain("Diabetologie");
     expect(text).toContain("Hinweis:");
     expect(text).toContain("Befund bitte an Hausarzt senden");
+    expect(text).toContain("Die erforderlichen Facharztberichte werden durch die Patientin bzw. den Patienten und die Praxis angefordert.");
+    expect(text).toContain("Rezepte für Dauermedikation werden nach vorheriger ärztlicher Rücksprache ausgestellt.");
+    expect(text).toContain("Überweisungen werden ohne vorherige ärztliche Rücksprache ausgestellt.");
     expect(text).toContain("Notizen / Offene Punkte:");
     expect(text).toContain("Facharzttermine einhalten");
     expect(text).not.toContain("Fachärztliche Betreuung:");
+    expect(text).not.toContain("Facharztberichte - Anforderung:");
     expect(text).not.toContain("Unterstützende Personen:");
     expect(text).not.toContain("CARE_PLAN_");
     expect(text).not.toContain("?");

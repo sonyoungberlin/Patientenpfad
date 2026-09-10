@@ -1,3 +1,4 @@
+import { getQuestionOptionValue } from "./questionOptions";
 /**
  * Mehrsprachigkeits-Helfer für den Patient-Renderpfad des
  * Token-Fragebogens (`/q/[token]`).
@@ -69,7 +70,11 @@ export function localizeQuestion(
     question.options_en &&
     question.options_en.length === question.options.length
   ) {
-    options = question.options_en;
+    options = question.options.map((option, index) =>
+      typeof option === "string"
+        ? question.options_en![index]
+        : { ...option, value: getQuestionOptionValue(option), label: question.options_en![index] },
+    );
   }
 
   return {

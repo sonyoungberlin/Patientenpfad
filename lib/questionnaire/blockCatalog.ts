@@ -54,6 +54,14 @@ export type QuestionType =
   | "repeatable_group"
   | "number"; // Phase 5: strukturierte numerische Eingabe (Wert als String gespeichert)
 
+export type QuestionOption = {
+  value: string;
+  label: string;
+  documentationText?: string;
+};
+
+export type QuestionOptionDefinition = string | QuestionOption;
+
 /** Ein Unterfeld innerhalb eines repeatable_group-Eintrags. */
 export type RepeatableGroupFieldDef = {
   key: string;
@@ -99,8 +107,8 @@ export type QuestionDefinition = {
   maxLength?: number;
   /** Nur für praxisindividuelle Bestätigungen: Kopie versenden. */
   send_patient_copy?: boolean;
-  /** Auswahloptionen für select / multi_select (Deutsch, kanonisch). */
-  options?: string[];
+  /** Auswahloptionen für select / yes_no / multi_select (Deutsch, kanonisch). */
+  options?: QuestionOptionDefinition[];
   /** Erläuternder Hilfetext unterhalb des Feldes (Deutsch, kanonisch). */
   helperText?: string;
   /** Optionale englische Übersetzung der Patientenformulierung. */

@@ -21,6 +21,7 @@ import type { QuestionnaireLanguage } from "@/lib/questionnaire/i18n";
 import { ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN } from "@/lib/questionnaire/validateAnswerCharacters";
 import type { ConditionGroup } from "@/lib/questionnaire/conditionalLogic";
 import { parseMultiSelectValue, toggleMultiSelectValue } from "@/lib/questionnaire/multiSelect";
+import { getQuestionOptionLabel, getQuestionOptionValue } from "@/lib/questionnaire/questionOptions";
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktion
@@ -956,19 +957,20 @@ export function QuestionField({
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }}>
           {(question.options ?? []).map((opt) => {
             const options = question.options ?? [];
-            const selected = parseMultiSelectValue(value, options).includes(opt);
+            const optionValue = getQuestionOptionValue(opt);
+            const selected = parseMultiSelectValue(value, options).includes(optionValue);
             return (
               <button
-                key={opt}
+                key={optionValue}
                 type="button"
                 disabled={disabled}
                 onClick={() => {
-                  onChange(question.id, toggleMultiSelectValue(value, opt, options));
+                  onChange(question.id, toggleMultiSelectValue(value, optionValue, options));
                 }}
                 style={answerChoiceStyle(selected, disabled)}
-                data-q-multiselect={`${question.id}:${opt}`}
+                data-q-multiselect={`${question.id}:${optionValue}`}
               >
-                {opt}
+                {getQuestionOptionLabel(opt)}
               </button>
             );
           })}
@@ -984,16 +986,16 @@ export function QuestionField({
         >
           {(question.options ?? []).map((opt) => (
             <button
-              key={opt}
+              key={getQuestionOptionValue(opt)}
               type="button"
               role="radio"
-              aria-checked={value === opt}
+              aria-checked={value === getQuestionOptionValue(opt)}
               disabled={disabled}
-              onClick={() => onChange(question.id, opt)}
-              style={{ ...answerChoiceStyle(value === opt, disabled), minHeight: "2.75rem", textAlign: "left" }}
-              data-q-select={`${question.id}:${opt}`}
+              onClick={() => onChange(question.id, getQuestionOptionValue(opt))}
+              style={{ ...answerChoiceStyle(value === getQuestionOptionValue(opt), disabled), minHeight: "2.75rem", textAlign: "left" }}
+              data-q-select={`${question.id}:${getQuestionOptionValue(opt)}`}
             >
-              {opt}
+              {getQuestionOptionLabel(opt)}
             </button>
           ))}
         </div>

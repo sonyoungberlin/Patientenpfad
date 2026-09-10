@@ -19,18 +19,50 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
     ],
   },
   CARE_PLAN_SPECIALIST_REPORTS: { id: "CARE_PLAN_SPECIALIST_REPORTS", text: "Facharztberichte – Anforderung", type: "select", required: false, options: [
-    "Patientin / Patient",
-    "Praxis",
-    "Patientin / Patient und Praxis",
-    "Keine Anforderung erforderlich",
+    {
+      value: "Patientin / Patient",
+      label: "Patientin / Patient",
+      documentationText: "Die erforderlichen Facharztberichte werden durch die Patientin bzw. den Patienten angefordert.",
+    },
+    {
+      value: "Praxis",
+      label: "Praxis",
+      documentationText: "Die erforderlichen Facharztberichte werden durch die Praxis angefordert.",
+    },
+    {
+      value: "Patientin / Patient und Praxis",
+      label: "Patientin / Patient und Praxis",
+      documentationText: "Die erforderlichen Facharztberichte werden durch die Patientin bzw. den Patienten und die Praxis angefordert.",
+    },
+    {
+      value: "Keine Anforderung erforderlich",
+      label: "Keine Anforderung erforderlich",
+      documentationText: "Eine Anforderung von Facharztberichten ist nicht erforderlich.",
+    },
   ] },
   CARE_PLAN_PRESCRIPTION_RENEWAL: { id: "CARE_PLAN_PRESCRIPTION_RENEWAL", text: "Rezepte für Dauermedikation", type: "select", required: false, options: [
-    "Ohne vorherige ärztliche Rücksprache",
-    "Nach vorheriger ärztlicher Rücksprache",
+    {
+      value: "Ohne vorherige ärztliche Rücksprache",
+      label: "Ohne vorherige ärztliche Rücksprache",
+      documentationText: "Rezepte für Dauermedikation werden ohne vorherige ärztliche Rücksprache ausgestellt.",
+    },
+    {
+      value: "Nach vorheriger ärztlicher Rücksprache",
+      label: "Nach vorheriger ärztlicher Rücksprache",
+      documentationText: "Rezepte für Dauermedikation werden nach vorheriger ärztlicher Rücksprache ausgestellt.",
+    },
   ] },
   CARE_PLAN_REFERRAL: { id: "CARE_PLAN_REFERRAL", text: "Überweisungen", type: "select", required: false, options: [
-    "Ohne vorherige ärztliche Rücksprache",
-    "Nach vorheriger ärztlicher Rücksprache",
+    {
+      value: "Ohne vorherige ärztliche Rücksprache",
+      label: "Ohne vorherige ärztliche Rücksprache",
+      documentationText: "Überweisungen werden ohne vorherige ärztliche Rücksprache ausgestellt.",
+    },
+    {
+      value: "Nach vorheriger ärztlicher Rücksprache",
+      label: "Nach vorheriger ärztlicher Rücksprache",
+      documentationText: "Überweisungen werden nach vorheriger ärztlicher Rücksprache ausgestellt.",
+    },
   ] },
   CARE_PLAN_SUPPLY_NOTES: { id: "CARE_PLAN_SUPPLY_NOTES", text: "Notizen / Offene Punkte", type: "textarea", required: false, maxLength: 120 },
   CARE_PLAN_SUPPORT: { id: "CARE_PLAN_SUPPORT", text: "Unterstützende Personen", type: "multi_select", required: false, options: [

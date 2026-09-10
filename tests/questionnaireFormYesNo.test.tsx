@@ -32,6 +32,7 @@ async function submitYesNo(question: QuestionDefinition, value: string) {
       />,
     );
   });
+  const renderedText = container.textContent ?? "";
   await act(async () => {
     container.querySelector<HTMLButtonElement>(`[data-q-yesno="${question.id}:${value}"]`)!.click();
   });
@@ -44,14 +45,14 @@ async function submitYesNo(question: QuestionDefinition, value: string) {
   const answers = JSON.parse(request.body as string).answers as Record<string, string>;
   await act(async () => root.unmount());
   document.body.removeChild(container);
-  return answers;
+  return { answers, renderedText };
 }
 
 describe("QuestionnaireFormClient yes_no-Werte", () => {
   beforeEach(() => fetchMock.mockReset());
 
   it.each(["ja", "nein"])("sendet Standardwert %s unverändert", async (value) => {
-    const answers = await submitYesNo({
+    const { answers } = await submitYesNo({
       id: "STANDARD_YES_NO",
       text: "Standardfrage",
       type: "yes_no",
@@ -62,7 +63,7 @@ describe("QuestionnaireFormClient yes_no-Werte", () => {
   });
 
   it.each(["unauffällig", "auffällig"])("sendet klinischen Custom-Wert %s unverändert", async (value) => {
-    const answers = await submitYesNo({
+    const { answers } = await submitYesNo({
       id: "HEALTH_CHECK_GENERAL_STATUS",
       text: "Allgemeinzustand",
       type: "yes_no",
@@ -71,6 +72,58 @@ describe("QuestionnaireFormClient yes_no-Werte", () => {
     }, value);
 
     expect(answers.HEALTH_CHECK_GENERAL_STATUS).toBe(value);
+  });
+
+  it("zeigt bei strukturierten custom yes_no-Optionen nur das Label", async () => {
+    const question: QuestionDefinition = {
+      id: "STRUCTURED_YES_NO",
+      text: "Dokumentationsstatus",
+      type: "yes_no",
+      required: false,
+      options: [
+        { value: "ja", label: "Ja, bestätigt", documentationText: "Der Status wurde bestätigt." },
+        { value: "nein", label: "Nein, offen", documentationText: "Der Status ist noch offen." },
+      ],
+    };
+    const { answers, renderedText } = await submitYesNo(question, "ja");
+
+    expect(renderedText).toContain("Ja, bestätigt");
+    expect(renderedText).not.toContain("Der Status wurde bestätigt.");
+    expect(answers.STRUCTURED_YES_NO).toBe("ja");
+  });
+
+  it("zeigt bei strukturierten select-Optionen nur das kurze Label", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireFormClient
+          token="token-1"
+          questions={[{
+            id: "STRUCTURED_SELECT",
+            text: "Anforderung",
+            type: "select",
+            required: false,
+            options: [{
+              value: "patient",
+              label: "Patientin / Patient",
+              documentationText: "Die Anforderung erfolgt durch die Patientin bzw. den Patienten.",
+            }],
+          }]}
+          source="kiosk_direct"
+          context="office"
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("Patientin / Patient");
+    expect(container.textContent).not.toContain("Die Anforderung erfolgt durch");
+    expect(container.querySelector<HTMLOptionElement>('option[value="patient"]')?.textContent)
+      .toBe("Patientin / Patient");
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
   });
 
   it("bricht lange Multi-Select-Texte innerhalb des Containers um", async () => {

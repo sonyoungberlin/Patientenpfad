@@ -4,6 +4,7 @@ import {
 } from "../lib/questionnaire/officeBlockCatalog";
 import { buildFrozenBlocks } from "../lib/questionnaire/frozenBlocks";
 import { evaluateCondition } from "../lib/questionnaire/conditionalLogic";
+import { getQuestionOptionValues } from "../lib/questionnaire/questionOptions";
 
 describe("BEWERBER_FUEHRERSCHEIN – Klassenbereinigung", () => {
   it("Optionen exakt: Klasse B, Klasse BE, Sonstige", () => {
@@ -48,7 +49,7 @@ describe("BEWERBER_FUEHRERSCHEIN – Klassenbereinigung", () => {
 });
 
 describe("BEWERBER_AUSBILDUNG – OFF_ABSCHLUSS Optionen", () => {
-  const opts = () => OFFICE_QUESTION_CATALOG["OFF_ABSCHLUSS"]?.options ?? [];
+  const opts = () => getQuestionOptionValues(OFFICE_QUESTION_CATALOG["OFF_ABSCHLUSS"]!);
 
   it("required bleibt true", () => {
     expect(OFFICE_QUESTION_CATALOG["OFF_ABSCHLUSS"]?.required).toBe(true);
