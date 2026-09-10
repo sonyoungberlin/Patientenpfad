@@ -27,6 +27,7 @@ import { BLOCK_CATALOG, QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
 import { buildFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 import { computeAllDerivedValues } from "./derivedValues";
+import { sortFrozenBlocksByLayout } from "./internalBlockLayout";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
@@ -479,9 +480,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const derivedValueLines = buildDerivedValueLines(derivedValues);
   const visibleQuestionIds = new Set<string>();
   if (input.frozenBlocks && input.frozenBlocks.length > 0) {
-    const frozenByOrder = [...input.frozenBlocks].sort(
-      (a, b) => a.displayOrder - b.displayOrder,
-    );
+    const frozenByOrder = sortFrozenBlocksByLayout(input.frozenBlocks);
     const visibleBlockIds = computeVisibleBlockIds(
       frozenByOrder.flatMap((block) => block.conditionalRules),
       frozenByOrder,
@@ -533,9 +532,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     // --- Phase 4: eingefrorene Blockstruktur verwenden ---
     // Nur Blöcke ausgeben, die von der Praxis ausgewählt wurden (initiallyVisible)
     // ODER tatsächlich Antworten haben (Folgeblocks, die sichtbar waren).
-    const frozenByOrder = [...input.frozenBlocks].sort(
-      (a, b) => a.displayOrder - b.displayOrder,
-    );
+    const frozenByOrder = sortFrozenBlocksByLayout(input.frozenBlocks);
     const visibleBlockIds = computeVisibleBlockIds(
       frozenByOrder.flatMap((block) => block.conditionalRules),
       frozenByOrder,

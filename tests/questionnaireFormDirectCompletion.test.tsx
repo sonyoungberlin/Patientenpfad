@@ -5,6 +5,9 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
+import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
+import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 
 jest.mock("@/components/SelfCheckInQrCode", () => ({
   SelfCheckInQrCode: ({ reference }: { reference: string }) => (
@@ -42,6 +45,8 @@ async function renderForm(
   patientReference?: string | null,
   selfCheckInQrReference?: string | null,
   kioskRestartPath?: string,
+  formQuestions: QuestionDefinition[] = QUESTIONS,
+  frozenBlocks?: FrozenBlock[],
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -50,7 +55,8 @@ async function renderForm(
     root.render(
       <QuestionnaireFormClient
         token="token-1"
-        questions={QUESTIONS}
+        questions={formQuestions}
+        frozenBlocks={frozenBlocks}
         source={source}
         inquirySessionId={inquirySessionId}
         patientReference={patientReference}
@@ -65,6 +71,100 @@ async function renderForm(
 
 describe("QuestionnaireFormClient Direktabschluss", () => {
   beforeEach(() => fetchMock.mockReset());
+
+  it("markiert Server-Fehler und scrollt/fokussiert das erste ungültige Feld", async () => {
+    const scrollIntoView = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: async () => ({
+        error: "Bitte prüfen Sie die Pflichtfelder und Auswahlwerte.",
+        invalidQuestionIds: ["SECOND_FIELD", "AU_SYMPTOMS"],
+      }),
+    });
+    const formQuestions: QuestionDefinition[] = [
+      ...QUESTIONS,
+      { id: "SECOND_FIELD", text: "Zweites Feld", type: "text", required: false },
+    ];
+    const { container, root } = await renderForm(
+      "practice_direct",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      formQuestions,
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const invalidQuestion = container.querySelector<HTMLElement>(
+      '[data-q-question="AU_SYMPTOMS"]',
+    )!;
+    expect(invalidQuestion.getAttribute("data-q-invalid")).toBe("true");
+    expect(container.querySelector('[data-q-validationerror="AU_SYMPTOMS"]')?.textContent)
+      .toBe("Bitte dieses Feld prüfen.");
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
+    expect(document.activeElement).toBe(
+      container.querySelector('[data-q-question="SECOND_FIELD"] input'),
+    );
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("markiert VACCINATION_REVIEW_ITEMS mit einem spezifischen Matrixhinweis", async () => {
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: jest.fn(),
+    });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: async () => ({
+        error: "Bitte prüfen Sie die Pflichtfelder und Auswahlwerte.",
+        invalidQuestionIds: ["VACCINATION_REVIEW_ITEMS"],
+      }),
+    });
+    const vaccinationQuestion = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+    const frozenBlocks: FrozenBlock[] = [{
+      id: "VACCINATION_REVIEW",
+      label: "Impfpassprüfung und Beratung",
+      displayOrder: 10,
+      questions: [vaccinationQuestion],
+      conditionalRules: [],
+      initiallyVisible: true,
+      outputSemantics: "documented-content-v1",
+    }];
+    const { container, root } = await renderForm(
+      "practice_direct",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [vaccinationQuestion],
+      frozenBlocks,
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('[data-q-question="VACCINATION_REVIEW_ITEMS"]')
+      ?.getAttribute("data-q-invalid")).toBe("true");
+    expect(container.querySelector('[data-q-validationerror="VACCINATION_REVIEW_ITEMS"]')?.textContent)
+      .toBe("Bitte prüfen Sie die bearbeiteten Impfungen auf einen gültigen Impfstatus.");
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
 
   it("zeigt beim Direkteinstieg nur den patientengerechten Abschluss", async () => {
     fetchMock.mockResolvedValue({

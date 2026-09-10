@@ -42,6 +42,9 @@ export type FrozenBlock = {
   hint?: string;
   hint_en?: string;
   displayOrder: number;
+  /** Optionale, frei gewählte Dokumentstruktur für interne Sessions. */
+  section?: 1 | 2 | 3;
+  order?: number;
   /** Vollständige QuestionDefinition-Snapshots; bereits dedupliziert. */
   questions: QuestionDefinition[];
   /** Alle ConditionalRules dieses Blocks (showQuestion + showBlock). */

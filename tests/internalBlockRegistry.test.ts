@@ -97,6 +97,21 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
       ]));
   });
 
+  it("speichert Abschnitt und Reihenfolge im Snapshot", () => {
+    const frozen = buildInternalDocumentationFrozenBlocks(
+      ["CARE_PLAN_HA", "VACCINATION_REVIEW"],
+      [
+        { blockId: "VACCINATION_REVIEW", section: 1, order: 0 },
+        { blockId: "CARE_PLAN_HA", section: 3, order: 0 },
+      ],
+    );
+
+    expect(frozen.map(({ id, section, order }) => ({ id, section, order }))).toEqual([
+      { id: "VACCINATION_REVIEW", section: 1, order: 0 },
+      { id: "CARE_PLAN_HA", section: 3, order: 0 },
+    ]);
+  });
+
   it("friert die Stellungnahme mit technischen Values und Dokumentationssätzen ein", () => {
     const frozen = buildInternalDocumentationFrozenBlocks(["MEDICAL_STATEMENT"]);
 

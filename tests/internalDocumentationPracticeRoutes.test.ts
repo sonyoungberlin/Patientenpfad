@@ -47,6 +47,7 @@ describe("practice internal documentation routes", () => {
   it("leitet Blockauswahl und aktive Praxis serverseitig an Create weiter", async () => {
     const response = await createRoute(request("/api/internal-documentation", {
       selectedBlockIds: ["CARE_PLAN_HA"],
+      blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
       patientReference: " PAT-1 ",
       owner_practice_id: "practice-evil",
       source: "kiosk_direct",
@@ -55,6 +56,7 @@ describe("practice internal documentation routes", () => {
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       selectedBlockIds: ["CARE_PLAN_HA"],
+      blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
       patientReference: "PAT-1",
       context: {
         kind: "practice",

@@ -3,6 +3,10 @@ import type { QuestionDefinition, QuestionnaireBlock } from "./blockCatalog";
 import { INTERNAL_DOCUMENTATION_BLOCK_CATALOG, INTERNAL_DOCUMENTATION_QUESTION_CATALOG } from "./internalDocumentationCatalog";
 import { VACCINATION_REVIEW_BLOCK_CATALOG, VACCINATION_REVIEW_QUESTION_CATALOG } from "./vaccinationReviewCatalog";
 import { HEALTH_CHECK_BLOCK_CATALOG, HEALTH_CHECK_QUESTION_CATALOG } from "./healthCheckCatalog";
+import {
+  normalizeInternalBlockPlacements,
+  type InternalBlockPlacement,
+} from "./internalBlockLayout";
 
 const LEGACY_HEALTH_CHECK_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
   ...HEALTH_CHECK_BLOCK_CATALOG,
@@ -211,8 +215,18 @@ export function resolveInternalBlocks(blockIds: string[]): QuestionnaireBlock[] 
     .map((blockId) => INTERNAL_BLOCK_ENTRIES[blockId].block);
 }
 
-export function buildInternalDocumentationFrozenBlocks(selectedBlockIds: string[]): FrozenBlock[] {
+export function buildInternalDocumentationFrozenBlocks(
+  selectedBlockIds: string[],
+  blockLayout?: unknown,
+): FrozenBlock[] {
   const orderedBlocks = resolveInternalBlocks(selectedBlockIds);
+  const placements = normalizeInternalBlockPlacements(
+    orderedBlocks.map((block) => block.id),
+    blockLayout,
+  );
+  const placementById = new Map(
+    placements.map((placement) => [placement.blockId, placement] as const),
+  );
   const selectedQuestionIds = new Set<string>();
   for (const block of orderedBlocks) {
     for (const questionId of block.questionIds) {
@@ -224,11 +238,18 @@ export function buildInternalDocumentationFrozenBlocks(selectedBlockIds: string[
   }
 
   return buildFrozenBlocks(
-    orderedBlocks.map((block) => block.id),
+    placements.map((placement) => placement.blockId),
     INTERNAL_BLOCK_CATALOG,
     INTERNAL_QUESTION_CATALOG,
-    INTERNAL_BLOCK_ORDER,
-  ).map((block) => ({ ...block, outputSemantics: "documented-content-v1" as const }));
+    placements.map((placement) => placement.blockId),
+  ).map((block) => {
+    const placement: InternalBlockPlacement | undefined = placementById.get(block.id);
+    return {
+      ...block,
+      ...(placement ? { section: placement.section, order: placement.order } : {}),
+      outputSemantics: "documented-content-v1" as const,
+    };
+  });
 }
 
 export function resolveInternalWorkflow(workflowId: unknown): InternalWorkflow | null {

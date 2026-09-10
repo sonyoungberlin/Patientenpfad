@@ -21,6 +21,7 @@ import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNo
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { buildInternalDocumentationFrozenBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
+import { INTERNAL_BLOCK_CATALOG } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedContent";
 import { submitInternalDocumentationSession } from "@/lib/questionnaire/internalDocumentationService";
 import { GET as PdfRoute } from "@/app/api/questionnaire/[id]/pdf/route";
@@ -132,6 +133,49 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
       internalWorkflowId: null,
       frozenBlocks: [frozenBlocks[0], { ...frozenBlocks[1], outputSemantics: undefined }],
     })).toBe(false);
+  });
+
+  it("verwendet dieselbe Layoutreihenfolge für noteText, Inbox und PDF", async () => {
+    const layoutBlocks = buildInternalDocumentationFrozenBlocks(
+      ["CARE_PLAN_HA", "VACCINATION_REVIEW"],
+      [
+        { blockId: "VACCINATION_REVIEW", section: 1, order: 0 },
+        { blockId: "CARE_PLAN_HA", section: 2, order: 0 },
+      ],
+    );
+    const layoutAnswers = {
+      CARE_PLAN_HA_REASON: "Versorgung abstimmen",
+      VACCINATION_REVIEW_ITEMS: JSON.stringify([{
+        vaccination_id: "influenza",
+        documented_status: "Vollständig vorhanden",
+      }]),
+    };
+    const layoutSession = session({
+      selected_block_ids: ["VACCINATION_REVIEW", "CARE_PLAN_HA"],
+      deduplicated_questions: layoutBlocks.flatMap((block) => block.questions),
+      frozen_blocks: layoutBlocks,
+      answers: layoutAnswers,
+    });
+
+    const note = buildMedicalRecordNote({
+      answers: layoutAnswers,
+      selected_block_ids: ["VACCINATION_REVIEW", "CARE_PLAN_HA"],
+      frozenBlocks: layoutBlocks,
+      internalWorkflowId: null,
+    });
+    const inbox = buildQuestionnaireInboxDetail(layoutSession);
+    const pdf = await buildQuestionnairePdfBytes(layoutSession, {
+      title: "Interne Dokumentation",
+      referenceLabel: "Patientenreferenz",
+      blockCatalog: INTERNAL_BLOCK_CATALOG,
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+    const firstLabel = layoutBlocks[0]!.label;
+    const secondLabel = layoutBlocks[1]!.label;
+
+    expect(note.indexOf(firstLabel)).toBeLessThan(note.indexOf(secondLabel));
+    expect(inbox.noteText).toBe(note);
+    expect(pdfText.indexOf(firstLabel)).toBeLessThan(pdfText.indexOf(secondLabel));
   });
 
   it("submitten, Inbox-Detail und Copytext ohne Workflowauflösung", async () => {

@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import InternalDocumentationBlockSelector from "@/components/InternalDocumentationBlockSelector";
+import { INTERNAL_BLOCK_UI_ORDER } from "@/lib/questionnaire/internalBlockPresentation";
+import {
+  reconcileInternalBlockPlacements,
+  type InternalBlockPlacement,
+} from "@/lib/questionnaire/internalBlockLayout";
 
 export default function InternalDocumentationLauncher() {
   const router = useRouter();
   const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
+  const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
+  const [layoutManuallyArranged, setLayoutManuallyArranged] = useState(false);
   const [patientReference, setPatientReference] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +33,7 @@ export default function InternalDocumentationLauncher() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           selectedBlockIds: blockIds,
+          blockLayout,
           patientReference: patientReference.trim(),
         }),
       });
@@ -43,24 +51,33 @@ export default function InternalDocumentationLauncher() {
   }
 
   function toggleBlock(blockId: string) {
-    setSelectedBlockIds((current) => {
-      const next = new Set(current);
-      if (next.has(blockId)) next.delete(blockId);
-      else next.add(blockId);
-      return next;
-    });
+    const next = new Set(selectedBlockIds);
+    const select = !next.has(blockId);
+    if (select) next.add(blockId);
+    else next.delete(blockId);
+    setSelectedBlockIds(next);
+    setBlockLayout(reconcileInternalBlockPlacements(
+      blockLayout,
+      next,
+      INTERNAL_BLOCK_UI_ORDER,
+      layoutManuallyArranged,
+    ));
   }
 
   function toggleGroup(blockIds: string[]) {
-    setSelectedBlockIds((current) => {
-      const next = new Set(current);
-      const select = blockIds.some((blockId) => !next.has(blockId));
-      for (const blockId of blockIds) {
-        if (select) next.add(blockId);
-        else next.delete(blockId);
-      }
-      return next;
-    });
+    const next = new Set(selectedBlockIds);
+    const select = blockIds.some((blockId) => !next.has(blockId));
+    for (const blockId of blockIds) {
+      if (select) next.add(blockId);
+      else next.delete(blockId);
+    }
+    setSelectedBlockIds(next);
+    setBlockLayout(reconcileInternalBlockPlacements(
+      blockLayout,
+      next,
+      INTERNAL_BLOCK_UI_ORDER,
+      layoutManuallyArranged,
+    ));
   }
 
   return (
@@ -72,6 +89,11 @@ export default function InternalDocumentationLauncher() {
         selectedBlockIds={selectedBlockIds}
         onToggleBlock={toggleBlock}
         onToggleGroup={toggleGroup}
+        blockLayout={blockLayout}
+        onBlockLayoutChange={(layout) => {
+          setLayoutManuallyArranged(true);
+          setBlockLayout(layout);
+        }}
         disabled={saving}
       />
       <label>

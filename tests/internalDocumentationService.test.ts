@@ -53,6 +53,9 @@ describe("internal documentation service", () => {
         internalWorkflowId: null,
       }));
       const input = createSession.mock.calls[0][0];
+      expect(input.internalBlockLayout).toEqual([
+        { blockId: "CARE_PLAN_HA", section: 1, order: 0 },
+      ]);
       expect(input).not.toHaveProperty("createdByKioskDeviceId");
       expect(input).not.toHaveProperty("patientCopyReturnEmail");
       expect(input).not.toHaveProperty("practiceConfirmations");
@@ -82,6 +85,43 @@ describe("internal documentation service", () => {
   it("weist unbekannte Blocks vor der Session-Erzeugung ab", async () => {
     await expect(createInternalDocumentationSession({
       selectedBlockIds: ["unknown"],
+      patientReference: "PAT-1",
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    })).rejects.toMatchObject({ status: 400 });
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("validiert und normalisiert frei sortierte Blockplatzierungen", async () => {
+    await createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW"],
+      blockLayout: [
+        { blockId: "VACCINATION_REVIEW", section: 1, order: 9 },
+        { blockId: "CARE_PLAN_HA", section: 2, order: 4 },
+      ],
+      patientReference: "PAT-1",
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    expect(createSession.mock.calls[0][0].internalBlockLayout).toEqual([
+      { blockId: "VACCINATION_REVIEW", section: 1, order: 0 },
+      { blockId: "CARE_PLAN_HA", section: 2, order: 0 },
+    ]);
+  });
+
+  it.each([
+    { blockLayout: [{ blockId: "UNKNOWN", section: 1, order: 0 }] },
+    { blockLayout: [{ blockId: "CARE_PLAN_HA", section: 4, order: 0 }] },
+    { blockLayout: [{ blockId: "CARE_PLAN_HA", section: 1, order: -1 }] },
+    { blockLayout: [
+      { blockId: "CARE_PLAN_HA", section: 1, order: 0 },
+      { blockId: "CARE_PLAN_HA", section: 2, order: 0 },
+    ] },
+  ])("weist ungültiges Blocklayout ab: $blockLayout", async ({ blockLayout }) => {
+    await expect(createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      blockLayout,
       patientReference: "PAT-1",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },

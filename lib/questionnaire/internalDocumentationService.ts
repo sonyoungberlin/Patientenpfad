@@ -17,6 +17,7 @@ import {
 } from "@/lib/questionnaire/documentedContent";
 import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
+import { normalizeInternalBlockPlacements } from "@/lib/questionnaire/internalBlockLayout";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -55,6 +56,7 @@ function validateHealthCheckAnswers(answers: Record<string, string>) {
 
 export async function createInternalDocumentationSession(input: {
   selectedBlockIds: unknown;
+  blockLayout?: unknown;
   patientReference: unknown;
   origin: string;
   context: InternalDocumentationContext;
@@ -76,8 +78,13 @@ export async function createInternalDocumentationSession(input: {
     );
   }
   let selectedBlockIds: string[];
+  let internalBlockLayout;
   try {
     selectedBlockIds = resolveInternalBlocks(requestedBlockIds).map((block) => block.id);
+    internalBlockLayout = normalizeInternalBlockPlacements(
+      selectedBlockIds,
+      input.blockLayout,
+    );
   } catch (cause) {
     throw new InternalDocumentationError(
       cause instanceof Error ? cause.message : "Ungültige interne Abschnitte.",
@@ -104,6 +111,7 @@ export async function createInternalDocumentationSession(input: {
     patientLanguage: "de",
     sessionKind: "internal_documentation",
     internalWorkflowId: null,
+    internalBlockLayout,
     origin: input.origin,
     ...creator,
   });

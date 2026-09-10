@@ -2,10 +2,12 @@ import { buildAppTextXml } from "@/lib/questionnaire/appTextXml";
 
 describe("buildAppTextXml", () => {
   it("erzeugt exakt das erwartete APP_TEXT-Schema", () => {
-    expect(buildAppTextXml("Fertiger Text")).toBe(
+    const xml = buildAppTextXml("Fertiger Text");
+    expect(xml).toBe(
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
       "<appExport version=\"1.0\"><section id=\"APP_TEXT\">Fertiger Text</section></appExport>",
     );
+    expect(xml.match(/id="APP_TEXT"/g)).toHaveLength(1);
   });
 
   it("escaped XML-Sonderzeichen im Textknoten", () => {

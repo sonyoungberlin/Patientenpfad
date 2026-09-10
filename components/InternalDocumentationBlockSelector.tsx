@@ -6,11 +6,15 @@ import {
   INTERNAL_BLOCK_GROUPS,
 } from "@/lib/questionnaire/internalBlockPresentation";
 import { INTERNAL_BLOCK_ORDER } from "@/lib/questionnaire/internalWorkflowRegistry";
+import InternalDocumentationBlockOrganizer from "@/components/InternalDocumentationBlockOrganizer";
+import type { InternalBlockPlacement } from "@/lib/questionnaire/internalBlockLayout";
 
 type Props = {
   selectedBlockIds: Set<string>;
   onToggleBlock: (blockId: string) => void;
   onToggleGroup: (blockIds: string[]) => void;
+  blockLayout: InternalBlockPlacement[];
+  onBlockLayoutChange: (layout: InternalBlockPlacement[]) => void;
   disabled?: boolean;
 };
 
@@ -50,6 +54,8 @@ export default function InternalDocumentationBlockSelector({
   selectedBlockIds,
   onToggleBlock,
   onToggleGroup,
+  blockLayout,
+  onBlockLayoutChange,
   disabled = false,
 }: Props) {
   return (
@@ -90,6 +96,11 @@ export default function InternalDocumentationBlockSelector({
       <span className="text-muted text-small">
         {selectedBlockIds.size} von {INTERNAL_BLOCK_ORDER.length} Abschnitten ausgewählt
       </span>
+      <InternalDocumentationBlockOrganizer
+        placements={blockLayout}
+        onChange={onBlockLayoutChange}
+        disabled={disabled}
+      />
     </fieldset>
   );
 }

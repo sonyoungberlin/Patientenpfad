@@ -30,6 +30,7 @@ import {
   type InternalWorkflowId,
 } from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
+import type { InternalBlockPlacement } from "@/lib/questionnaire/internalBlockLayout";
 import {
   buildPracticeConfirmationsFrozenBlock,
   type PracticeConfirmationSlot,
@@ -78,6 +79,7 @@ export type CreateSessionInput = {
   source?: "internal_link" | "practice_direct" | "kiosk_direct";
   sessionKind?: "patient_communication" | "internal_documentation";
   internalWorkflowId?: InternalWorkflowId | null;
+  internalBlockLayout?: InternalBlockPlacement[];
 } & (AccountSessionCreator | KioskSessionCreator);
 
 export type CreateSessionResult = {
@@ -114,6 +116,7 @@ export async function createQuestionnaireSession(
     source,
     sessionKind = "patient_communication",
     internalWorkflowId,
+    internalBlockLayout,
   } = input;
 
   const internalSelectedBlockIds = sessionKind === "internal_documentation" &&
@@ -129,7 +132,10 @@ export async function createQuestionnaireSession(
 
   const frozenBlocks =
     sessionKind === "internal_documentation"
-      ? buildInternalDocumentationFrozenBlocks(Array.from(internalSelectedBlockIds))
+      ? buildInternalDocumentationFrozenBlocks(
+          Array.from(internalSelectedBlockIds),
+          internalBlockLayout,
+        )
       : context === "office"
       ? buildFrozenBlocks(selectedBlockIds, OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG)
       : buildFrozenBlocks(selectedBlockIds);

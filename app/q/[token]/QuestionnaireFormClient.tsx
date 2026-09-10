@@ -905,6 +905,7 @@ function renderQuestionLi(
   t: { requiredAriaSuffix: string },
   isGate: boolean,
   hasMissingRequired: boolean,
+  hasServerValidationError: boolean,
   derivedValues: DerivedValues,
   useChoiceButtonSelect: boolean,
 ) {
@@ -915,7 +916,7 @@ function renderQuestionLi(
         borderColor: "#c8cdd4",
       }
     : {};
-  const requiredErrStyle: React.CSSProperties = hasMissingRequired
+  const requiredErrStyle: React.CSSProperties = hasMissingRequired || hasServerValidationError
     ? { borderColor: "var(--destructive, #dc2626)" }
     : {};
 
@@ -923,6 +924,7 @@ function renderQuestionLi(
     <li
       key={q.id}
       data-q-question={q.id}
+      data-q-invalid={hasServerValidationError || undefined}
       data-q-gate={isGate || undefined}
       className="card"
       style={{ marginBottom: "0.75rem", minWidth: 0, ...gateStyle, ...requiredErrStyle }}
@@ -972,6 +974,23 @@ function renderQuestionLi(
           style={{ margin: "0.25rem 0 0", fontSize: "0.85rem" }}
         >
           {language === "de" ? "Dieses Feld ist erforderlich." : "This field is required."}
+        </p>
+      )}
+      {hasServerValidationError && (
+        <p
+          data-q-validationerror={q.id}
+          className="text-error"
+          role="alert"
+          aria-live="polite"
+          style={{ margin: "0.25rem 0 0", fontSize: "0.85rem" }}
+        >
+          {q.id === "VACCINATION_REVIEW_ITEMS"
+            ? language === "de"
+              ? "Bitte prüfen Sie die bearbeiteten Impfungen auf einen gültigen Impfstatus."
+              : "Please check edited vaccinations for a valid vaccination status."
+            : language === "de"
+              ? "Bitte dieses Feld prüfen."
+              : "Please check this field."}
         </p>
       )}
       {fieldHasCharError[q.id] && (
@@ -1090,6 +1109,9 @@ export function QuestionnaireFormClient({
   const [missingRequiredIds, setMissingRequiredIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [serverInvalidQuestionIds, setServerInvalidQuestionIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const patientCopyEmailTouched = useRef(false);
 
   useEffect(() => {
@@ -1100,6 +1122,18 @@ export function QuestionnaireFormClient({
     window.addEventListener("pageshow", reloadRestoredPage);
     return () => window.removeEventListener("pageshow", reloadRestoredPage);
   }, [source]);
+
+  useEffect(() => {
+    const firstInvalidId = [...serverInvalidQuestionIds][0];
+    if (!firstInvalidId) return;
+    const questionElement = [...document.querySelectorAll<HTMLElement>("[data-q-question]")]
+      .find((element) => element.dataset.qQuestion === firstInvalidId);
+    if (!questionElement) return;
+    questionElement.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    questionElement.querySelector<HTMLElement>(
+      "button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+    )?.focus({ preventScroll: true });
+  }, [serverInvalidQuestionIds]);
 
   // Phase 5: Derived Values aus aktuellem Antwort-State live berechnen
   const derivedValues = useMemo(
@@ -1195,10 +1229,18 @@ export function QuestionnaireFormClient({
         return next;
       });
     }
+    if (serverInvalidQuestionIds.has(id)) {
+      setServerInvalidQuestionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   }
 
   async function handleSubmit() {
     setError(null);
+    setServerInvalidQuestionIds(new Set());
 
     // Beim Absenden nur Antworten sichtbarer Fragen mitsenden.
     // Antworten unsichtbarer Fragen (wegen Conditional Logic) werden nicht übermittelt.
@@ -1258,6 +1300,7 @@ export function QuestionnaireFormClient({
         xmlFilename?: string | null;
         sessionId?: string;
         inquiry_session_id?: string | null;
+        invalidQuestionIds?: string[];
       } | null;
 
       if (!response.ok) {
@@ -1265,6 +1308,13 @@ export function QuestionnaireFormClient({
         // sie nur, wenn die Patient:in deutsch ausgewählt hat. Sonst
         // einheitlich englischer Fallback.
         const serverError = data?.error ?? null;
+        const visibleQuestionIds = new Set(visibleQuestions.map((question) => question.id));
+        setServerInvalidQuestionIds(new Set(
+          (data?.invalidQuestionIds ?? []).filter(
+            (questionId): questionId is string =>
+              typeof questionId === "string" && visibleQuestionIds.has(questionId),
+          ),
+        ));
         setError(language === "de" && serverError ? serverError : t.submitError);
         return;
       }
@@ -1348,7 +1398,7 @@ export function QuestionnaireFormClient({
                 return (
                   <section key={block.id} data-q-block={block.id}>
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues, useChoiceButtonSelect))}
+                      {blockVisible.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), serverInvalidQuestionIds.has(q.id), derivedValues, useChoiceButtonSelect))}
                     </ul>
                   </section>
                 );
@@ -1357,7 +1407,7 @@ export function QuestionnaireFormClient({
         ) : (
           // Legacy-Pfad: flache Liste
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), derivedValues, useChoiceButtonSelect))}
+            {visibleQuestions.map((q) => renderQuestionLi(q, values, fieldHasCharError, handleChange, saving, language, charErrorMessage, t, gateQuestionIds.has(q.id), missingRequiredIds.has(q.id), serverInvalidQuestionIds.has(q.id), derivedValues, useChoiceButtonSelect))}
           </ul>
         )}
         {error ? (

@@ -5,7 +5,14 @@
 import React, { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import InternalDocumentationBlockSelector from "@/components/InternalDocumentationBlockSelector";
-import { INTERNAL_BLOCK_GROUPS } from "@/lib/questionnaire/internalBlockPresentation";
+import {
+  INTERNAL_BLOCK_GROUPS,
+  INTERNAL_BLOCK_UI_ORDER,
+} from "@/lib/questionnaire/internalBlockPresentation";
+import {
+  reconcileInternalBlockPlacements,
+  type InternalBlockPlacement,
+} from "@/lib/questionnaire/internalBlockLayout";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
   .IS_REACT_ACT_ENVIRONMENT = true;
@@ -13,27 +20,42 @@ import { INTERNAL_BLOCK_GROUPS } from "@/lib/questionnaire/internalBlockPresenta
 describe("InternalDocumentationBlockSelector", () => {
   function Harness() {
     const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
+    const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
+    const [manuallyArranged, setManuallyArranged] = useState(false);
     return (
       <InternalDocumentationBlockSelector
         selectedBlockIds={selectedBlockIds}
         onToggleBlock={(blockId) => {
-          setSelectedBlockIds((current) => {
-            const next = new Set(current);
-            if (next.has(blockId)) next.delete(blockId);
-            else next.add(blockId);
-            return next;
-          });
+          const next = new Set(selectedBlockIds);
+          if (next.has(blockId)) next.delete(blockId);
+          else next.add(blockId);
+          setSelectedBlockIds(next);
+          setBlockLayout(reconcileInternalBlockPlacements(
+            blockLayout,
+            next,
+            INTERNAL_BLOCK_UI_ORDER,
+            manuallyArranged,
+          ));
         }}
         onToggleGroup={(blockIds) => {
-          setSelectedBlockIds((current) => {
-            const next = new Set(current);
-            const select = blockIds.some((blockId) => !next.has(blockId));
-            for (const blockId of blockIds) {
-              if (select) next.add(blockId);
-              else next.delete(blockId);
-            }
-            return next;
-          });
+          const next = new Set(selectedBlockIds);
+          const select = blockIds.some((blockId) => !next.has(blockId));
+          for (const blockId of blockIds) {
+            if (select) next.add(blockId);
+            else next.delete(blockId);
+          }
+          setSelectedBlockIds(next);
+          setBlockLayout(reconcileInternalBlockPlacements(
+            blockLayout,
+            next,
+            INTERNAL_BLOCK_UI_ORDER,
+            manuallyArranged,
+          ));
+        }}
+        blockLayout={blockLayout}
+        onBlockLayoutChange={(layout) => {
+          setManuallyArranged(true);
+          setBlockLayout(layout);
         }}
       />
     );
@@ -71,6 +93,18 @@ describe("InternalDocumentationBlockSelector", () => {
     });
 
     expect(container.textContent).toContain("0 von 17 Abschnitten ausgewählt");
+    expect(container.textContent).toContain("Ausgewählte Abschnitte organisieren");
+    expect(container.textContent).toContain("Die Abschnitte erscheinen im Dokument von oben nach unten.");
+    expect(container.querySelectorAll("[data-document-section]")).toHaveLength(3);
+    expect(container.querySelectorAll("[data-document-section] .text-muted")).toHaveLength(3);
+    expect([...container.querySelectorAll("[data-internal-block]")].map(
+      (input) => input.getAttribute("data-internal-block"),
+    )).toEqual(INTERNAL_BLOCK_UI_ORDER);
+    const sectionContainer = container.querySelector<HTMLElement>("[data-document-sections]")!;
+    expect(sectionContainer.style.gridTemplateColumns).toBe("minmax(0, 1fr)");
+    expect([...sectionContainer.children].map(
+      (section) => section.getAttribute("data-document-section"),
+    )).toEqual(["1", "2", "3"]);
     const ekgCheckbox = container.querySelector<HTMLInputElement>(
       '[data-internal-block="EKG"]',
     )!;
@@ -101,6 +135,11 @@ describe("InternalDocumentationBlockSelector", () => {
     expect(documentCheckbox.checked).toBe(false);
     expect(specialistsCheckbox.checked).toBe(true);
     expect(consentCheckbox.checked).toBe(true);
+    expect(container.querySelector('[data-organized-block="EKG"]')).not.toBeNull();
+
+    await act(async () => statementCheckbox.click());
+    expect(container.querySelector('[data-organized-block="MEDICAL_STATEMENT"]')).toBeNull();
+    await act(async () => statementCheckbox.click());
 
     const healthSection = [...container.querySelectorAll("section")]
       .find((section) => section.textContent?.includes("Gesundheitsuntersuchung"))!;
@@ -118,6 +157,32 @@ describe("InternalDocumentationBlockSelector", () => {
     expect(documentCheckbox.checked).toBe(false);
     expect(specialistsCheckbox.checked).toBe(true);
     expect(consentCheckbox.checked).toBe(true);
+    expect([...container.querySelectorAll('[data-document-section="1"] [data-organized-block]')].map(
+      (block) => block.getAttribute("data-organized-block"),
+    )).toEqual(INTERNAL_BLOCK_UI_ORDER.filter((blockId) =>
+      container.querySelector<HTMLInputElement>(`[data-internal-block="${blockId}"]`)?.checked,
+    ));
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("zeigt neue Auswahlen bis zur manuellen Sortierung in sichtbarer UI-Reihenfolge", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => root.render(<Harness />));
+
+    await act(async () => container.querySelector<HTMLInputElement>(
+      '[data-internal-block="CARE_PLAN_HA"]',
+    )!.click());
+    await act(async () => container.querySelector<HTMLInputElement>(
+      '[data-internal-block="HEALTH_CHECK_MEASUREMENTS"]',
+    )!.click());
+
+    expect([...container.querySelectorAll('[data-document-section="1"] [data-organized-block]')].map(
+      (block) => block.getAttribute("data-organized-block"),
+    )).toEqual(["HEALTH_CHECK_MEASUREMENTS", "CARE_PLAN_HA"]);
 
     await act(async () => root.unmount());
     document.body.removeChild(container);

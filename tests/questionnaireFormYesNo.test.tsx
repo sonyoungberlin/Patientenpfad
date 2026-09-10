@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import {
+  buildInternalDocumentationFrozenBlocks,
   getInternalWorkflow,
   INTERNAL_QUESTION_CATALOG,
 } from "@/lib/questionnaire/internalWorkflowRegistry";
@@ -17,9 +18,43 @@ jest.mock("@/components/SelfCheckInQrCode", () => ({
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
   .IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as typeof globalThis & { structuredClone: <T>(value: T) => T }).structuredClone ??=
+  <T,>(value: T) => JSON.parse(JSON.stringify(value)) as T;
 
 const fetchMock = jest.fn();
 global.fetch = fetchMock;
+
+it("rendert interne Blöcke in der gespeicherten Layoutreihenfolge", async () => {
+  const frozenBlocks = buildInternalDocumentationFrozenBlocks(
+    ["CARE_PLAN_HA", "VACCINATION_REVIEW"],
+    [
+      { blockId: "VACCINATION_REVIEW", section: 1, order: 0 },
+      { blockId: "CARE_PLAN_HA", section: 2, order: 0 },
+    ],
+  );
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  await act(async () => {
+    root.render(
+      <QuestionnaireFormClient
+        token="token-layout"
+        questions={frozenBlocks.flatMap((block) => block.questions)}
+        frozenBlocks={frozenBlocks}
+        source="practice_direct"
+        context="office"
+        internalWorkflowId={null}
+      />,
+    );
+  });
+
+  expect([...container.querySelectorAll("[data-q-block]")].map(
+    (section) => section.getAttribute("data-q-block"),
+  )).toEqual(["VACCINATION_REVIEW", "CARE_PLAN_HA"]);
+
+  await act(async () => root.unmount());
+  document.body.removeChild(container);
+});
 
 async function submitYesNo(question: QuestionDefinition, value: string) {
   fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });

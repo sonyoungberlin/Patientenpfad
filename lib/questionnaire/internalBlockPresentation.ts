@@ -58,6 +58,11 @@ export const INTERNAL_BLOCK_GROUPS: readonly InternalBlockGroup[] = [
   },
 ] as const;
 
+/** Reihenfolge, in der die Block-Checkboxen tatsächlich angezeigt werden. */
+export const INTERNAL_BLOCK_UI_ORDER = INTERNAL_BLOCK_GROUPS.flatMap(
+  (group) => group.blockIds,
+);
+
 const registeredBlockIds = new Set(INTERNAL_BLOCK_ORDER);
 for (const group of INTERNAL_BLOCK_GROUPS) {
   for (const blockId of group.blockIds) {

@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     const patientReference = body?.patientReference;
     const createInput = {
       selectedBlockIds: body?.selectedBlockIds,
+      blockLayout: body?.blockLayout,
       patientReference: typeof patientReference === "string" ? patientReference.trim() : patientReference,
       origin,
       context: {

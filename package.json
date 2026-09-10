@@ -21,6 +21,9 @@
     "list-accounts": "node scripts/approve-account.mjs list"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@prisma/client": "^6.7.0",
     "@types/qrcode": "^1.5.6",
     "next": "^15.5.15",

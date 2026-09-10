@@ -82,6 +82,7 @@ describe("interne Kiosk-Dokumentation", () => {
   it("erstellt ausgewählte Blocks als interne practice-owned Kiosk-Session", async () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
       selectedBlockIds: ["CARE_PLAN_HA"],
+      blockLayout: [{ blockId: "CARE_PLAN_HA", section: 3, order: 0 }],
       patientReference: " PAT-1 ",
     }));
 
@@ -89,6 +90,7 @@ describe("interne Kiosk-Dokumentation", () => {
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       patientReference: "PAT-1",
       selectedBlockIds: ["CARE_PLAN_HA"],
+      internalBlockLayout: [{ blockId: "CARE_PLAN_HA", section: 3, order: 0 }],
       ownerPracticeId: "practice-1",
       createdByKioskDeviceId: "device-1",
       source: "kiosk_direct",
