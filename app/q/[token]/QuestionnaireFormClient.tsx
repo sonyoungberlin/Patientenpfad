@@ -35,6 +35,7 @@ import { SelfCheckInQrCode } from "@/components/SelfCheckInQrCode";
 import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
 import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
 import AppTextXmlDownloadButton from "@/components/questionnaire/AppTextXmlDownloadButton";
+import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
 
 // ---------------------------------------------------------------------------
 // FACHAERZTE Schema (lokaler Spezialfall)
@@ -1105,6 +1106,7 @@ export function QuestionnaireFormClient({
   const [xmlExport, setXmlExport] = useState<{
     noteText: string;
     filename: string;
+    semanticDocument: SemanticDocument | null;
   } | null>(null);
   const [missingRequiredIds, setMissingRequiredIds] = useState<Set<string>>(
     () => new Set(),
@@ -1298,6 +1300,7 @@ export function QuestionnaireFormClient({
         error?: string;
         noteText?: string;
         xmlFilename?: string | null;
+        semanticDocument?: SemanticDocument | null;
         sessionId?: string;
         inquiry_session_id?: string | null;
         invalidQuestionIds?: string[];
@@ -1320,7 +1323,11 @@ export function QuestionnaireFormClient({
       }
 
       if (data?.noteText && data.xmlFilename) {
-        setXmlExport({ noteText: data.noteText, filename: data.xmlFilename });
+        setXmlExport({
+          noteText: data.noteText,
+          filename: data.xmlFilename,
+          semanticDocument: data.semanticDocument ?? null,
+        });
       }
       setSubmitted(true);
     } catch {
@@ -1345,6 +1352,7 @@ export function QuestionnaireFormClient({
             filename={xmlExport.filename}
             label="XML für Word herunterladen"
             sessionId={token}
+            semanticDocument={xmlExport.semanticDocument}
           />
         ) : null}
         {source === "kiosk_direct" ? (

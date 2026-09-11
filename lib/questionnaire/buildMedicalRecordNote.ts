@@ -24,7 +24,8 @@
  */
 
 import { BLOCK_CATALOG, QUESTION_CATALOG } from "./blockCatalog";
-import type { QuestionDefinition } from "./blockCatalog";
+import type { DocumentationItemType, QuestionDefinition } from "./blockCatalog";
+import type { SemanticDocument, SemanticDocumentItem } from "./appTextXml";
 import { buildFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 import { computeAllDerivedValues } from "./derivedValues";
 import { sortFrozenBlocksByLayout } from "./internalBlockLayout";
@@ -57,6 +58,56 @@ export type MedicalRecordNoteInput = {
   frozenBlocks?: FrozenBlock[] | null;
   internalWorkflowId?: string | null;
 };
+
+export type MedicalRecordOutput = {
+  noteText: string;
+  semanticDocument: SemanticDocument;
+};
+
+type RenderedDocumentationItem = SemanticDocumentItem & {
+  legacyText: string;
+};
+
+const LEGACY_MEASUREMENT_BLOCK_IDS = new Set([
+  "EKG",
+  "HEALTH_CHECK_MEASUREMENTS",
+  "HEALTH_CHECK_LAB",
+  "HEALTH_CHECK_URINE",
+]);
+const LEGACY_BODY_TEXT_BLOCK_IDS = new Set([
+  "MEDICAL_STATEMENT",
+]);
+const LEGACY_UNLABELED_FREE_TEXT_IDS = new Set([
+  "CARE_PLAN_SUPPORT_NOTES",
+  "HEALTH_CHECK_CLINICAL_NOTE",
+  "HEALTH_CHECK_LAB_NOTE",
+  "HEALTH_CHECK_URINE_NOTE",
+  "HEALTH_CHECK_OTHER_NOTE",
+  "HEALTH_CHECK_NEXT_STEPS_NOTE",
+]);
+
+function resolveDocumentationItemType(
+  block: FrozenBlock,
+  question?: QuestionDefinition,
+): Exclude<DocumentationItemType, "heading"> {
+  if (question?.documentationItemType) return question.documentationItemType;
+  if (block.documentationItemType) return block.documentationItemType;
+  if (LEGACY_BODY_TEXT_BLOCK_IDS.has(block.id)) return "bodyText";
+  if (question?.type === "textarea") return "freeText";
+  if (LEGACY_MEASUREMENT_BLOCK_IDS.has(block.id)) return "measurement";
+  if (question?.type === "number") return "measurement";
+  if (question?.type === "multi_select" || question?.type === "repeatable_group") {
+    return "listItem";
+  }
+  if (question?.type === "select" || question?.type === "yes_no" || question?.type === "confirmation") {
+    return "status";
+  }
+  return "bodyText";
+}
+
+function resolveDocumentSection(block: FrozenBlock): 1 | 2 | 3 {
+  return block.section === 2 || block.section === 3 ? block.section : 1;
+}
 
 /**
  * Kurz-Labels für die Krankenblatt-Ausgabe. Diese sind bewusst von
@@ -436,7 +487,7 @@ function hasNewSmokingStructure(answers: Record<string, string>): boolean {
  * @param input - answers + selected_block_ids einer PatientQuestionnaireSession
  * @returns Ein String, Zeilen getrennt mit \n
  */
-export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
+export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): MedicalRecordOutput {
   const answers: Record<string, string> = input.answers ?? {};
   const blockIds = new Set(input.selected_block_ids);
   const internalWorkflow = getInternalWorkflow(input.internalWorkflowId);
@@ -479,6 +530,13 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
   const derivedValues = computeAllDerivedValues(answers);
 
   const lines: string[] = isNewBlockBased ? [] : [title];
+  const semanticDocument: SemanticDocument = {
+    sections: [
+      { slot: 1, items: [] },
+      { slot: 2, items: [] },
+      { slot: 3, items: [] },
+    ],
+  };
 
   // --- Berechnete Werte (AGE, BMI, Pack-Years) ---
   const derivedValueLines = buildDerivedValueLines(derivedValues);
@@ -546,7 +604,7 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
     for (const block of frozenByOrder) {
       if (!visibleBlockIds.has(block.id)) continue;
-      const blockLines: string[] = [];
+      const blockItems: RenderedDocumentationItem[] = [];
       const medicalStatementSentences: string[] = [];
 
       const frozenVisibleIds = computeVisibleQuestionIds(
@@ -565,7 +623,13 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           answers,
           frozenVisibleIds,
         );
-        if (inlineDocumentation) blockLines.push(inlineDocumentation);
+        if (inlineDocumentation) {
+          blockItems.push({
+            type: resolveDocumentationItemType(block),
+            text: inlineDocumentation,
+            legacyText: inlineDocumentation,
+          });
+        }
         for (const question of block.questions) {
           if (frozenVisibleIds.has(question.id)) seenQuestionIds.add(question.id);
         }
@@ -583,22 +647,38 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
 
         if (question.id === "FACHAERZTE") {
           const formatted = formatFacharztEntries(raw);
-          if (formatted.length > 0) blockLines.push(...formatted);
+          blockItems.push(...formatted.map((text) => ({
+            type: resolveDocumentationItemType(block, question),
+            text,
+            legacyText: text,
+          })));
           continue;
         }
 
         if (question.type === "repeatable_group") {
           const formatted = formatRepeatableGroupEntries(question.id, raw, question, omitQuestionLabel);
           if (formatted.length > 0) {
-            if (!omitQuestionLabel) blockLines.push(`${getLabel(question.id, question)}:`);
-            blockLines.push(...formatted);
+            if (!omitQuestionLabel) {
+              const heading = `${getLabel(question.id, question)}:`;
+              blockItems.push({ type: "heading", text: heading, legacyText: heading });
+            }
+            blockItems.push(...formatted.map((text) => ({
+              type: resolveDocumentationItemType(block, question),
+              text,
+              legacyText: text,
+            })));
           }
           continue;
         }
 
         if (question.type === "confirmation") {
           if (raw === "true") {
-            blockLines.push(`Bestätigt: ${question.text}`);
+            const text = `Bestätigt: ${question.text}`;
+            blockItems.push({
+              type: resolveDocumentationItemType(block, question),
+              text,
+              legacyText: text,
+            });
           }
           continue;
         }
@@ -607,11 +687,14 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           question.presentation === "health_check_follow_up" ||
           (useLegacyHealthCheckOutput && question.id === "HEALTH_CHECK_FOLLOW_UP_REQUIRED")
         ) {
-          blockLines.push(
-            raw === "nein"
-              ? "Keine weitere Abklärung oder Kontrolle erforderlich."
-              : "Weiteres Vorgehen erforderlich",
-          );
+          const text = raw === "nein"
+            ? "Keine weitere Abklärung oder Kontrolle erforderlich."
+            : "Weiteres Vorgehen erforderlich";
+          blockItems.push({
+            type: resolveDocumentationItemType(block, question),
+            text,
+            legacyText: text,
+          });
           continue;
         }
 
@@ -620,7 +703,12 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
           question.type === "yes_no" &&
           getQuestionOptionValues(question).includes(raw)
         ) {
-          blockLines.push(`${getLabel(question.id, question)}: ${raw}`);
+          const text = `${getLabel(question.id, question)}: ${raw}`;
+          blockItems.push({
+            type: resolveDocumentationItemType(block, question),
+            text,
+            legacyText: text,
+          });
           continue;
         }
 
@@ -630,30 +718,67 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
         if (block.id === "MEDICAL_STATEMENT") {
           medicalStatementSentences.push(...resolved.documentationTexts);
         } else {
-          blockLines.push(...resolved.documentationTexts);
+          blockItems.push(...resolved.documentationTexts.map((text) => ({
+            type: resolveDocumentationItemType(block, question),
+            text,
+            legacyText: text,
+          })));
         }
         if (resolved.fallbackValue !== undefined) {
-          blockLines.push(...renderQuestionLines(question.id, resolved.fallbackValue, question, omitQuestionLabel));
+          const renderedLines = renderQuestionLines(
+            question.id,
+            resolved.fallbackValue,
+            question,
+            omitQuestionLabel,
+          );
+          if (renderedLines.length > 0) {
+            blockItems.push({
+              type: resolveDocumentationItemType(block, question),
+              text: question.omitDocumentationLabel || LEGACY_UNLABELED_FREE_TEXT_IDS.has(question.id)
+                ? resolved.fallbackValue
+                : renderedLines.join("\n"),
+              legacyText: renderedLines.join("\n"),
+            });
+          }
         }
       }
 
       if (block.id === "VOLLST_NIKOTIN") {
-        blockLines.push(...renderSmokingSummary(answers));
+        blockItems.push(...renderSmokingSummary(answers).map((text) => ({
+          type: "status" as const,
+          text,
+          legacyText: text,
+        })));
       }
 
       if (
         useDocumentedContent
           ? useInlineDocumentation
-            ? blockLines.length === 0
+            ? blockItems.length === 0
             : !hasDocumentedBlockContent(block, answers, frozenVisibleIds)
-          : blockLines.length === 0 && !includeEmptyBlocks
+          : blockItems.length === 0 && !includeEmptyBlocks
       ) continue;
       if (lines.length > 0) lines.push("");
       lines.push(block.label);
+      const semanticSection = semanticDocument.sections[resolveDocumentSection(block) - 1];
+      semanticSection.items.push({
+        type: "heading",
+        text: block.label,
+        ...(block.omitStructuredHeading || block.id === "DOCUMENT_HANDLING"
+          ? { includeInStructuredExport: false }
+          : {}),
+      });
       if (medicalStatementSentences.length > 0) {
-        lines.push(joinMedicalStatementSentences(medicalStatementSentences));
+        const statementText = joinMedicalStatementSentences(medicalStatementSentences);
+        lines.push(statementText);
+        semanticSection.items.push({
+          type: resolveDocumentationItemType(block),
+          text: statementText,
+          legacyText: statementText,
+        });
       }
-      lines.push(...blockLines);
+      lines.push(...blockItems.map((item) => item.legacyText));
+      semanticSection.items.push(...blockItems);
     }
   } else {
     // --- Legacy-Pfad: BLOCK_CATALOG / QUESTION_CATALOG ---
@@ -700,5 +825,27 @@ export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
     }
   }
 
-  return normalizeTextForPvs(lines.join("\n"));
+  const noteText = normalizeTextForPvs(lines.join("\n"));
+  if (
+    input.internalWorkflowId != null &&
+    semanticDocument.sections.every((section) => section.items.length === 0) &&
+    noteText !== ""
+  ) {
+    semanticDocument.sections[0].items.push({ type: "bodyText", text: noteText });
+  }
+
+  return {
+    noteText,
+    semanticDocument,
+  };
+}
+
+export function buildMedicalRecordNote(input: MedicalRecordNoteInput): string {
+  return buildMedicalRecordOutput(input).noteText;
+}
+
+export function buildSemanticMedicalRecordDocument(
+  input: MedicalRecordNoteInput,
+): SemanticDocument {
+  return buildMedicalRecordOutput(input).semanticDocument;
 }

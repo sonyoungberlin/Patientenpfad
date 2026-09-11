@@ -10,7 +10,7 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
   CARE_PLAN_HA_REASON: { id: "CARE_PLAN_HA_REASON", text: "Anlass / Diagnose", type: "textarea", required: false, maxLength: 120 },
   CARE_PLAN_HA_MEDICAL_INTERVAL: { id: "CARE_PLAN_HA_MEDICAL_INTERVAL", text: "Ärztliche Kontrolle", type: "select", required: false, options: INTERVAL_OPTIONS },
   CARE_PLAN_HA_LAB_INTERVAL: { id: "CARE_PLAN_HA_LAB_INTERVAL", text: "Laborkontrolle", type: "select", required: false, options: INTERVAL_OPTIONS },
-  CARE_PLAN_HA_NOTES: { id: "CARE_PLAN_HA_NOTES", text: "Notizen / Vereinbarungen", type: "textarea", required: false, maxLength: 120 },
+  CARE_PLAN_HA_NOTES: { id: "CARE_PLAN_HA_NOTES", text: "Notizen / Vereinbarungen", type: "textarea", required: false, maxLength: 120, documentationItemType: "freeText" },
   CARE_PLAN_SPECIALISTS: {
     id: "CARE_PLAN_SPECIALISTS", text: "Fachärztliche Betreuung", type: "repeatable_group", required: false,
     maxEntries: 3, addEntryLabel: "+ Facharzt hinzufügen",
@@ -67,21 +67,22 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
       documentationText: "Überweisungen werden nach vorheriger ärztlicher Rücksprache ausgestellt.",
     },
   ] },
-  CARE_PLAN_SUPPLY_NOTES: { id: "CARE_PLAN_SUPPLY_NOTES", text: "Notizen / Offene Punkte", type: "textarea", required: false, maxLength: 120 },
+  CARE_PLAN_SUPPLY_NOTES: { id: "CARE_PLAN_SUPPLY_NOTES", text: "Notizen / Offene Punkte", type: "textarea", required: false, maxLength: 120, documentationItemType: "freeText" },
   CARE_PLAN_SUPPORT: { id: "CARE_PLAN_SUPPORT", text: "Unterstützende Personen", type: "multi_select", required: false, options: [
     "Angehörige / Bezugsperson informiert", "Sozialberatung empfohlen", "Selbsthilfegruppe empfohlen",
   ] },
-  CARE_PLAN_SUPPORT_NOTES: { id: "CARE_PLAN_SUPPORT_NOTES", text: "Notizen", type: "textarea", required: false, maxLength: 120 },
+  CARE_PLAN_SUPPORT_NOTES: { id: "CARE_PLAN_SUPPORT_NOTES", text: "Notizen", type: "textarea", required: false, maxLength: 120, documentationItemType: "freeText", omitDocumentationLabel: true },
   CARE_PLAN_AGREEMENT: { id: "CARE_PLAN_AGREEMENT", text: "Gemeinsame Vereinbarung", type: "multi_select", required: false, options: [
     "Warnsymptome erklärt", "Notfallplan besprochen", "Eigenverantwortung und Mitwirkung besprochen",
   ] },
-  CARE_PLAN_AGREEMENT_TEXT: { id: "CARE_PLAN_AGREEMENT_TEXT", text: "Individuelle Vereinbarung", type: "textarea", required: false, maxLength: 120 },
+  CARE_PLAN_AGREEMENT_TEXT: { id: "CARE_PLAN_AGREEMENT_TEXT", text: "Individuelle Vereinbarung", type: "textarea", required: false, maxLength: 120, documentationItemType: "freeText" },
   CARE_PLAN_AGREEMENT_DATE: { id: "CARE_PLAN_AGREEMENT_DATE", text: "Datum der Vereinbarung", type: "date", required: false },
   DOCUMENT_HANDLING_ACTIONS: {
     id: "DOCUMENT_HANDLING_ACTIONS",
     text: "Dokumente / Befunde",
     type: "multi_select",
     required: false,
+    documentationItemType: "status",
     options: [
       { value: "attached", label: "sind beigefügt", documentationText: "Dokumente / Befunde sind beigefügt." },
       { value: "handed_out", label: "wurden mitgegeben", documentationText: "Dokumente / Befunde wurden mitgegeben." },
@@ -148,7 +149,7 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
   CARE_PLAN_SUPPLY_BLOCK: { id: "CARE_PLAN_SUPPLY_BLOCK", label: "Versorgung und Organisation", displayOrder: 30, questionIds: ["CARE_PLAN_SPECIALIST_REPORTS", "CARE_PLAN_PRESCRIPTION_RENEWAL", "CARE_PLAN_REFERRAL", "CARE_PLAN_SUPPLY_NOTES"] },
   CARE_PLAN_SUPPORT_BLOCK: { id: "CARE_PLAN_SUPPORT_BLOCK", label: "Unterstützende Personen", displayOrder: 40, questionIds: ["CARE_PLAN_SUPPORT", "CARE_PLAN_SUPPORT_NOTES"] },
   CARE_PLAN_AGREEMENT_BLOCK: { id: "CARE_PLAN_AGREEMENT_BLOCK", label: "Gemeinsame Vereinbarung", displayOrder: 50, questionIds: ["CARE_PLAN_AGREEMENT", "CARE_PLAN_AGREEMENT_TEXT", "CARE_PLAN_AGREEMENT_DATE"] },
-  DOCUMENT_HANDLING: { id: "DOCUMENT_HANDLING", label: "Dokumente / Befunde", displayOrder: 60, questionIds: ["DOCUMENT_HANDLING_ACTIONS"] },
+  DOCUMENT_HANDLING: { id: "DOCUMENT_HANDLING", label: "Dokumente / Befunde", displayOrder: 60, questionIds: ["DOCUMENT_HANDLING_ACTIONS"], omitStructuredHeading: true },
   EKG: {
     id: "EKG",
     label: "EKG",
@@ -166,12 +167,14 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
         { questionIds: ["EKG_ERBS"], label: "ERBS" },
       ],
     },
+    documentationItemType: "measurement",
   },
   MEDICAL_STATEMENT: {
     id: "MEDICAL_STATEMENT",
     label: "Stellungnahme",
     displayOrder: 80,
     questionIds: ["MEDICAL_STATEMENT_IMPAIRMENT_TYPE", "MEDICAL_STATEMENT_TIME_ASSESSMENT", "MEDICAL_STATEMENT_RECOMMENDATIONS"],
+    documentationItemType: "bodyText",
   },
   SPECIALISTS: {
     id: "SPECIALISTS",

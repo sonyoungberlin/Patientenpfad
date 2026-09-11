@@ -94,6 +94,14 @@ export type VaccinationItemDefinition = {
   }>;
 };
 
+export type DocumentationItemType =
+  | "heading"
+  | "bodyText"
+  | "freeText"
+  | "measurement"
+  | "status"
+  | "listItem";
+
 export type QuestionDefinition = {
   /** Globale, stabile ID – darf nie geändert werden. */
   id: string;
@@ -144,6 +152,10 @@ export type QuestionDefinition = {
   }>;
   /** Feste Impfzeilen für die workflow-spezifische Impfmatrix. */
   vaccinationItems?: VaccinationItemDefinition[];
+  /** Semantischer Typ für strukturierte medizinische Dokumentausgaben. */
+  documentationItemType?: Exclude<DocumentationItemType, "heading">;
+  /** Unterdrückt ein rein formularartiges Feldlabel in strukturierten Ausgaben. */
+  omitDocumentationLabel?: boolean;
 };
 
 export type InlineDocumentationItem = {
@@ -196,6 +208,10 @@ export type QuestionnaireBlock = {
   documentationPresentation?: BlockDocumentationPresentation;
   /** Optionaler leerer Unterschriftsbereich für ein auszudruckendes Dokument. */
   paperSignature?: PaperSignaturePresentation;
+  /** Standardtyp der Inhalte dieses Blocks in strukturierten Ausgaben. */
+  documentationItemType?: Exclude<DocumentationItemType, "heading">;
+  /** Unterdrückt eine redundante Blocküberschrift nur in strukturierten Ausgaben. */
+  omitStructuredHeading?: boolean;
 };
 
 // ---------------------------------------------------------------------------

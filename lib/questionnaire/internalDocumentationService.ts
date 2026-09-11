@@ -18,6 +18,7 @@ import {
 import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { normalizeInternalBlockPlacements } from "@/lib/questionnaire/internalBlockLayout";
+import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -123,7 +124,11 @@ export async function submitInternalDocumentationSession(input: {
   sessionId: string;
   answers: unknown;
   context: InternalDocumentationContext;
-}): Promise<{ noteText: string; xmlFilename: string | null } | null> {
+}): Promise<{
+  noteText: string;
+  semanticDocument: SemanticDocument | null;
+  xmlFilename: string | null;
+} | null> {
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { id: input.sessionId },
     select: {
@@ -300,5 +305,9 @@ export async function submitInternalDocumentationSession(input: {
     session_kind: session.session_kind,
     internal_workflow_id: session.internal_workflow_id,
   });
-  return { noteText: detail.noteText, xmlFilename: detail.xmlFilename };
+  return {
+    noteText: detail.noteText,
+    semanticDocument: detail.semanticDocument,
+    xmlFilename: detail.xmlFilename,
+  };
 }

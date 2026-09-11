@@ -74,6 +74,47 @@ it("erzeugt den XML-Blob und lädt ihn mit dem gelieferten Dateinamen herunter",
   await act(async () => root.unmount());
 });
 
+it("lädt strukturiertes XML separat mit v2-Dateisuffix herunter", async () => {
+  let downloadedFilename = "";
+  jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+    downloadedFilename = this.download;
+  });
+
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  await act(async () => root.render(
+    <MedicalRecordNoteCopyButton
+      sessionId="session-v2"
+      noteText="Labor\nLipidprofil: unauffällig"
+      xmlFilename="20260910_12345_Gesundheitsuntersuchung.xml"
+      semanticDocument={{
+        sections: [
+          { slot: 1, items: [
+            { type: "heading", text: "Labor" },
+            { type: "measurement", text: "Lipidprofil: unauffällig" },
+          ] },
+          { slot: 2, items: [] },
+          { slot: 3, items: [] },
+        ],
+      }}
+    />,
+  ));
+
+  const button = container.querySelector<HTMLButtonElement>("[data-q-download-xml-v2]")!;
+  await act(async () => button.click());
+
+  const blob = (URL.createObjectURL as jest.Mock).mock.calls[0][0] as Blob;
+  expect(blob.type).toBe("application/xml;charset=utf-8");
+  await expect(readBlob(blob)).resolves.toContain(
+    '<item type="measurement">Lipidprofil: unauffällig</item>',
+  );
+  expect(downloadedFilename).toBe("20260910_12345_Gesundheitsuntersuchung-v2.xml");
+  expect(container.querySelector("[data-q-download-xml]")).not.toBeNull();
+
+  await act(async () => root.unmount());
+});
+
 it("zeigt ohne XML-Dateinamen nur die bestehende Copy-Funktion", async () => {
   const container = document.createElement("div");
   document.body.appendChild(container);

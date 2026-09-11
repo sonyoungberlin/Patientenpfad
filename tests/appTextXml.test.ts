@@ -1,4 +1,8 @@
-import { buildAppTextXml } from "@/lib/questionnaire/appTextXml";
+import {
+  buildAppTextXml,
+  buildStructuredAppXml,
+  buildStructuredXmlFilename,
+} from "@/lib/questionnaire/appTextXml";
 
 describe("buildAppTextXml", () => {
   it("erzeugt exakt das erwartete APP_TEXT-Schema", () => {
@@ -30,5 +34,33 @@ describe("buildAppTextXml", () => {
     expect(xml).not.toContain("\u0000");
     expect(xml).not.toContain("\u0008");
     expect(xml).not.toContain("\u000B");
+  });
+});
+
+describe("buildStructuredAppXml", () => {
+  it("serialisiert drei semantische Sections und escaped XML-Inhalte", () => {
+    const xml = buildStructuredAppXml({
+      sections: [
+        { slot: 1, items: [
+          { type: "heading", text: "Labor & Werte" },
+          { type: "measurement", text: "Lipidprofil: <auffällig>\u0000" },
+        ] },
+        { slot: 2, items: [] },
+        { slot: 3, items: [{ type: "bodyText", text: "Ärztliche Stellungnahme" }] },
+      ],
+    });
+
+    expect(xml).toContain('<appExport version="2.0">');
+    expect(xml).toContain('<section slot="1">');
+    expect(xml).toContain('<item type="heading">Labor &amp; Werte</item>');
+    expect(xml).toContain('<item type="measurement">Lipidprofil: &lt;auffällig&gt;</item>');
+    expect(xml).toContain('<section slot="2"></section>');
+    expect(xml).toContain('<section slot="3">');
+    expect(xml).not.toContain("\u0000");
+  });
+
+  it("ergänzt den separaten v2-Dateisuffix", () => {
+    expect(buildStructuredXmlFilename("Interne_Dokumentation.xml"))
+      .toBe("Interne_Dokumentation-v2.xml");
   });
 });

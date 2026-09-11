@@ -1,7 +1,8 @@
 import { BLOCK_CATALOG, QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
-import { buildMedicalRecordNote } from "./buildMedicalRecordNote";
+import { buildMedicalRecordOutput } from "./buildMedicalRecordNote";
+import type { SemanticDocument } from "./appTextXml";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { computeAllDerivedValues } from "./derivedValues";
 import type { DerivedValues } from "./derivedValues";
@@ -31,6 +32,7 @@ export type QuestionnaireInboxDetail = {
   questions: QuestionDefinition[];
   answers: Record<string, string>;
   noteText: string;
+  semanticDocument: SemanticDocument | null;
   xmlFilename: string | null;
   derivedValues: DerivedValues;
   attentionHints: ReturnType<typeof computeQuestionnaireAttentionHints>;
@@ -112,20 +114,24 @@ export function buildQuestionnaireInboxDetail(
     derivedValues,
     frozenBlocks,
   );
+  const medicalRecordOutput = buildMedicalRecordOutput({
+    answers,
+    selected_block_ids: blockIds,
+    frozenBlocks,
+    internalWorkflowId: isNewBlockBased
+      ? null
+      : session.session_kind === "internal_documentation"
+        ? session.internal_workflow_id
+        : null,
+  });
 
   return {
     questions,
     answers,
-    noteText: buildMedicalRecordNote({
-      answers,
-      selected_block_ids: blockIds,
-      frozenBlocks,
-      internalWorkflowId: isNewBlockBased
-        ? null
-        : session.session_kind === "internal_documentation"
-          ? session.internal_workflow_id
-          : null,
-    }),
+    noteText: medicalRecordOutput.noteText,
+    semanticDocument: session.session_kind === "internal_documentation"
+      ? medicalRecordOutput.semanticDocument
+      : null,
     derivedValues,
     attentionHints: computeQuestionnaireAttentionHints(answers, visibleQuestionIds),
     visibleQuestionIds: [...visibleQuestionIds],

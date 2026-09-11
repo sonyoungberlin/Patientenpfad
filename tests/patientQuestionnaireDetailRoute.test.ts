@@ -72,6 +72,7 @@ it("liefert genau die aufbereiteten Details eines Fragebogens derselben Praxis",
   expect(body.detail.questions).toEqual(detailSession.deduplicated_questions);
   expect(body.detail.answers).toEqual(detailSession.answers);
   expect(body.detail.xmlFilename).toBeNull();
+  expect(body.detail.semanticDocument).toBeNull();
   expect(body.detail).not.toHaveProperty("frozen_blocks");
   expect(body.detail).not.toHaveProperty("owner_practice_id");
 

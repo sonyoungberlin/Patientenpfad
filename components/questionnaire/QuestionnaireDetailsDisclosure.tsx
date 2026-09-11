@@ -81,6 +81,7 @@ export default function QuestionnaireDetailsDisclosure({ sessionId }: Props) {
             sessionId={sessionId}
             noteText={detail.noteText}
             xmlFilename={detail.xmlFilename}
+            semanticDocument={detail.semanticDocument}
           />
           {(derivedLines.length > 0 || detail.attentionHints.length > 0) && (
             <div

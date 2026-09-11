@@ -57,6 +57,10 @@ export type FrozenBlock = {
   documentationPresentation?: BlockDocumentationPresentation;
   /** Eingefrorener leerer Unterschriftsbereich für Papierdokumente. */
   paperSignature?: { label: string };
+  /** Eingefrorener Standardtyp für strukturierte Dokumentausgaben. */
+  documentationItemType?: QuestionnaireBlock["documentationItemType"];
+  /** Eingefrorene Unterdrückung einer redundanten strukturierten Überschrift. */
+  omitStructuredHeading?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -152,6 +156,12 @@ export function buildFrozenBlocks(
     }
     if (block.paperSignature !== undefined) {
       frozenBlock.paperSignature = structuredClone(block.paperSignature);
+    }
+    if (block.documentationItemType !== undefined) {
+      frozenBlock.documentationItemType = block.documentationItemType;
+    }
+    if (block.omitStructuredHeading !== undefined) {
+      frozenBlock.omitStructuredHeading = block.omitStructuredHeading;
     }
 
     result.push(frozenBlock);

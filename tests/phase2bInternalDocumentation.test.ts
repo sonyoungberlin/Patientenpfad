@@ -17,7 +17,11 @@ jest.mock("@/lib/authz", () => ({
 
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
-import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
+import {
+  buildMedicalRecordNote,
+  buildSemanticMedicalRecordDocument,
+} from "@/lib/questionnaire/buildMedicalRecordNote";
+import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { buildInternalDocumentationFrozenBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
@@ -125,6 +129,132 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     ])).toBe("Erster Satz.\n\nBewusster Absatz. Zweiter Satz.");
   });
 
+  it("erzeugt strukturiertes XML v2 in gespeicherter Section- und Blockreihenfolge", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks(
+      ["HEALTH_CHECK_LAB", "HEALTH_CHECK_PREVENTION", "MEDICAL_STATEMENT", "DOCUMENT_HANDLING"],
+      [
+        { blockId: "DOCUMENT_HANDLING", section: 1, order: 0 },
+        { blockId: "HEALTH_CHECK_LAB", section: 1, order: 1 },
+        { blockId: "HEALTH_CHECK_PREVENTION", section: 2, order: 0 },
+        { blockId: "MEDICAL_STATEMENT", section: 3, order: 0 },
+      ],
+    );
+    const input = {
+      answers: {
+        DOCUMENT_HANDLING_ACTIONS: "attached",
+        HEALTH_CHECK_LIPID_PROFILE_STATUS: "unauffällig",
+        HEALTH_CHECK_FASTING_GLUCOSE_STATUS: "ausstehend",
+        HEALTH_CHECK_LAB_NOTE: "Kontrolle A & B <zeitnah>",
+        HEALTH_CHECK_PREVENTION_TOPICS: "Herz-Kreislauf, Sonstiges",
+        HEALTH_CHECK_OTHER_NOTE: "Individuelle Empfehlung",
+        MEDICAL_STATEMENT_IMPAIRMENT_TYPE: "combined",
+      },
+      selected_block_ids: blocks.map((block) => block.id),
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    };
+
+    const document = buildSemanticMedicalRecordDocument(input);
+    expect(document.sections.map((section) => section.slot)).toEqual([1, 2, 3]);
+    expect(document.sections[0].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "status", text: "Dokumente / Befunde sind beigefügt." }),
+      expect.objectContaining({ type: "heading", text: "Labor" }),
+      expect.objectContaining({ type: "measurement", text: "Lipidprofil: unauffällig" }),
+      expect.objectContaining({ type: "measurement", text: "Nüchternplasmaglukose: ausstehend" }),
+      expect.objectContaining({ type: "freeText", text: "Kontrolle A & B <zeitnah>" }),
+    ]));
+    expect(document.sections[1].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "heading", text: "Prävention / Empfehlungen" }),
+      expect.objectContaining({ type: "listItem", text: "Besprochene Themen: Herz-Kreislauf, Sonstiges" }),
+      expect.objectContaining({ type: "freeText", text: "Individuelle Empfehlung" }),
+    ]));
+    expect(document.sections[2].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "heading", text: "Stellungnahme" }),
+      expect.objectContaining({
+        type: "bodyText",
+        text: expect.stringContaining("sowohl körperliche als auch psychische"),
+      }),
+    ]));
+
+    const xml = buildStructuredAppXml(document);
+    expect(xml.match(/<section slot="[123]">/g)).toHaveLength(3);
+    expect(xml).toContain('<item type="freeText">Kontrolle A &amp; B &lt;zeitnah&gt;</item>');
+    expect(xml).not.toContain("Kurzer Hinweis:");
+    expect(xml).not.toContain('<item type="heading">Dokumente / Befunde</item>');
+    expect(xml.indexOf("Dokumente / Befunde sind beigefügt."))
+      .toBeLessThan(xml.indexOf('<item type="heading">Labor</item>'));
+  });
+
+  it("typisiert alte Frozen Snapshots ohne Semantikmetadaten per Fallback", () => {
+    const legacyBlocks = buildInternalDocumentationFrozenBlocks(
+      ["HEALTH_CHECK_LAB", "MEDICAL_STATEMENT"],
+      [
+        { blockId: "HEALTH_CHECK_LAB", section: 1, order: 0 },
+        { blockId: "MEDICAL_STATEMENT", section: 3, order: 0 },
+      ],
+    ).map((block) => ({
+      ...block,
+      documentationItemType: undefined,
+      questions: block.questions.map((question) => ({
+        ...question,
+        documentationItemType: undefined,
+        omitDocumentationLabel: undefined,
+      })),
+    }));
+
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {
+        HEALTH_CHECK_LIPID_PROFILE_STATUS: "auffällig",
+        HEALTH_CHECK_LAB_NOTE: "Historischer Freitext",
+        MEDICAL_STATEMENT_IMPAIRMENT_TYPE: "physical",
+      },
+      selected_block_ids: legacyBlocks.map((block) => block.id),
+      frozenBlocks: legacyBlocks,
+      internalWorkflowId: null,
+    });
+
+    expect(document.sections[0].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "measurement", text: "Lipidprofil: auffällig" }),
+      expect.objectContaining({ type: "freeText", text: "Historischer Freitext" }),
+    ]));
+    expect(document.sections[2].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "bodyText", text: expect.stringContaining("körperliche Beschwerden") }),
+    ]));
+  });
+
+  it("entfernt nur das technische Notizen-Label aus XML v2", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks([
+      "CARE_PLAN_SUPPORT_BLOCK",
+      "HEALTH_CHECK_NEXT_STEPS",
+    ]).map((block) => ({
+      ...block,
+      questions: block.questions.map((question) => ({
+        ...question,
+        omitDocumentationLabel: undefined,
+      })),
+    }));
+    const input = {
+      answers: {
+        CARE_PLAN_SUPPORT_NOTES: "Flyer wurde mitgegeben.",
+        HEALTH_CHECK_NEXT_STEPS: "Verlaufskontrolle in unserer Praxis",
+      },
+      selected_block_ids: blocks.map((block) => block.id),
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    };
+
+    const note = buildMedicalRecordNote(input);
+    const xml = buildStructuredAppXml(buildSemanticMedicalRecordDocument(input));
+
+    expect(note).toContain("Notizen: Flyer wurde mitgegeben.");
+    expect(note).toContain("Maßnahmen: Verlaufskontrolle in unserer Praxis");
+    expect(xml).toContain('<item type="freeText">Flyer wurde mitgegeben.</item>');
+    expect(xml).not.toContain("Notizen: Flyer wurde mitgegeben.");
+    expect(xml).toContain(
+      '<item type="listItem">Maßnahmen: Verlaufskontrolle in unserer Praxis</item>',
+    );
+  });
+
   it("erkennt nur vollständige null-Workflow-Snapshots als neuen Pfad", () => {
     expect(isNewBlockBasedInternalSession({
       sessionKind: "internal_documentation",
@@ -227,6 +357,7 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(detail.noteText).toContain("Versorgung abstimmen");
     expect(detail.noteText).toContain("Impfungen");
     expect(detail.noteText).toContain("Keine weitere Abklärung oder Kontrolle erforderlich.");
+    expect(detail.semanticDocument?.sections).toHaveLength(3);
     expect(detail.xmlFilename).toBe("20260909_PAT2B_Interne_Dokumentation.xml");
   });
 
