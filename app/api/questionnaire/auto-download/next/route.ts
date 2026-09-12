@@ -14,6 +14,22 @@ import {
   QUESTIONNAIRE_AUTO_DEVICE_HEADER,
 } from "@/lib/questionnaire/autoDownloadDevice";
 import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
+import {
+  buildInternalDocumentationGdtArtifact,
+  buildInternalDocumentationPdfArtifact,
+  buildInternalDocumentationXmlArtifact,
+  type InternalDocumentationArtifact,
+} from "@/lib/questionnaire/internalDocumentationArtifacts";
+import { claimInternalDocumentationXml } from "@/lib/questionnaire/internalDocumentationXmlClaim";
+
+function artifactResponse(artifact: InternalDocumentationArtifact): Response {
+  return new Response(Buffer.from(artifact.bytes), {
+    headers: {
+      "Content-Type": artifact.mimeType,
+      "Content-Disposition": `attachment; filename="${artifact.filename}"`,
+    },
+  });
+}
 
 export async function GET(req: NextRequest) {
   const { account, error } = await requireQuestionnaireInboxAccess(req);
@@ -139,8 +155,132 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  const internalSessions = await prisma.patientQuestionnaireSession.findMany({
+    where: {
+      AND: [
+        ...baseEligibility.AND,
+        { session_kind: "internal_documentation" },
+        {
+          OR: [
+            { auto_pdf_download_claimed_at: null },
+            { auto_xml_download_claimed_at: null },
+            { gdt_download_claimed_at: null },
+          ],
+        },
+      ],
+    },
+    orderBy: [{ submitted_at: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      patient_reference: true,
+      submitted_at: true,
+      submitted_by: true,
+      selected_block_ids: true,
+      deduplicated_questions: true,
+      frozen_blocks: true,
+      answers: true,
+      source: true,
+      session_kind: true,
+      internal_workflow_id: true,
+      auto_pdf_download_claimed_at: true,
+      auto_xml_download_claimed_at: true,
+      gdt_download_claimed_at: true,
+      practice_form: { select: { title: true } },
+    },
+  });
+  const deviceEligibility = [
+    ...baseEligibility.AND,
+    {
+      owner_practice: {
+        is: {
+          questionnaire_auto_pdf_device_hash: deviceHash,
+          questionnaire_auto_pdf_enabled_at: enabledAt,
+        },
+      },
+    },
+  ];
+
+  for (const session of internalSessions) {
+    if (!session.submitted_at) continue;
+    const internalSession = {
+      ...session,
+      submitted_at: session.submitted_at,
+      session_kind: "internal_documentation" as const,
+    };
+
+    if (session.auto_pdf_download_claimed_at === null) {
+      try {
+        const artifact = await buildInternalDocumentationPdfArtifact(internalSession);
+        const claim = await prisma.patientQuestionnaireSession.updateMany({
+          where: {
+            id: session.id,
+            AND: [
+              ...deviceEligibility,
+              { session_kind: "internal_documentation" },
+              { auto_pdf_download_claimed_at: null },
+            ],
+          },
+          data: { auto_pdf_download_claimed_at: new Date() },
+        });
+        if (claim.count === 1) return artifactResponse(artifact);
+      } catch (buildError) {
+        console.error("[questionnaire auto-download] internal_pdf_build_failed", {
+          sessionId: session.id,
+          message: buildError instanceof Error ? buildError.message : "UnknownError",
+        });
+      }
+    }
+
+    if (session.auto_xml_download_claimed_at === null) {
+      try {
+        const artifact = buildInternalDocumentationXmlArtifact(internalSession);
+        const claimed = await claimInternalDocumentationXml(
+          session.id,
+          new Date(),
+          deviceEligibility,
+        );
+        if (claimed) return artifactResponse(artifact);
+      } catch (buildError) {
+        console.error("[questionnaire auto-download] internal_xml_build_failed", {
+          sessionId: session.id,
+          message: buildError instanceof Error ? buildError.message : "UnknownError",
+        });
+      }
+    }
+
+    if (session.gdt_download_claimed_at === null) {
+      try {
+        const artifact = buildInternalDocumentationGdtArtifact(internalSession);
+        if (!artifact) continue;
+        const claim = await prisma.patientQuestionnaireSession.updateMany({
+          where: {
+            id: session.id,
+            AND: [
+              ...deviceEligibility,
+              { session_kind: "internal_documentation" },
+              { gdt_download_claimed_at: null },
+            ],
+          },
+          data: { gdt_download_claimed_at: new Date() },
+        });
+        if (claim.count === 1) return artifactResponse(artifact);
+      } catch (buildError) {
+        console.error("[questionnaire auto-download] internal_gdt_build_failed", {
+          sessionId: session.id,
+          message: buildError instanceof Error ? buildError.message : "UnknownError",
+        });
+      }
+    }
+  }
+
   const session = await prisma.patientQuestionnaireSession.findFirst({
-    where: { AND: [...baseEligibility.AND, { auto_pdf_download_claimed_at: null }] },
+    where: {
+      AND: [
+        ...baseEligibility.AND,
+        { session_kind: { not: "internal_documentation" } },
+        { auto_pdf_download_claimed_at: null },
+      ],
+    },
     orderBy: [{ submitted_at: "asc" }, { createdAt: "asc" }],
     select: {
       id: true,

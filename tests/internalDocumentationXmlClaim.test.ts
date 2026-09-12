@@ -26,11 +26,13 @@ describe("claimInternalDocumentationXml", () => {
 
     expect(updateMany).toHaveBeenCalledWith({
       where: {
-        id: "session-1",
-        status: "completed",
-        deleted_at: null,
-        session_kind: "internal_documentation",
-        auto_xml_download_claimed_at: null,
+        AND: [{
+          id: "session-1",
+          status: "completed",
+          deleted_at: null,
+          session_kind: "internal_documentation",
+          auto_xml_download_claimed_at: null,
+        }],
       },
       data: { auto_xml_download_claimed_at: claimedAt },
     });
@@ -46,6 +48,23 @@ describe("claimInternalDocumentationXml", () => {
     await expect(
       claimInternalDocumentationXml("session-1", claimedAt),
     ).resolves.toBe(false);
+  });
+
+  it("prüft zusätzliche Eligibility-Bedingungen im selben atomaren Claim", async () => {
+    updateMany.mockResolvedValue({ count: 1 });
+    const eligibility = [{ owner_practice_id: "practice-1" }];
+
+    await expect(
+      claimInternalDocumentationXml("session-1", claimedAt, eligibility),
+    ).resolves.toBe(true);
+
+    expect(updateMany.mock.calls[0][0].where.AND).toEqual([
+      expect.objectContaining({
+        id: "session-1",
+        auto_xml_download_claimed_at: null,
+      }),
+      { owner_practice_id: "practice-1" },
+    ]);
   });
 
   it("lässt bei parallelen Claim-Versuchen höchstens einen gewinnen", async () => {

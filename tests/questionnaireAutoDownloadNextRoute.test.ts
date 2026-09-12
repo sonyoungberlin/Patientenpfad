@@ -16,10 +16,20 @@ jest.mock("@/lib/authz", () => ({
 jest.mock("@/lib/questionnaire/pdfRenderer", () => ({
   buildQuestionnairePdfBytes: jest.fn(),
 }));
+jest.mock("@/lib/questionnaire/internalDocumentationArtifacts", () => ({
+  buildInternalDocumentationPdfArtifact: jest.fn(),
+  buildInternalDocumentationXmlArtifact: jest.fn(),
+  buildInternalDocumentationGdtArtifact: jest.fn(),
+}));
 
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
+import {
+  buildInternalDocumentationGdtArtifact,
+  buildInternalDocumentationPdfArtifact,
+  buildInternalDocumentationXmlArtifact,
+} from "@/lib/questionnaire/internalDocumentationArtifacts";
 import { GET } from "@/app/api/questionnaire/auto-download/next/route";
 import { hashQuestionnaireAutoDeviceId } from "@/lib/questionnaire/autoDownloadDevice";
 
@@ -34,6 +44,9 @@ const sessionMock = prisma.patientQuestionnaireSession as unknown as {
 };
 const accessMock = requireQuestionnaireInboxAccess as jest.Mock;
 const pdfMock = buildQuestionnairePdfBytes as jest.Mock;
+const internalPdfMock = buildInternalDocumentationPdfArtifact as jest.Mock;
+const internalXmlMock = buildInternalDocumentationXmlArtifact as jest.Mock;
+const internalGdtMock = buildInternalDocumentationGdtArtifact as jest.Mock;
 
 function request(deviceId = DEVICE_A) {
   return new NextRequest(
@@ -56,6 +69,50 @@ const SESSION = {
   practice_form: null,
 };
 
+type InternalSessionFixture = Omit<
+  typeof SESSION,
+  "frozen_blocks" | "session_kind"
+> & {
+  frozen_blocks: unknown;
+  session_kind: "internal_documentation";
+  internal_workflow_id: string | null;
+  auto_pdf_download_claimed_at: Date | null;
+  auto_xml_download_claimed_at: Date | null;
+  gdt_download_claimed_at: Date | null;
+};
+
+const INTERNAL_SESSION: InternalSessionFixture = {
+  ...SESSION,
+  id: "internal-session-1",
+  submitted_by: "practice",
+  source: "practice_direct",
+  session_kind: "internal_documentation",
+  internal_workflow_id: null,
+  auto_pdf_download_claimed_at: null,
+  auto_xml_download_claimed_at: null,
+  gdt_download_claimed_at: null,
+};
+
+function internalArtifact(extension: "pdf" | "xml" | "gdt") {
+  const mimeType = extension === "pdf"
+    ? "application/pdf"
+    : extension === "xml"
+      ? "application/xml; charset=utf-8"
+      : "application/octet-stream";
+  return {
+    bytes: new Uint8Array([extension.charCodeAt(0)]),
+    filename: `20260903_4711_Bescheinigung.${extension}`,
+    mimeType,
+  };
+}
+
+function queueInternalCandidates(...candidates: Array<typeof INTERNAL_SESSION | null>) {
+  for (const candidate of candidates) {
+    sessionMock.findMany.mockResolvedValueOnce([]);
+    sessionMock.findMany.mockResolvedValueOnce(candidate ? [candidate] : []);
+  }
+}
+
 beforeEach(() => {
   accessMock.mockReset().mockResolvedValue({
     account: { current_practice: { id: "practice-1" } },
@@ -73,6 +130,162 @@ beforeEach(() => {
     bytes: new Uint8Array([37, 80, 68, 70]),
     filename: "20260903_4711_Versicherungsdaten.pdf",
   });
+  internalPdfMock.mockReset().mockResolvedValue(internalArtifact("pdf"));
+  internalXmlMock.mockReset().mockReturnValue(internalArtifact("xml"));
+  internalGdtMock.mockReset().mockReturnValue(internalArtifact("gdt"));
+});
+
+it("liefert interne PDF, XML und GDT nacheinander mit unabhängigen Claims", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  const claimedAt = new Date("2026-09-03T09:30:00.000Z");
+  queueInternalCandidates(
+    INTERNAL_SESSION,
+    { ...INTERNAL_SESSION, auto_pdf_download_claimed_at: claimedAt },
+    {
+      ...INTERNAL_SESSION,
+      auto_pdf_download_claimed_at: claimedAt,
+      auto_xml_download_claimed_at: claimedAt,
+    },
+    null,
+  );
+
+  const pdfResponse = await GET(request());
+  const xmlResponse = await GET(request());
+  const gdtResponse = await GET(request());
+  const emptyResponse = await GET(request());
+
+  expect(pdfResponse.headers.get("content-type")).toBe("application/pdf");
+  expect(xmlResponse.headers.get("content-type")).toBe("application/xml; charset=utf-8");
+  expect(gdtResponse.headers.get("content-type")).toBe("application/octet-stream");
+  expect(emptyResponse.status).toBe(204);
+  expect([
+    pdfResponse,
+    xmlResponse,
+    gdtResponse,
+  ].map((response) => response.headers.get("content-disposition"))).toEqual([
+    expect.stringContaining("20260903_4711_Bescheinigung.pdf"),
+    expect.stringContaining("20260903_4711_Bescheinigung.xml"),
+    expect.stringContaining("20260903_4711_Bescheinigung.gdt"),
+  ]);
+  expect(sessionMock.updateMany.mock.calls.map(([input]) => input.data)).toEqual([
+    { auto_pdf_download_claimed_at: expect.any(Date) },
+    { auto_xml_download_claimed_at: expect.any(Date) },
+    { gdt_download_claimed_at: expect.any(Date) },
+  ]);
+});
+
+it("liefert Legacy-PDF und XML, überspringt aber eine nicht verfügbare GDT", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  const claimedAt = new Date("2026-09-03T09:30:00.000Z");
+  internalGdtMock.mockReturnValue(null);
+  queueInternalCandidates(
+    { ...INTERNAL_SESSION, patient_reference: "PAT-ALT" },
+    {
+      ...INTERNAL_SESSION,
+      patient_reference: "PAT-ALT",
+      auto_pdf_download_claimed_at: claimedAt,
+    },
+    {
+      ...INTERNAL_SESSION,
+      patient_reference: "PAT-ALT",
+      auto_pdf_download_claimed_at: claimedAt,
+      auto_xml_download_claimed_at: claimedAt,
+    },
+  );
+
+  expect((await GET(request())).headers.get("content-type")).toBe("application/pdf");
+  expect((await GET(request())).headers.get("content-type"))
+    .toBe("application/xml; charset=utf-8");
+  expect((await GET(request())).status).toBe(204);
+  expect(sessionMock.updateMany.mock.calls.map(([input]) => input.data)).toEqual([
+    { auto_pdf_download_claimed_at: expect.any(Date) },
+    { auto_xml_download_claimed_at: expect.any(Date) },
+  ]);
+});
+
+it("setzt keinen Claim für einen Buildfehler und versucht das nächste Artefakt", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  internalPdfMock.mockRejectedValue(new Error("pdf failed"));
+  queueInternalCandidates(INTERNAL_SESSION);
+  const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+  const response = await GET(request());
+
+  expect(response.headers.get("content-type")).toBe("application/xml; charset=utf-8");
+  expect(sessionMock.updateMany).toHaveBeenCalledTimes(1);
+  expect(sessionMock.updateMany.mock.calls[0][0].data).toEqual({
+    auto_xml_download_claimed_at: expect.any(Date),
+  });
+  errorSpy.mockRestore();
+});
+
+it("lässt einen XML-Buildfehler die interne GDT nicht blockieren", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  internalXmlMock.mockImplementation(() => { throw new Error("xml failed"); });
+  queueInternalCandidates({
+    ...INTERNAL_SESSION,
+    auto_pdf_download_claimed_at: new Date(),
+  });
+  const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+  const response = await GET(request());
+
+  expect(response.headers.get("content-disposition")).toContain("Bescheinigung.gdt");
+  expect(sessionMock.updateMany).toHaveBeenCalledTimes(1);
+  expect(sessionMock.updateMany.mock.calls[0][0].data).toEqual({
+    gdt_download_claimed_at: expect.any(Date),
+  });
+  errorSpy.mockRestore();
+});
+
+it("versucht nach einem verlorenen PDF-Claim das nächste offene Artefakt", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  queueInternalCandidates(INTERNAL_SESSION);
+  sessionMock.updateMany
+    .mockResolvedValueOnce({ count: 0 })
+    .mockResolvedValueOnce({ count: 1 });
+
+  const response = await GET(request());
+
+  expect(response.headers.get("content-type")).toBe("application/xml; charset=utf-8");
+  expect(sessionMock.updateMany.mock.calls.map(([input]) => input.data)).toEqual([
+    { auto_pdf_download_claimed_at: expect.any(Date) },
+    { auto_xml_download_claimed_at: expect.any(Date) },
+  ]);
+});
+
+it.each([
+  ["PDF", {
+    auto_pdf_download_claimed_at: null,
+    auto_xml_download_claimed_at: new Date(),
+    gdt_download_claimed_at: new Date(),
+  }],
+  ["XML", {
+    auto_pdf_download_claimed_at: new Date(),
+    auto_xml_download_claimed_at: null,
+    gdt_download_claimed_at: new Date(),
+  }],
+  ["GDT", {
+    auto_pdf_download_claimed_at: new Date(),
+    auto_xml_download_claimed_at: new Date(),
+    gdt_download_claimed_at: null,
+  }],
+])("liefert intern konkurrierend geclaimte %s höchstens einmal", async (_, claims) => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  sessionMock.findMany.mockImplementation(({ where }) => {
+    const parts = where.AND as Array<Record<string, unknown>>;
+    return Promise.resolve(parts.some((part) => part.session_kind === "internal_documentation")
+      ? [{ ...INTERNAL_SESSION, ...claims }]
+      : []);
+  });
+  sessionMock.updateMany
+    .mockResolvedValueOnce({ count: 1 })
+    .mockResolvedValueOnce({ count: 0 });
+
+  const responses = await Promise.all([GET(request()), GET(request())]);
+
+  expect(responses.map((response) => response.status).sort()).toEqual([200, 204]);
+  expect(sessionMock.updateMany).toHaveBeenCalledTimes(2);
 });
 
 it("liefert nur dem registrierten Gerät eine PDF und claimt nur den Auto-Marker", async () => {
@@ -197,30 +410,28 @@ it("rendert normale Fragebögen weiterhin für den Auto-Download", async () => {
 });
 
 it("rendert abgeschlossene interne Dokumentationen für den Auto-Download", async () => {
-  sessionMock.findFirst.mockResolvedValue({
-    ...SESSION,
+  sessionMock.findFirst.mockResolvedValue(null);
+  queueInternalCandidates({
+    ...INTERNAL_SESSION,
     source: "kiosk_direct",
-    session_kind: "internal_documentation",
+    internal_workflow_id: "care_plan_v1",
   });
 
   const response = await GET(request());
 
   expect(response.status).toBe(200);
-  expect(pdfMock).toHaveBeenCalledWith(
-    expect.objectContaining({ session_kind: "internal_documentation" }),
-    expect.objectContaining({
-      title: "Persönlicher Versorgungsplan",
-      filenameLabel: "Persönlicher Versorgungsplan",
-      omitUnanswered: true,
-    }),
-  );
+  expect(internalPdfMock).toHaveBeenCalledWith(expect.objectContaining({
+    session_kind: "internal_documentation",
+    internal_workflow_id: "care_plan_v1",
+  }));
+  expect(pdfMock).not.toHaveBeenCalled();
 });
 
 it("rendert neue blockbasierte Dokumentationen neutral im Auto-Download", async () => {
-  sessionMock.findFirst.mockResolvedValue({
-    ...SESSION,
+  sessionMock.findFirst.mockResolvedValue(null);
+  queueInternalCandidates({
+    ...INTERNAL_SESSION,
     source: "practice_direct",
-    session_kind: "internal_documentation",
     internal_workflow_id: null,
     frozen_blocks: [{
       id: "CARE_PLAN_HA",
@@ -236,56 +447,47 @@ it("rendert neue blockbasierte Dokumentationen neutral im Auto-Download", async 
   const response = await GET(request());
 
   expect(response.status).toBe(200);
-  expect(pdfMock).toHaveBeenCalledWith(
-    expect.objectContaining({
-      session_kind: "internal_documentation",
-      internal_workflow_id: null,
-    }),
-    expect.objectContaining({
-      title: "Interne Dokumentation",
-      filenameLabel: "Interne Dokumentation",
-    }),
-  );
+  expect(internalPdfMock).toHaveBeenCalledWith(expect.objectContaining({
+    session_kind: "internal_documentation",
+    internal_workflow_id: null,
+  }));
+  expect(pdfMock).not.toHaveBeenCalled();
 });
 
-it("rendert Impfpassprüfungen mit deren Workflowtitel im Auto-Download", async () => {
-  sessionMock.findFirst.mockResolvedValue({
-    ...SESSION,
+it("leitet auch alte interne Workflows an den zentralen Artefaktbuilder", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  queueInternalCandidates({
+    ...INTERNAL_SESSION,
     source: "kiosk_direct",
-    session_kind: "internal_documentation",
     internal_workflow_id: "vaccination_review_v1",
-  });
-  pdfMock.mockResolvedValue({
-    bytes: new Uint8Array([37, 80, 68, 70]),
-    filename: "20260903_4711_DOKU_Impfberatung.pdf",
   });
 
   const response = await GET(request());
 
   expect(response.status).toBe(200);
   expect(response.headers.get("content-disposition")).toContain(
-    "20260903_4711_DOKU_Impfberatung.pdf",
+    "20260903_4711_Bescheinigung.pdf",
   );
-  expect(pdfMock).toHaveBeenCalledWith(
-    expect.objectContaining({
-      session_kind: "internal_documentation",
-      internal_workflow_id: "vaccination_review_v1",
-    }),
-    expect.objectContaining({
-      title: "Impfpassprüfung und Beratung",
-      filenameLabel: "DOKU Impfberatung",
-      omitUnanswered: true,
-    }),
-  );
+  expect(internalPdfMock).toHaveBeenCalledWith(expect.objectContaining({
+    session_kind: "internal_documentation",
+    internal_workflow_id: "vaccination_review_v1",
+  }));
 });
 
 it("lässt nur abgeschlossene und noch nicht geclaimte interne Dokumentationen zu", async () => {
   await GET(request());
-  const eligibility = sessionMock.findFirst.mock.calls[0][0].where.AND;
+  const eligibility = sessionMock.findMany.mock.calls[1][0].where.AND;
 
   expect(eligibility).toEqual(expect.arrayContaining([
     { status: "completed" },
-    { auto_pdf_download_claimed_at: null },
+    { session_kind: "internal_documentation" },
+    {
+      OR: [
+        { auto_pdf_download_claimed_at: null },
+        { auto_xml_download_claimed_at: null },
+        { gdt_download_claimed_at: null },
+      ],
+    },
   ]));
 });
 
