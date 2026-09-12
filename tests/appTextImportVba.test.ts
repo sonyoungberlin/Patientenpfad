@@ -59,6 +59,40 @@ describe("AppTextImport VBA", () => {
     expect(formatting).toContain('Case "measurement", "status", "listItem"');
   });
 
+  it("trennt Slot 1 von Slot 2 und Slot 2 von Slot 3 über eine eigene Layoutregel", () => {
+    const version2 = procedure("ImportVersion2");
+    const slotSpacing = procedure("ApplyV2SlotSpacing");
+
+    expect(version2).toContain("ApplyV2SlotSpacing xml");
+    expect(slotSpacing).toContain("For slotNumber = 1 To 3");
+    expect(slotSpacing).toContain("If previousSlotIsFilled Then");
+    expect(slotSpacing).toContain('"APP_TEXT_" & CStr(slotNumber)');
+    expect(slotSpacing).toContain("slotRange.ParagraphFormat.SpaceBefore = 12");
+  });
+
+  it("setzt Slot-Abstand nur vor einem weiteren tatsächlich befüllten Slot", () => {
+    const slotSpacing = procedure("ApplyV2SlotSpacing");
+    const visibleContent = procedure("V2SectionHasVisibleContent");
+
+    expect(slotSpacing).toContain("If V2SectionHasVisibleContent(sectionNode) Then");
+    expect(slotSpacing).toContain("previousSlotIsFilled = True");
+    expect(slotSpacing).not.toContain("SpaceAfter");
+    expect(visibleContent).toContain('sectionNode.SelectNodes("./item")');
+    expect(visibleContent).toContain("BuildRenderedItemText(itemNode, itemType)");
+  });
+
+  it("verändert für die Slot-Trennung weder Slot-Inhalte noch APP_TITLE", () => {
+    const slotSpacing = procedure("ApplyV2SlotSpacing");
+    const titleImport = procedure("ImportV2DocumentTitle");
+
+    expect(slotSpacing).not.toContain(".Text =");
+    expect(slotSpacing).not.toContain("InsertV2Section");
+    expect(slotSpacing).not.toContain("ApplyItemFormatting");
+    expect(slotSpacing).not.toContain("APP_TITLE");
+    expect(titleImport).toContain("cc.Range.Text = documentTitle");
+    expect(titleImport).not.toContain("ApplyV2SlotSpacing");
+  });
+
   it("setzt keine Schriftfamilie hart", () => {
     expect(source).not.toMatch(/\.Font\.Name\s*=/i);
     expect(procedure("ImportV2DocumentTitle")).not.toContain(".Font.");

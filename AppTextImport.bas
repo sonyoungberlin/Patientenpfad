@@ -141,7 +141,51 @@ Private Function ImportVersion2(ByVal xml As Object, _
         End Select
     Next node
 
+    ApplyV2SlotSpacing xml
+
     ImportVersion2 = True
+End Function
+
+Private Sub ApplyV2SlotSpacing(ByVal xml As Object)
+    Dim slotNumber As Long
+    Dim sectionNode As Object
+    Dim cc As ContentControl
+    Dim slotRange As Range
+    Dim previousSlotIsFilled As Boolean
+
+    For slotNumber = 1 To 3
+        Set sectionNode = xml.SelectSingleNode( _
+            "/appExport/section[@slot='" & CStr(slotNumber) & "']")
+
+        If Not sectionNode Is Nothing Then
+            If V2SectionHasVisibleContent(sectionNode) Then
+                If previousSlotIsFilled Then
+                    Set cc = FindContentControlByTag( _
+                        "APP_TEXT_" & CStr(slotNumber))
+                    If Not cc Is Nothing Then
+                        Set slotRange = cc.Range.Duplicate
+                        slotRange.Collapse wdCollapseStart
+                        slotRange.ParagraphFormat.SpaceBefore = 12
+                    End If
+                End If
+                previousSlotIsFilled = True
+            End If
+        End If
+    Next slotNumber
+End Sub
+
+Private Function V2SectionHasVisibleContent( _
+        ByVal sectionNode As Object) As Boolean
+    Dim itemNode As Object
+    Dim itemType As String
+
+    For Each itemNode In sectionNode.SelectNodes("./item")
+        itemType = NormalizeItemType(GetAttributeText(itemNode, "type"))
+        If Len(BuildRenderedItemText(itemNode, itemType)) > 0 Then
+            V2SectionHasVisibleContent = True
+            Exit Function
+        End If
+    Next itemNode
 End Function
 
 Private Sub ImportV2DocumentTitle(ByVal xml As Object, _
