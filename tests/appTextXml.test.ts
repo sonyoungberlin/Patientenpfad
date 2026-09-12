@@ -59,6 +59,43 @@ describe("buildStructuredAppXml", () => {
     expect(xml).not.toContain("\u0000");
   });
 
+  it("serialisiert Heading-Hierarchie und optionale unsichtbare Darstellung", () => {
+    const xml = buildStructuredAppXml({
+      sections: [
+        { slot: 1, items: [
+          { type: "heading", text: "Stellungnahme", headingLevel: 1 },
+          {
+            type: "heading",
+            text: "Weiteres Vorgehen",
+            headingLevel: 1,
+            headingVisibility: "spacingOnly",
+          },
+          { type: "heading", text: "Messwerte", headingLevel: 2 },
+        ] },
+        { slot: 2, items: [] },
+        { slot: 3, items: [] },
+      ],
+    });
+
+    expect(xml).toContain('<item type="heading" level="1">Stellungnahme</item>');
+    expect(xml).toContain(
+      '<item type="heading" level="1" visibility="spacingOnly">Weiteres Vorgehen</item>',
+    );
+    expect(xml).toContain('<item type="heading" level="2">Messwerte</item>');
+  });
+
+  it("lässt bestehende v2-Headings ohne level unverändert serialisierbar", () => {
+    const xml = buildStructuredAppXml({
+      sections: [
+        { slot: 1, items: [{ type: "heading", text: "Legacy-Überschrift" }] },
+        { slot: 2, items: [] },
+        { slot: 3, items: [] },
+      ],
+    });
+
+    expect(xml).toContain('<item type="heading">Legacy-Überschrift</item>');
+  });
+
   it("ergänzt den separaten v2-Dateisuffix", () => {
     expect(buildStructuredXmlFilename("Interne_Dokumentation.xml"))
       .toBe("Interne_Dokumentation-v2.xml");

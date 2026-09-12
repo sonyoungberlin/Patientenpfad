@@ -61,6 +61,10 @@ export type FrozenBlock = {
   documentationItemType?: QuestionnaireBlock["documentationItemType"];
   /** Eingefrorene Unterdrückung einer redundanten strukturierten Überschrift. */
   omitStructuredHeading?: boolean;
+  /** Eingefrorene Hierarchieebene der strukturierten Überschrift. */
+  structuredHeadingLevel?: QuestionnaireBlock["structuredHeadingLevel"];
+  /** Eingefrorene geplante Sichtbarkeit der strukturierten Überschrift. */
+  structuredHeadingVisibility?: QuestionnaireBlock["structuredHeadingVisibility"];
 };
 
 // ---------------------------------------------------------------------------
@@ -162,6 +166,12 @@ export function buildFrozenBlocks(
     }
     if (block.omitStructuredHeading !== undefined) {
       frozenBlock.omitStructuredHeading = block.omitStructuredHeading;
+    }
+    if (block.structuredHeadingLevel !== undefined) {
+      frozenBlock.structuredHeadingLevel = block.structuredHeadingLevel;
+    }
+    if (block.structuredHeadingVisibility !== undefined) {
+      frozenBlock.structuredHeadingVisibility = block.structuredHeadingVisibility;
     }
 
     result.push(frozenBlock);

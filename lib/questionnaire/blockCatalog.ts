@@ -102,6 +102,9 @@ export type DocumentationItemType =
   | "status"
   | "listItem";
 
+export type DocumentationHeadingLevel = 1 | 2;
+export type DocumentationHeadingVisibility = "visible" | "spacingOnly";
+
 export type QuestionDefinition = {
   /** Globale, stabile ID – darf nie geändert werden. */
   id: string;
@@ -212,6 +215,10 @@ export type QuestionnaireBlock = {
   documentationItemType?: Exclude<DocumentationItemType, "heading">;
   /** Unterdrückt eine redundante Blocküberschrift nur in strukturierten Ausgaben. */
   omitStructuredHeading?: boolean;
+  /** Hierarchieebene der Blocküberschrift in strukturierten Ausgaben. Default: 1. */
+  structuredHeadingLevel?: DocumentationHeadingLevel;
+  /** Geplante Sichtbarkeit der Blocküberschrift in formatierenden Ausgaben. */
+  structuredHeadingVisibility?: DocumentationHeadingVisibility;
 };
 
 // ---------------------------------------------------------------------------

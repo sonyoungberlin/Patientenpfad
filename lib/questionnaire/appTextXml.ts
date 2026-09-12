@@ -1,4 +1,8 @@
-import type { DocumentationItemType } from "./blockCatalog";
+import type {
+  DocumentationHeadingLevel,
+  DocumentationHeadingVisibility,
+  DocumentationItemType,
+} from "./blockCatalog";
 
 const INVALID_XML_1_0_CHARACTERS = /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu;
 
@@ -7,6 +11,8 @@ export type SemanticDocumentItem = {
   text: string;
   legacyText?: string;
   includeInStructuredExport?: boolean;
+  headingLevel?: DocumentationHeadingLevel;
+  headingVisibility?: DocumentationHeadingVisibility;
 };
 
 export type SemanticDocumentSection = {
@@ -44,7 +50,13 @@ export function buildStructuredAppXml(document: SemanticDocument): string {
         const text = item.text
           .replace(/\r\n?/g, "\n")
           .replace(INVALID_XML_1_0_CHARACTERS, "");
-        return `    <item type="${item.type}">${escapeXmlText(text)}</item>`;
+        const levelAttribute = item.type === "heading" && item.headingLevel !== undefined
+          ? ` level="${item.headingLevel}"`
+          : "";
+        const visibilityAttribute = item.type === "heading" && item.headingVisibility === "spacingOnly"
+          ? ' visibility="spacingOnly"'
+          : "";
+        return `    <item type="${item.type}"${levelAttribute}${visibilityAttribute}>${escapeXmlText(text)}</item>`;
       })
       .join("\n");
     return items.length > 0

@@ -96,11 +96,12 @@ export const HEALTH_CHECK_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
       ],
     },
     documentationItemType: "measurement",
+    structuredHeadingLevel: 2,
   },
-  HEALTH_CHECK_LAB: { id: "HEALTH_CHECK_LAB", label: "Labor", displayOrder: 30, questionIds: ["HEALTH_CHECK_LIPID_PROFILE_STATUS", "HEALTH_CHECK_FASTING_GLUCOSE_STATUS", "HEALTH_CHECK_LAB_NOTE"] },
-  HEALTH_CHECK_URINE: { id: "HEALTH_CHECK_URINE", label: "Urinstatus", displayOrder: 40, questionIds: ["HEALTH_CHECK_URINE_STATUS", "HEALTH_CHECK_URINE_NOTE"] },
+  HEALTH_CHECK_LAB: { id: "HEALTH_CHECK_LAB", label: "Labor", displayOrder: 30, questionIds: ["HEALTH_CHECK_LIPID_PROFILE_STATUS", "HEALTH_CHECK_FASTING_GLUCOSE_STATUS", "HEALTH_CHECK_LAB_NOTE"], structuredHeadingLevel: 2 },
+  HEALTH_CHECK_URINE: { id: "HEALTH_CHECK_URINE", label: "Urinstatus", displayOrder: 40, questionIds: ["HEALTH_CHECK_URINE_STATUS", "HEALTH_CHECK_URINE_NOTE"], structuredHeadingLevel: 2 },
   HEALTH_CHECK_PREVENTION: { id: "HEALTH_CHECK_PREVENTION", label: "Prävention / Empfehlungen", displayOrder: 50, questionIds: ["HEALTH_CHECK_PREVENTION_TOPICS", "HEALTH_CHECK_OTHER_NOTE"] },
-  HEALTH_CHECK_NEXT_STEPS: { id: "HEALTH_CHECK_NEXT_STEPS", label: "Weiteres Vorgehen", displayOrder: 60, questionIds: ["HEALTH_CHECK_FOLLOW_UP_REQUIRED", "HEALTH_CHECK_NEXT_STEPS", "HEALTH_CHECK_NEXT_STEPS_NOTE"] },
+  HEALTH_CHECK_NEXT_STEPS: { id: "HEALTH_CHECK_NEXT_STEPS", label: "Weiteres Vorgehen", displayOrder: 60, questionIds: ["HEALTH_CHECK_FOLLOW_UP_REQUIRED", "HEALTH_CHECK_NEXT_STEPS", "HEALTH_CHECK_NEXT_STEPS_NOTE"], structuredHeadingVisibility: "spacingOnly" },
 };
 
 export const HEALTH_CHECK_QUESTION_CATALOG = QUESTIONS;
