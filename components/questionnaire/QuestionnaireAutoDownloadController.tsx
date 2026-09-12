@@ -56,6 +56,7 @@ export default function QuestionnaireAutoDownloadController() {
           const contentType = response.headers.get("content-type") ?? "";
           if (!response.ok || (
             !contentType.includes("application/pdf") &&
+            !contentType.includes("application/xml") &&
             !contentType.includes("application/octet-stream")
           )) {
             throw new Error("auto_download_failed");

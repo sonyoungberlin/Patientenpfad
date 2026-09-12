@@ -51,7 +51,23 @@ function gdtResponse(filename = "20260903_Test.gdt") {
   };
 }
 
+function xmlResponse(
+  contentType: "application/xml" | "application/xml; charset=utf-8",
+  filename = "20260912_81426_Bescheinigung.xml",
+) {
+  return {
+    ok: true,
+    status: 200,
+    headers: new Headers({
+      "content-type": contentType,
+      "content-disposition": `attachment; filename="${filename}"`,
+    }),
+    blob: async () => new Blob(["xml"], { type: contentType }),
+  };
+}
+
 const noContentResponse = { ok: true, status: 204 };
+const downloadedFilenames: string[] = [];
 
 async function settle() {
   await act(async () => {
@@ -72,6 +88,7 @@ beforeEach(() => {
   window.localStorage.clear();
   fetchMock.mockReset();
   refreshMock.mockReset();
+  downloadedFilenames.length = 0;
   Object.defineProperty(globalThis.crypto, "randomUUID", {
     configurable: true,
     value: jest.fn(() => "123e4567-e89b-42d3-a456-426614174000"),
@@ -84,7 +101,11 @@ beforeEach(() => {
     configurable: true,
     value: jest.fn(),
   });
-  jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    downloadedFilenames.push(this.download);
+  });
 });
 
 afterEach(() => {
@@ -136,17 +157,47 @@ it("lädt mehrere PDFs strikt sequenziell und aktualisiert die Inbox", async () 
   container.remove();
 });
 
-it("lädt PDF und GDT als separate Artefakte sequenziell", async () => {
+it("lädt PDF, XML und GDT als separate Artefakte sequenziell", async () => {
   fetchMock
     .mockResolvedValueOnce(statusResponse(true, true))
     .mockResolvedValueOnce(pdfResponse("fragebogen.pdf"))
+    .mockResolvedValueOnce(xmlResponse(
+      "application/xml; charset=utf-8",
+      "fragebogen.xml",
+    ))
     .mockResolvedValueOnce(gdtResponse("fragebogen.gdt"))
     .mockResolvedValueOnce(noContentResponse);
 
   const { container, root } = await renderController();
 
-  expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(2);
-  expect(URL.createObjectURL).toHaveBeenCalledTimes(2);
+  expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(3);
+  expect(URL.createObjectURL).toHaveBeenCalledTimes(3);
+  expect(downloadedFilenames).toEqual([
+    "fragebogen.pdf",
+    "fragebogen.xml",
+    "fragebogen.gdt",
+  ]);
+  expect(refreshMock).toHaveBeenCalledTimes(1);
+
+  await act(async () => root.unmount());
+  container.remove();
+});
+
+it.each([
+  "application/xml",
+  "application/xml; charset=utf-8",
+] as const)("akzeptiert XML mit Content-Type %s und übernimmt den Server-Dateinamen", async (contentType) => {
+  fetchMock
+    .mockResolvedValueOnce(statusResponse(true, true))
+    .mockResolvedValueOnce(xmlResponse(contentType))
+    .mockResolvedValueOnce(noContentResponse);
+
+  const { container, root } = await renderController();
+
+  expect(downloadedFilenames).toEqual([
+    "20260912_81426_Bescheinigung.xml",
+  ]);
+  expect(fetchMock).toHaveBeenCalledTimes(3);
   expect(refreshMock).toHaveBeenCalledTimes(1);
 
   await act(async () => root.unmount());
@@ -164,6 +215,37 @@ it("begrenzt einen Zyklus auf zehn Downloads", async () => {
   expect(fetchMock).toHaveBeenCalledTimes(11);
   expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(10);
   expect(refreshMock).toHaveBeenCalledTimes(1);
+
+  await act(async () => root.unmount());
+  container.remove();
+});
+
+it("verwendet weiterhin das Polling-Intervall von zehn Sekunden", async () => {
+  const intervalSpy = jest.spyOn(window, "setInterval");
+  fetchMock.mockResolvedValue(statusResponse(false, false));
+
+  const { container, root } = await renderController();
+
+  expect(intervalSpy).toHaveBeenCalledWith(expect.any(Function), 10_000);
+
+  await act(async () => root.unmount());
+  container.remove();
+});
+
+it("behält das bestehende Fehlerverhalten für unbekannte MIME-Types bei", async () => {
+  fetchMock
+    .mockResolvedValueOnce(statusResponse(true, true))
+    .mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "text/plain" }),
+    });
+
+  const { container, root } = await renderController();
+
+  expect(container.textContent).toContain("Automatischer Download fehlgeschlagen");
+  expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
+  expect(refreshMock).not.toHaveBeenCalled();
 
   await act(async () => root.unmount());
   container.remove();
