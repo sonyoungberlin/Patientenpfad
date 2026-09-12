@@ -58,6 +58,41 @@ export type ResolvedQuestionDocumentation = {
   fallbackValue?: string;
 };
 
+export type ClinicalStatusSummary = {
+  text: string;
+  questionIds: string[];
+};
+
+export function buildClinicalStatusSummary(
+  questions: readonly QuestionDefinition[],
+  answers: Record<string, string>,
+): ClinicalStatusSummary | null {
+  const unremarkable: string[] = [];
+  const remarkable: string[] = [];
+  const questionIds: string[] = [];
+
+  for (const question of questions) {
+    const value = answers[question.id];
+    if (value !== "unauffällig" && value !== "auffällig") continue;
+
+    questionIds.push(question.id);
+    if (value === "unauffällig") unremarkable.push(question.text);
+    else remarkable.push(question.text);
+  }
+
+  if (questionIds.length === 0) return null;
+
+  const lines: string[] = [];
+  if (unremarkable.length > 0) {
+    lines.push(`Unauffällig: ${unremarkable.join(", ")}.`);
+  }
+  if (remarkable.length > 0) {
+    lines.push(`Auffällig: ${remarkable.join(", ")}.`);
+  }
+
+  return { text: lines.join(" "), questionIds };
+}
+
 export function joinMedicalStatementSentences(sentences: readonly string[]): string {
   return sentences.filter((sentence) => sentence.trim() !== "").join(" ");
 }

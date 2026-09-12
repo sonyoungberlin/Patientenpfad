@@ -158,18 +158,22 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(document.sections.map((section) => section.slot)).toEqual([1, 2, 3]);
     expect(document.sections[0].items).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: "status", text: "Dokumente / Befunde sind beigefügt." }),
-      expect.objectContaining({ type: "heading", text: "Labor" }),
+      expect.objectContaining({ type: "heading", text: "Labor", headingLevel: 2 }),
       expect.objectContaining({ type: "measurement", text: "Lipidprofil: unauffällig" }),
       expect.objectContaining({ type: "measurement", text: "Nüchternplasmaglukose: ausstehend" }),
       expect.objectContaining({ type: "freeText", text: "Kontrolle A & B <zeitnah>" }),
     ]));
     expect(document.sections[1].items).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: "heading", text: "Prävention / Empfehlungen" }),
+      expect.objectContaining({
+        type: "heading",
+        text: "Prävention / Empfehlungen",
+        headingLevel: 1,
+      }),
       expect.objectContaining({ type: "listItem", text: "Besprochene Themen: Herz-Kreislauf, Sonstiges" }),
       expect.objectContaining({ type: "freeText", text: "Individuelle Empfehlung" }),
     ]));
     expect(document.sections[2].items).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: "heading", text: "Stellungnahme" }),
+      expect.objectContaining({ type: "heading", text: "Stellungnahme", headingLevel: 1 }),
       expect.objectContaining({
         type: "bodyText",
         text: expect.stringContaining("sowohl körperliche als auch psychische"),
@@ -182,7 +186,7 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(xml).not.toContain("Kurzer Hinweis:");
     expect(xml).not.toContain('<item type="heading">Dokumente / Befunde</item>');
     expect(xml.indexOf("Dokumente / Befunde sind beigefügt."))
-      .toBeLessThan(xml.indexOf('<item type="heading">Labor</item>'));
+      .toBeLessThan(xml.indexOf('<item type="heading" level="2">Labor</item>'));
   });
 
   it("typisiert alte Frozen Snapshots ohne Semantikmetadaten per Fallback", () => {
@@ -195,6 +199,8 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     ).map((block) => ({
       ...block,
       documentationItemType: undefined,
+      structuredHeadingLevel: undefined,
+      structuredHeadingVisibility: undefined,
       questions: block.questions.map((question) => ({
         ...question,
         documentationItemType: undefined,
@@ -214,10 +220,12 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     });
 
     expect(document.sections[0].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "heading", text: "Labor", headingLevel: 2 }),
       expect.objectContaining({ type: "measurement", text: "Lipidprofil: auffällig" }),
       expect.objectContaining({ type: "freeText", text: "Historischer Freitext" }),
     ]));
     expect(document.sections[2].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "heading", text: "Stellungnahme", headingLevel: 1 }),
       expect.objectContaining({ type: "bodyText", text: expect.stringContaining("körperliche Beschwerden") }),
     ]));
   });
@@ -253,6 +261,117 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(xml).toContain(
       '<item type="listItem">Maßnahmen: Verlaufskontrolle in unserer Praxis</item>',
     );
+    expect(xml).toContain(
+      '<item type="heading" level="1" visibility="spacingOnly">Weiteres Vorgehen</item>',
+    );
+  });
+
+  it("ordnet große und kompakte Dokumentationsblöcke den Heading-Leveln zu", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks([
+      "HEALTH_CHECK_CLINICAL_STATUS",
+      "HEALTH_CHECK_MEASUREMENTS",
+      "HEALTH_CHECK_URINE",
+      "HEALTH_CHECK_NEXT_STEPS",
+      "EKG",
+    ]);
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {
+        HEALTH_CHECK_GENERAL_STATUS: "unauffällig",
+        HEALTH_CHECK_BP_SYSTOLIC: "120",
+        HEALTH_CHECK_BP_DIASTOLIC: "80",
+        HEALTH_CHECK_URINE_STATUS: "unauffällig",
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+        EKG_RHYTHM: "Sinusrhythmus",
+      },
+      selected_block_ids: blocks.map((block) => block.id),
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    });
+
+    const headings = document.sections.flatMap((section) => section.items)
+      .filter((item) => item.type === "heading");
+    expect(headings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ text: "Klinischer Status", headingLevel: 1 }),
+      expect.objectContaining({ text: "Messwerte", headingLevel: 2 }),
+      expect.objectContaining({ text: "Urinstatus", headingLevel: 2 }),
+      expect.objectContaining({ text: "EKG", headingLevel: 2 }),
+      expect.objectContaining({
+        text: "Weiteres Vorgehen",
+        headingLevel: 1,
+        headingVisibility: "spacingOnly",
+      }),
+    ]));
+  });
+
+  it("verdichtet klinische Statuswerte und erhält individuelle Zusatztexte", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks([
+      "HEALTH_CHECK_CLINICAL_STATUS",
+    ]);
+    const input = {
+      answers: {
+        HEALTH_CHECK_GENERAL_STATUS: "auffällig",
+        HEALTH_CHECK_HEART_STATUS: "unauffällig",
+        HEALTH_CHECK_LUNG_STATUS: "unauffällig",
+        HEALTH_CHECK_ABDOMEN_STATUS: "unauffällig",
+        HEALTH_CHECK_SKIN_STATUS: "auffällig",
+        HEALTH_CHECK_CLINICAL_NOTE: "Belastungsabhängige Beschwerden seit drei Tagen.",
+      },
+      selected_block_ids: blocks.map((block) => block.id),
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    };
+
+    const note = buildMedicalRecordNote(input);
+    expect(note).toContain("Unauffällig: Herz, Lunge, Abdomen.");
+    expect(note).toContain("Auffällig: Allgemeinzustand, Haut.");
+    expect(note).toContain("Kurzer Hinweis: Belastungsabhängige Beschwerden seit drei Tagen.");
+    expect(note).not.toContain("Herz klinisch unauffällig.");
+
+    const document = buildSemanticMedicalRecordDocument(input);
+    expect(document.sections[0].items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: "status",
+        text: "Unauffällig: Herz, Lunge, Abdomen. Auffällig: Allgemeinzustand, Haut.",
+      }),
+      expect.objectContaining({
+        type: "freeText",
+        text: "Belastungsabhängige Beschwerden seit drei Tagen.",
+      }),
+    ]));
+  });
+
+  it("markiert nur geeignete Versorgungsplan-Grenzen als spacingOnly", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks([
+      "CARE_PLAN_HA",
+      "CARE_PLAN_AGREEMENT_BLOCK",
+      "HEALTH_CHECK_NEXT_STEPS",
+      "HEALTH_CHECK_CLINICAL_STATUS",
+      "HEALTH_CHECK_PREVENTION",
+      "MEDICAL_STATEMENT",
+    ]);
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {
+        CARE_PLAN_HA_REASON: "Versorgung abstimmen",
+        CARE_PLAN_AGREEMENT: "Warnsymptome erklärt",
+        HEALTH_CHECK_HEART_STATUS: "unauffällig",
+        HEALTH_CHECK_FOLLOW_UP_REQUIRED: "nein",
+        HEALTH_CHECK_PREVENTION_TOPICS: "Bewegung",
+        MEDICAL_STATEMENT_IMPAIRMENT_TYPE: "physical",
+      },
+      selected_block_ids: blocks.map((block) => block.id),
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    });
+
+    const headings = document.sections.flatMap((section) => section.items)
+      .filter((item) => item.type === "heading");
+    expect(headings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ text: "Gemeinsame Vereinbarung", headingVisibility: "spacingOnly" }),
+      expect.objectContaining({ text: "Weiteres Vorgehen", headingVisibility: "spacingOnly" }),
+      expect.objectContaining({ text: "Klinischer Status", headingVisibility: "visible" }),
+      expect.objectContaining({ text: "Prävention / Empfehlungen", headingVisibility: "visible" }),
+      expect.objectContaining({ text: "Stellungnahme", headingVisibility: "visible" }),
+    ]));
   });
 
   it("erkennt nur vollständige null-Workflow-Snapshots als neuen Pfad", () => {

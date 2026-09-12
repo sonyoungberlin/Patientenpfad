@@ -148,7 +148,13 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
   CARE_PLAN_SPECIALIST: { id: "CARE_PLAN_SPECIALIST", label: "Fachärztliche Betreuung", displayOrder: 20, questionIds: ["CARE_PLAN_SPECIALISTS"] },
   CARE_PLAN_SUPPLY_BLOCK: { id: "CARE_PLAN_SUPPLY_BLOCK", label: "Versorgung und Organisation", displayOrder: 30, questionIds: ["CARE_PLAN_SPECIALIST_REPORTS", "CARE_PLAN_PRESCRIPTION_RENEWAL", "CARE_PLAN_REFERRAL", "CARE_PLAN_SUPPLY_NOTES"] },
   CARE_PLAN_SUPPORT_BLOCK: { id: "CARE_PLAN_SUPPORT_BLOCK", label: "Unterstützende Personen", displayOrder: 40, questionIds: ["CARE_PLAN_SUPPORT", "CARE_PLAN_SUPPORT_NOTES"] },
-  CARE_PLAN_AGREEMENT_BLOCK: { id: "CARE_PLAN_AGREEMENT_BLOCK", label: "Gemeinsame Vereinbarung", displayOrder: 50, questionIds: ["CARE_PLAN_AGREEMENT", "CARE_PLAN_AGREEMENT_TEXT", "CARE_PLAN_AGREEMENT_DATE"] },
+  CARE_PLAN_AGREEMENT_BLOCK: {
+    id: "CARE_PLAN_AGREEMENT_BLOCK",
+    label: "Gemeinsame Vereinbarung",
+    displayOrder: 50,
+    questionIds: ["CARE_PLAN_AGREEMENT", "CARE_PLAN_AGREEMENT_TEXT", "CARE_PLAN_AGREEMENT_DATE"],
+    structuredHeadingVisibility: "spacingOnly",
+  },
   DOCUMENT_HANDLING: { id: "DOCUMENT_HANDLING", label: "Dokumente / Befunde", displayOrder: 60, questionIds: ["DOCUMENT_HANDLING_ACTIONS"], omitStructuredHeading: true },
   EKG: {
     id: "EKG",
@@ -168,6 +174,7 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
       ],
     },
     documentationItemType: "measurement",
+    structuredHeadingLevel: 2,
   },
   MEDICAL_STATEMENT: {
     id: "MEDICAL_STATEMENT",

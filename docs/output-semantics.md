@@ -6,9 +6,9 @@ Diese Dokumentation beschreibt den aktuellen Stand der medizinischen Ausgabesema
 
 | Typ | Bedeutung | Typische aktuelle Beispiele | XML v2 | Geplante Darstellung in Word/PDF |
 | --- | --- | --- | --- | --- |
-| `heading` | Überschrift eines ausgegebenen Dokumentationsblocks | `Labor`, `Prävention / Empfehlungen`, `Stellungnahme` | `<item type="heading">Labor</item>` | fett |
+| `heading` | Überschrift oder semantische Blockgrenze eines Dokumentationsblocks | `Labor`, `Prävention / Empfehlungen`, `Stellungnahme` | `<item type="heading" level="2">Labor</item>` | Hierarchie nach Level; grundsätzlich fett, sofern nicht `spacingOnly` |
 | `bodyText` | Zusammenhängender medizinischer Brief- oder Fließtext | automatisch erzeugte Stellungnahme; Entscheidung zur weiteren Abklärung | `<item type="bodyText">…</item>` | normale Fließtextformatierung |
-| `freeText` | Frei eingegebene ärztliche Hinweise oder Ergänzungen | `HEALTH_CHECK_LAB_NOTE`, `HEALTH_CHECK_OTHER_NOTE`, `CARE_PLAN_SUPPORT_NOTES` | `<item type="freeText">…</item>` | kursiv |
+| `freeText` | Frei eingegebene ärztliche Hinweise oder Ergänzungen | `HEALTH_CHECK_LAB_NOTE`, `HEALTH_CHECK_OTHER_NOTE`, `CARE_PLAN_SUPPORT_NOTES` | `<item type="freeText">…</item>` | gleiche Grundschrift wie `bodyText`, einheitlich sichtbar als `Hinweis: <Text>`, gegebenenfalls mit leichtem Abstand davor |
 | `measurement` | Messwert oder kompakte strukturierte Untersuchungszeile | Lipidprofil, Nüchternplasmaglukose, RR, HF, BZ, Größe, Gewicht, EKG | `<item type="measurement">…</item>` | etwas kleinere Schrift und kompakter Zeilen-/Absatzabstand |
 | `status` | Kurze Bewertung oder Zustand, sofern nicht Teil einer Messwertzeile | klinischer Status; `Dokumente / Befunde sind beigefügt.` | `<item type="status">…</item>` | etwas kleinere Schrift und kompakte Darstellung |
 | `listItem` | Kurzer strukturierter Aufzählungs- oder Empfehlungseintrag | Präventionsthemen, Maßnahmen, Impfmatrix | `<item type="listItem">…</item>` | kompakte listenartige Darstellung |
@@ -29,7 +29,37 @@ Neue interne Sessions frieren optionale Semantikmetadaten aus den Katalogen in d
    - `select`, `yes_no` und `confirmation` -> `status`
    - übrige Typen -> `bodyText`
 
-Blocküberschriften werden als `heading` ausgegeben. Die Semantik beschreibt die Darstellung, nicht eine neue medizinische Bewertung.
+Blocküberschriften werden als `heading` ausgegeben. `structuredHeadingLevel` unterscheidet Hauptüberschriften (`1`) und kleinere Unterüberschriften (`2`). Ohne explizite Angabe gilt Level 1. `structuredHeadingVisibility: "spacingOnly"` kennzeichnet eine semantische Blockgrenze, deren Überschrift ein späterer formatierender Renderer nicht sichtbar ausgeben soll. Die Semantik beschreibt die Darstellung, nicht eine neue medizinische Bewertung.
+Aktuell verwenden `HEALTH_CHECK_NEXT_STEPS` (`Weiteres Vorgehen`) und `CARE_PLAN_AGREEMENT_BLOCK` (`Gemeinsame Vereinbarung`) diese Markierung, weil der jeweilige Inhalt als fortlaufender Abschnitt gelesen wird und die wiederholte Blocküberschrift keinen zusätzlichen medizinischen Informationswert liefert.
+
+Im aktuellen dokumentierten Blockpfad werden die neun klinischen Statusfragen des Blocks `HEALTH_CHECK_CLINICAL_STATUS` gemeinsam ausgegeben. Gleichartige Antworten werden jeweils in einer kompakten Gruppe zusammengefasst, zum Beispiel `Unauffällig: Herz, Lunge, Abdomen.` und `Auffällig: Allgemeinzustand, Haut.`. Individuelle Inhalte aus `HEALTH_CHECK_CLINICAL_NOTE` bleiben als separater `freeText`-Eintrag vollständig erhalten. Historische `health_check_v1`-Snapshots behalten ihre bisherige Ausgabe, damit der rückwärtskompatible XML-v1-/Legacy-Pfad nicht unbeabsichtigt verändert wird.
+
+## Überschriftenhierarchie
+
+XML v2 verwendet weiterhin ausschließlich den Typ `heading`; die Hierarchie wird additiv über `level` abgebildet:
+
+```xml
+<item type="heading" level="1">Stellungnahme</item>
+<item type="heading" level="2">Messwerte</item>
+```
+
+Aktuell sind folgende kompakte Untersuchungsblöcke explizit Level 2:
+
+- `HEALTH_CHECK_MEASUREMENTS` (`Messwerte`)
+- `HEALTH_CHECK_LAB` (`Labor`)
+- `HEALTH_CHECK_URINE` (`Urinstatus`)
+- `EKG` (`EKG`)
+
+Alle übrigen sichtbaren Blocküberschriften sind derzeit Level 1. Dazu gehören insbesondere:
+
+- `MEDICAL_STATEMENT` (`Stellungnahme`)
+- `HEALTH_CHECK_CLINICAL_STATUS` (`Klinischer Status`)
+- `HEALTH_CHECK_PREVENTION` (`Prävention / Empfehlungen`)
+- die Versorgungsplan-, Facharzt-, Impfberatungs- und Einwilligungsblöcke, soweit sie nicht als `spacingOnly` markiert sind
+
+`HEALTH_CHECK_NEXT_STEPS` (`Weiteres Vorgehen`) und `CARE_PLAN_AGREEMENT_BLOCK` (`Gemeinsame Vereinbarung`) sind semantische Blockgrenzen mit `visibility="spacingOnly"`; ihre Inhalte bleiben vollständig erhalten, die Überschrift wird nur nicht sichtbar wiederholt.
+
+`DOCUMENT_HANDLING` bleibt die bestehende Sonderregel: Seine redundante Überschrift wird in XML v2 vollständig unterdrückt, während der medizinisch relevante Statusinhalt erhalten bleibt.
 
 ## Konkrete Feldregeln
 
@@ -51,11 +81,11 @@ Der Block `HEALTH_CHECK_NEXT_STEPS` ist aktuell gemischt typisiert:
 - `HEALTH_CHECK_NEXT_STEPS` (`Maßnahmen`) -> `listItem`. Das inhaltlich relevante Label bleibt erhalten, beispielsweise `Maßnahmen: Verlaufskontrolle in unserer Praxis`.
 - `HEALTH_CHECK_NEXT_STEPS_NOTE` (`Kurzer Hinweis`) -> `freeText`; das technische Label wird nur in XML v2 entfernt.
 
-Der Blocktitel `Weiteres Vorgehen` ist `heading`. Nicht jeder Inhalt dieses Blocks ist pauschal `bodyText`.
+Der Blocktitel `Weiteres Vorgehen` bleibt als `heading` mit Level 1 und `visibility="spacingOnly"` im semantischen XML erhalten. Damit bleibt die Blockgrenze maschinenlesbar. Die geplante Word-Darstellung zeigt den Titel nicht sichtbar an, sondern erzeugt nur einen zurückhaltenden Absatzabstand vor dem ersten Inhalt. Nicht jeder Inhalt dieses Blocks ist pauschal `bodyText`.
 
 ### Gemeinsame Vereinbarung
 
-Der Block `CARE_PLAN_AGREEMENT_BLOCK` ist im aktuellen Code nicht pauschal `bodyText`, sondern enthält unterschiedliche Feldarten:
+Der Block `CARE_PLAN_AGREEMENT_BLOCK` ist im aktuellen Code nicht pauschal `bodyText`, sondern enthält unterschiedliche Feldarten. Seine Überschrift ist zusätzlich `spacingOnly`, weil die ausgewählten Vereinbarungen und der individuelle Vereinbarungstext als fortlaufender Abschnitt anschließen:
 
 - Blocktitel `Gemeinsame Vereinbarung` -> `heading`
 - `CARE_PLAN_AGREEMENT` (Mehrfachauswahl) -> derzeit über den Typ-Fallback `listItem`
@@ -85,6 +115,8 @@ Beispiel:
 ### Notizen
 
 `CARE_PLAN_SUPPORT_NOTES` ist `freeText`. Das technische Label `Notizen:` bleibt im XML-v1-/`noteText`-Weg erhalten und wird in XML v2 gezielt entfernt.
+
+Für die spätere Word-Darstellung sollen die technisch unterschiedlich benannten labelfreien Freitexte einheitlich als `Hinweis: <Text>` erscheinen. Sie verwenden dabei dieselbe Grundschrift wie `bodyText`, sind nicht zwingend kursiv und können einen leichten Abstand vor dem Hinweis erhalten. Diese sichtbare Kennzeichnung wird nicht in XML v2 hineingeschrieben; XML v2 enthält weiterhin nur den eigentlichen Freitext.
 
 Andere ähnlich benannte Felder werden nicht pauschal gleichbehandelt:
 
@@ -181,7 +213,7 @@ XML v2 ist ein additiver, separater Export mit dem Dateisuffix `-v2.xml`. Es ent
 </appExport>
 ```
 
-Jeder Inhalt wird als `<item type="…">…</item>` ausgegeben. XML-Sonderzeichen werden escaped, Zeilenenden normalisiert und für XML 1.0 unzulässige Steuerzeichen entfernt. Es werden keine zusätzlichen Patienten- oder Personendaten ergänzt.
+Jeder Inhalt wird als `<item type="…">…</item>` ausgegeben. `heading` kann zusätzlich `level="1|2"` und bei einer nur als Abstand darzustellenden Blockgrenze `visibility="spacingOnly"` tragen. Das XML-v2-Format bleibt Version `2.0`; die Attribute sind additive Metadaten. Bestehende v2-Dateien ohne `level` bleiben gültig und sind als normale Hauptüberschrift (Level 1) zu behandeln. XML-Sonderzeichen werden escaped, Zeilenenden normalisiert und für XML 1.0 unzulässige Steuerzeichen entfernt. Es werden keine zusätzlichen Patienten- oder Personendaten ergänzt.
 
 ### Labels
 
@@ -197,7 +229,7 @@ Inhaltlich relevante Labels wie `Maßnahmen:` und `Besprochene Themen:` bleiben 
 
 ### Snapshot- und Reihenfolgeverhalten
 
-- Neue Sessions frieren `documentationItemType`, `omitDocumentationLabel`, Blockstandard und `omitStructuredHeading` zusammen mit den übrigen Katalogdaten ein.
+- Neue Sessions frieren `documentationItemType`, `omitDocumentationLabel`, Blockstandard, Heading-Level, Heading-Sichtbarkeit und `omitStructuredHeading` zusammen mit den übrigen Katalogdaten ein.
 - Alte Snapshots ohne diese Metadaten bleiben ohne Migration lesbar. Bekannte Messblöcke, die Stellungnahme und die gezielt labelfreien historischen Hinweisfelder besitzen enge Legacy-Fallbacks; ansonsten greift der Fragetyp-Fallback.
 - `section` und `order` der Frozen Blocks bestimmen Slot und Reihenfolge. Sind vollständige Layoutdaten vorhanden, wird zuerst nach `section`, dann nach `order` sortiert.
 - Fehlen Layoutdaten, bleibt die historische `displayOrder`-Sortierung erhalten; ein fehlender oder ungültiger Slot fällt für die strukturierte Ausgabe auf Slot 1 zurück.
@@ -221,6 +253,7 @@ Bei jedem neuen Feld oder Ausgabetyp muss vor Aufnahme in den Katalog entschiede
 2. Bleibt das Feldlabel erhalten oder wird es ausschließlich in XML v2 gezielt entfernt?
 3. Handelt es sich fachlich um Fließtext, Freitext, Messwert, Status oder Listeneintrag?
 4. Wie lautet die XML-v2-Ausgabe einschließlich sinnvoller Labels und Gruppierung?
-5. Wie soll der Typ später in Word und PDF dargestellt werden?
+5. Welches Heading-Level und welche Heading-Sichtbarkeit gelten für einen neuen Block?
+6. Wie soll der Typ später in Word und PDF dargestellt werden?
 
 Eine Labelunterdrückung darf nicht pauschal aus Feldtyp oder Labeltext abgeleitet werden. Änderungen müssen die Rückwärtskompatibilität von XML v1 und alten Snapshots berücksichtigen und dürfen keinen parallelen medizinischen Textgenerator einführen.

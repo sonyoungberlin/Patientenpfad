@@ -34,6 +34,7 @@ import { buildOptionsByQuestionId } from "./multiSelect";
 import { buildDerivedValueLines } from "./formatAnswer";
 import {
   buildAttentionHintLines,
+  buildClinicalStatusSummary,
   joinMedicalStatementSentences,
   resolveQuestionDocumentation,
 } from "./formatAnswer";
@@ -77,6 +78,12 @@ const LEGACY_MEASUREMENT_BLOCK_IDS = new Set([
 const LEGACY_BODY_TEXT_BLOCK_IDS = new Set([
   "MEDICAL_STATEMENT",
 ]);
+const LEGACY_LEVEL_2_HEADING_BLOCK_IDS = new Set([
+  "EKG",
+  "HEALTH_CHECK_MEASUREMENTS",
+  "HEALTH_CHECK_LAB",
+  "HEALTH_CHECK_URINE",
+]);
 const LEGACY_UNLABELED_FREE_TEXT_IDS = new Set([
   "CARE_PLAN_SUPPORT_NOTES",
   "HEALTH_CHECK_CLINICAL_NOTE",
@@ -107,6 +114,16 @@ function resolveDocumentationItemType(
 
 function resolveDocumentSection(block: FrozenBlock): 1 | 2 | 3 {
   return block.section === 2 || block.section === 3 ? block.section : 1;
+}
+
+function resolveHeadingLevel(block: FrozenBlock): 1 | 2 {
+  if (block.structuredHeadingLevel) return block.structuredHeadingLevel;
+  return LEGACY_LEVEL_2_HEADING_BLOCK_IDS.has(block.id) ? 2 : 1;
+}
+
+function resolveHeadingVisibility(block: FrozenBlock): "visible" | "spacingOnly" {
+  if (block.structuredHeadingVisibility) return block.structuredHeadingVisibility;
+  return block.id === "HEALTH_CHECK_NEXT_STEPS" ? "spacingOnly" : "visible";
 }
 
 /**
@@ -606,6 +623,10 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
       if (!visibleBlockIds.has(block.id)) continue;
       const blockItems: RenderedDocumentationItem[] = [];
       const medicalStatementSentences: string[] = [];
+      const clinicalStatusSummary = isNewBlockBased && block.id === "HEALTH_CHECK_CLINICAL_STATUS"
+        ? buildClinicalStatusSummary(block.questions, answers)
+        : null;
+      const condensedClinicalStatusIds = new Set(clinicalStatusSummary?.questionIds ?? []);
 
       const frozenVisibleIds = computeVisibleQuestionIds(
         block.conditionalRules,
@@ -636,6 +657,7 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
       } else for (const question of block.questions) {
         if (!frozenVisibleIds.has(question.id)) continue;
         if (seenQuestionIds.has(question.id)) continue;
+        if (condensedClinicalStatusIds.has(question.id)) continue;
         seenQuestionIds.add(question.id);
         if (block.id === "VOLLST_NIKOTIN" && hasNewSmokingStructure(answers) && SMOKING_PAIR_IDS.has(question.id)) continue;
         const raw = (answers[question.id] ?? "").trim();
@@ -750,6 +772,13 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
           legacyText: text,
         })));
       }
+      if (clinicalStatusSummary) {
+        blockItems.unshift({
+          type: "status",
+          text: clinicalStatusSummary.text,
+          legacyText: clinicalStatusSummary.text,
+        });
+      }
 
       if (
         useDocumentedContent
@@ -764,6 +793,8 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
       semanticSection.items.push({
         type: "heading",
         text: block.label,
+        headingLevel: resolveHeadingLevel(block),
+        headingVisibility: resolveHeadingVisibility(block),
         ...(block.omitStructuredHeading || block.id === "DOCUMENT_HANDLING"
           ? { includeInStructuredExport: false }
           : {}),
