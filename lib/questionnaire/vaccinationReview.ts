@@ -17,6 +17,186 @@ type VaccinationItem = NonNullable<QuestionDefinition["vaccinationItems"]>[numbe
 
 type VaccinationEntry = Record<string, string>;
 
+export const STRUCTURED_VACCINATION_SCHEMA_VERSION = 1 as const;
+
+export type VaccinationAssessment =
+  | "recommended"
+  | "possible"
+  | "clarify_first"
+  | "not_recommended";
+
+export type VaccinationImplementationStatus = "open" | "planned";
+export type VaccinationDoseStatus = "done" | "open" | "planned";
+
+export type StructuredVaccinationDose = {
+  number: number;
+  status: VaccinationDoseStatus;
+  date?: string;
+  recommendedInterval?: string;
+};
+
+export type StructuredVaccinationEntry = {
+  vaccination_id: string;
+  custom_label?: string;
+  medical_assessment?: VaccinationAssessment;
+  clarification_note?: string;
+  implementation_status?: VaccinationImplementationStatus;
+  doses?: StructuredVaccinationDose[];
+  legacy?: {
+    documented_status?: string;
+    documented_doses?: string;
+    further_action?: string;
+    note?: string;
+  };
+};
+
+export type StructuredVaccinationAnswer = {
+  schema_version: typeof STRUCTURED_VACCINATION_SCHEMA_VERSION;
+  entries: StructuredVaccinationEntry[];
+};
+
+const ASSESSMENT_LABELS: Record<VaccinationAssessment, string> = {
+  recommended: "empfohlen",
+  possible: "kann erfolgen",
+  clarify_first: "vorher klären",
+  not_recommended: "derzeit nicht empfohlen",
+};
+
+const DOSE_STATUS_LABELS: Record<VaccinationDoseStatus, string> = {
+  done: "erfolgt",
+  open: "noch erforderlich",
+  planned: "geplant",
+};
+
+const ASSESSMENTS = new Set<VaccinationAssessment>(Object.keys(ASSESSMENT_LABELS) as VaccinationAssessment[]);
+const DOSE_STATUSES = new Set<VaccinationDoseStatus>(Object.keys(DOSE_STATUS_LABELS) as VaccinationDoseStatus[]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function cleanOptionalText(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim().slice(0, maxLength);
+  return trimmed || undefined;
+}
+
+export function adaptLegacyVaccinationEntry(
+  raw: Record<string, unknown>,
+): StructuredVaccinationEntry | null {
+  const vaccinationId = cleanOptionalText(raw.vaccination_id, 100);
+  if (!vaccinationId) return null;
+
+  const entry: StructuredVaccinationEntry = {
+    vaccination_id: vaccinationId,
+  };
+  const customLabel = cleanOptionalText(raw.custom_label, 120);
+  if (customLabel) entry.custom_label = customLabel;
+
+  const legacy: NonNullable<StructuredVaccinationEntry["legacy"]> = {};
+  const documentedStatus = cleanOptionalText(raw.documented_status, 80);
+  const documentedDoses = cleanOptionalText(raw.documented_doses, 200);
+  const furtherAction = cleanOptionalText(raw.further_action, 100);
+  const note = cleanOptionalText(raw.note, 2000);
+  if (documentedStatus) legacy.documented_status = documentedStatus;
+  if (documentedDoses) legacy.documented_doses = documentedDoses;
+  if (furtherAction) legacy.further_action = furtherAction;
+  if (note) legacy.note = note;
+  if (Object.keys(legacy).length > 0) entry.legacy = legacy;
+
+  return entry;
+}
+
+function normalizeStructuredDose(raw: unknown): StructuredVaccinationDose | null {
+  if (!isRecord(raw) || typeof raw.number !== "number" || !Number.isInteger(raw.number) || raw.number < 1) {
+    return null;
+  }
+  if (typeof raw.status !== "string" || !DOSE_STATUSES.has(raw.status as VaccinationDoseStatus)) return null;
+  const dose: StructuredVaccinationDose = {
+    number: raw.number,
+    status: raw.status as VaccinationDoseStatus,
+  };
+  const date = cleanOptionalText(raw.date, 10);
+  const interval = cleanOptionalText(raw.recommendedInterval, 100);
+  if (date) dose.date = date;
+  if (interval) dose.recommendedInterval = interval;
+  return dose;
+}
+
+export function normalizeStructuredVaccinationAnswer(raw: unknown): StructuredVaccinationAnswer | null {
+  if (!isRecord(raw) || raw.schema_version !== STRUCTURED_VACCINATION_SCHEMA_VERSION || !Array.isArray(raw.entries)) {
+    return null;
+  }
+
+  const entries: StructuredVaccinationEntry[] = [];
+  const seen = new Set<string>();
+  for (const value of raw.entries) {
+    if (!isRecord(value)) return null;
+    const vaccinationId = cleanOptionalText(value.vaccination_id, 100);
+    if (!vaccinationId || seen.has(vaccinationId)) return null;
+    seen.add(vaccinationId);
+    const entry: StructuredVaccinationEntry = { vaccination_id: vaccinationId };
+    const customLabel = cleanOptionalText(value.custom_label, 120);
+    const assessment = value.medical_assessment;
+    const clarificationNote = cleanOptionalText(value.clarification_note, 2000);
+    const implementationStatus = value.implementation_status;
+    if (customLabel) entry.custom_label = customLabel;
+    if (assessment !== undefined) {
+      if (typeof assessment !== "string" || !ASSESSMENTS.has(assessment as VaccinationAssessment)) return null;
+      entry.medical_assessment = assessment as VaccinationAssessment;
+    }
+    if (clarificationNote) entry.clarification_note = clarificationNote;
+    if (implementationStatus !== undefined) {
+      if (implementationStatus !== "open" && implementationStatus !== "planned") return null;
+      entry.implementation_status = implementationStatus;
+    }
+    if (value.doses !== undefined) {
+      if (!Array.isArray(value.doses)) return null;
+      const doses = value.doses.map(normalizeStructuredDose);
+      if (doses.some((dose) => dose === null)) return null;
+      const normalizedDoses = doses as StructuredVaccinationDose[];
+      if (new Set(normalizedDoses.map((dose) => dose.number)).size !== normalizedDoses.length) return null;
+      entry.doses = normalizedDoses.sort((left, right) => left.number - right.number);
+    }
+    entries.push(entry);
+  }
+  return { schema_version: STRUCTURED_VACCINATION_SCHEMA_VERSION, entries };
+}
+
+export function parseStructuredVaccinationAnswer(value: string): StructuredVaccinationAnswer | null {
+  try {
+    return normalizeStructuredVaccinationAnswer(JSON.parse(value));
+  } catch {
+    return null;
+  }
+}
+
+export function countEditedVaccinations(answer: StructuredVaccinationAnswer): number {
+  return answer.entries.filter((entry) => Object.keys(entry).some((key) => key !== "vaccination_id")).length;
+}
+
+export function countExplicitlyOpenVaccinations(answer: StructuredVaccinationAnswer): number {
+  return answer.entries.filter((entry) => entry.implementation_status === "open"
+    || entry.doses?.some((dose) => dose.status === "open")).length;
+}
+
+export function formatStructuredVaccinationEntry(
+  entry: StructuredVaccinationEntry,
+  label: string,
+): string {
+  const parts: string[] = [];
+  if (entry.medical_assessment) parts.push(ASSESSMENT_LABELS[entry.medical_assessment]);
+  if (entry.clarification_note) parts.push(`- ${entry.clarification_note}`);
+  if (entry.implementation_status) parts.push(entry.implementation_status === "planned" ? "Durchführung geplant" : "Durchführung offen");
+  if (entry.doses?.length) {
+    parts.push(entry.doses.map((dose) => {
+      const suffix = dose.date ? ` am ${formatVaccinationDate(dose.date)}` : dose.recommendedInterval ? ` in ${dose.recommendedInterval}` : "";
+      return `${dose.number}. Dosis ${DOSE_STATUS_LABELS[dose.status]}${suffix}`;
+    }).join(", "));
+  }
+  return `${label}: ${parts.join("; ")}`;
+}
+
 export function calculateNextVaccinationDate(
   referenceDate: string,
   intervalValue: string,
@@ -201,6 +381,14 @@ export function normalizeVaccinationReviewAnswers(
     parsed = JSON.parse(raw);
   } catch {
     return { ok: false, error: "Die Impfungsdaten sind ungültig." };
+  }
+  if (isRecord(parsed) && parsed.schema_version === STRUCTURED_VACCINATION_SCHEMA_VERSION) {
+    const normalized = normalizeStructuredVaccinationAnswer(parsed);
+    if (!normalized) return { ok: false, error: "Die Impfungsdaten enthalten ungültige Werte." };
+    return {
+      ok: true,
+      answers: { ...answers, [question.id]: JSON.stringify(normalized) },
+    };
   }
   if (!Array.isArray(parsed)) return { ok: false, error: "Die Impfungsdaten sind ungültig." };
 

@@ -1,6 +1,11 @@
 import {
+  adaptLegacyVaccinationEntry,
   calculateNextVaccinationDate,
+  countEditedVaccinations,
+  countExplicitlyOpenVaccinations,
+  formatStructuredVaccinationEntry,
   normalizeVaccinationReviewAnswers,
+  parseStructuredVaccinationAnswer,
 } from "@/lib/questionnaire/vaccinationReview";
 import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 import { parseRepeatableGroupEntries } from "@/lib/questionnaire/formatAnswer";
@@ -332,5 +337,106 @@ describe("vaccination review", () => {
     expect(note).not.toContain("Impfung: tdap_ipv_group");
     expect(note).not.toContain("VACCINATION_REVIEW_ITEMS:");
     expect(note).not.toContain("COVID-19:");
+  });
+
+  it("normalizes the versioned model without deriving medical rules", () => {
+    const answer = parseStructuredVaccinationAnswer(JSON.stringify({
+      schema_version: 1,
+      entries: [{
+        vaccination_id: "hpv",
+        medical_assessment: "recommended",
+        implementation_status: "planned",
+        doses: [
+          { number: 2, status: "open", recommendedInterval: "in 5 Monaten" },
+          { number: 1, status: "done", date: "2026-01-31" },
+        ],
+      }],
+    }));
+
+    expect(answer).toEqual({
+      schema_version: 1,
+      entries: [{
+        vaccination_id: "hpv",
+        medical_assessment: "recommended",
+        implementation_status: "planned",
+        doses: [
+          { number: 1, status: "done", date: "2026-01-31" },
+          { number: 2, status: "open", recommendedInterval: "in 5 Monaten" },
+        ],
+      }],
+    });
+    expect(countEditedVaccinations(answer!)).toBe(1);
+    expect(countExplicitlyOpenVaccinations(answer!)).toBe(1);
+
+    const normalized = normalizeVaccinationReviewAnswers({
+      VACCINATION_REVIEW_ITEMS: JSON.stringify(answer),
+    }, question);
+    expect(normalized).toMatchObject({ ok: true });
+    if (normalized.ok) expect(JSON.parse(normalized.answers.VACCINATION_REVIEW_ITEMS)).toEqual(answer);
+  });
+
+  it("counts only explicitly open structured vaccinations", () => {
+    const answer = parseStructuredVaccinationAnswer(JSON.stringify({
+      schema_version: 1,
+      entries: [
+        { vaccination_id: "hpv", doses: [{ number: 1, status: "open" }] },
+        { vaccination_id: "rsv", implementation_status: "open" },
+        { vaccination_id: "mmr" },
+      ],
+    }));
+
+    expect(answer).not.toBeNull();
+    expect(countEditedVaccinations(answer!)).toBe(2);
+    expect(countExplicitlyOpenVaccinations(answer!)).toBe(2);
+  });
+
+  it("keeps legacy meaning separate from the structured assessment", () => {
+    const entry = adaptLegacyVaccinationEntry({
+      vaccination_id: "rsv",
+      documented_status: "Nicht vorhanden",
+      further_action: "Impfung ärztlich empfohlen",
+    });
+
+    expect(entry).toEqual({
+      vaccination_id: "rsv",
+      legacy: {
+        documented_status: "Nicht vorhanden",
+        further_action: "Impfung ärztlich empfohlen",
+      },
+    });
+    expect(entry?.medical_assessment).toBeUndefined();
+  });
+
+  it("formats structured vaccination entries and uses them in the medical note", () => {
+    const entry = {
+      vaccination_id: "hpv",
+      medical_assessment: "possible" as const,
+      doses: [
+        { number: 1, status: "done" as const },
+          { number: 2, status: "planned" as const, recommendedInterval: "5 Monaten" },
+      ],
+    };
+    expect(formatStructuredVaccinationEntry(entry, "HPV"))
+      .toBe("HPV: kann erfolgen; 1. Dosis erfolgt, 2. Dosis geplant in 5 Monaten");
+
+    const note = buildMedicalRecordNote({
+      answers: {
+        VACCINATION_REVIEW_ITEMS: JSON.stringify({
+          schema_version: 1,
+          entries: [entry],
+        }),
+      },
+      selected_block_ids: ["VACCINATION_REVIEW"],
+      internalWorkflowId: "vaccination_review_v1",
+      frozenBlocks: [{
+        id: "VACCINATION_REVIEW",
+        label: "Impfpassprüfung und Beratung",
+        displayOrder: 10,
+        questions: [question],
+        conditionalRules: [],
+        initiallyVisible: true,
+      }],
+    });
+    expect(note).toContain("HPV: kann erfolgen; 1. Dosis erfolgt, 2. Dosis geplant in 5 Monaten");
   });
 });

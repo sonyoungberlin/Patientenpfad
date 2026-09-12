@@ -42,7 +42,11 @@ import { getQuestionOptionValues } from "./questionOptions";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
-import { getVaccinationLabel } from "./vaccinationReview";
+import {
+  formatStructuredVaccinationEntry,
+  getVaccinationLabel,
+  parseStructuredVaccinationAnswer,
+} from "./vaccinationReview";
 import { getInternalWorkflow } from "./internalWorkflowRegistry";
 import { resolveInlineDocumentation } from "./inlineDocumentation";
 import {
@@ -364,6 +368,18 @@ function formatRepeatableGroupEntries(
   return lines;
 }
 
+function formatStructuredVaccinationEntries(
+  raw: string,
+  question: QuestionDefinition,
+): string[] {
+  const answer = parseStructuredVaccinationAnswer(raw);
+  if (!answer || question.presentation !== "vaccination_matrix") return [];
+  return answer.entries.map((entry) => formatStructuredVaccinationEntry(
+    entry,
+    getVaccinationLabel(entry as unknown as Record<string, string>, question),
+  ));
+}
+
 /**
  * Formatiert das FACHAERZTE-Feld (repeatable group) für die Krankenblatt-Ausgabe.
  */
@@ -678,6 +694,19 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
         }
 
         if (question.type === "repeatable_group") {
+          const structuredVaccinations = formatStructuredVaccinationEntries(raw, question);
+          if (structuredVaccinations.length > 0) {
+            if (!omitQuestionLabel) {
+              const heading = `${getLabel(question.id, question)}:`;
+              blockItems.push({ type: "heading", text: heading, legacyText: heading });
+            }
+            blockItems.push(...structuredVaccinations.map((text) => ({
+              type: resolveDocumentationItemType(block, question),
+              text,
+              legacyText: text,
+            })));
+            continue;
+          }
           const formatted = formatRepeatableGroupEntries(question.id, raw, question, omitQuestionLabel);
           if (formatted.length > 0) {
             if (!omitQuestionLabel) {
@@ -836,6 +865,15 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
         }
 
         if (QUESTION_CATALOG[questionId]?.type === "repeatable_group") {
+          const question = QUESTION_CATALOG[questionId];
+          const structuredVaccinations = question
+            ? formatStructuredVaccinationEntries(raw, question)
+            : [];
+          if (structuredVaccinations.length > 0) {
+            blockLines.push(`${getLabel(questionId)}:`);
+            blockLines.push(...structuredVaccinations.map((text) => `  ${text}`));
+            continue;
+          }
           const formatted = formatRepeatableGroupEntries(questionId, raw);
           if (formatted.length > 0) {
             blockLines.push(`${getLabel(questionId)}:`);
