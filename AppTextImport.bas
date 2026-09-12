@@ -121,6 +121,8 @@ Private Function ImportVersion2(ByVal xml As Object, _
         Exit Function
     End If
 
+    ImportV2DocumentTitle xml, missingTags
+
     For Each node In nodes
         slotValue = GetAttributeText(node, "slot")
         Select Case slotValue
@@ -141,6 +143,27 @@ Private Function ImportVersion2(ByVal xml As Object, _
 
     ImportVersion2 = True
 End Function
+
+Private Sub ImportV2DocumentTitle(ByVal xml As Object, _
+                                  ByRef missingTags As String)
+    Dim titleNode As Object
+    Dim documentTitle As String
+    Dim cc As ContentControl
+
+    Set titleNode = xml.SelectSingleNode("/appExport/documentTitle")
+    If titleNode Is Nothing Then Exit Sub
+
+    documentTitle = CStr(titleNode.Text)
+    If Len(Trim$(documentTitle)) = 0 Then Exit Sub
+
+    Set cc = FindContentControlByTag("APP_TITLE")
+    If cc Is Nothing Then
+        AddMissingTag missingTags, "APP_TITLE"
+        Debug.Print "Kein Word-Feld gefunden für: APP_TITLE"
+    Else
+        cc.Range.Text = documentTitle
+    End If
+End Sub
 
 Private Function FindContentControlByTag(ByVal targetTag As String) _
                                          As ContentControl
