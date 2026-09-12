@@ -22,6 +22,16 @@ import { ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN } from "@/lib/questionnaire/vali
 import type { ConditionGroup } from "@/lib/questionnaire/conditionalLogic";
 import { parseMultiSelectValue, toggleMultiSelectValue } from "@/lib/questionnaire/multiSelect";
 import { getQuestionOptionLabel, getQuestionOptionValue } from "@/lib/questionnaire/questionOptions";
+import {
+  countEditedVaccinations,
+  countExplicitlyOpenVaccinations,
+  normalizeStructuredVaccinationAnswer,
+  type StructuredVaccinationAnswer,
+  type StructuredVaccinationDose,
+  type StructuredVaccinationEntry,
+  type VaccinationAssessment,
+  type VaccinationDoseStatus,
+} from "@/lib/questionnaire/vaccinationReview";
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktion
@@ -267,7 +277,246 @@ function LegacyVaccinationMatrixField({
   return <div style={{ display: "grid", gap: "0.25rem" }}><div>{coreItems.map(renderRow)}</div><details><summary>Weitere Impfungen</summary>{optionalItems.map((item) => <label key={item.id} style={{ display: "block", margin: "0.5rem 0" }}><input type="checkbox" checked={activeIds.has(item.id)} disabled={disabled} onChange={() => toggleOptional(item.id)} /> {item.label}</label>)}{optionalItems.filter((item) => activeIds.has(item.id)).map(renderRow)}</details></div>;
 }
 
-function VaccinationMatrixV2Field({
+const STRUCTURED_ASSESSMENT_OPTIONS: Array<{ value: VaccinationAssessment; label: string }> = [
+  { value: "recommended", label: "empfohlen" },
+  { value: "possible", label: "kann erfolgen" },
+  { value: "clarify_first", label: "vorher klären" },
+  { value: "not_recommended", label: "derzeit nicht empfohlen" },
+];
+
+const STRUCTURED_DOSE_STATUS_OPTIONS: Array<{ value: VaccinationDoseStatus; label: string }> = [
+  { value: "done", label: "erfolgt" },
+  { value: "open", label: "offen" },
+  { value: "planned", label: "geplant" },
+];
+
+function parseStructuredValue(value: string): StructuredVaccinationAnswer {
+  try {
+    const parsed: unknown = value ? JSON.parse(value) : null;
+    return normalizeStructuredVaccinationAnswer(parsed)
+      ?? { schema_version: 1, entries: [] };
+  } catch {
+    return { schema_version: 1, entries: [] };
+  }
+}
+
+function StructuredVaccinationMatrixField({
+  question,
+  value,
+  onChange,
+  disabled,
+}: {
+  question: QuestionDefinition;
+  value: string;
+  onChange: (jsonValue: string) => void;
+  disabled: boolean;
+}) {
+  const [answer, setAnswer] = useState<StructuredVaccinationAnswer>(() => parseStructuredValue(value));
+  const [openCategoryIds, setOpenCategoryIds] = useState<Set<string>>(() => new Set());
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [openDoseIds, setOpenDoseIds] = useState<Set<string>>(() => new Set());
+  const items = question.vaccinationItems ?? [];
+  const categories = question.vaccinationCategories ?? [];
+  const entryById = new Map(answer.entries.map((entry) => [entry.vaccination_id, entry]));
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const fieldStyle: React.CSSProperties = {
+    width: "100%",
+    minWidth: 0,
+    minHeight: "2.5rem",
+    padding: "0.45rem 0.65rem",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius)",
+    background: "var(--input-background)",
+    color: "var(--foreground)",
+    fontFamily: "inherit",
+    fontSize: "1rem",
+  };
+
+  const commit = (next: StructuredVaccinationAnswer) => {
+    setAnswer(next);
+    onChange(JSON.stringify(next));
+  };
+
+  const updateEntry = (id: string, update: (entry: StructuredVaccinationEntry) => StructuredVaccinationEntry) => {
+    const current = entryById.get(id) ?? { vaccination_id: id };
+    const nextEntries = answer.entries.some((entry) => entry.vaccination_id === id)
+      ? answer.entries.map((entry) => entry.vaccination_id === id ? update(entry) : entry)
+      : [...answer.entries, update(current)];
+    commit({ ...answer, entries: nextEntries });
+  };
+
+  const setAssessment = (id: string, assessment: VaccinationAssessment) => {
+    updateEntry(id, (entry) => ({ ...entry, medical_assessment: assessment }));
+  };
+
+  const setImplementationStatus = (id: string, status: "open" | "planned") => {
+    updateEntry(id, (entry) => ({ ...entry, implementation_status: status }));
+  };
+
+  const setClarificationNote = (id: string, note: string) => {
+    updateEntry(id, (entry) => ({ ...entry, clarification_note: note.slice(0, 2000) }));
+  };
+
+  const updateDose = (id: string, doseNumber: number, update: (dose: StructuredVaccinationDose) => StructuredVaccinationDose) => {
+    updateEntry(id, (entry) => {
+      const currentDoses = entry.doses ?? [];
+      const nextDoses = currentDoses.some((dose) => dose.number === doseNumber)
+        ? currentDoses.map((dose) => dose.number === doseNumber ? update(dose) : dose)
+        : [...currentDoses, update({ number: doseNumber, status: "open" })];
+      return { ...entry, doses: nextDoses.sort((left, right) => left.number - right.number) };
+    });
+  };
+
+  const toggleCategory = (id: string) => {
+    setOpenCategoryIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const summary = (entry: StructuredVaccinationEntry | undefined) => {
+    if (!entry) return "";
+    if (entry.implementation_status === "open") return "offen";
+    if (entry.implementation_status === "planned") return "geplant";
+    if (entry.medical_assessment === "clarify_first") return "vorher klären";
+    if (entry.medical_assessment) return STRUCTURED_ASSESSMENT_OPTIONS.find((option) => option.value === entry.medical_assessment)?.label ?? "bearbeitet";
+    return entry.doses?.length ? "bearbeitet" : "bearbeitet";
+  };
+
+  const renderDoseDetails = (itemId: string, entry: StructuredVaccinationEntry) => {
+    const item = itemById.get(itemId);
+    if (item?.documentationMode !== "dose_stages") return null;
+    const isOpen = openDoseIds.has(itemId);
+    const doseCountFromCatalog = (item.doseOptions ?? []).reduce((highest, option) => {
+      const match = option.match(/(?:Dosis|Grunddosis)\s+(\d+)/);
+      return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    const doseCount = Math.max(doseCountFromCatalog, entry.doses?.length ? Math.max(...entry.doses.map((dose) => dose.number)) : 0);
+    if (doseCount === 0) return null;
+    return (
+      <details open={isOpen} onToggle={(event) => {
+        const nextOpen = event.currentTarget.open;
+        setOpenDoseIds((current) => {
+          const next = new Set(current);
+          if (nextOpen) next.add(itemId); else next.delete(itemId);
+          return next;
+        });
+      }}>
+        <summary style={{ cursor: "pointer", fontWeight: 500 }}>Dosen</summary>
+        <div style={{ display: "grid", gap: "0.65rem", paddingTop: "0.5rem" }}>
+          {Array.from({ length: doseCount }, (_, index) => index + 1).map((doseNumber) => {
+            const dose = entry.doses?.find((candidate) => candidate.number === doseNumber);
+            const status = dose?.status;
+            return (
+              <div key={doseNumber} data-vaccination-dose={doseNumber} style={{ display: "grid", gap: "0.35rem" }}>
+                <strong>{doseNumber}. Dosis</strong>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                  {STRUCTURED_DOSE_STATUS_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      disabled={disabled}
+                      aria-pressed={status === option.value}
+                      onClick={() => updateDose(itemId, doseNumber, (current) => ({ ...current, status: option.value }))}
+                      style={answerChoiceStyle(status === option.value, disabled)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                {(status === "done" || status === "planned") && (
+                  <input
+                    type="date"
+                    aria-label={`${item?.label ?? itemId} ${doseNumber}. Dosis Datum`}
+                    value={dose?.date ?? ""}
+                    disabled={disabled}
+                    onChange={(event) => updateDose(itemId, doseNumber, (current) => ({ ...current, date: event.target.value || undefined }))}
+                    style={fieldStyle}
+                  />
+                )}
+                {doseNumber > 1 && status === "planned" && (
+                  <input
+                    aria-label={`${item?.label ?? itemId} ${doseNumber}. Dosis Intervall`}
+                    value={dose?.recommendedInterval ?? ""}
+                    placeholder="empfohlen in ..."
+                    disabled={disabled}
+                    onChange={(event) => updateDose(itemId, doseNumber, (current) => ({ ...current, recommendedInterval: event.target.value.slice(0, 100) || undefined }))}
+                    style={fieldStyle}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </details>
+    );
+  };
+
+  const renderRow = (item: NonNullable<QuestionDefinition["vaccinationItems"]>[number]) => {
+    const entry = entryById.get(item.id);
+    const isOpen = openId === item.id;
+    const edited = Boolean(entry);
+    return (
+      <div key={item.id} data-vaccination-row={item.id} style={{ borderTop: "1px solid var(--border)" }}>
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          disabled={disabled}
+          onClick={() => setOpenId(isOpen ? null : item.id)}
+          style={{ width: "100%", minWidth: 0, minHeight: "3rem", padding: "0.55rem 0", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 1.5rem", gap: "0.75rem", alignItems: "center", textAlign: "left", border: 0, background: "transparent", color: "inherit" }}
+        >
+          <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+            <strong>{item.label}</strong>
+            {edited && <span data-vaccination-entry-summary style={{ display: "block", marginTop: "0.1rem", color: "var(--muted-foreground, #6b7280)", fontSize: "0.8rem" }}>{summary(entry)}</span>}
+          </span>
+          <span aria-hidden="true" style={{ width: "1.5rem", textAlign: "center", fontSize: "1.15rem" }}>{isOpen ? "−" : "+"}</span>
+        </button>
+        {isOpen && (
+          <div style={{ display: "grid", gap: "0.7rem", padding: "0.15rem 0 0.85rem" }}>
+            <div data-vaccination-assessment style={{ display: "grid", gap: "0.35rem" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                {STRUCTURED_ASSESSMENT_OPTIONS.map((option) => (
+                  <button key={option.value} type="button" disabled={disabled} aria-pressed={entry?.medical_assessment === option.value} onClick={() => setAssessment(item.id, option.value)} style={answerChoiceStyle(entry?.medical_assessment === option.value, disabled)}>{option.label}</button>
+                ))}
+              </div>
+              {entry?.medical_assessment === "clarify_first" && <textarea aria-label={`${item.label} Klärung`} placeholder="Freitext zur Klärung" value={entry.clarification_note ?? ""} disabled={disabled} onChange={(event) => setClarificationNote(item.id, event.target.value)} style={{ ...fieldStyle, minHeight: "4rem", resize: "vertical" }} />}
+            </div>
+            <div data-vaccination-implementation style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+              {(["open", "planned"] as const).map((status) => (
+                <button key={status} type="button" disabled={disabled} aria-pressed={entry?.implementation_status === status} onClick={() => setImplementationStatus(item.id, status)} style={answerChoiceStyle(entry?.implementation_status === status, disabled)}>{status === "open" ? "offen" : "geplant"}</button>
+              ))}
+            </div>
+            {renderDoseDetails(item.id, entry ?? { vaccination_id: item.id })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: "grid", gap: "0.45rem", minWidth: 0 }} data-vaccination-structured-matrix>
+      {categories.map((category) => {
+        const categoryItems = items.filter((item) => item.categoryId === category.id);
+        const categoryEntries = answer.entries.filter((entry) => categoryItems.some((item) => item.id === entry.vaccination_id));
+        const categoryAnswer: StructuredVaccinationAnswer = { ...answer, entries: categoryEntries };
+        const isOpen = openCategoryIds.has(category.id);
+        return (
+          <section key={category.id} data-vaccination-category={category.id} style={{ minWidth: 0, borderTop: "1px solid var(--border)" }}>
+            <button type="button" aria-expanded={isOpen} disabled={disabled} onClick={() => toggleCategory(category.id)} style={{ width: "100%", minHeight: "2.8rem", padding: "0.5rem 0", display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto 1.5rem", gap: "0.55rem", alignItems: "center", textAlign: "left", border: 0, background: "transparent", color: "inherit" }}>
+              <strong>{category.label}</strong>
+              <span style={{ color: "var(--muted-foreground, #6b7280)", fontSize: "0.8rem", whiteSpace: "nowrap" }}>{countEditedVaccinations(categoryAnswer) > 0 && `${countEditedVaccinations(categoryAnswer)} bearbeitet`}{countExplicitlyOpenVaccinations(categoryAnswer) > 0 && ` ${countExplicitlyOpenVaccinations(categoryAnswer)} offen`}</span>
+              <span aria-hidden="true" style={{ textAlign: "center", fontSize: "1.15rem" }}>{isOpen ? "−" : "+"}</span>
+            </button>
+            {isOpen && <div>{categoryItems.map(renderRow)}</div>}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function VaccinationMatrixV2LegacyField({
   question,
   value,
   onChange,
@@ -427,6 +676,24 @@ function VaccinationMatrixV2Field({
   };
 
   return <div style={{ display: "grid", gap: "1.25rem", minWidth: 0 }}>{(question.vaccinationCategories ?? []).map((category) => <section key={category.id} data-vaccination-category={category.id} style={{ minWidth: 0 }}><h3 style={{ margin: "0 0 0.35rem", fontSize: "1rem" }}>{category.label}</h3>{items.filter((item) => item.categoryId === category.id).map(renderRow)}</section>)}</div>;
+}
+
+function VaccinationMatrixV2Field(props: {
+  question: QuestionDefinition;
+  value: string;
+  onChange: (jsonValue: string) => void;
+  disabled: boolean;
+}) {
+  let structuredValue = false;
+  try {
+    const parsed: unknown = props.value ? JSON.parse(props.value) : null;
+    structuredValue = Boolean(parsed && typeof parsed === "object" && !Array.isArray(parsed) && "schema_version" in parsed && "entries" in parsed);
+  } catch {
+    structuredValue = false;
+  }
+  return structuredValue
+    ? <StructuredVaccinationMatrixField {...props} />
+    : <VaccinationMatrixV2LegacyField {...props} />;
 }
 
 export function VaccinationMatrixField(props: {
