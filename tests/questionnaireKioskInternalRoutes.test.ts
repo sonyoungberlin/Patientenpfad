@@ -83,13 +83,13 @@ describe("interne Kiosk-Dokumentation", () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 3, order: 0 }],
-      patientReference: " PAT-1 ",
+      patientReference: " 81426 ",
       documentTitleOption: "bescheinigung",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
-      patientReference: "PAT-1",
+      patientReference: "81426",
       internalDocumentTitle: {
         documentTitleOption: "bescheinigung",
         documentTitle: "Bescheinigung",
@@ -120,14 +120,14 @@ describe("interne Kiosk-Dokumentation", () => {
   it("erstellt Cross-Group-Blocks ohne Workflow-ID", async () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
       selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
-      patientReference: "PAT-2C",
+      patientReference: "81426",
       documentTitleOption: "bericht",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
-      patientReference: "PAT-2C",
+      patientReference: "81426",
       internalDocumentTitle: {
         documentTitleOption: "bericht",
         documentTitle: "Bericht",
@@ -140,7 +140,7 @@ describe("interne Kiosk-Dokumentation", () => {
   it("weist unbekannte interne Blocks serverseitig ab", async () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
       selectedBlockIds: ["__proto__"],
-      patientReference: "PAT-1",
+      patientReference: "81426",
     }));
 
     expect(response.status).toBe(400);
@@ -156,13 +156,30 @@ describe("interne Kiosk-Dokumentation", () => {
   ])("weist ungültige Dokumenttitel mit HTTP 400 ab: %j", async (titleInput) => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
       selectedBlockIds: ["CARE_PLAN_HA"],
-      patientReference: "PAT-1",
+      patientReference: "81426",
       ...titleInput,
     }));
 
     expect(response.status).toBe(400);
     expect(createSession).not.toHaveBeenCalled();
   });
+
+  it.each(["", "PAT-1", "814-26", "81426!"])(
+    "weist die ungültige neue Referenz %j mit HTTP 400 ab",
+    async (patientReference) => {
+      const response = await createInternal(request(
+        "/api/questionnaire-kiosk/internal",
+        {
+          selectedBlockIds: ["CARE_PLAN_HA"],
+          patientReference,
+          documentTitleOption: "arztbrief",
+        },
+      ));
+
+      expect(response.status).toBe(400);
+      expect(createSession).not.toHaveBeenCalled();
+    },
+  );
 
   it("weist eine Session eines anderen Kioskgeräts ab", async () => {
     db.patientQuestionnaireSession.findUnique.mockResolvedValue({

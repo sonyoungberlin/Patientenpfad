@@ -16,7 +16,7 @@ export type QuestionnaireExportFilenameOptions = {
   extension: "pdf" | "xml" | "gdt";
 };
 
-function formatDateYyyyMmDd(date: Date): string {
+export function formatDateYyyyMmDd(date: Date): string {
   const formatter = new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin",
     year: "numeric",

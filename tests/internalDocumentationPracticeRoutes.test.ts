@@ -16,6 +16,7 @@ jest.mock("@/lib/questionnaire/internalDocumentationService", () => ({
 import { requireInternalDocumentationAccess } from "@/lib/authz";
 import {
   createInternalDocumentationSession,
+  InternalDocumentationError,
   submitInternalDocumentationSession,
 } from "@/lib/questionnaire/internalDocumentationService";
 import { POST as createRoute } from "@/app/api/internal-documentation/route";
@@ -48,7 +49,7 @@ describe("practice internal documentation routes", () => {
     const response = await createRoute(request("/api/internal-documentation", {
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
-      patientReference: " PAT-1 ",
+      patientReference: " 81426 ",
       documentTitleOption: "arztbrief",
       owner_practice_id: "practice-evil",
       source: "kiosk_direct",
@@ -58,7 +59,7 @@ describe("practice internal documentation routes", () => {
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
-      patientReference: "PAT-1",
+      patientReference: "81426",
       documentTitleOption: "arztbrief",
       context: {
         kind: "practice",
@@ -94,17 +95,31 @@ describe("practice internal documentation routes", () => {
   it("leitet frei kombinierte Blocks ohne Workflow-ID weiter", async () => {
     const response = await createRoute(request("/api/internal-documentation", {
       selectedBlockIds: ["HEALTH_CHECK_MEASUREMENTS", "VACCINATION_REVIEW", "CARE_PLAN_HA"],
-      patientReference: " PAT-2C ",
+      patientReference: " 81426 ",
       documentTitleOption: "patienteninformation",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       selectedBlockIds: ["HEALTH_CHECK_MEASUREMENTS", "VACCINATION_REVIEW", "CARE_PLAN_HA"],
-      patientReference: "PAT-2C",
+      patientReference: "81426",
       documentTitleOption: "patienteninformation",
     }));
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("workflowId");
+  });
+
+  it("gibt den serverseitigen Referenzfehler als HTTP 400 zurück", async () => {
+    createSession.mockRejectedValue(
+      new InternalDocumentationError("Ungültige Patientenreferenz.", 400),
+    );
+
+    const response = await createRoute(request("/api/internal-documentation", {
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "PAT-1",
+      documentTitleOption: "arztbrief",
+    }));
+
+    expect(response.status).toBe(400);
   });
 
   it("delegiert Submit erneut mit aktiver Praxis", async () => {

@@ -35,7 +35,7 @@ describe("internal documentation service", () => {
   it("erstellt ausgewählte Blocks im Praxiskontext mit festem Ownership-Scope", async () => {
       await createInternalDocumentationSession({
         selectedBlockIds: ["CARE_PLAN_HA"],
-        patientReference: " PAT-1 ",
+        patientReference: " 81426 ",
         documentTitleOption: "arztbrief",
         origin: "https://example.test",
         context: {
@@ -46,7 +46,7 @@ describe("internal documentation service", () => {
       });
 
       expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
-        patientReference: "PAT-1",
+        patientReference: "81426",
         ownerAccountId: "account-1",
         ownerPracticeId: "practice-1",
         source: "practice_direct",
@@ -69,7 +69,7 @@ describe("internal documentation service", () => {
   it("erstellt den Kioskkontext weiterhin ohne Account-Owner", async () => {
     await createInternalDocumentationSession({
       selectedBlockIds: ["CARE_PLAN_HA"],
-      patientReference: "PAT-1",
+      patientReference: "81426",
       documentTitleOption: "bericht",
       origin: "https://example.test",
       context: {
@@ -91,7 +91,7 @@ describe("internal documentation service", () => {
   it("weist unbekannte Blocks vor der Session-Erzeugung ab", async () => {
     await expect(createInternalDocumentationSession({
       selectedBlockIds: ["unknown"],
-      patientReference: "PAT-1",
+      patientReference: "81426",
       documentTitleOption: "arztbrief",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
@@ -106,7 +106,7 @@ describe("internal documentation service", () => {
         { blockId: "VACCINATION_REVIEW", section: 1, order: 9 },
         { blockId: "CARE_PLAN_HA", section: 2, order: 4 },
       ],
-      patientReference: "PAT-1",
+      patientReference: "81426",
       documentTitleOption: "stellungnahme",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
@@ -130,7 +130,7 @@ describe("internal documentation service", () => {
     await expect(createInternalDocumentationSession({
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout,
-      patientReference: "PAT-1",
+      patientReference: "81426",
       documentTitleOption: "arztbrief",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
@@ -149,7 +149,7 @@ describe("internal documentation service", () => {
   ])("weist einen ungültigen Dokumenttitel ab: %j", async (titleInput) => {
     await expect(createInternalDocumentationSession({
       selectedBlockIds: ["CARE_PLAN_HA"],
-      patientReference: "PAT-1",
+      patientReference: "81426",
       ...titleInput,
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
       origin: "https://example.test",
@@ -160,7 +160,7 @@ describe("internal documentation service", () => {
   it("speichert einen getrimmten individuellen Dokumenttitel unabhängig von Blocks", async () => {
     await createInternalDocumentationSession({
       selectedBlockIds: ["VACCINATION_REVIEW", "CARE_PLAN_HA"],
-      patientReference: "PAT-1",
+      patientReference: "81426",
       documentTitleOption: "andere",
       customDocumentTitle: "  Individueller Titel  ",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
@@ -175,6 +175,25 @@ describe("internal documentation service", () => {
       },
     }));
   });
+
+  it.each(["", "   ", "PAT-1", "814-26", "81426!"])(
+    "weist die ungültige neue Patientenreferenz %j ab",
+    async (patientReference) => {
+      await expect(createInternalDocumentationSession({
+        selectedBlockIds: ["CARE_PLAN_HA"],
+        patientReference,
+        documentTitleOption: "arztbrief",
+        origin: "https://example.test",
+        context: {
+          kind: "practice",
+          practiceId: "practice-1",
+          accountId: "account-1",
+        },
+      })).rejects.toMatchObject({ status: 400 });
+
+      expect(createSession).not.toHaveBeenCalled();
+    },
+  );
 
   it("schließt eine Praxis-Session mit vollständig gescoptem atomarem Write ab", async () => {
     const frozenBlocks = buildInternalWorkflowBlocks("care_plan_v1");

@@ -24,6 +24,7 @@ import {
   InternalDocumentTitleValidationError,
   resolveInternalDocumentTitle,
 } from "@/lib/questionnaire/internalDocumentTitle";
+import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -70,10 +71,7 @@ export async function createInternalDocumentationSession(input: {
   context: InternalDocumentationContext;
 }) {
   const requestedBlockIds = input.selectedBlockIds;
-  const patientReference =
-    typeof input.patientReference === "string"
-      ? input.patientReference.trim()
-      : "";
+  const patientReference = normalizeXComfortPatientReference(input.patientReference);
   if (
     !patientReference ||
     !Array.isArray(requestedBlockIds) ||
