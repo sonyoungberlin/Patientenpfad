@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import iconv from "iconv-lite";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: { patientQuestionnaireSession: { findUnique: jest.fn(), updateMany: jest.fn() } },
@@ -54,6 +55,8 @@ it("liefert eine GDT mit PDF-identischem Basestamm und atomarem Claim", async ()
   const response = await GET(request(), { params: Promise.resolve({ id: "session-1" }) });
   expect(response.status).toBe(200);
   expect(response.headers.get("content-disposition")).toContain("20260912_79383_Kurzanamnese.gdt");
+  expect(iconv.decode(Buffer.from(await response.arrayBuffer()), "cp850"))
+    .toContain("6227System: Kurzanamnese eingegangen\r\n");
   expect(sessionMock.updateMany).toHaveBeenCalledWith(expect.objectContaining({
     where: expect.objectContaining({
       session_kind: "patient_communication",

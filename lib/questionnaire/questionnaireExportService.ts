@@ -6,6 +6,7 @@ import {
 import { parseFrozenBlocks } from "./frozenBlocks";
 import { resolveInternalWorkflow } from "./internalWorkflowRegistry";
 import type { PdfRenderOptions, PdfSessionInput } from "./pdfRenderer";
+import { resolveQuestionnaireDocumentLabels } from "./questionnaireDocumentLabel";
 import { buildQuestionnaireExportFilename } from "./questionnaireExportFilename";
 import { normalizeXComfortPatientReference } from "./patientReference";
 
@@ -61,11 +62,19 @@ export function resolveQuestionnaireGdtExport(session: QuestionnaireExportSessio
     ...(pdfOptions.filenameLabel ? { filenameLabel: pdfOptions.filenameLabel } : {}),
     extension: "gdt",
   });
-  const baseName = filename.slice(0, -4);
-  const label = baseName.replace(new RegExp(`^\\d{8}_${patientReference}_?`), "") || "Fragebogen";
+  const selectedBlockIds = Array.isArray(session.selected_block_ids)
+    ? session.selected_block_ids.filter((id): id is string => typeof id === "string")
+    : [];
+  const documentLabels = resolveQuestionnaireDocumentLabels({
+    selectedBlockIds,
+    blockCatalog: pdfOptions.blockCatalog,
+    source: session.source,
+    practiceFormTitle: session.practice_form?.title,
+    ...(pdfOptions.filenameLabel ? { filenameLabel: pdfOptions.filenameLabel } : {}),
+  });
   return {
     patientReference,
     filename,
-    documentationText: `${label} eingegangen`,
+    documentationText: `System: ${documentLabels.gdtLabel} eingegangen`,
   };
 }

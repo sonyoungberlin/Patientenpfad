@@ -32,6 +32,16 @@ describe("questionnaire GDT renderer", () => {
     expect(Buffer.from(bytes)).toContain(0x94);
   });
 
+  it("schreibt den semantischen System-Rückschrieb unverändert in Feld 6227", () => {
+    const bytes = buildQuestionnaireGdtBytes({
+      patientReference: "79383",
+      documentationText: "System: Überweisungsanfrage eingegangen",
+    });
+
+    const text = iconv.decode(Buffer.from(bytes), "cp850");
+    expect(text).toContain("6227System: Überweisungsanfrage eingegangen\r\n");
+  });
+
   it("akzeptiert ausschließlich getrimmte Ziffernfolgen", () => {
     expect(normalizeXComfortPatientReference(" 004711 ")).toBe("004711");
     expect(normalizeXComfortPatientReference(4711)).toBeNull();

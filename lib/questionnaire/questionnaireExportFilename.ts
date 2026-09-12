@@ -1,4 +1,5 @@
 import type { QuestionnaireBlock } from "./blockCatalog";
+import { resolveQuestionnaireDocumentLabels } from "./questionnaireDocumentLabel";
 
 export type QuestionnaireExportFilenameInput = {
   patient_reference: string | null;
@@ -44,18 +45,6 @@ export function sanitizeFilenamePart(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-function getFirstBlockLabel(
-  selectedBlockIds: string[],
-  blockCatalog: Record<string, QuestionnaireBlock>,
-): string | null {
-  const firstBlockId = selectedBlockIds[0];
-  if (!firstBlockId) return null;
-  const label = blockCatalog[firstBlockId]?.label;
-  if (!label) return null;
-  const sanitized = sanitizeFilenamePart(label);
-  return sanitized.length > 0 ? sanitized : null;
-}
-
 function prioritizeContactBlock(
   questionnairePart: string | null,
   selectedBlockIds: string[],
@@ -79,11 +68,17 @@ export function buildQuestionnaireExportFilename(
     ? session.answers as Record<string, string>
     : {};
   const datePart = formatDateYyyyMmDd(session.submitted_at ?? new Date());
-  const questionnairePartWithoutContact = options.filenameLabel
-    ? sanitizeFilenamePart(options.filenameLabel)
-    : session.source === "website"
-      ? sanitizeFilenamePart(session.practice_form?.title ?? "") || null
-      : getFirstBlockLabel(selectedBlockIds, options.blockCatalog);
+  const documentLabels = resolveQuestionnaireDocumentLabels({
+    selectedBlockIds,
+    blockCatalog: options.blockCatalog,
+    source: session.source,
+    practiceFormTitle: session.practice_form?.title,
+    ...(options.filenameLabel ? { filenameLabel: options.filenameLabel } : {}),
+  });
+  const sanitizedDocumentLabel = documentLabels.filenameLabel
+    ? sanitizeFilenamePart(documentLabels.filenameLabel)
+    : null;
+  const questionnairePartWithoutContact = sanitizedDocumentLabel || null;
   const questionnairePart = prioritizeContactBlock(
     questionnairePartWithoutContact,
     selectedBlockIds,
