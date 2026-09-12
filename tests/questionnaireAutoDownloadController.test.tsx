@@ -39,6 +39,18 @@ function pdfResponse(filename = "20260903_Test.pdf") {
   };
 }
 
+function gdtResponse(filename = "20260903_Test.gdt") {
+  return {
+    ok: true,
+    status: 200,
+    headers: new Headers({
+      "content-type": "application/octet-stream",
+      "content-disposition": `attachment; filename="${filename}"`,
+    }),
+    blob: async () => new Blob(["gdt"], { type: "application/octet-stream" }),
+  };
+}
+
 const noContentResponse = { ok: true, status: 204 };
 
 async function settle() {
@@ -119,6 +131,23 @@ it("lädt mehrere PDFs strikt sequenziell und aktualisiert die Inbox", async () 
   expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
   expect(refreshMock).toHaveBeenCalledTimes(1);
   expect(container.textContent).toContain("Automatischer PDF-Download aktiv");
+
+  await act(async () => root.unmount());
+  container.remove();
+});
+
+it("lädt PDF und GDT als separate Artefakte sequenziell", async () => {
+  fetchMock
+    .mockResolvedValueOnce(statusResponse(true, true))
+    .mockResolvedValueOnce(pdfResponse("fragebogen.pdf"))
+    .mockResolvedValueOnce(gdtResponse("fragebogen.gdt"))
+    .mockResolvedValueOnce(noContentResponse);
+
+  const { container, root } = await renderController();
+
+  expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(2);
+  expect(URL.createObjectURL).toHaveBeenCalledTimes(2);
+  expect(refreshMock).toHaveBeenCalledTimes(1);
 
   await act(async () => root.unmount());
   container.remove();

@@ -12,7 +12,7 @@ export type QuestionnaireExportFilenameInput = {
 export type QuestionnaireExportFilenameOptions = {
   blockCatalog: Record<string, QuestionnaireBlock>;
   filenameLabel?: string;
-  extension: "pdf" | "xml";
+  extension: "pdf" | "xml" | "gdt";
 };
 
 function formatDateYyyyMmDd(date: Date): string {

@@ -125,9 +125,10 @@ describe("GET /api/questionnaire/[id]/pdf — pdf_downloaded_at Marker", () => {
     const call = pm.patientQuestionnaireSession.update.mock.calls[0][0];
     expect(call.where).toEqual({ id: "sess-1" });
     expect(call.data.pdf_downloaded_at).toBeInstanceOf(Date);
-    // Es darf keine andere Spalte mitgeschrieben werden (insbesondere nicht
-    // answers, status, deleted_at).
+    // Es darf keine andere Spalte mitgeschrieben werden, insbesondere kein
+    // GDT-Claim durch einen späteren manuellen PDF-Download.
     expect(Object.keys(call.data)).toEqual(["pdf_downloaded_at"]);
+    expect(call.data).not.toHaveProperty("gdt_download_claimed_at");
   });
 
   it("schreibt nicht erneut, wenn pdf_downloaded_at bereits gesetzt ist", async () => {

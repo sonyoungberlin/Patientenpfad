@@ -11,6 +11,7 @@ import {
   trashQuestionnaireLifecycleFilter,
 } from "@/lib/questionnaire/lifecycle";
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
+import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
 
 export async function GET(
   req: NextRequest,
@@ -102,10 +103,10 @@ export async function PATCH(
         { status: 400 },
       );
     }
-    const patientReference = body.patient_reference.trim();
+    const patientReference = normalizeXComfortPatientReference(body.patient_reference);
     if (!patientReference) {
       return NextResponse.json(
-        { ok: false, error: "Patientennummer muss ein nicht-leerer String sein." },
+        { ok: false, error: "Patientennummer darf nur aus Ziffern bestehen." },
         { status: 400 },
       );
     }

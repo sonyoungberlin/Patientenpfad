@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { downloadFileResponse } from "@/lib/questionnaire/downloadFileResponse";
 
 type Props = {
   sessionId: string;
@@ -41,9 +42,18 @@ export default function QuestionnairePatientAssignment({ sessionId }: Props) {
         return;
       }
 
+      const pdfResponse = await fetch(`/api/questionnaire/${sessionId}/pdf`);
+      if (!pdfResponse.ok) throw new Error("pdf_download_failed");
+      await downloadFileResponse(pdfResponse, "Fragebogen.pdf");
+
+      const gdtResponse = await fetch(`/api/questionnaire/${sessionId}/gdt`);
+      if (gdtResponse.status !== 204) {
+        if (!gdtResponse.ok) throw new Error("gdt_download_failed");
+        await downloadFileResponse(gdtResponse, "Fragebogen.gdt");
+      }
+
       cancel();
       router.refresh();
-      window.location.href = `/api/questionnaire/${sessionId}/pdf`;
     } catch {
       setError("Patient konnte nicht zugeordnet werden.");
     } finally {

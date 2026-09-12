@@ -85,6 +85,14 @@ describe("PATCH /api/questionnaire/[id] – Website-Patientenzuordnung", () => {
     expect(pm.patientQuestionnaireSession.findUnique).not.toHaveBeenCalled();
   });
 
+  it.each(["47A11", "47-11"])("lehnt nicht numerische Patientennummer %s ab", async (patientReference) => {
+    const response = await PATCH(request({ patient_reference: patientReference }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+    expect(response.status).toBe(400);
+    expect(pm.patientQuestionnaireSession.findUnique).not.toHaveBeenCalled();
+  });
+
   it.each([null, "nicht-objekt", ["nicht", "objekt"]])(
     "lehnt nicht-objektartigen JSON-Body %j mit 400 ab",
     async (body) => {

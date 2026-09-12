@@ -2,15 +2,9 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
-import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
-import { resolveInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
-import {
-  isDocumentedContentSnapshot,
-  isNewBlockBasedInternalSession,
-} from "@/lib/questionnaire/documentedContent";
-import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import { resolveQuestionnairePdfOptions } from "@/lib/questionnaire/questionnaireExportService";
 
 export async function GET(
   req: NextRequest,
@@ -70,35 +64,16 @@ export async function GET(
     );
   }
 
-  const frozenBlocks = parseFrozenBlocks(session.frozen_blocks);
-  const isNewBlockBased = isNewBlockBasedInternalSession({
-    sessionKind: session.session_kind,
-    internalWorkflowId: session.internal_workflow_id,
-    frozenBlocks,
-  });
-  const workflow = session.session_kind === "internal_documentation" && !isNewBlockBased
-    ? resolveInternalWorkflow(session.internal_workflow_id)
-    : null;
-  if (session.session_kind === "internal_documentation" && !isNewBlockBased && !workflow) {
+  let pdfOptions;
+  try {
+    pdfOptions = resolveQuestionnairePdfOptions(session);
+  } catch {
     return new Response(JSON.stringify({ ok: false, error: "Unbekannter interner Workflow." }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
-  const { bytes, filename } = await buildQuestionnairePdfBytes(session, {
-    title: isNewBlockBased ? "Interne Dokumentation" : workflow?.title ?? "Fragebogen – Patientenangaben",
-    referenceLabel: "Patientenreferenz",
-    blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
-    ...(!isDocumentedContentSnapshot(parseFrozenBlocks(session.frozen_blocks)) && workflow
-      ? { omitUnanswered: workflow!.legacyOutputPolicy.omitUnansweredInPdf }
-      : {}),
-    ...(!isNewBlockBased && !isDocumentedContentSnapshot(frozenBlocks) && workflow?.legacyOutputPolicy.omitEmptyBlocksInPdf
-      ? { omitEmptyBlocksInPdf: true }
-      : {}),
-    ...(isNewBlockBased
-      ? { filenameLabel: "Interne Dokumentation" }
-      : workflow ? { filenameLabel: workflow.filenameLabel } : {}),
-  });
+  const { bytes, filename } = await buildQuestionnairePdfBytes(session, pdfOptions);
 
   if (session.pdf_downloaded_at == null) {
     try {

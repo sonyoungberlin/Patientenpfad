@@ -5,6 +5,7 @@ jest.mock("@/lib/prisma", () => ({
     practice: { findUnique: jest.fn() },
     patientQuestionnaireSession: {
       findFirst: jest.fn(),
+      findMany: jest.fn(),
       updateMany: jest.fn(),
     },
   },
@@ -28,6 +29,7 @@ const ENABLED_AT = new Date("2026-09-03T08:00:00.000Z");
 const practiceMock = prisma.practice as unknown as { findUnique: jest.Mock };
 const sessionMock = prisma.patientQuestionnaireSession as unknown as {
   findFirst: jest.Mock;
+  findMany: jest.Mock;
   updateMany: jest.Mock;
 };
 const accessMock = requireQuestionnaireInboxAccess as jest.Mock;
@@ -65,6 +67,7 @@ beforeEach(() => {
     questionnaire_auto_pdf_enabled_at: ENABLED_AT,
   });
   sessionMock.findFirst.mockReset().mockResolvedValue(SESSION);
+  sessionMock.findMany.mockReset().mockResolvedValue([]);
   sessionMock.updateMany.mockReset().mockResolvedValue({ count: 1 });
   pdfMock.mockReset().mockResolvedValue({
     bytes: new Uint8Array([37, 80, 68, 70]),
@@ -108,6 +111,63 @@ it("liefert 204 wenn keine eligible Session existiert", async () => {
   const response = await GET(request());
   expect(response.status).toBe(204);
   expect(pdfMock).not.toHaveBeenCalled();
+});
+
+it("liefert nach geclaimter PDF eine GDT für patient_communication", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  sessionMock.findMany.mockResolvedValue([SESSION]);
+
+  const response = await GET(request());
+
+  expect(response.status).toBe(200);
+  expect(response.headers.get("content-type")).toBe("application/octet-stream");
+  expect(response.headers.get("content-disposition")).toContain(
+    "20260903_4711_Versicherungsdaten.gdt",
+  );
+  expect(sessionMock.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: expect.objectContaining({
+      AND: expect.arrayContaining([
+        { session_kind: "patient_communication" },
+        { patient_reference: "4711" },
+        { auto_pdf_download_claimed_at: { not: null } },
+        { gdt_download_claimed_at: null },
+      ]),
+    }),
+    data: { gdt_download_claimed_at: expect.any(Date) },
+  }));
+});
+
+it("priorisiert eine offene GDT nach deren PDF vor der nächsten PDF", async () => {
+  sessionMock.findMany.mockResolvedValue([SESSION]);
+
+  const response = await GET(request());
+
+  expect(response.headers.get("content-type")).toBe("application/octet-stream");
+  expect(sessionMock.findFirst).not.toHaveBeenCalled();
+});
+
+it("liefert keine GDT für unzugeordnete oder interne Sessions", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  sessionMock.findMany.mockResolvedValue([
+    { ...SESSION, patient_reference: null },
+    { ...SESSION, session_kind: "internal_documentation" },
+    { ...SESSION, patient_reference: "47A11" },
+  ]);
+
+  const response = await GET(request());
+
+  expect(response.status).toBe(204);
+  expect(sessionMock.updateMany).not.toHaveBeenCalled();
+});
+
+it("liefert bei konkurrierenden GDT-Claims höchstens eine Datei", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  sessionMock.findMany.mockResolvedValue([SESSION]);
+  sessionMock.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+
+  const [first, second] = await Promise.all([GET(request()), GET(request())]);
+
+  expect([first.status, second.status].sort()).toEqual([200, 204]);
 });
 
 it("wendet Practice-, Sichtbarkeits-, Zeit- und Claim-Filter an", async () => {

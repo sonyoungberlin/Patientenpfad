@@ -3,15 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getOrCreateQuestionnaireAutoDeviceId } from "@/lib/questionnaire/autoDownloadDeviceClient";
+import { downloadFileResponse } from "@/lib/questionnaire/downloadFileResponse";
 
 const STATUS_ENDPOINT = "/api/practice/questionnaire-auto-download";
 const NEXT_ENDPOINT = "/api/questionnaire/auto-download/next";
 const POLL_INTERVAL_MS = 10_000;
 const MAX_DOWNLOADS_PER_CYCLE = 10;
-
-function filenameFromContentDisposition(value: string | null): string {
-  return value?.match(/filename="([^"]+)"/i)?.[1] ?? "Fragebogen.pdf";
-}
 
 export default function QuestionnaireAutoDownloadController() {
   const { refresh } = useRouter();
@@ -29,21 +26,6 @@ export default function QuestionnaireAutoDownloadController() {
     }
 
     const headers = { "X-Questionnaire-Auto-Device": deviceId };
-
-    async function downloadPdf(response: Response) {
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = filenameFromContentDisposition(
-        response.headers.get("content-disposition"),
-      );
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(objectUrl);
-    }
 
     async function runCycle() {
       if (disposed || inFlight.current) return;
@@ -71,13 +53,14 @@ export default function QuestionnaireAutoDownloadController() {
             setActive(false);
             break;
           }
-          if (
-            !response.ok ||
-            !response.headers.get("content-type")?.includes("application/pdf")
-          ) {
+          const contentType = response.headers.get("content-type") ?? "";
+          if (!response.ok || (
+            !contentType.includes("application/pdf") &&
+            !contentType.includes("application/octet-stream")
+          )) {
             throw new Error("auto_download_failed");
           }
-          await downloadPdf(response);
+          await downloadFileResponse(response, "Fragebogen");
         }
         if (!disposed) refresh();
       } catch {
