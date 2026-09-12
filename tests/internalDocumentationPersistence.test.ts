@@ -11,6 +11,8 @@ import {
   parseFrozenBlocks,
   parseInternalDocumentTitleMetadata,
 } from "@/lib/questionnaire/frozenBlocks";
+import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
+import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
 
 const create = prisma.patientQuestionnaireSession.create as jest.Mock;
 
@@ -109,5 +111,55 @@ describe("internal documentation persistence", () => {
     expect(parseFrozenBlocks(legacySnapshot)).toEqual(legacySnapshot);
     expect(parseInternalDocumentTitleMetadata(legacySnapshot)).toBeNull();
     expect(getInternalDocumentTitle(legacySnapshot)).toBe("Interne Dokumentation");
+    const detail = buildQuestionnaireInboxDetail({
+      patient_reference: "PAT-1",
+      submitted_at: new Date("2026-09-12T10:00:00.000Z"),
+      selected_block_ids: ["CARE_PLAN_HA"],
+      deduplicated_questions: [],
+      answers: {},
+      frozen_blocks: legacySnapshot,
+      source: "practice_direct",
+      session_kind: "internal_documentation",
+      internal_workflow_id: null,
+    });
+    expect(buildStructuredAppXml(detail.semanticDocument!))
+      .toContain("<documentTitle>Interne Dokumentation</documentTitle>");
+  });
+
+  it("übernimmt festen und individuellen Snapshot-Titel in das semantische v2-Dokument", () => {
+    const blocks = [{
+      id: "CARE_PLAN_HA",
+      label: "Hausärztliche Betreuung",
+      displayOrder: 10,
+      questions: [],
+      conditionalRules: [],
+      initiallyVisible: true,
+      outputSemantics: "documented-content-v1" as const,
+    }];
+    const detailFor = (documentTitleOption: "stellungnahme" | "andere", documentTitle: string) =>
+      buildQuestionnaireInboxDetail({
+        patient_reference: "PAT-1",
+        submitted_at: new Date("2026-09-12T10:00:00.000Z"),
+        selected_block_ids: ["CARE_PLAN_HA"],
+        deduplicated_questions: [],
+        answers: {},
+        frozen_blocks: {
+          schemaVersion: 2,
+          metadata: { documentTitleOption, documentTitle },
+          blocks,
+        },
+        source: "practice_direct",
+        session_kind: "internal_documentation",
+        internal_workflow_id: null,
+      });
+
+    const fixed = detailFor("stellungnahme", "Stellungnahme").semanticDocument!;
+    const custom = detailFor("andere", "Bericht & Stellungnahme").semanticDocument!;
+    expect(buildStructuredAppXml(fixed)).toContain(
+      "<documentTitle>Stellungnahme</documentTitle>",
+    );
+    expect(buildStructuredAppXml(custom)).toContain(
+      "<documentTitle>Bericht &amp; Stellungnahme</documentTitle>",
+    );
   });
 });

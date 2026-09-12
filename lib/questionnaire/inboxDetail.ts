@@ -7,6 +7,7 @@ import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditional
 import { computeAllDerivedValues } from "./derivedValues";
 import type { DerivedValues } from "./derivedValues";
 import { parseFrozenBlocks } from "./frozenBlocks";
+import { getInternalDocumentTitle } from "./frozenBlocks";
 import type { FrozenBlock } from "./frozenBlocks";
 import { isNewBlockBasedInternalSession } from "./documentedContent";
 import { buildOptionsByQuestionId } from "./multiSelect";
@@ -130,7 +131,10 @@ export function buildQuestionnaireInboxDetail(
     answers,
     noteText: medicalRecordOutput.noteText,
     semanticDocument: session.session_kind === "internal_documentation"
-      ? medicalRecordOutput.semanticDocument
+      ? {
+          ...medicalRecordOutput.semanticDocument,
+          documentTitle: getInternalDocumentTitle(session.frozen_blocks),
+        }
       : null,
     derivedValues,
     attentionHints: computeQuestionnaireAttentionHints(answers, visibleQuestionIds),

@@ -38,8 +38,26 @@ describe("buildAppTextXml", () => {
 });
 
 describe("buildStructuredAppXml", () => {
+  it.each(["Stellungnahme", "Individueller Dokumenttitel"])(
+    "serialisiert den Dokumenttitel %s als v2-Metadatum",
+    (documentTitle) => {
+      const xml = buildStructuredAppXml({
+        documentTitle,
+        sections: [
+          { slot: 1, items: [] },
+          { slot: 2, items: [] },
+          { slot: 3, items: [] },
+        ],
+      });
+
+      expect(xml).toContain(`<documentTitle>${documentTitle}</documentTitle>`);
+      expect(xml.indexOf("<documentTitle>")).toBeLessThan(xml.indexOf('<section slot="1">'));
+    },
+  );
+
   it("serialisiert drei semantische Sections und escaped XML-Inhalte", () => {
     const xml = buildStructuredAppXml({
+      documentTitle: `Bericht & Stellungnahme <Test> "Zitat"`,
       sections: [
         { slot: 1, items: [
           { type: "heading", text: "Labor & Werte" },
@@ -51,12 +69,29 @@ describe("buildStructuredAppXml", () => {
     });
 
     expect(xml).toContain('<appExport version="2.0">');
+    expect(xml).toContain(
+      '<documentTitle>Bericht &amp; Stellungnahme &lt;Test&gt; &quot;Zitat&quot;</documentTitle>',
+    );
     expect(xml).toContain('<section slot="1">');
     expect(xml).toContain('<item type="heading">Labor &amp; Werte</item>');
     expect(xml).toContain('<item type="measurement">Lipidprofil: &lt;auffällig&gt;</item>');
     expect(xml).toContain('<section slot="2"></section>');
     expect(xml).toContain('<section slot="3">');
     expect(xml).not.toContain("\u0000");
+    expect(xml.match(/<section slot=/g)).toHaveLength(3);
+  });
+
+  it("verwendet für alte semantische Dokumente den zentralen Legacy-Fallback", () => {
+    const xml = buildStructuredAppXml({
+      sections: [
+        { slot: 1, items: [] },
+        { slot: 2, items: [] },
+        { slot: 3, items: [] },
+      ],
+    });
+
+    expect(xml).toContain("<documentTitle>Interne Dokumentation</documentTitle>");
+    expect(xml.match(/<section slot=/g)).toHaveLength(3);
   });
 
   it("serialisiert Heading-Hierarchie und optionale unsichtbare Darstellung", () => {

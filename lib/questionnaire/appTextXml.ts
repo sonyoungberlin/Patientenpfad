@@ -3,6 +3,7 @@ import type {
   DocumentationHeadingVisibility,
   DocumentationItemType,
 } from "./blockCatalog";
+import { INTERNAL_DOCUMENT_TITLE_FALLBACK } from "./internalDocumentTitle";
 
 const INVALID_XML_1_0_CHARACTERS = /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu;
 
@@ -21,6 +22,7 @@ export type SemanticDocumentSection = {
 };
 
 export type SemanticDocument = {
+  documentTitle?: string;
   sections: [SemanticDocumentSection, SemanticDocumentSection, SemanticDocumentSection];
 };
 
@@ -43,6 +45,9 @@ export function buildAppTextXml(noteText: string): string {
 }
 
 export function buildStructuredAppXml(document: SemanticDocument): string {
+  const documentTitle = (document.documentTitle ?? INTERNAL_DOCUMENT_TITLE_FALLBACK)
+    .replace(/\r\n?/g, "\n")
+    .replace(INVALID_XML_1_0_CHARACTERS, "");
   const sections = document.sections.map((section) => {
     const items = section.items
       .filter((item) => item.includeInStructuredExport !== false)
@@ -64,7 +69,7 @@ export function buildStructuredAppXml(document: SemanticDocument): string {
       : `  <section slot="${section.slot}"></section>`;
   }).join("\n");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<appExport version="2.0">\n${sections}\n</appExport>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<appExport version="2.0">\n  <documentTitle>${escapeXmlText(documentTitle)}</documentTitle>\n${sections}\n</appExport>`;
 }
 
 export function buildStructuredXmlFilename(filename: string): string {
