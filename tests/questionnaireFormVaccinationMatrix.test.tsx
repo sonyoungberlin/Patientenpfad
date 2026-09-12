@@ -58,6 +58,26 @@ function cloneQuestion(question: QuestionDefinition): QuestionDefinition {
 
 const legacyV2Question = cloneQuestion(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS);
 delete legacyV2Question.structuredVaccinationUiVersion;
+legacyV2Question.vaccinationItems = [
+  {
+    id: "tdap_ipv_group",
+    label: "Tetanus / Diphtherie / Pertussis / Poliomyelitis",
+    categoryId: "combination",
+    documentationMode: "component_group",
+    componentFields: [
+      { key: "tetanus_doses", label: "Tetanus", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
+      { key: "diphtheria_doses", label: "Diphtherie", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
+      { key: "pertussis_doses", label: "Pertussis", options: ["Impfung dokumentiert", "Weitere Impfung dokumentiert", "unklar"] },
+      { key: "polio_doses", label: "Poliomyelitis", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
+    ],
+  },
+  ...VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS.vaccinationItems!.filter((item) => item.id !== "dtp" && item.id !== "polio"),
+  { id: "other", label: "Weitere Impfung", categoryId: "other", documentationMode: "free_text" },
+];
+legacyV2Question.vaccinationCategories = [
+  ...(legacyV2Question.vaccinationCategories ?? []),
+  { id: "other", label: "Weitere Impfung" },
+];
 
 function structuredValue(entries: unknown[] = []): string {
   return JSON.stringify({ schema_version: 1, entries });
@@ -296,18 +316,31 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const root = createRoot(container);
     await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={jest.fn()} disabled={false} />));
 
-    expect(container.querySelectorAll("[data-vaccination-category]")).toHaveLength(6);
+    expect(container.querySelectorAll("[data-vaccination-category]")).toHaveLength(5);
     expect(container.querySelectorAll("[data-vaccination-row]")).toHaveLength(0);
     const combination = container.querySelector<HTMLButtonElement>('[data-vaccination-category="combination"] > button')!;
     const seasonal = container.querySelector<HTMLButtonElement>('[data-vaccination-category="seasonal"] > button')!;
     expect(combination.getAttribute("aria-expanded")).toBe("false");
     await act(async () => combination.click());
     expect(combination.getAttribute("aria-expanded")).toBe("true");
-    expect(container.querySelectorAll('[data-vaccination-category="combination"] [data-vaccination-row]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-vaccination-category="combination"] [data-vaccination-row]')).toHaveLength(2);
     expect(container.querySelectorAll('[data-vaccination-category="seasonal"] [data-vaccination-row]')).toHaveLength(0);
     await act(async () => seasonal.click());
-    expect(container.querySelectorAll('[data-vaccination-category="combination"] [data-vaccination-row]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-vaccination-category="combination"] [data-vaccination-row]')).toHaveLength(2);
     expect(container.querySelectorAll('[data-vaccination-category="seasonal"] [data-vaccination-row]')).toHaveLength(2);
+    await act(async () => root.unmount());
+  });
+
+  it("zeigt neue DTP- und Polio-Zeilen sowie die freie ergänzende Bemerkung", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={jest.fn()} disabled={false} />));
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-category="combination"] > button')!.click());
+    expect(container.querySelector('[data-vaccination-row="dtp"]')).not.toBeNull();
+    expect(container.querySelector('[data-vaccination-row="dtp"]')?.textContent).toContain("Tetanus · Diphtherie · Pertussis");
+    expect(container.querySelector('[data-vaccination-row="polio"]')).not.toBeNull();
+    expect(container.querySelector('[data-vaccination-row="other"]')).toBeNull();
+    expect(container.querySelector('[aria-label="Ergänzende Bemerkung"]')).not.toBeNull();
     await act(async () => root.unmount());
   });
 
@@ -315,7 +348,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const value = structuredValue([
-      { vaccination_id: "tdap_ipv_group", medical_assessment: "recommended" },
+      { vaccination_id: "dtp", status: "complete" },
       { vaccination_id: "influenza", doses: [{ number: 1, status: "open" }] },
     ]);
     await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value={value} onChange={jest.fn()} disabled={false} />));

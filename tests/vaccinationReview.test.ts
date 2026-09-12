@@ -12,7 +12,24 @@ import { parseRepeatableGroupEntries } from "@/lib/questionnaire/formatAnswer";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
 
 describe("vaccination review", () => {
-  const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+  const question = structuredClone(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS);
+  delete question.structuredVaccinationUiVersion;
+  question.vaccinationItems = [
+    {
+      id: "tdap_ipv_group",
+      label: "Tetanus / Diphtherie / Pertussis / Poliomyelitis",
+      categoryId: "combination",
+      documentationMode: "component_group",
+      componentFields: [
+        { key: "tetanus_doses", label: "Tetanus", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
+        { key: "diphtheria_doses", label: "Diphtherie", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
+        { key: "pertussis_doses", label: "Pertussis", options: ["Impfung dokumentiert", "Weitere Impfung dokumentiert", "unklar"] },
+        { key: "polio_doses", label: "Poliomyelitis", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
+      ],
+    },
+    ...VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS.vaccinationItems!.filter((item) => item.id !== "dtp" && item.id !== "polio"),
+    { id: "other", label: "Weitere Impfung", categoryId: "other", documentationMode: "free_text" },
+  ];
   const legacyQuestion = structuredClone(question);
   delete legacyQuestion.vaccinationSchemaVersion;
   legacyQuestion.vaccinationItems = [
@@ -482,5 +499,33 @@ describe("vaccination review", () => {
       { number: 2, status: "planned", recommended_interval_value: 4, recommended_interval_unit: "weeks" },
       { number: 3, status: "open", recommended_interval_value: 5, recommended_interval_unit: "months" },
     ]);
+  });
+
+  it("gibt die ergänzende Bemerkung kompakt aus und lässt sie leer weg", () => {
+    const frozenBlocks = [{
+      id: "VACCINATION_REVIEW",
+      label: "Impfpassprüfung und Beratung",
+      displayOrder: 10,
+      questions: [question],
+      conditionalRules: [],
+      initiallyVisible: true,
+    }];
+    const withNote = buildMedicalRecordNote({
+      answers: {
+        VACCINATION_REVIEW_ITEMS: JSON.stringify({ schema_version: 1, entries: [], supplemental_note: "Gelbfieberimpfung bereits im Tropeninstitut erfolgt" }),
+      },
+      selected_block_ids: ["VACCINATION_REVIEW"],
+      internalWorkflowId: "vaccination_review_v1",
+      frozenBlocks,
+    });
+    expect(withNote).toContain("Ergänzende Bemerkung: Gelbfieberimpfung bereits im Tropeninstitut erfolgt");
+
+    const withoutNote = buildMedicalRecordNote({
+      answers: { VACCINATION_REVIEW_ITEMS: JSON.stringify({ schema_version: 1, entries: [] }) },
+      selected_block_ids: ["VACCINATION_REVIEW"],
+      internalWorkflowId: "vaccination_review_v1",
+      frozenBlocks,
+    });
+    expect(withoutNote).not.toContain("Ergänzende Bemerkung:");
   });
 });

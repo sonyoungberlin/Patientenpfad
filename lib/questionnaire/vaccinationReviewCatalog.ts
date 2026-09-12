@@ -23,17 +23,13 @@ export const VACCINATION_DOSE_OPTIONS = [
 
 export const VACCINATION_ITEMS: readonly VaccinationItemDefinition[] = [
   {
-    id: "tdap_ipv_group",
-    label: "Tetanus / Diphtherie / Pertussis / Poliomyelitis",
+    id: "dtp",
+    label: "DTP",
+    secondaryLabel: "Tetanus · Diphtherie · Pertussis",
     categoryId: "combination",
-    documentationMode: "component_group",
-    componentFields: [
-      { key: "tetanus_doses", label: "Tetanus", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
-      { key: "diphtheria_doses", label: "Diphtherie", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
-      { key: "pertussis_doses", label: "Pertussis", options: ["Impfung dokumentiert", "Weitere Impfung dokumentiert", "unklar"] },
-      { key: "polio_doses", label: "Poliomyelitis", options: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
-    ],
+    documentationMode: "single",
   },
+  { id: "polio", label: "Polio", categoryId: "combination", documentationMode: "single" },
   { id: "influenza", label: "Influenza", categoryId: "seasonal", documentationMode: "season" },
   { id: "covid19", label: "COVID-19", categoryId: "seasonal", documentationMode: "season" },
   { id: "pneumococcal", label: "Pneumokokken", categoryId: "indication", documentationMode: "dose_count", doseOptions: ["1 Dosis dokumentiert", "2 oder mehr Dosen dokumentiert", "unklar"] },
@@ -46,7 +42,6 @@ export const VACCINATION_ITEMS: readonly VaccinationItemDefinition[] = [
   { id: "hepatitis_b", label: "Hepatitis B", categoryId: "frequent", documentationMode: "dose_count", doseOptions: ["1 Dosis dokumentiert", "2 Dosen dokumentiert", "3 oder mehr Dosen dokumentiert", "unklar"] },
   { id: "fsme", label: "FSME", categoryId: "frequent", documentationMode: "dose_stages", doseOptions: ["Grunddosis 1", "Grunddosis 2", "Grunddosis 3", "Auffrischung", "unklar"] },
   { id: "meningococcal", label: "Meningokokken", categoryId: "frequent", documentationMode: "subtype", subtypeOptions: ["ACWY", "B", "C", "Serogruppe unklar"] },
-  { id: "other", label: "Weitere Impfung", categoryId: "other", documentationMode: "free_text" },
 ];
 
 const VACCINATION_QUESTION: QuestionDefinition = {
@@ -55,7 +50,6 @@ const VACCINATION_QUESTION: QuestionDefinition = {
   type: "repeatable_group",
   required: false,
   maxEntries: VACCINATION_ITEMS.length,
-  addEntryLabel: "Weitere Impfung",
   presentation: "vaccination_matrix",
   vaccinationSchemaVersion: 2,
   structuredVaccinationUiVersion: 1,
@@ -65,8 +59,8 @@ const VACCINATION_QUESTION: QuestionDefinition = {
     { id: "indication", label: "Alters- / indikationsbezogen" },
     { id: "catch_up", label: "Grundschutz / Nachholen" },
     { id: "frequent", label: "Weitere häufig relevante Impfungen" },
-    { id: "other", label: "Weitere Impfung" },
   ],
+  structuredVaccinationSupplementLabel: "Ergänzende Bemerkung",
   vaccinationItems: VACCINATION_ITEMS.map((item) => ({
     ...item,
     ...(item.doseOptions ? { doseOptions: [...item.doseOptions] } : {}),

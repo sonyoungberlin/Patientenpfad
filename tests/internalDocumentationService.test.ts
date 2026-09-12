@@ -367,7 +367,7 @@ describe("internal documentation service", () => {
       sessionId: "session-1",
       answers: {
         VACCINATION_REVIEW_ITEMS: JSON.stringify([{
-          vaccination_id: "tdap_ipv_group",
+          vaccination_id: "rsv",
           documented_status: "Nicht vorhanden",
           further_action: "Impfung ärztlich empfohlen",
           reference_date: "2026-01-31",

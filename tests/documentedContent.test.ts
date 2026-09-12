@@ -80,6 +80,20 @@ describe("documented content", () => {
     })).toBe(true);
   });
 
+  it.each([
+    [{ schema_version: 1, entries: [] }, false],
+    [{ schema_version: 1, entries: [{ vaccination_id: "influenza", status: "complete" }] }, true],
+    [{ schema_version: 1, entries: [{ vaccination_id: "influenza", status: "open" }] }, true],
+    [{ schema_version: 1, entries: [{ vaccination_id: "influenza", status: "planned" }] }, true],
+    [{ schema_version: 1, entries: [{ vaccination_id: "hpv", doses: [{ number: 1, status: "done" }] }] }, true],
+    [{ schema_version: 1, entries: [{ vaccination_id: "influenza", status: "open", note: "Abklärung" }] }, true],
+    [{ schema_version: 1, entries: [{ vaccination_id: "hpv", doses: [{ number: 2, status: "planned", recommended_interval_value: 5, recommended_interval_unit: "months" }] }] }, true],
+    [{ schema_version: 1, entries: [], supplemental_note: "Reiseimpfung prüfen" }, true],
+  ])("wertet strukturierte Impfantworten korrekt als %s", (structured, expected) => {
+    const q = question({ id: "VACCINATION_REVIEW_ITEMS", type: "repeatable_group", presentation: "vaccination_matrix" });
+    expect(hasDocumentedAnswer(q, { VACCINATION_REVIEW_ITEMS: JSON.stringify(structured) })).toBe(expected);
+  });
+
   it("prüft Blockinhalt optional gegen sichtbare Fragen", () => {
     const q = question({ id: "VISIBLE" });
     const frozen = block(q);

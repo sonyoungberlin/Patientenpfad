@@ -65,6 +65,7 @@ export type StructuredVaccinationEntry = {
 export type StructuredVaccinationAnswer = {
   schema_version: typeof STRUCTURED_VACCINATION_SCHEMA_VERSION;
   entries: StructuredVaccinationEntry[];
+  supplemental_note?: string;
 };
 
 const ASSESSMENT_LABELS: Record<VaccinationAssessment, string> = {
@@ -193,7 +194,23 @@ export function normalizeStructuredVaccinationAnswer(raw: unknown): StructuredVa
     }
     entries.push(entry);
   }
-  return { schema_version: STRUCTURED_VACCINATION_SCHEMA_VERSION, entries };
+  const supplementalNote = cleanOptionalText(raw.supplemental_note, 2000);
+  return {
+    schema_version: STRUCTURED_VACCINATION_SCHEMA_VERSION,
+    entries,
+    ...(supplementalNote ? { supplemental_note: supplementalNote } : {}),
+  };
+}
+
+export function structuredVaccinationAnswerHasContent(answer: StructuredVaccinationAnswer): boolean {
+  return Boolean(answer.supplemental_note) || answer.entries.some((entry) =>
+    Object.entries(entry).some(([key, value]) => {
+      if (key === "vaccination_id") return false;
+      if (typeof value === "string") return value.trim() !== "";
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== undefined && value !== null;
+    }),
+  );
 }
 
 export function parseStructuredVaccinationAnswer(value: string): StructuredVaccinationAnswer | null {

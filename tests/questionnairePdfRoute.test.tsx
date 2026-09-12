@@ -547,10 +547,8 @@ describe("questionnaire PDF patient reference", () => {
     const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
     const normalized = normalizeVaccinationReviewAnswers({
       VACCINATION_REVIEW_ITEMS: JSON.stringify([{
-        vaccination_id: "tdap_ipv_group",
+        vaccination_id: "dtp",
         documented_status: "Teilweise vorhanden",
-        tetanus_doses: "Grunddosis 1",
-        pertussis_doses: "Impfung dokumentiert",
         documented_subtypes: "stale-subtype",
         further_action: "Impfung ärztlich empfohlen",
         note: "Impfpass erneut prüfen",
@@ -582,16 +580,12 @@ describe("questionnaire PDF patient reference", () => {
     );
 
     const text = await extractPdfText(result.bytes);
-    expect(text).toContain("Tetanus / Diphtherie / Pertussis / Poliomyelitis");
+    expect(text).toContain("DTP");
     expect(text).toContain("Dokumentierter Impfstatus:");
     expect(text).toContain("Teilweise vorhanden");
-    expect(text).toContain("Tetanus:");
-    expect(text).toContain("Grunddosis 1");
-    expect(text).toContain("Pertussis:");
-    expect(text).toContain("Impfung dokumentiert");
     expect(text).toContain("Bemerkung:");
     expect(text).toContain("Impfpass erneut prüfen");
-    expect(text).not.toContain("tdap_ipv_group");
+    expect(text).not.toContain("dtp");
     expect(text).not.toContain("vaccination_id");
     expect(text).not.toContain("COVID-19");
     expect(text).not.toContain("stale-subtype");

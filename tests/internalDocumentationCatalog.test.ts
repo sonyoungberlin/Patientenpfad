@@ -107,11 +107,18 @@ describe("internal documentation workflow registry", () => {
     });
     expect(blocks[0].questions[0].vaccinationItems).toHaveLength(14);
     expect(blocks[0].questions[0].vaccinationItems?.[0]).toMatchObject({
-      id: "tdap_ipv_group",
-      label: "Tetanus / Diphtherie / Pertussis / Poliomyelitis",
-      documentationMode: "component_group",
+      id: "dtp",
+      label: "DTP",
+      secondaryLabel: "Tetanus · Diphtherie · Pertussis",
+      documentationMode: "single",
     });
-    expect(blocks[0].questions[0].vaccinationItems?.[0].componentFields).toHaveLength(4);
+    expect(blocks[0].questions[0].vaccinationItems?.[1]).toMatchObject({
+      id: "polio",
+      label: "Polio",
+      documentationMode: "single",
+    });
+    expect(blocks[0].questions[0].vaccinationItems?.some((item) => item.id === "other")).toBe(false);
+    expect(blocks[0].questions[0].structuredVaccinationSupplementLabel).toBe("Ergänzende Bemerkung");
     const schema = blocks[0].questions[0].groupSchema ?? [];
     expect(schema.filter((field) => field.maxLength === 120).map((field) => field.key)).toEqual([
       "custom_label",
@@ -218,19 +225,19 @@ describe("internal documentation workflow registry", () => {
     expect(blocks[0].questions[0].options).not.toBe(catalogOptions);
   });
 
-  it("deep-copies nested vaccination v2 metadata into the frozen snapshot", () => {
+  it("deep-copies vaccination metadata into the frozen snapshot", () => {
     const workflow = getInternalWorkflow("vaccination_review_v1")!;
     const catalogQuestion = workflow.questionCatalog.VACCINATION_REVIEW_ITEMS;
-    const component = catalogQuestion.vaccinationItems?.[0].componentFields?.[0];
-    const originalOption = component?.options[0];
+    const vaccinationItem = catalogQuestion.vaccinationItems?.[4];
+    const originalOption = vaccinationItem?.doseOptions?.[0];
     const frozen = buildInternalWorkflowBlocks("vaccination_review_v1");
 
-    expect(originalOption).toBe("Grunddosis 1");
-    component!.options[0] = "Katalog nach Snapshot verändert";
+    expect(originalOption).toBe("1 Dosis dokumentiert");
+    vaccinationItem!.doseOptions![0] = "Katalog nach Snapshot verändert";
     try {
-      expect(frozen[0].questions[0].vaccinationItems?.[0].componentFields?.[0].options[0]).toBe("Grunddosis 1");
+      expect(frozen[0].questions[0].vaccinationItems?.[4].doseOptions?.[0]).toBe("1 Dosis dokumentiert");
     } finally {
-      component!.options[0] = originalOption!;
+      vaccinationItem!.doseOptions![0] = originalOption!;
     }
   });
 });

@@ -12,6 +12,7 @@ import { validateAnswerCharacters } from "@/lib/questionnaire/validateAnswerChar
 import { validateAnswerLengths } from "@/lib/questionnaire/validateAnswerLengths";
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
 import {
+  hasDocumentedAnswer,
   isDocumentedContentSnapshot,
   isNewBlockBasedInternalSession,
 } from "@/lib/questionnaire/documentedContent";
@@ -254,9 +255,7 @@ export async function submitInternalDocumentationSession(input: {
     validateHealthCheckAnswers(answers);
   }
 
-  const meaningful = Object.values(answers).some(
-    (value) => value.trim() !== "" && value !== "[]",
-  );
+  const meaningful = questions.some((question) => hasDocumentedAnswer(question, answers));
   if (!meaningful) {
     throw new InternalDocumentationError(
       "Ein vollständig leeres Dokument kann nicht abgesendet werden.",

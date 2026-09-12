@@ -374,10 +374,12 @@ function formatStructuredVaccinationEntries(
 ): string[] {
   const answer = parseStructuredVaccinationAnswer(raw);
   if (!answer || question.presentation !== "vaccination_matrix") return [];
-  return answer.entries.map((entry) => formatStructuredVaccinationEntry(
+  const lines = answer.entries.map((entry) => formatStructuredVaccinationEntry(
     entry,
     getVaccinationLabel(entry as unknown as Record<string, string>, question),
   ));
+  if (answer.supplemental_note) lines.push(`Ergänzende Bemerkung: ${answer.supplemental_note}`);
+  return lines;
 }
 
 /**

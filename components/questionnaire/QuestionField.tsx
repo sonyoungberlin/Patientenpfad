@@ -346,6 +346,14 @@ function StructuredVaccinationMatrixField({
     updateEntry(id, (entry) => ({ ...entry, note: note.slice(0, 2000) || undefined }));
   };
 
+  const setSupplementalNote = (note: string) => {
+    const trimmed = note.slice(0, 2000).trim();
+    commit({
+      ...answer,
+      ...(trimmed ? { supplemental_note: trimmed } : { supplemental_note: undefined }),
+    });
+  };
+
   const updateDose = (id: string, doseNumber: number, update: (dose: StructuredVaccinationDose) => StructuredVaccinationDose) => {
     updateEntry(id, (entry) => {
       const currentDoses = entry.doses ?? [];
@@ -472,6 +480,7 @@ function StructuredVaccinationMatrixField({
         >
           <span style={{ minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
             <strong style={{ display: "block", overflowWrap: "anywhere", wordBreak: "break-word" }}>{item.label}</strong>
+            {item.secondaryLabel && <span style={{ display: "block", marginTop: "0.1rem", fontSize: "0.8rem", color: "var(--muted-foreground, #6b7280)", overflowWrap: "anywhere" }}>{item.secondaryLabel}</span>}
             {edited && <span data-vaccination-entry-summary style={{ display: "block", marginTop: "0.1rem", color: "var(--muted-foreground, #6b7280)", fontSize: "0.8rem" }}>{summary(entry)}</span>}
           </span>
           <span aria-hidden="true" style={{ width: "1.5rem", textAlign: "center", fontSize: "1.15rem" }}>{isOpen ? "−" : "+"}</span>
@@ -512,6 +521,19 @@ function StructuredVaccinationMatrixField({
           </section>
         );
       })}
+      {question.structuredVaccinationSupplementLabel && (
+        <div style={{ display: "grid", gap: "0.35rem", paddingTop: "0.6rem" }}>
+          <label htmlFor="vaccination-supplemental-note"><strong>{question.structuredVaccinationSupplementLabel}</strong></label>
+          <textarea
+            id="vaccination-supplemental-note"
+            aria-label={question.structuredVaccinationSupplementLabel}
+            value={answer.supplemental_note ?? ""}
+            disabled={disabled}
+            onChange={(event) => setSupplementalNote(event.target.value)}
+            style={{ ...fieldStyle, minHeight: "4rem", resize: "vertical" }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -265,7 +265,7 @@ describe("interne Kiosk-Dokumentation", () => {
       request("/api/questionnaire-kiosk/internal/session-1", {
         answers: {
           VACCINATION_REVIEW_ITEMS: JSON.stringify([{
-            vaccination_id: "tdap_ipv_group",
+            vaccination_id: "dtp",
             documented_status: "Vollständig vorhanden",
           }]),
         },
@@ -279,7 +279,7 @@ describe("interne Kiosk-Dokumentation", () => {
       data: expect.objectContaining({
         answers: {
           VACCINATION_REVIEW_ITEMS: JSON.stringify([{
-            vaccination_id: "tdap_ipv_group",
+            vaccination_id: "dtp",
             documented_status: "Vollständig vorhanden",
           }]),
         },

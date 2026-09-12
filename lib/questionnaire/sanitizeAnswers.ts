@@ -28,6 +28,7 @@ import type { QuestionnaireLanguage } from "./i18n";
 import { ALLOWED_ANSWER_CHARACTERS_REGEX } from "./validateAnswerCharacters";
 import { parseMultiSelectValue } from "./multiSelect";
 import { getQuestionOptionValues } from "./questionOptions";
+import { normalizeStructuredVaccinationAnswer } from "./vaccinationReview";
 import {
   isPlausibleCalendarYear,
   isPlausibleYearsAgo,
@@ -270,6 +271,18 @@ export function sanitizeAnswers(
 
     // Generischer repeatable_group-Typ (VOLLST_* und zukünftige Blöcke)
     if (qDef.type === "repeatable_group") {
+      if (qDef.presentation === "vaccination_matrix") {
+        try {
+          const parsed: unknown = JSON.parse(value);
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            const structured = normalizeStructuredVaccinationAnswer(parsed);
+            if (structured) sanitized[questionId] = JSON.stringify(structured);
+            continue;
+          }
+        } catch {
+          // Legacy-Impfarrays werden im nachfolgenden Pfad verarbeitet.
+        }
+      }
       const validated = sanitizeRepeatableGroupArray(questionId, value, qDef);
       if (validated !== null) {
         sanitized[questionId] = validated;

@@ -1,5 +1,9 @@
 import type { QuestionDefinition } from "./blockCatalog";
 import type { FrozenBlock } from "./frozenBlocks";
+import {
+  parseStructuredVaccinationAnswer,
+  structuredVaccinationAnswerHasContent,
+} from "./vaccinationReview";
 
 function hasNonEmptyValue(value: string | undefined): boolean {
   return typeof value === "string" && value.trim() !== "" && value !== "[]";
@@ -11,6 +15,10 @@ function repeatableGroupHasContent(value: string, question: QuestionDefinition):
     parsed = JSON.parse(value);
   } catch {
     return false;
+  }
+  if (question.presentation === "vaccination_matrix" && parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const structured = parseStructuredVaccinationAnswer(value);
+    return structured ? structuredVaccinationAnswerHasContent(structured) : false;
   }
   if (!Array.isArray(parsed)) return false;
 

@@ -82,6 +82,7 @@ export type RepeatableGroupFieldDef = {
 export type VaccinationItemDefinition = {
   id: string;
   label: string;
+  secondaryLabel?: string;
   optional?: boolean;
   categoryId?: string;
   documentationMode?: "component_group" | "dose_stages" | "season" | "single" | "dose_count" | "subtype" | "free_text";
@@ -150,6 +151,7 @@ export type QuestionDefinition = {
   vaccinationSchemaVersion?: number;
   /** Aktiviert die strukturierte Phase-2-Impf-UI in neu erzeugten Frozen Snapshots. */
   structuredVaccinationUiVersion?: 1;
+  structuredVaccinationSupplementLabel?: string;
   /** Sichtbare Navigationsgruppen der Impfmatrix. */
   vaccinationCategories?: Array<{
     id: string;
