@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
       selectedBlockIds: body?.selectedBlockIds,
       blockLayout: body?.blockLayout,
       patientReference: typeof patientReference === "string" ? patientReference.trim() : patientReference,
+      documentTitleOption: body?.documentTitleOption,
+      customDocumentTitle: body?.customDocumentTitle,
       origin,
       context: {
         kind: "practice" as const,

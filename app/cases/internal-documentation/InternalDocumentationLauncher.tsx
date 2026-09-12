@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import InternalDocumentationBlockSelector from "@/components/InternalDocumentationBlockSelector";
+import InternalDocumentTitleField from "@/components/InternalDocumentTitleField";
 import { INTERNAL_BLOCK_UI_ORDER } from "@/lib/questionnaire/internalBlockPresentation";
+import {
+  resolveInternalDocumentTitle,
+  type InternalDocumentTitleOption,
+} from "@/lib/questionnaire/internalDocumentTitle";
 import {
   reconcileInternalBlockPlacements,
   type InternalBlockPlacement,
@@ -15,6 +20,8 @@ export default function InternalDocumentationLauncher() {
   const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
   const [layoutManuallyArranged, setLayoutManuallyArranged] = useState(false);
   const [patientReference, setPatientReference] = useState("");
+  const [documentTitleOption, setDocumentTitleOption] = useState<InternalDocumentTitleOption | "">("");
+  const [customDocumentTitle, setCustomDocumentTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +30,12 @@ export default function InternalDocumentationLauncher() {
     const blockIds = Array.from(selectedBlockIds);
     if (blockIds.length === 0) {
       setError("Bitte mindestens einen Abschnitt auswählen.");
+      return;
+    }
+    try {
+      resolveInternalDocumentTitle(documentTitleOption, customDocumentTitle);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Bitte einen gültigen Dokumenttitel auswählen.");
       return;
     }
     setSaving(true);
@@ -35,6 +48,8 @@ export default function InternalDocumentationLauncher() {
           selectedBlockIds: blockIds,
           blockLayout,
           patientReference: patientReference.trim(),
+          documentTitleOption,
+          ...(documentTitleOption === "andere" ? { customDocumentTitle } : {}),
         }),
       });
       const data = await response.json() as { link?: string; error?: string };
@@ -85,17 +100,6 @@ export default function InternalDocumentationLauncher() {
       onSubmit={start}
       style={{ display: "grid", gap: "0.75rem", maxWidth: "28rem" }}
     >
-      <InternalDocumentationBlockSelector
-        selectedBlockIds={selectedBlockIds}
-        onToggleBlock={toggleBlock}
-        onToggleGroup={toggleGroup}
-        blockLayout={blockLayout}
-        onBlockLayoutChange={(layout) => {
-          setLayoutManuallyArranged(true);
-          setBlockLayout(layout);
-        }}
-        disabled={saving}
-      />
       <label>
         Patientenreferenz
         <input
@@ -111,8 +115,26 @@ export default function InternalDocumentationLauncher() {
       <p className="text-muted text-small" style={{ margin: 0 }}>
         Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
       </p>
+      <InternalDocumentTitleField
+        option={documentTitleOption}
+        customTitle={customDocumentTitle}
+        onOptionChange={setDocumentTitleOption}
+        onCustomTitleChange={setCustomDocumentTitle}
+        disabled={saving}
+      />
+      <InternalDocumentationBlockSelector
+        selectedBlockIds={selectedBlockIds}
+        onToggleBlock={toggleBlock}
+        onToggleGroup={toggleGroup}
+        blockLayout={blockLayout}
+        onBlockLayoutChange={(layout) => {
+          setLayoutManuallyArranged(true);
+          setBlockLayout(layout);
+        }}
+        disabled={saving}
+      />
       {error && <p className="text-error" role="alert">{error}</p>}
-      <button type="submit" disabled={saving || selectedBlockIds.size === 0 || !patientReference.trim()}>
+      <button type="submit" disabled={saving || selectedBlockIds.size === 0 || !patientReference.trim() || !documentTitleOption || (documentTitleOption === "andere" && !customDocumentTitle.trim())}>
         {saving ? "Wird gestartet…" : "Starten"}
       </button>
     </form>

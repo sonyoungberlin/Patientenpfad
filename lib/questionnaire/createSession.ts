@@ -22,7 +22,10 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import {
+  buildFrozenBlocks,
+  buildInternalDocumentationSnapshot,
+} from "@/lib/questionnaire/frozenBlocks";
 import { OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
 import {
   buildInternalDocumentationFrozenBlocks,
@@ -31,6 +34,7 @@ import {
 } from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
 import type { InternalBlockPlacement } from "@/lib/questionnaire/internalBlockLayout";
+import type { InternalDocumentTitleMetadata } from "@/lib/questionnaire/internalDocumentTitle";
 import {
   buildPracticeConfirmationsFrozenBlock,
   type PracticeConfirmationSlot,
@@ -80,6 +84,7 @@ export type CreateSessionInput = {
   sessionKind?: "patient_communication" | "internal_documentation";
   internalWorkflowId?: InternalWorkflowId | null;
   internalBlockLayout?: InternalBlockPlacement[];
+  internalDocumentTitle?: InternalDocumentTitleMetadata;
 } & (AccountSessionCreator | KioskSessionCreator);
 
 export type CreateSessionResult = {
@@ -117,6 +122,7 @@ export async function createQuestionnaireSession(
     sessionKind = "patient_communication",
     internalWorkflowId,
     internalBlockLayout,
+    internalDocumentTitle,
   } = input;
 
   const internalSelectedBlockIds = sessionKind === "internal_documentation" &&
@@ -163,6 +169,10 @@ export async function createQuestionnaireSession(
   const persistedSelectedBlockIds = sessionKind === "internal_documentation"
     ? frozenBlocks.filter((block) => block.initiallyVisible).map((block) => block.id)
     : internalSelectedBlockIds;
+  const frozenBlocksSnapshot = sessionKind === "internal_documentation" &&
+    internalWorkflowId == null && internalDocumentTitle
+    ? buildInternalDocumentationSnapshot(frozenBlocks, internalDocumentTitle)
+    : frozenBlocks;
 
   const session = await prisma.patientQuestionnaireSession.create({
     data: {
@@ -183,7 +193,7 @@ export async function createQuestionnaireSession(
           ? (conditionalRules as unknown as Prisma.InputJsonValue)
           : Prisma.JsonNull,
       frozen_blocks: frozenBlocks.length > 0
-        ? (frozenBlocks as unknown as Prisma.InputJsonValue)
+        ? (frozenBlocksSnapshot as unknown as Prisma.InputJsonValue)
         : Prisma.JsonNull,
       patient_language: patientLanguage,
       context,

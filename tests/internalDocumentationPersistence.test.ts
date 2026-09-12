@@ -6,6 +6,11 @@ jest.mock("@/lib/prisma", () => ({
 
 import { prisma } from "@/lib/prisma";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
+import {
+  getInternalDocumentTitle,
+  parseFrozenBlocks,
+  parseInternalDocumentTitleMetadata,
+} from "@/lib/questionnaire/frozenBlocks";
 
 const create = prisma.patientQuestionnaireSession.create as jest.Mock;
 
@@ -51,6 +56,10 @@ describe("internal documentation persistence", () => {
       source: "practice_direct",
       sessionKind: "internal_documentation",
       internalWorkflowId: null,
+      internalDocumentTitle: {
+        documentTitleOption: "patienteninformation",
+        documentTitle: "Patienteninformation",
+      },
       origin: "https://example.test",
     });
 
@@ -59,10 +68,22 @@ describe("internal documentation persistence", () => {
     expect(data.token_expires_at).toBeNull();
     expect(data.patient_copy_return_email).toBeNull();
     expect(data.selected_block_ids).toEqual(["SPECIALISTS", "INTERNAL_CONSENT"]);
-    expect(data.frozen_blocks).toEqual([
-      expect.objectContaining({ id: "SPECIALISTS", outputSemantics: "documented-content-v1" }),
-      expect.objectContaining({ id: "INTERNAL_CONSENT", outputSemantics: "documented-content-v1" }),
-    ]);
+    expect(data.frozen_blocks).toEqual(expect.objectContaining({
+      schemaVersion: 2,
+      metadata: {
+        documentTitleOption: "patienteninformation",
+        documentTitle: "Patienteninformation",
+      },
+      blocks: [
+        expect.objectContaining({ id: "SPECIALISTS", outputSemantics: "documented-content-v1" }),
+        expect.objectContaining({ id: "INTERNAL_CONSENT", outputSemantics: "documented-content-v1" }),
+      ],
+    }));
+    expect(parseFrozenBlocks(data.frozen_blocks)).toHaveLength(2);
+    expect(parseInternalDocumentTitleMetadata(data.frozen_blocks)).toEqual({
+      documentTitleOption: "patienteninformation",
+      documentTitle: "Patienteninformation",
+    });
     expect(data.deduplicated_questions).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "FACHAERZTE", type: "textarea" }),
       expect.objectContaining({ id: "INTERNAL_CONSENT_INCLUDE", type: "multi_select" }),
@@ -73,5 +94,20 @@ describe("internal documentation persistence", () => {
     ]));
     expect(result.token).toBe("");
     expect(result.tokenLink).toBe("https://example.test/questionnaire-kiosk/internal/session-1");
+  });
+
+  it("liest alte Array-Snapshots ohne Titel mit neutralem Fallback", () => {
+    const legacySnapshot = [{
+      id: "CARE_PLAN_HA",
+      label: "Hausärztliche Betreuung",
+      displayOrder: 10,
+      questions: [],
+      conditionalRules: [],
+      initiallyVisible: true,
+    }];
+
+    expect(parseFrozenBlocks(legacySnapshot)).toEqual(legacySnapshot);
+    expect(parseInternalDocumentTitleMetadata(legacySnapshot)).toBeNull();
+    expect(getInternalDocumentTitle(legacySnapshot)).toBe("Interne Dokumentation");
   });
 });

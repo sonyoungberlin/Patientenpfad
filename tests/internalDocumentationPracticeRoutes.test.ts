@@ -49,6 +49,7 @@ describe("practice internal documentation routes", () => {
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
       patientReference: " PAT-1 ",
+      documentTitleOption: "arztbrief",
       owner_practice_id: "practice-evil",
       source: "kiosk_direct",
     }));
@@ -58,6 +59,7 @@ describe("practice internal documentation routes", () => {
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
       patientReference: "PAT-1",
+      documentTitleOption: "arztbrief",
       context: {
         kind: "practice",
         practiceId: "practice-1",
@@ -93,12 +95,14 @@ describe("practice internal documentation routes", () => {
     const response = await createRoute(request("/api/internal-documentation", {
       selectedBlockIds: ["HEALTH_CHECK_MEASUREMENTS", "VACCINATION_REVIEW", "CARE_PLAN_HA"],
       patientReference: " PAT-2C ",
+      documentTitleOption: "patienteninformation",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       selectedBlockIds: ["HEALTH_CHECK_MEASUREMENTS", "VACCINATION_REVIEW", "CARE_PLAN_HA"],
       patientReference: "PAT-2C",
+      documentTitleOption: "patienteninformation",
     }));
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("workflowId");
   });

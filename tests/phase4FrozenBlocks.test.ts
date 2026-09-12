@@ -113,6 +113,16 @@ describe("parseFrozenBlocks", () => {
     expect(result).not.toBeNull();
     expect(result).toHaveLength(1);
   });
+
+  it("liest Blocks aus einer versionierten internen Snapshot-Hülle", () => {
+    const blocks = [makeBlock("a", 1, ["q1"])];
+    const result = parseFrozenBlocks({
+      schemaVersion: 2,
+      metadata: { documentTitleOption: "arztbrief", documentTitle: "Arztbrief" },
+      blocks,
+    });
+    expect(result).toEqual(blocks);
+  });
 });
 
 // ---------------------------------------------------------------------------

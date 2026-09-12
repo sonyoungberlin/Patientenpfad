@@ -36,6 +36,7 @@ describe("internal documentation service", () => {
       await createInternalDocumentationSession({
         selectedBlockIds: ["CARE_PLAN_HA"],
         patientReference: " PAT-1 ",
+        documentTitleOption: "arztbrief",
         origin: "https://example.test",
         context: {
           kind: "practice",
@@ -51,6 +52,10 @@ describe("internal documentation service", () => {
         source: "practice_direct",
         sessionKind: "internal_documentation",
         internalWorkflowId: null,
+        internalDocumentTitle: {
+          documentTitleOption: "arztbrief",
+          documentTitle: "Arztbrief",
+        },
       }));
       const input = createSession.mock.calls[0][0];
       expect(input.internalBlockLayout).toEqual([
@@ -65,6 +70,7 @@ describe("internal documentation service", () => {
     await createInternalDocumentationSession({
       selectedBlockIds: ["CARE_PLAN_HA"],
       patientReference: "PAT-1",
+      documentTitleOption: "bericht",
       origin: "https://example.test",
       context: {
         kind: "kiosk",
@@ -86,6 +92,7 @@ describe("internal documentation service", () => {
     await expect(createInternalDocumentationSession({
       selectedBlockIds: ["unknown"],
       patientReference: "PAT-1",
+      documentTitleOption: "arztbrief",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
     })).rejects.toMatchObject({ status: 400 });
@@ -100,6 +107,7 @@ describe("internal documentation service", () => {
         { blockId: "CARE_PLAN_HA", section: 2, order: 4 },
       ],
       patientReference: "PAT-1",
+      documentTitleOption: "stellungnahme",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
     });
@@ -123,10 +131,49 @@ describe("internal documentation service", () => {
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout,
       patientReference: "PAT-1",
+      documentTitleOption: "arztbrief",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
     })).rejects.toMatchObject({ status: 400 });
     expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { documentTitleOption: undefined },
+    { documentTitleOption: "unbekannt" },
+    { documentTitleOption: "andere" },
+    { documentTitleOption: "andere", customDocumentTitle: "   " },
+    { documentTitleOption: "andere", customDocumentTitle: "a".repeat(121) },
+    { documentTitleOption: "andere", customDocumentTitle: "Titel\nZeile" },
+    { documentTitleOption: "arztbrief", customDocumentTitle: "Zusatz" },
+  ])("weist einen ungültigen Dokumenttitel ab: %j", async (titleInput) => {
+    await expect(createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "PAT-1",
+      ...titleInput,
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+      origin: "https://example.test",
+    })).rejects.toMatchObject({ status: 400 });
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("speichert einen getrimmten individuellen Dokumenttitel unabhängig von Blocks", async () => {
+    await createInternalDocumentationSession({
+      selectedBlockIds: ["VACCINATION_REVIEW", "CARE_PLAN_HA"],
+      patientReference: "PAT-1",
+      documentTitleOption: "andere",
+      customDocumentTitle: "  Individueller Titel  ",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+      origin: "https://example.test",
+    });
+
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW"],
+      internalDocumentTitle: {
+        documentTitleOption: "andere",
+        documentTitle: "Individueller Titel",
+      },
+    }));
   });
 
   it("schließt eine Praxis-Session mit vollständig gescoptem atomarem Write ab", async () => {

@@ -20,6 +20,10 @@ import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { normalizeInternalBlockPlacements } from "@/lib/questionnaire/internalBlockLayout";
 import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
+import {
+  InternalDocumentTitleValidationError,
+  resolveInternalDocumentTitle,
+} from "@/lib/questionnaire/internalDocumentTitle";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -60,6 +64,8 @@ export async function createInternalDocumentationSession(input: {
   selectedBlockIds: unknown;
   blockLayout?: unknown;
   patientReference: unknown;
+  documentTitleOption: unknown;
+  customDocumentTitle?: unknown;
   origin: string;
   context: InternalDocumentationContext;
 }) {
@@ -78,6 +84,18 @@ export async function createInternalDocumentationSession(input: {
       "Mindestens ein gültiger Abschnitt und eine Patientenreferenz sind erforderlich.",
       400,
     );
+  }
+  let internalDocumentTitle;
+  try {
+    internalDocumentTitle = resolveInternalDocumentTitle(
+      input.documentTitleOption,
+      input.customDocumentTitle,
+    );
+  } catch (cause) {
+    if (cause instanceof InternalDocumentTitleValidationError) {
+      throw new InternalDocumentationError(cause.message, 400);
+    }
+    throw cause;
   }
   let selectedBlockIds: string[];
   let internalBlockLayout;
@@ -114,6 +132,7 @@ export async function createInternalDocumentationSession(input: {
     sessionKind: "internal_documentation",
     internalWorkflowId: null,
     internalBlockLayout,
+    internalDocumentTitle,
     origin: input.origin,
     ...creator,
   });

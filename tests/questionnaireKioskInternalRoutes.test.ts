@@ -84,11 +84,16 @@ describe("interne Kiosk-Dokumentation", () => {
       selectedBlockIds: ["CARE_PLAN_HA"],
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 3, order: 0 }],
       patientReference: " PAT-1 ",
+      documentTitleOption: "bescheinigung",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       patientReference: "PAT-1",
+      internalDocumentTitle: {
+        documentTitleOption: "bescheinigung",
+        documentTitle: "Bescheinigung",
+      },
       selectedBlockIds: ["CARE_PLAN_HA"],
       internalBlockLayout: [{ blockId: "CARE_PLAN_HA", section: 3, order: 0 }],
       ownerPracticeId: "practice-1",
@@ -116,12 +121,17 @@ describe("interne Kiosk-Dokumentation", () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
       selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
       patientReference: "PAT-2C",
+      documentTitleOption: "bericht",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
       selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
       patientReference: "PAT-2C",
+      internalDocumentTitle: {
+        documentTitleOption: "bericht",
+        documentTitle: "Bericht",
+      },
       internalWorkflowId: null,
     }));
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("workflowId");
@@ -131,6 +141,23 @@ describe("interne Kiosk-Dokumentation", () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
       selectedBlockIds: ["__proto__"],
       patientReference: "PAT-1",
+    }));
+
+    expect(response.status).toBe(400);
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {},
+    { documentTitleOption: "unbekannt" },
+    { documentTitleOption: "andere" },
+    { documentTitleOption: "andere", customDocumentTitle: "   " },
+    { documentTitleOption: "andere", customDocumentTitle: "Titel\nZeile" },
+  ])("weist ungültige Dokumenttitel mit HTTP 400 ab: %j", async (titleInput) => {
+    const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "PAT-1",
+      ...titleInput,
     }));
 
     expect(response.status).toBe(400);

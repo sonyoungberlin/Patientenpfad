@@ -28,6 +28,11 @@ import {
   type QuestionnaireBlock,
 } from "./blockCatalog";
 import type { ConditionalRule } from "./conditionalLogic";
+import {
+  INTERNAL_DOCUMENT_TITLE_FALLBACK,
+  resolveInternalDocumentTitle,
+  type InternalDocumentTitleMetadata,
+} from "./internalDocumentTitle";
 
 // ---------------------------------------------------------------------------
 // Typ
@@ -66,6 +71,23 @@ export type FrozenBlock = {
   /** Eingefrorene geplante Sichtbarkeit der strukturierten Überschrift. */
   structuredHeadingVisibility?: QuestionnaireBlock["structuredHeadingVisibility"];
 };
+
+export type InternalDocumentationSnapshot = {
+  schemaVersion: 2;
+  metadata: InternalDocumentTitleMetadata;
+  blocks: FrozenBlock[];
+};
+
+export function buildInternalDocumentationSnapshot(
+  blocks: FrozenBlock[],
+  metadata: InternalDocumentTitleMetadata,
+): InternalDocumentationSnapshot {
+  return {
+    schemaVersion: 2,
+    metadata: structuredClone(metadata),
+    blocks,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Aufbau
@@ -186,6 +208,47 @@ export function buildFrozenBlocks(
 
 /** Parst einen rohen DB-Wert sicher zu FrozenBlock[] oder null. */
 export function parseFrozenBlocks(raw: unknown): FrozenBlock[] | null {
-  if (!Array.isArray(raw) || raw.length === 0) return null;
-  return raw as FrozenBlock[];
+  const blocks = Array.isArray(raw)
+    ? raw
+    : isInternalDocumentationSnapshot(raw)
+      ? raw.blocks
+      : null;
+  if (!blocks || blocks.length === 0) return null;
+  return blocks as FrozenBlock[];
+}
+
+function isInternalDocumentationSnapshot(
+  raw: unknown,
+): raw is InternalDocumentationSnapshot {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
+  const snapshot = raw as Record<string, unknown>;
+  return snapshot.schemaVersion === 2 && Array.isArray(snapshot.blocks);
+}
+
+export function parseInternalDocumentTitleMetadata(
+  raw: unknown,
+): InternalDocumentTitleMetadata | null {
+  if (!isInternalDocumentationSnapshot(raw)) return null;
+  const metadata = raw.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const value = metadata as Record<string, unknown>;
+  if (
+    typeof value.documentTitleOption !== "string" ||
+    typeof value.documentTitle !== "string" ||
+    !value.documentTitle.trim()
+  ) return null;
+  try {
+    const resolved = resolveInternalDocumentTitle(
+      value.documentTitleOption,
+      value.documentTitleOption === "andere" ? value.documentTitle : undefined,
+    );
+    return resolved.documentTitle === value.documentTitle ? resolved : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getInternalDocumentTitle(raw: unknown): string {
+  return parseInternalDocumentTitleMetadata(raw)?.documentTitle
+    ?? INTERNAL_DOCUMENT_TITLE_FALLBACK;
 }
