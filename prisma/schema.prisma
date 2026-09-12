@@ -484,6 +484,10 @@ model PatientQuestionnaireSession {
   /// abbildet.
   auto_pdf_download_claimed_at DateTime? @db.Timestamp(6)
 
+  /// Markiert die einmalige Verarbeitung des XML-v2-Exports für interne
+  /// Dokumentationen. Unabhängig von PDF- und GDT-Claims.
+  auto_xml_download_claimed_at DateTime? @db.Timestamp(6)
+
   /// Markiert die einmalige GDT-Ausgabe über direkten Zuordnungsflow oder
   /// automatischen Praxis-Download.
   gdt_download_claimed_at DateTime? @db.Timestamp(6)

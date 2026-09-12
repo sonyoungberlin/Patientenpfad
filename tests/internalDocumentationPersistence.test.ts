@@ -69,6 +69,7 @@ describe("internal documentation persistence", () => {
     expect(data.token).toBeNull();
     expect(data.token_expires_at).toBeNull();
     expect(data.patient_copy_return_email).toBeNull();
+    expect(data.auto_xml_download_claimed_at).toBeNull();
     expect(data.selected_block_ids).toEqual(["SPECIALISTS", "INTERNAL_CONSENT"]);
     expect(data.frozen_blocks).toEqual(expect.objectContaining({
       schemaVersion: 2,

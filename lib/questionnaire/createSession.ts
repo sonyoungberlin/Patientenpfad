@@ -198,6 +198,9 @@ export async function createQuestionnaireSession(
       patient_language: patientLanguage,
       context,
       status: "pending",
+      ...(sessionKind === "internal_documentation"
+        ? { auto_xml_download_claimed_at: null }
+        : {}),
       source: source ?? "internal_link",
       session_kind: sessionKind,
       ...(sessionKind === "internal_documentation" && internalWorkflowId
