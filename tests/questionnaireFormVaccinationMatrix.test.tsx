@@ -56,6 +56,9 @@ function cloneQuestion(question: QuestionDefinition): QuestionDefinition {
   return JSON.parse(JSON.stringify(question)) as QuestionDefinition;
 }
 
+const legacyV2Question = cloneQuestion(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS);
+delete legacyV2Question.structuredVaccinationUiVersion;
+
 function structuredValue(entries: unknown[] = []): string {
   return JSON.stringify({ schema_version: 1, entries });
 }
@@ -63,7 +66,7 @@ function structuredValue(entries: unknown[] = []): string {
 describe("QuestionnaireFormClient vaccination matrix", () => {
   it("zeigt Frozen-v2-Kategorien und alle Impfzeilen initial geschlossen", async () => {
     const { container, root } = await renderForm(
-      VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS,
+      legacyV2Question,
       true,
     );
 
@@ -84,7 +87,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const onChange = jest.fn();
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={onChange} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value="" onChange={onChange} disabled={false} />));
 
     const combinationToggle = container.querySelector<HTMLButtonElement>('[data-vaccination-row="tdap_ipv_group"] button[aria-expanded]')!;
     await act(async () => combinationToggle.click());
@@ -104,7 +107,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const onChange = jest.fn();
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={onChange} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value="" onChange={onChange} disabled={false} />));
 
     const toggle = container.querySelector<HTMLButtonElement>('[data-vaccination-row="zoster"] button[aria-expanded]')!;
     await act(async () => toggle.click());
@@ -126,7 +129,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
   it("zeigt impfungsspezifische v2-Details ohne künstliche Dosisstufen", async () => {
     const container = document.createElement("div");
     const root = createRoot(container);
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={jest.fn()} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value="" onChange={jest.fn()} disabled={false} />));
 
     for (const [id, expected, absent] of [
       ["tdap_ipv_group", "Pertussis", "Dosis 3"],
@@ -158,7 +161,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
   });
 
   it("steuert v2-Planungsfelder vollständig über das Frozen groupSchema", async () => {
-    const frozen = cloneQuestion(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS);
+    const frozen = cloneQuestion(legacyV2Question);
     frozen.groupSchema!.find((field) => field.key === "note")!.label = "Frozen Notiz";
     const container = document.createElement("div");
     const root = createRoot(container);
@@ -192,7 +195,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
   });
 
   it("verwendet auch bei abweichenden Frozen-Bedingungen keine parallele Planungslogik", async () => {
-    const frozen = cloneQuestion(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS);
+    const frozen = cloneQuestion(legacyV2Question);
     frozen.groupSchema!.find((field) => field.key === "further_action")!.conditionalValues = ["Unklar"];
     frozen.groupSchema!.find((field) => field.key === "note")!.conditionalValues = ["Derzeit kein weiteres Vorgehen"];
     const container = document.createElement("div");
@@ -214,7 +217,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const onChange = jest.fn();
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={onChange} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value="" onChange={onChange} disabled={false} />));
 
     const otherToggle = container.querySelector<HTMLButtonElement>('[data-vaccination-row="other"] button[aria-expanded]')!;
     const rsvToggle = container.querySelector<HTMLButtonElement>('[data-vaccination-row="rsv"] button[aria-expanded]')!;
@@ -232,7 +235,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
   it("verwendet für Status und weiteres Vorgehen den bestehenden Auswahlbutton-State", async () => {
     const container = document.createElement("div");
     const root = createRoot(container);
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={jest.fn()} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value="" onChange={jest.fn()} disabled={false} />));
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="rsv"] button[aria-expanded]')!.click());
 
     const partial = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-vaccination-status-gates] button')).find((button) => button.textContent === "Teilweise vorhanden")!;
@@ -248,7 +251,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
 
   it("ignoriert technische Impf-IDs, zeigt aber den bestehenden Fehlerzustand für ungültigen Freitext", async () => {
     const { container, root } = await renderForm(
-      VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS,
+      legacyV2Question,
       true,
     );
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="tdap_ipv_group"] button[aria-expanded]')!.click());
@@ -280,7 +283,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     }]);
     const container = document.createElement("div");
     const root = createRoot(container);
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value={stale} onChange={jest.fn()} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value={stale} onChange={jest.fn()} disabled={false} />));
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="rsv"] button[aria-expanded]')!.click());
     expect(container.querySelector('[data-vaccination-row="rsv"] select')).toBeNull();
     expect(container.querySelector('[data-vaccination-row="rsv"] textarea')).toBeNull();
@@ -291,7 +294,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
   it("zeigt strukturierte Kategorien standardmäßig geschlossen und unabhängig aufklappbar", async () => {
     const container = document.createElement("div");
     const root = createRoot(container);
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value={structuredValue()} onChange={jest.fn()} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={jest.fn()} disabled={false} />));
 
     expect(container.querySelectorAll("[data-vaccination-category]")).toHaveLength(6);
     expect(container.querySelectorAll("[data-vaccination-row]")).toHaveLength(0);
@@ -390,7 +393,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const onChange = jest.fn();
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={onChange} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value="" onChange={onChange} disabled={false} />));
 
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="meningococcal"] button[aria-expanded]')!.click());
     await clickButton(container, "meningococcal", "Teilweise vorhanden");
@@ -418,7 +421,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const onChange = jest.fn();
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value="" onChange={onChange} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={legacyV2Question} value="" onChange={onChange} disabled={false} />));
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-row="other"] button[aria-expanded]')!.click());
     expect(onChange).not.toHaveBeenCalled();
     await clickButton(container, "other", "Unklar");
@@ -441,6 +444,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
   it("rendert eine Legacy-v1-Definition weiterhin mit Select und getrennten Zeilen", async () => {
     const legacy = JSON.parse(JSON.stringify(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS)) as QuestionDefinition;
     delete legacy.vaccinationSchemaVersion;
+    delete legacy.structuredVaccinationUiVersion;
     legacy.vaccinationItems = [
       { id: "tdap", label: "Tetanus / Diphtherie / Pertussis", doseOptions: ["1. Dosis"] },
       { id: "polio", label: "Poliomyelitis", doseOptions: ["1. Dosis"] },
@@ -454,6 +458,7 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
 
   it("verwendet für v2 ausschließlich die Statusoptionen des Frozen Snapshots", async () => {
     const frozen = JSON.parse(JSON.stringify(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS)) as QuestionDefinition;
+    delete frozen.structuredVaccinationUiVersion;
     frozen.groupSchema!.find((field) => field.key === "documented_status")!.options = ["Archiviert"];
     frozen.vaccinationCategories = [{ id: "indication", label: "Archiv" }];
     frozen.vaccinationItems = frozen.vaccinationItems?.filter((item) => item.id === "rsv");

@@ -58,6 +58,7 @@ const VACCINATION_QUESTION: QuestionDefinition = {
   addEntryLabel: "Weitere Impfung",
   presentation: "vaccination_matrix",
   vaccinationSchemaVersion: 2,
+  structuredVaccinationUiVersion: 1,
   vaccinationCategories: [
     { id: "combination", label: "Kombinationsschutz" },
     { id: "seasonal", label: "Saisonal / wiederkehrend" },

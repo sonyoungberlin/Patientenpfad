@@ -684,14 +684,7 @@ function VaccinationMatrixV2Field(props: {
   onChange: (jsonValue: string) => void;
   disabled: boolean;
 }) {
-  let structuredValue = false;
-  try {
-    const parsed: unknown = props.value ? JSON.parse(props.value) : null;
-    structuredValue = Boolean(parsed && typeof parsed === "object" && !Array.isArray(parsed) && "schema_version" in parsed && "entries" in parsed);
-  } catch {
-    structuredValue = false;
-  }
-  return structuredValue
+  return props.question.structuredVaccinationUiVersion === 1
     ? <StructuredVaccinationMatrixField {...props} />
     : <VaccinationMatrixV2LegacyField {...props} />;
 }

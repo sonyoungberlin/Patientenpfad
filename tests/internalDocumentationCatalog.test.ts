@@ -103,6 +103,7 @@ describe("internal documentation workflow registry", () => {
       type: "repeatable_group",
       presentation: "vaccination_matrix",
       vaccinationSchemaVersion: 2,
+      structuredVaccinationUiVersion: 1,
     });
     expect(blocks[0].questions[0].vaccinationItems).toHaveLength(14);
     expect(blocks[0].questions[0].vaccinationItems?.[0]).toMatchObject({

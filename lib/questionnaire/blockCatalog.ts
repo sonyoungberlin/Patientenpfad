@@ -148,6 +148,8 @@ export type QuestionDefinition = {
   presentation?: "vaccination_matrix" | "health_check_follow_up";
   /** Version des vollständig eingefrorenen Dokumentationsschemas der Impfmatrix. */
   vaccinationSchemaVersion?: number;
+  /** Aktiviert die strukturierte Phase-2-Impf-UI in neu erzeugten Frozen Snapshots. */
+  structuredVaccinationUiVersion?: 1;
   /** Sichtbare Navigationsgruppen der Impfmatrix. */
   vaccinationCategories?: Array<{
     id: string;
