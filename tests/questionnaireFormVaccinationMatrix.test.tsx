@@ -327,25 +327,28 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     await act(async () => root.unmount());
   });
 
-  it("öffnet die Impfung kompakt und trennt Einschätzung, Klärung und Organisation", async () => {
+  it("bietet bei Einzeldosisimpfungen nur Status und bedingte Notiz an", async () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const onChange = jest.fn();
     await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value={structuredValue()} onChange={onChange} disabled={false} />));
-    await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-category="catch_up"] > button')!.click());
-    const row = container.querySelector('[data-vaccination-row="hpv"]')!;
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-category="seasonal"] > button')!.click());
+    const row = container.querySelector('[data-vaccination-row="influenza"]')!;
     const toggle = row.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     await act(async () => toggle.click());
-    expect(row.querySelector('[data-vaccination-assessment]')).not.toBeNull();
-    expect(row.querySelector('[data-vaccination-implementation]')).not.toBeNull();
+    expect(row.querySelector('[data-vaccination-status]')).not.toBeNull();
+    expect(row.querySelectorAll('[data-vaccination-status] button')).toHaveLength(3);
+    expect(row.textContent).not.toContain("empfohlen");
+    expect(row.textContent).not.toContain("vorher klären");
     expect(row.querySelector('textarea')).toBeNull();
-    await act(async () => Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "vorher klären")!.click());
+    await act(async () => Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "offen")!.click());
     expect(row.querySelectorAll("textarea")).toHaveLength(1);
-    await act(async () => Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "empfohlen")!.click());
-    expect(row.querySelector("textarea")).toBeNull();
     await act(async () => Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "geplant")!.click());
-    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('"implementation_status":"planned"'));
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('"status":"planned"'));
+    await act(async () => Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "vollständig")!.click());
+    expect(row.querySelector("textarea")).toBeNull();
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('"status":"complete"'));
     await act(async () => root.unmount());
   });
 
@@ -360,12 +363,14 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     const doseOne = hpv.querySelector('[data-vaccination-dose="1"]')!;
     const doseTwo = hpv.querySelector('[data-vaccination-dose="2"]')!;
     expect(doseOne.querySelectorAll("button")).toHaveLength(3);
-    expect(doseOne.querySelector('input[type="date"]')).toBeNull();
+    expect(doseOne.querySelectorAll("button")).toHaveLength(3);
     await act(async () => Array.from(doseOne.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "erfolgt")!.click());
-    expect(doseOne.querySelector('input[type="date"]')).not.toBeNull();
+    expect(doseOne.querySelector("textarea")).not.toBeNull();
+    expect(hpv.querySelector('[data-vaccination-status]')).toBeNull();
     await act(async () => Array.from(doseTwo.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "geplant")!.click());
-    expect(doseTwo.querySelector('input[type="date"]')).not.toBeNull();
-    expect(doseTwo.querySelector('input[placeholder="empfohlen in ..."]')).not.toBeNull();
+    expect(doseTwo.querySelector("textarea")).not.toBeNull();
+    expect(doseTwo.querySelector('input[type="number"]')).not.toBeNull();
+    expect(doseTwo.querySelector('select')).not.toBeNull();
 
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-category="indication"] > button')!.click());
     const rsv = container.querySelector('[data-vaccination-row="rsv"]')!;
@@ -374,18 +379,17 @@ describe("QuestionnaireFormClient vaccination matrix", () => {
     await act(async () => root.unmount());
   });
 
-  it("lädt strukturierte Antworten als bearbeitbare UI und übergibt sie bei Änderungen weiter", async () => {
+  it("lädt strukturierte Dosisnotizen und Status unabhängig voneinander", async () => {
     const container = document.createElement("div");
     const root = createRoot(container);
     const onChange = jest.fn();
-    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value={structuredValue([{ vaccination_id: "hpv", medical_assessment: "clarify_first", clarification_note: "Impfpass suchen", implementation_status: "open", doses: [{ number: 1, status: "done", date: "2026-01-01" }] }])} onChange={onChange} disabled={false} />));
+    await act(async () => root.render(<VaccinationMatrixField question={VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS} value={structuredValue([{ vaccination_id: "hpv", doses: [{ number: 1, status: "done", note: "nach Rücksprache" }] }])} onChange={onChange} disabled={false} />));
     await act(async () => container.querySelector<HTMLButtonElement>('[data-vaccination-category="catch_up"] > button')!.click());
     const row = container.querySelector('[data-vaccination-row="hpv"]')!;
     await act(async () => row.querySelector<HTMLButtonElement>('button[aria-expanded]')!.click());
-    expect(row.textContent).toContain("offen");
-    expect(row.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("Impfpass suchen");
+    expect(row.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("nach Rücksprache");
     await act(async () => row.querySelector<HTMLTextAreaElement>("textarea")!.dispatchEvent(new InputEvent("input", { bubbles: true })));
-    expect(row.querySelector('[data-vaccination-implementation]')?.textContent).toContain("offen");
+    expect(row.querySelector('[data-vaccination-status]')).toBeNull();
     await act(async () => root.unmount());
   });
 

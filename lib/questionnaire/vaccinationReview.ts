@@ -25,21 +25,33 @@ export type VaccinationAssessment =
   | "clarify_first"
   | "not_recommended";
 
+export type VaccinationStatus = "complete" | "open" | "planned";
+/** @deprecated Nur zum konservativen Lesen bereits gespeicherter Antworten. */
 export type VaccinationImplementationStatus = "open" | "planned";
 export type VaccinationDoseStatus = "done" | "open" | "planned";
 
 export type StructuredVaccinationDose = {
   number: number;
   status: VaccinationDoseStatus;
+  note?: string;
+  recommended_interval_value?: number;
+  recommended_interval_unit?: "weeks" | "months";
+  /** @deprecated Nur zum konservativen Lesen bereits gespeicherter Antworten. */
   date?: string;
+  /** @deprecated Nur zum konservativen Lesen bereits gespeicherter Antworten. */
   recommendedInterval?: string;
 };
 
 export type StructuredVaccinationEntry = {
   vaccination_id: string;
   custom_label?: string;
+  status?: VaccinationStatus;
+  note?: string;
+  /** @deprecated Nur zum konservativen Lesen bereits gespeicherter Antworten. */
   medical_assessment?: VaccinationAssessment;
+  /** @deprecated Nur zum konservativen Lesen bereits gespeicherter Antworten. */
   clarification_note?: string;
+  /** @deprecated Nur zum konservativen Lesen bereits gespeicherter Antworten. */
   implementation_status?: VaccinationImplementationStatus;
   doses?: StructuredVaccinationDose[];
   legacy?: {
@@ -64,7 +76,7 @@ const ASSESSMENT_LABELS: Record<VaccinationAssessment, string> = {
 
 const DOSE_STATUS_LABELS: Record<VaccinationDoseStatus, string> = {
   done: "erfolgt",
-  open: "noch erforderlich",
+  open: "offen",
   planned: "geplant",
 };
 
@@ -116,6 +128,20 @@ function normalizeStructuredDose(raw: unknown): StructuredVaccinationDose | null
     number: raw.number,
     status: raw.status as VaccinationDoseStatus,
   };
+  const note = cleanOptionalText(raw.note, 2000);
+  if (note) dose.note = note;
+  if (raw.recommended_interval_value !== undefined) {
+    if (typeof raw.recommended_interval_value !== "number"
+      || !Number.isInteger(raw.recommended_interval_value)
+      || raw.recommended_interval_value < 1
+      || raw.recommended_interval_value > 9999) return null;
+    dose.recommended_interval_value = raw.recommended_interval_value;
+  }
+  if (raw.recommended_interval_unit !== undefined) {
+    if (raw.recommended_interval_unit !== "weeks" && raw.recommended_interval_unit !== "months") return null;
+    dose.recommended_interval_unit = raw.recommended_interval_unit;
+  }
+  if ((dose.recommended_interval_value === undefined) !== (dose.recommended_interval_unit === undefined)) return null;
   const date = cleanOptionalText(raw.date, 10);
   const interval = cleanOptionalText(raw.recommendedInterval, 100);
   if (date) dose.date = date;
@@ -137,10 +163,17 @@ export function normalizeStructuredVaccinationAnswer(raw: unknown): StructuredVa
     seen.add(vaccinationId);
     const entry: StructuredVaccinationEntry = { vaccination_id: vaccinationId };
     const customLabel = cleanOptionalText(value.custom_label, 120);
+    const status = value.status;
+    const note = cleanOptionalText(value.note, 2000);
     const assessment = value.medical_assessment;
     const clarificationNote = cleanOptionalText(value.clarification_note, 2000);
     const implementationStatus = value.implementation_status;
     if (customLabel) entry.custom_label = customLabel;
+    if (status !== undefined) {
+      if (status !== "complete" && status !== "open" && status !== "planned") return null;
+      entry.status = status;
+    }
+    if (note) entry.note = note;
     if (assessment !== undefined) {
       if (typeof assessment !== "string" || !ASSESSMENTS.has(assessment as VaccinationAssessment)) return null;
       entry.medical_assessment = assessment as VaccinationAssessment;
@@ -176,7 +209,8 @@ export function countEditedVaccinations(answer: StructuredVaccinationAnswer): nu
 }
 
 export function countExplicitlyOpenVaccinations(answer: StructuredVaccinationAnswer): number {
-  return answer.entries.filter((entry) => entry.implementation_status === "open"
+  return answer.entries.filter((entry) => entry.status === "open"
+    || entry.implementation_status === "open"
     || entry.doses?.some((dose) => dose.status === "open")).length;
 }
 
@@ -185,13 +219,25 @@ export function formatStructuredVaccinationEntry(
   label: string,
 ): string {
   const parts: string[] = [];
-  if (entry.medical_assessment) parts.push(ASSESSMENT_LABELS[entry.medical_assessment]);
-  if (entry.clarification_note) parts.push(`- ${entry.clarification_note}`);
-  if (entry.implementation_status) parts.push(entry.implementation_status === "planned" ? "Durchführung geplant" : "Durchführung offen");
+  if (entry.status) {
+    const statusLabel = entry.status === "complete" ? "vollständig" : entry.status === "open" ? "offen" : "geplant";
+    parts.push(`${statusLabel}${entry.note ? ` – ${entry.note}` : ""}`);
+  } else if (entry.implementation_status) {
+    parts.push(entry.implementation_status === "planned" ? "Durchführung geplant" : "Durchführung offen");
+  } else if (entry.medical_assessment) {
+    parts.push(ASSESSMENT_LABELS[entry.medical_assessment]);
+    if (entry.clarification_note) parts.push(`- ${entry.clarification_note}`);
+  }
   if (entry.doses?.length) {
     parts.push(entry.doses.map((dose) => {
-      const suffix = dose.date ? ` am ${formatVaccinationDate(dose.date)}` : dose.recommendedInterval ? ` in ${dose.recommendedInterval}` : "";
-      return `${dose.number}. Dosis ${DOSE_STATUS_LABELS[dose.status]}${suffix}`;
+      let interval = "";
+      if (dose.recommended_interval_value && dose.recommended_interval_unit) {
+        interval = `, empfohlen in ${dose.recommended_interval_value} ${dose.recommended_interval_unit === "weeks" ? "Wochen" : "Monaten"}`;
+      } else if (dose.recommendedInterval) {
+        interval = dose.recommendedInterval.startsWith("in ") ? ` ${dose.recommendedInterval}` : ` in ${dose.recommendedInterval}`;
+      }
+      const date = dose.date ? `am ${formatVaccinationDate(dose.date)}` : "";
+      return `${dose.number}. Dosis ${DOSE_STATUS_LABELS[dose.status]}${interval}${date ? ` ${date}` : ""}${dose.note ? ` – ${dose.note}` : ""}`;
     }).join(", "));
   }
   return `${label}: ${parts.join("; ")}`;

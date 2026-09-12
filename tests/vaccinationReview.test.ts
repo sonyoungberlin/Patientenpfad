@@ -439,4 +439,48 @@ describe("vaccination review", () => {
     });
     expect(note).toContain("HPV: kann erfolgen; 1. Dosis erfolgt, 2. Dosis geplant in 5 Monaten");
   });
+
+  it("formats the simplified single-dose and dose-series model", () => {
+    expect(formatStructuredVaccinationEntry({
+      vaccination_id: "influenza",
+      status: "complete",
+    }, "Influenza")).toBe("Influenza: vollständig");
+    expect(formatStructuredVaccinationEntry({
+      vaccination_id: "influenza",
+      status: "open",
+      note: "Abklärung mit Gyn",
+    }, "Influenza")).toBe("Influenza: offen – Abklärung mit Gyn");
+    expect(formatStructuredVaccinationEntry({
+      vaccination_id: "covid19",
+      status: "planned",
+      note: "Termin im Oktober",
+    }, "COVID-19")).toBe("COVID-19: geplant – Termin im Oktober");
+    expect(formatStructuredVaccinationEntry({
+      vaccination_id: "hpv",
+      doses: [
+        { number: 1, status: "done" },
+        { number: 2, status: "open", note: "Impfpass suchen", recommended_interval_value: 5, recommended_interval_unit: "months" },
+      ],
+    }, "HPV")).toBe("HPV: 1. Dosis erfolgt, 2. Dosis offen, empfohlen in 5 Monaten – Impfpass suchen");
+  });
+
+  it("normalizes documented dose intervals in weeks and months without calculating them", () => {
+    const answer = parseStructuredVaccinationAnswer(JSON.stringify({
+      schema_version: 1,
+      entries: [{
+        vaccination_id: "hpv",
+        doses: [
+          { number: 1, status: "done" },
+          { number: 2, status: "planned", recommended_interval_value: 4, recommended_interval_unit: "weeks" },
+          { number: 3, status: "open", recommended_interval_value: 5, recommended_interval_unit: "months" },
+        ],
+      }],
+    }));
+
+    expect(answer?.entries[0].doses).toEqual([
+      { number: 1, status: "done" },
+      { number: 2, status: "planned", recommended_interval_value: 4, recommended_interval_unit: "weeks" },
+      { number: 3, status: "open", recommended_interval_value: 5, recommended_interval_unit: "months" },
+    ]);
+  });
 });

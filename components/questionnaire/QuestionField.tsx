@@ -29,8 +29,8 @@ import {
   type StructuredVaccinationAnswer,
   type StructuredVaccinationDose,
   type StructuredVaccinationEntry,
-  type VaccinationAssessment,
   type VaccinationDoseStatus,
+  type VaccinationStatus,
 } from "@/lib/questionnaire/vaccinationReview";
 
 // ---------------------------------------------------------------------------
@@ -277,13 +277,6 @@ function LegacyVaccinationMatrixField({
   return <div style={{ display: "grid", gap: "0.25rem" }}><div>{coreItems.map(renderRow)}</div><details><summary>Weitere Impfungen</summary>{optionalItems.map((item) => <label key={item.id} style={{ display: "block", margin: "0.5rem 0" }}><input type="checkbox" checked={activeIds.has(item.id)} disabled={disabled} onChange={() => toggleOptional(item.id)} /> {item.label}</label>)}{optionalItems.filter((item) => activeIds.has(item.id)).map(renderRow)}</details></div>;
 }
 
-const STRUCTURED_ASSESSMENT_OPTIONS: Array<{ value: VaccinationAssessment; label: string }> = [
-  { value: "recommended", label: "empfohlen" },
-  { value: "possible", label: "kann erfolgen" },
-  { value: "clarify_first", label: "vorher klären" },
-  { value: "not_recommended", label: "derzeit nicht empfohlen" },
-];
-
 const STRUCTURED_DOSE_STATUS_OPTIONS: Array<{ value: VaccinationDoseStatus; label: string }> = [
   { value: "done", label: "erfolgt" },
   { value: "open", label: "offen" },
@@ -345,16 +338,12 @@ function StructuredVaccinationMatrixField({
     commit({ ...answer, entries: nextEntries });
   };
 
-  const setAssessment = (id: string, assessment: VaccinationAssessment) => {
-    updateEntry(id, (entry) => ({ ...entry, medical_assessment: assessment }));
+  const setStatus = (id: string, status: VaccinationStatus) => {
+    updateEntry(id, (entry) => ({ ...entry, status }));
   };
 
-  const setImplementationStatus = (id: string, status: "open" | "planned") => {
-    updateEntry(id, (entry) => ({ ...entry, implementation_status: status }));
-  };
-
-  const setClarificationNote = (id: string, note: string) => {
-    updateEntry(id, (entry) => ({ ...entry, clarification_note: note.slice(0, 2000) }));
+  const setNote = (id: string, note: string) => {
+    updateEntry(id, (entry) => ({ ...entry, note: note.slice(0, 2000) || undefined }));
   };
 
   const updateDose = (id: string, doseNumber: number, update: (dose: StructuredVaccinationDose) => StructuredVaccinationDose) => {
@@ -377,11 +366,11 @@ function StructuredVaccinationMatrixField({
 
   const summary = (entry: StructuredVaccinationEntry | undefined) => {
     if (!entry) return "";
-    if (entry.implementation_status === "open") return "offen";
-    if (entry.implementation_status === "planned") return "geplant";
-    if (entry.medical_assessment === "clarify_first") return "vorher klären";
-    if (entry.medical_assessment) return STRUCTURED_ASSESSMENT_OPTIONS.find((option) => option.value === entry.medical_assessment)?.label ?? "bearbeitet";
-    return entry.doses?.length ? "bearbeitet" : "bearbeitet";
+    if (entry.status === "complete") return "vollständig";
+    if (entry.status === "open") return "offen";
+    if (entry.status === "planned") return "geplant";
+    if (entry.doses?.length) return "Dosen dokumentiert";
+    return "bearbeitet";
   };
 
   const renderDoseDetails = (itemId: string, entry: StructuredVaccinationEntry) => {
@@ -425,25 +414,40 @@ function StructuredVaccinationMatrixField({
                     </button>
                   ))}
                 </div>
-                {(status === "done" || status === "planned") && (
-                  <input
-                    type="date"
-                    aria-label={`${item?.label ?? itemId} ${doseNumber}. Dosis Datum`}
-                    value={dose?.date ?? ""}
-                    disabled={disabled}
-                    onChange={(event) => updateDose(itemId, doseNumber, (current) => ({ ...current, date: event.target.value || undefined }))}
-                    style={fieldStyle}
-                  />
-                )}
-                {doseNumber > 1 && status === "planned" && (
-                  <input
-                    aria-label={`${item?.label ?? itemId} ${doseNumber}. Dosis Intervall`}
-                    value={dose?.recommendedInterval ?? ""}
-                    placeholder="empfohlen in ..."
-                    disabled={disabled}
-                    onChange={(event) => updateDose(itemId, doseNumber, (current) => ({ ...current, recommendedInterval: event.target.value.slice(0, 100) || undefined }))}
-                    style={fieldStyle}
-                  />
+                <textarea
+                  aria-label={`${item?.label ?? itemId} ${doseNumber}. Dosis Notiz`}
+                  placeholder="Notiz (optional)"
+                  value={dose?.note ?? ""}
+                  disabled={disabled}
+                  onChange={(event) => updateDose(itemId, doseNumber, (current) => ({ ...current, note: event.target.value.slice(0, 2000) || undefined }))}
+                  style={{ ...fieldStyle, minHeight: "3.5rem", resize: "vertical" }}
+                />
+                {doseNumber > 1 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(5rem, 1fr) minmax(8rem, 1fr)", gap: "0.5rem", minWidth: 0 }}>
+                    <input
+                      type="number"
+                      min="1"
+                      max="9999"
+                      inputMode="numeric"
+                      aria-label={`${item?.label ?? itemId} ${doseNumber}. Dosis Abstandswert`}
+                      value={dose?.recommended_interval_value ?? ""}
+                      placeholder="Abstand"
+                      disabled={disabled}
+                      onChange={(event) => updateDose(itemId, doseNumber, (current) => ({ ...current, recommended_interval_value: event.target.value ? Number(event.target.value) : undefined }))}
+                      style={fieldStyle}
+                    />
+                    <select
+                      aria-label={`${item?.label ?? itemId} ${doseNumber}. Dosis Abstandseinheit`}
+                      value={dose?.recommended_interval_unit ?? ""}
+                      disabled={disabled}
+                      onChange={(event) => updateDose(itemId, doseNumber, (current) => ({ ...current, recommended_interval_unit: event.target.value === "weeks" || event.target.value === "months" ? event.target.value : undefined }))}
+                      style={fieldStyle}
+                    >
+                      <option value="">Einheit</option>
+                      <option value="weeks">Wochen</option>
+                      <option value="months">Monate</option>
+                    </select>
+                  </div>
                 )}
               </div>
             );
@@ -466,28 +470,24 @@ function StructuredVaccinationMatrixField({
           onClick={() => setOpenId(isOpen ? null : item.id)}
           style={{ width: "100%", minWidth: 0, minHeight: "3rem", padding: "0.55rem 0", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 1.5rem", gap: "0.75rem", alignItems: "center", textAlign: "left", border: 0, background: "transparent", color: "inherit" }}
         >
-          <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-            <strong>{item.label}</strong>
+          <span style={{ minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+            <strong style={{ display: "block", overflowWrap: "anywhere", wordBreak: "break-word" }}>{item.label}</strong>
             {edited && <span data-vaccination-entry-summary style={{ display: "block", marginTop: "0.1rem", color: "var(--muted-foreground, #6b7280)", fontSize: "0.8rem" }}>{summary(entry)}</span>}
           </span>
           <span aria-hidden="true" style={{ width: "1.5rem", textAlign: "center", fontSize: "1.15rem" }}>{isOpen ? "−" : "+"}</span>
         </button>
         {isOpen && (
           <div style={{ display: "grid", gap: "0.7rem", padding: "0.15rem 0 0.85rem" }}>
-            <div data-vaccination-assessment style={{ display: "grid", gap: "0.35rem" }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-                {STRUCTURED_ASSESSMENT_OPTIONS.map((option) => (
-                  <button key={option.value} type="button" disabled={disabled} aria-pressed={entry?.medical_assessment === option.value} onClick={() => setAssessment(item.id, option.value)} style={answerChoiceStyle(entry?.medical_assessment === option.value, disabled)}>{option.label}</button>
-                ))}
-              </div>
-              {entry?.medical_assessment === "clarify_first" && <textarea aria-label={`${item.label} Klärung`} placeholder="Freitext zur Klärung" value={entry.clarification_note ?? ""} disabled={disabled} onChange={(event) => setClarificationNote(item.id, event.target.value)} style={{ ...fieldStyle, minHeight: "4rem", resize: "vertical" }} />}
-            </div>
-            <div data-vaccination-implementation style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-              {(["open", "planned"] as const).map((status) => (
-                <button key={status} type="button" disabled={disabled} aria-pressed={entry?.implementation_status === status} onClick={() => setImplementationStatus(item.id, status)} style={answerChoiceStyle(entry?.implementation_status === status, disabled)}>{status === "open" ? "offen" : "geplant"}</button>
-              ))}
-            </div>
-            {renderDoseDetails(item.id, entry ?? { vaccination_id: item.id })}
+            {item.documentationMode === "dose_stages" ? renderDoseDetails(item.id, entry ?? { vaccination_id: item.id }) : (
+              <>
+                <div data-vaccination-status style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                  {(["complete", "open", "planned"] as const).map((status) => (
+                    <button key={status} type="button" disabled={disabled} aria-pressed={entry?.status === status} onClick={() => setStatus(item.id, status)} style={answerChoiceStyle(entry?.status === status, disabled)}>{status === "complete" ? "vollständig" : status === "open" ? "offen" : "geplant"}</button>
+                  ))}
+                </div>
+                {(entry?.status === "open" || entry?.status === "planned") && <textarea aria-label={`${item.label} Notiz`} placeholder="Notiz (optional)" value={entry.note ?? ""} disabled={disabled} onChange={(event) => setNote(item.id, event.target.value)} style={{ ...fieldStyle, minHeight: "3.5rem", resize: "vertical" }} />}
+              </>
+            )}
           </div>
         )}
       </div>
