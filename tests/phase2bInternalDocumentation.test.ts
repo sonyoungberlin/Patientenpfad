@@ -972,7 +972,7 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-disposition")).toContain(
-      "20260909_PAT2B_Interne_Dokumentation.pdf",
+      "20260909_Interne_Dokumentation.pdf",
     );
   });
 });

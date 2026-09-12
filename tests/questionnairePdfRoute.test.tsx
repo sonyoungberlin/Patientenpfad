@@ -169,7 +169,7 @@ describe("questionnaire pdf filename", () => {
     await expect(getFilename()).resolves.toBe("20260512_Test_Neupatient.pdf");
   });
 
-  it("uses the internal care plan filename while keeping the existing date format", async () => {
+  it("uses the central legacy title for an internal care plan filename", async () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
       baseSession({
         patient_reference: "123545",
@@ -180,11 +180,11 @@ describe("questionnaire pdf filename", () => {
     );
 
     await expect(getFilename()).resolves.toBe(
-      "20260512_123545_Persoenlicher_Versorgungsplan.pdf",
+      "20260512_123545_Interne_Dokumentation.pdf",
     );
   });
 
-  it("uses the vaccination review workflow title and filename", async () => {
+  it("does not derive an internal filename from the vaccination workflow", async () => {
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
       baseSession({
         patient_reference: "123545",
@@ -200,7 +200,7 @@ describe("questionnaire pdf filename", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-disposition")).toContain(
-      "20260512_123545_DOKU_Impfberatung.pdf",
+      "20260512_123545_Interne_Dokumentation.pdf",
     );
   });
 

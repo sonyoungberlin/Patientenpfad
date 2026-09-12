@@ -5,6 +5,7 @@ import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { resolveQuestionnairePdfOptions } from "@/lib/questionnaire/questionnaireExportService";
+import { buildInternalDocumentationPdfArtifact } from "@/lib/questionnaire/internalDocumentationArtifacts";
 
 export async function GET(
   req: NextRequest,
@@ -73,7 +74,23 @@ export async function GET(
       headers: { "Content-Type": "application/json" },
     });
   }
-  const { bytes, filename } = await buildQuestionnairePdfBytes(session, pdfOptions);
+  let pdf;
+  if (session.session_kind === "internal_documentation") {
+    if (!session.submitted_at) {
+      return new Response(JSON.stringify({ ok: false, error: "Abschlussdatum fehlt." }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    pdf = await buildInternalDocumentationPdfArtifact({
+      ...session,
+      session_kind: "internal_documentation",
+      submitted_at: session.submitted_at,
+    }, pdfOptions);
+  } else {
+    pdf = await buildQuestionnairePdfBytes(session, pdfOptions);
+  }
+  const { bytes, filename } = pdf;
 
   if (session.pdf_downloaded_at == null) {
     try {

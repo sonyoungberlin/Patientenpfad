@@ -57,6 +57,8 @@ export type PdfRenderOptions = {
   blockCatalog: Record<string, QuestionnaireBlock>;
   /** Optionaler fachlicher Dateiname; ohne Angabe bleibt die Bestandslogik unverändert. */
   filenameLabel?: string;
+  /** Optionaler finaler Dateiname für spezialisierte Exportpfade. */
+  filename?: string;
   /** Interne Workflows dürfen unbeantwortete Fragen ausblenden. */
   omitUnanswered?: boolean;
   /** Unterdrückt ein Fragenlabel, wenn es exakt der Blocküberschrift entspricht. */
@@ -517,7 +519,7 @@ export async function buildQuestionnairePdfBytes(
 
   const bytes = await pdfDoc.save();
 
-  const filename = buildQuestionnaireExportFilename(session, {
+  const filename = opts.filename ?? buildQuestionnaireExportFilename(session, {
     blockCatalog,
     filenameLabel: opts.filenameLabel,
     extension: "pdf",
