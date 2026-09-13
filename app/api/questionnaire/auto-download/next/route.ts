@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { QuestionnaireAutoExportMode } from "@prisma/client";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
+import { requireQuestionnaireAutoExportMode } from "@/lib/questionnaire/autoExportMode";
 import {
   AutoDownloadArtifactBuildError,
   selectNextAutoDownloadArtifact,
@@ -41,17 +42,15 @@ export async function GET(req: NextRequest) {
   }
   const deviceHash = hashQuestionnaireAutoDeviceId(deviceId);
 
-  const settings = await prisma.practice.findUnique({
-    where: { id: practice.id },
-    select: {
-      questionnaire_auto_pdf_device_hash: true,
-      questionnaire_auto_pdf_enabled_at: true,
-    },
-  });
-  const enabledAt = settings?.questionnaire_auto_pdf_enabled_at ?? null;
+  const mode = await requireQuestionnaireAutoExportMode(
+    practice.id,
+    QuestionnaireAutoExportMode.BROWSER,
+  );
+  if (mode.error) return mode.error;
+  const enabledAt = mode.settings.browserEnabledAt;
   if (
     !enabledAt ||
-    settings?.questionnaire_auto_pdf_device_hash !== deviceHash
+    mode.settings.browserDeviceHash !== deviceHash
   ) {
     return Response.json(
       { ok: false, error: "Gerät nicht für Auto-Download freigegeben." },

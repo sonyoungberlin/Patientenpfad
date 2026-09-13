@@ -37,6 +37,7 @@ import NotificationEmailField from "@/components/practice/NotificationEmailField
 import PersistentAutoDownloadDeviceSettings from "@/components/practice/PersistentAutoDownloadDeviceSettings";
 import PublicPracticeProfileForm from "@/components/practice/PublicPracticeProfileForm";
 import QuestionnaireAutoDownloadDeviceSettings from "@/components/practice/QuestionnaireAutoDownloadDeviceSettings";
+import QuestionnaireAutoExportModeSettings from "@/components/practice/QuestionnaireAutoExportModeSettings";
 
 const ROLE_LABEL: Record<PracticeRole, string> = {
   OWNER: "Inhaber",
@@ -221,6 +222,7 @@ export default async function PracticeMembersPage({
         </tbody>
       </table>
 
+      <QuestionnaireAutoExportModeSettings />
       <QuestionnaireAutoDownloadDeviceSettings />
       <PersistentAutoDownloadDeviceSettings />
 

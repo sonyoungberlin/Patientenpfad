@@ -18,6 +18,8 @@ export default function QuestionnaireAutoDownloadController() {
 
   useEffect(() => {
     let disposed = false;
+    let interval: number | null = null;
+    let visibilityListenerAttached = false;
     let deviceId: string;
     try {
       deviceId = getOrCreateQuestionnaireAutoDeviceId();
@@ -27,22 +29,40 @@ export default function QuestionnaireAutoDownloadController() {
 
     const headers = { "X-Questionnaire-Auto-Device": deviceId };
 
-    async function runCycle() {
-      if (disposed || inFlight.current) return;
+    function stopPolling() {
+      if (interval !== null) {
+        window.clearInterval(interval);
+        interval = null;
+      }
+      if (visibilityListenerAttached) {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        visibilityListenerAttached = false;
+      }
+    }
+
+    async function runCycle(): Promise<boolean> {
+      if (disposed || inFlight.current) return true;
       inFlight.current = true;
       try {
         const statusResponse = await fetch(STATUS_ENDPOINT, { headers });
-        if (!statusResponse.ok) return;
+        if (!statusResponse.ok) return true;
         const status = (await statusResponse.json()) as {
+          mode: "BROWSER" | "WINDOWS";
           enabled: boolean;
           isCurrentDevice: boolean;
         };
+        if (status.mode === "WINDOWS") {
+          setActive(false);
+          setError(false);
+          stopPolling();
+          return false;
+        }
         const isActive = status.enabled && status.isCurrentDevice;
-        if (disposed) return;
+        if (disposed) return false;
         setActive(isActive);
         if (!isActive) {
           setError(false);
-          return;
+          return true;
         }
 
         setError(false);
@@ -64,24 +84,29 @@ export default function QuestionnaireAutoDownloadController() {
           await downloadFileResponse(response, "Fragebogen");
         }
         if (!disposed) refresh();
+        return true;
       } catch {
         if (!disposed) setError(true);
+        return true;
       } finally {
         inFlight.current = false;
       }
     }
 
-    void runCycle();
-    const interval = window.setInterval(() => void runCycle(), POLL_INTERVAL_MS);
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") void runCycle();
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    void runCycle().then((shouldPoll) => {
+      if (disposed || !shouldPoll) return;
+      interval = window.setInterval(() => void runCycle(), POLL_INTERVAL_MS);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      visibilityListenerAttached = true;
+    });
 
     return () => {
       disposed = true;
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      stopPolling();
     };
   }, [refresh]);
 

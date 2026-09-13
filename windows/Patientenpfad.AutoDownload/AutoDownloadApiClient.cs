@@ -13,12 +13,14 @@ public sealed class FetchedArtifact(
     HttpResponseMessage response,
     Stream content,
     string fileName,
+    string artifactType,
     string deliveryId,
     string leaseToken,
     string contentSha256) : IAsyncDisposable
 {
     public Stream Content { get; } = content;
     public string FileName { get; } = fileName;
+    public string ArtifactType { get; } = artifactType;
     public string DeliveryId { get; } = deliveryId;
     public string LeaseToken { get; } = leaseToken;
     public string ContentSha256 { get; } = contentSha256;
@@ -34,6 +36,8 @@ public sealed record FetchResult(bool HasArtifact, FetchedArtifact? Artifact)
 {
     public static FetchResult Empty { get; } = new(false, null);
 }
+
+public sealed record AcknowledgeResult(bool IsSuccess, HttpStatusCode StatusCode);
 
 public sealed class AutoDownloadApiClient(HttpClient httpClient)
 {
@@ -69,13 +73,14 @@ public sealed class AutoDownloadApiClient(HttpClient httpClient)
         try
         {
             var fileName = ReadFileName(response.Content.Headers.ContentDisposition);
+            var artifactType = ReadArtifactType(response);
             var deliveryId = ReadRequiredHeader(response, "X-Auto-Download-Delivery-Id");
             var leaseToken = ReadRequiredHeader(response, "X-Auto-Download-Lease-Token");
             var contentSha256 = ReadRequiredHeader(response, "X-Content-SHA256");
             var content = await response.Content.ReadAsStreamAsync(cancellationToken);
             return new FetchResult(
                 true,
-                new FetchedArtifact(response, content, fileName, deliveryId, leaseToken, contentSha256));
+                new FetchedArtifact(response, content, fileName, artifactType, deliveryId, leaseToken, contentSha256));
         }
         catch
         {
@@ -84,7 +89,7 @@ public sealed class AutoDownloadApiClient(HttpClient httpClient)
         }
     }
 
-    public async Task<bool> AcknowledgeAsync(
+    public async Task<AcknowledgeResult> AcknowledgeAsync(
         Uri serverBaseUrl,
         DeviceCredential credential,
         string deliveryId,
@@ -99,7 +104,7 @@ public sealed class AutoDownloadApiClient(HttpClient httpClient)
         request.Headers.TryAddWithoutValidation("X-Auto-Download-Lease-Token", leaseToken);
         using var response = await httpClient.SendAsync(request, cancellationToken);
         ThrowIfAuthenticationFailed(response);
-        return response.IsSuccessStatusCode;
+        return new AcknowledgeResult(response.IsSuccessStatusCode, response.StatusCode);
     }
 
     private static void AddDeviceAuthorization(HttpRequestMessage request, DeviceCredential credential)
@@ -139,5 +144,13 @@ public sealed class AutoDownloadApiClient(HttpClient httpClient)
         return headers.Length != 1 || string.IsNullOrWhiteSpace(headers[0])
             ? throw new InvalidDataException($"Pflichtheader {name} ist ungültig.")
             : headers[0];
+    }
+
+    private static string ReadArtifactType(HttpResponseMessage response)
+    {
+        var artifactType = ReadRequiredHeader(response, "X-Auto-Download-Artifact-Type");
+        return artifactType is "PDF" or "XML" or "GDT"
+            ? artifactType
+            : throw new InvalidDataException("Artefakttyp ist ungültig.");
     }
 }

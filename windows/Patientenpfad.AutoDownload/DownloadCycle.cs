@@ -31,6 +31,12 @@ public sealed class DownloadCycle(
         string targetDirectory,
         CancellationToken cancellationToken)
     {
+        var phase = "Fetch";
+        var endpoint = "next";
+        string? artifactType = null;
+        string? deliveryId = null;
+        var localStored = false;
+        var ackSucceeded = false;
         try
         {
             var fetch = await apiClient.FetchNextAsync(serverBaseUrl, credential, cancellationToken);
@@ -41,7 +47,10 @@ public sealed class DownloadCycle(
             }
 
             await using var artifact = fetch.Artifact!;
+            artifactType = artifact.ArtifactType;
+            deliveryId = artifact.DeliveryId;
             logger.LogInformation("Datei empfangen.");
+            phase = "Store";
             var stored = await fileStore.StoreAsync(
                 artifact.Content,
                 artifact.FileName,
@@ -50,55 +59,138 @@ public sealed class DownloadCycle(
                 cancellationToken);
             if (!stored.CanAcknowledge)
             {
-                logger.LogError("Datei konnte nicht sicher gespeichert werden. Status {StoreStatus}.", stored.Status);
+                var failureStage = stored.Status == ArtifactStoreStatus.HashMismatch ? "Hash" : "Store";
+                LogTransferFailure(
+                    failureStage,
+                    endpoint,
+                    null,
+                    artifactType,
+                    deliveryId,
+                    localStored,
+                    ackSucceeded,
+                    failureStage);
                 return DownloadCycleResult.RetryLater;
             }
 
+            localStored = true;
             logger.LogInformation(
                 stored.Status == ArtifactStoreStatus.Stored
                     ? "Datei gespeichert und SHA-256 bestätigt."
                     : "Datei ist bereits identisch vorhanden.");
-            var acknowledged = await apiClient.AcknowledgeAsync(
+            phase = "Ack";
+            endpoint = "ack";
+            var acknowledge = await apiClient.AcknowledgeAsync(
                 serverBaseUrl,
                 credential,
                 artifact.DeliveryId,
                 artifact.LeaseToken,
                 cancellationToken);
-            if (!acknowledged)
+            if (!acknowledge.IsSuccess)
             {
-                logger.LogError("ACK fehlgeschlagen.");
+                LogTransferFailure(
+                    phase,
+                    endpoint,
+                    (int)acknowledge.StatusCode,
+                    artifactType,
+                    deliveryId,
+                    localStored,
+                    ackSucceeded,
+                    "AckHttpStatus");
                 return DownloadCycleResult.RetryLater;
             }
 
+            ackSucceeded = true;
             logger.LogInformation("ACK erfolgreich.");
             return DownloadCycleResult.Delivered;
         }
         catch (DeviceAuthenticationException exception)
         {
-            logger.LogError("Geräteauthentifizierung fehlgeschlagen. HTTP-Status {StatusCode}.", (int)exception.StatusCode);
+            LogTransferFailure(
+                phase,
+                endpoint,
+                (int)exception.StatusCode,
+                artifactType,
+                deliveryId,
+                localStored,
+                ackSucceeded,
+                "Authentication");
             return DownloadCycleResult.AuthenticationFailed;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogWarning("Zeitüberschreitung oder temporärer Netzwerkabbruch beim Auto-Download.");
+            LogTransferFailure(
+                phase,
+                endpoint,
+                null,
+                artifactType,
+                deliveryId,
+                localStored,
+                ackSucceeded,
+                "Timeout");
             return DownloadCycleResult.RetryLater;
         }
         catch (HttpRequestException exception)
         {
-            logger.LogError(exception, "Netzwerk- oder Serverfehler beim Auto-Download.");
+            LogTransferFailure(
+                phase,
+                endpoint,
+                exception.StatusCode is null ? null : (int)exception.StatusCode,
+                artifactType,
+                deliveryId,
+                localStored,
+                ackSucceeded,
+                exception.StatusCode is null ? "Network" : "HttpStatus");
             return DownloadCycleResult.RetryLater;
         }
-        catch (InvalidDataException exception)
+        catch (InvalidDataException)
         {
-            logger.LogError(exception, "Ungültige Download-Antwort.");
+            LogTransferFailure(
+                "ValidateResponse",
+                "next",
+                null,
+                artifactType,
+                deliveryId,
+                localStored,
+                ackSucceeded,
+                "InvalidResponse");
             return DownloadCycleResult.RetryLater;
         }
         catch (Exception exception) when (exception is IOException or CryptographicException)
         {
-            logger.LogError(
-                "Lokaler Datei- oder Prüfsummenfehler ({ErrorType}).",
-                exception.GetType().Name);
+            LogTransferFailure(
+                phase,
+                endpoint,
+                null,
+                artifactType,
+                deliveryId,
+                localStored,
+                ackSucceeded,
+                exception is CryptographicException ? "Hash" : "Store");
             return DownloadCycleResult.RetryLater;
         }
+    }
+
+    private void LogTransferFailure(
+        string phase,
+        string endpoint,
+        int? httpStatus,
+        string? artifactType,
+        string? deliveryId,
+        bool localStored,
+        bool ackSucceeded,
+        string failureStage)
+    {
+        logger.LogError(
+            "AutoDownload transfer failed. Phase {Phase}, Endpoint {Endpoint}, HTTP-Status {HttpStatus}, " +
+            "ArtifactType {ArtifactType}, DeliveryId {DeliveryId}, LocalStored {LocalStored}, " +
+            "AckSucceeded {AckSucceeded}, FailureStage {FailureStage}.",
+            phase,
+            endpoint,
+            httpStatus,
+            artifactType ?? "unknown",
+            deliveryId ?? "none",
+            localStored,
+            ackSucceeded,
+            failureStage);
     }
 }

@@ -49,15 +49,15 @@ afterEach(() => jest.restoreAllMocks());
 it("aktiviert diesen Computer und speichert lokal nur die Geräte-ID", async () => {
   fetchMock
     .mockResolvedValueOnce(
-      response({ enabled: false, isCurrentDevice: false, canManage: true }),
+      response({ mode: "BROWSER", enabled: false, isCurrentDevice: false, canManage: true }),
     )
     .mockResolvedValueOnce(response({ ok: true }))
     .mockResolvedValueOnce(
-      response({ enabled: true, isCurrentDevice: true, canManage: true }),
+      response({ mode: "BROWSER", enabled: true, isCurrentDevice: true, canManage: true }),
     );
   const { container, root } = await renderSettings();
 
-  expect(container.textContent).toContain("Nicht eingerichtet");
+  expect(container.textContent).toContain("Browser-Download ist nicht eingerichtet");
   expect(container.textContent).toContain(
     "Chrome muss automatische Downloads für Patientenpfad erlauben",
   );
@@ -68,7 +68,7 @@ it("aktiviert diesen Computer und speichert lokal nur die Geräte-ID", async () 
 
   expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: "PUT" });
   expect(container.textContent).toContain(
-    "Automatischer Download ist auf diesem Computer aktiv.",
+    "Browser-Download ist auf diesem Computer aktiv.",
   );
   expect(Object.keys(window.localStorage)).toEqual([
     QUESTIONNAIRE_AUTO_DEVICE_STORAGE_KEY,
@@ -81,17 +81,17 @@ it("aktiviert diesen Computer und speichert lokal nur die Geräte-ID", async () 
 it("ersetzt ein anderes Gerät erst nach Bestätigung", async () => {
   fetchMock
     .mockResolvedValueOnce(
-      response({ enabled: true, isCurrentDevice: false, canManage: true }),
+      response({ mode: "BROWSER", enabled: true, isCurrentDevice: false, canManage: true }),
     )
     .mockResolvedValueOnce(response({ ok: true }))
     .mockResolvedValueOnce(
-      response({ enabled: true, isCurrentDevice: true, canManage: true }),
+      response({ mode: "BROWSER", enabled: true, isCurrentDevice: true, canManage: true }),
     );
   const confirmMock = jest.spyOn(window, "confirm").mockReturnValue(true);
   const { container, root } = await renderSettings();
 
   expect(container.textContent).toContain(
-    "Automatischer Download ist auf einem anderen Computer aktiv.",
+    "Browser-Download ist auf einem anderen Computer aktiv.",
   );
   await act(async () => {
     container.querySelector<HTMLButtonElement>("button")!.click();
@@ -110,11 +110,11 @@ it("ersetzt ein anderes Gerät erst nach Bestätigung", async () => {
 it("deaktiviert den automatischen Download auf dem aktiven Gerät", async () => {
   fetchMock
     .mockResolvedValueOnce(
-      response({ enabled: true, isCurrentDevice: true, canManage: true }),
+      response({ mode: "BROWSER", enabled: true, isCurrentDevice: true, canManage: true }),
     )
     .mockResolvedValueOnce(response({ ok: true }))
     .mockResolvedValueOnce(
-      response({ enabled: false, isCurrentDevice: false, canManage: true }),
+      response({ mode: "BROWSER", enabled: false, isCurrentDevice: false, canManage: true }),
     );
   const { container, root } = await renderSettings();
 
@@ -125,7 +125,7 @@ it("deaktiviert den automatischen Download auf dem aktiven Gerät", async () => 
   await settle();
 
   expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: "DELETE" });
-  expect(container.textContent).toContain("Nicht eingerichtet");
+  expect(container.textContent).toContain("Browser-Download ist nicht eingerichtet");
 
   await act(async () => root.unmount());
   container.remove();

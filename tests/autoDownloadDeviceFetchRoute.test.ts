@@ -1,6 +1,11 @@
 import { createHash } from "crypto";
+import { QuestionnaireAutoExportMode } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { POST } from "@/app/api/auto-download-devices/next/route";
+
+jest.mock("@/lib/prisma", () => ({
+  prisma: { practice: { findUnique: jest.fn() } },
+}));
 
 jest.mock("@/lib/autoDownloadDevices/auth", () => ({
   requireAutoDownloadDevice: jest.fn(),
@@ -24,8 +29,10 @@ jest.mock("@/lib/questionnaire/autoDownloadArtifactSelector", () => {
 import { requireAutoDownloadDevice } from "@/lib/autoDownloadDevices/auth";
 import { acquireAutoDownloadArtifactLease } from "@/lib/autoDownloadDevices/delivery";
 import { selectNextAutoDownloadArtifactForDelivery } from "@/lib/questionnaire/autoDownloadArtifactSelector";
+import { prisma } from "@/lib/prisma";
 
 const authenticate = requireAutoDownloadDevice as jest.Mock;
+const practice = prisma.practice as unknown as { findUnique: jest.Mock };
 const acquireLease = acquireAutoDownloadArtifactLease as jest.Mock;
 const selectArtifact = selectNextAutoDownloadArtifactForDelivery as jest.Mock;
 const device = { deviceId: "device-1", practiceId: "practice-1", deviceName: "Server" };
@@ -47,6 +54,11 @@ function request(practiceId?: string) {
 
 beforeEach(() => {
   authenticate.mockReset().mockResolvedValue({ device, error: null });
+  practice.findUnique.mockReset().mockResolvedValue({
+    questionnaire_auto_export_mode: QuestionnaireAutoExportMode.WINDOWS,
+    questionnaire_auto_pdf_device_hash: null,
+    questionnaire_auto_pdf_enabled_at: null,
+  });
   acquireLease.mockReset().mockResolvedValue({
     ...candidate,
     deliveryId: "delivery-1",
@@ -57,6 +69,24 @@ beforeEach(() => {
   selectArtifact.mockReset().mockImplementation(async ({ accept }) => {
     return await accept(candidate) ? candidate : null;
   });
+});
+
+it("blockiert den Windows-Pfad im BROWSER-Modus vor Auswahl und Lease", async () => {
+  practice.findUnique.mockResolvedValue({
+    questionnaire_auto_export_mode: QuestionnaireAutoExportMode.BROWSER,
+    questionnaire_auto_pdf_device_hash: null,
+    questionnaire_auto_pdf_enabled_at: null,
+  });
+
+  const response = await POST(request());
+
+  expect(response.status).toBe(409);
+  await expect(response.json()).resolves.toEqual({
+    ok: false,
+    error: "export_mode_mismatch",
+  });
+  expect(selectArtifact).not.toHaveBeenCalled();
+  expect(acquireLease).not.toHaveBeenCalled();
 });
 
 it("liefert Datei, MIME, Dateiname, Delivery, Lease-Token und SHA-256", async () => {

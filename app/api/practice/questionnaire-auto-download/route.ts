@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PracticeRole } from "@prisma/client";
+import { PracticeRole, QuestionnaireAutoExportMode } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requirePracticeRole } from "@/lib/authz";
+import { requireQuestionnaireAutoExportMode } from "@/lib/questionnaire/autoExportMode";
 import {
   hashQuestionnaireAutoDeviceId,
   isValidQuestionnaireAutoDeviceId,
@@ -59,21 +60,53 @@ export async function GET(req: NextRequest) {
   const settings = await prisma.practice.findUnique({
     where: { id: practice.id },
     select: {
+      questionnaire_auto_export_mode: true,
       questionnaire_auto_pdf_device_hash: true,
       questionnaire_auto_pdf_enabled_at: true,
     },
   });
   const enabled =
+    settings?.questionnaire_auto_export_mode === QuestionnaireAutoExportMode.BROWSER &&
     settings?.questionnaire_auto_pdf_device_hash != null &&
     settings.questionnaire_auto_pdf_enabled_at != null;
 
   return NextResponse.json({
+    mode: settings?.questionnaire_auto_export_mode ?? QuestionnaireAutoExportMode.BROWSER,
     enabled,
     isCurrentDevice:
       enabled &&
       settings.questionnaire_auto_pdf_device_hash === deviceHash,
     canManage: canManage(auth.account),
   });
+}
+
+export async function PATCH(req: NextRequest) {
+  const auth = await requirePracticeRole(req, WRITE_ROLES);
+  if (auth.error) return auth.error;
+  const practice = auth.account.current_practice;
+  if (!practice) {
+    return NextResponse.json(
+      { ok: false, error: "Kein Praxiszugriff." },
+      { status: 403 },
+    );
+  }
+
+  const body = await req.json().catch(() => null) as { mode?: unknown } | null;
+  if (
+    body?.mode !== QuestionnaireAutoExportMode.BROWSER &&
+    body?.mode !== QuestionnaireAutoExportMode.WINDOWS
+  ) {
+    return NextResponse.json(
+      { ok: false, error: "Ungültiger Exportmodus." },
+      { status: 400 },
+    );
+  }
+
+  await prisma.practice.update({
+    where: { id: practice.id },
+    data: { questionnaire_auto_export_mode: body.mode },
+  });
+  return NextResponse.json({ ok: true, mode: body.mode });
 }
 
 export async function PUT(req: NextRequest) {
@@ -94,6 +127,12 @@ export async function PUT(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  const mode = await requireQuestionnaireAutoExportMode(
+    practice.id,
+    QuestionnaireAutoExportMode.BROWSER,
+  );
+  if (mode.error) return mode.error;
 
   try {
     const activation = await prisma.practice.updateMany({

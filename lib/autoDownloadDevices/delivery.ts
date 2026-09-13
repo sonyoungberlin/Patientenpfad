@@ -16,6 +16,7 @@ export const AUTO_DOWNLOAD_LEASE_DURATION_MS = 5 * 60 * 1000;
 export const AUTO_DOWNLOAD_DELIVERY_ID_HEADER = "X-Auto-Download-Delivery-Id";
 export const AUTO_DOWNLOAD_LEASE_TOKEN_HEADER = "X-Auto-Download-Lease-Token";
 export const AUTO_DOWNLOAD_CONTENT_SHA256_HEADER = "X-Content-SHA256";
+export const AUTO_DOWNLOAD_ARTIFACT_TYPE_HEADER = "X-Auto-Download-Artifact-Type";
 
 export type LeasedAutoDownloadArtifact = BuiltAutoDownloadArtifact & {
   deliveryId: string;

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { QuestionnaireAutoExportMode } from "@prisma/client";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -120,6 +121,7 @@ beforeEach(() => {
     error: null,
   });
   practiceMock.findUnique.mockReset().mockResolvedValue({
+    questionnaire_auto_export_mode: QuestionnaireAutoExportMode.BROWSER,
     questionnaire_auto_pdf_device_hash:
       hashQuestionnaireAutoDeviceId(DEVICE_A),
     questionnaire_auto_pdf_enabled_at: ENABLED_AT,
@@ -134,6 +136,25 @@ beforeEach(() => {
   internalPdfMock.mockReset().mockResolvedValue(internalArtifact("pdf"));
   internalXmlMock.mockReset().mockReturnValue(internalArtifact("xml"));
   internalGdtMock.mockReset().mockReturnValue(internalArtifact("gdt"));
+});
+
+it("blockiert den Browserpfad im WINDOWS-Modus vor Auswahl und Claim", async () => {
+  practiceMock.findUnique.mockResolvedValue({
+    questionnaire_auto_export_mode: QuestionnaireAutoExportMode.WINDOWS,
+    questionnaire_auto_pdf_device_hash: hashQuestionnaireAutoDeviceId(DEVICE_A),
+    questionnaire_auto_pdf_enabled_at: ENABLED_AT,
+  });
+
+  const response = await GET(request());
+
+  expect(response.status).toBe(409);
+  await expect(response.json()).resolves.toEqual({
+    ok: false,
+    error: "export_mode_mismatch",
+  });
+  expect(sessionMock.findFirst).not.toHaveBeenCalled();
+  expect(sessionMock.findMany).not.toHaveBeenCalled();
+  expect(sessionMock.updateMany).not.toHaveBeenCalled();
 });
 
 it("liefert das nächste Artefakt unabhängig vom HTTP-Transport", async () => {

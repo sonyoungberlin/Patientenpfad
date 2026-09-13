@@ -19,11 +19,15 @@ import { QUESTIONNAIRE_AUTO_DEVICE_STORAGE_KEY } from "@/lib/questionnaire/autoD
 const fetchMock = jest.fn();
 global.fetch = fetchMock;
 
-function statusResponse(enabled: boolean, isCurrentDevice: boolean) {
+function statusResponse(
+  enabled: boolean,
+  isCurrentDevice: boolean,
+  mode: "BROWSER" | "WINDOWS" = "BROWSER",
+) {
   return {
     ok: true,
     status: 200,
-    json: async () => ({ enabled, isCurrentDevice, canManage: false }),
+    json: async () => ({ mode, enabled, isCurrentDevice, canManage: false }),
   };
 }
 
@@ -227,6 +231,29 @@ it("verwendet weiterhin das Polling-Intervall von zehn Sekunden", async () => {
   const { container, root } = await renderController();
 
   expect(intervalSpy).toHaveBeenCalledWith(expect.any(Function), 10_000);
+
+  await act(async () => root.unmount());
+  container.remove();
+});
+
+it("startet im Windows-Modus weder Browser-Polling noch Timer oder Visibility-Listener", async () => {
+  const intervalSpy = jest.spyOn(window, "setInterval");
+  const listenerSpy = jest.spyOn(document, "addEventListener");
+  fetchMock.mockResolvedValue(statusResponse(false, false, "WINDOWS"));
+
+  const { container, root } = await renderController();
+
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(fetchMock).toHaveBeenCalledWith(
+    "/api/practice/questionnaire-auto-download",
+    expect.any(Object),
+  );
+  expect(intervalSpy).not.toHaveBeenCalled();
+  expect(listenerSpy).not.toHaveBeenCalledWith(
+    "visibilitychange",
+    expect.any(Function),
+  );
+  expect(container.textContent).toBe("");
 
   await act(async () => root.unmount());
   container.remove();

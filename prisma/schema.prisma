@@ -27,6 +27,11 @@ enum PracticeRole {
   INBOX_ONLY
 }
 
+enum QuestionnaireAutoExportMode {
+  BROWSER
+  WINDOWS
+}
+
 model Account {
   id          String  @id @default(cuid())
   email       String  @unique
@@ -828,6 +833,8 @@ model Practice {
   /// Beginn der Auto-Download-Queue. Bleibt bei einem Gerätewechsel erhalten
   /// und wird beim Deaktivieren auf NULL gesetzt.
   questionnaire_auto_pdf_enabled_at DateTime? @db.Timestamp(6)
+  /// Expliziter Transportweg für automatische Fragebogen-Exporte.
+  questionnaire_auto_export_mode QuestionnaireAutoExportMode @default(BROWSER)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

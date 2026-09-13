@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
+import { QuestionnaireAutoExportMode } from "@prisma/client";
 import { requireAutoDownloadDevice } from "@/lib/autoDownloadDevices/auth";
+import { requireQuestionnaireAutoExportMode } from "@/lib/questionnaire/autoExportMode";
 import {
   acquireAutoDownloadArtifactLease,
+  AUTO_DOWNLOAD_ARTIFACT_TYPE_HEADER,
   AUTO_DOWNLOAD_CONTENT_SHA256_HEADER,
   AUTO_DOWNLOAD_DELIVERY_ID_HEADER,
   AUTO_DOWNLOAD_LEASE_TOKEN_HEADER,
@@ -20,6 +23,7 @@ function artifactResponse(leased: LeasedAutoDownloadArtifact): Response {
       [AUTO_DOWNLOAD_DELIVERY_ID_HEADER]: leased.deliveryId,
       [AUTO_DOWNLOAD_LEASE_TOKEN_HEADER]: leased.leaseToken,
       [AUTO_DOWNLOAD_CONTENT_SHA256_HEADER]: leased.contentSha256,
+      [AUTO_DOWNLOAD_ARTIFACT_TYPE_HEADER]: leased.artifactType,
       "Cache-Control": "no-store",
     },
   });
@@ -28,6 +32,11 @@ function artifactResponse(leased: LeasedAutoDownloadArtifact): Response {
 export async function POST(req: NextRequest) {
   const { device, error } = await requireAutoDownloadDevice(req);
   if (error) return error;
+  const mode = await requireQuestionnaireAutoExportMode(
+    device.practiceId,
+    QuestionnaireAutoExportMode.WINDOWS,
+  );
+  if (mode.error) return mode.error;
 
   try {
     let leasedArtifact: LeasedAutoDownloadArtifact | null = null;

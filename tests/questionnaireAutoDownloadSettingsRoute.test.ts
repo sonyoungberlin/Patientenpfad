@@ -19,6 +19,7 @@ import { getSessionAccount } from "@/lib/auth";
 import {
   DELETE,
   GET,
+  PATCH,
   PUT,
 } from "@/app/api/practice/questionnaire-auto-download/route";
 import { hashQuestionnaireAutoDeviceId } from "@/lib/questionnaire/autoDownloadDevice";
@@ -55,9 +56,24 @@ function request(method: "GET" | "PUT" | "DELETE", deviceId = DEVICE_A) {
   );
 }
 
+function modeRequest(mode: unknown) {
+  return new NextRequest(
+    "http://localhost/api/practice/questionnaire-auto-download",
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode }),
+    },
+  );
+}
+
 beforeEach(() => {
   getAccountMock.mockReset();
-  practiceMock.findUnique.mockReset();
+  practiceMock.findUnique.mockReset().mockResolvedValue({
+    questionnaire_auto_export_mode: "BROWSER",
+    questionnaire_auto_pdf_device_hash: null,
+    questionnaire_auto_pdf_enabled_at: null,
+  });
   practiceMock.update.mockReset().mockResolvedValue({});
   practiceMock.updateMany.mockReset();
 });
@@ -68,6 +84,7 @@ describe("questionnaire auto-download settings status", () => {
     async (role) => {
       getAccountMock.mockResolvedValue(account(role));
       practiceMock.findUnique.mockResolvedValue({
+        questionnaire_auto_export_mode: "BROWSER",
         questionnaire_auto_pdf_device_hash:
           hashQuestionnaireAutoDeviceId(DEVICE_A),
         questionnaire_auto_pdf_enabled_at: new Date(),
@@ -78,6 +95,7 @@ describe("questionnaire auto-download settings status", () => {
 
       expect(response.status).toBe(200);
       expect(body).toEqual({
+        mode: "BROWSER",
         enabled: true,
         isCurrentDevice: true,
         canManage: role === "OWNER" || role === "ADMIN",
@@ -93,11 +111,13 @@ describe("questionnaire auto-download settings status", () => {
     getAccountMock.mockResolvedValue(account("OWNER"));
     practiceMock.findUnique
       .mockResolvedValueOnce({
+        questionnaire_auto_export_mode: "BROWSER",
         questionnaire_auto_pdf_device_hash:
           hashQuestionnaireAutoDeviceId(DEVICE_B),
         questionnaire_auto_pdf_enabled_at: new Date(),
       })
       .mockResolvedValueOnce({
+        questionnaire_auto_export_mode: "BROWSER",
         questionnaire_auto_pdf_device_hash: null,
         questionnaire_auto_pdf_enabled_at: null,
       });
@@ -120,6 +140,28 @@ describe("questionnaire auto-download settings status", () => {
 });
 
 describe("questionnaire auto-download settings mutations", () => {
+  it.each(["OWNER", "ADMIN"] as const)(
+    "%s kann den expliziten Exportmodus setzen",
+    async (role) => {
+      getAccountMock.mockResolvedValue(account(role));
+
+      const response = await PATCH(modeRequest("WINDOWS"));
+
+      expect(response.status).toBe(200);
+      expect(practiceMock.update).toHaveBeenCalledWith({
+        where: { id: "practice-1" },
+        data: { questionnaire_auto_export_mode: "WINDOWS" },
+      });
+    },
+  );
+
+  it("weist unbekannte Exportmodi zurück", async () => {
+    getAccountMock.mockResolvedValue(account("OWNER"));
+
+    expect((await PATCH(modeRequest("AUTO"))).status).toBe(400);
+    expect(practiceMock.update).not.toHaveBeenCalled();
+  });
+
   it.each(["OWNER", "ADMIN"] as const)(
     "%s darf erstmals aktivieren",
     async (role) => {

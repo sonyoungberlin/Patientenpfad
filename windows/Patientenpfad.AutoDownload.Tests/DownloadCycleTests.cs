@@ -170,22 +170,61 @@ public sealed class DownloadCycleTests
         Assert.Equal(2, handler.CallCount);
     }
 
-    [Fact]
-    public async Task FailedAcknowledgementKeepsFinalFileForRetry()
+    [Theory]
+    [InlineData(HttpStatusCode.NotFound)]
+    [InlineData(HttpStatusCode.Conflict)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    public async Task FailedAcknowledgementKeepsFinalFileAndLogsStatus(HttpStatusCode statusCode)
     {
         using var directory = new TemporaryDirectory();
         var bytes = Encoding.UTF8.GetBytes("lokal gespeichert");
         var handler = new StubHttpMessageHandler((_, call, _) => Task.FromResult(
             call == 1
                 ? FileResponse("datei.pdf", "application/pdf", bytes)
-                : new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
-        var cycle = CreateCycle(handler, out _);
+                : new HttpResponseMessage(statusCode)));
+        var cycle = CreateCycle(handler, out var logger);
 
         var result = await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None);
 
         Assert.Equal(DownloadCycleResult.RetryLater, result);
         Assert.Equal(bytes, await File.ReadAllBytesAsync(System.IO.Path.Combine(directory.Path, "datei.pdf")));
         Assert.Equal(2, handler.CallCount);
+        Assert.Contains(logger.Messages, message =>
+            message.Contains($"HTTP-Status {(int)statusCode}", StringComparison.Ordinal) &&
+            message.Contains("ArtifactType PDF", StringComparison.Ordinal) &&
+            message.Contains("DeliveryId delivery-1", StringComparison.Ordinal) &&
+            message.Contains("LocalStored True", StringComparison.Ordinal) &&
+            message.Contains("AckSucceeded False", StringComparison.Ordinal) &&
+            message.Contains("FailureStage AckHttpStatus", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(false, "Network")]
+    [InlineData(true, "Timeout")]
+    public async Task AcknowledgementTransportFailureLogsItsStage(bool timeout, string failureStage)
+    {
+        using var directory = new TemporaryDirectory();
+        var bytes = Encoding.UTF8.GetBytes("lokal gespeichert");
+        var handler = new StubHttpMessageHandler((_, call, _) =>
+            call == 1
+                ? Task.FromResult(FileResponse("datei.pdf", "application/pdf", bytes))
+                : Task.FromException<HttpResponseMessage>(timeout
+                    ? new TaskCanceledException("sensitive-timeout-detail")
+                    : new HttpRequestException("sensitive-network-detail")));
+        var cycle = CreateCycle(handler, out var logger);
+
+        var result = await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None);
+
+        Assert.Equal(DownloadCycleResult.RetryLater, result);
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("Phase Ack", StringComparison.Ordinal) &&
+            message.Contains("Endpoint ack", StringComparison.Ordinal) &&
+            message.Contains($"FailureStage {failureStage}", StringComparison.Ordinal));
+        var logs = string.Join("\n", logger.Messages);
+        Assert.DoesNotContain("sensitive", logs, StringComparison.Ordinal);
+        Assert.DoesNotContain(Credential.Secret, logs, StringComparison.Ordinal);
+        Assert.DoesNotContain("lease-secret", logs, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -215,7 +254,10 @@ public sealed class DownloadCycleTests
         var result = await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None);
 
         Assert.Equal(DownloadCycleResult.RetryLater, result);
-        Assert.Contains(logger.Messages, message => message.Contains("Zeitüberschreitung", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("Phase Fetch", StringComparison.Ordinal) &&
+            message.Contains("Endpoint next", StringComparison.Ordinal) &&
+            message.Contains("FailureStage Timeout", StringComparison.Ordinal));
         var logs = string.Join("\n", logger.Messages);
         Assert.DoesNotContain(Credential.Secret, logs, StringComparison.Ordinal);
         Assert.DoesNotContain("lease-secret", logs, StringComparison.Ordinal);
@@ -253,7 +295,9 @@ public sealed class DownloadCycleTests
         var result = await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None);
 
         Assert.Equal(DownloadCycleResult.AuthenticationFailed, result);
-        Assert.Contains(logger.Messages, message => message.Contains("Geräteauthentifizierung", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, message =>
+            message.Contains($"HTTP-Status {(int)statusCode}", StringComparison.Ordinal) &&
+            message.Contains("FailureStage Authentication", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -350,6 +394,9 @@ public sealed class DownloadCycleTests
         };
         response.Headers.Add("X-Auto-Download-Delivery-Id", "delivery-1");
         response.Headers.Add("X-Auto-Download-Lease-Token", "lease-secret");
+        response.Headers.Add(
+            "X-Auto-Download-Artifact-Type",
+            mediaType == "application/pdf" ? "PDF" : mediaType == "application/xml" ? "XML" : "GDT");
         response.Headers.Add(
             "X-Content-SHA256",
             sha256 ?? Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());

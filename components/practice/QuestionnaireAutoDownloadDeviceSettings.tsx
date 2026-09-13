@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getOrCreateQuestionnaireAutoDeviceId } from "@/lib/questionnaire/autoDownloadDeviceClient";
 
 type DeviceStatus = {
+  mode: "BROWSER" | "WINDOWS";
   enabled: boolean;
   isCurrentDevice: boolean;
   canManage: boolean;
@@ -65,6 +66,25 @@ export default function QuestionnaireAutoDownloadDeviceSettings() {
     }
   }
 
+  async function changeMode(mode: DeviceStatus["mode"]) {
+    if (!deviceId || status?.mode === mode) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(ENDPOINT, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      if (!response.ok) throw new Error("mode_failed");
+      await loadStatus(deviceId);
+    } catch {
+      setError("Exportweg konnte nicht gespeichert werden.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function disable() {
     if (!deviceId) return;
     setBusy(true);
@@ -84,12 +104,13 @@ export default function QuestionnaireAutoDownloadDeviceSettings() {
   }
 
   let statusText = "Status wird geladen …";
-  if (status && !status.enabled) statusText = "Nicht eingerichtet";
+  if (status?.mode === "WINDOWS") statusText = "Windows AutoDownload ist ausgewählt.";
+  if (status?.mode === "BROWSER" && !status.enabled) statusText = "Browser-Download ist nicht eingerichtet.";
   if (status?.enabled && status.isCurrentDevice) {
-    statusText = "Automatischer Download ist auf diesem Computer aktiv.";
+    statusText = "Browser-Download ist auf diesem Computer aktiv.";
   }
   if (status?.enabled && !status.isCurrentDevice) {
-    statusText = "Automatischer Download ist auf einem anderen Computer aktiv.";
+    statusText = "Browser-Download ist auf einem anderen Computer aktiv.";
   }
 
   return (
@@ -100,17 +121,41 @@ export default function QuestionnaireAutoDownloadDeviceSettings() {
       <h2>Automatischer Fragebogen-Download</h2>
       <p>{statusText}</p>
 
-      {status?.canManage && !status.enabled && (
+      {status?.canManage && (
+        <fieldset disabled={busy}>
+          <legend>Exportweg</legend>
+          <label>
+            <input
+              type="radio"
+              name="questionnaire-auto-export-mode"
+              checked={status.mode === "BROWSER"}
+              onChange={() => void changeMode("BROWSER")}
+            />
+            Browser
+          </label>
+          <label style={{ marginLeft: "1rem" }}>
+            <input
+              type="radio"
+              name="questionnaire-auto-export-mode"
+              checked={status.mode === "WINDOWS"}
+              onChange={() => void changeMode("WINDOWS")}
+            />
+            Windows AutoDownload
+          </label>
+        </fieldset>
+      )}
+
+      {status?.mode === "BROWSER" && status.canManage && !status.enabled && (
         <button type="button" disabled={busy} onClick={activate}>
           Diesen Computer für automatische Downloads verwenden
         </button>
       )}
-      {status?.canManage && status.enabled && status.isCurrentDevice && (
+      {status?.mode === "BROWSER" && status.canManage && status.enabled && status.isCurrentDevice && (
         <button type="button" disabled={busy} onClick={disable}>
           Automatischen Download deaktivieren
         </button>
       )}
-      {status?.canManage && status.enabled && !status.isCurrentDevice && (
+      {status?.mode === "BROWSER" && status.canManage && status.enabled && !status.isCurrentDevice && (
         <button type="button" disabled={busy} onClick={activate}>
           Diesen Computer stattdessen verwenden
         </button>
@@ -122,11 +167,13 @@ export default function QuestionnaireAutoDownloadDeviceSettings() {
         </p>
       )}
 
-      <p className="text-muted text-small" style={{ marginTop: "0.75rem" }}>
-        Chrome muss automatische Downloads für Patientenpfad erlauben.<br />
-        Der Speicherort wird in Chrome festgelegt.<br />
-        Die Option „Vor jedem Download fragen“ sollte ausgeschaltet sein.
-      </p>
+      {status?.mode === "BROWSER" && (
+        <p className="text-muted text-small" style={{ marginTop: "0.75rem" }}>
+          Chrome muss automatische Downloads für Patientenpfad erlauben.<br />
+          Der Speicherort wird in Chrome festgelegt.<br />
+          Die Option „Vor jedem Download fragen“ sollte ausgeschaltet sein.
+        </p>
+      )}
     </section>
   );
 }
