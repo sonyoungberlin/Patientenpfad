@@ -55,6 +55,65 @@ public sealed class DownloadCycleTests
     }
 
     [Fact]
+    public async Task AcknowledgesWhenExternalDistributorMovesFinalFileBeforeAck()
+    {
+        using var inbox = new TemporaryDirectory();
+        using var destination = new TemporaryDirectory();
+        var bytes = Encoding.UTF8.GetBytes("lokal uebergeben");
+        var distributedPath = System.IO.Path.Combine(destination.Path, "datei.pdf");
+        var distributed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var watcher = new FileSystemWatcher(inbox.Path)
+        {
+            Filter = "datei.pdf",
+            NotifyFilter = NotifyFilters.FileName,
+            EnableRaisingEvents = true,
+        };
+        void Distribute(FileSystemEventArgs args)
+        {
+            try
+            {
+                File.Move(args.FullPath, distributedPath);
+                distributed.TrySetResult();
+            }
+            catch (Exception exception)
+            {
+                distributed.TrySetException(exception);
+            }
+        }
+        watcher.Created += (_, args) => Distribute(args);
+        watcher.Renamed += (_, args) => Distribute(args);
+
+        var handler = new StubHttpMessageHandler(async (_, call, cancellationToken) =>
+        {
+            if (call == 1) return FileResponse("datei.pdf", "application/pdf", bytes);
+            if (call == 2)
+            {
+                await distributed.Task.WaitAsync(cancellationToken);
+                Assert.False(File.Exists(System.IO.Path.Combine(inbox.Path, "datei.pdf")));
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        var cycle = CreateCycle(handler, out _);
+
+        var result = await cycle.RunAsync(
+            Server,
+            Credential,
+            inbox.Path,
+            CancellationToken.None);
+        var nextResult = await cycle.RunAsync(
+            Server,
+            Credential,
+            inbox.Path,
+            CancellationToken.None);
+
+        Assert.Equal(DownloadCycleResult.Delivered, result);
+        Assert.Equal(DownloadCycleResult.NoArtifact, nextResult);
+        Assert.Equal(bytes, await File.ReadAllBytesAsync(distributedPath));
+        Assert.Equal(3, handler.CallCount);
+    }
+
+    [Fact]
     public async Task HashMismatchDeletesTemporaryFileAndSendsNoAck()
     {
         using var directory = new TemporaryDirectory();

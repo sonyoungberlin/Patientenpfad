@@ -41,9 +41,9 @@ public sealed class ArtifactFileStore
 
         Directory.CreateDirectory(targetDirectory);
         var finalPath = Path.Combine(targetDirectory, serverFileName);
-        if (File.Exists(finalPath))
+        var existingHash = await TryComputeSha256Async(finalPath, cancellationToken);
+        if (existingHash is not null)
         {
-            var existingHash = await ComputeSha256Async(finalPath, cancellationToken);
             if (HashesEqual(existingHash, expectedHash))
             {
                 return new ArtifactStoreResult(ArtifactStoreStatus.ExistingIdentical, finalPath);
@@ -55,9 +55,9 @@ public sealed class ArtifactFileStore
             finalPath = Path.Combine(
                 targetDirectory,
                 $"{nameWithoutExtension}_{hashSuffix}{extension}");
-            if (File.Exists(finalPath))
+            var collisionHash = await TryComputeSha256Async(finalPath, cancellationToken);
+            if (collisionHash is not null)
             {
-                var collisionHash = await ComputeSha256Async(finalPath, cancellationToken);
                 return HashesEqual(collisionHash, expectedHash)
                     ? new ArtifactStoreResult(ArtifactStoreStatus.ExistingIdentical, finalPath)
                     : new ArtifactStoreResult(ArtifactStoreStatus.ExistingConflict, finalPath);
@@ -67,6 +67,7 @@ public sealed class ArtifactFileStore
         var temporaryPath = Path.Combine(
             targetDirectory,
             $".{Path.GetFileName(finalPath)}.{Guid.NewGuid():N}.tmp");
+        var handedOff = false;
         try
         {
             await using (var destination = new FileStream(
@@ -87,22 +88,29 @@ public sealed class ArtifactFileStore
                 return new ArtifactStoreResult(ArtifactStoreStatus.HashMismatch);
             }
 
-            try
+            for (var moveAttempt = 0; ; moveAttempt++)
             {
-                File.Move(temporaryPath, finalPath, false);
-                return new ArtifactStoreResult(ArtifactStoreStatus.Stored, finalPath);
-            }
-            catch (IOException) when (File.Exists(finalPath))
-            {
-                var existingHash = await ComputeSha256Async(finalPath, cancellationToken);
-                return HashesEqual(existingHash, expectedHash)
-                    ? new ArtifactStoreResult(ArtifactStoreStatus.ExistingIdentical, finalPath)
-                    : new ArtifactStoreResult(ArtifactStoreStatus.ExistingConflict, finalPath);
+                try
+                {
+                    File.Move(temporaryPath, finalPath, false);
+                    handedOff = true;
+                    return new ArtifactStoreResult(ArtifactStoreStatus.Stored, finalPath);
+                }
+                catch (IOException) when (moveAttempt == 0)
+                {
+                    existingHash = await TryComputeSha256Async(finalPath, cancellationToken);
+                    if (existingHash is not null)
+                    {
+                        return HashesEqual(existingHash, expectedHash)
+                            ? new ArtifactStoreResult(ArtifactStoreStatus.ExistingIdentical, finalPath)
+                            : new ArtifactStoreResult(ArtifactStoreStatus.ExistingConflict, finalPath);
+                    }
+                }
             }
         }
         finally
         {
-            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            if (!handedOff) File.Delete(temporaryPath);
         }
     }
 
@@ -143,6 +151,31 @@ public sealed class ArtifactFileStore
             81920,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
         return await SHA256.HashDataAsync(stream, cancellationToken);
+    }
+
+    private static async Task<byte[]?> TryComputeSha256Async(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var stream = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read | FileShare.Delete,
+                81920,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+            return await SHA256.HashDataAsync(stream, cancellationToken);
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
     }
 
     private static bool HashesEqual(byte[] first, byte[] second) =>
