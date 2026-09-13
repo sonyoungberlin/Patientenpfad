@@ -90,6 +90,7 @@ model Account {
   practice_questionnaire_forms        PracticeQuestionnaireForm[]
   digital_requests                    DigitalRequest[]
   created_questionnaire_kiosk_devices QuestionnaireKioskDevice[] @relation("QuestionnaireKioskDeviceCreatedByAccount")
+  created_auto_download_devices       PracticeAutoDownloadDevice[] @relation("PracticeAutoDownloadDeviceCreatedByAccount")
 
   /// Phase P1: Mitgliedschaften des Accounts in Practices.
   /// Wird per Backfill zunächst genau einmal pro Account mit Rolle
@@ -530,6 +531,28 @@ model QuestionnaireKioskDevice {
   @@index([practice_id, is_active, revoked_at])
 }
 
+model PracticeAutoDownloadDevice {
+  id                       String    @id @default(cuid())
+  practice_id              String
+  practice                 Practice  @relation(fields: [practice_id], references: [id], onDelete: Restrict)
+  name                     String
+  credential_hash          String?   @unique
+  enrollment_token_hash    String?   @unique
+  enrollment_expires_at    DateTime?
+  enrollment_used_at       DateTime?
+  is_active                Boolean   @default(true)
+  revoked_at               DateTime?
+  last_seen_at              DateTime?
+  created_by_account_id    String
+  created_by_account       Account   @relation("PracticeAutoDownloadDeviceCreatedByAccount", fields: [created_by_account_id], references: [id], onDelete: Restrict)
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+
+  @@index([practice_id, created_at])
+  @@index([practice_id, is_active, revoked_at])
+  @@index([enrollment_expires_at])
+}
+
 /// Wird in Phase 3a nur als Datenstruktur eingeführt; es gibt noch keine
 /// öffentliche Route `/p/[slug]`, keinen Submit-Endpoint und keine
 /// Praxis-UI zum Anlegen. In Phase 3a sind Datensätze ausschließlich
@@ -794,6 +817,7 @@ model Practice {
   /// referenzieren. Gegenseite zu `Account.default_practice`.
   default_for_accounts Account[] @relation("AccountDefaultPractice")
   questionnaire_kiosk_devices QuestionnaireKioskDevice[]
+  auto_download_devices PracticeAutoDownloadDevice[]
 }
 
 /// Offizielle, zentral vom Plattformbetreiber gepflegte Praxis- und

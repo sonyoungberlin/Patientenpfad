@@ -34,6 +34,7 @@ import {
 import { requirePracticeRoleFromCookies } from "@/lib/authz";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 import NotificationEmailField from "@/components/practice/NotificationEmailField";
+import PersistentAutoDownloadDeviceSettings from "@/components/practice/PersistentAutoDownloadDeviceSettings";
 import PublicPracticeProfileForm from "@/components/practice/PublicPracticeProfileForm";
 import QuestionnaireAutoDownloadDeviceSettings from "@/components/practice/QuestionnaireAutoDownloadDeviceSettings";
 
@@ -221,6 +222,7 @@ export default async function PracticeMembersPage({
       </table>
 
       <QuestionnaireAutoDownloadDeviceSettings />
+      <PersistentAutoDownloadDeviceSettings />
 
       <PublicPracticeProfileForm
         initialPublicName={practiceSettings?.public_name ?? ""}
