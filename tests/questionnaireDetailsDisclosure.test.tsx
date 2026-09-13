@@ -18,6 +18,14 @@ const detail = {
   ],
   answers: { SYMPTOM: "Husten" },
   noteText: "Beschwerden: Husten",
+  xmlFilename: "20260913_PAT1_Interne_Dokumentation.xml",
+  semanticDocument: {
+    sections: [
+      { slot: 1, items: [{ type: "bodyText", text: "Beschwerden: Husten" }] },
+      { slot: 2, items: [] },
+      { slot: 3, items: [] },
+    ],
+  },
   derivedValues: {},
   attentionHints: [],
   visibleQuestionIds: ["SYMPTOM"],
@@ -76,6 +84,9 @@ it("lädt beim ersten Aufklappen genau einmal und verwendet danach den Cache", a
     headers: { Accept: "application/json" },
   });
   expect(container.textContent).toContain("Husten");
+  expect(container.querySelector("[data-q-copy-note]")).not.toBeNull();
+  expect(container.querySelector("[data-q-download-xml]")).toBeNull();
+  expect(container.querySelector("[data-q-download-xml-v2]")).toBeNull();
 
   await toggle(detailsElement, false);
   await toggle(detailsElement, true);

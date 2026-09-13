@@ -1,21 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
-import AppTextXmlDownloadButton from "./AppTextXmlDownloadButton";
 
 type Props = {
   noteText: string;
   sessionId: string;
-  xmlFilename?: string | null;
-  semanticDocument?: SemanticDocument | null;
 };
 
 export default function MedicalRecordNoteCopyButton({
   noteText,
   sessionId,
-  xmlFilename = null,
-  semanticDocument = null,
 }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -56,14 +50,6 @@ export default function MedicalRecordNoteCopyButton({
       >
         {copied ? "Kopiert ✓" : "Krankenblatt-Text kopieren"}
       </button>
-      {xmlFilename && (
-        <AppTextXmlDownloadButton
-          noteText={noteText}
-          filename={xmlFilename}
-          sessionId={sessionId}
-          semanticDocument={semanticDocument}
-        />
-      )}
       <textarea
         readOnly
         aria-hidden="true"
