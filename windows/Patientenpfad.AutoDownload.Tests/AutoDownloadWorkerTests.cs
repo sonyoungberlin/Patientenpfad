@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using System.Net;
 
 namespace Patientenpfad.AutoDownload.Tests;
 
@@ -45,6 +46,46 @@ public sealed class AutoDownloadWorkerTests
         await cycle.WaitForCallsAsync(2);
 
         Assert.True(cycle.CallCount >= 2);
+        await worker.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task HttpClientTimeoutWaitsAndThenPollsAgain()
+    {
+        await AssertTransientFailureWaitsAndThenPollsAgain(
+            () => new TaskCanceledException("HttpClient timeout"));
+    }
+
+    [Fact]
+    public async Task HttpRequestExceptionWaitsAndThenPollsAgain()
+    {
+        await AssertTransientFailureWaitsAndThenPollsAgain(
+            () => new HttpRequestException("Temporary transport failure"));
+    }
+
+    private static async Task AssertTransientFailureWaitsAndThenPollsAgain(
+        Func<Exception> createException)
+    {
+        using var directory = new TemporaryDirectory();
+        var secondCall = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new StubHttpMessageHandler((_, call, _) =>
+        {
+            if (call == 1) return Task.FromException<HttpResponseMessage>(createException());
+            secondCall.TrySetResult();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        });
+        var cycle = new DownloadCycle(
+            new AutoDownloadApiClient(new HttpClient(handler)),
+            new ArtifactFileStore(),
+            new ListLogger<DownloadCycle>());
+        var worker = await CreateWorkerAsync(cycle, directory.Path);
+
+        await worker.StartAsync(CancellationToken.None);
+        await Task.Delay(100);
+        Assert.Equal(1, handler.CallCount);
+
+        await secondCall.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.True(handler.CallCount >= 2);
         await worker.StopAsync(CancellationToken.None);
     }
 

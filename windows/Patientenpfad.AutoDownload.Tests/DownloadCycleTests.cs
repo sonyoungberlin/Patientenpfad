@@ -203,6 +203,43 @@ public sealed class DownloadCycleTests
         Assert.Equal(2, handler.CallCount);
     }
 
+    [Fact]
+    public async Task HttpClientTimeoutCanBeRetriedWithoutLoggingSecrets()
+    {
+        using var directory = new TemporaryDirectory();
+        var handler = new StubHttpMessageHandler((_, _, _) =>
+            Task.FromException<HttpResponseMessage>(new TaskCanceledException(
+                $"Timeout with {Credential.Secret} and lease-secret")));
+        var cycle = CreateCycle(handler, out var logger);
+
+        var result = await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None);
+
+        Assert.Equal(DownloadCycleResult.RetryLater, result);
+        Assert.Contains(logger.Messages, message => message.Contains("Zeitüberschreitung", StringComparison.Ordinal));
+        var logs = string.Join("\n", logger.Messages);
+        Assert.DoesNotContain(Credential.Secret, logs, StringComparison.Ordinal);
+        Assert.DoesNotContain("lease-secret", logs, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RequestedCancellationIsNotLoggedOrConvertedToRetry()
+    {
+        using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var handler = new StubHttpMessageHandler(async (_, _, cancellationToken) =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        var cycle = CreateCycle(handler, out var logger);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            cycle.RunAsync(Server, Credential, directory.Path, cancellation.Token));
+
+        Assert.Empty(logger.Messages);
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.Unauthorized)]
     [InlineData(HttpStatusCode.Forbidden)]

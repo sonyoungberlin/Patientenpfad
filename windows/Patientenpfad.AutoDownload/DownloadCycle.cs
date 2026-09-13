@@ -78,6 +78,11 @@ public sealed class DownloadCycle(
             logger.LogError("Geräteauthentifizierung fehlgeschlagen. HTTP-Status {StatusCode}.", (int)exception.StatusCode);
             return DownloadCycleResult.AuthenticationFailed;
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning("Zeitüberschreitung oder temporärer Netzwerkabbruch beim Auto-Download.");
+            return DownloadCycleResult.RetryLater;
+        }
         catch (HttpRequestException exception)
         {
             logger.LogError(exception, "Netzwerk- oder Serverfehler beim Auto-Download.");
