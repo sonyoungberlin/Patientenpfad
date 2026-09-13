@@ -30,6 +30,7 @@ import {
   buildInternalDocumentationPdfArtifact,
   buildInternalDocumentationXmlArtifact,
 } from "@/lib/questionnaire/internalDocumentationArtifacts";
+import { selectNextAutoDownloadArtifact } from "@/lib/questionnaire/autoDownloadArtifactSelector";
 import { GET } from "@/app/api/questionnaire/auto-download/next/route";
 import { hashQuestionnaireAutoDeviceId } from "@/lib/questionnaire/autoDownloadDevice";
 
@@ -133,6 +134,23 @@ beforeEach(() => {
   internalPdfMock.mockReset().mockResolvedValue(internalArtifact("pdf"));
   internalXmlMock.mockReset().mockReturnValue(internalArtifact("xml"));
   internalGdtMock.mockReset().mockReturnValue(internalArtifact("gdt"));
+});
+
+it("liefert das nächste Artefakt unabhängig vom HTTP-Transport", async () => {
+  const artifact = await selectNextAutoDownloadArtifact({
+    practiceId: "practice-1",
+    deviceHash: hashQuestionnaireAutoDeviceId(DEVICE_A),
+    enabledAt: ENABLED_AT,
+  });
+
+  expect(artifact).toEqual({
+    bytes: new Uint8Array([37, 80, 68, 70]),
+    filename: "20260903_4711_Versicherungsdaten.pdf",
+    mimeType: "application/pdf",
+  });
+  expect(sessionMock.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+    data: { auto_pdf_download_claimed_at: expect.any(Date) },
+  }));
 });
 
 it("liefert interne PDF, XML und GDT nacheinander mit unabhängigen Claims", async () => {
