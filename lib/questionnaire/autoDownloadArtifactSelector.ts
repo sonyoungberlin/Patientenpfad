@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PATIENT_CONTEXT_FILTER } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnaireGdtBytes } from "@/lib/questionnaire/gdtRenderer";
@@ -16,6 +17,12 @@ import {
 import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
 
 export type AutoDownloadArtifact = InternalDocumentationArtifact;
+export type AutoDownloadArtifactType = "PDF" | "XML" | "GDT";
+export type BuiltAutoDownloadArtifact = {
+  sessionId: string;
+  artifactType: AutoDownloadArtifactType;
+  artifact: AutoDownloadArtifact;
+};
 
 export class AutoDownloadArtifactBuildError extends Error {
   constructor(
@@ -33,11 +40,42 @@ type SelectNextAutoDownloadArtifactInput = {
   enabledAt: Date;
 };
 
-export async function selectNextAutoDownloadArtifact({
+type SelectNextDeliveryArtifactInput = {
+  practiceId: string;
+  accept: (candidate: BuiltAutoDownloadArtifact) => Promise<boolean>;
+};
+
+type TraverseAutoDownloadArtifactsInput = {
+  practiceId: string;
+  deviceHash?: string;
+  enabledAt?: Date;
+  stopAfterRejectedCandidate: boolean;
+  skipRemainingInternalArtifactsAfterRejected: boolean;
+  accept: (
+    candidate: BuiltAutoDownloadArtifact,
+    claimForBrowser: () => Promise<boolean>,
+  ) => Promise<boolean>;
+};
+
+const STOP_SELECTION = Symbol("stop_auto_download_selection");
+
+async function traverseAutoDownloadArtifacts({
   practiceId,
   deviceHash,
   enabledAt,
-}: SelectNextAutoDownloadArtifactInput): Promise<AutoDownloadArtifact | null> {
+  stopAfterRejectedCandidate,
+  skipRemainingInternalArtifactsAfterRejected,
+  accept,
+}: TraverseAutoDownloadArtifactsInput): Promise<BuiltAutoDownloadArtifact | null> {
+  async function acceptBuiltArtifact(
+    candidate: BuiltAutoDownloadArtifact,
+    claimForBrowser: () => Promise<boolean>,
+    stopWhenRejected = stopAfterRejectedCandidate,
+  ): Promise<BuiltAutoDownloadArtifact | typeof STOP_SELECTION | null> {
+    if (await accept(candidate, claimForBrowser)) return candidate;
+    return stopWhenRejected ? STOP_SELECTION : null;
+  }
+
   const baseEligibility = {
     AND: [
       { owner_practice_id: practiceId },
@@ -45,7 +83,7 @@ export async function selectNextAutoDownloadArtifact({
       PRACTICE_VISIBLE_SESSION_FILTER,
       { deleted_at: null },
       { status: "completed" },
-      { submitted_at: { gte: enabledAt } },
+      ...(enabledAt ? [{ submitted_at: { gte: enabledAt } }] : []),
     ],
   };
 
@@ -75,16 +113,15 @@ export async function selectNextAutoDownloadArtifact({
       practice_form: { select: { title: true } },
     },
   });
-  const gdtCandidate = gdtCandidates
-    .map((item) => ({ session: item, gdt: resolveQuestionnaireGdtExport(item) }))
-    .find((item) => item.gdt !== null);
-  if (gdtCandidate?.gdt) {
+  for (const session of gdtCandidates) {
+    const gdt = resolveQuestionnaireGdtExport(session);
+    if (!gdt) continue;
     let bytes: Uint8Array;
     try {
-      bytes = buildQuestionnaireGdtBytes(gdtCandidate.gdt);
+      bytes = buildQuestionnaireGdtBytes(gdt);
     } catch (buildError) {
       console.error("[questionnaire auto-download] gdt_build_failed", {
-        sessionId: gdtCandidate.session.id,
+        sessionId: session.id,
         message: buildError instanceof Error ? buildError.message : "UnknownError",
       });
       throw new AutoDownloadArtifactBuildError(
@@ -93,34 +130,44 @@ export async function selectNextAutoDownloadArtifact({
       );
     }
 
-    const claim = await prisma.patientQuestionnaireSession.updateMany({
-      where: {
-        id: gdtCandidate.session.id,
-        AND: [
-          ...baseEligibility.AND,
-          { session_kind: "patient_communication" },
-          { patient_reference: gdtCandidate.gdt.patientReference },
-          { auto_pdf_download_claimed_at: { not: null } },
-          { gdt_download_claimed_at: null },
-          {
-            owner_practice: {
-              is: {
-                questionnaire_auto_pdf_device_hash: deviceHash,
-                questionnaire_auto_pdf_enabled_at: enabledAt,
-              },
-            },
-          },
-        ],
+    const result = await acceptBuiltArtifact(
+      {
+        sessionId: session.id,
+        artifactType: "GDT",
+        artifact: {
+          bytes,
+          filename: gdt.filename,
+          mimeType: "application/octet-stream",
+        },
       },
-      data: { gdt_download_claimed_at: new Date() },
-    });
-    if (claim.count !== 1) return null;
-
-    return {
-      bytes,
-      filename: gdtCandidate.gdt.filename,
-      mimeType: "application/octet-stream",
-    };
+      async () => {
+        if (!deviceHash || !enabledAt) return false;
+        const claim = await prisma.patientQuestionnaireSession.updateMany({
+          where: {
+            id: session.id,
+            AND: [
+              ...baseEligibility.AND,
+              { session_kind: "patient_communication" },
+              { patient_reference: gdt.patientReference },
+              { auto_pdf_download_claimed_at: { not: null } },
+              { gdt_download_claimed_at: null },
+              {
+                owner_practice: {
+                  is: {
+                    questionnaire_auto_pdf_device_hash: deviceHash,
+                    questionnaire_auto_pdf_enabled_at: enabledAt,
+                  },
+                },
+              },
+            ],
+          },
+          data: { gdt_download_claimed_at: new Date() },
+        });
+        return claim.count === 1;
+      },
+    );
+    if (result === STOP_SELECTION) return null;
+    if (result) return result;
   }
 
   const internalSessions = await prisma.patientQuestionnaireSession.findMany({
@@ -158,17 +205,19 @@ export async function selectNextAutoDownloadArtifact({
   });
   const deviceEligibility = [
     ...baseEligibility.AND,
-    {
-      owner_practice: {
-        is: {
-          questionnaire_auto_pdf_device_hash: deviceHash,
-          questionnaire_auto_pdf_enabled_at: enabledAt,
-        },
-      },
-    },
+    ...(deviceHash && enabledAt
+      ? [{
+          owner_practice: {
+            is: {
+              questionnaire_auto_pdf_device_hash: deviceHash,
+              questionnaire_auto_pdf_enabled_at: enabledAt,
+            },
+          },
+        }]
+      : []),
   ];
 
-  for (const session of internalSessions) {
+  internalSessionLoop: for (const session of internalSessions) {
     if (!session.submitted_at) continue;
     const internalSession = {
       ...session,
@@ -179,18 +228,30 @@ export async function selectNextAutoDownloadArtifact({
     if (session.auto_pdf_download_claimed_at === null) {
       try {
         const artifact = await buildInternalDocumentationPdfArtifact(internalSession);
-        const claim = await prisma.patientQuestionnaireSession.updateMany({
-          where: {
-            id: session.id,
-            AND: [
-              ...deviceEligibility,
-              { session_kind: "internal_documentation" },
-              { auto_pdf_download_claimed_at: null },
-            ],
+        const result = await acceptBuiltArtifact(
+          { sessionId: session.id, artifactType: "PDF", artifact },
+          async () => {
+            if (!deviceHash || !enabledAt) return false;
+            const claim = await prisma.patientQuestionnaireSession.updateMany({
+              where: {
+                id: session.id,
+                AND: [
+                  ...deviceEligibility,
+                  { session_kind: "internal_documentation" },
+                  { auto_pdf_download_claimed_at: null },
+                ],
+              },
+              data: { auto_pdf_download_claimed_at: new Date() },
+            });
+            return claim.count === 1;
           },
-          data: { auto_pdf_download_claimed_at: new Date() },
-        });
-        if (claim.count === 1) return artifact;
+          false,
+        );
+        if (result === STOP_SELECTION) return null;
+        if (result) return result;
+        if (skipRemainingInternalArtifactsAfterRejected) {
+          continue internalSessionLoop;
+        }
       } catch (buildError) {
         console.error("[questionnaire auto-download] internal_pdf_build_failed", {
           sessionId: session.id,
@@ -202,12 +263,23 @@ export async function selectNextAutoDownloadArtifact({
     if (session.auto_xml_download_claimed_at === null) {
       try {
         const artifact = buildInternalDocumentationXmlArtifact(internalSession);
-        const claimed = await claimInternalDocumentationXml(
-          session.id,
-          new Date(),
-          deviceEligibility,
+        const result = await acceptBuiltArtifact(
+          { sessionId: session.id, artifactType: "XML", artifact },
+          async () => {
+            if (!deviceHash || !enabledAt) return false;
+            return claimInternalDocumentationXml(
+              session.id,
+              new Date(),
+              deviceEligibility,
+            );
+          },
+          false,
         );
-        if (claimed) return artifact;
+        if (result === STOP_SELECTION) return null;
+        if (result) return result;
+        if (skipRemainingInternalArtifactsAfterRejected) {
+          continue internalSessionLoop;
+        }
       } catch (buildError) {
         console.error("[questionnaire auto-download] internal_xml_build_failed", {
           sessionId: session.id,
@@ -220,18 +292,27 @@ export async function selectNextAutoDownloadArtifact({
       try {
         const artifact = buildInternalDocumentationGdtArtifact(internalSession);
         if (!artifact) continue;
-        const claim = await prisma.patientQuestionnaireSession.updateMany({
-          where: {
-            id: session.id,
-            AND: [
-              ...deviceEligibility,
-              { session_kind: "internal_documentation" },
-              { gdt_download_claimed_at: null },
-            ],
+        const result = await acceptBuiltArtifact(
+          { sessionId: session.id, artifactType: "GDT", artifact },
+          async () => {
+            if (!deviceHash || !enabledAt) return false;
+            const claim = await prisma.patientQuestionnaireSession.updateMany({
+              where: {
+                id: session.id,
+                AND: [
+                  ...deviceEligibility,
+                  { session_kind: "internal_documentation" },
+                  { gdt_download_claimed_at: null },
+                ],
+              },
+              data: { gdt_download_claimed_at: new Date() },
+            });
+            return claim.count === 1;
           },
-          data: { gdt_download_claimed_at: new Date() },
-        });
-        if (claim.count === 1) return artifact;
+          false,
+        );
+        if (result === STOP_SELECTION) return null;
+        if (result) return result;
       } catch (buildError) {
         console.error("[questionnaire auto-download] internal_gdt_build_failed", {
           sessionId: session.id,
@@ -241,7 +322,7 @@ export async function selectNextAutoDownloadArtifact({
     }
   }
 
-  const session = await prisma.patientQuestionnaireSession.findFirst({
+  const patientPdfQuery = {
     where: {
       AND: [
         ...baseEligibility.AND,
@@ -266,49 +347,95 @@ export async function selectNextAutoDownloadArtifact({
       gdt_download_claimed_at: true,
       practice_form: { select: { title: true } },
     },
-  });
-  if (!session) return null;
+  } satisfies Prisma.PatientQuestionnaireSessionFindManyArgs;
+  const patientPdfSessions = stopAfterRejectedCandidate
+    ? [await prisma.patientQuestionnaireSession.findFirst(patientPdfQuery)]
+    : await prisma.patientQuestionnaireSession.findMany(patientPdfQuery);
 
-  let pdf: Awaited<ReturnType<typeof buildQuestionnairePdfBytes>>;
-  try {
-    pdf = await buildQuestionnairePdfBytes(
-      session,
-      resolveQuestionnairePdfOptions(session),
+  for (const session of patientPdfSessions) {
+    if (!session) continue;
+
+    let pdf: Awaited<ReturnType<typeof buildQuestionnairePdfBytes>>;
+    try {
+      pdf = await buildQuestionnairePdfBytes(
+        session,
+        resolveQuestionnairePdfOptions(session),
+      );
+    } catch (buildError) {
+      console.error("[questionnaire auto-download] pdf_build_failed", {
+        sessionId: session.id,
+        message: buildError instanceof Error ? buildError.message : "UnknownError",
+      });
+      throw new AutoDownloadArtifactBuildError(
+        "PDF konnte nicht erstellt werden.",
+        { cause: buildError },
+      );
+    }
+
+    const result = await acceptBuiltArtifact(
+      {
+        sessionId: session.id,
+        artifactType: "PDF",
+        artifact: {
+          bytes: pdf.bytes,
+          filename: pdf.filename,
+          mimeType: "application/pdf",
+        },
+      },
+      async () => {
+        if (!deviceHash || !enabledAt) return false;
+        const claim = await prisma.patientQuestionnaireSession.updateMany({
+          where: {
+            id: session.id,
+            AND: [
+              ...baseEligibility.AND,
+              { auto_pdf_download_claimed_at: null },
+              {
+                owner_practice: {
+                  is: {
+                    questionnaire_auto_pdf_device_hash: deviceHash,
+                    questionnaire_auto_pdf_enabled_at: enabledAt,
+                  },
+                },
+              },
+            ],
+          },
+          data: { auto_pdf_download_claimed_at: new Date() },
+        });
+        return claim.count === 1;
+      },
     );
-  } catch (buildError) {
-    console.error("[questionnaire auto-download] pdf_build_failed", {
-      sessionId: session.id,
-      message: buildError instanceof Error ? buildError.message : "UnknownError",
-    });
-    throw new AutoDownloadArtifactBuildError(
-      "PDF konnte nicht erstellt werden.",
-      { cause: buildError },
-    );
+    if (result === STOP_SELECTION) return null;
+    if (result) return result;
   }
 
-  const claim = await prisma.patientQuestionnaireSession.updateMany({
-    where: {
-      id: session.id,
-      AND: [
-        ...baseEligibility.AND,
-        { auto_pdf_download_claimed_at: null },
-        {
-          owner_practice: {
-            is: {
-              questionnaire_auto_pdf_device_hash: deviceHash,
-              questionnaire_auto_pdf_enabled_at: enabledAt,
-            },
-          },
-        },
-      ],
-    },
-    data: { auto_pdf_download_claimed_at: new Date() },
-  });
-  if (claim.count !== 1) return null;
+  return null;
+}
 
-  return {
-    bytes: pdf.bytes,
-    filename: pdf.filename,
-    mimeType: "application/pdf",
-  };
+export async function selectNextAutoDownloadArtifact({
+  practiceId,
+  deviceHash,
+  enabledAt,
+}: SelectNextAutoDownloadArtifactInput): Promise<AutoDownloadArtifact | null> {
+  const candidate = await traverseAutoDownloadArtifacts({
+    practiceId,
+    deviceHash,
+    enabledAt,
+    stopAfterRejectedCandidate: true,
+    skipRemainingInternalArtifactsAfterRejected: false,
+    accept: async (_candidate, claimForBrowser) => claimForBrowser(),
+  });
+  return candidate?.artifact ?? null;
+}
+
+export async function selectNextAutoDownloadArtifactForDelivery({
+  practiceId,
+  accept,
+}: SelectNextDeliveryArtifactInput): Promise<BuiltAutoDownloadArtifact | null> {
+  return traverseAutoDownloadArtifacts({
+    practiceId,
+    stopAfterRejectedCandidate: false,
+    skipRemainingInternalArtifactsAfterRejected: true,
+    accept: async (candidate) => accept(candidate),
+  });
 }

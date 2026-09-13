@@ -344,6 +344,12 @@ enum InquirySessionStatus {
   ARCHIVED
 }
 
+enum QuestionnaireArtifactType {
+  PDF
+  XML
+  GDT
+}
+
 /// Modulare Fragebogen-Sitzung für einen Patienten.
 /// Vollständig isoliert von CaseSession und InquirySession.
 /// Wird über einen einmaligen, zeitlich begrenzten Token zugänglich gemacht.
@@ -493,6 +499,8 @@ model PatientQuestionnaireSession {
   /// automatischen Praxis-Download.
   gdt_download_claimed_at DateTime? @db.Timestamp(6)
 
+  artifact_deliveries QuestionnaireArtifactDelivery[]
+
   /// Bedient die Praxis-Listenabfrage `/questionnaires`
   /// (Filter `owner_account_id`, Sortierung `createdAt desc`).
   @@index([owner_account_id, createdAt])
@@ -548,9 +556,32 @@ model PracticeAutoDownloadDevice {
   created_at               DateTime  @default(now())
   updated_at               DateTime  @updatedAt
 
+  artifact_deliveries QuestionnaireArtifactDelivery[]
+
   @@index([practice_id, created_at])
   @@index([practice_id, is_active, revoked_at])
   @@index([enrollment_expires_at])
+}
+
+model QuestionnaireArtifactDelivery {
+  id                 String                    @id @default(cuid())
+  session_id         String
+  session            PatientQuestionnaireSession @relation(fields: [session_id], references: [id], onDelete: Restrict)
+  artifact_type      QuestionnaireArtifactType
+  device_id          String?
+  device             PracticeAutoDownloadDevice? @relation(fields: [device_id], references: [id], onDelete: Restrict)
+  lease_token_hash   String?                   @unique
+  lease_expires_at   DateTime?                 @db.Timestamp(6)
+  attempt_count      Int                       @default(0)
+  acknowledged_at    DateTime?                 @db.Timestamp(6)
+  content_sha256     String?
+  created_at         DateTime                  @default(now())
+  updated_at         DateTime                  @updatedAt
+
+  @@unique([session_id, artifact_type])
+  @@index([acknowledged_at, lease_expires_at])
+  @@index([lease_expires_at])
+  @@index([device_id])
 }
 
 /// Wird in Phase 3a nur als Datenstruktur eingeführt; es gibt noch keine
