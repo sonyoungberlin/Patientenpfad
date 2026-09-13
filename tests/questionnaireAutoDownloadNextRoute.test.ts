@@ -322,7 +322,16 @@ it("liefert nur dem registrierten Gerät eine PDF und claimt nur den Auto-Marker
   expect(claim.data).not.toHaveProperty("pdf_downloaded_at");
   expect(claim.where.AND).toEqual(
     expect.arrayContaining([
-      { submitted_at: { gte: ENABLED_AT } },
+      {
+        OR: [
+          { submitted_at: { gte: ENABLED_AT } },
+          {
+            artifact_deliveries: {
+              some: { acknowledged_at: null },
+            },
+          },
+        ],
+      },
       { auto_pdf_download_claimed_at: null },
     ]),
   );
@@ -410,12 +419,39 @@ it("wendet Practice-, Sichtbarkeits-, Zeit- und Claim-Filter an", async () => {
       { context: "patient" },
       { deleted_at: null },
       { status: "completed" },
-      { submitted_at: { gte: ENABLED_AT } },
+      {
+        OR: [
+          { submitted_at: { gte: ENABLED_AT } },
+          {
+            artifact_deliveries: {
+              some: { acknowledged_at: null },
+            },
+          },
+        ],
+      },
       { auto_pdf_download_claimed_at: null },
     ]),
   );
   expect(where.AND.some((part: { OR?: unknown }) => part.OR)).toBe(true);
   expect(where.AND).not.toContainEqual({ session_kind: "patient_communication" });
+});
+
+it("lässt nach nativem FETCH ohne ACK den Browser-Fallback trotz späterer Aktivierung zu", async () => {
+  await GET(request());
+
+  const where = sessionMock.findFirst.mock.calls[0][0].where;
+  expect(where.AND).toEqual(expect.arrayContaining([
+    {
+      OR: [
+        { submitted_at: { gte: ENABLED_AT } },
+        {
+          artifact_deliveries: {
+            some: { acknowledged_at: null },
+          },
+        },
+      ],
+    },
+  ]));
 });
 
 it("rendert normale Fragebögen weiterhin für den Auto-Download", async () => {

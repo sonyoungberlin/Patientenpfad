@@ -49,7 +49,7 @@ beforeEach(() => {
 });
 
 describe("Auto-Download-Leases", () => {
-  it("setzt nach erfolgreichem Build einen fünfminütigen Lease mit Hash und Versuchszähler", async () => {
+  it("setzt bei nativem FETCH ohne ACK nur den Lease und keinen finalen Session-Claim", async () => {
     const now = new Date("2026-09-13T12:00:00.000Z");
     const leased = await acquireAutoDownloadArtifactLease(candidate, device, now);
 
@@ -72,6 +72,7 @@ describe("Auto-Download-Leases", () => {
       content_sha256: leased!.contentSha256,
     }));
     expect(JSON.stringify(update.data)).not.toContain(leased!.leaseToken);
+    expect(transaction).not.toHaveBeenCalled();
   });
 
   it("lässt bei parallelen Lease-Versuchen höchstens einen Gewinner zu", async () => {
@@ -135,7 +136,7 @@ describe("Auto-Download-ACK", () => {
     [QuestionnaireArtifactType.PDF, "auto_pdf_download_claimed_at"],
     [QuestionnaireArtifactType.XML, "auto_xml_download_claimed_at"],
     [QuestionnaireArtifactType.GDT, "gdt_download_claimed_at"],
-  ])("bestätigt %s und setzt den passenden finalen Session-Claim", async (artifactType, claimField) => {
+  ])("bestätigt %s, setzt den Browser-Sperrclaim und verhindert so ein Duplikat", async (artifactType, claimField) => {
     const tx = transactionDb({ artifact_type: artifactType });
 
     await expect(acknowledgeAutoDownloadDelivery(

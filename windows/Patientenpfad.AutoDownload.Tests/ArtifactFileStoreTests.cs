@@ -109,23 +109,29 @@ public sealed class ArtifactFileStoreTests
     }
 
     [Fact]
-    public async Task NeverOverwritesExistingDifferentFile()
+    public async Task StoresDifferentFileUnderDeterministicHashSuffix()
     {
         using var directory = new TemporaryDirectory();
         var existing = Encoding.UTF8.GetBytes("bestehend");
         var incoming = Encoding.UTF8.GetBytes("neu");
         var path = System.IO.Path.Combine(directory.Path, "datei.pdf");
         await File.WriteAllBytesAsync(path, existing);
+        var incomingHash = Convert.ToHexString(SHA256.HashData(incoming)).ToLowerInvariant();
 
         var result = await store.StoreAsync(
             new MemoryStream(incoming),
             "datei.pdf",
-            Convert.ToHexString(SHA256.HashData(incoming)),
+            incomingHash,
             directory.Path,
             CancellationToken.None);
 
-        Assert.Equal(ArtifactStoreStatus.ExistingConflict, result.Status);
-        Assert.False(result.CanAcknowledge);
+        var collisionPath = System.IO.Path.Combine(
+            directory.Path,
+            $"datei_{incomingHash[..12]}.pdf");
+        Assert.Equal(ArtifactStoreStatus.Stored, result.Status);
+        Assert.True(result.CanAcknowledge);
         Assert.Equal(existing, await File.ReadAllBytesAsync(path));
+        Assert.Equal(incoming, await File.ReadAllBytesAsync(collisionPath));
+        Assert.Equal(collisionPath, result.FinalPath);
     }
 }

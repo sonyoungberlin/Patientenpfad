@@ -83,7 +83,18 @@ async function traverseAutoDownloadArtifacts({
       PRACTICE_VISIBLE_SESSION_FILTER,
       { deleted_at: null },
       { status: "completed" },
-      ...(enabledAt ? [{ submitted_at: { gte: enabledAt } }] : []),
+      ...(enabledAt
+        ? [{
+            OR: [
+              { submitted_at: { gte: enabledAt } },
+              {
+                artifact_deliveries: {
+                  some: { acknowledged_at: null },
+                },
+              },
+            ],
+          }]
+        : []),
     ],
   };
 

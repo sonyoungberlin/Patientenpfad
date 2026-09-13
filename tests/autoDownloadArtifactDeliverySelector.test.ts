@@ -171,6 +171,53 @@ it("bietet Patientenfragebögen ausschließlich als PDF und danach GDT an", asyn
   expect(accepted).not.toContain("XML");
 });
 
+it.each([
+  ["neuen Patientenfragebogen", {
+    source: "practice_direct",
+    inquiry_session_id: null,
+    createdAt: new Date("2026-09-13T09:55:00.000Z"),
+  }],
+  ["Antwort auf angeforderten Fragebogen", {
+    source: "internal_link",
+    inquiry_session_id: "inquiry-current",
+    createdAt: new Date("2026-09-13T09:00:00.000Z"),
+  }],
+  ["Antwort auf alte Anfrage", {
+    source: "internal_link",
+    inquiry_session_id: "inquiry-old",
+    createdAt: new Date("2026-01-15T09:00:00.000Z"),
+  }],
+  ["Antwort über Einmal-Link", {
+    source: "internal_link",
+    inquiry_session_id: null,
+    createdAt: new Date("2026-09-13T09:00:00.000Z"),
+  }],
+])("liefert %s nativ als PDF", async (_, variant) => {
+  sessions.findMany
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce([{ ...PATIENT_SESSION, ...variant }]);
+  const accept = jest.fn().mockResolvedValue(true);
+
+  const result = await selectNextAutoDownloadArtifactForDelivery({
+    practiceId: "practice-1",
+    accept,
+  });
+
+  expect(result).toEqual(expect.objectContaining({
+    sessionId: "patient-1",
+    artifactType: "PDF",
+  }));
+  expect(accept).toHaveBeenCalledTimes(1);
+  const patientQuery = sessions.findMany.mock.calls[2][0];
+  expect(patientQuery.where.AND).not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ submitted_at: expect.anything() }),
+  ]));
+  expect(patientQuery.where.AND).not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ createdAt: expect.anything() }),
+  ]));
+});
+
 it("setzt bei Buildfehler keinen Lease für das fehlgeschlagene Artefakt", async () => {
   buildInternalPdf.mockRejectedValue(new Error("render failed"));
   sessions.findMany
@@ -225,6 +272,19 @@ it("prüft nur Sessions der authentifizierten Praxis", async () => {
   for (const [query] of sessions.findMany.mock.calls) {
     expect(query.where.AND).toEqual(expect.arrayContaining([
       { owner_practice_id: "practice-1" },
+      { context: "patient" },
     ]));
+  }
+});
+
+it("schließt Bewerber- und Office-Fragebögen über den positiven Patientenkontext aus", async () => {
+  await selectNextAutoDownloadArtifactForDelivery({
+    practiceId: "practice-1",
+    accept: jest.fn().mockResolvedValue(true),
+  });
+
+  for (const [query] of sessions.findMany.mock.calls) {
+    expect(query.where.AND).toContainEqual({ context: "patient" });
+    expect(query.where.AND).not.toContainEqual({ context: { not: "office" } });
   }
 });

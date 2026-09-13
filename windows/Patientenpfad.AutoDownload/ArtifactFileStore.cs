@@ -44,12 +44,29 @@ public sealed class ArtifactFileStore
         if (File.Exists(finalPath))
         {
             var existingHash = await ComputeSha256Async(finalPath, cancellationToken);
-            return HashesEqual(existingHash, expectedHash)
-                ? new ArtifactStoreResult(ArtifactStoreStatus.ExistingIdentical, finalPath)
-                : new ArtifactStoreResult(ArtifactStoreStatus.ExistingConflict, finalPath);
+            if (HashesEqual(existingHash, expectedHash))
+            {
+                return new ArtifactStoreResult(ArtifactStoreStatus.ExistingIdentical, finalPath);
+            }
+
+            var extension = Path.GetExtension(serverFileName);
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(serverFileName);
+            var hashSuffix = Convert.ToHexString(expectedHash)[..12].ToLowerInvariant();
+            finalPath = Path.Combine(
+                targetDirectory,
+                $"{nameWithoutExtension}_{hashSuffix}{extension}");
+            if (File.Exists(finalPath))
+            {
+                var collisionHash = await ComputeSha256Async(finalPath, cancellationToken);
+                return HashesEqual(collisionHash, expectedHash)
+                    ? new ArtifactStoreResult(ArtifactStoreStatus.ExistingIdentical, finalPath)
+                    : new ArtifactStoreResult(ArtifactStoreStatus.ExistingConflict, finalPath);
+            }
         }
 
-        var temporaryPath = Path.Combine(targetDirectory, $".{serverFileName}.{Guid.NewGuid():N}.tmp");
+        var temporaryPath = Path.Combine(
+            targetDirectory,
+            $".{Path.GetFileName(finalPath)}.{Guid.NewGuid():N}.tmp");
         try
         {
             await using (var destination = new FileStream(

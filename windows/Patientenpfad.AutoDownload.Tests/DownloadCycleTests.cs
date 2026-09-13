@@ -88,21 +88,27 @@ public sealed class DownloadCycleTests
     }
 
     [Fact]
-    public async Task ExistingDifferentFileIsNotOverwrittenOrAcknowledged()
+    public async Task ExistingDifferentFileIsStoredWithHashSuffixAndAcknowledged()
     {
         using var directory = new TemporaryDirectory();
         var path = System.IO.Path.Combine(directory.Path, "datei.pdf");
         await File.WriteAllTextAsync(path, "bestehend");
         var incoming = Encoding.UTF8.GetBytes("anders");
+        var incomingHash = Convert.ToHexString(SHA256.HashData(incoming)).ToLowerInvariant();
         var handler = new StubHttpMessageHandler((_, _, _) =>
             Task.FromResult(FileResponse("datei.pdf", "application/pdf", incoming)));
         var cycle = CreateCycle(handler, out _);
 
         var result = await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None);
 
-        Assert.Equal(DownloadCycleResult.RetryLater, result);
+        Assert.Equal(DownloadCycleResult.Delivered, result);
         Assert.Equal("bestehend", await File.ReadAllTextAsync(path));
-        Assert.Equal(1, handler.CallCount);
+        Assert.Equal(
+            incoming,
+            await File.ReadAllBytesAsync(System.IO.Path.Combine(
+                directory.Path,
+                $"datei_{incomingHash[..12]}.pdf")));
+        Assert.Equal(2, handler.CallCount);
     }
 
     [Fact]
