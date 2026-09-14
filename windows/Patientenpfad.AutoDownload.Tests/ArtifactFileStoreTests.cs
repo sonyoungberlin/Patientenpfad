@@ -28,6 +28,73 @@ public sealed class ArtifactFileStoreTests
         Assert.Single(Directory.GetFiles(directory.Path));
     }
 
+    [Fact]
+    public async Task KeepsShortFileNameUnchanged()
+    {
+        using var directory = new TemporaryDirectory();
+        var bytes = Encoding.UTF8.GetBytes("kurzer Name");
+
+        var result = await store.StoreAsync(
+            new MemoryStream(bytes),
+            "kurzer-dateiname.pdf",
+            Convert.ToHexString(SHA256.HashData(bytes)),
+            directory.Path,
+            CancellationToken.None);
+
+        Assert.Equal("kurzer-dateiname.pdf", System.IO.Path.GetFileName(result.FinalPath));
+    }
+
+    [Fact]
+    public async Task Shortens372CharacterFileNameAndPreservesExtension()
+    {
+        using var directory = new TemporaryDirectory();
+        var bytes = Encoding.UTF8.GetBytes("langer Name");
+        var fileName = $"{new string('a', 368)}.pdf";
+
+        var result = await store.StoreAsync(
+            new MemoryStream(bytes),
+            fileName,
+            Convert.ToHexString(SHA256.HashData(bytes)),
+            directory.Path,
+            CancellationToken.None);
+
+        Assert.Equal(ArtifactStoreStatus.Stored, result.Status);
+        Assert.NotNull(result.FinalPath);
+        var storedFileName = System.IO.Path.GetFileName(result.FinalPath);
+        Assert.Equal(216, storedFileName.Length);
+        Assert.EndsWith(".pdf", storedFileName, StringComparison.Ordinal);
+        Assert.True(ArtifactFileStore.IsSafeFileName(storedFileName));
+        Assert.DoesNotContain(Directory.GetFiles(directory.Path), path =>
+            System.IO.Path.GetFileName(path).Length > 216);
+    }
+
+    [Fact]
+    public async Task DifferentLongFileNamesDoNotCollide()
+    {
+        using var directory = new TemporaryDirectory();
+        var firstBytes = Encoding.UTF8.GetBytes("erste Datei");
+        var secondBytes = Encoding.UTF8.GetBytes("zweite Datei");
+        var commonPrefix = new string('a', 367);
+
+        var first = await store.StoreAsync(
+            new MemoryStream(firstBytes),
+            $"{commonPrefix}1.pdf",
+            Convert.ToHexString(SHA256.HashData(firstBytes)),
+            directory.Path,
+            CancellationToken.None);
+        var second = await store.StoreAsync(
+            new MemoryStream(secondBytes),
+            $"{commonPrefix}2.pdf",
+            Convert.ToHexString(SHA256.HashData(secondBytes)),
+            directory.Path,
+            CancellationToken.None);
+
+        Assert.Equal(ArtifactStoreStatus.Stored, first.Status);
+        Assert.Equal(ArtifactStoreStatus.Stored, second.Status);
+        Assert.NotEqual(first.FinalPath, second.FinalPath);
+        Assert.Equal(2, Directory.GetFiles(directory.Path).Length);
+    }
+
     [Theory]
     [InlineData("../datei.pdf")]
     [InlineData("..\\datei.pdf")]

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Patientenpfad.AutoDownload;
 
@@ -16,8 +17,30 @@ public sealed record ArtifactStoreResult(ArtifactStoreStatus Status, string? Fin
     public bool CanAcknowledge => Status is ArtifactStoreStatus.Stored or ArtifactStoreStatus.ExistingIdentical;
 }
 
+internal enum ArtifactStoreOperation
+{
+    OpenTemp,
+    CopyContent,
+    FlushTemp,
+    HashTemp,
+    HashFinal,
+    MoveFinal,
+    DeleteTemp,
+}
+
+internal sealed class ArtifactStoreIOException(
+    ArtifactStoreOperation operation,
+    IOException exception) : IOException("Artifact store operation failed.", exception)
+{
+    public ArtifactStoreOperation Operation { get; } = operation;
+    public string ExceptionType { get; } = exception.GetType().Name;
+    public int OriginalHResult { get; } = exception.HResult;
+}
+
 public sealed class ArtifactFileStore
 {
+    internal const int MaxFinalFileNameLength = 216;
+    private const int FileNameHashSuffixLength = 12;
     private static readonly char[] ForbiddenWindowsFileNameChars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
     private static readonly HashSet<string> ReservedWindowsNames = new(
         [
@@ -38,10 +61,17 @@ public sealed class ArtifactFileStore
         {
             return new ArtifactStoreResult(ArtifactStoreStatus.InvalidFileName);
         }
+        var finalFileName = CreateWindowsFileName(serverFileName);
+        if (finalFileName is null)
+        {
+            return new ArtifactStoreResult(ArtifactStoreStatus.InvalidFileName);
+        }
 
-        Directory.CreateDirectory(targetDirectory);
-        var finalPath = Path.Combine(targetDirectory, serverFileName);
-        var existingHash = await TryComputeSha256Async(finalPath, cancellationToken);
+        RunIo(ArtifactStoreOperation.OpenTemp, () => Directory.CreateDirectory(targetDirectory));
+        var finalPath = Path.Combine(targetDirectory, finalFileName);
+        var existingHash = await RunIoAsync(
+            ArtifactStoreOperation.HashFinal,
+            () => TryComputeSha256Async(finalPath, cancellationToken));
         if (existingHash is not null)
         {
             if (HashesEqual(existingHash, expectedHash))
@@ -50,12 +80,13 @@ public sealed class ArtifactFileStore
             }
 
             var extension = Path.GetExtension(serverFileName);
-            var nameWithoutExtension = Path.GetFileNameWithoutExtension(serverFileName);
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(finalFileName);
             var hashSuffix = Convert.ToHexString(expectedHash)[..12].ToLowerInvariant();
-            finalPath = Path.Combine(
-                targetDirectory,
-                $"{nameWithoutExtension}_{hashSuffix}{extension}");
-            var collisionHash = await TryComputeSha256Async(finalPath, cancellationToken);
+            finalFileName = CreateWindowsFileName($"{nameWithoutExtension}_{hashSuffix}{extension}")!;
+            finalPath = Path.Combine(targetDirectory, finalFileName);
+            var collisionHash = await RunIoAsync(
+                ArtifactStoreOperation.HashFinal,
+                () => TryComputeSha256Async(finalPath, cancellationToken));
             if (collisionHash is not null)
             {
                 return HashesEqual(collisionHash, expectedHash)
@@ -70,19 +101,34 @@ public sealed class ArtifactFileStore
         var handedOff = false;
         try
         {
-            await using (var destination = new FileStream(
-                temporaryPath,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                81920,
-                FileOptions.Asynchronous | FileOptions.WriteThrough))
+            var destination = RunIo(
+                ArtifactStoreOperation.OpenTemp,
+                () => new FileStream(
+                    temporaryPath,
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.None,
+                    81920,
+                    FileOptions.Asynchronous | FileOptions.WriteThrough));
+            try
             {
-                await content.CopyToAsync(destination, cancellationToken);
-                await destination.FlushAsync(cancellationToken);
+                await RunIoAsync(
+                    ArtifactStoreOperation.CopyContent,
+                    () => content.CopyToAsync(destination, cancellationToken));
+                await RunIoAsync(
+                    ArtifactStoreOperation.FlushTemp,
+                    () => destination.FlushAsync(cancellationToken));
+            }
+            finally
+            {
+                await RunIoAsync(
+                    ArtifactStoreOperation.FlushTemp,
+                    () => destination.DisposeAsync().AsTask());
             }
 
-            var actualHash = await ComputeSha256Async(temporaryPath, cancellationToken);
+            var actualHash = await RunIoAsync(
+                ArtifactStoreOperation.HashTemp,
+                () => ComputeSha256Async(temporaryPath, cancellationToken));
             if (!HashesEqual(actualHash, expectedHash))
             {
                 return new ArtifactStoreResult(ArtifactStoreStatus.HashMismatch);
@@ -92,13 +138,17 @@ public sealed class ArtifactFileStore
             {
                 try
                 {
-                    File.Move(temporaryPath, finalPath, false);
+                    RunIo(
+                        ArtifactStoreOperation.MoveFinal,
+                        () => File.Move(temporaryPath, finalPath, false));
                     handedOff = true;
                     return new ArtifactStoreResult(ArtifactStoreStatus.Stored, finalPath);
                 }
-                catch (IOException) when (moveAttempt == 0)
+                catch (ArtifactStoreIOException) when (moveAttempt == 0)
                 {
-                    existingHash = await TryComputeSha256Async(finalPath, cancellationToken);
+                    existingHash = await RunIoAsync(
+                        ArtifactStoreOperation.HashFinal,
+                        () => TryComputeSha256Async(finalPath, cancellationToken));
                     if (existingHash is not null)
                     {
                         return HashesEqual(existingHash, expectedHash)
@@ -110,8 +160,83 @@ public sealed class ArtifactFileStore
         }
         finally
         {
-            if (!handedOff) File.Delete(temporaryPath);
+            if (!handedOff)
+            {
+                RunIo(
+                    ArtifactStoreOperation.DeleteTemp,
+                    () => File.Delete(temporaryPath));
+            }
         }
+    }
+
+    private static void RunIo(ArtifactStoreOperation operation, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (IOException exception)
+        {
+            throw new ArtifactStoreIOException(operation, exception);
+        }
+    }
+
+    private static T RunIo<T>(ArtifactStoreOperation operation, Func<T> action)
+    {
+        try
+        {
+            return action();
+        }
+        catch (IOException exception)
+        {
+            throw new ArtifactStoreIOException(operation, exception);
+        }
+    }
+
+    private static async Task RunIoAsync(ArtifactStoreOperation operation, Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (IOException exception)
+        {
+            throw new ArtifactStoreIOException(operation, exception);
+        }
+    }
+
+    private static async Task<T> RunIoAsync<T>(
+        ArtifactStoreOperation operation,
+        Func<Task<T>> action)
+    {
+        try
+        {
+            return await action();
+        }
+        catch (IOException exception)
+        {
+            throw new ArtifactStoreIOException(operation, exception);
+        }
+    }
+
+    private static string? CreateWindowsFileName(string fileName)
+    {
+        if (fileName.Length <= MaxFinalFileNameLength) return fileName;
+
+        var extension = Path.GetExtension(fileName);
+        var suffix = "_" + Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(fileName)))[..FileNameHashSuffixLength]
+            .ToLowerInvariant();
+        var baseNameLength = MaxFinalFileNameLength - extension.Length - suffix.Length;
+        if (baseNameLength <= 0) return null;
+
+        var baseName = Path.GetFileNameWithoutExtension(fileName);
+        var truncatedLength = Math.Min(baseNameLength, baseName.Length);
+        if (truncatedLength > 0 && char.IsHighSurrogate(baseName[truncatedLength - 1]))
+        {
+            truncatedLength--;
+        }
+        return $"{baseName[..truncatedLength]}{suffix}{extension}";
     }
 
     public static bool IsSafeFileName(string fileName)

@@ -49,7 +49,7 @@ public sealed class DownloadCycle(
             await using var artifact = fetch.Artifact!;
             artifactType = artifact.ArtifactType;
             deliveryId = artifact.DeliveryId;
-            logger.LogInformation("Datei empfangen.");
+            logger.LogInformation("Datei-Header empfangen.");
             phase = "Store";
             var stored = await fileStore.StoreAsync(
                 artifact.Content,
@@ -153,6 +153,16 @@ public sealed class DownloadCycle(
                 localStored,
                 ackSucceeded,
                 "InvalidResponse");
+            return DownloadCycleResult.RetryLater;
+        }
+        catch (ArtifactStoreIOException exception)
+        {
+            logger.LogError(
+                "AutoDownload store failed. FailureStage {FailureStage}, ExceptionType {ExceptionType}, " +
+                "HResult {HResult}.",
+                exception.Operation,
+                exception.ExceptionType,
+                exception.OriginalHResult);
             return DownloadCycleResult.RetryLater;
         }
         catch (Exception exception) when (exception is IOException or CryptographicException)

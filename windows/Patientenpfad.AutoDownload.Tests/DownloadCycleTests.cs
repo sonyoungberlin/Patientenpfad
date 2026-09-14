@@ -129,6 +129,39 @@ public sealed class DownloadCycleTests
     }
 
     [Fact]
+    public async Task ContentIOExceptionLogsOnlyStoreOperationTypeAndHResult()
+    {
+        using var directory = new TemporaryDirectory();
+        const string sensitiveDetail = "patient-name path token hash";
+        var response = FileResponse("sensitive-name.pdf", "application/pdf", [1, 2, 3]);
+        response.Content = new StreamContent(new ThrowingReadStream(sensitiveDetail));
+        response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+        {
+            FileName = "\"sensitive-name.pdf\"",
+        };
+        var handler = new StubHttpMessageHandler((_, _, _) => Task.FromResult(response));
+        var cycle = CreateCycle(handler, out var logger);
+
+        var result = await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None);
+
+        Assert.Equal(DownloadCycleResult.RetryLater, result);
+        Assert.Equal(1, handler.CallCount);
+        Assert.Empty(Directory.GetFiles(directory.Path));
+        Assert.Contains("Datei-Header empfangen.", logger.Messages);
+        Assert.DoesNotContain("Datei empfangen.", logger.Messages);
+        var failure = Assert.Single(logger.Messages, message =>
+            message.Contains("AutoDownload store failed", StringComparison.Ordinal));
+        Assert.Contains("FailureStage CopyContent", failure, StringComparison.Ordinal);
+        Assert.Contains("ExceptionType IOException", failure, StringComparison.Ordinal);
+        Assert.Contains("HResult -2146232800", failure, StringComparison.Ordinal);
+        Assert.DoesNotContain(sensitiveDetail, failure, StringComparison.Ordinal);
+        Assert.DoesNotContain("sensitive-name", failure, StringComparison.Ordinal);
+        Assert.DoesNotContain("delivery-1", failure, StringComparison.Ordinal);
+        Assert.DoesNotContain("lease-secret", failure, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ExistingIdenticalFileCanBeAcknowledged()
     {
         using var directory = new TemporaryDirectory();
@@ -401,5 +434,13 @@ public sealed class DownloadCycleTests
             "X-Content-SHA256",
             sha256 ?? Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
         return response;
+    }
+
+    private sealed class ThrowingReadStream(string message) : MemoryStream
+    {
+        public override ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default) =>
+            ValueTask.FromException<int>(new IOException(message));
     }
 }
