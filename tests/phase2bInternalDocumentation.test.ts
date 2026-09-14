@@ -874,6 +874,41 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(stored).toEqual([{ erkrankung: "Hypertonie", bereich: "Kardiologie", name: "Dr. Herz", adresse: "" }]);
   });
 
+  it("rendert Facharztangaben im strukturierten XML als listItem", () => {
+    const blocks = buildInternalDocumentationFrozenBlocks(["SPECIALISTS"]);
+    const input = {
+      answers: {
+        FACHAERZTE: JSON.stringify([{
+          erkrankung: "Hypertonie",
+          bereich: "Kardiologie",
+          name: "Dr. Herz",
+          adresse: "Herzweg 1, 10115 Berlin",
+        }]),
+      },
+      selected_block_ids: ["SPECIALISTS"],
+      frozenBlocks: blocks,
+      internalWorkflowId: null,
+    };
+
+    const document = buildSemanticMedicalRecordDocument(input);
+    const specialistItems = document.sections.flatMap((section) => section.items)
+      .filter((item) => item.type === "listItem");
+    const xml = buildStructuredAppXml(document);
+
+    expect(specialistItems.length).toBeGreaterThan(0);
+    expect(specialistItems.every((item) => item.type === "listItem")).toBe(true);
+    const specialistText = specialistItems.map((item) => item.text).join("\n");
+    expect(specialistText).toContain("Facharztbereich: Kardiologie");
+    expect(specialistText).toContain("Name: Dr. Herz");
+    expect(specialistText).toContain("Adresse:");
+    expect(specialistText).toContain("Herzweg 1, 10115 Berlin");
+    expect(xml).toContain('<item type="listItem">     Facharztbereich: Kardiologie</item>');
+    expect(xml).toContain("Name: Dr. Herz");
+    expect(xml).toContain("Adresse:");
+    expect(xml).toContain("Herzweg 1, 10115 Berlin");
+    expect(xml).not.toContain('<item type="freeText">     Facharztbereich: Kardiologie</item>');
+  });
+
   it("lässt leere Fachärzte und nicht ausgewählte Einwilligung vollständig aus", async () => {
     const blocks = buildInternalDocumentationFrozenBlocks(["SPECIALISTS", "INTERNAL_CONSENT"]);
     const note = buildMedicalRecordNote({

@@ -188,6 +188,7 @@ export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireB
     label: "Fachärzte",
     displayOrder: 90,
     questionIds: ["FACHAERZTE"],
+    documentationItemType: "listItem",
   },
   INTERNAL_CONSENT: {
     id: "INTERNAL_CONSENT",
