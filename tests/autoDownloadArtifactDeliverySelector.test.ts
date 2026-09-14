@@ -177,6 +177,12 @@ it.each([
     inquiry_session_id: null,
     createdAt: new Date("2026-09-13T09:55:00.000Z"),
   }],
+  ["Kiosk-Check-in", {
+    source: "kiosk_direct",
+    inquiry_session_id: null,
+    selected_block_ids: ["KONTAKT", "CHECK_IN"],
+    createdAt: new Date("2026-09-13T09:56:00.000Z"),
+  }],
   ["Antwort auf angeforderten Fragebogen", {
     source: "internal_link",
     inquiry_session_id: "inquiry-current",

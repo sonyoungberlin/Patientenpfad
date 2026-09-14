@@ -862,6 +862,8 @@ export function QuestionnaireRequestSection({
   onLinkGenerated,
   practiceConfirmationSlots,
   initialOpen = false,
+  initialPatientReference = "",
+  hidePatientReference = false,
   mode = "message",
   createEndpoint = "/api/questionnaire",
 }: {
@@ -869,11 +871,13 @@ export function QuestionnaireRequestSection({
   onLinkGenerated?: (link: string) => void;
   practiceConfirmationSlots: PracticeConfirmationSlot[];
   initialOpen?: boolean;
+  initialPatientReference?: string;
+  hidePatientReference?: boolean;
   mode?: "message" | "direct";
   createEndpoint?: string;
 }) {
   const [open, setOpen] = useState(initialOpen);
-  const [patientRef, setPatientRef] = useState("");
+  const [patientRef, setPatientRef] = useState(initialPatientReference);
   const [patientRefTouched, setPatientRefTouched] = useState(false);
   const [selfCheckInQrEnabled, setSelfCheckInQrEnabled] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
@@ -1013,7 +1017,7 @@ export function QuestionnaireRequestSection({
       {open && (
         <div style={{ display: "grid", gap: "1rem" }}>
           {/* Patient reference */}
-          <div>
+          {!hidePatientReference && <div>
             <label
               htmlFor="q-patient-ref"
               style={{ display: "block", fontWeight: 500, marginBottom: "0.3rem", fontSize: "0.9rem" }}
@@ -1053,7 +1057,7 @@ export function QuestionnaireRequestSection({
             <p className="text-muted text-small" style={{ margin: "0.35rem 0 0" }}>
               Verwenden Sie nach Möglichkeit Ihre interne Praxisreferenz und keine unnötigen personenbezogenen Angaben.
             </p>
-          </div>
+          </div>}
 
           {/* Block selection */}
           <div>

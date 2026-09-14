@@ -35,7 +35,7 @@ describe("Questionnaire Kiosk Route-Isolation", () => {
     expect(response.status).toBe(403);
   });
 
-  it.each(["/questionnaire-kiosk/lock", "/questionnaire-kiosk/direct", "/api/questionnaire-kiosk/direct", "/q/token", "/api/q/token"])("lässt den erforderlichen Kiosk-Pfad %s zu", (path) => {
+  it.each(["/questionnaire-kiosk/lock", "/questionnaire-kiosk/direct", "/api/questionnaire-kiosk/direct", "/api/questionnaire-kiosk/check-in", "/q/token", "/api/q/token"])("lässt den erforderlichen Kiosk-Pfad %s zu", (path) => {
     expect(middleware(request(path, "pp_questionnaire_kiosk_device=device")).status).toBe(200);
   });
 

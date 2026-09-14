@@ -12,6 +12,7 @@
  * Blöcke (in Anzeigereihenfolge):
  *   10 IDENTITAET          – Vorname, Nachname, Geburtsdatum
  *   20 KONTAKT             – Telefon, E-Mail, Doctolib
+ *   25 CHECK_IN            – Kurzer Kiosk-Check-in
  *   30 KONTAKTPERSON       – Notfallkontakt
  *   40 ADRESSE             – Postanschrift
  *   50 VERSICHERUNG        – Versicherungsdaten
@@ -341,6 +342,61 @@ export const QUESTION_CATALOG: Record<string, QuestionDefinition> = {
     text_en: "Do you have a Doctolib account?",
     type: "yes_no",
     required: true,
+  },
+
+  // --- Kiosk-Check-in ---
+  CHECK_IN_PATIENT_TYPE: {
+    id: "CHECK_IN_PATIENT_TYPE",
+    text: "Sind Sie neu in unserer Praxis oder bereits bei uns in Behandlung?",
+    type: "select",
+    required: true,
+    options: [
+      { value: "new_patient", label: "Neupatient" },
+      { value: "existing_patient", label: "Bestandspatient" },
+    ],
+  },
+  CHECK_IN_MAIN_REASON: {
+    id: "CHECK_IN_MAIN_REASON",
+    text: "Was ist Ihr Hauptanliegen?",
+    type: "select",
+    required: true,
+    options: [
+      { value: "prescription", label: "Dauermedikamente / Rezept" },
+      { value: "sick_leave", label: "Arbeitsunfähigkeit / AU" },
+      { value: "referral", label: "Überweisung" },
+      { value: "medical_examination", label: "Ärztliche Untersuchung" },
+      { value: "consultation", label: "Beratung" },
+    ],
+  },
+  CHECK_IN_EXAMINATION_REASON: {
+    id: "CHECK_IN_EXAMINATION_REASON",
+    text: "Worum geht es bei der ärztlichen Untersuchung?",
+    type: "select",
+    required: true,
+    options: [
+      { value: "acute_pain", label: "Akute Schmerzen" },
+      { value: "cold_or_infection", label: "Erkältung / Infekt" },
+      { value: "gastrointestinal_complaints", label: "Magen-Darm-Beschwerden" },
+      { value: "injury", label: "Verletzung" },
+      { value: "new_symptoms", label: "Neu aufgetretene Beschwerden" },
+      { value: "worsening_known_condition", label: "Verschlechterung einer bekannten Erkrankung" },
+      { value: "other", label: "Sonstiges" },
+    ],
+  },
+  CHECK_IN_CONSULTATION_REASON: {
+    id: "CHECK_IN_CONSULTATION_REASON",
+    text: "Worum geht es bei der Beratung?",
+    type: "select",
+    required: true,
+    options: [
+      { value: "finding_or_result", label: "Befund / Untersuchungsergebnis" },
+      { value: "chronic_condition", label: "Chronische Erkrankung" },
+      { value: "medication_questions", label: "Fragen oder Probleme bei der Einnahme von Medikamenten" },
+      { value: "vaccination_advice", label: "Impfberatung" },
+      { value: "prevention_or_checkup", label: "Vorsorge / Check-up" },
+      { value: "form_or_certificate", label: "Formular / Bescheinigung" },
+      { value: "other", label: "Sonstiges" },
+    ],
   },
 
   // --- Kontaktperson ---
@@ -2088,6 +2144,39 @@ export const BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
     label_en: "Contact details",
     displayOrder: 20,
     questionIds: ["CONTACT_PHONE", "CONTACT_EMAIL", "CONTACT_DOCTOLIB"],
+  },
+  CHECK_IN: {
+    id: "CHECK_IN",
+    label: "Check-in",
+    description: "Kurze Erfassung des Anliegens bei einem Besuch ohne Termin.",
+    displayOrder: 25,
+    selectable: false,
+    conditionalRules: [
+      {
+        action: "showQuestion",
+        targetId: "CHECK_IN_EXAMINATION_REASON",
+        condition: {
+          target: { kind: "question", questionId: "CHECK_IN_MAIN_REASON" },
+          operator: "equals",
+          value: "medical_examination",
+        },
+      },
+      {
+        action: "showQuestion",
+        targetId: "CHECK_IN_CONSULTATION_REASON",
+        condition: {
+          target: { kind: "question", questionId: "CHECK_IN_MAIN_REASON" },
+          operator: "equals",
+          value: "consultation",
+        },
+      },
+    ],
+    questionIds: [
+      "CHECK_IN_PATIENT_TYPE",
+      "CHECK_IN_MAIN_REASON",
+      "CHECK_IN_EXAMINATION_REASON",
+      "CHECK_IN_CONSULTATION_REASON",
+    ],
   },
   KONTAKTPERSON: {
     id: "KONTAKTPERSON",
