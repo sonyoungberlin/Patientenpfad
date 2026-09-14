@@ -9,3 +9,4 @@ coverage
 *.tsbuildinfo
 .vercel
 .env*.local
+Patientenpfad.AutoDownload-win-x64*.zip
