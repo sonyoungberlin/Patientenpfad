@@ -1,4 +1,7 @@
-import type { QuestionnaireBlock } from "./blockCatalog";
+import {
+  VOLLSTAENDIGE_ANAMNESE_PRESET,
+  type QuestionnaireBlock,
+} from "./blockCatalog";
 
 const EXPORT_LABELS: Readonly<Record<string, string>> = {
   ARBEITSUNFAEHIGKEIT: "AU-Anfrage",
@@ -16,6 +19,8 @@ const BASIS_BLOCK_IDS = new Set([
   "ADRESSE",
   "VERSICHERUNG",
 ]);
+const VOLLSTAENDIGE_ANAMNESE_BLOCK_IDS = new Set(VOLLSTAENDIGE_ANAMNESE_PRESET);
+const VOLLSTAENDIGE_ANAMNESE_LABEL = "Vollständige Anamnese";
 
 export type QuestionnaireDocumentLabels = {
   filenameLabel: string | null;
@@ -43,23 +48,37 @@ export function resolveQuestionnaireDocumentLabels(
   const explicitLabel = input.filenameLabel
     ?? (input.source === "website" ? input.practiceFormTitle?.trim() || null : null);
   const selectedBlockIds = input.selectedBlockIds.filter((id) => id in input.blockCatalog);
-  const fachlicheLabels = selectedBlockIds
-    .filter((id) => !BASIS_BLOCK_IDS.has(id))
+  const fachlicheBlockIds = selectedBlockIds.filter((id) => !BASIS_BLOCK_IDS.has(id));
+  const gdtLabels = fachlicheBlockIds
     .map((id) => getBlockExportLabel(id, input.blockCatalog))
+    .filter((label): label is string => label !== null);
+  const isVollstaendigeAnamnese = VOLLSTAENDIGE_ANAMNESE_PRESET.every(
+    (id) => selectedBlockIds.includes(id),
+  );
+  let vollstaendigeAnamneseAdded = false;
+  const filenameLabels = fachlicheBlockIds
+    .map((id) => {
+      if (isVollstaendigeAnamnese && VOLLSTAENDIGE_ANAMNESE_BLOCK_IDS.has(id)) {
+        if (vollstaendigeAnamneseAdded) return null;
+        vollstaendigeAnamneseAdded = true;
+        return VOLLSTAENDIGE_ANAMNESE_LABEL;
+      }
+      return getBlockExportLabel(id, input.blockCatalog);
+    })
     .filter((label): label is string => label !== null);
 
   if (explicitLabel) {
     return {
       filenameLabel: explicitLabel,
-      gdtLabel: fachlicheLabels.length > 1 ? "Patientenfragebogen" : explicitLabel,
+      gdtLabel: gdtLabels.length > 1 ? "Patientenfragebogen" : explicitLabel,
     };
   }
 
-  if (fachlicheLabels.length > 0) {
+  if (filenameLabels.length > 0) {
     return {
-      filenameLabel: fachlicheLabels.join("_"),
-      gdtLabel: fachlicheLabels.length === 1
-        ? fachlicheLabels[0]
+      filenameLabel: filenameLabels.join("_"),
+      gdtLabel: gdtLabels.length === 1
+        ? gdtLabels[0]
         : "Patientenfragebogen",
     };
   }

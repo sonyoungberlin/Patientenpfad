@@ -1,4 +1,7 @@
-import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
+import {
+  BLOCK_CATALOG,
+  VOLLSTAENDIGE_ANAMNESE_PRESET,
+} from "@/lib/questionnaire/blockCatalog";
 import { buildQuestionnaireExportFilename } from "@/lib/questionnaire/questionnaireExportFilename";
 import { resolveQuestionnaireGdtExport } from "@/lib/questionnaire/questionnaireExportService";
 
@@ -82,6 +85,40 @@ it("stellt Kontaktdaten im Dateinamen voran, aber nicht im GDT-Text", () => {
     filename: "20260910_12345_Kontaktdaten_Rezeptanfrage.gdt",
     documentationText: "System: Rezeptanfrage eingegangen",
   }));
+});
+
+it.each([
+  [["KONTAKT", "REZEPT"], "Kontaktdaten_Rezeptanfrage"],
+  [["KONTAKT", "KURZANAMNESE"], "Kontaktdaten_Kurzanamnese"],
+  [["KONTAKT", ...VOLLSTAENDIGE_ANAMNESE_PRESET], "Kontaktdaten_Vollstaendige_Anamnese"],
+  [VOLLSTAENDIGE_ANAMNESE_PRESET, "Vollstaendige_Anamnese"],
+])("verwendet für %j nur den fachlichen Vorgangstyp %s", (selectedBlockIds, expectedLabel) => {
+  const session = buildSession(selectedBlockIds);
+
+  expect(buildQuestionnaireExportFilename(session, {
+    blockCatalog: BLOCK_CATALOG,
+    extension: "pdf",
+  })).toBe(`20260910_12345_${expectedLabel}.pdf`);
+});
+
+it("nennt die Unterblöcke der vollständigen Anamnese nicht einzeln", () => {
+  const session = buildSession([
+    "KONTAKT",
+    ...VOLLSTAENDIGE_ANAMNESE_PRESET,
+  ]);
+
+  const filename = buildQuestionnaireExportFilename(session, {
+    blockCatalog: BLOCK_CATALOG,
+    extension: "pdf",
+  });
+
+  expect(filename).toBe("20260910_12345_Kontaktdaten_Vollstaendige_Anamnese.pdf");
+  expect(filename).not.toContain("Basisdaten");
+  expect(filename).not.toContain("Erkrankungen");
+  expect(filename).not.toContain("Medikamente");
+  expect(filename).not.toContain("Allergien");
+  expect(resolveQuestionnaireGdtExport(session)?.documentationText)
+    .toBe("System: Patientenfragebogen eingegangen");
 });
 
 it("behält bei mehreren fachlichen Blöcken einen spezifischen Dateinamen und neutralisiert nur GDT", () => {
