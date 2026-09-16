@@ -43,9 +43,8 @@ import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
 import {
-  formatStructuredVaccinationEntry,
+  formatStructuredVaccinationEntries,
   getVaccinationLabel,
-  parseStructuredVaccinationAnswer,
 } from "./vaccinationReview";
 import { getInternalWorkflow } from "./internalWorkflowRegistry";
 import { resolveInlineDocumentation } from "./inlineDocumentation";
@@ -365,20 +364,6 @@ function formatRepeatableGroupEntries(
     }
   });
 
-  return lines;
-}
-
-function formatStructuredVaccinationEntries(
-  raw: string,
-  question: QuestionDefinition,
-): string[] {
-  const answer = parseStructuredVaccinationAnswer(raw);
-  if (!answer || question.presentation !== "vaccination_matrix") return [];
-  const lines = answer.entries.map((entry) => formatStructuredVaccinationEntry(
-    entry,
-    getVaccinationLabel(entry as unknown as Record<string, string>, question),
-  ));
-  if (answer.supplemental_note) lines.push(`Ergänzende Bemerkung: ${answer.supplemental_note}`);
   return lines;
 }
 
@@ -884,7 +869,12 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
           continue;
         }
 
-        blockLines.push(...renderQuestionLines(questionId, raw));
+        const question = QUESTION_CATALOG[questionId];
+        const resolved = resolveQuestionDocumentation(question, raw);
+        blockLines.push(...resolved.documentationTexts);
+        if (resolved.fallbackValue !== undefined) {
+          blockLines.push(...renderQuestionLines(questionId, resolved.fallbackValue, question));
+        }
       }
       if (block.id === "VOLLST_NIKOTIN") {
         blockLines.push(...renderSmokingSummary(answers));

@@ -71,7 +71,7 @@ export type RepeatableGroupFieldDef = {
   required: boolean;
   /** Maximale Länge für nutzereditierbare Freitext-Unterfelder. */
   maxLength?: number;
-  options?: string[];
+  options?: QuestionOptionDefinition[];
   helperText?: string;
   /** Dieses Feld nur anzeigen, wenn `conditionalOn`-Feld gleich `conditionalValue` ist. */
   conditionalOn?: string;

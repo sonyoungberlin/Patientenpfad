@@ -468,7 +468,7 @@ function submitFormReq(slug: string, ip = "8.8.8.8"): NextRequest {
     body: new URLSearchParams({
       email: "patient@example.com",
       CONTACT_PHONE: "01701234567",
-      CONTACT_DOCTOLIB: "false",
+      CONTACT_DOCTOLIB: "nein",
     }).toString(),
   });
 }

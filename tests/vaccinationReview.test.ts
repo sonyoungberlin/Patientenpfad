@@ -9,7 +9,11 @@ import {
 } from "@/lib/questionnaire/vaccinationReview";
 import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 import { parseRepeatableGroupEntries } from "@/lib/questionnaire/formatAnswer";
-import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
+import {
+  buildMedicalRecordNote,
+  buildSemanticMedicalRecordDocument,
+} from "@/lib/questionnaire/buildMedicalRecordNote";
+import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
 
 describe("vaccination review", () => {
   const question = structuredClone(VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS);
@@ -436,13 +440,8 @@ describe("vaccination review", () => {
     expect(formatStructuredVaccinationEntry(entry, "HPV"))
       .toBe("HPV: kann erfolgen; 1. Dosis erfolgt, 2. Dosis geplant in 5 Monaten");
 
-    const note = buildMedicalRecordNote({
-      answers: {
-        VACCINATION_REVIEW_ITEMS: JSON.stringify({
-          schema_version: 1,
-          entries: [entry],
-        }),
-      },
+    const input = {
+      answers: { VACCINATION_REVIEW_ITEMS: JSON.stringify({ schema_version: 1, entries: [entry] }) },
       selected_block_ids: ["VACCINATION_REVIEW"],
       internalWorkflowId: "vaccination_review_v1",
       frozenBlocks: [{
@@ -453,8 +452,14 @@ describe("vaccination review", () => {
         conditionalRules: [],
         initiallyVisible: true,
       }],
-    });
+    };
+    const note = buildMedicalRecordNote(input);
     expect(note).toContain("HPV: kann erfolgen; 1. Dosis erfolgt, 2. Dosis geplant in 5 Monaten");
+
+    const xml = buildStructuredAppXml(buildSemanticMedicalRecordDocument(input));
+    expect(xml).toContain("HPV: kann erfolgen; 1. Dosis erfolgt, 2. Dosis geplant in 5 Monaten");
+    expect(xml).not.toContain("vaccination_id");
+    expect(xml).not.toContain("schema_version");
   });
 
   it("formats the simplified single-dose and dose-series model", () => {

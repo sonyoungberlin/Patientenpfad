@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
+import { KIOSK_CHECK_IN_BLOCK_IDS } from "@/lib/questionnaire/kioskCheckIn";
 import { requireUnlockedQuestionnaireKioskDevice } from "@/lib/questionnaireKiosk/auth";
-import { appendSelfCheckInQrFlag } from "@/lib/selfCheckInQr";
 
-const CHECK_IN_BLOCK_IDS = ["KONTAKT", "CHECK_IN"];
 const FORBIDDEN_FIELDS = [
+  "patient_reference",
   "selected_block_ids",
   "selected_confirmation_ids",
   "practice_id",
@@ -31,22 +31,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const patientReference = typeof body.patient_reference === "string"
-    ? body.patient_reference.trim()
-    : "";
-  if (!patientReference) {
-    return NextResponse.json(
-      { ok: false, error: "Patientennummer / Referenz ist erforderlich." },
-      { status: 400 },
-    );
-  }
-
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
   const protocol = req.headers.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${protocol}://${host}` : req.nextUrl.origin;
-  const { tokenLink } = await createQuestionnaireSession({
-    selectedBlockIds: CHECK_IN_BLOCK_IDS,
-    patientReference,
+  const { sessionId, tokenLink } = await createQuestionnaireSession({
+    selectedBlockIds: [...KIOSK_CHECK_IN_BLOCK_IDS],
+    patientReference: null,
+    allowUnassignedKioskCheckIn: true,
     patientLanguage: "de",
     ownerPracticeId: device.practiceId,
     createdByKioskDeviceId: device.deviceId,
@@ -56,11 +47,8 @@ export async function POST(req: NextRequest) {
 
   const response = NextResponse.json({
     ok: true,
-    link: appendSelfCheckInQrFlag(
-      tokenLink,
-      patientReference,
-      true,
-    ),
+    sessionId,
+    link: tokenLink,
   });
   response.headers.set("Cache-Control", "no-store");
   return response;

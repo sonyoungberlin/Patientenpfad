@@ -242,4 +242,25 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
     );
     expect(assignedHtml).not.toContain("Patient zuordnen");
   });
+
+  it("zeigt Kiosk-Handoff-Aktionen erst nach der Patientenzuordnung", () => {
+    const unassignedHtml = renderToStaticMarkup(QuestionnaireCard({
+      ...baseProps,
+      patientReference: null,
+      source: "kiosk_direct",
+      kioskHandoffStatus: "waiting",
+    }));
+    expect(unassignedHtml).toContain("Patient zuordnen");
+    expect(unassignedHtml).not.toContain("Check-in abschließen");
+    expect(unassignedHtml).not.toContain("Fragebogen auswählen");
+
+    const assignedHtml = renderToStaticMarkup(QuestionnaireCard({
+      ...baseProps,
+      source: "kiosk_direct",
+      kioskHandoffStatus: "waiting",
+    }));
+    expect(assignedHtml).not.toContain("Patient zuordnen");
+    expect(assignedHtml).toContain("Check-in abschließen");
+    expect(assignedHtml).toContain("Fragebogen auswählen");
+  });
 });

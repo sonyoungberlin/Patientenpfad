@@ -558,8 +558,8 @@ function RepeatableGroupField({
                   >
                     <option value="">— bitte wählen —</option>
                     {(field.options ?? []).map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
+                      <option key={getQuestionOptionValue(opt)} value={getQuestionOptionValue(opt)}>
+                        {getQuestionOptionLabel(opt)}
                       </option>
                     ))}
                   </select>
@@ -610,17 +610,18 @@ function RepeatableGroupField({
                     data-rg-field={`${idx}:${field.key}`}
                   >
                     {(field.options ?? []).map((opt) => {
-                      const options = field.options ?? [];
-                      const selected = parseMultiSelectValue(fieldVal, options).includes(opt);
+                      const optionValue = getQuestionOptionValue(opt);
+                      const options = (field.options ?? []).map(getQuestionOptionValue);
+                      const selected = parseMultiSelectValue(fieldVal, options).includes(optionValue);
                       return (
                         <button
-                          key={opt}
+                          key={optionValue}
                           type="button"
                           disabled={disabled}
                           onClick={() => {
-                            updateField(idx, field.key, toggleMultiSelectValue(fieldVal, opt, options));
+                            updateField(idx, field.key, toggleMultiSelectValue(fieldVal, optionValue, options));
                           }}
-                          data-rg-multiselect={`${idx}:${field.key}:${opt}`}
+                          data-rg-multiselect={`${idx}:${field.key}:${optionValue}`}
                           style={{
                             padding: "0.25rem 0.75rem",
                             borderRadius: "var(--radius)",
@@ -633,7 +634,7 @@ function RepeatableGroupField({
                             fontSize: "0.9rem",
                           }}
                         >
-                          {opt}
+                          {getQuestionOptionLabel(opt)}
                         </button>
                       );
                     })}
@@ -1070,6 +1071,7 @@ export function QuestionnaireFormClient({
   patientReference,
   selfCheckInQrReference,
   kioskRestartPath = "/questionnaire-kiosk/direct",
+  kioskHandoffPath,
   internalWorkflowId,
 }: {
   token: string;
@@ -1088,6 +1090,7 @@ export function QuestionnaireFormClient({
   patientReference?: string | null;
   selfCheckInQrReference?: string | null;
   kioskRestartPath?: string;
+  kioskHandoffPath?: string;
   internalWorkflowId?: string | null;
 }) {
   const t = UI_STRINGS[language];
@@ -1328,6 +1331,10 @@ export function QuestionnaireFormClient({
           filename: data.xmlFilename,
           semanticDocument: data.semanticDocument ?? null,
         });
+      }
+      if (kioskHandoffPath) {
+        window.location.replace(kioskHandoffPath);
+        return;
       }
       setSubmitted(true);
     } catch {

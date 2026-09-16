@@ -1,7 +1,7 @@
 import { BLOCK_CATALOG, QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { parseMultiSelectValue, toggleMultiSelectValue } from "@/lib/questionnaire/multiSelect";
 import { evaluateCondition } from "@/lib/questionnaire/conditionalLogic";
-import { getQuestionOptionValues } from "@/lib/questionnaire/questionOptions";
+import { getQuestionOptionValue, getQuestionOptionValues } from "@/lib/questionnaire/questionOptions";
 
 function collectMultiSelectDefinitions() {
   const definitions: Array<{ id: string; options: string[] }> = [];
@@ -14,7 +14,10 @@ function collectMultiSelectDefinitions() {
     }
     for (const field of question.groupSchema ?? []) {
       if (field.type === "multi_select" && field.options) {
-        definitions.push({ id: `${question.id}.${field.key}`, options: field.options });
+        definitions.push({
+          id: `${question.id}.${field.key}`,
+          options: field.options.map(getQuestionOptionValue),
+        });
       }
     }
   }

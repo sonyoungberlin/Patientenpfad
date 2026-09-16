@@ -385,14 +385,14 @@ describe("VOLLST_SUBSTANZEN \u2013 Sanitizer", () => {
       SUBST_GATE: "Ja, aktuell",
       SUBST_EINTRAEGE: JSON.stringify([
         substanzEntry({ substanz: "Cannabis", status: "aktuell" }),
-        substanzEntry({ substanz: "Kokain", status: "fr\u00fcher" }),
+        substanzEntry({ substanz: "Kokain / Crack", status: "fr\u00fcher" }),
       ]),
     };
     const sanitized = sanitizeAnswers(raw, questions);
     const entries = JSON.parse(sanitized.SUBST_EINTRAEGE!);
     expect(entries).toHaveLength(2);
     expect(entries[0].substanz).toBe("Cannabis");
-    expect(entries[1].substanz).toBe("Kokain");
+    expect(entries[1].substanz).toBe("Kokain / Crack");
   });
 
   it("Sanitizer verwirft unbekannte Keys", () => {

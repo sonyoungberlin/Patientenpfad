@@ -5,6 +5,16 @@ import {
   formatYesNoValue,
 } from "@/lib/questionnaire/formatAnswer";
 import type { RepGroupEntry } from "@/lib/questionnaire/formatAnswer";
+import { parseMultiSelectValue } from "@/lib/questionnaire/multiSelect";
+import { resolveQuestionOptionLabel } from "@/lib/questionnaire/questionOptions";
+import { formatStructuredVaccinationEntries } from "@/lib/questionnaire/vaccinationReview";
+
+function StructuredVaccinationAnswerDisplay({ lines }: { lines: string[] }) {
+  if (lines.length === 0) return <span className="text-muted">–</span>;
+  return <div style={{ display: "grid", gap: "0.25rem" }}>
+    {lines.map((line, index) => <div key={index}>{line}</div>)}
+  </div>;
+}
 
 function RepeatableGroupAnswerDisplay({ entries }: { entries: RepGroupEntry[] }) {
   if (entries.length === 0) return <span className="text-muted">–</span>;
@@ -42,14 +52,26 @@ function renderAnswerValue(
     return <RepeatableGroupAnswerDisplay entries={parseFacharztEntries(val)} />;
   }
   if (q.type === "repeatable_group") {
+    const structuredVaccinations = formatStructuredVaccinationEntries(val, q);
+    if (structuredVaccinations.length > 0) {
+      return <StructuredVaccinationAnswerDisplay lines={structuredVaccinations} />;
+    }
     return (
       <RepeatableGroupAnswerDisplay
         entries={parseRepeatableGroupEntries(val, q.id, q)}
       />
     );
   }
-  if (q.type === "yes_no") return formatYesNoValue(val);
+  if (q.type === "yes_no") {
+    return formatYesNoValue(resolveQuestionOptionLabel(q, val));
+  }
   if (q.type === "confirmation") return val === "true" ? "Bestätigt" : "–";
+  if (q.type === "multi_select") {
+    return parseMultiSelectValue(val, q.options ?? [])
+      .map((value) => resolveQuestionOptionLabel(q, value))
+      .join(", ");
+  }
+  if (q.type === "select") return resolveQuestionOptionLabel(q, val);
   return val;
 }
 

@@ -203,7 +203,7 @@ describe("POST /api/p/[slug]/submit", () => {
         {
           email: "Patient@Example.COM",
           CONTACT_PHONE: "+4930123",
-          CONTACT_DOCTOLIB: "false",
+          CONTACT_DOCTOLIB: "nein",
           UNKNOWN_FIELD: "wird verworfen",
         },
         SLUG,
@@ -247,7 +247,7 @@ describe("POST /api/p/[slug]/submit", () => {
     expect(call.data.answers).toEqual({
       CONTACT_PHONE: "+4930123",
       CONTACT_EMAIL: "patient@example.com",
-      CONTACT_DOCTOLIB: "false",
+      CONTACT_DOCTOLIB: "nein",
     });
 
     // Mail wurde mit Klartext-URL und normalisierter Empfänger-Adresse aufgerufen.
@@ -264,7 +264,7 @@ describe("POST /api/p/[slug]/submit", () => {
   it("Mailfehler: Session bleibt bestehen, KEIN delete, generischer Erfolgs-Redirect", async () => {
     pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(makeForm());
     sendMailMock.mockRejectedValueOnce(new Error("smtp blew up"));
-    const res = await POST(formReq({ email: "a@b.de", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "6.0.0.1"), {
+    const res = await POST(formReq({ email: "a@b.de", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "nein" }, SLUG, "6.0.0.1"), {
       params: Promise.resolve({ slug: SLUG }),
     });
     expect(res.status).toBe(303);
@@ -369,7 +369,7 @@ describe("POST /api/p/[slug]/submit", () => {
     // 5 erlaubte Submits, der 6. soll 429 sein.
     for (let i = 0; i < 5; i++) {
       const res = await POST(
-        formReq({ email: `u${i}@b.de`, CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, ip),
+        formReq({ email: `u${i}@b.de`, CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "nein" }, SLUG, ip),
         { params: Promise.resolve({ slug: SLUG }) },
       );
       expect(res.status).toBe(303);
@@ -386,7 +386,7 @@ describe("POST /api/p/[slug]/submit", () => {
         makeForm({ selected_block_ids: ["KONTAKT"] }),
       );
       const res = await POST(
-        formReq({ email: "Patient1@Example.COM", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "9.0.0.1"),
+        formReq({ email: "Patient1@Example.COM", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "nein" }, SLUG, "9.0.0.1"),
         { params: Promise.resolve({ slug: SLUG }) },
       );
       expect(res.status).toBe(303);
@@ -406,7 +406,7 @@ describe("POST /api/p/[slug]/submit", () => {
             email: "patient2@example.com",
             CONTACT_EMAIL: "abweichend@example.org",
             CONTACT_PHONE: "+4930123",
-            CONTACT_DOCTOLIB: "false",
+            CONTACT_DOCTOLIB: "nein",
           },
           SLUG,
           "9.0.0.2",
@@ -430,7 +430,7 @@ describe("POST /api/p/[slug]/submit", () => {
             email: "patient-empty@example.com",
             CONTACT_EMAIL: "",
             CONTACT_PHONE: "01701234567",
-            CONTACT_DOCTOLIB: "false",
+            CONTACT_DOCTOLIB: "nein",
           },
           SLUG,
           "9.0.0.4",
@@ -540,7 +540,7 @@ describe("POST /api/p/[slug]/submit", () => {
         id: "sess-xyz",
       });
       const res = await POST(
-        formReq({ email: "patient@example.com", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "8.0.0.1"),
+        formReq({ email: "patient@example.com", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "nein" }, SLUG, "8.0.0.1"),
         { params: Promise.resolve({ slug: SLUG }) },
       );
       expect(res.status).toBe(303);
@@ -586,7 +586,7 @@ describe("POST /api/p/[slug]/submit", () => {
         id: "sess-mail-failed",
       });
       sendMailMock.mockRejectedValueOnce(new Error("smtp blew up"));
-      await POST(formReq({ email: "a@b.de", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "false" }, SLUG, "8.0.4.1"), {
+      await POST(formReq({ email: "a@b.de", CONTACT_PHONE: "01701234567", CONTACT_DOCTOLIB: "nein" }, SLUG, "8.0.4.1"), {
         params: Promise.resolve({ slug: SLUG }),
       });
       const errCall = consoleErrorSpy.mock.calls.find(
@@ -666,7 +666,7 @@ describe("POST /api/p/[slug]/submit", () => {
           {
             email: "char4@b.de",
             CONTACT_PHONE: "+4930123456",
-            CONTACT_DOCTOLIB: "false",
+            CONTACT_DOCTOLIB: "nein",
             AU_CURRENT_COMPLAINT: "Müller-Str. 5 (Hinterhof) & Co.",
           },
           SLUG,

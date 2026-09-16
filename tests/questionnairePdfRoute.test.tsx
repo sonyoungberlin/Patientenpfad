@@ -23,7 +23,7 @@ import { GET as PdfRoute } from "@/app/api/questionnaire/[id]/pdf/route";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { PDFDocument } from "pdf-lib";
 import { inflateSync } from "node:zlib";
-import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import { QUESTION_CATALOG, type QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
 import { VACCINATION_REVIEW_BLOCK_CATALOG, VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 import { buildInternalWorkflowBlocks, getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
@@ -589,6 +589,84 @@ describe("questionnaire PDF patient reference", () => {
     expect(text).not.toContain("vaccination_id");
     expect(text).not.toContain("COVID-19");
     expect(text).not.toContain("stale-subtype");
+  });
+
+  it("renders real option labels and hides unknown technical values", async () => {
+    const questions: QuestionDefinition[] = [
+      QUESTION_CATALOG.CHECK_IN_PATIENT_TYPE,
+      QUESTION_CATALOG.CHECK_IN_MAIN_REASON,
+      {
+        id: "UNKNOWN_SELECT",
+        text: "Unbekannte Auswahl",
+        type: "select",
+        required: false,
+        options: [{ value: "known", label: "Bekannt" }],
+      },
+    ];
+    const frozenBlock = {
+      id: "CHECK_IN",
+      label: "Check-in",
+      displayOrder: 1,
+      questions,
+      conditionalRules: [],
+      initiallyVisible: true,
+    };
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        selected_block_ids: ["CHECK_IN"],
+        deduplicated_questions: questions,
+        frozen_blocks: [frozenBlock],
+        answers: {
+          CHECK_IN_PATIENT_TYPE: "new_patient",
+          CHECK_IN_MAIN_REASON: "sick_leave",
+          UNKNOWN_SELECT: "some_internal_value",
+        },
+      }),
+      { title: "Fragebogen", referenceLabel: "Referenz", blockCatalog: {} },
+    );
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Neupatient");
+    expect(text).toContain("Arbeitsunfähigkeit / AU");
+    expect(text).toContain("Unbekannter Wert");
+    expect(text).not.toContain("new_patient");
+    expect(text).not.toContain("sick_leave");
+    expect(text).not.toContain("some_internal_value");
+  });
+
+  it("renders the current structured vaccination object", async () => {
+    const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+    const frozenBlock = {
+      ...VACCINATION_REVIEW_BLOCK_CATALOG.VACCINATION_REVIEW,
+      questions: [question],
+      conditionalRules: [],
+      initiallyVisible: true,
+    };
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        selected_block_ids: ["VACCINATION_REVIEW"],
+        deduplicated_questions: [question],
+        frozen_blocks: [frozenBlock],
+        answers: {
+          VACCINATION_REVIEW_ITEMS: JSON.stringify({
+            schema_version: 1,
+            entries: [{
+              vaccination_id: "hpv",
+              status: "planned",
+              note: "Termin vereinbart",
+              doses: [{ number: 1, status: "done", date: "2026-01-31" }],
+            }],
+            supplemental_note: "Impfpass geprüft",
+          }),
+        },
+      }),
+      { title: "Impfpassprüfung", referenceLabel: "Referenz", blockCatalog: {} },
+    );
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("HPV: geplant");
+    expect(text).toContain("1. Dosis erfolgt am 31.01.2026");
+    expect(text).toContain("Impfpass geprüft");
+    expect(text).not.toContain("vaccination_id");
+    expect(text).not.toContain("schema_version");
   });
 
   it("normalisiert Titel, Fragen, Antworten und Repeatable Groups für X-Komfort", async () => {

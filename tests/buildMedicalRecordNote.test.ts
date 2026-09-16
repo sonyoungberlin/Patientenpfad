@@ -304,13 +304,14 @@ describe("buildMedicalRecordNote – vollständige Inhalte", () => {
     expect(content.endsWith("...")).toBe(false);
   });
 
-  it("gibt lange Multi-Select-Antworten vollständig aus", () => {
+  it("gibt unbekannte Multi-Select-Antworten nicht roh aus", () => {
     const value = ("Option A, " + "Option B ".repeat(20)).trimEnd();
     const result = buildMedicalRecordNote({
       answers: { AU_SYMPTOMS: value },
       selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
     });
-    expect(result).toContain(`Beschwerden: ${value}`);
+    expect(result).toContain("Beschwerden: Unbekannter Wert");
+    expect(result).not.toContain(value);
   });
 
   it("erhält mehrzeiligen Text als Folgezeilen unterhalb des Labels", () => {

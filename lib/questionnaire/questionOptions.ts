@@ -3,6 +3,12 @@ import type {
   QuestionOptionDefinition,
 } from "./blockCatalog";
 
+export const UNKNOWN_OPTION_LABEL = "Unbekannter Wert";
+
+function looksLikeTechnicalOptionValue(value: string): boolean {
+  return /^[a-z0-9]+(?:[_:-][a-z0-9]+)+$/i.test(value.trim());
+}
+
 export function getQuestionOptionValue(option: QuestionOptionDefinition): string {
   return typeof option === "string" ? option : option.value;
 }
@@ -40,5 +46,9 @@ export function resolveQuestionOptionLabel(
   const option = question?.options?.find(
     (candidate) => getQuestionOptionValue(candidate) === value,
   );
-  return option ? getQuestionOptionLabel(option) : value;
+  if (option) return getQuestionOptionLabel(option);
+  if (question?.options === undefined && !looksLikeTechnicalOptionValue(value)) {
+    return value;
+  }
+  return UNKNOWN_OPTION_LABEL;
 }

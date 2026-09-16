@@ -6,9 +6,13 @@ import { downloadFileResponse } from "@/lib/questionnaire/downloadFileResponse";
 
 type Props = {
   sessionId: string;
+  downloadArtifacts?: boolean;
 };
 
-export default function QuestionnairePatientAssignment({ sessionId }: Props) {
+export default function QuestionnairePatientAssignment({
+  sessionId,
+  downloadArtifacts = true,
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [patientReference, setPatientReference] = useState("");
@@ -42,14 +46,16 @@ export default function QuestionnairePatientAssignment({ sessionId }: Props) {
         return;
       }
 
-      const pdfResponse = await fetch(`/api/questionnaire/${sessionId}/pdf`);
-      if (!pdfResponse.ok) throw new Error("pdf_download_failed");
-      await downloadFileResponse(pdfResponse, "Fragebogen.pdf");
+      if (downloadArtifacts) {
+        const pdfResponse = await fetch(`/api/questionnaire/${sessionId}/pdf`);
+        if (!pdfResponse.ok) throw new Error("pdf_download_failed");
+        await downloadFileResponse(pdfResponse, "Fragebogen.pdf");
 
-      const gdtResponse = await fetch(`/api/questionnaire/${sessionId}/gdt`);
-      if (gdtResponse.status !== 204) {
-        if (!gdtResponse.ok) throw new Error("gdt_download_failed");
-        await downloadFileResponse(gdtResponse, "Fragebogen.gdt");
+        const gdtResponse = await fetch(`/api/questionnaire/${sessionId}/gdt`);
+        if (gdtResponse.status !== 204) {
+          if (!gdtResponse.ok) throw new Error("gdt_download_failed");
+          await downloadFileResponse(gdtResponse, "Fragebogen.gdt");
+        }
       }
 
       cancel();
@@ -93,7 +99,7 @@ export default function QuestionnairePatientAssignment({ sessionId }: Props) {
           Abbrechen
         </button>
         <button type="button" className="btn text-small" onClick={replacePdf} disabled={pending}>
-          {pending ? "Wird erstellt…" : "PDF ersetzen"}
+          {pending ? "Wird zugeordnet…" : downloadArtifacts ? "PDF ersetzen" : "Zuordnen"}
         </button>
       </div>
     </div>

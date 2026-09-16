@@ -57,6 +57,16 @@ describe("POST /api/questionnaire-kiosk/direct", () => {
     }));
   });
 
+  it("erzeugt keinen normalen Kiosk-Fragebogen ohne Patientenreferenz", async () => {
+    const response = await POST(request({
+      selected_block_ids: ["KONTAKT"],
+      language: "de",
+      selected_confirmation_ids: [],
+    }));
+    expect(response.status).toBe(400);
+    expect(db.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+  });
+
   it.each(["practice_id", "owner_account_id", "created_by_kiosk_device_id", "inquiry_session_id", "mode", "message", "link"])("weist das kontrollierte Feld %s ab", async (field) => {
     const response = await POST(request({ patient_reference: "PAT-1", selected_block_ids: ["KONTAKT"], selected_confirmation_ids: [], [field]: "attacker" }));
     expect(response.status).toBe(400);

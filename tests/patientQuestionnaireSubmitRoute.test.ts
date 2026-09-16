@@ -173,7 +173,7 @@ describe("POST /api/q/[token]", () => {
         answers: {
           CONTACT_PHONE: "+491701234567",
           CONTACT_EMAIL: "max@example.de",
-          CONTACT_DOCTOLIB: "false",
+          CONTACT_DOCTOLIB: "nein",
         },
       }),
       { params: Promise.resolve({ token: "valid-token" }) },

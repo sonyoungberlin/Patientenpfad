@@ -25,7 +25,6 @@ export function KioskQuestionnaireStart({
   }
 
   async function startCheckIn() {
-    if (!validateReference()) return;
     setLoading(true);
     setError(null);
 
@@ -33,7 +32,7 @@ export function KioskQuestionnaireStart({
       const response = await fetch("/api/questionnaire-kiosk/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patient_reference: trimmedReference }),
+        body: JSON.stringify({}),
       });
       const data = await response.json() as { ok: boolean; link?: string; error?: string };
       if (!response.ok || !data.ok || !data.link) {
@@ -80,8 +79,7 @@ export function KioskQuestionnaireStart({
     <section style={{ display: "grid", gap: "1.25rem", maxWidth: "32rem" }}>
       <div>
         <label htmlFor="kiosk-patient-reference">
-          Patientennummer / Referenz <span aria-hidden="true">*</span>
-          <span className="sr-only"> (Pflichtfeld)</span>
+          Patientennummer / Referenz (für Fragebogen)
         </label>
         <input
           id="kiosk-patient-reference"
@@ -93,8 +91,6 @@ export function KioskQuestionnaireStart({
           onBlur={() => setReferenceTouched(true)}
           disabled={loading}
           placeholder="z.B. PAT-12345"
-          required
-          aria-required="true"
           aria-invalid={referenceTouched && !hasReference}
           style={{ marginTop: "0.3rem" }}
         />

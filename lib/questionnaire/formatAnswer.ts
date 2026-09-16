@@ -103,9 +103,14 @@ export function resolveQuestionDocumentation(
   options: { includeUnit?: boolean } = {},
 ): ResolvedQuestionDocumentation {
   if (!question?.options?.length) {
+    const fallbackValue = question?.type === "select" || question?.type === "multi_select"
+      ? resolveQuestionOptionLabel(question, rawValue)
+      : question?.type === "yes_no"
+        ? formatYesNoValue(resolveQuestionOptionLabel(question, rawValue))
+        : formatQuestionValue(question, rawValue, options.includeUnit);
     return {
       documentationTexts: [],
-      fallbackValue: formatQuestionValue(question, rawValue, options.includeUnit),
+      fallbackValue,
     };
   }
 
@@ -203,6 +208,12 @@ export function parseRepeatableGroupEntries(
 
       if (field.type === "yes_no") {
         display = formatYesNoValue(display);
+      } else if (field.type === "select") {
+        display = resolveQuestionOptionLabel({ options: field.options }, display);
+      } else if (field.type === "multi_select") {
+        display = parseMultiSelectValue(display, field.options ?? [])
+          .map((value) => resolveQuestionOptionLabel({ options: field.options }, value))
+          .join(", ");
       } else if (field.type === "checkbox") {
         // Nicht angekreuzt (leer) → überspringen; angekreuzt ("ja") → "Ja"
         if (display === "") continue;

@@ -29,6 +29,7 @@ import {
 } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import { isPracticeActive, PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
+import { redirect } from "next/navigation";
 
 // Always render per-request so the page reads fresh token state from the DB
 // and is never served from the Full Route Cache (would expose stale form HTML
@@ -68,10 +69,12 @@ export default async function QuestionnairePage({
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { token },
     select: {
+      id: true,
       token_expires_at: true,
       status: true,
       patient_reference: true,
       source: true,
+      kiosk_handoff_status: true,
       inquiry_session_id: true,
       deduplicated_questions: true,
       frozen_conditional_rules: true,
@@ -99,6 +102,10 @@ export default async function QuestionnairePage({
 
   const language = normalizeQuestionnaireLanguage(session.patient_language);
   const publicPractice = session.owner_practice;
+
+  if (session.status !== "pending" && session.kiosk_handoff_status != null) {
+    redirect(`/questionnaire-kiosk/check-in/${session.id}/waiting`);
+  }
 
   if (publicPractice && typeof publicPractice.is_approved === "boolean" && !isPracticeActive(publicPractice)) {
     return <main><p data-q-unavailable>{PRACTICE_SERVICE_UNAVAILABLE_MESSAGE}</p></main>;
@@ -183,6 +190,9 @@ export default async function QuestionnairePage({
             ? session.patient_reference
             : null
         }
+        kioskHandoffPath={session.kiosk_handoff_status === "waiting"
+          ? `/questionnaire-kiosk/check-in/${session.id}/waiting`
+          : undefined}
       />
       {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
     </main>

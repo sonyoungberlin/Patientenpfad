@@ -46,14 +46,15 @@ describe("POST /api/questionnaire-kiosk/check-in", () => {
     db.patientQuestionnaireSession.create.mockReset().mockResolvedValue({ id: "session-1" });
   });
 
-  it("erzeugt eine normale Kiosk-Session mit exakt KONTAKT und CHECK_IN", async () => {
-    const response = await POST(request({
-      patient_reference: " PAT-1 ",
-    }));
+  it("erzeugt einen unzugeordneten Kiosk-Check-in mit exakt KONTAKT und CHECK_IN", async () => {
+    const response = await POST(request({}));
 
     expect(response.status).toBe(200);
     const responseBody = await response.json();
-    expect(responseBody.link).toMatch(/^http:\/\/localhost\/q\/.+\?selfCheckInQr=1$/);
+    expect(responseBody).toEqual(expect.objectContaining({
+      sessionId: "session-1",
+      link: expect.stringMatching(/^http:\/\/localhost\/q\/.+$/),
+    }));
     const data = db.patientQuestionnaireSession.create.mock.calls[0][0].data;
     expect(data).toEqual(expect.objectContaining({
       owner_account_id: null,
@@ -61,7 +62,8 @@ describe("POST /api/questionnaire-kiosk/check-in", () => {
       created_by_kiosk_device_id: "device-1",
       source: "kiosk_direct",
       inquiry_session_id: null,
-      patient_reference: "PAT-1",
+      patient_reference: null,
+      kiosk_handoff_status: "waiting",
       patient_language: "de",
       selected_block_ids: ["KONTAKT", "CHECK_IN"],
     }));
@@ -85,7 +87,6 @@ describe("POST /api/questionnaire-kiosk/check-in", () => {
     "link",
   ])("weist das kontrollierte Feld %s ab", async (field) => {
     const response = await POST(request({
-      patient_reference: "PAT-1",
       [field]: "attacker",
     }));
 
@@ -93,10 +94,8 @@ describe("POST /api/questionnaire-kiosk/check-in", () => {
     expect(db.patientQuestionnaireSession.create).not.toHaveBeenCalled();
   });
 
-  it("verlangt eine Patientenreferenz", async () => {
-    const response = await POST(request({
-      patient_reference: "   ",
-    }));
+  it("weist eine vom Client gesetzte Patientenreferenz ab", async () => {
+    const response = await POST(request({ patient_reference: "PAT-1" }));
 
     expect(response.status).toBe(400);
     expect(db.patientQuestionnaireSession.create).not.toHaveBeenCalled();

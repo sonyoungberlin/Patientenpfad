@@ -48,8 +48,24 @@ function websiteSession(overrides: Record<string, unknown> = {}) {
     deleted_at: null,
     context: "patient",
     patient_reference: null,
+    created_by_kiosk_device_id: null,
+    selected_block_ids: ["KONTAKT"],
+    session_kind: "patient_communication",
+    kiosk_handoff_status: null,
     ...overrides,
   };
+}
+
+function kioskCheckInSession(overrides: Record<string, unknown> = {}) {
+  return websiteSession({
+    owner_account_id: null,
+    source: "kiosk_direct",
+    confirmed_at: null,
+    created_by_kiosk_device_id: "device-1",
+    selected_block_ids: ["KONTAKT", "CHECK_IN"],
+    kiosk_handoff_status: "waiting",
+    ...overrides,
+  });
 }
 
 beforeEach(() => {
@@ -160,5 +176,37 @@ describe("PATCH /api/questionnaire/[id] – Website-Patientenzuordnung", () => {
 
     expect(response.status).toBe(409);
     expect((await response.json()).ok).toBe(false);
+  });
+
+  it("ordnet einen wartenden initialen Kiosk-Check-in zu", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(kioskCheckInSession());
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
+
+    const response = await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        OR: expect.arrayContaining([
+          expect.objectContaining({ kiosk_handoff_status: "waiting" }),
+        ]),
+      }),
+      data: { patient_reference: "004711" },
+    }));
+  });
+
+  it("ordnet keine beliebige Kiosk-Session zu", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(kioskCheckInSession({
+      selected_block_ids: ["KONTAKT"],
+    }));
+
+    const response = await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 });

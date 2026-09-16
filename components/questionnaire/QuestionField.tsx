@@ -560,14 +560,15 @@ function VaccinationMatrixV2LegacyField({
   });
   const items = question.vaccinationItems ?? [];
   const schema = question.groupSchema ?? [];
-  const statusOptions = schema.find((field) => field.key === "documented_status")?.options ?? [];
+  const statusOptions = (schema.find((field) => field.key === "documented_status")?.options ?? [])
+    .map(getQuestionOptionValue);
   const furtherActionField = schema.find((field) => field.key === "further_action");
   const noteField = schema.find((field) => field.key === "note");
   const referenceDateField = schema.find((field) => field.key === "reference_date");
   const intervalValueField = schema.find((field) => field.key === "interval_value");
   const intervalUnitField = schema.find((field) => field.key === "interval_unit");
-  const actionOptions = furtherActionField?.options ?? [];
-  const intervalUnits = intervalUnitField?.options ?? [];
+  const actionOptions = (furtherActionField?.options ?? []).map(getQuestionOptionValue);
+  const intervalUnits = (intervalUnitField?.options ?? []).map(getQuestionOptionValue);
   const entryById = new Map(entries.map((entry) => [entry.vaccination_id, entry]));
   const fieldStyle: React.CSSProperties = {
     width: "100%",
@@ -885,7 +886,9 @@ export function RepeatableGroupField({
                   >
                     <option value="">— bitte wählen —</option>
                     {(field.options ?? []).map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
+                      <option key={getQuestionOptionValue(opt)} value={getQuestionOptionValue(opt)}>
+                        {getQuestionOptionLabel(opt)}
+                      </option>
                     ))}
                   </select>
                 ) : field.type === "date" ? (
@@ -935,17 +938,18 @@ export function RepeatableGroupField({
                 ) : field.type === "multi_select" ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }} data-rg-field={`${idx}:${field.key}`}>
                     {(field.options ?? []).map((opt) => {
-                      const options = field.options ?? [];
-                      const selected = parseMultiSelectValue(fieldVal, options).includes(opt);
+                      const optionValue = getQuestionOptionValue(opt);
+                      const options = (field.options ?? []).map(getQuestionOptionValue);
+                      const selected = parseMultiSelectValue(fieldVal, options).includes(optionValue);
                       return (
                         <button
-                          key={opt}
+                          key={optionValue}
                           type="button"
                           disabled={disabled}
                           onClick={() => {
-                            updateField(idx, field.key, toggleMultiSelectValue(fieldVal, opt, options));
+                            updateField(idx, field.key, toggleMultiSelectValue(fieldVal, optionValue, options));
                           }}
-                          data-rg-multiselect={`${idx}:${field.key}:${opt}`}
+                          data-rg-multiselect={`${idx}:${field.key}:${optionValue}`}
                           style={{
                             padding: "0.25rem 0.75rem",
                             borderRadius: "var(--radius)",
@@ -958,7 +962,7 @@ export function RepeatableGroupField({
                             fontSize: "0.9rem",
                           }}
                         >
-                          {opt}
+                          {getQuestionOptionLabel(opt)}
                         </button>
                       );
                     })}

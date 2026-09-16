@@ -102,3 +102,34 @@ it("behandelt einen bereits konkurrierend geclaimten GDT-Download als Erfolg", a
   await act(async () => root.unmount());
   container.remove();
 });
+
+it("ordnet einen Kiosk-Check-in ohne PDF- oder GDT-Download zu", async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, status: 200 });
+
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  await act(async () => root.render(
+    <QuestionnairePatientAssignment sessionId="session-1" downloadArtifacts={false} />,
+  ));
+  await act(async () => container.querySelector<HTMLButtonElement>("[data-q-assign]")!.click());
+  const input = container.querySelector<HTMLInputElement>("input")!;
+  await act(async () => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    setter.call(input, "79383");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  const submitButton = Array.from(container.querySelectorAll("button"))
+    .find((button) => button.textContent === "Zuordnen")!;
+  await act(async () => submitButton.click());
+  await settle();
+
+  expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+    "/api/questionnaire/session-1",
+  ]);
+  expect(downloadMock).not.toHaveBeenCalled();
+  expect(refreshMock).toHaveBeenCalledTimes(1);
+
+  await act(async () => root.unmount());
+  container.remove();
+});

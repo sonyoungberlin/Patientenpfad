@@ -3,6 +3,7 @@ import QuestionnaireDeleteButton from "./QuestionnaireDeleteButton";
 import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
 import QuestionnairePatientAssignment from "./QuestionnairePatientAssignment";
 import QuestionnaireDetailsDisclosure from "./QuestionnaireDetailsDisclosure";
+import { KioskCheckInActions } from "./KioskCheckInActions";
 
 /**
  * Reine Präsentations-Komponente (Server Component) für eine einzelne
@@ -46,6 +47,7 @@ export type QuestionnaireCardProps = {
   /** Technischer Entstehungsweg der Fragebogensession. */
   source?: string | null;
   sessionKind?: string | null;
+  kioskHandoffStatus?: string | null;
 };
 
 export default function QuestionnaireCard({
@@ -61,6 +63,7 @@ export default function QuestionnaireCard({
   isFromDigitalRequest = false,
   source = null,
   sessionKind = null,
+  kioskHandoffStatus = null,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
   const sourceLabel = sessionKind === "internal_documentation"
@@ -74,6 +77,11 @@ export default function QuestionnaireCard({
       : null;
   const canAssignWebsitePatient =
     !isDeleted && displayStatus === "completed" && source === "website" && patientReference == null;
+  const canAssignKioskCheckIn = !isDeleted &&
+    displayStatus === "completed" &&
+    source === "kiosk_direct" &&
+    kioskHandoffStatus === "waiting" &&
+    patientReference == null;
   return (
     <div
       className="card"
@@ -171,6 +179,15 @@ export default function QuestionnaireCard({
       )}
 
       {canAssignWebsitePatient && <QuestionnairePatientAssignment sessionId={id} />}
+      {canAssignKioskCheckIn && (
+        <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
+      )}
+      {!isDeleted &&
+        displayStatus === "completed" &&
+        kioskHandoffStatus === "waiting" &&
+        patientReference !== null && (
+          <KioskCheckInActions sessionId={id} />
+        )}
 
       {/* Kontexthinweis bei Einreichung durch Kontaktperson */}
       {submittedBy === "contact_person" && (

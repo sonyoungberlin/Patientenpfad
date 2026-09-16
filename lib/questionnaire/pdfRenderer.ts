@@ -31,6 +31,7 @@ import {
   sanitizeFilenamePart,
 } from "./questionnaireExportFilename";
 import { resolveInlineDocumentation } from "./inlineDocumentation";
+import { formatStructuredVaccinationEntries } from "./vaccinationReview";
 
 export { sanitizeFilenamePart } from "./questionnaireExportFilename";
 
@@ -460,6 +461,12 @@ export async function buildQuestionnairePdfBytes(
         continue;
       }
       if (q.type === "repeatable_group") {
+        const structuredVaccinations = formatStructuredVaccinationEntries(value, q);
+        if (structuredVaccinations.length > 0) {
+          if (!omitQuestionLabel) drawTextBlock(`${q.text}:`, { size: 9, bold: true, lineHeight });
+          for (const line of structuredVaccinations) drawWrappedValue(line);
+          continue;
+        }
         const entries = parseRepeatableGroupEntries(value, q.id, q);
         entries.length > 0
           ? drawRepGroupEntries(q.text, entries, !omitQuestionLabel)

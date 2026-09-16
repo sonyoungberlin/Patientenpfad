@@ -337,12 +337,12 @@ describe("buildMedicalRecordNote – Visibility-Filterung (Frozen Path)", () => 
     const result = buildMedicalRecordNote({
       answers: {
         VOLLST_VERS_PFLEGEGRAD: "Nein",
-        VOLLST_VERS_PFLEGEGRAD_STUFE: "Pflegegrad 2",
+        VOLLST_VERS_PFLEGEGRAD_STUFE: "2",
       },
       selected_block_ids: ["VOLLST_VERSORGUNGSSTATUS"],
       frozenBlocks,
     });
-    expect(result).not.toContain("Pflegegrad 2");
+    expect(result).not.toContain("Pflegegrad (Stufe): 2");
   });
 
   it("VOLLST_VERS_PFLEGEGRAD='Ja' → Stufe wird ausgegeben", () => {
@@ -350,12 +350,12 @@ describe("buildMedicalRecordNote – Visibility-Filterung (Frozen Path)", () => 
     const result = buildMedicalRecordNote({
       answers: {
         VOLLST_VERS_PFLEGEGRAD: "Ja",
-        VOLLST_VERS_PFLEGEGRAD_STUFE: "Pflegegrad 2",
+        VOLLST_VERS_PFLEGEGRAD_STUFE: "2",
       },
       selected_block_ids: ["VOLLST_VERSORGUNGSSTATUS"],
       frozenBlocks,
     });
-    expect(result).toContain("Pflegegrad 2");
+    expect(result).toContain("Pflegegrad (Stufe): 2");
   });
 
   it("VOLLST_VERS_PROTHESEN='Nein' → Prothesen-Text nicht ausgegeben", () => {

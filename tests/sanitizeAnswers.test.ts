@@ -6,6 +6,8 @@
  */
 
 import { sanitizeAnswers, MAX_ANSWER_LENGTH } from "@/lib/questionnaire/sanitizeAnswers";
+import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 
 const KNOWN_QUESTIONS = [
   { id: "CONTACT_PHONE" },
@@ -13,6 +15,99 @@ const KNOWN_QUESTIONS = [
 ];
 
 describe("sanitizeAnswers", () => {
+  describe("Frozen-Optionsvalidierung", () => {
+    function sanitizeFrozen(question: QuestionDefinition, value: string, language: "de" | "en" = "de") {
+      return sanitizeAnswers(
+        { [question.id]: value },
+        [{ id: question.id }],
+        language,
+        new Map([[question.id, question]]),
+      );
+    }
+
+    it("akzeptiert nur definierte select- und multi_select-Werte", () => {
+      const select: QuestionDefinition = {
+        id: "FROZEN_SELECT", text: "Auswahl", type: "select", required: false,
+        options: [{ value: "allowed", label: "Erlaubt" }],
+      };
+      const multi: QuestionDefinition = {
+        id: "FROZEN_MULTI", text: "Mehrfach", type: "multi_select", required: false,
+        options: [
+          { value: "first", label: "Erste" },
+          { value: "second", label: "Zweite" },
+        ],
+      };
+
+      expect(sanitizeFrozen(select, "allowed")).toEqual({ FROZEN_SELECT: "allowed" });
+      expect(sanitizeFrozen(select, "unknown")).toEqual({});
+      expect(sanitizeFrozen(multi, "first, second")).toEqual({ FROZEN_MULTI: "first, second" });
+      expect(sanitizeFrozen(multi, "first, unknown")).toEqual({});
+    });
+
+    it("akzeptiert nur definierte yes_no-Werte", () => {
+      const question: QuestionDefinition = {
+        id: "FROZEN_YES_NO", text: "Status", type: "yes_no", required: false,
+        options: ["Ja", "Nein"],
+      };
+      expect(sanitizeFrozen(question, "Ja")).toEqual({ FROZEN_YES_NO: "Ja" });
+      expect(sanitizeFrozen(question, "ja")).toEqual({});
+    });
+
+    it("validiert strukturierte Optionen in Repeatable-Unterfeldern", () => {
+      const question: QuestionDefinition = {
+        id: "FROZEN_GROUP", text: "Gruppe", type: "repeatable_group", required: false,
+        groupSchema: [{
+          key: "choice", label: "Wahl", type: "select", required: true,
+          options: [{ value: "internal", label: "Lesbar" }],
+        }],
+      };
+      const valid = JSON.stringify([{ choice: "internal" }]);
+      const invalid = JSON.stringify([{ choice: "unknown" }]);
+      expect(sanitizeFrozen(question, valid)).toEqual({ FROZEN_GROUP: valid });
+      expect(sanitizeFrozen(question, invalid)).toEqual({});
+    });
+
+    it("verwendet Frozen-Optionen und Frozen-EN-Mapping statt des aktuellen Katalogs", () => {
+      const frozen: QuestionDefinition = {
+        id: "CHECK_IN_PATIENT_TYPE",
+        text: "Historische Auswahl",
+        type: "select",
+        required: true,
+        options: [{ value: "historic_patient", label: "Historischer Patient" }],
+        options_en: ["Historic patient"],
+      };
+
+      expect(sanitizeFrozen(frozen, "Historic patient", "en")).toEqual({
+        CHECK_IN_PATIENT_TYPE: "historic_patient",
+      });
+      expect(sanitizeFrozen(frozen, "new_patient")).toEqual({});
+    });
+
+    it("erhält historische Selects ohne Optionsdefinition und yes_no-Schreibweisen", () => {
+      const legacySelect: QuestionDefinition = {
+        id: "LEGACY_SELECT", text: "Historisch", type: "select", required: false,
+      };
+      const legacyYesNo: QuestionDefinition = {
+        id: "LEGACY_YES_NO", text: "Historischer Status", type: "yes_no", required: false,
+      };
+      expect(sanitizeFrozen(legacySelect, "Historischer Klartext")).toEqual({
+        LEGACY_SELECT: "Historischer Klartext",
+      });
+      expect(sanitizeFrozen(legacyYesNo, "ja")).toEqual({ LEGACY_YES_NO: "ja" });
+      expect(sanitizeFrozen(legacyYesNo, "Ja")).toEqual({ LEGACY_YES_NO: "Ja" });
+      expect(sanitizeFrozen(legacyYesNo, "maybe")).toEqual({});
+    });
+
+    it("verwirft unbekannte strukturierte Impf-IDs gegen Frozen-Metadaten", () => {
+      const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+      const value = JSON.stringify({
+        schema_version: 1,
+        entries: [{ vaccination_id: "unknown_vaccine", status: "open" }],
+      });
+      expect(sanitizeFrozen(question, value)).toEqual({});
+    });
+  });
+
   it("validiert neue Nikotin-Zahlen strikt und verwirft Einheiten/Präfixe", () => {
     const questions = [
       { id: "NIKOTIN_BEGINN_JAHR" },
@@ -133,13 +228,13 @@ describe("sanitizeAnswers", () => {
       expect(out.AU_SYMPTOMS).toBe("Husten, Fieber, Sonstiges");
     });
 
-    it("lässt unbekannte EN-Werte unverändert (keine Erfindung)", () => {
+    it("verwirft unbekannte EN-Werte", () => {
       const out = sanitizeAnswers(
         { AU_SYMPTOMS: "Cough, Unbekannt" },
         [{ id: "AU_SYMPTOMS" }],
         "en",
       );
-      expect(out.AU_SYMPTOMS).toBe("Husten, Unbekannt");
+      expect(out.AU_SYMPTOMS).toBeUndefined();
     });
 
     it("akzeptiert auch bereits deutsche Werte unter language='en'", () => {
@@ -160,12 +255,12 @@ describe("sanitizeAnswers", () => {
       expect(out.CONTACT_PHONE).toBe("Cough");
     });
 
-    it("Default 'de' wendet kein Reverse-Mapping an", () => {
+    it("Default 'de' verwirft unbekannte Optionswerte", () => {
       const out = sanitizeAnswers(
         { AU_SYMPTOMS: "Cough" },
         [{ id: "AU_SYMPTOMS" }],
       );
-      expect(out.AU_SYMPTOMS).toBe("Cough");
+      expect(out.AU_SYMPTOMS).toBeUndefined();
     });
   });
 

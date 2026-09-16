@@ -24,7 +24,7 @@ describe("KioskQuestionnaireStart", () => {
     global.fetch = fetchMock;
   });
 
-  it("startet den Check-in nur mit der Patientenreferenz", async () => {
+  it("startet den Check-in ohne Patientenreferenz", async () => {
     fetchMock.mockResolvedValue({
       ok: false,
       json: async () => ({ ok: false, error: "Testabbruch vor Navigation" }),
@@ -36,16 +36,12 @@ describe("KioskQuestionnaireStart", () => {
     });
 
     await act(async () => {
-      setInputValue(
-        container.querySelector<HTMLInputElement>("#kiosk-patient-reference")!,
-        " PAT-17 ",
-      );
       container.querySelector<HTMLButtonElement>("[data-kiosk-start-check-in]")!.click();
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/questionnaire-kiosk/check-in",
-      expect.objectContaining({ body: JSON.stringify({ patient_reference: "PAT-17" }) }),
+      expect.objectContaining({ body: JSON.stringify({}) }),
     );
     await act(async () => root.unmount());
   });

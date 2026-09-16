@@ -12,6 +12,7 @@ import {
 } from "@/lib/questionnaire/lifecycle";
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
+import { isKioskCheckInSession } from "@/lib/questionnaire/kioskCheckIn";
 
 export async function GET(
   req: NextRequest,
@@ -122,8 +123,18 @@ export async function PATCH(
         deleted_at: true,
         context: true,
         patient_reference: true,
+        created_by_kiosk_device_id: true,
+        selected_block_ids: true,
+        session_kind: true,
+        kiosk_handoff_status: true,
       },
     });
+
+    const isAssignableWebsiteSession = session?.source === "website" &&
+      session.confirmed_at != null;
+    const isAssignableKioskCheckIn = session !== null &&
+      session.kiosk_handoff_status === "waiting" &&
+      isKioskCheckInSession(session);
 
     if (
       !session ||
@@ -131,9 +142,8 @@ export async function PATCH(
       !isPatientSession(session) ||
       !ownsSession(account, session) ||
       !isQuestionnaireVisibleToPractice(session) ||
-      session.source !== "website" ||
       session.status !== "completed" ||
-      session.confirmed_at == null ||
+      (!isAssignableWebsiteSession && !isAssignableKioskCheckIn) ||
       session.patient_reference != null
     ) {
       return NextResponse.json({ ok: false, error: "Fragebogen nicht gefunden." }, { status: 404 });
@@ -142,12 +152,20 @@ export async function PATCH(
     const result = await prisma.patientQuestionnaireSession.updateMany({
       where: {
         id,
-        source: "website",
         context: "patient",
         status: "completed",
-        confirmed_at: { not: null },
         deleted_at: null,
         patient_reference: null,
+        OR: [
+          { source: "website", confirmed_at: { not: null } },
+          {
+            source: "kiosk_direct",
+            session_kind: "patient_communication",
+            created_by_kiosk_device_id: { not: null },
+            selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
+            kiosk_handoff_status: "waiting",
+          },
+        ],
       },
       data: { patient_reference: patientReference },
     });

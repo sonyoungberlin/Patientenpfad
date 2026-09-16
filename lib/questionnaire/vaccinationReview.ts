@@ -5,6 +5,7 @@ import {
   VACCINATION_STATUS_OPTIONS,
 } from "./vaccinationReviewCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
+import { getQuestionOptionValue, UNKNOWN_OPTION_LABEL } from "./questionOptions";
 
 const PLANNING_ACTIONS = new Set<string>([
   "Impfung ärztlich empfohlen",
@@ -260,6 +261,22 @@ export function formatStructuredVaccinationEntry(
   return `${label}: ${parts.join("; ")}`;
 }
 
+export function formatStructuredVaccinationEntries(
+  raw: string,
+  question: QuestionDefinition,
+): string[] {
+  const answer = parseStructuredVaccinationAnswer(raw);
+  if (!answer || question.presentation !== "vaccination_matrix") return [];
+  const lines = answer.entries.map((entry) => formatStructuredVaccinationEntry(
+    entry,
+    getVaccinationLabel(entry as unknown as Record<string, string>, question),
+  ));
+  if (answer.supplemental_note) {
+    lines.push(`Ergänzende Bemerkung: ${answer.supplemental_note}`);
+  }
+  return lines;
+}
+
 export function calculateNextVaccinationDate(
   referenceDate: string,
   intervalValue: string,
@@ -311,7 +328,8 @@ function allowedItemMap(question: QuestionDefinition): Map<string, VaccinationIt
 
 function schemaOptions(question: QuestionDefinition, key: string, fallback: readonly string[]): string[] {
   if (question.vaccinationSchemaVersion !== 2) return [...fallback];
-  return question.groupSchema?.find((field) => field.key === key)?.options ?? [];
+  return (question.groupSchema?.find((field) => field.key === key)?.options ?? [])
+    .map(getQuestionOptionValue);
 }
 
 function normalizeSelection(raw: unknown, options: string[], unclearValue = "unklar"): string | null {
@@ -478,7 +496,7 @@ export function getVaccinationLabel(
 ): string {
   if (entry.vaccination_id === "other") return entry.custom_label ?? "Weitere Impfung";
   return question.vaccinationItems?.find((item) => item.id === entry.vaccination_id)?.label
-    ?? entry.vaccination_id;
+    ?? UNKNOWN_OPTION_LABEL;
 }
 
 export const VACCINATION_PLANNING_ACTIONS = PLANNING_ACTIONS;

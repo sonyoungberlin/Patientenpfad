@@ -27,7 +27,15 @@ import { isConfirmedAnswer } from "./confirmation";
 import type { QuestionnaireLanguage } from "./i18n";
 import { ALLOWED_ANSWER_CHARACTERS_REGEX } from "./validateAnswerCharacters";
 import { parseMultiSelectValue } from "./multiSelect";
-import { getQuestionOptionValues } from "./questionOptions";
+import {
+  getQuestionOptionValue,
+  getQuestionOptionValues,
+} from "./questionOptions";
+import type {
+  QuestionDefinition,
+  QuestionOptionDefinition,
+  RepeatableGroupFieldDef,
+} from "./blockCatalog";
 import { normalizeStructuredVaccinationAnswer } from "./vaccinationReview";
 import {
   isPlausibleCalendarYear,
@@ -51,21 +59,20 @@ export const MAX_ANSWER_LENGTH = 2000;
  * wird der Wert unverändert zurückgegeben.
  */
 function mapOptionToCanonical(
-  questionId: string,
+  question: QuestionDefinition,
   rawOption: string,
 ): string {
   const trimmed = rawOption.trim();
   if (trimmed === "") return rawOption;
 
-  const def = QUESTION_CATALOG[questionId];
-  if (!def || !def.options || !def.options_en) return rawOption;
-  if (def.options_en.length !== def.options.length) return rawOption;
-  const optionValues = getQuestionOptionValues(def);
+  if (!question.options || !question.options_en) return rawOption;
+  if (question.options_en.length !== question.options.length) return rawOption;
+  const optionValues = getQuestionOptionValues(question);
 
   // Bereits ein DE-Originalwert? Dann unverändert lassen.
   if (optionValues.includes(trimmed)) return trimmed;
 
-  const enIndex = def.options_en.indexOf(trimmed);
+  const enIndex = question.options_en.indexOf(trimmed);
   if (enIndex >= 0) {
     return optionValues[enIndex];
   }
@@ -78,28 +85,51 @@ function mapOptionToCanonical(
  * unverändert zurückgegeben.
  */
 function canonicalizeAnswerValue(
-  questionId: string,
+  question: QuestionDefinition,
   value: string,
 ): string {
-  const def = QUESTION_CATALOG[questionId];
-  if (!def) return value;
-
-  if (def.type === "select") {
-    return mapOptionToCanonical(questionId, value);
+  if (question.type === "select" || question.type === "yes_no") {
+    return mapOptionToCanonical(question, value);
   }
 
-  if (def.type === "multi_select") {
+  if (question.type === "multi_select") {
     // Format: kommagetrennte Liste; Kommas innerhalb eines Labels bleiben erhalten.
     const parts = parseMultiSelectValue(
       value,
-      [...getQuestionOptionValues(def), ...(def.options_en ?? [])],
+      [...getQuestionOptionValues(question), ...(question.options_en ?? [])],
     );
     if (parts.length === 0) return value;
-    const mapped = parts.map((p) => mapOptionToCanonical(questionId, p));
+    const mapped = parts.map((part) => mapOptionToCanonical(question, part));
     return mapped.join(", ");
   }
 
   return value;
+}
+
+function optionValues(options: readonly QuestionOptionDefinition[] | undefined): string[] {
+  return (options ?? []).map(getQuestionOptionValue);
+}
+
+function allowedValuesForType(
+  type: QuestionDefinition["type"] | RepeatableGroupFieldDef["type"],
+  options: readonly QuestionOptionDefinition[] | undefined,
+): string[] | null {
+  if (options !== undefined) return optionValues(options);
+  return type === "yes_no" ? ["ja", "nein", "Ja", "Nein"] : null;
+}
+
+function isAllowedOptionValue(
+  type: QuestionDefinition["type"] | RepeatableGroupFieldDef["type"],
+  value: string,
+  options: readonly QuestionOptionDefinition[] | undefined,
+): boolean {
+  if (type !== "select" && type !== "multi_select" && type !== "yes_no") return true;
+  if (value.trim() === "") return true;
+  const allowedValues = allowedValuesForType(type, options);
+  if (allowedValues === null) return true;
+  if (type !== "multi_select") return allowedValues.includes(value);
+  const selectedValues = parseMultiSelectValue(value, allowedValues);
+  return selectedValues.length > 0 && selectedValues.every((selected) => allowedValues.includes(selected));
 }
 
 /**
@@ -149,10 +179,15 @@ function sanitizeRepeatableGroupArray(
           break;
         }
       }
+      if (sliced.trim() !== "" && !isAllowedOptionValue(field.type, sliced, field.options)) {
+        entryInvalid = true;
+        break;
+      }
       clean[field.key] = sliced;
     }
 
-    if (!entryInvalid && Object.values(clean).some((v) => v.trim() !== "")) {
+    if (entryInvalid) return null;
+    if (Object.values(clean).some((v) => v.trim() !== "")) {
       result.push(clean);
     }
   }
@@ -276,7 +311,15 @@ export function sanitizeAnswers(
           const parsed: unknown = JSON.parse(value);
           if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
             const structured = normalizeStructuredVaccinationAnswer(parsed);
-            if (structured) sanitized[questionId] = JSON.stringify(structured);
+            const allowedVaccinationIds = new Set(
+              (qDef.vaccinationItems ?? []).map((item) => item.id),
+            );
+            if (
+              structured &&
+              structured.entries.every((entry) => allowedVaccinationIds.has(entry.vaccination_id))
+            ) {
+              sanitized[questionId] = JSON.stringify(structured);
+            }
             continue;
           }
         } catch {
@@ -313,10 +356,11 @@ export function sanitizeAnswers(
     }
 
     const sliced = value.slice(0, qDef.maxLength ?? MAX_ANSWER_LENGTH);
-    sanitized[questionId] =
-      language === "en"
-        ? canonicalizeAnswerValue(questionId, sliced)
-        : sliced;
+    const canonicalValue = language === "en"
+      ? canonicalizeAnswerValue(qDef, sliced)
+      : sliced;
+    if (!isAllowedOptionValue(qDef.type, canonicalValue, qDef.options)) continue;
+    sanitized[questionId] = canonicalValue;
   }
 
   const today = new Date();

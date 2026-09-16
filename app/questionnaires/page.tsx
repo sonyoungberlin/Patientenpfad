@@ -91,6 +91,7 @@ export default async function QuestionnairesPage({
       session_kind: true,
       internal_workflow_id: true,
       frozen_blocks: true,
+      kiosk_handoff_status: true,
     },
   });
 
@@ -218,6 +219,7 @@ export default async function QuestionnairesPage({
                 isFromDigitalRequest={digitalRequestSessionIds.has(s.id)}
                 source={s.source}
                 sessionKind={s.session_kind}
+                kioskHandoffStatus={s.kiosk_handoff_status}
               />
             );
           })}

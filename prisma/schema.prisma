@@ -388,6 +388,15 @@ model PatientQuestionnaireSession {
   created_by_kiosk_device_id String?
   created_by_kiosk_device    QuestionnaireKioskDevice? @relation(fields: [created_by_kiosk_device_id], references: [id], onDelete: Restrict)
 
+  /// Linearer Übergabestatus ausschließlich für initiale Kiosk-Check-ins.
+  /// NULL für alle regulären Fragebogensessions.
+  kiosk_handoff_status String?
+
+  /// Genau eine am Ursprungskiosk bereitzustellende Folge-Session.
+  kiosk_follow_up_session_id String? @unique
+  kiosk_follow_up_session    PatientQuestionnaireSession? @relation("KioskCheckInFollowUp", fields: [kiosk_follow_up_session_id], references: [id], onDelete: SetNull)
+  kiosk_check_in_session     PatientQuestionnaireSession? @relation("KioskCheckInFollowUp")
+
   /// Interne Patientenreferenz (wird nie in den Link kodiert)
   patient_reference String?
 

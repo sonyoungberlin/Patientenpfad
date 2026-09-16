@@ -39,6 +39,7 @@ import {
   buildPracticeConfirmationsFrozenBlock,
   type PracticeConfirmationSlot,
 } from "@/lib/questionnaire/confirmation";
+import { hasExactKioskCheckInBlocks } from "@/lib/questionnaire/kioskCheckIn";
 
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 Stunden
 
@@ -59,8 +60,9 @@ type KioskSessionCreator = {
 export type CreateSessionInput = {
   /** Bereits validierte und gefilterte Block-IDs (min. 1 Eintrag). */
   selectedBlockIds: string[];
-  /** Obligatorische interne Patientenreferenz (z. B. PVS-Nummer). */
-  patientReference: string;
+  /** Interne Patientenreferenz; nur beim initialen Kiosk-Check-in null. */
+  patientReference: string | null;
+  allowUnassignedKioskCheckIn?: boolean;
   /** "de" | "en", nach `normalizeQuestionnaireLanguage` normalisiert. */
   patientLanguage: string;
   /** Optionale Verknüpfung zur auslösenden InquirySession. */
@@ -85,6 +87,7 @@ export type CreateSessionInput = {
   internalWorkflowId?: InternalWorkflowId | null;
   internalBlockLayout?: InternalBlockPlacement[];
   internalDocumentTitle?: InternalDocumentTitleMetadata;
+  databaseClient?: Pick<Prisma.TransactionClient, "patientQuestionnaireSession">;
 } & (AccountSessionCreator | KioskSessionCreator);
 
 export type CreateSessionResult = {
@@ -107,6 +110,7 @@ export async function createQuestionnaireSession(
   const {
     selectedBlockIds,
     patientReference,
+    allowUnassignedKioskCheckIn = false,
     patientLanguage,
     ownerAccountId,
     ownerPracticeId,
@@ -123,7 +127,23 @@ export async function createQuestionnaireSession(
     internalWorkflowId,
     internalBlockLayout,
     internalDocumentTitle,
+    databaseClient = prisma,
   } = input;
+
+  const isUnassignedKioskCheckIn = patientReference === null &&
+    allowUnassignedKioskCheckIn &&
+    source === "kiosk_direct" &&
+    context === "patient" &&
+    sessionKind === "patient_communication" &&
+    Boolean(ownerPracticeId) &&
+    Boolean(createdByKioskDeviceId) &&
+    hasExactKioskCheckInBlocks(selectedBlockIds);
+  if (patientReference === null && !isUnassignedKioskCheckIn) {
+    throw new Error("Patientenreferenz ist erforderlich.");
+  }
+  if (typeof patientReference === "string" && patientReference.trim() === "") {
+    throw new Error("Patientenreferenz ist erforderlich.");
+  }
 
   const internalSelectedBlockIds = sessionKind === "internal_documentation" &&
     internalWorkflowId && selectedBlockIds.length === 0
@@ -174,7 +194,7 @@ export async function createQuestionnaireSession(
     ? buildInternalDocumentationSnapshot(frozenBlocks, internalDocumentTitle)
     : frozenBlocks;
 
-  const session = await prisma.patientQuestionnaireSession.create({
+  const session = await databaseClient.patientQuestionnaireSession.create({
     data: {
       token,
       token_expires_at: sessionKind === "internal_documentation" ? null : expiresAt,
@@ -184,6 +204,7 @@ export async function createQuestionnaireSession(
         ? { created_by_kiosk_device_id: createdByKioskDeviceId }
         : {}),
       patient_reference: patientReference,
+      kiosk_handoff_status: isUnassignedKioskCheckIn ? "waiting" : null,
       inquiry_session_id: inquirySessionId ?? null,
       selected_block_ids: persistedSelectedBlockIds as Prisma.InputJsonValue,
       deduplicated_questions:
