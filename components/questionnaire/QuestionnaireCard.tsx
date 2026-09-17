@@ -51,6 +51,7 @@ export type QuestionnaireCardProps = {
   kioskHandoffStatus?: string | null;
   publicHandoffStatus?: string | null;
   publicHandoffExpired?: boolean;
+  exportFinal?: boolean;
 };
 
 export default function QuestionnaireCard({
@@ -69,6 +70,7 @@ export default function QuestionnaireCard({
   kioskHandoffStatus = null,
   publicHandoffStatus = null,
   publicHandoffExpired = false,
+  exportFinal = displayStatus === "completed",
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
   const sourceLabel = sessionKind === "internal_documentation"
@@ -163,7 +165,7 @@ export default function QuestionnaireCard({
       </div>
 
       {/* PDF download + Krankenblatt-Text */}
-      {displayStatus === "completed" && (
+      {exportFinal && (
         <>
           <a
             href={`/api/questionnaire/${id}/pdf`}

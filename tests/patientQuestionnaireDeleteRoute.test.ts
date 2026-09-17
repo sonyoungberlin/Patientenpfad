@@ -188,7 +188,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
     expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
-  it("löscht einen wartenden Public-Check-in weiterhin atomar", async () => {
+  function mockPublicSession() {
     mockSession(true, "acc-owner");
     pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
       owner_account_id: null,
@@ -229,22 +229,87 @@ describe("DELETE /api/questionnaire/[id]", () => {
         }],
       },
     });
+  }
+
+  it("schützt einen wartenden Public-Parent", async () => {
+    mockPublicSession();
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 0 });
 
     const res = await deleteHandler(
       requestWithCookie("http://localhost/api/questionnaire/public-waiting"),
       { params: Promise.resolve({ id: "public-waiting" }) },
     );
 
+    expect(res.status).toBe(409);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["Public Child", { is: null }],
+    ["geschlossenen Public Parent", { is: { status: "closed" } }],
+    ["Public Parent mit abgeschlossenem Follow-up", {
+      is: {
+        status: "questionnaire_ready",
+        follow_up_session: { is: { status: "completed" } },
+      },
+    }],
+  ])("löscht %s atomar", async (_label, expectedHandoffFilter) => {
+    mockPublicSession();
+
+    const res = await deleteHandler(
+      requestWithCookie("http://localhost/api/questionnaire/public-final"),
+      { params: Promise.resolve({ id: "public-final" }) },
+    );
+
     expect(res.status).toBe(200);
     expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
-        OR: expect.arrayContaining([{
-          source: "public_check_in",
-          public_check_in_handoff: { is: { status: { not: "questionnaire_ready" } } },
-        }]),
+        OR: expect.arrayContaining([
+          expect.objectContaining({
+            source: "public_check_in",
+            OR: expect.arrayContaining([
+              { public_check_in_handoff: expectedHandoffFilter },
+            ]),
+          }),
+        ]),
       }),
     }));
   });
+
+  it("schützt Public Parent mit pending Follow-up atomar", async () => {
+    mockPublicSession();
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await deleteHandler(
+      requestWithCookie("http://localhost/api/questionnaire/public-ready"),
+      { params: Promise.resolve({ id: "public-ready" }) },
+    );
+
+    expect(res.status).toBe(409);
+  });
+
+  it.each(["internal_link", "kiosk_direct"])(
+    "löscht completed %s Session weiterhin",
+    async (source) => {
+      mockSession(true, "acc-owner");
+      pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+        owner_account_id: "acc-owner",
+        source,
+        status: "completed",
+        submitted_at: new Date(),
+        confirmed_at: null,
+        deleted_at: null,
+        context: "patient",
+      });
+
+      const res = await deleteHandler(
+        requestWithCookie(`http://localhost/api/questionnaire/${source}`),
+        { params: Promise.resolve({ id: source }) },
+      );
+
+      expect(res.status).toBe(200);
+    },
+  );
 
   it("meldet Konflikt, wenn Follow-up den Public-Parent zuerst geclaimt hat", async () => {
     mockSession(true, "acc-owner");

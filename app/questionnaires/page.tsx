@@ -19,6 +19,7 @@ import {
   activeQuestionnaireLifecycleFilter,
   trashQuestionnaireLifecycleFilter,
 } from "@/lib/questionnaire/lifecycle";
+import { isQuestionnaireExportFinal } from "@/lib/questionnaire/exportFinality";
 
 type SearchParams = Promise<{ view?: string | string[] }>;
 
@@ -92,7 +93,14 @@ export default async function QuestionnairesPage({
       internal_workflow_id: true,
       frozen_blocks: true,
       kiosk_handoff_status: true,
-      public_check_in_handoff: { select: { status: true, expires_at: true } },
+      kiosk_follow_up_session: { select: { status: true } },
+      public_check_in_handoff: {
+        select: {
+          status: true,
+          expires_at: true,
+          follow_up_session: { select: { status: true } },
+        },
+      },
     },
   });
 
@@ -225,6 +233,7 @@ export default async function QuestionnairesPage({
                 publicHandoffExpired={s.public_check_in_handoff
                   ? s.public_check_in_handoff.expires_at <= now
                   : false}
+                exportFinal={isQuestionnaireExportFinal(s)}
               />
             );
           })}

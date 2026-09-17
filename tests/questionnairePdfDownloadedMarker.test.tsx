@@ -41,7 +41,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
-      update: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -50,11 +50,12 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 import { GET as PdfRoute } from "@/app/api/questionnaire/[id]/pdf/route";
 import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
+import { QUESTIONNAIRE_EXPORT_FINALITY_FILTER } from "@/lib/questionnaire/exportFinality";
 
 type PrismaMock = {
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
-    update: jest.Mock;
+    updateMany: jest.Mock;
   };
 };
 const pm = prisma as unknown as PrismaMock;
@@ -105,7 +106,7 @@ const baseSession = {
 beforeEach(() => {
   getAcc.mockReset();
   pm.patientQuestionnaireSession.findUnique.mockReset();
-  pm.patientQuestionnaireSession.update.mockReset();
+  pm.patientQuestionnaireSession.updateMany.mockReset();
 });
 
 describe("GET /api/questionnaire/[id]/pdf — pdf_downloaded_at Marker", () => {
@@ -115,15 +116,18 @@ describe("GET /api/questionnaire/[id]/pdf — pdf_downloaded_at Marker", () => {
       ...baseSession,
       pdf_downloaded_at: null,
     });
-    pm.patientQuestionnaireSession.update.mockResolvedValue({});
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
 
     const res = await PdfRoute(pdfReq(), { params: Promise.resolve({ id: "sess-1" }) });
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/pdf");
-    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledTimes(1);
-    const call = pm.patientQuestionnaireSession.update.mock.calls[0][0];
-    expect(call.where).toEqual({ id: "sess-1" });
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
+    const call = pm.patientQuestionnaireSession.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual({
+      id: "sess-1",
+      AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
+    });
     expect(call.data.pdf_downloaded_at).toBeInstanceOf(Date);
     // Es darf keine andere Spalte mitgeschrieben werden, insbesondere kein
     // GDT-Claim durch einen späteren manuellen PDF-Download.
@@ -141,7 +145,7 @@ describe("GET /api/questionnaire/[id]/pdf — pdf_downloaded_at Marker", () => {
     const res = await PdfRoute(pdfReq(), { params: Promise.resolve({ id: "sess-1" }) });
 
     expect(res.status).toBe(200);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("Soft-Deleted Session → 404 und schreibt pdf_downloaded_at NICHT", async () => {
@@ -155,7 +159,7 @@ describe("GET /api/questionnaire/[id]/pdf — pdf_downloaded_at Marker", () => {
     const res = await PdfRoute(pdfReq(), { params: Promise.resolve({ id: "sess-1" }) });
 
     expect(res.status).toBe(404);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("Antwort wird auch zurückgegeben, wenn der Marker-Update fehlschlägt", async () => {
@@ -164,14 +168,14 @@ describe("GET /api/questionnaire/[id]/pdf — pdf_downloaded_at Marker", () => {
       ...baseSession,
       pdf_downloaded_at: null,
     });
-    pm.patientQuestionnaireSession.update.mockRejectedValue(new Error("DB hiccup"));
+    pm.patientQuestionnaireSession.updateMany.mockRejectedValue(new Error("DB hiccup"));
     const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const res = await PdfRoute(pdfReq(), { params: Promise.resolve({ id: "sess-1" }) });
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/pdf");
-    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledTimes(1);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
     errSpy.mockRestore();
   });
 });
@@ -223,6 +227,13 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
     expect(html).not.toContain("PDF herunterladen");
     expect(html).not.toContain("PDF erneut herunterladen");
     expect(html).not.toContain("PDF heruntergeladen");
+  });
+
+  it("blendet PDF für einen fachlich noch nicht finalen Check-in aus", () => {
+    const html = renderToStaticMarkup(
+      QuestionnaireCard({ ...baseProps, exportFinal: false }),
+    );
+    expect(html).not.toContain("PDF herunterladen");
   });
 
   it("zeigt Patient zuordnen nur für nicht zugeordnete Website-Submissions", () => {

@@ -6,6 +6,10 @@ import { buildQuestionnaireGdtBytes } from "@/lib/questionnaire/gdtRenderer";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { resolveQuestionnaireGdtExport } from "@/lib/questionnaire/questionnaireExportService";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
+import {
+  isQuestionnaireExportFinal,
+  QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
+} from "@/lib/questionnaire/exportFinality";
 
 export async function GET(
   req: NextRequest,
@@ -37,13 +41,21 @@ export async function GET(
       internal_workflow_id: true,
       gdt_download_claimed_at: true,
       practice_form: { select: { title: true } },
+      kiosk_handoff_status: true,
+      kiosk_follow_up_session: { select: { status: true } },
+      public_check_in_handoff: {
+        select: {
+          status: true,
+          follow_up_session: { select: { status: true } },
+        },
+      },
     },
   });
 
   if (
     !session ||
     session.deleted_at != null ||
-    session.status !== "completed" ||
+    !isQuestionnaireExportFinal(session) ||
     !isPatientSession(session) ||
     !ownsSession(account, session) ||
     !isQuestionnaireVisibleToPractice(session)
@@ -79,6 +91,7 @@ export async function GET(
       session_kind: "patient_communication",
       patient_reference: gdt.patientReference,
       gdt_download_claimed_at: null,
+      AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
     },
     data: { gdt_download_claimed_at: new Date() },
   });

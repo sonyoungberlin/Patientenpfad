@@ -11,6 +11,7 @@ import type {
   AutoDownloadArtifactType,
   BuiltAutoDownloadArtifact,
 } from "@/lib/questionnaire/autoDownloadArtifactSelector";
+import { QUESTIONNAIRE_EXPORT_FINALITY_FILTER } from "@/lib/questionnaire/exportFinality";
 
 export const AUTO_DOWNLOAD_LEASE_DURATION_MS = 5 * 60 * 1000;
 export const AUTO_DOWNLOAD_DELIVERY_ID_HEADER = "X-Auto-Download-Delivery-Id";
@@ -90,7 +91,7 @@ export async function acquireAutoDownloadArtifactLease(
         is: {
           owner_practice_id: device.practiceId,
           deleted_at: null,
-          status: "completed",
+          AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
           ...sessionClaimIsOpen(candidate.artifactType),
         },
       },
@@ -183,6 +184,7 @@ export async function acknowledgeAutoDownloadDelivery(
       where: {
         id: delivery.session_id,
         owner_practice_id: device.practiceId,
+        AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
         ...sessionClaimIsOpen(delivery.artifact_type),
       },
       data: sessionClaimData(delivery.artifact_type, now),
@@ -192,6 +194,7 @@ export async function acknowledgeAutoDownloadDelivery(
         where: {
           id: delivery.session_id,
           owner_practice_id: device.practiceId,
+          AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
           ...sessionClaimIsSet(delivery.artifact_type),
         },
         select: { id: true },

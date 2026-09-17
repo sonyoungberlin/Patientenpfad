@@ -34,6 +34,7 @@ import {
 import { selectNextAutoDownloadArtifact } from "@/lib/questionnaire/autoDownloadArtifactSelector";
 import { GET } from "@/app/api/questionnaire/auto-download/next/route";
 import { hashQuestionnaireAutoDeviceId } from "@/lib/questionnaire/autoDownloadDevice";
+import { QUESTIONNAIRE_EXPORT_FINALITY_FILTER } from "@/lib/questionnaire/exportFinality";
 
 const DEVICE_A = "123e4567-e89b-42d3-a456-426614174000";
 const ENABLED_AT = new Date("2026-09-03T08:00:00.000Z");
@@ -170,6 +171,9 @@ it("liefert das nächste Artefakt unabhängig vom HTTP-Transport", async () => {
     mimeType: "application/pdf",
   });
   expect(sessionMock.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: expect.objectContaining({
+      AND: expect.arrayContaining([QUESTIONNAIRE_EXPORT_FINALITY_FILTER]),
+    }),
     data: { auto_pdf_download_claimed_at: expect.any(Date) },
   }));
 });
@@ -439,7 +443,7 @@ it("wendet Practice-, Sichtbarkeits-, Zeit- und Claim-Filter an", async () => {
       { owner_practice_id: "practice-1" },
       { context: "patient" },
       { deleted_at: null },
-      { status: "completed" },
+      QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
       {
         OR: [
           { submitted_at: { gte: ENABLED_AT } },
@@ -554,7 +558,7 @@ it("lässt nur abgeschlossene und noch nicht geclaimte interne Dokumentationen z
   const eligibility = sessionMock.findMany.mock.calls[1][0].where.AND;
 
   expect(eligibility).toEqual(expect.arrayContaining([
-    { status: "completed" },
+    QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
     { session_kind: "internal_documentation" },
     {
       OR: [

@@ -6,6 +6,10 @@ import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { resolveQuestionnairePdfOptions } from "@/lib/questionnaire/questionnaireExportService";
 import { buildInternalDocumentationPdfArtifact } from "@/lib/questionnaire/internalDocumentationArtifacts";
+import {
+  isQuestionnaireExportFinal,
+  QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
+} from "@/lib/questionnaire/exportFinality";
 
 export async function GET(
   req: NextRequest,
@@ -41,6 +45,14 @@ export async function GET(
       context: true,
       session_kind: true,
       internal_workflow_id: true,
+      kiosk_handoff_status: true,
+      kiosk_follow_up_session: { select: { status: true } },
+      public_check_in_handoff: {
+        select: {
+          status: true,
+          follow_up_session: { select: { status: true } },
+        },
+      },
     },
   });
 
@@ -58,7 +70,7 @@ export async function GET(
     });
   }
 
-  if (session.status !== "completed") {
+  if (!isQuestionnaireExportFinal(session)) {
     return new Response(
       JSON.stringify({ ok: false, error: "PDF nur für abgeschlossene Fragebögen verfügbar." }),
       { status: 409, headers: { "Content-Type": "application/json" } },
@@ -94,8 +106,8 @@ export async function GET(
 
   if (session.pdf_downloaded_at == null) {
     try {
-      await prisma.patientQuestionnaireSession.update({
-        where: { id },
+      await prisma.patientQuestionnaireSession.updateMany({
+        where: { id, AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER] },
         data: { pdf_downloaded_at: new Date() },
       });
     } catch (err) {

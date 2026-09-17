@@ -15,6 +15,7 @@ import {
   resolveQuestionnairePdfOptions,
 } from "@/lib/questionnaire/questionnaireExportService";
 import { PRACTICE_VISIBLE_SESSION_FILTER } from "@/lib/websiteForms/practiceVisibility";
+import { QUESTIONNAIRE_EXPORT_FINALITY_FILTER } from "@/lib/questionnaire/exportFinality";
 
 export type AutoDownloadArtifact = InternalDocumentationArtifact;
 export type AutoDownloadArtifactType = "PDF" | "XML" | "GDT";
@@ -82,7 +83,7 @@ async function traverseAutoDownloadArtifacts({
       PATIENT_CONTEXT_FILTER,
       PRACTICE_VISIBLE_SESSION_FILTER,
       { deleted_at: null },
-      { status: "completed" },
+      QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
       ...(enabledAt
         ? [{
             OR: [

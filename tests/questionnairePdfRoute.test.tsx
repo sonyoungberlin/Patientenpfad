@@ -8,7 +8,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
-      update: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -31,7 +31,7 @@ import { buildInternalWorkflowBlocks, getInternalWorkflow } from "@/lib/question
 type PrismaMock = {
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
-    update: jest.Mock;
+    updateMany: jest.Mock;
   };
 };
 
@@ -68,7 +68,7 @@ function baseSession(overrides: Partial<Record<string, unknown>> = {}) {
 beforeEach(() => {
   requireAccess.mockResolvedValue({ account: { id: "acc-1" } });
   pm.patientQuestionnaireSession.findUnique.mockReset();
-  pm.patientQuestionnaireSession.update.mockReset();
+  pm.patientQuestionnaireSession.updateMany.mockReset();
   jest.useFakeTimers();
   jest.setSystemTime(new Date("2026-05-12T10:00:00.000Z"));
 });

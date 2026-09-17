@@ -253,9 +253,18 @@ export async function DELETE(
           { source: { not: "public_check_in" } },
           {
             source: "public_check_in",
-            public_check_in_handoff: {
-              is: { status: { not: "questionnaire_ready" } },
-            },
+            OR: [
+              { public_check_in_handoff: { is: null } },
+              { public_check_in_handoff: { is: { status: "closed" } } },
+              {
+                public_check_in_handoff: {
+                  is: {
+                    status: "questionnaire_ready",
+                    follow_up_session: { is: { status: "completed" } },
+                  },
+                },
+              },
+            ],
           },
         ],
       },

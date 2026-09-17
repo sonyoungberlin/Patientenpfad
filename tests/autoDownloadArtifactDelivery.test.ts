@@ -9,6 +9,7 @@ import {
   createAutoDownloadDeviceSecret,
   hashAutoDownloadDeviceSecret,
 } from "@/lib/autoDownloadDevices/credentials";
+import { QUESTIONNAIRE_EXPORT_FINALITY_FILTER } from "@/lib/questionnaire/exportFinality";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -73,6 +74,9 @@ describe("Auto-Download-Leases", () => {
     }));
     expect(JSON.stringify(update.data)).not.toContain(leased!.leaseToken);
     expect(transaction).not.toHaveBeenCalled();
+    expect(update.where.session.is.AND).toEqual([
+      QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
+    ]);
   });
 
   it("lässt bei parallelen Lease-Versuchen höchstens einen Gewinner zu", async () => {
@@ -154,6 +158,7 @@ describe("Auto-Download-ACK", () => {
       where: {
         id: "session-1",
         owner_practice_id: "practice-1",
+        AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
         [claimField]: null,
       },
       data: { [claimField]: now },
@@ -220,6 +225,7 @@ describe("Auto-Download-ACK", () => {
       where: {
         id: "session-1",
         owner_practice_id: "practice-1",
+        AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
         auto_pdf_download_claimed_at: { not: null },
       },
       select: { id: true },

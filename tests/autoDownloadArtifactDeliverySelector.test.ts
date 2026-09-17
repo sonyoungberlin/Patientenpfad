@@ -29,6 +29,7 @@ import {
 } from "@/lib/questionnaire/internalDocumentationArtifacts";
 import { resolveQuestionnaireGdtExport } from "@/lib/questionnaire/questionnaireExportService";
 import { selectNextAutoDownloadArtifactForDelivery } from "@/lib/questionnaire/autoDownloadArtifactSelector";
+import { QUESTIONNAIRE_EXPORT_FINALITY_FILTER } from "@/lib/questionnaire/exportFinality";
 
 const sessions = prisma.patientQuestionnaireSession as unknown as {
   findFirst: jest.Mock;
@@ -279,6 +280,7 @@ it("prüft nur Sessions der authentifizierten Praxis", async () => {
     expect(query.where.AND).toEqual(expect.arrayContaining([
       { owner_practice_id: "practice-1" },
       { context: "patient" },
+      QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
     ]));
   }
 });
