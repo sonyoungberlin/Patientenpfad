@@ -484,6 +484,33 @@ describe("DigitalRequestsPage — Interne Liste", () => {
     expect(whereArg.status).toEqual({ in: ["new", "in_review"] });
   });
 
+  it("zeigt Legacy-Anfragen mit null Intake-Feldern weiterhin an", async () => {
+    const account = makeAccount({
+      current_practice: { id: "praxis-1" },
+      memberships: [{ practice_id: "praxis-1", role: "OWNER" }],
+    });
+    requirePatComm.mockResolvedValue(account);
+    isInboxOnly.mockReturnValue(false);
+    pm.digitalRequest.findMany.mockResolvedValue([
+      {
+        id: "dr-legacy",
+        createdAt: new Date("2026-05-20T10:00:00Z"),
+        submitter_name: "Legacy Patient",
+        status: "new",
+        requested_topics: null,
+        patient_relationship: null,
+        request_intent: null,
+        concern_text: null,
+      },
+    ]);
+
+    const { result } = await runPage(() => DigitalRequestsPage());
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+
+    expect(markup).toContain("Legacy Patient");
+    expect(markup).toContain("Nicht angegeben");
+  });
+
   it("sent-Anfragen erscheinen nicht im Query-Where", async () => {
     const account = makeAccount({
       current_practice: { id: "praxis-1" },

@@ -108,6 +108,53 @@ describe("DigitalRequestDetailClient — Button-Sichtbarkeit", () => {
     await cleanup(root, container);
   });
 
+  it("zeigt das Gate als gesperrt ohne Patientennummer oder Ausnahme", async () => {
+    const { container, root } = await renderComponent(
+      defaultProps({
+        initialPatientReference: "",
+        initialPatientRelationship: "new_patient",
+      }),
+    );
+    expect(container.querySelector('[data-testid="gate-blocked-notice"]')).not.toBeNull();
+    expect(
+      container.querySelector<HTMLButtonElement>('[data-testid="send-questionnaire-btn"]')!.disabled,
+    ).toBe(true);
+    expect(container.textContent).toContain("Neu in der Praxis");
+    await cleanup(root, container);
+  });
+
+  it("gibt den Folgefragebogen nach bestätigter Ausnahme frei", async () => {
+    const { container, root } = await renderComponent(
+      defaultProps({
+        initialPatientReference: "",
+        initialNewPatientExceptionConfirmed: true,
+      }),
+    );
+    expect(container.querySelector('[data-testid="gate-ready-notice"]')).not.toBeNull();
+    expect(container.querySelector<HTMLButtonElement>('[data-testid="send-questionnaire-btn"]')!.disabled).toBe(false);
+    await cleanup(root, container);
+  });
+
+  it("setzt die Ausnahme bewusst und überschreibt die Selbstauskunft nicht", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, confirmed: true }),
+    });
+    const { container, root } = await renderComponent(
+      defaultProps({
+        initialPatientReference: "",
+        initialPatientRelationship: "existing_patient",
+      }),
+    );
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-testid="new-patient-exception-btn"]')!.click();
+    });
+    expect(mockFetch.mock.calls[0][0]).toContain("new-patient-exception");
+    expect(container.textContent).toContain("Bereits Patient/in");
+    expect(container.textContent).toContain("Neupatienten-Ausnahme bestätigt");
+    await cleanup(root, container);
+  });
+
   it("aktiviert die QR-Option nur mit Patientennummer", async () => {
     const withReference = await renderComponent(defaultProps());
     expect(withReference.container.querySelector<HTMLInputElement>("[data-self-check-in-qr]")!.disabled).toBe(false);

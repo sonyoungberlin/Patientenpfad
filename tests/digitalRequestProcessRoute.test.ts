@@ -119,6 +119,7 @@ const DR_READY = {
   status: "in_review",
   submitter_email: "patient@example.com",
   patient_reference: "PAT-001",
+  new_patient_exception_confirmed_at: null,
   selected_block_ids: ["IDENTITAET"],
   birth_date_hash: null,
   owner_account_id: "account-1",
@@ -236,6 +237,36 @@ describe("POST /api/digital-requests/[id]/process", () => {
     const json = await res.json();
     expect(json.ok).toBe(false);
     expect(json.error).toMatch(/Patientenreferenz/i);
+  });
+
+  it("lehnt den direkten Versand ohne Gate ab", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      ...DR_READY,
+      patient_reference: null,
+      new_patient_exception_confirmed_at: null,
+    });
+
+    const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/Zuordnung|Neupatienten-Ausnahme/i);
+    expect(createQuestionnaireSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("prüft das Gate vor der unveränderten Session-Referenzpflicht", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      ...DR_READY,
+      patient_reference: null,
+      new_patient_exception_confirmed_at: new Date(),
+    });
+
+    const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/Patientenreferenz/i);
+    expect(createQuestionnaireSessionMock).not.toHaveBeenCalled();
   });
 
   it("gibt 400 zurück wenn selected_block_ids null ist", async () => {

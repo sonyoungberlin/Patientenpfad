@@ -31,6 +31,7 @@ import {
   selectPracticeConfirmationSlots,
 } from "@/lib/questionnaire/confirmation";
 import { appendSelfCheckInQrFlag } from "@/lib/selfCheckInQr";
+import { hasDigitalRequestFollowUpGate } from "@/lib/digitalRequests/followUpGate";
 
 /** Status-Werte, bei denen kein erneuter Prozess erlaubt ist. */
 const TERMINAL_STATUSES = new Set(["sent", "closed", "rejected"]);
@@ -63,6 +64,7 @@ export async function POST(
       status: true,
       submitter_email: true,
       patient_reference: true,
+      new_patient_exception_confirmed_at: true,
       selected_block_ids: true,
       birth_date_hash: true,
       owner_account_id: true,
@@ -87,6 +89,16 @@ export async function POST(
     );
   }
 
+  if (!hasDigitalRequestFollowUpGate(dr)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Vor dem Versand muss zuerst eine Patientenreferenz zugeordnet oder die Neupatienten-Ausnahme bestätigt werden.",
+      },
+      { status: 400 },
+    );
+  }
+
   // --- Terminal-Status prüfen (409) ---
   if (TERMINAL_STATUSES.has(dr.status)) {
     return NextResponse.json(
@@ -107,7 +119,11 @@ export async function POST(
   }
 
   // --- patient_reference muss vorhanden sein (400) ---
-  if (!dr.patient_reference) {
+  const patientReference =
+    typeof dr.patient_reference === "string"
+      ? dr.patient_reference.trim()
+      : "";
+  if (!patientReference) {
     return NextResponse.json(
       { ok: false, error: "Patientenreferenz fehlt. Bitte zuerst die Anfrage ausfüllen." },
       { status: 400 },
@@ -153,7 +169,7 @@ export async function POST(
   const origin = req.nextUrl.origin;
   const { sessionId, tokenLink } = await createQuestionnaireSession({
     selectedBlockIds,
-    patientReference: dr.patient_reference,
+    patientReference,
     patientLanguage: "de",
     ownerAccountId: dr.owner_account_id,
     ownerPracticeId: dr.owner_practice_id ?? null,
@@ -163,7 +179,7 @@ export async function POST(
   });
   const questionnaireUrl = appendSelfCheckInQrFlag(
     tokenLink,
-    dr.patient_reference,
+    patientReference,
     requestedSelfCheckInQr,
   );
 

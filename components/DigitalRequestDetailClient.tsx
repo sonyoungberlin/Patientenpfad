@@ -32,6 +32,8 @@ export type BlockChoice = {
 type Props = {
   requestId: string;
   initialPatientReference: string | null;
+  initialPatientRelationship?: string | null;
+  initialNewPatientExceptionConfirmed?: boolean;
   initialSelectedBlockIds: string[];
   blocks: BlockChoice[];
   /** Wenn true, ist das Formular schreibgeschützt (status = sent/closed). */
@@ -46,6 +48,8 @@ type Props = {
 export function DigitalRequestDetailClient({
   requestId,
   initialPatientReference,
+  initialPatientRelationship = null,
+  initialNewPatientExceptionConfirmed = false,
   initialSelectedBlockIds,
   blocks,
   isSent = false,
@@ -57,6 +61,10 @@ export function DigitalRequestDetailClient({
   const [patientReference, setPatientReference] = useState(
     initialPatientReference ?? "",
   );
+  const [newPatientExceptionConfirmed, setNewPatientExceptionConfirmed] =
+    useState(initialNewPatientExceptionConfirmed);
+  const [exceptionSaving, setExceptionSaving] = useState(false);
+  const [exceptionError, setExceptionError] = useState<string | null>(null);
   const [selfCheckInQrEnabled, setSelfCheckInQrEnabled] = useState(false);
   const [selected, setSelected] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
@@ -98,9 +106,36 @@ export function DigitalRequestDetailClient({
 
   const canSend =
     !isReadOnly &&
-    patientReference.trim() !== "" &&
+    (patientReference.trim() !== "" || newPatientExceptionConfirmed) &&
     currentSelectedBlockIds.length > 0;
   const hasPatientReference = patientReference.trim() !== "";
+
+  async function handleNewPatientException() {
+    const confirmed = !newPatientExceptionConfirmed;
+    setExceptionSaving(true);
+    setExceptionError(null);
+
+    try {
+      const res = await fetch(
+        `/api/digital-requests/${requestId}/new-patient-exception`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confirmed }),
+        },
+      );
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (data.ok) {
+        setNewPatientExceptionConfirmed(confirmed);
+      } else {
+        setExceptionError(data.error ?? "Fehler beim Speichern der Praxisentscheidung.");
+      }
+    } catch {
+      setExceptionError("Netzwerkfehler.");
+    } finally {
+      setExceptionSaving(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -264,6 +299,53 @@ export function DigitalRequestDetailClient({
 
       {/* Patientenreferenz */}
       <div>
+        <div
+          className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4"
+          data-testid="patient-assignment-gate"
+        >
+          <p className="mb-2 font-medium text-gray-800">Patientenzuordnung</p>
+          <p className="mb-3 text-sm text-gray-600">
+            Patientenselbstauskunft: {initialPatientRelationship === "existing_patient"
+              ? "Bereits Patient/in"
+              : initialPatientRelationship === "new_patient"
+                ? "Neu in der Praxis"
+                : "Nicht angegeben"}
+          </p>
+          <p className="mb-3 text-sm text-gray-600">
+            Praxisentscheidung: {newPatientExceptionConfirmed
+              ? "Neupatienten-Ausnahme bestätigt"
+              : "Keine Neupatienten-Ausnahme bestätigt"}
+          </p>
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={handleNewPatientException}
+              disabled={exceptionSaving}
+              data-testid="new-patient-exception-btn"
+              className="rounded border border-gray-400 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-white disabled:opacity-50"
+            >
+              {exceptionSaving
+                ? "Speichert…"
+                : newPatientExceptionConfirmed
+                  ? "Neupatienten-Ausnahme zurücknehmen"
+                  : "Neupatient/in – noch keine Patientennummer vorhanden"}
+            </button>
+          )}
+          {exceptionError && (
+            <p className="mt-2 text-sm text-red-600" role="alert" data-testid="exception-error">
+              {exceptionError}
+            </p>
+          )}
+          {patientReference.trim() !== "" || newPatientExceptionConfirmed ? (
+            <p className="mt-3 text-sm text-green-700" data-testid="gate-ready-notice">
+              Die Zuordnungsvoraussetzung für den Folgefragebogen ist erfüllt.
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-amber-700" data-testid="gate-blocked-notice">
+              Vor dem Versand zuerst eine Patientennummer zuordnen oder die Neupatienten-Ausnahme bewusst bestätigen.
+            </p>
+          )}
+        </div>
         <label
           htmlFor="patient_reference"
           className="mb-1 block text-sm font-medium text-gray-700"

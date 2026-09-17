@@ -107,6 +107,7 @@ export default async function DigitalRequestDetailPage({
       patient_relationship: true,
       request_intent: true,
       concern_text: true,
+      new_patient_exception_confirmed_at: true,
       status: true,
       patient_reference: true,
       selected_block_ids: true,
@@ -229,6 +230,13 @@ export default async function DigitalRequestDetailPage({
             {PATIENT_RELATIONSHIP_LABEL[request.patient_relationship ?? ""] ?? "Nicht angegeben"}
           </dd>
 
+          <dt className="font-medium text-gray-500">Praxisentscheidung</dt>
+          <dd className="text-gray-900">
+            {request.new_patient_exception_confirmed_at
+              ? "Neupatienten-Ausnahme bestätigt"
+              : "Keine Neupatienten-Ausnahme bestätigt"}
+          </dd>
+
           <dt className="font-medium text-gray-500">Weg</dt>
           <dd className="text-gray-900">
             {REQUEST_INTENT_LABEL[request.request_intent ?? ""] ?? "Nicht angegeben"}
@@ -261,6 +269,10 @@ export default async function DigitalRequestDetailPage({
       <DigitalRequestDetailClient
         requestId={request.id}
         initialPatientReference={request.patient_reference ?? null}
+        initialPatientRelationship={request.patient_relationship ?? null}
+        initialNewPatientExceptionConfirmed={
+          request.new_patient_exception_confirmed_at != null
+        }
         initialSelectedBlockIds={savedBlockIds}
         blocks={blocks}
         isSent={isSent}

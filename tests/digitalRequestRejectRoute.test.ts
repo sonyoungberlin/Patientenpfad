@@ -263,6 +263,21 @@ describe("POST /api/digital-requests/[id]/reject", () => {
     expect(data.status).toBe("rejected");
   });
 
+  it("kann auch ohne Patientenzuordnung und Ausnahme abgelehnt werden", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_NEW);
+    sendDigitalRequestRejectionEmailMock.mockResolvedValue("practice");
+    pm.digitalRequest.update.mockResolvedValue({});
+
+    const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
+
+    expect(res.status).toBe(200);
+    expect(pm.digitalRequest.update).toHaveBeenCalledWith({
+      where: { id: "dr-1" },
+      data: { status: "rejected" },
+    });
+  });
+
   it("akzeptiert status = 'in_review' zum Ablehnen", async () => {
     getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
     pm.digitalRequest.findFirst.mockResolvedValue({ ...DR_NEW, status: "in_review" });
