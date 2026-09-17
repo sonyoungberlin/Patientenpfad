@@ -102,7 +102,12 @@ export async function PATCH(
   // --- Eigentum + Existenz prüfen ---
   const existing = await prisma.digitalRequest.findFirst({
     where: { id, ...getOwnershipFilter(account), request_type: "patient", deleted_at: null },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      patient_reference: true,
+      questionnaire_session_id: true,
+    },
   });
   if (!existing) {
     return NextResponse.json(
@@ -125,6 +130,84 @@ export async function PATCH(
   }
 
   if (Object.keys(data).length === 0) {
+    return NextResponse.json({ ok: true });
+  }
+
+  if (patientReference !== undefined && patientReference !== null) {
+    const assignmentResult = await prisma.$transaction(async (tx) => {
+      const current = await tx.digitalRequest.findFirst({
+        where: { id: existing.id, deleted_at: null, request_type: "patient" },
+        select: {
+          status: true,
+          patient_reference: true,
+          questionnaire_session_id: true,
+        },
+      });
+
+      if (!current) {
+        return { ok: false as const, status: 404 as const, error: "Anfrage nicht gefunden." };
+      }
+
+      if (
+        current.patient_reference &&
+        current.patient_reference !== patientReference
+      ) {
+        return {
+          ok: false as const,
+          status: 409 as const,
+          error: "Die Anfrage ist bereits einer anderen Patientennummer zugeordnet.",
+        };
+      }
+
+      const session = current.questionnaire_session_id
+        ? await tx.patientQuestionnaireSession.findUnique({
+            where: { id: current.questionnaire_session_id },
+            select: { patient_reference: true },
+          })
+        : null;
+
+      if (
+        session?.patient_reference &&
+        session.patient_reference !== patientReference
+      ) {
+        return {
+          ok: false as const,
+          status: 409 as const,
+          error: "Der verknüpfte Fragebogen ist bereits einer anderen Patientennummer zugeordnet.",
+        };
+      }
+
+      const transactionalData = { ...data, patient_reference: patientReference };
+      if (requestedStatus === "in_review") {
+        if (TERMINAL_STATUSES.has(current.status)) {
+          delete transactionalData.status;
+        } else {
+          transactionalData.status = "in_review";
+        }
+      }
+
+      await tx.digitalRequest.update({
+        where: { id: existing.id },
+        data: transactionalData,
+      });
+
+      if (session && session.patient_reference == null) {
+        await tx.patientQuestionnaireSession.update({
+          where: { id: current.questionnaire_session_id as string },
+          data: { patient_reference: patientReference },
+        });
+      }
+
+      return { ok: true as const };
+    });
+
+    if (!assignmentResult.ok) {
+      return NextResponse.json(
+        { ok: false, error: assignmentResult.error },
+        { status: assignmentResult.status },
+      );
+    }
+
     return NextResponse.json({ ok: true });
   }
 

@@ -24,6 +24,11 @@ jest.mock("@/lib/prisma", () => ({
       update: jest.fn(),
       delete: jest.fn(),
     },
+    patientQuestionnaireSession: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    $transaction: jest.fn(),
   },
 }));
 
@@ -40,6 +45,11 @@ type PrismaMock = {
     update: jest.Mock;
     delete: jest.Mock;
   };
+  patientQuestionnaireSession: {
+    findUnique: jest.Mock;
+    update: jest.Mock;
+  };
+  $transaction: jest.Mock;
 };
 const pm = prisma as unknown as PrismaMock;
 const getSessionAccountMock = getSessionAccount as jest.Mock;
@@ -129,6 +139,10 @@ describe("PATCH /api/digital-requests/[id]", () => {
   beforeEach(() => {
     pm.digitalRequest.findFirst.mockReset();
     pm.digitalRequest.update.mockReset();
+    pm.patientQuestionnaireSession.findUnique.mockReset();
+    pm.patientQuestionnaireSession.update.mockReset();
+    pm.$transaction.mockReset();
+    pm.$transaction.mockImplementation(async (callback: (tx: PrismaMock) => unknown) => callback(pm));
     getSessionAccountMock.mockReset();
   });
 
@@ -176,6 +190,8 @@ describe("PATCH /api/digital-requests/[id]", () => {
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(pm.digitalRequest.update.mock.calls[0][0].data.patient_reference).toBe("PAT-001");
+    expect(pm.patientQuestionnaireSession.findUnique).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
   });
 
   it("trimmt patient_reference", async () => {
@@ -185,6 +201,146 @@ describe("PATCH /api/digital-requests/[id]", () => {
 
     await PATCH(makeRequest("dr-1", { patient_reference: "  PAT-001  " }), CTX("dr-1"));
     expect(pm.digitalRequest.update.mock.calls[0][0].data.patient_reference).toBe("PAT-001");
+  });
+
+  it.each(["pending", "completed"]) (
+    "übernimmt die Referenz in eine verknüpfte %s Session ohne Session-Inhalte zu ändern",
+    async (sessionStatus) => {
+      getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+      pm.digitalRequest.findFirst.mockResolvedValue({
+        id: "dr-1",
+        status: "sent",
+        patient_reference: null,
+        questionnaire_session_id: "session-1",
+      });
+      pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+        patient_reference: null,
+        status: sessionStatus,
+        answers: { QUESTION_1: "Antwort" },
+        frozen_blocks: [{ id: "BLOCK_1" }],
+      });
+      pm.digitalRequest.update.mockResolvedValue({});
+      pm.patientQuestionnaireSession.update.mockResolvedValue({});
+
+      const res = await PATCH(
+        makeRequest("dr-1", { patient_reference: "PAT-001" }),
+        CTX("dr-1"),
+      );
+
+      expect(res.status).toBe(200);
+      expect(pm.digitalRequest.update).toHaveBeenCalledWith({
+        where: { id: "dr-1" },
+        data: { patient_reference: "PAT-001" },
+      });
+      const digitalRequestUpdateData = pm.digitalRequest.update.mock.calls[0][0].data;
+      expect(digitalRequestUpdateData.status).toBeUndefined();
+      expect(digitalRequestUpdateData.questionnaire_session_id).toBeUndefined();
+      expect(digitalRequestUpdateData.new_patient_exception_confirmed_at).toBeUndefined();
+      expect(pm.patientQuestionnaireSession.findUnique).toHaveBeenCalledWith({
+        where: { id: "session-1" },
+        select: { patient_reference: true },
+      });
+      expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledWith({
+        where: { id: "session-1" },
+        data: { patient_reference: "PAT-001" },
+      });
+    },
+  );
+
+  it("behandelt eine bereits identische Session-Referenz idempotent", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: "PAT-001",
+      questionnaire_session_id: "session-1",
+    });
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      patient_reference: "PAT-001",
+    });
+    pm.digitalRequest.update.mockResolvedValue({});
+
+    const res = await PATCH(
+      makeRequest("dr-1", { patient_reference: "PAT-001" }),
+      CTX("dr-1"),
+    );
+
+    expect(res.status).toBe(200);
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.digitalRequest.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("weist eine andere Referenz der verknüpften Session ohne Teilupdate zurück", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: null,
+      questionnaire_session_id: "session-1",
+    });
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      patient_reference: "PAT-999",
+    });
+
+    const res = await PATCH(
+      makeRequest("dr-1", { patient_reference: "PAT-001" }),
+      CTX("dr-1"),
+    );
+
+    expect(res.status).toBe(409);
+    expect(pm.digitalRequest.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+  });
+
+  it("weist eine widersprüchliche DigitalRequest-Referenz ohne Teilupdate zurück", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: "PAT-999",
+      questionnaire_session_id: "session-1",
+    });
+
+    const res = await PATCH(
+      makeRequest("dr-1", { patient_reference: "PAT-001" }),
+      CTX("dr-1"),
+    );
+
+    expect(res.status).toBe(409);
+    expect(pm.patientQuestionnaireSession.findUnique).not.toHaveBeenCalled();
+    expect(pm.digitalRequest.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+  });
+
+  it("verwendet ausschließlich die serverseitige Session-Verknüpfung", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: null,
+      questionnaire_session_id: "server-session",
+    });
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      patient_reference: null,
+    });
+    pm.digitalRequest.update.mockResolvedValue({});
+    pm.patientQuestionnaireSession.update.mockResolvedValue({});
+
+    const res = await PATCH(
+      makeRequest("dr-1", {
+        patient_reference: "PAT-001",
+        questionnaire_session_id: "client-session",
+      }),
+      CTX("dr-1"),
+    );
+
+    expect(res.status).toBe(200);
+    expect(pm.patientQuestionnaireSession.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "server-session" } }),
+    );
+    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "server-session" } }),
+    );
   });
 
   it("löscht patient_reference wenn null übergeben", async () => {
