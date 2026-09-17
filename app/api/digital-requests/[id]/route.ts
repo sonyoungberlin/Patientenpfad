@@ -21,6 +21,8 @@ import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 /** Status-Werte, die über diesen Endpoint nicht verlassen werden dürfen. */
 const TERMINAL_STATUSES = new Set(["sent", "closed", "rejected"]);
 
+class AssignmentConflictError extends Error {}
+
 export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
@@ -134,72 +136,112 @@ export async function PATCH(
   }
 
   if (patientReference !== undefined && patientReference !== null) {
-    const assignmentResult = await prisma.$transaction(async (tx) => {
-      const current = await tx.digitalRequest.findFirst({
-        where: { id: existing.id, deleted_at: null, request_type: "patient" },
-        select: {
-          status: true,
-          patient_reference: true,
-          questionnaire_session_id: true,
-        },
-      });
-
-      if (!current) {
-        return { ok: false as const, status: 404 as const, error: "Anfrage nicht gefunden." };
-      }
-
-      if (
-        current.patient_reference &&
-        current.patient_reference !== patientReference
-      ) {
-        return {
-          ok: false as const,
-          status: 409 as const,
-          error: "Die Anfrage ist bereits einer anderen Patientennummer zugeordnet.",
-        };
-      }
-
-      const session = current.questionnaire_session_id
-        ? await tx.patientQuestionnaireSession.findUnique({
-            where: { id: current.questionnaire_session_id },
-            select: { patient_reference: true },
-          })
-        : null;
-
-      if (
-        session?.patient_reference &&
-        session.patient_reference !== patientReference
-      ) {
-        return {
-          ok: false as const,
-          status: 409 as const,
-          error: "Der verknüpfte Fragebogen ist bereits einer anderen Patientennummer zugeordnet.",
-        };
-      }
-
-      const transactionalData = { ...data, patient_reference: patientReference };
-      if (requestedStatus === "in_review") {
-        if (TERMINAL_STATUSES.has(current.status)) {
-          delete transactionalData.status;
-        } else {
-          transactionalData.status = "in_review";
-        }
-      }
-
-      await tx.digitalRequest.update({
-        where: { id: existing.id },
-        data: transactionalData,
-      });
-
-      if (session && session.patient_reference == null) {
-        await tx.patientQuestionnaireSession.update({
-          where: { id: current.questionnaire_session_id as string },
-          data: { patient_reference: patientReference },
+    let assignmentResult:
+      | { ok: true }
+      | { ok: false; status: 404 | 409; error: string };
+    try {
+      assignmentResult = await prisma.$transaction(async (tx) => {
+        const current = await tx.digitalRequest.findFirst({
+          where: { id: existing.id, deleted_at: null, request_type: "patient" },
+          select: {
+            status: true,
+            patient_reference: true,
+            questionnaire_session_id: true,
+          },
         });
-      }
 
-      return { ok: true as const };
-    });
+        if (!current) {
+          return { ok: false as const, status: 404 as const, error: "Anfrage nicht gefunden." };
+        }
+
+        if (
+          current.patient_reference &&
+          current.patient_reference !== patientReference
+        ) {
+          return {
+            ok: false as const,
+            status: 409 as const,
+            error: "Die Anfrage ist bereits einer anderen Patientennummer zugeordnet.",
+          };
+        }
+
+        const session = current.questionnaire_session_id
+          ? await tx.patientQuestionnaireSession.findUnique({
+              where: { id: current.questionnaire_session_id },
+              select: { patient_reference: true },
+            })
+          : null;
+
+        if (
+          session?.patient_reference &&
+          session.patient_reference !== patientReference
+        ) {
+          return {
+            ok: false as const,
+            status: 409 as const,
+            error: "Der verknüpfte Fragebogen ist bereits einer anderen Patientennummer zugeordnet.",
+          };
+        }
+
+        const transactionalData = { ...data, patient_reference: patientReference };
+        if (requestedStatus === "in_review") {
+          if (TERMINAL_STATUSES.has(current.status)) {
+            delete transactionalData.status;
+          } else {
+            transactionalData.status = "in_review";
+          }
+        }
+
+        const requestUpdate = await tx.digitalRequest.updateMany({
+          where: {
+            id: existing.id,
+            deleted_at: null,
+            request_type: "patient",
+            status: current.status,
+            questionnaire_session_id: current.questionnaire_session_id,
+            OR: [
+              { patient_reference: null },
+              { patient_reference: patientReference },
+            ],
+          },
+          data: transactionalData,
+        });
+        if (requestUpdate.count !== 1) {
+          return {
+            ok: false as const,
+            status: 409 as const,
+            error: "Die Anfrage wurde zwischenzeitlich einer anderen Patientennummer zugeordnet.",
+          };
+        }
+
+        if (session) {
+          const sessionUpdate = await tx.patientQuestionnaireSession.updateMany({
+            where: {
+              id: current.questionnaire_session_id as string,
+              OR: [
+                { patient_reference: null },
+                { patient_reference: patientReference },
+              ],
+            },
+            data: { patient_reference: patientReference },
+          });
+          if (sessionUpdate.count !== 1) {
+            throw new AssignmentConflictError();
+          }
+        }
+
+        return { ok: true as const };
+      });
+    } catch (transactionError) {
+      if (!(transactionError instanceof AssignmentConflictError)) {
+        throw transactionError;
+      }
+      assignmentResult = {
+        ok: false,
+        status: 409,
+        error: "Der verknüpfte Fragebogen wurde zwischenzeitlich einer anderen Patientennummer zugeordnet.",
+      };
+    }
 
     if (!assignmentResult.ok) {
       return NextResponse.json(

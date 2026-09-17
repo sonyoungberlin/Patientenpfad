@@ -22,11 +22,13 @@ jest.mock("@/lib/prisma", () => ({
     digitalRequest: {
       findFirst: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
     },
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     $transaction: jest.fn(),
   },
@@ -43,11 +45,13 @@ type PrismaMock = {
   digitalRequest: {
     findFirst: jest.Mock;
     update: jest.Mock;
+    updateMany: jest.Mock;
     delete: jest.Mock;
   };
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
     update: jest.Mock;
+    updateMany: jest.Mock;
   };
   $transaction: jest.Mock;
 };
@@ -139,8 +143,10 @@ describe("PATCH /api/digital-requests/[id]", () => {
   beforeEach(() => {
     pm.digitalRequest.findFirst.mockReset();
     pm.digitalRequest.update.mockReset();
+    pm.digitalRequest.updateMany.mockReset().mockResolvedValue({ count: 1 });
     pm.patientQuestionnaireSession.findUnique.mockReset();
     pm.patientQuestionnaireSession.update.mockReset();
+    pm.patientQuestionnaireSession.updateMany.mockReset().mockResolvedValue({ count: 1 });
     pm.$transaction.mockReset();
     pm.$transaction.mockImplementation(async (callback: (tx: PrismaMock) => unknown) => callback(pm));
     getSessionAccountMock.mockReset();
@@ -189,9 +195,9 @@ describe("PATCH /api/digital-requests/[id]", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(pm.digitalRequest.update.mock.calls[0][0].data.patient_reference).toBe("PAT-001");
+    expect(pm.digitalRequest.updateMany.mock.calls[0][0].data.patient_reference).toBe("PAT-001");
     expect(pm.patientQuestionnaireSession.findUnique).not.toHaveBeenCalled();
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("trimmt patient_reference", async () => {
@@ -200,7 +206,7 @@ describe("PATCH /api/digital-requests/[id]", () => {
     pm.digitalRequest.update.mockResolvedValue({});
 
     await PATCH(makeRequest("dr-1", { patient_reference: "  PAT-001  " }), CTX("dr-1"));
-    expect(pm.digitalRequest.update.mock.calls[0][0].data.patient_reference).toBe("PAT-001");
+    expect(pm.digitalRequest.updateMany.mock.calls[0][0].data.patient_reference).toBe("PAT-001");
   });
 
   it.each(["pending", "completed"]) (
@@ -228,11 +234,19 @@ describe("PATCH /api/digital-requests/[id]", () => {
       );
 
       expect(res.status).toBe(200);
-      expect(pm.digitalRequest.update).toHaveBeenCalledWith({
-        where: { id: "dr-1" },
+      expect(pm.digitalRequest.updateMany).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          id: "dr-1",
+          status: "sent",
+          questionnaire_session_id: "session-1",
+          OR: [
+            { patient_reference: null },
+            { patient_reference: "PAT-001" },
+          ],
+        }),
         data: { patient_reference: "PAT-001" },
       });
-      const digitalRequestUpdateData = pm.digitalRequest.update.mock.calls[0][0].data;
+      const digitalRequestUpdateData = pm.digitalRequest.updateMany.mock.calls[0][0].data;
       expect(digitalRequestUpdateData.status).toBeUndefined();
       expect(digitalRequestUpdateData.questionnaire_session_id).toBeUndefined();
       expect(digitalRequestUpdateData.new_patient_exception_confirmed_at).toBeUndefined();
@@ -240,8 +254,14 @@ describe("PATCH /api/digital-requests/[id]", () => {
         where: { id: "session-1" },
         select: { patient_reference: true },
       });
-      expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledWith({
-        where: { id: "session-1" },
+      expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "session-1",
+          OR: [
+            { patient_reference: null },
+            { patient_reference: "PAT-001" },
+          ],
+        },
         data: { patient_reference: "PAT-001" },
       });
     },
@@ -266,8 +286,8 @@ describe("PATCH /api/digital-requests/[id]", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
-    expect(pm.digitalRequest.update).toHaveBeenCalledTimes(1);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
+    expect(pm.digitalRequest.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it("weist eine andere Referenz der verknüpften Session ohne Teilupdate zurück", async () => {
@@ -288,8 +308,8 @@ describe("PATCH /api/digital-requests/[id]", () => {
     );
 
     expect(res.status).toBe(409);
-    expect(pm.digitalRequest.update).not.toHaveBeenCalled();
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.digitalRequest.updateMany).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("weist eine widersprüchliche DigitalRequest-Referenz ohne Teilupdate zurück", async () => {
@@ -308,8 +328,8 @@ describe("PATCH /api/digital-requests/[id]", () => {
 
     expect(res.status).toBe(409);
     expect(pm.patientQuestionnaireSession.findUnique).not.toHaveBeenCalled();
-    expect(pm.digitalRequest.update).not.toHaveBeenCalled();
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.digitalRequest.updateMany).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
   });
 
   it("verwendet ausschließlich die serverseitige Session-Verknüpfung", async () => {
@@ -338,9 +358,67 @@ describe("PATCH /api/digital-requests/[id]", () => {
     expect(pm.patientQuestionnaireSession.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "server-session" } }),
     );
-    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "server-session" } }),
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "server-session" }),
+      }),
     );
+  });
+
+  it("verhindert, dass ein konkurrierendes Assignment die gewinnende Referenz überschreibt", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: null,
+      questionnaire_session_id: "session-1",
+    });
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      patient_reference: null,
+    });
+    pm.digitalRequest.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await PATCH(
+      makeRequest("dr-1", { patient_reference: "PATIENT-B" }),
+      CTX("dr-1"),
+    );
+
+    expect(res.status).toBe(409);
+    expect(pm.digitalRequest.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [
+            { patient_reference: null },
+            { patient_reference: "PATIENT-B" },
+          ],
+        }),
+      }),
+    );
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("rollt den DigitalRequest-CAS zurück, wenn das Session-Assignment das Race verliert", async () => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: null,
+      questionnaire_session_id: "session-1",
+    });
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      patient_reference: null,
+    });
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await PATCH(
+      makeRequest("dr-1", { patient_reference: "PATIENT-B" }),
+      CTX("dr-1"),
+    );
+
+    expect(res.status).toBe(409);
+    expect(pm.$transaction).toHaveBeenCalledTimes(1);
+    expect(pm.digitalRequest.updateMany).toHaveBeenCalledTimes(1);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it("löscht patient_reference wenn null übergeben", async () => {
@@ -400,7 +478,7 @@ describe("PATCH /api/digital-requests/[id]", () => {
     pm.digitalRequest.update.mockResolvedValue({});
 
     await PATCH(makeRequest("dr-1", { patient_reference: "P-1", status: "in_review" }), CTX("dr-1"));
-    expect(pm.digitalRequest.update.mock.calls[0][0].data.status).toBe("in_review");
+    expect(pm.digitalRequest.updateMany.mock.calls[0][0].data.status).toBe("in_review");
   });
 
   it("setzt status=in_review NICHT wenn aktueller Status 'sent'", async () => {
@@ -409,7 +487,7 @@ describe("PATCH /api/digital-requests/[id]", () => {
     pm.digitalRequest.update.mockResolvedValue({});
 
     await PATCH(makeRequest("dr-1", { patient_reference: "P-1", status: "in_review" }), CTX("dr-1"));
-    expect(pm.digitalRequest.update.mock.calls[0][0].data.status).toBeUndefined();
+    expect(pm.digitalRequest.updateMany.mock.calls[0][0].data.status).toBeUndefined();
   });
 
   it("lehnt status=sent ab (400)", async () => {
