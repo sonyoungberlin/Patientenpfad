@@ -443,7 +443,8 @@ model PatientQuestionnaireSession {
   /// Phase 3a: Quelle der Session.
   /// Whitelist: "internal_link" (interner Praxis-Link, bisheriges Verhalten)
   /// | "website" (öffentliches Website-Formular, ab Phase 3b genutzt)
-  /// | "kiosk_direct" (direkt auf einem autorisierten Praxisgerät).
+  /// | "kiosk_direct" (direkt auf einem autorisierten Praxisgerät)
+  /// | "digital_request_follow_up" (serverseitig geprüfter Folgefragebogen).
   /// Default ist "internal_link", damit Bestandszeilen und alle bestehenden
   /// Codepfade unverändert klassifiziert sind. Kein DB-Enum, konsistent zu
   /// `PrefillRun.source` und `CaseSession.preparation_mode`.

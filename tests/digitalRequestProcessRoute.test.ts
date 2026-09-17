@@ -254,19 +254,50 @@ describe("POST /api/digital-requests/[id]/process", () => {
     expect(createQuestionnaireSessionMock).not.toHaveBeenCalled();
   });
 
-  it("prüft das Gate vor der unveränderten Session-Referenzpflicht", async () => {
+  it("erzeugt eine unzugeordnete Session nach bestätigter Ausnahme", async () => {
     getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
     pm.digitalRequest.findFirst.mockResolvedValue({
       ...DR_READY,
       patient_reference: null,
       new_patient_exception_confirmed_at: new Date(),
     });
+    createQuestionnaireSessionMock.mockResolvedValue(SESSION_RESULT);
+    sendDigitalRequestTokenEmailMock.mockResolvedValue("practice");
+    pm.digitalRequest.update.mockResolvedValue({});
 
     const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
-    expect(res.status).toBe(400);
-    const json = await res.json();
-    expect(json.error).toMatch(/Patientenreferenz/i);
-    expect(createQuestionnaireSessionMock).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    const [input] = createQuestionnaireSessionMock.mock.calls[0];
+    expect(input.patientReference).toBeNull();
+    expect(input.allowUnassignedDigitalRequestFollowUp).toBe(true);
+    expect(input.source).toBe("digital_request_follow_up");
+    expect(input.ownerPracticeId).toBe("p-1");
+    expect(input.selectedBlockIds).toEqual(["IDENTITAET"]);
+    expect(input.practiceConfirmations).toEqual([]);
+    expect(sendDigitalRequestTokenEmailMock.mock.calls[0][0].questionnaireUrl)
+      .not.toContain("PAT-001");
+  });
+
+  it("übernimmt Confirmation-Hinweise auch im Ausnahmeweg", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      ...DR_READY,
+      patient_reference: null,
+      new_patient_exception_confirmed_at: new Date(),
+    });
+    createQuestionnaireSessionMock.mockResolvedValue(SESSION_RESULT);
+    sendDigitalRequestTokenEmailMock.mockResolvedValue("practice");
+    pm.digitalRequest.update.mockResolvedValue({});
+
+    await POST(
+      makeRequest("dr-1", {
+        selected_confirmation_ids: ["PRACTICE_CONFIRMATION_3"],
+      }),
+      CTX("dr-1"),
+    );
+
+    expect(createQuestionnaireSessionMock.mock.calls[0][0].practiceConfirmations)
+      .toEqual([{ id: "PRACTICE_CONFIRMATION_3", text: "Ich bestätige C." }]);
   });
 
   it("gibt 400 zurück wenn selected_block_ids null ist", async () => {

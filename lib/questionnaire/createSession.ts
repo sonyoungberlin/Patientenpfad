@@ -66,13 +66,21 @@ type PublicCheckInCreator = {
   source: "public_check_in";
 };
 
+type DigitalRequestFollowUpCreator = {
+  ownerAccountId: string;
+  ownerPracticeId: string;
+  createdByKioskDeviceId?: never;
+  source: "digital_request_follow_up";
+};
+
 export type CreateSessionInput = {
   /** Bereits validierte und gefilterte Block-IDs (min. 1 Eintrag). */
   selectedBlockIds: string[];
-  /** Interne Patientenreferenz; nur bei exakt erlaubten initialen Check-ins null. */
+  /** Interne Patientenreferenz; null ist nur bei explizit erlaubten Sonderpfaden zulässig. */
   patientReference: string | null;
   allowUnassignedKioskCheckIn?: boolean;
   allowUnassignedPublicCheckIn?: boolean;
+  allowUnassignedDigitalRequestFollowUp?: boolean;
   /** "de" | "en", nach `normalizeQuestionnaireLanguage` normalisiert. */
   patientLanguage: string;
   /** Optionale Verknüpfung zur auslösenden InquirySession. */
@@ -91,14 +99,19 @@ export type CreateSessionInput = {
   /** Bereits serverseitig aufgelöste Practice-Texte für den Session-Snapshot. */
   practiceConfirmations?: PracticeConfirmationSlot[];
   patientCopyReturnEmail?: string | null;
-  /** Herkunft der internen Session; Default bleibt der bisherige Link-Workflow. */
-  source?: "internal_link" | "practice_direct" | "kiosk_direct" | "public_check_in";
+  /** Herkunft der Session; Default bleibt der bisherige Link-Workflow. */
+  source?: "internal_link" | "practice_direct" | "kiosk_direct" | "public_check_in" | "digital_request_follow_up";
   sessionKind?: "patient_communication" | "internal_documentation";
   internalWorkflowId?: InternalWorkflowId | null;
   internalBlockLayout?: InternalBlockPlacement[];
   internalDocumentTitle?: InternalDocumentTitleMetadata;
   databaseClient?: Pick<Prisma.TransactionClient, "patientQuestionnaireSession">;
-} & (AccountSessionCreator | KioskSessionCreator | PublicCheckInCreator);
+} & (
+  | AccountSessionCreator
+  | KioskSessionCreator
+  | PublicCheckInCreator
+  | DigitalRequestFollowUpCreator
+);
 
 export type CreateSessionResult = {
   sessionId: string;
@@ -122,6 +135,7 @@ export async function createQuestionnaireSession(
     patientReference,
     allowUnassignedKioskCheckIn = false,
     allowUnassignedPublicCheckIn = false,
+    allowUnassignedDigitalRequestFollowUp = false,
     patientLanguage,
     ownerAccountId,
     ownerPracticeId,
@@ -157,10 +171,23 @@ export async function createQuestionnaireSession(
     Boolean(ownerPracticeId) &&
     !createdByKioskDeviceId &&
     hasExactPublicCheckInBlocks(selectedBlockIds);
+  const isUnassignedDigitalRequestFollowUp = patientReference === null &&
+    allowUnassignedDigitalRequestFollowUp &&
+    source === "digital_request_follow_up" &&
+    context === "patient" &&
+    sessionKind === "patient_communication" &&
+    Boolean(ownerAccountId) &&
+    Boolean(ownerPracticeId) &&
+    !createdByKioskDeviceId;
   if (source === "public_check_in" && (ownerAccountId || !ownerPracticeId || createdByKioskDeviceId)) {
     throw new Error("Public-Check-in benötigt eine Praxis ohne Account oder Kioskgerät.");
   }
-  if (patientReference === null && !isUnassignedKioskCheckIn && !isUnassignedPublicCheckIn) {
+  if (
+    patientReference === null &&
+    !isUnassignedKioskCheckIn &&
+    !isUnassignedPublicCheckIn &&
+    !isUnassignedDigitalRequestFollowUp
+  ) {
     throw new Error("Patientenreferenz ist erforderlich.");
   }
   if (typeof patientReference === "string" && patientReference.trim() === "") {

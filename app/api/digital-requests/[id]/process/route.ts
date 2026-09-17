@@ -12,7 +12,7 @@
  * Fehlerverhalten:
  *   - 404: Anfrage unbekannt oder fremde Practice.
  *   - 409: Anfrage bereits "sent" oder "closed".
- *   - 400: patient_reference fehlt | selected_block_ids fehlen / ungültig |
+ *   - 400: Gate/Patientenreferenz fehlt | selected_block_ids fehlen / ungültig |
  *          submitter_email fehlt.
  *   - 500 (mail_failed): Mail-Versand schlug fehl; DigitalRequest wird
  *          NICHT auf "sent" gesetzt.
@@ -118,12 +118,15 @@ export async function POST(
     );
   }
 
-  // --- patient_reference muss vorhanden sein (400) ---
+  // --- patient_reference ist regulär erforderlich; die bestätigte
+  //     Neupatienten-Ausnahme darf den Session-Service einmalig passieren ---
   const patientReference =
     typeof dr.patient_reference === "string"
       ? dr.patient_reference.trim()
       : "";
-  if (!patientReference) {
+  const hasConfirmedNewPatientException =
+    dr.new_patient_exception_confirmed_at != null;
+  if (!patientReference && !hasConfirmedNewPatientException) {
     return NextResponse.json(
       { ok: false, error: "Patientenreferenz fehlt. Bitte zuerst die Anfrage ausfüllen." },
       { status: 400 },
@@ -169,7 +172,13 @@ export async function POST(
   const origin = req.nextUrl.origin;
   const { sessionId, tokenLink } = await createQuestionnaireSession({
     selectedBlockIds,
-    patientReference,
+    patientReference: patientReference || null,
+    ...(hasConfirmedNewPatientException && !patientReference
+      ? {
+          allowUnassignedDigitalRequestFollowUp: true,
+          source: "digital_request_follow_up" as const,
+        }
+      : {}),
     patientLanguage: "de",
     ownerAccountId: dr.owner_account_id,
     ownerPracticeId: dr.owner_practice_id ?? null,
