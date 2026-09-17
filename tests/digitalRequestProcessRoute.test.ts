@@ -118,6 +118,12 @@ const DR_READY = {
   id: "dr-1",
   status: "in_review",
   submitter_email: "patient@example.com",
+  submitter_name: "Erika Muster",
+  birth_date: "1980-01-02",
+  patient_relationship: "new_patient",
+  request_intent: "digital_request",
+  concern_text: "Bitte um Rückruf",
+  requested_topics: ["AU", "PRESCRIPTION"],
   patient_reference: "PAT-001",
   new_patient_exception_confirmed_at: null,
   selected_block_ids: ["IDENTITAET"],
@@ -265,7 +271,12 @@ describe("POST /api/digital-requests/[id]/process", () => {
     sendDigitalRequestTokenEmailMock.mockResolvedValue("practice");
     pm.digitalRequest.update.mockResolvedValue({});
 
-    const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
+    const res = await POST(makeRequest("dr-1", {
+      digital_request_snapshot: {
+        submitter_name: "Client-Manipulation",
+        requested_topics: ["FORGED"],
+      },
+    }), CTX("dr-1"));
     expect(res.status).toBe(200);
     const [input] = createQuestionnaireSessionMock.mock.calls[0];
     expect(input.patientReference).toBeNull();
@@ -273,9 +284,32 @@ describe("POST /api/digital-requests/[id]/process", () => {
     expect(input.source).toBe("digital_request_follow_up");
     expect(input.ownerPracticeId).toBe("p-1");
     expect(input.selectedBlockIds).toEqual(["IDENTITAET"]);
+    expect(input.digitalRequestSnapshot).toEqual({
+      submitter_name: "Erika Muster",
+      birth_date: "1980-01-02",
+      submitter_email: "patient@example.com",
+      patient_relationship: "new_patient",
+      request_intent: "digital_request",
+      concern_text: "Bitte um Rückruf",
+      requested_topics: ["AU", "PRESCRIPTION"],
+    });
     expect(input.practiceConfirmations).toEqual([]);
     expect(sendDigitalRequestTokenEmailMock.mock.calls[0][0].questionnaireUrl)
       .not.toContain("PAT-001");
+  });
+
+  it("übergibt bei vorhandener Patientenreferenz keinen Snapshot", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_READY);
+    createQuestionnaireSessionMock.mockResolvedValue(SESSION_RESULT);
+    sendDigitalRequestTokenEmailMock.mockResolvedValue("practice");
+    pm.digitalRequest.update.mockResolvedValue({});
+
+    const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
+
+    expect(res.status).toBe(200);
+    expect(createQuestionnaireSessionMock.mock.calls[0][0].digitalRequestSnapshot)
+      .toBeUndefined();
   });
 
   it("übernimmt Confirmation-Hinweise auch im Ausnahmeweg", async () => {

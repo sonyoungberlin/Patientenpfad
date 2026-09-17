@@ -77,6 +77,44 @@ export default function QuestionnaireDetailsDisclosure({ sessionId }: Props) {
 
       {detail && (
         <div data-q-details-loaded={sessionId}>
+          {detail.digitalRequestContext && (
+            <section
+              data-q-digital-request-context={sessionId}
+              style={{
+                marginBottom: "0.75rem",
+                padding: "0.6rem 0.75rem",
+                border: "1px solid var(--border, #e2e8f0)",
+                borderRadius: "var(--radius)",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: "0.4rem" }}>
+                Ursprüngliche digitale Anfrage
+              </div>
+              {detail.digitalRequestContext.submitter_name && (
+                <div>Name: {detail.digitalRequestContext.submitter_name}</div>
+              )}
+              {detail.digitalRequestContext.birth_date && (
+                <div>Geburtsdatum: {detail.digitalRequestContext.birth_date}</div>
+              )}
+              {detail.digitalRequestContext.submitter_email && (
+                <div>E-Mail: {detail.digitalRequestContext.submitter_email}</div>
+              )}
+              {detail.digitalRequestContext.patient_relationship_label && (
+                <div>Patientenangabe: {detail.digitalRequestContext.patient_relationship_label}</div>
+              )}
+              {detail.digitalRequestContext.request_intent_label && (
+                <div>Art der Anfrage: {detail.digitalRequestContext.request_intent_label}</div>
+              )}
+              {detail.digitalRequestContext.concern_text && (
+                <div>Besuchsgrund: {detail.digitalRequestContext.concern_text}</div>
+              )}
+              {detail.digitalRequestContext.requested_topic_labels.length > 0 && (
+                <div>
+                  Anfragekategorien: {detail.digitalRequestContext.requested_topic_labels.join(", ")}
+                </div>
+              )}
+            </section>
+          )}
           <MedicalRecordNoteCopyButton
             sessionId={sessionId}
             noteText={detail.noteText}

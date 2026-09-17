@@ -420,6 +420,10 @@ model PatientQuestionnaireSession {
   /// NULL = Legacy-Session (bisheriges Verhalten).
   frozen_blocks Json?
 
+  /// Snapshot der ursprünglichen DigitalRequest für unzugeordnete Folgefragebögen.
+  /// NULL = keine unzugeordnete DigitalRequest-Folge-Session oder Legacy-Session.
+  digital_request_snapshot Json?
+
   /// Patientenantworten: Record<questionId, string> (nach Einreichung)
   answers Json?
 

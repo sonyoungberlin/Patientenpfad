@@ -51,6 +51,7 @@ export async function GET(
         deduplicated_questions: true,
         answers: true,
         frozen_blocks: true,
+        digital_request_snapshot: true,
         source: true,
         session_kind: true,
         internal_workflow_id: true,

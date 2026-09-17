@@ -41,6 +41,7 @@ import {
 } from "@/lib/questionnaire/confirmation";
 import { hasExactKioskCheckInBlocks } from "@/lib/questionnaire/kioskCheckIn";
 import { hasExactPublicCheckInBlocks } from "@/lib/questionnaire/publicCheckIn";
+import type { DigitalRequestFollowUpSnapshot } from "@/lib/questionnaire/digitalRequestSnapshot";
 
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 Stunden
 
@@ -105,6 +106,7 @@ export type CreateSessionInput = {
   internalWorkflowId?: InternalWorkflowId | null;
   internalBlockLayout?: InternalBlockPlacement[];
   internalDocumentTitle?: InternalDocumentTitleMetadata;
+  digitalRequestSnapshot?: DigitalRequestFollowUpSnapshot | null;
   databaseClient?: Pick<Prisma.TransactionClient, "patientQuestionnaireSession">;
 } & (
   | AccountSessionCreator
@@ -152,6 +154,7 @@ export async function createQuestionnaireSession(
     internalWorkflowId,
     internalBlockLayout,
     internalDocumentTitle,
+    digitalRequestSnapshot,
     databaseClient = prisma,
   } = input;
 
@@ -265,6 +268,9 @@ export async function createQuestionnaireSession(
       frozen_blocks: frozenBlocks.length > 0
         ? (frozenBlocksSnapshot as unknown as Prisma.InputJsonValue)
         : Prisma.JsonNull,
+      ...(isUnassignedDigitalRequestFollowUp && digitalRequestSnapshot
+        ? { digital_request_snapshot: digitalRequestSnapshot as unknown as Prisma.InputJsonValue }
+        : {}),
       patient_language: patientLanguage,
       context,
       status: "pending",

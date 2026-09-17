@@ -32,6 +32,7 @@ import {
 } from "@/lib/questionnaire/confirmation";
 import { appendSelfCheckInQrFlag } from "@/lib/selfCheckInQr";
 import { hasDigitalRequestFollowUpGate } from "@/lib/digitalRequests/followUpGate";
+import { buildDigitalRequestFollowUpSnapshot } from "@/lib/questionnaire/digitalRequestSnapshot";
 
 /** Status-Werte, bei denen kein erneuter Prozess erlaubt ist. */
 const TERMINAL_STATUSES = new Set(["sent", "closed", "rejected"]);
@@ -62,7 +63,13 @@ export async function POST(
     select: {
       id: true,
       status: true,
+      submitter_name: true,
       submitter_email: true,
+      birth_date: true,
+      patient_relationship: true,
+      request_intent: true,
+      concern_text: true,
+      requested_topics: true,
       patient_reference: true,
       new_patient_exception_confirmed_at: true,
       selected_block_ids: true,
@@ -183,6 +190,19 @@ export async function POST(
     ownerAccountId: dr.owner_account_id,
     ownerPracticeId: dr.owner_practice_id ?? null,
     birthDateHash: dr.birth_date_hash ?? null,
+    ...(!patientReference
+      ? {
+          digitalRequestSnapshot: buildDigitalRequestFollowUpSnapshot({
+            submitter_name: dr.submitter_name,
+            birth_date: dr.birth_date,
+            submitter_email: dr.submitter_email,
+            patient_relationship: dr.patient_relationship,
+            request_intent: dr.request_intent,
+            concern_text: dr.concern_text,
+            requested_topics: dr.requested_topics,
+          }),
+        }
+      : {}),
     practiceConfirmations,
     origin,
   });

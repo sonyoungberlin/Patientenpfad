@@ -16,6 +16,10 @@ import {
   resolveInternalWorkflow,
 } from "./internalWorkflowRegistry";
 import { buildQuestionnaireExportFilename } from "./questionnaireExportFilename";
+import {
+  parseDigitalRequestInboxContext,
+  type DigitalRequestInboxContext,
+} from "./digitalRequestSnapshot";
 
 export type QuestionnaireInboxDetailSource = {
   patient_reference: string | null;
@@ -24,6 +28,7 @@ export type QuestionnaireInboxDetailSource = {
   deduplicated_questions: unknown;
   answers: unknown;
   frozen_blocks: unknown;
+  digital_request_snapshot?: unknown;
   source: string;
   session_kind: string;
   internal_workflow_id: string | null;
@@ -38,6 +43,7 @@ export type QuestionnaireInboxDetail = {
   derivedValues: DerivedValues;
   attentionHints: ReturnType<typeof computeQuestionnaireAttentionHints>;
   visibleQuestionIds: string[];
+  digitalRequestContext: DigitalRequestInboxContext | null;
 };
 
 function buildVisibleQuestionIds(
@@ -139,6 +145,7 @@ export function buildQuestionnaireInboxDetail(
     derivedValues,
     attentionHints: computeQuestionnaireAttentionHints(answers, visibleQuestionIds),
     visibleQuestionIds: [...visibleQuestionIds],
+    digitalRequestContext: parseDigitalRequestInboxContext(session.digital_request_snapshot),
     xmlFilename: session.session_kind === "internal_documentation" && (isNewBlockBased || internalWorkflow)
       ? buildQuestionnaireExportFilename(
           {
