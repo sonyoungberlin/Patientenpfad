@@ -35,6 +35,7 @@ import { requirePracticeRoleFromCookies } from "@/lib/authz";
 import CopyPublicLinkButton from "@/components/websiteForms/CopyPublicLinkButton";
 import NotificationEmailField from "@/components/practice/NotificationEmailField";
 import PersistentAutoDownloadDeviceSettings from "@/components/practice/PersistentAutoDownloadDeviceSettings";
+import PublicPatientCheckInLink from "@/components/practice/PublicPatientCheckInLink";
 import PublicPracticeProfileForm from "@/components/practice/PublicPracticeProfileForm";
 import QuestionnaireAutoDownloadDeviceSettings from "@/components/practice/QuestionnaireAutoDownloadDeviceSettings";
 import QuestionnaireAutoExportModeSettings from "@/components/practice/QuestionnaireAutoExportModeSettings";
@@ -108,6 +109,7 @@ export default async function PracticeMembersPage({
   const publicPracticeSlug = practiceSettings?.public_slug ?? practice.slug;
   const anfrageLink = `${origin}/anfrage/${publicPracticeSlug}`;
   const bewerbenLink = `${origin}/bewerben/${publicPracticeSlug}`;
+  const patientCheckInLink = `${origin}/formular/${publicPracticeSlug}/check-in`;
 
   const sp = (await searchParams) ?? {};
   const errorMsg = Array.isArray(sp.error) ? sp.error[0] : sp.error;
@@ -230,6 +232,10 @@ export default async function PracticeMembersPage({
         initialPublicName={practiceSettings?.public_name ?? ""}
         initialPublicSlug={practiceSettings?.public_slug ?? null}
       />
+
+      {practice.patient_communication_enabled && (
+        <PublicPatientCheckInLink link={patientCheckInLink} />
+      )}
 
       {practice.patient_communication_enabled && (
         <section

@@ -40,6 +40,18 @@ jest.mock("@/components/websiteForms/CopyPublicLinkButton", () => ({
     (<button data-testid="copy-btn" data-link={link}>Link kopieren</button>) as unknown as React.JSX.Element,
 }));
 
+jest.mock("@/components/practice/PublicPatientCheckInLink", () => ({
+  __esModule: true,
+  default: ({ link }: { link: string }) => (
+    <section data-testid="patient-check-in-link-section" data-qr-value={link}>
+      <h2>Patienten-Check-in — Öffentlicher Link &amp; QR-Code</h2>
+      <input readOnly value={link} data-testid="patient-check-in-link-input" />
+      <button data-link={link}>Link kopieren</button>
+      <a href={link} target="_blank" rel="noopener noreferrer">Check-in öffnen</a>
+    </section>
+  ) as unknown as React.JSX.Element,
+}));
+
 jest.mock("@/components/practice/NotificationEmailField", () => ({
   __esModule: true,
   default: ({ variant }: { variant: string }) =>
@@ -317,6 +329,7 @@ describe("practice/members — Digitale Anfrage Link-Abschnitt", () => {
     const r = await runPage();
     expect(r.markup).toContain("https://praxis.example.com/anfrage/praxis-am-markt");
     expect(r.markup).toContain("https://praxis.example.com/bewerben/praxis-am-markt");
+    expect(r.markup).toContain("https://praxis.example.com/formular/praxis-am-markt/check-in");
     expect(r.markup).toContain("Stabile URL-Kennung");
   });
 
@@ -325,5 +338,24 @@ describe("practice/members — Digitale Anfrage Link-Abschnitt", () => {
     const r = await runPage();
     expect(r.markup).toContain("https://praxis.example.com/anfrage/p1");
     expect(r.markup).toContain("https://praxis.example.com/bewerben/p1");
+  });
+
+  it("zeigt den Patienten-Check-in mit identischer URL für Link, Öffnen und QR-Code", async () => {
+    getCookies.mockResolvedValue(makeAccount("OWNER"));
+    pm.practice.findUnique.mockResolvedValue({
+      digital_request_notification_email: null,
+      office_application_notification_email: null,
+      public_name: "Praxis am Markt",
+      public_slug: "praxis-am-markt",
+    });
+    const r = await runPage();
+    const link = "https://praxis.example.com/formular/praxis-am-markt/check-in";
+    expect(r.markup).toContain("Patienten-Check-in");
+    expect(r.markup).toContain(`data-qr-value="${link}"`);
+    expect(r.markup).toContain(`data-link="${link}"`);
+    expect(r.markup).toContain(`href="${link}"`);
+    expect(r.markup).toContain("Check-in öffnen");
+    expect(r.markup).toContain("https://praxis.example.com/anfrage/praxis-am-markt");
+    expect(r.markup).toContain("https://praxis.example.com/bewerben/praxis-am-markt");
   });
 });
