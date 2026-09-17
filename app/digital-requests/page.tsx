@@ -30,6 +30,16 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Abgelehnt",
 };
 
+const PATIENT_RELATIONSHIP_LABEL: Record<string, string> = {
+  existing_patient: "Bereits Patient/in",
+  new_patient: "Neu in der Praxis",
+};
+
+const REQUEST_INTENT_LABEL: Record<string, string> = {
+  existing_appointment: "Termin",
+  digital_request: "Digitale Anfrage",
+};
+
 function statusBadgeClass(status: string): string {
   switch (status) {
     case "new":
@@ -83,6 +93,9 @@ export default async function DigitalRequestsPage() {
       submitter_name: true,
       status: true,
       requested_topics: true,
+      patient_relationship: true,
+      request_intent: true,
+      concern_text: true,
     },
   });
 
@@ -102,6 +115,8 @@ export default async function DigitalRequestsPage() {
                 <th className="pb-2 pr-4 font-medium">Name</th>
                 <th className="pb-2 pr-4 font-medium">Eingegangen</th>
                 <th className="pb-2 pr-4 font-medium">Status</th>
+                <th className="pb-2 pr-4 font-medium">Selbstauskunft</th>
+                <th className="pb-2 pr-4 font-medium">Weg / Grund</th>
                 <th className="pb-2 pr-4 font-medium">Anliegen</th>
                 <th className="pb-2 font-medium"></th>
               </tr>
@@ -121,6 +136,15 @@ export default async function DigitalRequestsPage() {
                     >
                       {STATUS_LABEL[req.status] ?? req.status}
                     </span>
+                  </td>
+                  <td className="py-3 pr-4 text-gray-600">
+                    {PATIENT_RELATIONSHIP_LABEL[req.patient_relationship ?? ""] ?? "Nicht angegeben"}
+                  </td>
+                  <td className="py-3 pr-4 text-gray-600">
+                    {REQUEST_INTENT_LABEL[req.request_intent ?? ""] ?? "Nicht angegeben"}
+                    {req.request_intent === "existing_appointment" && req.concern_text
+                      ? `: ${req.concern_text}`
+                      : null}
                   </td>
                   <td className="py-3 pr-4 text-gray-600">
                     {Array.isArray(req.requested_topics) && req.requested_topics.length > 0

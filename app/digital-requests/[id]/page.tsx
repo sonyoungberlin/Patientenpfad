@@ -37,6 +37,16 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Abgelehnt",
 };
 
+const PATIENT_RELATIONSHIP_LABEL: Record<string, string> = {
+  existing_patient: "Bereits Patient/in",
+  new_patient: "Neu in der Praxis",
+};
+
+const REQUEST_INTENT_LABEL: Record<string, string> = {
+  existing_appointment: "Termin",
+  digital_request: "Digitale Anfrage",
+};
+
 function statusBadgeClass(status: string): string {
   switch (status) {
     case "new":
@@ -94,6 +104,9 @@ export default async function DigitalRequestDetailPage({
       submitter_email: true,
       birth_date: true,
       requested_topics: true,
+      patient_relationship: true,
+      request_intent: true,
+      concern_text: true,
       status: true,
       patient_reference: true,
       selected_block_ids: true,
@@ -210,6 +223,25 @@ export default async function DigitalRequestDetailPage({
               {STATUS_LABEL[request.status] ?? request.status}
             </span>
           </dd>
+
+          <dt className="font-medium text-gray-500">Selbstauskunft</dt>
+          <dd className="text-gray-900">
+            {PATIENT_RELATIONSHIP_LABEL[request.patient_relationship ?? ""] ?? "Nicht angegeben"}
+          </dd>
+
+          <dt className="font-medium text-gray-500">Weg</dt>
+          <dd className="text-gray-900">
+            {REQUEST_INTENT_LABEL[request.request_intent ?? ""] ?? "Nicht angegeben"}
+          </dd>
+
+          {request.request_intent === "existing_appointment" && (
+            <>
+              <dt className="font-medium text-gray-500">Termin-Grund</dt>
+              <dd className="whitespace-pre-wrap text-gray-900">
+                {request.concern_text || "Nicht angegeben"}
+              </dd>
+            </>
+          )}
 
           {Array.isArray(request.requested_topics) &&
             request.requested_topics.length > 0 && (

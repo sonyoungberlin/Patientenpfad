@@ -25,11 +25,11 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validateSlug } from "@/lib/websiteForms/slug";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
-import { DIGITAL_REQUEST_TOPICS } from "@/lib/digitalRequests/topics";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 import { getPublicPracticeIdentityById } from "@/lib/practice/publicIdentity";
 import { PublicPracticeFooter } from "@/components/practice/PublicPracticeFooter";
 import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
+import { DigitalRequestIntakeFields } from "@/components/DigitalRequestIntakeFields";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -79,12 +79,10 @@ export default async function AnfragePage({
     <main style={{ maxWidth: "38rem", margin: "0 auto", padding: "2.5rem 1rem" }}>
       <h1>Digitales Anliegen</h1>
       <p style={{ marginBottom: "0.5rem", color: "#555" }}>
-        Bitte wählen Sie aus, wofür Sie einen Fragebogenlink anfordern möchten.
-        Die Praxis prüft Ihre Angaben und sendet Ihnen anschließend den passenden Link.
+        Bitte wählen Sie aus, was Sie in unserer Praxis erledigen möchten.
       </p>
       <p style={{ marginBottom: "2rem", color: "#777" }}>
-        Wenn Ihr Anliegen nicht zu diesen Punkten passt, schreiben Sie uns bitte
-        wie gewohnt eine Nachricht.
+        Die Praxis prüft Ihre Angaben und meldet sich anschließend bei Ihnen.
       </p>
 
       <form method="POST" action={`/api/anfrage/${validation.slug}`}>
@@ -143,33 +141,7 @@ export default async function AnfragePage({
           />
         </div>
 
-        {/* Anliegen-Auswahl (Pflichtfeld, Mehrfachauswahl) */}
-        <div style={{ marginBottom: "2rem" }} role="group" aria-labelledby="topics-label">
-          <p id="topics-label" style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
-            Anliegen <span aria-hidden="true">*</span>
-          </p>
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}
-            data-testid="topic-checkboxes"
-          >
-            {(Object.entries(DIGITAL_REQUEST_TOPICS) as [string, string][]).map(
-              ([value, label]) => (
-                <label
-                  key={value}
-                  style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", cursor: "pointer", fontWeight: 400 }}
-                >
-                  <input
-                    type="checkbox"
-                    name="requested_topic"
-                    value={value}
-                    style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
-                  />
-                  <span>{label}</span>
-                </label>
-              ),
-            )}
-          </div>
-        </div>
+        <DigitalRequestIntakeFields />
 
         {/* Honeypot — unsichtbar für echte Nutzer */}
         <div aria-hidden="true" style={{ display: "none" }}>

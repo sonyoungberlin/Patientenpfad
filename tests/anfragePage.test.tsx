@@ -149,13 +149,13 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
     expect(r.markup).toMatch(/name="birth_date"[^>]*required|required[^>]*name="birth_date"/);
   });
 
-  it("rendert Checkboxen für AU, PRESCRIPTION und REFERRAL", async () => {
+  it("rendert die beiden Entscheidungen und blendet Folgefelder zunächst aus", async () => {
     pm.practice.findUnique.mockResolvedValue(activePractice());
     const r = await runPage("meine-praxis");
-    expect(r.markup).toContain('value="AU"');
-    expect(r.markup).toContain('value="PRESCRIPTION"');
-    expect(r.markup).toContain('value="REFERRAL"');
-    expect(r.markup).toContain('name="requested_topic"');
+    expect(r.markup).toContain('value="existing_patient"');
+    expect(r.markup).toContain('value="new_patient"');
+    expect(r.markup).not.toContain('data-testid="request-intent"');
+    expect(r.markup).not.toContain('name="requested_topic"');
   });
 
   it("hat kein concern_text-Textarea mehr", async () => {

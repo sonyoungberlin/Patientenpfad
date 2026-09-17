@@ -995,6 +995,15 @@ model DigitalRequest {
   /// Optionaler kurzer Freitext zum Anliegen (max. 500 Zeichen, neutral gehalten).
   concern_text String?
 
+  /// Selbstauskunft des Einreichenden: "existing_patient" oder "new_patient".
+  patient_relationship String?
+
+  /// Ausgewählter Weg: "existing_appointment" oder "digital_request".
+  request_intent String?
+
+  /// Für Phase 1 nur vorbereitend; wird noch nicht verwendet.
+  new_patient_exception_confirmed_at DateTime?
+
   /// "patient" = klassische Digitale Anfrage, "office" = Bewerbungsanfrage.
   request_type String @default("patient")
 

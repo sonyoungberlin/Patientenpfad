@@ -143,7 +143,13 @@ function formReq(
   slug = SLUG,
   ip = uniqueIp(),
 ): NextRequest {
-  const body = new URLSearchParams(fields).toString();
+  const body = new URLSearchParams({
+    patient_relationship: "existing_patient",
+    request_intent: "digital_request",
+    birth_date: "1990-01-15",
+    requested_topic: "AU",
+    ...fields,
+  }).toString();
   return new NextRequest(`http://localhost/api/anfrage/${slug}`, {
     method: "POST",
     headers: {
@@ -216,7 +222,7 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
     expect(markup).toContain("Digitales Anliegen");
   });
 
-  it("Anliegen-Checkboxen rendern ohne fieldset-Border (kein <fieldset>)", async () => {
+  it("rendert die Patiententyp-Auswahl ohne fieldset-Border", async () => {
     const { result } = await runPage(() =>
       AnfragePage({ params: Promise.resolve({ slug: SLUG }) }),
     );
@@ -224,9 +230,9 @@ describe("AnfragePage — Sichtbarkeits-Cascade", () => {
 
     // Kein <fieldset> mehr — Border-Bug behoben:
     expect(markup).not.toContain("<fieldset");
-    // Checkboxen werden trotzdem gerendert:
-    expect(markup).toContain('data-testid="topic-checkboxes"');
-    expect(markup).toContain('value="AU"');
+    expect(markup).toContain('value="existing_patient"');
+    expect(markup).toContain('value="new_patient"');
+    expect(markup).not.toContain('data-testid="topic-checkboxes"');
   });
 
   it("notFound wenn keine Practice mit dem Slug gefunden wird", async () => {
@@ -455,6 +461,8 @@ describe("DigitalRequestsPage — Interne Liste", () => {
         submitter_name: "Gabi Testerin",
         status: "new",
         concern_text: "Ich hätte gerne einen Termin.",
+        patient_relationship: "new_patient",
+        request_intent: "existing_appointment",
       },
     ]);
 
@@ -463,6 +471,8 @@ describe("DigitalRequestsPage — Interne Liste", () => {
 
     expect(markup).toContain("Gabi Testerin");
     expect(markup).toContain("Neu");
+    expect(markup).toContain("Neu in der Praxis");
+    expect(markup).toContain("Termin: Ich hätte gerne einen Termin.");
 
     // Scoping: owner_practice_id aus current_practice
     const whereArg = pm.digitalRequest.findMany.mock.calls[0][0].where as Record<

@@ -15,6 +15,7 @@
  */
 
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 
 jest.mock("@/lib/websiteForms/submitRateLimit", () => ({
   IP_SLUG_RATE_LIMIT: { windowMs: 60000, max: 100 },
@@ -69,6 +70,8 @@ function validBody(over: Record<string, unknown> = {}) {
     submitter_name: "Max Mustermann",
     email: "max@example.com",
     birth_date: "1990-05-15",
+    patient_relationship: "existing_patient",
+    request_intent: "digital_request",
     requested_topics: ["AU"],
     company_website: "", // honeypot leer
     ...over,
@@ -234,8 +237,52 @@ describe("POST /api/anfrage/[slug]", () => {
     );
     const data = pm.digitalRequest.create.mock.calls[0][0].data;
     expect(data.requested_topics).toEqual(["AU", "REFERRAL"]);
-    // Kein concern_text mehr
-    expect(data.concern_text).toBeUndefined();
+    expect(data.concern_text).toBeNull();
+  });
+
+  it("speichert den Terminweg mit concern_text und ohne Kategorien", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    await POST(
+      makeJsonReq("meine-praxis", validBody({
+        request_intent: "existing_appointment",
+        requested_topics: [],
+        concern_text: "Kontrolle meiner Beschwerden",
+      })),
+      CTX("meine-praxis"),
+    );
+    const data = pm.digitalRequest.create.mock.calls[0][0].data;
+    expect(data.request_intent).toBe("existing_appointment");
+    expect(data.concern_text).toBe("Kontrolle meiner Beschwerden");
+    expect(data.requested_topics).toBe(Prisma.DbNull);
+  });
+
+  it("verlangt concern_text beim Terminweg und begrenzt ihn auf 500 Zeichen", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({
+        request_intent: "existing_appointment",
+        requested_topics: [],
+        concern_text: "x".repeat(501),
+      })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("lehnt unbekannte Patiententypen und Anliegenwege ab", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const invalidRelationship = await POST(
+      makeJsonReq("meine-praxis", validBody({ patient_relationship: "staff" })),
+      CTX("meine-praxis"),
+    );
+    expect(invalidRelationship.status).toBe(400);
+
+    const invalidIntent = await POST(
+      makeJsonReq("meine-praxis", validBody({ request_intent: "message" })),
+      CTX("meine-praxis"),
+    );
+    expect(invalidIntent.status).toBe(400);
   });
 
   it("gibt 400 zurück bei ungültiger E-Mail", async () => {

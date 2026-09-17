@@ -18,9 +18,10 @@
  *   8. Name validieren (min 1, max 100 Zeichen).
  *   9. E-Mail hashen (SHA-256).
  *  10. Geburtsdatum hashen (SHA-256, kein Klartext) – Pflichtfeld.
- *  11. Anliegen (requested_topics) validieren – Whitelist, mind. 1 Eintrag.
- *  12. DigitalRequest anlegen (status = "new", practice_form_id = null).
- *  13. 303-Redirect auf `/anfrage/[slug]/eingegangen`.
+ *  11. Patiententyp und Anliegenweg validieren.
+ *  12. Termintext oder Anliegen-Kategorien bedingt validieren.
+ *  13. DigitalRequest anlegen (status = "new", practice_form_id = null).
+ *  14. 303-Redirect auf `/anfrage/[slug]/eingegangen`.
  *
  * Antwort-Codes:
  *   - 303 → Erfolg (und Honeypot-Treffer).
@@ -46,7 +47,7 @@ import {
   createRateLimiter,
   getClientIp,
 } from "@/lib/websiteForms/submitRateLimit";
-import { PracticeRole } from "@prisma/client";
+import { Prisma, PracticeRole } from "@prisma/client";
 import { VALID_TOPICS } from "@/lib/digitalRequests/topics";
 import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
@@ -65,6 +66,9 @@ type SubmitOutcome =
   | "invalid_email"
   | "invalid_name"
   | "invalid_birth_date"
+  | "invalid_patient_relationship"
+  | "invalid_request_intent"
+  | "invalid_concern_text"
   | "invalid_topics"
   | "honeypot"
   | "not_found"
@@ -108,6 +112,9 @@ type SubmitFields = {
   email: unknown;
   name: unknown;
   birth_date: unknown;
+  patient_relationship: unknown;
+  request_intent: unknown;
+  concern_text: unknown;
   requested_topics: unknown;
   honeypot: unknown;
 };
@@ -124,6 +131,9 @@ async function parseFields(
         email: body.email,
         name: body.submitter_name,
         birth_date: body.birth_date,
+        patient_relationship: body.patient_relationship,
+        request_intent: body.request_intent,
+        concern_text: body.concern_text,
         requested_topics: body.requested_topics,
         honeypot: body[HONEYPOT_FIELD_NAME],
       };
@@ -138,6 +148,9 @@ async function parseFields(
       email: fd.get("email"),
       name: fd.get("submitter_name"),
       birth_date: fd.get("birth_date"),
+      patient_relationship: fd.get("patient_relationship"),
+      request_intent: fd.get("request_intent"),
+      concern_text: fd.get("concern_text"),
       // Mehrere Checkboxen mit name="requested_topic"
       requested_topics: fd.getAll("requested_topic"),
       honeypot: fd.get(HONEYPOT_FIELD_NAME),
@@ -288,14 +301,51 @@ export async function POST(
         .digest("hex");
     }
 
-    // 11. Anliegen (requested_topics) validieren — Whitelist, mind. 1 Eintrag.
+    // 11. Patiententyp und Anliegenweg validieren.
+    const patientRelationship =
+      typeof fields.patient_relationship === "string"
+        ? fields.patient_relationship.trim()
+        : "";
+    if (patientRelationship !== "existing_patient" && patientRelationship !== "new_patient") {
+      logSubmit("invalid_patient_relationship", { slug: slugValidation.slug });
+      return new NextResponse("Bitte wählen Sie aus, ob Sie bereits Patient/in sind.", {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+
+    const requestIntent =
+      typeof fields.request_intent === "string"
+        ? fields.request_intent.trim()
+        : "";
+    if (requestIntent !== "existing_appointment" && requestIntent !== "digital_request") {
+      logSubmit("invalid_request_intent", { slug: slugValidation.slug });
+      return new NextResponse("Bitte wählen Sie aus, was Sie tun möchten.", {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+
+    // 12. Termintext oder Anliegen (requested_topics) bedingt validieren.
+    const rawConcernText =
+      typeof fields.concern_text === "string"
+        ? fields.concern_text.trim()
+        : "";
+    if (requestIntent === "existing_appointment" && (rawConcernText.length === 0 || rawConcernText.length > 500)) {
+      logSubmit("invalid_concern_text", { slug: slugValidation.slug });
+      return new NextResponse("Bitte beschreiben Sie kurz den Grund für Ihren Termin (max. 500 Zeichen).", {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+
     const rawTopics: unknown[] = Array.isArray(fields.requested_topics)
       ? fields.requested_topics
       : [];
     const validTopics = rawTopics.filter(
       (t): t is string => typeof t === "string" && VALID_TOPICS.has(t),
     );
-    if (validTopics.length === 0) {
+    if (requestIntent === "digital_request" && validTopics.length === 0) {
       logSubmit("invalid_topics", { slug: slugValidation.slug });
       return new NextResponse(
         "Bitte wählen Sie mindestens ein Anliegen aus.",
@@ -308,7 +358,7 @@ export async function POST(
     // Deduplizieren und sortieren für deterministischen JSON-Inhalt.
     const topics = [...new Set(validTopics)].sort();
 
-    // 12. DigitalRequest anlegen.
+    // 13. DigitalRequest anlegen.
     await prisma.digitalRequest.create({
       data: {
         owner_account_id: ownerAccountId,
@@ -319,7 +369,11 @@ export async function POST(
         submitter_email_hash: submitterEmailHash,
         birth_date: typeof fields.birth_date === "string" ? fields.birth_date.trim() : undefined,
         ...(birthDateHash !== null ? { birth_date_hash: birthDateHash } : {}),
-        requested_topics: topics,
+        concern_text: requestIntent === "existing_appointment" ? rawConcernText : null,
+        patient_relationship: patientRelationship,
+        request_intent: requestIntent,
+        requested_topics:
+          requestIntent === "digital_request" ? topics : Prisma.DbNull,
         request_type: "patient",
         status: "new",
       },
