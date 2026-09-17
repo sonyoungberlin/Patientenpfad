@@ -26,4 +26,17 @@ describe("PublicQuestionnaireHandoff migration", () => {
     expect(migration).toContain('"source" NOT IN (\'kiosk_direct\', \'public_check_in\')');
     expect(migration).not.toMatch(/INSERT INTO|UPDATE "PatientQuestionnaireSession"/);
   });
+
+  it("validiert den neuen Ownership-Constraint vor dem kurzen Austausch", () => {
+    const add = migration.indexOf('ADD CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check_v2"');
+    const validate = migration.indexOf('VALIDATE CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check_v2"');
+    const drop = migration.indexOf('DROP CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check"');
+    const rename = migration.indexOf('RENAME CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check_v2"');
+
+    expect(add).toBeGreaterThan(-1);
+    expect(migration.slice(add, validate)).toContain("NOT VALID");
+    expect(validate).toBeGreaterThan(add);
+    expect(drop).toBeGreaterThan(validate);
+    expect(rename).toBeGreaterThan(drop);
+  });
 });

@@ -35,10 +35,7 @@ ALTER TABLE "PublicQuestionnaireHandoff"
   );
 
 ALTER TABLE "PatientQuestionnaireSession"
-  DROP CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check";
-
-ALTER TABLE "PatientQuestionnaireSession"
-  ADD CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check" CHECK (
+  ADD CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check_v2" CHECK (
     (
       "source" = 'kiosk_direct'
       AND "owner_account_id" IS NULL
@@ -56,4 +53,14 @@ ALTER TABLE "PatientQuestionnaireSession"
       AND "owner_account_id" IS NOT NULL
       AND "created_by_kiosk_device_id" IS NULL
     )
-  );
+  ) NOT VALID;
+
+ALTER TABLE "PatientQuestionnaireSession"
+  VALIDATE CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check_v2";
+
+ALTER TABLE "PatientQuestionnaireSession"
+  DROP CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check";
+
+ALTER TABLE "PatientQuestionnaireSession"
+  RENAME CONSTRAINT "PatientQuestionnaireSession_owner_or_kiosk_check_v2"
+  TO "PatientQuestionnaireSession_owner_or_kiosk_check";
