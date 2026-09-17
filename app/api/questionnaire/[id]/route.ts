@@ -14,6 +14,11 @@ import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
 import { isKioskCheckInSession } from "@/lib/questionnaire/kioskCheckIn";
 import { isPublicCheckInSession } from "@/lib/questionnaire/publicCheckIn";
+import {
+  assignDigitalRequestAndLinkedSession,
+  DigitalRequestAssignmentConflictError,
+} from "@/lib/digitalRequests/assignPatientReference";
+import { getOwnershipFilter as getDigitalRequestOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 
 export async function GET(
   req: NextRequest,
@@ -143,6 +148,7 @@ export async function PATCH(
       session.public_check_in_handoff?.status === "waiting" &&
       session.public_check_in_handoff.expires_at > new Date() &&
       isPublicCheckInSession(session);
+    const isAssignableDigitalRequestFollowUp = session?.source === "digital_request_follow_up";
 
     if (
       !session ||
@@ -151,51 +157,105 @@ export async function PATCH(
       !ownsSession(account, session) ||
       !isQuestionnaireVisibleToPractice(session) ||
       session.status !== "completed" ||
-      (!isAssignableWebsiteSession && !isAssignableKioskCheckIn && !isAssignablePublicCheckIn) ||
+      (!isAssignableWebsiteSession && !isAssignableKioskCheckIn && !isAssignablePublicCheckIn &&
+        !isAssignableDigitalRequestFollowUp) ||
       session.patient_reference != null
     ) {
       return NextResponse.json({ ok: false, error: "Fragebogen nicht gefunden." }, { status: 404 });
     }
 
-    const result = await prisma.patientQuestionnaireSession.updateMany({
-      where: {
-        id,
-        context: "patient",
-        status: "completed",
-        deleted_at: null,
-        patient_reference: null,
-        OR: [
-          { source: "website", confirmed_at: { not: null } },
-          {
-            source: "kiosk_direct",
-            session_kind: "patient_communication",
-            created_by_kiosk_device_id: { not: null },
-            selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
-            kiosk_handoff_status: "waiting",
-          },
-          {
-            source: "public_check_in",
-            session_kind: "patient_communication",
-            created_by_kiosk_device_id: null,
-            selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
-            public_check_in_handoff: {
-              is: { status: "waiting", expires_at: { gt: new Date() } },
+    if (!isAssignableDigitalRequestFollowUp) {
+      const sessionUpdate = await prisma.patientQuestionnaireSession.updateMany({
+        where: {
+          id,
+          context: "patient",
+          status: "completed",
+          deleted_at: null,
+          patient_reference: null,
+          OR: [
+            { source: "website", confirmed_at: { not: null } },
+            {
+              source: "kiosk_direct",
+              session_kind: "patient_communication",
+              created_by_kiosk_device_id: { not: null },
+              selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
+              kiosk_handoff_status: "waiting",
             },
-          },
-        ],
-      },
-      data: { patient_reference: patientReference },
+            {
+              source: "public_check_in",
+              session_kind: "patient_communication",
+              created_by_kiosk_device_id: null,
+              selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
+              public_check_in_handoff: {
+                is: { status: "waiting", expires_at: { gt: new Date() } },
+              },
+            },
+          ],
+        },
+        data: { patient_reference: patientReference },
+      });
+      if (sessionUpdate.count !== 1) {
+        return NextResponse.json(
+          { ok: false, error: "Der Fragebogen wurde bereits einem Patienten zugeordnet." },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({ ok: true, patient_reference: patientReference });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const digitalRequest = await tx.digitalRequest.findFirst({
+        where: {
+          questionnaire_session_id: id,
+          deleted_at: null,
+          request_type: "patient",
+          ...getDigitalRequestOwnershipFilter(account),
+        },
+        select: { id: true },
+      });
+      if (digitalRequest) {
+        return assignDigitalRequestAndLinkedSession(tx, {
+          digitalRequestId: digitalRequest.id,
+          patientReference,
+          data: { patient_reference: patientReference },
+        });
+      }
+
+      const sessionUpdate = await tx.patientQuestionnaireSession.updateMany({
+        where: {
+          id,
+          context: "patient",
+          status: "completed",
+          deleted_at: null,
+          patient_reference: null,
+          source: "digital_request_follow_up",
+        },
+        data: { patient_reference: patientReference },
+      });
+      return sessionUpdate.count === 1
+        ? { ok: true as const }
+        : {
+            ok: false as const,
+            status: 409 as const,
+            error: "Der Fragebogen wurde bereits einem Patienten zugeordnet.",
+          };
     });
 
-    if (result.count !== 1) {
+    if (!result.ok) {
       return NextResponse.json(
-        { ok: false, error: "Der Fragebogen wurde bereits einem Patienten zugeordnet." },
-        { status: 409 },
+        { ok: false, error: result.error },
+        { status: result.status },
       );
     }
 
     return NextResponse.json({ ok: true, patient_reference: patientReference });
   } catch (err) {
+    if (err instanceof DigitalRequestAssignmentConflictError) {
+      return NextResponse.json(
+        { ok: false, error: err.message },
+        { status: 409 },
+      );
+    }
     console.error("[PATCH questionnaire/[id]]", {
       message: err instanceof Error ? err.message : "UnknownError",
     });

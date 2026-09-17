@@ -94,6 +94,10 @@ export default function QuestionnaireCard({
   const canAssignPublicCheckIn = !isDeleted && !publicHandoffExpired &&
     displayStatus === "completed" && source === "public_check_in" &&
     publicHandoffStatus === "waiting" && patientReference == null;
+  const canAssignDigitalRequestFollowUp = !isDeleted &&
+    displayStatus === "completed" &&
+    source === "digital_request_follow_up" &&
+    patientReference == null;
   return (
     <div
       className="card"
@@ -195,6 +199,9 @@ export default function QuestionnaireCard({
         <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
       )}
       {canAssignPublicCheckIn && (
+        <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
+      )}
+      {canAssignDigitalRequestFollowUp && (
         <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
       )}
       {!isDeleted &&

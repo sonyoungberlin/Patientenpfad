@@ -2,6 +2,11 @@ import { NextRequest } from "next/server";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    $transaction: jest.fn(),
+    digitalRequest: {
+      findFirst: jest.fn(),
+      updateMany: jest.fn(),
+    },
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
       updateMany: jest.fn(),
@@ -18,6 +23,11 @@ import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { PATCH } from "@/app/api/questionnaire/[id]/route";
 
 type PrismaMock = {
+  $transaction: jest.Mock;
+  digitalRequest: {
+    findFirst: jest.Mock;
+    updateMany: jest.Mock;
+  };
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
     updateMany: jest.Mock;
@@ -91,7 +101,22 @@ beforeEach(() => {
   requireAccess.mockResolvedValue({ account: ACCOUNT_A, error: null });
   pm.patientQuestionnaireSession.findUnique.mockReset();
   pm.patientQuestionnaireSession.updateMany.mockReset();
+  pm.digitalRequest.findFirst.mockReset();
+  pm.digitalRequest.updateMany.mockReset();
+  pm.$transaction.mockReset().mockImplementation(async (callback: (tx: unknown) => unknown) =>
+    callback({
+      digitalRequest: pm.digitalRequest,
+      patientQuestionnaireSession: pm.patientQuestionnaireSession,
+    }),
+  );
 });
+
+function digitalRequestFollowUpSession(overrides: Record<string, unknown> = {}) {
+  return websiteSession({
+    source: "digital_request_follow_up",
+    ...overrides,
+  });
+}
 
 describe("PATCH /api/questionnaire/[id] – Website-Patientenzuordnung", () => {
   it("ordnet eine nicht zugeordnete Website-Submission zu und trimmt die Nummer", async () => {
@@ -253,6 +278,151 @@ describe("PATCH /api/questionnaire/[id] – Website-Patientenzuordnung", () => {
       selected_block_ids: ["CHECK_IN"],
     }));
     expect((await PATCH(request({ patient_reference: "4711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    })).status).toBe(404);
+  });
+});
+
+describe("PATCH /api/questionnaire/[id] – DigitalRequest-Folgezuordnung", () => {
+  it("setzt Session und vorhandene DigitalRequest atomar", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(digitalRequestFollowUpSession());
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: null,
+      questionnaire_session_id: "session-1",
+    });
+    pm.patientQuestionnaireSession.findUnique
+      .mockResolvedValueOnce(digitalRequestFollowUpSession())
+      .mockResolvedValueOnce({ patient_reference: null });
+    pm.digitalRequest.updateMany.mockResolvedValue({ count: 1 });
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
+
+    const response = await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(pm.digitalRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: { patient_reference: "004711" },
+    }));
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: { patient_reference: "004711" },
+    }));
+  });
+
+  it("ordnet eine alte Session ohne DigitalRequest allein zu", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(digitalRequestFollowUpSession());
+    pm.digitalRequest.findFirst.mockResolvedValue(null);
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
+
+    const response = await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ source: "digital_request_follow_up" }),
+    }));
+  });
+
+  it("erlaubt dieselbe Referenz erneut, lehnt eine andere aber ab", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(digitalRequestFollowUpSession());
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: "004711",
+      questionnaire_session_id: "session-1",
+    });
+    pm.patientQuestionnaireSession.findUnique
+      .mockResolvedValueOnce(digitalRequestFollowUpSession())
+      .mockResolvedValueOnce({ patient_reference: "004711" });
+    pm.digitalRequest.updateMany.mockResolvedValue({ count: 1 });
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
+
+    expect((await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    })).status).toBe(200);
+
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(digitalRequestFollowUpSession());
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: "004711",
+      questionnaire_session_id: "session-1",
+    });
+    expect((await PATCH(request({ patient_reference: "999999" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    })).status).toBe(409);
+    expect(pm.digitalRequest.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("weist divergierende Session- und DigitalRequest-Referenzen zurück", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(digitalRequestFollowUpSession());
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: "111111",
+      questionnaire_session_id: "session-1",
+    });
+
+    const response = await PATCH(request({ patient_reference: "222222" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(pm.digitalRequest.updateMany).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("meldet einen DigitalRequest-CAS-Konflikt ohne Session-Update", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(digitalRequestFollowUpSession());
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: null,
+      questionnaire_session_id: "session-1",
+    });
+    pm.digitalRequest.updateMany.mockResolvedValue({ count: 0 });
+
+    const response = await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("meldet einen Session-CAS-Konflikt als 409", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(digitalRequestFollowUpSession());
+    pm.digitalRequest.findFirst.mockResolvedValue({
+      id: "dr-1",
+      status: "sent",
+      patient_reference: null,
+      questionnaire_session_id: "session-1",
+    });
+    pm.digitalRequest.updateMany.mockResolvedValue({ count: 1 });
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 0 });
+
+    const response = await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(409);
+  });
+
+  it("bleibt bei pending und bereits zugeordnet nicht zuordenbar", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      digitalRequestFollowUpSession({ status: "pending" }),
+    );
+    expect((await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    })).status).toBe(404);
+
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(
+      digitalRequestFollowUpSession({ patient_reference: "004711" }),
+    );
+    expect((await PATCH(request({ patient_reference: "999999" }), {
       params: Promise.resolve({ id: "session-1" }),
     })).status).toBe(404);
   });

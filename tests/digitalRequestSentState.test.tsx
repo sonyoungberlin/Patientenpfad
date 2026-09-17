@@ -354,6 +354,17 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
     expect(assigned).not.toContain("data-q-assign");
   });
 
+  it("zeigt Patientenzuordnung für unzugeordnete completed DigitalRequest-Follow-ups ohne Export", () => {
+    const markup = renderToStaticMarkup(QuestionnaireCard({
+      ...BASE_PROPS,
+      source: "digital_request_follow_up",
+      displayStatus: "completed",
+      patientReference: null,
+    }));
+    expect(markup).toContain("Patient zuordnen");
+    expect(markup).toContain('data-q-assign="session-1"');
+  });
+
   it("kein Badge wenn isFromDigitalRequest=false", () => {
     const markup = renderToStaticMarkup(
       QuestionnaireCard({ ...BASE_PROPS, isFromDigitalRequest: false }),
