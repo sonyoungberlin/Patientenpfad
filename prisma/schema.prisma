@@ -397,6 +397,9 @@ model PatientQuestionnaireSession {
   kiosk_follow_up_session    PatientQuestionnaireSession? @relation("KioskCheckInFollowUp", fields: [kiosk_follow_up_session_id], references: [id], onDelete: SetNull)
   kiosk_check_in_session     PatientQuestionnaireSession? @relation("KioskCheckInFollowUp")
 
+  public_check_in_handoff PublicQuestionnaireHandoff? @relation("PublicCheckInHandoffParent")
+  public_follow_up_handoff PublicQuestionnaireHandoff? @relation("PublicCheckInHandoffFollowUp")
+
   /// Interne Patientenreferenz (wird nie in den Link kodiert)
   patient_reference String?
 
@@ -523,6 +526,19 @@ model PatientQuestionnaireSession {
   /// können. Wird in P1 noch nicht genutzt.
   @@index([owner_practice_id, createdAt])
   @@index([created_by_kiosk_device_id, createdAt])
+}
+
+model PublicQuestionnaireHandoff {
+  parent_session_id String                      @id
+  parent_session    PatientQuestionnaireSession @relation("PublicCheckInHandoffParent", fields: [parent_session_id], references: [id], onDelete: Cascade)
+  secret_hash       String                      @unique
+  expires_at        DateTime
+  status            String                      @default("waiting")
+  follow_up_session_id String?                   @unique
+  follow_up_session    PatientQuestionnaireSession? @relation("PublicCheckInHandoffFollowUp", fields: [follow_up_session_id], references: [id], onDelete: SetNull)
+  created_at        DateTime                    @default(now())
+
+  @@index([expires_at])
 }
 
 model QuestionnaireKioskDevice {

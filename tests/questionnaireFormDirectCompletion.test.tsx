@@ -47,6 +47,7 @@ async function renderForm(
   kioskRestartPath?: string,
   formQuestions: QuestionDefinition[] = QUESTIONS,
   frozenBlocks?: FrozenBlock[],
+  publicHandoffPath?: string,
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -62,6 +63,7 @@ async function renderForm(
         patientReference={patientReference}
         selfCheckInQrReference={selfCheckInQrReference}
         kioskRestartPath={kioskRestartPath}
+        publicHandoffPath={publicHandoffPath}
         context="office"
       />,
     );

@@ -13,6 +13,7 @@ import {
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
 import { isKioskCheckInSession } from "@/lib/questionnaire/kioskCheckIn";
+import { isPublicCheckInSession } from "@/lib/questionnaire/publicCheckIn";
 
 export async function GET(
   req: NextRequest,
@@ -127,6 +128,8 @@ export async function PATCH(
         selected_block_ids: true,
         session_kind: true,
         kiosk_handoff_status: true,
+        frozen_blocks: true,
+        public_check_in_handoff: { select: { status: true, expires_at: true } },
       },
     });
 
@@ -135,6 +138,10 @@ export async function PATCH(
     const isAssignableKioskCheckIn = session !== null &&
       session.kiosk_handoff_status === "waiting" &&
       isKioskCheckInSession(session);
+    const isAssignablePublicCheckIn = session !== null &&
+      session.public_check_in_handoff?.status === "waiting" &&
+      session.public_check_in_handoff.expires_at > new Date() &&
+      isPublicCheckInSession(session);
 
     if (
       !session ||
@@ -143,7 +150,7 @@ export async function PATCH(
       !ownsSession(account, session) ||
       !isQuestionnaireVisibleToPractice(session) ||
       session.status !== "completed" ||
-      (!isAssignableWebsiteSession && !isAssignableKioskCheckIn) ||
+      (!isAssignableWebsiteSession && !isAssignableKioskCheckIn && !isAssignablePublicCheckIn) ||
       session.patient_reference != null
     ) {
       return NextResponse.json({ ok: false, error: "Fragebogen nicht gefunden." }, { status: 404 });
@@ -164,6 +171,15 @@ export async function PATCH(
             created_by_kiosk_device_id: { not: null },
             selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
             kiosk_handoff_status: "waiting",
+          },
+          {
+            source: "public_check_in",
+            session_kind: "patient_communication",
+            created_by_kiosk_device_id: null,
+            selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
+            public_check_in_handoff: {
+              is: { status: "waiting", expires_at: { gt: new Date() } },
+            },
           },
         ],
       },
@@ -229,10 +245,29 @@ export async function DELETE(
     // versehentliches Löschen kurzfristig durch eine DB-Korrektur
     // (`UPDATE ... SET deleted_at = NULL`) rückgängig gemacht werden kann.
     // Antworten und alle anderen Felder bleiben unverändert.
-    await prisma.patientQuestionnaireSession.update({
-      where: { id },
+    const result = await prisma.patientQuestionnaireSession.updateMany({
+      where: {
+        id,
+        deleted_at: null,
+        OR: [
+          { source: { not: "public_check_in" } },
+          {
+            source: "public_check_in",
+            public_check_in_handoff: {
+              is: { status: { not: "questionnaire_ready" } },
+            },
+          },
+        ],
+      },
       data: { deleted_at: new Date() },
     });
+
+    if (result.count !== 1) {
+      return NextResponse.json(
+        { ok: false, error: "Fragebogen wird bereits weiterbearbeitet." },
+        { status: 409 },
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

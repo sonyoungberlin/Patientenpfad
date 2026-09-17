@@ -4,6 +4,7 @@ import QuestionnaireRestoreButton from "./QuestionnaireRestoreButton";
 import QuestionnairePatientAssignment from "./QuestionnairePatientAssignment";
 import QuestionnaireDetailsDisclosure from "./QuestionnaireDetailsDisclosure";
 import { KioskCheckInActions } from "./KioskCheckInActions";
+import { PublicCheckInActions } from "./PublicCheckInActions";
 
 /**
  * Reine Präsentations-Komponente (Server Component) für eine einzelne
@@ -48,6 +49,8 @@ export type QuestionnaireCardProps = {
   source?: string | null;
   sessionKind?: string | null;
   kioskHandoffStatus?: string | null;
+  publicHandoffStatus?: string | null;
+  publicHandoffExpired?: boolean;
 };
 
 export default function QuestionnaireCard({
@@ -64,6 +67,8 @@ export default function QuestionnaireCard({
   source = null,
   sessionKind = null,
   kioskHandoffStatus = null,
+  publicHandoffStatus = null,
+  publicHandoffExpired = false,
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
   const sourceLabel = sessionKind === "internal_documentation"
@@ -72,6 +77,8 @@ export default function QuestionnaireCard({
     ? "Digitale Anfrage"
     : source === "kiosk_direct"
       ? "Kiosk"
+      : source === "public_check_in"
+      ? "Smartphone/QR"
       : source === "practice_direct"
       ? "Sofort-Abfrage"
       : null;
@@ -82,6 +89,9 @@ export default function QuestionnaireCard({
     source === "kiosk_direct" &&
     kioskHandoffStatus === "waiting" &&
     patientReference == null;
+  const canAssignPublicCheckIn = !isDeleted && !publicHandoffExpired &&
+    displayStatus === "completed" && source === "public_check_in" &&
+    publicHandoffStatus === "waiting" && patientReference == null;
   return (
     <div
       className="card"
@@ -182,12 +192,18 @@ export default function QuestionnaireCard({
       {canAssignKioskCheckIn && (
         <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
       )}
+      {canAssignPublicCheckIn && (
+        <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
+      )}
       {!isDeleted &&
         displayStatus === "completed" &&
         kioskHandoffStatus === "waiting" &&
         patientReference !== null && (
           <KioskCheckInActions sessionId={id} />
         )}
+      {!isDeleted && !publicHandoffExpired && displayStatus === "completed" &&
+        source === "public_check_in" && publicHandoffStatus === "waiting" &&
+        patientReference !== null && <PublicCheckInActions sessionId={id} />}
 
       {/* Kontexthinweis bei Einreichung durch Kontaktperson */}
       {submittedBy === "contact_person" && (

@@ -75,6 +75,7 @@ export default async function QuestionnairePage({
       patient_reference: true,
       source: true,
       kiosk_handoff_status: true,
+      public_check_in_handoff: { select: { status: true } },
       inquiry_session_id: true,
       deduplicated_questions: true,
       frozen_conditional_rules: true,
@@ -192,6 +193,9 @@ export default async function QuestionnairePage({
         }
         kioskHandoffPath={session.kiosk_handoff_status === "waiting"
           ? `/questionnaire-kiosk/check-in/${session.id}/waiting`
+          : undefined}
+        publicHandoffPath={session.source === "public_check_in" && session.public_check_in_handoff?.status === "waiting"
+          ? `/public-check-in/${session.id}`
           : undefined}
       />
       {publicPractice && <PublicPracticeFooter practice={publicPractice} />}

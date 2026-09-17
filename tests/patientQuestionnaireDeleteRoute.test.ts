@@ -22,7 +22,7 @@ jest.mock("@/lib/prisma", () => ({
     },
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
-      update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
     },
   },
@@ -34,7 +34,7 @@ type PrismaMock = {
   session: { findUnique: jest.Mock; delete: jest.Mock };
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
-    update: jest.Mock;
+    updateMany: jest.Mock;
     delete: jest.Mock;
   };
 };
@@ -65,6 +65,7 @@ function mockSession(is_approved: boolean, accountId = "acc-owner", patient_comm
 
 beforeEach(() => {
   jest.clearAllMocks();
+  pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
 });
 
 describe("DELETE /api/questionnaire/[id]", () => {
@@ -132,7 +133,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
       params: Promise.resolve({ id: "q-deleted" }),
     });
     expect(res.status).toBe(404);
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
   });
 
@@ -147,7 +148,6 @@ describe("DELETE /api/questionnaire/[id]", () => {
       deleted_at: null,
       context: "patient",
     });
-    pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const req = requestWithCookie("http://localhost/api/questionnaire/q-completed");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-completed" }) });
     expect(res.status).toBe(200);
@@ -155,9 +155,12 @@ describe("DELETE /api/questionnaire/[id]", () => {
     expect(json.ok).toBe(true);
     // Hard-Delete darf nicht passieren — Daten müssen erhalten bleiben.
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
-    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledTimes(1);
-    const call = pm.patientQuestionnaireSession.update.mock.calls[0][0];
-    expect(call.where).toEqual({ id: "q-completed" });
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
+    const call = pm.patientQuestionnaireSession.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual(expect.objectContaining({
+      id: "q-completed",
+      deleted_at: null,
+    }));
     expect(call.data.deleted_at).toBeInstanceOf(Date);
     // Es darf keine andere Spalte stillschweigend mitgeschrieben werden
     // (z. B. answers, status), damit eine spätere Wiederherstellung trivial
@@ -182,7 +185,87 @@ describe("DELETE /api/questionnaire/[id]", () => {
     const json = await res.json();
     expect(json.ok).toBe(false);
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
-    expect(pm.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("löscht einen wartenden Public-Check-in weiterhin atomar", async () => {
+    mockSession(true, "acc-owner");
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      owner_account_id: null,
+      owner_practice_id: "practice-1",
+      source: "public_check_in",
+      status: "completed",
+      submitted_at: new Date(),
+      confirmed_at: null,
+      deleted_at: null,
+      context: "patient",
+    });
+    pm.session.findUnique.mockResolvedValue({
+      token: "good-token",
+      expiresAt: new Date(Date.now() + 100_000),
+      account: {
+        id: "acc-owner",
+        email: "owner@example.com",
+        is_approved: true,
+        is_admin: false,
+        inquiry_assistant_enabled: false,
+        patient_communication_enabled: true,
+        memberships: [{
+          practice_id: "practice-1",
+          role: "OWNER",
+          created_at: new Date("2026-01-01T00:00:00Z"),
+          practice: {
+            id: "practice-1",
+            slug: "practice-1",
+            name: "Testpraxis",
+            is_approved: true,
+            disabled_at: null,
+            inquiry_assistant_enabled: false,
+            patient_communication_enabled: true,
+            website_forms_enabled: false,
+            office_cases_enabled: false,
+            arbeitsprozesse_enabled: false,
+          },
+        }],
+      },
+    });
+
+    const res = await deleteHandler(
+      requestWithCookie("http://localhost/api/questionnaire/public-waiting"),
+      { params: Promise.resolve({ id: "public-waiting" }) },
+    );
+
+    expect(res.status).toBe(200);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        OR: expect.arrayContaining([{
+          source: "public_check_in",
+          public_check_in_handoff: { is: { status: { not: "questionnaire_ready" } } },
+        }]),
+      }),
+    }));
+  });
+
+  it("meldet Konflikt, wenn Follow-up den Public-Parent zuerst geclaimt hat", async () => {
+    mockSession(true, "acc-owner");
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      source: "public_check_in",
+      status: "completed",
+      submitted_at: new Date(),
+      confirmed_at: null,
+      deleted_at: null,
+      context: "patient",
+    });
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await deleteHandler(
+      requestWithCookie("http://localhost/api/questionnaire/public-ready"),
+      { params: Promise.resolve({ id: "public-ready" }) },
+    );
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("Fragebogen wird bereits weiterbearbeitet.");
   });
 
   it("500 bei Datenbankfehler", async () => {
@@ -196,7 +279,7 @@ describe("DELETE /api/questionnaire/[id]", () => {
       deleted_at: null,
       context: "patient",
     });
-    pm.patientQuestionnaireSession.update.mockRejectedValue(new Error("DB error"));
+    pm.patientQuestionnaireSession.updateMany.mockRejectedValue(new Error("DB error"));
     const req = requestWithCookie("http://localhost/api/questionnaire/q-1");
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "q-1" }) });
     expect(res.status).toBe(500);

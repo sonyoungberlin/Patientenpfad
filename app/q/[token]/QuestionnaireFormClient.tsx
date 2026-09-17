@@ -1072,6 +1072,7 @@ export function QuestionnaireFormClient({
   selfCheckInQrReference,
   kioskRestartPath = "/questionnaire-kiosk/direct",
   kioskHandoffPath,
+  publicHandoffPath,
   internalWorkflowId,
 }: {
   token: string;
@@ -1091,6 +1092,7 @@ export function QuestionnaireFormClient({
   selfCheckInQrReference?: string | null;
   kioskRestartPath?: string;
   kioskHandoffPath?: string;
+  publicHandoffPath?: string;
   internalWorkflowId?: string | null;
 }) {
   const t = UI_STRINGS[language];
@@ -1334,6 +1336,10 @@ export function QuestionnaireFormClient({
       }
       if (kioskHandoffPath) {
         window.location.replace(kioskHandoffPath);
+        return;
+      }
+      if (publicHandoffPath) {
+        window.location.replace(publicHandoffPath);
         return;
       }
       setSubmitted(true);

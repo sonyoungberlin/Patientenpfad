@@ -337,6 +337,23 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
     expect(markup).not.toContain("Sofort-Abfrage");
   });
 
+  it("zeigt Public-Check-ins als Smartphone/QR und Actions erst nach Zuordnung", () => {
+    const unassigned = renderToStaticMarkup(QuestionnaireCard({
+      ...BASE_PROPS, source: "public_check_in", displayStatus: "completed",
+      patientReference: null, publicHandoffStatus: "waiting",
+    }));
+    expect(unassigned).toContain("Smartphone/QR");
+    expect(unassigned).toContain("data-q-assign");
+    expect(unassigned).not.toContain("data-public-check-in-actions");
+
+    const assigned = renderToStaticMarkup(QuestionnaireCard({
+      ...BASE_PROPS, source: "public_check_in", displayStatus: "completed",
+      publicHandoffStatus: "waiting",
+    }));
+    expect(assigned).toContain("data-public-check-in-actions");
+    expect(assigned).not.toContain("data-q-assign");
+  });
+
   it("kein Badge wenn isFromDigitalRequest=false", () => {
     const markup = renderToStaticMarkup(
       QuestionnaireCard({ ...BASE_PROPS, isFromDigitalRequest: false }),

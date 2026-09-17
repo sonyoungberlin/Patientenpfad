@@ -92,6 +92,7 @@ export default async function QuestionnairesPage({
       internal_workflow_id: true,
       frozen_blocks: true,
       kiosk_handoff_status: true,
+      public_check_in_handoff: { select: { status: true, expires_at: true } },
     },
   });
 
@@ -220,6 +221,10 @@ export default async function QuestionnairesPage({
                 source={s.source}
                 sessionKind={s.session_kind}
                 kioskHandoffStatus={s.kiosk_handoff_status}
+                publicHandoffStatus={s.public_check_in_handoff?.status ?? null}
+                publicHandoffExpired={s.public_check_in_handoff
+                  ? s.public_check_in_handoff.expires_at <= now
+                  : false}
               />
             );
           })}

@@ -47,6 +47,7 @@ jest.mock("@/lib/prisma", () => ({
       create: jest.fn(),
       delete: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -66,6 +67,7 @@ type PrismaMock = {
     create: jest.Mock;
     delete: jest.Mock;
     update: jest.Mock;
+    updateMany: jest.Mock;
   };
 };
 const pm = prisma as unknown as PrismaMock;
@@ -130,6 +132,7 @@ beforeEach(() => {
   pm.patientQuestionnaireSession.create.mockReset();
   pm.patientQuestionnaireSession.delete.mockReset();
   pm.patientQuestionnaireSession.update.mockReset();
+  pm.patientQuestionnaireSession.updateMany.mockReset().mockResolvedValue({ count: 1 });
 });
 
 // ---------------------------------------------------------------------------
@@ -218,16 +221,15 @@ describe("DELETE /api/questionnaire/[id] — Practice-Scope", () => {
       deleted_at: null,
       context: "patient",
     });
-    pm.patientQuestionnaireSession.update.mockResolvedValue({});
     const res = await DeleteRoute(deleteReq(), {
       params: Promise.resolve({ id: "sess-1" }),
     });
     expect(res.status).toBe(200);
-    // Hard-Delete passiert nicht mehr; stattdessen Soft Delete via update().
+    // Hard-Delete passiert nicht mehr; stattdessen atomarer Soft Delete.
     expect(pm.patientQuestionnaireSession.delete).not.toHaveBeenCalled();
-    expect(pm.patientQuestionnaireSession.update).toHaveBeenCalledTimes(1);
-    const call = pm.patientQuestionnaireSession.update.mock.calls[0][0];
-    expect(call.where).toEqual({ id: "sess-1" });
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledTimes(1);
+    const call = pm.patientQuestionnaireSession.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual(expect.objectContaining({ id: "sess-1", deleted_at: null }));
     expect(call.data.deleted_at).toBeInstanceOf(Date);
     expect(Object.keys(call.data)).toEqual(["deleted_at"]);
   });

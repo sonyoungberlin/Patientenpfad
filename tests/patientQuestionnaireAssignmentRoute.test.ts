@@ -68,6 +68,24 @@ function kioskCheckInSession(overrides: Record<string, unknown> = {}) {
   });
 }
 
+function publicCheckInSession(overrides: Record<string, unknown> = {}) {
+  return websiteSession({
+    owner_account_id: null,
+    source: "public_check_in",
+    confirmed_at: null,
+    selected_block_ids: ["KONTAKT", "CHECK_IN"],
+    frozen_blocks: [
+      { id: "KONTAKT", questions: [] },
+      { id: "CHECK_IN", questions: [] },
+    ],
+    public_check_in_handoff: {
+      status: "waiting",
+      expires_at: new Date(Date.now() + 60_000),
+    },
+    ...overrides,
+  });
+}
+
 beforeEach(() => {
   requireAccess.mockReset();
   requireAccess.mockResolvedValue({ account: ACCOUNT_A, error: null });
@@ -208,5 +226,34 @@ describe("PATCH /api/questionnaire/[id] – Website-Patientenzuordnung", () => {
 
     expect(response.status).toBe(404);
     expect(pm.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("ordnet einen gültigen Public-Check-in ohne Artefakt-Sonderpfad zu", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(publicCheckInSession());
+    pm.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 1 });
+    const response = await PATCH(request({ patient_reference: "004711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+    expect(response.status).toBe(200);
+    expect(pm.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        OR: expect.arrayContaining([expect.objectContaining({ source: "public_check_in" })]),
+      }),
+    }));
+  });
+
+  it("weist abgelaufene oder strukturell falsche Public-Check-ins ab", async () => {
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(publicCheckInSession({
+      public_check_in_handoff: { status: "waiting", expires_at: new Date(0) },
+    }));
+    expect((await PATCH(request({ patient_reference: "4711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    })).status).toBe(404);
+    pm.patientQuestionnaireSession.findUnique.mockResolvedValue(publicCheckInSession({
+      selected_block_ids: ["CHECK_IN"],
+    }));
+    expect((await PATCH(request({ patient_reference: "4711" }), {
+      params: Promise.resolve({ id: "session-1" }),
+    })).status).toBe(404);
   });
 });
