@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionAccount } from "@/lib/auth";
+import { requireDigitalRequestWorkAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 
@@ -12,13 +12,11 @@ export const dynamic = "force-dynamic";
  * DigitalRequest mit status="new" im Praxis-Scope des Accounts existiert.
  *
  * Wird von der AppShell verwendet, um den Unread-Indikator zu befüllen.
- * Erfordert eine aktive Sitzung (401 sonst).
+ * Erfordert Digital-Request-Arbeitszugriff.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const account = await getSessionAccount(req);
-  if (!account) {
-    return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-  }
+  const { account, error } = await requireDigitalRequestWorkAccess(req);
+  if (error) return error;
 
   const count = await prisma.digitalRequest.count({
     where: {

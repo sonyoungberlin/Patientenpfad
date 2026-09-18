@@ -11,7 +11,7 @@
  * - status "sent" → 409
  * - status "closed" → 409
  * - fremde Practice → 404
- * - INBOX_ONLY → 403
+ * - INBOX_ONLY darf den Folgefragebogen starten
  * - nicht angemeldet → 401
  * - Mailversand schlägt fehl → 500, kein DB-Update
  */
@@ -188,10 +188,16 @@ describe("POST /api/digital-requests/[id]/process", () => {
     expect(res.status).toBe(401);
   });
 
-  it("gibt 403 zurück für INBOX_ONLY", async () => {
+  it("INBOX_ONLY kann den Folgefragebogen starten", async () => {
     getSessionAccountMock.mockResolvedValue(INBOX_ONLY_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_READY);
+    createQuestionnaireSessionMock.mockResolvedValue(SESSION_RESULT);
+    sendDigitalRequestTokenEmailMock.mockResolvedValue(undefined);
+    pm.digitalRequest.update.mockResolvedValue({});
     const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(createQuestionnaireSessionMock).toHaveBeenCalled();
+    expect(pm.digitalRequest.update).toHaveBeenCalled();
   });
 
   // --- Eigentum ---

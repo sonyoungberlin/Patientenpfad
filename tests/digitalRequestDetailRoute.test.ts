@@ -6,7 +6,7 @@
  * - selected_block_ids werden gespeichert
  * - ungültige Block-IDs werden abgelehnt (400)
  * - fremde Practice → 404
- * - INBOX_ONLY → 403
+ * - INBOX_ONLY darf den bestehenden Workflow verwenden
  * - nicht angemeldet → 401
  * - status=in_review wird gesetzt wenn aktueller Status "new"
  * - status=in_review wird NICHT gesetzt wenn Terminal-Status ("sent")
@@ -160,10 +160,12 @@ describe("PATCH /api/digital-requests/[id]", () => {
     expect(res.status).toBe(401);
   });
 
-  it("gibt 403 zurück für INBOX_ONLY", async () => {
+  it("INBOX_ONLY kann einen Patienten zuordnen", async () => {
     getSessionAccountMock.mockResolvedValue(INBOX_ONLY_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "new" });
     const res = await PATCH(makeRequest("dr-1", { patient_reference: "P-1" }), CTX("dr-1"));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(pm.digitalRequest.updateMany.mock.calls[0][0].data.patient_reference).toBe("P-1");
   });
 
   // --- Eigentum ---
@@ -554,10 +556,13 @@ describe("DELETE /api/digital-requests/[id]", () => {
     expect(res.status).toBe(401);
   });
 
-  it("gibt 403 zurück für INBOX_ONLY", async () => {
+  it("INBOX_ONLY kann eine offene Anfrage löschen", async () => {
     getSessionAccountMock.mockResolvedValue(INBOX_ONLY_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue({ id: "dr-1", status: "new" });
+    pm.digitalRequest.delete.mockResolvedValue({});
     const res = await DELETE(makeDeleteRequest("dr-1"), CTX("dr-1"));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(pm.digitalRequest.delete).toHaveBeenCalledWith({ where: { id: "dr-1" } });
   });
 
   // --- Eigentum ---

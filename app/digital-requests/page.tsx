@@ -1,8 +1,7 @@
 /**
  * Phase A: Interne Praxis-Übersicht für Digitale Anfragen.
  *
- * Zugriff: requirePatientCommunicationAccessFromCookies + kein INBOX_ONLY.
- * INBOX_ONLY-Accounts werden zu `/questionnaires` weitergeleitet.
+ * Zugriff: dedizierter Digital-Request-Work-Guard einschließlich INBOX_ONLY.
  *
  * Zeigt maximal 100 Anfragen (neuste zuerst), jeweils mit:
  * Name, Eingang, Status-Badge, Anliegen-Auszug (max. 80 Zeichen).
@@ -13,10 +12,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import {
-  requirePatientCommunicationAccessFromCookies,
-  isInboxOnlyAccount,
-} from "@/lib/authz";
+import { requireDigitalRequestWorkAccessFromCookies } from "@/lib/authz";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 import { topicLabel } from "@/lib/digitalRequests/topics";
 
@@ -68,14 +64,9 @@ function formatDate(date: Date): string {
 }
 
 export default async function DigitalRequestsPage() {
-  const account = await requirePatientCommunicationAccessFromCookies();
+  const account = await requireDigitalRequestWorkAccessFromCookies();
   if (!account) {
     redirect("/");
-  }
-
-  // INBOX_ONLY hat keinen Zugriff auf Digitale Anfragen.
-  if (isInboxOnlyAccount(account)) {
-    redirect("/questionnaires");
   }
 
   const requests = await prisma.digitalRequest.findMany({

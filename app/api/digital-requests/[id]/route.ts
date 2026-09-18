@@ -5,8 +5,8 @@
  * Optional kann `status: "in_review"` mitgeschickt werden; der Server setzt
  * ihn nur, wenn der aktuelle Status dies erlaubt (nicht "sent" / "closed").
  *
- * Rechte: OWNER / ADMIN / USER (via requireQuestionnaireSendAccess).
- * INBOX_ONLY → 403. Nicht freigeschaltet → 403. Nicht eingeloggt → 401.
+ * Rechte: OWNER / ADMIN / USER / INBOX_ONLY via Digital-Request-Work-Guard.
+ * Nicht freigeschaltet → 403. Nicht eingeloggt → 401.
  *
  * Eigentum: Fremde / gelöschte IDs → 404 (kein 403, Konvention Praxis-Pfade).
  */
@@ -14,7 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireQuestionnaireSendAccess } from "@/lib/authz";
+import { requireDigitalRequestWorkAccess } from "@/lib/authz";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 import {
@@ -28,7 +28,7 @@ export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const { account, error } = await requireQuestionnaireSendAccess(req);
+  const { account, error } = await requireDigitalRequestWorkAccess(req);
   if (error) return error;
 
   const { id } = await ctx.params;
@@ -189,8 +189,8 @@ export async function PATCH(
  * Nur möglich, solange der Status nicht "sent" oder "closed" ist.
  * Eine eventuell vorhandene PatientQuestionnaireSession wird NICHT gelöscht.
  *
- * Rechte: OWNER / ADMIN / USER (via requireQuestionnaireSendAccess).
- * INBOX_ONLY → 403. Nicht eingeloggt → 401.
+ * Rechte: OWNER / ADMIN / USER / INBOX_ONLY via Digital-Request-Work-Guard.
+ * Nicht eingeloggt → 401.
  *
  * Fehlerverhalten:
  *   - 404: Anfrage unbekannt oder fremde Practice.
@@ -200,7 +200,7 @@ export async function DELETE(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const { account, error } = await requireQuestionnaireSendAccess(req);
+  const { account, error } = await requireDigitalRequestWorkAccess(req);
   if (error) return error;
 
   const { id } = await ctx.params;

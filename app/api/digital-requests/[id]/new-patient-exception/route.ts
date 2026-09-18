@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireQuestionnaireSendAccess } from "@/lib/authz";
+import { requireDigitalRequestWorkAccess } from "@/lib/authz";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 
 export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const { account, error } = await requireQuestionnaireSendAccess(req);
+  const { account, error } = await requireDigitalRequestWorkAccess(req);
   if (error) return error;
 
   let body: Record<string, unknown>;

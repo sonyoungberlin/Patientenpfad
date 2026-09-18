@@ -6,8 +6,8 @@
  * geschickt. Nach erfolgreichem Versand wird die DigitalRequest auf
  * `status = "sent"` gesetzt und mit der erzeugten Session verknüpft.
  *
- * Rechte: OWNER / ADMIN / USER (via requireQuestionnaireSendAccess).
- * INBOX_ONLY → 403. Nicht eingeloggt → 401.
+ * Rechte: OWNER / ADMIN / USER / INBOX_ONLY via Digital-Request-Work-Guard.
+ * Nicht eingeloggt → 401.
  *
  * Fehlerverhalten:
  *   - 404: Anfrage unbekannt oder fremde Practice.
@@ -20,7 +20,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireQuestionnaireSendAccess } from "@/lib/authz";
+import { requireDigitalRequestWorkAccess } from "@/lib/authz";
 import { getOwnershipFilter } from "@/lib/digitalRequests/practiceScope";
 import { BLOCK_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
@@ -41,7 +41,7 @@ export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const { account, error } = await requireQuestionnaireSendAccess(req);
+  const { account, error } = await requireDigitalRequestWorkAccess(req);
   if (error) return error;
 
   const { id } = await ctx.params;

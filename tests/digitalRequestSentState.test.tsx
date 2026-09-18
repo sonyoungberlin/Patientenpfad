@@ -38,8 +38,7 @@ jest.mock("@/lib/auth", () => ({
 }));
 
 jest.mock("@/lib/authz", () => ({
-  requirePatientCommunicationAccessFromCookies: jest.fn(),
-  isInboxOnlyAccount: jest.fn(),
+  requireDigitalRequestWorkAccessFromCookies: jest.fn(),
 }));
 
 jest.mock("@/lib/prisma", () => ({
@@ -53,8 +52,7 @@ jest.mock("@/lib/prisma", () => ({
 
 import { prisma } from "@/lib/prisma";
 import {
-  requirePatientCommunicationAccessFromCookies,
-  isInboxOnlyAccount,
+  requireDigitalRequestWorkAccessFromCookies,
 } from "@/lib/authz";
 
 type PrismaMock = {
@@ -65,8 +63,7 @@ type PrismaMock = {
 };
 const pm = prisma as unknown as PrismaMock;
 const requireAccessMock =
-  requirePatientCommunicationAccessFromCookies as jest.Mock;
-const isInboxOnlyMock = isInboxOnlyAccount as jest.Mock;
+  requireDigitalRequestWorkAccessFromCookies as jest.Mock;
 
 // ---------------------------------------------------------------------------
 // Imports — nach den Mocks
@@ -99,6 +96,11 @@ const ACCOUNT = {
     arbeitsprozesse_enabled: false,
   },
   memberships: [{ practice_id: "p-1", role: "OWNER" }],
+};
+
+const INBOX_ONLY_ACCOUNT = {
+  ...ACCOUNT,
+  memberships: [{ practice_id: "p-1", role: "INBOX_ONLY" }],
 };
 
 const BLOCKS = [
@@ -153,7 +155,20 @@ async function runPage<T>(fn: () => Promise<T>) {
 describe("Detailseite — sent-Status (via Server-Component-Render)", () => {
   beforeEach(() => {
     requireAccessMock.mockResolvedValue(ACCOUNT);
-    isInboxOnlyMock.mockReturnValue(false);
+  });
+
+  it("INBOX_ONLY kann die Detailseite öffnen", async () => {
+    requireAccessMock.mockResolvedValue(INBOX_ONLY_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_NEW);
+
+    const { result, redirect, notFound } = await runPage(() =>
+      DigitalRequestDetailPage({ params: Promise.resolve({ id: "dr-2" }) }),
+    );
+
+    expect(redirect).toBeNull();
+    expect(notFound).toBe(false);
+    expect(renderToStaticMarkup(result as React.ReactElement)).toContain("Anfrage bearbeiten");
+    expect(pm.digitalRequest.findFirst.mock.calls[0][0].where.owner_practice_id).toBe("p-1");
   });
 
   it("zeigt Versand-Hinweis und keinen Speichern-Button wenn status=sent", async () => {
@@ -210,7 +225,6 @@ const DR_REJECTED = {
 describe("Detailseite — rejected-Status (via Server-Component-Render)", () => {
   beforeEach(() => {
     requireAccessMock.mockResolvedValue(ACCOUNT);
-    isInboxOnlyMock.mockReturnValue(false);
   });
 
   it("zeigt Ablehnungs-Hinweis wenn status=rejected", async () => {
@@ -259,7 +273,6 @@ describe("Detailseite — rejected-Status (via Server-Component-Render)", () => 
 describe("DigitalRequestsPage — CTA-Labels", () => {
   beforeEach(() => {
     requireAccessMock.mockResolvedValue(ACCOUNT);
-    isInboxOnlyMock.mockReturnValue(false);
   });
 
   it("zeigt 'Bearbeiten' für aktive Zeilen (new / in_review)", async () => {

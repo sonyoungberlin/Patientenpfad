@@ -16,7 +16,11 @@ jest.mock("@/lib/prisma", () => ({
 import { prisma } from "@/lib/prisma";
 import {
   requireApprovedAccount,
+  requireDigitalRequestWorkAccess,
+  requireInquiriesAccess,
   requirePatientCommunicationAccess,
+  requireQuestionnaireInboxAccess,
+  requireQuestionnaireSendAccess,
   requireWebsiteFormsAccess,
   requireWebsiteFormsManagementAccess,
 } from "@/lib/authz";
@@ -40,7 +44,7 @@ function sessionWithPractice(practice: {
   inquiry_assistant_enabled: boolean;
   patient_communication_enabled: boolean;
   website_forms_enabled: boolean;
-}) {
+}, role: PracticeRole = PracticeRole.OWNER) {
   return {
     expiresAt: new Date(Date.now() + 60_000),
     account: {
@@ -55,7 +59,7 @@ function sessionWithPractice(practice: {
       memberships: [
         {
           practice_id: "p-1",
-          role: PracticeRole.OWNER,
+          role,
           created_at: new Date("2025-01-01"),
           practice: {
             id: "p-1",
@@ -144,6 +148,67 @@ describe("require*-Helper lesen Flags aus current_practice", () => {
     );
     const res = await requireWebsiteFormsManagementAccess(reqWithCookie());
     expect(res.error).toBeNull();
+  });
+
+  it.each([
+    PracticeRole.OWNER,
+    PracticeRole.ADMIN,
+    PracticeRole.USER,
+    PracticeRole.INBOX_ONLY,
+  ])("%s darf Digital Requests bearbeiten", async (role) => {
+    pm.session.findUnique.mockResolvedValue(
+      sessionWithPractice({
+        is_approved: true,
+        inquiry_assistant_enabled: true,
+        patient_communication_enabled: true,
+        website_forms_enabled: false,
+      }, role),
+    );
+
+    const res = await requireDigitalRequestWorkAccess(reqWithCookie());
+    expect(res.error).toBeNull();
+  });
+
+  it("INBOX_ONLY behält Zugriff auf Posteingang und reaktive Check-in-Aktionen", async () => {
+    pm.session.findUnique.mockResolvedValue(
+      sessionWithPractice({
+        is_approved: true,
+        inquiry_assistant_enabled: true,
+        patient_communication_enabled: true,
+        website_forms_enabled: false,
+      }, PracticeRole.INBOX_ONLY),
+    );
+
+    const res = await requireQuestionnaireInboxAccess(reqWithCookie());
+    expect(res.error).toBeNull();
+  });
+
+  it("INBOX_ONLY bleibt vom allgemeinen Questionnaire-Versand ausgeschlossen", async () => {
+    pm.session.findUnique.mockResolvedValue(
+      sessionWithPractice({
+        is_approved: true,
+        inquiry_assistant_enabled: true,
+        patient_communication_enabled: true,
+        website_forms_enabled: false,
+      }, PracticeRole.INBOX_ONLY),
+    );
+
+    const res = await requireQuestionnaireSendAccess(reqWithCookie());
+    expect(res.error?.status).toBe(403);
+  });
+
+  it("INBOX_ONLY bleibt vom Inquiry-Bereich ausgeschlossen", async () => {
+    pm.session.findUnique.mockResolvedValue(
+      sessionWithPractice({
+        is_approved: true,
+        inquiry_assistant_enabled: true,
+        patient_communication_enabled: true,
+        website_forms_enabled: false,
+      }, PracticeRole.INBOX_ONLY),
+    );
+
+    const res = await requireInquiriesAccess(reqWithCookie());
+    expect(res.error?.status).toBe(403);
   });
 
   it("Fallback: ohne Membership (Test-Double) gelten weiter die Account-Flags", async () => {

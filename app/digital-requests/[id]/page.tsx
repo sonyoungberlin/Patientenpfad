@@ -2,8 +2,7 @@
  * Phase B Schritt 2: Detailseite für eine einzelne DigitalRequest.
  *
  * Guard:
- *   - requirePatientCommunicationAccessFromCookies
- *   - INBOX_ONLY → redirect /questionnaires (analog Listenseite)
+ *   - dedizierter Digital-Request-Work-Guard einschließlich INBOX_ONLY
  *
  * Zeigt: Name, E-Mail, Eingangsdatum, Anliegen, Status.
  * Formular: patient_reference, Block-Auswahl (BLOCK_CATALOG), Speichern.
@@ -14,10 +13,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import {
-  requirePatientCommunicationAccessFromCookies,
-  isInboxOnlyAccount,
-} from "@/lib/authz";
+import { requireDigitalRequestWorkAccessFromCookies } from "@/lib/authz";
 import {
   BLOCK_CATALOG,
 } from "@/lib/questionnaire/blockCatalog";
@@ -79,13 +75,9 @@ export default async function DigitalRequestDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const account = await requirePatientCommunicationAccessFromCookies();
+  const account = await requireDigitalRequestWorkAccessFromCookies();
   if (!account) {
     redirect("/");
-  }
-
-  if (isInboxOnlyAccount(account)) {
-    redirect("/questionnaires");
   }
 
   const { id } = await params;

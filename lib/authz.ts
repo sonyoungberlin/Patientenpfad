@@ -599,6 +599,51 @@ export async function requireQuestionnaireSendAccess(
   return base;
 }
 
+export async function requireDigitalRequestWorkAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const base = await requirePatientCommunicationAccess(req);
+  if (base.error) return base;
+
+  const allowed = hasCurrentPracticeRole(
+    base.account,
+    [
+      PracticeRole.OWNER,
+      PracticeRole.ADMIN,
+      PracticeRole.USER,
+      PracticeRole.INBOX_ONLY,
+    ],
+    { allowNoPracticeFallback: true },
+  );
+  if (!allowed) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return base;
+}
+
+export async function requireDigitalRequestWorkAccessFromCookies(): Promise<SessionAccount | null> {
+  const account = await requirePatientCommunicationAccessFromCookies();
+  if (!account) return null;
+  const allowed = hasCurrentPracticeRole(
+    account,
+    [
+      PracticeRole.OWNER,
+      PracticeRole.ADMIN,
+      PracticeRole.USER,
+      PracticeRole.INBOX_ONLY,
+    ],
+    { allowNoPracticeFallback: true },
+  );
+  return allowed ? account : null;
+}
+
 export async function requireInquiriesAccess(
   req: NextRequest,
 ): Promise<RequireResult> {

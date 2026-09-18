@@ -46,7 +46,8 @@ export default async function DashboardPage() {
     (myRole === null ||
       myRole === PracticeRole.OWNER ||
       myRole === PracticeRole.ADMIN ||
-      myRole === PracticeRole.USER);
+      myRole === PracticeRole.USER ||
+      myRole === PracticeRole.INBOX_ONLY);
   const canUseInquiries =
     myRole === null ||
     myRole === PracticeRole.OWNER ||
@@ -60,11 +61,13 @@ export default async function DashboardPage() {
     myRole === PracticeRole.INBOX_ONLY;
   const showPracticeTile =
     myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
-  const showOfficeTile = account.office_cases_enabled || account.is_admin;
   const canOpenOfficeCases =
     myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
   const canOpenOfficeApplications =
     canOpenOfficeCases || myRole === PracticeRole.USER;
+  const showOfficeTile =
+    (account.office_cases_enabled || account.is_admin) &&
+    (canOpenOfficeCases || canOpenOfficeApplications);
   const showWorkflowTile = account.arbeitsprozesse_enabled || account.is_admin;
 
   return (

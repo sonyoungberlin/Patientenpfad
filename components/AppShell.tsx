@@ -160,7 +160,8 @@ export default function AppShell({
     practiceRole === null ||
     practiceRole === "OWNER" ||
     practiceRole === "ADMIN" ||
-    practiceRole === "USER";
+    practiceRole === "USER" ||
+    practiceRole === "INBOX_ONLY";
   const canUseInquiries =
     practiceRole === null ||
     practiceRole === "OWNER" ||
@@ -211,6 +212,9 @@ export default function AppShell({
         label: "Fragebogen-Posteingang",
         href: "/questionnaires",
       });
+    }
+    if (account.patient_communication_enabled && canUseDigitalRequests) {
+      sectionItems.push({ label: "Digitale Anfragen", href: "/digital-requests" });
     }
   } else if (isPractice) {
     if (account.arbeitsprozesse_enabled || account.is_admin) {

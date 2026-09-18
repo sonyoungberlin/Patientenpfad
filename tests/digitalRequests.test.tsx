@@ -14,8 +14,8 @@
  *   9. Submit-Endpoint: 404 wenn website_forms_enabled=false wird ignoriert
  *      (Form wird trotzdem gefunden wenn patient_communication_enabled=true).
  *  10. Interne Liste `/digital-requests` — zeigt nur eigene Anfragen (scoped).
- *  11. Interne Liste — INBOX_ONLY wird zu /questionnaires weitergeleitet.
- *  12. AppShell: INBOX_ONLY hat keinen "Digitale Anfragen"-NavItem.
+ *  11. Interne Liste — INBOX_ONLY sieht praxisgebundene Anfragen.
+ *  12. AppShell: INBOX_ONLY hat den "Digitale Anfragen"-NavItem.
  */
 
 import { NextRequest } from "next/server";
@@ -46,8 +46,7 @@ jest.mock("@/lib/auth", () => ({
 }));
 
 jest.mock("@/lib/authz", () => ({
-  requirePatientCommunicationAccessFromCookies: jest.fn(),
-  isInboxOnlyAccount: jest.fn(),
+  requireDigitalRequestWorkAccessFromCookies: jest.fn(),
 }));
 
 jest.mock("@/lib/prisma", () => ({
@@ -67,8 +66,7 @@ jest.mock("@/lib/prisma", () => ({
 
 import { prisma } from "@/lib/prisma";
 import {
-  requirePatientCommunicationAccessFromCookies,
-  isInboxOnlyAccount,
+  requireDigitalRequestWorkAccessFromCookies,
 } from "@/lib/authz";
 import { hashSubmitterEmail } from "@/lib/websiteForms/emailHash";
 import { POST } from "@/app/api/anfrage/[slug]/route";
@@ -82,9 +80,8 @@ type PrismaMock = {
   digitalRequest: { create: jest.Mock; findMany: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
-const requirePatComm =
-  requirePatientCommunicationAccessFromCookies as jest.Mock;
-const isInboxOnly = isInboxOnlyAccount as jest.Mock;
+const requireDigitalRequestWork =
+  requireDigitalRequestWorkAccessFromCookies as jest.Mock;
 
 const SLUG = "test-praxis";
 
@@ -451,8 +448,7 @@ describe("DigitalRequestsPage — Interne Liste", () => {
       current_practice: { id: "praxis-1" },
       memberships: [{ practice_id: "praxis-1", role: "OWNER" }],
     });
-    requirePatComm.mockResolvedValue(account);
-    isInboxOnly.mockReturnValue(false);
+    requireDigitalRequestWork.mockResolvedValue(account);
 
     pm.digitalRequest.findMany.mockResolvedValue([
       {
@@ -489,8 +485,7 @@ describe("DigitalRequestsPage — Interne Liste", () => {
       current_practice: { id: "praxis-1" },
       memberships: [{ practice_id: "praxis-1", role: "OWNER" }],
     });
-    requirePatComm.mockResolvedValue(account);
-    isInboxOnly.mockReturnValue(false);
+    requireDigitalRequestWork.mockResolvedValue(account);
     pm.digitalRequest.findMany.mockResolvedValue([
       {
         id: "dr-legacy",
@@ -516,8 +511,7 @@ describe("DigitalRequestsPage — Interne Liste", () => {
       current_practice: { id: "praxis-1" },
       memberships: [{ practice_id: "praxis-1", role: "OWNER" }],
     });
-    requirePatComm.mockResolvedValue(account);
-    isInboxOnly.mockReturnValue(false);
+    requireDigitalRequestWork.mockResolvedValue(account);
     // DB gibt nichts zurück (sent ist herausgefiltert)
     pm.digitalRequest.findMany.mockResolvedValue([]);
 
@@ -534,22 +528,23 @@ describe("DigitalRequestsPage — Interne Liste", () => {
     expect(whereArg.status).toEqual({ in: ["new", "in_review"] });
   });
 
-  it("INBOX_ONLY wird zu /questionnaires weitergeleitet", async () => {
+  it("INBOX_ONLY sieht Anfragen der aktiven Praxis", async () => {
     const account = makeAccount({
       current_practice: { id: "praxis-1" },
       memberships: [{ practice_id: "praxis-1", role: "INBOX_ONLY" }],
     });
-    requirePatComm.mockResolvedValue(account);
-    isInboxOnly.mockReturnValue(true);
+    requireDigitalRequestWork.mockResolvedValue(account);
+    pm.digitalRequest.findMany.mockResolvedValue([]);
 
-    const { redirect } = await runPage(() => DigitalRequestsPage());
+    const { result, redirect } = await runPage(() => DigitalRequestsPage());
 
-    expect(redirect).toBe("/questionnaires");
-    expect(pm.digitalRequest.findMany).not.toHaveBeenCalled();
+    expect(redirect).toBeNull();
+    expect(result).toBeDefined();
+    expect(pm.digitalRequest.findMany.mock.calls[0][0].where.owner_practice_id).toBe("praxis-1");
   });
 
   it("nicht eingeloggter Nutzer wird zu / weitergeleitet", async () => {
-    requirePatComm.mockResolvedValue(null);
+    requireDigitalRequestWork.mockResolvedValue(null);
 
     const { redirect } = await runPage(() => DigitalRequestsPage());
 
@@ -559,7 +554,7 @@ describe("DigitalRequestsPage — Interne Liste", () => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// AppShell — INBOX_ONLY hat kein "Digitale Anfragen"-NavItem
+// AppShell — INBOX_ONLY hat den "Digitale Anfragen"-NavItem
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe("AppShell — Digitale Anfragen NavItem", () => {
@@ -606,9 +601,9 @@ describe("AppShell — Digitale Anfragen NavItem", () => {
     expect(markup).toContain("Digitale Anfragen");
   });
 
-  it("INBOX_ONLY sieht KEIN 'Digitale Anfragen' NavItem", () => {
+  it("INBOX_ONLY sieht das 'Digitale Anfragen' NavItem", () => {
     const markup = renderNav("INBOX_ONLY");
-    expect(markup).not.toContain("Digitale Anfragen");
+    expect(markup).toContain("Digitale Anfragen");
   });
 
   it("Unread-Indikator erscheint wenn digitalRequestsHasUnread=true", () => {

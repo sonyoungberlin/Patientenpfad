@@ -8,7 +8,7 @@ import AppShell from "@/components/AppShell";
  * analog zu `/cases`, `/inquiries`, `/practice` etc.
  *
  * Auth-Guard: liegt bereits in den Page-Komponenten
- * (`requirePatientCommunicationAccessFromCookies` + INBOX_ONLY-Redirect).
+ * (`requireDigitalRequestWorkAccessFromCookies`).
  * Das Layout prüft daher nicht erneut — kein doppelter DB-Roundtrip.
  */
 export default function DigitalRequestsLayout({

@@ -87,11 +87,12 @@ describe("Dashboard INBOX_ONLY", () => {
     getCookies.mockReset();
   });
 
-  it("zeigt nur den erlaubten Fragebogen-Einstieg", async () => {
+  it("zeigt nur die reaktiven Patienteneingänge", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
 
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).toContain("Fragebögen");
+    expect(html).toContain("Digitale Anfragen");
     expect(html).not.toContain("Patientenkommunikation");
     expect(html).not.toContain("Patientenfälle");
     expect(redirectMock).not.toHaveBeenCalled();
@@ -120,10 +121,10 @@ describe("Dashboard — Kachel 'Digitale Anfragen'", () => {
     expect(html).not.toContain("data-testid=\"digital-requests-tile\"");
   });
 
-  it("INBOX_ONLY sieht die Kachel nicht", async () => {
+  it("INBOX_ONLY sieht die Kachel", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
     const html = renderToStaticMarkup(await DashboardPage());
-    expect(html).not.toContain('data-testid="digital-requests-tile"');
+    expect(html).toContain('data-testid="digital-requests-tile"');
   });
 });
 

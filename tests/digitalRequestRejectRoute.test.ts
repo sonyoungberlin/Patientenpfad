@@ -3,7 +3,7 @@
  *
  * Prüft:
  * - 401 wenn nicht angemeldet
- * - 403 für INBOX_ONLY
+ * - INBOX_ONLY darf ablehnen
  * - 404 bei fremder/unbekannter Practice
  * - 409 bei terminalen Statuswerten (sent / closed / rejected)
  * - 400 wenn submitter_email fehlt
@@ -146,10 +146,17 @@ describe("POST /api/digital-requests/[id]/reject", () => {
     expect(res.status).toBe(401);
   });
 
-  it("gibt 403 zurück für INBOX_ONLY", async () => {
+  it("INBOX_ONLY kann eine Anfrage ablehnen", async () => {
     getSessionAccountMock.mockResolvedValue(INBOX_ONLY_ACCOUNT);
+    pm.digitalRequest.findFirst.mockResolvedValue(DR_NEW);
+    sendDigitalRequestRejectionEmailMock.mockResolvedValue(undefined);
+    pm.digitalRequest.update.mockResolvedValue({});
     const res = await POST(makeRequest("dr-1"), CTX("dr-1"));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(pm.digitalRequest.update).toHaveBeenCalledWith({
+      where: { id: "dr-1" },
+      data: { status: "rejected" },
+    });
   });
 
   // --- Eigentum ---

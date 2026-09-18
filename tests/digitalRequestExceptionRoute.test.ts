@@ -10,17 +10,17 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 jest.mock("@/lib/authz", () => ({
-  requireQuestionnaireSendAccess: jest.fn(),
+  requireDigitalRequestWorkAccess: jest.fn(),
 }));
 
 import { prisma } from "@/lib/prisma";
-import { requireQuestionnaireSendAccess } from "@/lib/authz";
+import { requireDigitalRequestWorkAccess } from "@/lib/authz";
 import { PATCH } from "@/app/api/digital-requests/[id]/new-patient-exception/route";
 
 const pm = prisma as unknown as {
   digitalRequest: { findFirst: jest.Mock; update: jest.Mock };
 };
-const requireAccessMock = requireQuestionnaireSendAccess as jest.Mock;
+const requireAccessMock = requireDigitalRequestWorkAccess as jest.Mock;
 
 const ACCOUNT = {
   id: "account-1",
