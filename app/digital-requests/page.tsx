@@ -32,7 +32,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const PATIENT_RELATIONSHIP_LABEL: Record<string, string> = {
   existing_patient: "Bereits Patient/in",
-  new_patient: "Neu in der Praxis",
+  new_patient: "Neupatient/in",
 };
 
 const REQUEST_INTENT_LABEL: Record<string, string> = {
@@ -115,7 +115,7 @@ export default async function DigitalRequestsPage() {
                 <th className="pb-2 pr-4 font-medium">Name</th>
                 <th className="pb-2 pr-4 font-medium">Eingegangen</th>
                 <th className="pb-2 pr-4 font-medium">Status</th>
-                <th className="pb-2 pr-4 font-medium">Selbstauskunft</th>
+                <th className="pb-2 pr-4 font-medium">Patientenangabe</th>
                 <th className="pb-2 pr-4 font-medium">Weg / Grund</th>
                 <th className="pb-2 pr-4 font-medium">Anliegen</th>
                 <th className="pb-2 font-medium"></th>

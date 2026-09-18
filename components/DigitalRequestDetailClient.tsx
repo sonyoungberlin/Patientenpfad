@@ -305,16 +305,16 @@ export function DigitalRequestDetailClient({
         >
           <p className="mb-2 font-medium text-gray-800">Patientenzuordnung</p>
           <p className="mb-3 text-sm text-gray-600">
-            Patientenselbstauskunft: {initialPatientRelationship === "existing_patient"
+            Patientenangabe: {initialPatientRelationship === "existing_patient"
               ? "Bereits Patient/in"
               : initialPatientRelationship === "new_patient"
-                ? "Neu in der Praxis"
+                ? "Neupatient/in"
                 : "Nicht angegeben"}
           </p>
           <p className="mb-3 text-sm text-gray-600">
-            Praxisentscheidung: {newPatientExceptionConfirmed
-              ? "Neupatienten-Ausnahme bestätigt"
-              : "Keine Neupatienten-Ausnahme bestätigt"}
+            {newPatientExceptionConfirmed
+              ? "Versand ohne Patientennummer freigegeben"
+              : "Versand ohne Patientennummer nicht freigegeben"}
           </p>
           {!isReadOnly && (
             <button
@@ -327,8 +327,8 @@ export function DigitalRequestDetailClient({
               {exceptionSaving
                 ? "Speichert…"
                 : newPatientExceptionConfirmed
-                  ? "Neupatienten-Ausnahme zurücknehmen"
-                  : "Neupatient/in – noch keine Patientennummer vorhanden"}
+                  ? "Freigabe zurücknehmen"
+                  : "Ohne Patientennummer fortfahren"}
             </button>
           )}
           {exceptionError && (
@@ -338,11 +338,13 @@ export function DigitalRequestDetailClient({
           )}
           {patientReference.trim() !== "" || newPatientExceptionConfirmed ? (
             <p className="mt-3 text-sm text-green-700" data-testid="gate-ready-notice">
-              Die Zuordnungsvoraussetzung für den Folgefragebogen ist erfüllt.
+              {newPatientExceptionConfirmed
+                ? "Der Folgefragebogen wird ohne Patientennummer versendet. Die Patientennummer kann später zugeordnet werden."
+                : "Die Zuordnungsvoraussetzung für den Folgefragebogen ist erfüllt."}
             </p>
           ) : (
             <p className="mt-3 text-sm text-amber-700" data-testid="gate-blocked-notice">
-              Vor dem Versand zuerst eine Patientennummer zuordnen oder die Neupatienten-Ausnahme bewusst bestätigen.
+              Vor dem Versand zuerst eine Patientennummer zuordnen oder den Versand ohne Patientennummer freigeben.
             </p>
           )}
         </div>

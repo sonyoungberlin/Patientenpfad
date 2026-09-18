@@ -225,7 +225,7 @@ export default async function DigitalRequestDetailPage({
             </span>
           </dd>
 
-          <dt className="font-medium text-gray-500">Selbstauskunft</dt>
+          <dt className="font-medium text-gray-500">Patientenangabe</dt>
           <dd className="text-gray-900">
             {PATIENT_RELATIONSHIP_LABEL[request.patient_relationship ?? ""] ?? "Nicht angegeben"}
           </dd>
@@ -233,8 +233,8 @@ export default async function DigitalRequestDetailPage({
           <dt className="font-medium text-gray-500">Praxisentscheidung</dt>
           <dd className="text-gray-900">
             {request.new_patient_exception_confirmed_at
-              ? "Neupatienten-Ausnahme bestätigt"
-              : "Keine Neupatienten-Ausnahme bestätigt"}
+              ? "Versand ohne Patientennummer freigegeben"
+              : "Versand ohne Patientennummer nicht freigegeben"}
           </dd>
 
           <dt className="font-medium text-gray-500">Weg</dt>

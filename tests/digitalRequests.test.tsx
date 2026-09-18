@@ -471,7 +471,7 @@ describe("DigitalRequestsPage — Interne Liste", () => {
 
     expect(markup).toContain("Gabi Testerin");
     expect(markup).toContain("Neu");
-    expect(markup).toContain("Neu in der Praxis");
+    expect(markup).toContain("Neupatient/in");
     expect(markup).toContain("Termin: Ich hätte gerne einen Termin.");
 
     // Scoping: owner_practice_id aus current_practice

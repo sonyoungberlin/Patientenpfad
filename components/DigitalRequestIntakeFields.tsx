@@ -52,7 +52,7 @@ export function DigitalRequestIntakeFields() {
           data-testid="request-intent"
         >
           <p id="request-intent-label" style={{ marginBottom: "0.75rem", fontWeight: 500 }}>
-            Was möchten Sie tun? <span aria-hidden="true">*</span>
+            Was ist Ihr Anliegen? <span aria-hidden="true">*</span>
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <label style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", cursor: "pointer", fontWeight: 400 }}>
@@ -65,7 +65,7 @@ export function DigitalRequestIntakeFields() {
                 onChange={(event) => setRequestIntent(event.target.value)}
                 style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
               />
-              <span>Einen Termin vereinbaren.</span>
+              <span>Ich habe bereits einen Termin und möchte den Grund für meinen Besuch angeben.</span>
             </label>
             <label style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", cursor: "pointer", fontWeight: 400 }}>
               <input
@@ -76,7 +76,7 @@ export function DigitalRequestIntakeFields() {
                 onChange={(event) => setRequestIntent(event.target.value)}
                 style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
               />
-              <span>Eine digitale Anfrage senden.</span>
+              <span>Ich möchte eine digitale Anfrage stellen.</span>
             </label>
           </div>
         </div>

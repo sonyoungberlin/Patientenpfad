@@ -119,7 +119,7 @@ describe("DigitalRequestDetailClient — Button-Sichtbarkeit", () => {
     expect(
       container.querySelector<HTMLButtonElement>('[data-testid="send-questionnaire-btn"]')!.disabled,
     ).toBe(true);
-    expect(container.textContent).toContain("Neu in der Praxis");
+    expect(container.textContent).toContain("Patientenangabe: Neupatient/in");
     await cleanup(root, container);
   });
 
@@ -151,7 +151,10 @@ describe("DigitalRequestDetailClient — Button-Sichtbarkeit", () => {
     });
     expect(mockFetch.mock.calls[0][0]).toContain("new-patient-exception");
     expect(container.textContent).toContain("Bereits Patient/in");
-    expect(container.textContent).toContain("Neupatienten-Ausnahme bestätigt");
+    expect(container.textContent).toContain("Versand ohne Patientennummer freigegeben");
+    expect(container.textContent).toContain(
+      "Der Folgefragebogen wird ohne Patientennummer versendet. Die Patientennummer kann später zugeordnet werden.",
+    );
     await cleanup(root, container);
   });
 
