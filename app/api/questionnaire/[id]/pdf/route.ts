@@ -34,6 +34,7 @@ export async function GET(
       deduplicated_questions: true,
       answers: true,
       frozen_blocks: true,
+      digital_request_snapshot: true,
       source: true,
       practice_form: {
         select: {

@@ -32,6 +32,7 @@ import {
 } from "./questionnaireExportFilename";
 import { resolveInlineDocumentation } from "./inlineDocumentation";
 import { formatStructuredVaccinationEntries } from "./vaccinationReview";
+import { formatDigitalRequestSnapshot } from "./digitalRequestSnapshot";
 
 export { sanitizeFilenamePart } from "./questionnaireExportFilename";
 
@@ -47,6 +48,7 @@ export type PdfSessionInput = {
   internal_workflow_id?: unknown;
   practice_form: { title: string } | null;
   frozen_blocks?: unknown;
+  digital_request_snapshot?: unknown;
 };
 
 export type PdfRenderOptions = {
@@ -361,6 +363,15 @@ export async function buildQuestionnairePdfBytes(
     : "–";
   drawText(`Datum: ${submittedStr}`, { size: 9, color: [0.3, 0.3, 0.3] });
   drawText(`${referenceLabel}: ${session.patient_reference ?? "–"}`, { size: 9, color: [0.3, 0.3, 0.3] });
+
+  const digitalRequestSnapshot = formatDigitalRequestSnapshot(session.digital_request_snapshot);
+  if (digitalRequestSnapshot) {
+    y -= sectionGap;
+    drawText(digitalRequestSnapshot.heading, { size: 11, bold: true });
+    for (const field of digitalRequestSnapshot.fields) {
+      drawWrappedPair(field.label, field.value);
+    }
+  }
 
   const derivedValueLines = buildDerivedValueLines(derivedValues);
   const attentionHintLines = computeQuestionnaireAttentionHints(

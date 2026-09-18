@@ -130,6 +130,7 @@ export function buildQuestionnaireInboxDetail(
       : session.session_kind === "internal_documentation"
         ? session.internal_workflow_id
         : null,
+    digitalRequestSnapshot: session.digital_request_snapshot,
   });
 
   return {

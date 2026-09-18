@@ -53,6 +53,7 @@ import {
   isDocumentedContentSnapshot,
   isNewBlockBasedInternalSession,
 } from "./documentedContent";
+import { formatDigitalRequestSnapshot } from "./digitalRequestSnapshot";
 
 /** Eingabe-Subset einer PatientQuestionnaireSession. */
 export type MedicalRecordNoteInput = {
@@ -61,6 +62,7 @@ export type MedicalRecordNoteInput = {
   /** Phase 4: eingefrorene Block-Struktur. NULL = Legacy-Pfad. */
   frozenBlocks?: FrozenBlock[] | null;
   internalWorkflowId?: string | null;
+  digitalRequestSnapshot?: unknown;
 };
 
 export type MedicalRecordOutput = {
@@ -550,6 +552,12 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
   const derivedValues = computeAllDerivedValues(answers);
 
   const lines: string[] = isNewBlockBased ? [] : [title];
+  const digitalRequestSnapshot = formatDigitalRequestSnapshot(input.digitalRequestSnapshot);
+  if (digitalRequestSnapshot) {
+    lines.push("");
+    lines.push(digitalRequestSnapshot.heading);
+    lines.push(...digitalRequestSnapshot.fields.map(({ label, value }) => `${label}: ${value}`));
+  }
   const semanticDocument: SemanticDocument = {
     sections: [
       { slot: 1, items: [] },

@@ -31,6 +31,56 @@ describe("normalizeTextForPvs", () => {
   });
 });
 
+describe("buildMedicalRecordNote – DigitalRequest-Snapshot", () => {
+  it("setzt den ursprünglichen Kontext vor die Folgeantworten", () => {
+    const result = buildMedicalRecordNote({
+      answers: { AU_SYMPTOMS: "Husten" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      digitalRequestSnapshot: {
+        submitter_name: "Erika Muster",
+        birth_date: null,
+        submitter_email: "erika@example.com",
+        patient_relationship: "existing_patient",
+        request_intent: "existing_appointment",
+        concern_text: "Terminfrage",
+        requested_topics: ["AU"],
+      },
+    });
+
+    expect(result.indexOf("Ursprüngliche digitale Anfrage")).toBeLessThan(result.indexOf("Beschwerden: Husten"));
+    expect(result).toContain("Patientenangabe: Bestandspatient/in");
+    expect(result).toContain("Art der Anfrage: Termin vereinbaren");
+    expect(result).toContain("Anfragekategorien: Arbeitsunfähigkeitsbescheinigung");
+    expect(result).not.toContain("existing_patient");
+  });
+
+  it("bleibt ohne Snapshot unverändert und akzeptiert null-Felder", () => {
+    const legacy = buildMedicalRecordNote({
+      answers: { AU_SYMPTOMS: "Husten" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+    });
+    const withEmptySnapshot = buildMedicalRecordNote({
+      answers: { AU_SYMPTOMS: "Husten" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      digitalRequestSnapshot: {
+        submitter_name: null,
+        birth_date: null,
+        submitter_email: null,
+        patient_relationship: null,
+        request_intent: null,
+        concern_text: null,
+        requested_topics: null,
+      },
+    });
+    expect(withEmptySnapshot).toContain("Ursprüngliche digitale Anfrage");
+    expect(buildMedicalRecordNote({
+      answers: { AU_SYMPTOMS: "Husten" },
+      selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
+      digitalRequestSnapshot: null,
+    })).toBe(legacy);
+  });
+});
+
 describe("buildMedicalRecordNote – Titel", () => {
   it("liefert 'AU-Anfrage (digital)' wenn nur ARBEITSUNFAEHIGKEIT gewählt", () => {
     const result = buildMedicalRecordNote({

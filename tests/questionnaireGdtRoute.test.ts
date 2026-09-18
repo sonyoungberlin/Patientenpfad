@@ -36,6 +36,7 @@ const SESSION = {
   internal_workflow_id: null,
   gdt_download_claimed_at: null,
   practice_form: null,
+  digital_request_snapshot: null,
 };
 
 function request() {
@@ -65,6 +66,37 @@ it("liefert eine GDT mit PDF-identischem Basestamm und atomarem Claim", async ()
     }),
     data: { gdt_download_claimed_at: expect.any(Date) },
   }));
+});
+
+it("überträgt den Snapshot nur in 6227 und lässt 3000 bei der Patientennummer", async () => {
+  sessionMock.findUnique.mockResolvedValue({
+    ...SESSION,
+    digital_request_snapshot: {
+      submitter_name: "Erika Muster",
+      birth_date: null,
+      submitter_email: "erika@example.com",
+      patient_relationship: "existing_patient",
+      request_intent: "digital_request",
+      concern_text: "Rückruf erbeten",
+      requested_topics: ["PRESCRIPTION"],
+    },
+  });
+
+  const response = await GET(request(), { params: Promise.resolve({ id: "session-1" }) });
+  const text = iconv.decode(Buffer.from(await response.arrayBuffer()), "cp850");
+  expect(response.status).toBe(200);
+  expect(text).toContain("300079383");
+  expect(text).toContain("6227Ursprüngliche digitale Anfrage:");
+  expect(text).toContain("Name: Erika Muster");
+  expect(text).toContain("Patientenangabe: Bestandspatient/in");
+  expect(text).toContain("System: Kurzanamnese eingegangen");
+  expect(text).not.toContain("3000Erika Muster");
+});
+
+it("belässt 6227 ohne Snapshot unverändert", async () => {
+  const response = await GET(request(), { params: Promise.resolve({ id: "session-1" }) });
+  const text = iconv.decode(Buffer.from(await response.arrayBuffer()), "cp850");
+  expect(text).toContain("6227System: Kurzanamnese eingegangen\r\n");
 });
 
 it.each([

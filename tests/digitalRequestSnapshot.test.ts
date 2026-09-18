@@ -1,5 +1,6 @@
 import {
   buildDigitalRequestFollowUpSnapshot,
+  formatDigitalRequestSnapshot,
   parseDigitalRequestInboxContext,
 } from "@/lib/questionnaire/digitalRequestSnapshot";
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
@@ -66,5 +67,27 @@ describe("DigitalRequest-Follow-up-Snapshot", () => {
     expect(buildQuestionnaireInboxDetail(baseSession).digitalRequestContext).toBeNull();
     expect(parseDigitalRequestInboxContext({ requested_topics: [1, null] }))
       .toEqual(expect.objectContaining({ requested_topics: [], requested_topic_labels: [] }));
+  });
+
+  it("formatiert nur vorhandene Werte mit menschenlesbaren Labels", () => {
+    expect(formatDigitalRequestSnapshot({
+      submitter_name: "Erika Muster",
+      birth_date: null,
+      submitter_email: "erika@example.com",
+      patient_relationship: "new_patient",
+      request_intent: "digital_request",
+      concern_text: "Bitte um Rückruf",
+      requested_topics: ["PRESCRIPTION", "UNKNOWN_INTERNAL_VALUE"],
+    })).toEqual({
+      heading: "Ursprüngliche digitale Anfrage",
+      fields: [
+        { label: "Name", value: "Erika Muster" },
+        { label: "E-Mail", value: "erika@example.com" },
+        { label: "Patientenangabe", value: "Neupatient/in" },
+        { label: "Art der Anfrage", value: "Digitale Anfrage senden" },
+        { label: "Besuchsgrund", value: "Bitte um Rückruf" },
+        { label: "Anfragekategorien", value: "Rezept" },
+      ],
+    });
   });
 });

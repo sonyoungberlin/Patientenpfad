@@ -9,6 +9,7 @@ import type { PdfRenderOptions, PdfSessionInput } from "./pdfRenderer";
 import { resolveQuestionnaireDocumentLabels } from "./questionnaireDocumentLabel";
 import { buildQuestionnaireExportFilename } from "./questionnaireExportFilename";
 import { normalizeXComfortPatientReference } from "./patientReference";
+import { formatDigitalRequestSnapshot } from "./digitalRequestSnapshot";
 
 export type QuestionnaireExportSession = PdfSessionInput & {
   session_kind: string;
@@ -72,9 +73,18 @@ export function resolveQuestionnaireGdtExport(session: QuestionnaireExportSessio
     practiceFormTitle: session.practice_form?.title,
     ...(pdfOptions.filenameLabel ? { filenameLabel: pdfOptions.filenameLabel } : {}),
   });
+  const digitalRequestSnapshot = formatDigitalRequestSnapshot(session.digital_request_snapshot);
+  const systemText = `System: ${documentLabels.gdtLabel} eingegangen`;
   return {
     patientReference,
     filename,
-    documentationText: `System: ${documentLabels.gdtLabel} eingegangen`,
+    documentationText: digitalRequestSnapshot
+      ? [
+          `${digitalRequestSnapshot.heading}: ${digitalRequestSnapshot.fields
+            .map(({ label, value }) => `${label}: ${value}`)
+            .join("; ")}`,
+          systemText,
+        ].join("\n")
+      : systemText,
   };
 }

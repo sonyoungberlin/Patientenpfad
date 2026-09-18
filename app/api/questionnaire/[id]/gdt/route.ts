@@ -36,6 +36,7 @@ export async function GET(
       deduplicated_questions: true,
       frozen_blocks: true,
       answers: true,
+      digital_request_snapshot: true,
       source: true,
       session_kind: true,
       internal_workflow_id: true,

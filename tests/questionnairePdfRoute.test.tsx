@@ -252,6 +252,48 @@ describe("questionnaire PDF patient reference", () => {
     expect(result.filename).toBe("20260512_004711_Versicherungsdaten.pdf");
   });
 
+  it("renders the snapshot before follow-up answers and keeps patient reference separate", async () => {
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        patient_reference: "004711",
+        selected_block_ids: ["TEST"],
+        deduplicated_questions: [{ id: "TEST_QUESTION", text: "Frage", type: "textarea" }],
+        frozen_blocks: [{
+          id: "TEST",
+          label: "Folgeantworten",
+          displayOrder: 1,
+          questions: [{ id: "TEST_QUESTION", text: "Frage", type: "textarea" }],
+          conditionalRules: [],
+          initiallyVisible: true,
+        }],
+        answers: { TEST_QUESTION: "Antwort" },
+        digital_request_snapshot: {
+          submitter_name: "Erika Muster",
+          birth_date: null,
+          submitter_email: "erika@example.com",
+          patient_relationship: "new_patient",
+          request_intent: "digital_request",
+          concern_text: "Rückruf erbeten",
+          requested_topics: ["REFERRAL"],
+        },
+      }),
+      {
+        title: "Fragebogen",
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: {},
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Patientenreferenz: 004711");
+    expect(text).toContain("Ursprüngliche digitale Anfrage");
+    expect(text).toContain("Patientenangabe:");
+    expect(text).toContain("Neupatient/in");
+    expect(text).toContain("Art der Anfrage:");
+    expect(text).toContain("Digitale Anfrage senden");
+    expect(text.indexOf("Ursprüngliche digitale Anfrage")).toBeLessThan(text.indexOf("Antwort"));
+  });
+
   it("behält die yes_no-Normalisierung bei expliziten String-Optionen bei", async () => {
     const question: QuestionDefinition = {
       id: "YES_NO_WITH_OPTIONS",
