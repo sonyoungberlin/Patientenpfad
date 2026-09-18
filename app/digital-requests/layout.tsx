@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { getSessionAccountFromCookies } from "@/lib/auth";
+import { toAppShellAccount } from "@/lib/appShellAccount";
 import AppShell from "@/components/AppShell";
 
 /**
@@ -7,18 +9,18 @@ import AppShell from "@/components/AppShell";
  * Bindet die gemeinsame AppShell-Navigation ein,
  * analog zu `/cases`, `/inquiries`, `/practice` etc.
  *
- * Auth-Guard: liegt bereits in den Page-Komponenten
- * (`requireDigitalRequestWorkAccessFromCookies`).
- * Das Layout prüft daher nicht erneut — kein doppelter DB-Roundtrip.
+ * Der Page-Guard bleibt die Berechtigungsquelle. Das Layout liest den
+ * Session-Account zusätzlich nur für die serverseitige AppShell-Übergabe.
  */
-export default function DigitalRequestsLayout({
+export default async function DigitalRequestsLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const account = await getSessionAccountFromCookies();
   return (
     <>
-      <AppShell />
+      <AppShell account={toAppShellAccount(account)} />
       {children}
     </>
   );

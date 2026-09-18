@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PracticeRole } from "@prisma/client";
 import { getSessionAccountFromCookies } from "@/lib/auth";
+import { toAppShellAccount } from "@/lib/appShellAccount";
 import AppShell from "@/components/AppShell";
 
 /**
@@ -69,10 +70,9 @@ export default async function DashboardPage() {
     (account.office_cases_enabled || account.is_admin) &&
     (canOpenOfficeCases || canOpenOfficeApplications);
   const showWorkflowTile = account.arbeitsprozesse_enabled || account.is_admin;
-
   return (
     <>
-      <AppShell />
+      <AppShell account={toAppShellAccount(account)} />
       <main>
         <h1>Hallo.</h1>
         <p style={{ fontSize: "1.125rem", marginBottom: "1.5rem" }}>

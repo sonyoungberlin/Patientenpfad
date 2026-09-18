@@ -30,6 +30,22 @@ function inboxOnlyAccount() {
   };
 }
 
+function ownerAccount() {
+  return {
+    id: "acc-owner",
+    email: "owner@example.com",
+    is_approved: true,
+    is_admin: false,
+    inquiry_assistant_enabled: true,
+    patient_communication_enabled: true,
+    website_forms_enabled: true,
+    office_cases_enabled: true,
+    arbeitsprozesse_enabled: true,
+    current_practice: { id: "p-1" },
+    memberships: [{ practice_id: "p-1", role: "OWNER" as const }],
+  };
+}
+
 describe("AppShell INBOX_ONLY", () => {
   beforeEach(() => {
     pushMock.mockClear();
@@ -69,5 +85,42 @@ describe("AppShell INBOX_ONLY", () => {
       <AppShell account={inboxOnlyAccount()} digitalRequestsHasUnread={true} />,
     );
     expect(html).toContain("Digitale Anfragen");
+  });
+});
+
+describe("AppShell interne Pfadnavigation", () => {
+  it("behandelt /dashboard als Hauptmenü ohne Fallnavigation", () => {
+    mockedPathname = "/dashboard";
+    const html = renderToStaticMarkup(
+      <AppShell account={ownerAccount()} />,
+    );
+
+    expect(html).toContain('href="/dashboard">Hauptmenü</a>');
+    expect(html).not.toContain("Fallliste");
+    expect(html).not.toContain("Neuer Fall");
+  });
+
+  it.each(["/cases", "/cases/new"])(
+    "zeigt die Fallnavigation auf %s",
+    (pathname) => {
+      mockedPathname = pathname;
+      const html = renderToStaticMarkup(
+        <AppShell account={ownerAccount()} />,
+      );
+
+      expect(html).toContain('href="/dashboard">Hauptmenü</a>');
+      expect(html).toContain('href="/cases">Fallliste</a>');
+      expect(html).toContain('href="/">Neuer Fall</a>');
+    },
+  );
+
+  it("zeigt dem Owner auf /practice/members die Praxisnavigation", () => {
+    mockedPathname = "/practice/members";
+    const html = renderToStaticMarkup(
+      <AppShell account={ownerAccount()} />,
+    );
+
+    expect(html).toContain('href="/dashboard">Hauptmenü</a>');
+    expect(html).toContain('href="/practice/members">Mitglieder</a>');
   });
 });

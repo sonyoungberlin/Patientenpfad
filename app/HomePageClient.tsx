@@ -10,7 +10,6 @@ import {
 import M1SelectionForm from "@/components/M1SelectionForm";
 import MultiSelectCheckpointSection from "@/components/MultiSelectCheckpointSection";
 import AssessmentCheckpointSection from "@/components/AssessmentCheckpointSection";
-import AppShell from "@/components/AppShell";
 import { SelfCheckInQrOption } from "@/components/SelfCheckInQrOption";
 import {
   ALWAYS_PRESENT_ASSESSMENT_IDS,
@@ -60,7 +59,11 @@ type AccountInfo = {
   memberships?: Array<{ practice_id: string; role: "OWNER" | "ADMIN" | "USER" | "INBOX_ONLY" }>;
 };
 
-export default function HomePageClient() {
+export default function HomePageClient({
+  initialAccount,
+}: {
+  initialAccount?: AccountInfo | null;
+}) {
   const router = useRouter();
   const [selection, setSelection] = useState<M1Selection>(INITIAL_SELECTION);
   const [multiSelectCheckpoints, setMultiSelectCheckpoints] = useState<ActiveCheckpointMultiSelect[]>(
@@ -76,8 +79,8 @@ export default function HomePageClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const loginSectionRef = React.useRef<HTMLDivElement>(null);
-  const [account, setAccount] = useState<AccountInfo | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [account, setAccount] = useState<AccountInfo | null>(initialAccount ?? null);
+  const [authChecked, setAuthChecked] = useState(initialAccount !== undefined);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -90,6 +93,8 @@ export default function HomePageClient() {
   const [preparingLoading, setPreparingLoading] = useState(false);
 
   useEffect(() => {
+    if (initialAccount !== undefined) return;
+
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
@@ -103,7 +108,7 @@ export default function HomePageClient() {
       })
       .catch(() => {})
       .finally(() => setAuthChecked(true));
-  }, []);
+  }, [initialAccount]);
 
   async function handleLogin() {
     setLoginLoading(true);
@@ -452,7 +457,6 @@ export default function HomePageClient() {
   return (
     <>
       <main>
-        <AppShell account={account} onLogout={handleLogout} />
         <h1>Liegt genug Information vor, damit der Arzt direkt entscheiden kann?</h1>
         <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
           „Wissen wir genug über die Situation – nicht, ob sie gut oder schlecht ist?"

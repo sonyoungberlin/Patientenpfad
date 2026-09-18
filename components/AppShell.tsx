@@ -3,6 +3,12 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import type {
+  AppShellAccount,
+  AppShellPracticeRole,
+} from "@/lib/appShellAccount";
+
+export type { AppShellAccount, AppShellPracticeRole } from "@/lib/appShellAccount";
 
 /**
  * Shared header / account bar for internal app areas.
@@ -16,83 +22,30 @@ import { useRouter, usePathname } from "next/navigation";
  *   - Modul-Buttons werden – wie bisher in `app/page.tsx` – nur
  *     gerendert, wenn die zugehörigen Feature-Flags am Account gesetzt
  *     sind.
- *   - Die Account-Daten werden über `/api/auth/me` geladen, falls nicht
- *     als Prop übergeben (gleicher Endpoint wie heute in `app/page.tsx`).
+ *   - Der Account wird von den serverseitigen internen Layouts oder Pages als
+ *     Prop übergeben.
  *   - Logout ruft – wie bisher – `POST /api/auth/logout` und navigiert
  *     anschließend zurück nach `/`.
  *
- * Wenn kein Account vorliegt (nicht eingeloggt oder noch nicht geladen)
- * rendert die Komponente bewusst nichts. Damit sind eingebettete Layouts
- * (z. B. Login-Sicht) nicht betroffen.
+ * Wenn kein Account vorliegt, rendert die Komponente bewusst nichts. Es gibt
+ * dabei keinen clientseitigen Auth-Fallback, damit interne Seiten nicht
+ * während einer erneuten `/api/auth/me`-Abfrage verschwinden.
  */
 
-export type AppShellPracticeRole =
-  | "OWNER"
-  | "ADMIN"
-  | "USER"
-  | "INBOX_ONLY";
-
-export type AppShellAccount = {
-  id: string;
-  email: string;
-  is_approved: boolean;
-  is_admin: boolean;
-  inquiry_assistant_enabled: boolean;
-  patient_communication_enabled: boolean;
-  website_forms_enabled: boolean;
-  office_cases_enabled: boolean;
-  arbeitsprozesse_enabled: boolean;
-  // Optional: aktiver Praxis-Kontext + Mitgliedschaften des Accounts.
-  // Werden vom `/api/auth/me`-Endpoint mitgeliefert (siehe lib/auth.ts
-  // `SessionAccount`) und hier benötigt, um Praxis-Nav-Items anhand der
-  // effektiven Rolle des aktuellen Praxis-Kontexts zu filtern.
-  // Defensiv optional, damit bestehende Aufrufer/Test-Doubles, die nur
-  // die alten Felder setzen, nicht brechen.
-  current_practice?: { id: string } | null;
-  memberships?: Array<{ practice_id: string; role: AppShellPracticeRole }>;
-};
-
 type AppShellProps = {
-  account?: AppShellAccount | null;
+  account: AppShellAccount | null;
   onLogout?: () => void;
-  /** Wird aus Server-Kontext befüllt oder intern per Fetch nachgeladen. */
   digitalRequestsHasUnread?: boolean;
 };
 
 export default function AppShell({
-  account: accountProp,
+  account,
   onLogout,
   digitalRequestsHasUnread: propHasUnread,
 }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
-  const [internalAccount, setInternalAccount] = useState<AppShellAccount | null>(
-    accountProp ?? null,
-  );
-  const [internalLoaded, setInternalLoaded] = useState<boolean>(accountProp !== undefined);
   const [hasUnread, setHasUnread] = useState<boolean>(propHasUnread ?? false);
-
-  useEffect(() => {
-    if (accountProp !== undefined) {
-      setInternalAccount(accountProp);
-      setInternalLoaded(true);
-      return;
-    }
-    let cancelled = false;
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (cancelled) return;
-        if (d && d.ok) setInternalAccount(d.account as AppShellAccount);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setInternalLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [accountProp]);
 
   // Unread-Indikator für Digitale Anfragen – entweder per Prop (Server) oder Fetch.
   useEffect(() => {
@@ -100,8 +53,7 @@ export default function AppShell({
       setHasUnread(propHasUnread);
       return;
     }
-    const currentAccount = accountProp !== undefined ? accountProp : internalAccount;
-    if (!currentAccount?.patient_communication_enabled) return;
+    if (!account?.patient_communication_enabled) return;
 
     fetch("/api/digital-requests/unread")
       .then((r) => r.json())
@@ -111,17 +63,15 @@ export default function AppShell({
         }
       })
       .catch(() => {});
-  }, [accountProp, internalAccount, propHasUnread]);
+  }, [account, propHasUnread]);
 
   async function handleLogoutDefault() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    setInternalAccount(null);
     router.push("/");
     router.refresh();
   }
 
-  const account = accountProp !== undefined ? accountProp : internalAccount;
-  if (!internalLoaded || !account || !account.is_approved) {
+  if (!account || !account.is_approved) {
     return null;
   }
 
@@ -135,7 +85,7 @@ export default function AppShell({
   // `/` ist faktisch der „Neuer Fall"-Einstieg und gehört damit zum
   // Patientenfälle-Bereich – auch dort sollen Hauptmenü, Fallliste und
   // Neuer Fall in der AppShell erscheinen.
-  const isCases = pathname === "/" || inSection("/cases");
+  const isCases = inSection("/cases");
   const isCommunication =
     inSection("/inquiries") || inSection("/questionnaires");
   const isOfficeCases = inSection("/office-cases");

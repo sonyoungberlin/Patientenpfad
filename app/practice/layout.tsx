@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { isInboxOnlyAccount } from "@/lib/authz";
+import { toAppShellAccount } from "@/lib/appShellAccount";
 import AppShell from "@/components/AppShell";
 
 export default async function PracticeLayout({ children }: { children: ReactNode }) {
@@ -9,10 +10,9 @@ export default async function PracticeLayout({ children }: { children: ReactNode
   if (account && account.is_approved && isInboxOnlyAccount(account)) {
     redirect("/questionnaires");
   }
-
   return (
     <>
-      <AppShell />
+      <AppShell account={toAppShellAccount(account)} />
       {children}
     </>
   );

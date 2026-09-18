@@ -8,5 +8,5 @@ export default async function NewCasePage() {
     redirect("/");
   }
 
-  return <HomePageClient />;
+  return <HomePageClient initialAccount={account} />;
 }
