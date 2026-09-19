@@ -127,6 +127,7 @@ describe("zentrale Bereichsdefinition", () => {
     ["/website-forms/abc", "practice-management", "website-forms"],
     ["/office-cases/applications/abc", "inbox", "applicant-inbox"],
     ["/office-cases/questionnaire/abc", "inbox", "applicant-questionnaire-inbox"],
+    ["/office-cases/questionnaire/new", "office-path", "new-office-questionnaire"],
   ])("ordnet Detailroute %s dem richtigen Menüpunkt zu", (pathname, sectionId, itemId) => {
     const sections = getVisibleNavigationSections(account());
     const section = getNavigationSectionForPath(sections, pathname);
@@ -148,6 +149,7 @@ describe("AppShell Bereichsmenüs", () => {
     ["/digital-requests/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/applications/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/questionnaire/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
+    ["/office-cases/questionnaire/new", ["Officefälle", "Neuer Officefall", "Bewerbungsfragebögen", "Neuer Bewerber-Fragebogen", "Bewerbungsanfragen", "Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
     ["/cases/internal-documentation", ["Fallliste", "Neuer Fall", "Interne Dokumentation"]],
     ["/practice/signature", ["Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
   ])("zeigt auf %s das vollständige Bereichsmenü", (pathname, labels) => {
@@ -192,5 +194,15 @@ describe("AppShell Bereichsmenüs", () => {
       .items.map((item) => item.label);
 
     expect(labels).toEqual(["Fragebogen-Posteingang", "Digitale Anfragen"]);
+  });
+
+  it("ordnet den Officefall-Neustart dem Officepfad zu", () => {
+    const sections = getVisibleNavigationSections(account());
+    const section = getNavigationSectionForPath(sections, "/office-cases/new");
+
+    expect(section?.id).toBe("office-path");
+    expect(getActiveNavigationItem(section!, "/office-cases/new")).toBe(
+      "new-office-case",
+    );
   });
 });

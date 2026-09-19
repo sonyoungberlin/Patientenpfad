@@ -320,17 +320,31 @@ export function getNavigationSectionForPath(
   pathname: string,
 ): NavigationSection | null {
   const matches = sections
-    .filter((section) =>
-      section.items.some((item) =>
-        item.matches.some(
-          (match) => pathname === match || pathname.startsWith(match + "/"),
+    .map((section) => {
+      const matchingItemLength = Math.max(
+        0,
+        ...section.items.flatMap((item) =>
+          item.matches
+            .filter((match) => pathname === match || pathname.startsWith(match + "/"))
+            .map((match) => match.length),
         ),
-      ) ||
-      section.sectionMatches?.some(
+      );
+      const sectionMatches = section.sectionMatches?.some(
         (match) => pathname === match || pathname.startsWith(match + "/"),
-      ),
+      );
+      return {
+        section,
+        matchingItemLength,
+        matchesSection: matchingItemLength > 0 || sectionMatches,
+      };
+    })
+    .filter((entry) => entry.matchesSection)
+    .sort(
+      (a, b) =>
+        b.matchingItemLength - a.matchingItemLength ||
+        (b.section.pathPriority ?? 0) - (a.section.pathPriority ?? 0),
     )
-    .sort((a, b) => (b.pathPriority ?? 0) - (a.pathPriority ?? 0));
+    .map((entry) => entry.section);
   return matches[0] ?? null;
 }
 

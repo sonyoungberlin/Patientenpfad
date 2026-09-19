@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export type OfficeCaseListItem = {
   id: string;
   createdAt: string;
@@ -19,12 +17,6 @@ type Props = {
 export default function OfficeCasesClient({ items }: Props) {
   return (
     <section style={{ display: "grid", gap: "1rem" }}>
-      <div>
-        <Link href="/office-cases/new">
-          <button type="button">Neuen Officefall erstellen</button>
-        </Link>
-      </div>
-
       {items.length === 0 ? (
         <p className="text-muted" style={{ marginBottom: 0 }}>
           Noch keine Officefälle vorhanden.
