@@ -7,6 +7,12 @@ import type {
   AppShellAccount,
   AppShellPracticeRole,
 } from "@/lib/appShellAccount";
+import {
+  getActiveNavigationItem,
+  getCurrentNavigationRole,
+  getNavigationSectionForPath,
+  getVisibleNavigationSections,
+} from "@/lib/navigation";
 
 export type { AppShellAccount, AppShellPracticeRole } from "@/lib/appShellAccount";
 
@@ -77,128 +83,30 @@ export default function AppShell({
 
   const handleLogoutClick = onLogout ?? handleLogoutDefault;
 
-  // Bereich aus dem aktuellen Pfad ableiten. Exakte Übereinstimmung des
-  // Segment-Anfangs, damit z. B. /casesfoo nicht fälschlich /cases trifft.
-  const inSection = (prefix: string) =>
-    pathname === prefix || pathname.startsWith(prefix + "/");
-
-  // `/` ist faktisch der „Neuer Fall"-Einstieg und gehört damit zum
-  // Patientenfälle-Bereich – auch dort sollen Hauptmenü, Fallliste und
-  // Neuer Fall in der AppShell erscheinen.
-  const isCases = inSection("/cases");
-  const isCommunication =
-    inSection("/inquiries") || inSection("/questionnaires");
-  const isOfficeCases = inSection("/office-cases");
-  const isWorkflowCases = inSection("/workflow-cases");
-  const isPractice = inSection("/practice");
-  const isWebsiteForms = inSection("/website-forms");
-  const isDigitalRequests = inSection("/digital-requests");
-
-  const practiceRole: AppShellPracticeRole | null =
-    account.current_practice && account.memberships
-      ? account.memberships.find(
-          (m) => m.practice_id === account.current_practice!.id,
-        )?.role ?? null
-      : null;
-
-  const canUseCases =
-    practiceRole === null ||
-    practiceRole === "OWNER" ||
-    practiceRole === "ADMIN" ||
-    practiceRole === "USER";
-  const canUseDigitalRequests =
-    practiceRole === null ||
-    practiceRole === "OWNER" ||
-    practiceRole === "ADMIN" ||
-    practiceRole === "USER" ||
-    practiceRole === "INBOX_ONLY";
-  const canUseInquiries =
-    practiceRole === null ||
-    practiceRole === "OWNER" ||
-    practiceRole === "ADMIN" ||
-    practiceRole === "USER";
-  const canUseQuestionnaireInbox =
-    practiceRole === null ||
-    practiceRole === "OWNER" ||
-    practiceRole === "ADMIN" ||
-    practiceRole === "USER" ||
-    practiceRole === "INBOX_ONLY";
-  const canManagePractice =
-    practiceRole === "OWNER" || practiceRole === "ADMIN";
+  const practiceRole = getCurrentNavigationRole(account);
   const homeHref = practiceRole === "INBOX_ONLY" ? "/questionnaires" : "/dashboard";
-
-  type NavItem = { label: string; href: string };
-  const sectionItems: NavItem[] = [];
-
-  if (isCases && canUseCases) {
-    sectionItems.push(
-      { label: "Fallliste", href: "/cases" },
-      { label: "Neuer Fall", href: "/" },
-    );
-  } else if (isOfficeCases && (account.office_cases_enabled || account.is_admin)) {
-    if (canManagePractice) {
-      sectionItems.push({ label: "Officefälle", href: "/office-cases" });
-      sectionItems.push({ label: "Fragebögen", href: "/office-cases/questionnaire" });
-    }
-    // USER darf Bewerbungsanfragen bearbeiten, aber keine Fragebögen öffnen
-    if (canManagePractice || practiceRole === "USER") {
-      sectionItems.push({ label: "Bewerbungsanfragen", href: "/office-cases/applications" });
-    }
-  } else if (isWorkflowCases && (account.arbeitsprozesse_enabled || account.is_admin)) {
-    sectionItems.push(
-      { label: "Arbeitsprozesse", href: "/workflow-cases" },
-      { label: "Neue Sitzung", href: "/workflow-cases/internal-protocol/new" },
-      { label: "Praxiskatalog", href: "/practice/catalog" },
-    );
-  } else if (isCommunication) {
-    if (canUseInquiries) {
-      sectionItems.push(
-        { label: "Vorlagen", href: "/inquiries" },
-        { label: "Neue Nachricht", href: "/inquiries/new" },
-      );
-    }
-    if (canUseQuestionnaireInbox) {
-      sectionItems.push({
-        label: "Fragebogen-Posteingang",
-        href: "/questionnaires",
-      });
-    }
-    if (account.patient_communication_enabled && canUseDigitalRequests) {
-      sectionItems.push({ label: "Digitale Anfragen", href: "/digital-requests" });
-    }
-  } else if (isPractice) {
-    if (account.arbeitsprozesse_enabled || account.is_admin) {
-      sectionItems.push({ label: "Praxiskatalog", href: "/practice/catalog" });
-    }
-    if (canManagePractice) {
-      sectionItems.push({ label: "Mitglieder", href: "/practice/members" });
-      if (practiceRole === "OWNER") {
-        sectionItems.push({ label: "Kiosk-Geräte", href: "/practice/questionnaire-kiosk" });
-      }
-      sectionItems.push({ label: "Offizielle Praxisdaten", href: "/practice/legal-profile" });
-      sectionItems.push({ label: "Signatur", href: "/practice/signature" });
-      sectionItems.push({ label: "Anfrage-Einstellungen", href: "/practice/inquiry-settings" });
-      if (account.website_forms_enabled) {
-        sectionItems.push({ label: "Website-Formulare", href: "/website-forms" });
-      }
-    }
-  } else if (isWebsiteForms && account.website_forms_enabled && canManagePractice) {
-    sectionItems.push(
-      { label: "Fragebogen-Posteingang", href: "/questionnaires" },
-      { label: "Formularverwaltung", href: "/website-forms" },
-    );
-  }
+  const visibleSections = getVisibleNavigationSections(account);
+  const currentSection =
+    getNavigationSectionForPath(visibleSections, pathname) ??
+    (practiceRole === "INBOX_ONLY" && pathname.startsWith("/inquiries")
+      ? visibleSections.find((section) => section.id === "inbox") ?? null
+      : null);
+  const activeItemId = currentSection
+    ? getActiveNavigationItem(currentSection, pathname)
+    : null;
 
   return (
     <nav className="app-nav">
       <Link href={homeHref}>Hauptmenü</Link>
-      {account.patient_communication_enabled && canUseDigitalRequests && isDigitalRequests && (
+      {currentSection?.items.map((item) => (
         <Link
-          href="/digital-requests"
+          key={item.id}
+          href={item.href}
+          aria-current={item.id === activeItemId ? "page" : undefined}
           style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
         >
-          Digitale Anfragen
-          {hasUnread && (
+          {item.label}
+          {item.id === "digital-requests-inbox" && hasUnread && (
             <span
               data-testid="digital-requests-unread-dot"
               aria-label="Neue Anfragen vorhanden"
@@ -212,11 +120,6 @@ export default function AppShell({
               }}
             />
           )}
-        </Link>
-      )}
-      {sectionItems.map((item) => (
-        <Link key={item.href} href={item.href}>
-          {item.label}
         </Link>
       ))}
       <span className="account-email" style={{ marginLeft: "auto" }}>

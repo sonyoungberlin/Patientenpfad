@@ -92,7 +92,7 @@ describe("Dashboard INBOX_ONLY", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).toContain("Fragebögen");
-    expect(html).toContain("Digitale Anfragen");
+    expect(html).not.toContain("Digitale Anfragen");
     expect(html).not.toContain("Patientenkommunikation");
     expect(html).not.toContain("Patientenfälle");
     expect(redirectMock).not.toHaveBeenCalled();
@@ -121,10 +121,11 @@ describe("Dashboard — Kachel 'Digitale Anfragen'", () => {
     expect(html).not.toContain("data-testid=\"digital-requests-tile\"");
   });
 
-  it("INBOX_ONLY sieht die Kachel", async () => {
+  it("INBOX_ONLY sieht keinen zusätzlichen Digital-Eingang", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
     const html = renderToStaticMarkup(await DashboardPage());
-    expect(html).toContain('data-testid="digital-requests-tile"');
+    expect(html).toContain('data-testid="inbox-tile"');
+    expect(html).not.toContain('href="/digital-requests">Digitale Anfragen</a>');
   });
 });
 
@@ -143,12 +144,9 @@ describe("Dashboard — Kachel 'Officepfad'", () => {
       expect(html).toContain('data-testid="office-path-tile"');
       expect(html).toContain("Organisatorische Aufgaben strukturiert klären.");
       expect(html).not.toContain("Snapshots");
-      expect(html).toContain(
-        '<a href="/office-cases"><button type="button">Officefälle öffnen</button></a>',
-      );
-      expect(html).toContain(
-        '<a href="/office-cases/applications"><button type="button">Bewerbungsanfragen öffnen</button></a>',
-      );
+      expect(html).toContain('<a href="/office-cases">Officefälle</a>');
+      expect(html).toContain('<a href="/office-cases/questionnaire">Bewerbungsfragebögen</a>');
+      expect(html).toContain('<a href="/office-cases/applications">Bewerbungsanfragen</a>');
     },
   );
 
@@ -159,9 +157,7 @@ describe("Dashboard — Kachel 'Officepfad'", () => {
     expect(html).toContain('data-testid="office-path-tile"');
     expect(html).not.toContain("Officefälle öffnen");
     expect(html).not.toContain('<a href="/office-cases">');
-    expect(html).toContain(
-      '<a href="/office-cases/applications"><button type="button">Bewerbungsanfragen öffnen</button></a>',
-    );
+    expect(html).toContain('<a href="/office-cases/applications">Bewerbungsanfragen</a>');
   });
 
   it("INBOX_ONLY sieht die Officepfad-Kachel nicht", async () => {

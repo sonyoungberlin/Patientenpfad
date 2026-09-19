@@ -212,14 +212,14 @@ describe("AppShell-Navigation – Office-Bereich Rollentrennung", () => {
   it("OWNER sieht Officefälle, Fragebögen und Bewerbungsanfragen", () => {
     const html = renderNav(PracticeRole.OWNER);
     expect(html).toContain("Officefälle");
-    expect(html).toContain("Fragebögen");
+    expect(html).toContain("Bewerbungsfragebögen");
     expect(html).toContain("Bewerbungsanfragen");
   });
 
   it("ADMIN sieht Officefälle, Fragebögen und Bewerbungsanfragen", () => {
     const html = renderNav(PracticeRole.ADMIN);
     expect(html).toContain("Officefälle");
-    expect(html).toContain("Fragebögen");
+    expect(html).toContain("Bewerbungsfragebögen");
     expect(html).toContain("Bewerbungsanfragen");
   });
 
@@ -227,7 +227,7 @@ describe("AppShell-Navigation – Office-Bereich Rollentrennung", () => {
     const html = renderNav(PracticeRole.USER);
     expect(html).toContain("Bewerbungsanfragen");
     expect(html).not.toContain("Officefälle");
-    expect(html).not.toContain("Fragebögen");
+    expect(html).not.toContain("Bewerbungsfragebögen");
   });
 
   it("INBOX_ONLY sieht keinen der Office-Links", () => {

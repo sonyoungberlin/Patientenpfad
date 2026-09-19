@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { PracticeRole } from "@prisma/client";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { toAppShellAccount } from "@/lib/appShellAccount";
+import { getVisibleNavigationSections } from "@/lib/navigation";
 import AppShell from "@/components/AppShell";
 
 /**
@@ -28,51 +28,13 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const myRole =
-    (account.current_practice &&
-      account.memberships.find(
-        (m) => m.practice_id === account.current_practice!.id,
-      )?.role) ||
-    null;
-  const canUseCases =
-    myRole === null ||
-    myRole === PracticeRole.OWNER ||
-    myRole === PracticeRole.ADMIN ||
-    myRole === PracticeRole.USER;
-  const patientCommunicationEnabled = account.current_practice
-    ? account.current_practice.patient_communication_enabled
-    : account.patient_communication_enabled;
-  const canUseDigitalRequests =
-    patientCommunicationEnabled &&
-    (myRole === null ||
-      myRole === PracticeRole.OWNER ||
-      myRole === PracticeRole.ADMIN ||
-      myRole === PracticeRole.USER ||
-      myRole === PracticeRole.INBOX_ONLY);
-  const canUseInquiries =
-    myRole === null ||
-    myRole === PracticeRole.OWNER ||
-    myRole === PracticeRole.ADMIN ||
-    myRole === PracticeRole.USER;
-  const canUseQuestionnaireInbox =
-    myRole === null ||
-    myRole === PracticeRole.OWNER ||
-    myRole === PracticeRole.ADMIN ||
-    myRole === PracticeRole.USER ||
-    myRole === PracticeRole.INBOX_ONLY;
-  const showPracticeTile =
-    myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
-  const canOpenOfficeCases =
-    myRole === PracticeRole.OWNER || myRole === PracticeRole.ADMIN;
-  const canOpenOfficeApplications =
-    canOpenOfficeCases || myRole === PracticeRole.USER;
-  const showOfficeTile =
-    (account.office_cases_enabled || account.is_admin) &&
-    (canOpenOfficeCases || canOpenOfficeApplications);
-  const showWorkflowTile = account.arbeitsprozesse_enabled || account.is_admin;
+  const appShellAccount = toAppShellAccount(account);
+  const navigationSections = appShellAccount
+    ? getVisibleNavigationSections(appShellAccount)
+    : [];
   return (
     <>
-      <AppShell account={toAppShellAccount(account)} />
+      <AppShell account={appShellAccount} />
       <main>
         <h1>Hallo.</h1>
         <p style={{ fontSize: "1.125rem", marginBottom: "1.5rem" }}>
@@ -86,105 +48,23 @@ export default async function DashboardPage() {
             marginTop: "1rem",
           }}
         >
-          {canUseQuestionnaireInbox && (
-            <section className="card">
-              <h2 style={{ marginTop: 0 }}>Fragebögen</h2>
-              <p>Fragebögen versenden und Rückläufe bearbeiten.</p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <Link href="/questionnaires">
-                  <button type="button">Posteingang öffnen</button>
-                </Link>
-              </div>
+          {navigationSections.map((section) => (
+            <section
+              key={section.id}
+              className="card"
+              data-testid={`${section.id}-tile`}
+            >
+              <h2 style={{ marginTop: 0 }}>{section.title}</h2>
+              <p>{section.description}</p>
+              <ul style={{ display: "grid", gap: "0.5rem", margin: 0, paddingLeft: "1.25rem" }}>
+                {section.items.map((item) => (
+                  <li key={item.id}>
+                    <Link href={item.href}>{item.label}</Link>
+                  </li>
+                ))}
+              </ul>
             </section>
-          )}
-
-          {canUseInquiries && (
-            <section className="card">
-              <h2 style={{ marginTop: 0 }}>Patientenkommunikation</h2>
-              <p>Anfragen strukturiert klären und beantworten.</p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <Link href="/inquiries">
-                  <button type="button">Vorlagen öffnen</button>
-                </Link>
-                <Link href="/inquiries/new">
-                  <button type="button">Neue Nachricht</button>
-                </Link>
-              </div>
-            </section>
-          )}
-
-          {canUseCases && (
-            <section className="card">
-              <h2 style={{ marginTop: 0 }}>Patientenfälle</h2>
-              <p>Offene und bearbeitete Fälle aufrufen.</p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <Link href="/cases">
-                  <button type="button">Fallliste öffnen</button>
-                </Link>
-                <Link href="/cases/new">
-                  <button type="button">Neuer Fall</button>
-                </Link>
-              </div>
-            </section>
-          )}
-
-          {canUseDigitalRequests && (
-            <section className="card" data-testid="digital-requests-tile">
-              <h2 style={{ marginTop: 0 }}>Digitale Anfragen</h2>
-              <p>Anfragen prüfen und Fragebogenlinks senden</p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <Link href="/digital-requests">
-                  <button type="button">Anfragen öffnen</button>
-                </Link>
-              </div>
-            </section>
-          )}
-
-          {showOfficeTile && (
-            <section className="card" data-testid="office-path-tile">
-              <h2 style={{ marginTop: 0 }}>Officepfad</h2>
-              <p>Organisatorische Aufgaben strukturiert klären.</p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                {canOpenOfficeCases && (
-                  <Link href="/office-cases">
-                    <button type="button">Officefälle öffnen</button>
-                  </Link>
-                )}
-                {canOpenOfficeApplications && (
-                  <Link href="/office-cases/applications">
-                    <button type="button">Bewerbungsanfragen öffnen</button>
-                  </Link>
-                )}
-              </div>
-            </section>
-          )}
-
-          {showWorkflowTile && (
-            <section className="card">
-              <h2 style={{ marginTop: 0 }}>Arbeitsprozesse</h2>
-              <p>Musterprozesse strukturiert dokumentieren</p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <Link href="/workflow-cases">
-                  <button type="button">Arbeitsprozesse öffnen</button>
-                </Link>
-                <Link href="/workflow-cases/new">
-                  <button type="button">Neue Sitzung</button>
-                </Link>
-              </div>
-            </section>
-          )}
-
-          {showPracticeTile && (
-            <section className="card">
-              <h2 style={{ marginTop: 0 }}>Praxis</h2>
-              <p>Zugang und Einstellungen verwalten</p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <Link href="/practice/members">
-                  <button type="button">Praxis öffnen</button>
-                </Link>
-              </div>
-            </section>
-          )}
+          ))}
         </div>
       </main>
     </>

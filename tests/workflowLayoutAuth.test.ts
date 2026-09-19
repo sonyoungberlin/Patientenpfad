@@ -38,7 +38,14 @@ describe("WorkflowCasesLayout — Auth-Guard", () => {
       id: "acc-1",
       email: "test@example.com",
       is_approved: true,
+      is_admin: false,
+      inquiry_assistant_enabled: false,
+      patient_communication_enabled: true,
+      website_forms_enabled: false,
+      office_cases_enabled: false,
       arbeitsprozesse_enabled: true,
+      current_practice: { id: "practice-1" },
+      memberships: [{ practice_id: "practice-1", role: "USER" }],
     });
     await WorkflowCasesLayout({ children: "TEST_KIND" });
     expect(redirectMock).not.toHaveBeenCalled();

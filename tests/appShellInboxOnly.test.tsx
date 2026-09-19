@@ -79,12 +79,12 @@ describe("AppShell INBOX_ONLY", () => {
     expect(htmlWebsiteForms).not.toContain("Formularverwaltung");
   });
 
-  it("zeigt den Link zu 'Digitale Anfragen'", () => {
+  it("zeigt keine zusätzlichen Posteingänge", () => {
     mockedPathname = "/questionnaires";
     const html = renderToStaticMarkup(
       <AppShell account={inboxOnlyAccount()} digitalRequestsHasUnread={true} />,
     );
-    expect(html).toContain("Digitale Anfragen");
+    expect(html).not.toContain("Digitale Anfragen");
   });
 });
 
@@ -109,8 +109,10 @@ describe("AppShell interne Pfadnavigation", () => {
       );
 
       expect(html).toContain('href="/dashboard">Hauptmenü</a>');
-      expect(html).toContain('href="/cases">Fallliste</a>');
-      expect(html).toContain('href="/">Neuer Fall</a>');
+      expect(html).toContain('href="/cases"');
+      expect(html).toContain("Fallliste");
+      expect(html).toContain('href="/cases/new"');
+      expect(html).toContain("Neuer Fall");
     },
   );
 
