@@ -61,7 +61,7 @@ const APP_SHELL_CONTEXT_ROUTES: readonly {
   prefix: string;
   context: AppShellContext["id"];
 }[] = [
-  { prefix: "/office-cases/questionnaire/new", context: "office" },
+  { prefix: "/office-cases/questionnaire/new", context: "inbox" },
   { prefix: "/office-cases/questionnaire", context: "inbox" },
   { prefix: "/office-cases/applications", context: "inbox" },
   { prefix: "/cases/internal-documentation", context: "doctor" },
@@ -216,15 +216,6 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         label: "Bewerbungsfragebögen",
         href: "/office-cases/questionnaire",
         matches: ["/office-cases/questionnaire"],
-        roles: MANAGEMENT_ROLES,
-        requiresPracticeRole: true,
-        officeFeature: true,
-      },
-      {
-        id: "new-office-questionnaire",
-        label: "Neuer Bewerber-Fragebogen",
-        href: "/office-cases/questionnaire/new",
-        matches: ["/office-cases/questionnaire/new"],
         roles: MANAGEMENT_ROLES,
         requiresPracticeRole: true,
         officeFeature: true,

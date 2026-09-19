@@ -103,29 +103,6 @@ export default function AppShell({
       <div className="app-shell-topline" data-testid="app-shell-topline">
         <Link href={homeHref}>Hauptmenü</Link>
         <div className="app-shell-account-group" data-testid="app-shell-account-group">
-          {appShellContext && (
-            <span
-              data-testid="app-shell-context"
-              aria-label={`Aktueller Kontext: ${appShellContext.label}`}
-              title={`Aktueller Kontext: ${appShellContext.label}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                flexShrink: 0,
-              }}
-            >
-              <Image
-                src={appShellContext.iconSrc}
-                alt={appShellContext.label}
-                width={40}
-                height={40}
-                sizes="40px"
-                style={{ objectFit: "contain", flexShrink: 0 }}
-              />
-              <span className="app-shell-context-label">{appShellContext.label}</span>
-            </span>
-          )}
           <span className="account-email">{account.email}</span>
           <button
             type="button"
@@ -147,30 +124,49 @@ export default function AppShell({
       </div>
       {currentSection?.items.length ? (
         <div className="app-shell-sections" data-testid="app-shell-section-nav">
-          {currentSection.items.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              aria-current={item.id === activeItemId ? "page" : undefined}
-              style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+          {appShellContext && (
+            <span
+              data-testid="app-shell-context"
+              className="app-shell-context"
+              role="img"
+              aria-label={`Aktueller Kontext: ${appShellContext.label}`}
+              title={`Aktueller Kontext: ${appShellContext.label}`}
             >
-              {item.label}
-              {item.id === "digital-requests-inbox" && hasUnread && (
-                <span
-                  data-testid="digital-requests-unread-dot"
-                  aria-label="Neue Anfragen vorhanden"
-                  style={{
-                    display: "inline-block",
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "#ef4444",
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-            </Link>
-          ))}
+              <Image
+                src={appShellContext.iconSrc}
+                alt=""
+                width={32}
+                height={32}
+                sizes="32px"
+              />
+            </span>
+          )}
+          <div className="app-shell-section-links">
+            {currentSection.items.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                aria-current={item.id === activeItemId ? "page" : undefined}
+                style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                {item.label}
+                {item.id === "digital-requests-inbox" && hasUnread && (
+                  <span
+                    data-testid="digital-requests-unread-dot"
+                    aria-label="Neue Anfragen vorhanden"
+                    style={{
+                      display: "inline-block",
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "#ef4444",
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
       ) : null}
     </nav>

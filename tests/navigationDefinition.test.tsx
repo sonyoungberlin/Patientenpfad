@@ -62,7 +62,7 @@ describe("zentrale Bereichsdefinition", () => {
     ["/cases/internal-documentation/123", "doctor", "Ärztlich", "/context-icons/context-doctor.png"],
     ["/office-cases/123", "office", "Office", "/context-icons/context-office.png"],
     ["/workflow-cases/123", "office", "Office", "/context-icons/context-office.png"],
-    ["/office-cases/questionnaire/new", "office", "Office", "/context-icons/context-office.png"],
+    ["/office-cases/questionnaire/new", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
     ["/dashboard", null, null, null],
     ["/practice/members", null, null, null],
     ["/website-forms", null, null, null],
@@ -102,7 +102,6 @@ describe("zentrale Bereichsdefinition", () => {
       "Officefälle",
       "Neuer Officefall",
       "Bewerbungsfragebögen",
-      "Neuer Bewerber-Fragebogen",
       "Bewerbungsanfragen",
       "Arbeitsprozesse",
       "Neue Sitzung",
@@ -149,7 +148,7 @@ describe("zentrale Bereichsdefinition", () => {
     ["/website-forms/abc", "practice-management", "website-forms"],
     ["/office-cases/applications/abc", "inbox", "applicant-inbox"],
     ["/office-cases/questionnaire/abc", "inbox", "applicant-questionnaire-inbox"],
-    ["/office-cases/questionnaire/new", "office-path", "new-office-questionnaire"],
+    ["/office-cases/questionnaire/new", "inbox", "applicant-questionnaire-inbox"],
   ])("ordnet Detailroute %s dem richtigen Menüpunkt zu", (pathname, sectionId, itemId) => {
     const sections = getVisibleNavigationSections(account());
     const section = getNavigationSectionForPath(sections, pathname);
@@ -177,11 +176,12 @@ describe("AppShell Bereichsmenüs", () => {
 
     if (label && iconSrc) {
       expect(html).toContain(`url=${encodeURIComponent(iconSrc)}`);
-      expect(html).toContain('width="40"');
-      expect(html).toContain('height="40"');
-      expect(html).toContain(`alt="${label}"`);
+      expect(html).toContain('width="32"');
+      expect(html).toContain('height="32"');
+      expect(html).toContain('alt=""');
       expect(html).toContain(`title="Aktueller Kontext: ${label}"`);
-      expect(html).toContain(label);
+      expect(html).toContain('role="img"');
+      expect(html).not.toContain(`>${label}</span>`);
     } else {
       expect(html).not.toContain('data-testid="app-shell-context"');
     }
@@ -199,8 +199,8 @@ describe("AppShell Bereichsmenüs", () => {
       expect(html.indexOf('data-testid="app-shell-context"')).toBeGreaterThan(
         html.indexOf('data-testid="app-shell-account-group"'),
       );
-      expect(html.indexOf('data-testid="app-shell-context"')).toBeLessThan(
-        html.indexOf("owner@example.com"),
+      expect(html.indexOf('data-testid="app-shell-context"')).toBeGreaterThan(
+        html.indexOf('data-testid="app-shell-section-nav"'),
       );
     }
   });
@@ -212,7 +212,7 @@ describe("AppShell Bereichsmenüs", () => {
     ["/digital-requests/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/applications/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/questionnaire/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
-    ["/office-cases/questionnaire/new", ["Officefälle", "Neuer Officefall", "Bewerbungsfragebögen", "Neuer Bewerber-Fragebogen", "Bewerbungsanfragen", "Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
+    ["/office-cases/questionnaire/new", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/cases/internal-documentation", ["Fallliste", "Neuer Fall", "Interne Dokumentation"]],
     ["/practice/signature", ["Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
   ])("zeigt auf %s das vollständige Bereichsmenü", (pathname, labels) => {
