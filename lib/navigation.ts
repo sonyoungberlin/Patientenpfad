@@ -28,6 +28,58 @@ export type NavigationSection = {
   sectionMatches?: readonly string[];
 };
 
+export type AppShellContext = {
+  id: "inbox" | "patient" | "doctor" | "office";
+  label: "Posteingang" | "Patient" | "Ärztlich" | "Office";
+  iconSrc: string;
+};
+
+const APP_SHELL_CONTEXTS: Readonly<Record<AppShellContext["id"], AppShellContext>> = {
+  inbox: {
+    id: "inbox",
+    label: "Posteingang",
+    iconSrc: "/context-icons/context-inbox.png",
+  },
+  patient: {
+    id: "patient",
+    label: "Patient",
+    iconSrc: "/context-icons/context-patient.png",
+  },
+  doctor: {
+    id: "doctor",
+    label: "Ärztlich",
+    iconSrc: "/context-icons/context-doctor.png",
+  },
+  office: {
+    id: "office",
+    label: "Office",
+    iconSrc: "/context-icons/context-office.png",
+  },
+};
+
+const APP_SHELL_CONTEXT_ROUTES: readonly {
+  prefix: string;
+  context: AppShellContext["id"];
+}[] = [
+  { prefix: "/office-cases/questionnaire/new", context: "office" },
+  { prefix: "/office-cases/questionnaire", context: "inbox" },
+  { prefix: "/office-cases/applications", context: "inbox" },
+  { prefix: "/cases/internal-documentation", context: "doctor" },
+  { prefix: "/questionnaires", context: "inbox" },
+  { prefix: "/digital-requests", context: "inbox" },
+  { prefix: "/inquiries", context: "patient" },
+  { prefix: "/cases", context: "patient" },
+  { prefix: "/office-cases", context: "office" },
+  { prefix: "/workflow-cases", context: "office" },
+];
+
+export function getAppShellContext(pathname: string): AppShellContext | null {
+  const route = APP_SHELL_CONTEXT_ROUTES.find(
+    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  return route ? APP_SHELL_CONTEXTS[route.context] : null;
+}
+
 const PRACTICE_ROLES = ["OWNER", "ADMIN", "USER"] as const;
 const MANAGEMENT_ROLES = ["OWNER", "ADMIN"] as const;
 const INBOX_ROLES = ["OWNER", "ADMIN", "USER", "INBOX_ONLY"] as const;

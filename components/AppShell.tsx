@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import type {
@@ -9,6 +10,7 @@ import type {
 } from "@/lib/appShellAccount";
 import {
   getActiveNavigationItem,
+  getAppShellContext,
   getCurrentNavigationRole,
   getNavigationSectionForPath,
   getVisibleNavigationSections,
@@ -94,6 +96,7 @@ export default function AppShell({
   const activeItemId = currentSection
     ? getActiveNavigationItem(currentSection, pathname)
     : null;
+  const appShellContext = getAppShellContext(pathname);
 
   return (
     <nav className="app-nav">
@@ -122,6 +125,29 @@ export default function AppShell({
           )}
         </Link>
       ))}
+      {appShellContext && (
+        <span
+          data-testid="app-shell-context"
+          aria-label={`Aktueller Kontext: ${appShellContext.label}`}
+          title={`Aktueller Kontext: ${appShellContext.label}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            flexShrink: 0,
+          }}
+        >
+          <Image
+            src={appShellContext.iconSrc}
+            alt={appShellContext.label}
+            width={40}
+            height={40}
+            sizes="40px"
+            style={{ objectFit: "contain", flexShrink: 0 }}
+          />
+          <span className="app-shell-context-label">{appShellContext.label}</span>
+        </span>
+      )}
       <span className="account-email" style={{ marginLeft: "auto" }}>
         {account.email}
       </span>

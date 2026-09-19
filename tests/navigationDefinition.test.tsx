@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import AppShell from "@/components/AppShell";
 import {
   getActiveNavigationItem,
+  getAppShellContext,
   getNavigationSectionForPath,
   getVisibleNavigationSections,
 } from "@/lib/navigation";
@@ -50,6 +51,27 @@ function ownerAccount() {
 }
 
 describe("zentrale Bereichsdefinition", () => {
+  it.each([
+    ["/questionnaires", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/digital-requests/detail", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/office-cases/applications/detail", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/office-cases/questionnaire/detail", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/inquiries/new", "patient", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/new", "patient", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/123", "patient", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/internal-documentation/123", "doctor", "Ärztlich", "/context-icons/context-doctor.png"],
+    ["/office-cases/123", "office", "Office", "/context-icons/context-office.png"],
+    ["/workflow-cases/123", "office", "Office", "/context-icons/context-office.png"],
+    ["/office-cases/questionnaire/new", "office", "Office", "/context-icons/context-office.png"],
+    ["/dashboard", null, null, null],
+    ["/practice/members", null, null, null],
+    ["/website-forms", null, null, null],
+  ])("löst %s in den AppShell-Kontext auf", (pathname, id, label, iconSrc) => {
+    expect(getAppShellContext(pathname)).toEqual(
+      id ? { id, label, iconSrc } : null,
+    );
+  });
+
   it("liefert für Owner alle Bereiche und direkten Seitenlinks", () => {
     const sections = getVisibleNavigationSections(account());
 
@@ -140,6 +162,32 @@ describe("zentrale Bereichsdefinition", () => {
 describe("AppShell Bereichsmenüs", () => {
   beforeEach(() => {
     mockedPathname = "/dashboard";
+  });
+
+  it.each([
+    ["/questionnaires", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/inquiries", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/internal-documentation", "Ärztlich", "/context-icons/context-doctor.png"],
+    ["/office-cases", "Office", "/context-icons/context-office.png"],
+    ["/dashboard", null, null],
+    ["/practice/members", null, null],
+  ])("rendert den Kontext vor den Accountaktionen auf %s", (pathname, label, iconSrc) => {
+    mockedPathname = pathname;
+    const html = renderToStaticMarkup(<AppShell account={account()} />);
+
+    if (label && iconSrc) {
+      expect(html).toContain(`url=${encodeURIComponent(iconSrc)}`);
+      expect(html).toContain('width="40"');
+      expect(html).toContain('height="40"');
+      expect(html).toContain(`alt="${label}"`);
+      expect(html).toContain(`title="Aktueller Kontext: ${label}"`);
+      expect(html).toContain(label);
+    } else {
+      expect(html).not.toContain('data-testid="app-shell-context"');
+    }
+
+    expect(html).toContain("owner@example.com");
+    expect(html).toContain("Abmelden");
   });
 
   it.each([
