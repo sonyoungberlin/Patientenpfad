@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import { canAccessInternalDocumentation } from "@/lib/authz";
 import { getCaseOwnershipFilter } from "@/lib/cases/practiceScope";
 import CaseListClient, { type CaseListItem } from "./CaseListClient";
 
@@ -116,32 +114,6 @@ export default async function CasesPage() {
   return (
     <main>
       <h1>Patientenpfad</h1>
-      <div
-        style={{
-          display: "grid",
-          gap: "1rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          marginTop: "1rem",
-          marginBottom: "2rem",
-        }}
-      >
-        <section className="card">
-          <h2 style={{ marginTop: 0 }}>Patientenfall eröffnen</h2>
-          <p>Bestehenden Patientenpfad starten.</p>
-          <Link href="/cases/new">
-            <button type="button">Patientenfall eröffnen</button>
-          </Link>
-        </section>
-        {canAccessInternalDocumentation(account) && (
-          <section className="card">
-            <h2 style={{ marginTop: 0 }}>Interne Dokumentation</h2>
-            <p>Interne Dokumentation für die Praxis erstellen.</p>
-            <Link href="/cases/internal-documentation">
-              <button type="button">Interne Dokumentation</button>
-            </Link>
-          </section>
-        )}
-      </div>
       <h2>Fälle</h2>
       <div style={{ marginTop: "1rem", display: "grid", gap: "0.75rem" }}>
         <CaseListClient cases={cases} quota={quotaInfo} />

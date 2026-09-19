@@ -63,7 +63,8 @@ describe("zentrale Bereichsdefinition", () => {
     expect(sections[0].items.map((item) => item.label)).toEqual([
       "Fragebogen-Posteingang",
       "Digitale Anfragen",
-      "Bewerber-Eingang",
+      "Bewerbungsanfragen",
+      "Bewerber-Fragebögen",
     ]);
     expect(sections[1].items.map((item) => item.label)).toEqual([
       "Vorlagen",
@@ -77,7 +78,9 @@ describe("zentrale Bereichsdefinition", () => {
     ]);
     expect(sections[3].items.map((item) => item.label)).toEqual([
       "Officefälle",
+      "Neuer Officefall",
       "Bewerbungsfragebögen",
+      "Neuer Bewerber-Fragebogen",
       "Bewerbungsanfragen",
       "Arbeitsprozesse",
       "Neue Sitzung",
@@ -109,7 +112,8 @@ describe("zentrale Bereichsdefinition", () => {
     );
 
     expect(labels).not.toContain("Digitale Anfragen");
-    expect(labels).not.toContain("Bewerber-Eingang");
+    expect(labels).not.toContain("Bewerbungsanfragen");
+    expect(labels).not.toContain("Bewerber-Fragebögen");
     expect(labels).not.toContain("Website-Formulare");
     expect(labels).toContain("Fallliste");
   });
@@ -122,6 +126,7 @@ describe("zentrale Bereichsdefinition", () => {
     ["/practice/members", "practice-management", "practice-members"],
     ["/website-forms/abc", "practice-management", "website-forms"],
     ["/office-cases/applications/abc", "inbox", "applicant-inbox"],
+    ["/office-cases/questionnaire/abc", "inbox", "applicant-questionnaire-inbox"],
   ])("ordnet Detailroute %s dem richtigen Menüpunkt zu", (pathname, sectionId, itemId) => {
     const sections = getVisibleNavigationSections(account());
     const section = getNavigationSectionForPath(sections, pathname);
@@ -139,9 +144,10 @@ describe("AppShell Bereichsmenüs", () => {
   it.each([
     ["/inquiries", ["Vorlagen", "Neue Nachricht", "Fragebogen zusammenstellen"]],
     ["/inquiries/new", ["Vorlagen", "Neue Nachricht", "Fragebogen zusammenstellen"]],
-    ["/questionnaires", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerber-Eingang"]],
-    ["/digital-requests/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerber-Eingang"]],
-    ["/office-cases/applications/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerber-Eingang"]],
+    ["/questionnaires", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
+    ["/digital-requests/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
+    ["/office-cases/applications/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
+    ["/office-cases/questionnaire/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/cases/internal-documentation", ["Fallliste", "Neuer Fall", "Interne Dokumentation"]],
     ["/practice/signature", ["Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
   ])("zeigt auf %s das vollständige Bereichsmenü", (pathname, labels) => {
@@ -177,5 +183,14 @@ describe("AppShell Bereichsmenüs", () => {
 
     expect(dashboardLinks).toEqual(inboxLinks);
     expect(shellLinks).toEqual(inboxLinks);
+  });
+
+  it("blendet Office-Eingänge ohne Office-Feature aus", () => {
+    const noOffice = account("OWNER", { office_cases_enabled: false });
+    const labels = getVisibleNavigationSections(noOffice)
+      .find((section) => section.id === "inbox")!
+      .items.map((item) => item.label);
+
+    expect(labels).toEqual(["Fragebogen-Posteingang", "Digitale Anfragen"]);
   });
 });

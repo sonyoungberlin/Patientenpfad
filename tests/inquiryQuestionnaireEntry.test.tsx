@@ -71,15 +71,14 @@ describe("Eigenständiger Fragebogen-Einstieg", () => {
     });
   });
 
-  it("bietet auf /inquiries den Einstieg /inquiries/questionnaire an", async () => {
+  it("verweist für den Einstieg ausschließlich auf das persistente Menü", async () => {
     const tree = await InquiriesPage();
     const link = findElement(
       tree,
       (element) => element.props.href === "/inquiries/questionnaire",
     );
 
-    expect(link).not.toBeNull();
-    expect(link?.props.children).toBe("Fragebogen starten");
+    expect(link).toBeNull();
   });
 
   it("öffnet die wiederverwendete Section direkt ohne InquirySession", async () => {

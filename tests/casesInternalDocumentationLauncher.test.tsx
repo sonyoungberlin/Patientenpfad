@@ -38,19 +38,21 @@ describe("Patientenpfad launcher", () => {
   });
 
   it.each([PracticeRole.ADMIN, PracticeRole.OWNER, PracticeRole.USER])(
-    "zeigt ADMIN/OWNER/USER den internen Launcher (%s)",
+    "entfernt die doppelten Alltags-Shortcuts (%s)",
     async (role) => {
       getAccount.mockResolvedValue(account(role));
       const html = renderToStaticMarkup(await CasesPage());
-      expect(html).toContain('href="/cases/new"');
-      expect(html).toContain('href="/cases/internal-documentation"');
+      expect(html).not.toContain("Patientenfall eröffnen");
+      expect(html).not.toContain('href="/cases/new"');
+      expect(html).not.toContain('href="/cases/internal-documentation"');
+      expect(html).toContain("Fälle");
     },
   );
 
   it("zeigt INBOX_ONLY keinen internen Launcher", async () => {
     getAccount.mockResolvedValue(account(PracticeRole.INBOX_ONLY));
     const html = renderToStaticMarkup(await CasesPage());
-    expect(html).toContain('href="/cases/new"');
+    expect(html).not.toContain('href="/cases/new"');
     expect(html).not.toContain('href="/cases/internal-documentation"');
   });
 });

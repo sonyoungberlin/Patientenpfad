@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
@@ -50,36 +49,6 @@ export default async function InquiriesPage() {
         Hier erscheinen ausschließlich gespeicherte Vorlagen. Einmalige
         Nachrichten werden nicht dauerhaft abgelegt.
       </p>
-      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-        <Link
-          href="/inquiries/new"
-          style={{
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            padding: "0.5rem 1.25rem",
-            textDecoration: "none",
-            color: "var(--foreground)",
-            background: "var(--background)",
-            fontWeight: 500,
-          }}
-        >
-          Neue Nachricht
-        </Link>
-        <Link
-          href="/inquiries/questionnaire"
-          style={{
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            padding: "0.5rem 1.25rem",
-            textDecoration: "none",
-            color: "var(--foreground)",
-            background: "var(--background)",
-            fontWeight: 500,
-          }}
-        >
-          Fragebogen starten
-        </Link>
-      </div>
       <InquiryListClient templates={items} />
     </main>
   );
