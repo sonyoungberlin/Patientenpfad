@@ -55,6 +55,7 @@ function makeAccount(
   role: string,
   patientCommunicationEnabled: boolean,
   officeCasesEnabled = false,
+  workflowEnabled = false,
 ) {
   return {
     id: "acc-1",
@@ -65,7 +66,7 @@ function makeAccount(
     patient_communication_enabled: patientCommunicationEnabled,
     website_forms_enabled: false,
     office_cases_enabled: officeCasesEnabled,
-    arbeitsprozesse_enabled: false,
+    arbeitsprozesse_enabled: workflowEnabled,
     current_practice: {
       id: "p-1",
       slug: "p-1",
@@ -75,7 +76,7 @@ function makeAccount(
       patient_communication_enabled: patientCommunicationEnabled,
       website_forms_enabled: false,
       office_cases_enabled: officeCasesEnabled,
-      arbeitsprozesse_enabled: false,
+      arbeitsprozesse_enabled: workflowEnabled,
     },
     memberships: [{ practice_id: "p-1", role }],
   };
@@ -165,5 +166,41 @@ describe("Dashboard — Kachel 'Officepfad'", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).not.toContain('data-testid="office-path-tile"');
+  });
+});
+
+describe("Dashboard — Kachel 'Arbeitsprozesse'", () => {
+  beforeEach(() => {
+    redirectMock.mockClear();
+    getCookies.mockReset();
+  });
+
+  it("zeigt die Arbeitsprozesse-Kachel mit freigeschaltetem Feature", async () => {
+    getCookies.mockResolvedValue(makeAccount("OWNER", true, false, true));
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).toContain('data-testid="workflow-path-tile"');
+    expect(html).toContain('<a href="/workflow-cases">Arbeitsprozesse</a>');
+    expect(html).toContain('<a href="/workflow-cases/new">Neue Sitzung</a>');
+    expect(html).toContain('<a href="/workflow-cases/internal-protocol/new">Praxisprozesse</a>');
+  });
+
+  it("blendet die Arbeitsprozesse-Kachel ohne Feature aus", async () => {
+    getCookies.mockResolvedValue(makeAccount("OWNER", true, false, false));
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).not.toContain('data-testid="workflow-path-tile"');
+    expect(html).not.toContain('href="/workflow-cases">');
+  });
+
+  it("gibt INBOX_ONLY trotz Feature keinen Arbeitsprozesszugriff", async () => {
+    const account = inboxOnlyAccount();
+    account.arbeitsprozesse_enabled = true;
+    account.current_practice.arbeitsprozesse_enabled = true;
+    getCookies.mockResolvedValue(account);
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).not.toContain('data-testid="workflow-path-tile"');
+    expect(html).not.toContain('href="/workflow-cases">');
   });
 });

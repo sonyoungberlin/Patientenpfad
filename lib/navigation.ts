@@ -5,6 +5,7 @@ export type NavigationSectionId =
   | "patient-communication"
   | "patient-path"
   | "office-path"
+  | "workflow-path"
   | "practice-management";
 
 export type NavigationItem = {
@@ -229,6 +230,14 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         requiresPracticeRole: true,
         officeFeature: true,
       },
+    ],
+  },
+  {
+    id: "workflow-path",
+    title: "Arbeitsprozesse",
+    description: "Musterprozesse strukturiert dokumentieren.",
+    sectionMatches: ["/workflow-cases"],
+    items: [
       {
         id: "workflow-cases",
         label: "Arbeitsprozesse",

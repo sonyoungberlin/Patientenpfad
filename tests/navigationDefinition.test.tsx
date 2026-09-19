@@ -80,6 +80,7 @@ describe("zentrale Bereichsdefinition", () => {
       "Patientenkommunikation",
       "Patientenpfad",
       "Officepfad",
+      "Arbeitsprozesse",
       "Praxisverwaltung",
     ]);
     expect(sections[0].items.map((item) => item.label)).toEqual([
@@ -103,11 +104,13 @@ describe("zentrale Bereichsdefinition", () => {
       "Neuer Officefall",
       "Bewerbungsfragebögen",
       "Bewerbungsanfragen",
+    ]);
+    expect(sections[4].items.map((item) => item.label)).toEqual([
       "Arbeitsprozesse",
       "Neue Sitzung",
       "Praxisprozesse",
     ]);
-    expect(sections[4].title).toBe("Praxisverwaltung");
+    expect(sections[5].title).toBe("Praxisverwaltung");
   });
 
   it("beschränkt INBOX_ONLY auf den Fragebogen-Posteingang", () => {
@@ -117,6 +120,46 @@ describe("zentrale Bereichsdefinition", () => {
     expect(sections[0].items.map((item) => item.label)).toEqual([
       "Fragebogen-Posteingang",
     ]);
+  });
+
+  it("führt Arbeitsprozesse nur mit freigeschaltetem Feature", () => {
+    const withoutWorkflow = getVisibleNavigationSections(
+      account("OWNER", { arbeitsprozesse_enabled: false }),
+    );
+    const withWorkflow = getVisibleNavigationSections(
+      account("OWNER", { arbeitsprozesse_enabled: true }),
+    );
+
+    expect(withoutWorkflow.map((section) => section.id)).not.toContain("workflow-path");
+    expect(withWorkflow.find((section) => section.id === "workflow-path")?.items.map((item) => item.href)).toEqual([
+      "/workflow-cases",
+      "/workflow-cases/new",
+      "/workflow-cases/internal-protocol/new",
+    ]);
+  });
+
+  it("hält Workflow-Routen im eigenständigen Bereich und den Officepfad workflowfrei", () => {
+    const sections = getVisibleNavigationSections(account());
+    const workflow = sections.find((section) => section.id === "workflow-path");
+    const office = sections.find((section) => section.id === "office-path");
+
+    expect(getNavigationSectionForPath(sections, "/workflow-cases/123")?.id).toBe(
+      "workflow-path",
+    );
+    expect(office?.items.some((item) => item.href.startsWith("/workflow-cases"))).toBe(false);
+    expect(workflow?.items.map((item) => item.label)).toEqual([
+      "Arbeitsprozesse",
+      "Neue Sitzung",
+      "Praxisprozesse",
+    ]);
+  });
+
+  it("gibt INBOX_ONLY keinen Arbeitsprozesszugriff", () => {
+    const sections = getVisibleNavigationSections(
+      account("INBOX_ONLY", { arbeitsprozesse_enabled: true }),
+    );
+
+    expect(sections.map((section) => section.id)).not.toContain("workflow-path");
   });
 
   it("filtert Feature-abhängige Eingänge und Verwaltungsseiten", () => {
@@ -149,6 +192,8 @@ describe("zentrale Bereichsdefinition", () => {
     ["/office-cases/applications/abc", "inbox", "applicant-inbox"],
     ["/office-cases/questionnaire/abc", "inbox", "applicant-questionnaire-inbox"],
     ["/office-cases/questionnaire/new", "inbox", "applicant-questionnaire-inbox"],
+    ["/workflow-cases/abc", "workflow-path", "workflow-cases"],
+    ["/workflow-cases/internal-protocol/new", "workflow-path", "new-practice-process"],
   ])("ordnet Detailroute %s dem richtigen Menüpunkt zu", (pathname, sectionId, itemId) => {
     const sections = getVisibleNavigationSections(account());
     const section = getNavigationSectionForPath(sections, pathname);
@@ -213,6 +258,8 @@ describe("AppShell Bereichsmenüs", () => {
     ["/office-cases/applications/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/questionnaire/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/questionnaire/new", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
+    ["/workflow-cases", ["Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
+    ["/workflow-cases/new", ["Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
     ["/cases/internal-documentation", ["Fallliste", "Neuer Fall", "Interne Dokumentation"]],
     ["/practice/signature", ["Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
   ])("zeigt auf %s das vollständige Bereichsmenü", (pathname, labels) => {
