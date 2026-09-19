@@ -69,7 +69,7 @@ export function moveInternalBlockPlacement(
   );
 }
 
-function SortableBlock({ blockId, disabled }: { blockId: string; disabled: boolean }) {
+function SortableBlock({ blockId, label, disabled }: { blockId: string; label: string; disabled: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: blockId,
     disabled,
@@ -92,7 +92,7 @@ function SortableBlock({ blockId, disabled }: { blockId: string; disabled: boole
     >
       <button
         type="button"
-        aria-label={`${getInternalBlockLabel(blockId)} verschieben`}
+        aria-label={`${label} verschieben`}
         title="Verschieben"
         disabled={disabled}
         {...attributes}
@@ -101,7 +101,7 @@ function SortableBlock({ blockId, disabled }: { blockId: string; disabled: boole
       >
         ↕
       </button>
-      <span style={{ overflowWrap: "anywhere" }}>{getInternalBlockLabel(blockId)}</span>
+      <span style={{ overflowWrap: "anywhere" }}>{label}</span>
     </div>
   );
 }
@@ -109,10 +109,12 @@ function SortableBlock({ blockId, disabled }: { blockId: string; disabled: boole
 function DropSection({
   section,
   placements,
+  blockLabels,
   disabled,
 }: {
   section: InternalBlockSection;
   placements: InternalBlockPlacement[];
+  blockLabels?: Readonly<Record<string, string>>;
   disabled: boolean;
 }) {
   const id = sectionId(section);
@@ -136,7 +138,7 @@ function DropSection({
       <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
         <div style={{ display: "grid", gap: "0.4rem" }}>
           {blockIds.map((blockId) => (
-            <SortableBlock key={blockId} blockId={blockId} disabled={disabled} />
+            <SortableBlock key={blockId} blockId={blockId} label={blockLabels?.[blockId] ?? getInternalBlockLabel(blockId)} disabled={disabled} />
           ))}
           {blockIds.length === 0 ? (
             <span className="text-muted text-small">Leer</span>
@@ -149,10 +151,12 @@ function DropSection({
 
 export default function InternalDocumentationBlockOrganizer({
   placements,
+  blockLabels,
   onChange,
   disabled = false,
 }: {
   placements: InternalBlockPlacement[];
+  blockLabels?: Readonly<Record<string, string>>;
   onChange: (placements: InternalBlockPlacement[]) => void;
   disabled?: boolean;
 }) {
@@ -173,7 +177,7 @@ export default function InternalDocumentationBlockOrganizer({
   return (
     <section aria-labelledby="internal-block-organizer-title" style={{ display: "grid", gap: "0.6rem" }}>
       <h2 id="internal-block-organizer-title" style={{ fontSize: "1.05rem", margin: 0 }}>
-        Ausgewählte Abschnitte organisieren
+        Ausgewählte Dokumentationsbausteine organisieren
       </h2>
       <p className="text-muted text-small" style={{ margin: 0 }}>
         Die Abschnitte erscheinen im Dokument von oben nach unten.
@@ -189,6 +193,7 @@ export default function InternalDocumentationBlockOrganizer({
               key={section}
               section={section}
               placements={placements}
+              blockLabels={blockLabels}
               disabled={disabled}
             />
           ))}

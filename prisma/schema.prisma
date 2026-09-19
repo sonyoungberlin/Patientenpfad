@@ -878,6 +878,8 @@ model Practice {
   practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
   digital_requests               DigitalRequest[]              @relation("DigitalRequestOwnerPractice")
   practice_catalog_entries       PracticeCatalogEntry[]        @relation("PracticeCatalogEntryPractice")
+  documentation_blocks            PracticeDocumentationBlock[] @relation("PracticeDocumentationBlockPractice")
+  documentation_templates         PracticeDocumentationTemplate[] @relation("PracticeDocumentationTemplatePractice")
   legal_profile                  PracticeLegalProfile?
   legal_profile_audits           PracticeLegalProfileAudit[]
 
@@ -886,6 +888,40 @@ model Practice {
   default_for_accounts Account[] @relation("AccountDefaultPractice")
   questionnaire_kiosk_devices QuestionnaireKioskDevice[]
   auto_download_devices PracticeAutoDownloadDevice[]
+}
+
+/// Wiederverwendbarer praxisbezogener Baustein für die interne Dokumentation.
+model PracticeDocumentationBlock {
+  id String @id @default(cuid())
+
+  practice_id String
+  practice    Practice @relation("PracticeDocumentationBlockPractice", fields: [practice_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  title       String
+  block_type  String
+  definition  Json
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([practice_id, is_active, created_at])
+}
+
+/// Praxisbezogene Zusammenstellung registrierter Dokumentationsbausteine.
+model PracticeDocumentationTemplate {
+  id String @id @default(cuid())
+
+  practice_id String
+  practice    Practice @relation("PracticeDocumentationTemplatePractice", fields: [practice_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  name                   String
+  is_active              Boolean  @default(true)
+  block_layout           Json
+  output_format          String?
+  document_title_option  String?
+  created_at             DateTime @default(now())
+
+  @@index([practice_id, is_active, created_at])
 }
 
 /// Offizielle, zentral vom Plattformbetreiber gepflegte Praxis- und

@@ -710,6 +710,46 @@ describe("Phase 2B blockbasierte interne Dokumentation", () => {
     expect(await extractPdfText(emptyResult.bytes)).not.toContain("Dokumente / Befunde");
   });
 
+  it("rendert eine eingefrorene Praxisempfehlung mit Systemoption weiterhin als bodyText", () => {
+    const practiceOption = {
+      value: "practice-content:cardiology",
+      label: "Kardiologie",
+      documentationText: "Eine kardiologische Mitbeurteilung wurde empfohlen.",
+    };
+    const frozenBlocks = buildInternalDocumentationFrozenBlocks(["MEDICAL_STATEMENT"]);
+    const recommendation = frozenBlocks[0].questions.find(
+      (question) => question.id === "MEDICAL_STATEMENT_RECOMMENDATIONS",
+    );
+    recommendation?.options?.push(structuredClone(practiceOption));
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {
+        MEDICAL_STATEMENT_RECOMMENDATIONS:
+          "medical_reassessment, practice-content:cardiology",
+      },
+      selected_block_ids: ["MEDICAL_STATEMENT"],
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+
+    expect(document.sections[0].items).toEqual([
+      expect.objectContaining({ type: "heading", text: "Stellungnahme" }),
+      expect.objectContaining({
+        type: "bodyText",
+        text: "Eine erneute ärztliche Beurteilung im weiteren Verlauf wird empfohlen. Eine kardiologische Mitbeurteilung wurde empfohlen.",
+      }),
+    ]);
+
+    practiceOption.documentationText = "Später geänderter Text.";
+    const frozenRecommendation = frozenBlocks[0].questions.find(
+      (question) => question.id === "MEDICAL_STATEMENT_RECOMMENDATIONS",
+    );
+    expect(frozenRecommendation?.options).toContainEqual({
+      value: "practice-content:cardiology",
+      label: "Kardiologie",
+      documentationText: "Eine kardiologische Mitbeurteilung wurde empfohlen.",
+    });
+  });
+
   it("rendert Stellungnahme in Fragen- und gespeicherter C-Reihenfolge", async () => {
     const statementBlocks = buildInternalDocumentationFrozenBlocks(["MEDICAL_STATEMENT"]);
     const statementAnswers = {

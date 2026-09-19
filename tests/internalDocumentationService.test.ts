@@ -7,6 +7,9 @@ jest.mock("@/lib/prisma", () => ({
       findUnique: jest.fn(),
       updateMany: jest.fn(),
     },
+    practiceDocumentationBlock: {
+      findMany: jest.fn(),
+    },
   },
 }));
 
@@ -24,12 +27,28 @@ const db = prisma.patientQuestionnaireSession as unknown as {
   findUnique: jest.Mock;
   updateMany: jest.Mock;
 };
+const findDocumentationBlocks = prisma.practiceDocumentationBlock.findMany as jest.Mock;
+
+function storedBlock(id: string) {
+  return {
+    id,
+    definition: {
+      schemaVersion: 1,
+      visibleType: "text",
+      block: { id, label: id, displayOrder: 0, questionIds: [`${id}_question`] },
+      questions: [{ id: `${id}_question`, text: id, type: "textarea", required: false }],
+    },
+  };
+}
 
 describe("internal documentation service", () => {
   beforeEach(() => {
     createSession.mockReset().mockResolvedValue({ sessionId: "session-1" });
     db.findUnique.mockReset();
     db.updateMany.mockReset().mockResolvedValue({ count: 1 });
+    findDocumentationBlocks.mockReset().mockImplementation(({ where }: {
+      where: { id: { in: string[] } };
+    }) => Promise.resolve(where.id.in.filter((id) => id !== "unknown").map(storedBlock)));
   });
 
   it("erstellt ausgewählte Blocks im Praxiskontext mit festem Ownership-Scope", async () => {
@@ -37,6 +56,7 @@ describe("internal documentation service", () => {
         selectedBlockIds: ["CARE_PLAN_HA"],
         patientReference: " 81426 ",
         documentTitleOption: "arztbrief",
+        outputFormat: "informell",
         origin: "https://example.test",
         context: {
           kind: "practice",
@@ -56,6 +76,11 @@ describe("internal documentation service", () => {
           documentTitleOption: "arztbrief",
           documentTitle: "Arztbrief",
         },
+        internalOutputFormat: "informell",
+        internalFrozenBlocks: [expect.objectContaining({
+          id: "CARE_PLAN_HA",
+          questions: [expect.objectContaining({ id: "CARE_PLAN_HA_question" })],
+        })],
       }));
       const input = createSession.mock.calls[0][0];
       expect(input.internalBlockLayout).toEqual([
@@ -71,6 +96,7 @@ describe("internal documentation service", () => {
       selectedBlockIds: ["CARE_PLAN_HA"],
       patientReference: "81426",
       documentTitleOption: "bericht",
+      outputFormat: "formell",
       origin: "https://example.test",
       context: {
         kind: "kiosk",
@@ -84,8 +110,35 @@ describe("internal documentation service", () => {
       createdByKioskDeviceId: "device-1",
       source: "kiosk_direct",
       internalWorkflowId: null,
+      internalOutputFormat: "formell",
     }));
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("ownerAccountId");
+  });
+
+  it("löst ausgewählte Bibliotheksblöcke ausschließlich im serverseitigen Praxis-Scope auf", async () => {
+    await createInternalDocumentationSession({
+      selectedBlockIds: ["practice_block_1"],
+      patientReference: "81426",
+      documentTitleOption: "stellungnahme",
+      outputFormat: "informell",
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    expect(findDocumentationBlocks).toHaveBeenCalledWith({
+      where: {
+        id: { in: ["practice_block_1"] },
+        practice_id: "practice-1",
+        is_active: true,
+      },
+      select: { id: true, definition: true },
+    });
+    const frozen = createSession.mock.calls[0][0].internalFrozenBlocks;
+    expect(frozen).toEqual([expect.objectContaining({
+      id: "practice_block_1",
+      outputSemantics: "documented-content-v1",
+      questions: [expect.objectContaining({ id: "practice_block_1_question" })],
+    })]);
   });
 
   it("weist unbekannte Blocks vor der Session-Erzeugung ab", async () => {
@@ -93,21 +146,37 @@ describe("internal documentation service", () => {
       selectedBlockIds: ["unknown"],
       patientReference: "81426",
       documentTitleOption: "arztbrief",
+      outputFormat: "informell",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
     })).rejects.toMatchObject({ status: 400 });
     expect(createSession).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [{ patientReference: "", documentTitleOption: "arztbrief", selectedBlockIds: ["CARE_PLAN_HA"] }, "Bitte Patientenreferenz angeben."],
+    [{ patientReference: "81426", documentTitleOption: "", selectedBlockIds: ["CARE_PLAN_HA"] }, "Bitte Dokumenttitel angeben."],
+    [{ patientReference: "81426", documentTitleOption: "arztbrief", selectedBlockIds: [] }, "Bitte mindestens einen Dokumentationsbaustein auswählen."],
+  ])("meldet eine fehlende Startvoraussetzung einzeln: %j", async (fields, message) => {
+    await expect(createInternalDocumentationSession({
+      ...fields,
+      outputFormat: "informell",
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    })).rejects.toMatchObject({ status: 400, message });
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
   it("validiert und normalisiert frei sortierte Blockplatzierungen", async () => {
     await createInternalDocumentationSession({
-      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW"],
+      selectedBlockIds: ["VACCINATION_REVIEW", "CARE_PLAN_HA"],
       blockLayout: [
         { blockId: "VACCINATION_REVIEW", section: 1, order: 9 },
         { blockId: "CARE_PLAN_HA", section: 2, order: 4 },
       ],
       patientReference: "81426",
       documentTitleOption: "stellungnahme",
+      outputFormat: "informell",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
     });
@@ -132,9 +201,13 @@ describe("internal documentation service", () => {
       blockLayout,
       patientReference: "81426",
       documentTitleOption: "arztbrief",
+      outputFormat: "informell",
       origin: "https://example.test",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
-    })).rejects.toMatchObject({ status: 400 });
+    })).rejects.toMatchObject({
+      status: 400,
+      message: "Dokumentationsbausteine konnten nicht verarbeitet werden.",
+    });
     expect(createSession).not.toHaveBeenCalled();
   });
 
@@ -151,6 +224,7 @@ describe("internal documentation service", () => {
       selectedBlockIds: ["CARE_PLAN_HA"],
       patientReference: "81426",
       ...titleInput,
+      outputFormat: "informell",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
       origin: "https://example.test",
     })).rejects.toMatchObject({ status: 400 });
@@ -163,12 +237,13 @@ describe("internal documentation service", () => {
       patientReference: "81426",
       documentTitleOption: "andere",
       customDocumentTitle: "  Individueller Titel  ",
+      outputFormat: "informell",
       context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
       origin: "https://example.test",
     });
 
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
-      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW"],
+      selectedBlockIds: ["VACCINATION_REVIEW", "CARE_PLAN_HA"],
       internalDocumentTitle: {
         documentTitleOption: "andere",
         documentTitle: "Individueller Titel",
@@ -183,6 +258,7 @@ describe("internal documentation service", () => {
         selectedBlockIds: ["CARE_PLAN_HA"],
         patientReference,
         documentTitleOption: "arztbrief",
+        outputFormat: "informell",
         origin: "https://example.test",
         context: {
           kind: "practice",

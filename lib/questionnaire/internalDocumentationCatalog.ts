@@ -6,6 +6,14 @@ const INTERVAL_OPTIONS = ["1x im Quartal", "halbjährlich", "jährlich", "indivi
 
 const QUESTIONS: Record<string, QuestionDefinition> = {
   FACHAERZTE: QUESTION_CATALOG.FACHAERZTE,
+  DOCUMENTATION_REASON_OPTIONS: {
+    id: "DOCUMENTATION_REASON_OPTIONS",
+    text: "Anlass",
+    type: "multi_select",
+    required: false,
+    options: [],
+    documentationItemType: "bodyText",
+  },
   CARE_PLAN_HA_DATE: { id: "CARE_PLAN_HA_DATE", text: "Datum des Gesprächs", type: "date", required: false },
   CARE_PLAN_HA_REASON: { id: "CARE_PLAN_HA_REASON", text: "Anlass / Diagnose", type: "textarea", required: false, maxLength: 120 },
   CARE_PLAN_HA_MEDICAL_INTERVAL: { id: "CARE_PLAN_HA_MEDICAL_INTERVAL", text: "Ärztliche Kontrolle", type: "select", required: false, options: INTERVAL_OPTIONS },
@@ -120,7 +128,7 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
   },
   MEDICAL_STATEMENT_RECOMMENDATIONS: {
     id: "MEDICAL_STATEMENT_RECOMMENDATIONS",
-    text: "Weitere Einschätzung / Empfehlung",
+    text: "Ärztliche Aussage / Empfehlung",
     type: "multi_select",
     required: false,
     options: [
@@ -144,6 +152,13 @@ const QUESTIONS: Record<string, QuestionDefinition> = {
 };
 
 export const INTERNAL_DOCUMENTATION_BLOCK_CATALOG: Record<string, QuestionnaireBlock> = {
+  DOCUMENTATION_REASON: {
+    id: "DOCUMENTATION_REASON",
+    label: "Anlass",
+    displayOrder: 5,
+    questionIds: ["DOCUMENTATION_REASON_OPTIONS"],
+    documentationItemType: "bodyText",
+  },
   CARE_PLAN_HA: { id: "CARE_PLAN_HA", label: "Hausärztliche Betreuung", displayOrder: 10, questionIds: ["CARE_PLAN_HA_DATE", "CARE_PLAN_HA_REASON", "CARE_PLAN_HA_MEDICAL_INTERVAL", "CARE_PLAN_HA_LAB_INTERVAL", "CARE_PLAN_HA_NOTES"] },
   CARE_PLAN_SPECIALIST: { id: "CARE_PLAN_SPECIALIST", label: "Fachärztliche Betreuung", displayOrder: 20, questionIds: ["CARE_PLAN_SPECIALISTS"] },
   CARE_PLAN_SUPPLY_BLOCK: { id: "CARE_PLAN_SUPPLY_BLOCK", label: "Versorgung und Organisation", displayOrder: 30, questionIds: ["CARE_PLAN_SPECIALIST_REPORTS", "CARE_PLAN_PRESCRIPTION_RENEWAL", "CARE_PLAN_REFERRAL", "CARE_PLAN_SUPPLY_NOTES"] },

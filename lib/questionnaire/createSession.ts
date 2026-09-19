@@ -25,6 +25,7 @@ import { prisma } from "@/lib/prisma";
 import {
   buildFrozenBlocks,
   buildInternalDocumentationSnapshot,
+  type FrozenBlock,
 } from "@/lib/questionnaire/frozenBlocks";
 import { OFFICE_BLOCK_CATALOG, OFFICE_QUESTION_CATALOG } from "@/lib/questionnaire/officeBlockCatalog";
 import {
@@ -106,6 +107,8 @@ export type CreateSessionInput = {
   internalWorkflowId?: InternalWorkflowId | null;
   internalBlockLayout?: InternalBlockPlacement[];
   internalDocumentTitle?: InternalDocumentTitleMetadata;
+  internalOutputFormat?: "informell" | "formell";
+  internalFrozenBlocks?: FrozenBlock[];
   digitalRequestSnapshot?: DigitalRequestFollowUpSnapshot | null;
   databaseClient?: Pick<Prisma.TransactionClient, "patientQuestionnaireSession">;
 } & (
@@ -154,6 +157,8 @@ export async function createQuestionnaireSession(
     internalWorkflowId,
     internalBlockLayout,
     internalDocumentTitle,
+    internalOutputFormat,
+    internalFrozenBlocks,
     digitalRequestSnapshot,
     databaseClient = prisma,
   } = input;
@@ -210,7 +215,9 @@ export async function createQuestionnaireSession(
 
   const frozenBlocks =
     sessionKind === "internal_documentation"
-      ? buildInternalDocumentationFrozenBlocks(
+      ? internalFrozenBlocks
+        ? structuredClone(internalFrozenBlocks)
+        : buildInternalDocumentationFrozenBlocks(
           Array.from(internalSelectedBlockIds),
           internalBlockLayout,
         )
@@ -243,7 +250,10 @@ export async function createQuestionnaireSession(
     : internalSelectedBlockIds;
   const frozenBlocksSnapshot = sessionKind === "internal_documentation" &&
     internalWorkflowId == null && internalDocumentTitle
-    ? buildInternalDocumentationSnapshot(frozenBlocks, internalDocumentTitle)
+    ? buildInternalDocumentationSnapshot(frozenBlocks, {
+        ...internalDocumentTitle,
+        ...(internalOutputFormat ? { outputFormat: internalOutputFormat } : {}),
+      })
     : frozenBlocks;
 
   const session = await databaseClient.patientQuestionnaireSession.create({

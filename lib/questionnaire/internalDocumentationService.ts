@@ -4,7 +4,6 @@ import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import {
   getInternalWorkflow,
-  resolveInternalBlocks,
   resolveInternalWorkflow,
 } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { sanitizeAnswers } from "@/lib/questionnaire/sanitizeAnswers";
@@ -25,6 +24,7 @@ import {
   resolveInternalDocumentTitle,
 } from "@/lib/questionnaire/internalDocumentTitle";
 import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
+import { resolvePracticeDocumentationBlocks } from "@/lib/practice/documentationBlocks";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -67,21 +67,23 @@ export async function createInternalDocumentationSession(input: {
   patientReference: unknown;
   documentTitleOption: unknown;
   customDocumentTitle?: unknown;
+  outputFormat: unknown;
   origin: string;
   context: InternalDocumentationContext;
 }) {
   const requestedBlockIds = input.selectedBlockIds;
   const patientReference = normalizeXComfortPatientReference(input.patientReference);
-  if (
-    !patientReference ||
-    !Array.isArray(requestedBlockIds) ||
-    requestedBlockIds.length === 0 ||
-    !requestedBlockIds.every((blockId): blockId is string => typeof blockId === "string")
-  ) {
+  if (!patientReference) {
     throw new InternalDocumentationError(
-      "Mindestens ein gültiger Abschnitt und eine Patientenreferenz sind erforderlich.",
+      "Bitte Patientenreferenz angeben.",
       400,
     );
+  }
+  if (input.documentTitleOption === undefined || input.documentTitleOption === null || input.documentTitleOption === "") {
+    throw new InternalDocumentationError("Bitte Dokumenttitel angeben.", 400);
+  }
+  if (input.outputFormat !== "informell" && input.outputFormat !== "formell") {
+    throw new InternalDocumentationError("Bitte eine gültige Ausgabeform auswählen.", 400);
   }
   let internalDocumentTitle;
   try {
@@ -95,17 +97,53 @@ export async function createInternalDocumentationSession(input: {
     }
     throw cause;
   }
-  let selectedBlockIds: string[];
+  if (
+    !Array.isArray(requestedBlockIds) ||
+    requestedBlockIds.length === 0 ||
+    !requestedBlockIds.every((blockId): blockId is string => typeof blockId === "string")
+  ) {
+    throw new InternalDocumentationError(
+      "Bitte mindestens einen Dokumentationsbaustein auswählen.",
+      400,
+    );
+  }
+  const selectedBlockIds = [...requestedBlockIds];
+  const storedBlocks = await prisma.practiceDocumentationBlock.findMany({
+    where: {
+      id: { in: selectedBlockIds },
+      practice_id: input.context.practiceId,
+      is_active: true,
+    },
+    select: { id: true, definition: true },
+  });
+  if (storedBlocks.length !== selectedBlockIds.length) {
+    throw new InternalDocumentationError(
+      "Bitte mindestens einen gültigen Dokumentationsbaustein auswählen.",
+      400,
+    );
+  }
+  const storedById = new Map(storedBlocks.map((block) => [block.id, block]));
   let internalBlockLayout;
   try {
-    selectedBlockIds = resolveInternalBlocks(requestedBlockIds).map((block) => block.id);
     internalBlockLayout = normalizeInternalBlockPlacements(
       selectedBlockIds,
       input.blockLayout,
     );
+  } catch {
+    throw new InternalDocumentationError(
+      "Dokumentationsbausteine konnten nicht verarbeitet werden.",
+      400,
+    );
+  }
+  let internalFrozenBlocks;
+  try {
+    internalFrozenBlocks = resolvePracticeDocumentationBlocks(
+      selectedBlockIds.map((id) => storedById.get(id)!),
+      internalBlockLayout,
+    );
   } catch (cause) {
     throw new InternalDocumentationError(
-      cause instanceof Error ? cause.message : "Ungültige interne Abschnitte.",
+      cause instanceof Error ? cause.message : "Dokumentationsbausteine konnten nicht aufgelöst werden.",
       400,
     );
   }
@@ -123,17 +161,27 @@ export async function createInternalDocumentationSession(input: {
           source: "practice_direct" as const,
         };
 
-  const result = await createQuestionnaireSession({
-    selectedBlockIds: [...selectedBlockIds],
-    patientReference,
-    patientLanguage: "de",
-    sessionKind: "internal_documentation",
-    internalWorkflowId: null,
-    internalBlockLayout,
-    internalDocumentTitle,
-    origin: input.origin,
-    ...creator,
-  });
+  let result;
+  try {
+    result = await createQuestionnaireSession({
+      selectedBlockIds: [...selectedBlockIds],
+      patientReference,
+      patientLanguage: "de",
+      sessionKind: "internal_documentation",
+      internalWorkflowId: null,
+      internalBlockLayout,
+      internalDocumentTitle,
+      internalOutputFormat: input.outputFormat,
+      internalFrozenBlocks,
+      origin: input.origin,
+      ...creator,
+    });
+  } catch (cause) {
+    throw new InternalDocumentationError(
+      cause instanceof Error ? cause.message : "Dokumentation konnte nicht gestartet werden.",
+      400,
+    );
+  }
 
   return { sessionId: result.sessionId };
 }

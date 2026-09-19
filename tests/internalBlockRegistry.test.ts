@@ -24,10 +24,14 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
     create.mockReset().mockResolvedValue({ id: "session-2a" });
   });
 
-  it("registriert alle 17 Blocks und global eindeutige Fragen", () => {
-    expect(INTERNAL_BLOCK_ORDER).toHaveLength(17);
-    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(17);
-    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(17);
+  it("registriert alle 18 Blocks und global eindeutige Fragen", () => {
+    expect(INTERNAL_BLOCK_ORDER).toHaveLength(18);
+    expect(Object.keys(INTERNAL_BLOCK_CATALOG)).toHaveLength(18);
+    expect(new Set(INTERNAL_BLOCK_ORDER).size).toBe(18);
+    expect(INTERNAL_BLOCK_CATALOG.DOCUMENTATION_REASON).toMatchObject({
+      label: "Anlass",
+      questionIds: ["DOCUMENTATION_REASON_OPTIONS"],
+    });
     expect(INTERNAL_BLOCK_CATALOG.DOCUMENT_HANDLING).toMatchObject({
       label: "Dokumente / Befunde",
       questionIds: ["DOCUMENT_HANDLING_ACTIONS"],
@@ -147,7 +151,7 @@ describe("interne Block Registry und Phase-2A-Frozen-Pipeline", () => {
       }),
       expect.objectContaining({
         id: "MEDICAL_STATEMENT_RECOMMENDATIONS",
-        text: "Weitere Einschätzung / Empfehlung",
+        text: "Ärztliche Aussage / Empfehlung",
         type: "multi_select",
         required: false,
         options: [

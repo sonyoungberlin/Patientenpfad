@@ -92,8 +92,8 @@ describe("InternalDocumentationBlockSelector", () => {
       root.render(<Harness />);
     });
 
-    expect(container.textContent).toContain("0 von 17 Abschnitten ausgewählt");
-    expect(container.textContent).toContain("Ausgewählte Abschnitte organisieren");
+    expect(container.textContent).toContain("0 von 18 Dokumentationsbausteinen ausgewählt");
+    expect(container.textContent).toContain("Ausgewählte Dokumentationsbausteine organisieren");
     expect(container.textContent).toContain("Die Abschnitte erscheinen im Dokument von oben nach unten.");
     expect(container.querySelectorAll("[data-document-section]")).toHaveLength(3);
     expect(container.querySelectorAll("[data-document-section] .text-muted")).toHaveLength(3);

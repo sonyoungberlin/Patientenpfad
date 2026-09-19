@@ -61,7 +61,7 @@ export default function InternalDocumentationBlockSelector({
   return (
     <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: "1rem" }}>
       <legend style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
-        Abschnitte auswählen
+        Dokumentationsbausteine auswählen
       </legend>
       {INTERNAL_BLOCK_GROUPS.map((group) => (
         <section key={group.id} style={{ display: "grid", gap: "0.5rem", minWidth: 0 }}>
@@ -94,7 +94,7 @@ export default function InternalDocumentationBlockSelector({
         </section>
       ))}
       <span className="text-muted text-small">
-        {selectedBlockIds.size} von {INTERNAL_BLOCK_ORDER.length} Abschnitten ausgewählt
+        {selectedBlockIds.size} von {INTERNAL_BLOCK_ORDER.length} Dokumentationsbausteinen ausgewählt
       </span>
       <InternalDocumentationBlockOrganizer
         placements={blockLayout}

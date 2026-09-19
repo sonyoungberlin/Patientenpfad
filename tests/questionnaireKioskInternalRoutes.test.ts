@@ -11,6 +11,9 @@ jest.mock("@/lib/questionnaire/createSession", () => ({
 }));
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    practiceDocumentationBlock: {
+      findMany: jest.fn(),
+    },
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
       updateMany: jest.fn(),
@@ -33,6 +36,9 @@ const guard = requireUnlockedQuestionnaireKioskDevice as jest.Mock;
 const hasCapability = hasQuestionnaireKioskCapability as jest.Mock;
 const createSession = createQuestionnaireSession as jest.Mock;
 const db = prisma as unknown as {
+  practiceDocumentationBlock: {
+    findMany: jest.Mock;
+  };
   patientQuestionnaireSession: {
     findUnique: jest.Mock;
     updateMany: jest.Mock;
@@ -63,6 +69,17 @@ describe("interne Kiosk-Dokumentation", () => {
       token: "",
       tokenLink: "http://localhost/questionnaire-kiosk/internal/session-1",
     });
+    db.practiceDocumentationBlock.findMany.mockReset().mockImplementation(({ where }: {
+      where: { id: { in: string[] } };
+    }) => Promise.resolve(where.id.in.map((id) => ({
+      id,
+      definition: {
+        schemaVersion: 1,
+        visibleType: "text",
+        block: { id, label: id, displayOrder: 0, questionIds: [`${id}_question`] },
+        questions: [{ id: `${id}_question`, text: id, type: "textarea", required: false }],
+      },
+    }))));
     db.patientQuestionnaireSession.findUnique.mockReset();
     db.patientQuestionnaireSession.updateMany.mockReset().mockResolvedValue({ count: 1 });
   });
@@ -81,10 +98,11 @@ describe("interne Kiosk-Dokumentation", () => {
 
   it("erstellt ausgewählte Blocks als interne practice-owned Kiosk-Session", async () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
-      selectedBlockIds: ["CARE_PLAN_HA"],
-      blockLayout: [{ blockId: "CARE_PLAN_HA", section: 3, order: 0 }],
+      selectedBlockIds: ["practice_block_care_plan"],
+      blockLayout: [{ blockId: "practice_block_care_plan", section: 3, order: 0 }],
       patientReference: " 81426 ",
       documentTitleOption: "bescheinigung",
+      outputFormat: "formell",
     }));
 
     expect(response.status).toBe(200);
@@ -94,8 +112,9 @@ describe("interne Kiosk-Dokumentation", () => {
         documentTitleOption: "bescheinigung",
         documentTitle: "Bescheinigung",
       },
-      selectedBlockIds: ["CARE_PLAN_HA"],
-      internalBlockLayout: [{ blockId: "CARE_PLAN_HA", section: 3, order: 0 }],
+      selectedBlockIds: ["practice_block_care_plan"],
+      internalBlockLayout: [{ blockId: "practice_block_care_plan", section: 3, order: 0 }],
+      internalOutputFormat: "formell",
       ownerPracticeId: "practice-1",
       createdByKioskDeviceId: "device-1",
       source: "kiosk_direct",
@@ -119,19 +138,21 @@ describe("interne Kiosk-Dokumentation", () => {
 
   it("erstellt Cross-Group-Blocks ohne Workflow-ID", async () => {
     const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
-      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
+      selectedBlockIds: ["practice_block_care_plan", "practice_block_vaccination", "practice_block_lab"],
       patientReference: "81426",
       documentTitleOption: "bericht",
+      outputFormat: "informell",
     }));
 
     expect(response.status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
-      selectedBlockIds: ["CARE_PLAN_HA", "VACCINATION_REVIEW", "HEALTH_CHECK_LAB"],
+      selectedBlockIds: ["practice_block_care_plan", "practice_block_vaccination", "practice_block_lab"],
       patientReference: "81426",
       internalDocumentTitle: {
         documentTitleOption: "bericht",
         documentTitle: "Bericht",
       },
+      internalOutputFormat: "informell",
       internalWorkflowId: null,
     }));
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("workflowId");

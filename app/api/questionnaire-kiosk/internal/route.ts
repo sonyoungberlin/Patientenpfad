@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       patientReference: typeof patientReference === "string" ? patientReference.trim() : patientReference,
       documentTitleOption: body?.documentTitleOption,
       customDocumentTitle: body?.customDocumentTitle,
+      outputFormat: body?.outputFormat,
       origin,
       context: {
         kind: "kiosk" as const,

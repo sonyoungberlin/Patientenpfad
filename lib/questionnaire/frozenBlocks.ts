@@ -74,13 +74,13 @@ export type FrozenBlock = {
 
 export type InternalDocumentationSnapshot = {
   schemaVersion: 2;
-  metadata: InternalDocumentTitleMetadata;
+  metadata: InternalDocumentTitleMetadata & { outputFormat?: "informell" | "formell" };
   blocks: FrozenBlock[];
 };
 
 export function buildInternalDocumentationSnapshot(
   blocks: FrozenBlock[],
-  metadata: InternalDocumentTitleMetadata,
+  metadata: InternalDocumentationSnapshot["metadata"],
 ): InternalDocumentationSnapshot {
   return {
     schemaVersion: 2,
