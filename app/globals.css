@@ -301,6 +301,25 @@ main {
   .app-shell-context-label {
     display: none;
   }
+
+  .app-nav {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .app-shell-topline {
+    gap: 0.5rem 1rem;
+  }
+
+  .app-shell-account-group {
+    gap: 0.5rem 1rem;
+  }
+
+  .app-shell-sections {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
 }
 
 /* M3 (ärztlicher Bereich): leicht hellblauer Seitenhintergrund,
@@ -316,12 +335,42 @@ body:has(main.m3-page) {
   position: sticky;
   top: 0;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+  display: block;
+  min-width: 0;
   padding: 0.75rem 1.5rem;
   background: var(--background);
   border-bottom: 1px solid var(--border);
+}
+
+.app-shell-topline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  min-width: 0;
+}
+
+.app-shell-account-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: auto;
+}
+
+.app-shell-account-group .account-email {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.app-shell-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  min-width: 0;
+  margin-top: 0.75rem;
 }
 
 .app-nav a {

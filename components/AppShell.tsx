@@ -100,73 +100,79 @@ export default function AppShell({
 
   return (
     <nav className="app-nav">
-      <Link href={homeHref}>Hauptmenü</Link>
-      {currentSection?.items.map((item) => (
-        <Link
-          key={item.id}
-          href={item.href}
-          aria-current={item.id === activeItemId ? "page" : undefined}
-          style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
-        >
-          {item.label}
-          {item.id === "digital-requests-inbox" && hasUnread && (
+      <div className="app-shell-topline" data-testid="app-shell-topline">
+        <Link href={homeHref}>Hauptmenü</Link>
+        <div className="app-shell-account-group" data-testid="app-shell-account-group">
+          {appShellContext && (
             <span
-              data-testid="digital-requests-unread-dot"
-              aria-label="Neue Anfragen vorhanden"
+              data-testid="app-shell-context"
+              aria-label={`Aktueller Kontext: ${appShellContext.label}`}
+              title={`Aktueller Kontext: ${appShellContext.label}`}
               style={{
-                display: "inline-block",
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: "#ef4444",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
                 flexShrink: 0,
               }}
-            />
+            >
+              <Image
+                src={appShellContext.iconSrc}
+                alt={appShellContext.label}
+                width={40}
+                height={40}
+                sizes="40px"
+                style={{ objectFit: "contain", flexShrink: 0 }}
+              />
+              <span className="app-shell-context-label">{appShellContext.label}</span>
+            </span>
           )}
-        </Link>
-      ))}
-      {appShellContext && (
-        <span
-          data-testid="app-shell-context"
-          aria-label={`Aktueller Kontext: ${appShellContext.label}`}
-          title={`Aktueller Kontext: ${appShellContext.label}`}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            flexShrink: 0,
-          }}
-        >
-          <Image
-            src={appShellContext.iconSrc}
-            alt={appShellContext.label}
-            width={40}
-            height={40}
-            sizes="40px"
-            style={{ objectFit: "contain", flexShrink: 0 }}
-          />
-          <span className="app-shell-context-label">{appShellContext.label}</span>
-        </span>
-      )}
-      <span className="account-email" style={{ marginLeft: "auto" }}>
-        {account.email}
-      </span>
-      <button
-        type="button"
-        onClick={handleLogoutClick}
-        style={{
-          background: "none",
-          border: "none",
-          padding: 0,
-          font: "inherit",
-          color: "var(--muted-foreground)",
-          fontSize: "0.875rem",
-          cursor: "pointer",
-          textDecoration: "underline",
-        }}
-      >
-        Abmelden
-      </button>
+          <span className="account-email">{account.email}</span>
+          <button
+            type="button"
+            onClick={handleLogoutClick}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              font: "inherit",
+              color: "var(--muted-foreground)",
+              fontSize: "0.875rem",
+              cursor: "pointer",
+              textDecoration: "underline",
+            }}
+          >
+            Abmelden
+          </button>
+        </div>
+      </div>
+      {currentSection?.items.length ? (
+        <div className="app-shell-sections" data-testid="app-shell-section-nav">
+          {currentSection.items.map((item) => (
+            <Link
+              key={item.id}
+              href={item.href}
+              aria-current={item.id === activeItemId ? "page" : undefined}
+              style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+            >
+              {item.label}
+              {item.id === "digital-requests-inbox" && hasUnread && (
+                <span
+                  data-testid="digital-requests-unread-dot"
+                  aria-label="Neue Anfragen vorhanden"
+                  style={{
+                    display: "inline-block",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#ef4444",
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+            </Link>
+          ))}
+        </div>
+      ) : null}
     </nav>
   );
 }

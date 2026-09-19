@@ -188,6 +188,21 @@ describe("AppShell Bereichsmenüs", () => {
 
     expect(html).toContain("owner@example.com");
     expect(html).toContain("Abmelden");
+    expect(html).toContain('data-testid="app-shell-topline"');
+    expect(html).toContain('data-testid="app-shell-account-group"');
+    if (pathname !== "/dashboard") {
+      expect(html).toContain('data-testid="app-shell-section-nav"');
+    } else {
+      expect(html).not.toContain('data-testid="app-shell-section-nav"');
+    }
+    if (label && iconSrc) {
+      expect(html.indexOf('data-testid="app-shell-context"')).toBeGreaterThan(
+        html.indexOf('data-testid="app-shell-account-group"'),
+      );
+      expect(html.indexOf('data-testid="app-shell-context"')).toBeLessThan(
+        html.indexOf("owner@example.com"),
+      );
+    }
   });
 
   it.each([
