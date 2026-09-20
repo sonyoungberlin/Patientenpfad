@@ -155,6 +155,44 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     ]));
   });
 
+  it("löst eine Zusatzangabe innerhalb einer bedingten Variante auf", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Reise(un)fähigkeit",
+      blockType: "selection",
+      options: [{
+        value: "travel_unfit",
+        label: "Reiseunfähig",
+        documentationText: "",
+        documentationSegments: [
+          { kind: "text", text: "Aufgrund ihrer/seiner Erkrankung ist der o. g. Patient / die o. g. Patientin aus ärztlicher Sicht vom " },
+          { kind: "answerRef", fieldId: "start" },
+          { kind: "conditional", fieldId: "endMode", optionValue: "date", segments: [
+            { kind: "text", text: " bis voraussichtlich zum " },
+            { kind: "answerRef", fieldId: "end" },
+            { kind: "text", text: " reiseunfähig." },
+          ] },
+          { kind: "conditional", fieldId: "endMode", optionValue: "open", segments: [{ kind: "text", text: " bis auf Weiteres reiseunfähig." }] },
+        ],
+      }],
+      additionalFields: [
+        { id: "start", label: "Startdatum", type: "date", required: true, showForOptionValues: ["travel_unfit"] },
+        { id: "endMode", label: "Ende", type: "select", options: [{ value: "date", label: "bis Datum" }, { value: "open", label: "bis auf Weiteres" }], required: true, showForOptionValues: ["travel_unfit"] },
+        { id: "end", label: "Enddatum", type: "date", required: true, showForFieldId: "endMode", showForOptionValues: ["date"] },
+      ],
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const option = definition.questions[0].options?.[0];
+    expect(typeof option).toBe("object");
+    if (!option || typeof option === "string") return;
+    expect(option.documentationSegments).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "conditional", optionValue: "date", segments: expect.arrayContaining([
+        expect.objectContaining({ kind: "answerRef", questionId: definition.questions[3].id }),
+      ]) }),
+    ]));
+  });
+
   it("verwendet contains für Multi-Choice-Quellen und equals für normale Auswahl", () => {
     const multiValidation = validatePracticeDocumentationBlock({
       title: "Mitgegeben",
