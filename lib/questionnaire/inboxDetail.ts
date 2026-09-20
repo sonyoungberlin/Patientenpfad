@@ -7,7 +7,7 @@ import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditional
 import { computeAllDerivedValues } from "./derivedValues";
 import type { DerivedValues } from "./derivedValues";
 import { parseFrozenBlocks } from "./frozenBlocks";
-import { getInternalDocumentTitle } from "./frozenBlocks";
+import { getInternalDocumentTitle, getInternalPatientSignatureMetadata } from "./frozenBlocks";
 import type { FrozenBlock } from "./frozenBlocks";
 import { isNewBlockBasedInternalSession } from "./documentedContent";
 import { buildOptionsByQuestionId } from "./multiSelect";
@@ -131,6 +131,14 @@ export function buildQuestionnaireInboxDetail(
         ? session.internal_workflow_id
         : null,
     digitalRequestSnapshot: session.digital_request_snapshot,
+    submittedAt: session.submitted_at,
+    ...(() => {
+      const signature = getInternalPatientSignatureMetadata(session.frozen_blocks);
+      return {
+        patientSignatureRequired: signature.required,
+        patientSignatureCity: signature.city,
+      };
+    })(),
   });
 
   return {

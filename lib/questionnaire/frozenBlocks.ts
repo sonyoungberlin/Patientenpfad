@@ -74,7 +74,11 @@ export type FrozenBlock = {
 
 export type InternalDocumentationSnapshot = {
   schemaVersion: 2;
-  metadata: InternalDocumentTitleMetadata & { outputFormat?: "informell" | "formell" };
+  metadata: InternalDocumentTitleMetadata & {
+    outputFormat?: "informell" | "formell";
+    patientSignatureRequired?: boolean;
+    patientSignatureCity?: string;
+  };
   blocks: FrozenBlock[];
 };
 
@@ -86,6 +90,24 @@ export function buildInternalDocumentationSnapshot(
     schemaVersion: 2,
     metadata: structuredClone(metadata),
     blocks,
+  };
+}
+
+export function getInternalPatientSignatureMetadata(raw: unknown): {
+  required: boolean;
+  city?: string;
+} {
+  if (!isInternalDocumentationSnapshot(raw)) return { required: false };
+  const metadata = raw.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return { required: false };
+  }
+  const value = metadata as Record<string, unknown>;
+  return {
+    required: value.patientSignatureRequired === true,
+    ...(typeof value.patientSignatureCity === "string" && value.patientSignatureCity.trim()
+      ? { city: value.patientSignatureCity.trim() }
+      : {}),
   };
 }
 

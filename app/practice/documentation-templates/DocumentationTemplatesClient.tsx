@@ -17,6 +17,7 @@ type PracticeTemplateRow = {
   blockLayout: unknown;
   outputFormat?: string | null;
   documentTitleOption?: string | null;
+  patientSignatureRequired?: boolean;
 };
 
 type AvailableBlock = { id: string; title: string };
@@ -34,6 +35,7 @@ export default function DocumentationTemplatesClient({
   const [outputFormat, setOutputFormat] = useState<"informell" | "formell">("informell");
   const [documentTitleOption, setDocumentTitleOption] = useState("bericht");
   const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
+  const [patientSignatureRequired, setPatientSignatureRequired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const blockLabels = Object.fromEntries(availableBlocks.map((block) => [block.id, block.title]));
@@ -44,6 +46,7 @@ export default function DocumentationTemplatesClient({
     setOutputFormat("informell");
     setDocumentTitleOption("bericht");
     setBlockLayout([]);
+    setPatientSignatureRequired(false);
     setError(null);
   }
 
@@ -54,6 +57,7 @@ export default function DocumentationTemplatesClient({
     setDocumentTitleOption(template.documentTitleOption ?? "bericht");
     setBlockLayout(Array.isArray(template.blockLayout)
       ? structuredClone(template.blockLayout) as InternalBlockPlacement[] : []);
+    setPatientSignatureRequired(template.patientSignatureRequired === true);
     setError(null);
   }
 
@@ -74,7 +78,7 @@ export default function DocumentationTemplatesClient({
       {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, outputFormat, documentTitleOption, blockLayout }),
+        body: JSON.stringify({ name, outputFormat, documentTitleOption, blockLayout, patientSignatureRequired }),
       },
     );
     const result = await response.json() as { ok?: boolean; error?: string };
@@ -140,6 +144,7 @@ export default function DocumentationTemplatesClient({
         <label>Ausgabeform<select value={outputFormat} onChange={(event) => setOutputFormat(event.target.value as "informell" | "formell")} disabled={busy}>
           <option value="informell">Informell</option><option value="formell">Formell</option>
         </select></label>
+        <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={patientSignatureRequired} onChange={(event) => setPatientSignatureRequired(event.target.checked)} disabled={busy} />Patientenunterschrift erforderlich</label>
         <label>Dokumenttitel<select value={documentTitleOption} onChange={(event) => setDocumentTitleOption(event.target.value)} disabled={busy}>
           {INTERNAL_DOCUMENT_TITLE_OPTIONS.filter((option) => option.value !== "andere").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select></label>

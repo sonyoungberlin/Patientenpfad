@@ -252,6 +252,47 @@ describe("questionnaire PDF patient reference", () => {
     expect(result.filename).toBe("20260512_004711_Versicherungsdaten.pdf");
   });
 
+  it("rendert den dokumentweiten Patientenabschluss einmal aus dem Snapshot", async () => {
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        patient_reference: "004711",
+        submitted_at: new Date("2026-09-20T10:00:00.000Z"),
+        session_kind: "internal_documentation",
+        selected_block_ids: ["TEST"],
+        deduplicated_questions: [{ id: "TEST_QUESTION", text: "Frage", type: "textarea" }],
+        frozen_blocks: {
+          schemaVersion: 2,
+          metadata: {
+            documentTitleOption: "bericht",
+            documentTitle: "Bericht",
+            patientSignatureRequired: true,
+            patientSignatureCity: "Berlin",
+          },
+          blocks: [{
+            id: "TEST",
+            label: "Test",
+            displayOrder: 1,
+            questions: [{ id: "TEST_QUESTION", text: "Frage", type: "textarea" }],
+            conditionalRules: [],
+            initiallyVisible: true,
+            outputSemantics: "documented-content-v1",
+          }],
+        },
+        answers: { TEST_QUESTION: "Antwort" },
+      }),
+      {
+        title: "Bericht",
+        referenceLabel: "Patientenreferenz",
+        blockCatalog: {},
+      },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text).toContain("Ort, Datum: Berlin, 20.09.26");
+    expect(text.match(/Unterschrift Patient\/in:/g)).toHaveLength(1);
+    expect(text).toContain("________________________________");
+  });
+
   it("renders the snapshot before follow-up answers and keeps patient reference separate", async () => {
     const result = await buildQuestionnairePdfBytes(
       baseSession({

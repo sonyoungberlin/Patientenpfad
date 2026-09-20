@@ -50,6 +50,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
           { blockId: "practice_block_1", section: 2, order: 0 },
           { blockId: "practice_block_2", section: 2, order: 1 },
         ],
+        patientSignatureRequired: false,
       },
     });
   });
@@ -83,6 +84,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
       outputFormat: "informell",
       documentTitleOption: "arztbrief",
       blockLayout: [{ blockId: "practice_block_1", section: 3, order: 0 }],
+      patientSignatureRequired: false,
     }]);
     expect(findTemplates).toHaveBeenCalledWith({
       where: { practice_id: "practice-1", is_active: true },
@@ -126,6 +128,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
       output_format: "formell",
       document_title_option: "stellungnahme",
       block_layout: input.blockLayout,
+      patient_signature_required: true,
     });
     findTemplates.mockResolvedValue([{ name: "Kardiologische Stellungnahme" }]);
     createTemplate.mockResolvedValue({ id: "template-2" });
@@ -143,6 +146,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
           { blockId: "practice_block_1", section: 2, order: 0 },
           { blockId: "practice_block_2", section: 2, order: 1 },
         ],
+        patient_signature_required: true,
       },
     });
     expect(createTemplate.mock.calls[0][0].data).not.toHaveProperty("block_definitions");

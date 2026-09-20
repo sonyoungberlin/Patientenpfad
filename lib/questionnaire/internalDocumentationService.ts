@@ -68,6 +68,7 @@ export async function createInternalDocumentationSession(input: {
   documentTitleOption: unknown;
   customDocumentTitle?: unknown;
   outputFormat: unknown;
+  patientSignatureRequired?: unknown;
   origin: string;
   context: InternalDocumentationContext;
 }) {
@@ -84,6 +85,9 @@ export async function createInternalDocumentationSession(input: {
   }
   if (input.outputFormat !== "informell" && input.outputFormat !== "formell") {
     throw new InternalDocumentationError("Bitte eine gültige Ausgabeform auswählen.", 400);
+  }
+  if (input.patientSignatureRequired !== undefined && typeof input.patientSignatureRequired !== "boolean") {
+    throw new InternalDocumentationError("Ungültige Einstellung für die Patientenunterschrift.", 400);
   }
   let internalDocumentTitle;
   try {
@@ -148,6 +152,17 @@ export async function createInternalDocumentationSession(input: {
     );
   }
 
+  let patientSignatureCity: string | undefined;
+  if (input.patientSignatureRequired === true) {
+    const legalProfile = await prisma.practiceLegalProfile.findUnique({
+      where: { practice_id: input.context.practiceId },
+      select: { city: true },
+    });
+    if (typeof legalProfile?.city === "string" && legalProfile.city.trim()) {
+      patientSignatureCity = legalProfile.city.trim();
+    }
+  }
+
   const creator =
     input.context.kind === "kiosk"
       ? {
@@ -172,6 +187,8 @@ export async function createInternalDocumentationSession(input: {
       internalBlockLayout,
       internalDocumentTitle,
       internalOutputFormat: input.outputFormat,
+      internalPatientSignatureRequired: input.patientSignatureRequired === true,
+      internalPatientSignatureCity: patientSignatureCity,
       internalFrozenBlocks,
       origin: input.origin,
       ...creator,

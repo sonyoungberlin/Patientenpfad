@@ -919,6 +919,7 @@ model PracticeDocumentationTemplate {
   block_layout           Json
   output_format          String?
   document_title_option  String?
+  patient_signature_required Boolean @default(false)
   created_at             DateTime @default(now())
 
   @@index([practice_id, is_active, created_at])

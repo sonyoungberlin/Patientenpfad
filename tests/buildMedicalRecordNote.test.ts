@@ -12,7 +12,8 @@
  * - Gespeicherte Inhalte werden vollständig ausgegeben
  */
 
-import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
+import { buildMedicalRecordNote, buildMedicalRecordOutput } from "@/lib/questionnaire/buildMedicalRecordNote";
+import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
 import { QUESTION_CATALOG } from "@/lib/questionnaire/blockCatalog";
 import { buildFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { buildInternalWorkflowBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
@@ -78,6 +79,47 @@ describe("buildMedicalRecordNote – DigitalRequest-Snapshot", () => {
       selected_block_ids: ["ARBEITSUNFAEHIGKEIT"],
       digitalRequestSnapshot: null,
     })).toBe(legacy);
+  });
+});
+
+describe("buildMedicalRecordNote – dokumentweiter Patientenabschluss", () => {
+  const input = {
+    answers: {
+      FACHAERZTE: JSON.stringify([
+        { erkrankung: "Befund", bereich: "Kardiologie", name: "Praxis 1", adresse: "Adresse 1" },
+        { erkrankung: "Befund", bereich: "Neurologie", name: "Praxis 2", adresse: "Adresse 2" },
+        { erkrankung: "Befund", bereich: "Dermatologie", name: "Praxis 3", adresse: "Adresse 3" },
+        { erkrankung: "Befund", bereich: "Orthopädie", name: "Praxis 4", adresse: "Adresse 4" },
+        { erkrankung: "Befund", bereich: "Radiologie", name: "Praxis 5", adresse: "Adresse 5" },
+      ]),
+    },
+    selected_block_ids: ["FACHAERZTE"],
+    submittedAt: new Date("2026-09-20T10:00:00.000Z"),
+  };
+
+  it("erscheint bei true genau einmal mit Ort und Dokumentdatum in allen strukturierten Textpfaden", () => {
+    const output = buildMedicalRecordOutput({
+      ...input,
+      patientSignatureRequired: true,
+      patientSignatureCity: "Berlin",
+    });
+    expect(output.noteText.match(/Unterschrift Patient\/in:/g)).toHaveLength(1);
+    expect(output.noteText).toContain("Ort, Datum: Berlin, 20.09.26");
+    expect(output.semanticDocument.sections[2].items).toHaveLength(1);
+    expect(buildStructuredAppXml(output.semanticDocument)).toContain("Unterschrift Patient/in:");
+  });
+
+  it("gibt bei false keinen Abschluss aus und erfindet ohne Ort keine Ortsangabe", () => {
+    const withoutSignature = buildMedicalRecordNote({ ...input, patientSignatureRequired: false });
+    expect(withoutSignature).not.toContain("Unterschrift Patient/in:");
+
+    const withoutCity = buildMedicalRecordNote({
+      ...input,
+      patientSignatureRequired: true,
+      submittedAt: null,
+    });
+    expect(withoutCity).toContain("Ort, Datum: -");
+    expect(withoutCity).not.toContain("Berlin");
   });
 });
 

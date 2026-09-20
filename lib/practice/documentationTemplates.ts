@@ -14,6 +14,7 @@ export type PracticeDocumentationTemplateInput = {
   outputFormat: PracticeDocumentationOutputFormat;
   documentTitleOption: string;
   blockLayout: InternalBlockPlacement[];
+  patientSignatureRequired?: boolean;
 };
 
 export type PracticeDocumentationTemplate = PracticeDocumentationTemplateInput & {
@@ -51,6 +52,9 @@ export function validatePracticeDocumentationTemplate(input: unknown): Validatio
   if (!Array.isArray(value.blockLayout) || value.blockLayout.length === 0) {
     return { ok: false, error: "Mindestens ein Dokumentationsbaustein ist erforderlich." };
   }
+  if (value.patientSignatureRequired !== undefined && typeof value.patientSignatureRequired !== "boolean") {
+    return { ok: false, error: "Ungültige Einstellung für die Patientenunterschrift." };
+  }
   const blockIds = value.blockLayout.map((item) =>
     item && typeof item === "object" && !Array.isArray(item)
       ? (item as Record<string, unknown>).blockId : undefined);
@@ -65,6 +69,7 @@ export function validatePracticeDocumentationTemplate(input: unknown): Validatio
         outputFormat: value.outputFormat,
         documentTitleOption: value.documentTitleOption,
         blockLayout: normalizeInternalBlockPlacements(blockIds, value.blockLayout),
+        patientSignatureRequired: value.patientSignatureRequired === true,
       },
     };
   } catch (cause) {
@@ -112,6 +117,7 @@ export async function resolveActivePracticeDocumentationTemplates(
         outputFormat: template.output_format,
         documentTitleOption: template.document_title_option,
         blockLayout: normalizeInternalBlockPlacements(blockIds, template.block_layout),
+        patientSignatureRequired: template.patient_signature_required === true,
       }];
     } catch {
       return [];
@@ -131,6 +137,7 @@ export async function createPracticeDocumentationTemplate(
       output_format: input.outputFormat,
       document_title_option: input.documentTitleOption,
       block_layout: input.blockLayout as unknown as Prisma.InputJsonValue,
+      patient_signature_required: input.patientSignatureRequired === true,
     },
   });
 }
@@ -165,6 +172,7 @@ export async function duplicatePracticeDocumentationTemplate(
     outputFormat: source.output_format,
     documentTitleOption: source.document_title_option,
     blockLayout: source.block_layout,
+    patientSignatureRequired: source.patient_signature_required === true,
   });
   if (!input.ok) throw new Error(input.error);
   await validateTemplateBlocks(practiceId, input.value.blockLayout);
@@ -176,6 +184,7 @@ export async function duplicatePracticeDocumentationTemplate(
       output_format: input.value.outputFormat,
       document_title_option: input.value.documentTitleOption,
       block_layout: input.value.blockLayout as unknown as Prisma.InputJsonValue,
+      patient_signature_required: input.value.patientSignatureRequired === true,
     },
   });
 }
@@ -193,6 +202,7 @@ export async function updatePracticeDocumentationTemplate(
       output_format: input.outputFormat,
       document_title_option: input.documentTitleOption,
       block_layout: input.blockLayout as unknown as Prisma.InputJsonValue,
+      patient_signature_required: input.patientSignatureRequired === true,
     },
   });
   return result.count === 1;

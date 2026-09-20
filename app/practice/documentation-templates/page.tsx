@@ -30,6 +30,7 @@ export default async function PracticeDocumentationTemplatesPage() {
           blockLayout: template.block_layout,
           outputFormat: template.output_format,
           documentTitleOption: template.document_title_option,
+          patientSignatureRequired: template.patient_signature_required,
         }))}
         availableBlocks={blocks.map((block) => ({
           id: block.id,

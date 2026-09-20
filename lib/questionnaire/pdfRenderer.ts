@@ -19,7 +19,7 @@ import type { RepGroupEntry } from "./formatAnswer";
 import { computeAllDerivedValues } from "./derivedValues";
 import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditionalLogic";
 import { buildOptionsByQuestionId } from "./multiSelect";
-import { buildFrozenBlocks, parseFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
+import { buildFrozenBlocks, getInternalPatientSignatureMetadata, parseFrozenBlocks, type FrozenBlock } from "./frozenBlocks";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
 import { resolveInternalWorkflow } from "./internalWorkflowRegistry";
@@ -559,6 +559,20 @@ export async function buildQuestionnairePdfBytes(
     y -= 3;
     drawText(`Bitte senden Sie das unterschriebene Dokument an: ${opts.patientCopy.returnEmail}`, { size: 9 });
     drawText("oder bringen Sie das unterschriebene Formular zu Ihrem Termin mit.", { size: 9 });
+  }
+
+  const patientSignature = getInternalPatientSignatureMetadata(session.frozen_blocks);
+  if (patientSignature.required) {
+    ensureSpace(lineHeight * 6);
+    y -= sectionGap;
+    const submittedDate = session.submitted_at
+      ? session.submitted_at.toLocaleDateString("de-DE", { dateStyle: "short", timeZone: "Europe/Berlin" })
+      : "–";
+    drawText(`Ort, Datum: ${patientSignature.city ? `${patientSignature.city}, ` : ""}${submittedDate}`, { size: 10 });
+    y -= 4;
+    drawText("Unterschrift Patient/in:", { size: 10, bold: true });
+    y -= 5;
+    drawText("________________________________", { size: 10 });
   }
 
   const bytes = await pdfDoc.save();

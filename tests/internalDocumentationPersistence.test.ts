@@ -62,6 +62,8 @@ describe("internal documentation persistence", () => {
         documentTitleOption: "patienteninformation",
         documentTitle: "Patienteninformation",
       },
+      internalPatientSignatureRequired: true,
+      internalPatientSignatureCity: "Berlin",
       origin: "https://example.test",
     });
 
@@ -76,6 +78,8 @@ describe("internal documentation persistence", () => {
       metadata: {
         documentTitleOption: "patienteninformation",
         documentTitle: "Patienteninformation",
+        patientSignatureRequired: true,
+        patientSignatureCity: "Berlin",
       },
       blocks: [
         expect.objectContaining({ id: "SPECIALISTS", outputSemantics: "documented-content-v1" }),

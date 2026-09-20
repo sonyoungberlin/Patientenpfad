@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       documentTitleOption: body?.documentTitleOption,
       customDocumentTitle: body?.customDocumentTitle,
       outputFormat: body?.outputFormat,
+      patientSignatureRequired: body?.patientSignatureRequired,
       origin,
       context: {
         kind: "practice" as const,

@@ -108,6 +108,8 @@ export type CreateSessionInput = {
   internalBlockLayout?: InternalBlockPlacement[];
   internalDocumentTitle?: InternalDocumentTitleMetadata;
   internalOutputFormat?: "informell" | "formell";
+  internalPatientSignatureRequired?: boolean;
+  internalPatientSignatureCity?: string | null;
   internalFrozenBlocks?: FrozenBlock[];
   digitalRequestSnapshot?: DigitalRequestFollowUpSnapshot | null;
   databaseClient?: Pick<Prisma.TransactionClient, "patientQuestionnaireSession">;
@@ -158,6 +160,8 @@ export async function createQuestionnaireSession(
     internalBlockLayout,
     internalDocumentTitle,
     internalOutputFormat,
+    internalPatientSignatureRequired,
+    internalPatientSignatureCity,
     internalFrozenBlocks,
     digitalRequestSnapshot,
     databaseClient = prisma,
@@ -253,6 +257,8 @@ export async function createQuestionnaireSession(
     ? buildInternalDocumentationSnapshot(frozenBlocks, {
         ...internalDocumentTitle,
         ...(internalOutputFormat ? { outputFormat: internalOutputFormat } : {}),
+        ...(internalPatientSignatureRequired ? { patientSignatureRequired: true } : {}),
+        ...(internalPatientSignatureCity ? { patientSignatureCity: internalPatientSignatureCity } : {}),
       })
     : frozenBlocks;
 

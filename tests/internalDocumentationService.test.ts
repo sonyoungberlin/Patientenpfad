@@ -10,6 +10,9 @@ jest.mock("@/lib/prisma", () => ({
     practiceDocumentationBlock: {
       findMany: jest.fn(),
     },
+    practiceLegalProfile: {
+      findUnique: jest.fn(),
+    },
   },
 }));
 
@@ -28,6 +31,7 @@ const db = prisma.patientQuestionnaireSession as unknown as {
   updateMany: jest.Mock;
 };
 const findDocumentationBlocks = prisma.practiceDocumentationBlock.findMany as jest.Mock;
+const findLegalProfile = prisma.practiceLegalProfile.findUnique as jest.Mock;
 
 function storedBlock(id: string) {
   return {
@@ -49,6 +53,7 @@ describe("internal documentation service", () => {
     findDocumentationBlocks.mockReset().mockImplementation(({ where }: {
       where: { id: { in: string[] } };
     }) => Promise.resolve(where.id.in.filter((id) => id !== "unknown").map(storedBlock)));
+    findLegalProfile.mockReset().mockResolvedValue({ city: "Berlin" });
   });
 
   it("erstellt ausgewählte Blocks im Praxiskontext mit festem Ownership-Scope", async () => {
@@ -113,6 +118,45 @@ describe("internal documentation service", () => {
       internalOutputFormat: "formell",
     }));
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("ownerAccountId");
+  });
+
+  it("friert die dokumentweite Patientenunterschrift samt Praxisort im Snapshot ein", async () => {
+    await createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "81426",
+      documentTitleOption: "bericht",
+      outputFormat: "formell",
+      patientSignatureRequired: true,
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    expect(findLegalProfile).toHaveBeenCalledWith({
+      where: { practice_id: "practice-1" },
+      select: { city: true },
+    });
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      internalPatientSignatureRequired: true,
+      internalPatientSignatureCity: "Berlin",
+    }));
+  });
+
+  it("behält einen fehlenden Praxisort ohne erfundene Angabe bei", async () => {
+    findLegalProfile.mockResolvedValue({ city: "   " });
+    await createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "81426",
+      documentTitleOption: "bericht",
+      outputFormat: "formell",
+      patientSignatureRequired: true,
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      internalPatientSignatureRequired: true,
+      internalPatientSignatureCity: undefined,
+    }));
   });
 
   it("löst ausgewählte Bibliotheksblöcke ausschließlich im serverseitigen Praxis-Scope auf", async () => {

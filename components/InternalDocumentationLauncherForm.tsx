@@ -34,18 +34,21 @@ export default function InternalDocumentationLauncherForm({
   const [documentTitleOption, setDocumentTitleOption] = useState<InternalDocumentTitleOption | "">("");
   const [customDocumentTitle, setCustomDocumentTitle] = useState("");
   const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
+  const [patientSignatureRequired, setPatientSignatureRequired] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function applyTemplate(template: PracticeDocumentationTemplate | null) {
     if (!template) {
       setBlockLayout([]);
+      setPatientSignatureRequired(false);
       return;
     }
     setBlockLayout(template.blockLayout.map((placement) => ({ ...placement })));
     setOutputFormat(template.outputFormat);
     setDocumentTitleOption(template.documentTitleOption as InternalDocumentTitleOption);
     setCustomDocumentTitle("");
+    setPatientSignatureRequired(template.patientSignatureRequired === true);
   }
 
   function toggleBlock(blockId: string) {
@@ -95,6 +98,7 @@ export default function InternalDocumentationLauncherForm({
           patientReference: patientReference.trim(),
           outputFormat,
           documentTitleOption,
+          ...(patientSignatureRequired ? { patientSignatureRequired: true } : {}),
           ...(documentTitleOption === "andere" ? { customDocumentTitle } : {}),
         }),
       });

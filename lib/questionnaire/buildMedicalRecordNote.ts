@@ -66,6 +66,9 @@ export type MedicalRecordNoteInput = {
   frozenBlocks?: FrozenBlock[] | null;
   internalWorkflowId?: string | null;
   digitalRequestSnapshot?: unknown;
+  submittedAt?: Date | null;
+  patientSignatureRequired?: boolean;
+  patientSignatureCity?: string;
 };
 
 export type MedicalRecordOutput = {
@@ -926,6 +929,21 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
       lines.push(block.label);
       lines.push(...blockLines);
     }
+  }
+
+  if (input.patientSignatureRequired === true) {
+    const documentDate = input.submittedAt
+      ? input.submittedAt.toLocaleDateString("de-DE", { dateStyle: "short", timeZone: "Europe/Berlin" })
+      : "–";
+    const signatureText = [
+      `Ort, Datum: ${input.patientSignatureCity ? `${input.patientSignatureCity}, ` : ""}${documentDate}`,
+      "Unterschrift Patient/in:",
+      "",
+      "________________________________",
+    ].join("\n");
+    lines.push("");
+    lines.push(signatureText);
+    semanticDocument.sections[2].items.push({ type: "bodyText", text: signatureText });
   }
 
   const noteText = normalizeTextForPvs(lines.join("\n"));

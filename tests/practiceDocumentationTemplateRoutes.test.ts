@@ -89,6 +89,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
         output_format: "formell",
         document_title_option: "stellungnahme",
         block_layout: layout,
+        patient_signature_required: false,
       },
     });
   });
@@ -120,6 +121,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
         output_format: "formell",
         document_title_option: "stellungnahme",
         block_layout: layout,
+        patient_signature_required: false,
       },
     });
 
@@ -162,6 +164,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
       output_format: "formell",
       document_title_option: "stellungnahme",
       block_layout: layout,
+      patient_signature_required: false,
     }]);
     const response = await GET(request("/api/questionnaire-kiosk/internal/templates?practiceId=foreign", "GET"));
 
@@ -180,6 +183,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
         outputFormat: "formell",
         documentTitleOption: "stellungnahme",
         blockLayout: layout,
+        patientSignatureRequired: false,
       }],
       blocks: [{ id: "practice_block_1", title: "Anamnese", blockType: "text" }],
     });
