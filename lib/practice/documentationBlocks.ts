@@ -86,6 +86,7 @@ export type PracticeDocumentationBlockInput = {
   unit?: string;
   required?: boolean;
   options?: PracticeDocumentationOptionInput[];
+  sharedDocumentationText?: string;
   additionalFields?: PracticeDocumentationAdditionalFieldInput[];
 };
 
@@ -245,6 +246,9 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
     }
     if (normalizedType === "selection" || normalizedType === "list") {
       value.options = normalizeOptions(input.options);
+      if (typeof input.sharedDocumentationText === "string" && input.sharedDocumentationText.trim()) {
+        value.sharedDocumentationText = normalizeText(input.sharedDocumentationText, "Gemeinsamer Ausgabetext", PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH);
+      }
     }
     value.additionalFields = normalizeAdditionalFields(input.additionalFields, normalizedType !== "repeatable");
     const additionalFields = value.additionalFields;
@@ -355,6 +359,7 @@ function questionForInput(
     text: input.title,
     type: input.blockType === "selection" ? "select" : "multi_select",
     options,
+    ...(input.sharedDocumentationText ? { sharedDocumentationText: input.sharedDocumentationText } : {}),
     documentationItemType: input.blockType === "list" ? "listItem" : "bodyText",
   };
 }

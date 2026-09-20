@@ -237,6 +237,23 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     });
   });
 
+  it("speichert gemeinsamen Multi-Select-Ausgabetext getrennt von den Optionsausgaben", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Anforderung Facharzt",
+      blockType: "list",
+      sharedDocumentationText: "Wir bitten um Übermittlung folgender Unterlagen bzw. Informationen:",
+      options: [
+        { value: "befund", label: "Befund / Epikrise", documentationText: "Befund / Epikrise" },
+        { value: "medikation", label: "Medikationsplan", documentationText: "Medikationsplan" },
+        { value: "therapie", label: "Therapieempfehlung", documentationText: "Therapieempfehlung" },
+      ],
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    expect(definition.questions[0].sharedDocumentationText).toBe("Wir bitten um Übermittlung folgender Unterlagen bzw. Informationen:");
+  });
+
   it("baut einen generischen Repeatable-Baustein mit instanzlokalen Regeln und unbegrenztem neuen Limit", () => {
     const validation = validatePracticeDocumentationBlock({
       title: "Kontaktverlauf",

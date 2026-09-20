@@ -127,6 +127,10 @@ export function resolveQuestionDocumentation(
     else fallbackLabels.push(resolveQuestionOptionLabel(question, selectedValue));
   }
 
+  if (selectedValues.length > 0 && question.type === "multi_select" && question.sharedDocumentationText) {
+    documentationTexts.unshift(question.sharedDocumentationText);
+  }
+
   return {
     documentationTexts,
     ...(fallbackLabels.length > 0 ? { fallbackValue: fallbackLabels.join(", ") } : {}),
@@ -213,7 +217,11 @@ export function resolveStructuredQuestionDocumentation(
       return option.documentationText ? [option.documentationText] : [];
     })
     .filter((text) => text !== "");
-  return resolvedOptions.length > 0 ? resolvedOptions.join(" ") : null;
+  if (resolvedOptions.length === 0) return null;
+  const sharedText = question.type === "multi_select" && question.sharedDocumentationText
+    ? `${question.sharedDocumentationText} `
+    : "";
+  return `${sharedText}${resolvedOptions.join(" ")}`;
 }
 
 // ---------------------------------------------------------------------------

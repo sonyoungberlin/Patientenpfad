@@ -222,6 +222,31 @@ describe("documentationText für Antwortoptionen", () => {
     expect(pdfText).toContain("Die Überweisung wurde mitgegeben (Facharzt).");
   });
 
+  it("gibt gemeinsamen Multi-Select-Text bei einer oder mehreren Auswahlen genau einmal aus", () => {
+    const question: QuestionDefinition = {
+      id: "SPECIALIST_REQUEST",
+      text: "Anforderung Facharzt",
+      type: "multi_select",
+      required: false,
+      sharedDocumentationText: "Wir bitten um Übermittlung folgender Unterlagen bzw. Informationen:",
+      options: [
+        { value: "befund", label: "Befund / Epikrise", documentationText: "Befund / Epikrise" },
+        { value: "medikation", label: "Medikationsplan", documentationText: "Medikationsplan" },
+        { value: "therapie", label: "Therapieempfehlung", documentationText: "Therapieempfehlung" },
+      ],
+    };
+    expect(resolveQuestionDocumentation(question, "befund, medikation, therapie").documentationTexts)
+      .toEqual(["Wir bitten um Übermittlung folgender Unterlagen bzw. Informationen:", "Befund / Epikrise", "Medikationsplan", "Therapieempfehlung"]);
+    expect(resolveQuestionDocumentation(question, "befund").documentationTexts)
+      .toEqual(["Wir bitten um Übermittlung folgender Unterlagen bzw. Informationen:", "Befund / Epikrise"]);
+    expect(resolveQuestionDocumentation(question, "").documentationTexts).toEqual([]);
+    const note = buildMedicalRecordNote({ answers: { SPECIALIST_REQUEST: "befund, medikation, therapie" }, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: [frozenBlock(question)] });
+    expect(note.match(/Wir bitten um Übermittlung/g)).toHaveLength(1);
+    expect(note).toContain("Befund / Epikrise");
+    expect(note).toContain("Medikationsplan");
+    expect(note).toContain("Therapieempfehlung");
+  });
+
   it("löst select-Dokumentation zentral auf und behält den Fallback bei", () => {
     const documented: QuestionDefinition = {
       id: "SELECT_DOCUMENTED",

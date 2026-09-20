@@ -25,6 +25,7 @@ type Draft = {
   text: string;
   unit: string;
   required: boolean;
+  sharedDocumentationText: string;
   options: PracticeDocumentationOptionInput[];
   additionalFields: PracticeDocumentationAdditionalFieldInput[];
 };
@@ -44,6 +45,7 @@ const emptyDraft = (): Draft => ({
   text: "",
   unit: "",
   required: false,
+  sharedDocumentationText: "",
   options: [
     { label: "", documentationText: "" },
     { label: "", documentationText: "" },
@@ -109,6 +111,7 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
       text: question.text,
       unit: question.unit ?? "",
       required: question.required,
+      sharedDocumentationText: question.sharedDocumentationText ?? "",
       options: (question.options ?? []).map((option) => typeof option === "string"
         ? { label: option, documentationText: option }
         : { value: option.value, label: option.label, documentationText: option.documentationText ?? option.label, documentationSegments: option.documentationSegments?.map(mapDocumentationSegment) }),
@@ -258,6 +261,7 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
         {(draft.blockType === "selection" || draft.blockType === "list") && (
           <fieldset style={{ display: "grid", gap: "0.75rem" }}>
             <legend>Optionen</legend>
+            {draft.blockType === "list" && <label>Gemeinsamer Ausgabetext<textarea value={draft.sharedDocumentationText} onChange={(event) => setDraft((current) => ({ ...current, sharedDocumentationText: event.target.value }))} rows={3} disabled={busy} /></label>}
             {draft.options.map((option, index) => <div key={option.value ?? `new-${index}`} style={{ display: "grid", gap: "0.4rem", borderBottom: "1px solid #ddd", paddingBottom: "0.75rem" }}>
               <label>Option {index + 1}<input value={option.label} onChange={(event) => updateOption(index, { label: event.target.value })} required disabled={busy} /></label>
               <label>Ausgabetext<textarea value={option.documentationText} onChange={(event) => updateOption(index, { documentationText: event.target.value })} rows={3} required={(option.documentationSegments?.length ?? 0) === 0} disabled={busy} /></label>
