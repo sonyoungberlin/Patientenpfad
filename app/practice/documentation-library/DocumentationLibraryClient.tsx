@@ -6,9 +6,11 @@ import type {
   PracticeDocumentationBlockDefinition,
   PracticeDocumentationBlockType,
   PracticeDocumentationAdditionalFieldInput,
+  PracticeDocumentationFieldOptionInput,
   PracticeDocumentationOptionInput,
   PracticeDocumentationSegmentInput,
 } from "@/lib/practice/documentationBlocks";
+import type { DocumentationSegment } from "@/lib/questionnaire/blockCatalog";
 
 type BlockRow = {
   id: string;
@@ -58,6 +60,10 @@ function newAdditionalField(): PracticeDocumentationAdditionalFieldInput {
   };
 }
 
+function newFieldOption(): PracticeDocumentationFieldOptionInput {
+  return { value: `option_${crypto.randomUUID()}`, label: "" };
+}
+
 export default function DocumentationLibraryClient({ initialBlocks }: { initialBlocks: BlockRow[] }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,6 +79,18 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
 
   function startEdit(row: BlockRow) {
     const question = row.definition.questions[0];
+    const rules = row.definition.block.conditionalRules ?? [];
+    const fieldIdForQuestion = new Map(row.definition.questions.slice(1).map((candidate) => [candidate.id, candidate.id]));
+    const mapDocumentationSegment = (segment: DocumentationSegment): PracticeDocumentationSegmentInput => {
+      if (segment.kind === "text") return segment;
+      if (segment.kind === "answerRef") return { kind: "answerRef", fieldId: fieldIdForQuestion.get(segment.questionId) ?? segment.questionId };
+      return {
+        kind: "conditional",
+        fieldId: segment.questionId === question.id ? "__primary" : fieldIdForQuestion.get(segment.questionId) ?? segment.questionId,
+        optionValue: segment.optionValue,
+        segments: segment.segments.map(mapDocumentationSegment),
+      };
+    };
     setEditingId(row.id);
     setDraft({
       title: row.title,
@@ -82,24 +100,22 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
       required: question.required,
       options: (question.options ?? []).map((option) => typeof option === "string"
         ? { label: option, documentationText: option }
-        : { value: option.value, label: option.label, documentationText: option.documentationText ?? option.label, documentationSegments: option.documentationSegments?.map((segment) => segment.kind === "text" ? segment : { kind: "answerRef", fieldId: row.definition.questions.find((candidate) => candidate.id === segment.questionId)?.id ?? segment.questionId }) }),
-      additionalFields: row.definition.questions.slice(1).map((question) => ({
-        id: question.id,
-        label: question.text,
-        type: question.type === "date" || question.type === "number" || question.type === "textarea" ? question.type : "text",
-        required: question.required,
-        showForOptionValues: (row.definition.block.conditionalRules ?? [])
-          .filter((rule) => {
-            const condition = rule.condition;
-            return rule.action === "showQuestion" && rule.targetId === question.id &&
-              !("mode" in condition) && condition.target.kind === "question" &&
-              condition.target.questionId === row.definition.questions[0].id &&
-              condition.operator === "equals" && typeof condition.value === "string";
-          })
-          .map((rule) => !("mode" in rule.condition) ? rule.condition.value as string : ""),
-        ...(question.maxLength ? { maxLength: question.maxLength } : {}),
-        ...(question.unit ? { unit: question.unit } : {}),
-      })),
+        : { value: option.value, label: option.label, documentationText: option.documentationText ?? option.label, documentationSegments: option.documentationSegments?.map(mapDocumentationSegment) }),
+      additionalFields: row.definition.questions.slice(1).map((fieldQuestion) => {
+        const rule = rules.find((candidate) => candidate.action === "showQuestion" && candidate.targetId === fieldQuestion.id && !("mode" in candidate.condition) && candidate.condition.target.kind === "question");
+        const sourceQuestionId = rule && !("mode" in rule.condition) && rule.condition.target.kind === "question" ? rule.condition.target.questionId : question.id;
+        return {
+          id: fieldQuestion.id,
+          label: fieldQuestion.text,
+          type: fieldQuestion.type === "date" || fieldQuestion.type === "number" || fieldQuestion.type === "textarea" || fieldQuestion.type === "select" ? fieldQuestion.type : "text",
+          ...(fieldQuestion.type === "select" ? { options: (fieldQuestion.options ?? []).filter((option): option is Exclude<typeof option, string> => typeof option !== "string").map((option) => ({ value: option.value, label: option.label })) } : {}),
+          required: fieldQuestion.required,
+          showForOptionValues: rules.filter((candidate) => candidate.action === "showQuestion" && candidate.targetId === fieldQuestion.id && !("mode" in candidate.condition) && candidate.condition.target.kind === "question" && candidate.condition.target.questionId === sourceQuestionId && typeof candidate.condition.value === "string").map((candidate) => !("mode" in candidate.condition) ? String(candidate.condition.value) : ""),
+          ...(sourceQuestionId !== question.id ? { showForFieldId: sourceQuestionId } : {}),
+          ...(fieldQuestion.maxLength ? { maxLength: fieldQuestion.maxLength } : {}),
+          ...(fieldQuestion.unit ? { unit: fieldQuestion.unit } : {}),
+        };
+      }),
     });
     setError(null);
   }
@@ -129,6 +145,17 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
         if (index !== optionIndex) return option;
         const segments = option.documentationSegments ?? [];
         return { ...option, documentationSegments: segments.map((segment, currentIndex) => currentIndex === segmentIndex ? { ...segment, ...update } as PracticeDocumentationSegmentInput : segment) };
+      }),
+    }));
+  }
+
+  function updateConditionalSegment(optionIndex: number, segmentIndex: number, nestedIndex: number, update: Partial<PracticeDocumentationSegmentInput>) {
+    setDraft((current) => ({
+      ...current,
+      options: current.options.map((option, index) => {
+        if (index !== optionIndex) return option;
+        const segments = option.documentationSegments ?? [];
+        return { ...option, documentationSegments: segments.map((segment, currentIndex) => currentIndex === segmentIndex && segment.kind === "conditional" ? { ...segment, segments: segment.segments.map((nested, currentNestedIndex) => currentNestedIndex === nestedIndex ? { ...nested, ...update } as PracticeDocumentationSegmentInput : nested) } : segment) };
       }),
     }));
   }
@@ -216,11 +243,24 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
                   <select value={segment.kind} onChange={(event) => updateOptionSegment(index, segmentIndex, event.target.value === "text" ? { kind: "text", text: "" } : { kind: "answerRef", fieldId: draft.additionalFields[0]?.id ?? "" })} disabled={busy}>
                     <option value="text">Fester Text</option>
                     <option value="answerRef">Zusatzangabe</option>
+                    <option value="conditional">Bedingte Variante</option>
                   </select>
-                  {segment.kind === "text" ? <input value={segment.text} onChange={(event) => updateOptionSegment(index, segmentIndex, { text: event.target.value })} disabled={busy} /> : <select value={segment.fieldId} onChange={(event) => updateOptionSegment(index, segmentIndex, { fieldId: event.target.value })} disabled={busy}><option value="">Zusatzangabe wählen</option>{draft.additionalFields.map((field) => <option key={field.id} value={field.id}>{field.label || "Unbenannte Zusatzangabe"}</option>)}</select>}
+                  {segment.kind === "text" ? <input value={segment.text} onChange={(event) => updateOptionSegment(index, segmentIndex, { text: event.target.value })} disabled={busy} /> : segment.kind === "answerRef" ? <select value={segment.fieldId} onChange={(event) => updateOptionSegment(index, segmentIndex, { fieldId: event.target.value })} disabled={busy}><option value="">Zusatzangabe wählen</option>{draft.additionalFields.map((field) => <option key={field.id} value={field.id}>{field.label || "Unbenannte Zusatzangabe"}</option>)}</select> : <>
+                    <select value={segment.fieldId} onChange={(event) => updateOptionSegment(index, segmentIndex, { fieldId: event.target.value })} disabled={busy}>
+                      <option value="__primary">Primäre Auswahl</option>
+                      {draft.additionalFields.map((field) => <option key={field.id} value={field.id}>{field.label || "Unbenannte Zusatzangabe"}</option>)}
+                    </select>
+                    <select value={segment.optionValue} onChange={(event) => updateOptionSegment(index, segmentIndex, { optionValue: event.target.value })} disabled={busy}>
+                      {(segment.fieldId === "__primary" ? draft.options : draft.additionalFields.find((field) => field.id === segment.fieldId)?.options ?? []).map((choice) => <option key={typeof choice === "string" ? choice : choice.value} value={typeof choice === "string" ? choice : choice.value}>{typeof choice === "string" ? choice : choice.label}</option>)}
+                    </select>
+                    <span>Variante:</span>
+                    {segment.segments.map((nested, nestedIndex) => <span key={nestedIndex} style={{ display: "inline-flex", gap: "0.25rem" }}>{nested.kind === "text" ? <input value={nested.text} onChange={(event) => updateConditionalSegment(index, segmentIndex, nestedIndex, { text: event.target.value })} disabled={busy} /> : <select value={nested.fieldId} onChange={(event) => updateConditionalSegment(index, segmentIndex, nestedIndex, { fieldId: event.target.value })} disabled={busy}><option value="">Zusatzangabe</option>{draft.additionalFields.map((field) => <option key={field.id} value={field.id}>{field.label || "Unbenannte Zusatzangabe"}</option>)}</select>}<button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.map((candidate, candidateIndex) => candidateIndex === index ? { ...candidate, documentationSegments: (candidate.documentationSegments ?? []).map((entry, entryIndex) => entryIndex === segmentIndex && entry.kind === "conditional" ? { ...entry, segments: entry.segments.filter((_, currentNestedIndex) => currentNestedIndex !== nestedIndex) } : entry) } : candidate) }))} disabled={busy}>Entfernen</button></span>)}
+                    <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.map((candidate, candidateIndex) => candidateIndex === index ? { ...candidate, documentationSegments: (candidate.documentationSegments ?? []).map((entry, entryIndex) => entryIndex === segmentIndex && entry.kind === "conditional" ? { ...entry, segments: [...entry.segments, { kind: "text", text: "" }] } : entry) } : candidate) }))} disabled={busy}>Variantensegment hinzufügen</button>
+                  </>}
                   <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.map((candidate, candidateIndex) => candidateIndex === index ? { ...candidate, documentationSegments: (candidate.documentationSegments ?? []).filter((_, currentIndex) => currentIndex !== segmentIndex) } : candidate) }))} disabled={busy}>Entfernen</button>
                 </div>)}
                 <button type="button" onClick={() => updateOption(index, { documentationSegments: [...(option.documentationSegments ?? []), { kind: "text", text: "" }] })} disabled={busy}>Segment hinzufügen</button>
+                <button type="button" onClick={() => updateOption(index, { documentationSegments: [...(option.documentationSegments ?? []), { kind: "conditional", fieldId: "__primary", optionValue: draft.options[0]?.value ?? draft.options[0]?.label ?? "", segments: [{ kind: "text", text: "" }] }] })} disabled={busy}>Bedingte Variante hinzufügen</button>
               </fieldset>
               {draft.options.length > 1 && <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.filter((_, optionIndex) => optionIndex !== index) }))} disabled={busy}>Option entfernen</button>}
             </div>)}
@@ -231,8 +271,9 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
           <legend>Optionale Zusatzangaben</legend>
           {draft.additionalFields.map((field, index) => <div key={field.id} style={{ display: "grid", gap: "0.4rem", borderBottom: "1px solid #ddd", paddingBottom: "0.75rem" }}>
             <label>Feldbezeichnung<input value={field.label} onChange={(event) => updateField(index, { label: event.target.value })} required disabled={busy} /></label>
-            <label>Feldtyp<select value={field.type} onChange={(event) => updateField(index, { type: event.target.value as PracticeDocumentationAdditionalFieldInput["type"] })} disabled={busy}><option value="text">Kurzer Text oder Monat/Jahr</option><option value="textarea">Längerer Text</option><option value="date">Datum</option><option value="number">Zahl</option></select></label>
-            <fieldset><legend>Anzeigen bei Auswahl</legend>{draft.options.map((option) => { const value = option.value ?? option.label; return <label key={value} style={{ display: "block" }}><input type="checkbox" checked={field.showForOptionValues.includes(value)} onChange={(event) => updateField(index, { showForOptionValues: event.target.checked ? [...field.showForOptionValues, value] : field.showForOptionValues.filter((candidate) => candidate !== value) })} disabled={busy} /> {option.label || "Unbenannte Option"}</label>; })}</fieldset>
+            <label>Feldtyp<select value={field.type} onChange={(event) => updateField(index, { type: event.target.value as PracticeDocumentationAdditionalFieldInput["type"], options: event.target.value === "select" ? (field.options ?? [newFieldOption()]) : undefined })} disabled={busy}><option value="text">Kurzer Text oder Monat/Jahr</option><option value="textarea">Längerer Text</option><option value="date">Datum</option><option value="number">Zahl</option><option value="select">Auswahl</option></select></label>
+            {field.type === "select" && <fieldset><legend>Auswahloptionen</legend>{(field.options ?? []).map((choice, choiceIndex) => <div key={choice.value} style={{ display: "flex", gap: "0.4rem" }}><input value={choice.label} placeholder="Bezeichnung" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, label: event.target.value } : candidate) })} disabled={busy} /><input value={choice.value} placeholder="Wert" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, value: event.target.value } : candidate) })} disabled={busy} /></div>)}<button type="button" onClick={() => updateField(index, { options: [...(field.options ?? []), newFieldOption()] })} disabled={busy}>Auswahloption hinzufügen</button></fieldset>}
+            <fieldset><legend>Anzeigen wenn</legend><select value={field.showForFieldId ?? "__primary"} onChange={(event) => updateField(index, { showForFieldId: event.target.value === "__primary" ? undefined : event.target.value, showForOptionValues: [] })} disabled={busy}><option value="__primary">Primäre Auswahl</option>{draft.additionalFields.slice(0, index).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.label || "Unbenannte Zusatzangabe"}</option>)}</select>{(field.showForFieldId ? draft.additionalFields.find((candidate) => candidate.id === field.showForFieldId)?.options ?? [] : draft.options).map((option) => { const value = typeof option === "string" ? option : (option.value ?? option.label); const label = typeof option === "string" ? option : option.label; return <label key={value} style={{ display: "block" }}><input type="checkbox" checked={field.showForOptionValues.includes(value)} onChange={(event) => updateField(index, { showForOptionValues: event.target.checked ? [...field.showForOptionValues, value] : field.showForOptionValues.filter((candidate) => candidate !== value) })} disabled={busy} /> {label || "Unbenannte Option"}</label>; })}</fieldset>
             <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={field.required === true} onChange={(event) => updateField(index, { required: event.target.checked })} disabled={busy} />Pflichtangabe, wenn sichtbar</label>
             <button type="button" onClick={() => setDraft((current) => ({ ...current, additionalFields: current.additionalFields.filter((_, fieldIndex) => fieldIndex !== index) }))} disabled={busy}>Zusatzangabe entfernen</button>
           </div>)}

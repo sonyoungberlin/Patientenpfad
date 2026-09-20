@@ -78,6 +78,50 @@ describe("documentationText für Antwortoptionen", () => {
     })).not.toContain("Von:");
   });
 
+  it("löst bedingte Segmentzweige für konkretes Datum und offenes Ende auf", () => {
+    const selection: QuestionDefinition = {
+      id: "LIMITATION_STATUS",
+      text: "Leistungseinschränkung",
+      type: "select",
+      required: true,
+      options: [{
+        value: "travel_unfit",
+        label: "Reiseunfähig",
+        documentationSegments: [
+          { kind: "text", text: "Vom " },
+          { kind: "answerRef", questionId: "LIMITATION_FROM" },
+          { kind: "conditional", questionId: "LIMITATION_END", optionValue: "date", segments: [
+            { kind: "text", text: " bis " },
+            { kind: "answerRef", questionId: "LIMITATION_TO" },
+          ] },
+          { kind: "conditional", questionId: "LIMITATION_END", optionValue: "open", segments: [
+            { kind: "text", text: " bis auf Weiteres" },
+          ] },
+          { kind: "text", text: " reiseunfähig." },
+        ],
+      }],
+    };
+    const from: QuestionDefinition = { id: "LIMITATION_FROM", text: "Von", type: "date", required: true };
+    const end: QuestionDefinition = { id: "LIMITATION_END", text: "Ende", type: "select", required: true, options: [{ value: "date", label: "Bis Datum" }, { value: "open", label: "Bis auf Weiteres" }] };
+    const to: QuestionDefinition = { id: "LIMITATION_TO", text: "Bis", type: "date", required: true };
+    const questions = new Map([selection, from, end, to].map((question) => [question.id, question]));
+
+    expect(resolveStructuredQuestionDocumentation(selection, "travel_unfit", {
+      LIMITATION_STATUS: "travel_unfit", LIMITATION_FROM: "2026-09-21", LIMITATION_END: "date", LIMITATION_TO: "2026-09-28",
+    }, questions)).toBe("Vom 21.09.2026 bis 28.09.2026 reiseunfähig.");
+    expect(resolveStructuredQuestionDocumentation(selection, "travel_unfit", {
+      LIMITATION_STATUS: "travel_unfit", LIMITATION_FROM: "2026-09-21", LIMITATION_END: "open", LIMITATION_TO: "",
+    }, questions)).toBe("Vom 21.09.2026 bis auf Weiteres reiseunfähig.");
+    const note = buildMedicalRecordNote({
+      answers: { LIMITATION_STATUS: "travel_unfit", LIMITATION_FROM: "2026-09-21", LIMITATION_END: "open", LIMITATION_TO: "" },
+      selected_block_ids: ["TEST_BLOCK"],
+      frozenBlocks: [{ ...frozenBlock(selection), questions: [selection, from, end, to] }],
+    });
+    expect(note).toContain("Vom 21.09.2026 bis auf Weiteres reiseunfähig.");
+    expect(note).not.toContain("Ende:");
+    expect(note).not.toContain("Bis:");
+  });
+
   it("löst select-Dokumentation zentral auf und behält den Fallback bei", () => {
     const documented: QuestionDefinition = {
       id: "SELECT_DOCUMENTED",

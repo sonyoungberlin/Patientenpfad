@@ -66,7 +66,8 @@ export type QuestionOptionDefinition = string | QuestionOption;
 
 export type DocumentationSegment =
   | { kind: "text"; text: string }
-  | { kind: "answerRef"; questionId: string };
+  | { kind: "answerRef"; questionId: string }
+  | { kind: "conditional"; questionId: string; optionValue: string; segments: DocumentationSegment[] };
 
 /** Ein Unterfeld innerhalb eines repeatable_group-Eintrags. */
 export type RepeatableGroupFieldDef = {

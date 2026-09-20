@@ -159,11 +159,18 @@ export function getStructuredDocumentationQuestionIds(
 ): Set<string> {
   const option = selectedOption(question, rawValue);
   if (typeof option === "string" || !option?.documentationSegments) return new Set();
-  return new Set(
-    option.documentationSegments
-      .filter((segment): segment is Extract<DocumentationSegment, { kind: "answerRef" }> => segment.kind === "answerRef")
-      .map((segment) => segment.questionId),
-  );
+  const questionIds = new Set<string>();
+  const collect = (segments: DocumentationSegment[]) => {
+    for (const segment of segments) {
+      if (segment.kind === "answerRef") questionIds.add(segment.questionId);
+      if (segment.kind === "conditional") {
+        questionIds.add(segment.questionId);
+        collect(segment.segments);
+      }
+    }
+  };
+  collect(option.documentationSegments);
+  return questionIds;
 }
 
 export function resolveStructuredQuestionDocumentation(
@@ -175,13 +182,19 @@ export function resolveStructuredQuestionDocumentation(
   const option = selectedOption(question, rawValue);
   if (typeof option === "string" || !option?.documentationSegments) return null;
 
-  return option.documentationSegments.map((segment) => {
+  const resolveSegments = (segments: DocumentationSegment[]): string => segments.map((segment) => {
     if (segment.kind === "text") return segment.text;
+    if (segment.kind === "conditional") {
+      return answers[segment.questionId] === segment.optionValue
+        ? resolveSegments(segment.segments)
+        : "";
+    }
     const referencedQuestion = questionsById.get(segment.questionId);
     return referencedQuestion
       ? formatDocumentationSegmentAnswer(referencedQuestion, (answers[segment.questionId] ?? "").trim())
       : "";
   }).join("");
+  return resolveSegments(option.documentationSegments);
 }
 
 // ---------------------------------------------------------------------------

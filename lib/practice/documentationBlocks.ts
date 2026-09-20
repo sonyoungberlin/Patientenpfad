@@ -54,14 +54,22 @@ export type PracticeDocumentationOptionInput = {
 
 export type PracticeDocumentationSegmentInput =
   | { kind: "text"; text: string }
-  | { kind: "answerRef"; fieldId: string };
+  | { kind: "answerRef"; fieldId: string }
+  | { kind: "conditional"; fieldId: string; optionValue: string; segments: PracticeDocumentationSegmentInput[] };
+
+export type PracticeDocumentationFieldOptionInput = {
+  value: string;
+  label: string;
+};
 
 export type PracticeDocumentationAdditionalFieldInput = {
   id?: string;
   label: string;
-  type: "text" | "textarea" | "date" | "number";
+  type: "text" | "textarea" | "date" | "number" | "select";
+  options?: PracticeDocumentationFieldOptionInput[];
   required?: boolean;
   showForOptionValues: string[];
+  showForFieldId?: string;
   maxLength?: number;
   unit?: string;
 };
@@ -135,7 +143,7 @@ function normalizeSegments(raw: unknown): PracticeDocumentationSegmentInput[] | 
     throw new Error("Der Ausgabetext enthält ungültige Segmente.");
   }
   return raw.map((item) => {
-    if (!isRecord(item) || (item.kind !== "text" && item.kind !== "answerRef")) {
+    if (!isRecord(item) || (item.kind !== "text" && item.kind !== "answerRef" && item.kind !== "conditional")) {
       throw new Error("Der Ausgabetext enthält ein ungültiges Segment.");
     }
     if (item.kind === "text") {
@@ -143,6 +151,14 @@ function normalizeSegments(raw: unknown): PracticeDocumentationSegmentInput[] | 
         throw new Error("Ausgabetext ist ungültig.");
       }
       return { kind: "text", text: item.text };
+    }
+    if (item.kind === "conditional") {
+      return {
+        kind: "conditional",
+        fieldId: normalizeText(item.fieldId, "Bedingungsfrage", 160),
+        optionValue: normalizeText(item.optionValue, "Bedingungswert", 240),
+        segments: normalizeSegments(item.segments) ?? [],
+      };
     }
     return { kind: "answerRef", fieldId: normalizeText(item.fieldId, "Zusatzfeld-Referenz", 160) };
   });
@@ -158,9 +174,10 @@ function normalizeAdditionalFields(raw: unknown): PracticeDocumentationAdditiona
     if (id && (!ID_PATTERN.test(id) || ids.has(id))) throw new Error("Zusatzfeld-ID ist ungültig oder doppelt vorhanden.");
     if (id) ids.add(id);
     const type = item.type;
-    if (type !== "text" && type !== "textarea" && type !== "date" && type !== "number") {
+    if (type !== "text" && type !== "textarea" && type !== "date" && type !== "number" && type !== "select") {
       throw new Error("Ungültiger Typ für Zusatzangabe.");
     }
+    const options = type === "select" ? normalizeFieldOptions(item.options) : undefined;
     if (!Array.isArray(item.showForOptionValues) || item.showForOptionValues.length === 0) {
       throw new Error("Jede Zusatzangabe benötigt mindestens eine Auswahloption.");
     }
@@ -169,11 +186,27 @@ function normalizeAdditionalFields(raw: unknown): PracticeDocumentationAdditiona
       ...(id ? { id } : {}),
       label: normalizeText(item.label, "Feldbezeichnung", 240),
       type,
+      ...(options ? { options } : {}),
       required: item.required === true,
       showForOptionValues,
+      ...(item.showForFieldId !== undefined ? { showForFieldId: normalizeText(item.showForFieldId, "Bedingungsfrage", 160) } : {}),
       ...(typeof item.maxLength === "number" ? { maxLength: Math.max(1, Math.min(2000, Math.floor(item.maxLength))) } : {}),
       ...(typeof item.unit === "string" && item.unit.trim() ? { unit: normalizeText(item.unit, "Einheit", 40) } : {}),
     };
+  });
+}
+
+function normalizeFieldOptions(raw: unknown): PracticeDocumentationFieldOptionInput[] {
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 50) {
+    throw new Error("Eine Auswahl-Zusatzangabe benötigt mindestens eine Option.");
+  }
+  const values = new Set<string>();
+  return raw.map((item) => {
+    if (!isRecord(item)) throw new Error("Ungültige Auswahloption.");
+    const value = normalizeText(item.value, "Auswahlwert", 160);
+    if (values.has(value)) throw new Error("Auswahlwert ist doppelt vorhanden.");
+    values.add(value);
+    return { value, label: normalizeText(item.label, "Auswahllabel", 240) };
   });
 }
 
@@ -204,20 +237,46 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
       value.options = normalizeOptions(input.options);
     }
     value.additionalFields = normalizeAdditionalFields(input.additionalFields);
+    const additionalFields = value.additionalFields;
     const optionValues = new Set((value.options ?? []).map((option) => option.value ?? option.label));
-    const fieldIds = new Set(value.additionalFields.map((field) => field.id).filter((id): id is string => Boolean(id)));
-    for (const field of value.additionalFields) {
-      if (field.showForOptionValues.some((optionValue) => !optionValues.has(optionValue))) {
-        throw new Error("Eine Zusatzangabe verweist auf eine unbekannte Auswahloption.");
+    const fieldIds = new Set(additionalFields.map((field) => field.id).filter((id): id is string => Boolean(id)));
+    const questionIds = new Set(["__primary", ...fieldIds]);
+    const fieldIndex = new Map(additionalFields.flatMap((field, index) => field.id ? [[field.id, index] as const] : []));
+    const optionValuesFor = (questionId: string) => {
+      if (questionId === "__primary") return optionValues;
+      const field = additionalFields.find((candidate) => candidate.id === questionId);
+      return new Set(field?.options?.map((option) => option.value) ?? []);
+    };
+    const assertPreviousQuestion = (questionId: string, currentIndex: number) => {
+      if (!questionIds.has(questionId)) throw new Error("Eine Zusatzangabe verweist auf eine unbekannte Bedingungsfrage.");
+      if (questionId !== "__primary" && (fieldIndex.get(questionId) ?? Number.MAX_SAFE_INTEGER) >= currentIndex) {
+        throw new Error("Eine Zusatzangabe darf nur von einer vorherigen Frage abhängen.");
+      }
+    };
+    for (const [index, field] of additionalFields.entries()) {
+      const sourceId = field.showForFieldId ?? "__primary";
+      assertPreviousQuestion(sourceId, index);
+      const sourceValues = optionValuesFor(sourceId);
+      if (field.showForOptionValues.some((optionValue) => !sourceValues.has(optionValue))) {
+        throw new Error("Eine Zusatzangabe verweist auf einen unbekannten Auswahlwert.");
       }
     }
-    for (const option of value.options ?? []) {
-      for (const segment of option.documentationSegments ?? []) {
-        if (segment.kind === "answerRef" && !fieldIds.has(segment.fieldId)) {
-          throw new Error("Der Ausgabetext verweist auf eine unbekannte Zusatzangabe.");
+    const validateSegments = (segments: PracticeDocumentationSegmentInput[], currentIndex: number): void => {
+      for (const segment of segments) {
+        if (segment.kind === "answerRef") {
+          if (!fieldIds.has(segment.fieldId)) throw new Error("Der Ausgabetext verweist auf eine unbekannte Zusatzangabe.");
+          continue;
+        }
+        if (segment.kind === "conditional") {
+          assertPreviousQuestion(segment.fieldId, currentIndex + 1);
+          if (!optionValuesFor(segment.fieldId).has(segment.optionValue)) {
+            throw new Error("Die bedingte Ausgabe verweist auf einen unbekannten Auswahlwert.");
+          }
+          validateSegments(segment.segments, currentIndex + 1);
         }
       }
-    }
+    };
+    for (const option of value.options ?? []) validateSegments(option.documentationSegments ?? [], additionalFields.length);
     return { ok: true, value };
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : "Ungültiger Dokumentationsbaustein." };
@@ -280,22 +339,28 @@ export function buildPracticeDocumentationBlockDefinition(
       text: field.label,
       type: questionTypeForField(field.type),
       required: field.required === true,
+      ...(field.type === "select" ? { options: field.options } : {}),
       ...(field.maxLength ? { maxLength: field.maxLength } : {}),
       ...(field.unit ? { unit: field.unit } : {}),
     } satisfies QuestionDefinition;
   });
   const allQuestions = [primaryQuestion, ...additionalQuestions];
   const fieldQuestionIds = new Map((input.additionalFields ?? []).map((field, index) => [field.id ?? `__new_${index}`, additionalQuestions[index].id]));
+  const sourceQuestionId = (field: PracticeDocumentationAdditionalFieldInput) => field.showForFieldId
+    ? fieldQuestionIds.get(field.showForFieldId) ?? primaryQuestion.id
+    : primaryQuestion.id;
   const rules: ConditionalRule[] = (input.additionalFields ?? []).flatMap((field, index) => {
     const questionId = fieldQuestionIds.get(field.id ?? `__new_${index}`)!;
     return field.showForOptionValues.map((inputOptionValue) => {
-      const inputOptionIndex = (input.options ?? []).findIndex((option) => (option.value ?? option.label) === inputOptionValue);
-      const optionValue = getQuestionOptionValue(primaryQuestion.options?.[inputOptionIndex] ?? inputOptionValue);
+      const sourceField = field.showForFieldId ? input.additionalFields?.find((candidate) => candidate.id === field.showForFieldId) : undefined;
+      const sourceOptions = sourceField?.options ?? input.options;
+      const sourceOptionIndex = sourceOptions?.findIndex((option) => (option.value ?? option.label) === inputOptionValue) ?? -1;
+      const optionValue = sourceField?.options?.[sourceOptionIndex]?.value ?? getQuestionOptionValue(primaryQuestion.options?.[sourceOptionIndex] ?? inputOptionValue);
       return {
       action: "showQuestion" as const,
       targetId: questionId,
       condition: {
-        target: { kind: "question" as const, questionId: primaryQuestion.id },
+        target: { kind: "question" as const, questionId: sourceQuestionId(field) },
         operator: "equals" as const,
         value: optionValue,
       },
@@ -305,11 +370,24 @@ export function buildPracticeDocumentationBlockDefinition(
   const options = (primaryQuestion.options ?? []).map((option) => {
     if (typeof option === "string") return option;
     const inputOption = (input.options ?? []).find((candidate) => candidate.label === option.label || candidate.value === option.value);
-    const segments: DocumentationSegment[] | undefined = inputOption?.documentationSegments?.map((segment) =>
-      segment.kind === "text"
-        ? segment
-        : { kind: "answerRef", questionId: fieldQuestionIds.get(segment.fieldId) ?? "" },
-    );
+    const mapSegment = (segment: PracticeDocumentationSegmentInput): DocumentationSegment => {
+      if (segment.kind === "text") return segment;
+      if (segment.kind === "answerRef") return { kind: "answerRef", questionId: fieldQuestionIds.get(segment.fieldId) ?? "" };
+      const sourceField = segment.fieldId === "__primary"
+        ? undefined
+        : input.additionalFields?.find((field) => field.id === segment.fieldId);
+      const sourceOptions = sourceField?.options ?? input.options ?? [];
+      const sourceIndex = sourceOptions.findIndex((option) => (option.value ?? option.label) === segment.optionValue);
+      const optionValue = sourceField?.options?.[sourceIndex]?.value
+        ?? getQuestionOptionValue(primaryQuestion.options?.[sourceIndex] ?? segment.optionValue);
+      return {
+        kind: "conditional",
+        questionId: segment.fieldId === "__primary" ? primaryQuestion.id : fieldQuestionIds.get(segment.fieldId) ?? "",
+        optionValue,
+        segments: segment.segments.map(mapSegment),
+      };
+    };
+    const segments: DocumentationSegment[] | undefined = inputOption?.documentationSegments?.map(mapSegment);
     return {
       ...option,
       ...(segments?.every((segment) => segment.kind === "text" || segment.questionId) ? { documentationSegments: segments } : {}),

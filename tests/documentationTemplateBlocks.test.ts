@@ -109,6 +109,66 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     });
   });
 
+  it("baut eine abhängige Select-Zusatzfrage und zwei bedingte Ausgabezweige auf", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Leistungseinschränkung / Befreiung",
+      blockType: "selection",
+      options: [{
+        value: "travel_unfit",
+        label: "Reiseunfähig",
+        documentationText: "",
+        documentationSegments: [
+          { kind: "text", text: "Vom " },
+          { kind: "answerRef", fieldId: "from" },
+          { kind: "conditional", fieldId: "end", optionValue: "date", segments: [
+            { kind: "text", text: " bis " },
+            { kind: "answerRef", fieldId: "to" },
+          ] },
+          { kind: "conditional", fieldId: "end", optionValue: "open", segments: [
+            { kind: "text", text: " bis auf Weiteres" },
+          ] },
+          { kind: "text", text: " reiseunfähig." },
+        ],
+      }],
+      additionalFields: [
+        { id: "from", label: "Von", type: "date", required: true, showForOptionValues: ["travel_unfit"] },
+        { id: "end", label: "Ende", type: "select", options: [{ value: "date", label: "Bis Datum" }, { value: "open", label: "Bis auf Weiteres" }], required: true, showForOptionValues: ["travel_unfit"] },
+        { id: "to", label: "Bis", type: "date", required: true, showForFieldId: "end", showForOptionValues: ["date"] },
+      ],
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    expect(definition.questions.map((question) => question.type)).toEqual(["select", "date", "select", "date"]);
+    expect(definition.block.conditionalRules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetId: definition.questions[3].id, condition: expect.objectContaining({ target: expect.objectContaining({ questionId: definition.questions[2].id }), value: "date" }) }),
+    ]));
+    const option = definition.questions[0].options?.[0];
+    expect(typeof option).toBe("object");
+    if (!option || typeof option === "string") return;
+    expect(option.documentationSegments).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "conditional", questionId: definition.questions[2].id, optionValue: "date" }),
+      expect.objectContaining({ kind: "conditional", questionId: definition.questions[2].id, optionValue: "open" }),
+    ]));
+  });
+
+  it.each([
+    ["unbekannte Quellfrage", { id: "to", label: "Bis", type: "date", showForFieldId: "missing", showForOptionValues: ["date"] }],
+    ["Vorwärtsreferenz", { id: "from", label: "Von", type: "date", showForFieldId: "end", showForOptionValues: ["date"] }],
+  ])("lehnt %s bei Zusatzangaben ab", (_label, field) => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Ungültige Abhängigkeit",
+      blockType: "selection",
+      options: [{ label: "Reiseunfähig", documentationText: "Reiseunfähig" }],
+      additionalFields: [
+        field,
+        { id: "end", label: "Ende", type: "select", options: [{ value: "date", label: "Bis Datum" }], showForOptionValues: ["Reiseunfähig"] },
+      ],
+    });
+    expect(validation.ok).toBe(false);
+  });
+
   it("akzeptiert mehrere Fragen in einer gespeicherten Definition und friert sie unabhängig ein", () => {
     const definition: PracticeDocumentationBlockDefinition = {
       schemaVersion: 1,
