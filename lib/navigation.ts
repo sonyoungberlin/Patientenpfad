@@ -105,7 +105,7 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         label: "Digitale Anfragen",
         href: "/digital-requests",
         matches: ["/digital-requests"],
-        roles: PRACTICE_ROLES,
+        roles: INBOX_ROLES,
         feature: "patient_communication_enabled",
       },
       {

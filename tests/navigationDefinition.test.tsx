@@ -113,12 +113,13 @@ describe("zentrale Bereichsdefinition", () => {
     expect(sections[5].title).toBe("Praxisverwaltung");
   });
 
-  it("beschränkt INBOX_ONLY auf den Fragebogen-Posteingang", () => {
+  it("beschränkt INBOX_ONLY auf die erlaubten Posteingänge", () => {
     const sections = getVisibleNavigationSections(account("INBOX_ONLY"));
 
     expect(sections.map((section) => section.title)).toEqual(["Posteingang"]);
     expect(sections[0].items.map((item) => item.label)).toEqual([
       "Fragebogen-Posteingang",
+      "Digitale Anfragen",
     ]);
   });
 

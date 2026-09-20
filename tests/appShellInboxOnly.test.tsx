@@ -52,7 +52,7 @@ describe("AppShell INBOX_ONLY", () => {
     refreshMock.mockClear();
   });
 
-  it("zeigt in Kommunikation nur Fragebogen-Posteingang", () => {
+  it("zeigt in Kommunikation nur die erlaubten Posteingänge", () => {
     mockedPathname = "/inquiries";
     const html = renderToStaticMarkup(
       <AppShell account={inboxOnlyAccount()} />,
@@ -60,6 +60,7 @@ describe("AppShell INBOX_ONLY", () => {
 
     expect(html).toContain('href="/questionnaires">Hauptmenü</a>');
     expect(html).toContain("Fragebogen-Posteingang");
+    expect(html).toContain("Digitale Anfragen");
     expect(html).not.toContain("Neue Nachricht");
     expect(html).not.toContain("Vorlagen");
   });
@@ -79,12 +80,13 @@ describe("AppShell INBOX_ONLY", () => {
     expect(htmlWebsiteForms).not.toContain("Formularverwaltung");
   });
 
-  it("zeigt keine zusätzlichen Posteingänge", () => {
+  it("zeigt Digitale Anfragen mit Unread-Indikator", () => {
     mockedPathname = "/questionnaires";
     const html = renderToStaticMarkup(
       <AppShell account={inboxOnlyAccount()} digitalRequestsHasUnread={true} />,
     );
-    expect(html).not.toContain("Digitale Anfragen");
+    expect(html).toContain("Digitale Anfragen");
+    expect(html).toContain("Neue Anfragen vorhanden");
   });
 });
 

@@ -601,9 +601,9 @@ describe("AppShell — Digitale Anfragen NavItem", () => {
     expect(markup).toContain("Digitale Anfragen");
   });
 
-  it("INBOX_ONLY sieht kein zusätzliches 'Digitale Anfragen' NavItem", () => {
+  it("INBOX_ONLY sieht 'Digitale Anfragen' in der Nav", () => {
     const markup = renderNav("INBOX_ONLY");
-    expect(markup).not.toContain("Digitale Anfragen");
+    expect(markup).toContain("Digitale Anfragen");
   });
 
   it("Unread-Indikator erscheint wenn digitalRequestsHasUnread=true", () => {

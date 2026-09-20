@@ -93,7 +93,7 @@ describe("Dashboard INBOX_ONLY", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).toContain("Fragebögen");
-    expect(html).not.toContain("Digitale Anfragen");
+    expect(html).toContain("Digitale Anfragen");
     expect(html).not.toContain("Patientenkommunikation");
     expect(html).not.toContain("Patientenfälle");
     expect(redirectMock).not.toHaveBeenCalled();
@@ -122,11 +122,11 @@ describe("Dashboard — Kachel 'Digitale Anfragen'", () => {
     expect(html).not.toContain("data-testid=\"digital-requests-tile\"");
   });
 
-  it("INBOX_ONLY sieht keinen zusätzlichen Digital-Eingang", async () => {
+  it("INBOX_ONLY sieht den Digital-Eingang", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).toContain('data-testid="inbox-tile"');
-    expect(html).not.toContain('href="/digital-requests">Digitale Anfragen</a>');
+    expect(html).toContain('href="/digital-requests">Digitale Anfragen</a>');
   });
 });
 
