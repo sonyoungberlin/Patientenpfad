@@ -27,6 +27,7 @@ const redirectMock = jest.fn((url: string) => {
 
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
 }));
 
 jest.mock(
@@ -49,6 +50,9 @@ jest.mock("@/lib/prisma", () => ({
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    digitalRequest: {
+      findMany: jest.fn(),
+    },
   },
 }));
 
@@ -68,6 +72,9 @@ type PrismaMock = {
     delete: jest.Mock;
     update: jest.Mock;
     updateMany: jest.Mock;
+  };
+  digitalRequest: {
+    findMany: jest.Mock;
   };
 };
 const pm = prisma as unknown as PrismaMock;
@@ -133,6 +140,7 @@ beforeEach(() => {
   pm.patientQuestionnaireSession.delete.mockReset();
   pm.patientQuestionnaireSession.update.mockReset();
   pm.patientQuestionnaireSession.updateMany.mockReset().mockResolvedValue({ count: 1 });
+  pm.digitalRequest.findMany.mockReset().mockResolvedValue([]);
 });
 
 // ---------------------------------------------------------------------------
@@ -177,6 +185,96 @@ describe("/questionnaires list — Practice-Scope", () => {
     const args = pm.patientQuestionnaireSession.findMany.mock.calls[0][0];
     expect(args.where.AND[0]).toEqual({ owner_account_id: "acc-ADMIN" });
   });
+
+  it("zeigt bei unzugeordnetem Website-Formular den Formularnamen", async () => {
+    getCookies.mockResolvedValue(ACCOUNT_A1_IN_PRACTICE_A);
+    pm.patientQuestionnaireSession.findMany.mockResolvedValue([{
+      id: "website-unassigned",
+      createdAt: new Date(),
+      patient_reference: null,
+      selected_block_ids: ["KONTAKT", "REZEPT"],
+      status: "completed",
+      token_expires_at: new Date(Date.now() + 60_000),
+      submitted_at: new Date(),
+      submitted_by: "patient",
+      pdf_downloaded_at: null,
+      deleted_at: null,
+      source: "website",
+      session_kind: "patient_communication",
+      internal_workflow_id: null,
+      frozen_blocks: null,
+      kiosk_handoff_status: null,
+      kiosk_follow_up_session: null,
+      public_check_in_handoff: null,
+      practice_form: { title: "Neupatient" },
+    }]);
+
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
+
+    expect(markup).toContain("Neupatient");
+    expect(markup).not.toContain("Rezeptanfrage");
+  });
+
+  it("zeigt nach Website-Patientenzuordnung wieder die Blocknamen", async () => {
+    getCookies.mockResolvedValue(ACCOUNT_A1_IN_PRACTICE_A);
+    pm.patientQuestionnaireSession.findMany.mockResolvedValue([{
+      id: "website-assigned",
+      createdAt: new Date(),
+      patient_reference: "12345",
+      selected_block_ids: ["KONTAKT", "REZEPT"],
+      status: "completed",
+      token_expires_at: new Date(Date.now() + 60_000),
+      submitted_at: new Date(),
+      submitted_by: "patient",
+      pdf_downloaded_at: null,
+      deleted_at: null,
+      source: "website",
+      session_kind: "patient_communication",
+      internal_workflow_id: null,
+      frozen_blocks: null,
+      kiosk_handoff_status: null,
+      kiosk_follow_up_session: null,
+      public_check_in_handoff: null,
+      practice_form: { title: "Neupatient" },
+    }]);
+
+    const markup = renderToStaticMarkup(await QuestionnairesPage({}));
+
+    expect(markup).toContain("Kontaktdaten, Rezept");
+    expect(markup).not.toContain("Neupatient");
+  });
+
+  it.each(["kiosk_direct", "public_check_in", "digital_request_follow_up"])(
+    "zeigt bei %s ohne Patientenreferenz weiterhin die Blocknamen",
+    async (source) => {
+      getCookies.mockResolvedValue(ACCOUNT_A1_IN_PRACTICE_A);
+      pm.patientQuestionnaireSession.findMany.mockResolvedValue([{
+        id: `${source}-unassigned`,
+        createdAt: new Date(),
+        patient_reference: null,
+        selected_block_ids: ["KONTAKT"],
+        status: "completed",
+        token_expires_at: new Date(Date.now() + 60_000),
+        submitted_at: new Date(),
+        submitted_by: "patient",
+        pdf_downloaded_at: null,
+        deleted_at: null,
+        source,
+        session_kind: "patient_communication",
+        internal_workflow_id: null,
+        frozen_blocks: null,
+        kiosk_handoff_status: null,
+        kiosk_follow_up_session: null,
+        public_check_in_handoff: null,
+        practice_form: { title: "Neupatient" },
+      }]);
+
+      const markup = renderToStaticMarkup(await QuestionnairesPage({}));
+
+      expect(markup).toContain("Kontaktdaten");
+      expect(markup).not.toContain("Neupatient");
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

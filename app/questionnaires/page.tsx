@@ -93,6 +93,7 @@ export default async function QuestionnairesPage({
       internal_workflow_id: true,
       frozen_blocks: true,
       kiosk_handoff_status: true,
+      practice_form: { select: { title: true } },
       kiosk_follow_up_session: { select: { status: true } },
       public_check_in_handoff: {
         select: {
@@ -209,6 +210,11 @@ export default async function QuestionnairesPage({
             const blockLabels = blockIds
               .map((id) => frozenBlocks?.find((block) => block.id === id)?.label ?? blockCatalog[id]?.label ?? id)
               .join(", ");
+            const displayedBlockLabels = s.source === "website" &&
+              s.patient_reference == null &&
+              s.practice_form?.title
+              ? s.practice_form.title
+              : blockLabels;
 
             const displayStatus = deriveDisplayStatus(s);
             const statusLabel = STATUS_LABELS[displayStatus] ?? displayStatus;
@@ -219,7 +225,7 @@ export default async function QuestionnairesPage({
                 id={s.id}
                 displayedAt={s.submitted_at ?? s.createdAt}
                 patientReference={s.patient_reference}
-                blockLabels={blockLabels}
+                blockLabels={displayedBlockLabels}
                 displayStatus={displayStatus}
                 statusLabel={statusLabel}
                 submittedBy={s.submitted_by}

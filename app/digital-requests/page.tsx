@@ -4,7 +4,7 @@
  * Zugriff: dedizierter Digital-Request-Work-Guard einschließlich INBOX_ONLY.
  *
  * Zeigt maximal 100 Anfragen (neuste zuerst), jeweils mit:
- * Name, Eingang, Status-Badge, Anliegen-Auszug (max. 80 Zeichen).
+ * Name, Eingang, Status-Badge, Anliegen-Auszug (max. 20 Zeichen).
  *
  * Phase A: Kein „Bearbeiten"-Button, kein Pagination.
  */
@@ -61,6 +61,11 @@ function formatDate(date: Date): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatConcernPreview(value: string): string {
+  const trimmed = value.trim();
+  return trimmed.length > 20 ? `${trimmed.slice(0, 20)}…` : trimmed;
 }
 
 export default async function DigitalRequestsPage() {
@@ -133,8 +138,8 @@ export default async function DigitalRequestsPage() {
                   </td>
                   <td className="py-3 pr-4 text-gray-600">
                     {REQUEST_INTENT_LABEL[req.request_intent ?? ""] ?? "Nicht angegeben"}
-                    {req.request_intent === "existing_appointment" && req.concern_text
-                      ? `: ${req.concern_text}`
+                    {req.request_intent === "existing_appointment" && req.concern_text?.trim()
+                      ? `: ${formatConcernPreview(req.concern_text)}`
                       : null}
                   </td>
                   <td className="py-3 pr-4 text-gray-600">

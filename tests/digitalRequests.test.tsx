@@ -468,7 +468,8 @@ describe("DigitalRequestsPage — Interne Liste", () => {
     expect(markup).toContain("Gabi Testerin");
     expect(markup).toContain("Neu");
     expect(markup).toContain("Neupatient/in");
-    expect(markup).toContain("Termin: Ich hätte gerne einen Termin.");
+    expect(markup).toContain("Termin: Ich hätte gerne eine…");
+    expect(markup).toContain("…");
 
     // Scoping: owner_practice_id aus current_practice
     const whereArg = pm.digitalRequest.findMany.mock.calls[0][0].where as Record<
@@ -478,6 +479,55 @@ describe("DigitalRequestsPage — Interne Liste", () => {
     expect(whereArg.owner_practice_id).toBe("praxis-1");
     // Nur offene Anfragen laden (new + in_review):
     expect(whereArg.status).toEqual({ in: ["new", "in_review"] });
+  });
+
+  it.each([
+    ["kurzer Text", "Kurzer Grund", "Termin: Kurzer Grund"],
+    ["exakt 20 Zeichen", "12345678901234567890", "Termin: 12345678901234567890"],
+    ["langer Text", "12345678901234567890abcdef", "Termin: 12345678901234567890…"],
+  ])("zeigt %s als Inbox-Vorschau", async (_label, concernText, expected) => {
+    const account = makeAccount({
+      current_practice: { id: "praxis-1" },
+      memberships: [{ practice_id: "praxis-1", role: "OWNER" }],
+    });
+    requireDigitalRequestWork.mockResolvedValue(account);
+    pm.digitalRequest.findMany.mockResolvedValue([{
+      id: "dr-preview",
+      createdAt: new Date("2026-05-20T10:00:00Z"),
+      submitter_name: "Preview Patient",
+      status: "new",
+      concern_text: `  ${concernText}  `,
+      patient_relationship: "existing_patient",
+      request_intent: "existing_appointment",
+    }]);
+
+    const { result } = await runPage(() => DigitalRequestsPage());
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+
+    expect(markup).toContain(expected);
+  });
+
+  it("zeigt den vollständigen langen Freitext nicht in der Inbox", async () => {
+    const account = makeAccount({
+      current_practice: { id: "praxis-1" },
+      memberships: [{ practice_id: "praxis-1", role: "OWNER" }],
+    });
+    requireDigitalRequestWork.mockResolvedValue(account);
+    const concernText = "12345678901234567890abcdef";
+    pm.digitalRequest.findMany.mockResolvedValue([{
+      id: "dr-long-preview",
+      createdAt: new Date("2026-05-20T10:00:00Z"),
+      submitter_name: "Preview Patient",
+      status: "new",
+      concern_text: concernText,
+      patient_relationship: "existing_patient",
+      request_intent: "existing_appointment",
+    }]);
+
+    const { result } = await runPage(() => DigitalRequestsPage());
+    const markup = renderToStaticMarkup(result as React.ReactElement);
+
+    expect(markup).not.toContain(concernText);
   });
 
   it("zeigt Legacy-Anfragen mit null Intake-Feldern weiterhin an", async () => {
