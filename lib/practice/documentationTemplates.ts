@@ -135,6 +135,51 @@ export async function createPracticeDocumentationTemplate(
   });
 }
 
+function duplicateTemplateName(name: string, existingNames: ReadonlySet<string>): string {
+  const base = `Kopie von ${name}`;
+  if (!existingNames.has(base)) return base;
+  let suffix = 2;
+  while (existingNames.has(`${base} (${suffix})`)) suffix += 1;
+  return `${base} (${suffix})`;
+}
+
+export async function duplicatePracticeDocumentationTemplate(
+  practiceId: string,
+  id: string,
+) {
+  const source = await prisma.practiceDocumentationTemplate.findFirst({
+    where: { id, practice_id: practiceId },
+  });
+  if (!source) return null;
+
+  const existingTemplates = await prisma.practiceDocumentationTemplate.findMany({
+    where: { practice_id: practiceId },
+    select: { name: true },
+  });
+  const name = duplicateTemplateName(
+    source.name,
+    new Set(existingTemplates.map((template) => template.name)),
+  );
+  const input = validatePracticeDocumentationTemplate({
+    name,
+    outputFormat: source.output_format,
+    documentTitleOption: source.document_title_option,
+    blockLayout: source.block_layout,
+  });
+  if (!input.ok) throw new Error(input.error);
+  await validateTemplateBlocks(practiceId, input.value.blockLayout);
+
+  return prisma.practiceDocumentationTemplate.create({
+    data: {
+      practice_id: practiceId,
+      name: input.value.name,
+      output_format: input.value.outputFormat,
+      document_title_option: input.value.documentTitleOption,
+      block_layout: input.value.blockLayout as unknown as Prisma.InputJsonValue,
+    },
+  });
+}
+
 export async function updatePracticeDocumentationTemplate(
   practiceId: string,
   id: string,

@@ -2,6 +2,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     practiceDocumentationTemplate: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
       updateMany: jest.fn(),
     },
@@ -12,6 +13,7 @@ jest.mock("@/lib/prisma", () => ({
 import { prisma } from "@/lib/prisma";
 import {
   createPracticeDocumentationTemplate,
+  duplicatePracticeDocumentationTemplate,
   PracticeDocumentationTemplateBlockError,
   resolveActivePracticeDocumentationTemplates,
   validatePracticeDocumentationTemplate,
@@ -20,6 +22,7 @@ import {
 const findTemplates = prisma.practiceDocumentationTemplate.findMany as jest.Mock;
 const findBlocks = prisma.practiceDocumentationBlock.findMany as jest.Mock;
 const createTemplate = prisma.practiceDocumentationTemplate.create as jest.Mock;
+const findTemplate = prisma.practiceDocumentationTemplate.findFirst as jest.Mock;
 const input = {
   name: " Kardiologische Stellungnahme ",
   outputFormat: "formell",
@@ -113,6 +116,57 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
 
     await expect(createPracticeDocumentationTemplate("practice-1", validation.value))
       .rejects.toBeInstanceOf(PracticeDocumentationTemplateBlockError);
+    expect(createTemplate).not.toHaveBeenCalled();
+  });
+
+  it("dupliziert nur die Vorlage mit gleicher Konfiguration und gemeinsamen Blockreferenzen", async () => {
+    findTemplate.mockResolvedValue({
+      id: "template-1",
+      name: "Kardiologische Stellungnahme",
+      output_format: "formell",
+      document_title_option: "stellungnahme",
+      block_layout: input.blockLayout,
+    });
+    findTemplates.mockResolvedValue([{ name: "Kardiologische Stellungnahme" }]);
+    createTemplate.mockResolvedValue({ id: "template-2" });
+
+    const duplicate = await duplicatePracticeDocumentationTemplate("practice-1", "template-1");
+
+    expect(duplicate).toEqual({ id: "template-2" });
+    expect(createTemplate).toHaveBeenCalledWith({
+      data: {
+        practice_id: "practice-1",
+        name: "Kopie von Kardiologische Stellungnahme",
+        output_format: "formell",
+        document_title_option: "stellungnahme",
+        block_layout: [
+          { blockId: "practice_block_1", section: 2, order: 0 },
+          { blockId: "practice_block_2", section: 2, order: 1 },
+        ],
+      },
+    });
+    expect(createTemplate.mock.calls[0][0].data).not.toHaveProperty("block_definitions");
+  });
+
+  it("erzeugt bei Namenskollisionen eine verständliche neue Variante", async () => {
+    findTemplate.mockResolvedValue({
+      id: "template-1",
+      name: "Kardiologie",
+      output_format: "informell",
+      document_title_option: "bericht",
+      block_layout: input.blockLayout,
+    });
+    findTemplates.mockResolvedValue([{ name: "Kopie von Kardiologie" }, { name: "Kopie von Kardiologie (2)" }]);
+    createTemplate.mockResolvedValue({ id: "template-3" });
+
+    await duplicatePracticeDocumentationTemplate("practice-1", "template-1");
+
+    expect(createTemplate.mock.calls[0][0].data.name).toBe("Kopie von Kardiologie (3)");
+  });
+
+  it("dupliziert keine Vorlage aus einer anderen Praxis", async () => {
+    findTemplate.mockResolvedValue(null);
+    await expect(duplicatePracticeDocumentationTemplate("practice-1", "foreign-template")).resolves.toBeNull();
     expect(createTemplate).not.toHaveBeenCalled();
   });
 });

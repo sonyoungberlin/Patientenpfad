@@ -10,6 +10,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     practiceDocumentationTemplate: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
       updateMany: jest.fn(),
     },
@@ -24,6 +25,7 @@ import {
   requireUnlockedQuestionnaireKioskDevice,
 } from "@/lib/questionnaireKiosk/auth";
 import { POST } from "@/app/api/practice/documentation-templates/route";
+import { POST as DuplicatePOST } from "@/app/api/practice/documentation-templates/[id]/route";
 import { PATCH } from "@/app/api/practice/documentation-templates/[id]/route";
 import { GET } from "@/app/api/questionnaire-kiosk/internal/templates/route";
 
@@ -32,6 +34,7 @@ const kioskGuard = requireUnlockedQuestionnaireKioskDevice as jest.Mock;
 const hasCapability = hasQuestionnaireKioskCapability as jest.Mock;
 const templateDb = prisma.practiceDocumentationTemplate as unknown as {
   findMany: jest.Mock;
+  findFirst: jest.Mock;
   create: jest.Mock;
   updateMany: jest.Mock;
 };
@@ -61,6 +64,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
     kioskGuard.mockResolvedValue({ device: { deviceId: "device-1", practiceId: "practice-1" }, error: null });
     hasCapability.mockReturnValue(true);
     templateDb.create.mockResolvedValue({ id: "template-1" });
+    templateDb.findFirst.mockResolvedValue({ id: "template-1", name: "Kardiologie", output_format: "formell", document_title_option: "stellungnahme", block_layout: layout });
     templateDb.updateMany.mockResolvedValue({ count: 1 });
     templateDb.findMany.mockResolvedValue([]);
     blockDb.findMany.mockResolvedValue([{ id: "practice_block_1", title: "Anamnese", block_type: "text" }]);
@@ -127,6 +131,27 @@ describe("Dokumentationsvorlagen-Routen", () => {
       where: { id: "template-1", practice_id: "practice-1" },
       data: { is_active: false },
     });
+  });
+
+  it("dupliziert eine Vorlage über die bestehende Praxisroute", async () => {
+    templateDb.findMany.mockResolvedValue([{ name: "Kardiologie" }]);
+    templateDb.create.mockResolvedValue({ id: "template-2" });
+    const response = await DuplicatePOST(
+      request("/api/practice/documentation-templates/template-1", "POST"),
+      { params: Promise.resolve({ id: "template-1" }) },
+    );
+
+    expect(response.status).toBe(201);
+    expect(templateDb.findFirst).toHaveBeenCalledWith({
+      where: { id: "template-1", practice_id: "practice-1" },
+    });
+    expect(templateDb.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        name: "Kopie von Kardiologie",
+        practice_id: "practice-1",
+        block_layout: layout,
+      }),
+    }));
   });
 
   it("liefert im Kiosk Praxisvorlagen und aktive Bibliotheksblöcke der Geräte-Praxis", async () => {

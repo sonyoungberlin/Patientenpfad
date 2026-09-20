@@ -104,6 +104,19 @@ export default function DocumentationTemplatesClient({
     router.refresh();
   }
 
+  async function duplicate(id: string) {
+    setBusy(true);
+    setError(null);
+    const response = await fetch(`/api/practice/documentation-templates/${id}`, { method: "POST" });
+    const result = await response.json() as { ok?: boolean; error?: string };
+    setBusy(false);
+    if (!response.ok || !result.ok) {
+      setError(result.error ?? "Dokumentationsvorlage konnte nicht dupliziert werden.");
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <>
       <section>
@@ -114,6 +127,7 @@ export default function DocumentationTemplatesClient({
               <td>{template.name}</td><td>{template.isActive ? "Aktiv" : "Inaktiv"}</td>
               <td><div style={{ display: "flex", gap: "0.5rem" }}>
                 <button type="button" onClick={() => startEdit(template)} disabled={busy}>Bearbeiten</button>
+                <button type="button" onClick={() => void duplicate(template.id)} disabled={busy}>Duplizieren</button>
                 {template.isActive && <button type="button" onClick={() => void deactivate(template.id)} disabled={busy}>Deaktivieren</button>}
               </div></td>
             </tr>)}

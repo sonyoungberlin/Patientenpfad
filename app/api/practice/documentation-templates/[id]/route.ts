@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PracticeRole } from "@prisma/client";
 import { requirePracticeRole } from "@/lib/authz";
 import {
+  duplicatePracticeDocumentationTemplate,
   updatePracticeDocumentationTemplate,
   PracticeDocumentationTemplateBlockError,
   validatePracticeDocumentationTemplate,
@@ -44,4 +45,21 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: "Dokumentationsvorlage nicht gefunden." }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
+}
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await requirePracticeRole(req, WRITE_ROLES);
+  if (auth.error) return auth.error;
+  const practice = auth.account.current_practice;
+  if (!practice) {
+    return NextResponse.json({ ok: false, error: "Kein Praxiszugriff." }, { status: 403 });
+  }
+  const template = await duplicatePracticeDocumentationTemplate(practice.id, (await params).id);
+  if (!template) {
+    return NextResponse.json({ ok: false, error: "Dokumentationsvorlage nicht gefunden." }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true, template }, { status: 201 });
 }
