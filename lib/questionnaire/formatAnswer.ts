@@ -153,12 +153,25 @@ function selectedOption(
   );
 }
 
+function selectedOptions(
+  question: QuestionDefinition,
+  rawValue: string,
+): QuestionOptionDefinition[] {
+  if (question.type !== "multi_select") {
+    const option = selectedOption(question, rawValue);
+    return option === undefined ? [] : [option];
+  }
+  const selectedValues = parseMultiSelectValue(rawValue, getQuestionOptionValues(question));
+  return selectedValues.flatMap((value) => {
+    const option = selectedOption(question, value);
+    return option === undefined ? [] : [option];
+  });
+}
+
 export function getStructuredDocumentationQuestionIds(
   question: QuestionDefinition,
   rawValue: string,
 ): Set<string> {
-  const option = selectedOption(question, rawValue);
-  if (typeof option === "string" || !option?.documentationSegments) return new Set();
   const questionIds = new Set<string>();
   const collect = (segments: DocumentationSegment[]) => {
     for (const segment of segments) {
@@ -169,7 +182,9 @@ export function getStructuredDocumentationQuestionIds(
       }
     }
   };
-  collect(option.documentationSegments);
+  for (const option of selectedOptions(question, rawValue)) {
+    if (typeof option !== "string" && option.documentationSegments) collect(option.documentationSegments);
+  }
   return questionIds;
 }
 
@@ -179,9 +194,6 @@ export function resolveStructuredQuestionDocumentation(
   answers: Record<string, string>,
   questionsById: ReadonlyMap<string, QuestionDefinition>,
 ): string | null {
-  const option = selectedOption(question, rawValue);
-  if (typeof option === "string" || !option?.documentationSegments) return null;
-
   const resolveSegments = (segments: DocumentationSegment[]): string => segments.map((segment) => {
     if (segment.kind === "text") return segment.text;
     if (segment.kind === "conditional") {
@@ -194,7 +206,14 @@ export function resolveStructuredQuestionDocumentation(
       ? formatDocumentationSegmentAnswer(referencedQuestion, (answers[segment.questionId] ?? "").trim())
       : "";
   }).join("");
-  return resolveSegments(option.documentationSegments);
+  const resolvedOptions = selectedOptions(question, rawValue)
+    .flatMap((option) => {
+      if (typeof option === "string") return [];
+      if (option.documentationSegments) return [resolveSegments(option.documentationSegments)];
+      return option.documentationText ? [option.documentationText] : [];
+    })
+    .filter((text) => text !== "");
+  return resolvedOptions.length > 0 ? resolvedOptions.join(" ") : null;
 }
 
 // ---------------------------------------------------------------------------

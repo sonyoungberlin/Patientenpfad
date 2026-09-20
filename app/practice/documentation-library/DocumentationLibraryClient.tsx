@@ -33,7 +33,7 @@ const TYPE_LABELS: Record<PracticeDocumentationBlockType, string> = {
   text: "Text",
   selection: "Auswahl",
   measurement: "Messwert",
-  list: "Aufzählung",
+  list: "Mehrfachauswahl",
   hint: "Hinweis",
 };
 

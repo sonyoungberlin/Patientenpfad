@@ -5,6 +5,8 @@ import {
   resolvePracticeDocumentationBlocks,
   validatePracticeDocumentationBlock,
 } from "@/lib/practice/documentationBlocks";
+import { evaluateCondition } from "@/lib/questionnaire/conditionalLogic";
+import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 
 describe("Dokumentationsbausteine der Praxisbibliothek", () => {
   it.each([
@@ -151,6 +153,50 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
       expect.objectContaining({ kind: "conditional", questionId: definition.questions[2].id, optionValue: "date" }),
       expect.objectContaining({ kind: "conditional", questionId: definition.questions[2].id, optionValue: "open" }),
     ]));
+  });
+
+  it("verwendet contains für Multi-Choice-Quellen und equals für normale Auswahl", () => {
+    const multiValidation = validatePracticeDocumentationBlock({
+      title: "Mitgegeben",
+      blockType: "list",
+      options: [
+        { value: "plan", label: "Medikamentenplan", documentationText: "Medikamentenplan wurde mitgegeben." },
+        { value: "referral", label: "Überweisung", documentationText: "Überweisung wurde mitgegeben." },
+      ],
+      additionalFields: [{ id: "note", label: "Hinweis", type: "text", showForOptionValues: ["plan"] }],
+    });
+    expect(multiValidation.ok).toBe(true);
+    if (!multiValidation.ok) return;
+    const multiDefinition = buildPracticeDocumentationBlockDefinition(multiValidation.value);
+    const multiRule = multiDefinition.block.conditionalRules?.[0];
+    const planValue = (multiDefinition.questions[0].options?.[0] as { value: string }).value;
+    const referralValue = (multiDefinition.questions[0].options?.[1] as { value: string }).value;
+    expect(multiRule).toMatchObject({ condition: { operator: "contains", value: planValue } });
+    expect(evaluateCondition(multiRule!.condition, { [multiDefinition.questions[0].id]: planValue }, undefined, buildOptionsByQuestionId(multiDefinition.questions))).toBe(true);
+    expect(evaluateCondition(multiRule!.condition, { [multiDefinition.questions[0].id]: `${planValue}, ${referralValue}` }, undefined, buildOptionsByQuestionId(multiDefinition.questions))).toBe(true);
+    expect(evaluateCondition(multiRule!.condition, { [multiDefinition.questions[0].id]: referralValue }, undefined, buildOptionsByQuestionId(multiDefinition.questions))).toBe(false);
+    const frozen = resolvePracticeDocumentationBlocks([{ definition: multiDefinition }]);
+    expect(frozen[0]).toEqual(expect.objectContaining({
+      conditionalRules: [expect.objectContaining({ condition: expect.objectContaining({ operator: "contains", value: planValue }) })],
+    }));
+    expect(frozen[0]?.questions[0]?.options?.[0]).toMatchObject({ documentationText: "Medikamentenplan wurde mitgegeben." });
+
+    const selectValidation = validatePracticeDocumentationBlock({
+      title: "Status",
+      blockType: "selection",
+      options: [
+        { value: "yes", label: "Ja", documentationText: "Ja." },
+        { value: "no", label: "Nein", documentationText: "Nein." },
+      ],
+      additionalFields: [{ id: "note", label: "Hinweis", type: "text", showForOptionValues: ["yes"] }],
+    });
+    expect(selectValidation.ok).toBe(true);
+    if (!selectValidation.ok) return;
+    const selectDefinition = buildPracticeDocumentationBlockDefinition(selectValidation.value);
+    const yesValue = (selectDefinition.questions[0].options?.[0] as { value: string }).value;
+    expect(selectDefinition.block.conditionalRules?.[0]).toMatchObject({
+      condition: { operator: "equals", value: yesValue },
+    });
   });
 
   it.each([

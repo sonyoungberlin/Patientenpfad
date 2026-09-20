@@ -6,7 +6,7 @@ import type {
   QuestionOption,
   QuestionnaireBlock,
 } from "@/lib/questionnaire/blockCatalog";
-import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
+import type { ConditionalRule, ConditionOperator } from "@/lib/questionnaire/conditionalLogic";
 import { buildFrozenBlocks, type FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { getQuestionOptionValue } from "@/lib/questionnaire/questionOptions";
 
@@ -356,12 +356,17 @@ export function buildPracticeDocumentationBlockDefinition(
       const sourceOptions = sourceField?.options ?? input.options;
       const sourceOptionIndex = sourceOptions?.findIndex((option) => (option.value ?? option.label) === inputOptionValue) ?? -1;
       const optionValue = sourceField?.options?.[sourceOptionIndex]?.value ?? getQuestionOptionValue(primaryQuestion.options?.[sourceOptionIndex] ?? inputOptionValue);
+      const operator: ConditionOperator = sourceField?.type === "select"
+        ? "equals"
+        : primaryQuestion.type === "multi_select"
+          ? "contains"
+          : "equals";
       return {
       action: "showQuestion" as const,
       targetId: questionId,
       condition: {
         target: { kind: "question" as const, questionId: sourceQuestionId(field) },
-        operator: "equals" as const,
+          operator,
         value: optionValue,
       },
       };

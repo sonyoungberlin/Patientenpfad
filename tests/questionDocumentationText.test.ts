@@ -7,6 +7,25 @@ import {
 } from "@/lib/questionnaire/formatAnswer";
 import { buildInternalDocumentationFrozenBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
+import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
+import { buildSemanticMedicalRecordDocument } from "@/lib/questionnaire/buildMedicalRecordNote";
+import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
+import { PDFDocument } from "pdf-lib";
+import { inflateSync } from "node:zlib";
+
+async function extractPdfText(bytes: Uint8Array): Promise<string> {
+  await PDFDocument.load(bytes);
+  const raw = Buffer.from(bytes).toString("latin1");
+  return [...raw.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)].map((match) => {
+    try {
+      return inflateSync(Buffer.from(match[1]!, "latin1")).toString("latin1");
+    } catch {
+      return match[1]!;
+    }
+  }).join(" ").replace(/<([0-9A-F]+)>\s+Tj/g, (_, hex: string) =>
+    Buffer.from(hex, "hex").toString("latin1"),
+  );
+}
 
 function frozenBlock(question: QuestionDefinition): FrozenBlock {
   return {
@@ -120,6 +139,60 @@ describe("documentationText für Antwortoptionen", () => {
     expect(note).toContain("Vom 21.09.2026 bis auf Weiteres reiseunfähig.");
     expect(note).not.toContain("Ende:");
     expect(note).not.toContain("Bis:");
+  });
+
+  it("gibt mehrere Multi-Choice-Optionen mit statischer und strukturierter Dokumentation aus", async () => {
+    const detail: QuestionDefinition = { id: "DETAIL", text: "Detail", type: "text", required: false };
+    const multi: QuestionDefinition = {
+      id: "SUPPLIES",
+      text: "Mitgegeben",
+      type: "multi_select",
+      required: true,
+      options: [
+        { value: "plan", label: "Medikamentenplan", documentationText: "Der Medikamentenplan wurde mitgegeben." },
+        { value: "referral", label: "Überweisung", documentationSegments: [
+          { kind: "text", text: "Die Überweisung wurde mitgegeben (" },
+          { kind: "answerRef", questionId: "DETAIL" },
+          { kind: "text", text: ")." },
+        ] },
+        { value: "copy", label: "Befundkopie", documentationText: "Die Befundkopie wurde mitgegeben." },
+      ],
+    };
+    const answers = { SUPPLIES: "plan, referral", DETAIL: "Facharzt" };
+    const frozen = [{ ...frozenBlock(multi), questions: [multi, detail] }];
+    expect(resolveQuestionDocumentation(multi, "plan").documentationTexts)
+      .toEqual(["Der Medikamentenplan wurde mitgegeben."]);
+    const note = buildMedicalRecordNote({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    const semantic = buildSemanticMedicalRecordDocument({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    const xml = buildStructuredAppXml(semantic);
+    const pdf = await buildQuestionnairePdfBytes({
+      patient_reference: null,
+      submitted_at: null,
+      submitted_by: "patient",
+      selected_block_ids: ["TEST_BLOCK"],
+      deduplicated_questions: [multi, detail],
+      answers,
+      source: "test",
+      practice_form: null,
+      frozen_blocks: frozen,
+    }, {
+      title: "Test",
+      referenceLabel: "Referenz",
+      blockCatalog: {
+        TEST_BLOCK: { id: "TEST_BLOCK", label: "Testblock", displayOrder: 1, questionIds: ["SUPPLIES", "DETAIL"] },
+      },
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+
+    expect(note).toContain("Der Medikamentenplan wurde mitgegeben.");
+    expect(note).toContain("Die Überweisung wurde mitgegeben (Facharzt).");
+    expect(note).not.toContain("Detail:");
+    expect(semantic.sections.flatMap((section) => section.items).map((item) => item.text)).toEqual(expect.arrayContaining([
+      "Der Medikamentenplan wurde mitgegeben. Die Überweisung wurde mitgegeben (Facharzt).",
+    ]));
+    expect(xml).toContain("Die Überweisung wurde mitgegeben (Facharzt).");
+    expect(pdfText).toContain("Der Medikamentenplan wurde mitgegeben.");
+    expect(pdfText).toContain("Die Überweisung wurde mitgegeben (Facharzt).");
   });
 
   it("löst select-Dokumentation zentral auf und behält den Fallback bei", () => {
