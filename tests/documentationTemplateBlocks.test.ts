@@ -57,6 +57,58 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
       .toEqual(options?.map((option) => typeof option === "string" ? option : option.value));
   });
 
+  it("akzeptiert genau eine Auswahloption mit statischem Ausgabetext", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Einzelauswahl",
+      blockType: "selection",
+      options: [{ label: "Reiseunfähig", documentationText: "Reiseunfähig" }],
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    expect(validation.value.options).toHaveLength(1);
+  });
+
+  it("akzeptiert genau eine Auswahloption mit strukturierter Komposition ohne documentationText", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Leistungseinschränkung",
+      blockType: "selection",
+      options: [{
+        label: "Reiseunfähig",
+        documentationText: "",
+        documentationSegments: [
+          { kind: "text", text: "Vom " },
+          { kind: "answerRef", fieldId: "from" },
+          { kind: "text", text: " bis " },
+          { kind: "answerRef", fieldId: "to" },
+          { kind: "text", text: " reiseunfähig." },
+        ],
+      }],
+      additionalFields: [
+        { id: "from", label: "Von", type: "date", showForOptionValues: ["Reiseunfähig"] },
+        { id: "to", label: "Bis", type: "date", showForOptionValues: ["Reiseunfähig"] },
+      ],
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    expect(validation.value.options?.[0].documentationText).toBe("");
+    expect(validation.value.options?.[0].documentationSegments).toHaveLength(5);
+  });
+
+  it("lehnt eine Option ohne statischen oder strukturierten Ausgabetext ab", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Unvollständige Auswahl",
+      blockType: "selection",
+      options: [{ label: "Reiseunfähig", documentationText: "" }],
+    });
+
+    expect(validation).toEqual({
+      ok: false,
+      error: "Ausgabetext oder eine strukturierte Ausgabekomposition ist erforderlich.",
+    });
+  });
+
   it("akzeptiert mehrere Fragen in einer gespeicherten Definition und friert sie unabhängig ein", () => {
     const definition: PracticeDocumentationBlockDefinition = {
       schemaVersion: 1,

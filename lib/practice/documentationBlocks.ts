@@ -100,8 +100,8 @@ function normalizeText(value: unknown, label: string, maxLength: number): string
 }
 
 function normalizeOptions(raw: unknown): PracticeDocumentationOptionInput[] {
-  if (!Array.isArray(raw) || raw.length < 2 || raw.length > 50) {
-    throw new Error("Auswahl und Aufzählung benötigen mindestens zwei Optionen.");
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 50) {
+    throw new Error("Auswahl und Aufzählung benötigen mindestens eine Option.");
   }
   const values = new Set<string>();
   return raw.map((item) => {
@@ -114,14 +114,16 @@ function normalizeOptions(raw: unknown): PracticeDocumentationOptionInput[] {
     }
     if (value) values.add(value);
     const documentationSegments = normalizeSegments(item.documentationSegments);
+    const documentationText = typeof item.documentationText === "string" && item.documentationText.trim()
+      ? normalizeText(item.documentationText, "Ausgabetext", PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH)
+      : undefined;
+    if (!documentationText && !documentationSegments) {
+      throw new Error("Ausgabetext oder eine strukturierte Ausgabekomposition ist erforderlich.");
+    }
     return {
       ...(value ? { value } : {}),
       label: normalizeText(item.label, "Optionsbezeichnung", 240),
-      documentationText: normalizeText(
-        item.documentationText,
-        "Ausgabetext",
-        PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH,
-      ),
+      documentationText: documentationText ?? "",
       ...(documentationSegments ? { documentationSegments } : {}),
     };
   });

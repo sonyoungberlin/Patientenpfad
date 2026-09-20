@@ -209,7 +209,7 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
             <legend>Optionen</legend>
             {draft.options.map((option, index) => <div key={option.value ?? `new-${index}`} style={{ display: "grid", gap: "0.4rem", borderBottom: "1px solid #ddd", paddingBottom: "0.75rem" }}>
               <label>Option {index + 1}<input value={option.label} onChange={(event) => updateOption(index, { label: event.target.value })} required disabled={busy} /></label>
-              <label>Ausgabetext<textarea value={option.documentationText} onChange={(event) => updateOption(index, { documentationText: event.target.value })} rows={3} required disabled={busy} /></label>
+              <label>Ausgabetext<textarea value={option.documentationText} onChange={(event) => updateOption(index, { documentationText: event.target.value })} rows={3} required={(option.documentationSegments?.length ?? 0) === 0} disabled={busy} /></label>
               <fieldset>
                 <legend>Zusammengesetzter Ausgabetext (optional)</legend>
                 {(option.documentationSegments ?? []).map((segment, segmentIndex) => <div key={`${index}-${segmentIndex}`} style={{ display: "flex", gap: "0.4rem", marginBottom: "0.4rem" }}>
@@ -222,7 +222,7 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
                 </div>)}
                 <button type="button" onClick={() => updateOption(index, { documentationSegments: [...(option.documentationSegments ?? []), { kind: "text", text: "" }] })} disabled={busy}>Segment hinzufügen</button>
               </fieldset>
-              {draft.options.length > 2 && <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.filter((_, optionIndex) => optionIndex !== index) }))} disabled={busy}>Option entfernen</button>}
+              {draft.options.length > 1 && <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.filter((_, optionIndex) => optionIndex !== index) }))} disabled={busy}>Option entfernen</button>}
             </div>)}
             <button type="button" onClick={() => setDraft((current) => ({ ...current, options: [...current.options, { label: "", documentationText: "" }] }))} disabled={busy}>Option hinzufügen</button>
           </fieldset>
