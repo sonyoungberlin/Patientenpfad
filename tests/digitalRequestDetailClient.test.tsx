@@ -190,7 +190,7 @@ describe("DigitalRequestDetailClient — Button-Sichtbarkeit", () => {
     await cleanup(root, container);
   });
 
-  it("zeigt nur übergebene Confirmation-Texte als Checkboxen ohne Texteditor", async () => {
+  it("zeigt nur übergebene Confirmation-Texte als Checkboxen", async () => {
     const { container, root } = await renderComponent(defaultProps({
       practiceConfirmationSlots: [
         { id: "PRACTICE_CONFIRMATION_1", text: "Erklärung 1" },
@@ -199,7 +199,7 @@ describe("DigitalRequestDetailClient — Button-Sichtbarkeit", () => {
     }));
     expect(container.querySelectorAll("[data-confirmation-choice]")).toHaveLength(2);
     expect(container.textContent).toContain("Erklärung 1");
-    expect(container.querySelector("textarea")).toBeNull();
+    expect(container.querySelector('[data-testid="completion-message-input"]')).not.toBeNull();
     await cleanup(root, container);
   });
 });
@@ -504,6 +504,78 @@ describe("DigitalRequestDetailClient — Löschen-Button", () => {
     // router.push wurde NICHT aufgerufen
     expect(mockRouterPush).not.toHaveBeenCalled();
 
+    await cleanup(root, container);
+  });
+});
+
+describe("DigitalRequestDetailClient — Abschlussantwort", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("zeigt drei Schnelltexte und übernimmt sie editierbar ins Textfeld", async () => {
+    const { container, root } = await renderComponent(defaultProps());
+    const quickTexts = container.querySelectorAll('[data-testid="completion-quick-text"]');
+    expect(quickTexts).toHaveLength(3);
+
+    await act(async () => {
+      (quickTexts[0] as HTMLButtonElement).click();
+    });
+    const input = container.querySelector<HTMLTextAreaElement>(
+      '[data-testid="completion-message-input"]',
+    )!;
+    expect(input.value).toContain("Wir haben Ihre Information erhalten");
+    expect(input.disabled).toBe(false);
+
+    await act(async () => {
+      input.value = "Eigene Antwort";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(input.disabled).toBe(false);
+    await cleanup(root, container);
+  });
+
+  it("sendet die Abschlussantwort und sperrt danach die Aktionen", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, status: "closed" }),
+    });
+    const { container, root } = await renderComponent(defaultProps());
+    await act(async () => {
+      (container.querySelectorAll('[data-testid="completion-quick-text"]')[0] as HTMLButtonElement).click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-testid="complete-btn"]')!.click();
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/api/digital-requests/dr-1/complete");
+    expect(JSON.parse(String(options.body))).toEqual({
+      completion_message: "Vielen Dank. Wir haben Ihre Information erhalten.",
+    });
+    expect(container.querySelector('[data-testid="completion-success-notice"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="complete-btn"]')).toBeNull();
+    await cleanup(root, container);
+  });
+
+  it("deaktiviert den Abschlussbutton während des laufenden Requests", async () => {
+    let resolveResponse!: (response: Response) => void;
+    mockFetch.mockReturnValueOnce(new Promise<Response>((resolve) => {
+      resolveResponse = resolve;
+    }));
+    const { container, root } = await renderComponent(defaultProps());
+    const button = container.querySelector<HTMLButtonElement>('[data-testid="complete-btn"]')!;
+
+    await act(async () => {
+      (container.querySelectorAll('[data-testid="completion-quick-text"]')[0] as HTMLButtonElement).click();
+    });
+    await act(async () => { button.click(); });
+    expect(button.disabled).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    resolveResponse({ ok: true } as Response);
+    await act(async () => {});
     await cleanup(root, container);
   });
 });

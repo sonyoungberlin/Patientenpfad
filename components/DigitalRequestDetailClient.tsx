@@ -38,8 +38,10 @@ type Props = {
   blocks: BlockChoice[];
   /** Wenn true, ist das Formular schreibgeschützt (status = sent/closed). */
   isSent?: boolean;
+  isClosed?: boolean;
   /** Wenn true, wurde die Anfrage abgelehnt (status = rejected). */
   isRejected?: boolean;
+  initialCompletionMessage?: string | null;
   /** Wenn true, darf die Anfrage nicht gelöscht werden (status = sent/closed). */
   canDelete?: boolean;
   practiceConfirmationSlots?: PracticeConfirmationSlot[];
@@ -53,7 +55,9 @@ export function DigitalRequestDetailClient({
   initialSelectedBlockIds,
   blocks,
   isSent = false,
+  isClosed = false,
   isRejected: isRejectedProp = false,
+  initialCompletionMessage = null,
   canDelete = false,
   practiceConfirmationSlots = [],
 }: Props) {
@@ -86,13 +90,25 @@ export function DigitalRequestDetailClient({
   const [rejectError, setRejectError] = useState<string | null>(null);
   const [rejected, setRejected] = useState(false);
 
+  const [completionMessage, setCompletionMessage] = useState(
+    initialCompletionMessage ?? "",
+  );
+  const [completing, setCompleting] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(isClosed);
+
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Effektiver Readonly-Zustand
   const isRejected = isRejectedProp || rejected;
   // Effektiver Readonly-Zustand: server-seitig versendet ODER lokal gerade versendet ODER abgelehnt.
-  const isReadOnly = isSent || sent || isRejected;
+  const isReadOnly = isSent || isClosed || sent || isRejected || completed;
+  const quickCompletionMessages = [
+    "Vielen Dank. Wir haben Ihre Information erhalten.",
+    "Alles klar, danke. Wir besprechen das bei Ihrem Termin.",
+    "Vielen Dank für Ihre Nachricht. Der Vorgang ist damit abgeschlossen.",
+  ];
 
   function toggleBlock(id: string) {
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -241,6 +257,29 @@ export function DigitalRequestDetailClient({
     }
   }
 
+  async function handleComplete() {
+    setCompleting(true);
+    setCompletionError(null);
+
+    try {
+      const res = await fetch(`/api/digital-requests/${requestId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completion_message: completionMessage.trim() }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (data.ok) {
+        setCompleted(true);
+      } else {
+        setCompletionError(data.error ?? "Fehler beim Abschließen.");
+      }
+    } catch {
+      setCompletionError("Netzwerkfehler.");
+    } finally {
+      setCompleting(false);
+    }
+  }
+
   async function handleDelete() {
     if (!window.confirm("Anfrage wirklich löschen?")) return;
     setDeleting(true);
@@ -294,6 +333,15 @@ export function DigitalRequestDetailClient({
           data-testid="send-success-notice"
         >
           <p className="font-medium">Fragebogen wurde versendet.</p>
+        </div>
+      )}
+
+      {completed && !isSent && (
+        <div
+          className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+          data-testid="completion-success-notice"
+        >
+          <p className="font-medium">Antwort wurde versendet und Vorgang abgeschlossen.</p>
         </div>
       )}
 
@@ -454,6 +502,58 @@ export function DigitalRequestDetailClient({
       {/* Feedback + Buttons — nur wenn nicht schreibgeschützt */}
       {!isReadOnly && (
         <div className="space-y-3">
+          {/* Einmalige abschließende Praxisantwort */}
+          <div className="space-y-3 rounded-lg border border-green-200 bg-green-50 p-4">
+            <div>
+              <label
+                htmlFor="completion_message"
+                className="mb-1 block text-sm font-medium text-gray-800"
+              >
+                Antwort senden & abschließen
+              </label>
+              <textarea
+                id="completion_message"
+                value={completionMessage}
+                onChange={(event) => setCompletionMessage(event.target.value)}
+                disabled={completing || completed}
+                maxLength={1000}
+                rows={3}
+                className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
+                data-testid="completion-message-input"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {quickCompletionMessages.map((message) => (
+                <button
+                  key={message}
+                  type="button"
+                  onClick={() => setCompletionMessage(message)}
+                  disabled={completing || completed}
+                  className="rounded border border-green-300 bg-white px-3 py-2 text-left text-xs text-green-800 hover:bg-green-100 disabled:opacity-50"
+                  data-testid="completion-quick-text"
+                >
+                  {message}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleComplete}
+                disabled={!completionMessage.trim() || completing || completed || rejecting || sending || saving}
+                className="rounded bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+                data-testid="complete-btn"
+              >
+                {completing ? "Wird versendet…" : "Antwort senden & abschließen"}
+              </button>
+              {completionError && (
+                <span className="text-sm text-red-600" role="alert" data-testid="completion-error">
+                  {completionError}
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Speichern */}
           <div className="flex items-center gap-4">
             <button
@@ -521,7 +621,7 @@ export function DigitalRequestDetailClient({
       )}
 
       {/* Löschen-Button – nur wenn nicht sent/closed */}
-      {!isSent && (
+      {!isSent && !isClosed && (
         <div className="space-y-2">
           <div className="flex items-center gap-4">
             <button

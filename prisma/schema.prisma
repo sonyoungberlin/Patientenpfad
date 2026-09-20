@@ -1089,6 +1089,10 @@ model DigitalRequest {
   /// NULL = noch nicht versendet.
   sent_at DateTime?
 
+  completion_message String?
+  completed_at       DateTime?
+  completion_claimed_at DateTime?
+
   /// Soft-Delete-Marker. NULL = aktiv, gesetzter Zeitstempel = archiviert.
   deleted_at DateTime?
 

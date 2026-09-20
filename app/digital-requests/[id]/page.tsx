@@ -105,6 +105,8 @@ export default async function DigitalRequestDetailPage({
       selected_block_ids: true,
       questionnaire_session_id: true,
       sent_at: true,
+      completion_message: true,
+      completed_at: true,
       owner_practice: {
         select: {
           questionnaire_confirmation_text_1: true,
@@ -119,7 +121,8 @@ export default async function DigitalRequestDetailPage({
     notFound();
   }
 
-  const isSent = request.status === "sent" || request.status === "closed";
+  const isSent = request.status === "sent";
+  const isClosed = request.status === "closed";
   const isRejected = request.status === "rejected";
 
   // selected_block_ids ist Json? – wir caste auf string[] (leer falls null)
@@ -145,10 +148,10 @@ export default async function DigitalRequestDetailPage({
       </div>
 
       <h1 className="mb-6 text-2xl font-semibold">
-        {isSent ? "Anfrage (versendet)" : isRejected ? "Anfrage (abgelehnt)" : "Anfrage bearbeiten"}
+        {isClosed ? "Anfrage (abgeschlossen)" : isSent ? "Anfrage (versendet)" : isRejected ? "Anfrage (abgelehnt)" : "Anfrage bearbeiten"}
       </h1>
 
-      {/* Versand-Hinweis (sent / closed) */}
+      {/* Versand-Hinweis (sent) */}
       {isSent && (
         <div
           className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
@@ -184,6 +187,21 @@ export default async function DigitalRequestDetailPage({
           <p className="mt-1 text-red-700">
             Der Patient wurde per E-Mail über die Ablehnung informiert.
           </p>
+        </div>
+      )}
+
+      {request.status === "closed" && request.completion_message && (
+        <div
+          className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+          data-testid="completion-notice"
+        >
+          <p className="font-medium">Antwort der Praxis</p>
+          <p className="mt-2 whitespace-pre-wrap">{request.completion_message}</p>
+          {request.completed_at && (
+            <p className="mt-2 text-green-700">
+              Abgeschlossen am {formatDate(request.completed_at)}
+            </p>
+          )}
         </div>
       )}
 
@@ -268,8 +286,10 @@ export default async function DigitalRequestDetailPage({
         initialSelectedBlockIds={savedBlockIds}
         blocks={blocks}
         isSent={isSent}
+        isClosed={isClosed}
         isRejected={isRejected}
-        canDelete={!isSent}
+        initialCompletionMessage={isClosed ? request.completion_message ?? null : null}
+        canDelete={!isSent && !isClosed}
         practiceConfirmationSlots={buildPracticeConfirmationSlots(
           request.owner_practice ?? {},
         )}
