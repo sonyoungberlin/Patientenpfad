@@ -10,6 +10,7 @@ jest.mock("@/lib/prisma", () => ({
     inquirySession: {
       findUnique: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
   },
 }));
@@ -18,7 +19,11 @@ import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
   session: { findUnique: jest.Mock };
-  inquirySession: { findUnique: jest.Mock; delete: jest.Mock };
+  inquirySession: {
+    findUnique: jest.Mock;
+    delete: jest.Mock;
+    deleteMany: jest.Mock;
+  };
 };
 
 const pm = prisma as unknown as PrismaMock;
@@ -73,6 +78,7 @@ function mockSessionAccount(
 
 beforeEach(() => {
   jest.clearAllMocks();
+  pm.inquirySession.deleteMany.mockResolvedValue({ count: 1 });
 });
 
 describe("DELETE /api/inquiries/[id]", () => {
@@ -175,7 +181,7 @@ describe("DELETE /api/inquiries/[id]", () => {
   });
 
   it("200 und löscht ein Template mit passendem Account- und Praxis-Scope", async () => {
-    mockSessionAccount(true, true, "acc-owner");
+    mockSessionAccount(true, true, "acc-owner", "OWNER");
     pm.inquirySession.findUnique.mockResolvedValue({
       id: "tpl-1",
       owner_account_id: "acc-owner",
@@ -188,31 +194,42 @@ describe("DELETE /api/inquiries/[id]", () => {
     const res = await deleteHandler(req, { params: Promise.resolve({ id: "tpl-1" }) });
 
     expect(res.status).toBe(200);
-    expect(pm.inquirySession.delete).toHaveBeenCalledWith({
-      where: { id: "tpl-1" },
+    expect(pm.inquirySession.deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: "tpl-1",
+        owner_practice_id: "p-1",
+        is_template: true,
+      },
     });
   });
 
-  it("404 und löscht kein Template eines anderen Accounts", async () => {
-    mockSessionAccount(true, true, "acc-owner");
+  it("200 und löscht als OWNER ein Praxis-Template eines anderen Accounts", async () => {
+    mockSessionAccount(true, true, "acc-owner", "OWNER");
     pm.inquirySession.findUnique.mockResolvedValue({
       id: "tpl-other-account",
       owner_account_id: "acc-other",
       owner_practice_id: "p-1",
       is_template: true,
     });
+    pm.inquirySession.delete.mockResolvedValue({});
 
     const req = requestWithCookie("http://localhost/api/inquiries/tpl-other-account");
     const res = await deleteHandler(req, {
       params: Promise.resolve({ id: "tpl-other-account" }),
     });
 
-    expect(res.status).toBe(404);
-    expect(pm.inquirySession.delete).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(pm.inquirySession.deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: "tpl-other-account",
+        owner_practice_id: "p-1",
+        is_template: true,
+      },
+    });
   });
 
   it("404 und löscht kein Template aus einer anderen Praxis", async () => {
-    mockSessionAccount(true, true, "acc-owner");
+    mockSessionAccount(true, true, "acc-owner", "OWNER");
     pm.inquirySession.findUnique.mockResolvedValue({
       id: "tpl-other-practice",
       owner_account_id: "acc-owner",
@@ -227,6 +244,47 @@ describe("DELETE /api/inquiries/[id]", () => {
 
     expect(res.status).toBe(404);
     expect(pm.inquirySession.delete).not.toHaveBeenCalled();
+  });
+
+  it.each(["ADMIN", "USER"] as const)(
+    "403 und löscht als %s kein Template der eigenen Praxis",
+    async (role) => {
+      mockSessionAccount(true, true, `acc-${role.toLowerCase()}`, role);
+      pm.inquirySession.findUnique.mockResolvedValue({
+        id: `tpl-${role.toLowerCase()}`,
+        owner_account_id: "acc-owner",
+        owner_practice_id: "p-1",
+        is_template: true,
+      });
+
+      const req = requestWithCookie(
+        `http://localhost/api/inquiries/tpl-${role.toLowerCase()}`,
+      );
+      const res = await deleteHandler(req, {
+        params: Promise.resolve({ id: `tpl-${role.toLowerCase()}` }),
+      });
+
+      expect(res.status).toBe(403);
+      expect(pm.inquirySession.delete).not.toHaveBeenCalled();
+    },
+  );
+
+  it("404 wenn das Template beim atomaren Practice-Delete nicht mehr passt", async () => {
+    mockSessionAccount(true, true, "acc-owner", "OWNER");
+    pm.inquirySession.findUnique.mockResolvedValue({
+      id: "tpl-raced",
+      owner_account_id: "acc-other",
+      owner_practice_id: "p-1",
+      is_template: true,
+    });
+    pm.inquirySession.deleteMany.mockResolvedValue({ count: 0 });
+
+    const req = requestWithCookie("http://localhost/api/inquiries/tpl-raced");
+    const res = await deleteHandler(req, {
+      params: Promise.resolve({ id: "tpl-raced" }),
+    });
+
+    expect(res.status).toBe(404);
   });
 
   it("gelöschte Session erscheint nicht mehr in GET", async () => {

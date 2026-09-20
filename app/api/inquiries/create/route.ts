@@ -4,6 +4,7 @@ import {
   createInquirySession,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
+import { canManageInquiryTemplates } from "@/lib/inquiries/practiceScope";
 
 /**
  * POST /api/inquiries/create
@@ -37,6 +38,13 @@ export async function POST(req: NextRequest) {
     const asTemplate = body?.asTemplate === true;
     const templateNameRaw =
       typeof body?.templateName === "string" ? body.templateName : undefined;
+
+    if (asTemplate && !canManageInquiryTemplates(account)) {
+      return NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      );
+    }
 
     const session = await createInquirySession({
       selectedInquiryIds: inquiryIds,

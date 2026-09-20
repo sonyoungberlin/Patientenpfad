@@ -113,6 +113,7 @@ type Props = {
   /** Praxisspezifische Inquiry-Config – steuert den Checkpoint-Katalog für die Vorschau. */
   practiceConfig?: PracticeInquiryConfig;
   practiceConfirmationSlots?: PracticeConfirmationSlot[];
+  canManageTemplates?: boolean;
 };
 
 const DECISION_OPTIONS = [
@@ -1290,6 +1291,7 @@ export default function InquiryM3Client({
   messageSignature = "",
   practiceConfig,
   practiceConfirmationSlots = [],
+  canManageTemplates = false,
 }: Props) {
   const actionIdSet = new Set(actionIds);
 
@@ -2407,17 +2409,19 @@ export default function InquiryM3Client({
             >
               {submitting ? "Wird bestätigt…" : "Anfrage bestätigen"}
             </button>
-            <button
-              type="button"
-              onClick={openTemplateDialog}
-              disabled={submitting || savingTemplate}
-              aria-haspopup="dialog"
-            >
-              Aktuellen Stand als Vorlage speichern
-            </button>
+            {canManageTemplates && (
+              <button
+                type="button"
+                onClick={openTemplateDialog}
+                disabled={submitting || savingTemplate}
+                aria-haspopup="dialog"
+              >
+                Aktuellen Stand als Vorlage speichern
+              </button>
+            )}
           </div>
 
-          {templateDialogOpen && (
+          {canManageTemplates && templateDialogOpen && (
             <div
               className="modal-overlay"
               onClick={closeTemplateDialog}

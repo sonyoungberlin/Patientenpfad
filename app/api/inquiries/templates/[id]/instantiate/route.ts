@@ -5,7 +5,7 @@ import {
   instantiateFromTemplate,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
-import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
+import { canAccessInquiryTemplate } from "@/lib/inquiries/practiceScope";
 
 /**
  * POST /api/inquiries/templates/[id]/instantiate
@@ -16,8 +16,9 @@ import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
  *
  * Response 201: { ok: true, inquiryId: string }
  *
- * Owner-Guard: Die Vorlage muss dem aufrufenden Account gehören. Andernfalls
- * antwortet die Route mit 404 (kein 403), um ID-Enumeration zu vermeiden.
+ * Practice-Guard: Die Vorlage muss zur aktuellen Praxis gehören. Der
+ * Ersteller-Account ist für die Verwendung unerheblich. Fremde Practices
+ * erhalten 404, um ID-Enumeration zu vermeiden.
  */
 export async function POST(
   req: NextRequest,
@@ -29,17 +30,21 @@ export async function POST(
 
     const { id } = await params;
 
-    const template = await getInquirySessionWithOutput(id, account.id, undefined, {
+    const template = await getInquirySessionWithOutput(id, undefined, undefined, {
       includeTemplates: true,
     });
-    if (!template || !template.is_template || !canAccessInquirySession(account, template)) {
+    if (!template || !canAccessInquiryTemplate(account, template)) {
       return NextResponse.json(
         { ok: false, error: "Vorlage nicht gefunden." },
         { status: 404 },
       );
     }
 
-    const session = await instantiateFromTemplate(id, account.id);
+    const session = await instantiateFromTemplate(
+      id,
+      account.id,
+      account.current_practice!.id,
+    );
 
     return NextResponse.json(
       { ok: true, inquiryId: session.id },

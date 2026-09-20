@@ -14,8 +14,10 @@ export type InquiryListItem = {
 
 export default function InquiryListClient({
   templates,
+  canManageTemplates,
 }: {
   templates: InquiryListItem[];
+  canManageTemplates: boolean;
 }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -127,32 +129,34 @@ export default function InquiryListClient({
               >
                 {usingId === t.id ? "Wird geöffnet…" : "Verwenden"}
               </button>
-              <button
-                type="button"
-                aria-label={`Löschen: ${t.templateName}`}
-                disabled={deletingId === t.id}
-                onClick={() => setPendingDeleteId(t.id)}
-                style={{
-                  whiteSpace: "nowrap",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius)",
-                  padding: "0.5rem 1rem",
-                  background: "var(--background)",
-                  color: "var(--destructive)",
-                  fontWeight: 500,
-                  fontSize: "0.875rem",
-                  cursor: deletingId === t.id ? "not-allowed" : "pointer",
-                  opacity: deletingId === t.id ? 0.5 : 1,
-                }}
-              >
-                {deletingId === t.id ? "Löschen…" : "Löschen"}
-              </button>
+              {canManageTemplates && (
+                <button
+                  type="button"
+                  aria-label={`Löschen: ${t.templateName}`}
+                  disabled={deletingId === t.id}
+                  onClick={() => setPendingDeleteId(t.id)}
+                  style={{
+                    whiteSpace: "nowrap",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius)",
+                    padding: "0.5rem 1rem",
+                    background: "var(--background)",
+                    color: "var(--destructive)",
+                    fontWeight: 500,
+                    fontSize: "0.875rem",
+                    cursor: deletingId === t.id ? "not-allowed" : "pointer",
+                    opacity: deletingId === t.id ? 0.5 : 1,
+                  }}
+                >
+                  {deletingId === t.id ? "Löschen…" : "Löschen"}
+                </button>
+              )}
             </div>
           </article>
         ))}
       </div>
 
-      {pendingDeleteId && (
+      {canManageTemplates && pendingDeleteId && (
         <div
           className="modal-overlay"
           onClick={closeDialog}

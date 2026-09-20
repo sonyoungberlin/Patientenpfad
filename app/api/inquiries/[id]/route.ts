@@ -3,9 +3,14 @@ import { requireInquiriesAccess } from "@/lib/authz";
 import {
   getInquirySessionWithOutput,
   deleteInquirySession,
+  deleteInquiryTemplate,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
-import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
+import {
+  canAccessInquirySession,
+  canAccessInquiryTemplate,
+  canManageInquiryTemplates,
+} from "@/lib/inquiries/practiceScope";
 
 /**
  * GET /api/inquiries/[id]
@@ -76,17 +81,39 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const session = await getInquirySessionWithOutput(id, account.id, undefined, {
+    const session = await getInquirySessionWithOutput(id, undefined, undefined, {
       includeTemplates: true,
     });
-    if (!session || !canAccessInquirySession(account, session)) {
+    if (!session) {
       return NextResponse.json(
         { ok: false, error: "Session nicht gefunden." },
         { status: 404 },
       );
     }
 
-    await deleteInquirySession(id, account.id);
+    if (session.is_template) {
+      if (!canAccessInquiryTemplate(account, session)) {
+        return NextResponse.json(
+          { ok: false, error: "Session nicht gefunden." },
+          { status: 404 },
+        );
+      }
+      if (!canManageInquiryTemplates(account)) {
+        return NextResponse.json(
+          { ok: false, error: "Rolle nicht ausreichend." },
+          { status: 403 },
+        );
+      }
+      await deleteInquiryTemplate(id, account.current_practice!.id);
+    } else {
+      if (!canAccessInquirySession(account, session)) {
+        return NextResponse.json(
+          { ok: false, error: "Session nicht gefunden." },
+          { status: 404 },
+        );
+      }
+      await deleteInquirySession(id, account.id);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

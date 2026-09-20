@@ -5,7 +5,10 @@ import {
   saveSessionAsTemplate,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
-import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
+import {
+  canAccessInquirySession,
+  canManageInquiryTemplates,
+} from "@/lib/inquiries/practiceScope";
 
 /**
  * POST /api/inquiries/[id]/save-as-template
@@ -17,9 +20,9 @@ import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
  * Body: { templateName: string }  (Pflicht; trim ≠ "")
  * Response 201: { ok: true, templateId: string, templateName: string }
  *
- * Owner-Guard: Die Quell-Session muss dem aufrufenden Account gehören.
- * Andernfalls antwortet die Route mit 404 (kein 403), um ID-Enumeration zu
- * vermeiden.
+ * OWNER-Guard: Nur OWNER dürfen speichern. Die Quell-Session muss dem
+ * aufrufenden Account und seiner aktuellen Praxis gehören. Andernfalls
+ * antwortet die Route mit 404, um ID-Enumeration zu vermeiden.
  *
  * Hinweis: `templateName` wird in einem dedizierten Feld `template_name`
  * gespeichert – NICHT in `patient_reference` (das bleibt ausschließlich
@@ -32,6 +35,13 @@ export async function POST(
   try {
     const { account, error } = await requireInquiriesAccess(req);
     if (error) return error;
+
+    if (!canManageInquiryTemplates(account)) {
+      return NextResponse.json(
+        { ok: false, error: "Rolle nicht ausreichend." },
+        { status: 403 },
+      );
+    }
 
     const { id } = await params;
 
@@ -56,7 +66,12 @@ export async function POST(
       );
     }
 
-    const template = await saveSessionAsTemplate(id, account.id, templateName);
+    const template = await saveSessionAsTemplate(
+      id,
+      account.id,
+      account.current_practice!.id,
+      templateName,
+    );
 
     return NextResponse.json(
       {

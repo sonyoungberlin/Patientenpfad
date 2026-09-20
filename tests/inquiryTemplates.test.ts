@@ -7,11 +7,12 @@
  *  - Fehlender/leerer Vorlagenname → InquirySessionError("template_name_required").
  *  - instantiateFromTemplate kopiert die Vorauswahlen in eine neue, normale
  *    Arbeits-Session (is_template=false).
- *  - Owner-Guard: Vorlage eines anderen Accounts → session_not_found.
+ *  - Practice-Guard: Vorlage einer anderen Practice → session_not_found.
  *  - Nicht-Vorlage über instantiateFromTemplate → session_not_found.
  *  - getInquirySessionWithOutput blendet Vorlagen standardmäßig aus.
  */
 
+import { PracticeRole } from "@prisma/client";
 import {
   createInquirySession,
   instantiateFromTemplate,
@@ -19,7 +20,11 @@ import {
   getInquirySessionWithOutput,
   InquirySessionError,
 } from "@/lib/inquiries/inquirySessionService";
-import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
+import {
+  canAccessInquirySession,
+  canAccessInquiryTemplate,
+  canManageInquiryTemplates,
+} from "@/lib/inquiries/practiceScope";
 
 type MockClient = {
   inquirySession: {
@@ -117,6 +122,7 @@ describe("instantiateFromTemplate", () => {
   const template = {
     id: "tpl-1",
     owner_account_id: "acc-1",
+    owner_practice_id: "practice-1",
     is_template: true,
     template_name: "Neupatient",
     status: "DRAFT",
@@ -137,14 +143,20 @@ describe("instantiateFromTemplate", () => {
       ...data,
     }));
 
-    const result = await instantiateFromTemplate("tpl-1", "acc-1", client as never);
+    const result = await instantiateFromTemplate(
+      "tpl-1",
+      "acc-2",
+      "practice-1",
+      client as never,
+    );
 
     expect(result.id).toBe("sess-new");
     const data = client.inquirySession.create.mock.calls[0][0].data;
     expect(data.is_template).toBe(false);
     expect(data.template_name).toBeNull();
     expect(data.status).toBe("DRAFT");
-    expect(data.owner_account_id).toBe("acc-1");
+    expect(data.owner_account_id).toBe("acc-2");
+    expect(data.owner_practice_id).toBe("practice-1");
     expect(data.selected_inquiry_ids).toEqual(["AU"]);
     expect(data.checkpoint_statuses).toEqual({ foo: "bar" });
     expect(data.communication_reason_selection).toEqual({ AU: "REASON_A" });
@@ -167,12 +179,18 @@ describe("instantiateFromTemplate", () => {
         { owner_account_id: "acc-1", owner_practice_id: "practice-1" },
       ),
     ).toBe(true);
+    expect(
+      canAccessInquiryTemplate(
+        { current_practice: testPractice },
+        { owner_practice_id: "practice-1", is_template: true },
+      ),
+    ).toBe(true);
     await expect(
-      instantiateFromTemplate("tpl-1", "acc-1", client as never),
+      instantiateFromTemplate("tpl-1", "acc-2", "practice-1", client as never),
     ).resolves.toMatchObject({ id: "sess-scoped" });
   });
 
-  it("reproduziert das Legacy-Verhalten bei fehlender Praxis-Zuordnung", async () => {
+  it("verweigert ein Template ohne Praxis-Zuordnung", async () => {
     const client = makeClient();
     client.inquirySession.findUnique.mockResolvedValue({
       ...template,
@@ -183,43 +201,37 @@ describe("instantiateFromTemplate", () => {
       ...data,
     }));
 
-    expect(
-      canAccessInquirySession(
-        { id: "acc-1", current_practice: testPractice },
-        { owner_account_id: "acc-1", owner_practice_id: null },
-      ),
-    ).toBe(false);
-    expect(
-      canAccessInquirySession(
-        { id: "acc-1", current_practice: null },
-        { owner_account_id: "acc-1", owner_practice_id: null },
-      ),
-    ).toBe(true);
     await expect(
-      instantiateFromTemplate("tpl-1", "acc-1", client as never),
-    ).resolves.toMatchObject({ owner_practice_id: null });
+      instantiateFromTemplate("tpl-1", "acc-1", "practice-1", client as never),
+    ).rejects.toMatchObject({ code: "session_not_found" });
   });
 
   it("verweigert ein Template aus einer anderen Praxis weiterhin", async () => {
     expect(
-      canAccessInquirySession(
-        { id: "acc-1", current_practice: testPractice },
-        { owner_account_id: "acc-1", owner_practice_id: "practice-2" },
+      canAccessInquiryTemplate(
+        { current_practice: testPractice },
+        { owner_practice_id: "practice-2", is_template: true },
       ),
     ).toBe(false);
   });
 
-  it("fremde Vorlage → session_not_found", async () => {
+  it("erlaubt die Praxisvorlage eines anderen Accounts", async () => {
     const client = makeClient();
     client.inquirySession.findUnique.mockResolvedValue({
       ...template,
       owner_account_id: "acc-other",
     });
+    client.inquirySession.create.mockImplementation(({ data }) => ({
+      id: "sess-from-owner-template",
+      ...data,
+    }));
 
     await expect(
-      instantiateFromTemplate("tpl-1", "acc-1", client as never),
-    ).rejects.toMatchObject({ code: "session_not_found" });
-    expect(client.inquirySession.create).not.toHaveBeenCalled();
+      instantiateFromTemplate("tpl-1", "acc-user", "practice-1", client as never),
+    ).resolves.toMatchObject({
+      owner_account_id: "acc-user",
+      owner_practice_id: "practice-1",
+    });
   });
 
   it("nicht existierende Vorlage → session_not_found", async () => {
@@ -227,7 +239,7 @@ describe("instantiateFromTemplate", () => {
     client.inquirySession.findUnique.mockResolvedValue(null);
 
     await expect(
-      instantiateFromTemplate("missing", "acc-1", client as never),
+      instantiateFromTemplate("missing", "acc-1", "practice-1", client as never),
     ).rejects.toMatchObject({ code: "session_not_found" });
   });
 
@@ -240,7 +252,7 @@ describe("instantiateFromTemplate", () => {
     });
 
     await expect(
-      instantiateFromTemplate("tpl-1", "acc-1", client as never),
+      instantiateFromTemplate("tpl-1", "acc-1", "practice-1", client as never),
     ).rejects.toBeInstanceOf(InquirySessionError);
   });
 });
@@ -249,6 +261,7 @@ describe("saveSessionAsTemplate", () => {
   const session = {
     id: "sess-1",
     owner_account_id: "acc-1",
+    owner_practice_id: "practice-1",
     is_template: false,
     template_name: null,
     status: "DRAFT",
@@ -272,6 +285,7 @@ describe("saveSessionAsTemplate", () => {
     const result = await saveSessionAsTemplate(
       "sess-1",
       "acc-1",
+      "practice-1",
       "  Neupatient  ",
       client as never,
     );
@@ -282,6 +296,7 @@ describe("saveSessionAsTemplate", () => {
     expect(data.template_name).toBe("Neupatient");
     expect(data.status).toBe("DRAFT");
     expect(data.owner_account_id).toBe("acc-1");
+    expect(data.owner_practice_id).toBe("practice-1");
     expect(data.selected_inquiry_ids).toEqual(["AU"]);
     expect(data.section_snapshot).toEqual(session.section_snapshot);
     expect(data.checkpoint_statuses).toEqual({ foo: "YES" });
@@ -294,7 +309,7 @@ describe("saveSessionAsTemplate", () => {
   it("leerer/whitespace-only Vorlagenname → template_name_required", async () => {
     const client = makeClient();
     await expect(
-      saveSessionAsTemplate("sess-1", "acc-1", "   ", client as never),
+      saveSessionAsTemplate("sess-1", "acc-1", "practice-1", "   ", client as never),
     ).rejects.toMatchObject({ code: "template_name_required" });
     expect(client.inquirySession.findUnique).not.toHaveBeenCalled();
     expect(client.inquirySession.create).not.toHaveBeenCalled();
@@ -308,7 +323,7 @@ describe("saveSessionAsTemplate", () => {
     });
 
     await expect(
-      saveSessionAsTemplate("sess-1", "acc-1", "Name", client as never),
+      saveSessionAsTemplate("sess-1", "acc-1", "practice-1", "Name", client as never),
     ).rejects.toMatchObject({ code: "session_not_found" });
     expect(client.inquirySession.create).not.toHaveBeenCalled();
   });
@@ -317,7 +332,7 @@ describe("saveSessionAsTemplate", () => {
     const client = makeClient();
     client.inquirySession.findUnique.mockResolvedValue(null);
     await expect(
-      saveSessionAsTemplate("missing", "acc-1", "Name", client as never),
+      saveSessionAsTemplate("missing", "acc-1", "practice-1", "Name", client as never),
     ).rejects.toMatchObject({ code: "session_not_found" });
   });
 
@@ -329,9 +344,34 @@ describe("saveSessionAsTemplate", () => {
       template_name: "Existing",
     });
     await expect(
-      saveSessionAsTemplate("sess-1", "acc-1", "Name", client as never),
+      saveSessionAsTemplate("sess-1", "acc-1", "practice-1", "Name", client as never),
     ).rejects.toMatchObject({ code: "session_not_found" });
     expect(client.inquirySession.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("Praxisvorlagen-Rollen", () => {
+  const accountForRole = (role: PracticeRole) => ({
+    current_practice: testPractice,
+    memberships: [{ practice_id: "practice-1", role }],
+  });
+
+  it.each([
+    [PracticeRole.OWNER, true],
+    [PracticeRole.ADMIN, false],
+    [PracticeRole.USER, false],
+    [PracticeRole.INBOX_ONLY, false],
+  ])("Management für %s = %s", (role, expected) => {
+    expect(canManageInquiryTemplates(accountForRole(role) as never)).toBe(expected);
+  });
+
+  it("verweigert Template-Zugriff ohne aktuelle Practice", () => {
+    expect(
+      canAccessInquiryTemplate(
+        { current_practice: null },
+        { owner_practice_id: "practice-1", is_template: true },
+      ),
+    ).toBe(false);
   });
 });
 

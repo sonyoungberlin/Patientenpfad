@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { requireInquiriesAccessFromCookies } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
-import { canAccessInquirySession } from "@/lib/inquiries/practiceScope";
+import {
+  canAccessInquirySession,
+  canManageInquiryTemplates,
+} from "@/lib/inquiries/practiceScope";
 import { INQUIRY_PROFILE_CATALOG_V2 } from "@/lib/inquiries/inquiryProfileCatalog";
 import { INQUIRY_CHECKPOINT_CATALOG_V2, INTRO_CHECKPOINT_IDS, SECTION_INTRO_CHECKPOINT_IDS } from "@/lib/inquiries/inquiryCheckpointCatalog";
 import { getPracticeInquiryConfig } from "@/lib/inquiries/practiceConfig";
@@ -303,6 +306,7 @@ export default async function InquiryM3Page({
         messageSignature={messageSignature}
         practiceConfig={practiceConfig}
         practiceConfirmationSlots={practiceConfirmationSlots}
+        canManageTemplates={canManageInquiryTemplates(account)}
       />
     </main>
   );

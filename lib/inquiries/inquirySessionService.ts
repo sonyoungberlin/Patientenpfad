@@ -278,9 +278,9 @@ export async function createInquirySession(
  * response_goal_selection), damit der Nutzer in der neuen Session direkt
  * dort weiterarbeiten kann, wo die Vorlage definiert wurde.
  *
- * Ownership: Vorlage muss dem aufrufenden Account gehören. Andernfalls
- * wird – analog zu allen anderen Owner-Guards – session_not_found geworfen
- * (kein 403, um ID-Enumeration zu vermeiden).
+ * Practice-Scope: Vorlage muss zur aktuellen Praxis gehören. Der Ersteller-
+ * Account ist für die Verwendung unerheblich. Bei abweichender Praxis wird
+ * session_not_found geworfen (kein 403, um ID-Enumeration zu vermeiden).
  *
  * Wirft:
  *  - InquirySessionError("session_not_found"), wenn die Vorlage nicht
@@ -289,6 +289,7 @@ export async function createInquirySession(
 export async function instantiateFromTemplate(
   templateId: string,
   ownerAccountId: string,
+  ownerPracticeId: string,
   client: PrismaLike = defaultPrisma,
 ): Promise<InquirySession> {
   const template = await client.inquirySession.findUnique({
@@ -297,7 +298,7 @@ export async function instantiateFromTemplate(
 
   if (
     !template ||
-    template.owner_account_id !== ownerAccountId ||
+    template.owner_practice_id !== ownerPracticeId ||
     !template.is_template
   ) {
     throw new InquirySessionError(
@@ -309,7 +310,7 @@ export async function instantiateFromTemplate(
   return client.inquirySession.create({
     data: {
       owner_account_id: ownerAccountId,
-      owner_practice_id: template.owner_practice_id,
+      owner_practice_id: ownerPracticeId,
       status: "DRAFT",
       is_template: false,
       template_name: null,
@@ -359,10 +360,9 @@ export async function instantiateFromTemplate(
  * `generated_output` und `confirmed_at` werden bewusst NICHT übernommen –
  * eine Vorlage ist immer DRAFT und nicht bestätigt.
  *
- * Ownership: Quell-Session muss dem aufrufenden Account gehören. Andernfalls
- * wird – analog zu allen anderen Owner-Guards – session_not_found geworfen
- * (kein 403, um ID-Enumeration zu vermeiden). Vorlagen selbst können nicht
- * erneut als Vorlage gespeichert werden (wäre redundant) → session_not_found.
+ * Die Quell-Session muss dem aufrufenden Account und seiner aktuellen Praxis
+ * gehören. Vorlagen selbst können nicht erneut als Vorlage gespeichert werden
+ * (wäre redundant) → session_not_found.
  *
  * Wirft:
  *  - InquirySessionError("template_name_required") bei leerem/whitespace-only Namen.
@@ -372,6 +372,7 @@ export async function instantiateFromTemplate(
 export async function saveSessionAsTemplate(
   sessionId: string,
   ownerAccountId: string,
+  ownerPracticeId: string,
   templateName: string,
   client: PrismaLike = defaultPrisma,
 ): Promise<InquirySession> {
@@ -390,6 +391,7 @@ export async function saveSessionAsTemplate(
   if (
     !source ||
     source.owner_account_id !== ownerAccountId ||
+    source.owner_practice_id !== ownerPracticeId ||
     source.is_template
   ) {
     throw new InquirySessionError(
@@ -401,7 +403,7 @@ export async function saveSessionAsTemplate(
   return client.inquirySession.create({
     data: {
       owner_account_id: ownerAccountId,
-      owner_practice_id: source.owner_practice_id,
+      owner_practice_id: ownerPracticeId,
       status: "DRAFT",
       is_template: true,
       template_name: trimmedName,
@@ -676,6 +678,27 @@ export async function deleteInquirySession(
   }
 
   await client.inquirySession.delete({ where: { id: sessionId } });
+}
+
+export async function deleteInquiryTemplate(
+  templateId: string,
+  ownerPracticeId: string,
+  client: PrismaLike = defaultPrisma,
+): Promise<void> {
+  const result = await client.inquirySession.deleteMany({
+    where: {
+      id: templateId,
+      owner_practice_id: ownerPracticeId,
+      is_template: true,
+    },
+  });
+
+  if (result.count !== 1) {
+    throw new InquirySessionError(
+      "session_not_found",
+      `Vorlage ${templateId} nicht gefunden.`,
+    );
+  }
 }
 
 /**
