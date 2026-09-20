@@ -16,6 +16,10 @@ import { requirePracticeRole } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { POST } from "@/app/api/practice/documentation-library/route";
 import { PATCH } from "@/app/api/practice/documentation-library/[id]/route";
+import {
+  buildPracticeDocumentationBlockDefinition,
+  validatePracticeDocumentationBlock,
+} from "@/lib/practice/documentationBlocks";
 
 const requireRole = requirePracticeRole as jest.Mock;
 const blockDb = prisma.practiceDocumentationBlock as unknown as {
@@ -71,6 +75,44 @@ describe("Praxis-Dokumentationsbibliothek API", () => {
         block_type: "text",
         definition: expect.objectContaining({ visibleType: "text" }),
       }),
+    });
+  });
+
+  it("baut Auswahl, Zusatzfragen, showQuestion-Regeln und Segmente gemeinsam auf", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Leistungseinschränkung",
+      blockType: "selection",
+      options: [{
+        value: "travel_unfit",
+        label: "Reiseunfähig",
+        documentationText: "Reiseunfähig",
+        documentationSegments: [
+          { kind: "text", text: "Vom " },
+          { kind: "answerRef", fieldId: "from" },
+          { kind: "text", text: " bis " },
+          { kind: "answerRef", fieldId: "to" },
+          { kind: "text", text: " reiseunfähig." },
+        ],
+      }, { value: "fit", label: "Reisefähig", documentationText: "Reisefähig" }],
+      additionalFields: [
+        { id: "from", label: "Von", type: "date", required: true, showForOptionValues: ["travel_unfit"] },
+        { id: "to", label: "Bis", type: "date", required: true, showForOptionValues: ["travel_unfit"] },
+      ],
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    expect(definition.block.questionIds).toHaveLength(3);
+    expect(definition.block.conditionalRules).toHaveLength(2);
+    expect(definition.questions[0].options?.[0]).toMatchObject({
+      documentationSegments: [
+        { kind: "text", text: "Vom " },
+        { kind: "answerRef", questionId: "from" },
+        { kind: "text", text: " bis " },
+        { kind: "answerRef", questionId: "to" },
+        { kind: "text", text: " reiseunfähig." },
+      ],
     });
   });
 

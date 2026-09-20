@@ -1,11 +1,14 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
+  DocumentationSegment,
   QuestionDefinition,
   QuestionOption,
   QuestionnaireBlock,
 } from "@/lib/questionnaire/blockCatalog";
+import type { ConditionalRule } from "@/lib/questionnaire/conditionalLogic";
 import { buildFrozenBlocks, type FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
+import { getQuestionOptionValue } from "@/lib/questionnaire/questionOptions";
 
 export const PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION = 1;
 export const PRACTICE_DOCUMENTATION_BLOCK_TITLE_MAX_LENGTH = 120;
@@ -46,6 +49,21 @@ export type PracticeDocumentationOptionInput = {
   value?: string;
   label: string;
   documentationText: string;
+  documentationSegments?: PracticeDocumentationSegmentInput[];
+};
+
+export type PracticeDocumentationSegmentInput =
+  | { kind: "text"; text: string }
+  | { kind: "answerRef"; fieldId: string };
+
+export type PracticeDocumentationAdditionalFieldInput = {
+  id?: string;
+  label: string;
+  type: "text" | "textarea" | "date" | "number";
+  required?: boolean;
+  showForOptionValues: string[];
+  maxLength?: number;
+  unit?: string;
 };
 
 export type PracticeDocumentationBlockInput = {
@@ -55,6 +73,7 @@ export type PracticeDocumentationBlockInput = {
   unit?: string;
   required?: boolean;
   options?: PracticeDocumentationOptionInput[];
+  additionalFields?: PracticeDocumentationAdditionalFieldInput[];
 };
 
 type ValidationResult =
@@ -94,6 +113,7 @@ function normalizeOptions(raw: unknown): PracticeDocumentationOptionInput[] {
       throw new Error("Options-ID ist ungültig oder doppelt vorhanden.");
     }
     if (value) values.add(value);
+    const documentationSegments = normalizeSegments(item.documentationSegments);
     return {
       ...(value ? { value } : {}),
       label: normalizeText(item.label, "Optionsbezeichnung", 240),
@@ -102,6 +122,55 @@ function normalizeOptions(raw: unknown): PracticeDocumentationOptionInput[] {
         "Ausgabetext",
         PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH,
       ),
+      ...(documentationSegments ? { documentationSegments } : {}),
+    };
+  });
+}
+
+function normalizeSegments(raw: unknown): PracticeDocumentationSegmentInput[] | undefined {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 50) {
+    throw new Error("Der Ausgabetext enthält ungültige Segmente.");
+  }
+  return raw.map((item) => {
+    if (!isRecord(item) || (item.kind !== "text" && item.kind !== "answerRef")) {
+      throw new Error("Der Ausgabetext enthält ein ungültiges Segment.");
+    }
+    if (item.kind === "text") {
+      if (typeof item.text !== "string" || !item.text.trim() || item.text.length > PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH || /[\u0000-\u001F\u007F]/.test(item.text)) {
+        throw new Error("Ausgabetext ist ungültig.");
+      }
+      return { kind: "text", text: item.text };
+    }
+    return { kind: "answerRef", fieldId: normalizeText(item.fieldId, "Zusatzfeld-Referenz", 160) };
+  });
+}
+
+function normalizeAdditionalFields(raw: unknown): PracticeDocumentationAdditionalFieldInput[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw) || raw.length > 20) throw new Error("Zu viele Zusatzangaben.");
+  const ids = new Set<string>();
+  return raw.map((item) => {
+    if (!isRecord(item)) throw new Error("Ungültige Zusatzangabe.");
+    const id = item.id === undefined ? undefined : normalizeText(item.id, "Zusatzfeld-ID", 160);
+    if (id && (!ID_PATTERN.test(id) || ids.has(id))) throw new Error("Zusatzfeld-ID ist ungültig oder doppelt vorhanden.");
+    if (id) ids.add(id);
+    const type = item.type;
+    if (type !== "text" && type !== "textarea" && type !== "date" && type !== "number") {
+      throw new Error("Ungültiger Typ für Zusatzangabe.");
+    }
+    if (!Array.isArray(item.showForOptionValues) || item.showForOptionValues.length === 0) {
+      throw new Error("Jede Zusatzangabe benötigt mindestens eine Auswahloption.");
+    }
+    const showForOptionValues = item.showForOptionValues.map((value) => normalizeText(value, "Auswahlzuordnung", 160));
+    return {
+      ...(id ? { id } : {}),
+      label: normalizeText(item.label, "Feldbezeichnung", 240),
+      type,
+      required: item.required === true,
+      showForOptionValues,
+      ...(typeof item.maxLength === "number" ? { maxLength: Math.max(1, Math.min(2000, Math.floor(item.maxLength))) } : {}),
+      ...(typeof item.unit === "string" && item.unit.trim() ? { unit: normalizeText(item.unit, "Einheit", 40) } : {}),
     };
   });
 }
@@ -132,13 +201,28 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
     if (normalizedType === "selection" || normalizedType === "list") {
       value.options = normalizeOptions(input.options);
     }
+    value.additionalFields = normalizeAdditionalFields(input.additionalFields);
+    const optionValues = new Set((value.options ?? []).map((option) => option.value ?? option.label));
+    const fieldIds = new Set(value.additionalFields.map((field) => field.id).filter((id): id is string => Boolean(id)));
+    for (const field of value.additionalFields) {
+      if (field.showForOptionValues.some((optionValue) => !optionValues.has(optionValue))) {
+        throw new Error("Eine Zusatzangabe verweist auf eine unbekannte Auswahloption.");
+      }
+    }
+    for (const option of value.options ?? []) {
+      for (const segment of option.documentationSegments ?? []) {
+        if (segment.kind === "answerRef" && !fieldIds.has(segment.fieldId)) {
+          throw new Error("Der Ausgabetext verweist auf eine unbekannte Zusatzangabe.");
+        }
+      }
+    }
     return { ok: true, value };
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : "Ungültiger Dokumentationsbaustein." };
   }
 }
 
-function createId(prefix: "block" | "question" | "option") {
+function createId(prefix: "block" | "question" | "option" | "field") {
   return `practice_${prefix}_${crypto.randomUUID()}`;
 }
 
@@ -173,24 +257,80 @@ function questionForInput(
   };
 }
 
+function questionTypeForField(type: PracticeDocumentationAdditionalFieldInput["type"]): QuestionDefinition["type"] {
+  return type;
+}
+
 export function buildPracticeDocumentationBlockDefinition(
   input: PracticeDocumentationBlockInput,
   existing?: PracticeDocumentationBlockDefinition,
 ): PracticeDocumentationBlockDefinition {
   const blockId = existing?.block.id ?? createId("block");
   const primaryQuestion = questionForInput(input, existing?.questions[0]);
+  const existingAdditional = new Map(
+    (existing?.questions.slice(1) ?? []).map((question) => [question.id, question]),
+  );
+  const additionalQuestions = (input.additionalFields ?? []).map((field) => {
+    const fieldId = field.id ?? createId("field");
+    const existingQuestion = existingAdditional.get(fieldId);
+    return {
+      id: existingQuestion?.id ?? fieldId,
+      text: field.label,
+      type: questionTypeForField(field.type),
+      required: field.required === true,
+      ...(field.maxLength ? { maxLength: field.maxLength } : {}),
+      ...(field.unit ? { unit: field.unit } : {}),
+    } satisfies QuestionDefinition;
+  });
+  const allQuestions = [primaryQuestion, ...additionalQuestions];
+  const fieldQuestionIds = new Map((input.additionalFields ?? []).map((field, index) => [field.id ?? `__new_${index}`, additionalQuestions[index].id]));
+  const rules: ConditionalRule[] = (input.additionalFields ?? []).flatMap((field, index) => {
+    const questionId = fieldQuestionIds.get(field.id ?? `__new_${index}`)!;
+    return field.showForOptionValues.map((inputOptionValue) => {
+      const inputOptionIndex = (input.options ?? []).findIndex((option) => (option.value ?? option.label) === inputOptionValue);
+      const optionValue = getQuestionOptionValue(primaryQuestion.options?.[inputOptionIndex] ?? inputOptionValue);
+      return {
+      action: "showQuestion" as const,
+      targetId: questionId,
+      condition: {
+        target: { kind: "question" as const, questionId: primaryQuestion.id },
+        operator: "equals" as const,
+        value: optionValue,
+      },
+      };
+    });
+  });
+  const options = (primaryQuestion.options ?? []).map((option) => {
+    if (typeof option === "string") return option;
+    const inputOption = (input.options ?? []).find((candidate) => candidate.label === option.label || candidate.value === option.value);
+    const segments: DocumentationSegment[] | undefined = inputOption?.documentationSegments?.map((segment) =>
+      segment.kind === "text"
+        ? segment
+        : { kind: "answerRef", questionId: fieldQuestionIds.get(segment.fieldId) ?? "" },
+    );
+    return {
+      ...option,
+      ...(segments?.every((segment) => segment.kind === "text" || segment.questionId) ? { documentationSegments: segments } : {}),
+    };
+  });
+  const block: QuestionnaireBlock = {
+    id: blockId,
+    label: input.title,
+    displayOrder: 0,
+    questionIds: allQuestions.map((question) => question.id),
+    ...(rules.length > 0 ? { conditionalRules: rules } : {}),
+  };
   return {
     schemaVersion: PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION,
     visibleType: input.blockType,
     block: {
-      id: blockId,
-      label: input.title,
-      displayOrder: 0,
-      questionIds: [primaryQuestion.id],
+      ...block,
       documentationItemType: input.blockType === "measurement" ? "measurement"
         : input.blockType === "list" ? "listItem" : "bodyText",
     },
-    questions: [primaryQuestion],
+    questions: allQuestions.map((question) => question.id === primaryQuestion.id
+      ? { ...question, options }
+      : question),
   };
 }
 

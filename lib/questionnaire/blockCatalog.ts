@@ -59,9 +59,14 @@ export type QuestionOption = {
   value: string;
   label: string;
   documentationText?: string;
+  documentationSegments?: DocumentationSegment[];
 };
 
 export type QuestionOptionDefinition = string | QuestionOption;
+
+export type DocumentationSegment =
+  | { kind: "text"; text: string }
+  | { kind: "answerRef"; questionId: string };
 
 /** Ein Unterfeld innerhalb eines repeatable_group-Eintrags. */
 export type RepeatableGroupFieldDef = {

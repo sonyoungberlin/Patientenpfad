@@ -12,6 +12,7 @@
 
 import { QUESTION_CATALOG } from "./blockCatalog";
 import type { QuestionDefinition } from "./blockCatalog";
+import type { DocumentationSegment, QuestionOptionDefinition } from "./blockCatalog";
 import type { DerivedValues } from "./derivedValues";
 import type { QuestionnaireAttentionHint } from "./attentionHints";
 import { parseMultiSelectValue } from "./multiSelect";
@@ -130,6 +131,57 @@ export function resolveQuestionDocumentation(
     documentationTexts,
     ...(fallbackLabels.length > 0 ? { fallbackValue: fallbackLabels.join(", ") } : {}),
   };
+}
+
+function formatDocumentationSegmentAnswer(
+  question: QuestionDefinition,
+  rawValue: string,
+): string {
+  if (question.type === "date" && /^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
+    const [year, month, day] = rawValue.split("-");
+    return `${day}.${month}.${year}`;
+  }
+  return formatQuestionValue(question, rawValue, true);
+}
+
+function selectedOption(
+  question: QuestionDefinition,
+  rawValue: string,
+): QuestionOptionDefinition | undefined {
+  return question.options?.find((option) =>
+    (typeof option === "string" ? option : option.value) === rawValue,
+  );
+}
+
+export function getStructuredDocumentationQuestionIds(
+  question: QuestionDefinition,
+  rawValue: string,
+): Set<string> {
+  const option = selectedOption(question, rawValue);
+  if (typeof option === "string" || !option?.documentationSegments) return new Set();
+  return new Set(
+    option.documentationSegments
+      .filter((segment): segment is Extract<DocumentationSegment, { kind: "answerRef" }> => segment.kind === "answerRef")
+      .map((segment) => segment.questionId),
+  );
+}
+
+export function resolveStructuredQuestionDocumentation(
+  question: QuestionDefinition,
+  rawValue: string,
+  answers: Record<string, string>,
+  questionsById: ReadonlyMap<string, QuestionDefinition>,
+): string | null {
+  const option = selectedOption(question, rawValue);
+  if (typeof option === "string" || !option?.documentationSegments) return null;
+
+  return option.documentationSegments.map((segment) => {
+    if (segment.kind === "text") return segment.text;
+    const referencedQuestion = questionsById.get(segment.questionId);
+    return referencedQuestion
+      ? formatDocumentationSegmentAnswer(referencedQuestion, (answers[segment.questionId] ?? "").trim())
+      : "";
+  }).join("");
 }
 
 // ---------------------------------------------------------------------------

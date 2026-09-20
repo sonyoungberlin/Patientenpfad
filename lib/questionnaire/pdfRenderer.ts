@@ -9,8 +9,10 @@ import {
   parseFacharztEntries,
   formatYesNoValue,
   buildDerivedValueLines,
+  getStructuredDocumentationQuestionIds,
   joinMedicalStatementSentences,
   resolveQuestionDocumentation,
+  resolveStructuredQuestionDocumentation,
 } from "./formatAnswer";
 import { getQuestionOptionValues } from "./questionOptions";
 import type { RepGroupEntry } from "./formatAnswer";
@@ -394,6 +396,14 @@ export async function buildQuestionnairePdfBytes(
 
   for (const section of blockSections) {
     const snapshotBlock = renderBlocks.find((block) => block.id === section.id);
+    const questionsById = new Map(section.questions.map((question) => [question.id, question]));
+    const composedQuestionIds = new Set<string>();
+    for (const question of section.questions) {
+      const raw = (answers[question.id] ?? "").trim();
+      if (raw !== "") {
+        getStructuredDocumentationQuestionIds(question, raw).forEach((id) => composedQuestionIds.add(id));
+      }
+    }
     const useInlineDocumentation = isNewBlockBased &&
       section.documentationPresentation?.layout === "inline";
     const inlineDocumentation = useInlineDocumentation
@@ -465,6 +475,7 @@ export async function buildQuestionnairePdfBytes(
         drawWrappedPair(q.text, "Nicht abgefragt");
         continue;
       }
+      if (composedQuestionIds.has(q.id)) continue;
       if ((useDocumentedContent || opts.omitUnanswered) && value.trim() === "") continue;
       if (q.id === "FACHAERZTE") {
         const entries = parseFacharztEntries(value);
@@ -492,9 +503,17 @@ export async function buildQuestionnairePdfBytes(
         drawWrappedPair(q.text, value);
         continue;
       }
-      const resolved = resolveQuestionDocumentation(q, value, {
-        includeUnit: isNewBlockBased,
-      });
+      const structuredText = resolveStructuredQuestionDocumentation(
+        q,
+        value,
+        answers,
+        questionsById,
+      );
+      const resolved = structuredText !== null
+        ? { documentationTexts: structuredText ? [structuredText] : [] }
+        : resolveQuestionDocumentation(q, value, {
+            includeUnit: isNewBlockBased,
+          });
       if (section.id === "MEDICAL_STATEMENT") {
         medicalStatementSentences.push(...resolved.documentationTexts);
       } else {

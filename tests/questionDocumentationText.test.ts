@@ -1,7 +1,10 @@
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { buildMedicalRecordNote } from "@/lib/questionnaire/buildMedicalRecordNote";
-import { resolveQuestionDocumentation } from "@/lib/questionnaire/formatAnswer";
+import {
+  resolveQuestionDocumentation,
+  resolveStructuredQuestionDocumentation,
+} from "@/lib/questionnaire/formatAnswer";
 import { buildInternalDocumentationFrozenBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 
@@ -17,6 +20,64 @@ function frozenBlock(question: QuestionDefinition): FrozenBlock {
 }
 
 describe("documentationText für Antwortoptionen", () => {
+  it("setzt referenzierte Zusatzantworten strukturiert zusammen und gibt sie nicht doppelt aus", () => {
+    const selection: QuestionDefinition = {
+      id: "LIMITATION_STATUS",
+      text: "Leistungseinschränkung",
+      type: "select",
+      required: true,
+      options: [{
+        value: "travel_unfit",
+        label: "Reiseunfähig",
+        documentationText: "Reiseunfähig",
+        documentationSegments: [
+          { kind: "text", text: "Die Person ist vom " },
+          { kind: "answerRef", questionId: "LIMITATION_FROM" },
+          { kind: "text", text: " bis zum " },
+          { kind: "answerRef", questionId: "LIMITATION_TO" },
+          { kind: "text", text: " reiseunfähig." },
+        ],
+      }],
+    };
+    const from: QuestionDefinition = {
+      id: "LIMITATION_FROM",
+      text: "Von",
+      type: "date",
+      required: true,
+    };
+    const to: QuestionDefinition = {
+      id: "LIMITATION_TO",
+      text: "Bis",
+      type: "date",
+      required: true,
+    };
+    const answers = {
+      LIMITATION_STATUS: "travel_unfit",
+      LIMITATION_FROM: "2026-09-21",
+      LIMITATION_TO: "2026-09-28",
+    };
+    const questions = new Map([selection, from, to].map((question) => [question.id, question]));
+
+    expect(resolveStructuredQuestionDocumentation(selection, answers.LIMITATION_STATUS, answers, questions))
+      .toBe("Die Person ist vom 21.09.2026 bis zum 28.09.2026 reiseunfähig.");
+    expect(buildMedicalRecordNote({
+      answers,
+      selected_block_ids: ["TEST_BLOCK"],
+      frozenBlocks: [{
+        ...frozenBlock(selection),
+        questions: [selection, from, to],
+      }],
+    })).toContain("Die Person ist vom 21.09.2026 bis zum 28.09.2026 reiseunfähig.");
+    expect(buildMedicalRecordNote({
+      answers,
+      selected_block_ids: ["TEST_BLOCK"],
+      frozenBlocks: [{
+        ...frozenBlock(selection),
+        questions: [selection, from, to],
+      }],
+    })).not.toContain("Von:");
+  });
+
   it("löst select-Dokumentation zentral auf und behält den Fallback bei", () => {
     const documented: QuestionDefinition = {
       id: "SELECT_DOCUMENTED",

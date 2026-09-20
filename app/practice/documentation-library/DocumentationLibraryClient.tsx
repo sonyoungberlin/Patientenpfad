@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import type {
   PracticeDocumentationBlockDefinition,
   PracticeDocumentationBlockType,
+  PracticeDocumentationAdditionalFieldInput,
   PracticeDocumentationOptionInput,
+  PracticeDocumentationSegmentInput,
 } from "@/lib/practice/documentationBlocks";
 
 type BlockRow = {
@@ -22,6 +24,7 @@ type Draft = {
   unit: string;
   required: boolean;
   options: PracticeDocumentationOptionInput[];
+  additionalFields: PracticeDocumentationAdditionalFieldInput[];
 };
 
 const TYPE_LABELS: Record<PracticeDocumentationBlockType, string> = {
@@ -42,7 +45,18 @@ const emptyDraft = (): Draft => ({
     { label: "", documentationText: "" },
     { label: "", documentationText: "" },
   ],
+  additionalFields: [],
 });
+
+function newAdditionalField(): PracticeDocumentationAdditionalFieldInput {
+  return {
+    id: `field_${crypto.randomUUID()}`,
+    label: "",
+    type: "text",
+    required: false,
+    showForOptionValues: [],
+  };
+}
 
 export default function DocumentationLibraryClient({ initialBlocks }: { initialBlocks: BlockRow[] }) {
   const router = useRouter();
@@ -68,7 +82,24 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
       required: question.required,
       options: (question.options ?? []).map((option) => typeof option === "string"
         ? { label: option, documentationText: option }
-        : { value: option.value, label: option.label, documentationText: option.documentationText ?? option.label }),
+        : { value: option.value, label: option.label, documentationText: option.documentationText ?? option.label, documentationSegments: option.documentationSegments?.map((segment) => segment.kind === "text" ? segment : { kind: "answerRef", fieldId: row.definition.questions.find((candidate) => candidate.id === segment.questionId)?.id ?? segment.questionId }) }),
+      additionalFields: row.definition.questions.slice(1).map((question) => ({
+        id: question.id,
+        label: question.text,
+        type: question.type === "date" || question.type === "number" || question.type === "textarea" ? question.type : "text",
+        required: question.required,
+        showForOptionValues: (row.definition.block.conditionalRules ?? [])
+          .filter((rule) => {
+            const condition = rule.condition;
+            return rule.action === "showQuestion" && rule.targetId === question.id &&
+              !("mode" in condition) && condition.target.kind === "question" &&
+              condition.target.questionId === row.definition.questions[0].id &&
+              condition.operator === "equals" && typeof condition.value === "string";
+          })
+          .map((rule) => !("mode" in rule.condition) ? rule.condition.value as string : ""),
+        ...(question.maxLength ? { maxLength: question.maxLength } : {}),
+        ...(question.unit ? { unit: question.unit } : {}),
+      })),
     });
     setError(null);
   }
@@ -81,6 +112,24 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
     setDraft((current) => ({
       ...current,
       options: current.options.map((option, optionIndex) => optionIndex === index ? { ...option, ...update } : option),
+    }));
+  }
+
+  function updateField(index: number, update: Partial<PracticeDocumentationAdditionalFieldInput>) {
+    setDraft((current) => ({
+      ...current,
+      additionalFields: current.additionalFields.map((field, fieldIndex) => fieldIndex === index ? { ...field, ...update } : field),
+    }));
+  }
+
+  function updateOptionSegment(optionIndex: number, segmentIndex: number, update: Partial<PracticeDocumentationSegmentInput>) {
+    setDraft((current) => ({
+      ...current,
+      options: current.options.map((option, index) => {
+        if (index !== optionIndex) return option;
+        const segments = option.documentationSegments ?? [];
+        return { ...option, documentationSegments: segments.map((segment, currentIndex) => currentIndex === segmentIndex ? { ...segment, ...update } as PracticeDocumentationSegmentInput : segment) };
+      }),
     }));
   }
 
@@ -161,11 +210,34 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
             {draft.options.map((option, index) => <div key={option.value ?? `new-${index}`} style={{ display: "grid", gap: "0.4rem", borderBottom: "1px solid #ddd", paddingBottom: "0.75rem" }}>
               <label>Option {index + 1}<input value={option.label} onChange={(event) => updateOption(index, { label: event.target.value })} required disabled={busy} /></label>
               <label>Ausgabetext<textarea value={option.documentationText} onChange={(event) => updateOption(index, { documentationText: event.target.value })} rows={3} required disabled={busy} /></label>
+              <fieldset>
+                <legend>Zusammengesetzter Ausgabetext (optional)</legend>
+                {(option.documentationSegments ?? []).map((segment, segmentIndex) => <div key={`${index}-${segmentIndex}`} style={{ display: "flex", gap: "0.4rem", marginBottom: "0.4rem" }}>
+                  <select value={segment.kind} onChange={(event) => updateOptionSegment(index, segmentIndex, event.target.value === "text" ? { kind: "text", text: "" } : { kind: "answerRef", fieldId: draft.additionalFields[0]?.id ?? "" })} disabled={busy}>
+                    <option value="text">Fester Text</option>
+                    <option value="answerRef">Zusatzangabe</option>
+                  </select>
+                  {segment.kind === "text" ? <input value={segment.text} onChange={(event) => updateOptionSegment(index, segmentIndex, { text: event.target.value })} disabled={busy} /> : <select value={segment.fieldId} onChange={(event) => updateOptionSegment(index, segmentIndex, { fieldId: event.target.value })} disabled={busy}><option value="">Zusatzangabe wählen</option>{draft.additionalFields.map((field) => <option key={field.id} value={field.id}>{field.label || "Unbenannte Zusatzangabe"}</option>)}</select>}
+                  <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.map((candidate, candidateIndex) => candidateIndex === index ? { ...candidate, documentationSegments: (candidate.documentationSegments ?? []).filter((_, currentIndex) => currentIndex !== segmentIndex) } : candidate) }))} disabled={busy}>Entfernen</button>
+                </div>)}
+                <button type="button" onClick={() => updateOption(index, { documentationSegments: [...(option.documentationSegments ?? []), { kind: "text", text: "" }] })} disabled={busy}>Segment hinzufügen</button>
+              </fieldset>
               {draft.options.length > 2 && <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.filter((_, optionIndex) => optionIndex !== index) }))} disabled={busy}>Option entfernen</button>}
             </div>)}
             <button type="button" onClick={() => setDraft((current) => ({ ...current, options: [...current.options, { label: "", documentationText: "" }] }))} disabled={busy}>Option hinzufügen</button>
           </fieldset>
         )}
+        {(draft.blockType === "selection" || draft.blockType === "list") && <fieldset style={{ display: "grid", gap: "0.75rem" }}>
+          <legend>Optionale Zusatzangaben</legend>
+          {draft.additionalFields.map((field, index) => <div key={field.id} style={{ display: "grid", gap: "0.4rem", borderBottom: "1px solid #ddd", paddingBottom: "0.75rem" }}>
+            <label>Feldbezeichnung<input value={field.label} onChange={(event) => updateField(index, { label: event.target.value })} required disabled={busy} /></label>
+            <label>Feldtyp<select value={field.type} onChange={(event) => updateField(index, { type: event.target.value as PracticeDocumentationAdditionalFieldInput["type"] })} disabled={busy}><option value="text">Kurzer Text oder Monat/Jahr</option><option value="textarea">Längerer Text</option><option value="date">Datum</option><option value="number">Zahl</option></select></label>
+            <fieldset><legend>Anzeigen bei Auswahl</legend>{draft.options.map((option) => { const value = option.value ?? option.label; return <label key={value} style={{ display: "block" }}><input type="checkbox" checked={field.showForOptionValues.includes(value)} onChange={(event) => updateField(index, { showForOptionValues: event.target.checked ? [...field.showForOptionValues, value] : field.showForOptionValues.filter((candidate) => candidate !== value) })} disabled={busy} /> {option.label || "Unbenannte Option"}</label>; })}</fieldset>
+            <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={field.required === true} onChange={(event) => updateField(index, { required: event.target.checked })} disabled={busy} />Pflichtangabe, wenn sichtbar</label>
+            <button type="button" onClick={() => setDraft((current) => ({ ...current, additionalFields: current.additionalFields.filter((_, fieldIndex) => fieldIndex !== index) }))} disabled={busy}>Zusatzangabe entfernen</button>
+          </div>)}
+          <button type="button" onClick={() => setDraft((current) => ({ ...current, additionalFields: [...current.additionalFields, newAdditionalField()] }))} disabled={busy}>Zusatzangabe hinzufügen</button>
+        </fieldset>}
         {draft.blockType !== "hint" && <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={draft.required} onChange={(event) => setDraft((current) => ({ ...current, required: event.target.checked }))} disabled={busy} />Pflichtfeld</label>}
         {error && <p role="alert" className="text-error">{error}</p>}
         <div style={{ display: "flex", gap: "0.5rem" }}>

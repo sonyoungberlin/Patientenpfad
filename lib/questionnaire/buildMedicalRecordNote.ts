@@ -36,7 +36,9 @@ import {
   buildAttentionHintLines,
   buildClinicalStatusSummary,
   joinMedicalStatementSentences,
+  getStructuredDocumentationQuestionIds,
   resolveQuestionDocumentation,
+  resolveStructuredQuestionDocumentation,
 } from "./formatAnswer";
 import { getQuestionOptionValues } from "./questionOptions";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
@@ -646,6 +648,14 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
         derivedValues as Record<string, number>,
         buildOptionsByQuestionId(block.questions),
       );
+      const questionsById = new Map(block.questions.map((question) => [question.id, question]));
+      const composedQuestionIds = new Set<string>();
+      for (const question of block.questions) {
+        const raw = (answers[question.id] ?? "").trim();
+        if (raw !== "") {
+          getStructuredDocumentationQuestionIds(question, raw).forEach((id) => composedQuestionIds.add(id));
+        }
+      }
 
       const useInlineDocumentation = isNewBlockBased &&
         block.documentationPresentation?.layout === "inline";
@@ -668,6 +678,10 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
       } else for (const question of block.questions) {
         if (!frozenVisibleIds.has(question.id)) continue;
         if (seenQuestionIds.has(question.id)) continue;
+        if (composedQuestionIds.has(question.id)) {
+          seenQuestionIds.add(question.id);
+          continue;
+        }
         if (condensedClinicalStatusIds.has(question.id)) continue;
         seenQuestionIds.add(question.id);
         if (block.id === "VOLLST_NIKOTIN" && hasNewSmokingStructure(answers) && SMOKING_PAIR_IDS.has(question.id)) continue;
@@ -758,9 +772,17 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
           continue;
         }
 
-        const resolved = resolveQuestionDocumentation(question, raw, {
-          includeUnit: isNewBlockBased,
-        });
+        const structuredText = resolveStructuredQuestionDocumentation(
+          question,
+          raw,
+          answers,
+          questionsById,
+        );
+        const resolved = structuredText !== null
+          ? { documentationTexts: structuredText ? [structuredText] : [] }
+          : resolveQuestionDocumentation(question, raw, {
+              includeUnit: isNewBlockBased,
+            });
         if (block.id === "MEDICAL_STATEMENT") {
           medicalStatementSentences.push(...resolved.documentationTexts);
         } else {
