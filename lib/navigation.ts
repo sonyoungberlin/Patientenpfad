@@ -270,6 +270,22 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
     description: "Zugang und Einstellungen verwalten",
     items: [
       {
+        id: "documentation-library",
+        label: "Dokumentationsbibliothek",
+        href: "/practice/documentation-library",
+        matches: ["/practice/documentation-library"],
+        roles: MANAGEMENT_ROLES,
+        requiresPracticeRole: true,
+      },
+      {
+        id: "documentation-templates",
+        label: "Dokumentationsvorlagen",
+        href: "/practice/documentation-templates",
+        matches: ["/practice/documentation-templates"],
+        roles: MANAGEMENT_ROLES,
+        requiresPracticeRole: true,
+      },
+      {
         id: "practice-catalog",
         label: "Praxiskatalog",
         href: "/practice/catalog",

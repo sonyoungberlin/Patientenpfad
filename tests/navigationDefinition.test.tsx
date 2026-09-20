@@ -111,6 +111,16 @@ describe("zentrale Bereichsdefinition", () => {
       "Praxisprozesse",
     ]);
     expect(sections[5].title).toBe("Praxisverwaltung");
+    expect(sections[5].items.slice(0, 2).map(({ label, href }) => ({ label, href }))).toEqual([
+      {
+        label: "Dokumentationsbibliothek",
+        href: "/practice/documentation-library",
+      },
+      {
+        label: "Dokumentationsvorlagen",
+        href: "/practice/documentation-templates",
+      },
+    ]);
   });
 
   it("beschränkt INBOX_ONLY auf die erlaubten Posteingänge", () => {
@@ -188,6 +198,8 @@ describe("zentrale Bereichsdefinition", () => {
     ["/inquiries/abc/m3", "patient-communication", "inquiry-templates"],
     ["/cases/abc/m2", "patient-path", "case-list"],
     ["/cases/internal-documentation/abc", "patient-path", "internal-documentation"],
+    ["/practice/documentation-library", "practice-management", "documentation-library"],
+    ["/practice/documentation-templates", "practice-management", "documentation-templates"],
     ["/practice/members", "practice-management", "practice-members"],
     ["/website-forms/abc", "practice-management", "website-forms"],
     ["/office-cases/applications/abc", "inbox", "applicant-inbox"],
@@ -262,7 +274,7 @@ describe("AppShell Bereichsmenüs", () => {
     ["/workflow-cases", ["Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
     ["/workflow-cases/new", ["Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
     ["/cases/internal-documentation", ["Fallliste", "Neuer Fall", "Interne Dokumentation"]],
-    ["/practice/signature", ["Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
+    ["/practice/signature", ["Dokumentationsbibliothek", "Dokumentationsvorlagen", "Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
   ])("zeigt auf %s das vollständige Bereichsmenü", (pathname, labels) => {
     mockedPathname = pathname;
     const html = renderToStaticMarkup(<AppShell account={account()} />);
