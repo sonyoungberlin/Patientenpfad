@@ -18,6 +18,7 @@ export const PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH = 1000;
 
 export type PracticeDocumentationBlockType =
   | "text"
+  | "paragraph"
   | "selection"
   | "measurement"
   | "list"
@@ -95,7 +96,7 @@ type ValidationResult =
   | { ok: false; error: string };
 
 const BLOCK_TYPES: readonly PracticeDocumentationBlockType[] = [
-  "text", "selection", "measurement", "list", "hint",
+  "text", "paragraph", "selection", "measurement", "list", "hint",
   "repeatable",
 ];
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,160}$/;
@@ -109,6 +110,15 @@ function normalizeText(value: unknown, label: string, maxLength: number): string
   const normalized = value.trim();
   if (!normalized) throw new Error(`${label} darf nicht leer sein.`);
   if (normalized.length > maxLength || /[\u0000-\u001F\u007F]/.test(normalized)) {
+    throw new Error(`${label} ist ungültig.`);
+  }
+  return normalized;
+}
+
+function normalizeDocumentContent(value: unknown, label: string): string {
+  if (typeof value !== "string") throw new Error(`${label} ist erforderlich.`);
+  const normalized = value.trim();
+  if (!normalized || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(normalized)) {
     throw new Error(`${label} ist ungültig.`);
   }
   return normalized;
@@ -234,7 +244,9 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
       blockType: normalizedType,
       required: input.required === true || normalizedType === "hint",
     };
-    if (normalizedType === "text" || normalizedType === "hint") {
+    if (normalizedType === "paragraph") {
+      value.text = normalizeDocumentContent(input.text, "Inhalt");
+    } else if (normalizedType === "text" || normalizedType === "hint") {
       value.text = normalizeText(
         input.text ?? input.title,
         normalizedType === "hint" ? "Hinweistext" : "Feldbezeichnung",
@@ -340,6 +352,17 @@ function questionForInput(
   }
   if (input.blockType === "text") {
     return { ...common, type: "textarea", maxLength: 1000, documentationItemType: "freeText" };
+  }
+  if (input.blockType === "paragraph") {
+    return {
+      ...common,
+      text: input.title,
+      type: "textarea",
+      required: false,
+      documentationText: input.text,
+      documentationItemType: "bodyText",
+      omitDocumentationLabel: true,
+    };
   }
   if (input.blockType === "measurement") {
     return { ...common, text: input.title, type: "number", step: 0.1, ...(input.unit ? { unit: input.unit } : {}), documentationItemType: "measurement" };

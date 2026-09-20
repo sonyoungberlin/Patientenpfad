@@ -32,6 +32,7 @@ type Draft = {
 
 const TYPE_LABELS: Record<PracticeDocumentationBlockType, string> = {
   text: "Text",
+  paragraph: "Absatz",
   selection: "Auswahl",
   measurement: "Messwert",
   list: "Mehrfachauswahl",
@@ -108,7 +109,7 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
     setDraft({
       title: row.title,
       blockType: row.definition.visibleType,
-      text: question.text,
+      text: question.documentationText ?? question.text,
       unit: question.unit ?? "",
       required: question.required,
       sharedDocumentationText: question.sharedDocumentationText ?? "",
@@ -252,8 +253,8 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
           {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>
         <label>Titel<input value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} maxLength={120} required disabled={busy} /></label>
-        {(draft.blockType === "text" || draft.blockType === "hint") && (
-          <label>{draft.blockType === "hint" ? "Hinweistext" : "Feldbezeichnung"}<textarea value={draft.text} onChange={(event) => setDraft((current) => ({ ...current, text: event.target.value }))} rows={4} required disabled={busy} /></label>
+        {(draft.blockType === "text" || draft.blockType === "paragraph" || draft.blockType === "hint") && (
+          <label>{draft.blockType === "hint" ? "Hinweistext" : draft.blockType === "paragraph" ? "Inhalt" : "Feldbezeichnung"}<textarea value={draft.text} onChange={(event) => setDraft((current) => ({ ...current, text: event.target.value }))} rows={draft.blockType === "paragraph" ? 10 : 4} required disabled={busy} /></label>
         )}
         {draft.blockType === "measurement" && (
           <label>Einheit<input value={draft.unit} onChange={(event) => setDraft((current) => ({ ...current, unit: event.target.value }))} maxLength={40} disabled={busy} /></label>

@@ -136,6 +136,8 @@ export type QuestionDefinition = {
   send_patient_copy?: boolean;
   /** Auswahloptionen für select / yes_no / multi_select (Deutsch, kanonisch). */
   options?: QuestionOptionDefinition[];
+  /** Fester Dokumentinhalt ohne Antwortfeld, z. B. ein Bibliotheksabsatz. */
+  documentationText?: string;
   /** Gemeinsamer Ausgabetext, der bei mindestens einer Auswahl einmalig vorangestellt wird. */
   sharedDocumentationText?: string;
   /** Erläuternder Hilfetext unterhalb des Feldes (Deutsch, kanonisch). */

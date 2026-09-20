@@ -688,6 +688,14 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
         }
         if (condensedClinicalStatusIds.has(question.id)) continue;
         seenQuestionIds.add(question.id);
+        if (question.documentationText) {
+          blockItems.push({
+            type: resolveDocumentationItemType(block, question),
+            text: question.documentationText,
+            legacyText: question.documentationText,
+          });
+          continue;
+        }
         if (block.id === "VOLLST_NIKOTIN" && hasNewSmokingStructure(answers) && SMOKING_PAIR_IDS.has(question.id)) continue;
         const raw = (answers[question.id] ?? "").trim();
         if (raw === "") continue;

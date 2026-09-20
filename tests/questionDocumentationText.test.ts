@@ -40,6 +40,28 @@ function frozenBlock(question: QuestionDefinition): FrozenBlock {
 }
 
 describe("documentationText für Antwortoptionen", () => {
+  it("gibt einen festen mehrzeiligen Absatz ohne Antwortwert vollständig aus", async () => {
+    const content = "Einleitung erster Absatz.\n\nEinleitung zweiter Absatz mit mehr als 500 Zeichen: " + "x".repeat(520);
+    const question: QuestionDefinition = {
+      id: "CONSENT_INTRO",
+      text: "Einwilligung Befundanforderung – Einleitung",
+      type: "textarea",
+      required: false,
+      documentationText: content,
+      documentationItemType: "bodyText",
+    };
+    const answers = { CONSENT_INTRO: "" };
+    const frozen = [frozenBlock(question)];
+    const note = buildMedicalRecordNote({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    expect(note).toContain(content);
+    const semantic = buildSemanticMedicalRecordDocument({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    expect(semantic.sections.flatMap((section) => section.items).map((item) => item.text).join("\n")).toContain(content);
+    const xml = buildStructuredAppXml(semantic);
+    expect(xml).toContain("Einleitung zweiter Absatz");
+    const pdf = await buildQuestionnairePdfBytes({ patient_reference: null, submitted_at: null, submitted_by: "patient", selected_block_ids: ["TEST_BLOCK"], deduplicated_questions: [question], answers, source: "test", practice_form: null, frozen_blocks: frozen }, { title: "Test", referenceLabel: "Referenz", blockCatalog: { TEST_BLOCK: { id: "TEST_BLOCK", label: "Testblock", displayOrder: 1, questionIds: [question.id] } } });
+    expect(await extractPdfText(pdf.bytes)).toContain("Einleitung erster Absatz.");
+  });
+
   it("gibt geordnete Repeatable-Instanzen mit instanzlokaler Dokumentation aus", async () => {
     const question: QuestionDefinition = {
       id: "CONTACTS",

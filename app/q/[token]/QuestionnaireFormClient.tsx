@@ -931,7 +931,7 @@ function renderQuestionLi(
       className="card"
       style={{ marginBottom: "0.75rem", minWidth: 0, ...gateStyle, ...requiredErrStyle }}
     >
-      <label
+      {q.documentationText ? <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{q.documentationText}</p> : <label
         htmlFor={q.id}
         style={{ display: "block", fontWeight: 500, marginBottom: "0.4rem" }}
       >
@@ -944,8 +944,8 @@ function renderQuestionLi(
             <span className="sr-only">{t.requiredAriaSuffix}</span>
           </>
         )}
-      </label>
-      {useChoiceButtonSelect && q.type === "select" ? (
+      </label>}
+      {q.documentationText ? null : useChoiceButtonSelect && q.type === "select" ? (
         <ChoiceButtonQuestionField
           question={q}
           value={values[q.id] ?? ""}

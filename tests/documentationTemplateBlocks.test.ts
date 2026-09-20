@@ -59,6 +59,40 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
       .toEqual(options?.map((option) => typeof option === "string" ? option : option.value));
   });
 
+  it("speichert einen langen mehrzeiligen Absatz und lädt ihn vollständig wieder", () => {
+    const content = `${"Ich bin damit einverstanden, dass meine Hausarztpraxis MVZ Kreuzberg, Skalitzer Str. 33, 10999 Berlin bei den nachfolgend genannten Ärztinnen und Ärzten, Facharztpraxen oder medizinischen Einrichtungen bereits vorhandene Befunde, Arztbriefe und sonstige für meine aktuelle hausärztliche Behandlung erforderliche medizinische Unterlagen anfordert."}\n\n${"Ich willige zugleich ein, dass die nachfolgend genannten Ärztinnen und Ärzte, Praxen oder Einrichtungen die hierfür erforderlichen medizinischen Unterlagen und Gesundheitsdaten an meine oben genannte Hausarztpraxis übermitteln dürfen."}`;
+    expect(content.length).toBeGreaterThan(500);
+    const validation = validatePracticeDocumentationBlock({
+      title: "Einwilligung Befundanforderung – Einleitung",
+      blockType: "paragraph",
+      text: content,
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const initial = buildPracticeDocumentationBlockDefinition(validation.value);
+    expect(initial.questions[0]).toEqual(expect.objectContaining({
+      type: "textarea",
+      documentationItemType: "bodyText",
+      documentationText: content,
+    }));
+    const reopened = parsePracticeDocumentationBlockDefinition(initial);
+    expect(reopened.visibleType).toBe("paragraph");
+    expect(reopened.questions[0]?.documentationText).toBe(content);
+    expect(reopened.questions[0]?.documentationText).toContain("\n\n");
+  });
+
+  it("behält Text als echte Freitexteingabe mit Feldbezeichnungsvalidierung bei", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Konkrete Fragestellung / insbesondere",
+      blockType: "text",
+      text: "Konkrete Fragestellung / insbesondere",
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    expect(buildPracticeDocumentationBlockDefinition(validation.value).questions[0]).toEqual(expect.objectContaining({ type: "textarea", documentationItemType: "freeText" }));
+    expect(validatePracticeDocumentationBlock({ title: "Text", blockType: "text", text: "Zeile 1\nZeile 2" }).ok).toBe(false);
+  });
+
   it("akzeptiert genau eine Auswahloption mit statischem Ausgabetext", () => {
     const validation = validatePracticeDocumentationBlock({
       title: "Einzelauswahl",

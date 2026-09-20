@@ -386,7 +386,9 @@ export function PublicFormView({
                       : {}),
                   }}
                 >
-                  {q.type !== "confirmation" && (
+                  {q.documentationText ? (
+                    <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{q.documentationText}</p>
+                  ) : q.type !== "confirmation" && (
                     <label
                       htmlFor={q.id}
                       style={{ display: "block", fontWeight: 500, marginBottom: "0.4rem" }}
@@ -402,14 +404,14 @@ export function PublicFormView({
                       )}
                     </label>
                   )}
-                  <QuestionField
+                  {!q.documentationText && <QuestionField
                     question={q}
                     value={values[q.id] ?? ""}
                     onChange={handleChange}
                     disabled={submitting}
                     language={language}
                     hasError={isMissing || hasCharErr}
-                  />
+                  />}
                   {hasCharErr && (
                     <p
                       role="alert"

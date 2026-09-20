@@ -35,6 +35,7 @@ export function hasDocumentedAnswer(
   question: QuestionDefinition,
   answers: Record<string, string>,
 ): boolean {
+  if (question.documentationText?.trim()) return true;
   const value = answers[question.id];
   if (!hasNonEmptyValue(value)) return false;
   if (question.type !== "repeatable_group") return true;

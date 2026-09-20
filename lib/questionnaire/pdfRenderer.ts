@@ -479,6 +479,10 @@ export async function buildQuestionnairePdfBytes(
         continue;
       }
       if (composedQuestionIds.has(q.id)) continue;
+      if (q.documentationText) {
+        drawWrappedValue(q.documentationText);
+        continue;
+      }
       if ((useDocumentedContent || opts.omitUnanswered) && value.trim() === "") continue;
       if (q.id === "FACHAERZTE") {
         const entries = parseFacharztEntries(value);
