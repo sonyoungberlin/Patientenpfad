@@ -4,6 +4,8 @@ import type {
   DocumentationSegment,
   QuestionDefinition,
   QuestionOption,
+  RepeatableDocumentationSegment,
+  RepeatableGroupFieldDef,
   QuestionnaireBlock,
 } from "@/lib/questionnaire/blockCatalog";
 import type { ConditionalRule, ConditionOperator } from "@/lib/questionnaire/conditionalLogic";
@@ -19,7 +21,8 @@ export type PracticeDocumentationBlockType =
   | "selection"
   | "measurement"
   | "list"
-  | "hint";
+  | "hint"
+  | "repeatable";
 
 export type PracticeDocumentationBlockDefinition = {
   schemaVersion: typeof PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION;
@@ -65,13 +68,15 @@ export type PracticeDocumentationFieldOptionInput = {
 export type PracticeDocumentationAdditionalFieldInput = {
   id?: string;
   label: string;
-  type: "text" | "textarea" | "date" | "number" | "select";
+  type: "text" | "textarea" | "date" | "time" | "number" | "select" | "multi_select" | "yes_no" | "checkbox";
   options?: PracticeDocumentationFieldOptionInput[];
   required?: boolean;
-  showForOptionValues: string[];
+  showForOptionValues?: string[];
   showForFieldId?: string;
   maxLength?: number;
   unit?: string;
+  documentationText?: string;
+  documentationSegments?: PracticeDocumentationSegmentInput[];
 };
 
 export type PracticeDocumentationBlockInput = {
@@ -90,6 +95,7 @@ type ValidationResult =
 
 const BLOCK_TYPES: readonly PracticeDocumentationBlockType[] = [
   "text", "selection", "measurement", "list", "hint",
+  "repeatable",
 ];
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,160}$/;
 
@@ -164,7 +170,7 @@ function normalizeSegments(raw: unknown): PracticeDocumentationSegmentInput[] | 
   });
 }
 
-function normalizeAdditionalFields(raw: unknown): PracticeDocumentationAdditionalFieldInput[] {
+function normalizeAdditionalFields(raw: unknown, requireCondition = true): PracticeDocumentationAdditionalFieldInput[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw) || raw.length > 20) throw new Error("Zu viele Zusatzangaben.");
   const ids = new Set<string>();
@@ -174,14 +180,16 @@ function normalizeAdditionalFields(raw: unknown): PracticeDocumentationAdditiona
     if (id && (!ID_PATTERN.test(id) || ids.has(id))) throw new Error("Zusatzfeld-ID ist ungültig oder doppelt vorhanden.");
     if (id) ids.add(id);
     const type = item.type;
-    if (type !== "text" && type !== "textarea" && type !== "date" && type !== "number" && type !== "select") {
+    if (type !== "text" && type !== "textarea" && type !== "date" && type !== "time" && type !== "number" && type !== "select" && type !== "multi_select") {
       throw new Error("Ungültiger Typ für Zusatzangabe.");
     }
-    const options = type === "select" ? normalizeFieldOptions(item.options) : undefined;
-    if (!Array.isArray(item.showForOptionValues) || item.showForOptionValues.length === 0) {
+    const options = type === "select" || type === "multi_select" ? normalizeFieldOptions(item.options) : undefined;
+    if (requireCondition && (!Array.isArray(item.showForOptionValues) || item.showForOptionValues.length === 0)) {
       throw new Error("Jede Zusatzangabe benötigt mindestens eine Auswahloption.");
     }
-    const showForOptionValues = item.showForOptionValues.map((value) => normalizeText(value, "Auswahlzuordnung", 160));
+    const showForOptionValues = Array.isArray(item.showForOptionValues)
+      ? item.showForOptionValues.map((value) => normalizeText(value, "Auswahlzuordnung", 160))
+      : [];
     return {
       ...(id ? { id } : {}),
       label: normalizeText(item.label, "Feldbezeichnung", 240),
@@ -192,6 +200,8 @@ function normalizeAdditionalFields(raw: unknown): PracticeDocumentationAdditiona
       ...(item.showForFieldId !== undefined ? { showForFieldId: normalizeText(item.showForFieldId, "Bedingungsfrage", 160) } : {}),
       ...(typeof item.maxLength === "number" ? { maxLength: Math.max(1, Math.min(2000, Math.floor(item.maxLength))) } : {}),
       ...(typeof item.unit === "string" && item.unit.trim() ? { unit: normalizeText(item.unit, "Einheit", 40) } : {}),
+      ...(typeof item.documentationText === "string" && item.documentationText.trim() ? { documentationText: normalizeText(item.documentationText, "Ausgabetext", PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH) } : {}),
+      ...(item.documentationSegments ? { documentationSegments: normalizeSegments(item.documentationSegments) } : {}),
     };
   });
 }
@@ -236,7 +246,7 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
     if (normalizedType === "selection" || normalizedType === "list") {
       value.options = normalizeOptions(input.options);
     }
-    value.additionalFields = normalizeAdditionalFields(input.additionalFields);
+    value.additionalFields = normalizeAdditionalFields(input.additionalFields, normalizedType !== "repeatable");
     const additionalFields = value.additionalFields;
     const optionValues = new Set((value.options ?? []).map((option) => option.value ?? option.label));
     const fieldIds = new Set(additionalFields.map((field) => field.id).filter((id): id is string => Boolean(id)));
@@ -254,12 +264,31 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
       }
     };
     for (const [index, field] of additionalFields.entries()) {
+      if (normalizedType === "repeatable") continue;
       const sourceId = field.showForFieldId ?? "__primary";
       assertPreviousQuestion(sourceId, index);
       const sourceValues = optionValuesFor(sourceId);
-      if (field.showForOptionValues.some((optionValue) => !sourceValues.has(optionValue))) {
+      if ((field.showForOptionValues ?? []).some((optionValue) => !sourceValues.has(optionValue))) {
         throw new Error("Eine Zusatzangabe verweist auf einen unbekannten Auswahlwert.");
       }
+    }
+    if (normalizedType === "repeatable") {
+      const repeatableFieldIds = new Set(additionalFields.map((field) => field.id).filter((id): id is string => Boolean(id)));
+      const repeatableOptions = new Map(additionalFields.map((field) => [field.id, new Set((field.options ?? []).map((option) => option.value))]));
+      const validateRepeatableSegments = (segments: PracticeDocumentationSegmentInput[]): void => {
+        for (const segment of segments) {
+          if (segment.kind === "answerRef" && !repeatableFieldIds.has(segment.fieldId)) {
+            throw new Error("Der Ausgabetext verweist auf ein unbekanntes Wiederholungsfeld.");
+          }
+          if (segment.kind === "conditional") {
+            if (!repeatableFieldIds.has(segment.fieldId) || !(repeatableOptions.get(segment.fieldId)?.has(segment.optionValue) ?? false)) {
+              throw new Error("Die bedingte Ausgabe verweist auf ein unbekanntes Wiederholungsfeld oder Auswahlwert.");
+            }
+            validateRepeatableSegments(segment.segments);
+          }
+        }
+      };
+      for (const field of additionalFields) validateRepeatableSegments(field.documentationSegments ?? []);
     }
     const validateSegments = (segments: PracticeDocumentationSegmentInput[], currentIndex: number): void => {
       for (const segment of segments) {
@@ -293,6 +322,18 @@ function questionForInput(
 ): QuestionDefinition {
   const id = existing?.id ?? createId("question");
   const common = { id, text: input.text ?? input.title, required: input.required === true };
+  if (input.blockType === "repeatable") {
+    return {
+      ...common,
+      text: input.title,
+      type: "repeatable_group",
+      groupSchema: [],
+      maxEntries: undefined,
+      unlimitedEntries: true,
+      addEntryLabel: "+ Weiteren Eintrag hinzufügen",
+      documentationItemType: "bodyText",
+    };
+  }
   if (input.blockType === "text") {
     return { ...common, type: "textarea", maxLength: 1000, documentationItemType: "freeText" };
   }
@@ -319,7 +360,7 @@ function questionForInput(
 }
 
 function questionTypeForField(type: PracticeDocumentationAdditionalFieldInput["type"]): QuestionDefinition["type"] {
-  return type;
+  return type === "checkbox" ? "confirmation" : type;
 }
 
 export function buildPracticeDocumentationBlockDefinition(
@@ -340,18 +381,62 @@ export function buildPracticeDocumentationBlockDefinition(
       type: questionTypeForField(field.type),
       required: field.required === true,
       ...(field.type === "select" ? { options: field.options } : {}),
+      ...(field.type === "multi_select" ? { options: field.options } : {}),
       ...(field.maxLength ? { maxLength: field.maxLength } : {}),
       ...(field.unit ? { unit: field.unit } : {}),
     } satisfies QuestionDefinition;
   });
   const allQuestions = [primaryQuestion, ...additionalQuestions];
+  if (input.blockType === "repeatable") {
+    const groupSchema: RepeatableGroupFieldDef[] = (input.additionalFields ?? []).map((field, index) => {
+      const fieldId = field.id ?? `field_${index}`;
+      const mapSegment = (segment: PracticeDocumentationSegmentInput): RepeatableDocumentationSegment => {
+        if (segment.kind === "text") return segment;
+        if (segment.kind === "answerRef") return { kind: "fieldRef", fieldKey: segment.fieldId };
+        return {
+          kind: "conditional",
+          fieldKey: segment.fieldId,
+          optionValue: segment.optionValue,
+          segments: segment.segments.map(mapSegment),
+        };
+      };
+      return {
+        key: fieldId,
+        label: field.label,
+        type: field.type,
+        required: field.required === true,
+        ...(field.maxLength ? { maxLength: field.maxLength } : {}),
+        ...(field.options ? { options: field.options } : {}),
+        ...(field.unit ? { helperText: field.unit } : {}),
+        ...(field.documentationText ? { documentationText: field.documentationText } : {}),
+        ...(field.documentationSegments ? { documentationSegments: field.documentationSegments.map(mapSegment) } : {}),
+        ...(field.showForFieldId ? { conditionalOn: field.showForFieldId } : {}),
+        ...(field.showForOptionValues?.length === 1 ? { conditionalValue: field.showForOptionValues[0] } : {}),
+        ...(field.showForOptionValues && field.showForOptionValues.length > 1 ? { conditionalValues: field.showForOptionValues } : {}),
+      };
+    });
+    const repeatableQuestion: QuestionDefinition = {
+      ...primaryQuestion,
+      type: "repeatable_group",
+      groupSchema,
+      maxEntries: undefined,
+      unlimitedEntries: true,
+      addEntryLabel: "+ Weiteren Eintrag hinzufügen",
+    };
+    return {
+      schemaVersion: PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION,
+      visibleType: input.blockType,
+      block: { id: blockId, label: input.title, displayOrder: 0, questionIds: [repeatableQuestion.id], documentationItemType: "bodyText" },
+      questions: [repeatableQuestion],
+    };
+  }
   const fieldQuestionIds = new Map((input.additionalFields ?? []).map((field, index) => [field.id ?? `__new_${index}`, additionalQuestions[index].id]));
   const sourceQuestionId = (field: PracticeDocumentationAdditionalFieldInput) => field.showForFieldId
     ? fieldQuestionIds.get(field.showForFieldId) ?? primaryQuestion.id
     : primaryQuestion.id;
   const rules: ConditionalRule[] = (input.additionalFields ?? []).flatMap((field, index) => {
     const questionId = fieldQuestionIds.get(field.id ?? `__new_${index}`)!;
-    return field.showForOptionValues.map((inputOptionValue) => {
+    return (field.showForOptionValues ?? []).map((inputOptionValue) => {
       const sourceField = field.showForFieldId ? input.additionalFields?.find((candidate) => candidate.id === field.showForFieldId) : undefined;
       const sourceOptions = sourceField?.options ?? input.options;
       const sourceOptionIndex = sourceOptions?.findIndex((option) => (option.value ?? option.label) === inputOptionValue) ?? -1;

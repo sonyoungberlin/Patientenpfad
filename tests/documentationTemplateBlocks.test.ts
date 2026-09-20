@@ -199,6 +199,42 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     });
   });
 
+  it("baut einen generischen Repeatable-Baustein mit instanzlokalen Regeln und unbegrenztem neuen Limit", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Kontaktverlauf",
+      blockType: "repeatable",
+      additionalFields: [
+        { id: "zeit", label: "Zeit", type: "time", required: true },
+        { id: "art", label: "Art", type: "select", options: [{ value: "telefon", label: "Telefon" }, { value: "mail", label: "E-Mail" }], required: true },
+        { id: "themen", label: "Themen", type: "multi_select", options: [{ value: "a", label: "A" }, { value: "b", label: "B" }], documentationSegments: [{ kind: "text", text: "Themen: " }, { kind: "answerRef", fieldId: "themen" }] },
+        { id: "notiz", label: "Notiz", type: "textarea", showForFieldId: "art", showForOptionValues: ["telefon"], documentationText: "Telefonischer Kontakt." },
+      ],
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    expect(definition.questions).toHaveLength(1);
+    expect(definition.questions[0]).toEqual(expect.objectContaining({ type: "repeatable_group", maxEntries: undefined }));
+    expect(definition.questions[0].groupSchema?.map((field) => field.type)).toEqual(["time", "select", "multi_select", "textarea"]);
+    expect(definition.questions[0].groupSchema?.[3]).toEqual(expect.objectContaining({ conditionalOn: "art", conditionalValue: "telefon", documentationText: "Telefonischer Kontakt." }));
+  });
+
+  it("validiert instanzlokale Uhrzeit und Auswahlwerte", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Termin",
+      blockType: "repeatable",
+      additionalFields: [
+        { id: "zeit", label: "Zeit", type: "time", required: true },
+        { id: "art", label: "Art", type: "select", options: [{ value: "vorort", label: "Vor Ort" }] },
+      ],
+    });
+    const frozen = resolvePracticeDocumentationBlocks([{ definition }]);
+    const { validateFrozenAnswers } = require("@/lib/questionnaire/validateFrozenAnswers") as typeof import("@/lib/questionnaire/validateFrozenAnswers");
+    expect(validateFrozenAnswers({ [definition.questions[0].id]: JSON.stringify([{ zeit: "23:59", art: "vorort" }]) }, frozen).ok).toBe(true);
+    expect(validateFrozenAnswers({ [definition.questions[0].id]: JSON.stringify([{ zeit: "24:00", art: "vorort" }]) }, frozen).ok).toBe(false);
+    expect(validateFrozenAnswers({ [definition.questions[0].id]: JSON.stringify([{ zeit: "12:00", art: "falsch" }]) }, frozen).ok).toBe(false);
+  });
+
   it.each([
     ["unbekannte Quellfrage", { id: "to", label: "Bis", type: "date", showForFieldId: "missing", showForOptionValues: ["date"] }],
     ["Vorwärtsreferenz", { id: "from", label: "Von", type: "date", showForFieldId: "end", showForOptionValues: ["date"] }],

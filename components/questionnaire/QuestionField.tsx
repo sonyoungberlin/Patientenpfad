@@ -735,7 +735,7 @@ export function RepeatableGroupField({
   disabled: boolean;
 }) {
   const schema: RepeatableGroupFieldDef[] = question.groupSchema ?? [];
-  const maxEntries = question.maxEntries ?? 20;
+  const maxEntries = question.unlimitedEntries ? Number.POSITIVE_INFINITY : question.maxEntries ?? 20;
 
   const [entries, setEntries] = useState<RepeatableEntry[]>(() => {
     if (!value) return [];
@@ -900,6 +900,15 @@ export function RepeatableGroupField({
                     style={baseFieldStyle}
                     data-rg-field={`${idx}:${field.key}`}
                   />
+                ) : field.type === "time" ? (
+                  <input
+                    type="time"
+                    value={fieldVal}
+                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    disabled={disabled}
+                    style={baseFieldStyle}
+                    data-rg-field={`${idx}:${field.key}`}
+                  />
                 ) : field.type === "textarea" ? (
                   <><textarea
                     value={fieldVal}
@@ -910,6 +919,15 @@ export function RepeatableGroupField({
                     style={{ ...baseFieldStyle, resize: "vertical" }}
                     data-rg-field={`${idx}:${field.key}`}
                   /><TextLengthCounter value={fieldVal} maxLength={field.maxLength} /></>
+                ) : field.type === "number" ? (
+                  <input
+                    type="number"
+                    value={fieldVal}
+                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    disabled={disabled}
+                    style={baseFieldStyle}
+                    data-rg-field={`${idx}:${field.key}`}
+                  />
                 ) : field.type === "yes_no" ? (
                   <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }} data-rg-field={`${idx}:${field.key}`}>
                     {(["ja", "nein"] as const).map((val) => (
@@ -1310,6 +1328,19 @@ export function QuestionField({
           onChange={(e) => onChange(question.id, e.target.value)}
           disabled={disabled}
           required={question.required}
+          style={baseStyle}
+        />
+      );
+    case "time":
+      return (
+        <input
+          type="time"
+          id={question.id}
+          value={value}
+          onChange={(e) => onChange(question.id, e.target.value)}
+          disabled={disabled}
+          required={question.required}
+          pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
           style={baseStyle}
         />
       );

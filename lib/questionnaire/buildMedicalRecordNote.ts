@@ -39,6 +39,7 @@ import {
   getStructuredDocumentationQuestionIds,
   resolveQuestionDocumentation,
   resolveStructuredQuestionDocumentation,
+  resolveRepeatableFieldDocumentation,
 } from "./formatAnswer";
 import { getQuestionOptionValues } from "./questionOptions";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
@@ -356,7 +357,10 @@ function formatRepeatableGroupEntries(
       if (typeof val !== "string" || val.trim() === "") continue;
 
       const trimmed = val.trim();
-      if (field.type === "textarea") {
+      const documentationText = resolveRepeatableFieldDocumentation(field, e);
+      if (documentationText) {
+        lines.push(`     ${documentationText}`);
+      } else if (field.type === "textarea") {
         const parts = trimmed
           .split(/\r?\n/)
           .filter((l) => l.trim() !== "");

@@ -5,6 +5,7 @@ import {
   resolveQuestionDocumentation,
   resolveStructuredQuestionDocumentation,
 } from "@/lib/questionnaire/formatAnswer";
+import { parseRepeatableGroupEntries } from "@/lib/questionnaire/formatAnswer";
 import { buildInternalDocumentationFrozenBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
@@ -39,6 +40,32 @@ function frozenBlock(question: QuestionDefinition): FrozenBlock {
 }
 
 describe("documentationText für Antwortoptionen", () => {
+  it("gibt geordnete Repeatable-Instanzen mit instanzlokaler Dokumentation aus", async () => {
+    const question: QuestionDefinition = {
+      id: "CONTACTS",
+      text: "Kontakte",
+      type: "repeatable_group",
+      required: false,
+      groupSchema: [
+        { key: "time", label: "Zeit", type: "time", required: true },
+        { key: "note", label: "Notiz", type: "textarea", required: false, documentationText: "Kontakt dokumentiert." },
+      ],
+    };
+    const answers = { CONTACTS: JSON.stringify([{ time: "09:15", note: "Rückruf" }, { time: "14:00", note: "Nachricht" }]) };
+    const entries = parseRepeatableGroupEntries(answers.CONTACTS, question.id, question);
+    expect(entries.map((entry) => entry.index)).toEqual([1, 2]);
+    expect(entries[0]?.fields[0]).toEqual(expect.objectContaining({ value: "09:15" }));
+    expect(entries[0]?.fields[1]).toEqual(expect.objectContaining({ documentationText: "Kontakt dokumentiert." }));
+    const note = buildMedicalRecordNote({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: [frozenBlock(question)] });
+    expect(note.indexOf("09:15")).toBeLessThan(note.indexOf("14:00"));
+    expect(note).toContain("Kontakt dokumentiert.");
+    const semantic = buildSemanticMedicalRecordDocument({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: [frozenBlock(question)] });
+    expect(semantic.sections.flatMap((section) => section.items).map((item) => item.text).join(" ")).toContain("Kontakt dokumentiert.");
+    const xml = buildStructuredAppXml(semantic);
+    expect(xml).toContain("Kontakt dokumentiert.");
+    const pdf = await buildQuestionnairePdfBytes({ patient_reference: null, submitted_at: null, submitted_by: "patient", selected_block_ids: ["TEST_BLOCK"], deduplicated_questions: [question], answers, source: "test", practice_form: null, frozen_blocks: [frozenBlock(question)] }, { title: "Test", referenceLabel: "Referenz", blockCatalog: { TEST_BLOCK: { id: "TEST_BLOCK", label: "Testblock", displayOrder: 1, questionIds: [question.id] } } });
+    expect(await extractPdfText(pdf.bytes)).toContain("Kontakt dokumentiert.");
+  });
   it("setzt referenzierte Zusatzantworten strukturiert zusammen und gibt sie nicht doppelt aus", () => {
     const selection: QuestionDefinition = {
       id: "LIMITATION_STATUS",

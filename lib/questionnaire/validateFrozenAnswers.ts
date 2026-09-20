@@ -7,7 +7,7 @@ import { computeAllDerivedValues } from "./derivedValues";
 import { buildOptionsByQuestionId, parseMultiSelectValue } from "./multiSelect";
 import { hasDocumentedAnswer } from "./documentedContent";
 import type { FrozenBlock } from "./frozenBlocks";
-import { getQuestionOptionValues } from "./questionOptions";
+import { getQuestionOptionValue, getQuestionOptionValues } from "./questionOptions";
 
 export type FrozenAnswersValidationResult = {
   ok: boolean;
@@ -23,6 +23,7 @@ function isAllowedOptionAnswer(question: QuestionDefinition, value: string): boo
     const selected = parseMultiSelectValue(value, optionValues);
     return selected.length > 0 && selected.every((option) => optionValues.includes(option));
   }
+  if (question.type === "time") return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
   return true;
 }
 
@@ -35,6 +36,7 @@ function hasValidRepeatableGroupEntries(question: QuestionDefinition, value: str
     return false;
   }
   if (!Array.isArray(parsed)) return false;
+  if (question.maxEntries !== undefined && parsed.length > question.maxEntries) return false;
 
   return parsed.every((entry) => {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
@@ -53,12 +55,14 @@ function hasValidRepeatableGroupEntries(question: QuestionDefinition, value: str
       if (field.required && fieldValue.trim() === "") return false;
       if (fieldValue.trim() === "") return true;
       if (field.type === "select" || field.type === "yes_no") {
-        return field.options?.includes(fieldValue) ?? false;
+        return field.options?.map(getQuestionOptionValue).includes(fieldValue) ?? false;
       }
       if (field.type === "multi_select") {
         const selected = parseMultiSelectValue(fieldValue, field.options ?? []);
-        return selected.length > 0 && selected.every((option) => field.options?.includes(option));
+        const optionValues = (field.options ?? []).map(getQuestionOptionValue);
+        return selected.length > 0 && selected.every((option) => optionValues.includes(option));
       }
+      if (field.type === "time" && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(fieldValue)) return false;
       return true;
     });
   });

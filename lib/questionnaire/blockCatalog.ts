@@ -53,7 +53,8 @@ export type QuestionType =
   | "multi_select"
   | "textarea"
   | "repeatable_group"
-  | "number"; // Phase 5: strukturierte numerische Eingabe (Wert als String gespeichert)
+  | "number"
+  | "time"; // Werte werden als String gespeichert
 
 export type QuestionOption = {
   value: string;
@@ -69,11 +70,16 @@ export type DocumentationSegment =
   | { kind: "answerRef"; questionId: string }
   | { kind: "conditional"; questionId: string; optionValue: string; segments: DocumentationSegment[] };
 
+export type RepeatableDocumentationSegment =
+  | { kind: "text"; text: string }
+  | { kind: "fieldRef"; fieldKey: string }
+  | { kind: "conditional"; fieldKey: string; optionValue: string; segments: RepeatableDocumentationSegment[] };
+
 /** Ein Unterfeld innerhalb eines repeatable_group-Eintrags. */
 export type RepeatableGroupFieldDef = {
   key: string;
   label: string;
-  type: "text" | "date" | "select" | "yes_no" | "textarea" | "checkbox" | "multi_select";
+  type: "text" | "date" | "time" | "number" | "select" | "yes_no" | "textarea" | "checkbox" | "multi_select";
   required: boolean;
   /** Maximale Länge für nutzereditierbare Freitext-Unterfelder. */
   maxLength?: number;
@@ -84,6 +90,8 @@ export type RepeatableGroupFieldDef = {
   conditionalValue?: string;
   /** Alternativ: Feld sichtbar, wenn `conditionalOn`-Feld einen der angegebenen Werte hat. */
   conditionalValues?: string[];
+  documentationText?: string;
+  documentationSegments?: RepeatableDocumentationSegment[];
 };
 
 export type VaccinationItemDefinition = {
@@ -144,6 +152,8 @@ export type QuestionDefinition = {
   groupSchema?: RepeatableGroupFieldDef[];
   /** Maximale Anzahl Einträge für repeatable_group (Default 20). */
   maxEntries?: number;
+  /** Neue Bibliotheksbausteine erlauben beliebig viele geordnete Instanzen. */
+  unlimitedEntries?: boolean;
   /** Beschriftung des „Eintrag hinzufügen"-Buttons. Default: \"+ Weiteren Eintrag hinzufügen\". */
   addEntryLabel?: string;
   /** Schrittweite für type "number"-Eingaben (HTML step-Attribut). Default 1. */

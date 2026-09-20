@@ -342,7 +342,10 @@ export async function buildQuestionnairePdfBytes(
         lineHeight,
       });
       y -= 1;
-      for (const field of entry.fields) drawWrappedPair(field.label, field.value);
+      for (const field of entry.fields) {
+        if (field.documentationText) drawWrappedValue(field.documentationText);
+        else drawWrappedPair(field.label, field.value);
+      }
       y -= 3;
     }
     y -= sectionGap / 2;

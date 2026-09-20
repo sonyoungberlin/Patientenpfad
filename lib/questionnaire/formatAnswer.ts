@@ -225,7 +225,27 @@ export type RepGroupField = {
   value: string;
   /** Originaltyp des Felds (für Textarea-Zeilenumbrüche o. ä.) */
   fieldType?: string;
+  documentationText?: string;
 };
+
+export function resolveRepeatableFieldDocumentation(
+  field: NonNullable<QuestionDefinition["groupSchema"]>[number],
+  entry: Record<string, unknown>,
+): string | undefined {
+  const resolve = (segments: NonNullable<typeof field.documentationSegments>): string => segments.map((segment) => {
+    if (segment.kind === "text") return segment.text;
+    if (segment.kind === "conditional") {
+      return entry[segment.fieldKey] === segment.optionValue ? resolve(segment.segments) : "";
+    }
+    const value = entry[segment.fieldKey];
+    return typeof value === "string" ? value.trim() : "";
+  }).join("");
+  if (field.documentationSegments) {
+    const text = resolve(field.documentationSegments);
+    return text || undefined;
+  }
+  return field.documentationText || undefined;
+}
 
 export type RepGroupEntry = {
   /** 1-basierter Index. */
@@ -304,7 +324,7 @@ export function parseRepeatableGroupEntries(
         if (display === "ja") display = "Ja";
       }
 
-      fields.push({ label: field.label, value: display, fieldType: field.type });
+      fields.push({ label: field.label, value: display, fieldType: field.type, documentationText: resolveRepeatableFieldDocumentation(field, entry) });
     }
 
     if (fields.length > 0) {

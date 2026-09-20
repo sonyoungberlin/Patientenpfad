@@ -10,7 +10,7 @@ import type {
   PracticeDocumentationOptionInput,
   PracticeDocumentationSegmentInput,
 } from "@/lib/practice/documentationBlocks";
-import type { DocumentationSegment } from "@/lib/questionnaire/blockCatalog";
+import type { DocumentationSegment, RepeatableDocumentationSegment } from "@/lib/questionnaire/blockCatalog";
 
 type BlockRow = {
   id: string;
@@ -35,6 +35,7 @@ const TYPE_LABELS: Record<PracticeDocumentationBlockType, string> = {
   measurement: "Messwert",
   list: "Mehrfachauswahl",
   hint: "Hinweis",
+  repeatable: "Wiederholbarer Baustein",
 };
 
 const emptyDraft = (): Draft => ({
@@ -91,6 +92,16 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
         segments: segment.segments.map(mapDocumentationSegment),
       };
     };
+    const mapRepeatableDocumentationSegment = (segment: RepeatableDocumentationSegment): PracticeDocumentationSegmentInput => {
+      if (segment.kind === "text") return segment;
+      if (segment.kind === "fieldRef") return { kind: "answerRef", fieldId: segment.fieldKey };
+      return {
+        kind: "conditional",
+        fieldId: segment.fieldKey,
+        optionValue: segment.optionValue,
+        segments: segment.segments.map(mapRepeatableDocumentationSegment),
+      };
+    };
     setEditingId(row.id);
     setDraft({
       title: row.title,
@@ -101,13 +112,26 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
       options: (question.options ?? []).map((option) => typeof option === "string"
         ? { label: option, documentationText: option }
         : { value: option.value, label: option.label, documentationText: option.documentationText ?? option.label, documentationSegments: option.documentationSegments?.map(mapDocumentationSegment) }),
-      additionalFields: row.definition.questions.slice(1).map((fieldQuestion) => {
+      additionalFields: row.definition.visibleType === "repeatable"
+        ? (question.groupSchema ?? []).map((field) => ({
+          id: field.key,
+          label: field.label,
+          type: field.type,
+          ...(field.options ? { options: field.options.filter((option): option is Exclude<typeof option, string> => typeof option !== "string").map((option) => ({ value: option.value, label: option.label })) } : {}),
+          required: field.required,
+          ...(field.conditionalOn ? { showForFieldId: field.conditionalOn } : {}),
+          showForOptionValues: field.conditionalValues ?? (field.conditionalValue ? [field.conditionalValue] : []),
+          ...(field.maxLength ? { maxLength: field.maxLength } : {}),
+          ...(field.documentationText ? { documentationText: field.documentationText } : {}),
+          ...(field.documentationSegments ? { documentationSegments: field.documentationSegments.map(mapRepeatableDocumentationSegment) } : {}),
+        }))
+        : row.definition.questions.slice(1).map((fieldQuestion) => {
         const rule = rules.find((candidate) => candidate.action === "showQuestion" && candidate.targetId === fieldQuestion.id && !("mode" in candidate.condition) && candidate.condition.target.kind === "question");
         const sourceQuestionId = rule && !("mode" in rule.condition) && rule.condition.target.kind === "question" ? rule.condition.target.questionId : question.id;
         return {
           id: fieldQuestion.id,
           label: fieldQuestion.text,
-          type: fieldQuestion.type === "date" || fieldQuestion.type === "number" || fieldQuestion.type === "textarea" || fieldQuestion.type === "select" ? fieldQuestion.type : "text",
+          type: fieldQuestion.type === "date" || fieldQuestion.type === "time" || fieldQuestion.type === "number" || fieldQuestion.type === "textarea" || fieldQuestion.type === "select" || fieldQuestion.type === "multi_select" ? fieldQuestion.type : "text",
           ...(fieldQuestion.type === "select" ? { options: (fieldQuestion.options ?? []).filter((option): option is Exclude<typeof option, string> => typeof option !== "string").map((option) => ({ value: option.value, label: option.label })) } : {}),
           required: fieldQuestion.required,
           showForOptionValues: rules.filter((candidate) => candidate.action === "showQuestion" && candidate.targetId === fieldQuestion.id && !("mode" in candidate.condition) && candidate.condition.target.kind === "question" && candidate.condition.target.questionId === sourceQuestionId && typeof candidate.condition.value === "string").map((candidate) => !("mode" in candidate.condition) ? String(candidate.condition.value) : ""),
@@ -267,13 +291,14 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
             <button type="button" onClick={() => setDraft((current) => ({ ...current, options: [...current.options, { label: "", documentationText: "" }] }))} disabled={busy}>Option hinzufügen</button>
           </fieldset>
         )}
-        {(draft.blockType === "selection" || draft.blockType === "list") && <fieldset style={{ display: "grid", gap: "0.75rem" }}>
+        {(draft.blockType === "selection" || draft.blockType === "list" || draft.blockType === "repeatable") && <fieldset style={{ display: "grid", gap: "0.75rem" }}>
           <legend>Optionale Zusatzangaben</legend>
           {draft.additionalFields.map((field, index) => <div key={field.id} style={{ display: "grid", gap: "0.4rem", borderBottom: "1px solid #ddd", paddingBottom: "0.75rem" }}>
             <label>Feldbezeichnung<input value={field.label} onChange={(event) => updateField(index, { label: event.target.value })} required disabled={busy} /></label>
-            <label>Feldtyp<select value={field.type} onChange={(event) => updateField(index, { type: event.target.value as PracticeDocumentationAdditionalFieldInput["type"], options: event.target.value === "select" ? (field.options ?? [newFieldOption()]) : undefined })} disabled={busy}><option value="text">Kurzer Text oder Monat/Jahr</option><option value="textarea">Längerer Text</option><option value="date">Datum</option><option value="number">Zahl</option><option value="select">Auswahl</option></select></label>
-            {field.type === "select" && <fieldset><legend>Auswahloptionen</legend>{(field.options ?? []).map((choice, choiceIndex) => <div key={choice.value} style={{ display: "flex", gap: "0.4rem" }}><input value={choice.label} placeholder="Bezeichnung" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, label: event.target.value } : candidate) })} disabled={busy} /><input value={choice.value} placeholder="Wert" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, value: event.target.value } : candidate) })} disabled={busy} /></div>)}<button type="button" onClick={() => updateField(index, { options: [...(field.options ?? []), newFieldOption()] })} disabled={busy}>Auswahloption hinzufügen</button></fieldset>}
-            <fieldset><legend>Anzeigen wenn</legend><select value={field.showForFieldId ?? "__primary"} onChange={(event) => updateField(index, { showForFieldId: event.target.value === "__primary" ? undefined : event.target.value, showForOptionValues: [] })} disabled={busy}><option value="__primary">Primäre Auswahl</option>{draft.additionalFields.slice(0, index).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.label || "Unbenannte Zusatzangabe"}</option>)}</select>{(field.showForFieldId ? draft.additionalFields.find((candidate) => candidate.id === field.showForFieldId)?.options ?? [] : draft.options).map((option) => { const value = typeof option === "string" ? option : (option.value ?? option.label); const label = typeof option === "string" ? option : option.label; return <label key={value} style={{ display: "block" }}><input type="checkbox" checked={field.showForOptionValues.includes(value)} onChange={(event) => updateField(index, { showForOptionValues: event.target.checked ? [...field.showForOptionValues, value] : field.showForOptionValues.filter((candidate) => candidate !== value) })} disabled={busy} /> {label || "Unbenannte Option"}</label>; })}</fieldset>
+            {draft.blockType === "repeatable" && <label>Instanz-Ausgabetext (optional)<textarea value={field.documentationText ?? ""} onChange={(event) => updateField(index, { documentationText: event.target.value })} rows={2} disabled={busy} /></label>}
+            <label>Feldtyp<select value={field.type} onChange={(event) => updateField(index, { type: event.target.value as PracticeDocumentationAdditionalFieldInput["type"], options: event.target.value === "select" || event.target.value === "multi_select" ? (field.options ?? [newFieldOption()]) : undefined })} disabled={busy}><option value="text">Kurzer Text</option><option value="textarea">Längerer Text</option><option value="date">Datum</option><option value="time">Uhrzeit</option><option value="number">Zahl</option><option value="select">Auswahl</option><option value="multi_select">Mehrfachauswahl</option><option value="yes_no">Ja/Nein</option><option value="checkbox">Kontrollfeld</option></select></label>
+            {(field.type === "select" || field.type === "multi_select") && <fieldset><legend>Auswahloptionen</legend>{(field.options ?? []).map((choice, choiceIndex) => <div key={choice.value} style={{ display: "flex", gap: "0.4rem" }}><input value={choice.label} placeholder="Bezeichnung" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, label: event.target.value } : candidate) })} disabled={busy} /><input value={choice.value} placeholder="Wert" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, value: event.target.value } : candidate) })} disabled={busy} /></div>)}<button type="button" onClick={() => updateField(index, { options: [...(field.options ?? []), newFieldOption()] })} disabled={busy}>Auswahloption hinzufügen</button></fieldset>}
+            <fieldset><legend>Anzeigen wenn</legend><select value={field.showForFieldId ?? "__primary"} onChange={(event) => updateField(index, { showForFieldId: event.target.value === "__primary" ? undefined : event.target.value, showForOptionValues: [] })} disabled={busy}><option value="__primary">Primäre Auswahl</option>{draft.additionalFields.slice(0, index).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.label || "Unbenannte Zusatzangabe"}</option>)}</select>{(field.showForFieldId ? draft.additionalFields.find((candidate) => candidate.id === field.showForFieldId)?.options ?? [] : draft.options).map((option) => { const value = typeof option === "string" ? option : (option.value ?? option.label); const label = typeof option === "string" ? option : option.label; const selectedValues = field.showForOptionValues ?? []; return <label key={value} style={{ display: "block" }}><input type="checkbox" checked={selectedValues.includes(value)} onChange={(event) => updateField(index, { showForOptionValues: event.target.checked ? [...selectedValues, value] : selectedValues.filter((candidate) => candidate !== value) })} disabled={busy} /> {label || "Unbenannte Option"}</label>; })}</fieldset>
             <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={field.required === true} onChange={(event) => updateField(index, { required: event.target.checked })} disabled={busy} />Pflichtangabe, wenn sichtbar</label>
             <button type="button" onClick={() => setDraft((current) => ({ ...current, additionalFields: current.additionalFields.filter((_, fieldIndex) => fieldIndex !== index) }))} disabled={busy}>Zusatzangabe entfernen</button>
           </div>)}
