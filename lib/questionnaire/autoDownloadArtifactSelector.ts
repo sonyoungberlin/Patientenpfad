@@ -39,6 +39,7 @@ type SelectNextAutoDownloadArtifactInput = {
   practiceId: string;
   deviceHash: string;
   enabledAt: Date;
+  sessionId?: string;
 };
 
 type SelectNextDeliveryArtifactInput = {
@@ -48,6 +49,7 @@ type SelectNextDeliveryArtifactInput = {
 
 type TraverseAutoDownloadArtifactsInput = {
   practiceId: string;
+  sessionId?: string;
   deviceHash?: string;
   enabledAt?: Date;
   stopAfterRejectedCandidate: boolean;
@@ -62,6 +64,7 @@ const STOP_SELECTION = Symbol("stop_auto_download_selection");
 
 async function traverseAutoDownloadArtifacts({
   practiceId,
+  sessionId,
   deviceHash,
   enabledAt,
   stopAfterRejectedCandidate,
@@ -80,6 +83,7 @@ async function traverseAutoDownloadArtifacts({
   const baseEligibility = {
     AND: [
       { owner_practice_id: practiceId },
+      ...(sessionId ? [{ id: sessionId }] : []),
       PATIENT_CONTEXT_FILTER,
       PRACTICE_VISIBLE_SESSION_FILTER,
       { deleted_at: null },
@@ -428,9 +432,11 @@ export async function selectNextAutoDownloadArtifact({
   practiceId,
   deviceHash,
   enabledAt,
+  sessionId,
 }: SelectNextAutoDownloadArtifactInput): Promise<AutoDownloadArtifact | null> {
   const candidate = await traverseAutoDownloadArtifacts({
     practiceId,
+    sessionId,
     deviceHash,
     enabledAt,
     stopAfterRejectedCandidate: true,

@@ -9,6 +9,11 @@ import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 
+const refreshMock = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: refreshMock }),
+}));
+
 jest.mock("@/components/SelfCheckInQrCode", () => ({
   SelfCheckInQrCode: ({ reference }: { reference: string }) => (
     <div data-self-check-in-qr data-reference={reference}>{reference}</div>
@@ -48,6 +53,8 @@ async function renderForm(
   formQuestions: QuestionDefinition[] = QUESTIONS,
   frozenBlocks?: FrozenBlock[],
   publicHandoffPath?: string,
+  submitEndpoint?: string,
+  autoDownloadSessionId?: string,
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -64,6 +71,8 @@ async function renderForm(
         selfCheckInQrReference={selfCheckInQrReference}
         kioskRestartPath={kioskRestartPath}
         publicHandoffPath={publicHandoffPath}
+        submitEndpoint={submitEndpoint}
+        autoDownloadSessionId={autoDownloadSessionId}
         context="office"
       />,
     );
@@ -72,7 +81,10 @@ async function renderForm(
 }
 
 describe("QuestionnaireFormClient Direktabschluss", () => {
-  beforeEach(() => fetchMock.mockReset());
+  beforeEach(() => {
+    fetchMock.mockReset();
+    refreshMock.mockReset();
+  });
 
   it("markiert Server-Fehler und scrollt/fokussiert das erste ungültige Feld", async () => {
     const scrollIntoView = jest.fn();
@@ -197,6 +209,86 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
 
     await act(async () => root.unmount());
     document.body.removeChild(container);
+  });
+
+  it("liefert nach einmaligem internen Submit PDF, XML und GDT derselben Session aus", async () => {
+    Object.defineProperty(globalThis.crypto, "randomUUID", {
+      configurable: true,
+      value: jest.fn(() => "123e4567-e89b-42d3-a456-426614174000"),
+    });
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: jest.fn(() => "blob:internal-artifact"),
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: jest.fn(),
+    });
+    const downloadedFilenames: string[] = [];
+    jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedFilenames.push(this.download);
+    });
+    const artifactResponse = (contentType: string, filename: string) => ({
+      ok: true,
+      status: 200,
+      headers: new Headers({
+        "content-type": contentType,
+        "content-disposition": `attachment; filename="${filename}"`,
+      }),
+      blob: async () => new Blob([filename], { type: contentType }),
+    });
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ ok: true }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ mode: "BROWSER", enabled: true, isCurrentDevice: true }),
+      })
+      .mockResolvedValueOnce(artifactResponse("application/pdf", "dokumentation.pdf"))
+      .mockResolvedValueOnce(artifactResponse("application/xml; charset=utf-8", "dokumentation.xml"))
+      .mockResolvedValueOnce(artifactResponse("application/octet-stream", "dokumentation.gdt"))
+      .mockResolvedValueOnce({ ok: true, status: 204 });
+
+    const { container, root } = await renderForm(
+      "practice_direct",
+      null,
+      "81426",
+      null,
+      undefined,
+      QUESTIONS,
+      undefined,
+      undefined,
+      "/api/internal-documentation/internal-session-1",
+      "internal-session-1",
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      for (let index = 0; index < 20; index += 1) await Promise.resolve();
+    });
+
+    expect(container.querySelector("[data-q-submitted]")).not.toBeNull();
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "/api/internal-documentation/internal-session-1",
+      "/api/practice/questionnaire-auto-download",
+      "/api/questionnaire/auto-download/next?sessionId=internal-session-1",
+      "/api/questionnaire/auto-download/next?sessionId=internal-session-1",
+      "/api/questionnaire/auto-download/next?sessionId=internal-session-1",
+      "/api/questionnaire/auto-download/next?sessionId=internal-session-1",
+    ]);
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+    expect(downloadedFilenames).toEqual([
+      "dokumentation.pdf",
+      "dokumentation.xml",
+      "dokumentation.gdt",
+    ]);
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+    jest.restoreAllMocks();
   });
 
   it("zeigt den Neustart ausschließlich bei echter Kiosk-Provenienz", async () => {

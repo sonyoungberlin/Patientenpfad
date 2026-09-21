@@ -61,6 +61,7 @@ export default async function InternalDocumentationPage({
         introText="Interne Dokumentation für die Praxis."
         patientReference={session.patient_reference}
         internalWorkflowId={workflow?.id ?? null}
+        autoDownloadSessionId={id}
       />
     </main>
   );

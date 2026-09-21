@@ -59,10 +59,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const sessionId = req.nextUrl.searchParams.get("sessionId")?.trim() || undefined;
     const artifact = await selectNextAutoDownloadArtifact({
       practiceId: practice.id,
       deviceHash,
       enabledAt,
+      sessionId,
     });
     return artifact
       ? artifactResponse(artifact)

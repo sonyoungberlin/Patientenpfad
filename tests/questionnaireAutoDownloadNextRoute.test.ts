@@ -51,9 +51,11 @@ const internalPdfMock = buildInternalDocumentationPdfArtifact as jest.Mock;
 const internalXmlMock = buildInternalDocumentationXmlArtifact as jest.Mock;
 const internalGdtMock = buildInternalDocumentationGdtArtifact as jest.Mock;
 
-function request(deviceId = DEVICE_A) {
+function request(deviceId = DEVICE_A, sessionId?: string) {
   return new NextRequest(
-    "http://localhost/api/questionnaire/auto-download/next",
+    `http://localhost/api/questionnaire/auto-download/next${
+      sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ""
+    }`,
     { headers: { "X-Questionnaire-Auto-Device": deviceId } },
   );
 }
@@ -215,6 +217,18 @@ it("liefert interne PDF, XML und GDT nacheinander mit unabhängigen Claims", asy
     { auto_xml_download_claimed_at: expect.any(Date) },
     { gdt_download_claimed_at: expect.any(Date) },
   ]);
+});
+
+it("begrenzt den Auto-Download nach Submit auf die angeforderte Session", async () => {
+  sessionMock.findFirst.mockResolvedValue(null);
+  queueInternalCandidates(INTERNAL_SESSION);
+
+  const response = await GET(request(DEVICE_A, "internal-session-1"));
+
+  expect(response.headers.get("content-type")).toBe("application/pdf");
+  for (const [query] of sessionMock.findMany.mock.calls) {
+    expect(query.where.AND).toContainEqual({ id: "internal-session-1" });
+  }
 });
 
 it("liefert Legacy-PDF und XML, überspringt aber eine nicht verfügbare GDT", async () => {

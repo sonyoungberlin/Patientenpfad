@@ -35,6 +35,7 @@ import { SelfCheckInQrCode } from "@/components/SelfCheckInQrCode";
 import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
 import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
 import AppTextXmlDownloadButton from "@/components/questionnaire/AppTextXmlDownloadButton";
+import QuestionnaireAutoDownloadController from "@/components/questionnaire/QuestionnaireAutoDownloadController";
 import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
 
 // ---------------------------------------------------------------------------
@@ -1074,6 +1075,7 @@ export function QuestionnaireFormClient({
   kioskHandoffPath,
   publicHandoffPath,
   internalWorkflowId,
+  autoDownloadSessionId,
 }: {
   token: string;
   submitEndpoint?: string;
@@ -1094,6 +1096,7 @@ export function QuestionnaireFormClient({
   kioskHandoffPath?: string;
   publicHandoffPath?: string;
   internalWorkflowId?: string | null;
+  autoDownloadSessionId?: string;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -1353,6 +1356,9 @@ export function QuestionnaireFormClient({
   if (submitted) {
     return (
       <section data-q-submitted style={{ marginTop: "1.5rem" }}>
+        {autoDownloadSessionId ? (
+          <QuestionnaireAutoDownloadController sessionId={autoDownloadSessionId} />
+        ) : null}
         {xmlExport ? null : <h2>{t.completedTitle}</h2>}
         <p>{t.completedThanks}</p>
         {selfCheckInQrReference ? (

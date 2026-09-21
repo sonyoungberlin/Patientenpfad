@@ -10,7 +10,11 @@ const NEXT_ENDPOINT = "/api/questionnaire/auto-download/next";
 const POLL_INTERVAL_MS = 10_000;
 const MAX_DOWNLOADS_PER_CYCLE = 10;
 
-export default function QuestionnaireAutoDownloadController() {
+export default function QuestionnaireAutoDownloadController({
+  sessionId,
+}: {
+  sessionId?: string;
+}) {
   const { refresh } = useRouter();
   const inFlight = useRef(false);
   const [active, setActive] = useState(false);
@@ -67,7 +71,10 @@ export default function QuestionnaireAutoDownloadController() {
 
         setError(false);
         for (let index = 0; index < MAX_DOWNLOADS_PER_CYCLE; index += 1) {
-          const response = await fetch(NEXT_ENDPOINT, { headers });
+          const nextEndpoint = sessionId
+            ? `${NEXT_ENDPOINT}?${new URLSearchParams({ sessionId })}`
+            : NEXT_ENDPOINT;
+          const response = await fetch(nextEndpoint, { headers });
           if (response.status === 204) break;
           if (response.status === 403) {
             setActive(false);
@@ -108,7 +115,7 @@ export default function QuestionnaireAutoDownloadController() {
       disposed = true;
       stopPolling();
     };
-  }, [refresh]);
+  }, [refresh, sessionId]);
 
   if (!active) return null;
   return (
