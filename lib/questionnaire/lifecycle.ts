@@ -36,6 +36,23 @@ export function activeQuestionnaireLifecycleFilter(
   };
 }
 
+export const activeQuestionnaireInboxHandoffFilter: Prisma.PatientQuestionnaireSessionWhereInput = {
+  AND: [
+    {
+      OR: [
+        { kiosk_handoff_status: null },
+        { kiosk_handoff_status: { notIn: ["closed", "questionnaire_ready"] } },
+      ],
+    },
+    {
+      OR: [
+        { public_check_in_handoff: { is: null } },
+        { public_check_in_handoff: { is: { status: { notIn: ["closed", "questionnaire_ready"] } } } },
+      ],
+    },
+  ],
+};
+
 export function trashQuestionnaireLifecycleFilter(
   now: Date,
 ): Prisma.PatientQuestionnaireSessionWhereInput {

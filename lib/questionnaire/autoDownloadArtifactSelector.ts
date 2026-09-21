@@ -343,6 +343,7 @@ async function traverseAutoDownloadArtifacts({
       AND: [
         ...baseEligibility.AND,
         { session_kind: { not: "internal_documentation" } },
+        { patient_reference: { not: null } },
         { auto_pdf_download_claimed_at: null },
       ],
     },

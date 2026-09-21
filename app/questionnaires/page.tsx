@@ -17,6 +17,7 @@ import QuestionnaireCard from "@/components/questionnaire/QuestionnaireCard";
 import QuestionnaireAutoDownloadController from "@/components/questionnaire/QuestionnaireAutoDownloadController";
 import {
   activeQuestionnaireLifecycleFilter,
+  activeQuestionnaireInboxHandoffFilter,
   trashQuestionnaireLifecycleFilter,
 } from "@/lib/questionnaire/lifecycle";
 import { isQuestionnaireExportFinal } from "@/lib/questionnaire/exportFinality";
@@ -64,6 +65,7 @@ export default async function QuestionnairesPage({
               AND: [
                 { deleted_at: null },
                 activeQuestionnaireLifecycleFilter(now),
+                activeQuestionnaireInboxHandoffFilter,
               ],
             },
       ],

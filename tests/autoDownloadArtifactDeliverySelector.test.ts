@@ -225,6 +225,50 @@ it.each([
   ]));
 });
 
+it.each([
+  ["Website-Formular", { source: "website", practice_form: { title: "Anamnese" } }],
+  ["Digital-Request-Follow-up", { source: "digital_request_follow_up" }],
+])("liefert %s ohne Patientenreferenz nicht als PDF", async (_, variant) => {
+  sessions.findMany
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce([]);
+  const accept = jest.fn().mockResolvedValue(true);
+
+  const result = await selectNextAutoDownloadArtifactForDelivery({
+    practiceId: "practice-1",
+    accept,
+  });
+
+  expect(result).toBeNull();
+  expect(accept).not.toHaveBeenCalled();
+  const patientQuery = sessions.findMany.mock.calls[2][0];
+  expect(patientQuery.where.AND).toEqual(expect.arrayContaining([
+    { patient_reference: { not: null } },
+  ]));
+  expect(variant).toBeDefined();
+});
+
+it("liefert Website- und Digital-Request-Sessions nach Zuordnung als PDF", async () => {
+  const variants = [
+    { source: "website", practice_form: { title: "Anamnese" } },
+    { source: "digital_request_follow_up", practice_form: null },
+  ];
+  for (const variant of variants) {
+    sessions.findMany
+      .mockReset()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ ...PATIENT_SESSION, ...variant }]);
+    const accept = jest.fn().mockResolvedValue(true);
+
+    await expect(selectNextAutoDownloadArtifactForDelivery({
+      practiceId: "practice-1",
+      accept,
+    })).resolves.toEqual(expect.objectContaining({ artifactType: "PDF" }));
+  }
+});
+
 it("setzt bei Buildfehler keinen Lease für das fehlgeschlagene Artefakt", async () => {
   buildInternalPdf.mockRejectedValue(new Error("render failed"));
   sessions.findMany

@@ -194,7 +194,9 @@ export default function QuestionnaireCard({
         </>
       )}
 
-      {canAssignWebsitePatient && <QuestionnairePatientAssignment sessionId={id} />}
+      {canAssignWebsitePatient && (
+        <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
+      )}
       {canAssignKioskCheckIn && (
         <QuestionnairePatientAssignment sessionId={id} downloadArtifacts={false} />
       )}
