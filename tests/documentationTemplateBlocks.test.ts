@@ -13,6 +13,7 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     ["text", "textarea"],
     ["selection", "select"],
     ["measurement", "number"],
+    ["month", "month"],
     ["list", "multi_select"],
     ["hint", "confirmation"],
   ] as const)("bildet %s auf %s ab", (blockType, questionType) => {
@@ -322,6 +323,83 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     expect(validateFrozenAnswers({ [definition.questions[0].id]: JSON.stringify([{ zeit: "23:59", art: "vorort" }]) }, frozen).ok).toBe(true);
     expect(validateFrozenAnswers({ [definition.questions[0].id]: JSON.stringify([{ zeit: "24:00", art: "vorort" }]) }, frozen).ok).toBe(false);
     expect(validateFrozenAnswers({ [definition.questions[0].id]: JSON.stringify([{ zeit: "12:00", art: "falsch" }]) }, frozen).ok).toBe(false);
+  });
+
+  it("validiert Monatswerte strikt für Haupt- und Wiederholungsfelder", () => {
+    const monthDefinition = buildPracticeDocumentationBlockDefinition({
+      title: "Behandlungsbeginn",
+      blockType: "month",
+      required: false,
+    });
+    const monthFrozen = resolvePracticeDocumentationBlocks([{ definition: monthDefinition }]);
+    const { validateFrozenAnswers } = require("@/lib/questionnaire/validateFrozenAnswers") as typeof import("@/lib/questionnaire/validateFrozenAnswers");
+
+    for (const value of ["2024-03", ""]) {
+      expect(validateFrozenAnswers({ [monthDefinition.questions[0].id]: value }, monthFrozen).ok).toBe(true);
+    }
+    for (const value of ["2024-00", "2024-13", "03/2024", "2024-03-01", "24-03", "2024-3", "2024-03x"]) {
+      expect(validateFrozenAnswers({ [monthDefinition.questions[0].id]: value }, monthFrozen).ok).toBe(false);
+    }
+    const requiredDefinition = buildPracticeDocumentationBlockDefinition({
+      title: "Pflichtbeginn",
+      blockType: "month",
+      required: true,
+    });
+    const requiredFrozen = resolvePracticeDocumentationBlocks([{ definition: requiredDefinition }]);
+    expect(validateFrozenAnswers({ [requiredDefinition.questions[0].id]: "" }, requiredFrozen).ok).toBe(false);
+    expect(validateFrozenAnswers({ [requiredDefinition.questions[0].id]: "2024-03" }, requiredFrozen).ok).toBe(true);
+
+    const repeatableDefinition = buildPracticeDocumentationBlockDefinition({
+      title: "Verläufe",
+      blockType: "repeatable",
+      additionalFields: [{ id: "beginn", label: "Beginn", type: "month", required: true }],
+    });
+    const repeatableFrozen = resolvePracticeDocumentationBlocks([{ definition: repeatableDefinition }]);
+    const repeatableId = repeatableDefinition.questions[0].id;
+    expect(validateFrozenAnswers({ [repeatableId]: JSON.stringify([{ beginn: "2024-03" }]) }, repeatableFrozen).ok).toBe(true);
+    expect(validateFrozenAnswers({ [repeatableId]: JSON.stringify([{ beginn: "2024-13" }]) }, repeatableFrozen).ok).toBe(false);
+    expect(validateFrozenAnswers({ [repeatableId]: "" }, repeatableFrozen).ok).toBe(true);
+  });
+
+  it("friert einen neuen Month-Fragetyp ein und liest alte Definitionen weiter", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Behandlungsbeginn",
+      blockType: "month",
+    });
+    const frozen = resolvePracticeDocumentationBlocks([{ definition }]);
+    expect(frozen[0]?.questions[0]?.type).toBe("month");
+
+    const legacy = parsePracticeDocumentationBlockDefinition({
+      schemaVersion: 1,
+      visibleType: "text",
+      block: { id: "practice_block_legacy", label: "Legacy", displayOrder: 0, questionIds: ["practice_question_legacy"] },
+      questions: [{ id: "practice_question_legacy", text: "Legacy", type: "textarea", required: false }],
+    });
+    expect(legacy.questions[0]?.type).toBe("textarea");
+  });
+
+  it("speichert frageeigene Segmente auch für eigenständige Textbausteine", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Behandlungshinweis",
+      blockType: "text",
+      text: "Hinweis",
+      documentationSegments: [
+        { kind: "text", text: "Dokumentiert: " },
+        { kind: "answerRef", fieldId: "monat" },
+      ],
+      additionalFields: [{ id: "monat", label: "Monat", type: "month" }],
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const reopened = parsePracticeDocumentationBlockDefinition(definition);
+    expect(reopened.questions[0]?.documentationSegments).toEqual([
+      { kind: "text", text: "Dokumentiert: " },
+      { kind: "answerRef", questionId: "monat" },
+    ]);
+    const frozen = resolvePracticeDocumentationBlocks([{ definition: reopened }]);
+    expect(frozen[0]?.questions[0]?.documentationSegments).toEqual(reopened.questions[0]?.documentationSegments);
+    expect(frozen[0]?.questions[1]?.type).toBe("month");
   });
 
   it.each([

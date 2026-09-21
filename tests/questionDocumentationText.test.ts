@@ -391,4 +391,90 @@ describe("documentationText für Antwortoptionen", () => {
     expect(selected).not.toContain("sind beigefügt, wurden angefordert");
     expect(empty).not.toContain("Dokumente / Befunde");
   });
+
+  it("gibt frageeigene Month-Segmente in allen Ausgabeformaten aus", async () => {
+    const month: QuestionDefinition = {
+      id: "TREATMENT_START_MONTH",
+      text: "Beginn der Behandlung",
+      type: "month",
+      required: true,
+      documentationSegments: [
+        { kind: "text", text: "Seit " },
+        { kind: "answerRef", questionId: "TREATMENT_START_MONTH" },
+        { kind: "text", text: " in unserer hausärztlichen Behandlung." },
+      ],
+    };
+    const frozen = [frozenBlock(month)];
+    const answers = { TREATMENT_START_MONTH: "2024-03" };
+    const note = buildMedicalRecordNote({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    expect(note).toContain("Seit 03/2024 in unserer hausärztlichen Behandlung.");
+
+    const semantic = buildSemanticMedicalRecordDocument({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    expect(semantic.sections.flatMap((section) => section.items).map((item) => item.text)).toContain("Seit 03/2024 in unserer hausärztlichen Behandlung.");
+    expect(buildStructuredAppXml(semantic)).toContain("03/2024");
+
+    const pdf = await buildQuestionnairePdfBytes({
+      patient_reference: null,
+      submitted_at: null,
+      submitted_by: "patient",
+      selected_block_ids: ["TEST_BLOCK"],
+      deduplicated_questions: [month],
+      answers,
+      source: "test",
+      practice_form: null,
+      frozen_blocks: frozen,
+    }, {
+      title: "Test",
+      referenceLabel: "Referenz",
+      blockCatalog: { TEST_BLOCK: { id: "TEST_BLOCK", label: "Testblock", displayOrder: 1, questionIds: [month.id] } },
+    });
+    expect(await extractPdfText(pdf.bytes)).toContain("03/2024");
+  });
+
+  it("unterdrückt unvollständige frageeigene Sätze und bevorzugt diese vor Optionssegmenten", () => {
+    const question: QuestionDefinition = {
+      id: "START",
+      text: "Start",
+      type: "month",
+      required: false,
+      documentationSegments: [
+        { kind: "text", text: "Seit " },
+        { kind: "answerRef", questionId: "OPTIONAL_END" },
+        { kind: "text", text: " in Behandlung." },
+      ],
+    };
+    const optional: QuestionDefinition = { id: "OPTIONAL_END", text: "Ende", type: "month", required: false };
+    const frozen = [{ ...frozenBlock(question), questions: [question, optional] }];
+    expect(buildMedicalRecordNote({ answers: { START: "2024-03", OPTIONAL_END: "" }, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen })).not.toContain("in Behandlung.");
+
+    const both: QuestionDefinition = {
+      id: "BOTH",
+      text: "Beide Quellen",
+      type: "select",
+      required: false,
+      options: [{ value: "yes", label: "Ja", documentationText: "Optionstext", documentationSegments: [{ kind: "text", text: "Optionssegment" }] }],
+      documentationSegments: [{ kind: "text", text: "Frageeigener Text" }],
+    };
+    expect(resolveStructuredQuestionDocumentation(both, "yes", { BOTH: "yes" }, new Map([[both.id, both]]))).toBe("Frageeigener Text");
+  });
+
+  it("formatiert Month-Felder in Repeatable-Ausgaben", () => {
+    const question: QuestionDefinition = {
+      id: "MONTH_ENTRIES",
+      text: "Verläufe",
+      type: "repeatable_group",
+      required: false,
+      groupSchema: [{
+        key: "month",
+        label: "Monat",
+        type: "month",
+        required: true,
+        documentationSegments: [{ kind: "text", text: "Beginn: " }, { kind: "fieldRef", fieldKey: "month" }],
+      }],
+    };
+    const answers = { MONTH_ENTRIES: JSON.stringify([{ month: "2024-03" }]) };
+    const note = buildMedicalRecordNote({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: [frozenBlock(question)] });
+    expect(note).toContain("Beginn: 03/2024");
+    expect(note).toContain("03/2024");
+  });
 });

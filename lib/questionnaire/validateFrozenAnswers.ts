@@ -24,6 +24,7 @@ function isAllowedOptionAnswer(question: QuestionDefinition, value: string): boo
     return selected.length > 0 && selected.every((option) => optionValues.includes(option));
   }
   if (question.type === "time") return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+  if (question.type === "month") return /^\d{4}-(?:0[1-9]|1[0-2])$/.test(value);
   return true;
 }
 
@@ -63,6 +64,7 @@ function hasValidRepeatableGroupEntries(question: QuestionDefinition, value: str
         return selected.length > 0 && selected.every((option) => optionValues.includes(option));
       }
       if (field.type === "time" && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(fieldValue)) return false;
+      if (field.type === "month" && !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(fieldValue)) return false;
       return true;
     });
   });

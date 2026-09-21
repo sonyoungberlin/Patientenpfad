@@ -909,6 +909,15 @@ export function RepeatableGroupField({
                     style={baseFieldStyle}
                     data-rg-field={`${idx}:${field.key}`}
                   />
+                ) : field.type === "month" ? (
+                  <input
+                    type="month"
+                    value={fieldVal}
+                    onChange={(e) => updateField(idx, field.key, e.target.value)}
+                    disabled={disabled}
+                    style={baseFieldStyle}
+                    data-rg-field={`${idx}:${field.key}`}
+                  />
                 ) : field.type === "textarea" ? (
                   <><textarea
                     value={fieldVal}
@@ -1341,6 +1350,18 @@ export function QuestionField({
           disabled={disabled}
           required={question.required}
           pattern="^([01]\\d|2[0-3]):[0-5]\\d$"
+          style={baseStyle}
+        />
+      );
+    case "month":
+      return (
+        <input
+          type="month"
+          id={question.id}
+          value={value}
+          onChange={(e) => onChange(question.id, e.target.value)}
+          disabled={disabled}
+          required={question.required}
           style={baseStyle}
         />
       );

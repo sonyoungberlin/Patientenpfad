@@ -42,7 +42,7 @@ export function formatYesNoValue(raw: string): string {
  * Gibt einen leeren String zurück, wenn rawValue leer ist.
  */
 export function formatQuestionValue(
-  question: QuestionDefinition | undefined,
+  question: Pick<QuestionDefinition, "type" | "unit" | "unitSeparator"> | undefined,
   rawValue: string,
   includeUnit = false,
 ): string {
@@ -137,13 +137,17 @@ export function resolveQuestionDocumentation(
   };
 }
 
-function formatDocumentationSegmentAnswer(
-  question: QuestionDefinition,
+export function formatDocumentationSegmentAnswer(
+  question: Pick<QuestionDefinition, "type" | "unit" | "unitSeparator">,
   rawValue: string,
 ): string {
   if (question.type === "date" && /^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
     const [year, month, day] = rawValue.split("-");
     return `${day}.${month}.${year}`;
+  }
+  if (question.type === "month" && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(rawValue)) {
+    const [year, month] = rawValue.split("-");
+    return `${month}/${year}`;
   }
   return formatQuestionValue(question, rawValue, true);
 }
@@ -186,6 +190,8 @@ export function getStructuredDocumentationQuestionIds(
       }
     }
   };
+  const collectQuestionSegments = question.documentationSegments;
+  if (collectQuestionSegments) collect(collectQuestionSegments);
   for (const option of selectedOptions(question, rawValue)) {
     if (typeof option !== "string" && option.documentationSegments) collect(option.documentationSegments);
   }
@@ -198,26 +204,43 @@ export function resolveStructuredQuestionDocumentation(
   answers: Record<string, string>,
   questionsById: ReadonlyMap<string, QuestionDefinition>,
 ): string | null {
-  const resolveSegments = (segments: DocumentationSegment[]): string => segments.map((segment) => {
+  const resolveSegments = (segments: DocumentationSegment[]): string | null => {
+    let hasMissingReference = false;
+    const text = segments.map((segment) => {
     if (segment.kind === "text") return segment.text;
     if (segment.kind === "conditional") {
-      return answers[segment.questionId] === segment.optionValue
-        ? resolveSegments(segment.segments)
-        : "";
+      if (answers[segment.questionId] !== segment.optionValue) return "";
+      const resolved = resolveSegments(segment.segments);
+      if (resolved === null) hasMissingReference = true;
+      return resolved ?? "";
     }
     const referencedQuestion = questionsById.get(segment.questionId);
-    return referencedQuestion
-      ? formatDocumentationSegmentAnswer(referencedQuestion, (answers[segment.questionId] ?? "").trim())
-      : "";
+    const referencedValue = (answers[segment.questionId] ?? "").trim();
+    if (!referencedQuestion || referencedValue === "") {
+      hasMissingReference = true;
+      return "";
+    }
+    return formatDocumentationSegmentAnswer(referencedQuestion, referencedValue);
   }).join("");
+    return hasMissingReference ? null : text;
+  };
+  if (question.documentationSegments && rawValue.trim() !== "") {
+    const resolved = resolveSegments(question.documentationSegments);
+    return resolved === null || resolved.trim() === "" ? "" : resolved;
+  }
+  let hasStructuredOption = false;
   const resolvedOptions = selectedOptions(question, rawValue)
     .flatMap((option) => {
       if (typeof option === "string") return [];
-      if (option.documentationSegments) return [resolveSegments(option.documentationSegments)];
+      if (option.documentationSegments) {
+        hasStructuredOption = true;
+        const resolved = resolveSegments(option.documentationSegments);
+        return resolved === null ? [] : [resolved];
+      }
       return option.documentationText ? [option.documentationText] : [];
     })
     .filter((text) => text !== "");
-  if (resolvedOptions.length === 0) return null;
+  if (resolvedOptions.length === 0) return hasStructuredOption ? "" : null;
   const sharedText = question.type === "multi_select" && question.sharedDocumentationText
     ? `${question.sharedDocumentationText} `
     : "";
@@ -246,7 +269,10 @@ export function resolveRepeatableFieldDocumentation(
       return entry[segment.fieldKey] === segment.optionValue ? resolve(segment.segments) : "";
     }
     const value = entry[segment.fieldKey];
-    return typeof value === "string" ? value.trim() : "";
+    if (typeof value !== "string") return "";
+    return field.type === "month"
+      ? formatDocumentationSegmentAnswer({ type: "month" }, value.trim())
+      : value.trim();
   }).join("");
   if (field.documentationSegments) {
     const text = resolve(field.documentationSegments);
@@ -326,6 +352,8 @@ export function parseRepeatableGroupEntries(
         display = parseMultiSelectValue(display, field.options ?? [])
           .map((value) => resolveQuestionOptionLabel({ options: field.options }, value))
           .join(", ");
+      } else if (field.type === "month" && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(display)) {
+        display = formatDocumentationSegmentAnswer({ type: "month" }, display);
       } else if (field.type === "checkbox") {
         // Nicht angekreuzt (leer) → überspringen; angekreuzt ("ja") → "Ja"
         if (display === "") continue;

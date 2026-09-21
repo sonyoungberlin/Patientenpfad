@@ -660,7 +660,10 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
       for (const question of block.questions) {
         const raw = (answers[question.id] ?? "").trim();
         if (raw !== "") {
-          getStructuredDocumentationQuestionIds(question, raw).forEach((id) => composedQuestionIds.add(id));
+          getStructuredDocumentationQuestionIds(question, raw)
+            .forEach((id) => {
+              if (id !== question.id) composedQuestionIds.add(id);
+            });
         }
       }
 

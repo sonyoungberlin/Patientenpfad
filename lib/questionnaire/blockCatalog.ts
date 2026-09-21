@@ -54,7 +54,8 @@ export type QuestionType =
   | "textarea"
   | "repeatable_group"
   | "number"
-  | "time"; // Werte werden als String gespeichert
+  | "time"
+  | "month"; // Werte werden als String gespeichert
 
 export type QuestionOption = {
   value: string;
@@ -79,7 +80,7 @@ export type RepeatableDocumentationSegment =
 export type RepeatableGroupFieldDef = {
   key: string;
   label: string;
-  type: "text" | "date" | "time" | "number" | "select" | "yes_no" | "textarea" | "checkbox" | "multi_select";
+  type: "text" | "date" | "time" | "month" | "number" | "select" | "yes_no" | "textarea" | "checkbox" | "multi_select";
   required: boolean;
   /** Maximale Länge für nutzereditierbare Freitext-Unterfelder. */
   maxLength?: number;
@@ -140,6 +141,8 @@ export type QuestionDefinition = {
   documentationText?: string;
   /** Gemeinsamer Ausgabetext, der bei mindestens einer Auswahl einmalig vorangestellt wird. */
   sharedDocumentationText?: string;
+  /** Optionale direkte Komposition für diese Frage, unabhängig von Auswahloptionen. */
+  documentationSegments?: DocumentationSegment[];
   /** Erläuternder Hilfetext unterhalb des Feldes (Deutsch, kanonisch). */
   helperText?: string;
   /** Optionale englische Übersetzung der Patientenformulierung. */

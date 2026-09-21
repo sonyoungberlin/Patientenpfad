@@ -21,6 +21,7 @@ export type PracticeDocumentationBlockType =
   | "paragraph"
   | "selection"
   | "measurement"
+  | "month"
   | "list"
   | "hint"
   | "repeatable";
@@ -69,7 +70,7 @@ export type PracticeDocumentationFieldOptionInput = {
 export type PracticeDocumentationAdditionalFieldInput = {
   id?: string;
   label: string;
-  type: "text" | "textarea" | "date" | "time" | "number" | "select" | "multi_select" | "yes_no" | "checkbox";
+  type: "text" | "textarea" | "date" | "time" | "month" | "number" | "select" | "multi_select" | "yes_no" | "checkbox";
   options?: PracticeDocumentationFieldOptionInput[];
   required?: boolean;
   showForOptionValues?: string[];
@@ -88,6 +89,7 @@ export type PracticeDocumentationBlockInput = {
   required?: boolean;
   options?: PracticeDocumentationOptionInput[];
   sharedDocumentationText?: string;
+  documentationSegments?: PracticeDocumentationSegmentInput[];
   additionalFields?: PracticeDocumentationAdditionalFieldInput[];
 };
 
@@ -97,7 +99,10 @@ type ValidationResult =
 
 const BLOCK_TYPES: readonly PracticeDocumentationBlockType[] = [
   "text", "paragraph", "selection", "measurement", "list", "hint",
-  "repeatable",
+  "repeatable", "month",
+];
+const DIRECT_SEGMENT_BLOCK_TYPES: readonly PracticeDocumentationBlockType[] = [
+  "text", "measurement", "month",
 ];
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,160}$/;
 
@@ -191,7 +196,7 @@ function normalizeAdditionalFields(raw: unknown, requireCondition = true): Pract
     if (id && (!ID_PATTERN.test(id) || ids.has(id))) throw new Error("Zusatzfeld-ID ist ungültig oder doppelt vorhanden.");
     if (id) ids.add(id);
     const type = item.type;
-    if (type !== "text" && type !== "textarea" && type !== "date" && type !== "time" && type !== "number" && type !== "select" && type !== "multi_select") {
+    if (type !== "text" && type !== "textarea" && type !== "date" && type !== "time" && type !== "month" && type !== "number" && type !== "select" && type !== "multi_select" && type !== "yes_no" && type !== "checkbox") {
       throw new Error("Ungültiger Typ für Zusatzangabe.");
     }
     const options = type === "select" || type === "multi_select" ? normalizeFieldOptions(item.options) : undefined;
@@ -256,13 +261,19 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
     if (normalizedType === "measurement" && input.unit !== undefined && input.unit !== "") {
       value.unit = normalizeText(input.unit, "Einheit", 40);
     }
+    if (DIRECT_SEGMENT_BLOCK_TYPES.includes(normalizedType) && input.documentationSegments !== undefined) {
+      value.documentationSegments = normalizeSegments(input.documentationSegments);
+    }
     if (normalizedType === "selection" || normalizedType === "list") {
       value.options = normalizeOptions(input.options);
       if (typeof input.sharedDocumentationText === "string" && input.sharedDocumentationText.trim()) {
         value.sharedDocumentationText = normalizeText(input.sharedDocumentationText, "Gemeinsamer Ausgabetext", PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH);
       }
     }
-    value.additionalFields = normalizeAdditionalFields(input.additionalFields, normalizedType !== "repeatable");
+    value.additionalFields = normalizeAdditionalFields(
+      input.additionalFields,
+      normalizedType !== "repeatable" && !DIRECT_SEGMENT_BLOCK_TYPES.includes(normalizedType),
+    );
     const additionalFields = value.additionalFields;
     const optionValues = new Set((value.options ?? []).map((option) => option.value ?? option.label));
     const fieldIds = new Set(additionalFields.map((field) => field.id).filter((id): id is string => Boolean(id)));
@@ -309,7 +320,7 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
     const validateSegments = (segments: PracticeDocumentationSegmentInput[], currentIndex: number): void => {
       for (const segment of segments) {
         if (segment.kind === "answerRef") {
-          if (!fieldIds.has(segment.fieldId)) throw new Error("Der Ausgabetext verweist auf eine unbekannte Zusatzangabe.");
+          if (segment.fieldId !== "__primary" && !fieldIds.has(segment.fieldId)) throw new Error("Der Ausgabetext verweist auf eine unbekannte Zusatzangabe.");
           continue;
         }
         if (segment.kind === "conditional") {
@@ -322,6 +333,7 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
       }
     };
     for (const option of value.options ?? []) validateSegments(option.documentationSegments ?? [], additionalFields.length);
+    if (value.documentationSegments) validateSegments(value.documentationSegments, additionalFields.length);
     return { ok: true, value };
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : "Ungültiger Dokumentationsbaustein." };
@@ -366,6 +378,9 @@ function questionForInput(
   }
   if (input.blockType === "measurement") {
     return { ...common, text: input.title, type: "number", step: 0.1, ...(input.unit ? { unit: input.unit } : {}), documentationItemType: "measurement" };
+  }
+  if (input.blockType === "month") {
+    return { ...common, text: input.title, type: "month" };
   }
   if (input.blockType === "hint") {
     return { ...common, type: "confirmation", required: true, documentationItemType: "bodyText" };
@@ -511,6 +526,26 @@ export function buildPracticeDocumentationBlockDefinition(
       ...(segments?.every((segment) => segment.kind === "text" || segment.questionId) ? { documentationSegments: segments } : {}),
     };
   });
+  const mapPrimarySegment = (segment: PracticeDocumentationSegmentInput): DocumentationSegment => {
+    if (segment.kind === "text") return segment;
+    if (segment.kind === "answerRef") {
+      return { kind: "answerRef", questionId: segment.fieldId === "__primary" ? primaryQuestion.id : fieldQuestionIds.get(segment.fieldId) ?? "" };
+    }
+    const sourceField = segment.fieldId === "__primary"
+      ? undefined
+      : input.additionalFields?.find((field) => field.id === segment.fieldId);
+    const sourceOptions = sourceField?.options ?? input.options ?? [];
+    const sourceIndex = sourceOptions.findIndex((option) => (option.value ?? option.label) === segment.optionValue);
+    const optionValue = sourceField?.options?.[sourceIndex]?.value
+      ?? getQuestionOptionValue(primaryQuestion.options?.[sourceIndex] ?? segment.optionValue);
+    return {
+      kind: "conditional",
+      questionId: segment.fieldId === "__primary" ? primaryQuestion.id : fieldQuestionIds.get(segment.fieldId) ?? "",
+      optionValue,
+      segments: segment.segments.map(mapPrimarySegment),
+    };
+  };
+  const primaryDocumentationSegments = input.documentationSegments?.map(mapPrimarySegment);
   const block: QuestionnaireBlock = {
     id: blockId,
     label: input.title,
@@ -527,7 +562,7 @@ export function buildPracticeDocumentationBlockDefinition(
         : input.blockType === "list" ? "listItem" : "bodyText",
     },
     questions: allQuestions.map((question) => question.id === primaryQuestion.id
-      ? { ...question, options }
+      ? { ...question, options, ...(primaryDocumentationSegments ? { documentationSegments: primaryDocumentationSegments } : {}) }
       : question),
   };
 }
