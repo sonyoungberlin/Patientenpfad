@@ -596,6 +596,7 @@ export function resolvePracticeDocumentationBlocks(
     const placement = placementById.get(block.id);
     return {
       ...block,
+      structuredHeadingVisibility: block.structuredHeadingVisibility ?? "spacingOnly",
       section: placement?.section ?? 1,
       order: placement?.order ?? index,
       outputSemantics: "documented-content-v1" as const,

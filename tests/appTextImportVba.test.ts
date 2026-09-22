@@ -59,6 +59,28 @@ describe("AppTextImport VBA", () => {
     expect(formatting).toContain('Case "measurement", "status", "listItem"');
   });
 
+  it("unterdrückt spacingOnly-Überschriften und übernimmt ihren Abstand für den Folgeinhalt", () => {
+    const sectionImport = procedure("InsertV2Section");
+    const renderedText = procedure("BuildRenderedItemText");
+    const formatting = procedure("ApplyItemFormatting");
+
+    expect(renderedText).toContain("If IsSpacingOnlyHeading(itemNode, itemType) Then Exit Function");
+    expect(sectionImport).toContain("If IsSpacingOnlyHeading(itemNode, itemType) Then");
+    expect(sectionImport).toContain("pendingSpacingBefore = True");
+    expect(sectionImport).toContain("pendingSpacingBefore = False");
+    expect(formatting).toContain("If addSpacingBefore And itemRange.ParagraphFormat.SpaceBefore < 6 Then");
+    expect(formatting).toContain("itemRange.ParagraphFormat.SpaceBefore = 6");
+  });
+
+  it("rendert sichtbare Überschriften weiterhin als fett formatierten Text", () => {
+    const renderedText = procedure("BuildRenderedItemText");
+    const formatting = procedure("ApplyItemFormatting");
+
+    expect(renderedText).toContain("BuildRenderedItemText = itemText");
+    expect(formatting).toContain('Case "heading"');
+    expect(formatting).toContain("itemRange.Font.Bold = True");
+  });
+
   it("trennt Slot 1 von Slot 2 und Slot 2 von Slot 3 über eine eigene Layoutregel", () => {
     const version2 = procedure("ImportVersion2");
     const slotSpacing = procedure("ApplyV2SlotSpacing");

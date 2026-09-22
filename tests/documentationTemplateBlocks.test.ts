@@ -5,6 +5,8 @@ import {
   resolvePracticeDocumentationBlocks,
   validatePracticeDocumentationBlock,
 } from "@/lib/practice/documentationBlocks";
+import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
+import { buildSemanticMedicalRecordDocument } from "@/lib/questionnaire/buildMedicalRecordNote";
 import { evaluateCondition } from "@/lib/questionnaire/conditionalLogic";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
@@ -81,6 +83,95 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     expect(reopened.visibleType).toBe("paragraph");
     expect(reopened.questions[0]?.documentationText).toBe(content);
     expect(reopened.questions[0]?.documentationText).toContain("\n\n");
+  });
+
+  it("hält den Bibliothekstitel standardmäßig als unsichtbare semantische Blockgrenze", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Interner Bibliothekstitel",
+      blockType: "paragraph",
+      text: "Der medizinische Inhalt bleibt sichtbar.",
+    });
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {},
+      selected_block_ids: [definition.block.id],
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+    const items = document.sections.flatMap((section) => section.items);
+
+    expect(items).toEqual([
+      expect.objectContaining({
+        type: "heading",
+        text: "Interner Bibliothekstitel",
+        headingVisibility: "spacingOnly",
+      }),
+      expect.objectContaining({
+        type: "bodyText",
+        text: "Der medizinische Inhalt bleibt sichtbar.",
+      }),
+    ]);
+    expect(buildStructuredAppXml(document)).toContain(
+      '<item type="heading" level="1" visibility="spacingOnly">Interner Bibliothekstitel</item>',
+    );
+  });
+
+  it("erhält eine ausdrücklich sichtbare Praxisblock-Überschrift", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Gewünschte Überschrift",
+      blockType: "paragraph",
+      text: "Dokumentierter Inhalt.",
+    });
+    definition.block.structuredHeadingVisibility = "visible";
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {},
+      selected_block_ids: [definition.block.id],
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+    const heading = document.sections.flatMap((section) => section.items)
+      .find((item) => item.type === "heading");
+
+    expect(heading).toEqual(expect.objectContaining({
+      text: "Gewünschte Überschrift",
+      headingVisibility: "visible",
+    }));
+    expect(buildStructuredAppXml(document)).toContain(
+      '<item type="heading" level="1">Gewünschte Überschrift</item>',
+    );
+  });
+
+  it("hält aufeinanderfolgende Absatzinhalte vollständig und ihre technischen Titel unsichtbar", () => {
+    const contents = [
+      "Erster medizinischer Absatz.",
+      "Zweiter medizinischer Absatz.",
+      "Dritter medizinischer Absatz.",
+    ];
+    const definitions = contents.map((text, index) => buildPracticeDocumentationBlockDefinition({
+      title: `Technischer Baustein ${index + 1}`,
+      blockType: "paragraph",
+      text,
+    }));
+    const frozenBlocks = resolvePracticeDocumentationBlocks(
+      definitions.map((definition) => ({ definition })),
+    );
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {},
+      selected_block_ids: definitions.map((definition) => definition.block.id),
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+    const items = document.sections.flatMap((section) => section.items);
+    const headings = items.filter((item) => item.type === "heading");
+    const bodyTexts = items.filter((item) => item.type === "bodyText");
+    const xml = buildStructuredAppXml(document);
+
+    expect(headings).toHaveLength(3);
+    expect(headings.every((item) => item.headingVisibility === "spacingOnly")).toBe(true);
+    expect(bodyTexts.map((item) => item.text)).toEqual(contents);
+    expect(xml.match(/visibility="spacingOnly"/g)).toHaveLength(3);
+    for (const content of contents) expect(xml).toContain(content);
   });
 
   it("behält Text als echte Freitexteingabe mit Feldbezeichnungsvalidierung bei", () => {
