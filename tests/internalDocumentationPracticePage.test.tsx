@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const redirectMock = jest.fn(() => { throw new Error("redirect"); });
 const notFoundMock = jest.fn(() => { throw new Error("not-found"); });
+const formPropsMock = jest.fn();
 
 jest.mock("next/navigation", () => ({
   redirect: () => redirectMock(),
@@ -16,9 +17,10 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 jest.mock("@/app/q/[token]/QuestionnaireFormClient", () => ({
-  QuestionnaireFormClient: ({ submitEndpoint }: { submitEndpoint: string }) => (
-    <div data-submit-endpoint={submitEndpoint} />
-  ),
+  QuestionnaireFormClient: (props: Record<string, unknown>) => {
+    formPropsMock(props);
+    return <div data-submit-endpoint={String(props.submitEndpoint)} />;
+  },
 }));
 
 import { requireInternalDocumentationAccessFromCookies } from "@/lib/authz";
@@ -33,10 +35,12 @@ describe("practice internal documentation page", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     notFoundMock.mockClear();
+    formPropsMock.mockClear();
     guard.mockReset().mockResolvedValue({ current_practice: { id: "practice-1" } });
     findFirst.mockReset().mockResolvedValue({
       internal_workflow_id: "care_plan_v1",
       frozen_blocks: buildInternalWorkflowBlocks("care_plan_v1"),
+      frozen_conditional_rules: null,
       patient_reference: "PAT-1",
     });
   });
@@ -58,6 +62,33 @@ describe("practice internal documentation page", () => {
       },
     }));
     expect(html).toContain('/api/internal-documentation/session-1');
+    expect(findFirst.mock.calls[0][0].select).toHaveProperty("frozen_conditional_rules", true);
+  });
+
+  it("übergibt die eingefrorenen Regeln an den produktiven Formularrenderer", async () => {
+    const conditionalRules = [{
+      action: "showQuestion",
+      targetId: "END_DATE",
+      condition: {
+        target: { kind: "question", questionId: "END_MODE" },
+        operator: "equals",
+        value: "date",
+      },
+    }];
+    findFirst.mockResolvedValue({
+      internal_workflow_id: "care_plan_v1",
+      frozen_blocks: buildInternalWorkflowBlocks("care_plan_v1"),
+      frozen_conditional_rules: conditionalRules,
+      patient_reference: "PAT-1",
+    });
+
+    renderToStaticMarkup(await InternalDocumentationPage({
+      params: Promise.resolve({ id: "session-1" }),
+    }));
+
+    expect(formPropsMock).toHaveBeenCalledWith(expect.objectContaining({
+      conditionalRules,
+    }));
   });
 
   it("gibt fremde oder nicht passende Sessions nicht preis", async () => {
@@ -73,6 +104,7 @@ describe("practice internal documentation page", () => {
     findFirst.mockResolvedValue({
       internal_workflow_id: null,
       frozen_blocks: frozenBlocks,
+      frozen_conditional_rules: [],
       patient_reference: "PAT-2B",
     });
 

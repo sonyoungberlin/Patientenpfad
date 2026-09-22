@@ -4,6 +4,7 @@ import { requireInternalDocumentationAccessFromCookies } from "@/lib/authz";
 import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedContent";
 import { getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
+import { parseConditionalRules } from "@/lib/questionnaire/conditionalLogic";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export default async function InternalDocumentationPage({
     select: {
       internal_workflow_id: true,
       frozen_blocks: true,
+      frozen_conditional_rules: true,
       patient_reference: true,
     },
   });
@@ -46,6 +48,7 @@ export default async function InternalDocumentationPage({
   const workflow = isNewBlockBased ? null : getInternalWorkflow(session.internal_workflow_id);
   if (!isNewBlockBased && !workflow) notFound();
   const questions = frozenBlocks?.flatMap((block) => block.questions) ?? [];
+  const conditionalRules = parseConditionalRules(session.frozen_conditional_rules);
 
   return (
     <main>
@@ -55,6 +58,7 @@ export default async function InternalDocumentationPage({
         token={id}
         submitEndpoint={`/api/internal-documentation/${id}`}
         questions={questions}
+        conditionalRules={conditionalRules}
         frozenBlocks={frozenBlocks}
         context="patient"
         source="practice_direct"
