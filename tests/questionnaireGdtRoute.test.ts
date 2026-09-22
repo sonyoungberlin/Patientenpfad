@@ -102,7 +102,6 @@ it("belässt 6227 ohne Snapshot unverändert", async () => {
 it.each([
   { patient_reference: null },
   { patient_reference: "47A11" },
-  { session_kind: "internal_documentation" },
 ])("liefert für nicht GDT-fähige Sessions keine Datei", async (override) => {
   sessionMock.findUnique.mockResolvedValue({ ...SESSION, ...override });
   const response = await GET(request(), { params: Promise.resolve({ id: "session-1" }) });

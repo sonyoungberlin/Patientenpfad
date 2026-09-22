@@ -182,6 +182,30 @@ export default function QuestionnaireCard({
           >
             {pdfDownloadedAt ? "PDF erneut herunterladen" : "PDF herunterladen"}
           </a>
+          {sessionKind === "internal_documentation" && (
+            <>
+              <a
+                href={`/api/questionnaire/${id}/xml`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary text-small"
+                data-q-xml={id}
+                style={{ display: "inline-block", marginTop: "0.25rem" }}
+              >
+                XML herunterladen
+              </a>
+              <a
+                href={`/api/questionnaire/${id}/gdt`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary text-small"
+                data-q-gdt={id}
+                style={{ display: "inline-block", marginTop: "0.25rem" }}
+              >
+                GDT herunterladen
+              </a>
+            </>
+          )}
           {pdfDownloadedAt && (
             <div
               className="text-small"

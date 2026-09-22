@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnaireGdtBytes } from "@/lib/questionnaire/gdtRenderer";
+import { buildInternalDocumentationGdtArtifact } from "@/lib/questionnaire/internalDocumentationArtifacts";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { resolveQuestionnaireGdtExport } from "@/lib/questionnaire/questionnaireExportService";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
@@ -64,21 +65,51 @@ export async function GET(
     return Response.json({ ok: false, error: "Session nicht gefunden." }, { status: 404 });
   }
 
-  const gdt = resolveQuestionnaireGdtExport(session);
-  if (!gdt) {
-    return Response.json({ ok: false, error: "GDT für diese Session nicht verfügbar." }, { status: 409 });
-  }
-  if (session.gdt_download_claimed_at != null) return new Response(null, { status: 204 });
-
+  let filename: string;
   let bytes: Uint8Array;
+  let patientReference: string;
+  const isInternalDocumentation = session.session_kind === "internal_documentation";
   try {
-    bytes = buildQuestionnaireGdtBytes(gdt);
+    if (isInternalDocumentation) {
+      if (!session.submitted_at) {
+        return Response.json({ ok: false, error: "Abschlussdatum fehlt." }, { status: 500 });
+      }
+      const artifact = buildInternalDocumentationGdtArtifact({
+        ...session,
+        submitted_at: session.submitted_at,
+        submitted_by: session.submitted_by,
+        session_kind: "internal_documentation",
+      });
+      if (!artifact) {
+        return Response.json({ ok: false, error: "GDT für diese Session nicht verfügbar." }, { status: 409 });
+      }
+      ({ bytes, filename } = artifact);
+      patientReference = session.patient_reference ?? "";
+    } else {
+      const gdt = resolveQuestionnaireGdtExport(session);
+      if (!gdt) {
+        return Response.json({ ok: false, error: "GDT für diese Session nicht verfügbar." }, { status: 409 });
+      }
+      if (session.gdt_download_claimed_at != null) return new Response(null, { status: 204 });
+      bytes = buildQuestionnaireGdtBytes(gdt);
+      filename = gdt.filename;
+      patientReference = gdt.patientReference;
+    }
   } catch (buildError) {
     console.error("[GET questionnaire/[id]/gdt] build_failed", {
       sessionId: id,
       message: buildError instanceof Error ? buildError.message : "UnknownError",
     });
     return Response.json({ ok: false, error: "GDT konnte nicht erstellt werden." }, { status: 500 });
+  }
+
+  if (isInternalDocumentation) {
+    return new Response(Buffer.from(bytes), {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
+    });
   }
 
   const claim = await prisma.patientQuestionnaireSession.updateMany({
@@ -90,7 +121,7 @@ export async function GET(
       deleted_at: null,
       context: "patient",
       session_kind: "patient_communication",
-      patient_reference: gdt.patientReference,
+      patient_reference: patientReference,
       gdt_download_claimed_at: null,
       AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER],
     },
@@ -101,7 +132,7 @@ export async function GET(
   return new Response(Buffer.from(bytes), {
     headers: {
       "Content-Type": "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${gdt.filename}"`,
+      "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
 }

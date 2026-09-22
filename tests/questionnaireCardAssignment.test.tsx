@@ -35,4 +35,20 @@ describe("QuestionnaireCard assignment download policy", () => {
     );
     expect(markup).toContain(`data-download-artifacts="${expected}"`);
   });
+
+  it("zeigt für interne Dokumentationen manuelle PDF-, XML- und GDT-Downloads", () => {
+    const markup = renderToStaticMarkup(
+      <QuestionnaireCard
+        {...baseProps}
+        patientReference="81426"
+        sessionKind="internal_documentation"
+      />,
+    );
+
+    expect(markup).toContain('data-q-pdf="session-1"');
+    expect(markup).toContain('data-q-xml="session-1"');
+    expect(markup).toContain('data-q-gdt="session-1"');
+    expect(markup).toContain('/api/questionnaire/session-1/xml');
+    expect(markup).toContain('/api/questionnaire/session-1/gdt');
+  });
 });
