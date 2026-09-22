@@ -105,7 +105,11 @@ export async function POST(
     // kyrillisch, arabisch, CJK, Emojis) unabhängig vom Client zuverlässig
     // abgewiesen werden. Sprache der Fehlermeldung folgt patient_language.
     const language = normalizeQuestionnaireLanguage(session.patient_language);
-    const charCheck = validateAnswerCharacters(body.answers, deduplicatedQuestions);
+    const charCheck = validateAnswerCharacters(
+      body.answers,
+      deduplicatedQuestions,
+      frozenQuestionMap,
+    );
     if (!charCheck.ok) {
       return NextResponse.json(
         {

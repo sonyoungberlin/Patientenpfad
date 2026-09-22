@@ -31,7 +31,6 @@ import { computeAllDerivedValues } from "@/lib/questionnaire/derivedValues";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import {
   answerCharactersErrorMessage,
-  isAnswerTextAllowed,
   validateAnswerCharacters,
 } from "@/lib/questionnaire/validateAnswerCharacters";
 import { HONEYPOT_FIELD_NAME } from "@/lib/websiteForms/submitValidation";
@@ -171,10 +170,11 @@ export function PublicFormView({
   // Zeichenfehler pro Frage (nur sichtbare Felder)
   const fieldHasCharError = useMemo<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {};
+    const definitions = new Map(visibleQuestions.map((question) => [question.id, question]));
     for (const q of visibleQuestions) {
       const v = values[q.id] ?? "";
       if (v) {
-        map[q.id] = !isAnswerTextAllowed(v, q.type as import("@/lib/questionnaire/blockCatalog").QuestionType, q.id);
+        map[q.id] = !validateAnswerCharacters({ [q.id]: v }, [q], definitions).ok;
       }
     }
     return map;
@@ -234,8 +234,12 @@ export function PublicFormView({
     }
 
     // Zeichenfehler prüfen
-    const { invalidQuestionIds } = validateAnswerCharacters(values, visibleQuestions);
-    if (invalidQuestionIds.length > 0) return;
+    const definitions = new Map(visibleQuestions.map((question) => [question.id, question]));
+    const { invalidQuestionIds } = validateAnswerCharacters(values, visibleQuestions, definitions);
+    if (invalidQuestionIds.length > 0) {
+      setError(charErrorMessage);
+      return;
+    }
 
     // Nur sichtbare Antworten senden
     const visibleAnswers: Record<string, string> = {};

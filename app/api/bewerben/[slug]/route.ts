@@ -40,6 +40,10 @@ import { VALID_APPLICATION_ROLES } from "@/lib/digitalRequests/applicationRoles"
 import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
+import {
+  ALLOWED_ANSWER_CHARACTERS_REGEX,
+  ANSWER_CHARACTERS_ERROR_MESSAGE,
+} from "@/lib/questionnaire/validateAnswerCharacters";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +57,7 @@ type SubmitOutcome =
   | "invalid_body"
   | "invalid_email"
   | "invalid_name"
+  | "invalid_concern_text"
   | "invalid_roles"
   | "honeypot"
   | "not_found"
@@ -234,7 +239,11 @@ export async function POST(
     // 8. Name validieren.
     const rawName =
       typeof fields.name === "string" ? fields.name.trim() : "";
-    if (rawName.length === 0 || rawName.length > 100) {
+    if (
+      rawName.length === 0 ||
+      rawName.length > 100 ||
+      !ALLOWED_ANSWER_CHARACTERS_REGEX.test(rawName)
+    ) {
       logSubmit("invalid_name", { slug: slugValidation.slug });
       return new NextResponse(
         "Bitte geben Sie Ihren Namen ein (max. 100 Zeichen).",
@@ -270,6 +279,16 @@ export async function POST(
       typeof fields.concern_text === "string"
         ? fields.concern_text.trim().slice(0, 500)
         : null;
+    if (
+      rawConcernText !== null &&
+      !ALLOWED_ANSWER_CHARACTERS_REGEX.test(rawConcernText)
+    ) {
+      logSubmit("invalid_concern_text", { slug: slugValidation.slug });
+      return new NextResponse(ANSWER_CHARACTERS_ERROR_MESSAGE.de, {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
 
     // 12. DigitalRequest anlegen.
     await prisma.digitalRequest.create({

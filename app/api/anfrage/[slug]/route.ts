@@ -52,6 +52,9 @@ import { VALID_TOPICS } from "@/lib/digitalRequests/topics";
 import { sendDigitalRequestNotificationEmail } from "@/lib/mail/sendDigitalRequestNotificationEmail";
 import { resolvePracticeByPublicOrLegacySlug } from "@/lib/practice/publicProfile";
 import { PRACTICE_SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/practice/lifecycle";
+import {
+  ALLOWED_ANSWER_CHARACTERS_REGEX,
+} from "@/lib/questionnaire/validateAnswerCharacters";
 
 export const dynamic = "force-dynamic";
 
@@ -264,7 +267,11 @@ export async function POST(
     // 8. Name validieren.
     const rawName =
       typeof fields.name === "string" ? fields.name.trim() : "";
-    if (rawName.length === 0 || rawName.length > 100) {
+    if (
+      rawName.length === 0 ||
+      rawName.length > 100 ||
+      !ALLOWED_ANSWER_CHARACTERS_REGEX.test(rawName)
+    ) {
       logSubmit("invalid_name", { slug: slugValidation.slug });
       return new NextResponse(
         "Bitte geben Sie Ihren Namen ein (max. 100 Zeichen).",
@@ -331,7 +338,12 @@ export async function POST(
       typeof fields.concern_text === "string"
         ? fields.concern_text.trim()
         : "";
-    if (requestIntent === "existing_appointment" && (rawConcernText.length === 0 || rawConcernText.length > 500)) {
+    if (
+      requestIntent === "existing_appointment" &&
+      (rawConcernText.length === 0 ||
+        rawConcernText.length > 500 ||
+        !ALLOWED_ANSWER_CHARACTERS_REGEX.test(rawConcernText))
+    ) {
       logSubmit("invalid_concern_text", { slug: slugValidation.slug });
       return new NextResponse("Bitte beschreiben Sie kurz den Grund für Ihren Termin (max. 500 Zeichen).", {
         status: 400,

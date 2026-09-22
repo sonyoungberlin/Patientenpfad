@@ -145,6 +145,27 @@ describe("POST /api/bewerben/[slug] – Notification-E-Mail", () => {
     expect(pm.digitalRequest.create).toHaveBeenCalledTimes(1);
   });
 
+  it("gibt 400 zurück bei ungültigen Zeichen im Namen", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ submitter_name: "Jane 😀" })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("gibt 400 zurück bei ungültigen Zeichen im Anliegen", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ concern_text: "Bewerbung 😀" })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.text()).toContain("lateinische Buchstaben");
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
   it("nutzt ausschließlich office_application_notification_email (nicht digital_request_notification_email)", async () => {
     pm.practice.findUnique.mockResolvedValue({
       ...activePractice(),

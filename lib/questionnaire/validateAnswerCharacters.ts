@@ -76,6 +76,21 @@ const FREE_TEXT_QUESTION_TYPES: ReadonlySet<QuestionType> = new Set([
   "textarea",
 ]);
 
+function isFacharztValueAllowed(value: unknown): boolean {
+  if (typeof value !== "string" || value.length === 0) return true;
+  let parsed: unknown;
+  try { parsed = JSON.parse(value); } catch { return true; }
+  if (!Array.isArray(parsed)) return true;
+  return !parsed.some((entry) =>
+    typeof entry === "object" && entry !== null &&
+    ["erkrankung", "bereich", "name", "adresse"].some((key) => {
+      const fieldValue = (entry as Record<string, unknown>)[key];
+      return typeof fieldValue === "string" && fieldValue.length > 0 &&
+        !ALLOWED_ANSWER_CHARACTERS_REGEX.test(fieldValue);
+    }),
+  );
+}
+
 /**
  * Prüft alle text/textarea-Unterfelder eines repeatable_group-JSON-Strings.
  * Ungültiges JSON oder fehlendes Schema gilt als erlaubt (Sanitizer verwirft separat).
@@ -117,9 +132,7 @@ export function isAnswerTextAllowed(
   type: QuestionType,
   questionId?: string,
 ): boolean {
-  // FACHAERZTE hat type="textarea", aber Wert ist JSON-String mit Strukturzeichen
-  // → wird serverseitig in sanitizeAnswers.ts separat validiert
-  if (questionId === "FACHAERZTE") return true;
+  if (questionId === "FACHAERZTE") return isFacharztValueAllowed(value);
   if (type === "repeatable_group") {
     return questionId ? isRepeatableGroupTextAllowed(value, questionId) : true;
   }
@@ -170,9 +183,10 @@ export function validateAnswerCharacters(
   )) {
     if (!allowedIds.has(questionId)) continue;
     
-    // FACHAERZTE hat type="textarea", aber Wert ist JSON-String
-    // → wird serverseitig in sanitizeAnswers.ts separat validiert
-    if (questionId === "FACHAERZTE") continue;
+    if (questionId === "FACHAERZTE") {
+      if (!isFacharztValueAllowed(value)) invalidQuestionIds.push(questionId);
+      continue;
+    }
     
     const def = definitions?.get(questionId) ?? QUESTION_CATALOG[questionId];
     if (!def) continue;

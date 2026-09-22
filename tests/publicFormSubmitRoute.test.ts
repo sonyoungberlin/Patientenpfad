@@ -361,6 +361,32 @@ describe("POST /api/p/[slug]/submit", () => {
       expect(answers.FACHAERZTE).toBe(specialists);
       expect(answers.PRACTICE_CONFIRMATION_1).toBe("true");
     });
+
+    it("lehnt ungültige Zeichen in FACHAERZTE-Freitextfeldern ab", async () => {
+      pm.practiceQuestionnaireForm.findUnique.mockResolvedValue(
+        makeForm({ selected_block_ids: ["FACHAERZTE"] }),
+      );
+      const specialists = JSON.stringify([
+        {
+          erkrankung: "Diabetes ń",
+          bereich: "Innere Medizin",
+          name: "Praxis Beispiel",
+          adresse: "",
+        },
+      ]);
+
+      const res = await POST(
+        formReq(
+          { email: "invalid-specialist@example.com", FACHAERZTE: specialists },
+          SLUG,
+          "6.3.0.2",
+        ),
+        { params: Promise.resolve({ slug: SLUG }) },
+      );
+
+      expect(res.status).toBe(400);
+      expect(pm.patientQuestionnaireSession.create).not.toHaveBeenCalled();
+    });
   });
 
   it("Rate-Limit IP+Slug: greift nach mehrfachen Submits derselben IP", async () => {

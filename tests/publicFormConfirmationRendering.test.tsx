@@ -149,6 +149,29 @@ describe("PublicFormView Praxisbestätigung", () => {
     await cleanup(root, container);
   });
 
+  it("zeigt ungültige Zeichen am Feld und sendet das Formular nicht", async () => {
+    const textQuestion: QuestionDefinition = {
+      id: "SYMPTOMS",
+      text: "Beschwerden",
+      type: "text",
+      required: false,
+    };
+    const { container, root } = await renderForm([textQuestion]);
+    const email = container.querySelector<HTMLInputElement>("[data-q-email]")!;
+    const symptoms = container.querySelector<HTMLInputElement>("#SYMPTOMS")!;
+
+    await act(async () => setInputValue(email, "patient@example.com"));
+    await act(async () => setInputValue(symptoms, "Beschwerden 😀"));
+    await submit(container);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(symptoms.getAttribute("aria-invalid")).toBe("true");
+    expect(container.querySelector('[data-q-question="SYMPTOMS"]')?.textContent)
+      .toContain("lateinische Buchstaben");
+
+    await cleanup(root, container);
+  });
+
   it("lässt normale Feldtypen unverändert", async () => {
     const questions: QuestionDefinition[] = [
       { id: "TEXT", text: "Text", type: "text", required: false },

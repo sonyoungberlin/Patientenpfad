@@ -93,9 +93,10 @@ describe("isAnswerTextAllowed", () => {
     expect(isAnswerTextAllowed(42, "text")).toBe(true);
   });
 
-  it("überspringt FACHAERZTE unabhängig vom Wert (JSON-String erlaubt)", () => {
+  it("prüft FACHAERZTE-Freitextfelder innerhalb des JSON-Werts", () => {
     const jsonValue = JSON.stringify([{ erkrankung: "Test", bereich: "K", name: "Dr. M", adresse: "" }]);
     expect(isAnswerTextAllowed(jsonValue, "textarea", "FACHAERZTE")).toBe(true);
+    expect(isAnswerTextAllowed(JSON.stringify([{ erkrankung: "ń" }]), "textarea", "FACHAERZTE")).toBe(false);
     expect(isAnswerTextAllowed("[]", "textarea", "FACHAERZTE")).toBe(true);
     expect(isAnswerTextAllowed("", "textarea", "FACHAERZTE")).toBe(true);
   });
@@ -179,7 +180,7 @@ describe("validateAnswerCharacters", () => {
     });
   });
 
-  it("überspringt FACHAERZTE (JSON-Strukturzeichen sind erlaubt)", () => {
+  it("prüft FACHAERZTE-Freitextfelder und erlaubt JSON-Strukturzeichen", () => {
     // FACHAERZTE hat type="textarea", aber Wert ist JSON-String
     // → JSON-Strukturzeichen wie {, }, [, ] würden normalerweise blockieren
     // → wird serverseitig in sanitizeAnswers.ts separat validiert
@@ -192,6 +193,12 @@ describe("validateAnswerCharacters", () => {
       [{ id: "FACHAERZTE" }],
     );
     expect(out).toEqual({ ok: true, invalidQuestionIds: [] });
+
+    const invalid = validateAnswerCharacters(
+      { FACHAERZTE: JSON.stringify([{ erkrankung: "ń" }]) },
+      [{ id: "FACHAERZTE" }],
+    );
+    expect(invalid).toEqual({ ok: false, invalidQuestionIds: ["FACHAERZTE"] });
   });
 
   it("überspringt leeres FACHAERZTE", () => {

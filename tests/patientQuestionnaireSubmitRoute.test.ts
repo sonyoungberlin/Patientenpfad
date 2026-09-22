@@ -374,6 +374,34 @@ describe("POST /api/q/[token]", () => {
       expect(prismaMock.patientQuestionnaireSession.update).not.toHaveBeenCalled();
     });
 
+    it("400 bei ungültigen Zeichen in FACHAERZTE-Freitextfeldern", async () => {
+      prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
+        ...SESSION_BASE,
+        deduplicated_questions: [
+          { id: "FACHAERZTE", text: "Fachärzte", type: "textarea", required: false },
+        ],
+      });
+
+      const req = makeRequest("valid-token", {
+        answers: {
+          FACHAERZTE: JSON.stringify([
+            {
+              erkrankung: "Diabetes ń",
+              bereich: "Innere Medizin",
+              name: "Praxis Beispiel",
+              adresse: "",
+            },
+          ]),
+        },
+      });
+      const res = await POST(req, {
+        params: Promise.resolve({ token: "valid-token" }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(prismaMock.patientQuestionnaireSession.update).not.toHaveBeenCalled();
+    });
+
     it("englische Fehlermeldung bei patient_language='en'", async () => {
       prismaMock.patientQuestionnaireSession.findUnique.mockResolvedValue({
         ...SESSION_BASE,

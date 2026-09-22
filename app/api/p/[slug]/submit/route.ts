@@ -325,6 +325,7 @@ export async function POST(
     const charCheck = validateAnswerCharacters(
       fields.answers,
       deduplicatedQuestions,
+      new Map(deduplicatedQuestions.map((question) => [question.id, question])),
     );
     if (!charCheck.ok) {
       logSubmit("invalid_characters", {

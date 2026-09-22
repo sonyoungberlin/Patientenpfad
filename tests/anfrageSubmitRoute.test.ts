@@ -295,6 +295,30 @@ describe("POST /api/anfrage/[slug]", () => {
     expect(pm.digitalRequest.create).not.toHaveBeenCalled();
   });
 
+  it("gibt 400 zurück bei ungültigen Zeichen im Namen", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ submitter_name: "Max 😀" })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("gibt 400 zurück bei ungültigen Zeichen im Termin-Anliegen", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({
+        request_intent: "existing_appointment",
+        requested_topics: [],
+        concern_text: "Beschwerden 😀",
+      })),
+      CTX("meine-praxis"),
+    );
+    expect(res.status).toBe(400);
+    expect(pm.digitalRequest.create).not.toHaveBeenCalled();
+  });
+
   it("gibt 303 zurück bei Honeypot-Auslösung (keine DB-Schreibung)", async () => {
     pm.practice.findUnique.mockResolvedValue(activePractice());
     const res = await POST(
