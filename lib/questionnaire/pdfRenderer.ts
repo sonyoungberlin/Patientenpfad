@@ -98,6 +98,7 @@ export async function buildQuestionnairePdfBytes(
 
   const derivedValues = computeAllDerivedValues(answers);
   const snapshotBlocks = parseFrozenBlocks(session.frozen_blocks);
+  const patientSignature = getInternalPatientSignatureMetadata(session.frozen_blocks);
   const isNewBlockBased = isNewBlockBasedInternalSession({
     sessionKind: session.session_kind ?? "",
     internalWorkflowId: session.internal_workflow_id,
@@ -541,7 +542,7 @@ export async function buildQuestionnairePdfBytes(
       drawWrappedValue(joinMedicalStatementSentences(medicalStatementSentences));
     }
 
-    if (snapshotBlock?.paperSignature) {
+    if (snapshotBlock?.paperSignature && !patientSignature.required) {
       ensureSpace(lineHeight * 4);
       y -= sectionGap;
       drawText("____________________________", { size: 10 });
@@ -564,7 +565,6 @@ export async function buildQuestionnairePdfBytes(
     drawText("oder bringen Sie das unterschriebene Formular zu Ihrem Termin mit.", { size: 9 });
   }
 
-  const patientSignature = getInternalPatientSignatureMetadata(session.frozen_blocks);
   if (patientSignature.required) {
     ensureSpace(lineHeight * 6);
     y -= sectionGap;

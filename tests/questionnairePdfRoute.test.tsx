@@ -27,6 +27,7 @@ import { QUESTION_CATALOG, type QuestionDefinition } from "@/lib/questionnaire/b
 import { normalizeVaccinationReviewAnswers } from "@/lib/questionnaire/vaccinationReview";
 import { VACCINATION_REVIEW_BLOCK_CATALOG, VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccinationReviewCatalog";
 import { buildInternalWorkflowBlocks, getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
+import { buildInternalDocumentationFrozenBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 
 type PrismaMock = {
   patientQuestionnaireSession: {
@@ -291,6 +292,35 @@ describe("questionnaire PDF patient reference", () => {
     expect(text).toContain("Ort, Datum: Berlin, 20.09.26");
     expect(text.match(/Unterschrift Patient\/in:/g)).toHaveLength(1);
     expect(text).toContain("________________________________");
+  });
+
+  it("vermeidet eine doppelte PDF-Signatur bei Einwilligung mit dokumentweiter Signatur", async () => {
+    const blocks = buildInternalDocumentationFrozenBlocks(["INTERNAL_CONSENT"]);
+    const result = await buildQuestionnairePdfBytes(
+      baseSession({
+        submitted_at: new Date("2026-09-20T10:00:00.000Z"),
+        session_kind: "internal_documentation",
+        selected_block_ids: ["INTERNAL_CONSENT"],
+        deduplicated_questions: blocks.flatMap((block) => block.questions),
+        frozen_blocks: {
+          schemaVersion: 2,
+          metadata: {
+            documentTitleOption: "bericht",
+            documentTitle: "Bericht",
+            patientSignatureRequired: true,
+            patientSignatureCity: "Berlin",
+          },
+          blocks,
+        },
+        answers: { INTERNAL_CONSENT_INCLUDE: "include_in_print" },
+      }),
+      { title: "Bericht", referenceLabel: "Patientenreferenz", blockCatalog: {} },
+    );
+
+    const text = await extractPdfText(result.bytes);
+    expect(text.match(/Unterschrift Patient\/in:/g)).toHaveLength(1);
+    expect(text).toContain("Ort, Datum: Berlin, 20.09.26");
+    expect(text).not.toContain("Datum / Unterschrift Patient/in");
   });
 
   it("renders the snapshot before follow-up answers and keeps patient reference separate", async () => {

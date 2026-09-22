@@ -7,6 +7,7 @@ import {
 } from "@/lib/practice/documentationBlocks";
 import { evaluateCondition } from "@/lib/questionnaire/conditionalLogic";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
+import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
 
 describe("Dokumentationsbausteine der Praxisbibliothek", () => {
   it.each([
@@ -188,6 +189,62 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
       expect.objectContaining({ kind: "conditional", questionId: definition.questions[2].id, optionValue: "date" }),
       expect.objectContaining({ kind: "conditional", questionId: definition.questions[2].id, optionValue: "open" }),
     ]));
+  });
+
+  it("wertet bedingte Pflichtfelder im Frozen- und Submit-Pfad aus", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Reise(un)fähigkeit",
+      blockType: "selection",
+      options: [
+        { value: "travel_unfit", label: "Reiseunfähig", documentationText: "Reiseunfähig" },
+        { value: "fit", label: "Reisefähig", documentationText: "Reisefähig" },
+      ],
+      additionalFields: [
+        { id: "endMode", label: "Ende", type: "select", options: [{ value: "date", label: "Bis Datum" }, { value: "open", label: "Bis auf Weiteres" }], required: true, showForOptionValues: ["travel_unfit"] },
+        { id: "end", label: "Enddatum", type: "date", required: true, showForFieldId: "endMode", showForOptionValues: ["date"] },
+      ],
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const frozen = resolvePracticeDocumentationBlocks([{ definition }]);
+    const primaryId = definition.questions[0].id;
+    const endModeId = definition.questions[1].id;
+    const endId = definition.questions[2].id;
+    const travelUnfitValue = (definition.questions[0].options?.[0] as { value: string }).value;
+
+    expect(frozen[0].conditionalRules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: "showQuestion", targetId: endId }),
+    ]));
+    expect(validateFrozenAnswers({ [primaryId]: travelUnfitValue, [endModeId]: "open" }, frozen)).toMatchObject({ ok: true });
+    expect(validateFrozenAnswers({ [primaryId]: travelUnfitValue, [endModeId]: "date" }, frozen)).toMatchObject({ ok: false, invalidQuestionIds: [endId] });
+  });
+
+  it("blendet eine körperlich bedingte Zusatzfrage bei psychischer Auswahl aus", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Ärztliche Stellungnahme",
+      blockType: "selection",
+      options: [
+        { value: "physical", label: "Körperlich", documentationText: "Körperlich" },
+        { value: "psychological", label: "Psychisch", documentationText: "Psychisch" },
+      ],
+      additionalFields: [
+        { id: "limitations", label: "Konkrete nicht mögliche Belastungen", type: "textarea", required: true, showForOptionValues: ["physical"] },
+      ],
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const frozen = resolvePracticeDocumentationBlocks([{ definition }]);
+    const primaryId = definition.questions[0].id;
+    const limitationsId = definition.questions[1].id;
+    const psychologicalValue = (definition.questions[0].options?.[1] as { value: string }).value;
+    const physicalValue = (definition.questions[0].options?.[0] as { value: string }).value;
+
+    expect(validateFrozenAnswers({ [primaryId]: psychologicalValue }, frozen)).toMatchObject({ ok: true });
+    expect(validateFrozenAnswers({ [primaryId]: physicalValue }, frozen)).toMatchObject({ ok: false, invalidQuestionIds: [limitationsId] });
   });
 
   it("löst eine Zusatzangabe innerhalb einer bedingten Variante auf", () => {
