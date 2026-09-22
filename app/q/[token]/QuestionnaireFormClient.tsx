@@ -245,6 +245,18 @@ function QuestionField({
           style={baseStyle}
         />
       );
+    case "month":
+      return (
+        <input
+          type="month"
+          id={question.id}
+          value={value}
+          onChange={(e) => onChange(question.id, e.target.value)}
+          disabled={disabled}
+          required={question.required}
+          style={baseStyle}
+        />
+      );
     case "yes_no":
       const yesNoOptions = question.options?.length === 2
         ? question.options.map((option) => ({

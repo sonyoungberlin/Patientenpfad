@@ -11,6 +11,7 @@ import {
   validatePracticeDocumentationBlock,
   type PracticeDocumentationBlockInput,
 } from "@/lib/practice/documentationBlocks";
+import { formatDocumentationSegmentAnswer } from "@/lib/questionnaire/formatAnswer";
 
 jest.mock("@/components/SelfCheckInQrCode", () => ({ SelfCheckInQrCode: () => null }));
 
@@ -146,6 +147,34 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
     for (const question of [day, from, to]) {
       expect(view.container.querySelector(`[data-q-question="${question.id}"]`)).toBeNull();
     }
+    await cleanup(view.root, view.container);
+  });
+
+  it("rendert einen Month-Baustein im internen Formular, speichert YYYY-MM und gibt MM/YYYY aus", async () => {
+    const view = await renderInternalForm({
+      title: "Behandlungsbeginn hausärztlich",
+      blockType: "month",
+      required: true,
+    });
+    const question = view.definition.questions[0];
+    const input = view.container.querySelector<HTMLInputElement>(`[data-q-question="${question.id}"] input`);
+
+    expect(input).not.toBeNull();
+    expect(input?.type).toBe("month");
+
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "2024-05");
+      input!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      view.container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).answers[question.id]).toBe("2024-05");
+    expect(formatDocumentationSegmentAnswer(question, "2024-05")).toBe("05/2024");
     await cleanup(view.root, view.container);
   });
 });
