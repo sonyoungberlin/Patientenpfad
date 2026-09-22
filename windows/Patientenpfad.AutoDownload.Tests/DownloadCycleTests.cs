@@ -55,6 +55,52 @@ public sealed class DownloadCycleTests
     }
 
     [Fact]
+    public async Task DownloadsAndAcknowledgesPdfXmlAndGdtForOneCompletedCase()
+    {
+        using var directory = new TemporaryDirectory();
+        var artifacts = new[]
+        {
+            (FileName: "vorgang.pdf", MediaType: "application/pdf", Bytes: Encoding.UTF8.GetBytes("PDF")),
+            (FileName: "vorgang.xml", MediaType: "application/xml", Bytes: Encoding.UTF8.GetBytes("XML")),
+            (FileName: "vorgang.gdt", MediaType: "application/octet-stream", Bytes: Encoding.UTF8.GetBytes("GDT")),
+        };
+        var fetchIndex = 0;
+        var ackCount = 0;
+        var handler = new StubHttpMessageHandler((request, call, _) =>
+        {
+            if (call % 2 == 0)
+            {
+                var artifact = artifacts[ackCount];
+                Assert.True(File.Exists(System.IO.Path.Combine(directory.Path, artifact.FileName)));
+                ackCount++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+            }
+
+            if (fetchIndex == artifacts.Length)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+            }
+
+            var next = artifacts[fetchIndex++];
+            return Task.FromResult(FileResponse(next.FileName, next.MediaType, next.Bytes));
+        });
+        var cycle = CreateCycle(handler, out _);
+
+        Assert.Equal(DownloadCycleResult.Delivered, await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None));
+        Assert.Equal(DownloadCycleResult.Delivered, await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None));
+        Assert.Equal(DownloadCycleResult.Delivered, await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None));
+        Assert.Equal(DownloadCycleResult.NoArtifact, await cycle.RunAsync(Server, Credential, directory.Path, CancellationToken.None));
+
+        foreach (var artifact in artifacts)
+        {
+            Assert.Equal(artifact.Bytes, await File.ReadAllBytesAsync(System.IO.Path.Combine(directory.Path, artifact.FileName)));
+        }
+
+        Assert.Equal(3, ackCount);
+        Assert.Equal(7, handler.CallCount);
+    }
+
+    [Fact]
     public async Task AcknowledgesWhenExternalDistributorMovesFinalFileBeforeAck()
     {
         using var inbox = new TemporaryDirectory();
