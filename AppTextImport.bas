@@ -246,8 +246,12 @@ Private Sub InsertV2Section(ByVal cc As ContentControl, _
         End If
     Next itemNode
 
+    If visibleItemCount = 0 Then
+        ClearEmptyV2Section cc
+        Exit Sub
+    End If
+
     cc.Range.Text = sectionText
-    If visibleItemCount = 0 Then Exit Sub
 
     insertionPosition = cc.Range.Start
     visibleItemCount = 0
@@ -276,6 +280,11 @@ Private Sub InsertV2Section(ByVal cc As ContentControl, _
             End If
         End If
     Next itemNode
+End Sub
+
+Private Sub ClearEmptyV2Section(ByVal cc As ContentControl)
+    cc.Range.Text = vbNullString
+    cc.SetPlaceholderText
 End Sub
 
 Private Sub ApplyItemFormatting(ByVal itemRange As Range, _

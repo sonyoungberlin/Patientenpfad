@@ -59,6 +59,42 @@ describe("AppTextImport VBA", () => {
     expect(formatting).toContain('Case "measurement", "status", "listItem"');
   });
 
+  it.each([
+    ["Fall A", 1],
+    ["Fall B", 2],
+    ["Fall C", 3],
+  ])("behandelt %s über den bestehenden v2-Importpfad", (_caseName, filledSlotCount) => {
+    const version2 = procedure("ImportVersion2");
+    const sectionImport = procedure("InsertV2Section");
+    const emptySection = procedure("ClearEmptyV2Section");
+
+    expect(version2).toContain('Case "1", "2", "3"');
+    expect(version2).toContain("InsertV2Section cc, node");
+    expect(sectionImport).toContain("If visibleItemCount = 0 Then");
+    expect(sectionImport).toContain("ClearEmptyV2Section cc");
+    expect(sectionImport).toContain("cc.Range.Text = sectionText");
+    expect(emptySection).toContain("cc.Range.Text = vbNullString");
+    expect(emptySection).toContain("cc.SetPlaceholderText");
+    expect(filledSlotCount).toBeGreaterThan(0);
+  });
+
+  it("leert v2-Slots ohne Dummy-Inhalt, Absatz oder Slot-Abstandsänderung", () => {
+    const sectionImport = procedure("InsertV2Section");
+    const emptySection = procedure("ClearEmptyV2Section");
+    const slotSpacing = procedure("ApplyV2SlotSpacing");
+
+    expect(emptySection).not.toContain('" "');
+    expect(emptySection).not.toContain("vbCr");
+    expect(emptySection).not.toContain("InsertAfter");
+    expect(emptySection).not.toContain("ContentControls.Add");
+    expect(emptySection).not.toContain(".Delete");
+    expect(sectionImport.indexOf("ClearEmptyV2Section cc")).toBeLessThan(
+      sectionImport.indexOf("cc.Range.Text = sectionText"),
+    );
+    expect(slotSpacing).toContain("slotRange.ParagraphFormat.SpaceBefore = 12");
+    expect(slotSpacing).not.toContain("SpaceAfter");
+  });
+
   it("unterdrückt spacingOnly-Überschriften und übernimmt ihren Abstand für den Folgeinhalt", () => {
     const sectionImport = procedure("InsertV2Section");
     const renderedText = procedure("BuildRenderedItemText");
