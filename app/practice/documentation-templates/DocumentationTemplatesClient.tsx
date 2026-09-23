@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import InternalDocumentationBlockOrganizer from "@/components/InternalDocumentationBlockOrganizer";
 import {
@@ -38,7 +38,17 @@ export default function DocumentationTemplatesClient({
   const [patientSignatureRequired, setPatientSignatureRequired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const editorFormRef = useRef<HTMLFormElement>(null);
   const blockLabels = Object.fromEntries(availableBlocks.map((block) => [block.id, block.title]));
+
+  useEffect(() => {
+    if (!editingId || !editorFormRef.current) return;
+    editorFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    const firstInput = editorFormRef.current.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      'input:not([type="checkbox"]), textarea',
+    );
+    firstInput?.focus({ preventScroll: true });
+  }, [editingId]);
 
   function reset() {
     setEditingId(null);
@@ -138,7 +148,7 @@ export default function DocumentationTemplatesClient({
           </tbody></table>
         )}
       </section>
-      <form onSubmit={(event) => void save(event)} style={{ display: "grid", gap: "1rem" }}>
+      <form ref={editorFormRef} onSubmit={(event) => void save(event)} style={{ display: "grid", gap: "1rem" }}>
         <h2>{editingId ? "Vorlage bearbeiten" : "Vorlage anlegen"}</h2>
         <label>Vorlagenname<input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required disabled={busy} /></label>
         <label>Ausgabeform<select value={outputFormat} onChange={(event) => setOutputFormat(event.target.value as "informell" | "formell")} disabled={busy}>

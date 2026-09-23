@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
   PracticeDocumentationBlockDefinition,
@@ -77,6 +77,16 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const editorFormRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!editingId || !editorFormRef.current) return;
+    editorFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    const firstInput = editorFormRef.current.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      'input:not([type="checkbox"]), textarea',
+    );
+    firstInput?.focus({ preventScroll: true });
+  }, [editingId]);
 
   function reset() {
     setEditingId(null);
@@ -269,7 +279,7 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
         )}
       </section>
 
-      <form onSubmit={(event) => void save(event)} style={{ display: "grid", gap: "0.75rem" }}>
+      <form ref={editorFormRef} onSubmit={(event) => void save(event)} style={{ display: "grid", gap: "0.75rem" }}>
         <h2>{editingId ? "Baustein bearbeiten" : "Baustein anlegen"}</h2>
         <label>Bausteinart<select value={draft.blockType} onChange={(event) => changeType(event.target.value as PracticeDocumentationBlockType)} disabled={busy || Boolean(editingId)}>
           {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
