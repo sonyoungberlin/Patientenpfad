@@ -193,10 +193,11 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
     answers: null,
     noteText: "",
   };
+  const unassignedProps = { ...baseProps, patientReference: null };
 
   it('zeigt "PDF herunterladen" und keinen Status-Hinweis, wenn pdfDownloadedAt null', () => {
     const html = renderToStaticMarkup(
-      QuestionnaireCard({ ...baseProps, pdfDownloadedAt: null }),
+      QuestionnaireCard({ ...unassignedProps, pdfDownloadedAt: null }),
     );
     expect(html).toContain(">PDF herunterladen<");
     expect(html).not.toContain("PDF erneut herunterladen");
@@ -207,7 +208,7 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
   it('zeigt "PDF erneut herunterladen" + Häkchen-Hinweis, wenn pdfDownloadedAt gesetzt', () => {
     const html = renderToStaticMarkup(
       QuestionnaireCard({
-        ...baseProps,
+        ...unassignedProps,
         pdfDownloadedAt: new Date("2026-05-04T10:00:00Z"),
       }),
     );

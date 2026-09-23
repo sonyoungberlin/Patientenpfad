@@ -201,7 +201,8 @@ describe("/practice/members read-only page", () => {
     expect(r.markup).toContain("self@example.com");
     expect(r.markup).toContain("kollege@example.com");
     expect(r.markup).toContain("Automatischer Fragebogen-Download");
-    expect(r.markup).toContain(
+    expect(r.markup).toContain("Status wird geladen …");
+    expect(r.markup).not.toContain(
       "Chrome muss automatische Downloads für Patientenpfad erlauben",
     );
     // Eigene Zeile markiert

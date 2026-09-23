@@ -35,6 +35,19 @@ function frozenBlock(questions: QuestionDefinition[]): FrozenBlock[] {
   }];
 }
 
+const legacyVaccinationQuestion = JSON.parse(JSON.stringify(
+  VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS,
+)) as QuestionDefinition;
+delete legacyVaccinationQuestion.structuredVaccinationUiVersion;
+legacyVaccinationQuestion.vaccinationItems = [
+  ...(legacyVaccinationQuestion.vaccinationItems ?? []),
+  { id: "other", label: "Weitere Impfung", categoryId: "other", documentationMode: "free_text" },
+];
+legacyVaccinationQuestion.vaccinationCategories = [
+  ...(legacyVaccinationQuestion.vaccinationCategories ?? []),
+  { id: "other", label: "Weitere Impfung" },
+];
+
 describe("questionnaire maxLength rendering", () => {
   it("begrenzt normale Text- und Textarea-Felder auf 120 und zeigt Counter", async () => {
     const questions: QuestionDefinition[] = [
@@ -97,7 +110,7 @@ describe("questionnaire maxLength rendering", () => {
   });
 
   it("begrenzt nutzereditierbaren Impfmatrix-Freitext, aber nicht vaccination_id", async () => {
-    const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+    const question = legacyVaccinationQuestion;
     expect(question.groupSchema?.find((field) => field.key === "vaccination_id")?.maxLength).toBeUndefined();
 
     const container = document.createElement("div");
@@ -110,6 +123,22 @@ describe("questionnaire maxLength rendering", () => {
     expect(input.maxLength).toBe(120);
     expect(input.value).toHaveLength(120);
     expect(container.querySelector('[data-vaccination-row="other"] [data-text-length-counter]')?.textContent?.trim()).toBe("120 / 120");
+
+    await act(async () => root.unmount());
+  });
+
+  it("begrenzt die strukturierte ergänzende Bemerkung auf 2000 Zeichen", async () => {
+    const question = VACCINATION_REVIEW_QUESTION_CATALOG.VACCINATION_REVIEW_ITEMS;
+    const onChange = jest.fn();
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => root.render(<VaccinationMatrixField question={question} value={JSON.stringify({ schema_version: 1, entries: [] })} onChange={onChange} disabled={false} />));
+
+    const textarea = container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Ergänzende Bemerkung"]')!;
+    await setInputValue(textarea, "e".repeat(2001));
+
+    expect(textarea.value).toHaveLength(2000);
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining(`"supplemental_note":"${"e".repeat(2000)}"`));
 
     await act(async () => root.unmount());
   });
