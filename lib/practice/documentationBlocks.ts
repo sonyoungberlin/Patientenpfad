@@ -406,6 +406,34 @@ function questionTypeForField(type: PracticeDocumentationAdditionalFieldInput["t
   return type === "checkbox" ? "confirmation" : type;
 }
 
+function isLabelOnlyRepeatableDocumentationText(field: {
+  label: string;
+  documentationText?: string;
+}): boolean {
+  const label = field.label.trim();
+  const documentationText = field.documentationText?.trim();
+  return Boolean(
+    documentationText &&
+    (documentationText === label || documentationText === `${label}:`),
+  );
+}
+
+function normalizeRepeatableFieldDocumentation(
+  field: RepeatableGroupFieldDef,
+): RepeatableGroupFieldDef {
+  if (field.documentationSegments || !isLabelOnlyRepeatableDocumentationText(field)) {
+    return field;
+  }
+  return {
+    ...field,
+    documentationText: undefined,
+    documentationSegments: [
+      { kind: "text", text: `${field.label.trim()}: ` },
+      { kind: "fieldRef", fieldKey: field.key },
+    ],
+  };
+}
+
 export function buildPracticeDocumentationBlockDefinition(
   input: PracticeDocumentationBlockInput,
   existing?: PracticeDocumentationBlockDefinition,
@@ -443,7 +471,7 @@ export function buildPracticeDocumentationBlockDefinition(
           segments: segment.segments.map(mapSegment),
         };
       };
-      return {
+      return normalizeRepeatableFieldDocumentation({
         key: fieldId,
         label: field.label,
         type: field.type,
@@ -456,7 +484,7 @@ export function buildPracticeDocumentationBlockDefinition(
         ...(field.showForFieldId ? { conditionalOn: field.showForFieldId } : {}),
         ...(field.showForOptionValues?.length === 1 ? { conditionalValue: field.showForOptionValues[0] } : {}),
         ...(field.showForOptionValues && field.showForOptionValues.length > 1 ? { conditionalValues: field.showForOptionValues } : {}),
-      };
+      });
     });
     const repeatableQuestion: QuestionDefinition = {
       ...primaryQuestion,
@@ -587,7 +615,19 @@ export function resolvePracticeDocumentationBlocks(
   definitions: Array<{ definition: unknown }>,
   layout?: Array<{ blockId: string; section: 1 | 2 | 3; order: number }>,
 ): FrozenBlock[] {
-  const parsed = definitions.map(({ definition }) => parsePracticeDocumentationBlockDefinition(definition));
+  const parsed = definitions.map(({ definition }) => {
+    const parsedDefinition = parsePracticeDocumentationBlockDefinition(definition);
+    if (parsedDefinition.visibleType !== "repeatable") return parsedDefinition;
+    return {
+      ...parsedDefinition,
+      questions: parsedDefinition.questions.map((question) => question.type !== "repeatable_group"
+        ? question
+        : {
+            ...question,
+            groupSchema: question.groupSchema?.map(normalizeRepeatableFieldDocumentation),
+          }),
+    };
+  });
   const blocks = Object.fromEntries(parsed.map((item) => [item.block.id, item.block]));
   const questions = Object.fromEntries(parsed.flatMap((item) => item.questions.map((question) => [question.id, question])));
   const order = layout?.map((item) => item.blockId) ?? parsed.map((item) => item.block.id);

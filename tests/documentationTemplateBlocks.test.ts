@@ -1,3 +1,5 @@
+import { PDFDocument } from "pdf-lib";
+import { inflateSync } from "node:zlib";
 import type { PracticeDocumentationBlockDefinition } from "@/lib/practice/documentationBlocks";
 import {
   buildPracticeDocumentationBlockDefinition,
@@ -7,9 +9,28 @@ import {
 } from "@/lib/practice/documentationBlocks";
 import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
 import { buildSemanticMedicalRecordDocument } from "@/lib/questionnaire/buildMedicalRecordNote";
+import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { evaluateCondition } from "@/lib/questionnaire/conditionalLogic";
 import { buildOptionsByQuestionId } from "@/lib/questionnaire/multiSelect";
 import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
+
+async function extractPdfText(bytes: Uint8Array): Promise<string> {
+  await PDFDocument.load(bytes);
+  const raw = Buffer.from(bytes).toString("latin1");
+  const streams: string[] = [];
+  for (const match of raw.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
+    try {
+      streams.push(inflateSync(Buffer.from(match[1]!, "latin1")).toString("latin1"));
+    } catch {
+      streams.push(match[1]!);
+    }
+  }
+  return streams
+    .join(" ")
+    .replace(/<([0-9A-F]+)>\s+Tj/g, (_, hex: string) =>
+      Buffer.from(hex, "hex").toString("latin1"),
+    );
+}
 
 describe("Dokumentationsbausteine der Praxisbibliothek", () => {
   it.each([
@@ -455,6 +476,158 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     expect(definition.questions[0]).toEqual(expect.objectContaining({ type: "repeatable_group", maxEntries: undefined }));
     expect(definition.questions[0].groupSchema?.map((field) => field.type)).toEqual(["time", "select", "multi_select", "textarea"]);
     expect(definition.questions[0].groupSchema?.[3]).toEqual(expect.objectContaining({ conditionalOn: "art", conditionalValue: "telefon", documentationText: "Telefonischer Kontakt." }));
+  });
+
+  it("wandelt label-only Repeatable-Ausgabetexte in feldwertauflösende Segmente um", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Facharztkontakte",
+      blockType: "repeatable",
+      additionalFields: [
+        { id: "fachrichtung", label: "Fachrichtung", type: "text", documentationText: "Fachrichtung:" },
+        { id: "name", label: "Name", type: "text", documentationText: "Name" },
+        { id: "notiz", label: "Notiz", type: "textarea", documentationText: "Individuelle fachliche Notiz." },
+      ],
+    });
+    const fields = definition.questions[0]?.groupSchema ?? [];
+
+    expect(fields[0]).toEqual(expect.objectContaining({
+      documentationText: undefined,
+      documentationSegments: [
+        { kind: "text", text: "Fachrichtung: " },
+        { kind: "fieldRef", fieldKey: fields[0]?.key },
+      ],
+    }));
+    expect(fields[1]).toEqual(expect.objectContaining({
+      documentationText: undefined,
+      documentationSegments: [
+        { kind: "text", text: "Name: " },
+        { kind: "fieldRef", fieldKey: fields[1]?.key },
+      ],
+    }));
+    expect(fields[2]).toEqual(expect.objectContaining({ documentationText: "Individuelle fachliche Notiz." }));
+    expect(fields[2]?.documentationSegments).toBeUndefined();
+  });
+
+  it("gibt den Einschränkungstext des Sport-/Schwimmblocks genau einmal aus", async () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Teilnahme – Einschränkungen",
+      blockType: "text",
+      text: "Einschränkungen der Teilnahme",
+      documentationSegments: [
+        { kind: "answerRef", fieldId: "__primary" },
+        { kind: "text", text: "." },
+      ],
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const question = definition.questions[0]!;
+    const answer = "Synthetische Einschränkung: Belastung nur nach ärztlicher Rücksprache";
+    const answers = { [question.id]: answer };
+    const document = buildSemanticMedicalRecordDocument({
+      answers,
+      selected_block_ids: [definition.block.id],
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+    const semanticText = document.sections.flatMap((section) => section.items).map((item) => item.text).join("\n");
+    const xml = buildStructuredAppXml(document);
+    const pdf = await buildQuestionnairePdfBytes({
+      patient_reference: null,
+      submitted_at: new Date("2026-09-23T10:00:00.000Z"),
+      submitted_by: "audit",
+      selected_block_ids: [definition.block.id],
+      deduplicated_questions: [question],
+      answers,
+      source: "audit",
+      session_kind: "internal_documentation",
+      internal_workflow_id: null,
+      practice_form: null,
+      frozen_blocks: frozenBlocks,
+    }, {
+      title: "Audit",
+      referenceLabel: "Referenz",
+      blockCatalog: {},
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+
+    expect(semanticText).toContain("Teilnahme – Einschränkungen");
+    expect(semanticText).toContain(`${answer}.`);
+    expect(semanticText.match(/Einschränkungen/g)).toHaveLength(1);
+    expect(semanticText).not.toContain("Hinweis: Einschränkungen:");
+    expect(xml).toContain("Teilnahme – Einschränkungen");
+    expect(xml).toContain(`${answer}.`);
+    expect(xml).not.toContain("Hinweis: Einschränkungen:");
+    expect(pdfText).toContain("Teilnahme");
+    expect(pdfText).toContain("Einschränkungen");
+    expect(pdfText).toContain("Belastung nur nach ärztlicher Rücksprache");
+    expect(pdfText).not.toContain("Hinweis: Einschränkungen:");
+  });
+
+  it("führt Repeatable-Text, Auswahl, Datum und Monat durch SemanticDocument, XML v2 und PDF", async () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Roundtrip-Prüfung",
+      blockType: "repeatable",
+      additionalFields: [
+        { id: "text", label: "Text", type: "text", documentationText: "Text:" },
+        { id: "status", label: "Status", type: "select", options: [{ value: "open", label: "Offen" }], documentationText: "Status:" },
+        { id: "topics", label: "Themen", type: "multi_select", options: [{ value: "a", label: "Alpha" }, { value: "b", label: "Beta" }], documentationText: "Themen:" },
+        { id: "date", label: "Datum", type: "date", documentationText: "Datum:" },
+        { id: "month", label: "Monat", type: "month", documentationText: "Monat:" },
+      ],
+    });
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const question = definition.questions[0]!;
+    const answers = {
+      [question.id]: JSON.stringify([
+        { text: "AUDIT_A_TEXT", status: "open", topics: "a, b", date: "2026-09-23", month: "2026-09" },
+        { text: "AUDIT_B_TEXT", status: "open", topics: "b", date: "2026-09-24", month: "2026-10" },
+      ]),
+    };
+    const document = buildSemanticMedicalRecordDocument({
+      answers,
+      selected_block_ids: [definition.block.id],
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+    const semanticText = document.sections.flatMap((section) => section.items).map((item) => item.text).join("\n");
+    const xml = buildStructuredAppXml(document);
+    const pdf = await buildQuestionnairePdfBytes({
+      patient_reference: null,
+      submitted_at: new Date("2026-09-23T10:00:00.000Z"),
+      submitted_by: "audit",
+      selected_block_ids: [definition.block.id],
+      deduplicated_questions: [question],
+      answers,
+      source: "audit",
+      session_kind: "internal_documentation",
+      internal_workflow_id: null,
+      practice_form: null,
+      frozen_blocks: frozenBlocks,
+    }, {
+      title: "Audit",
+      referenceLabel: "Referenz",
+      blockCatalog: {},
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+    const expected = [
+      "AUDIT_A_TEXT", "Offen", "Alpha, Beta", "23.09.2026", "09/2026",
+      "AUDIT_B_TEXT", "Beta", "24.09.2026", "10/2026",
+    ];
+
+    for (const value of expected) {
+      expect(semanticText).toContain(value);
+      expect(xml).toContain(value);
+      expect(pdfText).toContain(value);
+    }
+    expect(semanticText.match(/AUDIT_[AB]_TEXT/g)).toEqual(["AUDIT_A_TEXT", "AUDIT_B_TEXT"]);
+    expect(semanticText).not.toContain("Status: open");
+    expect(semanticText).not.toContain("Themen: a");
+    expect(xml.match(/Status: Offen/g)).toHaveLength(2);
+    expect(xml.match(/Datum: \d{2}\.\d{2}\.2026/g)).toHaveLength(2);
+    expect(xml.match(/Monat: \d{2}\/2026/g)).toHaveLength(2);
   });
 
   it("validiert instanzlokale Uhrzeit und Auswahlwerte", () => {

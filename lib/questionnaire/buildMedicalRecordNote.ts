@@ -360,7 +360,7 @@ function formatRepeatableGroupEntries(
       if (typeof val !== "string" || val.trim() === "") continue;
 
       const trimmed = val.trim();
-      const documentationText = resolveRepeatableFieldDocumentation(field, e);
+      const documentationText = resolveRepeatableFieldDocumentation(field, e, def.groupSchema);
       if (documentationText) {
         lines.push(`     ${documentationText}`);
       } else if (field.type === "textarea") {

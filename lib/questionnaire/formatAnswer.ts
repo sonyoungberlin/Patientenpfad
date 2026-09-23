@@ -262,6 +262,7 @@ export type RepGroupField = {
 export function resolveRepeatableFieldDocumentation(
   field: NonNullable<QuestionDefinition["groupSchema"]>[number],
   entry: Record<string, unknown>,
+  fields: NonNullable<QuestionDefinition["groupSchema"]> = [field],
 ): string | undefined {
   const resolve = (segments: NonNullable<typeof field.documentationSegments>): string => segments.map((segment) => {
     if (segment.kind === "text") return segment.text;
@@ -270,9 +271,20 @@ export function resolveRepeatableFieldDocumentation(
     }
     const value = entry[segment.fieldKey];
     if (typeof value !== "string") return "";
-    return field.type === "month"
-      ? formatDocumentationSegmentAnswer({ type: "month" }, value.trim())
-      : value.trim();
+    const referencedField = fields.find((candidate) => candidate.key === segment.fieldKey) ?? field;
+    const trimmedValue = value.trim();
+    if (referencedField.type === "select") {
+      return resolveQuestionOptionLabel({ options: referencedField.options }, trimmedValue);
+    }
+    if (referencedField.type === "multi_select") {
+      return parseMultiSelectValue(trimmedValue, referencedField.options ?? [])
+        .map((selectedValue) => resolveQuestionOptionLabel({ options: referencedField.options }, selectedValue))
+        .join(", ");
+    }
+    if (referencedField.type === "date" || referencedField.type === "month") {
+      return formatDocumentationSegmentAnswer({ type: referencedField.type }, trimmedValue);
+    }
+    return trimmedValue;
   }).join("");
   if (field.documentationSegments) {
     const text = resolve(field.documentationSegments);
@@ -352,15 +364,15 @@ export function parseRepeatableGroupEntries(
         display = parseMultiSelectValue(display, field.options ?? [])
           .map((value) => resolveQuestionOptionLabel({ options: field.options }, value))
           .join(", ");
-      } else if (field.type === "month" && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(display)) {
-        display = formatDocumentationSegmentAnswer({ type: "month" }, display);
+      } else if (field.type === "date" || field.type === "month") {
+        display = formatDocumentationSegmentAnswer({ type: field.type }, display);
       } else if (field.type === "checkbox") {
         // Nicht angekreuzt (leer) → überspringen; angekreuzt ("ja") → "Ja"
         if (display === "") continue;
         if (display === "ja") display = "Ja";
       }
 
-      fields.push({ label: field.label, value: display, fieldType: field.type, documentationText: resolveRepeatableFieldDocumentation(field, entry) });
+      fields.push({ label: field.label, value: display, fieldType: field.type, documentationText: resolveRepeatableFieldDocumentation(field, entry, schema) });
     }
 
     if (fields.length > 0) {
