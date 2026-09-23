@@ -11,6 +11,17 @@ export function questionnaireTrashCutoff(now: Date): Date {
   return new Date(now.getTime() - QUESTIONNAIRE_TRASH_RETENTION_MS);
 }
 
+const TECHNICAL_DIRECT_PRE_SUBMIT_SESSION: Prisma.PatientQuestionnaireSessionWhereInput = {
+  source: { in: ["kiosk_direct", "practice_direct"] },
+  status: "pending",
+  submitted_at: null,
+  kiosk_handoff_status: null,
+  public_check_in_handoff: { is: null },
+  NOT: {
+    selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
+  },
+};
+
 export function activeQuestionnaireLifecycleFilter(
   now: Date,
 ): Prisma.PatientQuestionnaireSessionWhereInput {
@@ -18,6 +29,7 @@ export function activeQuestionnaireLifecycleFilter(
     OR: [
       {
         session_kind: { not: "patient_communication" },
+        NOT: TECHNICAL_DIRECT_PRE_SUBMIT_SESSION,
       },
       {
         session_kind: "patient_communication",
@@ -25,6 +37,7 @@ export function activeQuestionnaireLifecycleFilter(
           {
             status: "pending",
             token_expires_at: { gt: now },
+            NOT: TECHNICAL_DIRECT_PRE_SUBMIT_SESSION,
           },
           {
             status: "completed",

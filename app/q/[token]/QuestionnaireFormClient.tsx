@@ -1466,7 +1466,7 @@ export function QuestionnaireFormClient({
         </button>
         </div>
         );
-        return context === "office" ? formDiv : (
+        return context === "office" || source === "kiosk_direct" ? formDiv : (
           <PersonalLinkNotice language={language}>{formDiv}</PersonalLinkNotice>
         );
       })()}

@@ -17,11 +17,14 @@ describe("questionnaire lifecycle filters", () => {
 
     expect(active).toEqual({
       OR: [
-        { session_kind: { not: "patient_communication" } },
+        {
+          session_kind: { not: "patient_communication" },
+          NOT: expect.any(Object),
+        },
         {
           session_kind: "patient_communication",
           OR: expect.arrayContaining([
-            { status: "pending", token_expires_at: { gt: NOW } },
+            expect.objectContaining({ status: "pending", token_expires_at: { gt: NOW } }),
           ]),
         },
       ],
@@ -34,16 +37,62 @@ describe("questionnaire lifecycle filters", () => {
     }));
   });
 
+  it("blendet direkte technische Vor-Submit-Sessions aus dem fachlichen Lifecycle aus", () => {
+    const active = activeQuestionnaireLifecycleFilter(NOW);
+    expect(active).toEqual({
+      OR: [
+        {
+          session_kind: { not: "patient_communication" },
+          NOT: expect.objectContaining({
+            source: { in: ["kiosk_direct", "practice_direct"] },
+            status: "pending",
+            submitted_at: null,
+          }),
+        },
+        {
+          session_kind: "patient_communication",
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              status: "pending",
+              NOT: expect.objectContaining({
+                source: { in: ["kiosk_direct", "practice_direct"] },
+                submitted_at: null,
+              }),
+            }),
+          ]),
+        },
+      ],
+    });
+  });
+
+  it("lässt abgeschlossene direkte Sessions und Check-in-Handoffs im Lifecycle", () => {
+    const active = activeQuestionnaireLifecycleFilter(NOW);
+    const [internalBranch, patientBranch] = active.OR as Array<Record<string, unknown>>;
+    expect(internalBranch).toEqual(expect.objectContaining({
+      session_kind: { not: "patient_communication" },
+    }));
+    expect(patientBranch).toEqual(expect.objectContaining({
+      session_kind: "patient_communication",
+    }));
+    expect(patientBranch.OR).toEqual(expect.arrayContaining([
+      expect.objectContaining({ status: "completed", submitted_at: { gt: expect.any(Date) } }),
+    ]));
+    expect(JSON.stringify(active)).toContain("CHECK_IN");
+  });
+
   it("trennt Completed eine Minute vor und nach sieben Tagen", () => {
     const cutoff = new Date("2026-09-01T12:00:00.000Z");
     expect(questionnaireSubmittedCutoff(NOW)).toEqual(cutoff);
     expect(activeQuestionnaireLifecycleFilter(NOW)).toEqual({
       OR: [
-        { session_kind: { not: "patient_communication" } },
+        {
+          session_kind: { not: "patient_communication" },
+          NOT: expect.any(Object),
+        },
         {
           session_kind: "patient_communication",
           OR: expect.arrayContaining([
-            { status: "completed", submitted_at: { gt: cutoff } },
+            expect.objectContaining({ status: "completed", submitted_at: { gt: cutoff } }),
           ]),
         },
       ],

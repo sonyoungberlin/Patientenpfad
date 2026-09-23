@@ -55,6 +55,7 @@ async function renderForm(
   publicHandoffPath?: string,
   submitEndpoint?: string,
   autoDownloadSessionId?: string,
+  context = "office",
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -73,7 +74,7 @@ async function renderForm(
         publicHandoffPath={publicHandoffPath}
         submitEndpoint={submitEndpoint}
         autoDownloadSessionId={autoDownloadSessionId}
-        context="office"
+        context={context}
       />,
     );
   });
@@ -84,6 +85,20 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
   beforeEach(() => {
     fetchMock.mockReset();
     refreshMock.mockReset();
+  });
+
+  it("zeigt das Kiosk-Formular direkt, während externe Links den Öffnen-Hinweis behalten", async () => {
+    const kiosk = await renderForm("kiosk_direct", undefined, "81426", undefined, undefined, QUESTIONS, undefined, undefined, undefined, undefined, "patient");
+    expect(kiosk.container.querySelector("[data-personal-link-notice]")).toBeNull();
+    expect(kiosk.container.querySelector("[data-q-submit]")).not.toBeNull();
+    await act(async () => kiosk.root.unmount());
+    document.body.removeChild(kiosk.container);
+
+    const link = await renderForm("internal_link", undefined, "81426", undefined, undefined, QUESTIONS, undefined, undefined, undefined, undefined, "patient");
+    expect(link.container.querySelector("[data-personal-link-notice]")).not.toBeNull();
+    expect(link.container.textContent).toContain("Fragebogen öffnen");
+    await act(async () => link.root.unmount());
+    document.body.removeChild(link.container);
   });
 
   it("markiert Server-Fehler und scrollt/fokussiert das erste ungültige Feld", async () => {
