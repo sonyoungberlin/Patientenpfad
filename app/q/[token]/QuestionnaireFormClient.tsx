@@ -1088,6 +1088,7 @@ export function QuestionnaireFormClient({
   publicHandoffPath,
   internalWorkflowId,
   autoDownloadSessionId,
+  hideManualExports = false,
 }: {
   token: string;
   submitEndpoint?: string;
@@ -1109,6 +1110,7 @@ export function QuestionnaireFormClient({
   publicHandoffPath?: string;
   internalWorkflowId?: string | null;
   autoDownloadSessionId?: string;
+  hideManualExports?: boolean;
 }) {
   const t = UI_STRINGS[language];
   const charErrorMessage = answerCharactersErrorMessage(language);
@@ -1371,13 +1373,13 @@ export function QuestionnaireFormClient({
         {autoDownloadSessionId ? (
           <QuestionnaireAutoDownloadController sessionId={autoDownloadSessionId} />
         ) : null}
-        {xmlExport ? null : <h2>{t.completedTitle}</h2>}
+        {xmlExport && !hideManualExports ? null : <h2>{t.completedTitle}</h2>}
         <p>{t.completedThanks}</p>
         {selfCheckInQrReference ? (
           <SelfCheckInQrCode reference={selfCheckInQrReference} />
         ) : null}
         <PatientReferenceSummary reference={patientReference} />
-        {xmlExport ? (
+        {xmlExport && !hideManualExports ? (
           <AppTextXmlDownloadButton
             noteText={xmlExport.noteText}
             filename={xmlExport.filename}

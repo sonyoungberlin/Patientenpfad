@@ -56,6 +56,7 @@ async function renderForm(
   submitEndpoint?: string,
   autoDownloadSessionId?: string,
   context = "office",
+  hideManualExports = false,
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -74,6 +75,7 @@ async function renderForm(
         publicHandoffPath={publicHandoffPath}
         submitEndpoint={submitEndpoint}
         autoDownloadSessionId={autoDownloadSessionId}
+        hideManualExports={hideManualExports}
         context={context}
       />,
     );
@@ -221,6 +223,48 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
     expect(container.querySelector("[data-q-copy-note]")).toBeNull();
     expect(container.querySelector("nav")).toBeNull();
     expect(container.querySelector("[data-q-kiosk-next]")).toBeNull();
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("zeigt im internen Kiosk-Abschluss keine manuellen Exporte", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        noteText: "Interne Dokumentation\nBefund",
+        xmlFilename: "interne-dokumentation.xml",
+        semanticDocument: { kind: "semantic-document", version: 2, sections: [] },
+      }),
+    });
+    const { container, root } = await renderForm(
+      "kiosk_direct",
+      undefined,
+      "81426",
+      undefined,
+      undefined,
+      QUESTIONS,
+      undefined,
+      undefined,
+      "/api/questionnaire-kiosk/internal/session-1",
+      undefined,
+      "patient",
+      true,
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector("[data-q-submitted]")).not.toBeNull();
+    expect(container.textContent).toContain("Fragebogen abgeschlossen");
+    expect(container.querySelector("[data-q-pdf]")).toBeNull();
+    expect(container.querySelector("[data-q-download-xml]")).toBeNull();
+    expect(container.querySelector("[data-q-download-xml-v2]")).toBeNull();
+    expect(container.querySelector("[data-q-gdt]")).toBeNull();
 
     await act(async () => root.unmount());
     document.body.removeChild(container);

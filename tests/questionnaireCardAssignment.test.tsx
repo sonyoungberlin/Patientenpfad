@@ -36,11 +36,10 @@ describe("QuestionnaireCard assignment download policy", () => {
     expect(markup).toContain(`data-download-artifacts="${expected}"`);
   });
 
-  it("zeigt für interne Dokumentationen manuelle PDF-, XML- und GDT-Downloads", () => {
+  it("zeigt für nicht zugeordnete interne Dokumentationen die manuellen Exporte", () => {
     const markup = renderToStaticMarkup(
       <QuestionnaireCard
         {...baseProps}
-        patientReference="81426"
         sessionKind="internal_documentation"
       />,
     );
@@ -50,5 +49,20 @@ describe("QuestionnaireCard assignment download policy", () => {
     expect(markup).toContain('data-q-gdt="session-1"');
     expect(markup).toContain('/api/questionnaire/session-1/xml');
     expect(markup).toContain('/api/questionnaire/session-1/gdt');
+  });
+
+  it("versteckt für zugeordnete Fälle Exporte und Zuordnung", () => {
+    const markup = renderToStaticMarkup(
+      <QuestionnaireCard
+        {...baseProps}
+        patientReference="81426"
+        sessionKind="internal_documentation"
+      />,
+    );
+
+    expect(markup).not.toContain('data-q-pdf="session-1"');
+    expect(markup).not.toContain('data-q-xml="session-1"');
+    expect(markup).not.toContain('data-q-gdt="session-1"');
+    expect(markup).not.toContain("Patient zuordnen");
   });
 });

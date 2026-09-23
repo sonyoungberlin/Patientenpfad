@@ -169,7 +169,7 @@ export default function QuestionnaireCard({
       </div>
 
       {/* PDF download + Krankenblatt-Text */}
-      {exportFinal && (
+      {exportFinal && patientReference == null && (
         <>
           <a
             href={`/api/questionnaire/${id}/pdf`}
