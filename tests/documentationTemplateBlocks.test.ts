@@ -258,6 +258,79 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     expect(xml).not.toContain("Hinweis: Hinweis:");
   });
 
+  it("behandelt normale Dokumentationsinhalte als Plaintext ohne Linksemantik", () => {
+    const paragraph = buildPracticeDocumentationBlockDefinition({
+      title: "KIM-Hinweis",
+      blockType: "paragraph",
+      text: "Kontakt: mvzkreuzberg.723236900@i-motion.kim.telematik",
+    });
+    const text = buildPracticeDocumentationBlockDefinition({
+      title: "Rückfrage",
+      blockType: "text",
+      text: "URL der Rückmeldung",
+    });
+    const hint = buildPracticeDocumentationBlockDefinition({
+      title: "Hinweis",
+      blockType: "hint",
+      text: "E-Mail-Adresse",
+    });
+    const list = buildPracticeDocumentationBlockDefinition({
+      title: "Weitere Informationen",
+      blockType: "list",
+      sharedDocumentationText: "Weitere Angaben unter https://example.test/info",
+      options: [{ label: "Onlinebefund", documentationText: "https://example.test/befund?format=xml&lang=de" }],
+    });
+    const repeatable = buildPracticeDocumentationBlockDefinition({
+      title: "Kontakt",
+      blockType: "repeatable",
+      additionalFields: [
+        { id: "url", label: "URL", type: "text", documentationText: "URL:" },
+        { id: "email", label: "E-Mail", type: "text", documentationText: "E-Mail:" },
+      ],
+    });
+    const repeatableQuestion = repeatable.questions[0]!;
+    const listQuestion = list.questions[0]!;
+    const document = buildSemanticMedicalRecordDocument({
+      answers: {
+        [text.questions[0]!.id]: "https://example.test/rueckfrage?format=xml&lang=de",
+        [hint.questions[0]!.id]: "support@example.de",
+        [listQuestion.id]: listQuestion.options?.[0] && typeof listQuestion.options[0] !== "string"
+          ? listQuestion.options[0].value
+          : "",
+        [repeatableQuestion.id]: JSON.stringify([{
+          url: "https://example.test/detail?format=xml&lang=de",
+          email: "detail@example.de",
+        }]),
+      },
+      selected_block_ids: [paragraph.block.id, text.block.id, hint.block.id, list.block.id, repeatable.block.id],
+      frozenBlocks: resolvePracticeDocumentationBlocks([
+        { definition: paragraph },
+        { definition: text },
+        { definition: hint },
+        { definition: list },
+        { definition: repeatable },
+      ]),
+      internalWorkflowId: null,
+    });
+    const semanticText = document.sections.flatMap((section) => section.items).map((item) => item.text).join("\n");
+    const xml = buildStructuredAppXml(document);
+
+    expect(semanticText).toContain("Kontakt: mvzkreuzberg.723236900@i-motion.kim.telematik");
+    expect(semanticText).toContain("https://example.test/rueckfrage?format=xml&lang=de");
+    expect(semanticText).toContain("support@example.de");
+    expect(semanticText).toContain("Weitere Angaben unter https://example.test/info");
+    expect(semanticText).toContain("https://example.test/befund?format=xml&lang=de");
+    expect(semanticText).toContain("https://example.test/detail?format=xml&lang=de");
+    expect(semanticText).toContain("detail@example.de");
+    expect(xml).toContain("https://example.test/rueckfrage?format=xml&amp;lang=de");
+    expect(xml).toContain("https://example.test/befund?format=xml&amp;lang=de");
+    expect(xml).toContain("https://example.test/detail?format=xml&amp;lang=de");
+    expect(xml).toContain("support@example.de");
+    expect(xml).not.toContain("mailto:");
+    expect(xml).not.toContain("<w:hyperlink");
+    expect(xml).not.toContain("<a ");
+  });
+
   it("behält Text als labelfreie Fließtexteingabe mit Feldbezeichnungsvalidierung bei", () => {
     const validation = validatePracticeDocumentationBlock({
       title: "Konkrete Fragestellung / insbesondere",

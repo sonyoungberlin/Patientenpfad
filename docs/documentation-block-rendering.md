@@ -2,6 +2,14 @@
 
 Diese Datei beschreibt die fachlich sichtbaren Bausteinmuster der Praxisbibliothek. Maßgeblich bleiben die vorhandenen `QuestionDefinition`-, `SemanticDocument`- und XML-v2-Verträge. Die fachlichen Namen im Editor sind eine verständliche Sicht auf diese vorhandenen technischen Typen, keine neue Backend-Struktur.
 
+## Plaintext-Grundregel
+
+Alle normalen Dokumentationsbausteine behandeln ihre Inhalte exakt als Plaintext. Das gilt für Festtext, Freitext, Hinweise, Auswahltexte, gemeinsame Einleitungstexte sowie Repeatable-/Detailfelder.
+
+Diese Inhalte werden weder als Markdown interpretiert noch automatisch in URL-, E-Mail-, KIM- oder HTML-Links umgewandelt. Insbesondere wird kein `mailto:` erzeugt und eine Adresse wie `mvzkreuzberg.723236900@i-motion.kim.telematik` erscheint in der Dokumentation exakt als dieser Text.
+
+Ein echter klickbarer Link ist eine separate zukünftige generische Funktion. Dafür wären ein expliziter Linkmechanismus sowie neue Unterstützung in `SemanticDocument`, XML v2 und `AppTextImport.bas` erforderlich. Normale Textbausteine dürfen keine Markdown-Linksyntax oder `mailto:`-Syntax als Linkvertrag verwenden.
+
 ## Mapping
 
 | Fachlicher Typ | Formular | Technischer Vertrag | SemanticDocument / XML v2 | Word |
@@ -89,6 +97,9 @@ Festtext plus optionaler Freitext wird bewusst aus zwei Bausteinen zusammengeset
 - Technische Titel oder Feldlabels nicht automatisch in den Dokumentinhalt übernehmen.
 - Keine Ausgaben wie `1. Eintrag` oder `2. Eintrag` in fertigen Briefen erzeugen.
 - Keine Dummy-Leerzeichen oder Leerabsätze zur Darstellung speichern.
+- Normale Textbausteine nicht mit Markdown-Linksyntax speichern.
+- Keine automatische Linkinterpretation von URLs, E-Mail- oder KIM-Adressen erwarten.
+- Keine `mailto:`-Syntax in Festtexten verwenden.
 - Keine neuen Spezialtypen einführen, wenn `paragraph`, `text`, `hint`, `repeatable`, `list` und die vorhandenen SemanticDocument-Typen ausreichen.
 - Den Präfix `Hinweis:` nicht in Eingaben oder XML duplizieren; er gehört zur Word-Darstellung von `freeText`.
 
