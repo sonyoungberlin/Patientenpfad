@@ -17,6 +17,13 @@ type BlockRow = {
   title: string;
   definition: PracticeDocumentationBlockDefinition;
   isActive: boolean;
+  usedInTemplates?: Array<{ id: string; name: string }>;
+};
+
+type TemplateRow = {
+  id: string;
+  name: string;
+  placements: Array<{ blockId: string; section: 1 | 2 | 3; order: number }>;
 };
 
 type Draft = {
@@ -53,6 +60,29 @@ const TYPE_HELP: Record<PracticeDocumentationBlockType, string> = {
   month: "Eine Monats- und Jahresangabe.",
 };
 
+const TYPE_PURPOSE: Record<PracticeDocumentationBlockType, string> = {
+  text: "Nur Ihre Eingabe erscheint im Dokument, ohne Überschrift.",
+  paragraph: "Wird ohne Eingabe als normaler Text ausgegeben.",
+  selection: "Eine Auswahl mit einem eigenen Ausgabetext je Option.",
+  measurement: "Ein Zahlenwert mit optionaler Einheit.",
+  list: "Fester Einleitungssatz mit ausgewählten Punkten darunter.",
+  hint: "Ihre Eingabe erscheint hervorgehoben als ‚Hinweis: …‘.",
+  repeatable: "Für strukturierte wiederholbare Angaben; kompakt und eingerückt.",
+  month: "Eine Monats- und Jahresangabe.",
+};
+
+function blockInputRequired(block: BlockRow): boolean {
+  return block.definition.visibleType !== "paragraph" && block.definition.questions[0]?.required === true;
+}
+
+function blockOutputDetails(block: BlockRow): string[] {
+  const question = block.definition.questions[0];
+  if (!question) return [];
+  if (block.definition.visibleType === "paragraph") return [question.documentationText ?? question.text];
+  if (block.definition.visibleType === "repeatable") return (question.groupSchema ?? []).map((field) => field.label);
+  return (question.options ?? []).map((option) => typeof option === "string" ? option : option.label);
+}
+
 const emptyDraft = (): Draft => ({
   title: "",
   blockType: "text",
@@ -82,7 +112,7 @@ function newFieldOption(): PracticeDocumentationFieldOptionInput {
   return { value: `option_${crypto.randomUUID()}`, label: "" };
 }
 
-export default function DocumentationLibraryClient({ initialBlocks }: { initialBlocks: BlockRow[] }) {
+export default function DocumentationLibraryClient({ initialBlocks, initialTemplates = [] }: { initialBlocks: BlockRow[]; initialTemplates?: TemplateRow[] }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -171,6 +201,32 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
       }),
     });
     setError(null);
+  }
+
+  const editingBlock = initialBlocks.find((block) => block.id === editingId);
+  const blockById = new Map(initialBlocks.map((block) => [block.id, block]));
+  const referencedBlockIds = new Set(initialTemplates.flatMap((template) => template.placements.map((placement) => placement.blockId)));
+  const additionalBlocks = initialBlocks.filter((block) => block.isActive && !referencedBlockIds.has(block.id));
+
+  function renderBlock(block: BlockRow, key: string) {
+    const usages = block.usedInTemplates ?? [];
+    const outputDetails = blockOutputDetails(block);
+    return <details key={key} style={{ border: "1px solid #ddd", padding: "0.65rem" }}>
+      <summary style={{ cursor: "pointer" }}>
+        <strong>{block.title}</strong> · {TYPE_LABELS[block.definition.visibleType]} · Eingabe erforderlich: {blockInputRequired(block) ? "ja" : "nein"} · {usages.length > 0 ? `Verwendet in ${usages.length} Vorlage${usages.length === 1 ? "" : "n"}` : "Noch nicht verwendet"}
+      </summary>
+      <div style={{ display: "grid", gap: "0.35rem", marginTop: "0.6rem" }}>
+        <p style={{ margin: 0 }}>{TYPE_PURPOSE[block.definition.visibleType]}</p>
+        <p className="text-muted text-small" style={{ margin: 0 }}>{block.isActive ? "Aktiv" : "Inaktiv"}</p>
+        {outputDetails.length > 0 && <div><strong>Ausgabe:</strong><ul>{outputDetails.map((detail, index) => <li key={`${key}-detail-${index}`}>{detail}</li>)}</ul></div>}
+        {usages.length > 0 && <div><strong>Vorlagen:</strong><ul>{usages.map((template) => <li key={template.id}>{template.name}</li>)}</ul></div>}
+        {usages.length > 0 && <p role="note" className="text-muted" style={{ margin: 0 }}>Änderungen an diesem Baustein betreffen die aufgeführten Vorlagen.</p>}
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button type="button" onClick={() => startEdit(block)} disabled={busy}>Bearbeiten</button>
+          {block.isActive && <button type="button" onClick={() => void deactivate(block.id)} disabled={busy}>Deaktivieren</button>}
+        </div>
+      </div>
+    </details>;
   }
 
   function changeType(blockType: PracticeDocumentationBlockType) {
@@ -274,24 +330,34 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
   return (
     <>
       <section>
-        <h2>Bausteine</h2>
-        {initialBlocks.length === 0 ? <p className="text-muted">Noch keine Bausteine angelegt.</p> : (
-          <table><thead><tr><th>Titel</th><th>Art</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>
-            {initialBlocks.map((block) => <tr key={block.id}>
-              <td>{block.title}</td>
-              <td>{TYPE_LABELS[block.definition.visibleType]}</td>
-              <td>{block.isActive ? "Aktiv" : "Inaktiv"}</td>
-              <td><div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <button type="button" onClick={() => startEdit(block)} disabled={busy}>Bearbeiten</button>
-                {block.isActive && <button type="button" onClick={() => void deactivate(block.id)} disabled={busy}>Deaktivieren</button>}
-              </div></td>
-            </tr>)}
-          </tbody></table>
+        <h2>Vorlagen</h2>
+        {initialTemplates.length === 0 ? <p className="text-muted">Noch keine aktiven Vorlagen angelegt.</p> : (
+          <div style={{ display: "grid", gap: "0.75rem" }}>
+            {initialTemplates.map((template) => <details key={template.id} open>
+              <summary style={{ cursor: "pointer", fontWeight: 700 }}>{template.name} ({template.placements.length})</summary>
+              <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.5rem" }}>
+                {template.placements.map((placement) => {
+                  const block = blockById.get(placement.blockId);
+                  return block ? renderBlock(block, `${template.id}-${placement.blockId}`) : <p key={`${template.id}-${placement.blockId}`} className="text-muted">Baustein nicht verfügbar.</p>;
+                })}
+              </div>
+            </details>)}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2>Weitere Bausteine</h2>
+        {additionalBlocks.length === 0 ? <p className="text-muted">Alle aktiven Bausteine werden in Vorlagen verwendet.</p> : (
+          <div style={{ display: "grid", gap: "0.5rem" }}>
+            {additionalBlocks.map((block) => renderBlock(block, `additional-${block.id}`))}
+          </div>
         )}
       </section>
 
       <form ref={editorFormRef} onSubmit={(event) => void save(event)} style={{ display: "grid", gap: "0.75rem" }}>
         <h2>{editingId ? "Baustein bearbeiten" : "Baustein anlegen"}</h2>
+        {editingBlock && (editingBlock.usedInTemplates ?? []).length > 0 && <p role="note" className="text-muted">Dieser Baustein wird in {(editingBlock.usedInTemplates ?? []).length} Vorlage{(editingBlock.usedInTemplates ?? []).length === 1 ? "" : "n"} verwendet. Änderungen betreffen: {(editingBlock.usedInTemplates ?? []).map((template) => template.name).join(", ")}.</p>}
         <label>Bausteinart<select value={draft.blockType} onChange={(event) => changeType(event.target.value as PracticeDocumentationBlockType)} disabled={busy || Boolean(editingId)}>
           {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>

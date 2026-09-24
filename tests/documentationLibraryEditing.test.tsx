@@ -172,6 +172,66 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
     await act(async () => root.unmount());
   });
 
+  it("gruppiert Bausteine nach Vorlagen und zeigt Mehrfachverwendung", async () => {
+    const fixedText = buildPracticeDocumentationBlockDefinition({
+      title: "Datenschutz- und Sorgfaltshinweis Attest",
+      blockType: "paragraph",
+      text: "Bitte behandeln Sie diese Bescheinigung sorgfältig.",
+    });
+    const realHint = buildPracticeDocumentationBlockDefinition({
+      title: "Individueller Hinweis",
+      blockType: "hint",
+      text: "Zusätzliche Information",
+    });
+    const consent = buildPracticeDocumentationBlockDefinition({
+      title: "Einwilligung Befundanforderung – Einleitung",
+      blockType: "paragraph",
+      text: "Ich willige in die Anforderung ein.",
+    });
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <DocumentationLibraryClient
+          initialBlocks={[
+            { id: "fixed", title: fixedText.block.label, definition: fixedText, isActive: true, usedInTemplates: [{ id: "template-1", name: "Rückfrage an Facharzt" }, { id: "template-2", name: "Einwilligung zur Anforderung von Facharztunterlagen" }] },
+            { id: "hint", title: realHint.block.label, definition: realHint, isActive: true, usedInTemplates: [{ id: "template-1", name: "Rückfrage an Facharzt" }] },
+            { id: "consent", title: consent.block.label, definition: consent, isActive: true, usedInTemplates: [] },
+          ]}
+          initialTemplates={[
+            { id: "template-1", name: "Rückfrage an Facharzt", placements: [{ blockId: "fixed", section: 1, order: 0 }, { blockId: "hint", section: 2, order: 0 }] },
+            { id: "template-2", name: "Einwilligung zur Anforderung von Facharztunterlagen", placements: [{ blockId: "fixed", section: 1, order: 0 }] },
+          ]}
+        />,
+      );
+    });
+
+    expect(container.querySelectorAll("details").length).toBeGreaterThanOrEqual(6);
+    expect(container.textContent).toContain("Rückfrage an Facharzt");
+    expect(container.textContent).toContain("Einwilligung zur Anforderung von Facharztunterlagen");
+    expect(container.textContent).toContain("Weitere Bausteine");
+    expect(Array.from(container.querySelectorAll("strong")).filter((node) => node.textContent === "Datenschutz- und Sorgfaltshinweis Attest")).toHaveLength(2);
+    expect(container.textContent).toContain("Einwilligung Befundanforderung – Einleitung");
+    expect(container.textContent).not.toContain("Facharztkommunikation");
+    expect(container.textContent).toContain("Festtext");
+    expect(container.textContent).toContain("Hinweis");
+    expect(container.textContent).toContain("Eingabe erforderlich: nein");
+    expect(container.textContent).toContain("Verwendet in 1 Vorlage");
+    expect(container.textContent).toContain("Verwendet in 2 Vorlagen");
+    expect(container.textContent).toContain("Wird ohne Eingabe als normaler Text ausgegeben.");
+    expect(container.textContent).toContain("Ihre Eingabe erscheint hervorgehoben als ‚Hinweis: …‘.");
+    expect(container.textContent).toContain("Noch nicht verwendet");
+
+    const usedBlockRow = Array.from(container.querySelectorAll("details"))
+      .find((details) => details.querySelector("summary")?.textContent?.includes("Datenschutz- und Sorgfaltshinweis Attest"));
+    await act(async () => {
+      usedBlockRow?.querySelector<HTMLButtonElement>("button")?.click();
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain("Änderungen betreffen: Rückfrage an Facharzt, Einwilligung zur Anforderung von Facharztunterlagen.");
+    await act(async () => root.unmount());
+  });
+
   it("zeigt Festtext im Formular ohne Eingabefeld", async () => {
     const definition = buildPracticeDocumentationBlockDefinition({
       title: "Ambulante Behandlung",
