@@ -32,14 +32,25 @@ type Draft = {
 };
 
 const TYPE_LABELS: Record<PracticeDocumentationBlockType, string> = {
-  text: "Text",
-  paragraph: "Absatz",
+  text: "Freitext",
+  paragraph: "Festtext",
   selection: "Auswahl",
   measurement: "Messwert",
-  list: "Mehrfachauswahl",
+  list: "Auswahlblock",
   hint: "Hinweis",
-  repeatable: "Wiederholbarer Baustein",
+  repeatable: "Detailblock",
   month: "Monat/Jahr",
+};
+
+const TYPE_HELP: Record<PracticeDocumentationBlockType, string> = {
+  text: "Nur Ihre Eingabe erscheint im Dokument, ohne Überschrift.",
+  paragraph: "Wird ohne Eingabefeld als normaler Text ausgegeben.",
+  selection: "Eine Auswahl mit einem eigenen Ausgabetext je Option.",
+  measurement: "Ein Zahlenwert mit optionaler Einheit.",
+  list: "Fester Einleitungssatz mit ausgewählten Punkten darunter.",
+  hint: "Ihre Eingabe erscheint mit ‚Hinweis:‘ hervorgehoben.",
+  repeatable: "Für wiederholende Angaben wie Fachrichtung, Praxis und Adresse; kompakt und eingerückt.",
+  month: "Eine Monats- und Jahresangabe.",
 };
 
 const emptyDraft = (): Draft => ({
@@ -163,7 +174,7 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
   }
 
   function changeType(blockType: PracticeDocumentationBlockType) {
-    setDraft((current) => ({ ...emptyDraft(), title: current.title, blockType, required: blockType === "hint" }));
+    setDraft((current) => ({ ...emptyDraft(), title: current.title, blockType }));
   }
 
   function updateOption(index: number, update: Partial<PracticeDocumentationOptionInput>) {
@@ -284,9 +295,12 @@ export default function DocumentationLibraryClient({ initialBlocks }: { initialB
         <label>Bausteinart<select value={draft.blockType} onChange={(event) => changeType(event.target.value as PracticeDocumentationBlockType)} disabled={busy || Boolean(editingId)}>
           {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>
+        <p className="text-muted text-small" data-documentation-block-type-help style={{ margin: 0 }}>
+          {TYPE_HELP[draft.blockType]}
+        </p>
         <label>Titel<input value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} maxLength={120} required disabled={busy} /></label>
         {(draft.blockType === "text" || draft.blockType === "paragraph" || draft.blockType === "hint") && (
-          <label>{draft.blockType === "hint" ? "Hinweistext" : draft.blockType === "paragraph" ? "Inhalt" : "Feldbezeichnung"}<textarea value={draft.text} onChange={(event) => setDraft((current) => ({ ...current, text: event.target.value }))} rows={draft.blockType === "paragraph" ? 10 : 4} required disabled={busy} /></label>
+          <label>{draft.blockType === "paragraph" ? "Inhalt" : "Eingabeaufforderung"}<textarea value={draft.text} onChange={(event) => setDraft((current) => ({ ...current, text: event.target.value }))} rows={draft.blockType === "paragraph" ? 10 : 4} required disabled={busy} /></label>
         )}
         {draft.blockType === "measurement" && (
           <label>Einheit<input value={draft.unit} onChange={(event) => setDraft((current) => ({ ...current, unit: event.target.value }))} maxLength={40} disabled={busy} /></label>

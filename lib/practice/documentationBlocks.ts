@@ -247,14 +247,14 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
     const value: PracticeDocumentationBlockInput = {
       title: normalizeText(input.title, "Titel", PRACTICE_DOCUMENTATION_BLOCK_TITLE_MAX_LENGTH),
       blockType: normalizedType,
-      required: input.required === true || normalizedType === "hint",
+      required: input.required === true,
     };
     if (normalizedType === "paragraph") {
       value.text = normalizeDocumentContent(input.text, "Inhalt");
     } else if (normalizedType === "text" || normalizedType === "hint") {
       value.text = normalizeText(
         input.text ?? input.title,
-        normalizedType === "hint" ? "Hinweistext" : "Feldbezeichnung",
+        "Eingabeaufforderung",
         PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH,
       );
     }
@@ -359,11 +359,18 @@ function questionForInput(
       maxEntries: undefined,
       unlimitedEntries: true,
       addEntryLabel: "+ Weiteren Eintrag hinzufügen",
-      documentationItemType: "bodyText",
+      documentationItemType: "listItem",
     };
   }
   if (input.blockType === "text") {
-    return { ...common, type: "textarea", maxLength: 1000, documentationItemType: "freeText" };
+    return {
+      ...common,
+      type: "textarea",
+      maxLength: 1000,
+      documentationItemType: "bodyText",
+      omitDocumentationLabel: true,
+      documentationSegments: [{ kind: "answerRef", questionId: id }],
+    };
   }
   if (input.blockType === "paragraph") {
     return {
@@ -383,7 +390,14 @@ function questionForInput(
     return { ...common, text: input.title, type: "month" };
   }
   if (input.blockType === "hint") {
-    return { ...common, type: "confirmation", required: true, documentationItemType: "bodyText" };
+    return {
+      ...common,
+      type: "textarea",
+      maxLength: 1000,
+      documentationItemType: "freeText",
+      omitDocumentationLabel: true,
+      documentationSegments: [{ kind: "answerRef", questionId: id }],
+    };
   }
   const existingValues = new Set((existing?.options ?? []).flatMap((option) =>
     typeof option === "string" ? [] : [option.value]));

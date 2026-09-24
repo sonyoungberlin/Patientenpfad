@@ -228,23 +228,22 @@ export function resolveStructuredQuestionDocumentation(
     const resolved = resolveSegments(question.documentationSegments);
     return resolved === null || resolved.trim() === "" ? "" : resolved;
   }
-  let hasStructuredOption = false;
-  const resolvedOptions = selectedOptions(question, rawValue)
+  const options = selectedOptions(question, rawValue);
+  const hasStructuredOption = options.some((option) =>
+    typeof option !== "string" && option.documentationSegments !== undefined,
+  );
+  if (!hasStructuredOption) return null;
+  const resolvedOptions = options
     .flatMap((option) => {
       if (typeof option === "string") return [];
       if (option.documentationSegments) {
-        hasStructuredOption = true;
         const resolved = resolveSegments(option.documentationSegments);
         return resolved === null ? [] : [resolved];
       }
       return option.documentationText ? [option.documentationText] : [];
     })
     .filter((text) => text !== "");
-  if (resolvedOptions.length === 0) return hasStructuredOption ? "" : null;
-  const sharedText = question.type === "multi_select" && question.sharedDocumentationText
-    ? `${question.sharedDocumentationText} `
-    : "";
-  return `${sharedText}${resolvedOptions.join(" ")}`;
+  return resolvedOptions.join(" ");
 }
 
 // ---------------------------------------------------------------------------

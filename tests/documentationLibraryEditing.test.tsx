@@ -6,7 +6,12 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import DocumentationTemplatesClient from "@/app/practice/documentation-templates/DocumentationTemplatesClient";
 import DocumentationLibraryClient from "@/app/practice/documentation-library/DocumentationLibraryClient";
-import type { PracticeDocumentationBlockDefinition } from "@/lib/practice/documentationBlocks";
+import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
+import {
+  buildPracticeDocumentationBlockDefinition,
+  resolvePracticeDocumentationBlocks,
+  type PracticeDocumentationBlockDefinition,
+} from "@/lib/practice/documentationBlocks";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: jest.fn() }),
@@ -133,6 +138,65 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
     });
     expect(Array.from(container.querySelectorAll("h2")).some((heading) => heading.textContent === "Baustein anlegen")).toBe(true);
 
+    await act(async () => root.unmount());
+  });
+
+  it("erklärt die fünf fachlichen Bausteintypen sichtbar und ohne Backend-Sprache", async () => {
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<DocumentationLibraryClient initialBlocks={[]} />);
+    });
+
+    const typeSelect = container.querySelector<HTMLSelectElement>("select");
+    const help = container.querySelector<HTMLElement>("[data-documentation-block-type-help]");
+    expect(typeSelect).not.toBeNull();
+    expect(help?.textContent).toContain("Nur Ihre Eingabe erscheint im Dokument, ohne Überschrift.");
+
+    const expectedHelp = [
+      ["paragraph", "Wird ohne Eingabefeld als normaler Text ausgegeben."],
+      ["hint", "Ihre Eingabe erscheint mit ‚Hinweis:‘ hervorgehoben."],
+      ["repeatable", "Für wiederholende Angaben wie Fachrichtung, Praxis und Adresse; kompakt und eingerückt."],
+      ["list", "Fester Einleitungssatz mit ausgewählten Punkten darunter."],
+    ] as const;
+    for (const [value, text] of expectedHelp) {
+      await act(async () => {
+        typeSelect!.value = value;
+        typeSelect!.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      expect(help?.textContent).toContain(text);
+    }
+
+    expect(container.textContent).not.toContain("SemanticDocument");
+    expect(container.textContent).not.toContain("documentationItemType");
+    await act(async () => root.unmount());
+  });
+
+  it("zeigt Festtext im Formular ohne Eingabefeld", async () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Ambulante Behandlung",
+      blockType: "paragraph",
+      text: "Die weitere Behandlung erfolgt ambulant hausärztlich.",
+    });
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <QuestionnaireFormClient
+          token="festtext-test"
+          questions={definition.questions}
+          frozenBlocks={frozenBlocks}
+          source="practice_direct"
+          context="office"
+          internalWorkflowId={null}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("Die weitere Behandlung erfolgt ambulant hausärztlich.");
+    expect(container.querySelector("textarea")).toBeNull();
+    expect(container.querySelector("input")).toBeNull();
     await act(async () => root.unmount());
   });
 });

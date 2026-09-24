@@ -39,7 +39,7 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     ["measurement", "number"],
     ["month", "month"],
     ["list", "multi_select"],
-    ["hint", "confirmation"],
+    ["hint", "textarea"],
   ] as const)("bildet %s auf %s ab", (blockType, questionType) => {
     const validation = validatePracticeDocumentationBlock({
       title: "Baustein",
@@ -56,7 +56,21 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
 
     const definition = buildPracticeDocumentationBlockDefinition(validation.value);
     expect(definition.questions[0].type).toBe(questionType);
-    if (blockType === "hint") expect(definition.questions[0].required).toBe(true);
+    if (blockType === "text") {
+      expect(definition.questions[0]).toEqual(expect.objectContaining({
+        documentationItemType: "bodyText",
+        omitDocumentationLabel: true,
+        documentationSegments: [{ kind: "answerRef", questionId: definition.questions[0].id }],
+      }));
+    }
+    if (blockType === "hint") {
+      expect(definition.questions[0]).toEqual(expect.objectContaining({
+        required: false,
+        documentationItemType: "freeText",
+        omitDocumentationLabel: true,
+        documentationSegments: [{ kind: "answerRef", questionId: definition.questions[0].id }],
+      }));
+    }
   });
 
   it("bewahrt getrennte Bezeichnungs- und Ausgabetexte sowie stabile IDs beim Bearbeiten", () => {
@@ -195,7 +209,56 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     for (const content of contents) expect(xml).toContain(content);
   });
 
-  it("behält Text als echte Freitexteingabe mit Feldbezeichnungsvalidierung bei", () => {
+  it("gibt normalen Freitext ohne Label als bodyText aus und lässt leere Eingaben weg", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Ergänzung",
+      blockType: "text",
+      text: "Welche Ergänzung soll dokumentiert werden?",
+    });
+    const question = definition.questions[0];
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const populated = buildSemanticMedicalRecordDocument({
+      answers: { [question.id]: "Kontrolle in vier Wochen." },
+      selected_block_ids: [definition.block.id],
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+    const populatedItems = populated.sections.flatMap((section) => section.items);
+    expect(populatedItems).toContainEqual(expect.objectContaining({
+      type: "bodyText",
+      text: "Kontrolle in vier Wochen.",
+    }));
+    expect(buildStructuredAppXml(populated)).not.toContain("Welche Ergänzung");
+
+    const empty = buildSemanticMedicalRecordDocument({
+      answers: { [question.id]: "" },
+      selected_block_ids: [definition.block.id],
+      frozenBlocks,
+      internalWorkflowId: null,
+    });
+    expect(empty.sections.flatMap((section) => section.items)).toHaveLength(0);
+  });
+
+  it("gibt Hinweise labelfrei als freeText für den bestehenden Word-Präfix aus", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Zusatzhinweis",
+      blockType: "hint",
+      text: "Welcher Hinweis soll ergänzt werden?",
+    });
+    const question = definition.questions[0];
+    const document = buildSemanticMedicalRecordDocument({
+      answers: { [question.id]: "Befund bitte zeitnah übermitteln." },
+      selected_block_ids: [definition.block.id],
+      frozenBlocks: resolvePracticeDocumentationBlocks([{ definition }]),
+      internalWorkflowId: null,
+    });
+    const xml = buildStructuredAppXml(document);
+    expect(xml).toContain('<item type="freeText">Befund bitte zeitnah übermitteln.</item>');
+    expect(xml).not.toContain("Welcher Hinweis");
+    expect(xml).not.toContain("Hinweis: Hinweis:");
+  });
+
+  it("behält Text als labelfreie Fließtexteingabe mit Feldbezeichnungsvalidierung bei", () => {
     const validation = validatePracticeDocumentationBlock({
       title: "Konkrete Fragestellung / insbesondere",
       blockType: "text",
@@ -203,7 +266,11 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     });
     expect(validation.ok).toBe(true);
     if (!validation.ok) return;
-    expect(buildPracticeDocumentationBlockDefinition(validation.value).questions[0]).toEqual(expect.objectContaining({ type: "textarea", documentationItemType: "freeText" }));
+    expect(buildPracticeDocumentationBlockDefinition(validation.value).questions[0]).toEqual(expect.objectContaining({
+      type: "textarea",
+      documentationItemType: "bodyText",
+      omitDocumentationLabel: true,
+    }));
     expect(validatePracticeDocumentationBlock({ title: "Text", blockType: "text", text: "Zeile 1\nZeile 2" }).ok).toBe(false);
   });
 
@@ -456,6 +523,22 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     if (!validation.ok) return;
     const definition = buildPracticeDocumentationBlockDefinition(validation.value);
     expect(definition.questions[0].sharedDocumentationText).toBe("Wir bitten um Übermittlung folgender Unterlagen bzw. Informationen:");
+
+    const question = definition.questions[0];
+    const optionValues = question.options?.map((option) => typeof option === "string" ? option : option.value) ?? [];
+    const document = buildSemanticMedicalRecordDocument({
+      answers: { [question.id]: optionValues.slice(0, 2).join(", ") },
+      selected_block_ids: [definition.block.id],
+      frozenBlocks: resolvePracticeDocumentationBlocks([{ definition }]),
+      internalWorkflowId: null,
+    });
+    const contentItems = document.sections.flatMap((section) => section.items)
+      .filter((item) => item.type !== "heading");
+    expect(contentItems).toEqual([
+      expect.objectContaining({ type: "bodyText", text: "Wir bitten um Übermittlung folgender Unterlagen bzw. Informationen:" }),
+      expect.objectContaining({ type: "listItem", text: "Befund / Epikrise" }),
+      expect.objectContaining({ type: "listItem", text: "Medikationsplan" }),
+    ]);
   });
 
   it("baut einen generischen Repeatable-Baustein mit instanzlokalen Regeln und unbegrenztem neuen Limit", () => {
@@ -506,6 +589,34 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     }));
     expect(fields[2]).toEqual(expect.objectContaining({ documentationText: "Individuelle fachliche Notiz." }));
     expect(fields[2]?.documentationSegments).toBeUndefined();
+  });
+
+  it("gruppiert wiederholte Detailangaben kompakt ohne technische Eintragsnummern", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Facharzt/Praxis",
+      blockType: "repeatable",
+      additionalFields: [
+        { id: "fachrichtung", label: "Fachrichtung", type: "text" },
+        { id: "praxis", label: "Praxis", type: "text" },
+      ],
+    });
+    const question = definition.questions[0];
+    const document = buildSemanticMedicalRecordDocument({
+      answers: { [question.id]: JSON.stringify([
+        { fachrichtung: "Orthopädie", praxis: "Praxis A" },
+        { fachrichtung: "Kardiologie", praxis: "Praxis B" },
+      ]) },
+      selected_block_ids: [definition.block.id],
+      frozenBlocks: resolvePracticeDocumentationBlocks([{ definition }]),
+      internalWorkflowId: null,
+    });
+    const detailItems = document.sections.flatMap((section) => section.items)
+      .filter((item) => item.type === "listItem");
+    expect(detailItems).toEqual([
+      expect.objectContaining({ text: "Fachrichtung: Orthopädie\nPraxis: Praxis A" }),
+      expect.objectContaining({ text: "Fachrichtung: Kardiologie\nPraxis: Praxis B" }),
+    ]);
+    expect(buildStructuredAppXml(document)).not.toMatch(/\d+\. Eintrag/);
   });
 
   it("gibt den Einschränkungstext des Sport-/Schwimmblocks genau einmal aus", async () => {

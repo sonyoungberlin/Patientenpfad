@@ -334,14 +334,18 @@ function formatRepeatableGroupEntries(
   if (!Array.isArray(parsed) || parsed.length === 0) return [];
 
   const lines: string[] = [];
+  const useCompactDetailContract = def.unlimitedEntries === true &&
+    def.documentationItemType === "listItem";
 
   parsed.forEach((entry, idx) => {
     if (typeof entry !== "object" || entry === null) return;
     const e = entry as Record<string, unknown>;
-
-    lines.push(def.presentation === "vaccination_matrix"
-      ? `  ${getVaccinationLabel(e as Record<string, string>, def)}:`
-      : `  ${idx + 1}. Eintrag${omitEntryHeadingColon ? "" : ":"}`);
+    const entryLines: string[] = [];
+    if (!useCompactDetailContract) {
+      lines.push(def.presentation === "vaccination_matrix"
+        ? `  ${getVaccinationLabel(e as Record<string, string>, def)}:`
+        : `  ${idx + 1}. Eintrag${omitEntryHeadingColon ? "" : ":"}`);
+    }
 
     for (const field of def.groupSchema!) {
       if (def.presentation === "vaccination_matrix" && (field.key === "vaccination_id" || field.key === "custom_label")) {
@@ -362,17 +366,25 @@ function formatRepeatableGroupEntries(
       const trimmed = val.trim();
       const documentationText = resolveRepeatableFieldDocumentation(field, e, def.groupSchema);
       if (documentationText) {
-        lines.push(`     ${documentationText}`);
+        if (useCompactDetailContract) entryLines.push(documentationText);
+        else lines.push(`     ${documentationText}`);
       } else if (field.type === "textarea") {
         const parts = trimmed
           .split(/\r?\n/)
           .filter((l) => l.trim() !== "");
-        lines.push(`     ${field.label}:`);
-        for (const p of parts) lines.push(`       ${p.trim()}`);
+        if (useCompactDetailContract) {
+          entryLines.push(`${field.label}:`);
+          for (const part of parts) entryLines.push(`  ${part.trim()}`);
+        } else {
+          lines.push(`     ${field.label}:`);
+          for (const part of parts) lines.push(`       ${part.trim()}`);
+        }
       } else {
-        lines.push(`     ${field.label}: ${trimmed}`);
+        if (useCompactDetailContract) entryLines.push(`${field.label}: ${trimmed}`);
+        else lines.push(`     ${field.label}: ${trimmed}`);
       }
     }
+    if (useCompactDetailContract && entryLines.length > 0) lines.push(entryLines.join("\n"));
   });
 
   return lines;
@@ -801,10 +813,24 @@ export function buildMedicalRecordOutput(input: MedicalRecordNoteInput): Medical
           : resolveQuestionDocumentation(question, raw, {
               includeUnit: isNewBlockBased,
             });
+        const sharedDocumentationText = question.type === "multi_select"
+          ? question.sharedDocumentationText?.trim()
+          : undefined;
+        const documentationTexts = sharedDocumentationText && structuredText === null &&
+          resolved.documentationTexts[0] === sharedDocumentationText
+          ? resolved.documentationTexts.slice(1)
+          : resolved.documentationTexts;
+        if (sharedDocumentationText && documentationTexts.length > 0) {
+          blockItems.push({
+            type: "bodyText",
+            text: sharedDocumentationText,
+            legacyText: sharedDocumentationText,
+          });
+        }
         if (block.id === "MEDICAL_STATEMENT") {
-          medicalStatementSentences.push(...resolved.documentationTexts);
+          medicalStatementSentences.push(...documentationTexts);
         } else {
-          blockItems.push(...resolved.documentationTexts.map((text) => ({
+          blockItems.push(...documentationTexts.map((text) => ({
             type: resolveDocumentationItemType(block, question),
             text,
             legacyText: text,
