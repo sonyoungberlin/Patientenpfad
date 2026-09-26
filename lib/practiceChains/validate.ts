@@ -66,8 +66,8 @@ export function validateChainDefinition(
       issues.push({ path: `${path}.fromStepId`, message: "Der Ausgangsschritt ist nicht in der Kette enthalten." });
     }
     if (transition.kind === "DIRECT") {
-      if (!transition.targetStepId || !stepIds.has(transition.targetStepId)) {
-        issues.push({ path: `${path}.targetStepId`, message: "Ein direkter Übergang braucht ein gültiges Zielfall." });
+      if (transition.targetStepId !== null && (!transition.targetStepId || !stepIds.has(transition.targetStepId))) {
+        issues.push({ path: `${path}.targetStepId`, message: "Wählen Sie einen Zielfall oder ausdrücklich das Ende der Kette." });
       }
       continue;
     }
@@ -137,7 +137,7 @@ export function validateChainDefinition(
       if (!transition) return false;
       const nextVisiting = new Set(visiting).add(stepId);
       const result = transition.kind === "DIRECT"
-        ? Boolean(transition.targetStepId && canReachEnd(transition.targetStepId, nextVisiting))
+        ? (transition.targetStepId === null || Boolean(transition.targetStepId && canReachEnd(transition.targetStepId, nextVisiting)))
         : (transition.question?.answers ?? []).some((answer) => answer.targetStepId === null || canReachEnd(answer.targetStepId, nextVisiting));
       canReachEndMemo.set(stepId, result);
       return result;

@@ -18,6 +18,15 @@ function id(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
+function issueLocation(path: string) {
+  const transition = path.match(/^transitions\.(\d+)/);
+  if (transition) return `Übergang ${Number(transition[1]) + 1}`;
+  const step = path.match(/^steps\.(\d+)/);
+  if (step) return `Praxisfall ${Number(step[1]) + 1}`;
+  if (path === "startStepId") return "Startschritt";
+  return "Kettendefinition";
+}
+
 export default function ChainEditor({ chain, entries }: Props) {
   const router = useRouter();
   const [name, setName] = useState(chain.name);
@@ -38,6 +47,8 @@ export default function ChainEditor({ chain, entries }: Props) {
   function updateDefinition(update: (current: PracticeCaseChainDefinition) => PracticeCaseChainDefinition) {
     setDefinition((current) => update(current));
     setStatus("DRAFT");
+    setError(null);
+    setIssues([]);
   }
 
   function addStep() {
@@ -194,8 +205,8 @@ export default function ChainEditor({ chain, entries }: Props) {
               <button type="button" disabled={readOnly} onClick={() => removeTransition(transition.id)}>Übergang entfernen</button>
             </div>
             {transition.kind === "DIRECT" ? (
-              <label>Zielfall <select disabled={readOnly} value={transition.targetStepId ?? ""} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, targetStepId: event.target.value || null }))}><option value="">Ziel auswählen</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select></label>
-            ) : (
+              <label>Zielfall <select disabled={readOnly} value={transition.targetStepId ?? ""} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, targetStepId: event.target.value || null }))}><option value="">Ende der Kette</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select></label>
+              ) : (
               <div style={{ display: "grid", gap: "0.6rem" }}>
                 <label>Frage <input disabled={readOnly} value={transition.question?.prompt ?? ""} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, question: { prompt: event.target.value, answers: current.question?.answers ?? [] } }))} placeholder="Frage der Praxis" style={{ width: "100%" }} /></label>
                 {(transition.question?.answers ?? []).map((answer) => (
@@ -206,7 +217,7 @@ export default function ChainEditor({ chain, entries }: Props) {
                 ))}
                 <button type="button" disabled={readOnly} onClick={() => addAnswer(transition.id)}>Antwortmöglichkeit hinzufügen</button>
               </div>
-            )}
+              )}
           </article>
         ))}
       </section>
@@ -214,7 +225,7 @@ export default function ChainEditor({ chain, entries }: Props) {
       {(visibleIssues.length > 0 || issues.length > 0) && (
         <section style={{ border: "1px solid #d9a441", padding: "0.8rem", background: "#fffaf0" }}>
           <strong>Offene Stellen</strong>
-          <ul>{[...new Map([...visibleIssues, ...issues].map((issue) => [`${issue.path}:${issue.message}`, issue])).values()].map((issue) => <li key={`${issue.path}:${issue.message}`}>{issue.message} ({issue.path})</li>)}</ul>
+          <ul>{[...new Map([...visibleIssues, ...issues].map((issue) => [`${issue.path}:${issue.message}`, issue])).values()].map((issue) => <li key={`${issue.path}:${issue.message}`}><strong>{issueLocation(issue.path)}:</strong> {issue.message}<span className="text-small text-muted"> ({issue.path})</span></li>)}</ul>
         </section>
       )}
 

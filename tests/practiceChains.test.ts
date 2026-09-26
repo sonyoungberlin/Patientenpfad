@@ -17,7 +17,7 @@ jest.mock("@/lib/prisma", () => ({
 
 jest.mock("@/lib/auth", () => ({ getSessionAccount: jest.fn() }));
 
-import { createPracticeChain, createPracticeChainRevision, getPracticeChain, updatePracticeChain } from "@/lib/practiceChains/service";
+import { createPracticeChain, createPracticeChainRevision, getPracticeChain, getReadyPracticeChainRunner, updatePracticeChain } from "@/lib/practiceChains/service";
 import { validateChainDefinition } from "@/lib/practiceChains/validate";
 import { createRunnerState, followRunnerTarget, goBackRunner } from "@/lib/practiceChains/runner";
 import { GET as getChains } from "@/app/api/practice-chains/route";
@@ -242,6 +242,45 @@ describe("PracticeCaseChain validation", () => {
       ],
     }, new Set([ENTRY_V1, ENTRY_V2]));
     expect(explicitReturn.filter((issue) => issue.message.includes("kein vollständig definierter Weg"))).toHaveLength(0);
+  });
+
+  it("erlaubt ein direktes Ende ohne künstliche Praxisfrage", () => {
+    const directEnd = {
+      ...completeDefinition,
+      transitions: [
+        { id: "a", fromStepId: "step-1", kind: "DIRECT" as const, targetStepId: "step-2" },
+        { id: "b", fromStepId: "step-2", kind: "DIRECT" as const, targetStepId: null },
+      ],
+    };
+    expect(validateChainDefinition(directEnd, new Set([ENTRY_V1, ENTRY_V2]))).toEqual([]);
+  });
+
+  it("führt zwei konkrete Katalogversionen über direkten Abschluss und Praxisantwort in den Runner", async () => {
+    const directThenQuestion = {
+      ...completeDefinition,
+      steps: [
+        { id: "step-1", catalogEntryId: ENTRY_V1 },
+        { id: "step-2", catalogEntryId: ENTRY_V2 },
+      ],
+      transitions: [
+        { id: "direct", fromStepId: "step-1", kind: "DIRECT" as const, targetStepId: "step-2" },
+        { id: "question", fromStepId: "step-2", kind: "QUESTION" as const, question: {
+          prompt: "Wie entscheidet diese Praxis?",
+          answers: [{ id: "end", label: "Praxis beendet den Lauf", targetStepId: null }],
+        } },
+      ],
+    };
+    mockPracticeCaseChain.update.mockResolvedValue(row({ status: "READY", definition: directThenQuestion }));
+    await expect(updatePracticeChain({ id: "chain-1", practiceId: PRACTICE_ID, name: "Pilotkette", status: "READY", definition: directThenQuestion })).resolves.toMatchObject({ status: "READY" });
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "READY", definition: directThenQuestion }));
+    mockPracticeCatalogEntry.findMany.mockResolvedValue([
+      { id: ENTRY_V1, title: "Praxisfall Version 1", description: null, snapshot: { checkpoints: [] } },
+      { id: ENTRY_V2, title: "Praxisfall Version 2", description: null, snapshot: { checkpoints: [] } },
+    ]);
+    const runner = await getReadyPracticeChainRunner("chain-1", PRACTICE_ID);
+    expect(runner?.steps.map((step) => step.title)).toEqual(["Praxisfall Version 1", "Praxisfall Version 2"]);
+    expect(runner?.transitions).toEqual(directThenQuestion.transitions);
+    expect(runner?.transitions[1].question?.answers[0].targetStepId).toBeNull();
   });
 });
 
