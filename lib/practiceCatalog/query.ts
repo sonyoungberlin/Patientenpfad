@@ -35,6 +35,17 @@ export async function listActiveCatalogEntries(
   });
 }
 
+/** Gibt alle veröffentlichten Versionen einer Praxis für die Kettenverwaltung zurück. */
+export async function listPublishedCatalogEntries(
+  practiceId: string,
+): Promise<CatalogEntryRow[]> {
+  return prisma.practiceCatalogEntry.findMany({
+    where: { practice_id: practiceId },
+    select: ROW_SELECT,
+    orderBy: [{ title: "asc" }, { version: "desc" }],
+  });
+}
+
 /**
  * Gibt alle Versionen eines Katalogfalls zurück (identische catalog_case_id),
  * sortiert nach Versionsnummer absteigend.

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionAccount } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { requirePracticeCatalogAccess } from "@/lib/authz";
 import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
 import { startRevision } from "@/lib/practiceCatalog/startRevision";
 
@@ -9,16 +8,9 @@ type Params = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, { params }: Params) {
   const { id: entryId } = await params;
 
-  const account = await getSessionAccount(req);
-  if (!account) {
-    return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-  }
-  if (!account.is_approved) {
-    return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-  }
-  if (!canAccessWorkflowCases(account)) {
-    return NextResponse.json({ ok: false, error: "Arbeitsprozesse nicht freigeschaltet." }, { status: 403 });
-  }
+  const access = await requirePracticeCatalogAccess(req);
+  if (access.error) return access.error;
+  const account = access.account;
 
   const filter = getCatalogOwnershipFilter(account);
   if (!filter) {

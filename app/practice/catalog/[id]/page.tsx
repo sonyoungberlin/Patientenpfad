@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { getSessionAccountFromCookies } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { requirePracticeCatalogAccessFromCookies } from "@/lib/authz";
 import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
 import { getCatalogEntry, listCatalogEntryVersions } from "@/lib/practiceCatalog/query";
 import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
@@ -12,13 +11,8 @@ type Params = { params: Promise<{ id: string }> };
 export default async function CatalogEntryDetailPage({ params }: Params) {
   const { id } = await params;
 
-  const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) {
-    redirect("/");
-  }
-  if (!canAccessWorkflowCases(account)) {
-    redirect("/dashboard");
-  }
+  const account = await requirePracticeCatalogAccessFromCookies();
+  if (!account) redirect("/dashboard");
 
   const filter = getCatalogOwnershipFilter(account);
   if (!filter) {

@@ -262,6 +262,15 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         roles: PRACTICE_ROLES,
         workflowFeature: true,
       },
+      {
+        id: "practice-case-chains",
+        label: "Praxisfall-Ketten",
+        href: "/practice/chains",
+        matches: ["/practice/chains"],
+        roles: PRACTICE_ROLES,
+        requiresPracticeRole: true,
+        workflowFeature: true,
+      },
     ],
   },
   {

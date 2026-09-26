@@ -1,18 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSessionAccountFromCookies } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { requirePracticeCatalogAccessFromCookies } from "@/lib/authz";
 import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
 import { listActiveCatalogEntries } from "@/lib/practiceCatalog/query";
 
 export default async function PracticeCatalogPage() {
-  const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) {
-    redirect("/");
-  }
-  if (!canAccessWorkflowCases(account)) {
-    redirect("/dashboard");
-  }
+  const account = await requirePracticeCatalogAccessFromCookies();
+  if (!account) redirect("/dashboard");
 
   const filter = getCatalogOwnershipFilter(account);
   const entries = filter ? await listActiveCatalogEntries(filter.practice_id) : [];
@@ -23,6 +17,9 @@ export default async function PracticeCatalogPage() {
         <h1 style={{ margin: 0 }}>Praxiskatalog</h1>
         <Link href="/workflow-cases" style={{ marginLeft: "auto", fontSize: "0.9rem" }}>
           ← Arbeitsprozesse
+        </Link>
+        <Link href="/practice/chains" style={{ fontSize: "0.9rem" }}>
+          Praxisfall-Ketten
         </Link>
       </div>
 

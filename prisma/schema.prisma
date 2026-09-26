@@ -878,6 +878,7 @@ model Practice {
   practice_questionnaire_forms   PracticeQuestionnaireForm[]   @relation("PracticeQuestionnaireFormOwnerPractice")
   digital_requests               DigitalRequest[]              @relation("DigitalRequestOwnerPractice")
   practice_catalog_entries       PracticeCatalogEntry[]        @relation("PracticeCatalogEntryPractice")
+  practice_case_chains            PracticeCaseChain[]            @relation("PracticeCaseChainPractice")
   documentation_blocks            PracticeDocumentationBlock[] @relation("PracticeDocumentationBlockPractice")
   documentation_templates         PracticeDocumentationTemplate[] @relation("PracticeDocumentationTemplatePractice")
   legal_profile                  PracticeLegalProfile?
@@ -1179,6 +1180,30 @@ model PracticeCatalogEntry {
   @@unique([catalog_case_id, version])
   @@index([practice_id, is_catalog_active, is_current_version])
   @@index([source_session_id])
+}
+
+/// Praxisindividuelle Verbindung veröffentlichter, versionsgebundener Praxisfälle.
+/// Die JSON-Definition enthält ausschließlich explizite Praxisentscheidungen;
+/// sie wird nicht automatisch in einen operativen Runner übersetzt.
+model PracticeCaseChain {
+  id          String   @id @default(cuid())
+  practice_id String
+  practice    Practice @relation("PracticeCaseChainPractice", fields: [practice_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  name       String
+  status     String   @default("DRAFT")
+  version    Int      @default(1)
+  source_chain_id String?
+  source_chain    PracticeCaseChain? @relation("PracticeCaseChainRevisions", fields: [source_chain_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  revisions       PracticeCaseChain[] @relation("PracticeCaseChainRevisions")
+  definition Json
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([practice_id, updated_at])
+  @@index([practice_id, status])
+  @@unique([source_chain_id])
 }
 
 /// Datensparsame Betriebsstatuskontrolle für den automatischen Cleanup.

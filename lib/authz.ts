@@ -395,6 +395,32 @@ export async function requirePracticeRole(
   return { account, error: null };
 }
 
+export async function requirePracticeCatalogAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const result = await requirePracticeRole(req, [PracticeRole.OWNER, PracticeRole.ADMIN]);
+  if (result.error) return result;
+  if (!result.account.is_approved) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Account nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+  if (!canAccessWorkflowCases(result.account)) {
+    return {
+      account: null,
+      error: NextResponse.json(
+        { ok: false, error: "Arbeitsprozesse nicht freigeschaltet." },
+        { status: 403 },
+      ),
+    };
+  }
+  return result;
+}
+
 /**
  * Server-Component-Variante für `requirePracticeRole`.
  *
@@ -419,6 +445,43 @@ export async function requirePracticeRoleFromCookies(
   if (!membership) return null;
   if (!allowedRoles.includes(membership.role)) return null;
 
+  return account;
+}
+
+export async function requirePracticeCatalogAccessFromCookies(): Promise<SessionAccount | null> {
+  const account = await requirePracticeRoleFromCookies([
+    PracticeRole.OWNER,
+    PracticeRole.ADMIN,
+  ]);
+  if (!account || !account.is_approved || !canAccessWorkflowCases(account)) return null;
+  return account;
+}
+
+export async function requirePracticeChainRunnerAccess(
+  req: NextRequest,
+): Promise<RequireResult> {
+  const result = await requirePracticeRole(req, [
+    PracticeRole.OWNER,
+    PracticeRole.ADMIN,
+    PracticeRole.USER,
+  ]);
+  if (result.error) return result;
+  if (!result.account.is_approved) {
+    return { account: null, error: NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 }) };
+  }
+  if (!canAccessWorkflowCases(result.account)) {
+    return { account: null, error: NextResponse.json({ ok: false, error: "Arbeitsprozesse nicht freigeschaltet." }, { status: 403 }) };
+  }
+  return result;
+}
+
+export async function requirePracticeChainRunnerAccessFromCookies(): Promise<SessionAccount | null> {
+  const account = await requirePracticeRoleFromCookies([
+    PracticeRole.OWNER,
+    PracticeRole.ADMIN,
+    PracticeRole.USER,
+  ]);
+  if (!account || !account.is_approved || !canAccessWorkflowCases(account)) return null;
   return account;
 }
 

@@ -11,6 +11,29 @@ import {
 } from "@/lib/workflow/internalProtocol/workflowAdapter";
 import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const account = await getSessionAccount(req);
+  if (!account) {
+    return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
+  }
+  if (!account.is_approved || !canAccessWorkflowCases(account)) {
+    return NextResponse.json({ ok: false, error: "Arbeitsprozesse nicht freigeschaltet." }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const session = await prisma.workflowSession.findFirst({
+    where: { id, ...getWorkflowOwnershipFilter(account) },
+    select: { id: true, title: true, process_snapshot: true },
+  });
+  if (!session || !isPracticeWorkflowSnapshot(session.process_snapshot)) {
+    return NextResponse.json({ ok: false, error: "Praxisprozess nicht gefunden." }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true, id: session.id, title: session.title, snapshot: session.process_snapshot });
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

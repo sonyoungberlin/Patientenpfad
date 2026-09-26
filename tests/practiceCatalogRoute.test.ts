@@ -54,6 +54,7 @@ import { GET as listRoute } from "@/app/api/practice-catalog/route";
 import { GET as detailRoute } from "@/app/api/practice-catalog/[id]/route";
 import { PATCH as deactivateRoute } from "@/app/api/practice-catalog/[id]/deactivate/route";
 import { PATCH as reactivateRoute } from "@/app/api/practice-catalog/[id]/reactivate/route";
+import { GET as loadDraftRoute } from "@/app/api/workflow-cases/[id]/protocol/save/route";
 import { getSessionAccount } from "@/lib/auth";
 
 // ─── Test-Fixtures ───────────────────────────────────────────────────────────
@@ -69,11 +70,17 @@ const ACCOUNT_WITH_PRACTICE = {
   is_admin: false,
   arbeitsprozesse_enabled: true,
   current_practice: { id: PRACTICE_ID, name: "Testpraxis" },
+  memberships: [{ practice_id: PRACTICE_ID, role: "OWNER" }],
 };
 
 const ACCOUNT_WITHOUT_PRACTICE = {
   ...ACCOUNT_WITH_PRACTICE,
   current_practice: null,
+};
+
+const USER_ACCOUNT = {
+  ...ACCOUNT_WITH_PRACTICE,
+  memberships: [{ practice_id: PRACTICE_ID, role: "USER" }],
 };
 
 const COMPLETED_SNAPSHOT: PracticeWorkflowSnapshot = {
@@ -110,6 +117,7 @@ beforeEach(() => {
   getSessionMock.mockResolvedValue(ACCOUNT_WITH_PRACTICE);
   mockWorkflowSession.findFirst.mockResolvedValue({
     id: SESSION_ID,
+    title: "Rezeptanfrage",
     process_snapshot: COMPLETED_SNAPSHOT,
     source_catalog_entry_id: null,
     owner_practice_id: PRACTICE_ID,
@@ -279,17 +287,22 @@ describe("POST /api/practice-catalog/[id]/start-revision", () => {
     );
     expect(res.status).toBe(403);
   });
+
+  it("verweigert USERn den direkten Katalogzugriff", async () => {
+    getSessionMock.mockResolvedValue(USER_ACCOUNT);
+    const res = await listRoute(makeRequest("/api/practice-catalog", "GET"));
+    expect(res.status).toBe(403);
+    expect(mockPracticeCatalogEntry.findMany).not.toHaveBeenCalled();
+  });
 });
 
 // ─── GET /api/practice-catalog ────────────────────────────────────────────────
 
 describe("GET /api/practice-catalog", () => {
-  it("gibt leere Liste zurück ohne Praxiskontext", async () => {
+  it("gibt 403 zurück ohne Praxiskontext", async () => {
     getSessionMock.mockResolvedValue(ACCOUNT_WITHOUT_PRACTICE);
     const res = await listRoute(makeRequest("/api/practice-catalog", "GET"));
-    expect(res.status).toBe(200);
-    const data = await res.json() as { ok: boolean; entries: unknown[] };
-    expect(data.entries).toHaveLength(0);
+    expect(res.status).toBe(403);
   });
 
   it("gibt Katalogeinträge der Praxis zurück", async () => {
@@ -300,6 +313,13 @@ describe("GET /api/practice-catalog", () => {
     expect(res.status).toBe(200);
     const data = await res.json() as { ok: boolean; entries: unknown[] };
     expect(data.entries).toHaveLength(1);
+  });
+
+  it("verweigert USERn den direkten Katalogzugriff", async () => {
+    getSessionMock.mockResolvedValue(USER_ACCOUNT);
+    const res = await listRoute(makeRequest("/api/practice-catalog", "GET"));
+    expect(res.status).toBe(403);
+    expect(mockPracticeCatalogEntry.findMany).not.toHaveBeenCalled();
   });
 
   it("filtert nur auf eigene Praxis-ID", async () => {
@@ -365,6 +385,29 @@ describe("GET /api/practice-catalog/[id]", () => {
       makeParams(CATALOG_ENTRY_ID),
     );
     expect(res.status).toBe(403);
+  });
+});
+
+describe("GET /api/workflow-cases/[id]/protocol/save", () => {
+  it("lädt einen Praxis-Entwurf für den direkten Revisions-Einstieg", async () => {
+    const res = await loadDraftRoute(
+      makeRequest(`/api/workflow-cases/${SESSION_ID}/protocol/save`, "GET"),
+      makeParams(SESSION_ID),
+    );
+    expect(res.status).toBe(200);
+    const data = await res.json() as { ok: boolean; id: string; snapshot: PracticeWorkflowSnapshot };
+    expect(data.ok).toBe(true);
+    expect(data.id).toBe(SESSION_ID);
+    expect(data.snapshot.processKind).toBe("practice-workflow");
+  });
+
+  it("verweigert den Revisions-Ladeweg außerhalb der eigenen Praxis", async () => {
+    mockWorkflowSession.findFirst.mockResolvedValue(null);
+    const res = await loadDraftRoute(
+      makeRequest(`/api/workflow-cases/${SESSION_ID}/protocol/save`, "GET"),
+      makeParams(SESSION_ID),
+    );
+    expect(res.status).toBe(404);
   });
 });
 

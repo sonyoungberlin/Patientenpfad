@@ -109,6 +109,7 @@ describe("zentrale Bereichsdefinition", () => {
       "Arbeitsprozesse",
       "Neue Sitzung",
       "Praxisprozesse",
+      "Praxisfall-Ketten",
     ]);
     expect(sections[5].title).toBe("Praxisverwaltung");
     expect(sections[5].items.slice(0, 2).map(({ label, href }) => ({ label, href }))).toEqual([
@@ -146,6 +147,7 @@ describe("zentrale Bereichsdefinition", () => {
       "/workflow-cases",
       "/workflow-cases/new",
       "/workflow-cases/internal-protocol/new",
+      "/practice/chains",
     ]);
   });
 
@@ -162,6 +164,7 @@ describe("zentrale Bereichsdefinition", () => {
       "Arbeitsprozesse",
       "Neue Sitzung",
       "Praxisprozesse",
+      "Praxisfall-Ketten",
     ]);
   });
 

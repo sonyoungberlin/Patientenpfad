@@ -33,7 +33,28 @@ export default function DraftM3Client() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const revisionId = new URLSearchParams(window.location.search).get("sessionId");
     const raw = sessionStorage.getItem(DRAFT_SNAPSHOT_KEY);
+    if (revisionId) {
+      void fetch(`/api/workflow-cases/${revisionId}/protocol/save`)
+        .then(async (res) => {
+          const data = await res.json() as {
+            ok?: boolean;
+            id?: string;
+            title?: string | null;
+            snapshot?: unknown;
+          };
+          if (!res.ok || !data.ok || typeof data.id !== "string" || !isPracticeWorkflowSnapshot(data.snapshot)) {
+            throw new Error("Revision konnte nicht geladen werden.");
+          }
+          sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(data.snapshot));
+          sessionStorage.setItem(DRAFT_SOURCE_ID_KEY, data.id);
+          if (data.title) sessionStorage.setItem(DRAFT_SOURCE_TITLE_KEY, data.title);
+          setSnapshot(data.snapshot);
+        })
+        .catch(() => router.replace("/workflow-cases"));
+      return;
+    }
     if (!raw) { router.replace("/workflow-cases/internal-protocol/new"); return; }
     try {
       const parsed: unknown = JSON.parse(raw);

@@ -25,7 +25,7 @@ export default function CatalogEntryActions({ entryId, isActive }: Props) {
         setError(data.error ?? "Fehler beim Starten der Revision.");
         return;
       }
-      router.push(`/workflow-cases/${data.sessionId}/protocol`);
+      router.push(`/workflow-cases/internal-protocol/draft/m3?sessionId=${data.sessionId}`);
     } catch {
       setError("Netzwerkfehler.");
     } finally {
