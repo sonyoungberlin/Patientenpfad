@@ -218,6 +218,27 @@ describe("PracticeCaseChain validation", () => {
     expect(issues.some((issue) => issue.message.includes("eindeutig"))).toBe(true);
   });
 
+  it("meldet offene Antwortziele gezielt und erlaubt Fall oder bewusstes Ende", () => {
+    const openAnswer = {
+      ...completeDefinition,
+      transitions: [{
+        id: "transition-1", fromStepId: "step-1", kind: "QUESTION" as const, question: {
+          prompt: "Praxisfrage", answers: [{ id: "answer-1", label: "Weiter" }],
+        },
+      }],
+    };
+    const openIssues = validateChainDefinition(openAnswer, new Set([ENTRY_V1, ENTRY_V2]));
+    expect(openIssues).toContainEqual({
+      path: "transitions.0.question.answers.0.targetStepId",
+      message: "Wählen Sie für diese Antwort einen Zielfall oder das Ende der Kette",
+    });
+
+    const caseTarget = { ...openAnswer, transitions: [{ ...openAnswer.transitions[0], question: { prompt: "Praxisfrage", answers: [{ id: "answer-1", label: "Weiter", targetStepId: "step-2" }] } }] };
+    const chainEnd = { ...openAnswer, transitions: [{ ...openAnswer.transitions[0], question: { prompt: "Praxisfrage", answers: [{ id: "answer-1", label: "Ende", targetStepId: null }] } }] };
+    expect(validateChainDefinition(caseTarget, new Set([ENTRY_V1, ENTRY_V2])).some((issue) => issue.path.endsWith("targetStepId"))).toBe(false);
+    expect(validateChainDefinition(chainEnd, new Set([ENTRY_V1, ENTRY_V2])).some((issue) => issue.path.endsWith("targetStepId"))).toBe(false);
+  });
+
   it("weist unerreichbare Schritte und Zyklen ohne Abschluss zurück, erlaubt aber einen explizit endenden Rücksprung", () => {
     const unreachable = validateChainDefinition({ ...completeDefinition, steps: [...completeDefinition.steps, { id: "step-3", catalogEntryId: ENTRY_V1 }] }, new Set([ENTRY_V1, ENTRY_V2]));
     expect(unreachable.some((issue) => issue.message.includes("nicht erreichbar"))).toBe(true);

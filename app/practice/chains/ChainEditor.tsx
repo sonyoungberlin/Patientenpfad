@@ -96,7 +96,7 @@ export default function ChainEditor({ chain, entries }: Props) {
       ...transition,
       question: {
         prompt: transition.question?.prompt ?? "",
-        answers: [...(transition.question?.answers ?? []), { id: id("answer"), label: "", targetStepId: null }],
+        answers: [...(transition.question?.answers ?? []), { id: id("answer"), label: "" }],
       },
     }));
   }
@@ -107,6 +107,16 @@ export default function ChainEditor({ chain, entries }: Props) {
       question: transition.question ? {
         ...transition.question,
         answers: transition.question.answers.map((answer) => answer.id === answerId ? update(answer) : answer),
+      } : undefined,
+    }));
+  }
+
+  function removeAnswer(transitionId: string, answerId: string) {
+    updateTransition(transitionId, (transition) => ({
+      ...transition,
+      question: transition.question ? {
+        ...transition.question,
+        answers: transition.question.answers.filter((answer) => answer.id !== answerId),
       } : undefined,
     }));
   }
@@ -212,6 +222,7 @@ export default function ChainEditor({ chain, entries }: Props) {
                   <div key={answer.id} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                     <input disabled={readOnly} value={answer.label} onChange={(event) => updateAnswer(transition.id, answer.id, (current) => ({ ...current, label: event.target.value }))} placeholder="Antwortmöglichkeit" style={{ flex: "1 1 14rem" }} />
                     <select disabled={readOnly} value={answer.targetStepId === null ? CHAIN_END_VALUE : answer.targetStepId ?? ""} onChange={(event) => updateAnswer(transition.id, answer.id, (current) => ({ ...current, targetStepId: event.target.value === CHAIN_END_VALUE ? null : event.target.value || undefined }))}><option value="">Ziel wählen</option><option value={CHAIN_END_VALUE}>Ende der Kette</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select>
+                    <button type="button" disabled={readOnly} onClick={() => removeAnswer(transition.id, answer.id)}>Antwort entfernen</button>
                   </div>
                 ))}
                 <button type="button" disabled={readOnly} onClick={() => addAnswer(transition.id)}>Antwortmöglichkeit hinzufügen</button>

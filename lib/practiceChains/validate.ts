@@ -92,7 +92,9 @@ export function validateChainDefinition(
       if (!answer.label.trim()) {
         issues.push({ path: `${answerPath}.label`, message: "Jede Antwortmöglichkeit braucht eine Bezeichnung." });
       }
-      if (answer.targetStepId !== null && (!answer.targetStepId || !stepIds.has(answer.targetStepId))) {
+      if (answer.targetStepId === undefined) {
+        issues.push({ path: `${answerPath}.targetStepId`, message: "Wählen Sie für diese Antwort einen Zielfall oder das Ende der Kette" });
+      } else if (answer.targetStepId !== null && (!answer.targetStepId || !stepIds.has(answer.targetStepId))) {
         issues.push({ path: `${answerPath}.targetStepId`, message: "Das Antwortziel ist nicht in der Kette enthalten." });
       }
       const normalizedLabel = answer.label.trim().toLowerCase();
