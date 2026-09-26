@@ -67,8 +67,10 @@ export default function Runner({ runner }: { runner: RunnerChain }) {
               <ul>{current.standards.map((standard) => <li key={standard.title}><strong>{standard.title}</strong>{standard.implementation && <>: {standard.implementation}</>}</li>)}</ul>
             )}
           </div>
-          {transition.kind === "DIRECT" ? (
-            <button type="button" onClick={() => setState((value) => followRunnerTarget(value, transition.targetStepId ?? null))}>
+          {state.error ? (
+            <p role="alert" style={{ color: "#a00", margin: 0 }}>{state.error}</p>
+          ) : transition.kind === "DIRECT" ? (
+            <button type="button" onClick={() => setState((value) => followRunnerTarget(value, transition.targetStepId))}>
               {transition.targetStepId ? "Zum nächsten Praxisfall" : "Kette beenden"}
             </button>
           ) : (

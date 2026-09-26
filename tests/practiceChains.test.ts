@@ -255,6 +255,29 @@ describe("PracticeCaseChain validation", () => {
     expect(validateChainDefinition(directEnd, new Set([ENTRY_V1, ENTRY_V2]))).toEqual([]);
   });
 
+  it("verlangt Ausgang und Ziel bei einem neuen direkten Übergang", () => {
+    const incompleteTransition = {
+      ...completeDefinition,
+      transitions: [{ id: "new", fromStepId: "", kind: "DIRECT" as const }],
+    };
+    const issues = validateChainDefinition(incompleteTransition, new Set([ENTRY_V1, ENTRY_V2]));
+    expect(issues.some((issue) => issue.path === "transitions.0.fromStepId")).toBe(true);
+    expect(issues.some((issue) => issue.path === "transitions.0.targetStepId")).toBe(true);
+  });
+
+  it("unterscheidet bewusstes Fallziel und bewusstes Kettenende", () => {
+    const caseTarget = {
+      ...completeDefinition,
+      transitions: [{ id: "new", fromStepId: "step-1", kind: "DIRECT" as const, targetStepId: "step-2" }],
+    };
+    const chainEnd = {
+      ...completeDefinition,
+      transitions: [{ id: "new", fromStepId: "step-1", kind: "DIRECT" as const, targetStepId: null }],
+    };
+    expect(validateChainDefinition(caseTarget, new Set([ENTRY_V1, ENTRY_V2])).some((issue) => issue.path === "transitions.0.targetStepId")).toBe(false);
+    expect(validateChainDefinition(chainEnd, new Set([ENTRY_V1, ENTRY_V2])).some((issue) => issue.path === "transitions.0.targetStepId")).toBe(false);
+  });
+
   it("führt zwei konkrete Katalogversionen über direkten Abschluss und Praxisantwort in den Runner", async () => {
     const directThenQuestion = {
       ...completeDefinition,
@@ -306,8 +329,20 @@ describe("PracticeCaseChain runner", () => {
     expect(followRunnerTarget(afterBack, artificialChain.returnTarget).currentStepId).toBe("step-1");
   });
 
+  it("stoppt verständlich bei einem fehlenden Ziel statt den Lauf zu beenden", () => {
+    const state = createRunnerState("step-1");
+    const blocked = followRunnerTarget(state, undefined);
+    expect(blocked).toEqual({
+      currentStepId: "step-1",
+      history: [],
+      finished: false,
+      error: "Dieser Übergang ist unvollständig und kann im Lauf nicht fortgesetzt werden.",
+    });
+    expect(followRunnerTarget(blocked, null)).toEqual(blocked);
+  });
+
   it("setzt beim Start keine Antwort und speichert keinen Lauf", () => {
     const state = createRunnerState("step-1");
-    expect(state).toEqual({ currentStepId: "step-1", history: [], finished: false });
+    expect(state).toEqual({ currentStepId: "step-1", history: [], finished: false, error: null });
   });
 });

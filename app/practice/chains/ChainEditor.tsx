@@ -27,6 +27,8 @@ function issueLocation(path: string) {
   return "Kettendefinition";
 }
 
+const CHAIN_END_VALUE = "__CHAIN_END__";
+
 export default function ChainEditor({ chain, entries }: Props) {
   const router = useRouter();
   const [name, setName] = useState(chain.name);
@@ -70,13 +72,10 @@ export default function ChainEditor({ chain, entries }: Props) {
   }
 
   function addTransition() {
-    const fromStepId = definition.steps[0]?.id;
-    if (!fromStepId) return;
     const transition: PracticeCaseChainTransition = {
       id: id("transition"),
-      fromStepId,
+      fromStepId: "",
       kind: "DIRECT",
-      targetStepId: null,
     };
     updateDefinition((current) => ({ ...current, transitions: [...current.transitions, transition] }));
   }
@@ -200,19 +199,19 @@ export default function ChainEditor({ chain, entries }: Props) {
         {definition.transitions.map((transition) => (
           <article key={transition.id} style={{ border: "1px solid #ddd", padding: "0.8rem", display: "grid", gap: "0.6rem" }}>
             <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-              <label>Von <select disabled={readOnly} value={transition.fromStepId} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, fromStepId: event.target.value }))}>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select></label>
-              <label>Art <select disabled={readOnly} value={transition.kind} onChange={(event) => updateTransition(transition.id, (current) => event.target.value === "QUESTION" ? { id: current.id, fromStepId: current.fromStepId, kind: "QUESTION", question: current.question ?? { prompt: "", answers: [] } } : { id: current.id, fromStepId: current.fromStepId, kind: "DIRECT", targetStepId: null })}><option value="DIRECT">Direkt zum Fall</option><option value="QUESTION">Praxisfrage</option></select></label>
+              <label>Von <select disabled={readOnly} value={transition.fromStepId} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, fromStepId: event.target.value }))}><option value="">Ausgang wählen</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select></label>
+              <label>Art <select disabled={readOnly} value={transition.kind} onChange={(event) => updateTransition(transition.id, (current) => event.target.value === "QUESTION" ? { id: current.id, fromStepId: current.fromStepId, kind: "QUESTION", question: current.question ?? { prompt: "", answers: [] } } : { id: current.id, fromStepId: current.fromStepId, kind: "DIRECT" })}><option value="DIRECT">Direkt zum Fall</option><option value="QUESTION">Praxisfrage</option></select></label>
               <button type="button" disabled={readOnly} onClick={() => removeTransition(transition.id)}>Übergang entfernen</button>
             </div>
             {transition.kind === "DIRECT" ? (
-              <label>Zielfall <select disabled={readOnly} value={transition.targetStepId ?? ""} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, targetStepId: event.target.value || null }))}><option value="">Ende der Kette</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select></label>
+              <label>Ziel <select disabled={readOnly} value={transition.targetStepId === null ? CHAIN_END_VALUE : transition.targetStepId ?? ""} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, targetStepId: event.target.value === CHAIN_END_VALUE ? null : event.target.value || undefined }))}><option value="">Ziel wählen</option><option value={CHAIN_END_VALUE}>Ende der Kette</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select></label>
               ) : (
               <div style={{ display: "grid", gap: "0.6rem" }}>
                 <label>Frage <input disabled={readOnly} value={transition.question?.prompt ?? ""} onChange={(event) => updateTransition(transition.id, (current) => ({ ...current, question: { prompt: event.target.value, answers: current.question?.answers ?? [] } }))} placeholder="Frage der Praxis" style={{ width: "100%" }} /></label>
                 {(transition.question?.answers ?? []).map((answer) => (
                   <div key={answer.id} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                     <input disabled={readOnly} value={answer.label} onChange={(event) => updateAnswer(transition.id, answer.id, (current) => ({ ...current, label: event.target.value }))} placeholder="Antwortmöglichkeit" style={{ flex: "1 1 14rem" }} />
-                    <select disabled={readOnly} value={answer.targetStepId ?? ""} onChange={(event) => updateAnswer(transition.id, answer.id, (current) => ({ ...current, targetStepId: event.target.value || null }))}><option value="">Ende der Kette</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select>
+                    <select disabled={readOnly} value={answer.targetStepId === null ? CHAIN_END_VALUE : answer.targetStepId ?? ""} onChange={(event) => updateAnswer(transition.id, answer.id, (current) => ({ ...current, targetStepId: event.target.value === CHAIN_END_VALUE ? null : event.target.value || undefined }))}><option value="">Ziel wählen</option><option value={CHAIN_END_VALUE}>Ende der Kette</option>{definition.steps.map((step) => <option key={step.id} value={step.id}>{stepTitle(step.id)}</option>)}</select>
                   </div>
                 ))}
                 <button type="button" disabled={readOnly} onClick={() => addAnswer(transition.id)}>Antwortmöglichkeit hinzufügen</button>

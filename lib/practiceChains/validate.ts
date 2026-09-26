@@ -17,13 +17,13 @@ export function parseChainDefinition(value: unknown): PracticeCaseChainDefinitio
     if (!transition || typeof transition !== "object") return false;
     const item = transition as Record<string, unknown>;
     if (typeof item.id !== "string" || typeof item.fromStepId !== "string") return false;
-    if (item.kind === "DIRECT") return item.targetStepId === null || typeof item.targetStepId === "string";
+    if (item.kind === "DIRECT") return item.targetStepId == null || typeof item.targetStepId === "string";
     if (item.kind !== "QUESTION" || !item.question || typeof item.question !== "object") return false;
     const question = item.question as Record<string, unknown>;
     return typeof question.prompt === "string" && Array.isArray(question.answers) && question.answers.every((answer) => {
       if (!answer || typeof answer !== "object") return false;
       const item = answer as Record<string, unknown>;
-      return typeof item.id === "string" && typeof item.label === "string" && (item.targetStepId === null || typeof item.targetStepId === "string");
+      return typeof item.id === "string" && typeof item.label === "string" && (item.targetStepId == null || typeof item.targetStepId === "string");
     });
   })) return null;
   return value as PracticeCaseChainDefinition;
@@ -92,7 +92,7 @@ export function validateChainDefinition(
       if (!answer.label.trim()) {
         issues.push({ path: `${answerPath}.label`, message: "Jede Antwortmöglichkeit braucht eine Bezeichnung." });
       }
-      if (answer.targetStepId !== null && !stepIds.has(answer.targetStepId)) {
+      if (answer.targetStepId !== null && (!answer.targetStepId || !stepIds.has(answer.targetStepId))) {
         issues.push({ path: `${answerPath}.targetStepId`, message: "Das Antwortziel ist nicht in der Kette enthalten." });
       }
       const normalizedLabel = answer.label.trim().toLowerCase();
@@ -138,7 +138,7 @@ export function validateChainDefinition(
       const nextVisiting = new Set(visiting).add(stepId);
       const result = transition.kind === "DIRECT"
         ? (transition.targetStepId === null || Boolean(transition.targetStepId && canReachEnd(transition.targetStepId, nextVisiting)))
-        : (transition.question?.answers ?? []).some((answer) => answer.targetStepId === null || canReachEnd(answer.targetStepId, nextVisiting));
+        : (transition.question?.answers ?? []).some((answer) => answer.targetStepId === null || (answer.targetStepId !== undefined && canReachEnd(answer.targetStepId, nextVisiting)));
       canReachEndMemo.set(stepId, result);
       return result;
     }

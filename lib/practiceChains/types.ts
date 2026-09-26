@@ -8,7 +8,7 @@ export type PracticeCaseChainStep = {
 export type PracticeCaseChainAnswer = {
   id: string;
   label: string;
-  targetStepId: string | null;
+  targetStepId?: string | null;
 };
 
 export type PracticeCaseChainTransition = {
