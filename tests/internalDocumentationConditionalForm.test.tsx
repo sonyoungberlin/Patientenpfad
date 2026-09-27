@@ -218,8 +218,12 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
       "field_2c012e7b-7fab-4616-99ea-b8d34e070955",
       "field_6e0e57c7-18e4-46cf-a206-0884029ef9b8",
     ]) {
-      expect(view.container.querySelector(`[data-rg-yesno="0:${fieldId}:ja"]`)).not.toBeNull();
-      expect(view.container.querySelector(`[data-rg-yesno="0:${fieldId}:nein"]`)).not.toBeNull();
+      const yes = view.container.querySelector(`[data-rg-yesno="0:${fieldId}:ja"]`);
+      const no = view.container.querySelector(`[data-rg-yesno="0:${fieldId}:nein"]`);
+      expect(yes).not.toBeNull();
+      expect(no).not.toBeNull();
+      expect(yes?.closest("label")).toBeNull();
+      expect(no?.closest("label")).toBeNull();
     }
     await cleanup(view.root, view.container);
   });
@@ -275,8 +279,12 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
     });
 
     await act(async () => view.container.querySelector<HTMLButtonElement>("[data-rg-add]")!.click());
-    expect(view.container.querySelector('[data-rg-multiselect="0:field_bcab3ba2-62d6-4f6b-891f-2fea4b1ede87:option_15ccc50e-f8a9-4b67-8884-140ded3316b5"]')?.textContent).toBe("ambulant");
-    expect(view.container.querySelector('[data-rg-multiselect="0:field_2f526729-b7fa-408d-9da0-e8265ce2b48a:option_5ecb9456-c66c-4588-9d9e-1a0a17c3e007"]')?.textContent).toBe("GKV");
+    const ambulant = view.container.querySelector('[data-rg-multiselect="0:field_bcab3ba2-62d6-4f6b-891f-2fea4b1ede87:option_15ccc50e-f8a9-4b67-8884-140ded3316b5"]');
+    const gkv = view.container.querySelector('[data-rg-multiselect="0:field_2f526729-b7fa-408d-9da0-e8265ce2b48a:option_5ecb9456-c66c-4588-9d9e-1a0a17c3e007"]');
+    expect(ambulant?.textContent).toBe("ambulant");
+    expect(gkv?.textContent).toBe("GKV");
+    expect(ambulant?.closest("label")).toBeNull();
+    expect(gkv?.closest("label")).toBeNull();
     await cleanup(view.root, view.container);
   });
 });

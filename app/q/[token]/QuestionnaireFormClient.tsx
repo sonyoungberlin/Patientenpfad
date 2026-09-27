@@ -550,8 +550,10 @@ function RepeatableGroupField({
               );
             }
 
+            const FieldContainer = field.type === "yes_no" || field.type === "multi_select" ? "div" : "label";
+
             return (
-              <label
+              <FieldContainer
                 key={field.key}
                 style={{ display: "block", marginBottom: "0.5rem" }}
               >
@@ -601,6 +603,8 @@ function RepeatableGroupField({
                   <div
                     style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}
                     data-rg-field={`${idx}:${field.key}`}
+                    role="group"
+                    aria-label={field.label}
                   >
                     {getYesNoOptions(field.options).map(({ val, labelDe }) => (
                       <button
@@ -632,6 +636,8 @@ function RepeatableGroupField({
                   <div
                     style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.25rem" }}
                     data-rg-field={`${idx}:${field.key}`}
+                    role="group"
+                    aria-label={field.label}
                   >
                     {(field.options ?? []).map((opt) => {
                       const optionValue = getQuestionOptionValue(opt);
@@ -687,7 +693,7 @@ function RepeatableGroupField({
                     {field.helperText}
                   </span>
                 )}
-              </label>
+              </FieldContainer>
             );
           })}
         </div>
