@@ -122,6 +122,25 @@ const FACHAERZTE_SCHEMA: Array<{
   },
 ];
 
+function getYesNoOptions(options: QuestionDefinition["options"]) {
+  const configured = options?.map((option) => ({
+    val: getQuestionOptionValue(option),
+    labelDe: getQuestionOptionLabel(option),
+    labelEn: getQuestionOptionLabel(option),
+  }));
+  if (
+    configured?.length === 2 &&
+    configured.every((option) => option.val.trim() && option.labelDe.trim()) &&
+    new Set(configured.map((option) => option.val)).size === 2
+  ) {
+    return configured;
+  }
+  return [
+    { val: "ja", labelDe: "Ja", labelEn: "Yes" },
+    { val: "nein", labelDe: "Nein", labelEn: "No" },
+  ];
+}
+
 function QuestionField({
   question,
   value,
@@ -259,16 +278,7 @@ function QuestionField({
         />
       );
     case "yes_no":
-      const yesNoOptions = question.options?.length === 2
-        ? question.options.map((option) => ({
-            val: getQuestionOptionValue(option),
-            labelDe: getQuestionOptionLabel(option),
-            labelEn: getQuestionOptionLabel(option),
-          }))
-        : [
-            { val: "ja", labelDe: "Ja", labelEn: "Yes" },
-            { val: "nein", labelDe: "Nein", labelEn: "No" },
-          ];
+      const yesNoOptions = getYesNoOptions(question.options);
       return (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.25rem", width: "100%", minWidth: 0 }}>
           {yesNoOptions.map(({ val, labelDe, labelEn }) => {
@@ -592,7 +602,7 @@ function RepeatableGroupField({
                     style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}
                     data-rg-field={`${idx}:${field.key}`}
                   >
-                    {(["ja", "nein"] as const).map((val) => (
+                    {getYesNoOptions(field.options).map(({ val, labelDe }) => (
                       <button
                         key={val}
                         type="button"
@@ -614,7 +624,7 @@ function RepeatableGroupField({
                           fontSize: "0.9rem",
                         }}
                       >
-                        {val === "ja" ? "Ja" : "Nein"}
+                        {labelDe}
                       </button>
                     ))}
                   </div>

@@ -111,6 +111,24 @@ describe("QuestionnaireFormClient yes_no-Werte", () => {
     expect(answers.HEALTH_CHECK_GENERAL_STATUS).toBe(value);
   });
 
+  it("ersetzt ein unvollständiges explizites yes_no-Paar durch Ja und Nein", async () => {
+    const question: QuestionDefinition = {
+      id: "BROKEN_YES_NO",
+      text: "Unvollständige Auswahl",
+      type: "yes_no",
+      required: false,
+      options: [
+        { value: "nein", label: "Nein" },
+        { value: "nein", label: "" },
+      ],
+    };
+    const { answers, renderedText } = await submitYesNo(question, "ja");
+
+    expect(renderedText).toContain("Ja");
+    expect(renderedText).toContain("Nein");
+    expect(answers.BROKEN_YES_NO).toBe("ja");
+  });
+
   it("zeigt bei strukturierten custom yes_no-Optionen nur das Label", async () => {
     const question: QuestionDefinition = {
       id: "STRUCTURED_YES_NO",

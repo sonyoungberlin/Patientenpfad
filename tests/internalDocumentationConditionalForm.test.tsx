@@ -150,18 +150,27 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
     await cleanup(view.root, view.container);
   });
 
-  it("normalisiert fehlende yes_no-Bedingungswerte und zeigt mehrere Folgefelder korrekt", async () => {
+  it("zeigt für Fax = Ja die realen Fax-Folgefelder", async () => {
     const input = {
       title: "Kontaktmöglichkeiten",
       blockType: "repeatable" as const,
       additionalFields: [
-        { id: "phoneAvailable", label: "Telefonisch erreichbar?", type: "yes_no" as const, required: false },
-        { id: "phoneNumber", label: "Telefonnummer", type: "text" as const, required: false, showForFieldId: "phoneAvailable", showForOptionValues: [] },
-        { id: "phoneHours", label: "Erreichbar von bis", type: "text" as const, required: false, showForFieldId: "phoneAvailable", showForOptionValues: [] },
+        { id: "field_4d461eff-e6e4-4771-a886-1795c0127e1d", label: "Telefonisch erreichbar?", type: "yes_no" as const, required: false },
+        { id: "field_2ccd80c2-7509-4988-b1f0-1ec05690c674", label: "Telefonnummer", type: "text" as const, required: true, showForFieldId: "field_4d461eff-e6e4-4771-a886-1795c0127e1d", showForOptionValues: [] },
+        { id: "field_3ab918db-c9e8-45c8-8f2a-03cff8612557", label: "Per E-Mail erreichbar?", type: "yes_no" as const, required: false },
+        { id: "field_96cc1c15-d665-4617-88ea-ab414de9cbcf", label: "E-Mail-Adresse", type: "text" as const, required: true, showForFieldId: "field_3ab918db-c9e8-45c8-8f2a-03cff8612557", showForOptionValues: [] },
+        { id: "field_e834bec0-5e36-4e60-851f-2d053128e265", label: "Online-Portal vorhanden?", type: "yes_no" as const, required: false },
+        { id: "field_52bb1fcc-bb1f-4e0c-a658-37f1632fef24", label: "Portal / URL", type: "text" as const, required: true, showForFieldId: "field_e834bec0-5e36-4e60-851f-2d053128e265", showForOptionValues: [] },
+        { id: "field_b621784e-56fd-441c-942c-cce91a99ff9d", label: "Fax vorhanden?", type: "yes_no" as const, required: false },
+        { id: "field_4609e3d2-a90f-48bf-8b40-80bf2c8d4466", label: "Faxnummer", type: "text" as const, required: true, showForFieldId: "field_b621784e-56fd-441c-942c-cce91a99ff9d", showForOptionValues: [] },
+        { id: "field_d883dc6a-ea9b-45f0-844e-ced21caa8f64", label: "Fax – Hinweise", type: "textarea" as const, required: false, showForFieldId: "field_b621784e-56fd-441c-942c-cce91a99ff9d", showForOptionValues: [] },
       ],
     };
     const runtime = buildRuntime(input);
-    const [source, dependent, secondDependent] = runtime.definition.questions[0].groupSchema ?? [];
+    const schema = runtime.definition.questions[0].groupSchema ?? [];
+    const source = schema.find((field) => field.key === "field_b621784e-56fd-441c-942c-cce91a99ff9d");
+    const dependent = schema.find((field) => field.key === "field_4609e3d2-a90f-48bf-8b40-80bf2c8d4466");
+    const secondDependent = schema.find((field) => field.key === "field_d883dc6a-ea9b-45f0-844e-ced21caa8f64");
     expect(dependent).toEqual(expect.objectContaining({ conditionalOn: source?.key, conditionalValue: "ja" }));
     expect(secondDependent).toEqual(expect.objectContaining({ conditionalOn: source?.key, conditionalValue: "ja" }));
     const legacyDefinition = structuredClone(runtime.definition);
@@ -169,10 +178,17 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
       if (field.conditionalOn) delete field.conditionalValue;
     }
     const resolvedLegacy = resolvePracticeDocumentationBlocks([{ definition: legacyDefinition }]);
-    expect(resolvedLegacy[0].questions[0].groupSchema?.[1].conditionalValue).toBe("ja");
+    expect(resolvedLegacy[0].questions[0].groupSchema?.find((field) => field.key === dependent?.key)?.conditionalValue).toBe("ja");
 
     const view = await renderInternalForm(input);
     await act(async () => view.container.querySelector<HTMLButtonElement>("[data-rg-add]")!.click());
+    for (const sourceId of [
+      "field_4d461eff-e6e4-4771-a886-1795c0127e1d",
+      "field_3ab918db-c9e8-45c8-8f2a-03cff8612557",
+      "field_e834bec0-5e36-4e60-851f-2d053128e265",
+    ]) {
+      await act(async () => view.container.querySelector<HTMLButtonElement>(`[data-rg-yesno="0:${sourceId}:ja"]`)!.click());
+    }
     expect(view.container.querySelector(`[data-rg-yesno="0:${source?.key}:ja"]`)).not.toBeNull();
     expect(view.container.querySelector(`[data-rg-yesno="0:${source?.key}:nein"]`)).not.toBeNull();
     expect(view.container.querySelector(`[data-rg-field="0:${dependent?.key}"]`)).toBeNull();
@@ -184,6 +200,27 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
     await act(async () => view.container.querySelector<HTMLButtonElement>(`[data-rg-yesno="0:${source?.key}:nein"]`)!.click());
     expect(view.container.querySelector(`[data-rg-field="0:${dependent?.key}"]`)).toBeNull();
     expect(view.container.querySelector(`[data-rg-field="0:${secondDependent?.key}"]`)).toBeNull();
+    await cleanup(view.root, view.container);
+  });
+
+  it("zeigt bei den realen Klinik-yes_no-Feldern jeweils Ja und Nein", async () => {
+    const view = await renderInternalForm({
+      title: "KLINIK / OP / SPEZIALAMBULANZ",
+      blockType: "repeatable",
+      additionalFields: [
+        { id: "field_2c012e7b-7fab-4616-99ea-b8d34e070955", label: "Muss vorher eine bestimmte Untersuchung erfolgt sein?", type: "yes_no", required: false },
+        { id: "field_6e0e57c7-18e4-46cf-a206-0884029ef9b8", label: "Muss Bildgebung vorliegen?", type: "yes_no", required: false },
+      ],
+    });
+
+    await act(async () => view.container.querySelector<HTMLButtonElement>("[data-rg-add]")!.click());
+    for (const fieldId of [
+      "field_2c012e7b-7fab-4616-99ea-b8d34e070955",
+      "field_6e0e57c7-18e4-46cf-a206-0884029ef9b8",
+    ]) {
+      expect(view.container.querySelector(`[data-rg-yesno="0:${fieldId}:ja"]`)).not.toBeNull();
+      expect(view.container.querySelector(`[data-rg-yesno="0:${fieldId}:nein"]`)).not.toBeNull();
+    }
     await cleanup(view.root, view.container);
   });
 
@@ -218,15 +255,28 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
   it("behält Versorgungsform- und Kostenträgerwerte im produktiven Formular", async () => {
     const view = await renderInternalForm({
       title: "Versorgungssetting / Kostenträger",
-      blockType: "list",
-      options: [
-        { value: "ambulant", label: "ambulant", documentationText: "ambulant" },
-        { value: "GKV", label: "GKV", documentationText: "GKV" },
+      blockType: "repeatable",
+      additionalFields: [
+        {
+          id: "field_bcab3ba2-62d6-4f6b-891f-2fea4b1ede87",
+          label: "Versorgungsform",
+          type: "multi_select",
+          required: false,
+          options: [{ value: "option_15ccc50e-f8a9-4b67-8884-140ded3316b5", label: "ambulant" }],
+        },
+        {
+          id: "field_2f526729-b7fa-408d-9da0-e8265ce2b48a",
+          label: "Kostenträger",
+          type: "multi_select",
+          required: false,
+          options: [{ value: "option_5ecb9456-c66c-4588-9d9e-1a0a17c3e007", label: "GKV" }],
+        },
       ],
     });
 
-    expect(view.container.textContent).toContain("ambulant");
-    expect(view.container.textContent).toContain("GKV");
+    await act(async () => view.container.querySelector<HTMLButtonElement>("[data-rg-add]")!.click());
+    expect(view.container.querySelector('[data-rg-multiselect="0:field_bcab3ba2-62d6-4f6b-891f-2fea4b1ede87:option_15ccc50e-f8a9-4b67-8884-140ded3316b5"]')?.textContent).toBe("ambulant");
+    expect(view.container.querySelector('[data-rg-multiselect="0:field_2f526729-b7fa-408d-9da0-e8265ce2b48a:option_5ecb9456-c66c-4588-9d9e-1a0a17c3e007"]')?.textContent).toBe("GKV");
     await cleanup(view.root, view.container);
   });
 });
