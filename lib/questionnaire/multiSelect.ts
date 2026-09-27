@@ -11,7 +11,7 @@ export function parseMultiSelectValue(
   options: readonly QuestionOptionDefinition[],
 ): string[] {
   const input = value.trim();
-  if (!input) return [];
+  if (!input || input === "[]") return [];
 
   const orderedOptions = options.map(getQuestionOptionValue).sort((a, b) => b.length - a.length);
   const result: string[] = [];

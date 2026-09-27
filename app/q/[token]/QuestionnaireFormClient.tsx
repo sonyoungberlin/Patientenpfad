@@ -34,6 +34,7 @@ import { synchronizeSmokingPair } from "@/lib/questionnaire/smokingInput";
 import { SelfCheckInQrCode } from "@/components/SelfCheckInQrCode";
 import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
 import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
+import { hasDocumentedAnswer } from "@/lib/questionnaire/documentedContent";
 import AppTextXmlDownloadButton from "@/components/questionnaire/AppTextXmlDownloadButton";
 import QuestionnaireAutoDownloadController from "@/components/questionnaire/QuestionnaireAutoDownloadController";
 import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
@@ -1279,7 +1280,7 @@ export function QuestionnaireFormClient({
         q.required &&
         (q.type === "confirmation"
           ? answersToSend[q.id] !== "true"
-          : (answersToSend[q.id] ?? "").trim() === ""),
+          : !hasDocumentedAnswer(q, answersToSend)),
     );
     if (missing.length > 0) {
       setMissingRequiredIds(new Set(missing.map((q) => q.id)));

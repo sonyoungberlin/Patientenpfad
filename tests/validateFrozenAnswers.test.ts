@@ -37,6 +37,43 @@ describe("validateFrozenAnswers", () => {
     expect(validateFrozenAnswers({ STATUS: "unbekannt" }, blocks)).toMatchObject({ ok: false, invalidQuestionIds: ["STATUS"] });
   });
 
+  it("akzeptiert ein leeres optionales Multi-Select in beiden Leerformaten", () => {
+    const question: QuestionDefinition = {
+      id: "OPTIONAL_MULTI",
+      text: "Optional mehrfach",
+      type: "multi_select",
+      required: false,
+      options: ["A", "B"],
+    };
+    expect(validateFrozenAnswers({ OPTIONAL_MULTI: "" }, [makeBlock([question])])).toMatchObject({ ok: true });
+    expect(validateFrozenAnswers({ OPTIONAL_MULTI: "[]" }, [makeBlock([question])])).toMatchObject({ ok: true });
+  });
+
+  it.each(["", "[]"])("weist ein leeres verpflichtendes Multi-Select (%s) ab", (value) => {
+    const question: QuestionDefinition = {
+      id: "REQUIRED_MULTI",
+      text: "Pflicht mehrfach",
+      type: "multi_select",
+      required: true,
+      options: ["A", "B"],
+    };
+    expect(validateFrozenAnswers({ REQUIRED_MULTI: value }, [makeBlock([question])])).toMatchObject({
+      ok: false,
+      invalidQuestionIds: ["REQUIRED_MULTI"],
+    });
+  });
+
+  it("akzeptiert ein leeres optionales Select-Feld", () => {
+    const question: QuestionDefinition = {
+      id: "OPTIONAL_SELECT",
+      text: "Optional Auswahl",
+      type: "select",
+      required: false,
+      options: ["A", "B"],
+    };
+    expect(validateFrozenAnswers({ OPTIONAL_SELECT: "" }, [makeBlock([question])])).toMatchObject({ ok: true });
+  });
+
   describe("optionale und verpflichtende Ja/Nein-Fragen", () => {
     const yesNo = (overrides: Partial<QuestionDefinition> = {}): QuestionDefinition => ({
       id: "YES_NO",
@@ -80,5 +117,21 @@ describe("validateFrozenAnswers", () => {
     }])];
     expect(validateFrozenAnswers({ GATE: "nein" }, blocks)).toMatchObject({ ok: true });
     expect(validateFrozenAnswers({ GATE: "ja" }, blocks)).toMatchObject({ ok: false, invalidQuestionIds: ["HIDDEN"] });
+  });
+
+  it("validiert ungültige Werte in conditional ausgeblendeten Feldern nicht", () => {
+    const blocks = [makeBlock([
+      { id: "GATE", text: "Gate", type: "select", required: false, options: ["ja", "nein"] },
+      { id: "HIDDEN_SELECT", text: "Verborgen", type: "select", required: false, options: ["A", "B"] },
+    ], [{
+      action: "showQuestion",
+      targetId: "HIDDEN_SELECT",
+      condition: { target: { kind: "question", questionId: "GATE" }, operator: "equals", value: "ja" },
+    }])];
+    expect(validateFrozenAnswers({ GATE: "nein", HIDDEN_SELECT: "unbekannt" }, blocks)).toMatchObject({ ok: true });
+    expect(validateFrozenAnswers({ GATE: "ja", HIDDEN_SELECT: "unbekannt" }, blocks)).toMatchObject({
+      ok: false,
+      invalidQuestionIds: ["HIDDEN_SELECT"],
+    });
   });
 });

@@ -21,7 +21,9 @@ function isAllowedOptionAnswer(question: QuestionDefinition, value: string): boo
   }
   if (question.type === "multi_select") {
     const selected = parseMultiSelectValue(value, optionValues);
-    return selected.length > 0 && selected.every((option) => optionValues.includes(option));
+    return selected.length > 0
+      ? selected.every((option) => optionValues.includes(option))
+      : question.required === false;
   }
   if (question.type === "time") return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
   if (question.type === "month") return /^\d{4}-(?:0[1-9]|1[0-2])$/.test(value);
@@ -61,7 +63,9 @@ function hasValidRepeatableGroupEntries(question: QuestionDefinition, value: str
       if (field.type === "multi_select") {
         const selected = parseMultiSelectValue(fieldValue, field.options ?? []);
         const optionValues = (field.options ?? []).map(getQuestionOptionValue);
-        return selected.length > 0 && selected.every((option) => optionValues.includes(option));
+        return selected.length > 0
+          ? selected.every((option) => optionValues.includes(option))
+          : field.required === false;
       }
       if (field.type === "time" && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(fieldValue)) return false;
       if (field.type === "month" && !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(fieldValue)) return false;

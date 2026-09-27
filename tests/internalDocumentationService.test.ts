@@ -18,6 +18,7 @@ jest.mock("@/lib/prisma", () => ({
 
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { prisma } from "@/lib/prisma";
+import type { FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { buildInternalWorkflowBlocks } from "@/lib/questionnaire/internalWorkflowRegistry";
 import {
   createInternalDocumentationSession,
@@ -32,6 +33,40 @@ const db = prisma.patientQuestionnaireSession as unknown as {
 };
 const findDocumentationBlocks = prisma.practiceDocumentationBlock.findMany as jest.Mock;
 const findLegalProfile = prisma.practiceLegalProfile.findUnique as jest.Mock;
+
+function profileSubmitBlocks(): FrozenBlock[] {
+  return [
+    {
+      id: "PROFILE_DOCUMENTS_BLOCK",
+      label: "MITZUBRINGENDE / EINZUREICHENDE UNTERLAGEN",
+      displayOrder: 10,
+      initiallyVisible: true,
+      conditionalRules: [],
+      outputSemantics: "documented-content-v1",
+      questions: [
+        { id: "PROFILE_DOCUMENTS", text: "Unterlagen", type: "textarea", required: false },
+        { id: "PROFILE_DOCUMENT_TYPES", text: "Unterlagenarten", type: "multi_select", required: false, options: ["Befunde", "Medikamentenplan"] },
+      ],
+    },
+    {
+      id: "PROFILE_TREATMENT_BLOCK",
+      label: "MEDIKAMENTÖSE / FACHÄRZTLICHE MITBEHANDLUNG",
+      displayOrder: 20,
+      initiallyVisible: true,
+      conditionalRules: [{
+        action: "showQuestion",
+        targetId: "PROFILE_TREATMENT_DETAILS",
+        condition: { target: { kind: "question", questionId: "PROFILE_TREATMENT_GATE" }, operator: "equals", value: "ja" },
+      }],
+      outputSemantics: "documented-content-v1",
+      questions: [
+        { id: "PROFILE_TREATMENT_GATE", text: "Mitbehandlung", type: "yes_no", required: false },
+        { id: "PROFILE_TREATMENT_OPTIONS", text: "Art der Mitbehandlung", type: "multi_select", required: false, options: ["Medikamentös", "Fachärztlich"] },
+        { id: "PROFILE_TREATMENT_DETAILS", text: "Details", type: "select", required: true, options: ["laufend", "geplant"] },
+      ],
+    },
+  ];
+}
 
 function storedBlock(id: string) {
   return {
@@ -382,6 +417,38 @@ describe("internal documentation service", () => {
       data: expect.objectContaining({ status: "completed", submitted_at: expect.any(Date) }),
     });
     expect(db.updateMany.mock.calls[0][0].data.answers.CARE_PLAN_HA_NOTES).toHaveLength(120);
+  });
+
+  it("akzeptiert den internen Steckbrief-Submit mit leeren optionalen Auswahlfeldern und verborgenem Zusatzfeld", async () => {
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: null,
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      frozen_blocks: profileSubmitBlocks(),
+    });
+
+    await submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: {
+        PROFILE_DOCUMENTS: "Befunde werden nachgereicht",
+        PROFILE_DOCUMENT_TYPES: "[]",
+        PROFILE_TREATMENT_GATE: "nein",
+        PROFILE_TREATMENT_OPTIONS: "[]",
+        PROFILE_TREATMENT_DETAILS: "unbekannt",
+      },
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    expect(db.updateMany).toHaveBeenCalledTimes(1);
+    expect(db.updateMany.mock.calls[0][0].data.answers).toMatchObject({
+      PROFILE_DOCUMENTS: "Befunde werden nachgereicht",
+      PROFILE_TREATMENT_GATE: "nein",
+    });
+    expect(db.updateMany.mock.calls[0][0].data.answers).not.toHaveProperty("PROFILE_TREATMENT_DETAILS");
   });
 
   it("weist im Praxisweg 121 Zeichen vor dem Speichern ab", async () => {
