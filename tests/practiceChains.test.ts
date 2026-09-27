@@ -6,24 +6,55 @@ const mockPracticeCaseChain = {
   create: jest.fn(),
   update: jest.fn(),
 };
+const mockPracticeCaseChainEntryApproval = {
+  findMany: jest.fn(),
+  findFirst: jest.fn(),
+  upsert: jest.fn(),
+  updateMany: jest.fn(),
+};
+const mockPracticeCaseChainConnectionApproval = {
+  findMany: jest.fn(),
+  findFirst: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  updateMany: jest.fn(),
+};
+const mockPracticeCaseChainApprovalEvent = { create: jest.fn() };
 const mockPracticeCatalogEntry = { findMany: jest.fn() };
+const mockRequirePracticeCatalogAccess = jest.fn();
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     practiceCaseChain: mockPracticeCaseChain,
+    practiceCaseChainEntryApproval: mockPracticeCaseChainEntryApproval,
+    practiceCaseChainConnectionApproval: mockPracticeCaseChainConnectionApproval,
+    practiceCaseChainApprovalEvent: mockPracticeCaseChainApprovalEvent,
     practiceCatalogEntry: mockPracticeCatalogEntry,
+    $transaction: jest.fn(async (callback: (tx: unknown) => unknown) => callback({
+      practiceCaseChainEntryApproval: mockPracticeCaseChainEntryApproval,
+      practiceCaseChainConnectionApproval: mockPracticeCaseChainConnectionApproval,
+      practiceCaseChainApprovalEvent: mockPracticeCaseChainApprovalEvent,
+    })),
   },
+}));
+
+jest.mock("@/lib/authz", () => ({
+  ...jest.requireActual("@/lib/authz"),
+  requirePracticeCatalogAccess: mockRequirePracticeCatalogAccess,
 }));
 
 jest.mock("@/lib/auth", () => ({ getSessionAccount: jest.fn() }));
 
-import { createPracticeChain, createPracticeChainRevision, getPracticeChain, getReadyPracticeChainRunner, updatePracticeChain } from "@/lib/practiceChains/service";
+import { approvePracticeChainConnection, approvePracticeChainEntry, createPracticeChain, createPracticeChainRevision, getApprovedPracticeChainContinuation, getPracticeChain, getReadyPracticeChainRunner, revokePracticeChainConnection, revokePracticeChainEntry, updatePracticeChain } from "@/lib/practiceChains/service";
 import { validateChainDefinition } from "@/lib/practiceChains/validate";
-import { createRunnerState, followRunnerTarget, goBackRunner } from "@/lib/practiceChains/runner";
+import { continueRunner, createRunnerState, followRunnerTarget, getRunnerContinuationStatus, goBackRunner } from "@/lib/practiceChains/runner";
+import type { RunnerChain } from "@/lib/practiceChains/runner";
+import { discoverPracticeChainSegments, findAttachmentCandidates, getSegmentTerminalCatalogEntryIds } from "@/lib/practiceChains/discovery";
 import { GET as getChains } from "@/app/api/practice-chains/route";
 import { PATCH as patchChain } from "@/app/api/practice-chains/[id]/route";
 import { POST as reviseChain } from "@/app/api/practice-chains/[id]/revision/route";
 import { GET as getRunner } from "@/app/api/practice-chains/[id]/runner/route";
+import { DELETE as deleteApproval } from "@/app/api/practice-chains/[id]/approvals/route";
 import { getSessionAccount } from "@/lib/auth";
 import { NextRequest } from "next/server";
 
@@ -89,10 +120,22 @@ function request(url: string, method = "GET", body?: unknown) {
 beforeEach(() => {
   jest.clearAllMocks();
   (getSessionAccount as jest.Mock).mockResolvedValue(account);
+  mockRequirePracticeCatalogAccess.mockResolvedValue({ account, error: null });
   mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1 }, { id: ENTRY_V2 }]);
   mockPracticeCaseChain.findFirst.mockResolvedValue(row());
+  mockPracticeCaseChain.findMany.mockResolvedValue([]);
   mockPracticeCaseChain.create.mockResolvedValue(row());
   mockPracticeCaseChain.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => row(data));
+  mockPracticeCaseChainEntryApproval.findMany.mockResolvedValue([]);
+  mockPracticeCaseChainEntryApproval.findFirst.mockResolvedValue(null);
+  mockPracticeCaseChainEntryApproval.upsert.mockResolvedValue({ id: "entry-approval" });
+  mockPracticeCaseChainEntryApproval.updateMany.mockResolvedValue({ count: 1 });
+  mockPracticeCaseChainConnectionApproval.findMany.mockResolvedValue([]);
+  mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue(null);
+  mockPracticeCaseChainConnectionApproval.create.mockResolvedValue({ id: "connection-approval" });
+  mockPracticeCaseChainConnectionApproval.update.mockResolvedValue({ id: "connection-approval" });
+  mockPracticeCaseChainConnectionApproval.updateMany.mockResolvedValue({ count: 1 });
+  mockPracticeCaseChainApprovalEvent.create.mockResolvedValue({ id: "approval-event" });
 });
 
 describe("PracticeCaseChain service", () => {
@@ -145,6 +188,260 @@ describe("PracticeCaseChain service", () => {
     expect(result.source_chain_id).toBe("chain-1");
     expect(mockPracticeCaseChain.create.mock.calls[0][0].data).toEqual(expect.objectContaining({ version: 4, source_chain_id: "chain-1" }));
   });
+
+  it("erlaubt einen Einstieg ab Schritt 2 erst nach expliziter Freigabe", async () => {
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "READY", definition: completeDefinition }));
+    expect(await getReadyPracticeChainRunner("chain-1", PRACTICE_ID, "step-2")).toBeNull();
+
+    await approvePracticeChainEntry({ practiceId: PRACTICE_ID, chainId: "chain-1", stepId: "step-2", actorAccountId: "account-1" });
+    expect(mockPracticeCaseChainEntryApproval.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { practice_id_chain_id_step_id: { practice_id: PRACTICE_ID, chain_id: "chain-1", step_id: "step-2" } },
+    }));
+
+    mockPracticeCaseChainEntryApproval.findFirst.mockResolvedValue({ id: "entry-approval" });
+    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1 }, { id: ENTRY_V2 }]);
+    await expect(getReadyPracticeChainRunner("chain-1", PRACTICE_ID, "step-2")).resolves.toMatchObject({ startStepId: "step-2" });
+  });
+
+  it("speichert Anschlüsse nur für ausdrückliche Enden und konkrete Kettenversionen", async () => {
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ id: "source", status: "READY", definition: completeDefinition }))
+      .mockResolvedValueOnce(row({ id: "target", status: "READY", definition: completeDefinition }));
+    await expect(approvePracticeChainConnection({ practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-1", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-2", actorAccountId: "account-1" })).rejects.toMatchObject({ statusCode: 400 });
+
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ id: "source", status: "READY", definition: completeDefinition }))
+      .mockResolvedValueOnce(row({ id: "target", status: "READY", definition: completeDefinition }));
+    await approvePracticeChainConnection({ practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-2", actorAccountId: "account-1" });
+    expect(mockPracticeCaseChainConnectionApproval.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ source_chain_id: "source", source_step_id: "step-2", target_chain_id: "target", target_step_id: "step-2" }),
+    }));
+    expect(mockPracticeCaseChainApprovalEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ approval_kind: "CONNECTION", action: "SELECT", selection_version: 1 }),
+    }));
+
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue({ id: "connection-approval", selection_version: 1 });
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "READY", definition: completeDefinition }));
+    await approvePracticeChainConnection({ practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target-2", targetStepId: "step-2", expectedSelectionVersion: 1, actorAccountId: "account-1" });
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: "connection-approval", selection_version: 1 }),
+      data: expect.objectContaining({ target_chain_id: "target-2", target_step_id: "step-2", selection_version: { increment: 1 } }),
+    }));
+
+    await expect(revokePracticeChainConnection({ practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", actorAccountId: "account-1" })).resolves.toBeDefined();
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: "connection-approval", revoked_at: null }),
+    }));
+    expect(mockPracticeCaseChainApprovalEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ approval_kind: "CONNECTION", action: "REVOKE" }),
+    }));
+  });
+
+  it("verweigert einen Auswahlwechsel mit veralteter Auswahlversion", async () => {
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ id: "source", status: "READY", definition: completeDefinition }))
+      .mockResolvedValueOnce(row({ id: "target", status: "READY", definition: completeDefinition }));
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue({ id: "current", selection_version: 2 });
+    mockPracticeCaseChainConnectionApproval.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(approvePracticeChainConnection({
+      practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-2", expectedSelectionVersion: 2, actorAccountId: "account-1",
+    })).rejects.toMatchObject({ statusCode: 409 });
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ selection_version: 2 }),
+    }));
+  });
+
+  it("führt Auswahl, Widerruf und Reaktivierung mit neuer Version und Ereignis aus", async () => {
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ id: "source", status: "READY", definition: completeDefinition }));
+    mockPracticeCaseChainConnectionApproval.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "connection-approval", selection_version: 1, revoked_at: null })
+      .mockResolvedValueOnce({ id: "connection-approval", selection_version: 2, revoked_at: new Date("2026-09-26") });
+
+    await approvePracticeChainConnection({ practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target-a", targetStepId: "step-2", actorAccountId: "account-1" });
+    await revokePracticeChainConnection({ practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", expectedSelectionVersion: 1, actorAccountId: "account-1" });
+    await approvePracticeChainConnection({ practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target-b", targetStepId: "step-2", actorAccountId: "account-1" });
+
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      where: { id: "connection-approval", revoked_at: null, selection_version: 1 },
+      data: expect.objectContaining({ revoked_at: expect.any(Date), selection_version: { increment: 1 } }),
+    }));
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: { id: "connection-approval", selection_version: 2, revoked_at: { not: null } },
+      data: expect.objectContaining({ target_chain_id: "target-b", revoked_at: null, selection_version: { increment: 1 } }),
+    }));
+    expect(mockPracticeCaseChainApprovalEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "SELECT", selection_version: 3, target_chain_id: "target-b" }) }));
+  });
+
+  it("lässt bei zwei konkurrierenden Reaktivierungen nur eine gewinnen", async () => {
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ id: "source", status: "READY", definition: completeDefinition }));
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue({ id: "connection-approval", selection_version: 4, revoked_at: new Date("2026-09-26") });
+    mockPracticeCaseChainConnectionApproval.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    const input = { practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-2", actorAccountId: "account-1" };
+
+    await expect(Promise.all([approvePracticeChainConnection(input), approvePracticeChainConnection(input)])).rejects.toMatchObject({ statusCode: 409 });
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenCalledTimes(2);
+    expect(mockPracticeCaseChainApprovalEvent.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("verlangt bei einer bestehenden aktiven Auswahl die erwartete Version", async () => {
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ id: "source", status: "READY", definition: completeDefinition }));
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue({ id: "connection-approval", selection_version: 2, revoked_at: null });
+
+    await expect(approvePracticeChainConnection({
+      practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-2", actorAccountId: "account-1",
+    })).rejects.toMatchObject({ statusCode: 409 });
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("gibt einen Widerrufskonflikt der DELETE-Route als sichtbaren HTTP-409-Fehler aus", async () => {
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue({ id: "connection-approval", selection_version: 4, revoked_at: null });
+    mockPracticeCaseChainConnectionApproval.updateMany.mockResolvedValue({ count: 0 });
+
+    const response = await deleteApproval(request("/api/practice-chains/source/approvals", "DELETE", {
+      kind: "CONNECTION", sourceStepId: "step-2", sourceExitId: "answer-3", expectedSelectionVersion: 3,
+    }), { params: Promise.resolve({ id: "source" }) });
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({ ok: false, error: expect.stringContaining("geändert") }));
+  });
+
+  it("gibt auch einen ENTRY-Widerrufskonflikt als sichtbaren HTTP-409-Fehler aus", async () => {
+    mockPracticeCaseChainEntryApproval.updateMany.mockResolvedValue({ count: 0 });
+
+    const response = await deleteApproval(request("/api/practice-chains/source/approvals", "DELETE", {
+      kind: "ENTRY", stepId: "step-2", expectedApprovalVersion: 3,
+    }), { params: Promise.resolve({ id: "source" }) });
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({ ok: false, error: expect.stringContaining("geändert") }));
+  });
+
+  it("lässt bei zwei Wechseln derselben Ausgangsversion nur einen gewinnen", async () => {
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValue(row({ id: "source", status: "READY", definition: completeDefinition }));
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ id: "source", status: "READY", definition: completeDefinition }))
+      .mockResolvedValueOnce(row({ id: "target", status: "READY", definition: completeDefinition }));
+    const current = { id: "current", selection_version: 1 };
+    mockPracticeCaseChainConnectionApproval.findFirst.mockReturnValue(Promise.resolve(current));
+    mockPracticeCaseChainConnectionApproval.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    const input = { practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-2", expectedSelectionVersion: 1, actorAccountId: "account-1" };
+    await expect(Promise.all([approvePracticeChainConnection(input), approvePracticeChainConnection(input)])).rejects.toMatchObject({ statusCode: 409 });
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenCalledTimes(2);
+    expect(mockPracticeCaseChainApprovalEvent.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("meldet eine konkurrierende Erstanlage als verständlichen Konflikt", async () => {
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ id: "source", status: "READY", definition: completeDefinition }))
+      .mockResolvedValueOnce(row({ id: "target", status: "READY", definition: completeDefinition }));
+    mockPracticeCaseChainConnectionApproval.create.mockRejectedValueOnce({ code: "P2002" });
+    await expect(approvePracticeChainConnection({
+      practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-2", actorAccountId: "account-1",
+    })).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("verweigert eine gleichzeitige Änderung oder einen Widerruf mit veralteter Version", async () => {
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ id: "source", status: "READY", definition: completeDefinition }))
+      .mockResolvedValueOnce(row({ id: "target", status: "READY", definition: completeDefinition }));
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue({ id: "current", selection_version: 4 });
+    mockPracticeCaseChainConnectionApproval.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(revokePracticeChainConnection({
+      practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", expectedSelectionVersion: 3, actorAccountId: "account-1",
+    })).rejects.toMatchObject({ statusCode: 409 });
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ selection_version: 3, revoked_at: null }),
+    }));
+  });
+
+  it("verweigert unterschiedliche konkrete CatalogEntry-IDs trotz gleichem Titel", async () => {
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ id: "source", status: "READY", definition: completeDefinition }))
+      .mockResolvedValueOnce(row({ id: "target", status: "READY", definition: completeDefinition }));
+    await expect(approvePracticeChainConnection({
+      practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target", targetStepId: "step-1", actorAccountId: "account-1",
+    })).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockPracticeCaseChainConnectionApproval.create).not.toHaveBeenCalled();
+  });
+
+  it("liefert nach dem Ende von A genau den aktiv ausgewählten Anschluss für B", async () => {
+    const chainA = row({ id: "chain-a", status: "READY", name: "Akutanfrage", version: 1, definition: completeDefinition });
+    const chainB = row({ id: "chain-b", status: "READY", name: "Facharztbericht Rezeptanfrage", version: 2, definition: completeDefinition });
+    mockPracticeCaseChain.findFirst.mockResolvedValue(chainA);
+    mockPracticeCaseChainConnectionApproval.findMany.mockResolvedValue([{ source_step_id: "step-2", source_exit_id: "answer-3", target_chain_id: "chain-b", target_step_id: "step-2" }]);
+    mockPracticeCaseChain.findMany.mockResolvedValue([chainB]);
+    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1, title: "Akutanfrage" }, { id: ENTRY_V2, title: "Facharztbericht" }]);
+    const runner = await getReadyPracticeChainRunner("chain-a", PRACTICE_ID);
+    expect(runner?.connections).toEqual([{ sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "chain-b", targetStepId: "step-2", targetName: "Facharztbericht Rezeptanfrage", targetVersion: 2, targetTitle: "Facharztbericht" }]);
+    expect(followRunnerTarget(createRunnerState("step-2"), null).finished).toBe(true);
+  });
+
+  it("setzt einen Anschluss im selben Lauf fort, dedupliziert den gemeinsamen Fall und erlaubt Zurück", () => {
+    const target: RunnerChain = {
+      id: "chain-b",
+      name: "Facharztbericht Rezeptanfrage",
+      version: 2,
+      startStepId: "b-step-1",
+      steps: [
+        { id: "b-step-1", catalogEntryId: ENTRY_V2, title: "Facharztbericht", description: null, standards: [] },
+        { id: "b-step-2", catalogEntryId: ENTRY_V1, title: "Rezeptanfrage", description: null, standards: [] },
+      ],
+      transitions: [{ id: "b-transition", fromStepId: "b-step-1", kind: "DIRECT", targetStepId: "b-step-2" }],
+      connections: [],
+    };
+    const atEndOfA = followRunnerTarget(followRunnerTarget(createRunnerState("a-step-1"), "a-step-2"), null);
+    const inB = continueRunner(atEndOfA, target, ENTRY_V2, ENTRY_V2);
+    expect(inB).toMatchObject({ currentStepId: "b-step-1", finished: false, history: ["a-step-1"] });
+    const atBNext = followRunnerTarget(inB, "b-step-2");
+    expect(atBNext.history).toEqual(["a-step-1", "b-step-1"]);
+    expect(goBackRunner(atBNext)).toMatchObject({ currentStepId: "b-step-1", history: ["a-step-1"] });
+    expect(goBackRunner(inB)).toMatchObject({ currentStepId: "a-step-1", history: [] });
+    const sameTitleDifferentVersion: RunnerChain = { ...target, steps: [{ ...target.steps[0], catalogEntryId: ENTRY_V1, title: "Facharztbericht" }, ...target.steps.slice(1)] };
+    expect(continueRunner(atEndOfA, sameTitleDifferentVersion, ENTRY_V1, ENTRY_V2).history).toEqual(["a-step-1", "a-step-2"]);
+  });
+
+  it("behält den begonnenen B-Kontext nach Widerruf oder Auswahlwechsel eingefroren bei", async () => {
+    const chainB = row({ id: "chain-b", status: "READY", definition: completeDefinition });
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValueOnce({
+      id: "old-selection", source_chain_id: "chain-a", source_step_id: "step-2", target_chain_id: "chain-b", target_step_id: "step-2", selection_version: 1, revoked_at: null,
+    });
+    mockPracticeCaseChain.findFirst.mockResolvedValue(chainB);
+    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1 }, { id: ENTRY_V2 }]);
+    const startedB = await getApprovedPracticeChainContinuation({
+      practiceId: PRACTICE_ID, sourceChainId: "chain-a", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "chain-b", targetStepId: "step-2",
+    });
+    expect(startedB?.startStepId).toBe("step-2");
+
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue(null);
+    await expect(getApprovedPracticeChainContinuation({
+      practiceId: PRACTICE_ID, sourceChainId: "chain-a", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "chain-b", targetStepId: "step-2",
+    })).resolves.toBeNull();
+    expect(startedB?.startStepId).toBe("step-2");
+  });
+
+  it("lädt bei zwei Endantworten keinen Anschluss mit leerer oder falscher Exit-ID", async () => {
+    const approval = { id: "approval", source_chain_id: "chain-a", source_step_id: "step-2", source_exit_id: "end-a", target_chain_id: "chain-b", target_step_id: "step-2", selection_version: 1, revoked_at: null };
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue(approval);
+    await expect(getApprovedPracticeChainContinuation({
+      practiceId: PRACTICE_ID, sourceChainId: "chain-a", sourceStepId: "step-2", sourceExitId: "", targetChainId: "chain-b", targetStepId: "step-2",
+    })).resolves.toBeNull();
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue(null);
+    await expect(getApprovedPracticeChainContinuation({
+      practiceId: PRACTICE_ID, sourceChainId: "chain-a", sourceStepId: "step-2", sourceExitId: "end-b", targetChainId: "chain-b", targetStepId: "step-2",
+    })).resolves.toBeNull();
+  });
+
+  it("verweigert die Fortsetzung nach Widerruf oder bei einer anderen konkreten Zielversion", async () => {
+    mockPracticeCaseChainConnectionApproval.findFirst.mockResolvedValue(null);
+    await expect(getApprovedPracticeChainContinuation({
+      practiceId: PRACTICE_ID, sourceChainId: "source", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "target-v2", targetStepId: "step-2",
+    })).resolves.toBeNull();
+    expect(mockPracticeCaseChain.findFirst).not.toHaveBeenCalled();
+  });
 });
 
 describe("PracticeCaseChain authorization", () => {
@@ -157,6 +454,7 @@ describe("PracticeCaseChain authorization", () => {
 
   it("verweigert USER den direkten Zugriff", async () => {
     (getSessionAccount as jest.Mock).mockResolvedValue({ ...account, memberships: [{ practice_id: PRACTICE_ID, role: "USER" }] });
+    mockRequirePracticeCatalogAccess.mockResolvedValueOnce({ account: null, error: new Response(null, { status: 403 }) });
     const response = await getChains(request("/api/practice-chains"));
     expect(response.status).toBe(403);
   });
@@ -365,5 +663,112 @@ describe("PracticeCaseChain runner", () => {
   it("setzt beim Start keine Antwort und speichert keinen Lauf", () => {
     const state = createRunnerState("step-1");
     expect(state).toEqual({ currentStepId: "step-1", history: [], finished: false, error: null });
+  });
+
+  it("markiert A nach A → B → A als besucht, verbietet den Rücksprung aber nicht pauschal", () => {
+    expect(getRunnerContinuationStatus(["chain-a", "chain-b"], "chain-a", 2)).toEqual({ alreadyVisited: true, limited: false });
+    expect(getRunnerContinuationStatus(["chain-a"], "chain-b", 32).limited).toBe(true);
+    const afterA = followRunnerTarget(createRunnerState("a-end"), null);
+    const targetB: RunnerChain = { id: "chain-b", name: "B", version: 1, startStepId: "b-start", steps: [{ id: "b-start", catalogEntryId: "entry-b", title: "B", description: null, standards: [] }], transitions: [], connections: [] };
+    const targetA: RunnerChain = { id: "chain-a", name: "A", version: 1, startStepId: "a-start", steps: [{ id: "a-start", catalogEntryId: "entry-a", title: "A", description: null, standards: [] }], transitions: [], connections: [] };
+    const afterB = continueRunner(afterA, targetB);
+    const afterBEnd = followRunnerTarget(afterB, null);
+    expect(continueRunner(afterBEnd, targetA).currentStepId).toBe("a-start");
+    expect(goBackRunner(afterBEnd).currentStepId).toBe("b-start");
+  });
+});
+
+describe("PracticeCaseChain discovery", () => {
+  it("behält einen gemischten End-/Weiter-Zweig als getrennte konkrete Pfade", () => {
+    const chain = {
+      id: "mixed", name: "Gemischt", version: 1,
+      definition: {
+        startStepId: "step-1",
+        steps: [{ id: "step-1", catalogEntryId: "entry-1" }, { id: "step-2", catalogEntryId: "entry-2" }],
+        transitions: [
+          { id: "t1", fromStepId: "step-1", kind: "QUESTION" as const, question: { prompt: "Route", answers: [
+            { id: "end", label: "Ende", targetStepId: null },
+            { id: "continue", label: "Weiter", targetStepId: "step-2" },
+          ] } },
+          { id: "t2", fromStepId: "step-2", kind: "DIRECT" as const, targetStepId: null },
+        ],
+      },
+      entryTitles: new Map([["entry-1", "Fall 1"], ["entry-2", "Fall 2"]]),
+    };
+    const segment = discoverPracticeChainSegments(chain).find((candidate) => candidate.startStepId === "step-1")!;
+    expect(segment.paths.map((path) => path.map((step) => step.stepId))).toEqual([["step-1"], ["step-1", "step-2"]]);
+    expect(segment.pathExitIds).toEqual(["end", "t2"]);
+  });
+
+  it("unterscheidet zwei verschiedene End-Antworten am selben Fall", () => {
+    const chain = {
+      id: "two-ends", name: "Zwei Enden", version: 1,
+      definition: { startStepId: "step-1", steps: [{ id: "step-1", catalogEntryId: "entry-1" }], transitions: [
+        { id: "question", fromStepId: "step-1", kind: "QUESTION" as const, question: { prompt: "Ende", answers: [
+          { id: "end-a", label: "Ende A", targetStepId: null },
+          { id: "end-b", label: "Ende B", targetStepId: null },
+        ] } },
+      ] },
+      entryTitles: new Map([["entry-1", "Fall 1"]]),
+    };
+    const segment = discoverPracticeChainSegments(chain)[0];
+    expect(segment.paths).toHaveLength(2);
+    expect(segment.pathExitIds).toEqual(["end-a", "end-b"]);
+  });
+
+  it("setzt A über B bis C fort und behält den aktuellen Kettenkontext", () => {
+    const chain = (id: string, stepId: string): RunnerChain => ({
+      id, name: id, version: 1, startStepId: stepId,
+      steps: [{ id: stepId, catalogEntryId: `entry-${id}`, title: id, description: null, standards: [] }],
+      transitions: [], connections: [],
+    });
+    const afterA = followRunnerTarget(createRunnerState("a"), null);
+    const afterB = continueRunner(afterA, chain("B", "b"));
+    const afterBEnd = followRunnerTarget(afterB, null);
+    const inC = continueRunner(afterBEnd, chain("C", "c"));
+    expect(inC).toMatchObject({ currentStepId: "c", finished: false, history: ["a", "b"] });
+  });
+
+  it("findet suffixartige Teilstrecken über konkrete Versionen und bleibt bei Verzweigungen eindeutig", () => {
+    const chain = {
+      id: "chain-1", name: "Neutral", version: 1,
+      definition: {
+        startStepId: "step-1",
+        steps: [
+          { id: "step-1", catalogEntryId: "entry-1" },
+          { id: "step-2", catalogEntryId: "entry-2" },
+          { id: "step-3", catalogEntryId: "entry-3" },
+          { id: "step-4", catalogEntryId: "entry-4" },
+        ],
+        transitions: [
+          { id: "t1", fromStepId: "step-1", kind: "DIRECT" as const, targetStepId: "step-2" },
+          { id: "t2", fromStepId: "step-2", kind: "QUESTION" as const, question: { prompt: "Welche Route?", answers: [
+            { id: "a1", label: "Drei", targetStepId: "step-3" },
+            { id: "a2", label: "Vier", targetStepId: "step-4" },
+          ] } },
+          { id: "t3", fromStepId: "step-3", kind: "DIRECT" as const, targetStepId: null },
+          { id: "t4", fromStepId: "step-4", kind: "DIRECT" as const, targetStepId: null },
+        ],
+      },
+      entryTitles: new Map([["entry-1", "Fall 1"], ["entry-2", "Fall 2"], ["entry-3", "Fall 3"], ["entry-4", "Fall 4"]]),
+    };
+    const segments = discoverPracticeChainSegments(chain);
+    const fromTwo = segments.find((segment) => segment.start.catalogEntryId === "entry-2");
+    expect(fromTwo?.paths.map((path) => path.map((step) => step.catalogEntryId))).toEqual([["entry-2", "entry-3"], ["entry-2", "entry-4"]]);
+    expect(getSegmentTerminalCatalogEntryIds([fromTwo!])).toEqual(new Set(["entry-3", "entry-4"]));
+    expect(findAttachmentCandidates(segments, new Set(["entry-3"]), "other-chain")).toEqual([segments.find((segment) => segment.start.catalogEntryId === "entry-3")]);
+    expect(findAttachmentCandidates(segments, new Set(["entry-2"]), "other-chain")).toEqual([fromTwo]);
+    expect(findAttachmentCandidates(segments, new Set(["entry-2"]), "chain-1")).toEqual([]);
+  });
+
+  it("unterscheidet gleiche Titel über Katalogversions-IDs", () => {
+    const chain = {
+      id: "chain-2", name: "Neutral", version: 2,
+      definition: { startStepId: "step-1", steps: [{ id: "step-1", catalogEntryId: "entry-v2" }], transitions: [] },
+      entryTitles: new Map([["entry-v2", "Gleicher Titel"]]),
+    };
+    const segment = discoverPracticeChainSegments(chain)[0];
+    expect(segment.start.catalogEntryId).toBe("entry-v2");
+    expect(findAttachmentCandidates([segment], new Set(["entry-v1"]))).toEqual([]);
   });
 });

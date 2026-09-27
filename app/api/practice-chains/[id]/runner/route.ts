@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const practiceId = getCatalogOwnershipFilter(access.account)?.practice_id;
   if (!practiceId) return NextResponse.json({ ok: false, error: "Kein Praxiskontext." }, { status: 403 });
   const { id } = await params;
-  const runner = await getReadyPracticeChainRunner(id, practiceId);
+  const runner = await getReadyPracticeChainRunner(id, practiceId, new URL(req.url).searchParams.get("startStepId") ?? undefined);
   if (!runner) return NextResponse.json({ ok: false, error: "Einsatzbereite Kette nicht gefunden." }, { status: 404 });
   return NextResponse.json({ ok: true, runner });
 }

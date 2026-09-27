@@ -44,3 +44,23 @@ export type PracticeCaseChainRecord = {
   created_at: Date;
   updated_at: Date;
 };
+
+export type PracticeCaseChainEntryApproval = {
+  id: string;
+  practice_id: string;
+  chain_id: string;
+  step_id: string;
+  created_at: Date;
+};
+
+export type PracticeCaseChainConnectionApproval = {
+  id: string;
+  practice_id: string;
+  source_chain_id: string;
+  source_step_id: string;
+  source_exit_id: string;
+  target_chain_id: string;
+  target_step_id: string;
+  selection_version: number;
+  created_at: Date;
+};

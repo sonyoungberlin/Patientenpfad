@@ -11,8 +11,14 @@ import type {
   PracticeCaseChainAnswer,
 } from "@/lib/practiceChains/types";
 import type { CatalogEntryRow } from "@/lib/practiceCatalog/types";
+import type { PracticeChainSegment } from "@/lib/practiceChains/discovery";
 
-type Props = { chain: PracticeCaseChainRecord; entries: CatalogEntryRow[] };
+type Props = {
+  chain: PracticeCaseChainRecord;
+  entries: CatalogEntryRow[];
+  discovery: { segments: PracticeChainSegment[]; attachmentCandidates: { sourceChainId: string; sourceStepId: string; sourceExitId: string; sourceExitPrompt: string | null; sourceExitLabel: string | null; target: PracticeChainSegment }[] };
+  approvals: { entries: { chain_id: string; step_id: string; approval_version: number }[]; connections: { source_chain_id: string; source_step_id: string; source_exit_id: string; target_chain_id: string; target_step_id: string; selection_version: number }[] };
+};
 
 function id(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
@@ -29,7 +35,7 @@ function issueLocation(path: string) {
 
 const CHAIN_END_VALUE = "__CHAIN_END__";
 
-export default function ChainEditor({ chain, entries }: Props) {
+export default function ChainEditor({ chain, entries, discovery, approvals }: Props) {
   const router = useRouter();
   const [name, setName] = useState(chain.name);
   const [status, setStatus] = useState(chain.status);
@@ -38,6 +44,7 @@ export default function ChainEditor({ chain, entries }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<{ path: string; message: string }[]>([]);
   const [saving, setSaving] = useState(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
   const readOnly = chain.status === "READY";
 
   const entryTitle = new Map(entries.map((entry) => [entry.id, `${entry.title} · Version ${entry.version}`]));
@@ -166,6 +173,28 @@ export default function ChainEditor({ chain, entries }: Props) {
 
   const visibleIssues = validateChainDefinition(definition, new Set(entries.map((entry) => entry.id)));
 
+  async function approve(body: Record<string, string>) {
+    setApprovalError(null);
+    const response = await fetch(`/api/practice-chains/${chain.id}/approvals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await response.json() as { ok?: boolean; error?: string };
+    if (!response.ok || !data.ok) {
+      setApprovalError(data.error ?? "Freigabe konnte nicht gespeichert werden.");
+      return;
+    }
+    router.refresh();
+  }
+
+  async function revoke(body: Record<string, string>) {
+    setApprovalError(null);
+    const response = await fetch(`/api/practice-chains/${chain.id}/approvals`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await response.json() as { ok?: boolean; error?: string };
+    if (!response.ok || !data.ok) {
+      setApprovalError(data.error ?? "Freigabe konnte nicht zurückgenommen werden.");
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <main style={{ padding: "2rem", maxWidth: "72rem", margin: "0 auto", display: "grid", gap: "1.25rem" }}>
       <header>
@@ -230,6 +259,36 @@ export default function ChainEditor({ chain, entries }: Props) {
               )}
           </article>
         ))}
+      </section>
+
+      <section className="card" style={{ padding: "1rem 1.25rem", display: "grid", gap: "0.75rem" }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Gefundene Teilstrecken und mögliche Anschlüsse</h2>
+          <p className="text-small text-muted" style={{ margin: "0.35rem 0 0" }}>
+            Diese Hinweise werden aus unveränderlichen READY-Ketten und konkreten Katalogversionen abgeleitet. Nichts wird automatisch verbunden oder ausgeführt.
+          </p>
+        </div>
+        {discovery.segments.filter((segment) => segment.chainId === chain.id).map((segment) => (
+          <div key={`${segment.chainId}:${segment.startStepId}`}>
+            <strong>{segment.start.title}</strong>
+            {segment.paths.map((path, index) => <div className="text-small text-muted" key={`${segment.startStepId}:${index}`}>Teilstrecke: {path.map((step) => step.title).join(" → ")}</div>)}
+          </div>
+        ))}
+        {discovery.segments.filter((segment) => segment.chainId === chain.id).map((segment) => (
+          <div key={`entry:${segment.chainId}:${segment.startStepId}`}>
+            <strong>Einstieg ab {segment.start.title}</strong>
+            {approvals.entries.some((approval) => approval.step_id === segment.startStepId) ? <><span className="text-small text-muted" style={{ marginLeft: "0.5rem" }}>freigegeben</span> <Link href={`/practice/chains/${chain.id}/run?startStepId=${encodeURIComponent(segment.startStepId)}`} className="text-small">Ab hier ausführen</Link> <button type="button" onClick={() => { const current = approvals.entries.find((approval) => approval.step_id === segment.startStepId); return current ? void revoke({ kind: "ENTRY", stepId: segment.startStepId, expectedApprovalVersion: String(current.approval_version) }) : undefined; }}>Freigabe zurücknehmen</button></> : <button type="button" onClick={() => void approve({ kind: "ENTRY", stepId: segment.startStepId })}>Als Einstieg freigeben</button>}
+          </div>
+        ))}
+        {discovery.attachmentCandidates.length === 0 ? <p className="text-small text-muted" style={{ margin: 0 }}>Keine passende READY-Teilstrecke aus einer anderen Kette gefunden.</p> : discovery.attachmentCandidates.map((candidate) => (
+          <div key={`${candidate.sourceChainId}:${candidate.sourceExitId}:${candidate.target.chainId}:${candidate.target.startStepId}`}>
+            <strong>Anschluss von {candidate.sourceChainId} ab {candidate.target.start.title}</strong>
+            <div className="text-small">{candidate.sourceExitPrompt ? `Frage: ${candidate.sourceExitPrompt} · ` : ""}{candidate.sourceExitLabel ?? "Unbekannter Endübergang"}</div>
+            <div className="text-small text-muted">{candidate.target.chainName} · Version {candidate.target.chainVersion} · {candidate.target.paths[0]?.map((step) => step.title).join(" → ")}</div>
+            {approvals.connections.some((approval) => approval.source_chain_id === candidate.sourceChainId && approval.source_exit_id === candidate.sourceExitId && approval.target_chain_id === candidate.target.chainId && approval.target_step_id === candidate.target.startStepId) ? <><span className="text-small text-muted">ausgewählt</span> <button type="button" onClick={() => { const current = approvals.connections.find((approval) => approval.source_chain_id === candidate.sourceChainId && approval.source_exit_id === candidate.sourceExitId); return current ? void revoke({ kind: "CONNECTION", sourceStepId: candidate.sourceStepId, sourceExitId: candidate.sourceExitId, expectedSelectionVersion: String(current.selection_version) }) : undefined; }}>Anschluss zurücknehmen</button></> : <button type="button" onClick={() => { const current = approvals.connections.find((approval) => approval.source_chain_id === candidate.sourceChainId && approval.source_exit_id === candidate.sourceExitId); return void approve({ kind: "CONNECTION", sourceChainId: candidate.sourceChainId, sourceStepId: candidate.sourceStepId, sourceExitId: candidate.sourceExitId, targetChainId: candidate.target.chainId, targetStepId: candidate.target.startStepId, ...(current ? { expectedSelectionVersion: String(current.selection_version) } : {}) }); }}>Anschluss auswählen</button>}
+          </div>
+        ))}
+        {approvalError && <p role="alert" style={{ color: "#a00", margin: 0 }}>{approvalError}</p>}
       </section>
 
       {(visibleIssues.length > 0 || issues.length > 0) && (

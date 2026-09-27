@@ -103,6 +103,7 @@ model Account {
   /// `owner_account_id` bleibt führend.
   memberships PracticeMembership[]
   password_reset_requests PasswordResetRequest[]
+  practice_case_chain_approval_events PracticeCaseChainApprovalEvent[] @relation("PracticeCaseChainApprovalEventActor")
 
 
   /// Option C (minimal): Standard-Praxis dieses Accounts. Reine
@@ -879,6 +880,9 @@ model Practice {
   digital_requests               DigitalRequest[]              @relation("DigitalRequestOwnerPractice")
   practice_catalog_entries       PracticeCatalogEntry[]        @relation("PracticeCatalogEntryPractice")
   practice_case_chains            PracticeCaseChain[]            @relation("PracticeCaseChainPractice")
+  practice_case_chain_entry_approvals PracticeCaseChainEntryApproval[] @relation("PracticeCaseChainEntryApprovalPractice")
+  practice_case_chain_connection_approvals PracticeCaseChainConnectionApproval[] @relation("PracticeCaseChainConnectionApprovalPractice")
+  practice_case_chain_approval_events PracticeCaseChainApprovalEvent[] @relation("PracticeCaseChainApprovalEventPractice")
   documentation_blocks            PracticeDocumentationBlock[] @relation("PracticeDocumentationBlockPractice")
   documentation_templates         PracticeDocumentationTemplate[] @relation("PracticeDocumentationTemplatePractice")
   legal_profile                  PracticeLegalProfile?
@@ -1196,6 +1200,9 @@ model PracticeCaseChain {
   source_chain_id String?
   source_chain    PracticeCaseChain? @relation("PracticeCaseChainRevisions", fields: [source_chain_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
   revisions       PracticeCaseChain[] @relation("PracticeCaseChainRevisions")
+  entry_approvals PracticeCaseChainEntryApproval[] @relation("PracticeCaseChainEntryApprovals")
+  connection_sources PracticeCaseChainConnectionApproval[] @relation("PracticeCaseChainConnectionSources")
+  connection_targets PracticeCaseChainConnectionApproval[] @relation("PracticeCaseChainConnectionTargets")
   definition Json
 
   created_at DateTime @default(now())
@@ -1204,6 +1211,70 @@ model PracticeCaseChain {
   @@index([practice_id, updated_at])
   @@index([practice_id, status])
   @@unique([source_chain_id])
+}
+
+/// Explizite, praxisgebundene Freigabe eines konkreten Schritts als Einstieg.
+/// Die Referenz auf eine READY-Kette ist versionsgebunden; alte Freigaben
+/// werden bei neuen Kettenversionen nicht automatisch übernommen.
+model PracticeCaseChainEntryApproval {
+  id          String   @id @default(cuid())
+  practice_id String
+  practice    Practice @relation("PracticeCaseChainEntryApprovalPractice", fields: [practice_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chain_id    String
+  chain       PracticeCaseChain @relation("PracticeCaseChainEntryApprovals", fields: [chain_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  step_id     String
+  approval_version Int @default(1)
+  revoked_at  DateTime?
+  created_at  DateTime @default(now())
+
+  @@unique([practice_id, chain_id, step_id])
+  @@index([practice_id, chain_id])
+}
+
+/// Explizite Auswahl einer vorgeschlagenen Anschlussstrecke zwischen zwei
+/// konkreten READY-Kettenversionen. Keine automatische Runner-Navigation.
+model PracticeCaseChainConnectionApproval {
+  id              String   @id @default(cuid())
+  practice_id     String
+  practice        Practice @relation("PracticeCaseChainConnectionApprovalPractice", fields: [practice_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  source_chain_id String
+  source_chain    PracticeCaseChain @relation("PracticeCaseChainConnectionSources", fields: [source_chain_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  source_step_id  String
+  source_exit_id  String
+  target_chain_id String
+  target_chain    PracticeCaseChain @relation("PracticeCaseChainConnectionTargets", fields: [target_chain_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  target_step_id  String
+  selection_version Int @default(1)
+  revoked_at      DateTime?
+  created_at      DateTime @default(now())
+
+  @@unique([practice_id, source_chain_id, source_exit_id])
+  @@index([practice_id, source_chain_id, source_exit_id])
+}
+
+/// Append-only Protokoll der expliziten Einstiegs- und Anschlussentscheidungen.
+/// Die Approval-Modelle oben bleiben der aktuelle, widerrufbare Zustand.
+model PracticeCaseChainApprovalEvent {
+  id                String   @id @default(cuid())
+  practice_id       String
+  practice          Practice @relation("PracticeCaseChainApprovalEventPractice", fields: [practice_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  actor_account_id  String
+  actor_account     Account @relation("PracticeCaseChainApprovalEventActor", fields: [actor_account_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  approval_kind     String
+  action            String
+  chain_id          String?
+  step_id           String?
+  source_chain_id   String?
+  source_step_id    String?
+  source_exit_id    String?
+  target_chain_id   String?
+  target_step_id    String?
+  selection_version Int?
+  created_at        DateTime @default(now())
+
+  @@index([practice_id, created_at])
+  @@index([practice_id, source_chain_id, source_step_id, created_at])
+  @@index([actor_account_id, created_at])
 }
 
 /// Datensparsame Betriebsstatuskontrolle für den automatischen Cleanup.

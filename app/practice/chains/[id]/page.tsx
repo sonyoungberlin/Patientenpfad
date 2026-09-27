@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requirePracticeCatalogAccessFromCookies } from "@/lib/authz";
 import { listPublishedCatalogEntries } from "@/lib/practiceCatalog/query";
-import { getPracticeChain } from "@/lib/practiceChains/service";
+import { discoverPracticeChainConnections, getPracticeChain, listPracticeChainApprovals } from "@/lib/practiceChains/service";
 import ChainEditor from "../ChainEditor";
 
 export default async function PracticeChainDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,5 +13,9 @@ export default async function PracticeChainDetailPage({ params }: { params: Prom
     listPublishedCatalogEntries(account.current_practice.id),
   ]);
   if (!chain) notFound();
-  return <ChainEditor chain={chain} entries={entries} />;
+  const [discovery, approvals] = await Promise.all([
+    discoverPracticeChainConnections(account.current_practice.id, chain.id),
+    listPracticeChainApprovals(account.current_practice.id, chain.id),
+  ]);
+  return <ChainEditor chain={chain} entries={entries} discovery={discovery} approvals={approvals} />;
 }
