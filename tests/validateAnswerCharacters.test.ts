@@ -13,6 +13,7 @@
 
 import {
   ALLOWED_ANSWER_CHARACTERS_REGEX,
+  ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN,
   ANSWER_CHARACTERS_ERROR_MESSAGE,
   answerCharactersErrorMessage,
   isAnswerTextAllowed,
@@ -23,14 +24,20 @@ import { VACCINATION_REVIEW_QUESTION_CATALOG } from "@/lib/questionnaire/vaccina
 describe("ALLOWED_ANSWER_CHARACTERS_REGEX", () => {
   it("akzeptiert lateinische Buchstaben, Umlaute, ß, Ziffern und Satzzeichen", () => {
     const allowed = [
-      "Mustermann",
-      "Müller-Lüdenscheidt",
-      "Straße 12",
-      "Köln",
-      "Heidelberger Straße 3a, 12435 Berlin",
-      "0171/123456",
-      "patient@example.com",
-      "Hallo, wie geht's? (Test) +49 30 1234 & Co.",
+      "Prüfung",
+      "Überweisung",
+      "größer",
+      "Straße",
+      "ca. 6–8 Wochen nach Prüfung der Unterlagen",
+      "Mo–Fr 08:00–12:30 Uhr",
+      "Müller",
+      "Rücksprache mit Ärztin/Arzt",
+      "patient@example.de",
+      "https://www.beispiel.de/termin?id=123",
+      "RR 120/80 mmHg",
+      "Müller-Lüdenscheidt, 0171/123456, 6–8 Wochen, 120 mmHg",
+      "„Bitte prüfen“ – Rücksprache mit Ärztin/Arzt.",
+      "[Info] C:\\Praxis\\Befund + 20% = 37° < 40° & €",
       "",
     ];
     for (const v of allowed) {
@@ -64,6 +71,19 @@ describe("ALLOWED_ANSWER_CHARACTERS_REGEX", () => {
   it("blockiert Emojis", () => {
     expect(ALLOWED_ANSWER_CHARACTERS_REGEX.test("😀")).toBe(false);
     expect(ALLOWED_ANSWER_CHARACTERS_REGEX.test("Hallo 👋")).toBe(false);
+  });
+
+  it("blockiert Steuerzeichen und nicht explizit freigegebene Unicode-Schriften", () => {
+    expect(ALLOWED_ANSWER_CHARACTERS_REGEX.test("Hallo\u0000Welt")).toBe(false);
+    expect(ALLOWED_ANSWER_CHARACTERS_REGEX.test("Patient ń")).toBe(false);
+    expect(ALLOWED_ANSWER_CHARACTERS_REGEX.test("Patient Ж")).toBe(false);
+  });
+
+  it("hält das HTML-Pattern mit der Serverklasse synchron", () => {
+    const htmlPattern = new RegExp(`^(?:${ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN})$`);
+    expect(htmlPattern.test("ca. 6–8 Wochen nach Prüfung der Unterlagen")).toBe(true);
+    expect(htmlPattern.test("https://www.beispiel.de/termin?id=123")).toBe(true);
+    expect(htmlPattern.test("Hallo 😀")).toBe(false);
   });
 });
 

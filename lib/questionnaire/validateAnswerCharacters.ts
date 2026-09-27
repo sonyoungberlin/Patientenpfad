@@ -29,12 +29,13 @@ import type { QuestionnaireLanguage } from "./i18n";
  *
  * Erlaubt:
  *   - lateinische Buchstaben A–Z, a–z
- *   - deutsche Umlaute Ä Ö Ü ä ö ü
- *   - ß
+ *   - lateinische Zeichen aus dem europäischen Latin-1-Bereich, einschließlich
+ *     deutscher Umlaute Ä Ö Ü ä ö ü und ß
  *   - Ziffern 0–9
  *   - Leerzeichen, Tabulator, Zeilenumbrüche (\r, \n) — letztere praktisch
  *     nur in Textareas; in Single-Line-Inputs harmlos
- *   - übliche Satzzeichen: . , ; : ! ? - / ( ) ' " + & @
+ *   - übliche Satz- und Praxiszeichen: . , ; : ! ? - – — / \\ ( ) [ ]
+ *     ' ’ " „ “ ” ‚ ‘ « » + & @ # % = _ ~ < > ° € µ ² ³
  *
  * Nicht erlaubt:
  *   - kyrillische, arabische, CJK- und sonstige nicht-lateinische Zeichen
@@ -44,7 +45,7 @@ import type { QuestionnaireLanguage } from "./i18n";
  * erfolgen, damit nicht versehentlich neue Schriftsysteme zugelassen werden.
  */
 export const ALLOWED_ANSWER_CHARACTERS_REGEX =
-  /^[A-Za-zÄÖÜäöüß0-9 \t\r\n.,;:!?\-/()'"+&@]*$/;
+  /^[A-Za-zÀ-ÖØ-öø-ÿ0-9 \t\r\n.,;:!?/\\()[\]+'’"„“”‚‘«»+&@#%=_~<>°€µ²³\-–—]*$/;
 
 /**
  * HTML5-`pattern`-Attribut für `<input type="text">`-Felder.
@@ -57,7 +58,7 @@ export const ALLOWED_ANSWER_CHARACTERS_REGEX =
  *     ohnehin nicht.
  */
 export const ALLOWED_ANSWER_CHARACTERS_HTML_PATTERN =
-  "[A-Za-zÄÖÜäöüß0-9 .,;:!?\\-/()'\"+&@]*";
+  "[A-Za-zÀ-ÖØ-öø-ÿ0-9 .,;:!?/\\\\()[\\]+’'\"„“”‚‘«»+&@#%=_~<>°€µ²³\\-–—]*";
 
 /** Lokalisierte Fehlermeldung pro Sprache. */
 export const ANSWER_CHARACTERS_ERROR_MESSAGE: Record<
