@@ -528,6 +528,17 @@ function normalizeRepeatableFieldDocumentation(
   };
 }
 
+function normalizeRepeatableFieldCondition(
+  field: RepeatableGroupFieldDef,
+  sourceFields: Map<string, { type: string }>,
+): RepeatableGroupFieldDef {
+  if (!field.conditionalOn || field.conditionalValue !== undefined || field.conditionalValues !== undefined) {
+    return field;
+  }
+  if (sourceFields.get(field.conditionalOn)?.type !== "yes_no") return field;
+  return { ...field, conditionalValue: "ja" };
+}
+
 export function buildPracticeDocumentationBlockDefinition(
   input: PracticeDocumentationBlockInput,
   existing?: PracticeDocumentationBlockDefinition,
@@ -553,6 +564,7 @@ export function buildPracticeDocumentationBlockDefinition(
   });
   const allQuestions = [primaryQuestion, ...additionalQuestions];
   if (input.blockType === "repeatable") {
+    const sourceFields = new Map((input.additionalFields ?? []).flatMap((field) => field.id ? [[field.id, field] as const] : []));
     const groupSchema: RepeatableGroupFieldDef[] = (input.additionalFields ?? []).map((field, index) => {
       const fieldId = field.id ?? `field_${index}`;
       const mapSegment = (segment: PracticeDocumentationSegmentInput): RepeatableDocumentationSegment => {
@@ -565,7 +577,7 @@ export function buildPracticeDocumentationBlockDefinition(
           segments: segment.segments.map(mapSegment),
         };
       };
-      return normalizeRepeatableFieldDocumentation({
+      return normalizeRepeatableFieldCondition(normalizeRepeatableFieldDocumentation({
         key: fieldId,
         label: field.label,
         type: field.type,
@@ -578,7 +590,7 @@ export function buildPracticeDocumentationBlockDefinition(
         ...(field.showForFieldId ? { conditionalOn: field.showForFieldId } : {}),
         ...(field.showForOptionValues?.length === 1 ? { conditionalValue: field.showForOptionValues[0] } : {}),
         ...(field.showForOptionValues && field.showForOptionValues.length > 1 ? { conditionalValues: field.showForOptionValues } : {}),
-      });
+      }), sourceFields);
     });
     const repeatableQuestion: QuestionDefinition = {
       ...primaryQuestion,
@@ -726,10 +738,16 @@ export function resolvePracticeDocumentationBlocks(
       ...parsedDefinition,
       questions: parsedDefinition.questions.map((question) => question.type !== "repeatable_group"
         ? question
-        : {
-            ...question,
-            groupSchema: question.groupSchema?.map(normalizeRepeatableFieldDocumentation),
-          }),
+        : (() => {
+            const sourceFields = new Map((question.groupSchema ?? []).map((field) => [field.key, field] as const));
+            return {
+              ...question,
+              groupSchema: question.groupSchema?.map((field) => normalizeRepeatableFieldCondition(
+                normalizeRepeatableFieldDocumentation(field),
+                sourceFields,
+              )),
+            };
+          })()),
     };
   });
   const blocks = Object.fromEntries(parsed.map((item) => [item.block.id, item.block]));

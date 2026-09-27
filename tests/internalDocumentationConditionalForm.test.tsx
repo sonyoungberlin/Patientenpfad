@@ -150,6 +150,43 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
     await cleanup(view.root, view.container);
   });
 
+  it("normalisiert fehlende yes_no-Bedingungswerte und zeigt mehrere Folgefelder korrekt", async () => {
+    const input = {
+      title: "Kontaktmöglichkeiten",
+      blockType: "repeatable" as const,
+      additionalFields: [
+        { id: "phoneAvailable", label: "Telefonisch erreichbar?", type: "yes_no" as const, required: false },
+        { id: "phoneNumber", label: "Telefonnummer", type: "text" as const, required: false, showForFieldId: "phoneAvailable", showForOptionValues: [] },
+        { id: "phoneHours", label: "Erreichbar von bis", type: "text" as const, required: false, showForFieldId: "phoneAvailable", showForOptionValues: [] },
+      ],
+    };
+    const runtime = buildRuntime(input);
+    const [source, dependent, secondDependent] = runtime.definition.questions[0].groupSchema ?? [];
+    expect(dependent).toEqual(expect.objectContaining({ conditionalOn: source?.key, conditionalValue: "ja" }));
+    expect(secondDependent).toEqual(expect.objectContaining({ conditionalOn: source?.key, conditionalValue: "ja" }));
+    const legacyDefinition = structuredClone(runtime.definition);
+    for (const field of legacyDefinition.questions[0].groupSchema ?? []) {
+      if (field.conditionalOn) delete field.conditionalValue;
+    }
+    const resolvedLegacy = resolvePracticeDocumentationBlocks([{ definition: legacyDefinition }]);
+    expect(resolvedLegacy[0].questions[0].groupSchema?.[1].conditionalValue).toBe("ja");
+
+    const view = await renderInternalForm(input);
+    await act(async () => view.container.querySelector<HTMLButtonElement>("[data-rg-add]")!.click());
+    expect(view.container.querySelector(`[data-rg-yesno="0:${source?.key}:ja"]`)).not.toBeNull();
+    expect(view.container.querySelector(`[data-rg-yesno="0:${source?.key}:nein"]`)).not.toBeNull();
+    expect(view.container.querySelector(`[data-rg-field="0:${dependent?.key}"]`)).toBeNull();
+
+    await act(async () => view.container.querySelector<HTMLButtonElement>(`[data-rg-yesno="0:${source?.key}:ja"]`)!.click());
+    expect(view.container.querySelector(`[data-rg-field="0:${dependent?.key}"]`)).not.toBeNull();
+    expect(view.container.querySelector(`[data-rg-field="0:${secondDependent?.key}"]`)).not.toBeNull();
+
+    await act(async () => view.container.querySelector<HTMLButtonElement>(`[data-rg-yesno="0:${source?.key}:nein"]`)!.click());
+    expect(view.container.querySelector(`[data-rg-field="0:${dependent?.key}"]`)).toBeNull();
+    expect(view.container.querySelector(`[data-rg-field="0:${secondDependent?.key}"]`)).toBeNull();
+    await cleanup(view.root, view.container);
+  });
+
   it("rendert einen Month-Baustein im internen Formular, speichert YYYY-MM und gibt MM/YYYY aus", async () => {
     const view = await renderInternalForm({
       title: "Behandlungsbeginn hausärztlich",
@@ -175,6 +212,21 @@ describe("produktives internes Dokumentationsformular – Conditional Rules", ()
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).answers[question.id]).toBe("2024-05");
     expect(formatDocumentationSegmentAnswer(question, "2024-05")).toBe("05/2024");
+    await cleanup(view.root, view.container);
+  });
+
+  it("behält Versorgungsform- und Kostenträgerwerte im produktiven Formular", async () => {
+    const view = await renderInternalForm({
+      title: "Versorgungssetting / Kostenträger",
+      blockType: "list",
+      options: [
+        { value: "ambulant", label: "ambulant", documentationText: "ambulant" },
+        { value: "GKV", label: "GKV", documentationText: "GKV" },
+      ],
+    });
+
+    expect(view.container.textContent).toContain("ambulant");
+    expect(view.container.textContent).toContain("GKV");
     await cleanup(view.root, view.container);
   });
 });
