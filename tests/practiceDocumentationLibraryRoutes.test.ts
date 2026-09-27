@@ -18,6 +18,7 @@ import { POST } from "@/app/api/practice/documentation-library/route";
 import { PATCH } from "@/app/api/practice/documentation-library/[id]/route";
 import {
   buildPracticeDocumentationBlockDefinition,
+  removePracticeDocumentationOption,
   validatePracticeDocumentationBlock,
 } from "@/lib/practice/documentationBlocks";
 
@@ -113,6 +114,96 @@ describe("Praxis-Dokumentationsbibliothek API", () => {
         { kind: "answerRef", questionId: "to" },
         { kind: "text", text: " reiseunfähig." },
       ],
+    });
+  });
+
+  it("entfernt eine Select-Option und erhält Reihenfolge und übrige Werte", () => {
+    const result = removePracticeDocumentationOption({
+      additionalFields: [{
+        id: "source",
+        label: "Quelle",
+        type: "select",
+        options: [
+          { value: "a", label: "A" },
+          { value: "b", label: "B" },
+          { value: "c", label: "C" },
+        ],
+      }],
+    }, "source", "b");
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        additionalFields: [{
+          id: "source",
+          label: "Quelle",
+          type: "select",
+          options: [{ value: "a", label: "A" }, { value: "c", label: "C" }],
+        }],
+      },
+    });
+  });
+
+  it("entfernt eine primäre Select-Option ohne Zusatzfelder", () => {
+    const result = removePracticeDocumentationOption({
+      options: [
+        { value: "first", label: "Erste", documentationText: "Erste" },
+        { value: "second", label: "Zweite", documentationText: "Zweite" },
+      ],
+      additionalFields: [],
+    }, "__primary", "first");
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { options: [{ value: "second", label: "Zweite" }] },
+    });
+  });
+
+  it("entfernt eine Multi-Select-Option und lässt keine leere Optionsliste zu", () => {
+    const state = {
+      additionalFields: [{
+        id: "source",
+        label: "Mehrfachauswahl",
+        type: "multi_select" as const,
+        options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
+      }],
+    };
+
+    const removed = removePracticeDocumentationOption(state, "source", "a");
+    expect(removed.ok).toBe(true);
+    if (removed.ok) expect(removed.value.additionalFields?.[0].options).toEqual([{ value: "b", label: "B" }]);
+    expect(removePracticeDocumentationOption(state, "source", "a")).toMatchObject({
+      ok: true,
+      value: { additionalFields: [{ options: [{ value: "b", label: "B" }] }] },
+    });
+    expect(removePracticeDocumentationOption({
+      additionalFields: [{ id: "source", label: "Mehrfachauswahl", type: "multi_select", options: [{ value: "a", label: "A" }] }],
+    }, "source", "a")).toEqual({ ok: false, error: "Eine Auswahl benötigt mindestens eine Option." });
+  });
+
+  it("verhindert das Entfernen einer Option mit abhängiger Bedingung", () => {
+    expect(removePracticeDocumentationOption({
+      additionalFields: [
+        { id: "source", label: "Quelle", type: "select", options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] },
+        { id: "dependent", label: "Weitere Angabe", type: "text", showForFieldId: "source", showForOptionValues: ["a"] },
+      ],
+    }, "source", "a")).toEqual({
+      ok: false,
+      error: "Die Option „a“ kann nicht entfernt werden, weil Zusatzangabe „Weitere Angabe“ davon abhängt.",
+    });
+  });
+
+  it("verhindert das Entfernen einer Option mit bedingtem Ausgabesegment", () => {
+    expect(removePracticeDocumentationOption({
+      options: [
+        { value: "a", label: "A", documentationText: "A" },
+        { value: "b", label: "B", documentationText: "B" },
+      ],
+      additionalFields: [],
+      documentationSegments: [{ kind: "conditional", fieldId: "__primary", optionValue: "a", segments: [{ kind: "text", text: "A gewählt" }] }],
+    }, "__primary", "a")).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("bedingte Ausgaberegel"),
     });
   });
 

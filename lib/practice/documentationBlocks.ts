@@ -106,6 +106,68 @@ export type PracticeDocumentationBlockInput = {
   allowedTemplateCategories?: PracticeDocumentationTemplateCategory[];
 };
 
+export type PracticeDocumentationOptionEditorState = Pick<
+  PracticeDocumentationBlockInput,
+  "options" | "additionalFields" | "documentationSegments"
+>;
+
+function segmentReferencesOption(
+  segments: PracticeDocumentationSegmentInput[] | undefined,
+  fieldId: string,
+  optionValue: string,
+): boolean {
+  return segments?.some((segment) => segment.kind === "conditional" && (
+    (segment.fieldId === fieldId && segment.optionValue === optionValue) ||
+    segmentReferencesOption(segment.segments, fieldId, optionValue)
+  )) ?? false;
+}
+
+export function removePracticeDocumentationOption(
+  state: PracticeDocumentationOptionEditorState,
+  sourceFieldId: string,
+  optionValue: string,
+): { ok: true; value: PracticeDocumentationOptionEditorState } | { ok: false; error: string } {
+  const sourceField = sourceFieldId === "__primary"
+    ? undefined
+    : state.additionalFields?.find((field) => field.id === sourceFieldId);
+  const sourceOptions = sourceFieldId === "__primary"
+    ? state.options ?? []
+    : sourceField?.options ?? [];
+  const optionIndex = sourceOptions.findIndex((option) => (option.value ?? option.label) === optionValue);
+  if (optionIndex < 0) return { ok: false, error: "Die Auswahloption konnte nicht gefunden werden." };
+  if (sourceOptions.length <= 1) return { ok: false, error: "Eine Auswahl benötigt mindestens eine Option." };
+
+  const dependentField = state.additionalFields?.find((field) => (
+    (field.showForFieldId ?? "__primary") === sourceFieldId &&
+    (field.showForOptionValues ?? []).includes(optionValue)
+  ));
+  const survivingOptionSegments = sourceFieldId === "__primary"
+    ? (state.options ?? []).filter((_, index) => index !== optionIndex).some((option) => segmentReferencesOption(option.documentationSegments, sourceFieldId, optionValue))
+    : false;
+  const dependentSegment = survivingOptionSegments ||
+    segmentReferencesOption(state.documentationSegments, sourceFieldId, optionValue) ||
+    (state.additionalFields ?? []).some((field) => segmentReferencesOption(field.documentationSegments, sourceFieldId, optionValue));
+  if (dependentField || dependentSegment) {
+    const dependency = dependentField
+      ? `Zusatzangabe „${dependentField.label}“`
+      : "eine bedingte Ausgaberegel";
+    return { ok: false, error: `Die Option „${optionValue}“ kann nicht entfernt werden, weil ${dependency} davon abhängt.` };
+  }
+
+  if (sourceFieldId === "__primary") {
+    return { ok: true, value: { ...state, options: (state.options ?? []).filter((_, index) => index !== optionIndex) } };
+  }
+  return {
+    ok: true,
+    value: {
+      ...state,
+      additionalFields: (state.additionalFields ?? []).map((field) => field.id === sourceFieldId
+        ? { ...field, options: (field.options ?? []).filter((_, index) => index !== optionIndex) }
+        : field),
+    },
+  };
+}
+
 type ValidationResult =
   | { ok: true; value: PracticeDocumentationBlockInput }
   | { ok: false; error: string };

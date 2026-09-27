@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { removePracticeDocumentationOption } from "@/lib/practice/documentationBlocks";
 import type {
   PracticeDocumentationBlockDefinition,
   PracticeDocumentationBlockType,
@@ -253,6 +254,16 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
       ...current,
       options: current.options.map((option, optionIndex) => optionIndex === index ? { ...option, ...update } : option),
     }));
+  }
+
+  function removeOption(sourceFieldId: string, optionValue: string) {
+    const result = removePracticeDocumentationOption(draft, sourceFieldId, optionValue);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setDraft((current) => ({ ...current, ...result.value }));
+    setError(null);
   }
 
   function updateField(index: number, update: Partial<PracticeDocumentationAdditionalFieldInput>) {
@@ -510,7 +521,7 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
                 <button type="button" onClick={() => updateOption(index, { documentationSegments: [...(option.documentationSegments ?? []), { kind: "text", text: "" }] })} disabled={busy}>Segment hinzufügen</button>
                 <button type="button" onClick={() => updateOption(index, { documentationSegments: [...(option.documentationSegments ?? []), { kind: "conditional", fieldId: "__primary", optionValue: draft.options[0]?.value ?? draft.options[0]?.label ?? "", segments: [{ kind: "text", text: "" }] }] })} disabled={busy}>Bedingte Variante hinzufügen</button>
               </fieldset>
-              {draft.options.length > 1 && <button type="button" onClick={() => setDraft((current) => ({ ...current, options: current.options.filter((_, optionIndex) => optionIndex !== index) }))} disabled={busy}>Option entfernen</button>}
+              {draft.options.length > 1 && <button type="button" onClick={() => removeOption("__primary", option.value ?? option.label)} disabled={busy}>Option entfernen</button>}
             </div>)}
             <button type="button" onClick={() => setDraft((current) => ({ ...current, options: [...current.options, { label: "", documentationText: "" }] }))} disabled={busy}>Option hinzufügen</button>
           </fieldset>
@@ -521,7 +532,7 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
             <label>Feldbezeichnung<input value={field.label} onChange={(event) => updateField(index, { label: event.target.value })} required disabled={busy} /></label>
             {draft.blockType === "repeatable" && <label>Instanz-Ausgabetext (optional)<textarea value={field.documentationText ?? ""} onChange={(event) => updateField(index, { documentationText: event.target.value })} rows={2} disabled={busy} /></label>}
             <label>Feldtyp<select value={field.type} onChange={(event) => updateField(index, { type: event.target.value as PracticeDocumentationAdditionalFieldInput["type"], options: event.target.value === "select" || event.target.value === "multi_select" ? (field.options ?? [newFieldOption()]) : undefined })} disabled={busy}><option value="text">Kurzer Text</option><option value="textarea">Längerer Text</option><option value="date">Datum</option><option value="time">Uhrzeit</option><option value="month">Monat/Jahr</option><option value="number">Zahl</option><option value="select">Auswahl</option><option value="multi_select">Mehrfachauswahl</option><option value="yes_no">Ja/Nein</option><option value="checkbox">Kontrollfeld</option></select></label>
-            {(field.type === "select" || field.type === "multi_select") && <fieldset><legend>Auswahloptionen</legend>{(field.options ?? []).map((choice, choiceIndex) => <div key={choice.value} style={{ display: "flex", gap: "0.4rem" }}><input value={choice.label} placeholder="Bezeichnung" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, label: event.target.value } : candidate) })} disabled={busy} /><input value={choice.value} placeholder="Wert" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, value: event.target.value } : candidate) })} disabled={busy} /></div>)}<button type="button" onClick={() => updateField(index, { options: [...(field.options ?? []), newFieldOption()] })} disabled={busy}>Auswahloption hinzufügen</button></fieldset>}
+            {(field.type === "select" || field.type === "multi_select") && <fieldset><legend>Auswahloptionen</legend>{(field.options ?? []).map((choice, choiceIndex) => <div key={choice.value} style={{ display: "flex", gap: "0.4rem" }}><input value={choice.label} placeholder="Bezeichnung" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, label: event.target.value } : candidate) })} disabled={busy} /><input value={choice.value} placeholder="Wert" onChange={(event) => updateField(index, { options: (field.options ?? []).map((candidate, currentIndex) => currentIndex === choiceIndex ? { ...candidate, value: event.target.value } : candidate) })} disabled={busy} />{(field.options ?? []).length > 1 && <button type="button" onClick={() => removeOption(field.id ?? "", choice.value)} disabled={busy}>Option entfernen</button>}</div>)}<button type="button" onClick={() => updateField(index, { options: [...(field.options ?? []), newFieldOption()] })} disabled={busy}>Auswahloption hinzufügen</button></fieldset>}
             <fieldset><legend>Anzeigen wenn</legend><select value={field.showForFieldId ?? "__primary"} onChange={(event) => updateField(index, { showForFieldId: event.target.value === "__primary" ? undefined : event.target.value, showForOptionValues: [] })} disabled={busy}><option value="__primary">Primäre Auswahl</option>{draft.additionalFields.slice(0, index).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.label || "Unbenannte Zusatzangabe"}</option>)}</select>{(field.showForFieldId ? draft.additionalFields.find((candidate) => candidate.id === field.showForFieldId)?.options ?? [] : (draft.blockType === "selection" || draft.blockType === "list" ? draft.options : [])).map((option) => { const value = typeof option === "string" ? option : (option.value ?? option.label); const label = typeof option === "string" ? option : option.label; const selectedValues = field.showForOptionValues ?? []; return <label key={value} style={{ display: "block" }}><input type="checkbox" checked={selectedValues.includes(value)} onChange={(event) => updateField(index, { showForOptionValues: event.target.checked ? [...selectedValues, value] : selectedValues.filter((candidate) => candidate !== value) })} disabled={busy} /> {label || "Unbenannte Option"}</label>; })}</fieldset>
             <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={field.required === true} onChange={(event) => updateField(index, { required: event.target.checked })} disabled={busy} />Pflichtangabe, wenn sichtbar</label>
             <button type="button" onClick={() => setDraft((current) => ({ ...current, additionalFields: current.additionalFields.filter((_, fieldIndex) => fieldIndex !== index) }))} disabled={busy}>Zusatzangabe entfernen</button>
