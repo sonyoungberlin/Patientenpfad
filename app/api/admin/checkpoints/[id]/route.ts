@@ -16,7 +16,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/authz";
-import { upsertLibraryCheckpoint, getCheckpointFromLib } from "@/lib/practiceProcesses";
+import { deleteLibraryCheckpoint, upsertLibraryCheckpoint, getCheckpointFromLib } from "@/lib/practiceProcesses";
 import { prisma } from "@/lib/prisma";
 import type { PracticeCheckpointAnchor } from "@/lib/practiceProcesses";
 
@@ -124,4 +124,21 @@ export async function PUT(
   }
 
   return NextResponse.json({ ok: true, checkpoint });
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { error } = await requireAdmin(req);
+  if (error) return error;
+
+  const result = await deleteLibraryCheckpoint((await params).id);
+  if (result.status === "not_found") {
+    return NextResponse.json({ ok: false, error: "Checkpoint nicht gefunden." }, { status: 404 });
+  }
+  if (result.status === "conflict") {
+    return NextResponse.json({ ok: false, error: result.error, dependencies: result.dependencies }, { status: 409 });
+  }
+  return NextResponse.json({ ok: true });
 }

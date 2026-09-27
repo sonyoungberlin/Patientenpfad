@@ -39,8 +39,12 @@ async function clickEdit(container: HTMLElement, label: string) {
 
 describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
   let scrollIntoView: jest.Mock;
+  let originalConfirm: typeof window.confirm;
+  let originalFetch: typeof global.fetch;
 
   beforeEach(() => {
+    originalConfirm = window.confirm;
+    originalFetch = global.fetch;
     scrollIntoView = jest.fn();
     Object.defineProperty(globalThis, "structuredClone", {
       configurable: true,
@@ -53,7 +57,56 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
   });
 
   afterEach(() => {
+    window.confirm = originalConfirm;
+    global.fetch = originalFetch;
     document.body.replaceChildren();
+  });
+
+  it("löscht deaktivierte Vorlagen erst nach Bestätigung", async () => {
+    window.confirm = jest.fn().mockReturnValue(true);
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) }) as jest.Mock;
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <DocumentationTemplatesClient
+          initialTemplates={[{
+            id: "template-1",
+            name: "Archivierte Vorlage",
+            isActive: false,
+            blockLayout: [{ blockId: "block-1", section: 1, order: 0 }],
+          }]}
+          availableBlocks={[{ id: "block-1", title: "Kontakt" }]}
+        />,
+      );
+    });
+
+    await clickEdit(container, "Löschen");
+
+    expect(window.confirm).toHaveBeenCalledWith("Vorlage „Archivierte Vorlage“ wirklich dauerhaft löschen?");
+    expect(global.fetch).toHaveBeenCalledWith("/api/practice/documentation-templates/template-1", { method: "DELETE" });
+    await act(async () => root.unmount());
+  });
+
+  it("zeigt Löschen bei aktiven Vorlagen erst nach dem Deaktivieren", async () => {
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <DocumentationTemplatesClient
+          initialTemplates={[{
+            id: "template-1",
+            name: "Aktive Vorlage",
+            isActive: true,
+            blockLayout: [{ blockId: "block-1", section: 1, order: 0 }],
+          }]}
+          availableBlocks={[{ id: "block-1", title: "Kontakt" }]}
+        />,
+      );
+    });
+    expect(Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Löschen")).toBe(false);
+    expect(container.textContent).toContain("Deaktivieren");
+    await act(async () => root.unmount());
   });
 
   it("öffnet Vorlagen inline, scrollt zum Editor und fokussiert den Namen", async () => {
@@ -138,6 +191,32 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
     });
     expect(Array.from(container.querySelectorAll("h2")).some((heading) => heading.textContent === "Baustein anlegen")).toBe(true);
 
+    await act(async () => root.unmount());
+  });
+
+  it("löscht einen Baustein erst nach Bestätigung", async () => {
+    window.confirm = jest.fn().mockReturnValue(true);
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) }) as jest.Mock;
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Kontakt",
+      blockType: "text",
+      text: "Telefonnummer",
+    });
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<DocumentationLibraryClient initialBlocks={[{
+        id: "block-1",
+        title: "Kontakt",
+        definition,
+        isActive: true,
+      }]} />);
+    });
+
+    await clickEdit(container, "Löschen");
+
+    expect(window.confirm).toHaveBeenCalledWith("Baustein „Kontakt“ wirklich dauerhaft löschen?");
+    expect(global.fetch).toHaveBeenCalledWith("/api/practice/documentation-library/block-1", { method: "DELETE" });
     await act(async () => root.unmount());
   });
 

@@ -11,6 +11,10 @@ import type {
 import type { ConditionalRule, ConditionOperator } from "@/lib/questionnaire/conditionalLogic";
 import { buildFrozenBlocks, type FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { getQuestionOptionValue } from "@/lib/questionnaire/questionOptions";
+import {
+  configurationDeleteConflict,
+  type ConfigurationDeleteResult,
+} from "@/lib/configurationDeletion";
 
 export const PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION = 1;
 export const PRACTICE_DOCUMENTATION_BLOCK_TITLE_MAX_LENGTH = 120;
@@ -798,4 +802,33 @@ export async function updatePracticeDocumentationBlock(
     },
   });
   return "updated";
+}
+
+export async function deletePracticeDocumentationBlock(
+  practiceId: string,
+  id: string,
+): Promise<ConfigurationDeleteResult> {
+  const existing = await prisma.practiceDocumentationBlock.findFirst({
+    where: { id, practice_id: practiceId },
+    select: { id: true },
+  });
+  if (!existing) return { status: "not_found" };
+
+  const templates = await prisma.practiceDocumentationTemplate.findMany({
+    where: { practice_id: practiceId },
+    select: { id: true, name: true, block_layout: true },
+  });
+  const dependencies = templates
+    .filter((template) => Array.isArray(template.block_layout) && template.block_layout.some(
+      (placement) => isRecord(placement) && placement.blockId === id,
+    ))
+    .map((template) => ({ id: template.id, name: template.name }));
+  if (dependencies.length > 0) {
+    return configurationDeleteConflict("Der Baustein", "Vorlagen", dependencies);
+  }
+
+  const deleted = await prisma.practiceDocumentationBlock.deleteMany({
+    where: { id, practice_id: practiceId },
+  });
+  return deleted.count === 1 ? { status: "deleted" } : { status: "not_found" };
 }

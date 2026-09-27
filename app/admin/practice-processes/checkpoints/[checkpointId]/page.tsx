@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import { getCheckpointFromLib } from "@/lib/practiceProcesses";
+import { getCheckpointFromLib, hasPersistedLibraryCheckpoint } from "@/lib/practiceProcesses";
 import CheckpointDetailClient from "./CheckpointDetailClient";
 
 export default async function AdminCheckpointDetailPage({
@@ -14,7 +14,10 @@ export default async function AdminCheckpointDetailPage({
   }
 
   const { checkpointId } = await params;
-  const checkpoint = await getCheckpointFromLib(checkpointId);
+  const [checkpoint, canDelete] = await Promise.all([
+    getCheckpointFromLib(checkpointId),
+    hasPersistedLibraryCheckpoint(checkpointId),
+  ]);
   if (!checkpoint) {
     notFound();
   }
@@ -28,6 +31,7 @@ export default async function AdminCheckpointDetailPage({
         orientationAnchors: [...(checkpoint.orientationAnchors ?? [])],
       }}
       fixedId={checkpoint.id}
+      canDelete={canDelete}
     />
   );
 }

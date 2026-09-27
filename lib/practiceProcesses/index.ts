@@ -12,7 +12,9 @@ export type { PracticeProcessTransferV1 } from "./processTransfer";
 export { buildPracticeProcessTransfer } from "./processTransfer";
 export {
   getCheckpointFromLib,
+  hasPersistedLibraryCheckpoint,
   listCheckpointsFromLib,
+  deleteLibraryCheckpoint,
   upsertLibraryCheckpoint,
 } from "./checkpointLibrary";
 export type { CheckpointWriteInput } from "./checkpointLibrary";

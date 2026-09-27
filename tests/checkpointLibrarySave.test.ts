@@ -24,10 +24,13 @@ import { NextRequest } from "next/server";
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     libraryCheckpoint: {
+      delete: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
       upsert: jest.fn(),
     },
+    libraryCaseProfile: { findMany: jest.fn(), updateMany: jest.fn() },
+    workflowSession: { findMany: jest.fn() },
     $queryRaw: jest.fn(),
   },
 }));
@@ -36,7 +39,7 @@ jest.mock("@/lib/auth", () => ({
   getSessionAccount: jest.fn(),
 }));
 
-import { PUT } from "@/app/api/admin/checkpoints/[id]/route";
+import { DELETE, PUT } from "@/app/api/admin/checkpoints/[id]/route";
 import { POST } from "@/app/api/admin/checkpoints/route";
 import { getCheckpointFromLib, listCheckpointsFromLib } from "@/lib/practiceProcesses/checkpointLibrary";
 import { prisma } from "@/lib/prisma";
@@ -44,10 +47,13 @@ import { getSessionAccount } from "@/lib/auth";
 
 type LibMock = {
   libraryCheckpoint: {
+    delete: jest.Mock;
     findUnique: jest.Mock;
     findMany: jest.Mock;
     upsert: jest.Mock;
   };
+  libraryCaseProfile: { findMany: jest.Mock; updateMany: jest.Mock };
+  workflowSession: { findMany: jest.Mock };
   $queryRaw: jest.Mock;
 };
 const pm = prisma as unknown as LibMock;
@@ -90,6 +96,10 @@ function makePutParams(id: string) {
   return { params: Promise.resolve({ id }) };
 }
 
+function makeDeleteRequest(id: string) {
+  return new NextRequest(`http://localhost/api/admin/checkpoints/${id}`, { method: "DELETE" });
+}
+
 function makePostRequest(body: unknown) {
   return new NextRequest("http://localhost/api/admin/checkpoints", {
     method: "POST",
@@ -100,8 +110,12 @@ function makePostRequest(body: unknown) {
 
 beforeEach(() => {
   pm.libraryCheckpoint.findUnique.mockReset();
+  pm.libraryCheckpoint.delete.mockReset();
   pm.libraryCheckpoint.findMany.mockReset();
   pm.libraryCheckpoint.upsert.mockReset();
+  pm.libraryCaseProfile.findMany.mockReset();
+  pm.libraryCaseProfile.findMany.mockResolvedValue([]);
+  pm.workflowSession.findMany.mockReset();
   pm.$queryRaw.mockReset();
   // Default: kein Anker referenziert
   pm.$queryRaw.mockResolvedValue([{ exists: false }]);
@@ -534,5 +548,53 @@ describe("PUT Löschschutz – nicht referenzierter Anker", () => {
 
     // $queryRaw soll nicht aufgerufen worden sein
     expect(pm.$queryRaw).not.toHaveBeenCalled();
+  });
+});
+
+describe("DELETE /api/admin/checkpoints/[id]", () => {
+  it("löscht einen unreferenzierten persistierten Checkpoint ohne Workflow-Snapshots zu prüfen", async () => {
+    pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
+    pm.libraryCheckpoint.delete.mockResolvedValue(DB_ROW);
+
+    const response = await DELETE(makeDeleteRequest(DB_ROW.id), makePutParams(DB_ROW.id));
+
+    expect(response.status).toBe(200);
+    expect(pm.libraryCheckpoint.delete).toHaveBeenCalledWith({ where: { id: DB_ROW.id } });
+    expect(pm.workflowSession.findMany).not.toHaveBeenCalled();
+  });
+
+  it("blockiert referenzierte Checkpoints und nennt die Praxisfälle", async () => {
+    pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
+    pm.libraryCaseProfile.findMany.mockResolvedValue([{
+      id: "profile-1",
+      title: "Aufnahmeprozess",
+      description: null,
+      checkpoint_refs: [{ checkpointId: DB_ROW.id }],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }]);
+
+    const response = await DELETE(makeDeleteRequest(DB_ROW.id), makePutParams(DB_ROW.id));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      dependencies: [{ id: "profile-1", name: "Aufnahmeprozess" }],
+    });
+    expect(pm.libraryCheckpoint.delete).not.toHaveBeenCalled();
+    expect(pm.libraryCaseProfile.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("liefert für nicht persistierte Checkpoints 404", async () => {
+    pm.libraryCheckpoint.findUnique.mockResolvedValue(null);
+    const response = await DELETE(makeDeleteRequest("nur-katalog"), makePutParams("nur-katalog"));
+    expect(response.status).toBe(404);
+    expect(pm.libraryCheckpoint.delete).not.toHaveBeenCalled();
+  });
+
+  it("verweigert Checkpoint-Löschen ohne Admin-Berechtigung", async () => {
+    getSessionMock.mockResolvedValue(NON_ADMIN_ACCOUNT);
+    const response = await DELETE(makeDeleteRequest(DB_ROW.id), makePutParams(DB_ROW.id));
+    expect(response.status).toBe(403);
+    expect(pm.libraryCheckpoint.findUnique).not.toHaveBeenCalled();
   });
 });

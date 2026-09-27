@@ -5,6 +5,7 @@ import {
   type InternalBlockPlacement,
 } from "@/lib/questionnaire/internalBlockLayout";
 import { INTERNAL_DOCUMENT_TITLE_OPTIONS } from "@/lib/questionnaire/internalDocumentTitle";
+import type { ConfigurationDeleteResult } from "@/lib/configurationDeletion";
 
 export const PRACTICE_DOCUMENTATION_TEMPLATE_NAME_MAX_LENGTH = 120;
 export type PracticeDocumentationOutputFormat = "informell" | "formell";
@@ -218,4 +219,26 @@ export async function updatePracticeDocumentationTemplate(
     },
   });
   return result.count === 1;
+}
+
+export async function deletePracticeDocumentationTemplate(
+  practiceId: string,
+  id: string,
+): Promise<ConfigurationDeleteResult> {
+  const template = await prisma.practiceDocumentationTemplate.findFirst({
+    where: { id, practice_id: practiceId },
+    select: { id: true, name: true, is_active: true },
+  });
+  if (!template) return { status: "not_found" };
+  if (template.is_active) {
+    return {
+      status: "conflict",
+      error: "Aktive Vorlagen können nicht gelöscht werden. Bitte deaktivieren Sie die Vorlage zuerst.",
+      dependencies: [],
+    };
+  }
+  const deleted = await prisma.practiceDocumentationTemplate.deleteMany({
+    where: { id, practice_id: practiceId, is_active: false },
+  });
+  return deleted.count === 1 ? { status: "deleted" } : { status: "not_found" };
 }

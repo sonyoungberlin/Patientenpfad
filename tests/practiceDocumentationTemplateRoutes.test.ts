@@ -12,9 +12,11 @@ jest.mock("@/lib/prisma", () => ({
       findMany: jest.fn(),
       findFirst: jest.fn(),
       create: jest.fn(),
+      deleteMany: jest.fn(),
       updateMany: jest.fn(),
     },
     practiceDocumentationBlock: { findMany: jest.fn() },
+    patientQuestionnaireSession: { findMany: jest.fn() },
   },
 }));
 
@@ -25,8 +27,7 @@ import {
   requireUnlockedQuestionnaireKioskDevice,
 } from "@/lib/questionnaireKiosk/auth";
 import { POST } from "@/app/api/practice/documentation-templates/route";
-import { POST as DuplicatePOST } from "@/app/api/practice/documentation-templates/[id]/route";
-import { PATCH } from "@/app/api/practice/documentation-templates/[id]/route";
+import { DELETE, POST as DuplicatePOST, PATCH } from "@/app/api/practice/documentation-templates/[id]/route";
 import { GET } from "@/app/api/questionnaire-kiosk/internal/templates/route";
 
 const requireRole = requirePracticeRole as jest.Mock;
@@ -36,9 +37,11 @@ const templateDb = prisma.practiceDocumentationTemplate as unknown as {
   findMany: jest.Mock;
   findFirst: jest.Mock;
   create: jest.Mock;
+  deleteMany: jest.Mock;
   updateMany: jest.Mock;
 };
 const blockDb = prisma.practiceDocumentationBlock as unknown as { findMany: jest.Mock };
+const sessionDb = prisma.patientQuestionnaireSession as unknown as { findMany: jest.Mock };
 const layout = [{ blockId: "practice_block_1", section: 2, order: 0 }];
 const templateInput = {
   name: " Kardiologie ",
@@ -47,7 +50,7 @@ const templateInput = {
   blockLayout: layout,
 };
 
-function request(path: string, method: "GET" | "POST" | "PATCH", body?: unknown) {
+function request(path: string, method: "GET" | "POST" | "PATCH" | "DELETE", body?: unknown) {
   return new NextRequest(`http://localhost${path}`, {
     method,
     ...(body === undefined ? {} : {
@@ -66,6 +69,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
     templateDb.create.mockResolvedValue({ id: "template-1" });
     templateDb.findFirst.mockResolvedValue({ id: "template-1", name: "Kardiologie", output_format: "formell", document_title_option: "stellungnahme", block_layout: layout });
     templateDb.updateMany.mockResolvedValue({ count: 1 });
+    templateDb.deleteMany.mockResolvedValue({ count: 1 });
     templateDb.findMany.mockResolvedValue([]);
     blockDb.findMany.mockResolvedValue([{ id: "practice_block_1", title: "Anamnese", block_type: "text" }]);
   });
@@ -198,5 +202,46 @@ describe("Dokumentationsvorlagen-Routen", () => {
     const response = await GET(request("/api/questionnaire-kiosk/internal/templates", "GET"));
     expect(response.status).toBe(403);
     expect(templateDb.findMany).not.toHaveBeenCalled();
+  });
+
+  it("löscht eine deaktivierte Vorlage", async () => {
+    templateDb.findFirst.mockResolvedValue({ id: "template-1", name: "Kardiologie", is_active: false });
+    const response = await DELETE(
+      request("/api/practice/documentation-templates/template-1", "DELETE"),
+      { params: Promise.resolve({ id: "template-1" }) },
+    );
+    expect(response.status).toBe(200);
+    expect(templateDb.deleteMany).toHaveBeenCalledWith({
+      where: { id: "template-1", practice_id: "practice-1", is_active: false },
+    });
+    expect(sessionDb.findMany).not.toHaveBeenCalled();
+  });
+
+  it("blockiert das Löschen einer aktiven Vorlage", async () => {
+    templateDb.findFirst.mockResolvedValue({ id: "template-1", name: "Kardiologie", is_active: true });
+    const response = await DELETE(
+      request("/api/practice/documentation-templates/template-1", "DELETE"),
+      { params: Promise.resolve({ id: "template-1" }) },
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: expect.stringContaining("zuerst") });
+    expect(templateDb.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("liefert für praxisfremde Vorlagen 404 und verweigert unberechtigte Deletes", async () => {
+    templateDb.findFirst.mockResolvedValue(null);
+    const missing = await DELETE(
+      request("/api/practice/documentation-templates/foreign", "DELETE"),
+      { params: Promise.resolve({ id: "foreign" }) },
+    );
+    expect(missing.status).toBe(404);
+
+    requireRole.mockResolvedValue({ account: null, error: NextResponse.json({ ok: false }, { status: 403 }) });
+    const forbidden = await DELETE(
+      request("/api/practice/documentation-templates/template-1", "DELETE"),
+      { params: Promise.resolve({ id: "template-1" }) },
+    );
+    expect(forbidden.status).toBe(403);
+    expect(templateDb.deleteMany).not.toHaveBeenCalled();
   });
 });

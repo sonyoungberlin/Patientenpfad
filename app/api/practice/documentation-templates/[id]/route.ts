@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PracticeRole } from "@prisma/client";
 import { requirePracticeRole } from "@/lib/authz";
 import {
+  deletePracticeDocumentationTemplate,
   duplicatePracticeDocumentationTemplate,
   updatePracticeDocumentationTemplate,
   PracticeDocumentationTemplateBlockError,
@@ -62,4 +63,25 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "Dokumentationsvorlage nicht gefunden." }, { status: 404 });
   }
   return NextResponse.json({ ok: true, template }, { status: 201 });
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await requirePracticeRole(req, WRITE_ROLES);
+  if (auth.error) return auth.error;
+  const practice = auth.account.current_practice;
+  if (!practice) {
+    return NextResponse.json({ ok: false, error: "Kein Praxiszugriff." }, { status: 403 });
+  }
+
+  const result = await deletePracticeDocumentationTemplate(practice.id, (await params).id);
+  if (result.status === "not_found") {
+    return NextResponse.json({ ok: false, error: "Dokumentationsvorlage nicht gefunden." }, { status: 404 });
+  }
+  if (result.status === "conflict") {
+    return NextResponse.json({ ok: false, error: result.error, dependencies: result.dependencies }, { status: 409 });
+  }
+  return NextResponse.json({ ok: true });
 }

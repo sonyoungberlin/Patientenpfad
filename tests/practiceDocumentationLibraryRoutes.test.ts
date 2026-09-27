@@ -5,17 +5,19 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     practiceDocumentationBlock: {
       create: jest.fn(),
+      deleteMany: jest.fn(),
       findFirst: jest.fn(),
       updateMany: jest.fn(),
     },
-    practiceDocumentationTemplate: { findMany: jest.fn() },
+    practiceDocumentationTemplate: { findMany: jest.fn(), updateMany: jest.fn() },
+    patientQuestionnaireSession: { findMany: jest.fn() },
   },
 }));
 
 import { requirePracticeRole } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { POST } from "@/app/api/practice/documentation-library/route";
-import { PATCH } from "@/app/api/practice/documentation-library/[id]/route";
+import { DELETE, PATCH } from "@/app/api/practice/documentation-library/[id]/route";
 import {
   buildPracticeDocumentationBlockDefinition,
   removePracticeDocumentationOption,
@@ -25,16 +27,20 @@ import {
 const requireRole = requirePracticeRole as jest.Mock;
 const blockDb = prisma.practiceDocumentationBlock as unknown as {
   create: jest.Mock;
+  deleteMany: jest.Mock;
   findFirst: jest.Mock;
   updateMany: jest.Mock;
 };
-const templateDb = prisma.practiceDocumentationTemplate as unknown as { findMany: jest.Mock };
+const templateDb = prisma.practiceDocumentationTemplate as unknown as { findMany: jest.Mock; updateMany: jest.Mock };
+const sessionDb = prisma.patientQuestionnaireSession as unknown as { findMany: jest.Mock };
 
-function request(path: string, method: "POST" | "PATCH", body: unknown) {
+function request(path: string, method: "POST" | "PATCH" | "DELETE", body?: unknown) {
   return new NextRequest(`http://localhost${path}`, {
     method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    ...(body === undefined ? {} : {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
   });
 }
 
@@ -59,6 +65,7 @@ describe("Praxis-Dokumentationsbibliothek API", () => {
       },
     });
     blockDb.updateMany.mockResolvedValue({ count: 1 });
+    blockDb.deleteMany.mockResolvedValue({ count: 1 });
     templateDb.findMany.mockResolvedValue([]);
   });
 
@@ -253,5 +260,59 @@ describe("Praxis-Dokumentationsbibliothek API", () => {
 
     expect(response.status).toBe(409);
     expect(blockDb.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("löscht einen unbenutzten Block ohne historische Sessions zu prüfen", async () => {
+    const response = await DELETE(
+      request("/api/practice/documentation-library/practice_block_1", "DELETE"),
+      { params: Promise.resolve({ id: "practice_block_1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(blockDb.deleteMany).toHaveBeenCalledWith({
+      where: { id: "practice_block_1", practice_id: "practice-1" },
+    });
+    expect(sessionDb.findMany).not.toHaveBeenCalled();
+  });
+
+  it("blockiert referenzierte Blocks und nennt alle abhängigen Vorlagen", async () => {
+    templateDb.findMany.mockResolvedValue([
+      { id: "template-1", name: "Aktive Vorlage", block_layout: [{ blockId: "practice_block_1" }] },
+      { id: "template-2", name: "Inaktive Vorlage", block_layout: [{ blockId: "practice_block_1" }] },
+    ]);
+    const response = await DELETE(
+      request("/api/practice/documentation-library/practice_block_1", "DELETE"),
+      { params: Promise.resolve({ id: "practice_block_1" }) },
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      dependencies: [
+        { id: "template-1", name: "Aktive Vorlage" },
+        { id: "template-2", name: "Inaktive Vorlage" },
+      ],
+    });
+    expect(blockDb.deleteMany).not.toHaveBeenCalled();
+    expect(templateDb.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("liefert beim Löschen praxisfremder Blocks 404", async () => {
+    blockDb.findFirst.mockResolvedValue(null);
+    const response = await DELETE(
+      request("/api/practice/documentation-library/foreign", "DELETE"),
+      { params: Promise.resolve({ id: "foreign" }) },
+    );
+    expect(response.status).toBe(404);
+    expect(blockDb.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("verweigert Block-Löschen ohne Berechtigung", async () => {
+    requireRole.mockResolvedValue({ account: null, error: NextResponse.json({ ok: false }, { status: 403 }) });
+    const response = await DELETE(
+      request("/api/practice/documentation-library/practice_block_1", "DELETE"),
+      { params: Promise.resolve({ id: "practice_block_1" }) },
+    );
+    expect(response.status).toBe(403);
+    expect(blockDb.findFirst).not.toHaveBeenCalled();
   });
 });

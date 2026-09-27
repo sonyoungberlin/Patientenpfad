@@ -50,11 +50,13 @@ export default function CheckpointDetailClient({
   fixedId,
   existingIds = [],
   existingTitles = [],
+  canDelete = false,
 }: {
   initialDraft: CheckpointDraft;
   fixedId?: string;
   existingIds?: string[];
   existingTitles?: string[];
+  canDelete?: boolean;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
@@ -126,6 +128,26 @@ export default function CheckpointDetailClient({
       if (isNew && json.checkpoint) {
         router.push(`/admin/practice-processes/checkpoints/${json.checkpoint.id}`);
       }
+    } catch {
+      setSaveState("error");
+      setSaveError("Netzwerkfehler. Bitte erneut versuchen.");
+    }
+  }
+
+  async function handleDelete() {
+    if (!fixedId || !window.confirm(`Checkpoint „${draft.title}“ wirklich dauerhaft löschen?`)) return;
+    setSaveState("saving");
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/admin/checkpoints/${fixedId}`, { method: "DELETE" });
+      const json = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setSaveState("error");
+        setSaveError(json.error ?? "Löschen fehlgeschlagen.");
+        return;
+      }
+      router.push("/admin/practice-processes/checkpoints");
+      router.refresh();
     } catch {
       setSaveState("error");
       setSaveError("Netzwerkfehler. Bitte erneut versuchen.");
@@ -331,6 +353,11 @@ export default function CheckpointDetailClient({
         >
           {saveState === "saving" ? "Wird gespeichert …" : "Speichern"}
         </button>
+        {fixedId && canDelete && (
+          <button type="button" data-delete-checkpoint onClick={() => void handleDelete()} disabled={saveState === "saving"}>
+            Löschen
+          </button>
+        )}
         {isDirty && saveState !== "saving" && saveState !== "success" && (
           <p className="text-small text-muted" style={{ margin: 0 }}>
             Ungespeicherte Änderungen.

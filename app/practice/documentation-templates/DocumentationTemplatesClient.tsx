@@ -138,6 +138,21 @@ export default function DocumentationTemplatesClient({
     router.refresh();
   }
 
+  async function deleteTemplate(template: PracticeTemplateRow) {
+    if (!window.confirm(`Vorlage „${template.name}“ wirklich dauerhaft löschen?`)) return;
+    setBusy(true);
+    setError(null);
+    const response = await fetch(`/api/practice/documentation-templates/${template.id}`, { method: "DELETE" });
+    const result = await response.json() as { ok?: boolean; error?: string };
+    setBusy(false);
+    if (!response.ok || !result.ok) {
+      setError(result.error ?? "Dokumentationsvorlage konnte nicht gelöscht werden.");
+      return;
+    }
+    if (editingId === template.id) reset();
+    router.refresh();
+  }
+
   return (
     <>
       <section>
@@ -150,6 +165,7 @@ export default function DocumentationTemplatesClient({
                 <button type="button" onClick={() => startEdit(template)} disabled={busy}>Bearbeiten</button>
                 <button type="button" onClick={() => void duplicate(template.id)} disabled={busy}>Duplizieren</button>
                 {template.isActive && <button type="button" onClick={() => void deactivate(template.id)} disabled={busy}>Deaktivieren</button>}
+                {!template.isActive && <button type="button" onClick={() => void deleteTemplate(template)} disabled={busy}>Löschen</button>}
               </div></td>
             </tr>)}
           </tbody></table>

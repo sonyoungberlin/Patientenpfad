@@ -14,6 +14,11 @@ import {
   getCheckpoint as getCatalogCheckpoint,
   listCheckpoints as listCatalogCheckpoints,
 } from "./checkpointCatalog";
+import { listCaseProfilesFromLib } from "./caseProfileLibrary";
+import {
+  configurationDeleteConflict,
+  type ConfigurationDeleteResult,
+} from "@/lib/configurationDeletion";
 
 // ---------------------------------------------------------------------------
 // Interne Helpers
@@ -76,6 +81,13 @@ export async function listCheckpointsFromLib(): Promise<PracticeCheckpoint[]> {
   return merged;
 }
 
+export async function hasPersistedLibraryCheckpoint(id: string): Promise<boolean> {
+  return Boolean(await prisma.libraryCheckpoint.findUnique({
+    where: { id },
+    select: { id: true },
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Schreib-API (nur Admin-Routen)
 // ---------------------------------------------------------------------------
@@ -112,4 +124,23 @@ export async function upsertLibraryCheckpoint(
     },
   });
   return dbRowToCheckpoint(row);
+}
+
+export async function deleteLibraryCheckpoint(id: string): Promise<ConfigurationDeleteResult> {
+  const existing = await prisma.libraryCheckpoint.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+  if (!existing) return { status: "not_found" };
+
+  const profiles = await listCaseProfilesFromLib();
+  const dependencies = profiles
+    .filter((profile) => profile.checkpointRefs.some((reference) => reference.checkpointId === id))
+    .map((profile) => ({ id: profile.id, name: profile.title }));
+  if (dependencies.length > 0) {
+    return configurationDeleteConflict("Der Checkpoint", "Praxisfällen", dependencies);
+  }
+
+  await prisma.libraryCheckpoint.delete({ where: { id } });
+  return { status: "deleted" };
 }

@@ -230,6 +230,7 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <button type="button" onClick={() => startEdit(block)} disabled={busy}>Bearbeiten</button>
           {block.isActive && <button type="button" onClick={() => void deactivate(block.id)} disabled={busy}>Deaktivieren</button>}
+          <button type="button" onClick={() => void deleteBlock(block)} disabled={busy}>Löschen</button>
         </div>
       </div>
     </details>;
@@ -350,6 +351,21 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
       return;
     }
     if (editingId === id) reset();
+    router.refresh();
+  }
+
+  async function deleteBlock(block: BlockRow) {
+    if (!window.confirm(`Baustein „${block.title}“ wirklich dauerhaft löschen?`)) return;
+    setBusy(true);
+    setError(null);
+    const response = await fetch(`/api/practice/documentation-library/${block.id}`, { method: "DELETE" });
+    const result = await response.json() as { ok?: boolean; error?: string };
+    setBusy(false);
+    if (!response.ok || !result.ok) {
+      setError(result.error ?? "Dokumentationsbaustein konnte nicht gelöscht werden.");
+      return;
+    }
+    if (editingId === block.id) reset();
     router.refresh();
   }
 
