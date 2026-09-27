@@ -134,4 +134,52 @@ describe("validateFrozenAnswers", () => {
       invalidQuestionIds: ["HIDDEN_SELECT"],
     });
   });
+
+  it("validiert die vier realen Profil-Repeatable-Questions mit UI-Auswahlwerten", () => {
+    const profileQuestions: Array<{
+      id: string;
+      label: string;
+      fields: QuestionDefinition["groupSchema"];
+      value: Record<string, string>;
+    }> = [
+      {
+        id: "practice_question_a81bda4d-605d-4e06-9dc7-b8a40f1332b4",
+        label: "KONTAKTMÖGLICHKEITEN",
+        fields: [{ key: "field_phone", label: "Telefonisch erreichbar?", type: "yes_no", required: false }],
+        value: { field_phone: "ja" },
+      },
+      {
+        id: "practice_question_93dddcc4-7e12-4ac6-8aa9-776da3627215",
+        label: "ZUGANGSTYP / ANMELDUNG",
+        fields: [
+          { key: "field_access", label: "Zugangstyp", type: "select", required: false, options: [{ value: "option_direct", label: "direkter Termin" }] },
+          { key: "field_referral", label: "Überweisung erforderlich?", type: "yes_no", required: false },
+        ],
+        value: { field_access: "option_direct", field_referral: "ja" },
+      },
+      {
+        id: "practice_question_8f6eeba2-65aa-470e-ba18-8e964cca8c76",
+        label: "MITZUBRINGENDE / EINZUREICHENDE UNTERLAGEN",
+        fields: [{ key: "field_documents", label: "Unterlagen", type: "multi_select", required: false, options: [{ value: "option_card", label: "Versichertenkarte" }] }],
+        value: { field_documents: "option_card" },
+      },
+      {
+        id: "practice_question_eade6ed0-4a31-43da-9134-1a10b0c770d1",
+        label: "MEDIKAMENTÖSE / FACHÄRZTLICHE MITBEHANDLUNG",
+        fields: [{ key: "field_medication", label: "Medikamenteneinstellung möglich?", type: "yes_no", required: false }],
+        value: { field_medication: "nein" },
+      },
+    ];
+
+    const blocks = profileQuestions.map(({ id, label, fields }) => makeBlock([{
+      id,
+      text: label,
+      type: "repeatable_group",
+      required: false,
+      groupSchema: fields,
+    }]));
+    const answers = Object.fromEntries(profileQuestions.map(({ id, value }) => [id, JSON.stringify([value])]));
+
+    expect(validateFrozenAnswers(answers, blocks)).toMatchObject({ ok: true, invalidQuestionIds: [] });
+  });
 });

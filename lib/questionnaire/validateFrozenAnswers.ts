@@ -7,7 +7,7 @@ import { computeAllDerivedValues } from "./derivedValues";
 import { buildOptionsByQuestionId, parseMultiSelectValue } from "./multiSelect";
 import { hasDocumentedAnswer } from "./documentedContent";
 import type { FrozenBlock } from "./frozenBlocks";
-import { getQuestionOptionValue, getQuestionOptionValues } from "./questionOptions";
+import { getQuestionOptionValues } from "./questionOptions";
 
 export type FrozenAnswersValidationResult = {
   ok: boolean;
@@ -58,11 +58,11 @@ function hasValidRepeatableGroupEntries(question: QuestionDefinition, value: str
       if (field.required && fieldValue.trim() === "") return false;
       if (fieldValue.trim() === "") return true;
       if (field.type === "select" || field.type === "yes_no") {
-        return field.options?.map(getQuestionOptionValue).includes(fieldValue) ?? false;
+        return getQuestionOptionValues(field).includes(fieldValue);
       }
       if (field.type === "multi_select") {
-        const selected = parseMultiSelectValue(fieldValue, field.options ?? []);
-        const optionValues = (field.options ?? []).map(getQuestionOptionValue);
+        const optionValues = getQuestionOptionValues(field);
+        const selected = parseMultiSelectValue(fieldValue, optionValues);
         return selected.length > 0
           ? selected.every((option) => optionValues.includes(option))
           : field.required === false;

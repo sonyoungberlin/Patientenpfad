@@ -1,6 +1,7 @@
 import type {
   QuestionDefinition,
   QuestionOptionDefinition,
+  RepeatableGroupFieldDef,
 } from "./blockCatalog";
 
 export const UNKNOWN_OPTION_LABEL = "Unbekannter Wert";
@@ -18,7 +19,9 @@ export function getQuestionOptionLabel(option: QuestionOptionDefinition): string
 }
 
 export function getQuestionOptionValues(
-  question: Pick<QuestionDefinition, "options"> & Partial<Pick<QuestionDefinition, "type">>,
+  question: Pick<QuestionDefinition | RepeatableGroupFieldDef, "options"> & {
+    type?: QuestionDefinition["type"] | RepeatableGroupFieldDef["type"];
+  },
 ): string[] {
   if (question.type === "yes_no" && (question.options === undefined || question.options.length === 0)) {
     return ["ja", "nein"];
