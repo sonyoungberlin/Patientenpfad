@@ -25,14 +25,14 @@ CREATE TABLE "PracticeCaseChainConnectionApproval" (
     CONSTRAINT "PracticeCaseChainConnectionApproval_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "PracticeCaseChainEntryApproval_practice_id_chain_id_step_id_key"
+CREATE UNIQUE INDEX "pc_chain_entry_approval_practice_chain_step_key"
 ON "PracticeCaseChainEntryApproval"("practice_id", "chain_id", "step_id");
-CREATE INDEX "PracticeCaseChainEntryApproval_practice_id_chain_id_idx"
+CREATE INDEX "pc_chain_entry_approval_practice_chain_idx"
 ON "PracticeCaseChainEntryApproval"("practice_id", "chain_id");
 
-CREATE UNIQUE INDEX "PracticeCaseChainConnectionApproval_practice_id_source_chain_id_source_exit_id_key"
+CREATE UNIQUE INDEX "pc_chain_connection_approval_practice_source_exit_key"
 ON "PracticeCaseChainConnectionApproval"("practice_id", "source_chain_id", "source_exit_id");
-CREATE INDEX "PracticeCaseChainConnectionApproval_practice_id_source_chain_id_source_exit_id_idx"
+CREATE INDEX "pc_chain_connection_approval_practice_source_exit_idx"
 ON "PracticeCaseChainConnectionApproval"("practice_id", "source_chain_id", "source_exit_id");
 
 ALTER TABLE "PracticeCaseChainEntryApproval"

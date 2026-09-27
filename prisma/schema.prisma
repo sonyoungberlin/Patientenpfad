@@ -1227,8 +1227,8 @@ model PracticeCaseChainEntryApproval {
   revoked_at  DateTime?
   created_at  DateTime @default(now())
 
-  @@unique([practice_id, chain_id, step_id])
-  @@index([practice_id, chain_id])
+  @@unique([practice_id, chain_id, step_id], map: "pc_chain_entry_approval_practice_chain_step_key")
+  @@index([practice_id, chain_id], map: "pc_chain_entry_approval_practice_chain_idx")
 }
 
 /// Explizite Auswahl einer vorgeschlagenen Anschlussstrecke zwischen zwei
@@ -1248,8 +1248,8 @@ model PracticeCaseChainConnectionApproval {
   revoked_at      DateTime?
   created_at      DateTime @default(now())
 
-  @@unique([practice_id, source_chain_id, source_exit_id])
-  @@index([practice_id, source_chain_id, source_exit_id])
+  @@unique([practice_id, source_chain_id, source_exit_id], map: "pc_chain_connection_approval_practice_source_exit_key")
+  @@index([practice_id, source_chain_id, source_exit_id], map: "pc_chain_connection_approval_practice_source_exit_idx")
 }
 
 /// Append-only Protokoll der expliziten Einstiegs- und Anschlussentscheidungen.
