@@ -86,6 +86,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
       data: {
         practice_id: "practice-1",
         name: "Kardiologie",
+        category: "documentation",
         output_format: "formell",
         document_title_option: "stellungnahme",
         block_layout: layout,
@@ -118,6 +119,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
       where: { id: "template-1", practice_id: "practice-1" },
       data: {
         name: "Kardiologie",
+        category: "documentation",
         output_format: "formell",
         document_title_option: "stellungnahme",
         block_layout: layout,
@@ -160,6 +162,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
     templateDb.findMany.mockResolvedValue([{
       id: "template-1",
       name: "Kardiologie",
+      category: "documentation",
       is_active: true,
       output_format: "formell",
       document_title_option: "stellungnahme",
@@ -180,12 +183,13 @@ describe("Dokumentationsvorlagen-Routen", () => {
       templates: [{
         id: "template-1",
         name: "Kardiologie",
+        category: "documentation",
         outputFormat: "formell",
         documentTitleOption: "stellungnahme",
         blockLayout: layout,
         patientSignatureRequired: false,
       }],
-      blocks: [{ id: "practice_block_1", title: "Anamnese", blockType: "text" }],
+      blocks: [{ id: "practice_block_1", title: "Anamnese", blockType: "text", allowedTemplateCategories: ["documentation"] }],
     });
   });
 

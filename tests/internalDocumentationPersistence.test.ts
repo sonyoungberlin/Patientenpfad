@@ -78,6 +78,7 @@ describe("internal documentation persistence", () => {
       metadata: {
         documentTitleOption: "patienteninformation",
         documentTitle: "Patienteninformation",
+        documentKind: "documentation",
         patientSignatureRequired: true,
         patientSignatureCity: "Berlin",
       },
@@ -101,6 +102,35 @@ describe("internal documentation persistence", () => {
     ]));
     expect(result.token).toBe("");
     expect(result.tokenLink).toBe("https://example.test/questionnaire-kiosk/internal/session-1");
+  });
+
+  it("speichert einen Steckbrief ohne Patientenreferenz als normale interne Session", async () => {
+    await createQuestionnaireSession({
+      selectedBlockIds: ["SPECIALISTS"],
+      patientReference: null,
+      patientLanguage: "de",
+      ownerAccountId: "account-1",
+      ownerPracticeId: "practice-1",
+      source: "practice_direct",
+      sessionKind: "internal_documentation",
+      internalWorkflowId: null,
+      internalDocumentKind: "profile",
+      internalDocumentTitle: {
+        documentTitleOption: "steckbrief",
+        documentTitle: "Steckbrief",
+      },
+      origin: "https://example.test",
+    });
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        patient_reference: null,
+        session_kind: "internal_documentation",
+        frozen_blocks: expect.objectContaining({
+          metadata: expect.objectContaining({ documentKind: "profile" }),
+        }),
+      }),
+    }));
   });
 
   it("liest alte Array-Snapshots ohne Titel mit neutralem Fallback", () => {

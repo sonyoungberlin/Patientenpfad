@@ -107,6 +107,7 @@ export type CreateSessionInput = {
   internalWorkflowId?: InternalWorkflowId | null;
   internalBlockLayout?: InternalBlockPlacement[];
   internalDocumentTitle?: InternalDocumentTitleMetadata;
+  internalDocumentKind?: "documentation" | "profile";
   internalOutputFormat?: "informell" | "formell";
   internalPatientSignatureRequired?: boolean;
   internalPatientSignatureCity?: string | null;
@@ -159,6 +160,7 @@ export async function createQuestionnaireSession(
     internalWorkflowId,
     internalBlockLayout,
     internalDocumentTitle,
+    internalDocumentKind = "documentation",
     internalOutputFormat,
     internalPatientSignatureRequired,
     internalPatientSignatureCity,
@@ -191,6 +193,9 @@ export async function createQuestionnaireSession(
     Boolean(ownerAccountId) &&
     Boolean(ownerPracticeId) &&
     !createdByKioskDeviceId;
+  const isUnassignedInternalProfile = patientReference === null &&
+    sessionKind === "internal_documentation" &&
+    internalDocumentKind === "profile";
   if (source === "public_check_in" && (ownerAccountId || !ownerPracticeId || createdByKioskDeviceId)) {
     throw new Error("Public-Check-in benötigt eine Praxis ohne Account oder Kioskgerät.");
   }
@@ -198,7 +203,8 @@ export async function createQuestionnaireSession(
     patientReference === null &&
     !isUnassignedKioskCheckIn &&
     !isUnassignedPublicCheckIn &&
-    !isUnassignedDigitalRequestFollowUp
+    !isUnassignedDigitalRequestFollowUp &&
+    !isUnassignedInternalProfile
   ) {
     throw new Error("Patientenreferenz ist erforderlich.");
   }
@@ -256,6 +262,7 @@ export async function createQuestionnaireSession(
     internalWorkflowId == null && internalDocumentTitle
     ? buildInternalDocumentationSnapshot(frozenBlocks, {
         ...internalDocumentTitle,
+        documentKind: internalDocumentKind,
         ...(internalOutputFormat ? { outputFormat: internalOutputFormat } : {}),
         ...(internalPatientSignatureRequired ? { patientSignatureRequired: true } : {}),
         ...(internalPatientSignatureCity ? { patientSignatureCity: internalPatientSignatureCity } : {}),

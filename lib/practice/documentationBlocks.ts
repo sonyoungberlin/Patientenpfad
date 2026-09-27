@@ -26,9 +26,11 @@ export type PracticeDocumentationBlockType =
   | "hint"
   | "repeatable";
 
+export type PracticeDocumentationTemplateCategory = "documentation" | "profile";
 export type PracticeDocumentationBlockDefinition = {
   schemaVersion: typeof PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION;
   visibleType: PracticeDocumentationBlockType;
+  allowedTemplateCategories?: PracticeDocumentationTemplateCategory[];
   block: QuestionnaireBlock;
   questions: QuestionDefinition[];
 };
@@ -37,17 +39,27 @@ export type PracticeDocumentationBlockSummary = {
   id: string;
   title: string;
   blockType: PracticeDocumentationBlockType;
+  allowedTemplateCategories?: PracticeDocumentationTemplateCategory[];
 };
 
 export function toPracticeDocumentationBlockSummary(block: {
   id: string;
   title: string;
   block_type: string;
+  definition?: unknown;
 }): PracticeDocumentationBlockSummary {
   if (!BLOCK_TYPES.includes(block.block_type as PracticeDocumentationBlockType)) {
     throw new Error("Ungültige gespeicherte Bausteinart.");
   }
-  return { id: block.id, title: block.title, blockType: block.block_type as PracticeDocumentationBlockType };
+  const definition = block.definition === undefined
+    ? { allowedTemplateCategories: ["documentation"] as PracticeDocumentationTemplateCategory[] }
+    : parsePracticeDocumentationBlockDefinition(block.definition);
+  return {
+    id: block.id,
+    title: block.title,
+    blockType: block.block_type as PracticeDocumentationBlockType,
+    allowedTemplateCategories: definition.allowedTemplateCategories,
+  };
 }
 
 export type PracticeDocumentationOptionInput = {
@@ -91,6 +103,7 @@ export type PracticeDocumentationBlockInput = {
   sharedDocumentationText?: string;
   documentationSegments?: PracticeDocumentationSegmentInput[];
   additionalFields?: PracticeDocumentationAdditionalFieldInput[];
+  allowedTemplateCategories?: PracticeDocumentationTemplateCategory[];
 };
 
 type ValidationResult =
@@ -248,6 +261,7 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
       title: normalizeText(input.title, "Titel", PRACTICE_DOCUMENTATION_BLOCK_TITLE_MAX_LENGTH),
       blockType: normalizedType,
       required: input.required === true,
+      allowedTemplateCategories: normalizeAllowedTemplateCategories(input.allowedTemplateCategories),
     };
     if (normalizedType === "paragraph") {
       value.text = normalizeDocumentContent(input.text, "Inhalt");
@@ -511,6 +525,7 @@ export function buildPracticeDocumentationBlockDefinition(
     return {
       schemaVersion: PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION,
       visibleType: input.blockType,
+      allowedTemplateCategories: normalizeAllowedTemplateCategories(input.allowedTemplateCategories),
       block: { id: blockId, label: input.title, displayOrder: 0, questionIds: [repeatableQuestion.id], documentationItemType: "bodyText" },
       questions: [repeatableQuestion],
     };
@@ -598,6 +613,7 @@ export function buildPracticeDocumentationBlockDefinition(
   return {
     schemaVersion: PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION,
     visibleType: input.blockType,
+    allowedTemplateCategories: normalizeAllowedTemplateCategories(input.allowedTemplateCategories),
     block: {
       ...block,
       documentationItemType: input.blockType === "measurement" ? "measurement"
@@ -622,9 +638,17 @@ export function parsePracticeDocumentationBlockDefinition(raw: unknown): Practic
     definition.block.questionIds.some((id) => !definition.questions.some((question) => question.id === id))) {
     throw new Error("Ungültige gespeicherte Bausteindefinition.");
   }
+  definition.allowedTemplateCategories = normalizeAllowedTemplateCategories(definition.allowedTemplateCategories);
   return definition;
 }
 
+function normalizeAllowedTemplateCategories(raw: unknown): PracticeDocumentationTemplateCategory[] {
+  if (!Array.isArray(raw) || raw.length === 0) return ["documentation"];
+  const categories = raw.filter((category): category is PracticeDocumentationTemplateCategory =>
+    category === "documentation" || category === "profile",
+  );
+  return categories.length > 0 ? [...new Set(categories)] : ["documentation"];
+}
 export function resolvePracticeDocumentationBlocks(
   definitions: Array<{ definition: unknown }>,
   layout?: Array<{ blockId: string; section: 1 | 2 | 3; order: number }>,

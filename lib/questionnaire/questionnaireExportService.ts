@@ -3,7 +3,7 @@ import {
   isDocumentedContentSnapshot,
   isNewBlockBasedInternalSession,
 } from "./documentedContent";
-import { parseFrozenBlocks } from "./frozenBlocks";
+import { getInternalDocumentKind, getInternalDocumentTitle, parseFrozenBlocks } from "./frozenBlocks";
 import { resolveInternalWorkflow } from "./internalWorkflowRegistry";
 import type { PdfRenderOptions, PdfSessionInput } from "./pdfRenderer";
 import { resolveQuestionnaireDocumentLabels } from "./questionnaireDocumentLabel";
@@ -28,13 +28,15 @@ export function resolveQuestionnairePdfOptions(
   const workflow = session.session_kind === "internal_documentation" && !isNewBlockBased
     ? resolveInternalWorkflow(session.internal_workflow_id)
     : null;
+  const documentKind = getInternalDocumentKind(session.frozen_blocks);
+  const internalTitle = getInternalDocumentTitle(session.frozen_blocks);
   if (session.session_kind === "internal_documentation" && !isNewBlockBased && !workflow) {
     throw new Error("Unbekannter interner Workflow.");
   }
 
   return {
-    title: isNewBlockBased ? "Interne Dokumentation" : workflow?.title ?? "Fragebogen – Patientenangaben",
-    referenceLabel: "Patientenreferenz",
+    title: isNewBlockBased ? internalTitle : workflow?.title ?? "Fragebogen – Patientenangaben",
+    referenceLabel: documentKind === "profile" ? "Referenz" : "Patientenreferenz",
     blockCatalog: workflow?.blockCatalog ?? BLOCK_CATALOG,
     ...(!isDocumentedContentSnapshot(frozenBlocks) && workflow
       ? { omitUnanswered: workflow.legacyOutputPolicy.omitUnansweredInPdf }
@@ -43,7 +45,7 @@ export function resolveQuestionnairePdfOptions(
       ? { omitEmptyBlocksInPdf: true }
       : {}),
     ...(isNewBlockBased
-      ? { filenameLabel: "Interne Dokumentation" }
+      ? { filenameLabel: documentKind === "profile" ? internalTitle : "Interne Dokumentation" }
       : workflow ? { filenameLabel: workflow.filenameLabel } : {}),
   };
 }

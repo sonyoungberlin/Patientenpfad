@@ -11,6 +11,7 @@ type Props = {
   customTitle: string;
   onOptionChange: (option: InternalDocumentTitleOption | "") => void;
   onCustomTitleChange: (title: string) => void;
+  includeProfileTitle?: boolean;
   disabled?: boolean;
 };
 
@@ -31,6 +32,7 @@ export default function InternalDocumentTitleField({
   customTitle,
   onOptionChange,
   onCustomTitleChange,
+  includeProfileTitle = false,
   disabled = false,
 }: Props) {
   return (
@@ -49,7 +51,7 @@ export default function InternalDocumentTitleField({
           style={{ ...fieldStyle, marginTop: "0.5rem" }}
         >
           <option value="">Bitte auswählen</option>
-          {INTERNAL_DOCUMENT_TITLE_OPTIONS.map((titleOption) => (
+          {INTERNAL_DOCUMENT_TITLE_OPTIONS.filter((titleOption) => includeProfileTitle || titleOption.value !== "steckbrief").map((titleOption) => (
             <option key={titleOption.value} value={titleOption.value}>
               {titleOption.label}
             </option>

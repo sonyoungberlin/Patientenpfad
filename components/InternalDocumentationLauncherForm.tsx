@@ -30,6 +30,7 @@ export default function InternalDocumentationLauncherForm({
 }) {
   const router = useRouter();
   const [patientReference, setPatientReference] = useState("");
+  const [documentKind, setDocumentKind] = useState<"documentation" | "profile">("documentation");
   const [outputFormat, setOutputFormat] = useState<"informell" | "formell">("informell");
   const [documentTitleOption, setDocumentTitleOption] = useState<InternalDocumentTitleOption | "">("");
   const [customDocumentTitle, setCustomDocumentTitle] = useState("");
@@ -51,6 +52,16 @@ export default function InternalDocumentationLauncherForm({
     setPatientSignatureRequired(template.patientSignatureRequired === true);
   }
 
+  function changeDocumentKind(nextKind: "documentation" | "profile") {
+    setDocumentKind(nextKind);
+    setPatientReference("");
+    setBlockLayout([]);
+    setPatientSignatureRequired(false);
+    setDocumentTitleOption(nextKind === "profile" ? "steckbrief" : "");
+    setCustomDocumentTitle("");
+    setError(null);
+  }
+
   function toggleBlock(blockId: string) {
     if (blockLayout.some((placement) => placement.blockId === blockId)) {
       setBlockLayout(compactInternalBlockPlacements(blockLayout.filter((placement) => placement.blockId !== blockId)));
@@ -61,7 +72,7 @@ export default function InternalDocumentationLauncherForm({
 
   async function start(event: React.FormEvent) {
     event.preventDefault();
-    if (!patientReference.trim()) {
+    if (documentKind === "documentation" && !patientReference.trim()) {
       setError("Bitte Patientenreferenz angeben.");
       return;
     }
@@ -96,6 +107,7 @@ export default function InternalDocumentationLauncherForm({
           selectedBlockIds: normalizedLayout.map(({ blockId }) => blockId),
           blockLayout: normalizedLayout,
           patientReference: patientReference.trim(),
+          documentKind,
           outputFormat,
           documentTitleOption,
           ...(patientSignatureRequired ? { patientSignatureRequired: true } : {}),
@@ -117,14 +129,29 @@ export default function InternalDocumentationLauncherForm({
 
   return (
     <form noValidate onSubmit={start} style={{ display: "grid", gap: "0.75rem", maxWidth: "32rem", width: "100%" }}>
-      <label>Patientenreferenz<input autoFocus required autoComplete="off" value={patientReference} onChange={(event) => setPatientReference(event.target.value)} disabled={saving} style={{ marginTop: "0.5rem" }} /></label>
-      {patientReferenceHint ? <p className="text-muted text-small" style={{ margin: 0 }}>{patientReferenceHint}</p> : null}
+      <div role="group" aria-label="Dokumentationsbereich" style={{ display: "flex", gap: "0.5rem" }}>
+        <button type="button" aria-pressed={documentKind === "documentation"} onClick={() => changeDocumentKind("documentation")} disabled={saving}>Dokumentationen</button>
+        <button type="button" aria-pressed={documentKind === "profile"} onClick={() => changeDocumentKind("profile")} disabled={saving}>Steckbriefe</button>
+      </div>
+      {documentKind === "documentation" ? <>
+        <label>Patientenreferenz<input autoFocus required autoComplete="off" value={patientReference} onChange={(event) => setPatientReference(event.target.value)} disabled={saving} style={{ marginTop: "0.5rem" }} /></label>
+        {patientReferenceHint ? <p className="text-muted text-small" style={{ margin: 0 }}>{patientReferenceHint}</p> : null}
+      </> : null}
       <label>Ausgabeform<select value={outputFormat} onChange={(event) => setOutputFormat(event.target.value as "informell" | "formell")} disabled={saving}>
         <option value="informell">Informell</option><option value="formell">Formell</option>
       </select></label>
-      <InternalDocumentTitleField option={documentTitleOption} customTitle={customDocumentTitle} onOptionChange={setDocumentTitleOption} onCustomTitleChange={setCustomDocumentTitle} disabled={saving} />
-      <InternalDocumentationTemplateSelector practiceTemplates={practiceTemplates} onSelect={applyTemplate} disabled={saving} />
-      <InternalDocumentationLauncherBlocks availableBlocks={availableBlocks} blockLayout={blockLayout} onToggleBlock={toggleBlock} onBlockLayoutChange={setBlockLayout} disabled={saving} />
+      <InternalDocumentTitleField option={documentTitleOption} customTitle={customDocumentTitle} onOptionChange={setDocumentTitleOption} onCustomTitleChange={setCustomDocumentTitle} includeProfileTitle={documentKind === "profile"} disabled={saving} />
+      <InternalDocumentationTemplateSelector key={documentKind} practiceTemplates={practiceTemplates.filter((template) => template.category === documentKind)} onSelect={applyTemplate} disabled={saving} />
+      <InternalDocumentationLauncherBlocks
+        availableBlocks={availableBlocks.filter((block) =>
+          (block.allowedTemplateCategories ?? ["documentation"]).includes(documentKind),
+        )}
+        blockLayout={blockLayout}
+        onToggleBlock={toggleBlock}
+        onBlockLayoutChange={setBlockLayout}
+        disabled={saving}
+      />
+      {documentKind === "profile" && practiceTemplates.every((template) => template.category !== "profile") ? <p className="text-muted text-small">Noch keine Steckbriefvorlage angelegt.</p> : null}
       {error && <p className="text-error" role="alert">{error}</p>}
       <button type="submit" disabled={saving}>{saving ? "Wird gestartet…" : submitLabel}</button>
     </form>

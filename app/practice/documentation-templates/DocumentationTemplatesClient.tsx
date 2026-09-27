@@ -13,6 +13,7 @@ import { INTERNAL_DOCUMENT_TITLE_OPTIONS } from "@/lib/questionnaire/internalDoc
 type PracticeTemplateRow = {
   id: string;
   name: string;
+  category?: string | null;
   isActive: boolean;
   blockLayout: unknown;
   outputFormat?: string | null;
@@ -20,7 +21,7 @@ type PracticeTemplateRow = {
   patientSignatureRequired?: boolean;
 };
 
-type AvailableBlock = { id: string; title: string };
+type AvailableBlock = { id: string; title: string; allowedTemplateCategories?: Array<"documentation" | "profile"> };
 
 export default function DocumentationTemplatesClient({
   initialTemplates,
@@ -32,6 +33,7 @@ export default function DocumentationTemplatesClient({
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [category, setCategory] = useState<"documentation" | "profile">("documentation");
   const [outputFormat, setOutputFormat] = useState<"informell" | "formell">("informell");
   const [documentTitleOption, setDocumentTitleOption] = useState("bericht");
   const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
@@ -40,6 +42,9 @@ export default function DocumentationTemplatesClient({
   const [error, setError] = useState<string | null>(null);
   const editorFormRef = useRef<HTMLFormElement>(null);
   const blockLabels = Object.fromEntries(availableBlocks.map((block) => [block.id, block.title]));
+  const categoryBlocks = availableBlocks.filter((block) =>
+    (block.allowedTemplateCategories ?? ["documentation"]).includes(category),
+  );
 
   useEffect(() => {
     if (!editingId || !editorFormRef.current) return;
@@ -53,6 +58,7 @@ export default function DocumentationTemplatesClient({
   function reset() {
     setEditingId(null);
     setName("");
+    setCategory("documentation");
     setOutputFormat("informell");
     setDocumentTitleOption("bericht");
     setBlockLayout([]);
@@ -63,6 +69,7 @@ export default function DocumentationTemplatesClient({
   function startEdit(template: PracticeTemplateRow) {
     setEditingId(template.id);
     setName(template.name);
+    setCategory(template.category === "profile" ? "profile" : "documentation");
     setOutputFormat(template.outputFormat === "formell" ? "formell" : "informell");
     setDocumentTitleOption(template.documentTitleOption ?? "bericht");
     setBlockLayout(Array.isArray(template.blockLayout)
@@ -88,7 +95,7 @@ export default function DocumentationTemplatesClient({
       {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, outputFormat, documentTitleOption, blockLayout, patientSignatureRequired }),
+        body: JSON.stringify({ name, category, outputFormat, documentTitleOption, blockLayout, patientSignatureRequired }),
       },
     );
     const result = await response.json() as { ok?: boolean; error?: string };
@@ -136,9 +143,9 @@ export default function DocumentationTemplatesClient({
       <section>
         <h2>Eigene Vorlagen</h2>
         {initialTemplates.length === 0 ? <p className="text-muted">Noch keine Vorlagen angelegt.</p> : (
-          <table><thead><tr><th>Name</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>
+          <table><thead><tr><th>Name</th><th>Bereich</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>
             {initialTemplates.map((template) => <tr key={template.id}>
-              <td>{template.name}</td><td>{template.isActive ? "Aktiv" : "Inaktiv"}</td>
+              <td>{template.name}</td><td>{template.category === "profile" ? "Steckbrief" : "Dokumentation"}</td><td>{template.isActive ? "Aktiv" : "Inaktiv"}</td>
               <td><div style={{ display: "flex", gap: "0.5rem" }}>
                 <button type="button" onClick={() => startEdit(template)} disabled={busy}>Bearbeiten</button>
                 <button type="button" onClick={() => void duplicate(template.id)} disabled={busy}>Duplizieren</button>
@@ -151,16 +158,24 @@ export default function DocumentationTemplatesClient({
       <form ref={editorFormRef} onSubmit={(event) => void save(event)} style={{ display: "grid", gap: "1rem" }}>
         <h2>{editingId ? "Vorlage bearbeiten" : "Vorlage anlegen"}</h2>
         <label>Vorlagenname<input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required disabled={busy} /></label>
+        <label>Bereich<select value={category} onChange={(event) => {
+          const nextCategory = event.target.value as "documentation" | "profile";
+          setCategory(nextCategory);
+          if (nextCategory === "profile") {
+            setDocumentTitleOption("steckbrief");
+            setPatientSignatureRequired(false);
+          }
+        }} disabled={busy}><option value="documentation">Dokumentation</option><option value="profile">Steckbrief</option></select></label>
         <label>Ausgabeform<select value={outputFormat} onChange={(event) => setOutputFormat(event.target.value as "informell" | "formell")} disabled={busy}>
           <option value="informell">Informell</option><option value="formell">Formell</option>
         </select></label>
-        <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={patientSignatureRequired} onChange={(event) => setPatientSignatureRequired(event.target.checked)} disabled={busy} />Patientenunterschrift erforderlich</label>
+        {category === "documentation" ? <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={patientSignatureRequired} onChange={(event) => setPatientSignatureRequired(event.target.checked)} disabled={busy} />Patientenunterschrift erforderlich</label> : null}
         <label>Dokumenttitel<select value={documentTitleOption} onChange={(event) => setDocumentTitleOption(event.target.value)} disabled={busy}>
-          {INTERNAL_DOCUMENT_TITLE_OPTIONS.filter((option) => option.value !== "andere").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          {INTERNAL_DOCUMENT_TITLE_OPTIONS.filter((option) => option.value !== "andere" && (category === "profile" || option.value !== "steckbrief")).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select></label>
         <fieldset style={{ display: "grid", gap: "0.5rem" }}>
           <legend>Bausteine</legend>
-          {availableBlocks.length === 0 ? <p className="text-muted">Bitte zuerst Bausteine in der Dokumentationsbibliothek anlegen.</p> : availableBlocks.map((block) => (
+          {categoryBlocks.length === 0 ? <p className="text-muted">Bitte zuerst passende Bausteine in der Dokumentationsbibliothek anlegen.</p> : categoryBlocks.map((block) => (
             <label key={block.id} style={{ display: "flex", gap: "0.5rem" }}>
               <input type="checkbox" checked={blockLayout.some((item) => item.blockId === block.id)} onChange={() => toggleBlock(block.id)} disabled={busy} />
               {block.title}

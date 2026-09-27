@@ -9,8 +9,10 @@ import type {
   PracticeDocumentationFieldOptionInput,
   PracticeDocumentationOptionInput,
   PracticeDocumentationSegmentInput,
+  PracticeDocumentationTemplateCategory,
 } from "@/lib/practice/documentationBlocks";
 import type { DocumentationSegment, RepeatableDocumentationSegment } from "@/lib/questionnaire/blockCatalog";
+import { PRACTICE_DOCUMENTATION_PROFILE_BLOCKS } from "@/lib/practice/documentationProfileBlocks";
 
 type BlockRow = {
   id: string;
@@ -36,6 +38,7 @@ type Draft = {
   documentationSegments: PracticeDocumentationSegmentInput[];
   options: PracticeDocumentationOptionInput[];
   additionalFields: PracticeDocumentationAdditionalFieldInput[];
+  allowedTemplateCategories: PracticeDocumentationTemplateCategory[];
 };
 
 const TYPE_LABELS: Record<PracticeDocumentationBlockType, string> = {
@@ -96,6 +99,7 @@ const emptyDraft = (): Draft => ({
     { label: "", documentationText: "" },
   ],
   additionalFields: [],
+  allowedTemplateCategories: ["documentation"],
 });
 
 function newAdditionalField(): PracticeDocumentationAdditionalFieldInput {
@@ -199,6 +203,7 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
           ...(fieldQuestion.unit ? { unit: fieldQuestion.unit } : {}),
         };
       }),
+      allowedTemplateCategories: row.definition.allowedTemplateCategories ?? ["documentation"],
     });
     setError(null);
   }
@@ -230,7 +235,17 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
   }
 
   function changeType(blockType: PracticeDocumentationBlockType) {
-    setDraft((current) => ({ ...emptyDraft(), title: current.title, blockType }));
+    setDraft((current) => ({ ...emptyDraft(), title: current.title, blockType, allowedTemplateCategories: current.allowedTemplateCategories }));
+  }
+
+  function toggleCategory(category: PracticeDocumentationTemplateCategory) {
+    setDraft((current) => {
+      const selected = current.allowedTemplateCategories.includes(category);
+      const next = selected
+        ? current.allowedTemplateCategories.filter((candidate) => candidate !== category)
+        : [...current.allowedTemplateCategories, category];
+      return { ...current, allowedTemplateCategories: next.length > 0 ? next : [category] };
+    });
   }
 
   function updateOption(index: number, update: Partial<PracticeDocumentationOptionInput>) {
@@ -327,6 +342,27 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
     router.refresh();
   }
 
+  async function importProfileBlocks() {
+    setBusy(true);
+    setError(null);
+    try {
+      for (const block of PRACTICE_DOCUMENTATION_PROFILE_BLOCKS) {
+        const response = await fetch("/api/practice/documentation-library", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(block),
+        });
+        const result = await response.json() as { ok?: boolean; error?: string };
+        if (!response.ok || !result.ok) throw new Error(result.error ?? "Steckbriefbaustein konnte nicht angelegt werden.");
+      }
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Steckbriefbausteine konnten nicht angelegt werden.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <>
       <section>
@@ -344,6 +380,12 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
             </details>)}
           </div>
         )}
+      </section>
+
+      <section>
+        <h2>Steckbrief-Bausteine</h2>
+        <p className="text-muted">Die folgenden normalen Bibliotheksbausteine können als Grundlage eigener Steckbriefvorlagen angelegt werden.</p>
+        <button type="button" onClick={() => void importProfileBlocks()} disabled={busy}>Steckbrief-Bausteine anlegen</button>
       </section>
 
       <section>
@@ -365,6 +407,11 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
           {TYPE_HELP[draft.blockType]}
         </p>
         <label>Titel<input value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} maxLength={120} required disabled={busy} /></label>
+        <fieldset>
+          <legend>Verfügbar für</legend>
+          <label><input type="checkbox" checked={draft.allowedTemplateCategories.includes("documentation")} onChange={() => toggleCategory("documentation")} disabled={busy} />Dokumentationen</label>
+          <label><input type="checkbox" checked={draft.allowedTemplateCategories.includes("profile")} onChange={() => toggleCategory("profile")} disabled={busy} />Steckbriefe</label>
+        </fieldset>
         {(draft.blockType === "text" || draft.blockType === "paragraph" || draft.blockType === "hint") && (
           <label>{draft.blockType === "paragraph" ? "Inhalt" : "Eingabeaufforderung"}<textarea value={draft.text} onChange={(event) => setDraft((current) => ({ ...current, text: event.target.value }))} rows={draft.blockType === "paragraph" ? 10 : 4} required disabled={busy} /></label>
         )}

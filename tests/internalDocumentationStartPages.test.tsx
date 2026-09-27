@@ -23,6 +23,7 @@ const blocks: PracticeDocumentationBlockSummary[] = [
 const templates: PracticeDocumentationTemplate[] = [{
   id: "template-1",
   name: "Praxisvorlage",
+  category: "documentation",
   outputFormat: "formell",
   documentTitleOption: "stellungnahme",
   blockLayout: [{ blockId: "practice_block_blutdruck", section: 2, order: 0 }],
@@ -110,6 +111,7 @@ describe.each(starts)("interner Dokumentationslauncher: %s", (_label, StartCompo
       selectedBlockIds: ["practice_block_blutdruck"],
       blockLayout: [{ blockId: "practice_block_blutdruck", section: 2, order: 0 }],
       patientReference: "81426",
+      documentKind: "documentation",
       outputFormat: "formell",
       documentTitleOption: "stellungnahme",
     });

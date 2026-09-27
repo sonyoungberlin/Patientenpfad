@@ -6,6 +6,7 @@ export const INTERNAL_DOCUMENT_TITLE_OPTIONS = [
   { value: "bericht", label: "Bericht" },
   { value: "rueckmeldung", label: "Rückmeldung" },
   { value: "patienteninformation", label: "Patienteninformation" },
+  { value: "steckbrief", label: "Steckbrief" },
   { value: "andere", label: "Andere" },
 ] as const;
 

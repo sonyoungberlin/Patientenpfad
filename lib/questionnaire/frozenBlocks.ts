@@ -75,12 +75,18 @@ export type FrozenBlock = {
 export type InternalDocumentationSnapshot = {
   schemaVersion: 2;
   metadata: InternalDocumentTitleMetadata & {
+    documentKind?: "documentation" | "profile";
     outputFormat?: "informell" | "formell";
     patientSignatureRequired?: boolean;
     patientSignatureCity?: string;
   };
   blocks: FrozenBlock[];
 };
+
+export function getInternalDocumentKind(raw: unknown): "documentation" | "profile" {
+  if (!isInternalDocumentationSnapshot(raw)) return "documentation";
+  return raw.metadata.documentKind === "profile" ? "profile" : "documentation";
+}
 
 export function buildInternalDocumentationSnapshot(
   blocks: FrozenBlock[],

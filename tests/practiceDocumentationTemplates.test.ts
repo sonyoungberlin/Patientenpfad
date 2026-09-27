@@ -44,6 +44,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
       ok: true,
       value: {
         name: "Kardiologische Stellungnahme",
+        category: "documentation",
         outputFormat: "formell",
         documentTitleOption: "stellungnahme",
         blockLayout: [
@@ -81,6 +82,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
     await expect(resolveActivePracticeDocumentationTemplates("practice-1")).resolves.toEqual([{
       id: "template-1",
       name: "Kardiologie",
+      category: "documentation",
       outputFormat: "informell",
       documentTitleOption: "arztbrief",
       blockLayout: [{ blockId: "practice_block_1", section: 3, order: 0 }],
@@ -125,6 +127,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
     findTemplate.mockResolvedValue({
       id: "template-1",
       name: "Kardiologische Stellungnahme",
+      category: "profile",
       output_format: "formell",
       document_title_option: "stellungnahme",
       block_layout: input.blockLayout,
@@ -140,13 +143,14 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
       data: {
         practice_id: "practice-1",
         name: "Kopie von Kardiologische Stellungnahme",
+        category: "profile",
         output_format: "formell",
         document_title_option: "stellungnahme",
         block_layout: [
           { blockId: "practice_block_1", section: 2, order: 0 },
           { blockId: "practice_block_2", section: 2, order: 1 },
         ],
-        patient_signature_required: true,
+        patient_signature_required: false,
       },
     });
     expect(createTemplate.mock.calls[0][0].data).not.toHaveProperty("block_definitions");

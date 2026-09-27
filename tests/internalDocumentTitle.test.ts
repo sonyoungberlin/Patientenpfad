@@ -20,7 +20,7 @@ describe("internal document title", () => {
     });
   });
 
-  it("enthält genau die acht freigegebenen Optionen", () => {
+  it("enthält die freigegebenen Dokument- und Steckbrieftitel", () => {
     expect(INTERNAL_DOCUMENT_TITLE_OPTIONS.map((option) => option.value)).toEqual([
       "arztbrief",
       "stellungnahme",
@@ -29,6 +29,7 @@ describe("internal document title", () => {
       "bericht",
       "rueckmeldung",
       "patienteninformation",
+      "steckbrief",
       "andere",
     ]);
   });

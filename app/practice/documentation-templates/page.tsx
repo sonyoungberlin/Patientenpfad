@@ -4,6 +4,7 @@ import { getSessionAccountFromCookies } from "@/lib/auth";
 import { requirePracticeRoleFromCookies } from "@/lib/authz";
 import { listPracticeDocumentationTemplates } from "@/lib/practice/documentationTemplates";
 import { listPracticeDocumentationBlocks } from "@/lib/practice/documentationBlocks";
+import { parsePracticeDocumentationBlockDefinition } from "@/lib/practice/documentationBlocks";
 import DocumentationTemplatesClient from "./DocumentationTemplatesClient";
 
 export default async function PracticeDocumentationTemplatesPage() {
@@ -26,6 +27,7 @@ export default async function PracticeDocumentationTemplatesPage() {
         initialTemplates={templates.map((template) => ({
           id: template.id,
           name: template.name,
+          category: template.category,
           isActive: template.is_active,
           blockLayout: template.block_layout,
           outputFormat: template.output_format,
@@ -35,6 +37,7 @@ export default async function PracticeDocumentationTemplatesPage() {
         availableBlocks={blocks.map((block) => ({
           id: block.id,
           title: block.title,
+          allowedTemplateCategories: parsePracticeDocumentationBlockDefinition(block.definition).allowedTemplateCategories,
         }))}
       />
     </main>

@@ -120,6 +120,40 @@ describe("internal documentation service", () => {
     expect(createSession.mock.calls[0][0]).not.toHaveProperty("ownerAccountId");
   });
 
+  it("erstellt einen Steckbrief ohne Patientenreferenz im bestehenden Sessionpfad", async () => {
+    await createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "",
+      documentKind: "profile",
+      documentTitleOption: "steckbrief",
+      outputFormat: "informell",
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      patientReference: null,
+      sessionKind: "internal_documentation",
+      internalDocumentKind: "profile",
+      internalDocumentTitle: {
+        documentTitleOption: "steckbrief",
+        documentTitle: "Steckbrief",
+      },
+    }));
+  });
+
+  it("verlangt für normale interne Dokumentation weiterhin eine Patientenreferenz", async () => {
+    await expect(createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "",
+      documentKind: "documentation",
+      documentTitleOption: "bericht",
+      outputFormat: "informell",
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    })).rejects.toMatchObject({ status: 400 });
+  });
+
   it("friert die dokumentweite Patientenunterschrift samt Praxisort im Snapshot ein", async () => {
     await createInternalDocumentationSession({
       selectedBlockIds: ["CARE_PLAN_HA"],

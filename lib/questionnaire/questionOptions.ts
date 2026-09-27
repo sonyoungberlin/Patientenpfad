@@ -18,8 +18,11 @@ export function getQuestionOptionLabel(option: QuestionOptionDefinition): string
 }
 
 export function getQuestionOptionValues(
-  question: Pick<QuestionDefinition, "options">,
+  question: Pick<QuestionDefinition, "options"> & Partial<Pick<QuestionDefinition, "type">>,
 ): string[] {
+  if (question.type === "yes_no" && (question.options === undefined || question.options.length === 0)) {
+    return ["ja", "nein"];
+  }
   return (question.options ?? []).map(getQuestionOptionValue);
 }
 

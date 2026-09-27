@@ -7,7 +7,7 @@ import { computeVisibleBlockIds, computeVisibleQuestionIds } from "./conditional
 import { computeAllDerivedValues } from "./derivedValues";
 import type { DerivedValues } from "./derivedValues";
 import { parseFrozenBlocks } from "./frozenBlocks";
-import { getInternalDocumentTitle, getInternalPatientSignatureMetadata } from "./frozenBlocks";
+import { getInternalDocumentKind, getInternalDocumentTitle, getInternalPatientSignatureMetadata } from "./frozenBlocks";
 import type { FrozenBlock } from "./frozenBlocks";
 import { isNewBlockBasedInternalSession } from "./documentedContent";
 import { buildOptionsByQuestionId } from "./multiSelect";
@@ -44,6 +44,7 @@ export type QuestionnaireInboxDetail = {
   attentionHints: ReturnType<typeof computeQuestionnaireAttentionHints>;
   visibleQuestionIds: string[];
   digitalRequestContext: DigitalRequestInboxContext | null;
+  documentKind: "documentation" | "profile";
 };
 
 function buildVisibleQuestionIds(
@@ -155,6 +156,7 @@ export function buildQuestionnaireInboxDetail(
     attentionHints: computeQuestionnaireAttentionHints(answers, visibleQuestionIds),
     visibleQuestionIds: [...visibleQuestionIds],
     digitalRequestContext: parseDigitalRequestInboxContext(session.digital_request_snapshot),
+    documentKind: getInternalDocumentKind(session.frozen_blocks),
     xmlFilename: session.session_kind === "internal_documentation" && (isNewBlockBased || internalWorkflow)
       ? buildQuestionnaireExportFilename(
           {

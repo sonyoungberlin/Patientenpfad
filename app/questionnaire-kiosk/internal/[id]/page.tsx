@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getQuestionnaireKioskDeviceFromCookies, hasQuestionnaireKioskCapability } from "@/lib/questionnaireKiosk/auth";
-import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
+import { getInternalDocumentKind, parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 import { getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedContent";
@@ -24,6 +24,7 @@ export default async function InternalDocumentationPage({ params }: { params: Pr
     frozenBlocks,
   });
   const workflow = isNewBlockBased ? null : getInternalWorkflow(session.internal_workflow_id);
+  const documentKind = getInternalDocumentKind(session.frozen_blocks);
   if (!isNewBlockBased && !workflow) notFound();
-  return <main className="questionnaire-kiosk-page"><h1>{isNewBlockBased ? "Interne Dokumentation" : workflow!.title}</h1><p className="text-muted">Patientenreferenz: {session.patient_reference}</p><QuestionnaireFormClient token={id} submitEndpoint={`/api/questionnaire-kiosk/internal/${id}`} questions={questions} conditionalRules={conditionalRules} frozenBlocks={frozenBlocks} context="patient" source="kiosk_direct" introText="Interne Dokumentation für die Praxis." patientReference={session.patient_reference} kioskRestartPath="/questionnaire-kiosk/internal" internalWorkflowId={workflow?.id ?? null} hideManualExports /></main>;
+  return <main className="questionnaire-kiosk-page"><h1>{isNewBlockBased ? documentKind === "profile" ? "Steckbrief" : "Interne Dokumentation" : workflow!.title}</h1>{session.patient_reference ? <p className="text-muted">Patientenreferenz: {session.patient_reference}</p> : null}<QuestionnaireFormClient token={id} submitEndpoint={`/api/questionnaire-kiosk/internal/${id}`} questions={questions} conditionalRules={conditionalRules} frozenBlocks={frozenBlocks} context="patient" source="kiosk_direct" introText={documentKind === "profile" ? "Steckbrief erstellen." : "Interne Dokumentation für die Praxis."} patientReference={session.patient_reference} kioskRestartPath="/questionnaire-kiosk/internal" internalWorkflowId={workflow?.id ?? null} hideManualExports /></main>;
 }

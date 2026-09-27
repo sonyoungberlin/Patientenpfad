@@ -5,6 +5,7 @@ import { parseFrozenBlocks } from "@/lib/questionnaire/frozenBlocks";
 import { isNewBlockBasedInternalSession } from "@/lib/questionnaire/documentedContent";
 import { getInternalWorkflow } from "@/lib/questionnaire/internalWorkflowRegistry";
 import { parseConditionalRules } from "@/lib/questionnaire/conditionalLogic";
+import { getInternalDocumentKind } from "@/lib/questionnaire/frozenBlocks";
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 
 export const dynamic = "force-dynamic";
@@ -49,11 +50,12 @@ export default async function InternalDocumentationPage({
   if (!isNewBlockBased && !workflow) notFound();
   const questions = frozenBlocks?.flatMap((block) => block.questions) ?? [];
   const conditionalRules = parseConditionalRules(session.frozen_conditional_rules);
+  const documentKind = getInternalDocumentKind(session.frozen_blocks);
 
   return (
     <main>
-      <h1>{isNewBlockBased ? "Interne Dokumentation" : workflow!.title}</h1>
-      <p className="text-muted">Patientenreferenz: {session.patient_reference}</p>
+      <h1>{isNewBlockBased ? documentKind === "profile" ? "Steckbrief" : "Interne Dokumentation" : workflow!.title}</h1>
+      {session.patient_reference ? <p className="text-muted">Patientenreferenz: {session.patient_reference}</p> : null}
       <QuestionnaireFormClient
         token={id}
         submitEndpoint={`/api/internal-documentation/${id}`}

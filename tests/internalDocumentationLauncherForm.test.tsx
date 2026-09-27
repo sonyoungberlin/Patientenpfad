@@ -15,19 +15,28 @@ jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }))
 Object.defineProperty(globalThis, "fetch", { configurable: true, writable: true, value: mockFetch });
 
 const availableBlocks: PracticeDocumentationBlockSummary[] = [
-  { id: "practice_block_anamnese", title: "Anamnese", blockType: "text" },
-  { id: "practice_block_blutdruck", title: "Blutdruck", blockType: "measurement" },
-  { id: "practice_block_hinweis", title: "Hinweis", blockType: "hint" },
+  { id: "practice_block_anamnese", title: "Anamnese", blockType: "text", allowedTemplateCategories: ["documentation"] },
+  { id: "practice_block_blutdruck", title: "Blutdruck", blockType: "measurement", allowedTemplateCategories: ["documentation", "profile"] },
+  { id: "practice_block_hinweis", title: "Hinweis", blockType: "hint", allowedTemplateCategories: ["profile"] },
 ];
 const practiceTemplate: PracticeDocumentationTemplate = {
   id: "practice-template",
   name: "Praxisvorlage",
+  category: "documentation",
   outputFormat: "formell",
   documentTitleOption: "stellungnahme",
   blockLayout: [
     { blockId: "practice_block_anamnese", section: 2, order: 0 },
     { blockId: "practice_block_blutdruck", section: 3, order: 0 },
   ],
+};
+const profileTemplate: PracticeDocumentationTemplate = {
+  id: "profile-template",
+  name: "Versorgungsstelle",
+  category: "profile",
+  outputFormat: "informell",
+  documentTitleOption: "steckbrief",
+  blockLayout: [{ blockId: "practice_block_hinweis", section: 1, order: 0 }],
 };
 
 function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
@@ -44,7 +53,7 @@ async function renderLauncher() {
     <InternalDocumentationLauncherForm
       endpoint="/api/internal-documentation"
       availableBlocks={availableBlocks}
-      practiceTemplates={[practiceTemplate]}
+      practiceTemplates={[practiceTemplate, profileTemplate]}
     />,
   ));
   return { container, root };
@@ -81,6 +90,7 @@ describe("InternalDocumentationLauncherForm", () => {
       selectedBlockIds: ["practice_block_anamnese", "practice_block_blutdruck"],
       blockLayout: practiceTemplate.blockLayout,
       patientReference: "81426",
+      documentKind: "documentation",
       outputFormat: "formell",
       documentTitleOption: "stellungnahme",
     });
@@ -118,14 +128,14 @@ describe("InternalDocumentationLauncherForm", () => {
       .find((button) => button.textContent?.includes("Baustein hinzufügen"))!;
     await act(async () => addButton.click());
     await act(async () => {
-      container.querySelector<HTMLInputElement>('[data-available-internal-block="practice_block_hinweis"]')!.click();
+      container.querySelector<HTMLInputElement>('[data-available-internal-block="practice_block_blutdruck"]')!.click();
     });
     await submit(container);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).toEqual(expect.objectContaining({
-      selectedBlockIds: ["practice_block_hinweis"],
-      blockLayout: [{ blockId: "practice_block_hinweis", section: 1, order: 0 }],
+      selectedBlockIds: ["practice_block_blutdruck"],
+      blockLayout: [{ blockId: "practice_block_blutdruck", section: 1, order: 0 }],
       outputFormat: "informell",
       documentTitleOption: "arztbrief",
     }));
@@ -149,6 +159,49 @@ describe("InternalDocumentationLauncherForm", () => {
     expect(container.querySelector('[role="alert"]')?.textContent)
       .toBe("Bitte mindestens einen Dokumentationsbaustein auswählen.");
     expect(mockFetch).not.toHaveBeenCalled();
+
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  it("startet einen Steckbrief ohne Patientenreferenz mit einer Profilvorlage", async () => {
+    const { container, root } = await renderLauncher();
+    const profileButton = [...container.querySelectorAll<HTMLButtonElement>('button[type="button"]')]
+      .find((button) => button.textContent === "Steckbriefe")!;
+    await act(async () => profileButton.click());
+    const templateSelect = [...container.querySelectorAll<HTMLSelectElement>("select")]
+      .find((select) => [...select.options].some((option) => option.value === "profile-template"))!;
+    await act(async () => change(templateSelect, "profile-template"));
+    await submit(container);
+
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body)).toEqual(expect.objectContaining({
+      patientReference: "",
+      documentKind: "profile",
+      documentTitleOption: "steckbrief",
+      selectedBlockIds: ["practice_block_hinweis"],
+    }));
+
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  it("zeigt ohne Vorlage nur den passenden Bausteinpool je Bereich", async () => {
+    const { container, root } = await renderLauncher();
+    const available = () => [...container.querySelectorAll<HTMLInputElement>("[data-available-internal-block]")]
+      .map((input) => input.dataset.availableInternalBlock);
+
+    await completeReference(container);
+    const titleSelect = container.querySelectorAll<HTMLSelectElement>("select")[1];
+    await act(async () => change(titleSelect, "arztbrief"));
+    await act(async () => container.querySelector<HTMLButtonElement>('button[aria-expanded="false"]')!.click());
+    expect(available()).toEqual(["practice_block_anamnese", "practice_block_blutdruck"]);
+
+    const profileButton = [...container.querySelectorAll<HTMLButtonElement>('button[type="button"]')]
+      .find((button) => button.textContent === "Steckbriefe")!;
+    await act(async () => profileButton.click());
+    const profileAddButton = container.querySelector<HTMLButtonElement>('button[aria-expanded="false"]');
+    if (profileAddButton) await act(async () => profileAddButton.click());
+    expect(available()).toEqual(["practice_block_blutdruck", "practice_block_hinweis"]);
 
     await act(async () => root.unmount());
     container.remove();

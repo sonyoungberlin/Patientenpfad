@@ -65,6 +65,7 @@ export async function createInternalDocumentationSession(input: {
   selectedBlockIds: unknown;
   blockLayout?: unknown;
   patientReference: unknown;
+  documentKind?: unknown;
   documentTitleOption: unknown;
   customDocumentTitle?: unknown;
   outputFormat: unknown;
@@ -73,8 +74,12 @@ export async function createInternalDocumentationSession(input: {
   context: InternalDocumentationContext;
 }) {
   const requestedBlockIds = input.selectedBlockIds;
+  const documentKind = input.documentKind ?? "documentation";
+  if (documentKind !== "documentation" && documentKind !== "profile") {
+    throw new InternalDocumentationError("Bitte eine gültige Dokumentkategorie auswählen.", 400);
+  }
   const patientReference = normalizeXComfortPatientReference(input.patientReference);
-  if (!patientReference) {
+  if (!patientReference && documentKind !== "profile") {
     throw new InternalDocumentationError(
       "Bitte Patientenreferenz angeben.",
       400,
@@ -89,6 +94,7 @@ export async function createInternalDocumentationSession(input: {
   if (input.patientSignatureRequired !== undefined && typeof input.patientSignatureRequired !== "boolean") {
     throw new InternalDocumentationError("Ungültige Einstellung für die Patientenunterschrift.", 400);
   }
+  const patientSignatureRequired = documentKind === "documentation" && input.patientSignatureRequired === true;
   let internalDocumentTitle;
   try {
     internalDocumentTitle = resolveInternalDocumentTitle(
@@ -153,7 +159,7 @@ export async function createInternalDocumentationSession(input: {
   }
 
   let patientSignatureCity: string | undefined;
-  if (input.patientSignatureRequired === true) {
+  if (patientSignatureRequired) {
     const legalProfile = await prisma.practiceLegalProfile.findUnique({
       where: { practice_id: input.context.practiceId },
       select: { city: true },
@@ -186,8 +192,9 @@ export async function createInternalDocumentationSession(input: {
       internalWorkflowId: null,
       internalBlockLayout,
       internalDocumentTitle,
+      internalDocumentKind: documentKind,
       internalOutputFormat: input.outputFormat,
-      internalPatientSignatureRequired: input.patientSignatureRequired === true,
+      internalPatientSignatureRequired: patientSignatureRequired,
       internalPatientSignatureCity: patientSignatureCity,
       internalFrozenBlocks,
       origin: input.origin,

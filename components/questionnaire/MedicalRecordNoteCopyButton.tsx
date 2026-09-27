@@ -5,11 +5,13 @@ import { useState } from "react";
 type Props = {
   noteText: string;
   sessionId: string;
+  label?: string;
 };
 
 export default function MedicalRecordNoteCopyButton({
   noteText,
   sessionId,
+  label = "Krankenblatt-Text kopieren",
 }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -48,7 +50,7 @@ export default function MedicalRecordNoteCopyButton({
         data-q-copy-note={sessionId}
         style={{ display: "inline-block", width: "fit-content" }}
       >
-        {copied ? "Kopiert ✓" : "Krankenblatt-Text kopieren"}
+        {copied ? "Kopiert ✓" : label}
       </button>
       <textarea
         readOnly

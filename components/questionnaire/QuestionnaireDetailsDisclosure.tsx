@@ -118,6 +118,7 @@ export default function QuestionnaireDetailsDisclosure({ sessionId }: Props) {
           <MedicalRecordNoteCopyButton
             sessionId={sessionId}
             noteText={detail.noteText}
+            label={detail.documentKind === "profile" ? "Steckbrief-Text kopieren" : undefined}
           />
           {(derivedLines.length > 0 || detail.attentionHints.length > 0) && (
             <div

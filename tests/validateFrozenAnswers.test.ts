@@ -37,6 +37,38 @@ describe("validateFrozenAnswers", () => {
     expect(validateFrozenAnswers({ STATUS: "unbekannt" }, blocks)).toMatchObject({ ok: false, invalidQuestionIds: ["STATUS"] });
   });
 
+  describe("optionale und verpflichtende Ja/Nein-Fragen", () => {
+    const yesNo = (overrides: Partial<QuestionDefinition> = {}): QuestionDefinition => ({
+      id: "YES_NO",
+      text: "Ja oder Nein",
+      type: "yes_no",
+      required: false,
+      ...overrides,
+    });
+
+    it("akzeptiert ein leeres optionales Ja/Nein-Feld", () => {
+      expect(validateFrozenAnswers({ YES_NO: "" }, [makeBlock([yesNo()])])).toMatchObject({ ok: true });
+    });
+
+    it("weist ein leeres verpflichtendes Ja/Nein-Feld ab", () => {
+      expect(validateFrozenAnswers({ YES_NO: "" }, [makeBlock([yesNo({ required: true })])])).toMatchObject({
+        ok: false,
+        invalidQuestionIds: ["YES_NO"],
+      });
+    });
+
+    it.each(["ja", "nein"])("akzeptiert den Standardwert %s", (value) => {
+      expect(validateFrozenAnswers({ YES_NO: value }, [makeBlock([yesNo()])])).toMatchObject({ ok: true });
+    });
+
+    it("weist einen unbekannten Ja/Nein-Wert ab", () => {
+      expect(validateFrozenAnswers({ YES_NO: "unbekannt" }, [makeBlock([yesNo()])])).toMatchObject({
+        ok: false,
+        invalidQuestionIds: ["YES_NO"],
+      });
+    });
+  });
+
   it("weist conditional ausgeblendete Pflichtfelder nicht ab", () => {
     const blocks = [makeBlock([
       { id: "GATE", text: "Gate", type: "select", required: false, options: ["ja", "nein"] },

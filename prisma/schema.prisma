@@ -920,6 +920,7 @@ model PracticeDocumentationTemplate {
   practice    Practice @relation("PracticeDocumentationTemplatePractice", fields: [practice_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   name                   String
+  category               String   @default("documentation")
   is_active              Boolean  @default(true)
   block_layout           Json
   output_format          String?

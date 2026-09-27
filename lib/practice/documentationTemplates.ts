@@ -8,9 +8,11 @@ import { INTERNAL_DOCUMENT_TITLE_OPTIONS } from "@/lib/questionnaire/internalDoc
 
 export const PRACTICE_DOCUMENTATION_TEMPLATE_NAME_MAX_LENGTH = 120;
 export type PracticeDocumentationOutputFormat = "informell" | "formell";
+export type PracticeDocumentationTemplateCategory = "documentation" | "profile";
 
 export type PracticeDocumentationTemplateInput = {
   name: string;
+  category: PracticeDocumentationTemplateCategory;
   outputFormat: PracticeDocumentationOutputFormat;
   documentTitleOption: string;
   blockLayout: InternalBlockPlacement[];
@@ -42,6 +44,10 @@ export function validatePracticeDocumentationTemplate(input: unknown): Validatio
   if (name.length > PRACTICE_DOCUMENTATION_TEMPLATE_NAME_MAX_LENGTH) {
     return { ok: false, error: `Name darf maximal ${PRACTICE_DOCUMENTATION_TEMPLATE_NAME_MAX_LENGTH} Zeichen enthalten.` };
   }
+  const category = value.category ?? "documentation";
+  if (category !== "documentation" && category !== "profile") {
+    return { ok: false, error: "Bitte eine gültige Vorlagenkategorie auswählen." };
+  }
   if (value.outputFormat !== "informell" && value.outputFormat !== "formell") {
     return { ok: false, error: "Bitte eine gültige Ausgabeform auswählen." };
   }
@@ -66,10 +72,11 @@ export function validatePracticeDocumentationTemplate(input: unknown): Validatio
       ok: true,
       value: {
         name,
+        category,
         outputFormat: value.outputFormat,
         documentTitleOption: value.documentTitleOption,
         blockLayout: normalizeInternalBlockPlacements(blockIds, value.blockLayout),
-        patientSignatureRequired: value.patientSignatureRequired === true,
+        patientSignatureRequired: category === "documentation" && value.patientSignatureRequired === true,
       },
     };
   } catch (cause) {
@@ -114,6 +121,7 @@ export async function resolveActivePracticeDocumentationTemplates(
       return [{
         id: template.id,
         name: template.name,
+        category: template.category === "profile" ? "profile" : "documentation",
         outputFormat: template.output_format,
         documentTitleOption: template.document_title_option,
         blockLayout: normalizeInternalBlockPlacements(blockIds, template.block_layout),
@@ -134,6 +142,7 @@ export async function createPracticeDocumentationTemplate(
     data: {
       practice_id: practiceId,
       name: input.name,
+      category: input.category,
       output_format: input.outputFormat,
       document_title_option: input.documentTitleOption,
       block_layout: input.blockLayout as unknown as Prisma.InputJsonValue,
@@ -169,6 +178,7 @@ export async function duplicatePracticeDocumentationTemplate(
   );
   const input = validatePracticeDocumentationTemplate({
     name,
+    category: source.category,
     outputFormat: source.output_format,
     documentTitleOption: source.document_title_option,
     blockLayout: source.block_layout,
@@ -181,6 +191,7 @@ export async function duplicatePracticeDocumentationTemplate(
     data: {
       practice_id: practiceId,
       name: input.value.name,
+      category: input.value.category,
       output_format: input.value.outputFormat,
       document_title_option: input.value.documentTitleOption,
       block_layout: input.value.blockLayout as unknown as Prisma.InputJsonValue,
@@ -199,6 +210,7 @@ export async function updatePracticeDocumentationTemplate(
     where: { id, practice_id: practiceId },
     data: "isActive" in input ? { is_active: false } : {
       name: input.name,
+      category: input.category,
       output_format: input.outputFormat,
       document_title_option: input.documentTitleOption,
       block_layout: input.blockLayout as unknown as Prisma.InputJsonValue,
