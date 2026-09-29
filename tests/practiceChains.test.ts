@@ -62,21 +62,6 @@ const PRACTICE_ID = "practice-1";
 const OTHER_PRACTICE_ID = "practice-2";
 const ENTRY_V1 = "entry-v1";
 const ENTRY_V2 = "entry-v2";
-function publishedEntrySnapshot() {
-  return {
-    processKind: "practice-workflow",
-    snapshotVersion: 2,
-    caseProfileId: "profile-1",
-    caseProfileTitle: "Testfall",
-    completedAt: "2026-09-01T00:00:00.000Z",
-    checkpoints: [{
-      checkpointId: "patient-bekannt",
-      checkpointTitle: "Patient bekannt",
-      decision: "PFLICHT",
-      definition: { checkpointAnchors: [], selectedAnchorIds: [] },
-    }],
-  };
-}
 const account = {
   id: "account-1",
   email: "owner@example.com",
@@ -136,7 +121,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   (getSessionAccount as jest.Mock).mockResolvedValue(account);
   mockRequirePracticeCatalogAccess.mockResolvedValue({ account, error: null });
-  mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1, snapshot: publishedEntrySnapshot() }, { id: ENTRY_V2, snapshot: publishedEntrySnapshot() }]);
+  mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1 }, { id: ENTRY_V2 }]);
   mockPracticeCaseChain.findFirst.mockResolvedValue(row());
   mockPracticeCaseChain.findMany.mockResolvedValue([]);
   mockPracticeCaseChain.create.mockResolvedValue(row());
@@ -214,7 +199,7 @@ describe("PracticeCaseChain service", () => {
     }));
 
     mockPracticeCaseChainEntryApproval.findFirst.mockResolvedValue({ id: "entry-approval" });
-    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1, snapshot: publishedEntrySnapshot() }, { id: ENTRY_V2, snapshot: publishedEntrySnapshot() }]);
+    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1 }, { id: ENTRY_V2 }]);
     await expect(getReadyPracticeChainRunner("chain-1", PRACTICE_ID, "step-2")).resolves.toMatchObject({ startStepId: "step-2" });
   });
 
@@ -389,7 +374,7 @@ describe("PracticeCaseChain service", () => {
     mockPracticeCaseChain.findFirst.mockResolvedValue(chainA);
     mockPracticeCaseChainConnectionApproval.findMany.mockResolvedValue([{ source_step_id: "step-2", source_exit_id: "answer-3", target_chain_id: "chain-b", target_step_id: "step-2" }]);
     mockPracticeCaseChain.findMany.mockResolvedValue([chainB]);
-    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1, title: "Akutanfrage", snapshot: publishedEntrySnapshot() }, { id: ENTRY_V2, title: "Facharztbericht", snapshot: publishedEntrySnapshot() }]);
+    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1, title: "Akutanfrage" }, { id: ENTRY_V2, title: "Facharztbericht" }]);
     const runner = await getReadyPracticeChainRunner("chain-a", PRACTICE_ID);
     expect(runner?.connections).toEqual([{ sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "chain-b", targetStepId: "step-2", targetName: "Facharztbericht Rezeptanfrage", targetVersion: 2, targetTitle: "Facharztbericht" }]);
     expect(followRunnerTarget(createRunnerState("step-2"), null).finished).toBe(true);
@@ -425,7 +410,7 @@ describe("PracticeCaseChain service", () => {
       id: "old-selection", source_chain_id: "chain-a", source_step_id: "step-2", target_chain_id: "chain-b", target_step_id: "step-2", selection_version: 1, revoked_at: null,
     });
     mockPracticeCaseChain.findFirst.mockResolvedValue(chainB);
-    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1, snapshot: publishedEntrySnapshot() }, { id: ENTRY_V2, snapshot: publishedEntrySnapshot() }]);
+    mockPracticeCatalogEntry.findMany.mockResolvedValue([{ id: ENTRY_V1 }, { id: ENTRY_V2 }]);
     const startedB = await getApprovedPracticeChainContinuation({
       practiceId: PRACTICE_ID, sourceChainId: "chain-a", sourceStepId: "step-2", sourceExitId: "answer-3", targetChainId: "chain-b", targetStepId: "step-2",
     });
@@ -631,8 +616,8 @@ describe("PracticeCaseChain validation", () => {
     await expect(updatePracticeChain({ id: "chain-1", practiceId: PRACTICE_ID, name: "Pilotkette", status: "READY", definition: directThenQuestion })).resolves.toMatchObject({ status: "READY" });
     mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "READY", definition: directThenQuestion }));
     mockPracticeCatalogEntry.findMany.mockResolvedValue([
-      { id: ENTRY_V1, title: "Praxisfall Version 1", description: null, snapshot: publishedEntrySnapshot() },
-      { id: ENTRY_V2, title: "Praxisfall Version 2", description: null, snapshot: publishedEntrySnapshot() },
+      { id: ENTRY_V1, title: "Praxisfall Version 1", description: null, snapshot: { checkpoints: [] } },
+      { id: ENTRY_V2, title: "Praxisfall Version 2", description: null, snapshot: { checkpoints: [] } },
     ]);
     const runner = await getReadyPracticeChainRunner("chain-1", PRACTICE_ID);
     expect(runner?.steps.map((step) => step.title)).toEqual(["Praxisfall Version 1", "Praxisfall Version 2"]);

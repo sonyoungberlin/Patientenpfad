@@ -21,6 +21,9 @@ export default async function PracticeCatalogPage() {
         <Link href="/practice/chains" style={{ fontSize: "0.9rem" }}>
           Praxisfall-Ketten
         </Link>
+        <Link href="/practice/checkpoint-definitions" style={{ fontSize: "0.9rem" }}>
+          Checkpoint-Definitionen
+        </Link>
       </div>
 
       {!filter && (

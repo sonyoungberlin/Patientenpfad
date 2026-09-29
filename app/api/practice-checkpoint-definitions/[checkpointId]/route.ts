@@ -1,41 +1,83 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PracticeRole } from "@prisma/client";
-import { requirePracticeRole } from "@/lib/authz";
-import { getPracticeCheckpointDefinition, upsertPracticeCheckpointDefinition } from "@/lib/practiceProcesses";
+import { requirePracticeCatalogAccess } from "@/lib/authz";
+import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
+import {
+  parsePracticeDefinitionContent,
+  getPracticeDefinitionVersions,
+  releasePracticeDefinition,
+  savePracticeDefinitionDraft,
+} from "@/lib/practiceProcesses";
 
-type Params = { params: Promise<{ checkpointId: string }> };
-const READ_ROLES = [PracticeRole.OWNER, PracticeRole.ADMIN, PracticeRole.USER, PracticeRole.INBOX_ONLY];
-const WRITE_ROLES = [PracticeRole.OWNER, PracticeRole.ADMIN];
-
-export async function GET(req: NextRequest, { params }: Params) {
-  const auth = await requirePracticeRole(req, READ_ROLES);
-  if (auth.error) return auth.error;
-  const practice = auth.account.current_practice;
-  if (!practice) return NextResponse.json({ ok: false, error: "Kein Praxiszugriff." }, { status: 403 });
-  const definition = await getPracticeCheckpointDefinition(practice.id, (await params).checkpointId);
-  return definition
-    ? NextResponse.json({ ok: true, definition })
-    : NextResponse.json({ ok: false, error: "Definition nicht gefunden." }, { status: 404 });
+function errorResponse(error: unknown) {
+  const value = error as { message?: unknown; statusCode?: unknown; issues?: unknown };
+  const status = typeof value.statusCode === "number" ? value.statusCode : 500;
+  return NextResponse.json({
+    ok: false,
+    error: typeof value.message === "string" ? value.message : "Speichern fehlgeschlagen.",
+    ...(Array.isArray(value.issues) ? { issues: value.issues } : {}),
+  }, { status });
 }
 
-export async function PUT(req: NextRequest, { params }: Params) {
-  const auth = await requirePracticeRole(req, WRITE_ROLES);
-  if (auth.error) return auth.error;
-  const practice = auth.account.current_practice;
-  if (!practice) return NextResponse.json({ ok: false, error: "Kein Praxiszugriff." }, { status: 403 });
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ checkpointId: string }> },
+) {
+  const access = await requirePracticeCatalogAccess(req);
+  if (access.error) return access.error;
+  const scope = getCatalogOwnershipFilter(access.account);
+  if (!scope) return NextResponse.json({ ok: false, error: "Kein Praxiskontext." }, { status: 403 });
   try {
-    const body = await req.json() as { selectedAnchorIds?: unknown; implementation?: unknown };
-    const checkpointId = (await params).checkpointId;
-    if (!Array.isArray(body.selectedAnchorIds) || !body.selectedAnchorIds.every((id) => typeof id === "string")) {
-      return NextResponse.json({ ok: false, error: "selectedAnchorIds muss ein String-Array sein." }, { status: 422 });
-    }
-    const definition = await upsertPracticeCheckpointDefinition(practice.id, checkpointId, {
-      selectedAnchorIds: body.selectedAnchorIds,
-      ...(typeof body.implementation === "string" ? { implementation: body.implementation } : {}),
-    });
-    return NextResponse.json({ ok: true, definition });
+    const versions = await getPracticeDefinitionVersions(scope.practice_id, (await params).checkpointId);
+    return NextResponse.json({ ok: true, versions });
   } catch (error) {
-    const status = (error as { statusCode?: number }).statusCode ?? 400;
-    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Ungültige Definition." }, { status });
+    return errorResponse(error);
+  }
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ checkpointId: string }> },
+) {
+  const access = await requirePracticeCatalogAccess(req);
+  if (access.error) return access.error;
+  const scope = getCatalogOwnershipFilter(access.account);
+  if (!scope) return NextResponse.json({ ok: false, error: "Kein Praxiskontext." }, { status: 403 });
+  let body: unknown;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ ok: false, error: "Ungültiges JSON." }, { status: 400 });
+  }
+  const content = parsePracticeDefinitionContent(
+    body && typeof body === "object" ? (body as Record<string, unknown>).content : null,
+  );
+  if (!content) return NextResponse.json({ ok: false, error: "Ungültiger Definitionsentwurf." }, { status: 400 });
+  try {
+    await savePracticeDefinitionDraft({
+      practiceId: scope.practice_id,
+      checkpointId: (await params).checkpointId,
+      content,
+    });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ checkpointId: string }> },
+) {
+  const access = await requirePracticeCatalogAccess(req);
+  if (access.error) return access.error;
+  const scope = getCatalogOwnershipFilter(access.account);
+  if (!scope) return NextResponse.json({ ok: false, error: "Kein Praxiskontext." }, { status: 403 });
+  try {
+    const version = await releasePracticeDefinition({
+      practiceId: scope.practice_id,
+      checkpointId: (await params).checkpointId,
+      actorAccountId: access.account.id,
+    });
+    return NextResponse.json({ ok: true, version }, { status: 201 });
+  } catch (error) {
+    return errorResponse(error);
   }
 }

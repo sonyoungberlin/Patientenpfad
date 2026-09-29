@@ -166,6 +166,23 @@ bei der Katalogarbeit als **`EXTERNAL_REVIEW_NEEDED`** zu kennzeichnen.
 
 ---
 
+## Versionierte Praxisdefinition und Runner-Vertrag
+
+Eine Praxis kann pro Checkpoint-Vorlage genau eine aktuell gültige Definition
+freigeben. Jede Freigabe erzeugt eine neue unveränderliche Version. Ein gestarteter
+Praxisfall übernimmt nur diese konkrete Version in seinen Snapshot; spätere
+Änderungen wirken nicht rückwirkend. Bestehende V1-Snapshots ohne Definition
+bleiben gültig. Definitionen werden nie aus bisherigen Freitexten oder ausgewählten
+Orientierungsankern abgeleitet.
+
+Die spätere Runner-Auswertung liefert fachlich genau `JA` oder `NEIN`. Fehlt eine
+laut Definition erforderliche Angabe oder die erforderliche Einschätzung, hält der
+Runner am Checkpoint an. Dieser Halt ist kein dritter Ergebniswert wie `UNKNOWN`.
+Ergebnisabhängige Verzweigungen von Checkpoint-Ketten sind nicht Teil des ersten
+Bausteins.
+
+---
+
 ## Verhältnis zu anderen Dokumenten
 
 | Dokument | Geltungsbereich |

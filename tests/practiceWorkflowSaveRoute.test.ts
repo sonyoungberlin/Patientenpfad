@@ -45,7 +45,6 @@ const AUTHORIZED_ACCOUNT = {
 
 const VALID_SNAPSHOT: PracticeWorkflowSnapshot = {
   processKind: "practice-workflow",
-  snapshotVersion: 2,
   caseProfileId: "rezeptanfrage-ohne-arzt",
   caseProfileTitle: "Rezeptanfrage ohne Arzt",
   checkpoints: [

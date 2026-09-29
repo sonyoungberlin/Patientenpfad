@@ -2,9 +2,7 @@ import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import {
   isPracticeWorkflowSnapshot,
-  buildPublishedPracticeWorkflowSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
-import { resolveDefinitionsForPublish } from "@/lib/practiceProcesses/practiceDefinitionService";
 import type { PublishToCatalogInput, PublishToCatalogResult } from "./types";
 
 /**
@@ -60,18 +58,16 @@ export async function publishToCatalog(
     );
   }
 
-  let publishedSnapshot;
-  try {
-    const definitions = await resolveDefinitionsForPublish(
-      practiceId,
-      rawSnapshot.checkpoints.map((checkpoint) => checkpoint.checkpointId),
-    );
-    publishedSnapshot = buildPublishedPracticeWorkflowSnapshot(rawSnapshot, definitions);
-  } catch (error) {
-    const statusCode = (error as { statusCode?: number }).statusCode;
+  const missingPracticeDefinitions = rawSnapshot.checkpoints.filter(
+    (checkpoint) => checkpoint.decision !== "NICHT_RELEVANT" && !checkpoint.practiceDefinitionVersion,
+  );
+  if (missingPracticeDefinitions.length > 0) {
+    const checkpointTitles = missingPracticeDefinitions
+      .map((checkpoint) => checkpoint.checkpointTitle)
+      .join(", ");
     throw Object.assign(
-      error instanceof Error ? error : new Error("Praxisdefinitionen sind unvollständig."),
-      { statusCode: statusCode ?? 409 },
+      new Error(`Für relevante Checkpoints fehlt eine freigegebene Praxisdefinition: ${checkpointTitles}.`),
+      { statusCode: 422 },
     );
   }
 
@@ -133,7 +129,7 @@ export async function publishToCatalog(
           source_case_profile_id: rawSnapshot.caseProfileId ?? null,
           title,
           description: description ?? null,
-          snapshot: publishedSnapshot as object,
+          snapshot: rawSnapshot as object,
           version: nextVersion,
           is_current_version: true,
           is_catalog_active: true,

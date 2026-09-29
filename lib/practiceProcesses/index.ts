@@ -25,13 +25,20 @@ export {
 } from "./caseProfileLibrary";
 export type { CaseProfileWriteInput } from "./caseProfileLibrary";
 export type {
-  PracticeCheckpointDefinition,
-  PracticeCheckpointDefinitionInput,
-  PracticeCheckpointDefinitionView,
+  PracticeCheckpointDefinitionContent,
+  PracticeCheckpointDefinitionVersionSnapshot,
 } from "./practiceDefinition";
 export {
-  getPracticeCheckpointDefinition,
-  listPracticeCheckpointDefinitions,
-  upsertPracticeCheckpointDefinition,
-  resolveDefinitionsForPublish,
+  checkpointTemplateSnapshot,
+  createEmptyPracticeDefinition,
+  parsePracticeDefinitionContent,
+  validatePracticeDefinitionForRelease,
+} from "./practiceDefinition";
+export {
+  getPracticeDefinition,
+  getPracticeDefinitionVersions,
+  listPracticeDefinitionSummaries,
+  getCurrentPracticeDefinitionVersions,
+  savePracticeDefinitionDraft,
+  releasePracticeDefinition,
 } from "./practiceDefinitionService";
