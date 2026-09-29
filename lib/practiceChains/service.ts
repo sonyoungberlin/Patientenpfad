@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import type { RunnerChain } from "./runner";
 import { discoverPracticeChainSegments, findAttachmentCandidates, getSegmentTerminalCatalogEntryIds, type PracticeChainSegment } from "./discovery";
+import { isPublishedPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 const EMPTY_DEFINITION: PracticeCaseChainDefinition = {
   startStepId: null,
@@ -24,12 +25,14 @@ async function assertCatalogEntriesBelongToPractice(
     ? []
     : await prisma.practiceCatalogEntry.findMany({
         where: { id: { in: ids }, practice_id: practiceId },
-        select: { id: true },
+        select: { id: true, snapshot: true },
       });
-  const knownIds = new Set(entries.map((entry) => entry.id));
+  const knownIds = new Set(entries
+    .filter((entry) => isPublishedPracticeWorkflowSnapshot(entry.snapshot))
+    .map((entry) => entry.id));
   const hasForeignEntry = definition.steps.some((step) => !step.catalogEntryId || !knownIds.has(step.catalogEntryId));
   if (hasForeignEntry) {
-    throw Object.assign(new Error("Mindestens ein Praxisfall gehört nicht zur eigenen Praxis oder existiert nicht."), {
+    throw Object.assign(new Error("Mindestens ein Kettenstep ist kein vollständiger veröffentlichter und eingefrorener Praxisfall."), {
       statusCode: 400,
     });
   }
@@ -282,6 +285,9 @@ export async function getReadyPracticeChainRunner(id: string, practiceId: string
     },
     select: { id: true, title: true, description: true, snapshot: true },
   });
+  if (entries.length !== chain.definition.steps.length || entries.some((entry) => !isPublishedPracticeWorkflowSnapshot(entry.snapshot))) {
+    return null;
+  }
   const entryById = new Map(entries.map((entry) => [entry.id, entry]));
   const steps = chain.definition.steps.map((step) => {
     const entry = entryById.get(step.catalogEntryId);
@@ -294,9 +300,9 @@ export async function getReadyPracticeChainRunner(id: string, practiceId: string
       description: entry?.description ?? null,
       standards: checkpoints.flatMap((checkpoint) => {
         if (!checkpoint || typeof checkpoint !== "object") return [];
-        const value = checkpoint as { checkpointTitle?: unknown; umsetzung?: unknown };
+        const value = checkpoint as { checkpointTitle?: unknown; definition?: { implementation?: unknown } };
         return typeof value.checkpointTitle === "string"
-          ? [{ title: value.checkpointTitle, implementation: typeof value.umsetzung === "string" ? value.umsetzung : null }]
+          ? [{ title: value.checkpointTitle, implementation: typeof value.definition?.implementation === "string" ? value.definition.implementation : null }]
           : [];
       }),
     };

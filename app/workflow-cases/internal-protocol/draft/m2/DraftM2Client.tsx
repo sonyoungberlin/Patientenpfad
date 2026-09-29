@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   isPracticeWorkflowSnapshot,
@@ -8,6 +8,7 @@ import {
 import type {
   PracticeWorkflowSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeCheckpointDefinitionView } from "@/lib/practiceProcesses/practiceDefinition";
 import {
   toggleAnchorSelection,
   DRAFT_SNAPSHOT_KEY,
@@ -15,11 +16,11 @@ import {
   DRAFT_SOURCE_TITLE_KEY,
 } from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
-import { getCheckpoint } from "@/lib/practiceProcesses";
 
 export default function DraftM2Client() {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<PracticeWorkflowSnapshot | null>(null);
+  const [definitions, setDefinitions] = useState<Record<string, PracticeCheckpointDefinitionView>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,34 +34,34 @@ export default function DraftM2Client() {
         return;
       }
       setSnapshot(parsed);
+      void fetch(`/api/practice-checkpoint-definitions?${(parsed.checkpoints as Array<{ checkpointId: string }>).map((cp) => `checkpointId=${encodeURIComponent(cp.checkpointId)}`).join("&")}`)
+        .then((response) => response.json() as Promise<{ ok?: boolean; definitions?: PracticeCheckpointDefinitionView[] }>)
+        .then((data) => {
+          if (data.ok && data.definitions) setDefinitions(Object.fromEntries(data.definitions.map((definition) => [definition.checkpointId, definition])));
+        })
+        .catch(() => undefined);
     } catch {
       router.replace("/workflow-cases/internal-protocol/new");
     }
   }, [router]);
 
-  // Checkpoint-Definitionen: Snapshot-Daten haben Vorrang (neue Sessions),
-  // statischer Katalog dient als Fallback für ältere Sessions ohne eingebettete Daten.
-  const cpDefinitions = useMemo(
-    () =>
-      Object.fromEntries(
-        (snapshot?.checkpoints ?? []).map((cp) => {
-          const catalogDef = getCheckpoint(cp.checkpointId);
-          return [
-            cp.checkpointId,
-            {
-              description: cp.checkpointDescription ?? catalogDef?.description,
-              orientationAnchors:
-                cp.checkpointAnchors ?? catalogDef?.orientationAnchors ?? [],
-            },
-          ];
-        }),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(",")],
-  );
-
   const handleToggle = useCallback(
     (checkpointId: string, anchorId: string) => {
+      const current = definitions[checkpointId]?.selectedAnchorIds ?? [];
+      const selectedAnchorIds = current.includes(anchorId)
+        ? current.filter((id) => id !== anchorId)
+        : [...current, anchorId];
+      void fetch(`/api/practice-checkpoint-definitions/${encodeURIComponent(checkpointId)}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ selectedAnchorIds, implementation: definitions[checkpointId]?.implementation ?? "" }),
+      });
+      setDefinitions((previous) => ({
+        ...previous,
+        [checkpointId]: previous[checkpointId]
+          ? { ...previous[checkpointId], selectedAnchorIds }
+          : previous[checkpointId],
+      }));
       setSnapshot((prev) => {
         if (!prev) return prev;
         const next = toggleAnchorSelection(prev, checkpointId, anchorId);
@@ -68,7 +69,7 @@ export default function DraftM2Client() {
         return next;
       });
     },
-    [],
+    [definitions],
   );
 
   async function handleSaveAndGoToM3() {
@@ -109,14 +110,14 @@ export default function DraftM2Client() {
       </div>
 
       {snapshot.checkpoints.map((cp) => {
-        const cpDef = cpDefinitions[cp.checkpointId];
-        const anchors = cpDef?.orientationAnchors ?? [];
+        const cpDef = definitions[cp.checkpointId];
+        const anchors = cpDef?.checkpointAnchors ?? [];
         return (
           <section key={cp.checkpointId} className="card" style={{ display: "grid", gap: "0.75rem" }}>
             <div style={{ fontWeight: 600 }}>{cp.checkpointTitle}</div>
-            {cpDef?.description && (
+            {cpDef?.checkpointDescription && (
               <p className="text-small text-muted" style={{ margin: 0 }}>
-                {cpDef.description}
+                {cpDef.checkpointDescription}
               </p>
             )}
             {anchors.length > 0 ? (
@@ -128,7 +129,7 @@ export default function DraftM2Client() {
                   >
                     <input
                       type="checkbox"
-                      checked={(cp.selectedAnchorIds ?? []).includes(anchor.id)}
+                      checked={cpDef.selectedAnchorIds.includes(anchor.id)}
                       onChange={() => handleToggle(cp.checkpointId, anchor.id)}
                       style={{ marginTop: "0.25rem", flexShrink: 0, accentColor: "var(--primary)" }}
                     />
@@ -141,6 +142,9 @@ export default function DraftM2Client() {
                 Keine Auswahlpunkte für diesen Bereich.
               </p>
             )}
+            <p className="text-small text-muted" style={{ margin: 0 }}>
+              {cpDef ? "Bereits definiert" : "Noch nicht definiert"}
+            </p>
           </section>
         );
       })}

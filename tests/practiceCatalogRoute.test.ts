@@ -29,6 +29,9 @@ const mockPracticeCatalogEntry = {
   create: jest.fn(),
   update: jest.fn(),
 };
+const mockPracticeCheckpointDefinition = {
+  findMany: jest.fn(),
+};
 const mockTransaction = jest.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
   fn({
     practiceCatalogEntry: mockPracticeCatalogEntry,
@@ -40,8 +43,17 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     workflowSession: mockWorkflowSession,
     practiceCatalogEntry: mockPracticeCatalogEntry,
+    practiceCheckpointDefinition: mockPracticeCheckpointDefinition,
     $transaction: mockTransaction,
   },
+}));
+
+jest.mock("@/lib/practiceProcesses/checkpointLibrary", () => ({
+  getCheckpointFromLib: jest.fn(async (id: string) => ({
+    id,
+    title: "Patient bekannt",
+    orientationAnchors: [],
+  })),
 }));
 
 jest.mock("@/lib/auth", () => ({
@@ -85,6 +97,7 @@ const USER_ACCOUNT = {
 
 const COMPLETED_SNAPSHOT: PracticeWorkflowSnapshot = {
   processKind: "practice-workflow",
+  snapshotVersion: 2,
   caseProfileId: "rezeptanfrage",
   caseProfileTitle: "Rezeptanfrage",
   completedAt: "2026-08-20T10:00:00.000Z",
@@ -96,6 +109,16 @@ const COMPLETED_SNAPSHOT: PracticeWorkflowSnapshot = {
       decision: "PFLICHT",
     },
   ],
+};
+
+const PRACTICE_DEFINITION = {
+  id: "definition-1",
+  practice_id: PRACTICE_ID,
+  checkpoint_id: "cp-1",
+  selected_anchor_ids: [],
+  implementation: "Standard für bekannte Patienten",
+  created_at: new Date("2026-08-01T00:00:00.000Z"),
+  updated_at: new Date("2026-08-01T00:00:00.000Z"),
 };
 
 const getSessionMock = getSessionAccount as jest.Mock;
@@ -126,6 +149,7 @@ beforeEach(() => {
   mockPracticeCatalogEntry.aggregate.mockResolvedValue({ _max: { version: null } });
   mockPracticeCatalogEntry.create.mockResolvedValue({ id: CATALOG_ENTRY_ID });
   mockPracticeCatalogEntry.updateMany.mockResolvedValue({ count: 0 });
+  mockPracticeCheckpointDefinition.findMany.mockResolvedValue([PRACTICE_DEFINITION]);
 });
 
 // ─── POST /api/practice-catalog/publish ──────────────────────────────────────

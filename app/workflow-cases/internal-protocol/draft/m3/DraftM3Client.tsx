@@ -11,7 +11,6 @@ import type {
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import {
   setCheckpointDecision,
-  setUmsetzung,
   DRAFT_SNAPSHOT_KEY,
   DRAFT_SOURCE_ID_KEY,
   DRAFT_SOURCE_TITLE_KEY,
@@ -73,18 +72,6 @@ export default function DraftM3Client() {
       setSnapshot((prev) => {
         if (!prev) return prev;
         const next = setCheckpointDecision(prev, checkpointId, decision);
-        sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(next));
-        return next;
-      });
-    },
-    [],
-  );
-
-  const handleUmsetzung = useCallback(
-    (checkpointId: string, value: string) => {
-      setSnapshot((prev) => {
-        if (!prev) return prev;
-        const next = setUmsetzung(prev, checkpointId, value);
         sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(next));
         return next;
       });
@@ -218,24 +205,6 @@ export default function DraftM3Client() {
             })}
           </div>
 
-          {(cp.decision === "PFLICHT" || cp.decision === "OPTIONAL") && (
-            <textarea
-              value={cp.umsetzung ?? ""}
-              onChange={(e) => handleUmsetzung(cp.checkpointId, e.target.value)}
-              placeholder="Wie setzt unsere Praxis diesen Checkpoint konkret um?"
-              rows={2}
-              style={{
-                width: "100%",
-                resize: "vertical",
-                fontFamily: "inherit",
-                fontSize: "0.875rem",
-                padding: "0.4rem 0.5rem",
-                border: "1px solid #d0d0d0",
-                borderRadius: "0.3rem",
-                boxSizing: "border-box",
-              }}
-            />
-          )}
         </div>
       ))}
 

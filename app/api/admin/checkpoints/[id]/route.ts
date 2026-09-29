@@ -36,12 +36,16 @@ function isAnchorArray(v: unknown): v is PracticeCheckpointAnchor[] {
 async function isAnchorReferenced(anchorId: string): Promise<boolean> {
   const rows = await prisma.$queryRaw<Array<{ exists: boolean }>>`
     SELECT EXISTS (
-      SELECT 1 FROM "WorkflowSession"
-      WHERE process_snapshot IS NOT NULL
-        AND EXISTS (
-          SELECT 1 FROM jsonb_array_elements(process_snapshot->'checkpoints') AS cp
-          WHERE cp->'selectedAnchorIds' @> ${JSON.stringify([anchorId])}::jsonb
-        )
+      SELECT 1 FROM "PracticeCheckpointDefinition"
+      WHERE selected_anchor_ids @> ${JSON.stringify([anchorId])}::jsonb
+      OR EXISTS (
+        SELECT 1 FROM "PracticeCatalogEntry"
+        WHERE snapshot IS NOT NULL
+          AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements(snapshot->'checkpoints') AS cp
+            WHERE cp->'definition'->'selectedAnchorIds' @> ${JSON.stringify([anchorId])}::jsonb
+          )
+      )
     ) AS "exists"
   `;
   return rows[0]?.exists ?? false;

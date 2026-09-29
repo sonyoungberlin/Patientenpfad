@@ -2,7 +2,9 @@ import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import {
   isPracticeWorkflowSnapshot,
+  buildPublishedPracticeWorkflowSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
+import { resolveDefinitionsForPublish } from "@/lib/practiceProcesses/practiceDefinitionService";
 import type { PublishToCatalogInput, PublishToCatalogResult } from "./types";
 
 /**
@@ -55,6 +57,21 @@ export async function publishToCatalog(
     throw Object.assign(
       new Error("Nicht alle Checkpoints haben eine Entscheidung (PFLICHT/OPTIONAL/NICHT_RELEVANT)."),
       { statusCode: 400 },
+    );
+  }
+
+  let publishedSnapshot;
+  try {
+    const definitions = await resolveDefinitionsForPublish(
+      practiceId,
+      rawSnapshot.checkpoints.map((checkpoint) => checkpoint.checkpointId),
+    );
+    publishedSnapshot = buildPublishedPracticeWorkflowSnapshot(rawSnapshot, definitions);
+  } catch (error) {
+    const statusCode = (error as { statusCode?: number }).statusCode;
+    throw Object.assign(
+      error instanceof Error ? error : new Error("Praxisdefinitionen sind unvollständig."),
+      { statusCode: statusCode ?? 409 },
     );
   }
 
@@ -116,7 +133,7 @@ export async function publishToCatalog(
           source_case_profile_id: rawSnapshot.caseProfileId ?? null,
           title,
           description: description ?? null,
-          snapshot: rawSnapshot as object,
+          snapshot: publishedSnapshot as object,
           version: nextVersion,
           is_current_version: true,
           is_catalog_active: true,
