@@ -1,4 +1,5 @@
 import type { PracticeCaseProfile, PracticeCheckpoint, PracticeCheckpointAnchor } from "./types";
+import type { PracticeCheckpointDefinitionVersionSnapshot } from "./practiceDefinition";
 
 export type CheckpointDecision = "PFLICHT" | "OPTIONAL" | "NICHT_RELEVANT";
 
@@ -13,6 +14,8 @@ export interface PracticeWorkflowCheckpointState {
   checkpointAnchors?: PracticeCheckpointAnchor[];
   /** Checkpoint-Beschreibung zum Zeitpunkt der Session-Erstellung. */
   checkpointDescription?: string;
+  /** Beim Start angeheftete, unveränderliche Praxisdefinition. Fehlt bei V1-Snapshots. */
+  practiceDefinitionVersion?: PracticeCheckpointDefinitionVersionSnapshot;
 }
 
 export interface PracticeWorkflowSnapshot {
@@ -40,6 +43,7 @@ export function isPracticeWorkflowSnapshot(
 export function buildInitialPracticeWorkflowSnapshot(
   profile: PracticeCaseProfile,
   getCheckpoint: (id: string) => PracticeCheckpoint | undefined,
+  definitionVersions: ReadonlyMap<string, PracticeCheckpointDefinitionVersionSnapshot> = new Map(),
 ): PracticeWorkflowSnapshot {
   return {
     processKind: "practice-workflow",
@@ -47,6 +51,7 @@ export function buildInitialPracticeWorkflowSnapshot(
     caseProfileTitle: profile.title,
     checkpoints: profile.checkpointRefs.map((ref) => {
       const cp = getCheckpoint(ref.checkpointId);
+      const practiceDefinitionVersion = definitionVersions.get(ref.checkpointId);
       return {
         checkpointId: ref.checkpointId,
         checkpointTitle: cp?.title ?? ref.checkpointId,
@@ -55,6 +60,7 @@ export function buildInitialPracticeWorkflowSnapshot(
         ...(cp?.orientationAnchors != null
           ? { checkpointAnchors: [...cp.orientationAnchors] }
           : {}),
+        ...(practiceDefinitionVersion ? { practiceDefinitionVersion } : {}),
       };
     }),
   };

@@ -79,6 +79,47 @@ const UNDECIDED_SNAPSHOT: PracticeWorkflowSnapshot = {
   ],
 };
 
+const DEFINED_SNAPSHOT: PracticeWorkflowSnapshot = {
+  ...COMPLETED_SNAPSHOT,
+  checkpoints: COMPLETED_SNAPSHOT.checkpoints.map((checkpoint) => ({
+    ...checkpoint,
+    practiceDefinitionVersion: {
+      definitionId: `definition-${checkpoint.checkpointId}`,
+      versionId: `version-${checkpoint.checkpointId}-1`,
+      version: 1,
+      checkpointId: checkpoint.checkpointId,
+      template: {
+        checkpointId: checkpoint.checkpointId,
+        title: checkpoint.checkpointTitle,
+        dimensions: [],
+      },
+      content: {
+        schemaVersion: 1 as const,
+        statement: `Definition für ${checkpoint.checkpointTitle}`,
+        dimensions: [],
+        criteria: [{
+          id: `criterion-${checkpoint.checkpointId}`,
+          label: "Angabe vorhanden",
+          dataKey: "present",
+          operator: "PRESENT" as const,
+        }],
+        expression: {
+          kind: "CRITERION" as const,
+          criterionId: `criterion-${checkpoint.checkpointId}`,
+        },
+        requiredData: [{ key: "present", label: "Angabe" }],
+        responsibility: {
+          collectedBy: ["Praxis"],
+          assessedBy: ["Praxis"],
+          assessmentLocation: "Praxis",
+          documentationLocation: "Praxissoftware",
+        },
+      },
+      releasedAt: "2026-09-29T12:00:00.000Z",
+    },
+  })),
+};
+
 function makeInput(overrides?: Partial<Parameters<typeof publishToCatalog>[0]>) {
   return {
     sessionId: SESSION_ID,
@@ -94,7 +135,7 @@ beforeEach(() => {
   // Standard: Session existiert, ist der Praxis zugeordnet
   mockWorkflowSession.findFirst.mockResolvedValue({
     id: SESSION_ID,
-    process_snapshot: COMPLETED_SNAPSHOT,
+    process_snapshot: DEFINED_SNAPSHOT,
     source_catalog_entry_id: null,
     owner_practice_id: PRACTICE_ID,
   });
@@ -130,6 +171,66 @@ describe("publishToCatalog — Erstpublikation", () => {
   });
 });
 
+describe("publishToCatalog — Praxisdefinition", () => {
+  it("lässt einen unvollständigen Entwurf ohne Definition zu, veröffentlicht ihn aber nicht", async () => {
+    mockWorkflowSession.findFirst.mockResolvedValue({
+      id: SESSION_ID,
+      process_snapshot: { ...COMPLETED_SNAPSHOT, completedAt: undefined },
+      source_catalog_entry_id: null,
+      owner_practice_id: PRACTICE_ID,
+    });
+
+    await expect(publishToCatalog(makeInput())).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockPracticeCatalogEntry.create).not.toHaveBeenCalled();
+  });
+
+  it("veröffentlicht keinen relevanten Checkpoint ohne freigegebene Definition", async () => {
+    mockWorkflowSession.findFirst.mockResolvedValue({
+      id: SESSION_ID,
+      process_snapshot: COMPLETED_SNAPSHOT,
+      source_catalog_entry_id: null,
+      owner_practice_id: PRACTICE_ID,
+    });
+    await expect(publishToCatalog(makeInput())).rejects.toMatchObject({
+      statusCode: 422,
+      message: expect.stringContaining("Patient bekannt"),
+    });
+    expect(mockPracticeCatalogEntry.create).not.toHaveBeenCalled();
+  });
+
+  it("akzeptiert eine eindeutige Definition und übernimmt deren Version unverändert", async () => {
+    mockWorkflowSession.findFirst.mockResolvedValue({
+      id: SESSION_ID,
+      process_snapshot: DEFINED_SNAPSHOT,
+      source_catalog_entry_id: null,
+      owner_practice_id: PRACTICE_ID,
+    });
+
+    await expect(publishToCatalog(makeInput())).resolves.toMatchObject({ ok: true });
+    expect(mockPracticeCatalogEntry.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ snapshot: DEFINED_SNAPSHOT }),
+    }));
+  });
+
+  it("erlaubt einen ausdrücklich nicht relevanten Checkpoint ohne Definition", async () => {
+    const snapshot = {
+      ...COMPLETED_SNAPSHOT,
+      checkpoints: COMPLETED_SNAPSHOT.checkpoints.map((checkpoint) => ({
+        ...checkpoint,
+        decision: "NICHT_RELEVANT" as const,
+      })),
+    };
+    mockWorkflowSession.findFirst.mockResolvedValue({
+      id: SESSION_ID,
+      process_snapshot: snapshot,
+      source_catalog_entry_id: null,
+      owner_practice_id: PRACTICE_ID,
+    });
+
+    await expect(publishToCatalog(makeInput())).resolves.toMatchObject({ ok: true });
+  });
+});
+
 describe("publishToCatalog — Idempotenz", () => {
   it("gibt alreadyPublished:true zurück, wenn Session bereits publiziert wurde", async () => {
     mockPracticeCatalogEntry.findUnique.mockResolvedValue({ id: "existing-entry" });
@@ -150,7 +251,7 @@ describe("publishToCatalog — Revision (neue Version)", () => {
 
     mockWorkflowSession.findFirst.mockResolvedValue({
       id: SESSION_ID,
-      process_snapshot: COMPLETED_SNAPSHOT,
+      process_snapshot: DEFINED_SNAPSHOT,
       source_catalog_entry_id: "parent-entry-id",
       owner_practice_id: PRACTICE_ID,
     });
@@ -190,15 +291,59 @@ describe("publishToCatalog — Snapshot eingefroren", () => {
     const createCall = mockPracticeCatalogEntry.create.mock.calls[0][0] as {
       data: { snapshot: typeof COMPLETED_SNAPSHOT };
     };
-    expect(createCall.data.snapshot).toEqual(COMPLETED_SNAPSHOT);
-    expect(createCall.data.snapshot.completedAt).toBe(COMPLETED_SNAPSHOT.completedAt);
+    expect(createCall.data.snapshot).toEqual(DEFINED_SNAPSHOT);
+    expect(createCall.data.snapshot.completedAt).toBe(DEFINED_SNAPSHOT.completedAt);
+  });
+
+  it("publiziert eine angeheftete Definitionsversion unverändert", async () => {
+    const snapshotWithDefinition = {
+      ...DEFINED_SNAPSHOT,
+      checkpoints: [{
+        ...COMPLETED_SNAPSHOT.checkpoints[0],
+        practiceDefinitionVersion: {
+          definitionId: "definition-1",
+          versionId: "definition-version-3",
+          version: 3,
+          checkpointId: "cp-1",
+          template: { checkpointId: "cp-1", title: "Patient bekannt", dimensions: [] },
+          content: {
+            schemaVersion: 1 as const,
+            statement: "Der Patient ist in der Praxis bekannt.",
+            dimensions: [],
+            criteria: [{ id: "known", label: "Patientenakte vorhanden", dataKey: "record", operator: "PRESENT" as const }],
+            expression: { kind: "CRITERION" as const, criterionId: "known" },
+            requiredData: [{ key: "record", label: "Patientenakte" }],
+            responsibility: {
+              collectedBy: ["Anmeldung"],
+              assessedBy: ["Anmeldung"],
+              assessmentLocation: "Anmeldung",
+              documentationLocation: "Praxissoftware",
+            },
+          },
+          releasedAt: "2026-09-29T12:00:00.000Z",
+        },
+      }, DEFINED_SNAPSHOT.checkpoints[1]],
+    } satisfies PracticeWorkflowSnapshot;
+    mockWorkflowSession.findFirst.mockResolvedValue({
+      id: SESSION_ID,
+      process_snapshot: snapshotWithDefinition,
+      source_catalog_entry_id: null,
+      owner_practice_id: PRACTICE_ID,
+    });
+
+    await publishToCatalog(makeInput());
+
+    const createCall = mockPracticeCatalogEntry.create.mock.calls[0][0] as {
+      data: { snapshot: PracticeWorkflowSnapshot };
+    };
+    expect(createCall.data.snapshot).toEqual(snapshotWithDefinition);
   });
 
   it("löscht keine alte Version — updateMany setzt nur is_current_version=false", async () => {
     const PARENT_ID = "catalog-case-for-delete-check";
     mockWorkflowSession.findFirst.mockResolvedValue({
       id: SESSION_ID,
-      process_snapshot: COMPLETED_SNAPSHOT,
+      process_snapshot: DEFINED_SNAPSHOT,
       source_catalog_entry_id: "parent-entry",
       owner_practice_id: PRACTICE_ID,
     });

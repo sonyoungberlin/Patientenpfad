@@ -94,6 +94,33 @@ const COMPLETED_SNAPSHOT: PracticeWorkflowSnapshot = {
       checkpointTitle: "Patient bekannt",
       selectedAnchorIds: [],
       decision: "PFLICHT",
+      practiceDefinitionVersion: {
+        definitionId: "definition-cp-1",
+        versionId: "definition-cp-1-v1",
+        checkpointId: "cp-1",
+        version: 1,
+        template: {
+          checkpointId: "cp-1",
+          title: "Patient bekannt",
+          description: "Patient bekannt",
+          dimensions: [],
+        },
+        content: {
+          schemaVersion: 1,
+          statement: "Patient bekannt",
+          dimensions: [],
+          criteria: [],
+          expression: { kind: "ALL", operands: [] },
+          requiredData: [],
+          responsibility: {
+            collectedBy: [],
+            assessedBy: [],
+            assessmentLocation: "",
+            documentationLocation: "",
+          },
+        },
+        releasedAt: "2026-08-20T09:00:00.000Z",
+      },
     },
   ],
 };

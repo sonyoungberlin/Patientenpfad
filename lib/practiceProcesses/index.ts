@@ -24,3 +24,21 @@ export {
   upsertLibraryCaseProfile,
 } from "./caseProfileLibrary";
 export type { CaseProfileWriteInput } from "./caseProfileLibrary";
+export type {
+  PracticeCheckpointDefinitionContent,
+  PracticeCheckpointDefinitionVersionSnapshot,
+} from "./practiceDefinition";
+export {
+  checkpointTemplateSnapshot,
+  createEmptyPracticeDefinition,
+  parsePracticeDefinitionContent,
+  validatePracticeDefinitionForRelease,
+} from "./practiceDefinition";
+export {
+  getPracticeDefinition,
+  getPracticeDefinitionVersions,
+  listPracticeDefinitionSummaries,
+  getCurrentPracticeDefinitionVersions,
+  savePracticeDefinitionDraft,
+  releasePracticeDefinition,
+} from "./practiceDefinitionService";

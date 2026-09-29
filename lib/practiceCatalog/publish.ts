@@ -58,6 +58,19 @@ export async function publishToCatalog(
     );
   }
 
+  const missingPracticeDefinitions = rawSnapshot.checkpoints.filter(
+    (checkpoint) => checkpoint.decision !== "NICHT_RELEVANT" && !checkpoint.practiceDefinitionVersion,
+  );
+  if (missingPracticeDefinitions.length > 0) {
+    const checkpointTitles = missingPracticeDefinitions
+      .map((checkpoint) => checkpoint.checkpointTitle)
+      .join(", ");
+    throw Object.assign(
+      new Error(`Für relevante Checkpoints fehlt eine freigegebene Praxisdefinition: ${checkpointTitles}.`),
+      { statusCode: 422 },
+    );
+  }
+
   // C — Idempotenz: bereits publiziert?
   const existing = await prisma.practiceCatalogEntry.findUnique({
     where: { source_session_id: sessionId },
