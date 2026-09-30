@@ -16,6 +16,8 @@ type SessionItem = {
   kind?: string;
   sessionStatus?: string;
   snapshotJson?: string;
+  profileId?: string;
+  workingSessionId?: string | null;
 };
 
 export default function WorkflowCasesListClient({ items: initialItems }: { items: SessionItem[] }) {
@@ -36,7 +38,9 @@ export default function WorkflowCasesListClient({ items: initialItems }: { items
         alert((data as { error?: string }).error ?? "Löschen fehlgeschlagen.");
         return;
       }
-      setItems((prev) => prev.filter((item) => item.id !== id));
+      setItems((prev) =>
+        prev.filter((item) => item.id !== id && item.workingSessionId !== id),
+      );
       router.refresh();
     } catch {
       alert("Netzwerkfehler beim Löschen.");
@@ -46,7 +50,26 @@ export default function WorkflowCasesListClient({ items: initialItems }: { items
   }
 
   function handleWeiterbearbeiten(item: SessionItem) {
-    router.push(`/workflow-cases/internal-protocol/draft/resume?sessionId=${encodeURIComponent(item.id)}`);
+    const sessionId = item.workingSessionId ?? item.id;
+    router.push(`/workflow-cases/internal-protocol/draft/resume?sessionId=${encodeURIComponent(sessionId)}`);
+  }
+
+  async function handlePracticeCase(item: SessionItem) {
+    if (item.workingSessionId || !item.profileId) {
+      handleWeiterbearbeiten(item);
+      return;
+    }
+    const response = await fetch("/api/workflow-cases/internal-protocol/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ caseProfileId: item.profileId }),
+    });
+    const data = (await response.json()) as { ok?: boolean; sessionId?: string; error?: string };
+    if (!response.ok || !data.ok || !data.sessionId) {
+      alert(data.error ?? "Praxisfall konnte nicht gestartet werden.");
+      return;
+    }
+    router.push(`/workflow-cases/internal-protocol/draft/m2?sessionId=${encodeURIComponent(data.sessionId)}`);
   }
 
   if (items.length === 0) {
@@ -91,13 +114,27 @@ export default function WorkflowCasesListClient({ items: initialItems }: { items
                     Weiterbearbeiten
                   </button>
                 )}
-                <button
+                {item.kind === "practice-case" && (
+                  <button type="button" onClick={() => void handlePracticeCase(item)}>
+                    {item.workingSessionId ? "Weiterbearbeiten" : "Bearbeiten"}
+                  </button>
+                )}
+                {item.kind !== "practice-case" && <button
                   type="button"
                   onClick={() => void handleDelete(item.id, item.title)}
                   disabled={deletingId === item.id}
                 >
                   {deletingId === item.id ? "Löscht…" : "Löschen"}
-                </button>
+                </button>}
+                {item.kind === "practice-case" && item.workingSessionId && (
+                  <button
+                    type="button"
+                    onClick={() => void handleDelete(item.workingSessionId!, item.title)}
+                    disabled={deletingId === item.workingSessionId}
+                  >
+                    {deletingId === item.workingSessionId ? "Löscht…" : "Verwerfen"}
+                  </button>
+                )}
               </td>
             </tr>
           ))}

@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import type { StartRevisionInput, StartRevisionResult } from "./types";
 import type { PracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import { isPublishedPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { ensurePracticeWorkingSession } from "./workingState";
 
 /**
  * Startet eine neue Revision eines Katalogeintrags.
  *
- * Idempotent: Existiert bereits eine WorkflowSession mit source_catalog_entry_id = entryId,
+ * Idempotent: Existiert bereits eine WorkflowSession für Praxis und Fallprofil,
  * wird diese zurückgegeben (alreadyStarted: true).
  *
  * Der Snapshot der neuen Session entspricht dem eingefrorenen Katalog-Snapshot,
@@ -29,17 +31,7 @@ export async function startRevision(
     );
   }
 
-  // B — Bestehende Revision prüfen (idempotent)
-  const existingRevision = await prisma.workflowSession.findUnique({
-    where: { source_catalog_entry_id: entryId },
-    select: { id: true },
-  });
-
-  if (existingRevision) {
-    return { ok: true, sessionId: existingRevision.id, alreadyStarted: true };
-  }
-
-  // C — Snapshot aus Katalogeintrag laden und completedAt entfernen
+  // B — Snapshot aus Katalogeintrag laden und completedAt entfernen
   const rawSnapshot = entry.snapshot;
   if (!isPublishedPracticeWorkflowSnapshot(rawSnapshot)) {
     throw Object.assign(
@@ -57,17 +49,18 @@ export async function startRevision(
     checkpoints: rawSnapshot.checkpoints.map(({ definition: _definition, ...checkpoint }) => checkpoint),
   };
 
-  const newSession = await prisma.workflowSession.create({
-    data: {
-      title: entry.title,
-      process_snapshot: draftSnapshot as object,
-      internal_saved_at: new Date(),
-      owner_account_id: accountId,
-      owner_practice_id: practiceId,
-      source_catalog_entry_id: entryId,
-    },
-    select: { id: true },
+  const session = await ensurePracticeWorkingSession({
+    accountId,
+    practiceId,
+    caseProfileId: rawSnapshot.caseProfileId,
+    title: entry.title,
+    snapshot: draftSnapshot as unknown as Prisma.InputJsonValue,
+    sourceCatalogEntryId: entryId,
   });
 
-  return { ok: true, sessionId: newSession.id };
+  return {
+    ok: true,
+    sessionId: session.id,
+    ...(session.alreadyExists ? { alreadyStarted: true as const } : {}),
+  };
 }

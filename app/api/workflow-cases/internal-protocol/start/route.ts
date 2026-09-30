@@ -10,10 +10,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 import { canAccessWorkflowCases } from "@/lib/authz";
-import { getWorkflowCreateOwnershipData } from "@/lib/workflow/scope";
+import { requirePracticeId } from "@/lib/practiceCatalog/scope";
+import { ensurePracticeWorkingSession } from "@/lib/practiceCatalog/workingState";
 import { getCaseProfileFromLib } from "@/lib/practiceProcesses/caseProfileLibrary";
 import { getCheckpointFromLib } from "@/lib/practiceProcesses/checkpointLibrary";
 import { buildInitialPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
@@ -62,15 +62,20 @@ export async function POST(req: NextRequest) {
     (id) => checkpointMap.get(id),
   );
 
-  const session = await prisma.workflowSession.create({
-    data: {
-      title: profile.title,
-      process_snapshot: snapshot as unknown as Prisma.InputJsonValue,
-      internal_saved_at: new Date(),
-      ...getWorkflowCreateOwnershipData(account),
-    },
-    select: { id: true },
+  let practiceId: string;
+  try {
+    practiceId = requirePracticeId(account);
+  } catch {
+    return NextResponse.json({ ok: false, error: "Kein Praxiskontext vorhanden." }, { status: 403 });
+  }
+
+  const session = await ensurePracticeWorkingSession({
+    accountId: account.id,
+    practiceId,
+    caseProfileId: profile.id,
+    title: profile.title,
+    snapshot: snapshot as unknown as Prisma.InputJsonValue,
   });
 
-  return NextResponse.json({ ok: true, sessionId: session.id, snapshot });
+  return NextResponse.json({ ok: true, sessionId: session.id, snapshot, alreadyExists: session.alreadyExists });
 }

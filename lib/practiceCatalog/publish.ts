@@ -25,7 +25,16 @@ export async function publishToCatalog(
 ): Promise<PublishToCatalogResult> {
   const { sessionId, title, description, practiceId } = input;
 
-  // A — Session laden + Ownership prüfen
+  // A — Persistenter Retry-Key zuerst prüfen: die Working Session darf bereits gelöscht sein.
+  const existingPublished = await prisma.practiceCatalogEntry.findFirst({
+    where: { source_session_id: sessionId, practice_id: practiceId },
+    select: { id: true },
+  });
+  if (existingPublished) {
+    return { ok: true, id: existingPublished.id, alreadyPublished: true };
+  }
+
+  // B — Session laden + Ownership prüfen
   const session = await prisma.workflowSession.findFirst({
     where: { id: sessionId, owner_practice_id: practiceId },
   });
@@ -36,7 +45,7 @@ export async function publishToCatalog(
     });
   }
 
-  // B — Snapshot validieren
+  // C — Snapshot validieren
   const rawSnapshot = session.process_snapshot;
 
   if (!isPracticeWorkflowDraftSnapshot(rawSnapshot)) {
@@ -69,15 +78,6 @@ export async function publishToCatalog(
     })),
   };
 
-  // C — Idempotenz: bereits publiziert?
-  const existing = await prisma.practiceCatalogEntry.findUnique({
-    where: { source_session_id: sessionId },
-    select: { id: true },
-  });
-  if (existing) {
-    return { ok: true, id: existing.id, alreadyPublished: true };
-  }
-
   // D/E — Versionierung bestimmen
   let catalogCaseId: string;
   let nextVersion: number;
@@ -107,7 +107,7 @@ export async function publishToCatalog(
     nextVersion = 1;
   }
 
-  // F — Transaktion: alte Versionen demarkieren, neuen Eintrag anlegen
+  // F — Transaktion: alte Versionen demarkieren, neuen Eintrag anlegen und Working State löschen
   let newEntryId: string;
 
   try {
@@ -136,6 +136,8 @@ export async function publishToCatalog(
         select: { id: true },
       });
 
+      await tx.workflowSession.delete({ where: { id: sessionId } });
+
       return entry;
     });
 
@@ -145,10 +147,16 @@ export async function publishToCatalog(
     const isUniqueViolation =
       err instanceof Error && err.message.includes("Unique constraint failed");
     if (isUniqueViolation) {
-      throw Object.assign(
-        new Error("Versionsnummern-Konflikt. Bitte erneut versuchen."),
-        { statusCode: 409 },
-      );
+      const concurrentEntry = await prisma.practiceCatalogEntry.findFirst({
+        where: { source_session_id: sessionId, practice_id: practiceId },
+        select: { id: true },
+      });
+      if (concurrentEntry) {
+        return { ok: true, id: concurrentEntry.id, alreadyPublished: true };
+      }
+      throw Object.assign(new Error("Versionsnummern-Konflikt. Bitte erneut versuchen."), {
+        statusCode: 409,
+      });
     }
     throw err;
   }

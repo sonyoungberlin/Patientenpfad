@@ -6,6 +6,9 @@ import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
 import { getWorkflowTopic, isWorkflowTopicId } from "@/lib/workflow/processCatalog";
 import { isValidProcessSnapshot } from "@/lib/workflow/types";
 import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { listCaseProfilesFromLib } from "@/lib/practiceProcesses/caseProfileLibrary";
+import { listActiveCatalogEntries } from "@/lib/practiceCatalog/query";
 import { isInternalProtocolWorkflowSnapshot } from "@/lib/workflow/internalProtocol/workflowAdapter";
 import {
   deriveSessionStatus,
@@ -36,10 +39,51 @@ export default async function WorkflowCasesPage() {
       updatedAt: true,
       title: true,
       process_snapshot: true,
+      case_profile_id: true,
+      owner_practice_id: true,
     },
   });
 
-  const items = sessions.map((s) => {
+  const practiceId = account.current_practice?.id ?? null;
+  const [profiles, catalogEntries] = practiceId
+    ? await Promise.all([listCaseProfilesFromLib(), listActiveCatalogEntries(practiceId)])
+    : [[], []];
+  const practiceSessions = sessions.filter(
+    (session) =>
+      session.owner_practice_id === practiceId &&
+      session.case_profile_id !== null &&
+      isPracticeWorkflowDraftSnapshot(session.process_snapshot),
+  );
+  const practiceSessionIds = new Set(practiceSessions.map((session) => session.id));
+  const sessionByProfile = new Map(practiceSessions.map((session) => [session.case_profile_id!, session]));
+  const catalogByProfile = new Map(
+    catalogEntries.map((entry) => [entry.source_case_profile_id, entry]),
+  );
+  const practiceItems = profiles.map((profile) => {
+    const workingSession = sessionByProfile.get(profile.id);
+    const catalogEntry = catalogByProfile.get(profile.id);
+    const latestDate = workingSession?.updatedAt ?? catalogEntry?.updatedAt ?? new Date(0);
+    return {
+      id: profile.id,
+      createdAt: latestDate.toISOString().slice(0, 10),
+      updatedAt: latestDate.toISOString().slice(0, 10),
+      title: profile.title,
+      topicTitle: profile.title,
+      role: null,
+      pointCount: workingSession && isPracticeWorkflowDraftSnapshot(workingSession.process_snapshot)
+        ? workingSession.process_snapshot.checkpoints.length
+        : profile.checkpointRefs.length,
+      href: null,
+      kind: "practice-case" as const,
+      sessionStatus: workingSession ? "In Bearbeitung" : catalogEntry ? "Veröffentlicht" : "Noch nicht begonnen",
+      profileId: profile.id,
+      workingSessionId: workingSession?.id ?? null,
+    };
+  });
+
+  const items = [
+    ...practiceItems,
+    ...sessions.filter((session) => !practiceSessionIds.has(session.id)).map((s) => {
     // Neuer Practice-Workflow
     if (isPracticeWorkflowSnapshot(s.process_snapshot)) {
       const status = deriveSessionStatus(s.process_snapshot);
@@ -93,7 +137,8 @@ export default async function WorkflowCasesPage() {
       href: `/workflow-cases/${s.id}` as string | null,
       kind: "clinical" as const,
     };
-  });
+    }),
+  ];
 
   return (
     <main style={{ display: "grid", gap: "1rem" }}>

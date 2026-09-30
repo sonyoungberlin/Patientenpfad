@@ -332,13 +332,14 @@ model WorkflowSession {
   owner_practice_id String?
   owner_practice    Practice? @relation("WorkflowSessionOwnerPractice", fields: [owner_practice_id], references: [id], onDelete: SetNull)
 
+  /// Relationale Identität des temporären practice-workflow Working States.
+  /// Andere WorkflowSession-Typen lassen dieses Feld null.
+  case_profile_id String?
+
   /// Verknüpft diese Draft-Sitzung mit dem Katalogeintrag, aus dem sie erzeugt wurde (Revision).
   /// Null = erste Fassung oder aus Bibliothek gestartet.
   source_catalog_entry_id String?                @unique
   source_catalog_entry    PracticeCatalogEntry?  @relation("WorkflowSessionSourceCatalogEntry", fields: [source_catalog_entry_id], references: [id], onDelete: SetNull)
-
-  /// Katalogeintrag, der aus dieser Sitzung publiziert wurde (max. einer).
-  practice_catalog_entries PracticeCatalogEntry[] @relation("PracticeCatalogEntrySourceSession")
 
   @@index([owner_account_id, createdAt])
   @@index([owner_practice_id, createdAt])
@@ -1164,10 +1165,9 @@ model PracticeCatalogEntry {
   practice_id String
   practice    Practice @relation("PracticeCatalogEntryPractice", fields: [practice_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  /// WorkflowSession, aus der dieser Eintrag publiziert wurde.
-  /// Null wenn die Session gelöscht wurde.
+  /// Persistenter, eindeutiger Publish-/Retry-Key der ursprünglichen Working Session.
+  /// Die zugehörige WorkflowSession wird nach erfolgreichem Publish gelöscht.
   source_session_id String?         @unique
-  source_session    WorkflowSession? @relation("PracticeCatalogEntrySourceSession", fields: [source_session_id], references: [id], onDelete: SetNull)
 
   /// WorkflowSession, die als Revision dieses Eintrags angelegt wurde.
   revision_session WorkflowSession? @relation("WorkflowSessionSourceCatalogEntry")

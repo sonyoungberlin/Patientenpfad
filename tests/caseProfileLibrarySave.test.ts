@@ -39,7 +39,7 @@ jest.mock("@/lib/prisma", () => ({
       findMany: jest.fn(),
       upsert: jest.fn(),
     },
-    workflowSession: { create: jest.fn() },
+    workflowSession: { create: jest.fn(), findFirst: jest.fn() },
   },
 }));
 
@@ -61,7 +61,7 @@ import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnap
 type PrismaMock = {
   libraryCaseProfile: { findUnique: jest.Mock; findMany: jest.Mock; upsert: jest.Mock };
   libraryCheckpoint: { findUnique: jest.Mock; findMany: jest.Mock; upsert: jest.Mock };
-  workflowSession: { create: jest.Mock };
+  workflowSession: { create: jest.Mock; findFirst: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
 const getSessionMock = getSessionAccount as jest.Mock;
@@ -72,6 +72,7 @@ const ADMIN_ACCOUNT = {
   is_approved: true,
   is_admin: true,
   arbeitsprozesse_enabled: true,
+  current_practice: { id: "practice-1" },
 };
 const NON_ADMIN_ACCOUNT = { ...ADMIN_ACCOUNT, is_admin: false };
 
@@ -130,7 +131,9 @@ beforeEach(() => {
   pm.libraryCheckpoint.findMany.mockReset();
   pm.libraryCheckpoint.upsert.mockReset();
   pm.workflowSession.create.mockReset();
+  pm.workflowSession.findFirst.mockReset();
   pm.workflowSession.create.mockResolvedValue({ id: "session-1" });
+  pm.workflowSession.findFirst.mockResolvedValue(null);
   // Default: keine DB-Einträge für Checkpoints (→ Katalog-Fallback)
   pm.libraryCheckpoint.findUnique.mockResolvedValue(null);
   pm.libraryCheckpoint.findMany.mockResolvedValue([]);
@@ -245,6 +248,16 @@ describe("/start-Route: Snapshot-Prinzip", () => {
     pm.libraryCaseProfile.findUnique.mockResolvedValue(null);
     const res = await startSession(makeStartRequest("existiert-nicht"));
     expect(res.status).toBe(404);
+  });
+
+  it("lehnt den Start ohne aktive Praxis ab und erzeugt keine Session", async () => {
+    getSessionMock.mockResolvedValue({ ...ADMIN_ACCOUNT, current_practice: null });
+    pm.libraryCaseProfile.findUnique.mockResolvedValue(DB_PROFILE_ROW);
+
+    const res = await startSession(makeStartRequest("rezeptanfrage-ohne-arzt"));
+
+    expect(res.status).toBe(403);
+    expect(pm.workflowSession.create).not.toHaveBeenCalled();
   });
 });
 

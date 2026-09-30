@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 import { canAccessWorkflowCases } from "@/lib/authz";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
+import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 export async function DELETE(
   req: NextRequest,
@@ -23,11 +24,15 @@ export async function DELETE(
 
   const existing = await prisma.workflowSession.findFirst({
     where: { id, ...getWorkflowOwnershipFilter(account) },
-    select: { id: true },
+    select: { id: true, process_snapshot: true, case_profile_id: true },
   });
 
   if (!existing) {
     return NextResponse.json({ ok: false, error: "Sitzung nicht gefunden." }, { status: 404 });
+  }
+
+  if (isPracticeWorkflowDraftSnapshot(existing.process_snapshot) && !existing.case_profile_id) {
+    return NextResponse.json({ ok: false, error: "Praxisfall ist nicht mehr bearbeitbar." }, { status: 409 });
   }
 
   await prisma.workflowSession.delete({ where: { id } });
