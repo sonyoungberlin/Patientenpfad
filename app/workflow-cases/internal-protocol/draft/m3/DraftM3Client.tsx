@@ -97,7 +97,7 @@ export default function DraftM3Client() {
         }),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(",")],
+    [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(","), definitions],
   );
 
   if (!snapshot) return null;
