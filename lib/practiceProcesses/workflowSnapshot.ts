@@ -1,4 +1,5 @@
 import type { PracticeCaseProfile, PracticeCheckpoint } from "./types";
+import { isPracticeCheckpointDefinitionDefined } from "./practiceDefinition";
 
 export const PRACTICE_WORKFLOW_SNAPSHOT_VERSION = 2 as const;
 export type CheckpointDecision = "PFLICHT" | "OPTIONAL" | "NICHT_RELEVANT";
@@ -69,10 +70,13 @@ function isPublishedCheckpoint(value: unknown): value is PublishedPracticeWorkfl
   return candidate.checkpointId === (value as PracticeWorkflowCheckpointState).checkpointId &&
     typeof candidate.checkpointTitle === "string" &&
     typeof candidate.implementation === "string" &&
-    candidate.implementation.trim().length > 0 &&
     Array.isArray(candidate.selectedAnchorIds) &&
     candidate.selectedAnchorIds.every((id) => typeof id === "string") &&
-    Array.isArray(candidate.checkpointAnchors);
+    Array.isArray(candidate.checkpointAnchors) &&
+    isPracticeCheckpointDefinitionDefined({
+      selectedAnchorIds: candidate.selectedAnchorIds,
+      implementation: candidate.implementation,
+    });
 }
 
 export function isPracticeWorkflowDraftSnapshot(value: unknown): value is PracticeWorkflowDraftSnapshot {

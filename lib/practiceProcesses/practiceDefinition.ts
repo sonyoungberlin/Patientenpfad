@@ -37,8 +37,14 @@ export function parsePracticeDefinitionInput(
   const implementation = typeof candidate.implementation === "string"
     ? candidate.implementation.trim()
     : "";
-  if (!selectedAnchorIds || implementation.length === 0) return null;
+  if (!selectedAnchorIds || (selectedAnchorIds.length === 0 && implementation.length === 0)) return null;
   return { selectedAnchorIds, implementation };
+}
+
+export function isPracticeCheckpointDefinitionDefined(
+  definition: Pick<PracticeCheckpointDefinitionRecord, "selectedAnchorIds" | "implementation">,
+): boolean {
+  return definition.selectedAnchorIds.length > 0 || definition.implementation.trim().length > 0;
 }
 
 export function checkpointDefinitionSnapshot(

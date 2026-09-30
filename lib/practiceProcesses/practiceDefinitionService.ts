@@ -14,7 +14,7 @@ function invalid(message: string, statusCode = 422): never {
 async function validateDefinitionInput(checkpointId: string, input: unknown) {
   const parsed = parsePracticeDefinitionInput(input);
   if (!parsed) {
-    invalid("Implementation muss nach Trim nicht leer sein; Anchor-Auswahl ist ein eindeutiges Array.");
+    invalid("Bitte mindestens ein Kriterium auswählen oder eine zusätzliche Umsetzung beschreiben.");
   }
   const checkpoint = await getCheckpointFromLib(checkpointId);
   if (!checkpoint) invalid("Checkpoint-Vorlage nicht gefunden.", 404);

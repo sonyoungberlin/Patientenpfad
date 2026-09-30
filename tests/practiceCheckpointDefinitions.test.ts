@@ -23,8 +23,12 @@ import {
 describe("Current PracticeCheckpointDefinition", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("akzeptiert eine leere Anchor-Auswahl, aber keine leere Implementation", () => {
+  it("akzeptiert Anchor-only und Text-only, aber keine leere Definition", () => {
     expect(parsePracticeDefinitionInput({ selectedAnchorIds: [], implementation: "  " })).toBeNull();
+    expect(parsePracticeDefinitionInput({ selectedAnchorIds: ["anchor-1"], implementation: "  " })).toEqual({
+      selectedAnchorIds: ["anchor-1"],
+      implementation: "",
+    });
     expect(parsePracticeDefinitionInput({ selectedAnchorIds: [], implementation: " Standard " })).toEqual({
       selectedAnchorIds: [],
       implementation: "Standard",
@@ -55,6 +59,39 @@ describe("Current PracticeCheckpointDefinition", () => {
       where: { practice_id_checkpoint_id: { practice_id: "practice-1", checkpoint_id: "cp-1" } },
       update: expect.objectContaining({ implementation: "Standard" }),
     }));
+  });
+
+  it("upsertet eine Anchor-only-Definition mit leerer Umsetzung", async () => {
+    definitionModel.upsert.mockResolvedValue({
+      id: "definition-1",
+      practice_id: "practice-1",
+      checkpoint_id: "cp-1",
+      selected_anchor_ids: ["anchor-1"],
+      implementation: "",
+      updated_at: new Date("2026-09-30T12:00:00Z"),
+    });
+
+    await upsertPracticeCheckpointDefinition({
+      practiceId: "practice-1",
+      checkpointId: "cp-1",
+      selectedAnchorIds: ["anchor-1"],
+      implementation: "",
+    });
+
+    expect(definitionModel.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("weist eine vollständig leere Definition fachlich verständlich zurück", async () => {
+    await expect(upsertPracticeCheckpointDefinition({
+      practiceId: "practice-1",
+      checkpointId: "cp-1",
+      selectedAnchorIds: [],
+      implementation: "",
+    })).rejects.toMatchObject({
+      statusCode: 422,
+      message: "Bitte mindestens ein Kriterium auswählen oder eine zusätzliche Umsetzung beschreiben.",
+    });
+    expect(definitionModel.upsert).not.toHaveBeenCalled();
   });
 
   it("weist fremde Anchor-IDs und fehlende Definitionen beim Publish-Check zurueck", async () => {

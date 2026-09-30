@@ -14,6 +14,7 @@ export default function DraftM2Client() {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<PracticeWorkflowDraftSnapshot | null>(null);
   const [definitions, setDefinitions] = useState<Record<string, EditableDefinition>>({});
+  const [definedCheckpointIds, setDefinedCheckpointIds] = useState<Set<string>>(new Set());
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export default function DraftM2Client() {
         const definitionResponse = await fetch("/api/practice-checkpoint-definitions");
         const definitionData = await definitionResponse.json() as { definitions?: PracticeCheckpointDefinitionRecord[] };
         if (definitionResponse.ok && Array.isArray(definitionData.definitions)) {
+          setDefinedCheckpointIds(new Set(definitionData.definitions.map((definition) => definition.checkpointId)));
           setDefinitions(Object.fromEntries(definitionData.definitions.map((definition) => [
             definition.checkpointId,
             { selectedAnchorIds: definition.selectedAnchorIds, implementation: definition.implementation },
@@ -50,30 +52,42 @@ export default function DraftM2Client() {
     }));
   }
 
-  async function saveDefinitions() {
-    if (!snapshot) return false;
-    for (const checkpoint of snapshot.checkpoints) {
-      const definition = definitions[checkpoint.checkpointId];
-      if (!definition) continue;
-      const response = await fetch(`/api/practice-checkpoint-definitions/${checkpoint.checkpointId}`, {
+  async function saveDefinition(checkpointId: string) {
+    const definition = definitions[checkpointId] ?? { selectedAnchorIds: [], implementation: "" };
+    if (definition.selectedAnchorIds.length === 0 && definition.implementation.trim().length === 0) {
+      setError("Bitte mindestens ein Kriterium auswählen oder eine zusätzliche Umsetzung beschreiben.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/practice-checkpoint-definitions/${checkpointId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(definition),
       });
-      const data = await response.json() as { ok?: boolean; error?: string };
-      if (!response.ok || !data.ok) {
-        setError(data.error ?? `Definition für ${checkpoint.checkpointTitle} konnte nicht gespeichert werden.`);
-        return false;
+      const data = await response.json() as {
+        ok?: boolean;
+        error?: string;
+        definition?: EditableDefinition;
+      };
+      if (!response.ok || !data.ok || !data.definition) {
+        setError(data.error ?? "Definition konnte nicht gespeichert werden.");
+        return;
       }
+      setDefinitions((current) => ({ ...current, [checkpointId]: data.definition! }));
+      setDefinedCheckpointIds((current) => new Set(current).add(checkpointId));
+    } catch {
+      setError("Definition konnte nicht gespeichert werden.");
+    } finally {
+      setSaving(false);
     }
-    return true;
   }
 
   async function saveAndNavigate(destination: string) {
     if (!snapshot || !sessionId) return;
     setSaving(true);
     setError(null);
-    if (!(await saveDefinitions())) { setSaving(false); return; }
     const result = await savePracticeWorkflowDraft(snapshot, snapshot.caseProfileTitle, sessionId);
     setSaving(false);
     if (!result.ok) { setError(result.error); return; }
@@ -94,18 +108,23 @@ export default function DraftM2Client() {
       {snapshot.checkpoints.map((checkpoint) => {
         const catalogCheckpoint = getCheckpoint(checkpoint.checkpointId);
         const current = definitions[checkpoint.checkpointId] ?? { selectedAnchorIds: [], implementation: "" };
+        const isDefined = definedCheckpointIds.has(checkpoint.checkpointId);
+        const canDefine = current.selectedAnchorIds.length > 0 || current.implementation.trim().length > 0;
         return (
           <section key={checkpoint.checkpointId} className="card" style={{ display: "grid", gap: "0.75rem" }}>
             <div style={{ fontWeight: 600 }}>{checkpoint.checkpointTitle}</div>
             {catalogCheckpoint?.description && <p className="text-small text-muted" style={{ margin: 0 }}>{catalogCheckpoint.description}</p>}
+            <div className="text-small text-muted">
+              Praxisstandard: {isDefined ? "Definiert" : "Noch nicht definiert"}
+            </div>
             <label>
-              Umsetzung
+              Zusätzliche Umsetzung (optional)
               <textarea
                 value={current.implementation}
                 onChange={(event) => updateDefinition(checkpoint.checkpointId, { implementation: event.target.value })}
                 rows={3}
                 style={{ width: "100%", boxSizing: "border-box", font: "inherit" }}
-                placeholder="Noch nicht definiert"
+                placeholder="Optional ergänzen"
               />
             </label>
             {(catalogCheckpoint?.orientationAnchors ?? []).map((anchor) => (
@@ -122,7 +141,13 @@ export default function DraftM2Client() {
                 <span>{anchor.text}</span>
               </label>
             ))}
-            {!definitions[checkpoint.checkpointId] && <span className="text-small text-muted">Noch nicht definiert</span>}
+            <button
+              type="button"
+              onClick={() => void saveDefinition(checkpoint.checkpointId)}
+              disabled={saving || !canDefine}
+            >
+              {isDefined ? "Definition ändern" : "Definition übernehmen"}
+            </button>
           </section>
         );
       })}

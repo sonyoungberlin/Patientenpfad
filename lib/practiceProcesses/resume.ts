@@ -1,5 +1,5 @@
 import type { PracticeWorkflowDraftSnapshot } from "./workflowSnapshot";
-import type { PracticeCheckpointDefinitionRecord } from "./practiceDefinition";
+import { isPracticeCheckpointDefinitionDefined, type PracticeCheckpointDefinitionRecord } from "./practiceDefinition";
 
 export type PracticeWorkflowResumeStep = "m2" | "m3" | "m4";
 
@@ -9,7 +9,7 @@ export function resolvePracticeWorkflowResumeStep(
 ): PracticeWorkflowResumeStep {
   const ids = new Set(
     definitions
-      .filter((definition) => definition.implementation.trim().length > 0)
+      .filter(isPracticeCheckpointDefinitionDefined)
       .map((definition) => definition.checkpointId),
   );
   const allDefinitions = snapshot.checkpoints.every((checkpoint) => ids.has(checkpoint.checkpointId));

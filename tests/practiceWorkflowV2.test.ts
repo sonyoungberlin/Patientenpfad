@@ -42,6 +42,19 @@ describe("Practice workflow v2", () => {
       checkpoints: [{ ...draft.checkpoints[0], definition: { ...definition, implementation: " " } }],
       completedAt: "2026-09-29T12:00:00.000Z",
     })).toBe(false);
+    expect(isPublishedPracticeWorkflowSnapshot({
+      ...draft,
+      checkpoints: [{
+        ...draft.checkpoints[0],
+        definition: {
+          ...definition,
+          checkpointAnchors: [{ id: "anchor-1", text: "Kriterium" }],
+          selectedAnchorIds: ["anchor-1"],
+          implementation: "",
+        },
+      }],
+      completedAt: "2026-09-29T12:00:00.000Z",
+    })).toBe(true);
   });
 
   it("speichert in M3 nur die Entscheidung", () => {
@@ -62,5 +75,9 @@ describe("Practice workflow v2", () => {
         selectedAnchorIds: [], implementation: "Standard", updatedAt: "2026-09-29T12:00:00.000Z",
       }],
     )).toBe("m4");
+    expect(resolvePracticeWorkflowResumeStep(draft, [{
+      id: "definition-1", practiceId: "practice-1", checkpointId: "cp-1",
+      selectedAnchorIds: ["anchor-1"], implementation: "", updatedAt: "2026-09-30T12:00:00.000Z",
+    }])).toBe("m3");
   });
 });

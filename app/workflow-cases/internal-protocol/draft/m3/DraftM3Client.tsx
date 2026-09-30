@@ -9,7 +9,10 @@ import type {
   PracticeWorkflowDraftSnapshot,
   CheckpointDecision,
 } from "@/lib/practiceProcesses/workflowSnapshot";
-import type { PracticeCheckpointDefinitionRecord } from "@/lib/practiceProcesses/practiceDefinition";
+import {
+  isPracticeCheckpointDefinitionDefined,
+  type PracticeCheckpointDefinitionRecord,
+} from "@/lib/practiceProcesses/practiceDefinition";
 import {
   setCheckpointDecision,
 } from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
@@ -92,6 +95,9 @@ export default function DraftM3Client() {
                 orientationAnchors: catalogDef?.orientationAnchors ?? [],
                 selectedAnchorIds: definitions[cp.checkpointId]?.selectedAnchorIds ?? [],
                 implementation: definitions[cp.checkpointId]?.implementation ?? "",
+                isDefined: definitions[cp.checkpointId]
+                  ? isPracticeCheckpointDefinitionDefined(definitions[cp.checkpointId])
+                  : false,
             },
           ];
         }),
@@ -181,8 +187,12 @@ export default function DraftM3Client() {
 
           <div style={{ display: "grid", gap: "0.35rem", padding: "0.65rem", background: "#f7f9fb", border: "1px solid #dfe5ea" }}>
             <strong className="text-small">Aktueller Praxisstandard</strong>
-            {cpDefinitions[cp.checkpointId]?.implementation ? (
-              <span className="text-small">{cpDefinitions[cp.checkpointId]!.implementation}</span>
+            {cpDefinitions[cp.checkpointId]?.isDefined ? (
+              cpDefinitions[cp.checkpointId]?.implementation ? (
+                <span className="text-small">{cpDefinitions[cp.checkpointId]!.implementation}</span>
+              ) : (
+                <span className="text-small text-muted">Nur ausgewählte Kriterien</span>
+              )
             ) : (
               <span className="text-small text-muted">Noch nicht definiert.</span>
             )}

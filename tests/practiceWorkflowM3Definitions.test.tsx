@@ -100,4 +100,18 @@ describe("M3 löst aktuelle PracticeCheckpointDefinition live auf", () => {
 
     root.unmount();
   });
+
+  it("behandelt eine Anchor-only-Definition als definierten Praxisstandard", async () => {
+    const { container, root } = await renderM3([{
+      ...definition,
+      selectedAnchorIds: ["identity"],
+      implementation: "",
+    }]);
+
+    expect(container.textContent).toContain("Identität geprüft");
+    expect(container.textContent).toContain("Nur ausgewählte Kriterien");
+    expect(container.textContent).not.toContain("Noch nicht definiert.");
+
+    root.unmount();
+  });
 });
