@@ -137,6 +137,15 @@ export async function deleteLibraryCheckpoint(id: string): Promise<Configuration
   const dependencies = profiles
     .filter((profile) => profile.checkpointRefs.some((reference) => reference.checkpointId === id))
     .map((profile) => ({ id: profile.id, name: profile.title }));
+  const definitionDependency = await prisma.practiceCheckpointDefinition.findFirst({
+    where: { checkpoint_id: id },
+    select: { id: true },
+  });
+  if (definitionDependency) {
+    return configurationDeleteConflict("Der Checkpoint", "aktuellen Praxisdefinitionen", [
+      { id: definitionDependency.id, name: "Praxisdefinition" },
+    ]);
+  }
   if (dependencies.length > 0) {
     return configurationDeleteConflict("Der Checkpoint", "Praxisfällen", dependencies);
   }

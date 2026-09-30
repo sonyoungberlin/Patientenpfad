@@ -2,11 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { requirePracticeCatalogAccessFromCookies } from "@/lib/authz";
 import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
 import { getCheckpointFromLib } from "@/lib/practiceProcesses/checkpointLibrary";
-import { getPracticeDefinition } from "@/lib/practiceProcesses/practiceDefinitionService";
-import {
-  checkpointTemplateSnapshot,
-  createEmptyPracticeDefinition,
-} from "@/lib/practiceProcesses/practiceDefinition";
+import { getPracticeCheckpointDefinition } from "@/lib/practiceProcesses/practiceDefinitionService";
 import PracticeDefinitionEditor from "./PracticeDefinitionEditor";
 
 export default async function PracticeCheckpointDefinitionPage({
@@ -21,14 +17,11 @@ export default async function PracticeCheckpointDefinitionPage({
   const { checkpointId } = await params;
   const checkpoint = await getCheckpointFromLib(checkpointId);
   if (!checkpoint) notFound();
-  const definition = await getPracticeDefinition(scope.practice_id, checkpointId);
-  const template = checkpointTemplateSnapshot(checkpoint);
-  const initialContent = definition?.draft ?? definition?.currentVersion?.content ?? createEmptyPracticeDefinition(template);
+  const definition = await getPracticeCheckpointDefinition(scope.practice_id, checkpointId);
   return (
     <PracticeDefinitionEditor
-      template={template}
-      initialContent={initialContent}
-      currentVersion={definition?.currentVersion ?? null}
+      checkpoint={checkpoint}
+      initialDefinition={definition}
     />
   );
 }

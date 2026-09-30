@@ -4,13 +4,6 @@ import type {
   ProtocolClarificationJudgement,
 } from "./workflowAdapter";
 
-// sessionStorage-Schlüssel für den lokalen Entwurf
-export const DRAFT_SNAPSHOT_KEY = "workflow-draft-snapshot";
-// gesetzt nur bei Weiterbearbeitung einer gespeicherten Session
-export const DRAFT_SOURCE_ID_KEY = "workflow-draft-source-id";
-// Titel der gespeicherten Session – Vorausfüllung für den Speicher-Dialog
-export const DRAFT_SOURCE_TITLE_KEY = "workflow-draft-source-title";
-
 /**
  * Einziger erlaubter Pfad für Antwortänderungen im Snapshot.
  * Ermittelt den Checkpoint anhand der questionId selbst.
@@ -91,55 +84,20 @@ export function setCheckpointJudgement(
 // ---------------------------------------------------------------------------
 
 import type {
-  PracticeWorkflowSnapshot,
+  PracticeWorkflowDraftSnapshot,
   CheckpointDecision,
 } from "@/lib/practiceProcesses/workflowSnapshot";
 
-/** Fügt anchorId zu selectedAnchorIds hinzu oder entfernt sie (Toggle). */
-export function toggleAnchorSelection(
-  snapshot: PracticeWorkflowSnapshot,
-  checkpointId: string,
-  anchorId: string,
-): PracticeWorkflowSnapshot {
-  return {
-    ...snapshot,
-    checkpoints: snapshot.checkpoints.map((cp) => {
-      if (cp.checkpointId !== checkpointId) return cp;
-      const current = cp.selectedAnchorIds ?? [];
-      const next = current.includes(anchorId)
-        ? current.filter((id) => id !== anchorId)
-        : [...current, anchorId];
-      return { ...cp, selectedAnchorIds: next };
-    }),
-  };
-}
-
 /** Setzt die fachliche M3-Entscheidung für einen Checkpoint. */
 export function setCheckpointDecision(
-  snapshot: PracticeWorkflowSnapshot,
+  snapshot: PracticeWorkflowDraftSnapshot,
   checkpointId: string,
   decision: CheckpointDecision,
-): PracticeWorkflowSnapshot {
+): PracticeWorkflowDraftSnapshot {
   return {
     ...snapshot,
     checkpoints: snapshot.checkpoints.map((cp) =>
       cp.checkpointId === checkpointId ? { ...cp, decision } : cp,
-    ),
-  };
-}
-
-/** Setzt die Umsetzungsbeschreibung für einen Checkpoint; leerer String entfernt das Feld. */
-export function setUmsetzung(
-  snapshot: PracticeWorkflowSnapshot,
-  checkpointId: string,
-  value: string,
-): PracticeWorkflowSnapshot {
-  return {
-    ...snapshot,
-    checkpoints: snapshot.checkpoints.map((cp) =>
-      cp.checkpointId === checkpointId
-        ? { ...cp, umsetzung: value || undefined }
-        : cp,
     ),
   };
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requirePracticeCatalogAccessFromCookies } from "@/lib/authz";
 import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
 import { getCatalogEntry, listCatalogEntryVersions } from "@/lib/practiceCatalog/query";
-import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { isPublishedPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import CatalogEntryActions from "./CatalogEntryActions";
 
 type Params = { params: Promise<{ id: string }> };
@@ -30,7 +30,7 @@ export default async function CatalogEntryDetailPage({ params }: Params) {
   );
 
   const snapshot = entry.snapshot;
-  const hasSnapshot = isPracticeWorkflowSnapshot(snapshot);
+  const hasSnapshot = isPublishedPracticeWorkflowSnapshot(snapshot);
 
   return (
     <main style={{ padding: "2rem", maxWidth: "56rem", margin: "0 auto" }}>
@@ -95,14 +95,14 @@ export default async function CatalogEntryDetailPage({ params }: Params) {
                     </span>
                   )}
                 </div>
-                {cp.umsetzung && (
+                {cp.definition.implementation && (
                   <p className="text-small" style={{ margin: "0.4rem 0 0", color: "#333" }}>
-                    {cp.umsetzung}
+                    {cp.definition.implementation}
                   </p>
                 )}
-                {cp.selectedAnchorIds.length > 0 && (
+                {cp.definition.selectedAnchorIds.length > 0 && (
                   <p className="text-small text-muted" style={{ margin: "0.25rem 0 0" }}>
-                    Anker: {cp.selectedAnchorIds.join(", ")}
+                    Anker: {cp.definition.selectedAnchorIds.join(", ")}
                   </p>
                 )}
               </li>

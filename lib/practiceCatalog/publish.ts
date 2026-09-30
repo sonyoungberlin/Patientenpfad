@@ -1,8 +1,11 @@
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import {
-  isPracticeWorkflowSnapshot,
+  isPracticeWorkflowDraftSnapshot,
+  type PracticeWorkflowDraftSnapshot,
+  type PublishedPracticeWorkflowSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
+import { resolveDefinitionsForPublish } from "@/lib/practiceProcesses/practiceDefinitionService";
 import type { PublishToCatalogInput, PublishToCatalogResult } from "./types";
 
 /**
@@ -36,14 +39,8 @@ export async function publishToCatalog(
   // B — Snapshot validieren
   const rawSnapshot = session.process_snapshot;
 
-  if (!isPracticeWorkflowSnapshot(rawSnapshot)) {
+  if (!isPracticeWorkflowDraftSnapshot(rawSnapshot)) {
     throw Object.assign(new Error("Snapshot ist kein PracticeWorkflowSnapshot."), {
-      statusCode: 400,
-    });
-  }
-
-  if (!rawSnapshot.completedAt) {
-    throw Object.assign(new Error("Snapshot ist noch nicht abgeschlossen (completedAt fehlt)."), {
       statusCode: 400,
     });
   }
@@ -58,18 +55,19 @@ export async function publishToCatalog(
     );
   }
 
-  const missingPracticeDefinitions = rawSnapshot.checkpoints.filter(
-    (checkpoint) => checkpoint.decision !== "NICHT_RELEVANT" && !checkpoint.practiceDefinitionVersion,
-  );
-  if (missingPracticeDefinitions.length > 0) {
-    const checkpointTitles = missingPracticeDefinitions
-      .map((checkpoint) => checkpoint.checkpointTitle)
-      .join(", ");
-    throw Object.assign(
-      new Error(`Für relevante Checkpoints fehlt eine freigegebene Praxisdefinition: ${checkpointTitles}.`),
-      { statusCode: 422 },
-    );
-  }
+  const definitions = await resolveDefinitionsForPublish({
+    practiceId,
+    checkpoints: rawSnapshot.checkpoints,
+  });
+  const draftSnapshot = rawSnapshot as PracticeWorkflowDraftSnapshot;
+  const publishedSnapshot: PublishedPracticeWorkflowSnapshot = {
+    ...draftSnapshot,
+    completedAt: new Date().toISOString(),
+    checkpoints: draftSnapshot.checkpoints.map((checkpoint) => ({
+      ...checkpoint,
+      definition: definitions.find((definition) => definition.checkpointId === checkpoint.checkpointId)!,
+    })),
+  };
 
   // C — Idempotenz: bereits publiziert?
   const existing = await prisma.practiceCatalogEntry.findUnique({
@@ -129,7 +127,7 @@ export async function publishToCatalog(
           source_case_profile_id: rawSnapshot.caseProfileId ?? null,
           title,
           description: description ?? null,
-          snapshot: rawSnapshot as object,
+          snapshot: publishedSnapshot as object,
           version: nextVersion,
           is_current_version: true,
           is_catalog_active: true,

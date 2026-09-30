@@ -3,45 +3,46 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  isPracticeWorkflowSnapshot,
-  markSnapshotCompleted,
+  isPracticeWorkflowDraftSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
-import type { PracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeCheckpointDefinitionSnapshot } from "@/lib/practiceProcesses/practiceDefinition";
 import { buildM4Text } from "@/lib/practiceProcesses/buildM4Text";
-import {
-  DRAFT_SNAPSHOT_KEY,
-  DRAFT_SOURCE_ID_KEY,
-  DRAFT_SOURCE_TITLE_KEY,
-} from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
 
 export default function PracticeWorkflowM4Client() {
   const router = useRouter();
-  const [snapshot, setSnapshot] = useState<PracticeWorkflowSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState<PracticeWorkflowDraftSnapshot | null>(null);
+  const [definitions, setDefinitions] = useState<PracticeCheckpointDefinitionSnapshot[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [alreadyPublished, setAlreadyPublished] = useState(false);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(DRAFT_SNAPSHOT_KEY);
-    if (!raw) { router.replace("/workflow-cases/internal-protocol/new"); return; }
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (!isPracticeWorkflowSnapshot(parsed)) {
-        router.replace("/workflow-cases/internal-protocol/new");
-        return;
-      }
-      setSnapshot(parsed);
-    } catch {
-      router.replace("/workflow-cases/internal-protocol/new");
-    }
+    const id = new URLSearchParams(window.location.search).get("sessionId");
+    if (!id) { router.replace("/workflow-cases/internal-protocol/new"); return; }
+    setSessionId(id);
+    void fetch(`/api/workflow-cases/${id}/protocol/save`)
+      .then(async (res) => {
+        const data = await res.json() as { ok?: boolean; snapshot?: unknown };
+        if (!res.ok || !data.ok || !isPracticeWorkflowDraftSnapshot(data.snapshot)) throw new Error();
+        setSnapshot(data.snapshot);
+        const response = await fetch("/api/practice-checkpoint-definitions");
+        const definitionsData = await response.json() as { definitions?: PracticeCheckpointDefinitionSnapshot[] };
+        if (response.ok && Array.isArray(definitionsData.definitions)) {
+          const ids = new Set(data.snapshot.checkpoints.map((checkpoint) => checkpoint.checkpointId));
+          setDefinitions(definitionsData.definitions.filter((definition) => ids.has(definition.checkpointId)));
+        }
+      })
+      .catch(() => router.replace("/workflow-cases"));
   }, [router]);
 
   async function handleCopy() {
-    if (!snapshot) return;
+    if (!snapshot || !sessionId) return;
     try {
-      await navigator.clipboard.writeText(buildM4Text(snapshot));
+      await navigator.clipboard.writeText(buildM4Text(snapshot, definitions));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -50,17 +51,13 @@ export default function PracticeWorkflowM4Client() {
   }
 
   async function handlePublishToCatalog() {
-    if (!snapshot) return;
+    if (!snapshot || !sessionId) return;
     setFinishing(true);
     setError(null);
-    const completed = markSnapshotCompleted(snapshot);
-    sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(completed));
-    const sourceId = sessionStorage.getItem(DRAFT_SOURCE_ID_KEY);
-    const title =
-      sessionStorage.getItem(DRAFT_SOURCE_TITLE_KEY) ?? snapshot.caseProfileTitle;
+    const title = snapshot.caseProfileTitle;
 
-    // 1. Entwurf speichern (PATCH oder POST)
-    const saveResult = await savePracticeWorkflowDraft(completed, title, sourceId);
+    // 1. Entwurf speichern
+    const saveResult = await savePracticeWorkflowDraft(snapshot, title, sessionId);
     if (!saveResult.ok) {
       setFinishing(false);
       setError(saveResult.error);
@@ -95,11 +92,6 @@ export default function PracticeWorkflowM4Client() {
       return;
     }
 
-    // Entwurfsdaten aus sessionStorage bereinigen
-    sessionStorage.removeItem(DRAFT_SNAPSHOT_KEY);
-    sessionStorage.removeItem(DRAFT_SOURCE_ID_KEY);
-    sessionStorage.removeItem(DRAFT_SOURCE_TITLE_KEY);
-
     if (publishData.alreadyPublished) {
       setAlreadyPublished(true);
       return;
@@ -110,7 +102,7 @@ export default function PracticeWorkflowM4Client() {
 
   if (!snapshot) return null;
 
-  const m4Text = buildM4Text(snapshot);
+  const m4Text = buildM4Text(snapshot, definitions);
 
   return (
     <article className="card" style={{ display: "grid", gap: "1.25rem", maxWidth: "44rem" }}>
@@ -158,7 +150,7 @@ export default function PracticeWorkflowM4Client() {
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
         <button
           type="button"
-          onClick={() => router.push("/workflow-cases/internal-protocol/draft/m3")}
+          onClick={() => router.push(`/workflow-cases/internal-protocol/draft/m3?sessionId=${encodeURIComponent(sessionId ?? "")}`)}
         >
           ← Zurück zu M3
         </button>

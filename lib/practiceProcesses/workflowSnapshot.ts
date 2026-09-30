@@ -1,73 +1,111 @@
-import type { PracticeCaseProfile, PracticeCheckpoint, PracticeCheckpointAnchor } from "./types";
-import type { PracticeCheckpointDefinitionVersionSnapshot } from "./practiceDefinition";
+import type { PracticeCaseProfile, PracticeCheckpoint } from "./types";
 
+export const PRACTICE_WORKFLOW_SNAPSHOT_VERSION = 2 as const;
 export type CheckpointDecision = "PFLICHT" | "OPTIONAL" | "NICHT_RELEVANT";
 
 export interface PracticeWorkflowCheckpointState {
   checkpointId: string;
   checkpointTitle: string;
-  selectedAnchorIds: string[];
   decision?: CheckpointDecision;
-  /** Kurze praxisindividuelle Beschreibung, wie diese Praxis den Checkpoint konkret umsetzt. */
-  umsetzung?: string;
-  /** Snapshot der verfügbaren Orientierungsanker zum Zeitpunkt der Session-Erstellung. */
-  checkpointAnchors?: PracticeCheckpointAnchor[];
-  /** Checkpoint-Beschreibung zum Zeitpunkt der Session-Erstellung. */
-  checkpointDescription?: string;
-  /** Beim Start angeheftete, unveränderliche Praxisdefinition. Fehlt bei V1-Snapshots. */
-  practiceDefinitionVersion?: PracticeCheckpointDefinitionVersionSnapshot;
 }
 
-export interface PracticeWorkflowSnapshot {
+export interface PracticeWorkflowDraftSnapshot {
   processKind: "practice-workflow";
+  snapshotVersion: typeof PRACTICE_WORKFLOW_SNAPSHOT_VERSION;
   caseProfileId: string;
   caseProfileTitle: string;
   checkpoints: PracticeWorkflowCheckpointState[];
-  /** ISO-8601-Timestamp; fehlt = In Bearbeitung, gesetzt = Abgeschlossen */
-  completedAt?: string;
 }
 
-export function isPracticeWorkflowSnapshot(
-  value: unknown,
-): value is PracticeWorkflowSnapshot {
+export interface PublishedPracticeWorkflowCheckpoint extends PracticeWorkflowCheckpointState {
+  definition: {
+    checkpointId: string;
+    checkpointTitle: string;
+    checkpointDescription?: string;
+    checkpointAnchors: PracticeCheckpoint["orientationAnchors"];
+    selectedAnchorIds: string[];
+    implementation: string;
+  };
+}
+
+export interface PublishedPracticeWorkflowSnapshot {
+  processKind: "practice-workflow";
+  snapshotVersion: typeof PRACTICE_WORKFLOW_SNAPSHOT_VERSION;
+  caseProfileId: string;
+  caseProfileTitle: string;
+  checkpoints: PublishedPracticeWorkflowCheckpoint[];
+  completedAt: string;
+}
+
+export type PracticeWorkflowSnapshot = PracticeWorkflowDraftSnapshot | PublishedPracticeWorkflowSnapshot;
+
+function isBaseSnapshot(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    v.processKind === "practice-workflow" &&
-    typeof v.caseProfileId === "string" &&
-    typeof v.caseProfileTitle === "string" &&
-    Array.isArray(v.checkpoints)
-  );
+  const snapshot = value as Record<string, unknown>;
+  return snapshot.processKind === "practice-workflow" &&
+    typeof snapshot.caseProfileId === "string" &&
+    typeof snapshot.caseProfileTitle === "string";
+}
+
+function isDecision(value: unknown): value is CheckpointDecision {
+  return value === "PFLICHT" || value === "OPTIONAL" || value === "NICHT_RELEVANT";
+}
+
+function isDraftCheckpoint(value: unknown): value is PracticeWorkflowCheckpointState {
+  if (!value || typeof value !== "object") return false;
+  const checkpoint = value as Record<string, unknown>;
+  return typeof checkpoint.checkpointId === "string" &&
+    typeof checkpoint.checkpointTitle === "string" &&
+    (checkpoint.decision === undefined || isDecision(checkpoint.decision)) &&
+    !Object.prototype.hasOwnProperty.call(checkpoint, "selectedAnchorIds") &&
+    !Object.prototype.hasOwnProperty.call(checkpoint, "implementation");
+}
+
+function isPublishedCheckpoint(value: unknown): value is PublishedPracticeWorkflowCheckpoint {
+  if (!isDraftCheckpoint(value) || !value || typeof value !== "object") return false;
+  const definition = (value as unknown as Record<string, unknown>).definition;
+  if (!definition || typeof definition !== "object") return false;
+  const candidate = definition as Record<string, unknown>;
+  return candidate.checkpointId === (value as PracticeWorkflowCheckpointState).checkpointId &&
+    typeof candidate.checkpointTitle === "string" &&
+    typeof candidate.implementation === "string" &&
+    candidate.implementation.trim().length > 0 &&
+    Array.isArray(candidate.selectedAnchorIds) &&
+    candidate.selectedAnchorIds.every((id) => typeof id === "string") &&
+    Array.isArray(candidate.checkpointAnchors);
+}
+
+export function isPracticeWorkflowDraftSnapshot(value: unknown): value is PracticeWorkflowDraftSnapshot {
+  if (!isBaseSnapshot(value)) return false;
+  const snapshot = value as Record<string, unknown>;
+  return snapshot.snapshotVersion === PRACTICE_WORKFLOW_SNAPSHOT_VERSION &&
+    Array.isArray(snapshot.checkpoints) && snapshot.checkpoints.every(isDraftCheckpoint);
+}
+
+export function isPublishedPracticeWorkflowSnapshot(value: unknown): value is PublishedPracticeWorkflowSnapshot {
+  if (!isBaseSnapshot(value)) return false;
+  const snapshot = value as Record<string, unknown>;
+  return snapshot.snapshotVersion === PRACTICE_WORKFLOW_SNAPSHOT_VERSION &&
+    typeof snapshot.completedAt === "string" &&
+    Array.isArray(snapshot.checkpoints) && snapshot.checkpoints.every(isPublishedCheckpoint);
+}
+
+export function isPracticeWorkflowSnapshot(value: unknown): value is PracticeWorkflowSnapshot {
+  return isPracticeWorkflowDraftSnapshot(value) || isPublishedPracticeWorkflowSnapshot(value);
 }
 
 export function buildInitialPracticeWorkflowSnapshot(
   profile: PracticeCaseProfile,
   getCheckpoint: (id: string) => PracticeCheckpoint | undefined,
-  definitionVersions: ReadonlyMap<string, PracticeCheckpointDefinitionVersionSnapshot> = new Map(),
-): PracticeWorkflowSnapshot {
+): PracticeWorkflowDraftSnapshot {
   return {
     processKind: "practice-workflow",
+    snapshotVersion: PRACTICE_WORKFLOW_SNAPSHOT_VERSION,
     caseProfileId: profile.id,
     caseProfileTitle: profile.title,
-    checkpoints: profile.checkpointRefs.map((ref) => {
-      const cp = getCheckpoint(ref.checkpointId);
-      const practiceDefinitionVersion = definitionVersions.get(ref.checkpointId);
-      return {
-        checkpointId: ref.checkpointId,
-        checkpointTitle: cp?.title ?? ref.checkpointId,
-        selectedAnchorIds: [],
-        ...(cp?.description != null ? { checkpointDescription: cp.description } : {}),
-        ...(cp?.orientationAnchors != null
-          ? { checkpointAnchors: [...cp.orientationAnchors] }
-          : {}),
-        ...(practiceDefinitionVersion ? { practiceDefinitionVersion } : {}),
-      };
-    }),
+    checkpoints: profile.checkpointRefs.map((ref) => ({
+      checkpointId: ref.checkpointId,
+      checkpointTitle: getCheckpoint(ref.checkpointId)?.title ?? ref.checkpointId,
+    })),
   };
-}
-
-export function markSnapshotCompleted(
-  snapshot: PracticeWorkflowSnapshot,
-): PracticeWorkflowSnapshot {
-  return { ...snapshot, completedAt: new Date().toISOString() };
 }

@@ -1,100 +1,83 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  isPracticeWorkflowSnapshot,
-} from "@/lib/practiceProcesses/workflowSnapshot";
-import type {
-  PracticeWorkflowSnapshot,
-} from "@/lib/practiceProcesses/workflowSnapshot";
-import {
-  toggleAnchorSelection,
-  DRAFT_SNAPSHOT_KEY,
-  DRAFT_SOURCE_ID_KEY,
-  DRAFT_SOURCE_TITLE_KEY,
-} from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
-import { savePracticeWorkflowDraft } from "../_saveDraft";
 import { getCheckpoint } from "@/lib/practiceProcesses";
+import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeCheckpointDefinitionRecord } from "@/lib/practiceProcesses/practiceDefinition";
+import { savePracticeWorkflowDraft } from "../_saveDraft";
+
+type EditableDefinition = Pick<PracticeCheckpointDefinitionRecord, "selectedAnchorIds" | "implementation">;
 
 export default function DraftM2Client() {
   const router = useRouter();
-  const [snapshot, setSnapshot] = useState<PracticeWorkflowSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState<PracticeWorkflowDraftSnapshot | null>(null);
+  const [definitions, setDefinitions] = useState<Record<string, EditableDefinition>>({});
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(DRAFT_SNAPSHOT_KEY);
-    if (!raw) { router.replace("/workflow-cases/internal-protocol/new"); return; }
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (!isPracticeWorkflowSnapshot(parsed)) {
-        router.replace("/workflow-cases/internal-protocol/new");
-        return;
-      }
-      setSnapshot(parsed);
-    } catch {
-      router.replace("/workflow-cases/internal-protocol/new");
-    }
+    const id = new URLSearchParams(window.location.search).get("sessionId");
+    if (!id) { router.replace("/workflow-cases/internal-protocol/new"); return; }
+    setSessionId(id);
+    void fetch(`/api/workflow-cases/${id}/protocol/save`)
+      .then(async (res) => {
+        const data = await res.json() as { ok?: boolean; snapshot?: unknown };
+        if (!res.ok || !data.ok || !isPracticeWorkflowDraftSnapshot(data.snapshot)) throw new Error();
+        setSnapshot(data.snapshot);
+        const definitionResponse = await fetch("/api/practice-checkpoint-definitions");
+        const definitionData = await definitionResponse.json() as { definitions?: PracticeCheckpointDefinitionRecord[] };
+        if (definitionResponse.ok && Array.isArray(definitionData.definitions)) {
+          setDefinitions(Object.fromEntries(definitionData.definitions.map((definition) => [
+            definition.checkpointId,
+            { selectedAnchorIds: definition.selectedAnchorIds, implementation: definition.implementation },
+          ])));
+        }
+      })
+      .catch(() => router.replace("/workflow-cases"));
   }, [router]);
 
-  // Checkpoint-Definitionen: Snapshot-Daten haben Vorrang (neue Sessions),
-  // statischer Katalog dient als Fallback für ältere Sessions ohne eingebettete Daten.
-  const cpDefinitions = useMemo(
-    () =>
-      Object.fromEntries(
-        (snapshot?.checkpoints ?? []).map((cp) => {
-          const catalogDef = getCheckpoint(cp.checkpointId);
-          return [
-            cp.checkpointId,
-            {
-              description: cp.checkpointDescription ?? catalogDef?.description,
-              orientationAnchors:
-                cp.checkpointAnchors ?? catalogDef?.orientationAnchors ?? [],
-            },
-          ];
-        }),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(",")],
-  );
-
-  const handleToggle = useCallback(
-    (checkpointId: string, anchorId: string) => {
-      setSnapshot((prev) => {
-        if (!prev) return prev;
-        const next = toggleAnchorSelection(prev, checkpointId, anchorId);
-        sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(next));
-        return next;
-      });
-    },
-    [],
-  );
-
-  async function handleSaveAndGoToM3() {
-    if (!snapshot) return;
-    setSaving(true);
-    setError(null);
-    const sourceId = sessionStorage.getItem(DRAFT_SOURCE_ID_KEY);
-    const title = sessionStorage.getItem(DRAFT_SOURCE_TITLE_KEY) ?? snapshot.caseProfileTitle;
-    const result = await savePracticeWorkflowDraft(snapshot, title, sourceId);
-    setSaving(false);
-    if (!result.ok) { setError(result.error); return; }
-    sessionStorage.setItem(DRAFT_SOURCE_ID_KEY, result.id);
-    router.push("/workflow-cases/internal-protocol/draft/m3");
+  function updateDefinition(checkpointId: string, update: Partial<EditableDefinition>) {
+    setDefinitions((current) => ({
+      ...current,
+      [checkpointId]: {
+        selectedAnchorIds: current[checkpointId]?.selectedAnchorIds ?? [],
+        implementation: current[checkpointId]?.implementation ?? "",
+        ...update,
+      },
+    }));
   }
 
-  async function handleZwischenspeichern() {
-    if (!snapshot) return;
+  async function saveDefinitions() {
+    if (!snapshot) return false;
+    for (const checkpoint of snapshot.checkpoints) {
+      const definition = definitions[checkpoint.checkpointId];
+      if (!definition) continue;
+      const response = await fetch(`/api/practice-checkpoint-definitions/${checkpoint.checkpointId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(definition),
+      });
+      const data = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? `Definition für ${checkpoint.checkpointTitle} konnte nicht gespeichert werden.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  async function saveAndNavigate(destination: string) {
+    if (!snapshot || !sessionId) return;
     setSaving(true);
     setError(null);
-    const sourceId = sessionStorage.getItem(DRAFT_SOURCE_ID_KEY);
-    const title = sessionStorage.getItem(DRAFT_SOURCE_TITLE_KEY) ?? snapshot.caseProfileTitle;
-    const result = await savePracticeWorkflowDraft(snapshot, title, sourceId);
+    if (!(await saveDefinitions())) { setSaving(false); return; }
+    const result = await savePracticeWorkflowDraft(snapshot, snapshot.caseProfileTitle, sessionId);
     setSaving(false);
     if (!result.ok) { setError(result.error); return; }
-    sessionStorage.setItem(DRAFT_SOURCE_ID_KEY, result.id);
-    router.push("/workflow-cases/internal-protocol/draft/save");
+    router.push(`${destination}?sessionId=${encodeURIComponent(result.id)}`);
   }
 
   if (!snapshot) return null;
@@ -104,68 +87,50 @@ export default function DraftM2Client() {
       <div>
         <h2 style={{ margin: 0 }}>Praxisstandard festlegen</h2>
         <p className="text-small text-muted" style={{ margin: "0.35rem 0 0" }}>
-          {snapshot.caseProfileTitle} – Wählen Sie aus, welche Punkte zu Ihrem Praxisstandard gehören sollen.
+          {snapshot.caseProfileTitle} – fehlende Definitionen dürfen später ergänzt werden.
         </p>
       </div>
 
-      {snapshot.checkpoints.map((cp) => {
-        const cpDef = cpDefinitions[cp.checkpointId];
-        const anchors = cpDef?.orientationAnchors ?? [];
+      {snapshot.checkpoints.map((checkpoint) => {
+        const catalogCheckpoint = getCheckpoint(checkpoint.checkpointId);
+        const current = definitions[checkpoint.checkpointId] ?? { selectedAnchorIds: [], implementation: "" };
         return (
-          <section key={cp.checkpointId} className="card" style={{ display: "grid", gap: "0.75rem" }}>
-            <div style={{ fontWeight: 600 }}>{cp.checkpointTitle}</div>
-            {cpDef?.description && (
-              <p className="text-small text-muted" style={{ margin: 0 }}>
-                {cpDef.description}
-              </p>
-            )}
-            {anchors.length > 0 ? (
-              <div style={{ display: "grid", gap: "0.5rem" }}>
-                {anchors.map((anchor) => (
-                  <label
-                    key={anchor.id}
-                    style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", cursor: "pointer" }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={(cp.selectedAnchorIds ?? []).includes(anchor.id)}
-                      onChange={() => handleToggle(cp.checkpointId, anchor.id)}
-                      style={{ marginTop: "0.25rem", flexShrink: 0, accentColor: "var(--primary)" }}
-                    />
-                    <span className="text-small">{anchor.text}</span>
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <p className="text-small text-muted" style={{ margin: 0 }}>
-                Keine Auswahlpunkte für diesen Bereich.
-              </p>
-            )}
+          <section key={checkpoint.checkpointId} className="card" style={{ display: "grid", gap: "0.75rem" }}>
+            <div style={{ fontWeight: 600 }}>{checkpoint.checkpointTitle}</div>
+            {catalogCheckpoint?.description && <p className="text-small text-muted" style={{ margin: 0 }}>{catalogCheckpoint.description}</p>}
+            <label>
+              Umsetzung
+              <textarea
+                value={current.implementation}
+                onChange={(event) => updateDefinition(checkpoint.checkpointId, { implementation: event.target.value })}
+                rows={3}
+                style={{ width: "100%", boxSizing: "border-box", font: "inherit" }}
+                placeholder="Noch nicht definiert"
+              />
+            </label>
+            {(catalogCheckpoint?.orientationAnchors ?? []).map((anchor) => (
+              <label key={anchor.id} style={{ display: "flex", gap: "0.5rem" }}>
+                <input
+                  type="checkbox"
+                  checked={current.selectedAnchorIds.includes(anchor.id)}
+                  onChange={() => updateDefinition(checkpoint.checkpointId, {
+                    selectedAnchorIds: current.selectedAnchorIds.includes(anchor.id)
+                      ? current.selectedAnchorIds.filter((id) => id !== anchor.id)
+                      : [...current.selectedAnchorIds, anchor.id],
+                  })}
+                />
+                <span>{anchor.text}</span>
+              </label>
+            ))}
+            {!definitions[checkpoint.checkpointId] && <span className="text-small text-muted">Noch nicht definiert</span>}
           </section>
         );
       })}
 
-      {error && <p style={{ color: "var(--destructive)", margin: 0 }}>{error}</p>}
-
-      <div
-        style={{
-          display: "flex",
-          gap: "0.75rem",
-          alignItems: "center",
-          flexWrap: "wrap",
-          paddingTop: "0.75rem",
-          borderTop: "1px solid var(--muted)",
-        }}
-      >
-        <button type="button" onClick={handleZwischenspeichern} disabled={saving}>
-          Zwischenspeichern
-        </button>
-        <button
-          type="button"
-          onClick={handleSaveAndGoToM3}
-          disabled={saving}
-          style={{ marginLeft: "auto" }}
-        >
+      {error && <p role="alert" style={{ color: "var(--destructive)", margin: 0 }}>{error}</p>}
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", paddingTop: "0.75rem", borderTop: "1px solid var(--muted)" }}>
+        <button type="button" onClick={() => void saveAndNavigate("/workflow-cases")} disabled={saving}>Zwischenspeichern</button>
+        <button type="button" onClick={() => void saveAndNavigate("/workflow-cases/internal-protocol/draft/m3")} disabled={saving} style={{ marginLeft: "auto" }}>
           {saving ? "Speichern…" : "Weiter zu Entscheidungen →"}
         </button>
       </div>

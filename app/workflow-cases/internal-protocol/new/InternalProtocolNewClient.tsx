@@ -3,13 +3,6 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { PracticeCaseProfile } from "@/lib/practiceProcesses";
-import type { PracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
-import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
-import {
-  DRAFT_SNAPSHOT_KEY,
-  DRAFT_SOURCE_ID_KEY,
-  DRAFT_SOURCE_TITLE_KEY,
-} from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 
 export default function InternalProtocolNewClient({
   profiles,
@@ -40,22 +33,18 @@ export default function InternalProtocolNewClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ caseProfileId: profile.id }),
       });
-      const data = (await res.json()) as { ok: boolean; snapshot?: unknown; error?: string };
+      const data = (await res.json()) as { ok: boolean; sessionId?: string; error?: string };
       if (!res.ok || !data.ok) {
         setStartError(data.error ?? "Sitzung konnte nicht gestartet werden.");
         setStarting(false);
         return;
       }
-      if (!isPracticeWorkflowSnapshot(data.snapshot)) {
+      if (typeof data.sessionId !== "string") {
         setStartError("Ungültige Antwort vom Server.");
         setStarting(false);
         return;
       }
-      const snapshot: PracticeWorkflowSnapshot = data.snapshot;
-      sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, JSON.stringify(snapshot));
-      sessionStorage.removeItem(DRAFT_SOURCE_ID_KEY);
-      sessionStorage.removeItem(DRAFT_SOURCE_TITLE_KEY);
-      router.push("/workflow-cases/internal-protocol/draft/m2");
+      router.push(`/workflow-cases/internal-protocol/draft/m2?sessionId=${encodeURIComponent(data.sessionId)}`);
     } catch {
       setStartError("Netzwerkfehler. Bitte erneut versuchen.");
       setStarting(false);

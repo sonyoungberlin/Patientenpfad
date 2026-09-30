@@ -39,6 +39,7 @@ jest.mock("@/lib/prisma", () => ({
       findMany: jest.fn(),
       upsert: jest.fn(),
     },
+    workflowSession: { create: jest.fn() },
   },
 }));
 
@@ -60,6 +61,7 @@ import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnap
 type PrismaMock = {
   libraryCaseProfile: { findUnique: jest.Mock; findMany: jest.Mock; upsert: jest.Mock };
   libraryCheckpoint: { findUnique: jest.Mock; findMany: jest.Mock; upsert: jest.Mock };
+  workflowSession: { create: jest.Mock };
 };
 const pm = prisma as unknown as PrismaMock;
 const getSessionMock = getSessionAccount as jest.Mock;
@@ -127,6 +129,8 @@ beforeEach(() => {
   pm.libraryCheckpoint.findUnique.mockReset();
   pm.libraryCheckpoint.findMany.mockReset();
   pm.libraryCheckpoint.upsert.mockReset();
+  pm.workflowSession.create.mockReset();
+  pm.workflowSession.create.mockResolvedValue({ id: "session-1" });
   // Default: keine DB-Einträge für Checkpoints (→ Katalog-Fallback)
   pm.libraryCheckpoint.findUnique.mockResolvedValue(null);
   pm.libraryCheckpoint.findMany.mockResolvedValue([]);
@@ -210,7 +214,7 @@ describe("/start-Route: Snapshot-Prinzip", () => {
     expect(snap2.checkpoints.length).toBe(1);
   });
 
-  it("18. Snapshot enthält eingebettete DB-Checkpoint-Daten", async () => {
+  it("18. Draft-Snapshot enthält keine zentrale Definition", async () => {
     pm.libraryCaseProfile.findUnique.mockResolvedValue(DB_PROFILE_ROW);
     // Checkpoint hat DB-Override
     pm.libraryCheckpoint.findUnique.mockImplementation(({ where }: { where: { id: string } }) => {
@@ -234,8 +238,7 @@ describe("/start-Route: Snapshot-Prinzip", () => {
     };
     const cp = snapshot.checkpoints.find((c) => c.checkpointId === "patient-bekannt");
     expect(cp?.checkpointTitle).toBe("Patient bekannt (DB-Version)");
-    expect(cp?.checkpointAnchors).toBeDefined();
-    expect((cp?.checkpointAnchors as unknown[]).length).toBe(1);
+    expect(cp?.checkpointAnchors).toBeUndefined();
   });
 
   it("gibt 404 zurück wenn Praxisfall nicht existiert", async () => {

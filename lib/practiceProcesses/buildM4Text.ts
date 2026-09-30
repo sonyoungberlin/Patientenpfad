@@ -1,19 +1,21 @@
-import { getCheckpoint } from "./checkpointCatalog";
 import type {
-  PracticeWorkflowSnapshot,
+  PracticeWorkflowDraftSnapshot,
   PracticeWorkflowCheckpointState,
 } from "./workflowSnapshot";
+import type { PracticeCheckpointDefinitionSnapshot } from "./practiceDefinition";
 
-function anchorTextsFor(cp: PracticeWorkflowCheckpointState): string[] {
-  const ids = cp.selectedAnchorIds ?? [];
+function anchorTextsFor(cp: PracticeWorkflowCheckpointState, definition?: PracticeCheckpointDefinitionSnapshot): string[] {
+  const ids = definition?.selectedAnchorIds ?? [];
   if (ids.length === 0) return [];
-  // Prefer embedded snapshot anchors, fall back to static catalog for old sessions
-  const anchors =
-    cp.checkpointAnchors ?? getCheckpoint(cp.checkpointId)?.orientationAnchors ?? [];
+  const anchors = definition?.checkpointAnchors ?? [];
   return anchors.filter((a) => ids.includes(a.id)).map((a) => a.text);
 }
 
-export function buildM4Text(snapshot: PracticeWorkflowSnapshot): string {
+export function buildM4Text(
+  snapshot: PracticeWorkflowDraftSnapshot,
+  definitions: PracticeCheckpointDefinitionSnapshot[],
+): string {
+  const definitionById = new Map(definitions.map((definition) => [definition.checkpointId, definition]));
   const lines: string[] = [];
   lines.push(`Praxisfall: ${snapshot.caseProfileTitle}`);
   lines.push("");
@@ -26,12 +28,13 @@ export function buildM4Text(snapshot: PracticeWorkflowSnapshot): string {
     lines.push("Pflicht:");
     for (const cp of pflicht) {
       lines.push(`- ${cp.checkpointTitle}`);
-      const anchors = anchorTextsFor(cp);
+      const definition = definitionById.get(cp.checkpointId);
+      const anchors = anchorTextsFor(cp, definition);
       if (anchors.length > 0) {
         lines.push("  Zu berücksichtigen:");
         for (const text of anchors) lines.push(`  - ${text}`);
       }
-      if (cp.umsetzung) lines.push(`  ${cp.umsetzung}`);
+      if (definition?.implementation) lines.push(`  ${definition.implementation}`);
     }
   }
 
@@ -40,12 +43,13 @@ export function buildM4Text(snapshot: PracticeWorkflowSnapshot): string {
     lines.push("Optional:");
     for (const cp of optional) {
       lines.push(`- ${cp.checkpointTitle}`);
-      const anchors = anchorTextsFor(cp);
+      const definition = definitionById.get(cp.checkpointId);
+      const anchors = anchorTextsFor(cp, definition);
       if (anchors.length > 0) {
         lines.push("  Zu berücksichtigen:");
         for (const text of anchors) lines.push(`  - ${text}`);
       }
-      if (cp.umsetzung) lines.push(`  ${cp.umsetzung}`);
+      if (definition?.implementation) lines.push(`  ${definition.implementation}`);
     }
   }
 

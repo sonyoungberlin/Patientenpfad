@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePracticeCatalogAccess } from "@/lib/authz";
 import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
 import {
-  parsePracticeDefinitionContent,
-  getPracticeDefinitionVersions,
-  releasePracticeDefinition,
-  savePracticeDefinitionDraft,
+  getPracticeCheckpointDefinition,
+  upsertPracticeCheckpointDefinition,
 } from "@/lib/practiceProcesses";
 
 function errorResponse(error: unknown) {
@@ -27,8 +25,8 @@ export async function GET(
   const scope = getCatalogOwnershipFilter(access.account);
   if (!scope) return NextResponse.json({ ok: false, error: "Kein Praxiskontext." }, { status: 403 });
   try {
-    const versions = await getPracticeDefinitionVersions(scope.practice_id, (await params).checkpointId);
-    return NextResponse.json({ ok: true, versions });
+    const definition = await getPracticeCheckpointDefinition(scope.practice_id, (await params).checkpointId);
+    return NextResponse.json({ ok: true, definition });
   } catch (error) {
     return errorResponse(error);
   }
@@ -46,37 +44,15 @@ export async function PUT(
   try { body = await req.json(); } catch {
     return NextResponse.json({ ok: false, error: "Ungültiges JSON." }, { status: 400 });
   }
-  const content = parsePracticeDefinitionContent(
-    body && typeof body === "object" ? (body as Record<string, unknown>).content : null,
-  );
-  if (!content) return NextResponse.json({ ok: false, error: "Ungültiger Definitionsentwurf." }, { status: 400 });
+  const payload = body && typeof body === "object" ? body as Record<string, unknown> : {};
   try {
-    await savePracticeDefinitionDraft({
+    const definition = await upsertPracticeCheckpointDefinition({
       practiceId: scope.practice_id,
       checkpointId: (await params).checkpointId,
-      content,
+      selectedAnchorIds: payload.selectedAnchorIds,
+      implementation: payload.implementation,
     });
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return errorResponse(error);
-  }
-}
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ checkpointId: string }> },
-) {
-  const access = await requirePracticeCatalogAccess(req);
-  if (access.error) return access.error;
-  const scope = getCatalogOwnershipFilter(access.account);
-  if (!scope) return NextResponse.json({ ok: false, error: "Kein Praxiskontext." }, { status: 403 });
-  try {
-    const version = await releasePracticeDefinition({
-      practiceId: scope.practice_id,
-      checkpointId: (await params).checkpointId,
-      actorAccountId: access.account.id,
-    });
-    return NextResponse.json({ ok: true, version }, { status: 201 });
+    return NextResponse.json({ ok: true, definition });
   } catch (error) {
     return errorResponse(error);
   }

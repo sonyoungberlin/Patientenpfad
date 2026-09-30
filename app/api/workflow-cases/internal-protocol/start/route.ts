@@ -9,12 +9,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
-import { canAccessWorkflowCases, getCurrentPractice } from "@/lib/authz";
+import { canAccessWorkflowCases } from "@/lib/authz";
+import { getWorkflowCreateOwnershipData } from "@/lib/workflow/scope";
 import { getCaseProfileFromLib } from "@/lib/practiceProcesses/caseProfileLibrary";
 import { getCheckpointFromLib } from "@/lib/practiceProcesses/checkpointLibrary";
 import { buildInitialPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
-import { getCurrentPracticeDefinitionVersions } from "@/lib/practiceProcesses/practiceDefinitionService";
 import type { PracticeCheckpoint } from "@/lib/practiceProcesses";
 
 export async function POST(req: NextRequest) {
@@ -55,19 +57,20 @@ export async function POST(req: NextRequest) {
   const checkpointMap = new Map<string, PracticeCheckpoint>(
     cpEntries.filter((e): e is [string, PracticeCheckpoint] => e[1] !== undefined),
   );
-  const practice = getCurrentPractice(account);
-  const definitionVersions = practice
-    ? await getCurrentPracticeDefinitionVersions(
-        practice.id,
-        profile.checkpointRefs.map((ref) => ref.checkpointId),
-      )
-    : new Map();
-
   const snapshot = buildInitialPracticeWorkflowSnapshot(
     profile,
     (id) => checkpointMap.get(id),
-    definitionVersions,
   );
 
-  return NextResponse.json({ ok: true, snapshot });
+  const session = await prisma.workflowSession.create({
+    data: {
+      title: profile.title,
+      process_snapshot: snapshot as unknown as Prisma.InputJsonValue,
+      internal_saved_at: new Date(),
+      ...getWorkflowCreateOwnershipData(account),
+    },
+    select: { id: true },
+  });
+
+  return NextResponse.json({ ok: true, sessionId: session.id, snapshot });
 }

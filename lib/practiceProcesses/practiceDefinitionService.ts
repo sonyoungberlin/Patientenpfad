@@ -2,166 +2,133 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCheckpointFromLib } from "./checkpointLibrary";
 import {
-  checkpointTemplateSnapshot,
-  parsePracticeDefinitionContent,
-  validatePracticeDefinitionForRelease,
-  type PracticeCheckpointDefinitionContent,
-  type PracticeCheckpointDefinitionVersionSnapshot,
+  checkpointDefinitionSnapshot,
+  parsePracticeDefinitionInput,
+  type PracticeCheckpointDefinitionRecord,
 } from "./practiceDefinition";
 
-export async function getPracticeDefinition(
-  practiceId: string,
-  checkpointId: string,
-) {
-  const definition = await prisma.practiceCheckpointDefinition.findUnique({
-    where: { practice_id_checkpoint_id: { practice_id: practiceId, checkpoint_id: checkpointId } },
-  });
-  if (!definition) return null;
-  const currentVersion = definition.current_version_id
-    ? await prisma.practiceCheckpointDefinitionVersion.findUnique({
-        where: { id: definition.current_version_id },
-      })
-    : null;
+function invalid(message: string, statusCode = 422): never {
+  throw Object.assign(new Error(message), { statusCode });
+}
+
+async function validateDefinitionInput(checkpointId: string, input: unknown) {
+  const parsed = parsePracticeDefinitionInput(input);
+  if (!parsed) {
+    invalid("Implementation muss nach Trim nicht leer sein; Anchor-Auswahl ist ein eindeutiges Array.");
+  }
+  const checkpoint = await getCheckpointFromLib(checkpointId);
+  if (!checkpoint) invalid("Checkpoint-Vorlage nicht gefunden.", 404);
+  const knownIds = new Set((checkpoint.orientationAnchors ?? []).map((anchor) => anchor.id));
+  const foreign = parsed.selectedAnchorIds.filter((id) => !knownIds.has(id));
+  if (foreign.length > 0) invalid(`Unbekannte Anchor-ID: ${foreign.join(", ")}`);
+  return { checkpoint, ...parsed };
+}
+
+function mapDefinition(row: {
+  id: string;
+  practice_id: string;
+  checkpoint_id: string;
+  selected_anchor_ids: unknown;
+  implementation: string;
+  updated_at: Date;
+}): PracticeCheckpointDefinitionRecord {
   return {
-    id: definition.id,
-    checkpointId,
-    draft: parsePracticeDefinitionContent(definition.draft),
-    currentVersion: currentVersion ? mapVersion(currentVersion) : null,
+    id: row.id,
+    practiceId: row.practice_id,
+    checkpointId: row.checkpoint_id,
+    selectedAnchorIds: Array.isArray(row.selected_anchor_ids)
+      ? row.selected_anchor_ids.filter((id): id is string => typeof id === "string")
+      : [],
+    implementation: row.implementation,
+    updatedAt: row.updated_at.toISOString(),
   };
 }
 
-export async function getPracticeDefinitionVersions(
-  practiceId: string,
-  checkpointId: string,
-): Promise<PracticeCheckpointDefinitionVersionSnapshot[]> {
-  const definition = await prisma.practiceCheckpointDefinition.findUnique({
+export async function getPracticeCheckpointDefinition(practiceId: string, checkpointId: string) {
+  const row = await prisma.practiceCheckpointDefinition.findUnique({
     where: { practice_id_checkpoint_id: { practice_id: practiceId, checkpoint_id: checkpointId } },
-    select: { id: true },
   });
-  if (!definition) return [];
-  const versions = await prisma.practiceCheckpointDefinitionVersion.findMany({
-    where: { definition_id: definition.id },
-    orderBy: { version: "desc" },
+  return row ? mapDefinition(row) : null;
+}
+
+export async function listPracticeCheckpointDefinitions(practiceId: string, checkpointIds?: string[]) {
+  const rows = await prisma.practiceCheckpointDefinition.findMany({
+    where: {
+      practice_id: practiceId,
+      ...(checkpointIds ? { checkpoint_id: { in: [...new Set(checkpointIds)] } } : {}),
+    },
+    orderBy: { checkpoint_id: "asc" },
   });
-  return versions.map(mapVersion);
+  return rows.map(mapDefinition);
 }
 
 export async function listPracticeDefinitionSummaries(practiceId: string) {
-  return prisma.practiceCheckpointDefinition.findMany({
-    where: { practice_id: practiceId },
-    select: {
-      checkpoint_id: true,
-      current_version_id: true,
-      draft: true,
-      updated_at: true,
-    },
-  });
+  return listPracticeCheckpointDefinitions(practiceId);
 }
 
-export async function getCurrentPracticeDefinitionVersions(
-  practiceId: string,
-  checkpointIds: string[],
-): Promise<Map<string, PracticeCheckpointDefinitionVersionSnapshot>> {
-  const definitions = await prisma.practiceCheckpointDefinition.findMany({
-    where: {
-      practice_id: practiceId,
-      checkpoint_id: { in: [...new Set(checkpointIds)] },
-      current_version_id: { not: null },
-    },
-  });
-  const versionIds = definitions.flatMap((item) => item.current_version_id ? [item.current_version_id] : []);
-  const versions = versionIds.length === 0
-    ? []
-    : await prisma.practiceCheckpointDefinitionVersion.findMany({ where: { id: { in: versionIds } } });
-  const versionById = new Map(versions.map((version) => [version.id, version]));
-  return new Map(definitions.flatMap((definition) => {
-    const version = definition.current_version_id ? versionById.get(definition.current_version_id) : undefined;
-    return version ? [[definition.checkpoint_id, mapVersion(version)]] : [];
-  }));
-}
-
-export async function savePracticeDefinitionDraft(input: {
+export async function upsertPracticeCheckpointDefinition(input: {
   practiceId: string;
   checkpointId: string;
-  content: PracticeCheckpointDefinitionContent;
+  selectedAnchorIds: unknown;
+  implementation: unknown;
 }) {
-  const checkpoint = await getCheckpointFromLib(input.checkpointId);
-  if (!checkpoint) throw Object.assign(new Error("Checkpoint-Vorlage nicht gefunden."), { statusCode: 404 });
-  return prisma.practiceCheckpointDefinition.upsert({
+  const validated = await validateDefinitionInput(input.checkpointId, {
+    selectedAnchorIds: input.selectedAnchorIds,
+    implementation: input.implementation,
+  });
+  const row = await prisma.practiceCheckpointDefinition.upsert({
     where: { practice_id_checkpoint_id: { practice_id: input.practiceId, checkpoint_id: input.checkpointId } },
     create: {
       practice_id: input.practiceId,
       checkpoint_id: input.checkpointId,
-      draft: input.content as unknown as Prisma.InputJsonValue,
+      selected_anchor_ids: validated.selectedAnchorIds as unknown as Prisma.InputJsonValue,
+      implementation: validated.implementation,
     },
-    update: { draft: input.content as unknown as Prisma.InputJsonValue },
+    update: {
+      selected_anchor_ids: validated.selectedAnchorIds as unknown as Prisma.InputJsonValue,
+      implementation: validated.implementation,
+    },
   });
+  return mapDefinition(row);
 }
 
-export async function releasePracticeDefinition(input: {
+export async function assertDefinitionsComplete(input: {
   practiceId: string;
-  checkpointId: string;
-  actorAccountId: string;
-}): Promise<PracticeCheckpointDefinitionVersionSnapshot> {
-  const [definition, checkpoint] = await Promise.all([
-    prisma.practiceCheckpointDefinition.findUnique({
-      where: { practice_id_checkpoint_id: { practice_id: input.practiceId, checkpoint_id: input.checkpointId } },
-    }),
-    getCheckpointFromLib(input.checkpointId),
-  ]);
-  if (!definition || !checkpoint) {
-    throw Object.assign(new Error("Definition oder Checkpoint-Vorlage nicht gefunden."), { statusCode: 404 });
-  }
-  const content = parsePracticeDefinitionContent(definition.draft);
-  if (!content) throw Object.assign(new Error("Kein gültiger Definitionsentwurf vorhanden."), { statusCode: 400 });
-  const template = checkpointTemplateSnapshot(checkpoint);
-  const issues = validatePracticeDefinitionForRelease(content, template);
-  if (issues.length > 0) {
-    throw Object.assign(new Error("Die Definition ist noch nicht freigabefähig."), { statusCode: 422, issues });
+  checkpointIds: string[];
+}) {
+  const checkpointIds = [...new Set(input.checkpointIds)];
+  const rows = await listPracticeCheckpointDefinitions(input.practiceId, checkpointIds);
+  const byId = new Map(rows.map((row) => [row.checkpointId, row]));
+  const missing: string[] = [];
+  const invalidIds: string[] = [];
+  const snapshots: ReturnType<typeof checkpointDefinitionSnapshot>[] = [];
+
+  for (const checkpointId of checkpointIds) {
+    const row = byId.get(checkpointId);
+    if (!row) {
+      missing.push(checkpointId);
+      continue;
+    }
+    try {
+      const validated = await validateDefinitionInput(checkpointId, row);
+      snapshots.push(checkpointDefinitionSnapshot(validated.checkpoint, validated));
+    } catch {
+      invalidIds.push(checkpointId);
+    }
   }
 
-  const released = await prisma.$transaction(async (tx) => {
-    const aggregate = await tx.practiceCheckpointDefinitionVersion.aggregate({
-      where: { definition_id: definition.id },
-      _max: { version: true },
-    });
-    const version = await tx.practiceCheckpointDefinitionVersion.create({
-      data: {
-        definition_id: definition.id,
-        version: (aggregate._max.version ?? 0) + 1,
-        checkpoint_id: input.checkpointId,
-        template_snapshot: template as unknown as Prisma.InputJsonValue,
-        content: content as unknown as Prisma.InputJsonValue,
-        released_by_account_id: input.actorAccountId,
-      },
-    });
-    await tx.practiceCheckpointDefinition.update({
-      where: { id: definition.id },
-      data: { current_version_id: version.id, draft: Prisma.DbNull },
-    });
-    return version;
-  });
-  return mapVersion(released);
+  if (missing.length > 0 || invalidIds.length > 0) {
+    invalid(`Praxisdefinitionen fehlen oder sind ungültig: ${[...missing, ...invalidIds].join(", ")}`);
+  }
+  return snapshots;
 }
 
-function mapVersion(row: {
-  id: string;
-  definition_id: string;
-  version: number;
-  checkpoint_id: string;
-  template_snapshot: unknown;
-  content: unknown;
-  released_at: Date;
-}): PracticeCheckpointDefinitionVersionSnapshot {
-  const content = parsePracticeDefinitionContent(row.content);
-  if (!content) throw new Error("Ungültige freigegebene Praxisdefinition in der Datenbank.");
-  return {
-    definitionId: row.definition_id,
-    versionId: row.id,
-    version: row.version,
-    checkpointId: row.checkpoint_id,
-    template: row.template_snapshot as PracticeCheckpointDefinitionVersionSnapshot["template"],
-    content,
-    releasedAt: row.released_at.toISOString(),
-  };
+export async function resolveDefinitionsForPublish(input: {
+  practiceId: string;
+  checkpoints: Array<{ checkpointId: string }>;
+}) {
+  return assertDefinitionsComplete({
+    practiceId: input.practiceId,
+    checkpointIds: input.checkpoints.map((checkpoint) => checkpoint.checkpointId),
+  });
 }

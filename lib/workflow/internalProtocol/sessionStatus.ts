@@ -1,11 +1,12 @@
 import type { PracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { isPublishedPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import type { InternalProtocolWorkflowSnapshot } from "@/lib/workflow/internalProtocol/workflowAdapter";
 import { getPracticeProcessMode } from "@/lib/workflow/internalProtocol/workflowAdapter";
 
 export type SessionStatus = "IN_PROGRESS" | "COMPLETED";
 
 export function deriveSessionStatus(snapshot: PracticeWorkflowSnapshot): SessionStatus {
-  return snapshot.completedAt !== undefined ? "COMPLETED" : "IN_PROGRESS";
+  return isPublishedPracticeWorkflowSnapshot(snapshot) ? "COMPLETED" : "IN_PROGRESS";
 }
 
 /** Alle Checkpoints entschieden → M4 kann geöffnet werden. Sagt nichts über completedAt. */

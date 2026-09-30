@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 import { canAccessWorkflowCases } from "@/lib/authz";
 import { getWorkflowCreateOwnershipData } from "@/lib/workflow/scope";
-import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 export async function POST(req: NextRequest) {
   const account = await getSessionAccount(req);
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Titel fehlt." }, { status: 400 });
   }
 
-  if (!isPracticeWorkflowSnapshot(body.snapshot)) {
+  if (!isPracticeWorkflowDraftSnapshot(body.snapshot)) {
     return NextResponse.json({ ok: false, error: "Ungültiger Snapshot." }, { status: 400 });
   }
 

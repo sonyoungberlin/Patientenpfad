@@ -9,7 +9,7 @@ import {
   isProtocolWorkflowCheckpoint,
   type ProtocolWorkflowCheckpoint,
 } from "@/lib/workflow/internalProtocol/workflowAdapter";
-import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 export async function GET(
   req: NextRequest,
@@ -28,7 +28,7 @@ export async function GET(
     where: { id, ...getWorkflowOwnershipFilter(account) },
     select: { id: true, title: true, process_snapshot: true },
   });
-  if (!session || !isPracticeWorkflowSnapshot(session.process_snapshot)) {
+  if (!session || !isPracticeWorkflowDraftSnapshot(session.process_snapshot)) {
     return NextResponse.json({ ok: false, error: "Praxisprozess nicht gefunden." }, { status: 404 });
   }
   return NextResponse.json({ ok: true, id: session.id, title: session.title, snapshot: session.process_snapshot });
@@ -68,7 +68,7 @@ export async function PATCH(
   }
 
   // --- Pfad P: Neuer PracticeWorkflow – voller Snapshot-Überschrieb ---
-  if (isPracticeWorkflowSnapshot(body.snapshot)) {
+  if (isPracticeWorkflowDraftSnapshot(body.snapshot)) {
     if (typeof body.title !== "string" || !body.title.trim()) {
       return NextResponse.json({ ok: false, error: "Titel fehlt." }, { status: 400 });
     }

@@ -32,16 +32,12 @@ function isAnchorArray(v: unknown): v is PracticeCheckpointAnchor[] {
   );
 }
 
-/** Prüft ob eine Anchor-ID in einem gespeicherten WorkflowSession-Snapshot vorkommt. */
+/** Prüft, ob eine Anchor-ID in einer aktuellen Praxisdefinition verwendet wird. */
 async function isAnchorReferenced(anchorId: string): Promise<boolean> {
   const rows = await prisma.$queryRaw<Array<{ exists: boolean }>>`
     SELECT EXISTS (
-      SELECT 1 FROM "WorkflowSession"
-      WHERE process_snapshot IS NOT NULL
-        AND EXISTS (
-          SELECT 1 FROM jsonb_array_elements(process_snapshot->'checkpoints') AS cp
-          WHERE cp->'selectedAnchorIds' @> ${JSON.stringify([anchorId])}::jsonb
-        )
+      SELECT 1 FROM "PracticeCheckpointDefinition"
+      WHERE "selected_anchor_ids" @> ${JSON.stringify([anchorId])}::jsonb
     ) AS "exists"
   `;
   return rows[0]?.exists ?? false;
@@ -108,12 +104,19 @@ export async function PUT(
     }
   }
 
+  const currentIds = new Set((current?.orientationAnchors ?? []).map((anchor) => anchor.id));
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const normalizedAnchors = orientationAnchors.map((anchor) => ({
+    ...anchor,
+    id: currentIds.has(anchor.id) || uuidPattern.test(anchor.id) ? anchor.id : crypto.randomUUID(),
+  }));
+
   const checkpoint = await upsertLibraryCheckpoint({
     id,
     title,
     description,
     orientationHint,
-    orientationAnchors,
+    orientationAnchors: normalizedAnchors,
   }).catch(() => null);
 
   if (!checkpoint) {

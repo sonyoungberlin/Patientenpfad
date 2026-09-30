@@ -1,0 +1,4426 @@
+{
+  "generatedAt": "2026-09-29T20:36:03.766Z",
+  "protectionScope": [
+    "LibraryCheckpoint",
+    "LibraryCaseProfile",
+    "static checkpoint catalog",
+    "static case-profile catalog"
+  ],
+  "libraryCheckpoint": {
+    "count": 69,
+    "ids": [
+      "abrechnungsgrundlage-geklaert",
+      "abwesenheit-in-dienst--und-terminplanung-eintragen",
+      "aerztliche-fort--und-weiterbildungsvorgaben-klaeren",
+      "aerztliche-soforteinschaetzung-veranlassen",
+      "aerztliche-vorlage-von-patientennachrichten",
+      "akutanlass-fuer-sprechstunde",
+      "angefragter-befund-identifiziert",
+      "annahme-einer-selbst-gewonnenen-probe",
+      "anspruch-auf-gesundheits-check-up-klaeren",
+      "arbeitskleidung-im-dienst-tragen",
+      "arbeitskleidung-wechseln-und-aufbereiten",
+      "ausnahme-bei-nicht-erfuellten-akutkriterien",
+      "befundbesprechung-zur-buchung-freigeben",
+      "beleuchtung-nach-schichtende",
+      "benoetigte-unterlagen-vollstaendig",
+      "dauermedikation-vorhanden",
+      "dokument-kennzeichnen",
+      "dolmetschperson-organisieren",
+      "dringlichkeitsbedarf-erkennen",
+      "eingehenden-patientenkontakt-dokumentieren",
+      "erneuter-patientenkontakt-erforderlich",
+      "folgerezept-ohne-erneuten-arzttermin",
+      "fort--oder-weiterbildungsanlass-einordnen",
+      "frist-fuer-erste-rueckmeldung-auf-patientenanliegen",
+      "gebuchte-termine-bei-personalausfall-behandeln",
+      "geraete-zum-schichtbeginn-einsatzbereit",
+      "geraetebetrieb-nach-schichtende",
+      "getragene-arbeitskleidung-aufbereiten",
+      "getragene-arbeitskleidung-aufbewahren",
+      "hygienematerial-zum-schichtbeginn-verfuegbar",
+      "it-arbeitsplaetze-nach-schichtende-sichern",
+      "kontaktform-festlegen",
+      "kosten-der-fort--oder-weiterbildung-regeln",
+      "krankmeldung-im-team-entgegennehmen",
+      "laborumfang-beim-check-up-klaeren",
+      "mfa-qualifikationsanforderungen-klaeren",
+      "mitgebrachte-lebensmittel-lagern",
+      "offene-vorgaenge-bei-abwesenheit-uebergeben",
+      "patient-bekannt",
+      "patient-digital-kontaktieren",
+      "patient-informieren",
+      "patient-telefonisch-kontaktieren",
+      "persoenliche-vorstellung-bei-infektionsverdacht",
+      "pflichtangaben-bei-digitaler-au-anfrage",
+      "private-handys-im-dienst-nutzen",
+      "raumtemperatur-nach-schichtende-einstellen",
+      "schichtbeginn-praxisbereitschaft-pruefen",
+      "schichtende-raeume-sichern",
+      "schriftliche-bearbeitung-von-patientennachrichten",
+      "shit-instabilitaetszeichen-erkennen",
+      "speisen-und-getraenke-im-dienst",
+      "sprache-externer-medizinischer-unterlagen",
+      "teilnahme-an-fort--oder-weiterbildung-entscheiden",
+      "termin-vereinbaren",
+      "termin-vorhanden",
+      "terminanliegen-geklaert",
+      "ueberweisung-ohne-erneuten-arztkontakt",
+      "unterlagen-anfordern",
+      "urlaub-anhand-der-dienstbesetzung-entscheiden",
+      "versicherungsnachweis-vorhanden",
+      "verspaetung-zum-termin",
+      "verstaendigung-bei-sprachbarriere",
+      "vertretung-bei-abwesenheit-zuordnen",
+      "vorlauf-fuer-urlaubsantrag",
+      "wartephase-in-der-praxis-vorgesehen",
+      "zeit-fuer-fort--oder-weiterbildung-regeln",
+      "zeitliche-dynamik-der-beschwerden",
+      "zeitpunkt-der-einbestellung-festlegen",
+      "zeitpunkt-der-information-bei-terminausfall"
+    ],
+    "anchorIds": [
+      "abrechnungsgrundlage-geklaert-a1",
+      "abrechnungsgrundlage-geklaert-a2",
+      "abrechnungsgrundlage-geklaert-a3",
+      "abwesenheit-in-dienst--und-terminplanung-eintragen-a1",
+      "abwesenheit-in-dienst--und-terminplanung-eintragen-a2",
+      "abwesenheit-in-dienst--und-terminplanung-eintragen-a3",
+      "abwesenheit-in-dienst--und-terminplanung-eintragen-a4",
+      "aerztliche-fort--und-weiterbildungsvorgaben-klaeren-a1",
+      "aerztliche-fort--und-weiterbildungsvorgaben-klaeren-a2",
+      "aerztliche-soforteinschaetzung-veranlassen-a1",
+      "aerztliche-vorlage-von-patientennachrichten-a1",
+      "aerztliche-vorlage-von-patientennachrichten-a2",
+      "aerztliche-vorlage-von-patientennachrichten-a3",
+      "akutanlass-fuer-sprechstunde-a1",
+      "akutanlass-fuer-sprechstunde-a2",
+      "akutanlass-fuer-sprechstunde-a3",
+      "akutanlass-fuer-sprechstunde-a4",
+      "akutanlass-fuer-sprechstunde-a5",
+      "akutanlass-fuer-sprechstunde-a6",
+      "angefragter-befund-identifiziert-a1",
+      "angefragter-befund-identifiziert-a2",
+      "angefragter-befund-identifiziert-a3",
+      "annahme-einer-selbst-gewonnenen-probe-a1",
+      "annahme-einer-selbst-gewonnenen-probe-a2",
+      "annahme-einer-selbst-gewonnenen-probe-a3",
+      "annahme-einer-selbst-gewonnenen-probe-a4",
+      "anspruch-auf-gesundheits-check-up-klaeren-a1",
+      "anspruch-auf-gesundheits-check-up-klaeren-a2",
+      "anspruch-auf-gesundheits-check-up-klaeren-a3",
+      "arbeitskleidung-im-dienst-tragen-a1",
+      "arbeitskleidung-wechseln-und-aufbereiten-a1",
+      "ausnahme-bei-nicht-erfuellten-akutkriterien-a1",
+      "ausnahme-bei-nicht-erfuellten-akutkriterien-a2",
+      "befundbesprechung-zur-buchung-freigeben-a1",
+      "befundbesprechung-zur-buchung-freigeben-a2",
+      "befundbesprechung-zur-buchung-freigeben-a3",
+      "beleuchtung-nach-schichtende-a1",
+      "benoetigte-unterlagen-vollstaendig-a1",
+      "benoetigte-unterlagen-vollstaendig-a2",
+      "benoetigte-unterlagen-vollstaendig-a3",
+      "dauermedikation-vorhanden-a1",
+      "dauermedikation-vorhanden-a2",
+      "dauermedikation-vorhanden-a3",
+      "dauermedikation-vorhanden-a4",
+      "dauermedikation-vorhanden-a5",
+      "dokument-kennzeichnen-a1",
+      "dokument-kennzeichnen-a2",
+      "dokument-kennzeichnen-a3",
+      "dokument-kennzeichnen-a4",
+      "dolmetschperson-organisieren-a1",
+      "dringlichkeitsbedarf-erkennen-a1",
+      "dringlichkeitsbedarf-erkennen-a2",
+      "eingehenden-patientenkontakt-dokumentieren-a1",
+      "eingehenden-patientenkontakt-dokumentieren-a2",
+      "eingehenden-patientenkontakt-dokumentieren-a3",
+      "eingehenden-patientenkontakt-dokumentieren-a4",
+      "erneuter-patientenkontakt-erforderlich-a1",
+      "erneuter-patientenkontakt-erforderlich-a2",
+      "folgerezept-ohne-erneuten-arzttermin-a1",
+      "folgerezept-ohne-erneuten-arzttermin-a2",
+      "folgerezept-ohne-erneuten-arzttermin-a3",
+      "folgerezept-ohne-erneuten-arzttermin-a4",
+      "fort--oder-weiterbildungsanlass-einordnen-a1",
+      "fort--oder-weiterbildungsanlass-einordnen-a2",
+      "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a1",
+      "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a2",
+      "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a3",
+      "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a4",
+      "gebuchte-termine-bei-personalausfall-behandeln-a1",
+      "gebuchte-termine-bei-personalausfall-behandeln-a2",
+      "gebuchte-termine-bei-personalausfall-behandeln-a3",
+      "gebuchte-termine-bei-personalausfall-behandeln-a4",
+      "geraete-zum-schichtbeginn-einsatzbereit-a1",
+      "geraetebetrieb-nach-schichtende-a1",
+      "getragene-arbeitskleidung-aufbereiten-a1",
+      "getragene-arbeitskleidung-aufbewahren-a1",
+      "hygienematerial-zum-schichtbeginn-verfuegbar-a1",
+      "it-arbeitsplaetze-nach-schichtende-sichern-a1",
+      "kontaktform-festlegen-a1",
+      "kontaktform-festlegen-a2",
+      "kontaktform-festlegen-a3",
+      "kontaktform-festlegen-a4",
+      "kontaktform-festlegen-a5",
+      "kosten-der-fort--oder-weiterbildung-regeln-a1",
+      "kosten-der-fort--oder-weiterbildung-regeln-a2",
+      "krankmeldung-im-team-entgegennehmen-a1",
+      "krankmeldung-im-team-entgegennehmen-a2",
+      "krankmeldung-im-team-entgegennehmen-a3",
+      "krankmeldung-im-team-entgegennehmen-a4",
+      "laborumfang-beim-check-up-klaeren-a1",
+      "laborumfang-beim-check-up-klaeren-a2",
+      "mfa-qualifikationsanforderungen-klaeren-a1",
+      "mfa-qualifikationsanforderungen-klaeren-a2",
+      "mitgebrachte-lebensmittel-lagern-a1",
+      "offene-vorgaenge-bei-abwesenheit-uebergeben-a1",
+      "offene-vorgaenge-bei-abwesenheit-uebergeben-a2",
+      "offene-vorgaenge-bei-abwesenheit-uebergeben-a3",
+      "offene-vorgaenge-bei-abwesenheit-uebergeben-a4",
+      "patient-bekannt-a1",
+      "patient-bekannt-a2",
+      "patient-bekannt-a3",
+      "patient-bekannt-a4",
+      "patient-bekannt-a5",
+      "patient-bekannt-a6",
+      "patient-bekannt-a7",
+      "patient-bekannt-a8",
+      "patient-digital-kontaktieren-a1",
+      "patient-digital-kontaktieren-a2",
+      "patient-digital-kontaktieren-a3",
+      "patient-digital-kontaktieren-a4",
+      "patient-digital-kontaktieren-a5",
+      "patient-digital-kontaktieren-a6",
+      "patient-informieren-a1",
+      "patient-informieren-a2",
+      "patient-informieren-a3",
+      "patient-informieren-a4",
+      "patient-informieren-a5",
+      "patient-informieren-a6",
+      "patient-telefonisch-kontaktieren-a1",
+      "patient-telefonisch-kontaktieren-a2",
+      "patient-telefonisch-kontaktieren-a3",
+      "persoenliche-vorstellung-bei-infektionsverdacht-a1",
+      "persoenliche-vorstellung-bei-infektionsverdacht-a2",
+      "persoenliche-vorstellung-bei-infektionsverdacht-a3",
+      "pflichtangaben-bei-digitaler-au-anfrage-a1",
+      "pflichtangaben-bei-digitaler-au-anfrage-a2",
+      "pflichtangaben-bei-digitaler-au-anfrage-a3",
+      "private-handys-im-dienst-nutzen-a1",
+      "raumtemperatur-nach-schichtende-einstellen-a1",
+      "schichtbeginn-praxisbereitschaft-pruefen-a1",
+      "schichtende-raeume-sichern-a1",
+      "schriftliche-bearbeitung-von-patientennachrichten-a1",
+      "schriftliche-bearbeitung-von-patientennachrichten-a2",
+      "schriftliche-bearbeitung-von-patientennachrichten-a3",
+      "shit-instabilitaetszeichen-erkennen-a1",
+      "shit-instabilitaetszeichen-erkennen-a2",
+      "shit-instabilitaetszeichen-erkennen-a3",
+      "shit-instabilitaetszeichen-erkennen-a4",
+      "speisen-und-getraenke-im-dienst-a1",
+      "sprache-externer-medizinischer-unterlagen-a1",
+      "sprache-externer-medizinischer-unterlagen-a2",
+      "sprache-externer-medizinischer-unterlagen-a3",
+      "sprache-externer-medizinischer-unterlagen-a4",
+      "teilnahme-an-fort--oder-weiterbildung-entscheiden-a1",
+      "teilnahme-an-fort--oder-weiterbildung-entscheiden-a2",
+      "termin-vereinbaren-a1",
+      "termin-vereinbaren-a2",
+      "termin-vereinbaren-a3",
+      "termin-vereinbaren-a4",
+      "termin-vereinbaren-a5",
+      "termin-vorhanden-a1",
+      "termin-vorhanden-a2",
+      "termin-vorhanden-a3",
+      "termin-vorhanden-a4",
+      "terminanliegen-geklaert-a1",
+      "terminanliegen-geklaert-a2",
+      "terminanliegen-geklaert-a3",
+      "ueberweisung-ohne-erneuten-arztkontakt-a1",
+      "ueberweisung-ohne-erneuten-arztkontakt-a2",
+      "ueberweisung-ohne-erneuten-arztkontakt-a3",
+      "ueberweisung-ohne-erneuten-arztkontakt-a4",
+      "unterlagen-anfordern-a1",
+      "unterlagen-anfordern-a10",
+      "unterlagen-anfordern-a2",
+      "unterlagen-anfordern-a3",
+      "unterlagen-anfordern-a4",
+      "unterlagen-anfordern-a5",
+      "unterlagen-anfordern-a6",
+      "unterlagen-anfordern-a7",
+      "unterlagen-anfordern-a8",
+      "unterlagen-anfordern-a9",
+      "urlaub-anhand-der-dienstbesetzung-entscheiden-a1",
+      "urlaub-anhand-der-dienstbesetzung-entscheiden-a2",
+      "urlaub-anhand-der-dienstbesetzung-entscheiden-a3",
+      "urlaub-anhand-der-dienstbesetzung-entscheiden-a4",
+      "versicherungsnachweis-vorhanden-a1",
+      "versicherungsnachweis-vorhanden-a2",
+      "versicherungsnachweis-vorhanden-a3",
+      "verspaetung-zum-termin-a1",
+      "verspaetung-zum-termin-a2",
+      "verspaetung-zum-termin-a3",
+      "verspaetung-zum-termin-a4",
+      "verspaetung-zum-termin-a5",
+      "verspaetung-zum-termin-a6",
+      "verstaendigung-bei-sprachbarriere-a1",
+      "verstaendigung-bei-sprachbarriere-a2",
+      "vertretung-bei-abwesenheit-zuordnen-a1",
+      "vertretung-bei-abwesenheit-zuordnen-a2",
+      "vertretung-bei-abwesenheit-zuordnen-a3",
+      "vertretung-bei-abwesenheit-zuordnen-a4",
+      "vorlauf-fuer-urlaubsantrag-a1",
+      "vorlauf-fuer-urlaubsantrag-a2",
+      "vorlauf-fuer-urlaubsantrag-a3",
+      "vorlauf-fuer-urlaubsantrag-a4",
+      "wartephase-in-der-praxis-vorgesehen-a1",
+      "wartephase-in-der-praxis-vorgesehen-a2",
+      "wartephase-in-der-praxis-vorgesehen-a3",
+      "wartephase-in-der-praxis-vorgesehen-a4",
+      "zeit-fuer-fort--oder-weiterbildung-regeln-a1",
+      "zeit-fuer-fort--oder-weiterbildung-regeln-a2",
+      "zeitliche-dynamik-der-beschwerden-a1",
+      "zeitliche-dynamik-der-beschwerden-a2",
+      "zeitpunkt-der-einbestellung-festlegen-a1",
+      "zeitpunkt-der-einbestellung-festlegen-a2",
+      "zeitpunkt-der-einbestellung-festlegen-a3",
+      "zeitpunkt-der-einbestellung-festlegen-a4",
+      "zeitpunkt-der-information-bei-terminausfall-a1",
+      "zeitpunkt-der-information-bei-terminausfall-a2",
+      "zeitpunkt-der-information-bei-terminausfall-a3",
+      "zeitpunkt-der-information-bei-terminausfall-a4"
+    ],
+    "rows": [
+      {
+        "id": "abrechnungsgrundlage-geklaert",
+        "title": "Abrechnungsgrundlage geklärt",
+        "description": "Es wird geklärt, ob die für den konkreten Vorgang maßgebliche Abrechnungsgrundlage nach Praxisstandard feststeht.",
+        "orientation_hint": "Die Praxis klärt für den konkreten Vorgang, auf welcher Grundlage die Leistung zugeordnet und abgerechnet werden kann. Ein vorhandener Versicherungsnachweis ist nur eine mögliche Informationsquelle und wird separat geprüft. Die Vorlage legt keine rechtliche Abrechnungsentscheidung oder Standardlösung fest.",
+        "anchors": [
+          {
+            "id": "abrechnungsgrundlage-geklaert-a1",
+            "text": "Welche möglichen Grundlagen unterscheidet ihr für diesen Vorgang (z. B. gesetzlich, privat oder Selbstzahlung)?"
+          },
+          {
+            "id": "abrechnungsgrundlage-geklaert-a2",
+            "text": "Welche Angaben oder Prüfungen braucht ihr, damit die zutreffende Grundlage als geklärt gilt?"
+          },
+          {
+            "id": "abrechnungsgrundlage-geklaert-a3",
+            "text": "Wer klärt eine uneindeutige Grundlage, bevor der Vorgang weiterbearbeitet wird?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:54:38.732Z",
+        "updatedAt": "2026-09-29T06:54:38.732Z"
+      },
+      {
+        "id": "abwesenheit-in-dienst--und-terminplanung-eintragen",
+        "title": "Abwesenheit in Dienst- und Terminplanung eintragen",
+        "description": "Es ist festgelegt, welche Dienstpläne und buchbaren Terminressourcen nach feststehender Abwesenheit angepasst werden.",
+        "orientation_hint": "Betrifft die Planungsmedien und buchbaren Ressourcen; bereits gebuchte Termine werden in einem eigenen Folgefall behandelt.",
+        "anchors": [
+          {
+            "id": "abwesenheit-in-dienst--und-terminplanung-eintragen-a1",
+            "text": "Die Abwesenheit wird im Dienstplan und Teamkalender eingetragen."
+          },
+          {
+            "id": "abwesenheit-in-dienst--und-terminplanung-eintragen-a2",
+            "text": "Neue Online-Buchungen bei der abwesenden Person werden gesperrt."
+          },
+          {
+            "id": "abwesenheit-in-dienst--und-terminplanung-eintragen-a3",
+            "text": "Die betroffenen Sprechstunden- oder Funktionszeiten werden angepasst."
+          },
+          {
+            "id": "abwesenheit-in-dienst--und-terminplanung-eintragen-a4",
+            "text": "Die Vertretungszeiten werden im Terminplan hinterlegt."
+          }
+        ],
+        "createdAt": "2026-09-26T01:08:56.536Z",
+        "updatedAt": "2026-09-26T01:17:40.675Z"
+      },
+      {
+        "id": "aerztliche-fort--und-weiterbildungsvorgaben-klaeren",
+        "title": "Ärztliche Fort- und Weiterbildungsvorgaben klären",
+        "description": "Erfasst die für die konkrete ärztliche Maßnahme relevanten berufsbezogenen Anerkennungs- und Nachweisanforderungen.",
+        "orientation_hint": "Für Ärztinnen und Ärzte Fortbildungsnachweise und formale Weiterbildung je Tätigkeit und zuständiger Stelle gesondert prüfen.",
+        "anchors": [
+          {
+            "id": "aerztliche-fort--und-weiterbildungsvorgaben-klaeren-a1",
+            "text": "Ist für die Person ein Fortbildungsnachweis gegenüber Ärztekammer oder KV relevant, und wird die Maßnahme dafür anerkannt?"
+          },
+          {
+            "id": "aerztliche-fort--und-weiterbildungsvorgaben-klaeren-a2",
+            "text": "Falls es um ärztliche Weiterbildung geht: welche Weiterbildungsordnung, Befugnis, Dauer und Dokumentation sind betroffen?"
+          }
+        ],
+        "createdAt": "2026-09-26T01:27:58.760Z",
+        "updatedAt": "2026-09-26T01:27:58.760Z"
+      },
+      {
+        "id": "aerztliche-soforteinschaetzung-veranlassen",
+        "title": "Ärztliche Soforteinschätzung veranlassen",
+        "description": "Bei erkannten Warnzeichen wird ohne Verzögerung eine ärztliche Beurteilung veranlasst.",
+        "orientation_hint": "Dieser Checkpoint regelt das unmittelbare Hinzuziehen ärztlicher Hilfe. Die fachliche Einschätzung und weitere Notfallentscheidung folgen durch die Ärztin oder den Arzt.",
+        "anchors": [
+          {
+            "id": "aerztliche-soforteinschaetzung-veranlassen-a1",
+            "text": "Holt die MFA bei entsprechenden Warnzeichen unverzüglich eine Ärztin oder einen Arzt hinzu?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:34:38.057Z",
+        "updatedAt": "2026-09-25T19:34:38.057Z"
+      },
+      {
+        "id": "aerztliche-vorlage-von-patientennachrichten",
+        "title": "Ärztliche Vorlage von Patientennachrichten",
+        "description": "Es ist festgelegt, welche schriftlich eingegangenen Patientenanliegen einer Ärztin oder einem Arzt vorgelegt werden.",
+        "orientation_hint": "Die Vorlageentscheidung ist unabhängig davon, ob eine Antwort später schriftlich oder im Gespräch erfolgt.",
+        "anchors": [
+          {
+            "id": "aerztliche-vorlage-von-patientennachrichten-a1",
+            "text": "Jeden medizinischen Inhalt ärztlich vorlegen"
+          },
+          {
+            "id": "aerztliche-vorlage-von-patientennachrichten-a2",
+            "text": "Nur festgelegte medizinische Anliegen ärztlich vorlegen"
+          },
+          {
+            "id": "aerztliche-vorlage-von-patientennachrichten-a3",
+            "text": "MFA entscheidet nach dokumentierten Kriterien über die ärztliche Vorlage"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:05.386Z",
+        "updatedAt": "2026-09-25T20:57:05.386Z"
+      },
+      {
+        "id": "akutanlass-fuer-sprechstunde",
+        "title": "Akutanlass für Sprechstunde",
+        "description": "Es ist festgelegt, welche aktuell geschilderten Beschwerden grundsätzlich als Anlass für die Akutsprechstunde der Praxis gelten.",
+        "orientation_hint": "Abgrenzung zur medizinischen Dringlichkeits- und Notfallbeurteilung: Ein passender Beschwerdeanlass bedeutet nicht automatisch, dass ein regulärer Akutplatz der richtige Versorgungsweg ist.",
+        "anchors": [
+          {
+            "id": "akutanlass-fuer-sprechstunde-a1",
+            "text": "Brustschmerz als Akutanlass?"
+          },
+          {
+            "id": "akutanlass-fuer-sprechstunde-a2",
+            "text": "Atemnot als Akutanlass?"
+          },
+          {
+            "id": "akutanlass-fuer-sprechstunde-a3",
+            "text": "Blutung als Akutanlass?"
+          },
+          {
+            "id": "akutanlass-fuer-sprechstunde-a4",
+            "text": "Akute Augenbeschwerden oder Sehverlust als Akutanlass?"
+          },
+          {
+            "id": "akutanlass-fuer-sprechstunde-a5",
+            "text": "Hohes Fieber als Akutanlass?"
+          },
+          {
+            "id": "akutanlass-fuer-sprechstunde-a6",
+            "text": "Starke Schmerzen als Akutanlass?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:21:09.104Z",
+        "updatedAt": "2026-09-25T19:21:09.104Z"
+      },
+      {
+        "id": "angefragter-befund-identifiziert",
+        "title": "Angefragter Befund identifiziert",
+        "description": "Es wird geklärt, ob eindeutig feststeht, auf welchen konkreten Befund sich die Anfrage bezieht.",
+        "orientation_hint": "Die Praxis legt fest, anhand welcher Angaben eine Befundanfrage einem konkreten Befund zugeordnet werden kann, zum Beispiel Untersuchung, Zeitraum oder Anlass. Ob der Befund vorliegt, wer ihn bewerten oder erhalten darf und wie er mitgeteilt wird, sind getrennte Fragen.",
+        "anchors": [
+          {
+            "id": "angefragter-befund-identifiziert-a1",
+            "text": "Welche Angaben braucht ihr, um den gemeinten Befund eindeutig zu identifizieren?"
+          },
+          {
+            "id": "angefragter-befund-identifiziert-a2",
+            "text": "Wie grenzt ihr mehrere mögliche Befunde desselben Patienten voneinander ab?"
+          },
+          {
+            "id": "angefragter-befund-identifiziert-a3",
+            "text": "Wann bleibt die Befundanfrage noch ungeklärt und braucht eine Rückfrage?"
+          }
+        ],
+        "createdAt": "2026-09-29T08:25:38.259Z",
+        "updatedAt": "2026-09-29T08:25:38.259Z"
+      },
+      {
+        "id": "annahme-einer-selbst-gewonnenen-probe",
+        "title": "Annahme einer selbst gewonnenen Probe",
+        "description": "Es ist festgelegt, unter welchen Voraussetzungen eine vom Patienten selbst gewonnene Probe in der Praxis angenommen wird.",
+        "orientation_hint": "Betrifft die Annahmebedingungen einer selbst gewonnenen Probe; Laborauftrag und spätere Befundbearbeitung sind andere Vorgänge.Art der Probe, Laborauftrag und fachliche Eignung sind im konkreten Praxisfall zu beachten.",
+        "anchors": [
+          {
+            "id": "annahme-einer-selbst-gewonnenen-probe-a1",
+            "text": "Nur bei dokumentierter ärztlicher Anordnung annehmen"
+          },
+          {
+            "id": "annahme-einer-selbst-gewonnenen-probe-a2",
+            "text": "Nur eindeutig beschriftete und zuordenbare Probe annehmen"
+          },
+          {
+            "id": "annahme-einer-selbst-gewonnenen-probe-a3",
+            "text": "Abgabe nur innerhalb festgelegter Zeiten"
+          },
+          {
+            "id": "annahme-einer-selbst-gewonnenen-probe-a4",
+            "text": "Transport und Lagerung müssen den Vorgaben für die jeweilige Probe entsprechen"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:17.264Z",
+        "updatedAt": "2026-09-26T01:20:13.775Z"
+      },
+      {
+        "id": "anspruch-auf-gesundheits-check-up-klaeren",
+        "title": "Anspruch auf Gesundheits-Check-up klären",
+        "description": "Es ist geklärt, ob die Voraussetzungen für den Gesundheits-Check-up der gesetzlichen Krankenversicherung nach Alter und Untersuchungsintervall vorliegen.",
+        "orientation_hint": "Hier wird nur der Anspruch auf die gesetzliche Gesundheitsuntersuchung geklärt. Der Umfang der Laboruntersuchung und die Terminorganisation sind eigene Fragen. Bei unklarer früherer Inanspruchnahme kann die Krankenkasse Auskunft geben.",
+        "anchors": [
+          {
+            "id": "anspruch-auf-gesundheits-check-up-klaeren-a1",
+            "text": "18 bis 34 Jahre: Wurde der einmalige Check-up bereits in Anspruch genommen?"
+          },
+          {
+            "id": "anspruch-auf-gesundheits-check-up-klaeren-a2",
+            "text": "Ab 35 Jahren: Liegt der letzte Check-up mindestens drei Jahre zurück?"
+          },
+          {
+            "id": "anspruch-auf-gesundheits-check-up-klaeren-a3",
+            "text": "Ist eine unklare frühere Inanspruchnahme mit der Krankenkasse zu klären?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:41:54.265Z",
+        "updatedAt": "2026-09-25T19:41:54.265Z"
+      },
+      {
+        "id": "arbeitskleidung-im-dienst-tragen",
+        "title": "Arbeitskleidung im Dienst tragen",
+        "description": "Dieser Checkpoint erfasst die Vorgaben der Praxis zur Kleidung während des Dienstes.",
+        "orientation_hint": "Je Tätigkeit klären, ob und welche Arbeits- oder Schutzkleidung vorgesehen ist. Vorgaben zu Beschaffung, Anlegen und Wechselort können getrennt festgelegt werden.",
+        "anchors": [
+          {
+            "id": "arbeitskleidung-im-dienst-tragen-a1",
+            "text": "Welche Kleidung gilt für welche Tätigkeiten, wer stellt sie bereit und wo beziehungsweise wann wird sie angelegt?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:12.370Z",
+        "updatedAt": "2026-09-26T01:15:03.344Z"
+      },
+      {
+        "id": "arbeitskleidung-wechseln-und-aufbereiten",
+        "title": "Arbeitskleidung wechseln",
+        "description": "Es wird geklärt, ob für die betreffende Kleidung nach der Praxisdefinition ein Wechsel erforderlich ist.",
+        "orientation_hint": "Die Praxis legt getrennt fest, wann Arbeits- oder Schutzkleidung gewechselt wird. Aufbewahrung, Reinigung oder Entsorgung nach dem Wechsel sind eigene Festlegungen. Bestehende verbindliche Vorgaben sind zu berücksichtigen.",
+        "anchors": [
+          {
+            "id": "arbeitskleidung-wechseln-und-aufbereiten-a1",
+            "text": "Welche Kleidungsart und welcher Anlass lösen bei euch einen Wechsel aus (z. B. Schichtende oder Verunreinigung)?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:14.645Z",
+        "updatedAt": "2026-09-29T06:40:49.010Z"
+      },
+      {
+        "id": "ausnahme-bei-nicht-erfuellten-akutkriterien",
+        "title": "Ausnahme bei nicht erfüllten Akutkriterien",
+        "description": "Es ist festgelegt, wer entscheidet, ob ein Patient trotz nicht erfüllter Kriterien der Akutsprechstunde am selben Tag behandelt wird.",
+        "orientation_hint": "Dieser Checkpoint greift erst nach der Einordnung des Akutanlasses. Die anschließende Terminbuchung ist ein eigener Schritt.",
+        "anchors": [
+          {
+            "id": "ausnahme-bei-nicht-erfuellten-akutkriterien-a1",
+            "text": "Fragt die MFA die zuständige Ärztin oder den zuständigen Arzt nach einer Ausnahmeentscheidung?"
+          },
+          {
+            "id": "ausnahme-bei-nicht-erfuellten-akutkriterien-a2",
+            "text": "Wird entschieden, ob die Behandlung heute stattfindet oder ein regulärer Termin nötig ist?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:22:23.960Z",
+        "updatedAt": "2026-09-25T19:22:23.960Z"
+      },
+      {
+        "id": "befundbesprechung-zur-buchung-freigeben",
+        "title": "Befundbesprechung zur Buchung freigeben",
+        "description": "Es ist festgelegt, wann ein Termin zur Besprechung eines Laborbefunds für den Patienten buchbar wird.",
+        "orientation_hint": "Die fachliche Bewertung des Befunds und die tatsächliche Terminvereinbarung sind eigenständige Schritte.",
+        "anchors": [
+          {
+            "id": "befundbesprechung-zur-buchung-freigeben-a1",
+            "text": "Erst nach Eingang des vollständigen Laborbefunds"
+          },
+          {
+            "id": "befundbesprechung-zur-buchung-freigeben-a2",
+            "text": "Erst nach ärztlicher Sichtung des Befunds"
+          },
+          {
+            "id": "befundbesprechung-zur-buchung-freigeben-a3",
+            "text": "Nur bei dokumentierter ärztlicher Anordnung einer Besprechung"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:19.150Z",
+        "updatedAt": "2026-09-25T20:57:19.150Z"
+      },
+      {
+        "id": "beleuchtung-nach-schichtende",
+        "title": "Beleuchtung nach Schichtende",
+        "description": "Es wird geklärt, ob die Beleuchtung nach Schichtende dem für die Bereiche festgelegten Praxiszustand entspricht.",
+        "orientation_hint": "Mögliche Festlegungen betreffen ausgeschaltete, gedimmte oder weiter benötigte Beleuchtung je Bereich. Die Praxis legt ihren Zustand fest; Raumsicherung, Geräte und IT bleiben getrennt.",
+        "anchors": [
+          {
+            "id": "beleuchtung-nach-schichtende-a1",
+            "text": "Welche Beleuchtung bleibt in welchen Bereichen an, wird gedimmt oder ausgeschaltet?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:43:26.324Z",
+        "updatedAt": "2026-09-29T06:43:26.324Z"
+      },
+      {
+        "id": "benoetigte-unterlagen-vollstaendig",
+        "title": "Benötigte Unterlagen vollständig",
+        "description": "Es wird geklärt, ob die für den aktuellen Vorgang benötigten Unterlagen nach der Definition der Praxis vollständig vorliegen.",
+        "orientation_hint": "Die Praxis legt je Vorgang fest, welche Unterlagen oder Angaben benötigt werden und wann der Eingang als vollständig gilt. Möglich sind unterschiedliche Dokumentarten, Mindestangaben und akzeptierte Ersatznachweise. Das spätere Anfordern fehlender Unterlagen und die fachliche Bewertung sind getrennte Schritte.",
+        "anchors": [
+          {
+            "id": "benoetigte-unterlagen-vollstaendig-a1",
+            "text": "Welche Unterlagen oder Angaben gehören für diesen Vorgang zum vollständigen Eingang?"
+          },
+          {
+            "id": "benoetigte-unterlagen-vollstaendig-a2",
+            "text": "Gibt es akzeptierte Ersatzunterlagen oder Fälle, in denen einzelne Angaben nicht erforderlich sind?"
+          },
+          {
+            "id": "benoetigte-unterlagen-vollstaendig-a3",
+            "text": "Woran erkennt ihr, dass die vorhandenen Unterlagen dem aktuellen Anliegen zugeordnet und für dessen nächste Bearbeitung ausreichend vollständig sind?"
+          }
+        ],
+        "createdAt": "2026-09-29T07:34:05.369Z",
+        "updatedAt": "2026-09-29T07:34:05.369Z"
+      },
+      {
+        "id": "dauermedikation-vorhanden",
+        "title": "Dauermedikation bekannt",
+        "description": "Es wird geklärt, ob die aktuelle Dauermedikation des Patienten nach der Definition der Praxis ausreichend bekannt ist.",
+        "orientation_hint": "Diese Vorlage bietet mögliche Quellen und Nachweise für die in der Praxis bekannte Dauermedikation. Die Praxis legt selbst fest, welche Angaben und wie aktuelle Informationen für diese Einordnung benötigt werden. Ein Medikationsabgleich oder eine neue Verordnung ist ein eigener Sachverhalt.",
+        "anchors": [
+          {
+            "id": "dauermedikation-vorhanden-a1",
+            "text": "Zählt eine frühere Verordnung durch diese Praxis als Quelle?"
+          },
+          {
+            "id": "dauermedikation-vorhanden-a2",
+            "text": "Welche Angaben müssen in der Patientenakte dokumentiert sein?"
+          },
+          {
+            "id": "dauermedikation-vorhanden-a3",
+            "text": "Ist eine strukturierte Hinterlegung im Praxissystem erforderlich?"
+          },
+          {
+            "id": "dauermedikation-vorhanden-a4",
+            "text": "Werden extern verordnete Medikamente einbezogen, und welcher Nachweis zählt?"
+          },
+          {
+            "id": "dauermedikation-vorhanden-a5",
+            "text": "Spielt die Aktualität der Angaben für die Einordnung eine Rolle?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:34:01.692Z",
+        "updatedAt": "2026-09-29T06:34:01.692Z"
+      },
+      {
+        "id": "dokument-kennzeichnen",
+        "title": "Dokument kennzeichnen",
+        "description": "Das Dokument wird nach dem in der Praxis festgelegten Schema gekennzeichnet.",
+        "orientation_hint": "Wie werden Dokumente in der Praxis beschriftet?",
+        "anchors": [
+          {
+            "id": "dokument-kennzeichnen-a1",
+            "text": "Dokumentdatum ist Bestandteil der Kennzeichnung"
+          },
+          {
+            "id": "dokument-kennzeichnen-a2",
+            "text": "Patientenkennung ist Bestandteil der Kennzeichnung"
+          },
+          {
+            "id": "dokument-kennzeichnen-a3",
+            "text": "Dokumentart oder Dokumentbeschreibung ist Bestandteil der Kennzeichnung"
+          },
+          {
+            "id": "dokument-kennzeichnen-a4",
+            "text": "Absender oder ausstellende Stelle ist Bestandteil der Kennzeichnung"
+          }
+        ],
+        "createdAt": "2026-08-19T17:54:08.233Z",
+        "updatedAt": "2026-08-19T17:54:08.233Z"
+      },
+      {
+        "id": "dolmetschperson-organisieren",
+        "title": "Dolmetschperson organisieren",
+        "description": "Es ist festgelegt, wer für einen planbaren Behandlungstermin eine geeignete Dolmetschperson organisiert.",
+        "orientation_hint": "Diese organisatorische Regel betrifft planbare Kontakte bei nicht ausreichend möglicher Verständigung; die medizinische Ersteinschätzung möglicher Notfälle bleibt davon unberührt.",
+        "anchors": [
+          {
+            "id": "dolmetschperson-organisieren-a1",
+            "text": "Organisiert der Patient oder die Patientin die Dolmetschperson für den Termin?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:23:20.420Z",
+        "updatedAt": "2026-09-25T19:23:20.420Z"
+      },
+      {
+        "id": "dringlichkeitsbedarf-erkennen",
+        "title": "Dringlichkeitsbedarf erkennen",
+        "description": "Es wird nach der Definition der Praxis geklärt, ob ein eingehender Vorgang Hinweise auf einen Bedarf an Dringlichkeitseinschätzung enthält.",
+        "orientation_hint": "Diese Vorlage hilft der Praxis, Hinweise zu benennen, bei denen eine Dringlichkeitseinschätzung benötigt wird, und die Zuständigkeit bei Unklarheit festzulegen. Die konkrete Einschätzung und das weitere Vorgehen werden an anderer Stelle entschieden.",
+        "anchors": [
+          {
+            "id": "dringlichkeitsbedarf-erkennen-a1",
+            "text": "Enthält der Vorgang Hinweise auf möglichen akuten Handlungsbedarf?"
+          },
+          {
+            "id": "dringlichkeitsbedarf-erkennen-a2",
+            "text": "Wer klärt in der Praxis uneindeutige Hinweise auf möglichen akuten Handlungsbedarf?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:37:56.524Z",
+        "updatedAt": "2026-09-29T06:37:56.524Z"
+      },
+      {
+        "id": "eingehenden-patientenkontakt-dokumentieren",
+        "title": "Eingehenden Patientenkontakt dokumentieren",
+        "description": "Es ist festgelegt, welche eingehenden Nachrichten und Telefonate mit Anliegen, Ergebnis und offenem Arbeitsauftrag im Praxissystem dokumentiert werden.",
+        "orientation_hint": "Betrifft den Eingang und das im Kontakt Gesagte. Die Dokumentation eines späteren ausgehenden Kontaktversuchs ist separat abgebildet.",
+        "anchors": [
+          {
+            "id": "eingehenden-patientenkontakt-dokumentieren-a1",
+            "text": "Jedes medizinische Anliegen mit Eingang, Inhalt und Bearbeitungsstand dokumentieren"
+          },
+          {
+            "id": "eingehenden-patientenkontakt-dokumentieren-a2",
+            "text": "Organisatorische Anliegen dokumentieren, wenn daraus ein Arbeitsauftrag entsteht"
+          },
+          {
+            "id": "eingehenden-patientenkontakt-dokumentieren-a3",
+            "text": "Telefonisch abschließend geklärte Anliegen mit Ergebnis dokumentieren"
+          },
+          {
+            "id": "eingehenden-patientenkontakt-dokumentieren-a4",
+            "text": "Nicht abschließend geklärte Anliegen mit Zuständigkeit und nächstem Schritt dokumentieren"
+          }
+        ],
+        "createdAt": "2026-09-26T00:52:17.517Z",
+        "updatedAt": "2026-09-26T00:52:17.517Z"
+      },
+      {
+        "id": "erneuter-patientenkontakt-erforderlich",
+        "title": "Erneuter Patientenkontakt erforderlich",
+        "description": "Es wird nach der Definition der Praxis geklärt, ob zum aktuellen Vorgang ein erneuter Patientenkontakt erforderlich ist.",
+        "orientation_hint": "Die Praxis legt fest, wann zu einem Vorgang ein weiterer Kontakt mit dem Patienten nötig ist und wann eine bereits vermittelte Information ausreicht. Die Form des Kontakts und die tatsächliche Kontaktaufnahme werden separat festgelegt.",
+        "anchors": [
+          {
+            "id": "erneuter-patientenkontakt-erforderlich-a1",
+            "text": "Welche noch nicht übermittelte Information oder offene Rückfrage löst bei euch einen erneuten Kontakt aus?"
+          },
+          {
+            "id": "erneuter-patientenkontakt-erforderlich-a2",
+            "text": "Wann gilt der Patient bereits ausreichend informiert, sodass kein erneuter Kontakt erforderlich ist?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:50:51.158Z",
+        "updatedAt": "2026-09-29T06:50:51.158Z"
+      },
+      {
+        "id": "folgerezept-ohne-erneuten-arzttermin",
+        "title": "Folgerezept ohne erneuten Arzttermin",
+        "description": "Es ist festgelegt, unter welchen Voraussetzungen ein Folgerezept für bekannte Dauermedikation ohne erneuten Arzttermin bearbeitet wird.",
+        "orientation_hint": "Die Aktualität einer Kontrolle und die Prüfung des angefragten Medikaments bleiben eigene Checkpoints.",
+        "anchors": [
+          {
+            "id": "folgerezept-ohne-erneuten-arzttermin-a1",
+            "text": "Freigabe für das nächste Folgerezept ist ärztlich dokumentiert"
+          },
+          {
+            "id": "folgerezept-ohne-erneuten-arzttermin-a2",
+            "text": "Letzter Kontrolltermin liegt innerhalb des festgelegten Intervalls"
+          },
+          {
+            "id": "folgerezept-ohne-erneuten-arzttermin-a3",
+            "text": "Definierte Medikamentengruppen sind ausgeschlossen"
+          },
+          {
+            "id": "folgerezept-ohne-erneuten-arzttermin-a4",
+            "text": "Jede Rezeptanfrage wird erneut ärztlich geprüft"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:13.071Z",
+        "updatedAt": "2026-09-25T20:57:13.071Z"
+      },
+      {
+        "id": "fort--oder-weiterbildungsanlass-einordnen",
+        "title": "Fort- oder Weiterbildungsanlass einordnen",
+        "description": "Erfasst Art, Anlass und Initiative einer vorgeschlagenen Fort- oder Weiterbildung.",
+        "orientation_hint": "Fortbildung, längerfristige Weiterbildung und tätigkeitsbezogene Pflichtmaßnahme unterscheiden. Daraus folgt noch keine Entscheidung über Teilnahme, Zeit oder Kosten.",
+        "anchors": [
+          {
+            "id": "fort--oder-weiterbildungsanlass-einordnen-a1",
+            "text": "Wer hat die Maßnahme angestoßen: die Person selbst, die Praxis oder eine externe Anforderung?"
+          },
+          {
+            "id": "fort--oder-weiterbildungsanlass-einordnen-a2",
+            "text": "Um welche Art von Maßnahme geht es: einzelne Fortbildung, mehrteilige Qualifikation, Weiterbildung oder erforderliche Unterweisung?"
+          }
+        ],
+        "createdAt": "2026-09-26T01:27:51.036Z",
+        "updatedAt": "2026-09-26T01:27:51.036Z"
+      },
+      {
+        "id": "frist-fuer-erste-rueckmeldung-auf-patientenanliegen",
+        "title": "Frist für erste Rückmeldung auf Patientenanliegen",
+        "description": "Es ist festgelegt, innerhalb welcher Frist die Praxis auf ein eingegangenes, nicht sofort erledigtes Patientenanliegen erstmals inhaltlich reagiert.",
+        "orientation_hint": "Betrifft die erste inhaltliche Rückmeldung, nicht den Abschluss der Bearbeitung. Dringlichkeit ist ein eigener Checkpoint.",
+        "anchors": [
+          {
+            "id": "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a1",
+            "text": "Erste Rückmeldung innerhalb von 12 Stunden nach Eingang"
+          },
+          {
+            "id": "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a2",
+            "text": "Erste Rückmeldung innerhalb von 48 Stunden nach Eingang"
+          },
+          {
+            "id": "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a3",
+            "text": "Erste Rückmeldung bis zum Ende des nächsten Praxistags"
+          },
+          {
+            "id": "frist-fuer-erste-rueckmeldung-auf-patientenanliegen-a4",
+            "text": "Rückrufbitten innerhalb von 12 Stunden, sonstige Routineanliegen innerhalb von 48 Stunden erstmals beantworten"
+          }
+        ],
+        "createdAt": "2026-09-26T00:52:22.957Z",
+        "updatedAt": "2026-09-26T01:20:14.724Z"
+      },
+      {
+        "id": "gebuchte-termine-bei-personalausfall-behandeln",
+        "title": "Gebuchte Termine bei Personalausfall behandeln",
+        "description": "Es ist festgelegt, welche bereits gebuchten Termine bei Ausfall einer für sie benötigten Person stattfinden, vertreten oder verlegt werden.",
+        "orientation_hint": "Betrifft die Entscheidung über bereits gebuchte Termine. Der Kontakt zum Patienten wird in eigenen Checkpoints abgebildet.",
+        "anchors": [
+          {
+            "id": "gebuchte-termine-bei-personalausfall-behandeln-a1",
+            "text": "Ein gebuchter Termin bleibt bei benannter interner Vertretung bestehen."
+          },
+          {
+            "id": "gebuchte-termine-bei-personalausfall-behandeln-a2",
+            "text": "Planbare Termine werden auf einen neuen Termin verlegt."
+          },
+          {
+            "id": "gebuchte-termine-bei-personalausfall-behandeln-a3",
+            "text": "Für gebuchte akute Anliegen wird am selben Tag eine ärztliche Einschätzung organisiert."
+          },
+          {
+            "id": "gebuchte-termine-bei-personalausfall-behandeln-a4",
+            "text": "Alle Termine der betroffenen Person werden verlegt, auch wenn interne Vertretung verfügbar ist."
+          }
+        ],
+        "createdAt": "2026-09-26T01:09:14.718Z",
+        "updatedAt": "2026-09-26T01:17:46.970Z"
+      },
+      {
+        "id": "geraete-zum-schichtbeginn-einsatzbereit",
+        "title": "Geräte zum Schichtbeginn einsatzbereit",
+        "description": "Es wird geklärt, ob die für den vorgesehenen Betrieb benötigten Geräte zu Schichtbeginn nach Praxisdefinition einsatzbereit sind.",
+        "orientation_hint": "Die Praxis legt für die zum Dienst benötigten Geräte fest, woran die Einsatzbereitschaft zu Schichtbeginn erkannt wird. Je Gerätegruppe können unterschiedliche Merkmale gelten. Der Umgang mit einer Störung wird separat im Fall oder Ablauf festgelegt.",
+        "anchors": [
+          {
+            "id": "geraete-zum-schichtbeginn-einsatzbereit-a1",
+            "text": "Welche Geräte werden für den Dienst benötigt, und welche Merkmale zeigen bei euch ihre Einsatzbereitschaft an?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:45:33.263Z",
+        "updatedAt": "2026-09-29T06:45:33.263Z"
+      },
+      {
+        "id": "geraetebetrieb-nach-schichtende",
+        "title": "Gerätebetrieb nach Schichtende",
+        "description": "Es wird geklärt, ob die relevanten Praxisgeräte nach Schichtende im jeweils festgelegten Betriebszustand sind.",
+        "orientation_hint": "Mögliche Praxisregeln unterscheiden Geräte, die nach Dienstschluss ausgeschaltet werden, und solche, die weiterlaufen müssen. Die Praxis legt den vorgesehenen Betriebszustand je relevanter Gerätegruppe fest; IT-Arbeitsplätze und Raumtemperatur werden separat betrachtet.",
+        "anchors": [
+          {
+            "id": "geraetebetrieb-nach-schichtende-a1",
+            "text": "Welche Geräte werden abgeschaltet und welche müssen bei euch weiterlaufen; gelten Ausnahmen für einzelne Räume oder Geräte?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:43:41.156Z",
+        "updatedAt": "2026-09-29T06:43:41.156Z"
+      },
+      {
+        "id": "getragene-arbeitskleidung-aufbereiten",
+        "title": "Getragene Arbeitskleidung aufbereiten",
+        "description": "Es wird geklärt, ob die getragene Arbeits- oder Schutzkleidung nach dem für sie festgelegten Praxisweg aufbereitet oder entsorgt wurde.",
+        "orientation_hint": "Die Praxis legt je Kleidungsart fest, ob Reinigung, ein anderer Aufbereitungsweg oder Entsorgung vorgesehen ist, wer dies veranlasst und woran der Abschluss erkennbar ist. Verbindliche Anforderungen sind zu berücksichtigen. Wechselanlass und Zwischenaufbewahrung bleiben eigene Festlegungen.",
+        "anchors": [
+          {
+            "id": "getragene-arbeitskleidung-aufbereiten-a1",
+            "text": "Welcher Weg gilt je Kleidungsart (Reinigung, andere Aufbereitung oder Entsorgung), und wann ist dieser Weg abgeschlossen?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:42:35.574Z",
+        "updatedAt": "2026-09-29T06:42:35.574Z"
+      },
+      {
+        "id": "getragene-arbeitskleidung-aufbewahren",
+        "title": "Getragene Arbeitskleidung aufbewahren",
+        "description": "Es wird geklärt, ob getragene Arbeits- oder Schutzkleidung nach der Praxisdefinition bis zur Aufbereitung richtig aufbewahrt ist.",
+        "orientation_hint": "Mögliche Festlegungen betreffen getrennte Behälter, Orte und Wege für getragene Arbeits- oder Schutzkleidung bis zur Aufbereitung. Die Praxis legt die Zuordnung fest und berücksichtigt verbindliche Anforderungen. Der Anlass des Wechsels und die spätere Aufbereitung sind eigene Checkpoints.",
+        "anchors": [
+          {
+            "id": "getragene-arbeitskleidung-aufbewahren-a1",
+            "text": "Wo und in welcher Form werden getragene Kleidungsstücke bis zur Reinigung oder Entsorgung abgelegt; gelten je Kleidungsart unterschiedliche Regeln?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:41:54.383Z",
+        "updatedAt": "2026-09-29T06:41:54.383Z"
+      },
+      {
+        "id": "hygienematerial-zum-schichtbeginn-verfuegbar",
+        "title": "Hygienematerial zum Schichtbeginn verfügbar",
+        "description": "Es wird geklärt, ob das für den vorgesehenen Betrieb festgelegte Hygienematerial zu Schichtbeginn verfügbar ist.",
+        "orientation_hint": "Die Praxis legt fest, welche Materialien für die vorgesehenen Tätigkeiten zu Schichtbeginn am jeweiligen Ort verfügbar sein müssen. Unterschiedliche Räume oder Tätigkeiten können unterschiedliche Bedarfe haben. Beschaffung oder Umgang mit fehlendem Material sind eigene Abläufe.",
+        "anchors": [
+          {
+            "id": "hygienematerial-zum-schichtbeginn-verfuegbar-a1",
+            "text": "Welche Materialien müssen für welche Räume oder Tätigkeiten zum Schichtbeginn in welchem Zustand und Umfang verfügbar sein?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:45:17.518Z",
+        "updatedAt": "2026-09-29T06:45:17.518Z"
+      },
+      {
+        "id": "it-arbeitsplaetze-nach-schichtende-sichern",
+        "title": "IT-Arbeitsplätze nach Schichtende sichern",
+        "description": "Es wird geklärt, ob die benutzten IT-Arbeitsplätze nach Schichtende im festgelegten Praxiszustand sind.",
+        "orientation_hint": "Die Praxis legt fest, welcher Zustand für benutzte IT-Arbeitsplätze nach Schichtende gilt, zum Beispiel gesperrte Anmeldung, Abmeldung oder Ausschalten. Regeln für medizinische Geräte und Raumzugänge werden separat festgelegt.",
+        "anchors": [
+          {
+            "id": "it-arbeitsplaetze-nach-schichtende-sichern-a1",
+            "text": "Welcher Zustand gilt bei euch nach Schichtende für welche IT-Arbeitsplätze: sperren, abmelden, ausschalten oder bewusst weiterlaufen lassen?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:44:21.754Z",
+        "updatedAt": "2026-09-29T06:44:21.754Z"
+      },
+      {
+        "id": "kontaktform-festlegen",
+        "title": "Erforderliche Kontaktform festlegen",
+        "description": "Es wird festgelegt, welche Form eines erforderlichen Kontakts für den jeweiligen Vorgang nach Praxisstandard geeignet ist.",
+        "orientation_hint": "Diese Vorlage wird verwendet, wenn ein Kontakt für den Vorgang erforderlich ist. Die Praxis wählt eine passende Kontaktform oder definiert weitere Formen. Ob überhaupt ein erneuter Kontakt nötig ist und ob er tatsächlich zustande kam, sind getrennte Sachverhalte.",
+        "anchors": [
+          {
+            "id": "kontaktform-festlegen-a1",
+            "text": "Persönlicher Kontakt in der Praxis"
+          },
+          {
+            "id": "kontaktform-festlegen-a2",
+            "text": "Telefonischer Kontakt"
+          },
+          {
+            "id": "kontaktform-festlegen-a3",
+            "text": "Videosprechstunde"
+          },
+          {
+            "id": "kontaktform-festlegen-a4",
+            "text": "Asynchroner digitaler Kontakt"
+          },
+          {
+            "id": "kontaktform-festlegen-a5",
+            "text": "Weitere von der Praxis festgelegte Kontaktform"
+          }
+        ],
+        "createdAt": "2026-09-29T06:50:31.876Z",
+        "updatedAt": "2026-09-29T06:50:31.876Z"
+      },
+      {
+        "id": "kosten-der-fort--oder-weiterbildung-regeln",
+        "title": "Kosten der Fort- oder Weiterbildung regeln",
+        "description": "Erfasst, wer welche Kosten einer Fort- oder Weiterbildung trägt und wie die Entscheidung vorab festgehalten wird.",
+        "orientation_hint": "Teilnahmegebühren und Nebenkosten getrennt betrachten. Bei verpflichtenden Maßnahmen vor einer Zuordnung die geltenden Vorgaben prüfen.",
+        "anchors": [
+          {
+            "id": "kosten-der-fort--oder-weiterbildung-regeln-a1",
+            "text": "Wer trägt Teilnahmegebühren, Lernmaterial, Fahrt und Übernachtung ganz, teilweise oder im Einzelfall?"
+          },
+          {
+            "id": "kosten-der-fort--oder-weiterbildung-regeln-a2",
+            "text": "Gibt es Budgetgrenzen, eine vorherige Zusage oder Bedingungen für Erstattung und Abrechnung?"
+          }
+        ],
+        "createdAt": "2026-09-26T01:27:56.612Z",
+        "updatedAt": "2026-09-26T01:27:56.612Z"
+      },
+      {
+        "id": "krankmeldung-im-team-entgegennehmen",
+        "title": "Meldeweg der Krankmeldung",
+        "description": "Es ist festgelegt, auf welchem Weg und bei welcher Stelle die Krankmeldung eines Teammitglieds eingeht.",
+        "orientation_hint": "Betrifft den Meldeweg und den Empfänger der Krankmeldung; die Bearbeitung der Abwesenheit folgt als eigener Praxisfall.",
+        "anchors": [
+          {
+            "id": "krankmeldung-im-team-entgegennehmen-a1",
+            "text": "Die Krankmeldung erfolgt telefonisch direkt bei der Praxisleitung."
+          },
+          {
+            "id": "krankmeldung-im-team-entgegennehmen-a2",
+            "text": "Falls die Praxisleitung nicht erreichbar ist, erfolgt die Meldung telefonisch an die diensthabende Leitung."
+          },
+          {
+            "id": "krankmeldung-im-team-entgegennehmen-a3",
+            "text": "Die Krankmeldung erfolgt über einen festgelegten digitalen Personalkanal."
+          },
+          {
+            "id": "krankmeldung-im-team-entgegennehmen-a4",
+            "text": "Die Krankmeldung geht an eine zentrale Teamnummer; die Leitung wird intern informiert."
+          }
+        ],
+        "createdAt": "2026-09-26T01:08:37.258Z",
+        "updatedAt": "2026-09-26T01:17:34.683Z"
+      },
+      {
+        "id": "laborumfang-beim-check-up-klaeren",
+        "title": "Laborumfang beim Check-up klären",
+        "description": "Es ist geklärt, welche Laboruntersuchungen im konkreten Gesundheits-Check-up vorgesehen sind.",
+        "orientation_hint": "Der Check-up-Anspruch allein begründet bei 18- bis 34-Jährigen keine routinemäßige Blutuntersuchung. Die medizinische Festlegung des Untersuchungsumfangs bleibt ärztlich.",
+        "anchors": [
+          {
+            "id": "laborumfang-beim-check-up-klaeren-a1",
+            "text": "18 bis 34 Jahre: Liegt ein ärztlich beurteiltes Risikoprofil für eine Blutuntersuchung vor?"
+          },
+          {
+            "id": "laborumfang-beim-check-up-klaeren-a2",
+            "text": "Ab 35 Jahren: Sind die vorgesehenen Basis-Laboruntersuchungen eingeplant?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:47:54.569Z",
+        "updatedAt": "2026-09-25T19:47:54.569Z"
+      },
+      {
+        "id": "mfa-qualifikationsanforderungen-klaeren",
+        "title": "MFA-Qualifikationsanforderungen klären",
+        "description": "Erfasst die für die konkrete MFA-Maßnahme relevanten Qualifikations- und Nachweisanforderungen.",
+        "orientation_hint": "Tätigkeit, Zusatzqualifikation und mögliche verbindliche Schulung unterscheiden; aus dem Berufstitel allein keine einheitliche Fortbildungspflicht ableiten.",
+        "anchors": [
+          {
+            "id": "mfa-qualifikationsanforderungen-klaeren-a1",
+            "text": "Ist für die vorgesehene Tätigkeit eine bestimmte Schulung, Qualifikation oder Auffrischung relevant?"
+          },
+          {
+            "id": "mfa-qualifikationsanforderungen-klaeren-a2",
+            "text": "Geht es um eine freiwillige Zusatzqualifikation oder längerfristige Aufstiegsfortbildung, und welcher Nachweis soll vorliegen?"
+          }
+        ],
+        "createdAt": "2026-09-26T01:28:00.995Z",
+        "updatedAt": "2026-09-26T01:28:00.995Z"
+      },
+      {
+        "id": "mitgebrachte-lebensmittel-lagern",
+        "title": "Mitgebrachte Lebensmittel lagern",
+        "description": "Dieser Checkpoint erfasst die praxisbezogene Regel zur Aufbewahrung eigener Speisen und Getränke.",
+        "orientation_hint": "Mögliche Aufbewahrungsorte und Bedingungen erfassen, etwa mitgebrachte Behälter, Schränke oder Kühlschränke. Hygienische Anforderungen für die betroffenen Bereiche prüfen.",
+        "anchors": [
+          {
+            "id": "mitgebrachte-lebensmittel-lagern-a1",
+            "text": "Wo und unter welchen Bedingungen dürfen eigene Speisen und Getränke aufbewahrt werden? Gibt es ausgeschlossene Orte oder besondere Vorgaben für Kühlung und Kennzeichnung?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:09.210Z",
+        "updatedAt": "2026-09-26T01:15:01.417Z"
+      },
+      {
+        "id": "offene-vorgaenge-bei-abwesenheit-uebergeben",
+        "title": "Offene Vorgänge bei Abwesenheit übergeben",
+        "description": "Es ist festgelegt, welche offenen Arbeitsaufträge bei einer geplanten oder kurzfristigen Abwesenheit auf eine Vertretung übergehen.",
+        "orientation_hint": "Betrifft den Umfang der zu übernehmenden offenen Vorgänge. Die Zuständigkeit für die Neuzuordnung wird über den Vertretungs-Checkpoint festgelegt.",
+        "anchors": [
+          {
+            "id": "offene-vorgaenge-bei-abwesenheit-uebergeben-a1",
+            "text": "Zeitkritische Befunde und ärztliche Rückfragen gehen an die Vertretung."
+          },
+          {
+            "id": "offene-vorgaenge-bei-abwesenheit-uebergeben-a2",
+            "text": "Offene Patientennachrichten und zugesagte Rückrufe gehen an die Vertretung."
+          },
+          {
+            "id": "offene-vorgaenge-bei-abwesenheit-uebergeben-a3",
+            "text": "Wiedervorlagen werden mit Frist und Zuständigkeit neu zugeordnet."
+          },
+          {
+            "id": "offene-vorgaenge-bei-abwesenheit-uebergeben-a4",
+            "text": "Offene Verordnungen, Anträge und Laboraufträge werden nach ihrer Zuständigkeit neu zugeordnet."
+          }
+        ],
+        "createdAt": "2026-09-26T01:09:08.370Z",
+        "updatedAt": "2026-09-26T01:17:44.851Z"
+      },
+      {
+        "id": "patient-bekannt",
+        "title": "Patient bekannt",
+        "description": "Es wird geklärt, ob der Patient die von der Praxis festgelegte Definition von „bekannt“ erfüllt.",
+        "orientation_hint": "Diese Vorlage fragt nur, wann ein Patient dieser Praxis als bekannt gilt. Ein Systemeintrag, vollständige Stammdaten oder ein Portalzugang sind nicht automatisch gleichbedeutend. Die Praxis wählt und ergänzt ihre Kriterien und legt fest, wie sie zusammenwirken.",
+        "anchors": [
+          {
+            "id": "patient-bekannt-a1",
+            "text": "Ist ein Eintrag im Praxissystem erforderlich oder bereits ausreichend?"
+          },
+          {
+            "id": "patient-bekannt-a2",
+            "text": "Welche früheren Kontakte oder Behandlungen in dieser Praxis zählen?"
+          },
+          {
+            "id": "patient-bekannt-a3",
+            "text": "Zählen rein administrative Kontakte ebenfalls?"
+          },
+          {
+            "id": "patient-bekannt-a4",
+            "text": "Spielt die Zeit seit dem letzten relevanten Kontakt eine Rolle?"
+          },
+          {
+            "id": "patient-bekannt-a5",
+            "text": "Ist die eindeutige Zuordnung zu einer vorhandenen Patientenakte Voraussetzung?"
+          },
+          {
+            "id": "patient-bekannt-a6",
+            "text": "Wie werden frühere Kontakte ohne aktuellen Praxissystem-Eintrag berücksichtigt?"
+          },
+          {
+            "id": "patient-bekannt-a7",
+            "text": "Welche Konstellationen gelten trotz Praxissystem-Eintrag nicht als bekannt?"
+          },
+          {
+            "id": "patient-bekannt-a8",
+            "text": "Welche weiteren Merkmale spielen eine Rolle oder ausdrücklich keine Rolle?"
+          }
+        ],
+        "createdAt": "2026-08-19T14:03:02.387Z",
+        "updatedAt": "2026-09-29T06:28:08.468Z"
+      },
+      {
+        "id": "patient-digital-kontaktieren",
+        "title": "Patient asynchron kontaktieren",
+        "description": "Es wird geklärt, wann eine asynchrone Nachricht an den Patienten nach dem Standard der Praxis als übermittelt gilt.",
+        "orientation_hint": "Versand, technische Zustellung und Kenntnisnahme sind unterschiedliche Nachweise. Diese Vorlage bietet mögliche Kontaktwege und Nachweisstufen zur Diskussion; die Praxis legt fest, wann dieser asynchrone Kontakt als erfolgt gilt. Eine unmittelbare Antwort wird nicht vorausgesetzt.",
+        "anchors": [
+          {
+            "id": "patient-digital-kontaktieren-a1",
+            "text": "Ist eine SMS für diesen Kontakt ein geeigneter Weg?"
+          },
+          {
+            "id": "patient-digital-kontaktieren-a2",
+            "text": "Ist eine E-Mail für diesen Kontakt ein geeigneter Weg?"
+          },
+          {
+            "id": "patient-digital-kontaktieren-a3",
+            "text": "Ist ein Patienten- oder Kommunikationsportal ein geeigneter Weg?"
+          },
+          {
+            "id": "patient-digital-kontaktieren-a4",
+            "text": "Genügt der dokumentierte Versand oder wird eine technische Zustellung benötigt?"
+          },
+          {
+            "id": "patient-digital-kontaktieren-a5",
+            "text": "Spielt eine bestätigte Kenntnisnahme für diese Einordnung eine Rolle?"
+          },
+          {
+            "id": "patient-digital-kontaktieren-a6",
+            "text": "Welche Angaben zum Kontaktversuch und seinem Ergebnis werden dokumentiert?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:31:44.471Z",
+        "updatedAt": "2026-09-29T06:31:44.471Z"
+      },
+      {
+        "id": "patient-informieren",
+        "title": "Patient informieren",
+        "description": "Eine relevante Information wird in diesem Praxisprozess mitgeteilt.",
+        "orientation_hint": "Betrifft ausschließlich den Informationsinhalt. Empfänger, Kontaktwege und Dokumentbereitstellung sind eigenständige Checkpoints.",
+        "anchors": [
+          {
+            "id": "patient-informieren-a1",
+            "text": "Über Eingang / Vorliegen eines Ergebnisses oder Befundes informieren"
+          },
+          {
+            "id": "patient-informieren-a2",
+            "text": "Über konkretes Ergebnis / konkreten Befund informieren"
+          },
+          {
+            "id": "patient-informieren-a3",
+            "text": "Über den nächsten erforderlichen Schritt informieren"
+          },
+          {
+            "id": "patient-informieren-a4",
+            "text": "Über erforderliche ärztliche Besprechung informieren"
+          },
+          {
+            "id": "patient-informieren-a5",
+            "text": "Über ärztlich festgestellte Diagnose informieren"
+          },
+          {
+            "id": "patient-informieren-a6",
+            "text": "Ausfall oder Verlegung eines gebuchten Termins mitteilen"
+          }
+        ],
+        "createdAt": "2026-09-26T01:11:08.632Z",
+        "updatedAt": "2026-09-26T01:11:08.632Z"
+      },
+      {
+        "id": "patient-telefonisch-kontaktieren",
+        "title": "Patient direkt kontaktieren",
+        "description": "Es wird geklärt, ob ein direkter Austausch mit dem Patienten nach der Definition der Praxis zustande gekommen ist.",
+        "orientation_hint": "Hier legt die Praxis fest, wann ein unmittelbarer Austausch mit dem Patienten als zustande gekommen gilt. Ein bloßer Versuch, die Dokumentation des Gesprächs und ein weiterer Kontaktversuch sind getrennte Sachverhalte.",
+        "anchors": [
+          {
+            "id": "patient-telefonisch-kontaktieren-a1",
+            "text": "Welche synchronen Kontaktwege gelten bei euch als direkter Patientenkontakt (z. B. Telefon oder persönliches Gespräch)?"
+          },
+          {
+            "id": "patient-telefonisch-kontaktieren-a2",
+            "text": "Reicht die Annahme des Anrufs, oder muss ein Gespräch mit dem Patienten stattgefunden haben?"
+          },
+          {
+            "id": "patient-telefonisch-kontaktieren-a3",
+            "text": "Wie grenzt ihr Mailbox, Rückrufbitte oder Gespräch mit einer anderen Person vom direkten Patientenkontakt ab?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:39:08.923Z",
+        "updatedAt": "2026-09-29T06:39:08.923Z"
+      },
+      {
+        "id": "persoenliche-vorstellung-bei-infektionsverdacht",
+        "title": "Persönliche Vorstellung bei Infektionsverdacht",
+        "description": "Es ist festgelegt, unter welchen Voraussetzungen ein Patient mit vermuteter ansteckender Erkrankung persönlich in die Praxis kommt.",
+        "orientation_hint": "Dringlichkeit und medizinische Soforteinschätzung bleiben eigenständige Prüfungen.",
+        "anchors": [
+          {
+            "id": "persoenliche-vorstellung-bei-infektionsverdacht-a1",
+            "text": "Persönliches Erscheinen erst nach Rücksprache und Freigabe"
+          },
+          {
+            "id": "persoenliche-vorstellung-bei-infektionsverdacht-a2",
+            "text": "Bei definierten Beschwerden direkt in einem festgelegten Infektionszeitfenster"
+          },
+          {
+            "id": "persoenliche-vorstellung-bei-infektionsverdacht-a3",
+            "text": "Zunächst Videosprechstunde, persönliche Vorstellung nur bei anschließendem Bedarf"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:07.090Z",
+        "updatedAt": "2026-09-25T20:57:07.090Z"
+      },
+      {
+        "id": "pflichtangaben-bei-digitaler-au-anfrage",
+        "title": "Pflichtangaben bei digitaler AU-Anfrage",
+        "description": "Es wird geklärt, ob die für die weitere Prüfung einer digitalen AU-Anfrage benötigten Angaben nach dem Standard der Praxis vorliegen.",
+        "orientation_hint": "Diese Vorlage betrifft nur die Vollständigkeit der Angaben in einer digital eingegangenen AU-Anfrage. Versicherungs- oder Abrechnungsstatus und die ärztliche Entscheidung über Arbeitsunfähigkeit sind eigenständige Sachverhalte. Die Praxis legt die benötigten Angaben und die prüfende Rolle fest.",
+        "anchors": [
+          {
+            "id": "pflichtangaben-bei-digitaler-au-anfrage-a1",
+            "text": "Welche Angaben zu Beschwerden und ihrem Beginn werden benötigt?"
+          },
+          {
+            "id": "pflichtangaben-bei-digitaler-au-anfrage-a2",
+            "text": "Welche Angaben zum gewünschten Zeitraum werden benötigt?"
+          },
+          {
+            "id": "pflichtangaben-bei-digitaler-au-anfrage-a3",
+            "text": "Welche weiteren Angaben zur Anfrage sind für die Prüfung relevant?"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:08.796Z",
+        "updatedAt": "2026-09-29T06:34:56.986Z"
+      },
+      {
+        "id": "private-handys-im-dienst-nutzen",
+        "title": "Private Handys im Dienst nutzen",
+        "description": "Dieser Checkpoint erfasst die Praxisentscheidung zur privaten Handynutzung während des Dienstes.",
+        "orientation_hint": "Mögliche Regelungsvarianten für Nutzung, Aufbewahrung und Ausnahmen erfassen. Berührungspunkte mit Patientenversorgung, Hygiene und Datenschutz prüfen.",
+        "anchors": [
+          {
+            "id": "private-handys-im-dienst-nutzen-a1",
+            "text": "Ist private Handynutzung erlaubt, und falls ja, wann, wo und unter welchen Bedingungen? Welche Ausnahmen und Grenzen gelten?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:17.864Z",
+        "updatedAt": "2026-09-26T01:15:07.267Z"
+      },
+      {
+        "id": "raumtemperatur-nach-schichtende-einstellen",
+        "title": "Raumtemperatur nach Schichtende einstellen",
+        "description": "Dieser Checkpoint erfasst die Praxisregel für Heizung, Lüftung und Klimatisierung nach dem Dienst.",
+        "orientation_hint": "Mögliche Varianten je Raum erfassen: unverändert lassen, absenken, ausschalten oder weiterlaufen lassen. Technische und betriebliche Anforderungen bei der Entscheidung prüfen.",
+        "anchors": [
+          {
+            "id": "raumtemperatur-nach-schichtende-einstellen-a1",
+            "text": "Welche Einstellung gilt nach Schichtende für welchen Raum oder welches System, und wer ist dafür zuständig?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:28.090Z",
+        "updatedAt": "2026-09-26T01:15:13.963Z"
+      },
+      {
+        "id": "schichtbeginn-praxisbereitschaft-pruefen",
+        "title": "Räume zum Schichtbeginn bereit",
+        "description": "Es wird geklärt, ob die vorgesehenen Praxisräume nach der Definition der Praxis zum Schichtbeginn bereit sind.",
+        "orientation_hint": "Die Praxis legt fest, wann die für den Dienst vorgesehenen Räume als vorbereitet gelten. Hygienematerial und Gerätebereitschaft werden in eigenen Checkpoints festgelegt; der Umgang mit Abweichungen gehört in einen Fall oder eine Kette.",
+        "anchors": [
+          {
+            "id": "schichtbeginn-praxisbereitschaft-pruefen-a1",
+            "text": "Welche Merkmale müssen die benötigten Räume zu Schichtbeginn erfüllen; gelten je Raum unterschiedliche Anforderungen?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:21.104Z",
+        "updatedAt": "2026-09-29T06:45:02.166Z"
+      },
+      {
+        "id": "schichtende-raeume-sichern",
+        "title": "Schichtende: Räume sichern",
+        "description": "Es wird geklärt, ob Zugänge und Öffnungen der Praxisräume nach der Festlegung der Praxis für das Schichtende gesichert sind.",
+        "orientation_hint": "Die Praxis legt fest, welche Zugänge und Öffnungen nach Schichtende gesichert sein müssen und welche Ausnahmen gelten. Beleuchtung, Gerätebetrieb, IT und Raumtemperatur sind getrennte Festlegungen.",
+        "anchors": [
+          {
+            "id": "schichtende-raeume-sichern-a1",
+            "text": "Welche Türen, Fenster und sonstigen Zugänge müssen bei euch nach Schichtende in welchem Zustand sein?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:24.694Z",
+        "updatedAt": "2026-09-29T06:43:07.975Z"
+      },
+      {
+        "id": "schriftliche-bearbeitung-von-patientennachrichten",
+        "title": "Schriftliche Bearbeitung von Patientennachrichten",
+        "description": "Es ist festgelegt, welche eingehenden Patientenanliegen schriftlich abschließend beantwortet werden dürfen.",
+        "orientation_hint": "Die Einordnung des Anliegens ist von der Wahl des Eingangskanals und einer ärztlichen Vorlage zu trennen.",
+        "anchors": [
+          {
+            "id": "schriftliche-bearbeitung-von-patientennachrichten-a1",
+            "text": "Nur organisatorische Anliegen schriftlich abschließen"
+          },
+          {
+            "id": "schriftliche-bearbeitung-von-patientennachrichten-a2",
+            "text": "Definierte medizinische Standardanfragen schriftlich abschließen"
+          },
+          {
+            "id": "schriftliche-bearbeitung-von-patientennachrichten-a3",
+            "text": "Medizinische Beratung und Befundbesprechung ausschließlich im direkten Gespräch"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:03.563Z",
+        "updatedAt": "2026-09-25T20:57:03.563Z"
+      },
+      {
+        "id": "shit-instabilitaetszeichen-erkennen",
+        "title": "SHIT-Instabilitätszeichen erkennen",
+        "description": "Es wird erkannt, ob bei einem Patienten Hinweise auf Kreislaufinstabilität vorliegen, die eine sofortige ärztliche Beurteilung erfordern.",
+        "orientation_hint": "SHIT ist eine Merkhilfe für Instabilitätszeichen, vor allem bei Herzrhythmusstörungen, und kein numerischer Score. Die MFA erkennt Hinweise; die medizinische Beurteilung und Entscheidung übernimmt die Ärztin oder der Arzt.",
+        "anchors": [
+          {
+            "id": "shit-instabilitaetszeichen-erkennen-a1",
+            "text": "S – Synkope oder Bewusstseinsstörung erkennbar?"
+          },
+          {
+            "id": "shit-instabilitaetszeichen-erkennen-a2",
+            "text": "H – Hypotonie oder Schockzeichen erkennbar?"
+          },
+          {
+            "id": "shit-instabilitaetszeichen-erkennen-a3",
+            "text": "I – Hinweise auf akute Herzinsuffizienz, etwa schwere Atemnot, erkennbar?"
+          },
+          {
+            "id": "shit-instabilitaetszeichen-erkennen-a4",
+            "text": "T – Thoraxschmerz als möglicher Hinweis auf Myokardischämie vorhanden?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:33:33.170Z",
+        "updatedAt": "2026-09-25T19:33:33.170Z"
+      },
+      {
+        "id": "speisen-und-getraenke-im-dienst",
+        "title": "Speisen und Getränke im Dienst",
+        "description": "Dieser Checkpoint sammelt die Entscheidung der Praxis, wo und wann eigene Speisen und Getränke mitgebracht und verzehrt werden dürfen.",
+        "orientation_hint": "Mögliche Orte und Situationen erfassen, etwa Pausenbereich, Empfang, Büro und Behandlungsraum. Speisen und Getränke können unterschiedlich geregelt sein.",
+        "anchors": [
+          {
+            "id": "speisen-und-getraenke-im-dienst-a1",
+            "text": "Wo und wann sind eigene Speisen und Getränke erlaubt, eingeschränkt oder nicht erlaubt? Gelten für Getränke andere Vorgaben als für Speisen?"
+          }
+        ],
+        "createdAt": "2026-09-26T00:58:38.479Z",
+        "updatedAt": "2026-09-26T01:14:59.470Z"
+      },
+      {
+        "id": "sprache-externer-medizinischer-unterlagen",
+        "title": "Sprache externer medizinischer Unterlagen",
+        "description": "Es ist festgelegt, in welchen Sprachen externe medizinische Unterlagen als Behandlungsgrundlage angenommen werden und wann eine Übersetzung benötigt wird.",
+        "orientation_hint": "Die Verständigung im Patientengespräch wird separat geprüft.",
+        "anchors": [
+          {
+            "id": "sprache-externer-medizinischer-unterlagen-a1",
+            "text": "Unterlagen auf Deutsch annehmen"
+          },
+          {
+            "id": "sprache-externer-medizinischer-unterlagen-a2",
+            "text": "Unterlagen auf Deutsch oder Englisch annehmen"
+          },
+          {
+            "id": "sprache-externer-medizinischer-unterlagen-a3",
+            "text": "Weitere definierte Sprachen entsprechend der behandelnden ärztlichen Sprachkompetenz annehmen"
+          },
+          {
+            "id": "sprache-externer-medizinischer-unterlagen-a4",
+            "text": "Bei nicht sicher verständlichen Unterlagen eine Übersetzung anfordern"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:15.210Z",
+        "updatedAt": "2026-09-25T20:57:15.210Z"
+      },
+      {
+        "id": "teilnahme-an-fort--oder-weiterbildung-entscheiden",
+        "title": "Teilnahme an Fort- oder Weiterbildung entscheiden",
+        "description": "Legt fest, wer über die Teilnahme entscheidet und welche Kriterien dabei gelten.",
+        "orientation_hint": "Die Entscheidung über Teilnahme von Zeit- und Kostenregelung trennen; unterschiedliche Entscheidungswege nach Anlass oder Berufsgruppe sind möglich.",
+        "anchors": [
+          {
+            "id": "teilnahme-an-fort--oder-weiterbildung-entscheiden-a1",
+            "text": "Wer entscheidet über die Teilnahme, und muss eine Maßnahme vor der Anmeldung genehmigt werden?"
+          },
+          {
+            "id": "teilnahme-an-fort--oder-weiterbildung-entscheiden-a2",
+            "text": "Nach welchen Kriterien werden beantragte, angebotene und von der Praxis veranlasste Maßnahmen behandelt?"
+          }
+        ],
+        "createdAt": "2026-09-26T01:27:52.955Z",
+        "updatedAt": "2026-09-26T01:27:52.955Z"
+      },
+      {
+        "id": "termin-vereinbaren",
+        "title": "Termin vereinbaren",
+        "description": "Es wird geklärt, ob für den vorgesehenen Anlass ein konkreter, nach Praxisstandard vereinbarter Termin besteht.",
+        "orientation_hint": "Diese Vorlage klärt, ab wann ein konkreter Termin nach Praxisstandard als vereinbart gilt. Ob eine Einbestellung erforderlich ist, welche Vorbereitung der Patient benötigt und wie er informiert wird, sind eigene Festlegungen.",
+        "anchors": [
+          {
+            "id": "termin-vereinbaren-a1",
+            "text": "Muss die Terminart für diesen Anlass feststehen?"
+          },
+          {
+            "id": "termin-vereinbaren-a2",
+            "text": "Müssen Datum und Uhrzeit feststehen, oder gelten auch andere Terminformen?"
+          },
+          {
+            "id": "termin-vereinbaren-a3",
+            "text": "Ist der Eintrag im Praxissystem für die Vereinbarung erforderlich?"
+          },
+          {
+            "id": "termin-vereinbaren-a4",
+            "text": "Wann gilt die Vereinbarung als bestätigt: bei Eintrag, Zusage des Patienten oder erst nach Mitteilung?"
+          },
+          {
+            "id": "termin-vereinbaren-a5",
+            "text": "Wie unterscheiden sich vorläufig reservierte, bestätigte und später geänderte Termine?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:39:33.989Z",
+        "updatedAt": "2026-09-29T06:39:33.989Z"
+      },
+      {
+        "id": "termin-vorhanden",
+        "title": "Termin vorhanden",
+        "description": "Es wird geklärt, ob für den aktuellen Anlass ein nach der Definition der Praxis gültiger Termin besteht.",
+        "orientation_hint": "Diese Vorlage klärt nur, ob für den betrachteten Anlass ein nach Praxisdefinition gültiger Termin besteht. Ort der Buchung, Anlassbezug und Terminstatus sind mögliche Kriterien; die Vereinbarung oder Änderung eines Termins ist ein anderer Baustein.",
+        "anchors": [
+          {
+            "id": "termin-vorhanden-a1",
+            "text": "Zählt nur ein in der eigenen Praxis gebuchter Termin?"
+          },
+          {
+            "id": "termin-vorhanden-a2",
+            "text": "Werden extern vereinbarte oder empfohlene Folgetermine berücksichtigt?"
+          },
+          {
+            "id": "termin-vorhanden-a3",
+            "text": "Welche Terminstatus gelten als vorhanden, etwa reserviert oder bestätigt?"
+          },
+          {
+            "id": "termin-vorhanden-a4",
+            "text": "Muss der Termin genau diesem Anlass zugeordnet sein?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:32:30.735Z",
+        "updatedAt": "2026-09-29T06:32:30.735Z"
+      },
+      {
+        "id": "terminanliegen-geklaert",
+        "title": "Terminanliegen geklärt",
+        "description": "Es wird geklärt, ob das Anliegen hinter einer Terminanfrage nach der Definition der Praxis ausreichend beschrieben ist.",
+        "orientation_hint": "Die Praxis legt fest, welche Angaben zum Anliegen einer patienteninitiierten Terminanfrage nötig sind, um sie einem passenden weiteren Ablauf zuzuordnen. Die eigentliche Terminbuchung und die medizinische Dringlichkeitsbeurteilung sind eigene Schritte.",
+        "anchors": [
+          {
+            "id": "terminanliegen-geklaert-a1",
+            "text": "Welche Angaben zum Anlass braucht ihr, um die Anfrage einer Terminart oder einem anderen Weg zuzuordnen?"
+          },
+          {
+            "id": "terminanliegen-geklaert-a2",
+            "text": "Müssen gewünschter Zeitraum oder besondere organisatorische Bedingungen bereits bekannt sein?"
+          },
+          {
+            "id": "terminanliegen-geklaert-a3",
+            "text": "Wie wird eine noch unklare Anfrage von einem geklärten Terminanliegen abgegrenzt?"
+          }
+        ],
+        "createdAt": "2026-09-29T08:25:19.003Z",
+        "updatedAt": "2026-09-29T08:25:19.003Z"
+      },
+      {
+        "id": "ueberweisung-ohne-erneuten-arztkontakt",
+        "title": "Überweisung ohne erneuten Arztkontakt",
+        "description": "Es ist festgelegt, wann eine angefragte Überweisung ohne erneuten Arzttermin bearbeitet werden kann.",
+        "orientation_hint": "Anlass und konkrete Fragestellung der Überweisung werden in eigenen Checkpoints geklärt.",
+        "anchors": [
+          {
+            "id": "ueberweisung-ohne-erneuten-arztkontakt-a1",
+            "text": "Bei bekannter Erkrankung und dokumentierter regelmäßiger fachärztlicher Kontrolle"
+          },
+          {
+            "id": "ueberweisung-ohne-erneuten-arztkontakt-a2",
+            "text": "Nur bei vorab dokumentierter ärztlicher Freigabe"
+          },
+          {
+            "id": "ueberweisung-ohne-erneuten-arztkontakt-a3",
+            "text": "Jede neue Anfrage vor Ausstellung ärztlich prüfen"
+          },
+          {
+            "id": "ueberweisung-ohne-erneuten-arztkontakt-a4",
+            "text": "Bei neuen oder unklaren Beschwerden zunächst Sprechstunde"
+          }
+        ],
+        "createdAt": "2026-09-25T20:57:10.943Z",
+        "updatedAt": "2026-09-25T20:57:10.943Z"
+      },
+      {
+        "id": "unterlagen-anfordern",
+        "title": "Unterlagen anfordern",
+        "description": "Es wird geklärt, ob die benötigten externen Unterlagen auf dem für sie festgelegten Weg angefordert wurden.",
+        "orientation_hint": "Diese Vorlage klärt, welche benötigten externen Unterlagen bei welcher Stelle und durch wen angefordert werden und wann die Anforderung als veranlasst gilt. Ob die Unterlagen eingegangen sind, ihre spätere Prüfung und eine Wiedervorlage sind eigene Sachverhalte.",
+        "anchors": [
+          {
+            "id": "unterlagen-anfordern-a1",
+            "text": "Praxis fordert die Unterlagen selbst an"
+          },
+          {
+            "id": "unterlagen-anfordern-a2",
+            "text": "Patient wird gebeten, die Unterlagen selbst anzufordern bzw. zu beschaffen"
+          },
+          {
+            "id": "unterlagen-anfordern-a3",
+            "text": "Vom Patienten"
+          },
+          {
+            "id": "unterlagen-anfordern-a4",
+            "text": "Von einer anderen Arztpraxis / einem Facharzt"
+          },
+          {
+            "id": "unterlagen-anfordern-a5",
+            "text": "Vom Krankenhaus"
+          },
+          {
+            "id": "unterlagen-anfordern-a6",
+            "text": "Von Pflegeeinrichtung / Pflegedienst"
+          },
+          {
+            "id": "unterlagen-anfordern-a7",
+            "text": "Von einer anderen beteiligten Stelle"
+          },
+          {
+            "id": "unterlagen-anfordern-a8",
+            "text": "Benötigte Unterlagen sind konkret benannt"
+          },
+          {
+            "id": "unterlagen-anfordern-a9",
+            "text": "Über welchen Kontaktweg gilt die Anforderung bei der zuständigen Stelle als übermittelt?"
+          },
+          {
+            "id": "unterlagen-anfordern-a10",
+            "text": "Wann gilt die Anforderung als veranlasst, auch wenn die Unterlagen noch nicht eingegangen sind?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:55:52.447Z",
+        "updatedAt": "2026-09-29T06:55:52.447Z"
+      },
+      {
+        "id": "urlaub-anhand-der-dienstbesetzung-entscheiden",
+        "title": "Kriterien der Urlaubsentscheidung",
+        "description": "Es ist festgelegt, welche Kriterien die Praxis bei der Entscheidung über einen Urlaubsantrag anwendet.",
+        "orientation_hint": "Betrifft die von der Praxis gewählten organisatorischen Kriterien für eine konkrete Urlaubsentscheidung.",
+        "anchors": [
+          {
+            "id": "urlaub-anhand-der-dienstbesetzung-entscheiden-a1",
+            "text": "Freigabe nur, wenn je Sprechstunde mindestens eine ärztliche Person und zwei MFA eingeplant bleiben."
+          },
+          {
+            "id": "urlaub-anhand-der-dienstbesetzung-entscheiden-a2",
+            "text": "Je Funktion ist höchstens ein Teammitglied gleichzeitig im Urlaub."
+          },
+          {
+            "id": "urlaub-anhand-der-dienstbesetzung-entscheiden-a3",
+            "text": "Gleichzeitiger Urlaub mehrerer MFA ist bei namentlich feststehender Schichtvertretung möglich."
+          },
+          {
+            "id": "urlaub-anhand-der-dienstbesetzung-entscheiden-a4",
+            "text": "Der Urlaub wird vor Festlegung einer Vertretung genehmigt; die Besetzung wird danach organisiert."
+          }
+        ],
+        "createdAt": "2026-09-26T01:08:49.866Z",
+        "updatedAt": "2026-09-26T01:19:23.003Z"
+      },
+      {
+        "id": "versicherungsnachweis-vorhanden",
+        "title": "Versicherungsnachweis vorhanden",
+        "description": "Es wird geklärt, ob für den Patienten nach der Definition der Praxis ein zuordenbarer und für den Vorgang geeigneter Versicherungsnachweis vorliegt.",
+        "orientation_hint": "Diese Vorlage klärt nur, welche Unterlagen oder elektronischen Angaben für die Praxis als vorhandener Versicherungsnachweis gelten und wie deren Zuordnung und Aktualität geprüft werden. Die Abrechnungsgrundlage wird separat festgelegt; verbindliche Vorgaben sind dabei zu beachten.",
+        "anchors": [
+          {
+            "id": "versicherungsnachweis-vorhanden-a1",
+            "text": "Welche Formen eines Versicherungsnachweises berücksichtigt ihr für diesen Vorgang?"
+          },
+          {
+            "id": "versicherungsnachweis-vorhanden-a2",
+            "text": "Für welchen Zeitraum oder Anlass muss der Nachweis aktuell sein?"
+          },
+          {
+            "id": "versicherungsnachweis-vorhanden-a3",
+            "text": "Woran erkennt ihr, dass der Nachweis dem richtigen Patienten zugeordnet und ausreichend vollständig ist?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:51:24.869Z",
+        "updatedAt": "2026-09-29T06:51:24.869Z"
+      },
+      {
+        "id": "verspaetung-zum-termin",
+        "title": "Verspätung zum Termin",
+        "description": "Es wird geklärt, ob das Eintreffen nach einem vereinbarten Zeitpunkt nach der Definition der Praxis als Verspätung gilt.",
+        "orientation_hint": "Diese Vorlage zeigt mögliche Arten, Verspätung zu definieren. Die Praxis legt Bezugspunkt, Toleranz und weitere für sie relevante Merkmale selbst fest. Ob ein Termin trotzdem stattfindet, ist ein anderer Sachverhalt.",
+        "anchors": [
+          {
+            "id": "verspaetung-zum-termin-a1",
+            "text": "Welcher vereinbarte Zeitpunkt ist der Bezugspunkt für die Verspätung?"
+          },
+          {
+            "id": "verspaetung-zum-termin-a2",
+            "text": "Gilt eine feste Toleranzzeit oder hängt die Grenze von der Terminart ab?"
+          },
+          {
+            "id": "verspaetung-zum-termin-a3",
+            "text": "Ändert eine vorherige Mitteilung die Einordnung als verspätet?"
+          },
+          {
+            "id": "verspaetung-zum-termin-a4",
+            "text": "Gilt eine später vereinbarte Terminänderung als neuer Bezugspunkt?"
+          },
+          {
+            "id": "verspaetung-zum-termin-a5",
+            "text": "Spielt der Grund für die Verspätung bei der Definition eine Rolle?"
+          },
+          {
+            "id": "verspaetung-zum-termin-a6",
+            "text": "Welche weiteren Merkmale sind für die Praxis relevant oder ausdrücklich nicht relevant?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:24:18.398Z",
+        "updatedAt": "2026-09-29T06:26:57.509Z"
+      },
+      {
+        "id": "verstaendigung-bei-sprachbarriere",
+        "title": "Verständigung bei Sprachbarriere",
+        "description": "Es ist geklärt, ob die Verständigung für Beschwerden, Aufklärung und Einwilligung im jeweiligen Kontakt ausreichend gesichert ist.",
+        "orientation_hint": "Für aufschiebbare Behandlungen gilt die Praxisregel: keine Behandlung ohne ausreichend gesicherte Verständigung durch eine Dolmetschperson. Eine mögliche Notfallsituation wird trotz Sprachbarriere sofort eingeschätzt.",
+        "anchors": [
+          {
+            "id": "verstaendigung-bei-sprachbarriere-a1",
+            "text": "Ist eine direkte Verständigung in einer gemeinsamen Sprache ausreichend möglich?"
+          },
+          {
+            "id": "verstaendigung-bei-sprachbarriere-a2",
+            "text": "Ist bei fehlender gemeinsamer Verständigung eine geeignete Dolmetschperson verfügbar?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:23:02.672Z",
+        "updatedAt": "2026-09-25T19:23:02.672Z"
+      },
+      {
+        "id": "vertretung-bei-abwesenheit-zuordnen",
+        "title": "Vertretung bei Abwesenheit zuordnen",
+        "description": "Es ist festgelegt, wer die Aufgaben einer abwesenden Person in der Praxis übernimmt und wer bei fehlender Besetzung entscheidet.",
+        "orientation_hint": "Betrifft die Zuordnung der Vertretung; welche offenen Aufgaben übergehen, wird getrennt festgelegt.",
+        "anchors": [
+          {
+            "id": "vertretung-bei-abwesenheit-zuordnen-a1",
+            "text": "Bei geplanter Abwesenheit wird eine namentliche Vertretung vorab zugeordnet."
+          },
+          {
+            "id": "vertretung-bei-abwesenheit-zuordnen-a2",
+            "text": "Bei kurzfristigem Ausfall übernimmt die diensthabende Leitung die Neuzuordnung."
+          },
+          {
+            "id": "vertretung-bei-abwesenheit-zuordnen-a3",
+            "text": "Die Aufgaben werden nach Funktion an mehrere verfügbare Teammitglieder verteilt."
+          },
+          {
+            "id": "vertretung-bei-abwesenheit-zuordnen-a4",
+            "text": "Bei fehlender interner Besetzung wird eine externe Vertretung angefragt."
+          }
+        ],
+        "createdAt": "2026-09-26T01:09:02.181Z",
+        "updatedAt": "2026-09-26T01:17:42.588Z"
+      },
+      {
+        "id": "vorlauf-fuer-urlaubsantrag",
+        "title": "Vorlauf für Urlaubsantrag",
+        "description": "Es ist festgelegt, wie weit vor dem gewünschten Urlaubsbeginn ein regulärer Urlaubsantrag eingereicht werden soll.",
+        "orientation_hint": "Betrifft den Zeitpunkt regulärer Urlaubsanträge. Für kurzfristige Anträge kann die Praxis eine abweichende Regel formulieren.",
+        "anchors": [
+          {
+            "id": "vorlauf-fuer-urlaubsantrag-a1",
+            "text": "Ein regulärer Urlaubsantrag liegt mindestens zwei Wochen vor Urlaubsbeginn vor."
+          },
+          {
+            "id": "vorlauf-fuer-urlaubsantrag-a2",
+            "text": "Ein regulärer Urlaubsantrag liegt mindestens vier Wochen vor Urlaubsbeginn vor."
+          },
+          {
+            "id": "vorlauf-fuer-urlaubsantrag-a3",
+            "text": "Ein regulärer Urlaubsantrag liegt mindestens sechs Wochen vor Urlaubsbeginn vor."
+          },
+          {
+            "id": "vorlauf-fuer-urlaubsantrag-a4",
+            "text": "Haupturlaube werden bis zum 31. Januar des Urlaubsjahres beantragt."
+          }
+        ],
+        "createdAt": "2026-09-26T01:08:43.518Z",
+        "updatedAt": "2026-09-26T01:18:58.249Z"
+      },
+      {
+        "id": "wartephase-in-der-praxis-vorgesehen",
+        "title": "Wartephase in der Praxis vorgesehen",
+        "description": "Es wird geklärt, ob der Patient für den aktuellen Vorgang nach Praxisstandard in der Praxis auf eine vorgesehene Leistung warten soll.",
+        "orientation_hint": "Eine Wartephase kann zu einem bestehenden Termin oder auch ohne vorherigen Termin vorgesehen sein, etwa vor einer spontan angeordneten Leistung. Die Praxis legt fest, wann ein Vorgang in den Warteablauf aufgenommen ist. Ob und wann die Leistung tatsächlich erfolgt, bleibt eine eigene Entscheidung.",
+        "anchors": [
+          {
+            "id": "wartephase-in-der-praxis-vorgesehen-a1",
+            "text": "Was bedeutet bei euch eine Wartephase vor Ort, und für welche vorgesehene Leistung gilt sie?"
+          },
+          {
+            "id": "wartephase-in-der-praxis-vorgesehen-a2",
+            "text": "Kann eine Wartephase auch ohne bereits vereinbarten Termin vorgesehen sein?"
+          },
+          {
+            "id": "wartephase-in-der-praxis-vorgesehen-a3",
+            "text": "Wer legt bei euch fest, ob ein Vorgang in den Warteablauf aufgenommen wird?"
+          },
+          {
+            "id": "wartephase-in-der-praxis-vorgesehen-a4",
+            "text": "Wie grenzt ihr eine Wartephase vor Ort von Rückruf oder einem späteren Termin ab?"
+          }
+        ],
+        "createdAt": "2026-09-29T07:19:53.373Z",
+        "updatedAt": "2026-09-29T07:19:53.373Z"
+      },
+      {
+        "id": "zeit-fuer-fort--oder-weiterbildung-regeln",
+        "title": "Zeit für Fort- oder Weiterbildung regeln",
+        "description": "Erfasst die zeitliche Behandlung einer Fort- oder Weiterbildung für die betroffene Person.",
+        "orientation_hint": "Arbeitszeit, Freistellung und private Zeit getrennt von Kosten behandeln. Rechtliche, tarifliche und vertragliche Vorgaben je Maßnahme prüfen.",
+        "anchors": [
+          {
+            "id": "zeit-fuer-fort--oder-weiterbildung-regeln-a1",
+            "text": "Wie werden Veranstaltungszeit und Freistellung behandelt: als Arbeitszeit, bezahlte oder unbezahlte Freistellung, Urlaub oder private Zeit, soweit jeweils zulässig?"
+          },
+          {
+            "id": "zeit-fuer-fort--oder-weiterbildung-regeln-a2",
+            "text": "Wie werden Reisezeiten, Wochenenden und mehrtägige Maßnahmen behandelt?"
+          }
+        ],
+        "createdAt": "2026-09-26T01:27:54.799Z",
+        "updatedAt": "2026-09-26T01:27:54.799Z"
+      },
+      {
+        "id": "zeitliche-dynamik-der-beschwerden",
+        "title": "Zeitliche Dynamik der Beschwerden",
+        "description": "Es wird geklärt, ob Beginn oder Veränderung der Beschwerden die von der Praxis festgelegten zeitlichen Merkmale erfüllt.",
+        "orientation_hint": "Mögliche Praxisdefinitionen berücksichtigen einen festen Zeitraum seit Beginn, eine kurzfristige Verschlechterung eines bekannten Zustands oder beides. Die Praxis legt fest, welche Zeiträume und Veränderungen für sie gelten. Beschwerdeanlass, Dringlichkeit und Aufnahme in die Akutsprechstunde werden getrennt beurteilt.",
+        "anchors": [
+          {
+            "id": "zeitliche-dynamik-der-beschwerden-a1",
+            "text": "Welcher Zeitraum seit erstmaligem Auftreten gilt bei euch als zeitlich neu (z. B. Stunden oder Tage)?"
+          },
+          {
+            "id": "zeitliche-dynamik-der-beschwerden-a2",
+            "text": "Kann auch eine neue Verschlechterung eines länger bestehenden Beschwerdebildes das zeitliche Merkmal erfüllen, und wie beschreibt ihr diese Veränderung?"
+          }
+        ],
+        "createdAt": "2026-09-25T19:21:47.042Z",
+        "updatedAt": "2026-09-29T06:40:00.395Z"
+      },
+      {
+        "id": "zeitpunkt-der-einbestellung-festlegen",
+        "title": "Zeitpunkt der Einbestellung festlegen",
+        "description": "Es wird geklärt, welches Zeitfenster für eine Einbestellung zu diesem Anlass nach dem Standard der Praxis gilt.",
+        "orientation_hint": "Diese Vorlage betrifft das Zeitfenster, nicht die Buchung eines konkreten Termins. Die Praxis bestimmt Bezugsereignis, mögliche früheste oder späteste Zeitpunkte, Anlassbezug und Zuständigkeit; die Plattform setzt keinen Zeitraum fest.",
+        "anchors": [
+          {
+            "id": "zeitpunkt-der-einbestellung-festlegen-a1",
+            "text": "Ist ein Abstand zu einem früheren Ereignis maßgeblich, und welches Ereignis ist der Bezugspunkt?"
+          },
+          {
+            "id": "zeitpunkt-der-einbestellung-festlegen-a2",
+            "text": "Hängt das Zeitfenster vom Anlass oder von einer fachlich festgelegten Priorität ab?"
+          },
+          {
+            "id": "zeitpunkt-der-einbestellung-festlegen-a3",
+            "text": "Legt die Praxis einen frühesten, einen spätesten oder beide Zeitpunkte fest?"
+          },
+          {
+            "id": "zeitpunkt-der-einbestellung-festlegen-a4",
+            "text": "Wer bestimmt das Zeitfenster bei unklarer Grundlage?"
+          }
+        ],
+        "createdAt": "2026-09-29T06:30:19.800Z",
+        "updatedAt": "2026-09-29T06:30:19.800Z"
+      },
+      {
+        "id": "zeitpunkt-der-information-bei-terminausfall",
+        "title": "Zeitpunkt der Information bei Terminausfall",
+        "description": "Es ist festgelegt, bis wann betroffene Patienten über eine ausfallende oder verlegte Sprechstunde informiert werden.",
+        "orientation_hint": "Betrifft ausschließlich die Frist der Mitteilung; Kontaktweg, Inhalt und erneute Kontaktversuche sind eigenständige Checkpoints.",
+        "anchors": [
+          {
+            "id": "zeitpunkt-der-information-bei-terminausfall-a1",
+            "text": "Bei kurzfristigem Ausfall erfolgt die Mitteilung unmittelbar nach der Umplanungsentscheidung."
+          },
+          {
+            "id": "zeitpunkt-der-information-bei-terminausfall-a2",
+            "text": "Die Mitteilung erfolgt spätestens am selben Praxistag nach Bekanntwerden des Ausfalls."
+          },
+          {
+            "id": "zeitpunkt-der-information-bei-terminausfall-a3",
+            "text": "Bei geplanter Abwesenheit erfolgt die Mitteilung vor Beginn der Abwesenheit."
+          },
+          {
+            "id": "zeitpunkt-der-information-bei-terminausfall-a4",
+            "text": "Bei geplanter Verlegung erfolgt die Mitteilung spätestens sieben Tage vor dem Termin."
+          }
+        ],
+        "createdAt": "2026-09-26T01:09:22.000Z",
+        "updatedAt": "2026-09-26T01:17:48.959Z"
+      }
+    ]
+  },
+  "libraryCaseProfile": {
+    "count": 77,
+    "ids": [
+      "abwesenheit-in-dienst--und-terminplanung-eintragen",
+      "aerztliche-fort--oder-weiterbildung-organisieren",
+      "aerztliche-fort--oder-weiterbildung-steht-an",
+      "aerztliche-soforteinschaetzung-veranlassen",
+      "akteneinsicht",
+      "akutsprechstunde-ohne-erfuellte-akutkriterien",
+      "anfrage-zur-akutsprechstunde",
+      "arbeitskleidung-wechseln-und-aufbereiten",
+      "befundanfrage",
+      "check-up-laborwerte-vorliegend",
+      "digitale-au-anfrage-eingegangen",
+      "dokument-bereitstellen",
+      "dokument-fehlzugeordnet",
+      "dokument-nicht-zuordenbar",
+      "dokument-unklar",
+      "dokument-weiterleiten",
+      "dolmetschperson-organisieren",
+      "eingang-mit-maengeln",
+      "eingehenden-patientenkontakt-dokumentieren",
+      "erneuten-kontaktversuch-durchfuehren",
+      "facharztbericht-bearbeiten",
+      "facharztbericht-eingegangen",
+      "fort--oder-weiterbildung-einer-mfa-organisieren",
+      "fort--oder-weiterbildung-einer-mfa-steht-an",
+      "fremdsprachige-medizinische-unterlagen-eingegangen",
+      "geplante-abwesenheit-vorbereiten",
+      "gesundheits-check-up-angefragt",
+      "infektionsverdacht-gemeldet",
+      "kosten-der-fort--oder-weiterbildung-regeln",
+      "krankenhausbrief-eingegangen",
+      "kurzfristiger-personalausfall",
+      "laborbefund-eingegangen",
+      "laborbefund-fachlich-bewerten",
+      "laborbefund-mitteilen",
+      "laborbefund-zur-besprechung-freigeben",
+      "laborumfang-beim-check-up-klaeren",
+      "medikamentenaenderung",
+      "mfa-beendet-die-letzte-schicht",
+      "mfa-beginnt-den-dienst-in-arbeitskleidung",
+      "mfa-benutzt-ein-privates-handy-waehrend-der-schicht",
+      "mfa-bringt-eigene-speisen-und-getraenke-mit",
+      "mfa-oeffnet-die-praxis-zur-fruehschicht",
+      "neupatient",
+      "offene-vorgaenge-bei-abwesenheit-uebergeben",
+      "patient-bringt-unterlagen",
+      "patient-erinnern",
+      "patient-erscheint-verspaetet-zum-termin",
+      "patient-gibt-selbst-gewonnene-probe-ab",
+      "patient-informieren",
+      "patient-mit-sprachbarriere",
+      "patient-nicht-erreichbar",
+      "patient-ohne-unterlagen",
+      "patientenanruf-eingegangen",
+      "patientennachricht-eingegangen",
+      "persoenliche-vorstellung-bei-infektionsverdacht",
+      "raumtemperatur-nach-schichtende-einstellen",
+      "rezept-erstellen",
+      "rezeptanfrage-ohne-arzt",
+      "rueckrufbitte",
+      "shit-instabilitaetszeichen-bei-rhythmusstoerung",
+      "speisen-und-getraenke-im-dienst",
+      "teammitglied-meldet-arbeitsunfaehigkeit",
+      "termin-durch-personalausfall-betroffen",
+      "terminanfrage",
+      "terminvereinbarung",
+      "ueberweisung-erstellen",
+      "ueberweisungsanfrage",
+      "unterlagen-anfordern",
+      "unterlagen-aushaendigen",
+      "unzustellbare-post",
+      "urlaubsantrag-eingegangen",
+      "verlaufskontakt",
+      "verschlechterung-gemeldet",
+      "versicherungsnachweis-fehlt",
+      "vertretung-bei-abwesenheit-zuordnen",
+      "wiedervorlage-vormerken",
+      "zeit-fuer-fort--oder-weiterbildung-regeln"
+    ],
+    "checkpointRefs": [
+      {
+        "id": "abwesenheit-in-dienst--und-terminplanung-eintragen",
+        "checkpoint_refs": [
+          {
+            "group": "Terminressourcen",
+            "checkpointId": "abwesenheit-in-dienst--und-terminplanung-eintragen"
+          }
+        ]
+      },
+      {
+        "id": "aerztliche-fort--oder-weiterbildung-organisieren",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztlich: Zeit",
+            "checkpointId": "zeit-fuer-fort--oder-weiterbildung-regeln"
+          }
+        ]
+      },
+      {
+        "id": "aerztliche-fort--oder-weiterbildung-steht-an",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztlich: Anlass",
+            "checkpointId": "fort--oder-weiterbildungsanlass-einordnen"
+          },
+          {
+            "group": "Ärztlich: Anforderungen",
+            "checkpointId": "aerztliche-fort--und-weiterbildungsvorgaben-klaeren"
+          },
+          {
+            "group": "Ärztlich: Teilnahme",
+            "checkpointId": "teilnahme-an-fort--oder-weiterbildung-entscheiden"
+          }
+        ]
+      },
+      {
+        "id": "aerztliche-soforteinschaetzung-veranlassen",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztliche Einschätzung",
+            "checkpointId": "aerztliche-soforteinschaetzung-veranlassen"
+          }
+        ]
+      },
+      {
+        "id": "akteneinsicht",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-dem-patienten-bereitstellen"
+          }
+        ]
+      },
+      {
+        "id": "akutsprechstunde-ohne-erfuellte-akutkriterien",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztliche Entscheidung",
+            "checkpointId": "ausnahme-bei-nicht-erfuellten-akutkriterien"
+          }
+        ]
+      },
+      {
+        "id": "anfrage-zur-akutsprechstunde",
+        "checkpoint_refs": [
+          {
+            "group": "Dringlichkeit",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Akutkriterien",
+            "checkpointId": "akutanlass-fuer-sprechstunde"
+          },
+          {
+            "group": "Akutkriterien",
+            "checkpointId": "zeitliche-dynamik-der-beschwerden"
+          }
+        ]
+      },
+      {
+        "id": "arbeitskleidung-wechseln-und-aufbereiten",
+        "checkpoint_refs": [
+          {
+            "group": "Kleidung",
+            "checkpointId": "arbeitskleidung-wechseln-und-aufbereiten"
+          },
+          {
+            "group": "Kleidung",
+            "checkpointId": "getragene-arbeitskleidung-aufbewahren"
+          },
+          {
+            "group": "Kleidung",
+            "checkpointId": "getragene-arbeitskleidung-aufbereiten"
+          }
+        ]
+      },
+      {
+        "id": "befundanfrage",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "angefragter-befund-identifiziert"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          }
+        ]
+      },
+      {
+        "id": "check-up-laborwerte-vorliegend",
+        "checkpoint_refs": [
+          {
+            "group": "Laborwerte",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verständigung",
+            "checkpointId": "verstaendigung-bei-sprachbarriere"
+          },
+          {
+            "group": "Terminfreigabe",
+            "checkpointId": "befundbesprechung-zur-buchung-freigeben"
+          }
+        ]
+      },
+      {
+        "id": "digitale-au-anfrage-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "pflichtangaben-bei-digitaler-au-anfrage"
+          },
+          {
+            "group": "Voraussetzung",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Voraussetzung",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Weiteres Vorgehen",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Weiteres Vorgehen",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ]
+      },
+      {
+        "id": "dokument-bereitstellen",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-dem-patienten-bereitstellen"
+          }
+        ]
+      },
+      {
+        "id": "dokument-fehlzugeordnet",
+        "checkpoint_refs": [
+          {
+            "group": "Korrektur",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Korrektur",
+            "checkpointId": "dokument-kennzeichnen"
+          }
+        ]
+      },
+      {
+        "id": "dokument-nicht-zuordenbar",
+        "checkpoint_refs": [
+          {
+            "group": "Klärung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "dokument-kennzeichnen"
+          }
+        ]
+      },
+      {
+        "id": "dokument-unklar",
+        "checkpoint_refs": [
+          {
+            "group": "Klärung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ]
+      },
+      {
+        "id": "dokument-weiterleiten",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-weiterleiten"
+          }
+        ]
+      },
+      {
+        "id": "dolmetschperson-organisieren",
+        "checkpoint_refs": [
+          {
+            "group": "Organisation",
+            "checkpointId": "dolmetschperson-organisieren"
+          }
+        ]
+      },
+      {
+        "id": "eingang-mit-maengeln",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "benoetigte-unterlagen-vollstaendig"
+          },
+          {
+            "group": "Nachforderung",
+            "checkpointId": "unterlagen-anfordern"
+          }
+        ]
+      },
+      {
+        "id": "eingehenden-patientenkontakt-dokumentieren",
+        "checkpoint_refs": [
+          {
+            "group": "Gespräch",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          }
+        ]
+      },
+      {
+        "id": "erneuten-kontaktversuch-durchfuehren",
+        "checkpoint_refs": [
+          {
+            "group": "Kontakt",
+            "checkpointId": "erneuten-kontaktversuch-durchfuehren"
+          }
+        ]
+      },
+      {
+        "id": "facharztbericht-bearbeiten",
+        "checkpoint_refs": [
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          },
+          {
+            "group": "Medizinische Einordnung",
+            "checkpointId": "dauermedikation-abgleichen"
+          },
+          {
+            "group": "Medizinische Einordnung",
+            "checkpointId": "facharztbericht-einordnen"
+          }
+        ]
+      },
+      {
+        "id": "facharztbericht-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ]
+      },
+      {
+        "id": "fort--oder-weiterbildung-einer-mfa-organisieren",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Zeit",
+            "checkpointId": "zeit-fuer-fort--oder-weiterbildung-regeln"
+          }
+        ]
+      },
+      {
+        "id": "fort--oder-weiterbildung-einer-mfa-steht-an",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Anlass",
+            "checkpointId": "fort--oder-weiterbildungsanlass-einordnen"
+          },
+          {
+            "group": "MFA: Anforderungen",
+            "checkpointId": "mfa-qualifikationsanforderungen-klaeren"
+          },
+          {
+            "group": "MFA: Teilnahme",
+            "checkpointId": "teilnahme-an-fort--oder-weiterbildung-entscheiden"
+          }
+        ]
+      },
+      {
+        "id": "fremdsprachige-medizinische-unterlagen-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Prüfung",
+            "checkpointId": "sprache-externer-medizinischer-unterlagen"
+          }
+        ]
+      },
+      {
+        "id": "geplante-abwesenheit-vorbereiten",
+        "checkpoint_refs": [
+          {
+            "group": "Planung",
+            "checkpointId": "abwesenheit-in-dienst--und-terminplanung-eintragen"
+          }
+        ]
+      },
+      {
+        "id": "gesundheits-check-up-angefragt",
+        "checkpoint_refs": [
+          {
+            "group": "Anspruch",
+            "checkpointId": "anspruch-auf-gesundheits-check-up-klaeren"
+          }
+        ]
+      },
+      {
+        "id": "infektionsverdacht-gemeldet",
+        "checkpoint_refs": [
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Erstkontakt",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Erstkontakt",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ]
+      },
+      {
+        "id": "kosten-der-fort--oder-weiterbildung-regeln",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Kosten",
+            "checkpointId": "kosten-der-fort--oder-weiterbildung-regeln"
+          }
+        ]
+      },
+      {
+        "id": "krankenhausbrief-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ]
+      },
+      {
+        "id": "kurzfristiger-personalausfall",
+        "checkpoint_refs": [
+          {
+            "group": "Besetzung",
+            "checkpointId": "vertretung-bei-abwesenheit-zuordnen"
+          }
+        ]
+      },
+      {
+        "id": "laborbefund-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ]
+      },
+      {
+        "id": "laborbefund-fachlich-bewerten",
+        "checkpoint_refs": [
+          {
+            "group": "",
+            "checkpointId": "laborbefund-fachlich-bewerten"
+          }
+        ]
+      },
+      {
+        "id": "laborbefund-mitteilen",
+        "checkpoint_refs": [
+          {
+            "group": "Konfiguration",
+            "checkpointId": "informationsempfaenger-festlegen"
+          },
+          {
+            "group": "Konfiguration",
+            "checkpointId": "kontaktform-festlegen"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "patient-informieren"
+          }
+        ]
+      },
+      {
+        "id": "laborbefund-zur-besprechung-freigeben",
+        "checkpoint_refs": [
+          {
+            "group": "Befund",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Freigabe",
+            "checkpointId": "befundbesprechung-zur-buchung-freigeben"
+          }
+        ]
+      },
+      {
+        "id": "laborumfang-beim-check-up-klaeren",
+        "checkpoint_refs": [
+          {
+            "group": "Untersuchungsumfang",
+            "checkpointId": "laborumfang-beim-check-up-klaeren"
+          }
+        ]
+      },
+      {
+        "id": "medikamentenaenderung",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-vorhanden"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "angefragtes-medikament-pruefen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-abgleichen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "diagnose-dokumentiert"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "aktuellen-verlauf-erfassen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "kontrolle-aktuell"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "facharztbericht-einordnen"
+          }
+        ]
+      },
+      {
+        "id": "mfa-beendet-die-letzte-schicht",
+        "checkpoint_refs": [
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "schichtende-raeume-sichern"
+          },
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "beleuchtung-nach-schichtende"
+          },
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "geraetebetrieb-nach-schichtende"
+          },
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "it-arbeitsplaetze-nach-schichtende-sichern"
+          }
+        ]
+      },
+      {
+        "id": "mfa-beginnt-den-dienst-in-arbeitskleidung",
+        "checkpoint_refs": [
+          {
+            "group": "Dienstbeginn",
+            "checkpointId": "arbeitskleidung-im-dienst-tragen"
+          }
+        ]
+      },
+      {
+        "id": "mfa-benutzt-ein-privates-handy-waehrend-der-schicht",
+        "checkpoint_refs": [
+          {
+            "group": "Handynutzung",
+            "checkpointId": "private-handys-im-dienst-nutzen"
+          }
+        ]
+      },
+      {
+        "id": "mfa-bringt-eigene-speisen-und-getraenke-mit",
+        "checkpoint_refs": [
+          {
+            "group": "Aufbewahrung",
+            "checkpointId": "mitgebrachte-lebensmittel-lagern"
+          }
+        ]
+      },
+      {
+        "id": "mfa-oeffnet-die-praxis-zur-fruehschicht",
+        "checkpoint_refs": [
+          {
+            "group": "Öffnung",
+            "checkpointId": "schichtbeginn-praxisbereitschaft-pruefen"
+          },
+          {
+            "group": "Öffnung",
+            "checkpointId": "hygienematerial-zum-schichtbeginn-verfuegbar"
+          },
+          {
+            "group": "Öffnung",
+            "checkpointId": "geraete-zum-schichtbeginn-einsatzbereit"
+          }
+        ]
+      },
+      {
+        "id": "neupatient",
+        "checkpoint_refs": [
+          {
+            "group": "Stammdaten",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "einwilligung-vorhanden"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "berechtigung-pruefen"
+          },
+          {
+            "group": "Organisation",
+            "checkpointId": "behandlerzuordnung-geklaert"
+          },
+          {
+            "group": "Anamnese",
+            "checkpointId": "anamnese-dokumentiert"
+          }
+        ]
+      },
+      {
+        "id": "offene-vorgaenge-bei-abwesenheit-uebergeben",
+        "checkpoint_refs": [
+          {
+            "group": "Offene Arbeit",
+            "checkpointId": "offene-vorgaenge-bei-abwesenheit-uebergeben"
+          }
+        ]
+      },
+      {
+        "id": "patient-bringt-unterlagen",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          }
+        ]
+      },
+      {
+        "id": "patient-erinnern",
+        "checkpoint_refs": [
+          {
+            "group": "Konfiguration",
+            "checkpointId": "informationsempfaenger-festlegen"
+          },
+          {
+            "group": "Konfiguration",
+            "checkpointId": "kontaktform-festlegen"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "patient-informieren"
+          }
+        ]
+      },
+      {
+        "id": "patient-erscheint-verspaetet-zum-termin",
+        "checkpoint_refs": [
+          {
+            "group": "Termin",
+            "checkpointId": "termin-vorhanden"
+          },
+          {
+            "group": "Verspätung",
+            "checkpointId": "verspaetung-zum-termin"
+          },
+          {
+            "group": "Wartephase",
+            "checkpointId": "wartephase-in-der-praxis-vorgesehen"
+          }
+        ]
+      },
+      {
+        "id": "patient-gibt-selbst-gewonnene-probe-ab",
+        "checkpoint_refs": [
+          {
+            "group": "Annahme",
+            "checkpointId": "annahme-einer-selbst-gewonnenen-probe"
+          },
+          {
+            "group": "Zuordnung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          }
+        ]
+      },
+      {
+        "id": "patient-informieren",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "patient-informieren"
+          }
+        ]
+      },
+      {
+        "id": "patient-mit-sprachbarriere",
+        "checkpoint_refs": [
+          {
+            "group": "Dringlichkeit",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Verständigung",
+            "checkpointId": "verstaendigung-bei-sprachbarriere"
+          }
+        ]
+      },
+      {
+        "id": "patient-nicht-erreichbar",
+        "checkpoint_refs": [
+          {
+            "group": "Kontakt",
+            "checkpointId": "erneuten-kontaktversuch-durchfuehren"
+          }
+        ]
+      },
+      {
+        "id": "patient-ohne-unterlagen",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Unterlagen",
+            "checkpointId": "benoetigte-unterlagen-vollstaendig"
+          },
+          {
+            "group": "Nachforderung",
+            "checkpointId": "unterlagen-anfordern"
+          }
+        ]
+      },
+      {
+        "id": "patientenanruf-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Gespräch",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          }
+        ]
+      },
+      {
+        "id": "patientennachricht-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          },
+          {
+            "group": "Antwort",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Antwort",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ]
+      },
+      {
+        "id": "persoenliche-vorstellung-bei-infektionsverdacht",
+        "checkpoint_refs": [
+          {
+            "group": "Vorstellung",
+            "checkpointId": "persoenliche-vorstellung-bei-infektionsverdacht"
+          }
+        ]
+      },
+      {
+        "id": "raumtemperatur-nach-schichtende-einstellen",
+        "checkpoint_refs": [
+          {
+            "group": "Raumklima",
+            "checkpointId": "raumtemperatur-nach-schichtende-einstellen"
+          }
+        ]
+      },
+      {
+        "id": "rezept-erstellen",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "rezept-erstellen"
+          }
+        ]
+      },
+      {
+        "id": "rezeptanfrage-ohne-arzt",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-vorhanden"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "kontrolle-aktuell"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-abgleichen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "diagnose-dokumentiert"
+          }
+        ]
+      },
+      {
+        "id": "rueckrufbitte",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          },
+          {
+            "group": "Rückruffrist",
+            "checkpointId": "frist-fuer-erste-rueckmeldung-auf-patientenanliegen"
+          }
+        ]
+      },
+      {
+        "id": "shit-instabilitaetszeichen-bei-rhythmusstoerung",
+        "checkpoint_refs": [
+          {
+            "group": "Warnzeichen",
+            "checkpointId": "shit-instabilitaetszeichen-erkennen"
+          }
+        ]
+      },
+      {
+        "id": "speisen-und-getraenke-im-dienst",
+        "checkpoint_refs": [
+          {
+            "group": "Verzehr",
+            "checkpointId": "speisen-und-getraenke-im-dienst"
+          }
+        ]
+      },
+      {
+        "id": "teammitglied-meldet-arbeitsunfaehigkeit",
+        "checkpoint_refs": [
+          {
+            "group": "Meldung",
+            "checkpointId": "krankmeldung-im-team-entgegennehmen"
+          }
+        ]
+      },
+      {
+        "id": "termin-durch-personalausfall-betroffen",
+        "checkpoint_refs": [
+          {
+            "group": "Entscheidung",
+            "checkpointId": "gebuchte-termine-bei-personalausfall-behandeln"
+          }
+        ]
+      },
+      {
+        "id": "terminanfrage",
+        "checkpoint_refs": [
+          {
+            "group": "Patient",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Anliegen",
+            "checkpointId": "terminanliegen-geklaert"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          }
+        ]
+      },
+      {
+        "id": "terminvereinbarung",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "termin-vereinbaren"
+          }
+        ]
+      },
+      {
+        "id": "ueberweisung-erstellen",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "ueberweisung-erstellen"
+          }
+        ]
+      },
+      {
+        "id": "ueberweisungsanfrage",
+        "checkpoint_refs": [
+          {
+            "group": "Patient",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Voraussetzungen",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Voraussetzungen",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "anlass-einer-ueberweisung-pruefen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "fragestellung-der-ueberweisung-klaeren"
+          }
+        ]
+      },
+      {
+        "id": "unterlagen-anfordern",
+        "checkpoint_refs": [
+          {
+            "group": "Nachforderung",
+            "checkpointId": "unterlagen-anfordern"
+          }
+        ]
+      },
+      {
+        "id": "unterlagen-aushaendigen",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-dem-patienten-bereitstellen"
+          }
+        ]
+      },
+      {
+        "id": "unzustellbare-post",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Kontakt",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Kontakt",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ]
+      },
+      {
+        "id": "urlaubsantrag-eingegangen",
+        "checkpoint_refs": [
+          {
+            "group": "Antrag",
+            "checkpointId": "vorlauf-fuer-urlaubsantrag"
+          },
+          {
+            "group": "Entscheidung",
+            "checkpointId": "urlaub-anhand-der-dienstbesetzung-entscheiden"
+          }
+        ]
+      },
+      {
+        "id": "verlaufskontakt",
+        "checkpoint_refs": [
+          {
+            "group": "Verlauf",
+            "checkpointId": "aktuellen-verlauf-erfassen"
+          }
+        ]
+      },
+      {
+        "id": "verschlechterung-gemeldet",
+        "checkpoint_refs": [
+          {
+            "group": "Verlauf",
+            "checkpointId": "aktuellen-verlauf-erfassen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          }
+        ]
+      },
+      {
+        "id": "versicherungsnachweis-fehlt",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Prüfung",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          }
+        ]
+      },
+      {
+        "id": "vertretung-bei-abwesenheit-zuordnen",
+        "checkpoint_refs": [
+          {
+            "group": "Besetzung",
+            "checkpointId": "vertretung-bei-abwesenheit-zuordnen"
+          }
+        ]
+      },
+      {
+        "id": "wiedervorlage-vormerken",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "zur-wiedervorlage-vormerken"
+          }
+        ]
+      },
+      {
+        "id": "zeit-fuer-fort--oder-weiterbildung-regeln",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Zeit",
+            "checkpointId": "zeit-fuer-fort--oder-weiterbildung-regeln"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "id": "abwesenheit-in-dienst--und-terminplanung-eintragen",
+        "title": "Abwesenheit in Dienst- und Terminplanung eintragen",
+        "description": "Eine feststehende Abwesenheit wird in Dienst- und Terminplanung eingetragen.",
+        "checkpoint_refs": [
+          {
+            "group": "Terminressourcen",
+            "checkpointId": "abwesenheit-in-dienst--und-terminplanung-eintragen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:05:58.132Z",
+        "updatedAt": "2026-09-28T07:05:58.132Z"
+      },
+      {
+        "id": "aerztliche-fort--oder-weiterbildung-organisieren",
+        "title": "Ärztliche Fort- oder Weiterbildung organisieren",
+        "description": "Eine bereits entschiedene ärztliche Fort- oder Weiterbildung wird zeitlich eingeordnet. Die Kostenregelung ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztlich: Zeit",
+            "checkpointId": "zeit-fuer-fort--oder-weiterbildung-regeln"
+          }
+        ],
+        "createdAt": "2026-09-28T05:14:12.983Z",
+        "updatedAt": "2026-09-28T07:04:29.012Z"
+      },
+      {
+        "id": "aerztliche-fort--oder-weiterbildung-steht-an",
+        "title": "Ärztliche Fort- oder Weiterbildung steht an",
+        "description": "Eine Ärztin oder ein Arzt möchte an einer Fort- oder Weiterbildung teilnehmen oder die Praxis schlägt sie vor. Anlass, berufsbezogene Anforderungen und die Teilnahmeentscheidung werden geklärt. Zeit und Kosten werden in einem Folgeprozess organisiert.",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztlich: Anlass",
+            "checkpointId": "fort--oder-weiterbildungsanlass-einordnen"
+          },
+          {
+            "group": "Ärztlich: Anforderungen",
+            "checkpointId": "aerztliche-fort--und-weiterbildungsvorgaben-klaeren"
+          },
+          {
+            "group": "Ärztlich: Teilnahme",
+            "checkpointId": "teilnahme-an-fort--oder-weiterbildung-entscheiden"
+          }
+        ],
+        "createdAt": "2026-09-26T01:28:35.421Z",
+        "updatedAt": "2026-09-28T05:14:47.088Z"
+      },
+      {
+        "id": "aerztliche-soforteinschaetzung-veranlassen",
+        "title": "Ärztliche Soforteinschätzung veranlassen",
+        "description": "Bei erkannten Warnzeichen wird ohne Verzögerung eine ärztliche Beurteilung veranlasst.",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztliche Einschätzung",
+            "checkpointId": "aerztliche-soforteinschaetzung-veranlassen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:01:25.690Z",
+        "updatedAt": "2026-09-28T07:01:25.690Z"
+      },
+      {
+        "id": "akteneinsicht",
+        "title": "Akteneinsicht",
+        "description": "Ein Patient fordert Einsicht in die vollständige eigene Akte oder Kopien der vollständigen Akte an. Einzelne angeforderte Unterlagen werden im separaten Prozess „Unterlagen aushändigen“ behandelt.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-dem-patienten-bereitstellen"
+          }
+        ],
+        "createdAt": "2026-09-28T08:26:38.352Z",
+        "updatedAt": "2026-09-28T08:26:38.352Z"
+      },
+      {
+        "id": "akutsprechstunde-ohne-erfuellte-akutkriterien",
+        "title": "Akutsprechstunde ohne erfüllte Akutkriterien",
+        "description": "Ein Patient erscheint zur Akutsprechstunde, erfüllt die festgelegten Kriterien aber nicht. Dieser Prozess klärt ausschließlich, ob ausnahmsweise am selben Tag behandelt wird. Andernfalls folgt eine allgemeine Terminvereinbarung.",
+        "checkpoint_refs": [
+          {
+            "group": "Ärztliche Entscheidung",
+            "checkpointId": "ausnahme-bei-nicht-erfuellten-akutkriterien"
+          }
+        ],
+        "createdAt": "2026-09-25T19:25:40.641Z",
+        "updatedAt": "2026-09-28T05:14:49.831Z"
+      },
+      {
+        "id": "anfrage-zur-akutsprechstunde",
+        "title": "Anfrage zur Akutsprechstunde",
+        "description": "Ein Patient meldet sich mit aktuellen Beschwerden und bittet um einen Akutplatz. Die Praxis ordnet Beschwerdeanlass und zeitliche Dynamik ein und erkennt möglichen ärztlichen Dringlichkeitsbedarf.",
+        "checkpoint_refs": [
+          {
+            "group": "Dringlichkeit",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Akutkriterien",
+            "checkpointId": "akutanlass-fuer-sprechstunde"
+          },
+          {
+            "group": "Akutkriterien",
+            "checkpointId": "zeitliche-dynamik-der-beschwerden"
+          }
+        ],
+        "createdAt": "2026-09-25T19:25:00.609Z",
+        "updatedAt": "2026-09-25T19:25:00.609Z"
+      },
+      {
+        "id": "arbeitskleidung-wechseln-und-aufbereiten",
+        "title": "Arbeitskleidung wechseln und aufbereiten",
+        "description": "Arbeits- oder Schutzkleidung wird nach der Praxisregel gewechselt, bis zur Aufbereitung aufbewahrt und anschließend auf dem vorgesehenen Weg aufbereitet oder entsorgt.",
+        "checkpoint_refs": [
+          {
+            "group": "Kleidung",
+            "checkpointId": "arbeitskleidung-wechseln-und-aufbereiten"
+          },
+          {
+            "group": "Kleidung",
+            "checkpointId": "getragene-arbeitskleidung-aufbewahren"
+          },
+          {
+            "group": "Kleidung",
+            "checkpointId": "getragene-arbeitskleidung-aufbereiten"
+          }
+        ],
+        "createdAt": "2026-09-28T07:05:25.828Z",
+        "updatedAt": "2026-09-29T07:05:45.905Z"
+      },
+      {
+        "id": "befundanfrage",
+        "title": "Befundanfrage",
+        "description": "Ein Patient fragt nach einem Befund. Die Praxis dokumentiert die Anfrage und klärt, welcher konkrete Befund gemeint ist, ob er vorliegt und ob er dem richtigen Patienten zugeordnet ist. Fachliche Bewertung, Berechtigung zur Herausgabe, Mitteilung und Bereitstellung sind getrennte Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "angefragter-befund-identifiziert"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          }
+        ],
+        "createdAt": "2026-09-29T08:26:41.724Z",
+        "updatedAt": "2026-09-29T08:26:41.724Z"
+      },
+      {
+        "id": "check-up-laborwerte-vorliegend",
+        "title": "Check-up-Laborwerte vorliegend",
+        "description": "Nach der vorgesehenen Laboruntersuchung im Gesundheits-Check-up liegen die Werte vor. Dokument und Verständigung werden geprüft und die Befundbesprechung zur Buchung freigegeben; die medizinische Bewertung und die Terminvereinbarung sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Laborwerte",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verständigung",
+            "checkpointId": "verstaendigung-bei-sprachbarriere"
+          },
+          {
+            "group": "Terminfreigabe",
+            "checkpointId": "befundbesprechung-zur-buchung-freigeben"
+          }
+        ],
+        "createdAt": "2026-09-25T19:49:46.805Z",
+        "updatedAt": "2026-09-28T08:26:25.096Z"
+      },
+      {
+        "id": "digitale-au-anfrage-eingegangen",
+        "title": "Digitale AU-Anfrage eingegangen",
+        "description": "Eine digitale AU-Anfrage geht ein. Die Praxis prüft erforderliche Angaben, Versicherungsnachweis und Abrechnungsgrundlage und legt fest, ob ein weiterer Kontakt nötig ist und gegebenenfalls in welcher Form. Untersuchung und ärztliche Entscheidung sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "pflichtangaben-bei-digitaler-au-anfrage"
+          },
+          {
+            "group": "Voraussetzung",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Voraussetzung",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Weiteres Vorgehen",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Weiteres Vorgehen",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ],
+        "createdAt": "2026-09-25T20:59:47.474Z",
+        "updatedAt": "2026-09-29T07:10:56.538Z"
+      },
+      {
+        "id": "dokument-bereitstellen",
+        "title": "Dokument bereitstellen",
+        "description": "Ein vorgesehenes Dokument wird dem berechtigten Empfänger zugänglich gemacht.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-dem-patienten-bereitstellen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:17.614Z",
+        "updatedAt": "2026-09-28T07:00:17.614Z"
+      },
+      {
+        "id": "dokument-fehlzugeordnet",
+        "title": "Dokument fehlzugeordnet",
+        "description": "Ein eingehendes Dokument ist bereits dem falschen Patienten zugeordnet. Die Praxis kennzeichnet die Fehlzuordnung; Korrektur, Umzuordnung oder Weiterleitung sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Korrektur",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Korrektur",
+            "checkpointId": "dokument-kennzeichnen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:03:43.528Z",
+        "updatedAt": "2026-09-28T08:25:46.773Z"
+      },
+      {
+        "id": "dokument-nicht-zuordenbar",
+        "title": "Dokument nicht zuordenbar",
+        "description": "Ein eingehendes Dokument kann keinem Patienten sicher zugeordnet werden. Die Praxis kennzeichnet diesen ungeklärten Zuordnungsstatus; eine spätere Klärung oder Weiterbearbeitung ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Klärung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "dokument-kennzeichnen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:03:31.992Z",
+        "updatedAt": "2026-09-28T08:25:46.359Z"
+      },
+      {
+        "id": "dokument-unklar",
+        "title": "Dokument unklar",
+        "description": "Ein eingehender Vorgang wird hinsichtlich Dokumenttyp, Absender und Patientenbezug geklärt. Weiterleitung und Wiedervorlage sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Klärung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:03:31.460Z",
+        "updatedAt": "2026-09-28T07:03:31.460Z"
+      },
+      {
+        "id": "dokument-weiterleiten",
+        "title": "Dokument weiterleiten",
+        "description": "Ein Dokument oder Vorgang wird an die dafür vorgesehene Stelle weitergeleitet.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-weiterleiten"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:24.356Z",
+        "updatedAt": "2026-09-28T07:00:24.356Z"
+      },
+      {
+        "id": "dolmetschperson-organisieren",
+        "title": "Dolmetschperson organisieren",
+        "description": "Für einen planbaren Patientenkontakt wird eine geeignete Dolmetschperson organisiert.",
+        "checkpoint_refs": [
+          {
+            "group": "Organisation",
+            "checkpointId": "dolmetschperson-organisieren"
+          }
+        ],
+        "createdAt": "2026-09-28T07:01:25.025Z",
+        "updatedAt": "2026-09-28T07:01:25.025Z"
+      },
+      {
+        "id": "eingang-mit-maengeln",
+        "title": "Eingang mit Mängeln",
+        "description": "Ein Eingang wird daran gemessen, welche Unterlagen für diesen Vorgang nach der Definition der Praxis vollständig sein müssen. Fehlt etwas, werden die konkret benötigten Unterlagen angefordert. Spätere Eingangskontrolle und fachliche Prüfung bleiben getrennte Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "benoetigte-unterlagen-vollstaendig"
+          },
+          {
+            "group": "Nachforderung",
+            "checkpointId": "unterlagen-anfordern"
+          }
+        ],
+        "createdAt": "2026-09-28T07:03:55.594Z",
+        "updatedAt": "2026-09-29T07:34:35.849Z"
+      },
+      {
+        "id": "eingehenden-patientenkontakt-dokumentieren",
+        "title": "Eingehenden Patientenkontakt dokumentieren",
+        "description": "Ein eingehender telefonischer oder schriftlicher Patientenkontakt wird nachvollziehbar dokumentiert.",
+        "checkpoint_refs": [
+          {
+            "group": "Gespräch",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:58.948Z",
+        "updatedAt": "2026-09-28T07:00:58.948Z"
+      },
+      {
+        "id": "erneuten-kontaktversuch-durchfuehren",
+        "title": "Erneuten Kontaktversuch durchführen",
+        "description": "Nach einem erfolglosen Kontaktversuch wird ein weiterer Kontaktversuch durchgeführt.",
+        "checkpoint_refs": [
+          {
+            "group": "Kontakt",
+            "checkpointId": "erneuten-kontaktversuch-durchfuehren"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:48.133Z",
+        "updatedAt": "2026-09-28T07:00:48.133Z"
+      },
+      {
+        "id": "facharztbericht-bearbeiten",
+        "title": "Facharztbericht bearbeiten",
+        "description": "Ein eingegangener Facharztbericht wird hinsichtlich Bezug zum laufenden Fall, möglichem Bedarf an Dringlichkeitseinschätzung und Medikationsinformationen geprüft und hausärztlich eingeordnet. Patienteninformation, Dokumentbereitstellung und Weiterleitung sind getrennte Folgehandlungen.",
+        "checkpoint_refs": [
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          },
+          {
+            "group": "Medizinische Einordnung",
+            "checkpointId": "dauermedikation-abgleichen"
+          },
+          {
+            "group": "Medizinische Einordnung",
+            "checkpointId": "facharztbericht-einordnen"
+          }
+        ],
+        "createdAt": "2026-09-28T04:42:39.946Z",
+        "updatedAt": "2026-09-29T08:04:37.542Z"
+      },
+      {
+        "id": "facharztbericht-eingegangen",
+        "title": "Facharztbericht eingegangen",
+        "description": "Ein eingehender Facharztbericht wird dem richtigen Patienten zugeordnet und gekennzeichnet; bei Papier wird er digital erfasst. Die Praxis klärt, ob Hinweise auf einen Bedarf an Dringlichkeitseinschätzung oder ein Bezug zu einem laufenden Fall vorliegen. Hausärztliche Einordnung und Kommunikation sind Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ],
+        "createdAt": "2026-09-28T04:42:38.731Z",
+        "updatedAt": "2026-09-29T08:16:51.942Z"
+      },
+      {
+        "id": "fort--oder-weiterbildung-einer-mfa-organisieren",
+        "title": "Fort- oder Weiterbildung einer MFA organisieren",
+        "description": "Eine bereits entschiedene Fort- oder Weiterbildung einer MFA wird zeitlich eingeordnet. Die Kostenregelung ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Zeit",
+            "checkpointId": "zeit-fuer-fort--oder-weiterbildung-regeln"
+          }
+        ],
+        "createdAt": "2026-09-28T05:14:23.577Z",
+        "updatedAt": "2026-09-28T07:04:28.504Z"
+      },
+      {
+        "id": "fort--oder-weiterbildung-einer-mfa-steht-an",
+        "title": "Fort- oder Weiterbildung einer MFA steht an",
+        "description": "Eine MFA möchte an einer Fort- oder Weiterbildung teilnehmen oder die Praxis schlägt sie vor. Anlass, tätigkeitsbezogene Anforderungen und die Teilnahmeentscheidung werden geklärt. Zeit und Kosten werden in einem Folgeprozess organisiert.",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Anlass",
+            "checkpointId": "fort--oder-weiterbildungsanlass-einordnen"
+          },
+          {
+            "group": "MFA: Anforderungen",
+            "checkpointId": "mfa-qualifikationsanforderungen-klaeren"
+          },
+          {
+            "group": "MFA: Teilnahme",
+            "checkpointId": "teilnahme-an-fort--oder-weiterbildung-entscheiden"
+          }
+        ],
+        "createdAt": "2026-09-26T01:28:33.198Z",
+        "updatedAt": "2026-09-28T05:14:47.946Z"
+      },
+      {
+        "id": "fremdsprachige-medizinische-unterlagen-eingegangen",
+        "title": "Fremdsprachige medizinische Unterlagen eingegangen",
+        "description": "Externe medizinische Unterlagen sind in einer anderen Sprache eingegangen. Es wird geklärt, ob sie nach der Praxisregel als Behandlungsgrundlage verwertbar sind. Eine Unterlagenanforderung ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Prüfung",
+            "checkpointId": "sprache-externer-medizinischer-unterlagen"
+          }
+        ],
+        "createdAt": "2026-09-25T20:59:48.674Z",
+        "updatedAt": "2026-09-28T07:04:35.141Z"
+      },
+      {
+        "id": "geplante-abwesenheit-vorbereiten",
+        "title": "Geplante Abwesenheit vorbereiten",
+        "description": "Eine feststehende geplante Abwesenheit wird in Dienst- und Terminplanung eingetragen. Vertretung und Übergabe sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Planung",
+            "checkpointId": "abwesenheit-in-dienst--und-terminplanung-eintragen"
+          }
+        ],
+        "createdAt": "2026-09-26T01:10:01.324Z",
+        "updatedAt": "2026-09-28T07:05:59.424Z"
+      },
+      {
+        "id": "gesundheits-check-up-angefragt",
+        "title": "Gesundheits-Check-up angefragt",
+        "description": "Für einen angefragten Gesundheits-Check-up wird geklärt, ob der gesetzliche Anspruch nach Alter und Untersuchungsintervall vorliegt. Laborumfang und Terminvereinbarung sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Anspruch",
+            "checkpointId": "anspruch-auf-gesundheits-check-up-klaeren"
+          }
+        ],
+        "createdAt": "2026-09-25T19:48:52.561Z",
+        "updatedAt": "2026-09-28T07:05:07.590Z"
+      },
+      {
+        "id": "infektionsverdacht-gemeldet",
+        "title": "Infektionsverdacht gemeldet",
+        "description": "Ein Patient meldet vor dem Besuch Beschwerden mit möglicher Ansteckungsgefahr. Die Praxis klärt den Bedarf an einer Dringlichkeitseinschätzung und ob weiterer Patientenkontakt erforderlich ist; gegebenenfalls legt sie die Kontaktform fest. Eine persönliche Vorstellung ist ein eigener Folgeprozess.",
+        "checkpoint_refs": [
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Erstkontakt",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Erstkontakt",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ],
+        "createdAt": "2026-09-25T20:59:46.125Z",
+        "updatedAt": "2026-09-29T07:14:56.725Z"
+      },
+      {
+        "id": "kosten-der-fort--oder-weiterbildung-regeln",
+        "title": "Kosten der Fort- oder Weiterbildung regeln",
+        "description": "Die Kostentragung einer Fort- oder Weiterbildung wird festgelegt.",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Kosten",
+            "checkpointId": "kosten-der-fort--oder-weiterbildung-regeln"
+          }
+        ],
+        "createdAt": "2026-09-28T07:01:12.569Z",
+        "updatedAt": "2026-09-28T07:01:12.569Z"
+      },
+      {
+        "id": "krankenhausbrief-eingegangen",
+        "title": "Krankenhausbrief eingegangen",
+        "description": "Ein eingehender Krankenhaus- oder Entlassbrief wird dem richtigen Patienten zugeordnet und gekennzeichnet; bei Papier wird er digital erfasst. Die Praxis klärt, ob Hinweise auf einen Bedarf an Dringlichkeitseinschätzung oder ein Bezug zu einem laufenden Fall vorliegen. Fachliche Einordnung, Medikationsabgleich und Weiterleitung sind Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ],
+        "createdAt": "2026-09-28T04:42:37.398Z",
+        "updatedAt": "2026-09-29T08:16:50.468Z"
+      },
+      {
+        "id": "kurzfristiger-personalausfall",
+        "title": "Kurzfristiger Personalausfall",
+        "description": "Bei einem kurzfristigen Personalausfall wird eine geeignete Vertretung zugeordnet. Übergabe und Planungsanpassung sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Besetzung",
+            "checkpointId": "vertretung-bei-abwesenheit-zuordnen"
+          }
+        ],
+        "createdAt": "2026-09-26T01:10:03.586Z",
+        "updatedAt": "2026-09-28T07:05:58.757Z"
+      },
+      {
+        "id": "laborbefund-eingegangen",
+        "title": "Laborbefund eingegangen",
+        "description": "Ein eingehender Laborbefund wird dem richtigen Patienten zugeordnet und gekennzeichnet; bei Papier wird er digital erfasst. Die Praxis klärt, ob Hinweise auf einen Bedarf an Dringlichkeitseinschätzung oder ein Bezug zu einem laufenden Fall vorliegen. Fachliche Bewertung, Befundbesprechung und Mitteilung sind Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "bezug-zu-laufendem-fall-pruefen"
+          }
+        ],
+        "createdAt": "2026-09-28T04:42:38.072Z",
+        "updatedAt": "2026-09-29T08:16:51.238Z"
+      },
+      {
+        "id": "laborbefund-fachlich-bewerten",
+        "title": "Laborbefund fachlich bewerten",
+        "description": "Ein eingegangener Laborbefund wird fachlich bewertet und das Ergebnis nachvollziehbar dokumentiert. Die Freigabe zur Befundbesprechung und die Mitteilung an den Patienten sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "",
+            "checkpointId": "laborbefund-fachlich-bewerten"
+          }
+        ],
+        "createdAt": "2026-09-28T08:26:49.286Z",
+        "updatedAt": "2026-09-28T08:26:49.286Z"
+      },
+      {
+        "id": "laborbefund-mitteilen",
+        "title": "Laborbefund mitteilen",
+        "description": "Ein bereits fachlich bewerteter Laborbefund soll mitgeteilt werden. Die Praxis legt zuerst den berechtigten Informationsempfänger und die Kontaktform fest; danach erfolgt die Mitteilung. Befundbewertung, Dokumentbereitstellung und weitere Maßnahmen sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Konfiguration",
+            "checkpointId": "informationsempfaenger-festlegen"
+          },
+          {
+            "group": "Konfiguration",
+            "checkpointId": "kontaktform-festlegen"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "patient-informieren"
+          }
+        ],
+        "createdAt": "2026-09-28T07:04:35.656Z",
+        "updatedAt": "2026-09-29T08:07:33.984Z"
+      },
+      {
+        "id": "laborbefund-zur-besprechung-freigeben",
+        "title": "Laborbefund zur Besprechung freigeben",
+        "description": "Ein bereits vorliegender Laborbefund soll zur Besprechung eingeplant werden. Die Praxis legt fest, wann und auf welchem Weg ein Besprechungstermin buchbar wird; dieser allgemeine Prozess gilt nicht nur für Gesundheits-Check-ups.",
+        "checkpoint_refs": [
+          {
+            "group": "Befund",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Freigabe",
+            "checkpointId": "befundbesprechung-zur-buchung-freigeben"
+          }
+        ],
+        "createdAt": "2026-09-25T20:59:51.513Z",
+        "updatedAt": "2026-09-28T08:26:25.560Z"
+      },
+      {
+        "id": "laborumfang-beim-check-up-klaeren",
+        "title": "Laborumfang beim Check-up klären",
+        "description": "Für einen vorgesehenen Gesundheits-Check-up wird der passende Laborumfang festgelegt.",
+        "checkpoint_refs": [
+          {
+            "group": "Untersuchungsumfang",
+            "checkpointId": "laborumfang-beim-check-up-klaeren"
+          }
+        ],
+        "createdAt": "2026-09-28T07:05:07.081Z",
+        "updatedAt": "2026-09-28T07:05:07.081Z"
+      },
+      {
+        "id": "medikamentenaenderung",
+        "title": "Medikamentenänderung",
+        "description": "Eine Änderung der bisherigen Medikation wird angefragt. Patientenstatus, Versicherungsnachweis, Abrechnungsgrundlage und die medizinische Ausgangslage werden für die ärztliche Änderungsentscheidung geprüft. Rezept erstellen, bereitstellen und Patientenkontakt sind getrennte Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-vorhanden"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "angefragtes-medikament-pruefen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-abgleichen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "diagnose-dokumentiert"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "aktuellen-verlauf-erfassen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "kontrolle-aktuell"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "facharztbericht-einordnen"
+          }
+        ],
+        "createdAt": "2026-09-28T04:42:36.267Z",
+        "updatedAt": "2026-09-29T07:12:38.610Z"
+      },
+      {
+        "id": "mfa-beendet-die-letzte-schicht",
+        "title": "MFA beendet die letzte Schicht",
+        "description": "Eine MFA beendet die letzte Schicht und sichert die dafür vorgesehenen Räume und Systeme. Die Temperatureinstellung ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "schichtende-raeume-sichern"
+          },
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "beleuchtung-nach-schichtende"
+          },
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "geraetebetrieb-nach-schichtende"
+          },
+          {
+            "group": "Abschlusskontrolle",
+            "checkpointId": "it-arbeitsplaetze-nach-schichtende-sichern"
+          }
+        ],
+        "createdAt": "2026-09-26T01:00:06.975Z",
+        "updatedAt": "2026-09-29T07:05:16.060Z"
+      },
+      {
+        "id": "mfa-beginnt-den-dienst-in-arbeitskleidung",
+        "title": "MFA klärt Kleidung für den Dienst",
+        "description": "Eine MFA beginnt ihren Dienst und trägt die für die jeweilige Tätigkeit vorgeschriebene Kleidung. Wechsel und Aufbereitung sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Dienstbeginn",
+            "checkpointId": "arbeitskleidung-im-dienst-tragen"
+          }
+        ],
+        "createdAt": "2026-09-26T01:00:00.362Z",
+        "updatedAt": "2026-09-28T07:05:26.718Z"
+      },
+      {
+        "id": "mfa-benutzt-ein-privates-handy-waehrend-der-schicht",
+        "title": "MFA benutzt ein privates Handy während der Schicht",
+        "description": "Eine MFA möchte ihr privates Handy während der Schicht nutzen. Die Praxis bestimmt, ob, wann und wo dies möglich ist und welche Bedingungen oder Ausnahmen gelten.",
+        "checkpoint_refs": [
+          {
+            "group": "Handynutzung",
+            "checkpointId": "private-handys-im-dienst-nutzen"
+          }
+        ],
+        "createdAt": "2026-09-26T01:00:02.542Z",
+        "updatedAt": "2026-09-26T01:16:18.411Z"
+      },
+      {
+        "id": "mfa-bringt-eigene-speisen-und-getraenke-mit",
+        "title": "MFA bringt eigene Speisen und Getränke mit",
+        "description": "Mitgebrachte Lebensmittel werden nach der Praxisregel gelagert. Der Verzehr ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Aufbewahrung",
+            "checkpointId": "mitgebrachte-lebensmittel-lagern"
+          }
+        ],
+        "createdAt": "2026-09-26T00:59:58.023Z",
+        "updatedAt": "2026-09-28T07:05:25.194Z"
+      },
+      {
+        "id": "mfa-oeffnet-die-praxis-zur-fruehschicht",
+        "title": "MFA öffnet die Praxis zur Frühschicht",
+        "description": "Eine MFA beginnt die erste Schicht und prüft die Bereitschaft der vorgesehenen Räume, des Hygienematerials und der benötigten Geräte. Der Umgang mit festgestellten Abweichungen wird als Folgeprozess festgelegt.",
+        "checkpoint_refs": [
+          {
+            "group": "Öffnung",
+            "checkpointId": "schichtbeginn-praxisbereitschaft-pruefen"
+          },
+          {
+            "group": "Öffnung",
+            "checkpointId": "hygienematerial-zum-schichtbeginn-verfuegbar"
+          },
+          {
+            "group": "Öffnung",
+            "checkpointId": "geraete-zum-schichtbeginn-einsatzbereit"
+          }
+        ],
+        "createdAt": "2026-09-26T01:00:04.743Z",
+        "updatedAt": "2026-09-29T07:09:31.246Z"
+      },
+      {
+        "id": "neupatient",
+        "title": "Neupatient",
+        "description": "Ein Patient wird erstmals in der Praxis aufgenommen. Anhand der Praxisdefinition wird geklärt, ob er bereits bekannt ist; anschließend werden für die Aufnahme relevante Angaben einschließlich Versicherungsnachweis und Abrechnungsgrundlage erfasst. Weitere Entscheidungen trifft die Praxis im konkreten Ablauf.",
+        "checkpoint_refs": [
+          {
+            "group": "Stammdaten",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "einwilligung-vorhanden"
+          },
+          {
+            "group": "Stammdaten",
+            "checkpointId": "berechtigung-pruefen"
+          },
+          {
+            "group": "Organisation",
+            "checkpointId": "behandlerzuordnung-geklaert"
+          },
+          {
+            "group": "Anamnese",
+            "checkpointId": "anamnese-dokumentiert"
+          }
+        ],
+        "createdAt": "2026-09-28T04:42:53.689Z",
+        "updatedAt": "2026-09-29T07:13:18.771Z"
+      },
+      {
+        "id": "offene-vorgaenge-bei-abwesenheit-uebergeben",
+        "title": "Offene Vorgänge bei Abwesenheit übergeben",
+        "description": "Offene Arbeitsaufträge werden bei einer Abwesenheit an eine Vertretung übergeben.",
+        "checkpoint_refs": [
+          {
+            "group": "Offene Arbeit",
+            "checkpointId": "offene-vorgaenge-bei-abwesenheit-uebergeben"
+          }
+        ],
+        "createdAt": "2026-09-28T07:05:57.379Z",
+        "updatedAt": "2026-09-28T07:05:57.379Z"
+      },
+      {
+        "id": "patient-bringt-unterlagen",
+        "title": "Patient bringt Unterlagen mit",
+        "description": "Vom Patienten übergebene Unterlagen werden entgegengenommen, dem richtigen Patienten zugeordnet und digital erfasst. Weiterleitung und weitere medizinische Prüfung sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "patientenzuordnung-pruefen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "unterlagen-vorhanden"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-digitalisieren"
+          },
+          {
+            "group": "Verarbeitung",
+            "checkpointId": "dokument-kennzeichnen"
+          }
+        ],
+        "createdAt": "2026-09-28T04:42:40.763Z",
+        "updatedAt": "2026-09-28T07:03:30.834Z"
+      },
+      {
+        "id": "patient-erinnern",
+        "title": "Patient erinnern",
+        "description": "Die Praxis erinnert einen Patienten proaktiv an eine fällige Kontrolle oder Vorsorgemaßnahme. Dieser Prozess betrifft nur die Erinnerung; die zugrunde liegende medizinische Prüfung, Terminvereinbarung oder Befundmitteilung sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Konfiguration",
+            "checkpointId": "informationsempfaenger-festlegen"
+          },
+          {
+            "group": "Konfiguration",
+            "checkpointId": "kontaktform-festlegen"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "patient-informieren"
+          }
+        ],
+        "createdAt": "2026-09-28T08:26:02.001Z",
+        "updatedAt": "2026-09-29T08:08:01.066Z"
+      },
+      {
+        "id": "patient-erscheint-verspaetet-zum-termin",
+        "title": "Patient erscheint verspätet zum Termin",
+        "description": "Ein Patient erscheint nach dem vereinbarten Terminzeitpunkt. Die Praxis prüft, ob ein Termin besteht, ob dies nach ihrer Definition eine Verspätung ist und ob eine Wartephase vor Ort vorgesehen wird. Behandlung, Neuvereinbarung und eine mögliche Dringlichkeitseinschätzung bleiben getrennte Entscheidungen.",
+        "checkpoint_refs": [
+          {
+            "group": "Termin",
+            "checkpointId": "termin-vorhanden"
+          },
+          {
+            "group": "Verspätung",
+            "checkpointId": "verspaetung-zum-termin"
+          },
+          {
+            "group": "Wartephase",
+            "checkpointId": "wartephase-in-der-praxis-vorgesehen"
+          }
+        ],
+        "createdAt": "2026-09-25T19:27:01.940Z",
+        "updatedAt": "2026-09-29T07:20:40.887Z"
+      },
+      {
+        "id": "patient-gibt-selbst-gewonnene-probe-ab",
+        "title": "Patient gibt selbst gewonnene Probe ab",
+        "description": "Ein Patient bringt eine außerhalb der Praxis selbst gewonnene Probe. Die Praxis wendet ihre Annahme- und Zuordnungsregeln an; die Laborbearbeitung ist ein Folgefall.",
+        "checkpoint_refs": [
+          {
+            "group": "Annahme",
+            "checkpointId": "annahme-einer-selbst-gewonnenen-probe"
+          },
+          {
+            "group": "Zuordnung",
+            "checkpointId": "patientenzuordnung-pruefen"
+          }
+        ],
+        "createdAt": "2026-09-25T20:59:49.826Z",
+        "updatedAt": "2026-09-26T01:20:40.634Z"
+      },
+      {
+        "id": "patient-informieren",
+        "title": "Patient informieren",
+        "description": "Eine relevante Information wird dem vorgesehenen Patienten oder Empfänger mitgeteilt.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "patient-informieren"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:01.160Z",
+        "updatedAt": "2026-09-28T07:00:01.160Z"
+      },
+      {
+        "id": "patient-mit-sprachbarriere",
+        "title": "Patient mit Sprachbarriere",
+        "description": "Bei einem Patientenkontakt wird geklärt, ob die Verständigung für Beschwerden, Aufklärung und Einwilligung ausreichend gesichert ist. Die Organisation einer Dolmetschperson ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Dringlichkeit",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Verständigung",
+            "checkpointId": "verstaendigung-bei-sprachbarriere"
+          }
+        ],
+        "createdAt": "2026-09-25T19:26:23.169Z",
+        "updatedAt": "2026-09-28T07:04:03.855Z"
+      },
+      {
+        "id": "patient-nicht-erreichbar",
+        "title": "Patient nicht erreichbar",
+        "description": "Nach einem erfolglosen Kontaktversuch wird ein weiterer Kontaktversuch durchgeführt. Eine spätere Wiedervorlage ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Kontakt",
+            "checkpointId": "erneuten-kontaktversuch-durchfuehren"
+          }
+        ],
+        "createdAt": "2026-09-28T07:02:29.281Z",
+        "updatedAt": "2026-09-28T07:02:29.281Z"
+      },
+      {
+        "id": "patient-ohne-unterlagen",
+        "title": "Patient ohne Unterlagen",
+        "description": "Bei einem Patientenkontakt wird geklärt, ob die für den konkreten Vorgang benötigten Unterlagen vollständig vorliegen. Fehlende Unterlagen werden gezielt angefordert; Eingangskontrolle, Wiedervorlage und medizinische Bearbeitung sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Unterlagen",
+            "checkpointId": "benoetigte-unterlagen-vollstaendig"
+          },
+          {
+            "group": "Nachforderung",
+            "checkpointId": "unterlagen-anfordern"
+          }
+        ],
+        "createdAt": "2026-09-28T07:02:25.639Z",
+        "updatedAt": "2026-09-29T07:35:07.758Z"
+      },
+      {
+        "id": "patientenanruf-eingegangen",
+        "title": "Patientenanruf eingegangen",
+        "description": "Ein Patient schildert telefonisch ein Anliegen. Die Praxis dokumentiert den Eingang und erkennt mögliche Hinweise auf einen Bedarf an Dringlichkeitseinschätzung. Rückrufbitte, fachliche Einschätzung und weitere Bearbeitung sind Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Gespräch",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          }
+        ],
+        "createdAt": "2026-09-26T00:53:27.918Z",
+        "updatedAt": "2026-09-29T08:04:36.569Z"
+      },
+      {
+        "id": "patientennachricht-eingegangen",
+        "title": "Patientennachricht eingegangen",
+        "description": "Eine schriftliche Patientennachricht geht ein. Die Praxis erfasst Eingang und mögliche Dringlichkeit und klärt, ob ein weiterer Patientenkontakt erforderlich ist; erst dann wird gegebenenfalls die Kontaktform festgelegt. Ärztliche Vorlage, Antwort und weitere Bearbeitung sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          },
+          {
+            "group": "Antwort",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Antwort",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ],
+        "createdAt": "2026-09-25T20:59:01.155Z",
+        "updatedAt": "2026-09-29T07:14:23.682Z"
+      },
+      {
+        "id": "persoenliche-vorstellung-bei-infektionsverdacht",
+        "title": "Persönliche Vorstellung bei Infektionsverdacht",
+        "description": "Bei einem Infektionsverdacht ist eine persönliche Vorstellung des Patienten erforderlich. Die Praxis legt die dafür geltende Kontakt- und Ablaufregel fest.",
+        "checkpoint_refs": [
+          {
+            "group": "Vorstellung",
+            "checkpointId": "persoenliche-vorstellung-bei-infektionsverdacht"
+          }
+        ],
+        "createdAt": "2026-09-28T05:13:56.679Z",
+        "updatedAt": "2026-09-28T05:13:56.679Z"
+      },
+      {
+        "id": "raumtemperatur-nach-schichtende-einstellen",
+        "title": "Raumtemperatur nach Schichtende einstellen",
+        "description": "Die Praxisregel für Heizung, Lüftung und Klimatisierung nach dem Dienst wird umgesetzt.",
+        "checkpoint_refs": [
+          {
+            "group": "Raumklima",
+            "checkpointId": "raumtemperatur-nach-schichtende-einstellen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:05:23.448Z",
+        "updatedAt": "2026-09-28T07:05:37.143Z"
+      },
+      {
+        "id": "rezept-erstellen",
+        "title": "Rezept erstellen",
+        "description": "Auf Grundlage bereits geklärter Voraussetzungen wird ein Rezept erstellt.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "rezept-erstellen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:00.385Z",
+        "updatedAt": "2026-09-28T07:00:00.385Z"
+      },
+      {
+        "id": "rezeptanfrage-ohne-arzt",
+        "title": "Rezeptanfrage ohne Arzt",
+        "description": "Eine Folgeverordnung für bekannte Dauermedikation wird ohne erneuten Arzttermin angefragt. Patientenstatus, Versicherungsnachweis, Abrechnungsgrundlage und medizinische Voraussetzungen werden für die ärztliche Entscheidung geprüft. Rezept erstellen, bereitstellen und Patientenkontakt sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-vorhanden"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "kontrolle-aktuell"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "dauermedikation-abgleichen"
+          },
+          {
+            "group": "Medizinische Prüfung",
+            "checkpointId": "diagnose-dokumentiert"
+          }
+        ],
+        "createdAt": "2026-08-19T14:04:09.075Z",
+        "updatedAt": "2026-09-29T07:11:58.994Z"
+      },
+      {
+        "id": "rueckrufbitte",
+        "title": "Rückrufbitte",
+        "description": "Es liegt ein konkreter Wunsch nach einem Rückruf vor. Die Praxis dokumentiert den Eingang und legt die Frist für die erste Rückmeldung fest; der eigentliche Rückruf, ein erneuter Kontaktversuch und eine Wiedervorlage sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          },
+          {
+            "group": "Rückruffrist",
+            "checkpointId": "frist-fuer-erste-rueckmeldung-auf-patientenanliegen"
+          }
+        ],
+        "createdAt": "2026-09-26T00:52:48.529Z",
+        "updatedAt": "2026-09-29T08:03:48.562Z"
+      },
+      {
+        "id": "shit-instabilitaetszeichen-bei-rhythmusstoerung",
+        "title": "SHIT-Instabilitätszeichen bei Rhythmusstörung",
+        "description": "Es wird erkannt, ob bei einem Patienten mit vermuteter oder bekannter Herzrhythmusstörung Hinweise auf Kreislaufinstabilität vorliegen. Die ärztliche Soforteinschätzung ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Warnzeichen",
+            "checkpointId": "shit-instabilitaetszeichen-erkennen"
+          }
+        ],
+        "createdAt": "2026-09-25T19:35:52.364Z",
+        "updatedAt": "2026-09-28T07:04:14.273Z"
+      },
+      {
+        "id": "speisen-und-getraenke-im-dienst",
+        "title": "Speisen und Getränke im Dienst",
+        "description": "Die Praxisregel für Ort und Zeitpunkt des Verzehrs eigener Speisen und Getränke wird umgesetzt.",
+        "checkpoint_refs": [
+          {
+            "group": "Verzehr",
+            "checkpointId": "speisen-und-getraenke-im-dienst"
+          }
+        ],
+        "createdAt": "2026-09-28T07:05:24.595Z",
+        "updatedAt": "2026-09-28T07:05:24.595Z"
+      },
+      {
+        "id": "teammitglied-meldet-arbeitsunfaehigkeit",
+        "title": "Teammitglied meldet Arbeitsunfähigkeit",
+        "description": "Ein Teammitglied meldet eine Arbeitsunfähigkeit mit voraussichtlicher Dauer. Die Praxis wendet ihren festgelegten Meldeweg an. Ein kurzfristiger Personalausfall kann als Folgefall entstehen.",
+        "checkpoint_refs": [
+          {
+            "group": "Meldung",
+            "checkpointId": "krankmeldung-im-team-entgegennehmen"
+          }
+        ],
+        "createdAt": "2026-09-26T01:09:56.531Z",
+        "updatedAt": "2026-09-26T01:18:10.071Z"
+      },
+      {
+        "id": "termin-durch-personalausfall-betroffen",
+        "title": "Termin durch Personalausfall betroffen",
+        "description": "Es wird entschieden, wie ein gebuchter Termin bei Ausfall einer benötigten Person behandelt wird. Information und Terminvereinbarung sind eigene Vorgänge.",
+        "checkpoint_refs": [
+          {
+            "group": "Entscheidung",
+            "checkpointId": "gebuchte-termine-bei-personalausfall-behandeln"
+          }
+        ],
+        "createdAt": "2026-09-26T01:10:05.763Z",
+        "updatedAt": "2026-09-28T07:04:20.909Z"
+      },
+      {
+        "id": "terminanfrage",
+        "title": "Terminanfrage",
+        "description": "Ein Patient fragt selbst nach einem Termin. Die Praxis ordnet den Patienten zu, klärt das Terminanliegen und dokumentiert die Anfrage. Eine konkrete Terminvereinbarung ist ein eigener, anschließender Fall und kann auch aus anderen Vorgängen heraus gestartet werden.",
+        "checkpoint_refs": [
+          {
+            "group": "Patient",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Anliegen",
+            "checkpointId": "terminanliegen-geklaert"
+          },
+          {
+            "group": "Eingang",
+            "checkpointId": "eingehenden-patientenkontakt-dokumentieren"
+          }
+        ],
+        "createdAt": "2026-09-28T08:26:24.338Z",
+        "updatedAt": "2026-09-29T08:26:01.244Z"
+      },
+      {
+        "id": "terminvereinbarung",
+        "title": "Terminvereinbarung",
+        "description": "Für einen bereits geklärten Anlass wird ein konkreter Termin in der Praxis vereinbart. Dieser Prozess ist unabhängig davon, ob der Anlass aus einer Patientenanfrage, einer Einbestellung, einem Befund oder einem anderen Vorgang entsteht.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "termin-vereinbaren"
+          }
+        ],
+        "createdAt": "2026-09-28T05:13:47.989Z",
+        "updatedAt": "2026-09-28T08:26:24.709Z"
+      },
+      {
+        "id": "ueberweisung-erstellen",
+        "title": "Überweisung erstellen",
+        "description": "Eine Überweisung wird auf Grundlage der geklärten Angaben erstellt.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "ueberweisung-erstellen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:01:27.496Z",
+        "updatedAt": "2026-09-28T07:01:27.496Z"
+      },
+      {
+        "id": "ueberweisungsanfrage",
+        "title": "Überweisungsanfrage",
+        "description": "Bei einer Überweisungsanfrage werden Patientenstatus, Versicherungsnachweis, Abrechnungsgrundlage, Anlass und Fragestellung geklärt. Erstellung und Bereitstellung der Überweisung sind getrennte Folgehandlungen.",
+        "checkpoint_refs": [
+          {
+            "group": "Patient",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Voraussetzungen",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          },
+          {
+            "group": "Voraussetzungen",
+            "checkpointId": "abrechnungsgrundlage-geklaert"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "anlass-einer-ueberweisung-pruefen"
+          },
+          {
+            "group": "Klärung",
+            "checkpointId": "fragestellung-der-ueberweisung-klaeren"
+          }
+        ],
+        "createdAt": "2026-09-25T21:00:21.356Z",
+        "updatedAt": "2026-09-29T07:13:53.040Z"
+      },
+      {
+        "id": "unterlagen-anfordern",
+        "title": "Unterlagen anfordern",
+        "description": "Benötigte externe Unterlagen werden unabhängig vom konkreten Anlass bei der zuständigen Person oder Stelle angefordert. Dieser Prozess beschreibt nur die Anforderung, nicht die Feststellung eines mangelhaften Eingangs oder die spätere Prüfung.",
+        "checkpoint_refs": [
+          {
+            "group": "Nachforderung",
+            "checkpointId": "unterlagen-anfordern"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:30.885Z",
+        "updatedAt": "2026-09-28T08:26:39.760Z"
+      },
+      {
+        "id": "unterlagen-aushaendigen",
+        "title": "Unterlagen aushändigen",
+        "description": "Ein Patient fordert einzelne eigene Unterlagen oder Dokumente an. Dieser Prozess betrifft die Herausgabe einzelner Dokumente; die vollständige eigene Akte wird im separaten Prozess „Akteneinsicht“ behandelt.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Abschluss",
+            "checkpointId": "dokument-dem-patienten-bereitstellen"
+          }
+        ],
+        "createdAt": "2026-09-28T08:26:37.847Z",
+        "updatedAt": "2026-09-28T08:26:37.847Z"
+      },
+      {
+        "id": "unzustellbare-post",
+        "title": "Unzustellbare Post",
+        "description": "Eine Sendung kommt unzustellbar zurück. Die Praxis klärt den Patientenbezug, ob ein erneuter Kontakt erforderlich ist und gegebenenfalls auf welchem Weg. Die tatsächliche Kontaktaufnahme und eine spätere Wiedervorlage sind eigene Folgeprozesse.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Kontakt",
+            "checkpointId": "erneuter-patientenkontakt-erforderlich"
+          },
+          {
+            "group": "Kontakt",
+            "checkpointId": "kontaktform-festlegen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:02:26.666Z",
+        "updatedAt": "2026-09-29T08:08:57.935Z"
+      },
+      {
+        "id": "urlaubsantrag-eingegangen",
+        "title": "Urlaubsantrag eingegangen",
+        "description": "Ein Teammitglied beantragt Urlaub für einen konkreten Zeitraum. Der Antrag wird anhand der von der Praxis festgelegten Regeln zu Vorlauf und Entscheidungskriterien bearbeitet.",
+        "checkpoint_refs": [
+          {
+            "group": "Antrag",
+            "checkpointId": "vorlauf-fuer-urlaubsantrag"
+          },
+          {
+            "group": "Entscheidung",
+            "checkpointId": "urlaub-anhand-der-dienstbesetzung-entscheiden"
+          }
+        ],
+        "createdAt": "2026-09-26T01:09:58.938Z",
+        "updatedAt": "2026-09-26T01:18:12.091Z"
+      },
+      {
+        "id": "verlaufskontakt",
+        "title": "Verlaufskontakt",
+        "description": "Der aktuelle Verlauf eines bekannten Problems wird dokumentiert. Eine spätere Wiedervorlage ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Verlauf",
+            "checkpointId": "aktuellen-verlauf-erfassen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:02:27.463Z",
+        "updatedAt": "2026-09-28T07:02:27.463Z"
+      },
+      {
+        "id": "verschlechterung-gemeldet",
+        "title": "Verschlechterung gemeldet",
+        "description": "Ein Patient meldet eine konkrete Zustandsveränderung. Der aktuelle Verlauf wird erfasst und es wird geklärt, ob Hinweise auf einen Bedarf an Dringlichkeitseinschätzung vorliegen. Die fachliche Einschätzung und das weitere Vorgehen folgen getrennt.",
+        "checkpoint_refs": [
+          {
+            "group": "Verlauf",
+            "checkpointId": "aktuellen-verlauf-erfassen"
+          },
+          {
+            "group": "Einschätzung",
+            "checkpointId": "dringlichkeitsbedarf-erkennen"
+          }
+        ],
+        "createdAt": "2026-09-29T08:04:35.601Z",
+        "updatedAt": "2026-09-29T08:04:35.601Z"
+      },
+      {
+        "id": "versicherungsnachweis-fehlt",
+        "title": "Versicherungsnachweis fehlt",
+        "description": "Ein fehlender Versicherungsnachweis wird bei einem Patientenkontakt geklärt. Eine spätere Wiedervorlage ist ein eigener Vorgang.",
+        "checkpoint_refs": [
+          {
+            "group": "Patientenstatus",
+            "checkpointId": "patient-bekannt"
+          },
+          {
+            "group": "Prüfung",
+            "checkpointId": "versicherungsnachweis-vorhanden"
+          }
+        ],
+        "createdAt": "2026-09-28T07:02:26.152Z",
+        "updatedAt": "2026-09-28T07:02:26.152Z"
+      },
+      {
+        "id": "vertretung-bei-abwesenheit-zuordnen",
+        "title": "Vertretung bei Abwesenheit zuordnen",
+        "description": "Für eine abwesende Person wird eine geeignete Vertretung zugeordnet.",
+        "checkpoint_refs": [
+          {
+            "group": "Besetzung",
+            "checkpointId": "vertretung-bei-abwesenheit-zuordnen"
+          }
+        ],
+        "createdAt": "2026-09-28T07:05:56.467Z",
+        "updatedAt": "2026-09-28T07:05:56.467Z"
+      },
+      {
+        "id": "wiedervorlage-vormerken",
+        "title": "Wiedervorlage vormerken",
+        "description": "Ein Vorgang wird für eine spätere erneute Bearbeitung vorgemerkt.",
+        "checkpoint_refs": [
+          {
+            "group": "Abschluss",
+            "checkpointId": "zur-wiedervorlage-vormerken"
+          }
+        ],
+        "createdAt": "2026-09-28T07:00:39.102Z",
+        "updatedAt": "2026-09-28T07:00:39.102Z"
+      },
+      {
+        "id": "zeit-fuer-fort--oder-weiterbildung-regeln",
+        "title": "Zeit für Fort- oder Weiterbildung regeln",
+        "description": "Die zeitliche Behandlung einer Fort- oder Weiterbildung wird festgelegt.",
+        "checkpoint_refs": [
+          {
+            "group": "MFA: Zeit",
+            "checkpointId": "zeit-fuer-fort--oder-weiterbildung-regeln"
+          }
+        ],
+        "createdAt": "2026-09-28T07:01:11.927Z",
+        "updatedAt": "2026-09-28T07:01:11.927Z"
+      }
+    ]
+  },
+  "staticCatalogSources": [
+    {
+      "path": "lib/practiceProcesses/checkpointCatalog.ts",
+      "sha256": "897d34f7d53288f7cd8dba1683fc1fb35ff8750ba60c545635f4f809300088da"
+    },
+    {
+      "path": "lib/practiceProcesses/caseProfileLibrary.ts",
+      "sha256": "06e3c888e6c6596d6e484b16b3598a4ebad4fcb8c0bc7e224d5eb70b5cf3885d"
+    }
+  ],
+  "canonicalSha256": "f188ef3e0e916a4a3f72f788ddcefcb0ca10bad78fee87e0807cf3417181116e"
+}

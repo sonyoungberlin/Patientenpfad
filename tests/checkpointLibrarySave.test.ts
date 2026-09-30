@@ -31,6 +31,7 @@ jest.mock("@/lib/prisma", () => ({
     },
     libraryCaseProfile: { findMany: jest.fn(), updateMany: jest.fn() },
     workflowSession: { findMany: jest.fn() },
+    practiceCheckpointDefinition: { findFirst: jest.fn() },
     $queryRaw: jest.fn(),
   },
 }));
@@ -54,6 +55,7 @@ type LibMock = {
   };
   libraryCaseProfile: { findMany: jest.Mock; updateMany: jest.Mock };
   workflowSession: { findMany: jest.Mock };
+  practiceCheckpointDefinition: { findFirst: jest.Mock };
   $queryRaw: jest.Mock;
 };
 const pm = prisma as unknown as LibMock;
@@ -116,11 +118,14 @@ beforeEach(() => {
   pm.libraryCaseProfile.findMany.mockReset();
   pm.libraryCaseProfile.findMany.mockResolvedValue([]);
   pm.workflowSession.findMany.mockReset();
+  pm.practiceCheckpointDefinition.findFirst.mockReset();
+  pm.practiceCheckpointDefinition.findFirst.mockResolvedValue(null);
   pm.$queryRaw.mockReset();
   // Default: kein Anker referenziert
   pm.$queryRaw.mockResolvedValue([{ exists: false }]);
   getSessionMock.mockReset();
   getSessionMock.mockResolvedValue(ADMIN_ACCOUNT);
+  pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
 });
 
 // ---------------------------------------------------------------------------

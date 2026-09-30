@@ -3,11 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  DRAFT_SNAPSHOT_KEY,
-  DRAFT_SOURCE_ID_KEY,
-  DRAFT_SOURCE_TITLE_KEY,
-} from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 
 type SessionItem = {
   id: string;
@@ -51,12 +46,7 @@ export default function WorkflowCasesListClient({ items: initialItems }: { items
   }
 
   function handleWeiterbearbeiten(item: SessionItem) {
-    if (!item.snapshotJson) return;
-    sessionStorage.setItem(DRAFT_SNAPSHOT_KEY, item.snapshotJson);
-    sessionStorage.setItem(DRAFT_SOURCE_ID_KEY, item.id);
-    if (item.title) sessionStorage.setItem(DRAFT_SOURCE_TITLE_KEY, item.title);
-    else sessionStorage.removeItem(DRAFT_SOURCE_TITLE_KEY);
-    router.push("/workflow-cases/internal-protocol/draft/m3");
+    router.push(`/workflow-cases/internal-protocol/draft/resume?sessionId=${encodeURIComponent(item.id)}`);
   }
 
   if (items.length === 0) {
@@ -93,7 +83,7 @@ export default function WorkflowCasesListClient({ items: initialItems }: { items
                     <button type="button">Öffnen</button>
                   </Link>
                 )}
-                {item.kind === "practice-workflow" && item.snapshotJson && (
+                {item.kind === "practice-workflow" && (
                   <button
                     type="button"
                     onClick={() => handleWeiterbearbeiten(item)}

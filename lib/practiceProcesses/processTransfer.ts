@@ -1,4 +1,4 @@
-import type { CheckpointDecision, PracticeWorkflowSnapshot } from "./workflowSnapshot";
+import type { CheckpointDecision, PublishedPracticeWorkflowSnapshot } from "./workflowSnapshot";
 
 export interface PracticeProcessTransferV1 {
   schemaVersion: 1;
@@ -22,9 +22,8 @@ export interface PracticeProcessTransferV1 {
  * Gibt null zurück wenn completedAt fehlt oder ein Checkpoint keine decision hat.
  */
 export function buildPracticeProcessTransfer(
-  snapshot: PracticeWorkflowSnapshot,
+  snapshot: PublishedPracticeWorkflowSnapshot,
 ): PracticeProcessTransferV1 | null {
-  if (!snapshot.completedAt) return null;
   if (snapshot.checkpoints.some((cp) => cp.decision === undefined)) return null;
 
   return {
@@ -37,8 +36,8 @@ export function buildPracticeProcessTransfer(
       checkpointId: cp.checkpointId,
       checkpointTitle: cp.checkpointTitle,
       decision: cp.decision as CheckpointDecision,
-      ...(cp.umsetzung !== undefined ? { umsetzung: cp.umsetzung } : {}),
-      selectedAnchorIds: cp.selectedAnchorIds ?? [],
+      ...(cp.definition.implementation ? { umsetzung: cp.definition.implementation } : {}),
+      selectedAnchorIds: cp.definition.selectedAnchorIds,
       order: index + 1,
     })),
   };

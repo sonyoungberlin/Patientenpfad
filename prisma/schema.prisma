@@ -1135,45 +1135,20 @@ model LibraryCaseProfile {
   updatedAt       DateTime @updatedAt
 }
 
-/// Genau eine Definitionsfamilie je Praxis und Checkpoint-Vorlage.
-/// Der Draft darf bearbeitet werden; freigegebene Versionen sind append-only.
+/// Aktueller praxisweiter Standard je Checkpoint-Vorlage.
 model PracticeCheckpointDefinition {
-  id          String   @id @default(cuid())
-  practice_id String
-  practice    Practice @relation("PracticeCheckpointDefinitionPractice", fields: [practice_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
-
-  checkpoint_id String
-  draft         Json?
-
-  /// Zeigt auf die aktuell gültige, unveränderliche Version.
-  /// Die Zuordnung wird ausschließlich zusammen mit einer neuen Version geändert.
-  current_version_id String? @unique
-  current_version    PracticeCheckpointDefinitionVersion? @relation("CurrentPracticeCheckpointDefinitionVersion", fields: [current_version_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  versions           PracticeCheckpointDefinitionVersion[] @relation("PracticeCheckpointDefinitionVersions")
+  id                 String   @id @default(cuid())
+  practice_id        String
+  practice           Practice @relation("PracticeCheckpointDefinitionPractice", fields: [practice_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  checkpoint_id      String
+  selected_anchor_ids Json
+  implementation     String
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@unique([practice_id, checkpoint_id])
   @@index([practice_id, updated_at])
-}
-
-/// Unveränderliche, freigegebene Version einer praxiseigenen Checkpoint-Definition.
-model PracticeCheckpointDefinitionVersion {
-  id            String                       @id @default(cuid())
-  definition_id String
-  definition    PracticeCheckpointDefinition @relation("PracticeCheckpointDefinitionVersions", fields: [definition_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  current_for   PracticeCheckpointDefinition? @relation("CurrentPracticeCheckpointDefinitionVersion")
-
-  version                Int
-  checkpoint_id          String
-  template_snapshot      Json
-  content                Json
-  released_by_account_id String
-  released_at            DateTime @default(now())
-
-  @@unique([definition_id, version])
-  @@index([definition_id, released_at])
 }
 
 /// Stabiler, versionierter Praxiskatalog-Eintrag.

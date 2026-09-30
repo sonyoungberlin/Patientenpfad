@@ -14,7 +14,7 @@ export default async function PracticeCheckpointDefinitionsPage() {
     listCheckpointsFromLib(),
     listPracticeDefinitionSummaries(scope.practice_id),
   ]);
-  const byCheckpointId = new Map(definitions.map((item) => [item.checkpoint_id, item]));
+  const byCheckpointId = new Map(definitions.map((item) => [item.checkpointId, item]));
 
   return (
     <main style={{ padding: "2rem", maxWidth: "64rem", margin: "0 auto" }}>
@@ -28,11 +28,7 @@ export default async function PracticeCheckpointDefinitionsPage() {
       <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: "0.6rem" }}>
         {checkpoints.map((checkpoint) => {
           const definition = byCheckpointId.get(checkpoint.id);
-          const status = definition?.draft
-            ? "Entwurf vorhanden"
-            : definition?.current_version_id
-              ? "Freigegeben"
-              : "Noch nicht definiert";
+          const status = definition ? "Definiert" : "Noch nicht definiert";
           return (
             <li key={checkpoint.id}>
               <Link href={`/practice/checkpoint-definitions/${checkpoint.id}`} className="card" style={{ display: "flex", justifyContent: "space-between", gap: "1rem", padding: "0.85rem 1rem", color: "inherit", textDecoration: "none" }}>

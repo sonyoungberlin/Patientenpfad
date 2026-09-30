@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { StartRevisionInput, StartRevisionResult } from "./types";
-import type { PracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
-import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import { isPublishedPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 /**
  * Startet eine neue Revision eines Katalogeintrags.
@@ -41,7 +41,7 @@ export async function startRevision(
 
   // C — Snapshot aus Katalogeintrag laden und completedAt entfernen
   const rawSnapshot = entry.snapshot;
-  if (!isPracticeWorkflowSnapshot(rawSnapshot)) {
+  if (!isPublishedPracticeWorkflowSnapshot(rawSnapshot)) {
     throw Object.assign(
       new Error("Snapshot des Katalogeintrags ist kein gültiger PracticeWorkflowSnapshot."),
       { statusCode: 500 },
@@ -49,8 +49,13 @@ export async function startRevision(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { completedAt: _removed, ...draftSnapshot } =
-    rawSnapshot as PracticeWorkflowSnapshot;
+  const draftSnapshot: PracticeWorkflowDraftSnapshot = {
+    processKind: rawSnapshot.processKind,
+    snapshotVersion: rawSnapshot.snapshotVersion,
+    caseProfileId: rawSnapshot.caseProfileId,
+    caseProfileTitle: rawSnapshot.caseProfileTitle,
+    checkpoints: rawSnapshot.checkpoints.map(({ definition: _definition, ...checkpoint }) => checkpoint),
+  };
 
   const newSession = await prisma.workflowSession.create({
     data: {
