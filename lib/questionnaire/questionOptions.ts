@@ -7,7 +7,8 @@ import type {
 export const UNKNOWN_OPTION_LABEL = "Unbekannter Wert";
 
 function looksLikeTechnicalOptionValue(value: string): boolean {
-  return /^[a-z0-9]+(?:[_:-][a-z0-9]+)+$/i.test(value.trim());
+  const trimmed = value.trim();
+  return trimmed.length > 120 || /^[a-z0-9]+(?:[_:.\-][a-z0-9]+)+$/i.test(trimmed);
 }
 
 export function getQuestionOptionValue(option: QuestionOptionDefinition): string {
@@ -57,4 +58,14 @@ export function resolveQuestionOptionLabel(
     return value;
   }
   return UNKNOWN_OPTION_LABEL;
+}
+
+export function resolveRepeatableQuestionOptionLabel(
+  question: Pick<QuestionDefinition, "options"> | undefined,
+  value: string,
+): string {
+  const label = resolveQuestionOptionLabel(question, value);
+  return label === UNKNOWN_OPTION_LABEL && !looksLikeTechnicalOptionValue(value)
+    ? value
+    : label;
 }

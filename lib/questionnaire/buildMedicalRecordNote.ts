@@ -41,7 +41,8 @@ import {
   resolveStructuredQuestionDocumentation,
   resolveRepeatableFieldDocumentation,
 } from "./formatAnswer";
-import { getQuestionOptionValues } from "./questionOptions";
+import { getQuestionOptionValues, resolveRepeatableQuestionOptionLabel } from "./questionOptions";
+import { parseMultiSelectValue } from "./multiSelect";
 import { computeQuestionnaireAttentionHints } from "./attentionHints";
 import { normalizeSmokingPair } from "./smokingInput";
 import { normalizeTextForPvs } from "./normalizeTextForPvs";
@@ -380,8 +381,16 @@ function formatRepeatableGroupEntries(
           for (const part of parts) lines.push(`       ${part.trim()}`);
         }
       } else {
-        if (useCompactDetailContract) entryLines.push(`${field.label}: ${trimmed}`);
-        else lines.push(`     ${field.label}: ${trimmed}`);
+        let display = trimmed;
+        if (field.type === "select") {
+          display = resolveRepeatableQuestionOptionLabel({ options: field.options }, display);
+        } else if (field.type === "multi_select") {
+          display = parseMultiSelectValue(display, field.options ?? [])
+            .map((value) => resolveRepeatableQuestionOptionLabel({ options: field.options }, value))
+            .join(", ");
+        }
+        if (useCompactDetailContract) entryLines.push(`${field.label}: ${display}`);
+        else lines.push(`     ${field.label}: ${display}`);
       }
     }
     if (useCompactDetailContract && entryLines.length > 0) lines.push(entryLines.join("\n"));

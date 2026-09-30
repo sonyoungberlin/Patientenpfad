@@ -20,6 +20,7 @@ import {
   getQuestionOptionValues,
   resolveQuestionOptionDocumentation,
   resolveQuestionOptionLabel,
+  resolveRepeatableQuestionOptionLabel,
 } from "./questionOptions";
 
 // ---------------------------------------------------------------------------
@@ -104,9 +105,7 @@ export function resolveQuestionDocumentation(
   options: { includeUnit?: boolean } = {},
 ): ResolvedQuestionDocumentation {
   if (!question?.options?.length) {
-    const fallbackValue = question?.type === "select" || question?.type === "multi_select"
-      ? resolveQuestionOptionLabel(question, rawValue)
-      : question?.type === "yes_no"
+    const fallbackValue = question?.type === "yes_no"
         ? formatYesNoValue(resolveQuestionOptionLabel(question, rawValue))
         : formatQuestionValue(question, rawValue, options.includeUnit);
     return {
@@ -138,9 +137,20 @@ export function resolveQuestionDocumentation(
 }
 
 export function formatDocumentationSegmentAnswer(
-  question: Pick<QuestionDefinition, "type" | "unit" | "unitSeparator">,
+  question: Pick<QuestionDefinition, "type" | "unit" | "unitSeparator" | "options">,
   rawValue: string,
 ): string {
+  if (question.type === "select") {
+    return resolveQuestionOptionLabel(question, rawValue);
+  }
+  if (question.type === "multi_select") {
+    return parseMultiSelectValue(rawValue, getQuestionOptionValues(question))
+      .map((value) => resolveQuestionOptionLabel(question, value))
+      .join(", ");
+  }
+  if (question.type === "yes_no" && question.options?.length) {
+    return resolveQuestionOptionLabel(question, rawValue);
+  }
   if (question.type === "date" && /^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
     const [year, month, day] = rawValue.split("-");
     return `${day}.${month}.${year}`;
@@ -273,11 +283,11 @@ export function resolveRepeatableFieldDocumentation(
     const referencedField = fields.find((candidate) => candidate.key === segment.fieldKey) ?? field;
     const trimmedValue = value.trim();
     if (referencedField.type === "select") {
-      return resolveQuestionOptionLabel({ options: referencedField.options }, trimmedValue);
+      return resolveRepeatableQuestionOptionLabel({ options: referencedField.options }, trimmedValue);
     }
     if (referencedField.type === "multi_select") {
       return parseMultiSelectValue(trimmedValue, referencedField.options ?? [])
-        .map((selectedValue) => resolveQuestionOptionLabel({ options: referencedField.options }, selectedValue))
+        .map((selectedValue) => resolveRepeatableQuestionOptionLabel({ options: referencedField.options }, selectedValue))
         .join(", ");
     }
     if (referencedField.type === "date" || referencedField.type === "month") {
@@ -358,10 +368,10 @@ export function parseRepeatableGroupEntries(
       if (field.type === "yes_no") {
         display = formatYesNoValue(display);
       } else if (field.type === "select") {
-        display = resolveQuestionOptionLabel({ options: field.options }, display);
+        display = resolveRepeatableQuestionOptionLabel({ options: field.options }, display);
       } else if (field.type === "multi_select") {
         display = parseMultiSelectValue(display, field.options ?? [])
-          .map((value) => resolveQuestionOptionLabel({ options: field.options }, value))
+          .map((value) => resolveRepeatableQuestionOptionLabel({ options: field.options }, value))
           .join(", ");
       } else if (field.type === "date" || field.type === "month") {
         display = formatDocumentationSegmentAnswer({ type: field.type }, display);

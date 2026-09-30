@@ -477,4 +477,107 @@ describe("documentationText für Antwortoptionen", () => {
     expect(note).toContain("Beginn: 03/2024");
     expect(note).toContain("03/2024");
   });
+
+  it("gibt bei Krankenkassen-, Multi-Select- und bedingten Antworten nur sichtbare Labels aus", async () => {
+    const insuranceType: QuestionDefinition = {
+      id: "INSURANCE_TYPE_PROFILE",
+      text: "Versicherungsart",
+      type: "select",
+      required: false,
+      options: [
+        { value: "statutory", label: "Gesetzlich versichert" },
+        { value: "private", label: "Privat versichert" },
+      ],
+    };
+    const support: QuestionDefinition = {
+      id: "SUPPORT_OPTIONS",
+      text: "Unterstützung",
+      type: "multi_select",
+      required: false,
+      options: [
+        { value: "family", label: "Angehörige" },
+        { value: "service", label: "Ambulanter Dienst" },
+      ],
+    };
+    const repeatable: QuestionDefinition = {
+      id: "INSURANCE_ENTRIES",
+      text: "Versicherungen",
+      type: "repeatable_group",
+      required: false,
+      groupSchema: [{
+        key: "kind",
+        label: "Versicherungsart",
+        type: "select",
+        required: false,
+        options: [{ value: "statutory", label: "Gesetzlich versichert" }],
+      }],
+    };
+    const followUp: QuestionDefinition = {
+      id: "FOLLOW_UP",
+      text: "Folgeoption",
+      type: "select",
+      required: false,
+      options: [{ value: "later", label: "Später prüfen" }],
+    };
+    const profile: QuestionDefinition = {
+      id: "PROFILE_SUMMARY",
+      text: "Profilzusammenfassung",
+      type: "select",
+      required: false,
+      options: [{
+        value: "complete",
+        label: "Vollständig",
+        documentationSegments: [
+          { kind: "text", text: "Versicherung: " },
+          { kind: "answerRef", questionId: "INSURANCE_TYPE_PROFILE" },
+          { kind: "text", text: "; Unterstützung: " },
+          { kind: "answerRef", questionId: "SUPPORT_OPTIONS" },
+          { kind: "conditional", questionId: "FOLLOW_UP", optionValue: "later", segments: [
+            { kind: "text", text: " (" },
+            { kind: "answerRef", questionId: "FOLLOW_UP" },
+            { kind: "text", text: ")" },
+          ] },
+        ],
+      }],
+    };
+    const questions = [insuranceType, support, repeatable, followUp, profile];
+    const frozen = [{ ...frozenBlock(profile), questions }];
+    const answers = {
+      INSURANCE_TYPE_PROFILE: "statutory",
+      SUPPORT_OPTIONS: "family, service",
+      INSURANCE_ENTRIES: JSON.stringify([{ kind: "statutory" }]),
+      FOLLOW_UP: "later",
+      PROFILE_SUMMARY: "complete",
+    };
+
+    const note = buildMedicalRecordNote({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    const semantic = buildSemanticMedicalRecordDocument({ answers, selected_block_ids: ["TEST_BLOCK"], frozenBlocks: frozen });
+    const xml = buildStructuredAppXml(semantic);
+    const pdf = await buildQuestionnairePdfBytes({
+      patient_reference: null,
+      submitted_at: null,
+      submitted_by: "patient",
+      selected_block_ids: ["TEST_BLOCK"],
+      deduplicated_questions: questions,
+      answers,
+      source: "test",
+      practice_form: null,
+      frozen_blocks: frozen,
+    }, {
+      title: "Test",
+      referenceLabel: "Referenz",
+      blockCatalog: { TEST_BLOCK: { id: "TEST_BLOCK", label: "Testblock", displayOrder: 1, questionIds: questions.map((question) => question.id) } },
+    });
+    const pdfText = await extractPdfText(pdf.bytes);
+
+    for (const output of [note, xml, pdfText]) {
+      expect(output).toContain("Gesetzlich versichert");
+      expect(output).toContain("Angehörige, Ambulanter Dienst");
+      expect(output).toContain("Später prüfen");
+      expect(output).not.toContain("statutory");
+      expect(output).not.toContain("family");
+      expect(output).not.toContain("service");
+      expect(output).not.toContain("later");
+    }
+  });
 });
