@@ -108,11 +108,17 @@ describe("zentrale Bereichsdefinition", () => {
     expect(sections[4].items.map((item) => item.label)).toEqual([
       "Arbeitsprozesse",
       "Neue Sitzung",
-      "Praxisprozesse",
-      "Praxisfall-Ketten",
     ]);
     expect(sections[5].title).toBe("Praxisverwaltung");
-    expect(sections[5].items.slice(0, 2).map(({ label, href }) => ({ label, href }))).toEqual([
+    expect(sections[5].items.slice(0, 4).map(({ label, href }) => ({ label, href }))).toEqual([
+      {
+        label: "Praxisfälle",
+        href: "/workflow-cases/internal-protocol/new",
+      },
+      {
+        label: "Praxisfall-Ketten",
+        href: "/practice/chains",
+      },
       {
         label: "Dokumentationsbibliothek",
         href: "/practice/documentation-library",
@@ -146,8 +152,6 @@ describe("zentrale Bereichsdefinition", () => {
     expect(withWorkflow.find((section) => section.id === "workflow-path")?.items.map((item) => item.href)).toEqual([
       "/workflow-cases",
       "/workflow-cases/new",
-      "/workflow-cases/internal-protocol/new",
-      "/practice/chains",
     ]);
   });
 
@@ -163,8 +167,6 @@ describe("zentrale Bereichsdefinition", () => {
     expect(workflow?.items.map((item) => item.label)).toEqual([
       "Arbeitsprozesse",
       "Neue Sitzung",
-      "Praxisprozesse",
-      "Praxisfall-Ketten",
     ]);
   });
 
@@ -209,7 +211,7 @@ describe("zentrale Bereichsdefinition", () => {
     ["/office-cases/questionnaire/abc", "inbox", "applicant-questionnaire-inbox"],
     ["/office-cases/questionnaire/new", "inbox", "applicant-questionnaire-inbox"],
     ["/workflow-cases/abc", "workflow-path", "workflow-cases"],
-    ["/workflow-cases/internal-protocol/new", "workflow-path", "new-practice-process"],
+    ["/workflow-cases/internal-protocol/new", "practice-management", "practice-cases"],
   ])("ordnet Detailroute %s dem richtigen Menüpunkt zu", (pathname, sectionId, itemId) => {
     const sections = getVisibleNavigationSections(account());
     const section = getNavigationSectionForPath(sections, pathname);
@@ -274,8 +276,8 @@ describe("AppShell Bereichsmenüs", () => {
     ["/office-cases/applications/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/questionnaire/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/questionnaire/new", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
-    ["/workflow-cases", ["Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
-    ["/workflow-cases/new", ["Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
+    ["/workflow-cases", ["Arbeitsprozesse", "Neue Sitzung"]],
+    ["/workflow-cases/new", ["Arbeitsprozesse", "Neue Sitzung"]],
     ["/cases/internal-documentation", ["Fallliste", "Neuer Fall", "Interne Dokumentation"]],
     ["/practice/signature", ["Dokumentationsbibliothek", "Dokumentationsvorlagen", "Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
   ])("zeigt auf %s das vollständige Bereichsmenü", (pathname, labels) => {

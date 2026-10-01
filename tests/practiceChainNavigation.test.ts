@@ -1,4 +1,7 @@
-import { getVisibleNavigationSections } from "@/lib/navigation";
+import {
+  getNavigationSectionForPath,
+  getVisibleNavigationSections,
+} from "@/lib/navigation";
 
 function account(role: "OWNER" | "ADMIN" | "USER") {
   return {
@@ -17,10 +20,41 @@ function account(role: "OWNER" | "ADMIN" | "USER") {
 }
 
 describe("Praxisfall-Ketten-Navigation", () => {
-  it.each(["OWNER", "ADMIN", "USER"] as const)("zeigt %s den sichtbaren Einstieg", (role) => {
-    const item = getVisibleNavigationSections(account(role))
-      .flatMap((section) => section.items)
-      .find((entry) => entry.id === "practice-case-chains");
-    expect(item).toEqual(expect.objectContaining({ href: "/practice/chains" }));
+  it.each(["OWNER", "ADMIN"] as const)("ordnet %s dem Verwaltungsbereich zu", (role) => {
+    const sections = getVisibleNavigationSections(account(role));
+    const management = sections.find((section) => section.id === "practice-management");
+
+    expect(management?.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: "practice-cases",
+        href: "/workflow-cases/internal-protocol/new",
+      }),
+      expect.objectContaining({
+        id: "practice-case-chains-management",
+        href: "/practice/chains",
+      }),
+    ]));
+    expect(getNavigationSectionForPath(sections, "/practice/chains")?.id).toBe(
+      "practice-management",
+    );
+    expect(sections.flatMap((section) => section.items).some((entry) => entry.id === "practice-case-chains-runner")).toBe(false);
+  });
+
+  it("ordnet USER dem Arbeitsprozesse-Runner zu", () => {
+    const sections = getVisibleNavigationSections(account("USER"));
+    const workflow = sections.find((section) => section.id === "workflow-path");
+
+    expect(workflow?.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: "practice-case-chains-runner",
+        href: "/practice/chains",
+      }),
+    ]));
+    expect(getNavigationSectionForPath(sections, "/practice/chains")?.id).toBe(
+      "workflow-path",
+    );
+    expect(sections.some((section) => section.id === "practice-management")).toBe(false);
+    expect(sections.flatMap((section) => section.items).some((entry) => entry.id === "practice-cases")).toBe(false);
+    expect(sections.flatMap((section) => section.items).some((entry) => entry.href === "/workflow-cases/internal-protocol/new")).toBe(false);
   });
 });

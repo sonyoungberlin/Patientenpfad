@@ -182,7 +182,6 @@ describe("Dashboard — Kachel 'Arbeitsprozesse'", () => {
     expect(html).toContain('data-testid="workflow-path-tile"');
     expect(html).toContain('<a href="/workflow-cases">Arbeitsprozesse</a>');
     expect(html).toContain('<a href="/workflow-cases/new">Neue Sitzung</a>');
-    expect(html).toContain('<a href="/workflow-cases/internal-protocol/new">Praxisprozesse</a>');
   });
 
   it("blendet die Arbeitsprozesse-Kachel ohne Feature aus", async () => {
