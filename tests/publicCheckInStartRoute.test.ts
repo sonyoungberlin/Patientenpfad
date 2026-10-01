@@ -41,7 +41,7 @@ describe("POST public check-in start", () => {
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("http://localhost/q/questionnaire-token");
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
-      selectedBlockIds: ["KONTAKT", "CHECK_IN"], patientReference: null,
+      selectedBlockIds: ["IDENTITAET", "KONTAKT", "CHECK_IN"], patientReference: null,
       allowUnassignedPublicCheckIn: true, ownerPracticeId: "practice-1",
       source: "public_check_in", databaseClient: expect.any(Object),
     }));

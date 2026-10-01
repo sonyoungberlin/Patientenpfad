@@ -2,6 +2,7 @@ import {
   hasExactPublicCheckInBlocks,
   hasExactPublicCheckInFrozenBlocks,
   isPublicCheckInSession,
+  PUBLIC_CHECK_IN_BLOCK_IDS,
 } from "@/lib/questionnaire/publicCheckIn";
 import {
   createPublicHandoffSecret,
@@ -12,12 +13,13 @@ import {
 
 describe("public check-in security helpers", () => {
   const frozen = [
+    { id: "IDENTITAET", questions: [] },
     { id: "KONTAKT", questions: [] },
     { id: "CHECK_IN", questions: [] },
   ];
 
   it("erkennt nur das exakte Preset und die Frozen-Struktur", () => {
-    expect(hasExactPublicCheckInBlocks(["KONTAKT", "CHECK_IN"])).toBe(true);
+    expect(hasExactPublicCheckInBlocks(PUBLIC_CHECK_IN_BLOCK_IDS)).toBe(true);
     expect(hasExactPublicCheckInBlocks(["CHECK_IN", "KONTAKT"])).toBe(false);
     expect(hasExactPublicCheckInFrozenBlocks(frozen)).toBe(true);
     expect(hasExactPublicCheckInFrozenBlocks([{ id: "CHECK_IN", questions: [] }])).toBe(false);
@@ -28,7 +30,7 @@ describe("public check-in security helpers", () => {
       source: "public_check_in", session_kind: "patient_communication", context: "patient",
       owner_account_id: null,
       owner_practice_id: "practice-1", created_by_kiosk_device_id: null,
-      selected_block_ids: ["KONTAKT", "CHECK_IN"], frozen_blocks: frozen,
+      selected_block_ids: PUBLIC_CHECK_IN_BLOCK_IDS, frozen_blocks: frozen,
     };
     expect(isPublicCheckInSession(session)).toBe(true);
     expect(isPublicCheckInSession({ ...session, created_by_kiosk_device_id: "device-1" })).toBe(false);

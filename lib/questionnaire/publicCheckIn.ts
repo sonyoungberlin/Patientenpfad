@@ -1,4 +1,4 @@
-export const PUBLIC_CHECK_IN_BLOCK_IDS = ["KONTAKT", "CHECK_IN"] as const;
+export const PUBLIC_CHECK_IN_BLOCK_IDS = ["IDENTITAET", "KONTAKT", "CHECK_IN"] as const;
 
 export type PublicHandoffStatus = "waiting" | "closed" | "questionnaire_ready";
 
