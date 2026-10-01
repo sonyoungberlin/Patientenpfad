@@ -104,6 +104,15 @@ export default async function QuestionnairesPage({
           follow_up_session: { select: { status: true } },
         },
       },
+      public_follow_up_handoff: {
+        select: {
+          parent_session: {
+            select: {
+              public_check_in_handoff: { select: { status: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -241,6 +250,7 @@ export default async function QuestionnairesPage({
                 publicHandoffExpired={s.public_check_in_handoff
                   ? s.public_check_in_handoff.expires_at <= now
                   : false}
+                publicFollowUpHandoffStatus={s.public_follow_up_handoff?.parent_session.public_check_in_handoff?.status ?? null}
                 exportFinal={isQuestionnaireExportFinal(s)}
               />
             );

@@ -4,14 +4,25 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BLOCK_CATALOG, BLOCK_IDS_SORTED } from "@/lib/questionnaire/blockCatalog";
 
-export function PublicCheckInActions({ sessionId }: { sessionId: string }) {
+export function PublicCheckInActions({
+  sessionId,
+  mode = "parent",
+  canContinue = false,
+}: {
+  sessionId: string;
+  mode?: "parent" | "child";
+  canContinue?: boolean;
+}) {
   const router = useRouter();
   const [selecting, setSelecting] = useState(false);
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit(action: "close" | "start_questionnaire") {
+  async function submit(action: "close" | "start_questionnaire" | "discard") {
+    if (action === "discard" && !window.confirm(
+      "Dieser Check-in wird nicht weiterbearbeitet und aus dem Posteingang entfernt.",
+    )) return;
     setPending(true);
     setError(null);
     try {
@@ -36,8 +47,11 @@ export function PublicCheckInActions({ sessionId }: { sessionId: string }) {
   return (
     <section data-public-check-in-actions={sessionId} style={{ display: "grid", gap: "0.5rem" }}>
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-        <button type="button" disabled={pending} onClick={() => void submit("close")}>Vorgang beenden</button>
-        <button type="button" disabled={pending} onClick={() => setSelecting(true)}>Folgefragebogen starten</button>
+        {mode === "parent" && canContinue ? <>
+          <button type="button" disabled={pending} onClick={() => void submit("close")}>Vorgang beenden</button>
+          <button type="button" disabled={pending} onClick={() => setSelecting(true)}>Folgefragebogen starten</button>
+        </> : null}
+        <button type="button" className="btn-danger" disabled={pending} onClick={() => void submit("discard")}>Vorgang verwerfen</button>
       </div>
       {selecting ? <div style={{ display: "grid", gap: "0.5rem" }}>
         <fieldset style={{ maxHeight: "16rem", overflow: "auto" }}>

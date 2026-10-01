@@ -33,8 +33,8 @@ const parent = {
   public_check_in_handoff: { status: "waiting", expires_at: new Date(Date.now() + 60_000), follow_up_session_id: null },
 };
 const context = { params: Promise.resolve({ id: "parent-1" }) };
-function request(action: string) {
-  return new NextRequest("http://localhost/api/questionnaire/parent-1/public-handoff", {
+function request(action: string, sessionId = "parent-1") {
+  return new NextRequest(`http://localhost/api/questionnaire/${sessionId}/public-handoff`, {
     method: "POST", headers: { origin: "http://localhost", "content-type": "application/json" },
     body: JSON.stringify(action === "start_questionnaire"
       ? { action, selected_block_ids: ["KONTAKT", "IDENTITAET"] } : { action }),
@@ -61,6 +61,115 @@ describe("POST public questionnaire handoff", () => {
     expect((await POST(request("close"), context)).status).toBe(200);
     db.publicQuestionnaireHandoff.updateMany.mockResolvedValue({ count: 0 });
     expect((await POST(request("close"), context)).status).toBe(409);
+  });
+
+  it.each([
+    ["ohne Patientenreferenz", null],
+    ["mit Patientenreferenz", "4711"],
+  ])("verwirft den wartenden Parent %s", async (_label, patientReference) => {
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      ...parent,
+      patient_reference: patientReference,
+    });
+    const response = await POST(request("discard"), context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, status: "closed" });
+    expect(db.publicQuestionnaireHandoff.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        parent_session_id: "parent-1",
+        status: "waiting",
+        follow_up_session_id: null,
+      }),
+      data: { status: "closed" },
+    }));
+    expect(db.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: "parent-1", deleted_at: null }),
+      data: expect.objectContaining({ deleted_at: expect.any(Date) }),
+    }));
+  });
+
+  it("verwirft ein offenes Child atomar mit Parent und Handoff", async () => {
+    const child = {
+      ...parent,
+      status: "pending",
+      patient_reference: "4711",
+      public_check_in_handoff: null,
+      public_follow_up_handoff: {
+        parent_session_id: "parent-1",
+        parent_session: {
+          ...parent,
+          public_check_in_handoff: {
+            status: "questionnaire_ready",
+            expires_at: new Date(Date.now() + 60_000),
+            follow_up_session_id: "child-1",
+          },
+        },
+      },
+    };
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue(child);
+    const response = await POST(request("discard", "child-1"), { params: Promise.resolve({ id: "child-1" }) });
+    expect(response.status).toBe(200);
+    expect(db.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: "child-1", status: "pending", deleted_at: null }),
+      data: expect.objectContaining({ deleted_at: expect.any(Date) }),
+    }));
+    expect(db.publicQuestionnaireHandoff.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        parent_session_id: "parent-1",
+        status: "questionnaire_ready",
+        follow_up_session_id: "child-1",
+      }),
+      data: { status: "closed", follow_up_session_id: null },
+    }));
+  });
+
+  it("schützt ein abgeschlossenes Child", async () => {
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      ...parent,
+      public_check_in_handoff: {
+        status: "questionnaire_ready",
+        expires_at: new Date(Date.now() + 60_000),
+        follow_up_session_id: "child-1",
+      },
+    });
+    db.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 0 });
+    const response = await POST(request("discard"), context);
+    expect(response.status).toBe(409);
+    expect(db.publicQuestionnaireHandoff.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("verweigert fremde Practices", async () => {
+    const { ownsSession } = jest.requireMock("@/lib/questionnaire/practiceScope") as {
+      ownsSession: jest.Mock;
+    };
+    ownsSession.mockReturnValueOnce(false);
+    const response = await POST(request("discard"), context);
+    expect(response.status).toBe(404);
+    expect(db.publicQuestionnaireHandoff.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("verliert bei konkurrierendem Child-Abschluss neutral mit 409", async () => {
+    const child = {
+      ...parent,
+      status: "pending",
+      public_check_in_handoff: null,
+      public_follow_up_handoff: {
+        parent_session_id: "parent-1",
+        parent_session: {
+          ...parent,
+          public_check_in_handoff: {
+            status: "questionnaire_ready",
+            expires_at: new Date(Date.now() + 60_000),
+            follow_up_session_id: "child-1",
+          },
+        },
+      },
+    };
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue(child);
+    db.patientQuestionnaireSession.updateMany.mockResolvedValue({ count: 0 });
+    const response = await POST(request("discard", "child-1"), { params: Promise.resolve({ id: "child-1" }) });
+    expect(response.status).toBe(409);
+    expect(db.publicQuestionnaireHandoff.updateMany).not.toHaveBeenCalled();
   });
 
   it("erzeugt ein device-freies Child mit geerbtem Kontext ohne Token-Response", async () => {

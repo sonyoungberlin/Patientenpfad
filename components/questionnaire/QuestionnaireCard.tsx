@@ -51,6 +51,7 @@ export type QuestionnaireCardProps = {
   kioskHandoffStatus?: string | null;
   publicHandoffStatus?: string | null;
   publicHandoffExpired?: boolean;
+  publicFollowUpHandoffStatus?: string | null;
   exportFinal?: boolean;
 };
 
@@ -70,6 +71,7 @@ export default function QuestionnaireCard({
   kioskHandoffStatus = null,
   publicHandoffStatus = null,
   publicHandoffExpired = false,
+  publicFollowUpHandoffStatus = null,
   exportFinal = displayStatus === "completed",
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
@@ -98,6 +100,10 @@ export default function QuestionnaireCard({
     displayStatus === "completed" &&
     source === "digital_request_follow_up" &&
     patientReference == null;
+  const canDiscardPublicCheckIn = !isDeleted && source === "public_check_in" && (
+    (displayStatus === "completed" && publicHandoffStatus === "waiting") ||
+    (displayStatus === "pending" && publicFollowUpHandoffStatus === "questionnaire_ready")
+  );
   return (
     <div
       className="card"
@@ -236,9 +242,16 @@ export default function QuestionnaireCard({
         patientReference !== null && (
           <KioskCheckInActions sessionId={id} />
         )}
+      {canDiscardPublicCheckIn && (
+        <PublicCheckInActions
+          sessionId={id}
+          mode={displayStatus === "pending" ? "child" : "parent"}
+          canContinue={!publicHandoffExpired && patientReference !== null}
+        />
+      )}
       {!isDeleted && !publicHandoffExpired && displayStatus === "completed" &&
         source === "public_check_in" && publicHandoffStatus === "waiting" &&
-        patientReference !== null && <PublicCheckInActions sessionId={id} />}
+        patientReference !== null && !canDiscardPublicCheckIn && <PublicCheckInActions sessionId={id} canContinue />}
 
       {/* Kontexthinweis bei Einreichung durch Kontaktperson */}
       {submittedBy === "contact_person" && (
