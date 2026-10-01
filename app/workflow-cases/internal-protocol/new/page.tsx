@@ -1,15 +1,11 @@
 import { redirect } from "next/navigation";
-import { getSessionAccountFromCookies } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { requirePracticeCatalogAccessFromCookies } from "@/lib/authz";
 import { listCaseProfilesFromLib } from "@/lib/practiceProcesses/caseProfileLibrary";
 import InternalProtocolNewClient from "./InternalProtocolNewClient";
 
 export default async function InternalProtocolNewPage() {
-  const account = await getSessionAccountFromCookies();
-  if (!account || !account.is_approved) {
-    redirect("/");
-  }
-  if (!canAccessWorkflowCases(account)) {
+  const account = await requirePracticeCatalogAccessFromCookies();
+  if (!account) {
     redirect("/dashboard");
   }
 

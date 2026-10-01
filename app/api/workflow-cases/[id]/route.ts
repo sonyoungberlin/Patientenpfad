@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { canAccessWorkflowCases, requirePracticeCatalogAccess } from "@/lib/authz";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
 import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
@@ -33,6 +33,11 @@ export async function DELETE(
 
   if (isPracticeWorkflowDraftSnapshot(existing.process_snapshot) && !existing.case_profile_id) {
     return NextResponse.json({ ok: false, error: "Praxisfall ist nicht mehr bearbeitbar." }, { status: 409 });
+  }
+
+  if (isPracticeWorkflowDraftSnapshot(existing.process_snapshot)) {
+    const practiceAccess = await requirePracticeCatalogAccess(req);
+    if (practiceAccess.error) return practiceAccess.error;
   }
 
   await prisma.workflowSession.delete({ where: { id } });

@@ -23,6 +23,7 @@
  */
 
 import { NextRequest } from "next/server";
+import { PracticeRole } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Prisma-Mock
@@ -73,6 +74,7 @@ const ADMIN_ACCOUNT = {
   is_admin: true,
   arbeitsprozesse_enabled: true,
   current_practice: { id: "practice-1" },
+  memberships: [{ practice_id: "practice-1", role: PracticeRole.ADMIN }],
 };
 const NON_ADMIN_ACCOUNT = { ...ADMIN_ACCOUNT, is_admin: false };
 

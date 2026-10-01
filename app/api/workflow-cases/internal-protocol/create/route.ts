@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionAccount } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { requirePracticeCatalogAccess } from "@/lib/authz";
 import type { Prisma } from "@prisma/client";
 import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import { requirePracticeId } from "@/lib/practiceCatalog/scope";
 import { ensurePracticeWorkingSession } from "@/lib/practiceCatalog/workingState";
 
 export async function POST(req: NextRequest) {
-  const account = await getSessionAccount(req);
-  if (!account) {
-    return NextResponse.json({ ok: false, error: "Nicht angemeldet." }, { status: 401 });
-  }
-  if (!account.is_approved) {
-    return NextResponse.json({ ok: false, error: "Account nicht freigeschaltet." }, { status: 403 });
-  }
-  if (!canAccessWorkflowCases(account)) {
-    return NextResponse.json({ ok: false, error: "Arbeitsprozesse nicht freigeschaltet." }, { status: 403 });
-  }
+  const access = await requirePracticeCatalogAccess(req);
+  if (access.error) return access.error;
+  const account = access.account;
 
   let body: { title?: unknown; snapshot?: unknown };
   try {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { canAccessWorkflowCases, requirePracticeCatalogAccess } from "@/lib/authz";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
 import {
   isInternalProtocolWorkflowSnapshot,
@@ -29,7 +29,14 @@ export async function GET(
     select: { id: true, title: true, process_snapshot: true },
   });
   if (!session || !isPracticeWorkflowDraftSnapshot(session.process_snapshot)) {
-    return NextResponse.json({ ok: false, error: "Praxisprozess nicht gefunden." }, { status: 404 });
+    if (!session) {
+      return NextResponse.json({ ok: false, error: "Praxisprozess nicht gefunden." }, { status: 404 });
+    }
+  }
+
+  if (isPracticeWorkflowDraftSnapshot(session.process_snapshot)) {
+    const practiceAccess = await requirePracticeCatalogAccess(req);
+    if (practiceAccess.error) return practiceAccess.error;
   }
   return NextResponse.json({ ok: true, id: session.id, title: session.title, snapshot: session.process_snapshot });
 }
@@ -65,6 +72,14 @@ export async function PATCH(
     body = (await req.json()) as { checkpoints?: unknown; snapshot?: unknown; title?: unknown };
   } catch {
     return NextResponse.json({ ok: false, error: "Ungültiger JSON-Body." }, { status: 400 });
+  }
+
+  if (
+    isPracticeWorkflowDraftSnapshot(session.process_snapshot) ||
+    isPracticeWorkflowDraftSnapshot(body.snapshot)
+  ) {
+    const practiceAccess = await requirePracticeCatalogAccess(req);
+    if (practiceAccess.error) return practiceAccess.error;
   }
 
   // --- Pfad P: Neuer PracticeWorkflow – voller Snapshot-Überschrieb ---

@@ -27,6 +27,10 @@ jest.mock("@/lib/auth", () => ({
 
 jest.mock("@/lib/authz", () => ({
   canAccessWorkflowCases: jest.fn(() => true),
+  requirePracticeCatalogAccess: jest.fn(async () => ({
+    account: { id: "account-1" },
+    error: null,
+  })),
 }));
 
 import { prisma } from "@/lib/prisma";
