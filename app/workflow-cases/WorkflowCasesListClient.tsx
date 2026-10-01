@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -24,6 +24,10 @@ export default function WorkflowCasesListClient({ items: initialItems }: { items
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   async function handleDelete(id: string, title: string | null) {
     const label = title ? `"${title}"` : "diese Sitzung";

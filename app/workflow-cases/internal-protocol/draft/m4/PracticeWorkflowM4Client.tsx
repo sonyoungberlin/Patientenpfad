@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   isPracticeWorkflowDraftSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
+import { getCheckpoint } from "@/lib/practiceProcesses";
 import type { PracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
-import type { PracticeCheckpointDefinitionSnapshot } from "@/lib/practiceProcesses/practiceDefinition";
+import type {
+  PracticeCheckpointDefinitionRecord,
+  PracticeCheckpointDefinitionSnapshot,
+} from "@/lib/practiceProcesses/practiceDefinition";
 import { buildM4Text } from "@/lib/practiceProcesses/buildM4Text";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
 
@@ -28,12 +32,28 @@ export default function PracticeWorkflowM4Client() {
       .then(async (res) => {
         const data = await res.json() as { ok?: boolean; snapshot?: unknown };
         if (!res.ok || !data.ok || !isPracticeWorkflowDraftSnapshot(data.snapshot)) throw new Error();
-        setSnapshot(data.snapshot);
+        const draftSnapshot = data.snapshot;
+        setSnapshot(draftSnapshot);
         const response = await fetch("/api/practice-checkpoint-definitions");
-        const definitionsData = await response.json() as { definitions?: PracticeCheckpointDefinitionSnapshot[] };
+        const definitionsData = await response.json() as { definitions?: PracticeCheckpointDefinitionRecord[] };
         if (response.ok && Array.isArray(definitionsData.definitions)) {
-          const ids = new Set(data.snapshot.checkpoints.map((checkpoint) => checkpoint.checkpointId));
-          setDefinitions(definitionsData.definitions.filter((definition) => ids.has(definition.checkpointId)));
+          const ids = new Set(draftSnapshot.checkpoints.map((checkpoint) => checkpoint.checkpointId));
+          setDefinitions(definitionsData.definitions
+            .filter((definition) => ids.has(definition.checkpointId))
+            .map((definition): PracticeCheckpointDefinitionSnapshot => {
+              const checkpoint = getCheckpoint(definition.checkpointId);
+              const snapshotCheckpoint = draftSnapshot.checkpoints.find(
+                (item) => item.checkpointId === definition.checkpointId,
+              );
+              return {
+                checkpointId: definition.checkpointId,
+                checkpointTitle: snapshotCheckpoint?.checkpointTitle ?? definition.checkpointId,
+                ...(checkpoint?.description ? { checkpointDescription: checkpoint.description } : {}),
+                checkpointAnchors: [...(checkpoint?.orientationAnchors ?? [])],
+                selectedAnchorIds: definition.selectedAnchorIds,
+                implementation: definition.implementation,
+              };
+            }));
         }
       })
       .catch(() => router.replace("/workflow-cases"));
