@@ -5,7 +5,12 @@ export type RunnerStep = {
   catalogEntryId?: string;
   title: string;
   description: string | null;
-  standards: { title: string; implementation: string | null }[];
+  standards: {
+    title: string;
+    selectedAnchors: string[];
+    implementation: string | null;
+    missingAnchorCount: number;
+  }[];
 };
 
 export type RunnerChain = {

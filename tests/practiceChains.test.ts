@@ -21,6 +21,7 @@ const mockPracticeCaseChainConnectionApproval = {
 };
 const mockPracticeCaseChainApprovalEvent = { create: jest.fn() };
 const mockPracticeCatalogEntry = { findMany: jest.fn() };
+const mockPracticeCheckpointDefinition = { findMany: jest.fn(), findUnique: jest.fn() };
 const mockRequirePracticeCatalogAccess = jest.fn();
 
 jest.mock("@/lib/prisma", () => ({
@@ -30,6 +31,7 @@ jest.mock("@/lib/prisma", () => ({
     practiceCaseChainConnectionApproval: mockPracticeCaseChainConnectionApproval,
     practiceCaseChainApprovalEvent: mockPracticeCaseChainApprovalEvent,
     practiceCatalogEntry: mockPracticeCatalogEntry,
+    practiceCheckpointDefinition: mockPracticeCheckpointDefinition,
     $transaction: jest.fn(async (callback: (tx: unknown) => unknown) => callback({
       practiceCaseChainEntryApproval: mockPracticeCaseChainEntryApproval,
       practiceCaseChainConnectionApproval: mockPracticeCaseChainConnectionApproval,
@@ -635,6 +637,85 @@ describe("PracticeCaseChain validation", () => {
 });
 
 describe("PracticeCaseChain runner", () => {
+  it("liefert eingefrorene Anchor-Texte und Umsetzungen aus den gepinnten Snapshot-Versionen", async () => {
+    const snapshot = (anchorText: string, implementation: string) => ({
+      ...publishedSnapshot,
+      checkpoints: [
+        {
+          checkpointId: "patient-bekannt",
+          checkpointTitle: "Patient bekannt",
+          decision: "PFLICHT",
+          definition: {
+            checkpointId: "patient-bekannt",
+            checkpointTitle: "Patient bekannt",
+            checkpointAnchors: [
+              { id: "anchor-a", text: anchorText },
+              { id: "anchor-b", text: "Geburtsdatum ist erfasst" },
+              { id: "anchor-unused", text: "Nicht ausgewählt" },
+            ],
+            selectedAnchorIds: ["anchor-a", "anchor-b"],
+            implementation,
+          },
+        },
+        {
+          checkpointId: "rueckruf",
+          checkpointTitle: "Rückruf",
+          decision: "OPTIONAL",
+          definition: {
+            checkpointId: "rueckruf",
+            checkpointTitle: "Rückruf",
+            checkpointAnchors: [{ id: "anchor-c", text: "Rückrufnummer prüfen" }],
+            selectedAnchorIds: ["anchor-c"],
+            implementation: "Zusätzliche Umsetzung separat",
+          },
+        },
+      ],
+    });
+    const chainDefinition = (entryId: string, stepId: string) => ({
+      startStepId: stepId,
+      steps: [{ id: stepId, catalogEntryId: entryId }],
+      transitions: [],
+    });
+    const entries = new Map([
+      [ENTRY_V1, { id: ENTRY_V1, title: "Fall v1", description: null, snapshot: snapshot("Name ist erfasst", "") }],
+      [ENTRY_V2, { id: ENTRY_V2, title: "Fall v2", description: null, snapshot: snapshot("Name wurde aktualisiert", "Zusätzlich Rückrufnummer abgleichen") }],
+    ]);
+    mockPracticeCaseChain.findFirst.mockImplementation(async ({ where }: { where: { id: string } }) =>
+      row({ id: where.id, status: "READY", definition: chainDefinition(where.id === "chain-v1" ? ENTRY_V1 : ENTRY_V2, where.id === "chain-v1" ? "step-v1" : "step-v2") }),
+    );
+    mockPracticeCatalogEntry.findMany.mockImplementation(async ({ where }: { where: { id: { in: string[] } } }) =>
+      where.id.in.flatMap((id) => entries.has(id) ? [entries.get(id)] : []),
+    );
+
+    const versionOne = await getReadyPracticeChainRunner("chain-v1", PRACTICE_ID);
+    const versionTwo = await getReadyPracticeChainRunner("chain-v2", PRACTICE_ID);
+
+    expect(versionOne?.steps[0].standards).toEqual([
+      {
+        title: "Patient bekannt",
+        selectedAnchors: ["Name ist erfasst", "Geburtsdatum ist erfasst"],
+        implementation: null,
+        missingAnchorCount: 0,
+      },
+      {
+        title: "Rückruf",
+        selectedAnchors: ["Rückrufnummer prüfen"],
+        implementation: "Zusätzliche Umsetzung separat",
+        missingAnchorCount: 0,
+      },
+    ]);
+    expect(versionTwo?.steps[0].standards[0].selectedAnchors).toEqual([
+      "Name wurde aktualisiert",
+      "Geburtsdatum ist erfasst",
+    ]);
+    expect(versionTwo?.steps[0].standards[0].implementation).toBe("Zusätzlich Rückrufnummer abgleichen");
+    expect(versionOne?.steps[0].standards[0].selectedAnchors).toContain("Name ist erfasst");
+    expect(versionOne?.steps[0].standards[0].selectedAnchors).not.toContain("Name wurde aktualisiert");
+    expect(mockPracticeCheckpointDefinition.findMany).not.toHaveBeenCalled();
+    expect(mockPracticeCheckpointDefinition.findUnique).not.toHaveBeenCalled();
+    expect(mockPracticeCatalogEntry.findMany.mock.calls.every(([args]) => args.select?.snapshot === true)).toBe(true);
+  });
+
   it("navigiert direkte Übergänge, zwei Antwortzweige, Ende und erlaubten Rücksprung ohne Vorauswahl", () => {
     const artificialChain = {
       direct: { fromStepId: "step-1", targetStepId: "step-2" },

@@ -108,8 +108,23 @@ export default function Runner({ runner }: { runner: RunnerChain }) {
           </div>
           <div>
             <h3>Gespeicherter Praxisstandard</h3>
-            {current.standards.length === 0 ? <p className="text-muted">Für diesen Praxisfall ist kein Standardtext gespeichert.</p> : (
-              <ul>{current.standards.map((standard) => <li key={standard.title}><strong>{standard.title}</strong>{standard.implementation && <>: {standard.implementation}</>}</li>)}</ul>
+            {current.standards.length === 0 ? <p className="text-muted">Für diesen Praxisfall ist kein Standard gespeichert.</p> : (
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                {current.standards.map((standard) => (
+                  <section key={standard.title}>
+                    <strong>{standard.title}</strong>
+                    {standard.selectedAnchors.length > 0 && (
+                      <ul>{standard.selectedAnchors.map((anchor, index) => <li key={`${index}-${anchor}`}>{anchor}</li>)}</ul>
+                    )}
+                    {standard.missingAnchorCount > 0 && (
+                      <p className="text-muted">{standard.missingAnchorCount === 1 ? "Ein ausgewähltes Kriterium" : `${standard.missingAnchorCount} ausgewählte Kriterien`} ist in dieser veröffentlichten Version nicht verfügbar.</p>
+                    )}
+                    {standard.implementation && (
+                      <p><strong>Zusätzliche Umsetzung:</strong> {standard.implementation}</p>
+                    )}
+                  </section>
+                ))}
+              </div>
             )}
           </div>
           {state.error ? (

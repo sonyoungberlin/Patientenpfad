@@ -302,10 +302,42 @@ export async function getReadyPracticeChainRunner(id: string, practiceId: string
       description: entry?.description ?? null,
       standards: checkpoints.flatMap((checkpoint) => {
         if (!checkpoint || typeof checkpoint !== "object") return [];
-        const value = checkpoint as { checkpointTitle?: unknown; definition?: { implementation?: unknown } };
-        return typeof value.checkpointTitle === "string"
-          ? [{ title: value.checkpointTitle, implementation: typeof value.definition?.implementation === "string" ? value.definition.implementation : null }]
+        const value = checkpoint as {
+          checkpointTitle?: unknown;
+          definition?: {
+            checkpointAnchors?: unknown;
+            selectedAnchorIds?: unknown;
+            implementation?: unknown;
+          };
+        };
+        if (typeof value.checkpointTitle !== "string") return [];
+
+        const anchors = Array.isArray(value.definition?.checkpointAnchors)
+          ? value.definition.checkpointAnchors.flatMap((anchor) => {
+              if (!anchor || typeof anchor !== "object") return [];
+              const candidate = anchor as { id?: unknown; text?: unknown };
+              return typeof candidate.id === "string" && typeof candidate.text === "string"
+                ? [{ id: candidate.id, text: candidate.text }]
+                : [];
+            })
           : [];
+        const selectedAnchorIds = Array.isArray(value.definition?.selectedAnchorIds)
+          ? value.definition.selectedAnchorIds.filter((id): id is string => typeof id === "string")
+          : [];
+        const anchorsById = new Map(anchors.map((anchor) => [anchor.id, anchor.text]));
+        const selectedAnchors = selectedAnchorIds.flatMap((id) => {
+          const text = anchorsById.get(id);
+          return text === undefined ? [] : [text];
+        });
+
+        return [{
+          title: value.checkpointTitle,
+          selectedAnchors,
+          implementation: typeof value.definition?.implementation === "string" && value.definition.implementation.trim()
+            ? value.definition.implementation
+            : null,
+          missingAnchorCount: selectedAnchorIds.length - selectedAnchors.length,
+        }];
       }),
     };
   });
