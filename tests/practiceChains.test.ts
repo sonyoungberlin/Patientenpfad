@@ -24,6 +24,7 @@ const mockPracticeCaseChainApprovalEvent = { create: jest.fn() };
 const mockPracticeCatalogEntry = { findMany: jest.fn() };
 const mockPracticeCheckpointDefinition = { findMany: jest.fn(), findUnique: jest.fn() };
 const mockRequirePracticeCatalogAccess = jest.fn();
+const mockGetCheckpointFromLib = jest.fn();
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -47,6 +48,11 @@ jest.mock("@/lib/authz", () => ({
 }));
 
 jest.mock("@/lib/auth", () => ({ getSessionAccount: jest.fn() }));
+
+jest.mock("@/lib/practiceProcesses/checkpointLibrary", () => ({
+  getCheckpointFromLib: (...args: unknown[]) => mockGetCheckpointFromLib(...args),
+  listCheckpointsFromLib: jest.fn(),
+}));
 
 import { approvePracticeChainConnection, approvePracticeChainEntry, createPracticeChain, createPracticeChainRevision, deactivatePracticeChain, getApprovedPracticeChainContinuation, getPracticeChain, getReadyPracticeChainRunner, revokePracticeChainConnection, revokePracticeChainEntry, updatePracticeChain } from "@/lib/practiceChains/service";
 import { validateChainDefinition } from "@/lib/practiceChains/validate";
@@ -770,6 +776,7 @@ describe("PracticeCaseChain runner", () => {
     mockPracticeCatalogEntry.findMany.mockImplementation(async ({ where }: { where: { id: { in: string[] } } }) =>
       where.id.in.flatMap((id) => entries.has(id) ? [entries.get(id)] : []),
     );
+    mockGetCheckpointFromLib.mockClear();
 
     const versionOne = await getReadyPracticeChainRunner("chain-v1", PRACTICE_ID);
     const versionTwo = await getReadyPracticeChainRunner("chain-v2", PRACTICE_ID);
@@ -797,6 +804,7 @@ describe("PracticeCaseChain runner", () => {
     expect(versionOne?.steps[0].standards[0].selectedAnchors).not.toContain("Name wurde aktualisiert");
     expect(mockPracticeCheckpointDefinition.findMany).not.toHaveBeenCalled();
     expect(mockPracticeCheckpointDefinition.findUnique).not.toHaveBeenCalled();
+    expect(mockGetCheckpointFromLib).not.toHaveBeenCalled();
     expect(mockPracticeCatalogEntry.findMany.mock.calls.every(([args]) => args.select?.snapshot === true)).toBe(true);
   });
 

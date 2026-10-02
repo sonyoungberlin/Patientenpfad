@@ -3,20 +3,21 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  isPracticeWorkflowBuilderProjection,
   isPracticeWorkflowDraftSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
-import { getCheckpoint } from "@/lib/practiceProcesses";
-import type { PracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import type {
-  PracticeCheckpointDefinitionRecord,
-  PracticeCheckpointDefinitionSnapshot,
-} from "@/lib/practiceProcesses/practiceDefinition";
+  PracticeWorkflowBuilderCheckpoint,
+  PracticeWorkflowDraftSnapshot,
+} from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeCheckpointDefinitionSnapshot } from "@/lib/practiceProcesses/practiceDefinition";
 import { buildM4Text } from "@/lib/practiceProcesses/buildM4Text";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
 
 export default function PracticeWorkflowM4Client() {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<PracticeWorkflowDraftSnapshot | null>(null);
+  const [builderCheckpoints, setBuilderCheckpoints] = useState<PracticeWorkflowBuilderCheckpoint[]>([]);
   const [definitions, setDefinitions] = useState<PracticeCheckpointDefinitionSnapshot[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -30,31 +31,28 @@ export default function PracticeWorkflowM4Client() {
     setSessionId(id);
     void fetch(`/api/workflow-cases/${id}/protocol/save`)
       .then(async (res) => {
-        const data = await res.json() as { ok?: boolean; snapshot?: unknown };
-        if (!res.ok || !data.ok || !isPracticeWorkflowDraftSnapshot(data.snapshot)) throw new Error();
+        const data = await res.json() as { ok?: boolean; snapshot?: unknown; builderCheckpoints?: unknown };
+        if (
+          !res.ok ||
+          !data.ok ||
+          !isPracticeWorkflowDraftSnapshot(data.snapshot) ||
+          !isPracticeWorkflowBuilderProjection(data.snapshot, data.builderCheckpoints)
+        ) throw new Error();
         const draftSnapshot = data.snapshot;
         setSnapshot(draftSnapshot);
-        const response = await fetch("/api/practice-checkpoint-definitions");
-        const definitionsData = await response.json() as { definitions?: PracticeCheckpointDefinitionRecord[] };
-        if (response.ok && Array.isArray(definitionsData.definitions)) {
-          const ids = new Set(draftSnapshot.checkpoints.map((checkpoint) => checkpoint.checkpointId));
-          setDefinitions(definitionsData.definitions
-            .filter((definition) => ids.has(definition.checkpointId))
-            .map((definition): PracticeCheckpointDefinitionSnapshot => {
-              const checkpoint = getCheckpoint(definition.checkpointId);
-              const snapshotCheckpoint = draftSnapshot.checkpoints.find(
-                (item) => item.checkpointId === definition.checkpointId,
-              );
-              return {
-                checkpointId: definition.checkpointId,
-                checkpointTitle: snapshotCheckpoint?.checkpointTitle ?? definition.checkpointId,
-                ...(checkpoint?.description ? { checkpointDescription: checkpoint.description } : {}),
-                checkpointAnchors: [...(checkpoint?.orientationAnchors ?? [])],
-                selectedAnchorIds: definition.selectedAnchorIds,
-                implementation: definition.implementation,
-              };
-            }));
-        }
+        setBuilderCheckpoints(data.builderCheckpoints);
+        setDefinitions(data.builderCheckpoints.flatMap((checkpoint): PracticeCheckpointDefinitionSnapshot[] =>
+          checkpoint.definition
+            ? [{
+                checkpointId: checkpoint.checkpointId,
+                checkpointTitle: checkpoint.title,
+                ...(checkpoint.description ? { checkpointDescription: checkpoint.description } : {}),
+                checkpointAnchors: checkpoint.orientationAnchors,
+                selectedAnchorIds: checkpoint.definition.selectedAnchorIds,
+                implementation: checkpoint.definition.implementation,
+              }]
+            : [],
+        ));
       })
       .catch(() => router.replace("/workflow-cases"));
   }, [router]);
@@ -62,7 +60,7 @@ export default function PracticeWorkflowM4Client() {
   async function handleCopy() {
     if (!snapshot || !sessionId) return;
     try {
-      await navigator.clipboard.writeText(buildM4Text(snapshot, definitions));
+      await navigator.clipboard.writeText(buildM4Text(getCurrentSnapshot(), definitions, builderCheckpoints));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -122,7 +120,15 @@ export default function PracticeWorkflowM4Client() {
 
   if (!snapshot) return null;
 
-  const m4Text = buildM4Text(snapshot, definitions);
+  const getCurrentSnapshot = () => ({
+    ...snapshot,
+    checkpoints: snapshot.checkpoints.map((checkpoint) => ({
+      ...checkpoint,
+      checkpointTitle: builderCheckpoints.find((item) => item.checkpointId === checkpoint.checkpointId)?.title
+        ?? checkpoint.checkpointTitle,
+    })),
+  });
+  const m4Text = buildM4Text(getCurrentSnapshot(), definitions, builderCheckpoints);
 
   return (
     <article className="card" style={{ display: "grid", gap: "1.25rem", maxWidth: "44rem" }}>

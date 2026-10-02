@@ -3,22 +3,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  isPracticeWorkflowBuilderProjection,
   isPracticeWorkflowDraftSnapshot,
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import type {
+  PracticeWorkflowBuilderCheckpoint,
   PracticeWorkflowDraftSnapshot,
   CheckpointDecision,
 } from "@/lib/practiceProcesses/workflowSnapshot";
 import {
   isPracticeCheckpointDefinitionDefined,
-  type PracticeCheckpointDefinitionRecord,
+  getUnresolvedSelectedAnchorIds,
 } from "@/lib/practiceProcesses/practiceDefinition";
 import {
   setCheckpointDecision,
 } from "@/lib/workflow/internalProtocol/workflowSnapshotUpdater";
 import { allDecided } from "@/lib/workflow/internalProtocol/sessionStatus";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
-import { getCheckpoint } from "@/lib/practiceProcesses";
 
 const DECISION_OPTIONS: { value: CheckpointDecision; label: string }[] = [
   { value: "PFLICHT", label: "Pflicht" },
@@ -29,8 +30,8 @@ const DECISION_OPTIONS: { value: CheckpointDecision; label: string }[] = [
 export default function DraftM3Client() {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<PracticeWorkflowDraftSnapshot | null>(null);
+  const [builderCheckpoints, setBuilderCheckpoints] = useState<PracticeWorkflowBuilderCheckpoint[]>([]);
   const [saving, setSaving] = useState(false);
-  const [definitions, setDefinitions] = useState<Record<string, PracticeCheckpointDefinitionRecord>>({});
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,14 +41,15 @@ export default function DraftM3Client() {
     setSessionId(id);
     void fetch(`/api/workflow-cases/${id}/protocol/save`)
       .then(async (res) => {
-        const data = await res.json() as { ok?: boolean; snapshot?: unknown };
-        if (!res.ok || !data.ok || !isPracticeWorkflowDraftSnapshot(data.snapshot)) throw new Error();
+        const data = await res.json() as { ok?: boolean; snapshot?: unknown; builderCheckpoints?: unknown };
+        if (
+          !res.ok ||
+          !data.ok ||
+          !isPracticeWorkflowDraftSnapshot(data.snapshot) ||
+          !isPracticeWorkflowBuilderProjection(data.snapshot, data.builderCheckpoints)
+        ) throw new Error();
         setSnapshot(data.snapshot);
-        const definitionResponse = await fetch("/api/practice-checkpoint-definitions");
-        const definitionData = await definitionResponse.json() as { definitions?: PracticeCheckpointDefinitionRecord[] };
-        if (definitionResponse.ok && Array.isArray(definitionData.definitions)) {
-          setDefinitions(Object.fromEntries(definitionData.definitions.map((definition) => [definition.checkpointId, definition])));
-        }
+        setBuilderCheckpoints(data.builderCheckpoints);
       })
       .catch(() => router.replace("/workflow-cases"));
   }, [router]);
@@ -84,26 +86,20 @@ export default function DraftM3Client() {
   }
 
   const cpDefinitions = useMemo(
-    () =>
-      Object.fromEntries(
-        (snapshot?.checkpoints ?? []).map((cp) => {
-          const catalogDef = getCheckpoint(cp.checkpointId);
-          return [
-            cp.checkpointId,
-            {
-              description: catalogDef?.description,
-                orientationAnchors: catalogDef?.orientationAnchors ?? [],
-                selectedAnchorIds: definitions[cp.checkpointId]?.selectedAnchorIds ?? [],
-                implementation: definitions[cp.checkpointId]?.implementation ?? "",
-                isDefined: definitions[cp.checkpointId]
-                  ? isPracticeCheckpointDefinitionDefined(definitions[cp.checkpointId])
-                  : false,
-            },
-          ];
-        }),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snapshot?.checkpoints.map((cp) => cp.checkpointId).join(","), definitions],
+    () => Object.fromEntries(builderCheckpoints.map((checkpoint) => [
+      checkpoint.checkpointId,
+      {
+        description: checkpoint.description,
+        orientationHint: checkpoint.orientationHint,
+        orientationAnchors: checkpoint.orientationAnchors,
+        selectedAnchorIds: checkpoint.definition?.selectedAnchorIds ?? [],
+        implementation: checkpoint.definition?.implementation ?? "",
+        isDefined: checkpoint.definition
+          ? isPracticeCheckpointDefinitionDefined(checkpoint.definition)
+          : false,
+      },
+    ])),
+    [builderCheckpoints],
   );
 
   if (!snapshot) return null;
@@ -119,7 +115,18 @@ export default function DraftM3Client() {
         </p>
       </div>
 
-      {snapshot.checkpoints.map((cp) => (
+      {snapshot.checkpoints.map((cp) => {
+        const builderCheckpoint = builderCheckpoints.find((item) => item.checkpointId === cp.checkpointId)!;
+        const cpDefinition = cpDefinitions[cp.checkpointId];
+        const selectedIds = cpDefinition?.selectedAnchorIds ?? [];
+        const selected = (cpDefinition?.orientationAnchors ?? []).filter((anchor) =>
+          selectedIds.includes(anchor.id),
+        );
+        const unresolvedAnchorIds = getUnresolvedSelectedAnchorIds(
+          selectedIds,
+          builderCheckpoint.orientationAnchors,
+        );
+        return (
         <div
           key={cp.checkpointId}
           style={{
@@ -131,23 +138,21 @@ export default function DraftM3Client() {
             background: cp.decision ? "#f8fffe" : "#fff",
           }}
         >
-          <div style={{ fontWeight: 600 }}>{cp.checkpointTitle}</div>
+          <div style={{ fontWeight: 600 }}>{builderCheckpoint.title}</div>
 
-          {cpDefinitions[cp.checkpointId]?.description && (
+          {cpDefinition?.description && (
             <p className="text-small text-muted" style={{ margin: 0 }}>
-              {cpDefinitions[cp.checkpointId]!.description}
+              {cpDefinition.description}
+            </p>
+          )}
+          {cpDefinition?.orientationHint && (
+            <p className="text-small text-muted" style={{ margin: 0 }}>
+              Orientierung – keine verbindliche Praxisdefinition: {cpDefinition.orientationHint}
             </p>
           )}
 
           {/* Ausgewählte Anchors aus M2 als Kontext */}
-          {(() => {
-            const cpDef = cpDefinitions[cp.checkpointId];
-            const selectedIds = cpDefinitions[cp.checkpointId]?.selectedAnchorIds ?? [];
-            const selected = (cpDef?.orientationAnchors ?? []).filter((a) =>
-              selectedIds.includes(a.id),
-            );
-            if (selected.length === 0) return null;
-            return (
+          {selected.length > 0 && (
               <div>
                 <div className="text-small text-muted" style={{ marginBottom: "0.35rem" }}>
                   Für den Standard ausgewählt:
@@ -160,8 +165,13 @@ export default function DraftM3Client() {
                   ))}
                 </div>
               </div>
-            );
-          })()}
+          )}
+          {unresolvedAnchorIds.length > 0 && (
+            <p role="alert" className="text-small" style={{ color: "var(--destructive)", margin: 0 }}>
+              Gespeicherte Auswahl enthält nicht mehr aktuelle Anchor-ID(s): {unresolvedAnchorIds.join(", ")}.
+              Sie werden nicht durch statische Anker ersetzt.
+            </p>
+          )}
 
           {/* Entscheidungsknöpfe */}
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -198,7 +208,8 @@ export default function DraftM3Client() {
             )}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
@@ -231,4 +242,3 @@ export default function DraftM3Client() {
     </article>
   );
 }
-

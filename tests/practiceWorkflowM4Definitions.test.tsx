@@ -9,19 +9,6 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace: jest.fn() }),
 }));
 
-jest.mock("@/lib/practiceProcesses", () => ({
-  getCheckpoint: () => ({
-    id: "patientenzuordnung-pruefen",
-    title: "Patientenzuordnung prüfen",
-    description: "Zuordnung prüfen",
-    orientationAnchors: [
-      { id: "a1", text: "Name stimmt überein" },
-      { id: "a2", text: "Geburtsdatum stimmt überein" },
-      { id: "a3", text: "Weitere Patientenkennung stimmt überein" },
-    ],
-  }),
-}));
-
 jest.mock("@/app/workflow-cases/internal-protocol/draft/_saveDraft", () => ({
   savePracticeWorkflowDraft: jest.fn(),
 }));
@@ -35,7 +22,7 @@ const snapshot = {
   caseProfileTitle: "Praxisfall",
   checkpoints: [{
     checkpointId: "patientenzuordnung-pruefen",
-    checkpointTitle: "Patientenzuordnung prüfen",
+    checkpointTitle: "Historischer Titel",
     decision: "PFLICHT",
   }],
 };
@@ -49,15 +36,37 @@ const definition = {
   updatedAt: "2026-09-30T10:00:00.000Z",
 };
 
+const builderCheckpoint = {
+  checkpointId: "patientenzuordnung-pruefen",
+  title: "Aktueller DB-Titel",
+  description: "Aktuelle DB-Beschreibung",
+  orientationHint: "Aktueller DB-Orientierungshinweis",
+  orientationAnchors: [
+    { id: "a1", text: "Aktueller DB-Anker 1" },
+    { id: "a2", text: "Aktueller DB-Anker 2" },
+    { id: "a3", text: "Nicht ausgewählter DB-Anker" },
+  ],
+};
+
 function response(body: unknown, ok = true) {
   return Promise.resolve({ ok, json: async () => body });
 }
 
-async function renderM4(currentDefinition = definition) {
+async function renderM4(currentDefinition: typeof definition | null = definition, builderOverrides = {}) {
+  const checkpoint = {
+    ...builderCheckpoint,
+    ...builderOverrides,
+    definition: currentDefinition
+      ? {
+          selectedAnchorIds: currentDefinition.selectedAnchorIds,
+          implementation: currentDefinition.implementation,
+        }
+      : null,
+  };
   global.fetch = jest.fn((input: string | URL) => (
     String(input).includes("/protocol/save")
-      ? response({ ok: true, snapshot })
-      : response({ ok: true, definitions: [currentDefinition] })
+      ? response({ ok: true, snapshot, builderCheckpoints: [checkpoint] })
+      : response({ ok: true })
   )) as jest.Mock;
 
   const container = document.createElement("div");
@@ -77,12 +86,19 @@ afterEach(() => {
 });
 
 describe("M4 zeigt ausgewählte Praxisstandard-Anchors", () => {
-  it("löst selectedAnchorIds mit aktuellen Anchor-Metadaten auf", async () => {
+  it("löst selectedAnchorIds mit aktuellen DB-first Metadaten auf", async () => {
     const { container, root } = await renderM4();
 
-    expect(container.textContent).toContain("Name stimmt überein");
-    expect(container.textContent).toContain("Geburtsdatum stimmt überein");
-    expect(container.textContent).not.toContain("Weitere Patientenkennung stimmt überein");
+    expect(container.textContent).toContain("Aktueller DB-Titel");
+    expect(container.textContent).not.toContain("Historischer Titel");
+    expect(container.textContent).toContain("Aktuelle DB-Beschreibung");
+    expect(container.textContent).toContain("Aktueller DB-Orientierungshinweis");
+    expect(container.textContent).toContain("Aktueller DB-Anker 1");
+    expect(container.textContent).toContain("Aktueller DB-Anker 2");
+    expect(container.textContent).not.toContain("Nicht ausgewählter DB-Anker");
+    expect((global.fetch as jest.Mock).mock.calls.some(([input]) =>
+      String(input) === "/api/practice-checkpoint-definitions",
+    )).toBe(false);
     expect(container.textContent).not.toContain("Noch nicht definiert");
 
     root.unmount();
@@ -95,7 +111,20 @@ describe("M4 zeigt ausgewählte Praxisstandard-Anchors", () => {
     });
 
     expect(container.textContent).toContain("Digital dokumentieren");
-    expect(container.textContent).toContain("Name stimmt überein");
+    expect(container.textContent).toContain("Aktueller DB-Anker 1");
+
+    root.unmount();
+  });
+
+  it("zeigt veraltete Anchor-IDs sichtbar und löst sie nicht über statische Anker auf", async () => {
+    const { container, root } = await renderM4({
+      ...definition,
+      selectedAnchorIds: ["old-static-anchor"],
+    });
+
+    expect(container.textContent).toContain("old-static-anchor");
+    expect(container.textContent).toContain("nicht automatisch ersetzt");
+    expect(container.textContent).not.toContain("Name stimmt überein");
 
     root.unmount();
   });

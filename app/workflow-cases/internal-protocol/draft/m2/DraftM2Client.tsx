@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCheckpoint } from "@/lib/practiceProcesses";
-import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
-import type { PracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import {
+  isPracticeWorkflowBuilderProjection,
+  isPracticeWorkflowDraftSnapshot,
+} from "@/lib/practiceProcesses/workflowSnapshot";
+import type {
+  PracticeWorkflowBuilderCheckpoint,
+  PracticeWorkflowDraftSnapshot,
+} from "@/lib/practiceProcesses/workflowSnapshot";
 import type { PracticeCheckpointDefinitionRecord } from "@/lib/practiceProcesses/practiceDefinition";
+import { getUnresolvedSelectedAnchorIds } from "@/lib/practiceProcesses/practiceDefinition";
 import { savePracticeWorkflowDraft } from "../_saveDraft";
 
 type EditableDefinition = Pick<PracticeCheckpointDefinitionRecord, "selectedAnchorIds" | "implementation">;
@@ -13,8 +19,8 @@ type EditableDefinition = Pick<PracticeCheckpointDefinitionRecord, "selectedAnch
 export default function DraftM2Client() {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<PracticeWorkflowDraftSnapshot | null>(null);
+  const [builderCheckpoints, setBuilderCheckpoints] = useState<PracticeWorkflowBuilderCheckpoint[]>([]);
   const [definitions, setDefinitions] = useState<Record<string, EditableDefinition>>({});
-  const [definedCheckpointIds, setDefinedCheckpointIds] = useState<Set<string>>(new Set());
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,18 +31,19 @@ export default function DraftM2Client() {
     setSessionId(id);
     void fetch(`/api/workflow-cases/${id}/protocol/save`)
       .then(async (res) => {
-        const data = await res.json() as { ok?: boolean; snapshot?: unknown };
-        if (!res.ok || !data.ok || !isPracticeWorkflowDraftSnapshot(data.snapshot)) throw new Error();
+        const data = await res.json() as { ok?: boolean; snapshot?: unknown; builderCheckpoints?: unknown };
+        if (
+          !res.ok ||
+          !data.ok ||
+          !isPracticeWorkflowDraftSnapshot(data.snapshot) ||
+          !isPracticeWorkflowBuilderProjection(data.snapshot, data.builderCheckpoints)
+        ) throw new Error();
         setSnapshot(data.snapshot);
-        const definitionResponse = await fetch("/api/practice-checkpoint-definitions");
-        const definitionData = await definitionResponse.json() as { definitions?: PracticeCheckpointDefinitionRecord[] };
-        if (definitionResponse.ok && Array.isArray(definitionData.definitions)) {
-          setDefinedCheckpointIds(new Set(definitionData.definitions.map((definition) => definition.checkpointId)));
-          setDefinitions(Object.fromEntries(definitionData.definitions.map((definition) => [
-            definition.checkpointId,
-            { selectedAnchorIds: definition.selectedAnchorIds, implementation: definition.implementation },
-          ])));
-        }
+        setBuilderCheckpoints(data.builderCheckpoints);
+        setDefinitions(Object.fromEntries(data.builderCheckpoints.map((checkpoint) => [
+          checkpoint.checkpointId,
+          checkpoint.definition ?? { selectedAnchorIds: [], implementation: "" },
+        ])));
       })
       .catch(() => router.replace("/workflow-cases"));
   }, [router]);
@@ -76,7 +83,11 @@ export default function DraftM2Client() {
         return;
       }
       setDefinitions((current) => ({ ...current, [checkpointId]: data.definition! }));
-      setDefinedCheckpointIds((current) => new Set(current).add(checkpointId));
+      setBuilderCheckpoints((current) => current.map((checkpoint) =>
+        checkpoint.checkpointId === checkpointId
+          ? { ...checkpoint, definition: data.definition! }
+          : checkpoint,
+      ));
     } catch {
       setError("Definition konnte nicht gespeichert werden.");
     } finally {
@@ -106,14 +117,23 @@ export default function DraftM2Client() {
       </div>
 
       {snapshot.checkpoints.map((checkpoint) => {
-        const catalogCheckpoint = getCheckpoint(checkpoint.checkpointId);
+        const builderCheckpoint = builderCheckpoints.find((item) => item.checkpointId === checkpoint.checkpointId)!;
         const current = definitions[checkpoint.checkpointId] ?? { selectedAnchorIds: [], implementation: "" };
-        const isDefined = definedCheckpointIds.has(checkpoint.checkpointId);
+        const isDefined = builderCheckpoint.definition !== null;
         const canDefine = current.selectedAnchorIds.length > 0 || current.implementation.trim().length > 0;
+        const unresolvedAnchorIds = getUnresolvedSelectedAnchorIds(
+          current.selectedAnchorIds,
+          builderCheckpoint.orientationAnchors,
+        );
         return (
           <section key={checkpoint.checkpointId} className="card" style={{ display: "grid", gap: "0.75rem" }}>
-            <div style={{ fontWeight: 600 }}>{checkpoint.checkpointTitle}</div>
-            {catalogCheckpoint?.description && <p className="text-small text-muted" style={{ margin: 0 }}>{catalogCheckpoint.description}</p>}
+            <div style={{ fontWeight: 600 }}>{builderCheckpoint.title}</div>
+            {builderCheckpoint.description && <p className="text-small text-muted" style={{ margin: 0 }}>{builderCheckpoint.description}</p>}
+            {builderCheckpoint.orientationHint && (
+              <p className="text-small text-muted" style={{ margin: 0 }}>
+                Orientierung – keine verbindliche Praxisdefinition: {builderCheckpoint.orientationHint}
+              </p>
+            )}
             <div className="text-small text-muted">
               Praxisstandard: {isDefined ? "Definiert" : "Noch nicht definiert"}
             </div>
@@ -127,7 +147,22 @@ export default function DraftM2Client() {
                 placeholder="Optional ergänzen"
               />
             </label>
-            {(catalogCheckpoint?.orientationAnchors ?? []).map((anchor) => (
+            {unresolvedAnchorIds.length > 0 && (
+              <div role="alert" className="text-small" style={{ color: "var(--destructive)" }}>
+                Nicht mehr aktuelle Anchor-ID(s): {unresolvedAnchorIds.join(", ")}. Sie werden nicht auf statische
+                Anker abgebildet.
+                <button
+                  type="button"
+                  onClick={() => updateDefinition(checkpoint.checkpointId, {
+                    selectedAnchorIds: current.selectedAnchorIds.filter((id) => !unresolvedAnchorIds.includes(id)),
+                  })}
+                  style={{ display: "block", marginTop: "0.35rem" }}
+                >
+                  Nicht mehr aktuelle Auswahl entfernen
+                </button>
+              </div>
+            )}
+            {builderCheckpoint.orientationAnchors.map((anchor) => (
               <label key={anchor.id} style={{ display: "flex", gap: "0.5rem" }}>
                 <input
                   type="checkbox"

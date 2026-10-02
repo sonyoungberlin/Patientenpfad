@@ -163,6 +163,14 @@ describe("practice working-state lifecycle", () => {
 
   it("8. erzeugt beim Publish den Katalogeintrag und löscht die Working Session", async () => {
     pm.practiceCatalogEntry.findFirst.mockResolvedValueOnce(null);
+    resolveDefinitionsMock.mockResolvedValueOnce([{
+      checkpointId: "cp-a",
+      checkpointTitle: "Aktueller DB-Titel",
+      checkpointDescription: "Beschreibung",
+      checkpointAnchors: [],
+      selectedAnchorIds: [],
+      implementation: "Umsetzen",
+    }]);
     pm.workflowSession.findFirst.mockResolvedValue({
       id: "session-1",
       owner_practice_id: "practice-1",
@@ -179,6 +187,8 @@ describe("practice working-state lifecycle", () => {
 
     expect(result).toEqual({ ok: true, id: "entry-2" });
     expect(pm.practiceCatalogEntry.create).toHaveBeenCalledTimes(1);
+    expect(pm.practiceCatalogEntry.create.mock.calls[0][0].data.snapshot.checkpoints[0].checkpointTitle)
+      .toBe("Aktueller DB-Titel");
     expect(pm.workflowSession.delete).toHaveBeenCalledWith({ where: { id: "session-1" } });
   });
 

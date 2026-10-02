@@ -14,15 +14,6 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace, push }),
 }));
 
-jest.mock("@/lib/practiceProcesses", () => ({
-  getCheckpoint: () => ({
-    id: "patient-bekannt",
-    title: "Patient bekannt",
-    description: "Bekannter Patient",
-    orientationAnchors: [{ id: "identity", text: "Identität geprüft" }],
-  }),
-}));
-
 jest.mock("@/app/workflow-cases/internal-protocol/draft/_saveDraft", () => ({
   savePracticeWorkflowDraft: (...args: unknown[]) => saveDraft(...args),
 }));
@@ -50,21 +41,43 @@ const existingDefinition = {
   updatedAt: "2026-09-30T10:00:00.000Z",
 };
 
+const builderCheckpoint = {
+  checkpointId: "patient-bekannt",
+  title: "Aktueller DB-Titel",
+  description: "Aktuelle DB-Beschreibung",
+  orientationHint: "Aktueller DB-Orientierungshinweis",
+  orientationAnchors: [{ id: "identity", text: "Aktueller DB-Anker" }],
+  definition: null as null | Pick<typeof existingDefinition, "selectedAnchorIds" | "implementation">,
+};
+
 const anchorOnlyDefinition = { ...existingDefinition, implementation: "" };
 const textOnlyDefinition = { ...existingDefinition, selectedAnchorIds: [], implementation: "Nur zusätzliche Umsetzung" };
 const emptyDefinition = { ...existingDefinition, selectedAnchorIds: [], implementation: "" };
 
-async function renderM2(definitions: unknown[] = []) {
+async function renderM2(definition: typeof existingDefinition | null = null, builderOverrides = {}) {
+  const checkpoint = {
+    ...builderCheckpoint,
+    ...builderOverrides,
+    definition: definition
+      ? { selectedAnchorIds: definition.selectedAnchorIds, implementation: definition.implementation }
+      : null,
+  };
   global.fetch = jest.fn((input: string | URL | Request, init?: RequestInit) => {
-    if (String(input).includes("/protocol/save")) return response({ ok: true, snapshot }) as never;
+    if (String(input).includes("/protocol/save")) {
+      const draftSnapshot = {
+        ...snapshot,
+        checkpoints: snapshot.checkpoints.map((item) => ({ ...item, checkpointId: checkpoint.checkpointId })),
+      };
+      return response({ ok: true, snapshot: draftSnapshot, builderCheckpoints: [checkpoint] }) as never;
+    }
     if (init?.method === "PUT") {
       const body = JSON.parse(String(init.body)) as { selectedAnchorIds: string[]; implementation: string };
       return response({
         ok: true,
-        definition: body,
+        definition: { ...body, checkpointId: "patient-bekannt" },
       }) as never;
     }
-    return response({ ok: true, definitions }) as never;
+    return response({ ok: true }) as never;
   });
   saveDraft.mockResolvedValue({ ok: true, id: "session-1" });
 
@@ -113,7 +126,7 @@ describe("M2 zentrale Checkpoint-Definitionen", () => {
   });
 
   it("lädt eine bestehende Definition und zeigt Definition ändern", async () => {
-    const { container, root } = await renderM2([existingDefinition]);
+    const { container, root } = await renderM2(existingDefinition);
 
     expect(container.textContent).toContain("Praxisstandard: Definiert");
     expect(container.textContent).toContain(existingDefinition.implementation);
@@ -123,8 +136,44 @@ describe("M2 zentrale Checkpoint-Definitionen", () => {
     root.unmount();
   });
 
+  it("zeigt DB-only Metadaten vollständig aus der Builder-Projektion", async () => {
+    const { container, root } = await renderM2(null, {
+      checkpointId: "checkpoint-db-only",
+      title: "DB-only Titel",
+      description: "DB-only Beschreibung",
+      orientationHint: "DB-only Orientierungshinweis",
+      orientationAnchors: [{ id: "db-anchor", text: "DB-only Ankertext" }],
+    });
+
+    expect(container.textContent).toContain("DB-only Titel");
+    expect(container.textContent).toContain("DB-only Beschreibung");
+    expect(container.textContent).toContain("DB-only Orientierungshinweis");
+    expect(container.textContent).toContain("DB-only Ankertext");
+    expect((global.fetch as jest.Mock).mock.calls.some(([input]) =>
+      String(input) === "/api/practice-checkpoint-definitions",
+    )).toBe(false);
+
+    root.unmount();
+  });
+
+  it("zeigt ausgewählte IDs nur gegen die aktuelle Ankerliste und markiert veraltete IDs", async () => {
+    const { container, root } = await renderM2({
+      ...existingDefinition,
+      selectedAnchorIds: ["identity", "old-static-anchor"],
+    }, {
+      orientationAnchors: [{ id: "identity", text: "DB-Anker statt statischem Text" }],
+    });
+
+    expect(container.textContent).toContain("DB-Anker statt statischem Text");
+    expect(container.textContent).toContain("old-static-anchor");
+    expect(container.textContent).toContain("Sie werden nicht auf statische Anker abgebildet.");
+    expect(container.textContent).not.toContain("Identität geprüft");
+
+    root.unmount();
+  });
+
   it("ändert eine bestehende Definition auf Anchor-only", async () => {
-    const { container, root } = await renderM2([anchorOnlyDefinition]);
+    const { container, root } = await renderM2(anchorOnlyDefinition);
     await clickDefinitionButton(container);
 
     const request = getPutRequest();
@@ -134,7 +183,7 @@ describe("M2 zentrale Checkpoint-Definitionen", () => {
   });
 
   it("ändert eine bestehende Definition auf Text-only", async () => {
-    const { container, root } = await renderM2([textOnlyDefinition]);
+    const { container, root } = await renderM2(textOnlyDefinition);
     await clickDefinitionButton(container);
 
     const request = getPutRequest();
@@ -146,7 +195,7 @@ describe("M2 zentrale Checkpoint-Definitionen", () => {
   });
 
   it("weist eine bestehende Definition beim vollständigen Leeren zurück", async () => {
-    const { container, root } = await renderM2([emptyDefinition]);
+    const { container, root } = await renderM2(emptyDefinition);
 
     const definitionButton = getDefinitionButton(container);
     expect(definitionButton.disabled).toBe(true);
@@ -169,7 +218,7 @@ describe("M2 zentrale Checkpoint-Definitionen", () => {
   });
 
   it("speichert eine geladene Definition beim Zwischenspeichern nur im Working State", async () => {
-    const { container, root } = await renderM2([existingDefinition]);
+    const { container, root } = await renderM2(existingDefinition);
 
     const saveButton = [...container.querySelectorAll("button")]
       .find((button) => button.textContent === "Zwischenspeichern") as HTMLButtonElement;

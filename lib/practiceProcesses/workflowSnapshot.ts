@@ -1,4 +1,4 @@
-import type { PracticeCaseProfile, PracticeCheckpoint } from "./types";
+import type { PracticeCaseProfile, PracticeCheckpoint, PracticeCheckpointAnchor } from "./types";
 import { isPracticeCheckpointDefinitionDefined } from "./practiceDefinition";
 
 export const PRACTICE_WORKFLOW_SNAPSHOT_VERSION = 2 as const;
@@ -16,6 +16,18 @@ export interface PracticeWorkflowDraftSnapshot {
   caseProfileId: string;
   caseProfileTitle: string;
   checkpoints: PracticeWorkflowCheckpointState[];
+}
+
+export interface PracticeWorkflowBuilderCheckpoint {
+  checkpointId: string;
+  title: string;
+  description?: string;
+  orientationHint?: string;
+  orientationAnchors: PracticeCheckpointAnchor[];
+  definition: {
+    selectedAnchorIds: string[];
+    implementation: string;
+  } | null;
 }
 
 export interface PublishedPracticeWorkflowCheckpoint extends PracticeWorkflowCheckpointState {
@@ -89,6 +101,42 @@ export function isPracticeWorkflowDraftSnapshot(value: unknown): value is Practi
   const snapshot = value as Record<string, unknown>;
   return snapshot.snapshotVersion === PRACTICE_WORKFLOW_SNAPSHOT_VERSION &&
     Array.isArray(snapshot.checkpoints) && snapshot.checkpoints.every(isDraftCheckpoint);
+}
+
+export function isPracticeWorkflowBuilderProjection(
+  snapshot: PracticeWorkflowDraftSnapshot,
+  value: unknown,
+): value is PracticeWorkflowBuilderCheckpoint[] {
+  if (!Array.isArray(value) || value.length !== snapshot.checkpoints.length) return false;
+
+  return value.every((item, index) => {
+    if (!item || typeof item !== "object") return false;
+    const checkpoint = item as Record<string, unknown>;
+    if (
+      checkpoint.checkpointId !== snapshot.checkpoints[index].checkpointId ||
+      typeof checkpoint.title !== "string" ||
+      (checkpoint.description !== undefined && typeof checkpoint.description !== "string") ||
+      (checkpoint.orientationHint !== undefined && typeof checkpoint.orientationHint !== "string") ||
+      !Array.isArray(checkpoint.orientationAnchors) ||
+      !checkpoint.orientationAnchors.every((anchor) =>
+        !!anchor &&
+        typeof anchor === "object" &&
+        typeof (anchor as Record<string, unknown>).id === "string" &&
+        typeof (anchor as Record<string, unknown>).text === "string",
+      )
+    ) {
+      return false;
+    }
+
+    const definition = checkpoint.definition;
+    return definition === null || (
+      !!definition &&
+      typeof definition === "object" &&
+      Array.isArray((definition as Record<string, unknown>).selectedAnchorIds) &&
+      ((definition as Record<string, unknown>).selectedAnchorIds as unknown[]).every((id) => typeof id === "string") &&
+      typeof (definition as Record<string, unknown>).implementation === "string"
+    );
+  });
 }
 
 export function isPublishedPracticeWorkflowSnapshot(value: unknown): value is PublishedPracticeWorkflowSnapshot {

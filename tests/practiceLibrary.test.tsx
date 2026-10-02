@@ -5,6 +5,8 @@ const mockFindMany = jest.fn();
 const mockFindFirst = jest.fn();
 const mockAccess = jest.fn();
 const mockRole = { value: "USER" as "OWNER" | "ADMIN" | "USER" };
+const mockGetCheckpointFromLib = jest.fn();
+const mockListPracticeCheckpointDefinitions = jest.fn();
 
 jest.mock("next/navigation", () => ({
   redirect: (path: string) => { throw new Error(`REDIRECT:${path}`); },
@@ -23,6 +25,15 @@ jest.mock("@/lib/prisma", () => ({
       findFirst: (...args: unknown[]) => mockFindFirst(...args),
     },
   },
+}));
+
+jest.mock("@/lib/practiceProcesses/checkpointLibrary", () => ({
+  getCheckpointFromLib: (...args: unknown[]) => mockGetCheckpointFromLib(...args),
+  listCheckpointsFromLib: jest.fn(),
+}));
+
+jest.mock("@/lib/practiceProcesses/practiceDefinitionService", () => ({
+  listPracticeCheckpointDefinitions: (...args: unknown[]) => mockListPracticeCheckpointDefinitions(...args),
 }));
 
 import { listActivePublishedCatalogEntries } from "@/lib/practiceCatalog/query";
@@ -178,6 +189,8 @@ describe("Praxisbibliothek", () => {
     expect(html).not.toContain("<input");
     expect(html).not.toContain("<textarea");
     expect(html).not.toContain("Versionshistorie");
+    expect(mockGetCheckpointFromLib).not.toHaveBeenCalled();
+    expect(mockListPracticeCheckpointDefinitions).not.toHaveBeenCalled();
   });
 
   it("beschränkt die Bibliothek auf USER und verwendet Praxis-Scope beim Direktaufruf", async () => {
