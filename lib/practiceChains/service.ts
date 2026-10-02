@@ -103,6 +103,23 @@ export async function getPracticeChain(id: string, practiceId: string) {
   return row ? mapChain(row) : null;
 }
 
+export async function deactivatePracticeChain(id: string, practiceId: string) {
+  const result = await prisma.practiceCaseChain.updateMany({
+    where: { id, practice_id: practiceId, status: "READY" },
+    data: { status: "DEACTIVATED" },
+  });
+  if (result.count === 1) {
+    const deactivated = await getPracticeChain(id, practiceId);
+    if (deactivated) return deactivated;
+    throw Object.assign(new Error("Kette nicht gefunden oder kein Zugriff."), { statusCode: 404 });
+  }
+
+  const existing = await getPracticeChain(id, practiceId);
+  if (!existing) throw Object.assign(new Error("Kette nicht gefunden oder kein Zugriff."), { statusCode: 404 });
+  if (existing.status === "DEACTIVATED") return existing;
+  throw Object.assign(new Error("Nur einsatzbereite Ketten können deaktiviert werden."), { statusCode: 409 });
+}
+
 function chainStepExists(definition: PracticeCaseChainDefinition, stepId: string) {
   return definition.steps.some((step) => step.id === stepId);
 }
@@ -427,6 +444,9 @@ export async function updatePracticeChain(input: {
   });
   if (existingChain?.status === "READY") {
     throw Object.assign(new Error("Eine einsatzbereite Kette ist unveränderlich. Erstellen Sie dafür eine neue Entwurfsversion."), { statusCode: 409 });
+  }
+  if (existingChain?.status === "DEACTIVATED") {
+    throw Object.assign(new Error("Eine deaktivierte Kette bleibt historisch erhalten und kann nicht geändert werden."), { statusCode: 409 });
   }
 
   await assertCatalogEntriesBelongToPractice(input.definition, input.practiceId);

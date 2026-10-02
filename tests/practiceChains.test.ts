@@ -5,6 +5,7 @@ const mockPracticeCaseChain = {
   findFirst: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
+  updateMany: jest.fn(),
 };
 const mockPracticeCaseChainEntryApproval = {
   findMany: jest.fn(),
@@ -47,7 +48,7 @@ jest.mock("@/lib/authz", () => ({
 
 jest.mock("@/lib/auth", () => ({ getSessionAccount: jest.fn() }));
 
-import { approvePracticeChainConnection, approvePracticeChainEntry, createPracticeChain, createPracticeChainRevision, getApprovedPracticeChainContinuation, getPracticeChain, getReadyPracticeChainRunner, revokePracticeChainConnection, revokePracticeChainEntry, updatePracticeChain } from "@/lib/practiceChains/service";
+import { approvePracticeChainConnection, approvePracticeChainEntry, createPracticeChain, createPracticeChainRevision, deactivatePracticeChain, getApprovedPracticeChainContinuation, getPracticeChain, getReadyPracticeChainRunner, revokePracticeChainConnection, revokePracticeChainEntry, updatePracticeChain } from "@/lib/practiceChains/service";
 import { validateChainDefinition } from "@/lib/practiceChains/validate";
 import { continueRunner, createRunnerState, followRunnerTarget, getRunnerContinuationStatus, goBackRunner } from "@/lib/practiceChains/runner";
 import type { RunnerChain } from "@/lib/practiceChains/runner";
@@ -56,6 +57,7 @@ import { GET as getChains } from "@/app/api/practice-chains/route";
 import { PATCH as patchChain } from "@/app/api/practice-chains/[id]/route";
 import { POST as reviseChain } from "@/app/api/practice-chains/[id]/revision/route";
 import { GET as getRunner } from "@/app/api/practice-chains/[id]/runner/route";
+import { PATCH as deactivateChain } from "@/app/api/practice-chains/[id]/deactivate/route";
 import { DELETE as deleteApproval } from "@/app/api/practice-chains/[id]/approvals/route";
 import { getSessionAccount } from "@/lib/auth";
 import { NextRequest } from "next/server";
@@ -136,6 +138,7 @@ beforeEach(() => {
   mockPracticeCaseChain.findMany.mockResolvedValue([]);
   mockPracticeCaseChain.create.mockResolvedValue(row());
   mockPracticeCaseChain.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => row(data));
+  mockPracticeCaseChain.updateMany.mockResolvedValue({ count: 1 });
   mockPracticeCaseChainEntryApproval.findMany.mockResolvedValue([]);
   mockPracticeCaseChainEntryApproval.findFirst.mockResolvedValue(null);
   mockPracticeCaseChainEntryApproval.upsert.mockResolvedValue({ id: "entry-approval" });
@@ -189,6 +192,21 @@ describe("PracticeCaseChain service", () => {
     expect(mockPracticeCaseChain.update).not.toHaveBeenCalled();
   });
 
+  it("schützt deaktivierte Ketten vor direkter Änderung oder neuer Revision", async () => {
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ status: "DEACTIVATED" }))
+      .mockResolvedValueOnce(row({ status: "DEACTIVATED" }));
+
+    await expect(updatePracticeChain({ id: "chain-1", practiceId: PRACTICE_ID, name: "Wieder aktiv", status: "READY", definition: completeDefinition }))
+      .rejects.toMatchObject({ statusCode: 409 });
+    expect(mockPracticeCaseChain.update).not.toHaveBeenCalled();
+    expect(mockPracticeCatalogEntry.findMany).not.toHaveBeenCalled();
+
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "DEACTIVATED" }));
+    await expect(createPracticeChainRevision("chain-1", PRACTICE_ID)).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockPracticeCaseChain.create).not.toHaveBeenCalled();
+  });
+
   it("erstellt aus READY eine nachvollziehbare Draft-Version", async () => {
     mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "READY", version: 3, definition: completeDefinition }));
     mockPracticeCaseChain.create.mockResolvedValue(row({ status: "DRAFT", version: 4, source_chain_id: "chain-1", definition: completeDefinition }));
@@ -197,6 +215,38 @@ describe("PracticeCaseChain service", () => {
     expect(result.version).toBe(4);
     expect(result.source_chain_id).toBe("chain-1");
     expect(mockPracticeCaseChain.create.mock.calls[0][0].data).toEqual(expect.objectContaining({ version: 4, source_chain_id: "chain-1" }));
+  });
+
+  it("deaktiviert ausschließlich eine READY-Kette per Status-Update und erhält Version und Pins", async () => {
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "DEACTIVATED", version: 3, definition: completeDefinition }));
+
+    const result = await deactivatePracticeChain("chain-1", PRACTICE_ID);
+
+    expect(result).toMatchObject({ status: "DEACTIVATED", version: 3, definition: completeDefinition });
+    expect(mockPracticeCaseChain.updateMany).toHaveBeenCalledWith({
+      where: { id: "chain-1", practice_id: PRACTICE_ID, status: "READY" },
+      data: { status: "DEACTIVATED" },
+    });
+    expect(mockPracticeCaseChain.update).not.toHaveBeenCalled();
+    expect(mockPracticeCaseChain.create).not.toHaveBeenCalled();
+    expect(mockPracticeCatalogEntry.findMany).not.toHaveBeenCalled();
+    expect(mockPracticeCheckpointDefinition.findMany).not.toHaveBeenCalled();
+    expect(mockPracticeCheckpointDefinition.findUnique).not.toHaveBeenCalled();
+    expect(mockPracticeCaseChainEntryApproval.updateMany).not.toHaveBeenCalled();
+    expect(mockPracticeCaseChainConnectionApproval.updateMany).not.toHaveBeenCalled();
+    expect(mockPracticeCaseChainApprovalEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("behandelt wiederholtes Deaktivieren idempotent und lehnt andere Zustände ab", async () => {
+    mockPracticeCaseChain.updateMany.mockResolvedValue({ count: 0 });
+    mockPracticeCaseChain.findFirst
+      .mockResolvedValueOnce(row({ status: "DEACTIVATED" }))
+      .mockResolvedValueOnce(row({ status: "DRAFT" }))
+      .mockResolvedValueOnce(null);
+
+    await expect(deactivatePracticeChain("chain-1", PRACTICE_ID)).resolves.toMatchObject({ status: "DEACTIVATED" });
+    await expect(deactivatePracticeChain("chain-1", PRACTICE_ID)).rejects.toMatchObject({ statusCode: 409 });
+    await expect(deactivatePracticeChain("missing", PRACTICE_ID)).rejects.toMatchObject({ statusCode: 404 });
   });
 
   it("erlaubt einen Einstieg ab Schritt 2 erst nach expliziter Freigabe", async () => {
@@ -481,6 +531,36 @@ describe("PracticeCaseChain authorization", () => {
     expect(response.status).toBe(404);
   });
 
+  it.each(["OWNER", "ADMIN"] as const)("erlaubt %s die Deaktivierung einer READY-Kette", async (role) => {
+    const manager = { ...account, memberships: [{ practice_id: PRACTICE_ID, role }] };
+    mockRequirePracticeCatalogAccess.mockResolvedValueOnce({ account: manager, error: null });
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "DEACTIVATED", version: 4, definition: completeDefinition }));
+
+    const response = await deactivateChain(
+      request("/api/practice-chains/chain-1/deactivate", "PATCH"),
+      { params: Promise.resolve({ id: "chain-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, chain: { status: "DEACTIVATED", version: 4, definition: completeDefinition } });
+    expect(mockPracticeCaseChain.updateMany).toHaveBeenCalledWith({
+      where: { id: "chain-1", practice_id: PRACTICE_ID, status: "READY" },
+      data: { status: "DEACTIVATED" },
+    });
+  });
+
+  it("verweigert USERn die Deaktivierungsaktion", async () => {
+    mockRequirePracticeCatalogAccess.mockResolvedValueOnce({ account: null, error: new Response(null, { status: 403 }) });
+
+    const response = await deactivateChain(
+      request("/api/practice-chains/chain-1/deactivate", "PATCH"),
+      { params: Promise.resolve({ id: "chain-1" }) },
+    );
+
+    expect(response.status).toBe(403);
+    expect(mockPracticeCaseChain.updateMany).not.toHaveBeenCalled();
+  });
+
   it("erlaubt USER den READY-Runner, aber keine Entwürfe oder fremde Ketten", async () => {
     (getSessionAccount as jest.Mock).mockResolvedValue({ ...account, memberships: [{ practice_id: PRACTICE_ID, role: "USER" }] });
     mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "READY", definition: completeDefinition }));
@@ -490,6 +570,10 @@ describe("PracticeCaseChain authorization", () => {
     mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "DRAFT" }));
     const draftResponse = await getRunner(request("/api/practice-chains/chain-1/runner"), { params: Promise.resolve({ id: "chain-1" }) });
     expect(draftResponse.status).toBe(404);
+
+    mockPracticeCaseChain.findFirst.mockResolvedValue(row({ status: "DEACTIVATED" }));
+    const deactivatedResponse = await getRunner(request("/api/practice-chains/chain-1/runner"), { params: Promise.resolve({ id: "chain-1" }) });
+    expect(deactivatedResponse.status).toBe(404);
 
     mockPracticeCaseChain.findFirst.mockResolvedValue(null);
     const foreignResponse = await getRunner(request("/api/practice-chains/foreign/runner"), { params: Promise.resolve({ id: "foreign" }) });

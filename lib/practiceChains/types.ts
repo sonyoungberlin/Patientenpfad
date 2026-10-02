@@ -1,4 +1,4 @@
-export type ChainStatus = "DRAFT" | "READY";
+export type ChainStatus = "DRAFT" | "READY" | "DEACTIVATED";
 
 export type PracticeCaseChainStep = {
   id: string;

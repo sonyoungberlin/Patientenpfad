@@ -38,7 +38,7 @@ export default async function PracticeChainsPage() {
               <Link href={canManage ? `/practice/chains/${chain.id}` : `/practice/chains/${chain.id}/run`} style={{ color: "inherit", textDecoration: "none" }}>
                 <strong>{chain.name}</strong>
                 <span className="text-small text-muted" style={{ marginLeft: "0.75rem" }}>
-                  {canManage ? chain.status === "READY" ? "Einsatzbereit" : "Entwurf" : "Freigegeben"} · {chain.definition.steps.length} Schritte
+                  {canManage ? chain.status === "READY" ? "Einsatzbereit" : chain.status === "DEACTIVATED" ? "Deaktiviert" : "Entwurf" : "Freigegeben"} · {chain.definition.steps.length} Schritte
                 </span>
               </Link>
               {chain.status === "READY" && canManage && <Link href={`/practice/chains/${chain.id}/run`} className="text-small" style={{ marginLeft: "1rem" }}>Runner öffnen</Link>}
