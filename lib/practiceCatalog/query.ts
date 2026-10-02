@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { CatalogEntryRow, CatalogEntryDetail } from "./types";
+import { isPublishedPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 
 const ROW_SELECT = {
   id: true,
@@ -33,6 +34,28 @@ export async function listActiveCatalogEntries(
     select: ROW_SELECT,
     orderBy: { title: "asc" },
   });
+}
+
+export async function listActivePublishedCatalogEntries(
+  practiceId: string,
+): Promise<CatalogEntryDetail[]> {
+  const entries = await prisma.practiceCatalogEntry.findMany({
+    where: {
+      practice_id: practiceId,
+      is_catalog_active: true,
+      is_current_version: true,
+    },
+    select: { ...ROW_SELECT, snapshot: true },
+    orderBy: { title: "asc" },
+  });
+  const publishedEntries = entries.flatMap((entry) =>
+    isPublishedPracticeWorkflowSnapshot(entry.snapshot)
+      ? [entry as unknown as CatalogEntryDetail]
+      : [],
+  );
+  return publishedEntries.sort((left, right) =>
+    left.snapshot.caseProfileTitle.localeCompare(right.snapshot.caseProfileTitle, "de"),
+  );
 }
 
 /** Gibt alle veröffentlichten Versionen einer Praxis für die Kettenverwaltung zurück. */

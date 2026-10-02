@@ -163,6 +163,8 @@ describe("M2 zentrale Checkpoint-Definitionen", () => {
 
     expect(saveDraft).toHaveBeenCalledTimes(1);
     expect((global.fetch as jest.Mock).mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(push).toHaveBeenCalledWith("/workflow-cases/internal-protocol/new?sessionId=session-1");
     root.unmount();
   });
 

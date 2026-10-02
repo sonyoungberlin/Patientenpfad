@@ -38,6 +38,7 @@ describe("Praxisfall-Ketten-Navigation", () => {
       "practice-management",
     );
     expect(sections.flatMap((section) => section.items).some((entry) => entry.id === "practice-case-chains-runner")).toBe(false);
+    expect(sections.flatMap((section) => section.items).some((entry) => entry.id === "practice-library")).toBe(false);
   });
 
   it("ordnet USER dem Arbeitsprozesse-Runner zu", () => {
@@ -49,8 +50,15 @@ describe("Praxisfall-Ketten-Navigation", () => {
         id: "practice-case-chains-runner",
         href: "/practice/chains",
       }),
+      expect.objectContaining({
+        id: "practice-library",
+        href: "/practice/library",
+      }),
     ]));
     expect(getNavigationSectionForPath(sections, "/practice/chains")?.id).toBe(
+      "workflow-path",
+    );
+    expect(getNavigationSectionForPath(sections, "/practice/library/entry-1")?.id).toBe(
       "workflow-path",
     );
     expect(sections.some((section) => section.id === "practice-management")).toBe(false);

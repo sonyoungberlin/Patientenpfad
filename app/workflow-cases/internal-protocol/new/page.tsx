@@ -14,9 +14,9 @@ export default async function InternalProtocolNewPage() {
   return (
     <main style={{ display: "grid", gap: "1.5rem" }}>
       <section>
-        <h1>Neue Sitzung</h1>
+        <h1>Praxisfälle verwalten</h1>
         <p className="text-muted">
-          Arbeitsprozess auswählen und Sitzung starten.
+          Praxisfall auswählen, Praxisstandards konfigurieren und zur Veröffentlichung vorbereiten.
         </p>
       </section>
       <InternalProtocolNewClient profiles={profiles} />

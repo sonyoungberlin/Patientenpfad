@@ -127,18 +127,22 @@ export default function AppShell({
           {appShellContext && (
             <span
               data-testid="app-shell-context"
-              className="app-shell-context"
-              role="img"
+              className={appShellContext.iconSrc ? "app-shell-context" : "app-shell-context app-shell-context-label"}
+              role={appShellContext.iconSrc ? "img" : undefined}
               aria-label={`Aktueller Kontext: ${appShellContext.label}`}
               title={`Aktueller Kontext: ${appShellContext.label}`}
             >
-              <Image
-                src={appShellContext.iconSrc}
-                alt=""
-                width={32}
-                height={32}
-                sizes="32px"
-              />
+              {appShellContext.iconSrc ? (
+                <Image
+                  src={appShellContext.iconSrc}
+                  alt=""
+                  width={32}
+                  height={32}
+                  sizes="32px"
+                />
+              ) : (
+                appShellContext.label
+              )}
             </span>
           )}
           <div className="app-shell-section-links">

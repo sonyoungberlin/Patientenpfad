@@ -62,6 +62,9 @@ describe("zentrale Bereichsdefinition", () => {
     ["/cases/internal-documentation/123", "doctor", "Ärztlich", "/context-icons/context-doctor.png"],
     ["/office-cases/123", "office", "Office", "/context-icons/context-office.png"],
     ["/workflow-cases/123", "office", "Office", "/context-icons/context-office.png"],
+    ["/workflow-cases/internal-protocol/draft/m2", "practice", "Praxisverwaltung", null],
+    ["/workflow-cases/internal-protocol/draft/m3", "practice", "Praxisverwaltung", null],
+    ["/workflow-cases/internal-protocol/draft/m4", "practice", "Praxisverwaltung", null],
     ["/office-cases/questionnaire/new", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
     ["/dashboard", null, null, null],
     ["/practice/members", null, null, null],
@@ -212,6 +215,9 @@ describe("zentrale Bereichsdefinition", () => {
     ["/office-cases/questionnaire/new", "inbox", "applicant-questionnaire-inbox"],
     ["/workflow-cases/abc", "workflow-path", "workflow-cases"],
     ["/workflow-cases/internal-protocol/new", "practice-management", "practice-cases"],
+    ["/workflow-cases/internal-protocol/draft/m2", "practice-management", "practice-cases"],
+    ["/workflow-cases/internal-protocol/draft/m3", "practice-management", "practice-cases"],
+    ["/workflow-cases/internal-protocol/draft/m4", "practice-management", "practice-cases"],
   ])("ordnet Detailroute %s dem richtigen Menüpunkt zu", (pathname, sectionId, itemId) => {
     const sections = getVisibleNavigationSections(account());
     const section = getNavigationSectionForPath(sections, pathname);
@@ -245,6 +251,9 @@ describe("AppShell Bereichsmenüs", () => {
       expect(html).toContain(`title="Aktueller Kontext: ${label}"`);
       expect(html).toContain('role="img"');
       expect(html).not.toContain(`>${label}</span>`);
+    } else if (label) {
+      expect(html).toContain(`title="Aktueller Kontext: ${label}"`);
+      expect(html).toContain(`>${label}</span>`);
     } else {
       expect(html).not.toContain('data-testid="app-shell-context"');
     }

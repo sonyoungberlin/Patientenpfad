@@ -35,6 +35,8 @@ describe("Chain Runner Praxisstandards", () => {
     expect(html).toContain("Patient ist im Praxissystem angelegt");
     expect(html).toContain("Name ist erfasst");
     expect(html).toContain("Geburtsdatum ist erfasst");
+    expect(html).toContain("← Praxisfall-Ketten");
+    expect(html).not.toContain("Kettenverwaltung");
     expect(html).not.toContain("patient-bekannt-a1");
     expect(html).not.toContain("<input");
     expect(html).not.toContain("<textarea");

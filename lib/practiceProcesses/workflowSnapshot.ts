@@ -73,6 +73,11 @@ function isPublishedCheckpoint(value: unknown): value is PublishedPracticeWorkfl
     Array.isArray(candidate.selectedAnchorIds) &&
     candidate.selectedAnchorIds.every((id) => typeof id === "string") &&
     Array.isArray(candidate.checkpointAnchors) &&
+    candidate.checkpointAnchors.every((anchor) =>
+      !!anchor && typeof anchor === "object" && !Array.isArray(anchor) &&
+      typeof (anchor as Record<string, unknown>).id === "string" &&
+      typeof (anchor as Record<string, unknown>).text === "string",
+    ) &&
     isPracticeCheckpointDefinitionDefined({
       selectedAnchorIds: candidate.selectedAnchorIds,
       implementation: candidate.implementation,

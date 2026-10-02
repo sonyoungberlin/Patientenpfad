@@ -14,11 +14,16 @@ export default async function PracticeChainsPage() {
   return (
     <main style={{ padding: "2rem", maxWidth: "64rem", margin: "0 auto", display: "grid", gap: "1.5rem" }}>
       <header>
-        <Link href="/practice/catalog" className="text-small text-muted">← Praxiskatalog</Link>
+        {canManage ? (
+          <Link href="/practice/catalog" className="text-small text-muted">← Praxiskatalog</Link>
+        ) : (
+          <Link href="/practice/library" className="text-small text-muted">← Praxisbibliothek</Link>
+        )}
         <h1 style={{ marginBottom: "0.35rem" }}>Praxisfall-Ketten</h1>
         <p className="text-muted" style={{ margin: 0 }}>
-          Verbinden Sie veröffentlichte Versionen Ihrer Praxisfälle mit eigenen Übergängen.
-          Entwürfe dürfen offene Stellen enthalten.
+          {canManage
+            ? <>Verbinden Sie veröffentlichte Versionen Ihrer Praxisfälle mit eigenen Übergängen. Entwürfe dürfen offene Stellen enthalten.</>
+            : "Nutzen Sie die für Ihre Praxis freigegebenen Ketten, um veröffentlichte Praxisfälle anhand ihrer Übergänge durchzugehen."}
         </p>
       </header>
 
@@ -33,7 +38,7 @@ export default async function PracticeChainsPage() {
               <Link href={canManage ? `/practice/chains/${chain.id}` : `/practice/chains/${chain.id}/run`} style={{ color: "inherit", textDecoration: "none" }}>
                 <strong>{chain.name}</strong>
                 <span className="text-small text-muted" style={{ marginLeft: "0.75rem" }}>
-                  {chain.status === "READY" ? "Einsatzbereit" : "Entwurf"} · {chain.definition.steps.length} Schritte
+                  {canManage ? chain.status === "READY" ? "Einsatzbereit" : "Entwurf" : "Freigegeben"} · {chain.definition.steps.length} Schritte
                 </span>
               </Link>
               {chain.status === "READY" && canManage && <Link href={`/practice/chains/${chain.id}/run`} className="text-small" style={{ marginLeft: "1rem" }}>Runner öffnen</Link>}

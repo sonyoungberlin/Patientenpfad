@@ -154,7 +154,7 @@ export default function DraftM2Client() {
 
       {error && <p role="alert" style={{ color: "var(--destructive)", margin: 0 }}>{error}</p>}
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", paddingTop: "0.75rem", borderTop: "1px solid var(--muted)" }}>
-        <button type="button" onClick={() => void saveAndNavigate("/workflow-cases")} disabled={saving}>Zwischenspeichern</button>
+        <button type="button" onClick={() => void saveAndNavigate("/workflow-cases/internal-protocol/new")} disabled={saving}>Zwischenspeichern</button>
         <button type="button" onClick={() => void saveAndNavigate("/workflow-cases/internal-protocol/draft/m3")} disabled={saving} style={{ marginLeft: "auto" }}>
           {saving ? "Speichern…" : "Weiter zu Entscheidungen →"}
         </button>

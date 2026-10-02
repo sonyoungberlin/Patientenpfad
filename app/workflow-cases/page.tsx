@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
-import { canAccessWorkflowCases } from "@/lib/authz";
+import { canAccessWorkflowCases, getCurrentPracticeRole } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
 import { getWorkflowTopic, isWorkflowTopicId } from "@/lib/workflow/processCatalog";
@@ -26,6 +26,8 @@ export default async function WorkflowCasesPage() {
   if (!canAccessWorkflowCases(account)) {
     redirect("/dashboard");
   }
+  const role = getCurrentPracticeRole(account);
+  const canManagePracticeCases = role === "OWNER" || role === "ADMIN";
 
   const sessions = await prisma.workflowSession.findMany({
     where: {
@@ -45,15 +47,15 @@ export default async function WorkflowCasesPage() {
   });
 
   const practiceId = account.current_practice?.id ?? null;
-  const [profiles, catalogEntries] = practiceId
+  const [profiles, catalogEntries] = practiceId && canManagePracticeCases
     ? await Promise.all([listCaseProfilesFromLib(), listActiveCatalogEntries(practiceId)])
     : [[], []];
-  const practiceSessions = sessions.filter(
+  const practiceSessions = canManagePracticeCases ? sessions.filter(
     (session) =>
       session.owner_practice_id === practiceId &&
       session.case_profile_id !== null &&
       isPracticeWorkflowDraftSnapshot(session.process_snapshot),
-  );
+  ) : [];
   const practiceSessionIds = new Set(practiceSessions.map((session) => session.id));
   const sessionByProfile = new Map(practiceSessions.map((session) => [session.case_profile_id!, session]));
   const catalogByProfile = new Map(
@@ -83,7 +85,10 @@ export default async function WorkflowCasesPage() {
 
   const items = [
     ...practiceItems,
-    ...sessions.filter((session) => !practiceSessionIds.has(session.id)).map((s) => {
+    ...sessions.filter((session) =>
+      !practiceSessionIds.has(session.id) &&
+      (canManagePracticeCases || !isPracticeWorkflowSnapshot(session.process_snapshot)),
+    ).map((s) => {
     // Neuer Practice-Workflow
     if (isPracticeWorkflowSnapshot(s.process_snapshot)) {
       const status = deriveSessionStatus(s.process_snapshot);

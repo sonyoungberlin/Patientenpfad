@@ -298,10 +298,6 @@ main {
     padding-top: 2rem;
   }
 
-  .app-shell-context-label {
-    display: none;
-  }
-
   .app-nav {
     padding-left: 1rem;
     padding-right: 1rem;
@@ -385,6 +381,17 @@ body:has(main.m3-page) {
   flex: 0 0 32px;
   cursor: default;
   pointer-events: none;
+}
+
+.app-shell-context-label {
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  align-items: center;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
 }
 
 .app-shell-section-links {

@@ -30,9 +30,9 @@ export type NavigationSection = {
 };
 
 export type AppShellContext = {
-  id: "inbox" | "patient" | "doctor" | "office";
-  label: "Posteingang" | "Patient" | "Ärztlich" | "Office";
-  iconSrc: string;
+  id: "inbox" | "patient" | "doctor" | "office" | "practice";
+  label: "Posteingang" | "Patient" | "Ärztlich" | "Office" | "Praxisverwaltung";
+  iconSrc: string | null;
 };
 
 const APP_SHELL_CONTEXTS: Readonly<Record<AppShellContext["id"], AppShellContext>> = {
@@ -56,6 +56,11 @@ const APP_SHELL_CONTEXTS: Readonly<Record<AppShellContext["id"], AppShellContext
     label: "Office",
     iconSrc: "/context-icons/context-office.png",
   },
+  practice: {
+    id: "practice",
+    label: "Praxisverwaltung",
+    iconSrc: null,
+  },
 };
 
 const APP_SHELL_CONTEXT_ROUTES: readonly {
@@ -71,6 +76,7 @@ const APP_SHELL_CONTEXT_ROUTES: readonly {
   { prefix: "/inquiries", context: "patient" },
   { prefix: "/cases", context: "patient" },
   { prefix: "/office-cases", context: "office" },
+  { prefix: "/workflow-cases/internal-protocol", context: "practice" },
   { prefix: "/workflow-cases", context: "office" },
 ];
 
@@ -263,6 +269,15 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         requiresPracticeRole: true,
         workflowFeature: true,
       },
+      {
+        id: "practice-library",
+        label: "Praxisbibliothek",
+        href: "/practice/library",
+        matches: ["/practice/library"],
+        roles: ["USER"],
+        requiresPracticeRole: true,
+        workflowFeature: true,
+      },
     ],
   },
   {
@@ -274,7 +289,7 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         id: "practice-cases",
         label: "Praxisfälle",
         href: "/workflow-cases/internal-protocol/new",
-        matches: ["/workflow-cases/internal-protocol/new"],
+        matches: ["/workflow-cases/internal-protocol"],
         roles: MANAGEMENT_ROLES,
         requiresPracticeRole: true,
         workflowFeature: true,
