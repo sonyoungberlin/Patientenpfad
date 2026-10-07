@@ -172,6 +172,29 @@ describe("M2 zentrale Checkpoint-Definitionen", () => {
     root.unmount();
   });
 
+  it("ermöglicht die bewusste Entfernung einer stale Auswahl und speichert die gültige Definition", async () => {
+    const { container, root } = await renderM2({
+      ...existingDefinition,
+      selectedAnchorIds: ["identity", "old-static-anchor"],
+    }, {
+      orientationAnchors: [{ id: "identity", text: "Aktueller Anker" }],
+    });
+
+    const removeStaleButton = [...container.querySelectorAll("button")]
+      .find((button) => button.textContent === "Nicht mehr aktuelle Auswahl entfernen");
+    expect(removeStaleButton).toBeDefined();
+    flushSync(() => removeStaleButton?.click());
+    expect(container.textContent).not.toContain("old-static-anchor");
+
+    await clickDefinitionButton(container);
+
+    expect(JSON.parse(String(getPutRequest()?.[1].body))).toEqual({
+      selectedAnchorIds: ["identity"],
+      implementation: "Bestehende Umsetzung",
+    });
+    root.unmount();
+  });
+
   it("ändert eine bestehende Definition auf Anchor-only", async () => {
     const { container, root } = await renderM2(anchorOnlyDefinition);
     await clickDefinitionButton(container);

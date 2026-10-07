@@ -13,6 +13,7 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 import { resolvePracticeWorkflowBuilderCheckpoints } from "@/lib/practiceProcesses/practiceWorkflowBuilder";
+import { getUnresolvedSelectedAnchorIds } from "@/lib/practiceProcesses/practiceDefinition";
 
 function definitionRow(checkpointId: string) {
   return {
@@ -92,6 +93,35 @@ describe("resolvePracticeWorkflowBuilderCheckpoints", () => {
     });
     expect(checkpoint.orientationAnchors).not.toContainEqual(
       expect.objectContaining({ id: "patient-bekannt-a1" }),
+    );
+  });
+
+  it("erkennt nach Library-Entfernung eine weiterhin gespeicherte Auswahl als stale", async () => {
+    mockLibraryCheckpointFindUnique.mockResolvedValue({
+      id: "patient-bekannt",
+      title: "Patient bekannt",
+      anchors: [{ id: "patient-bekannt-a1", text: "Aktueller Anker" }],
+    });
+    mockPracticeCheckpointDefinitionFindMany.mockResolvedValue([{
+      ...definitionRow("patient-bekannt"),
+      selected_anchor_ids: ["patient-bekannt-a2"],
+    }]);
+
+    const [checkpoint] = await resolvePracticeWorkflowBuilderCheckpoints(
+      "practice-current",
+      ["patient-bekannt"],
+    );
+
+    expect(checkpoint.definition?.selectedAnchorIds).toEqual(["patient-bekannt-a2"]);
+    expect(checkpoint.orientationAnchors).toEqual([
+      { id: "patient-bekannt-a1", text: "Aktueller Anker" },
+    ]);
+    expect(getUnresolvedSelectedAnchorIds(
+      checkpoint.definition!.selectedAnchorIds,
+      checkpoint.orientationAnchors,
+    )).toEqual(["patient-bekannt-a2"]);
+    expect(checkpoint.orientationAnchors).not.toContainEqual(
+      expect.objectContaining({ id: "patient-bekannt-a2" }),
     );
   });
 

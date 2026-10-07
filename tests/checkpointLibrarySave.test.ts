@@ -12,8 +12,7 @@
  * 8. Fehlgeschlagener Save führt nicht zu Erfolgszustand (error-response)
  * 9. Neuer Checkpoint anlegen (POST)
  * 10. POST mit bereits existierender ID wird abgelehnt
- * 11. Löschschutz: referenzierter Anker kann nicht gelöscht werden
- * 12. Nicht-referenzierter Anker kann gelöscht werden
+ * 11. Referenzierter Anker wird entfernt ohne die Praxisdefinition zu ändern
  */
 
 import { NextRequest } from "next/server";
@@ -31,8 +30,7 @@ jest.mock("@/lib/prisma", () => ({
     },
     libraryCaseProfile: { findMany: jest.fn(), updateMany: jest.fn() },
     workflowSession: { findMany: jest.fn() },
-    practiceCheckpointDefinition: { findFirst: jest.fn() },
-    $queryRaw: jest.fn(),
+    practiceCheckpointDefinition: { findFirst: jest.fn(), updateMany: jest.fn() },
   },
 }));
 
@@ -55,8 +53,7 @@ type LibMock = {
   };
   libraryCaseProfile: { findMany: jest.Mock; updateMany: jest.Mock };
   workflowSession: { findMany: jest.Mock };
-  practiceCheckpointDefinition: { findFirst: jest.Mock };
-  $queryRaw: jest.Mock;
+  practiceCheckpointDefinition: { findFirst: jest.Mock; updateMany: jest.Mock };
 };
 const pm = prisma as unknown as LibMock;
 const getSessionMock = getSessionAccount as jest.Mock;
@@ -120,9 +117,7 @@ beforeEach(() => {
   pm.workflowSession.findMany.mockReset();
   pm.practiceCheckpointDefinition.findFirst.mockReset();
   pm.practiceCheckpointDefinition.findFirst.mockResolvedValue(null);
-  pm.$queryRaw.mockReset();
-  // Default: kein Anker referenziert
-  pm.$queryRaw.mockResolvedValue([{ exists: false }]);
+  pm.practiceCheckpointDefinition.updateMany.mockReset();
   getSessionMock.mockReset();
   getSessionMock.mockResolvedValue(ADMIN_ACCOUNT);
   pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
@@ -463,97 +458,34 @@ describe("listCheckpointsFromLib", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 11. Löschschutz: referenzierter Anker kann nicht gelöscht werden
+// Anchor-Entfernung bleibt lokal auf LibraryCheckpoint begrenzt
 // ---------------------------------------------------------------------------
-describe("PUT Löschschutz – referenzierter Anker", () => {
-  it("gibt 409 zurück wenn Anker in gespeichertem Praxisprozess verwendet wird", async () => {
-    // Aktueller Stand hat einen Anker
-    pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
-    // isAnchorReferenced gibt true zurück
-    pm.$queryRaw.mockResolvedValue([{ exists: true }]);
+it("entfernt einen in einer Praxisdefinition ausgewaehlten Anchor ohne die Definition zu aendern", async () => {
+  const anchorOne = { id: "mein-checkpoint-a1", text: "Erster Anker" };
+  const anchorTwo = { id: "mein-checkpoint-a2", text: "Zweiter Anker" };
+  const currentDefinition = { selected_anchor_ids: [anchorTwo.id] };
+  pm.libraryCheckpoint.findUnique.mockResolvedValue({ ...DB_ROW, anchors: [anchorOne, anchorTwo] });
+  pm.libraryCheckpoint.upsert.mockImplementation(async ({ update }: { update: { anchors: typeof anchorOne[] } }) => ({
+    ...DB_ROW,
+    anchors: update.anchors,
+  }));
+  pm.practiceCheckpointDefinition.findFirst.mockResolvedValue(currentDefinition);
 
-    // Incoming request entfernt den Anker komplett (nur noch ein anderer)
-    const res = await PUT(
-      makePutRequest("mein-checkpoint", {
-        title: "Mein Checkpoint",
-        description: "",
-        orientationHint: "",
-        orientationAnchors: [{ id: "mein-checkpoint-a2", text: "Zweiter Anker" }],
-      }),
-      makePutParams("mein-checkpoint"),
-    );
+  const res = await PUT(
+    makePutRequest("mein-checkpoint", {
+      title: "Mein Checkpoint",
+      description: "",
+      orientationHint: "",
+      orientationAnchors: [anchorOne],
+    }),
+    makePutParams("mein-checkpoint"),
+  );
 
-    expect(res.status).toBe(409);
-    const data = await res.json() as { ok: boolean; error: string };
-    expect(data.ok).toBe(false);
-    expect(data.error).toMatch(/gespeicherten Praxisprozessen verwendet/);
-  });
-
-  it("Fehlermeldung enthält Ankertext des referenzierten Ankers", async () => {
-    pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
-    pm.$queryRaw.mockResolvedValue([{ exists: true }]);
-
-    const res = await PUT(
-      makePutRequest("mein-checkpoint", {
-        title: "Mein Checkpoint",
-        description: "",
-        orientationHint: "",
-        orientationAnchors: [{ id: "mein-checkpoint-a2", text: "Zweiter Anker" }],
-      }),
-      makePutParams("mein-checkpoint"),
-    );
-
-    const data = await res.json() as { error: string };
-    // Fehlermeldung enthält den Ankertext "Erster Anker"
-    expect(data.error).toContain("Erster Anker");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 12. Nicht-referenzierter Anker kann gelöscht werden
-// ---------------------------------------------------------------------------
-describe("PUT Löschschutz – nicht referenzierter Anker", () => {
-  it("gibt 200 zurück wenn Anker in keinem Praxisprozess verwendet wird", async () => {
-    pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
-    // Default aus beforeEach: exists: false
-    pm.libraryCheckpoint.upsert.mockResolvedValue({
-      ...DB_ROW,
-      anchors: [{ id: "mein-checkpoint-a2", text: "Zweiter Anker" }],
-    });
-
-    const res = await PUT(
-      makePutRequest("mein-checkpoint", {
-        title: "Mein Checkpoint",
-        description: "",
-        orientationHint: "",
-        orientationAnchors: [{ id: "mein-checkpoint-a2", text: "Zweiter Anker" }],
-      }),
-      makePutParams("mein-checkpoint"),
-    );
-
-    expect(res.status).toBe(200);
-    const data = await res.json() as { ok: boolean };
-    expect(data.ok).toBe(true);
-  });
-
-  it("ruft $queryRaw nicht auf wenn kein Anker entfernt wird", async () => {
-    pm.libraryCheckpoint.findUnique.mockResolvedValue(DB_ROW);
-    pm.libraryCheckpoint.upsert.mockResolvedValue(DB_ROW);
-
-    await PUT(
-      makePutRequest("mein-checkpoint", {
-        title: "Mein Checkpoint",
-        description: "",
-        orientationHint: "",
-        // Gleiche Anchor-IDs wie im DB_ROW → nichts gelöscht
-        orientationAnchors: [{ id: "mein-checkpoint-a1", text: "Erster Anker" }],
-      }),
-      makePutParams("mein-checkpoint"),
-    );
-
-    // $queryRaw soll nicht aufgerufen worden sein
-    expect(pm.$queryRaw).not.toHaveBeenCalled();
-  });
+  expect(res.status).toBe(200);
+  expect((await res.json()).checkpoint.orientationAnchors).toEqual([anchorOne]);
+  expect(currentDefinition.selected_anchor_ids).toEqual([anchorTwo.id]);
+  expect(pm.practiceCheckpointDefinition.findFirst).not.toHaveBeenCalled();
+  expect(pm.practiceCheckpointDefinition.updateMany).not.toHaveBeenCalled();
 });
 
 describe("DELETE /api/admin/checkpoints/[id]", () => {

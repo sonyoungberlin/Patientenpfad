@@ -60,8 +60,11 @@ function publishedSnapshot(caseProfileTitle = "Veröffentlichter Praxisfall") {
         checkpointId: "checkpoint-1",
         checkpointTitle: "Veröffentlichter Checkpoint",
         checkpointDescription: "Beschreibung aus dem Snapshot",
-        checkpointAnchors: [{ id: "anchor-1", text: "Eingefrorener Ankertext" }],
-        selectedAnchorIds: ["anchor-1"],
+        checkpointAnchors: [
+          { id: "anchor-1", text: "Eingefrorener Ankertext" },
+          { id: "patient-bekannt-a2", text: "Eingefrorener Text für a2" },
+        ],
+        selectedAnchorIds: ["anchor-1", "patient-bekannt-a2"],
         implementation: "Eingefrorene Umsetzung",
       },
     }],
@@ -175,6 +178,10 @@ describe("Praxisbibliothek", () => {
       title: "Live-Titel darf nicht erscheinen",
       description: "Live-Beschreibung darf nicht erscheinen",
     }));
+    mockGetCheckpointFromLib.mockResolvedValue({
+      id: "checkpoint-1",
+      orientationAnchors: [{ id: "anchor-1", text: "Live-Anchor" }],
+    });
 
     const html = renderToStaticMarkup(await PracticeLibraryEntryPage({ params: Promise.resolve({ id: "entry-1" }) }));
 
@@ -182,6 +189,8 @@ describe("Praxisbibliothek", () => {
     expect(html).toContain("Veröffentlichter Checkpoint");
     expect(html).toContain("Beschreibung aus dem Snapshot");
     expect(html).toContain("Eingefrorener Ankertext");
+    expect(html).toContain("Eingefrorener Text für a2");
+    expect(html).not.toContain("Live-Anchor");
     expect(html).toContain("Eingefrorene Umsetzung");
     expect(html).not.toContain("Live-Titel");
     expect(html).not.toContain("Live-Beschreibung");

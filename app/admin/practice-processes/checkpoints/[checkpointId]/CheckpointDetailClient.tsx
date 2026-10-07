@@ -116,15 +116,28 @@ export default function CheckpointDetailClient({
       const json = (await res.json()) as {
         ok: boolean;
         error?: string;
-        checkpoint?: { id: string };
+        checkpoint?: {
+          id: string;
+          title: string;
+          description?: string;
+          orientationHint?: string;
+          orientationAnchors?: PracticeCheckpointAnchor[];
+        };
       };
-      if (!res.ok || !json.ok) {
+      if (!res.ok || !json.ok || !json.checkpoint) {
         setSaveState("error");
         setSaveError(json.error ?? "Speichern fehlgeschlagen.");
         return;
       }
+      const persistedDraft: CheckpointDraft = {
+        title: json.checkpoint.title,
+        description: json.checkpoint.description ?? "",
+        orientationHint: json.checkpoint.orientationHint ?? "",
+        orientationAnchors: [...(json.checkpoint.orientationAnchors ?? [])],
+      };
       setSaveState("success");
-      setSavedDraft(draft);
+      setDraft(persistedDraft);
+      setSavedDraft(persistedDraft);
       if (isNew && json.checkpoint) {
         router.push(`/admin/practice-processes/checkpoints/${json.checkpoint.id}`);
       }

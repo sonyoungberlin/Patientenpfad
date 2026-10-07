@@ -740,10 +740,10 @@ describe("PracticeCaseChain runner", () => {
             checkpointTitle: "Patient bekannt",
             checkpointAnchors: [
               { id: "anchor-a", text: anchorText },
-              { id: "anchor-b", text: "Geburtsdatum ist erfasst" },
+              { id: "patient-bekannt-a2", text: "Eingefrorener Text für a2" },
               { id: "anchor-unused", text: "Nicht ausgewählt" },
             ],
-            selectedAnchorIds: ["anchor-a", "anchor-b"],
+            selectedAnchorIds: ["anchor-a", "patient-bekannt-a2"],
             implementation,
           },
         },
@@ -777,6 +777,10 @@ describe("PracticeCaseChain runner", () => {
       where.id.in.flatMap((id) => entries.has(id) ? [entries.get(id)] : []),
     );
     mockGetCheckpointFromLib.mockClear();
+    mockGetCheckpointFromLib.mockResolvedValue({
+      id: "patient-bekannt",
+      orientationAnchors: [{ id: "patient-bekannt-a1", text: "Live-Anker nach Entfernung" }],
+    });
 
     const versionOne = await getReadyPracticeChainRunner("chain-v1", PRACTICE_ID);
     const versionTwo = await getReadyPracticeChainRunner("chain-v2", PRACTICE_ID);
@@ -784,7 +788,7 @@ describe("PracticeCaseChain runner", () => {
     expect(versionOne?.steps[0].standards).toEqual([
       {
         title: "Patient bekannt",
-        selectedAnchors: ["Name ist erfasst", "Geburtsdatum ist erfasst"],
+        selectedAnchors: ["Name ist erfasst", "Eingefrorener Text für a2"],
         implementation: null,
         missingAnchorCount: 0,
       },
@@ -797,7 +801,7 @@ describe("PracticeCaseChain runner", () => {
     ]);
     expect(versionTwo?.steps[0].standards[0].selectedAnchors).toEqual([
       "Name wurde aktualisiert",
-      "Geburtsdatum ist erfasst",
+      "Eingefrorener Text für a2",
     ]);
     expect(versionTwo?.steps[0].standards[0].implementation).toBe("Zusätzlich Rückrufnummer abgleichen");
     expect(versionOne?.steps[0].standards[0].selectedAnchors).toContain("Name ist erfasst");
