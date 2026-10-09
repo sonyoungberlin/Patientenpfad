@@ -1,22 +1,24 @@
 import { redirect } from "next/navigation";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { listCheckpointsFromLib, getCheckpointFromLib } from "@/lib/practiceProcesses";
+import { listCheckpointLabels } from "@/lib/checkpointLabels";
+import { sanitizeCheckpointLibraryReturnTo } from "@/lib/checkpointLibraryNavigation";
 import CheckpointDetailClient from "../[checkpointId]/CheckpointDetailClient";
 
 export default async function AdminNewCheckpointPage({
   searchParams,
 }: {
-  searchParams: Promise<{ copyFrom?: string }>;
+  searchParams: Promise<{ copyFrom?: string; returnTo?: string }>;
 }) {
   const account = await getSessionAccountFromCookies();
   if (!account || !account.is_approved || !account.is_admin) {
     redirect("/");
   }
 
-  const { copyFrom } = await searchParams;
+  const { copyFrom, returnTo: requestedReturnTo } = await searchParams;
   const source = copyFrom ? await getCheckpointFromLib(copyFrom) : null;
 
-  const checkpoints = await listCheckpointsFromLib();
+  const [checkpoints, labels] = await Promise.all([listCheckpointsFromLib(), listCheckpointLabels()]);
 
   const initialDraft = source
     ? {
@@ -36,6 +38,8 @@ export default async function AdminNewCheckpointPage({
       initialDraft={initialDraft}
       existingIds={checkpoints.map((c) => c.id)}
       existingTitles={checkpoints.map((c) => c.title)}
+      initialLabels={labels.map(({ id, name }) => ({ id, name }))}
+      returnTo={sanitizeCheckpointLibraryReturnTo(requestedReturnTo)}
     />
   );
 }

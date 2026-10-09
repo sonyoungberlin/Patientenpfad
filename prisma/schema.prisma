@@ -1123,6 +1123,28 @@ model LibraryCheckpoint {
   updatedAt        DateTime @updatedAt
 }
 
+/// Organisatorisches Label der zentralen Admin-Checkpoint-Bibliothek.
+model CheckpointLabel {
+  id              String                     @id @default(cuid())
+  name            String
+  normalized_name String                     @unique
+  created_at      DateTime                   @default(now())
+  updated_at      DateTime                   @updatedAt
+  assignments     CheckpointLabelAssignment[]
+}
+
+/// Zuordnung über stabile Checkpoint-ID; absichtlich ohne FK auf LibraryCheckpoint,
+/// da Checkpoints auch ausschließlich im statischen Katalog existieren können.
+model CheckpointLabelAssignment {
+  checkpoint_id String
+  label_id      String
+  label         CheckpointLabel @relation(fields: [label_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  created_at    DateTime        @default(now())
+
+  @@id([checkpoint_id, label_id])
+  @@index([label_id])
+}
+
 /// Admin-verwaltete Überschreibungen der Praxisfall-Bibliothek.
 /// DB-Einträge überschreiben den statischen Katalog (caseProfileCatalog.ts) zur Laufzeit.
 /// CheckpointRefs werden als JSON gespeichert.

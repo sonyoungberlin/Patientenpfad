@@ -13,6 +13,8 @@ type CheckpointDraft = {
   orientationAnchors: PracticeCheckpointAnchor[];
 };
 
+type LabelOption = { id: string; name: string };
+
 type SaveState = "idle" | "saving" | "success" | "error";
 
 /** Nächste freie Anker-ID im Format `{checkpointId}-aN`. */
@@ -48,25 +50,38 @@ const textareaStyle: React.CSSProperties = {
 export default function CheckpointDetailClient({
   initialDraft,
   fixedId,
+  initialLabels = [],
+  initialLabelIds = [],
+  returnTo = "/admin/practice-processes/checkpoints",
   existingIds = [],
   existingTitles = [],
   canDelete = false,
 }: {
   initialDraft: CheckpointDraft;
   fixedId?: string;
+  initialLabels?: LabelOption[];
+  initialLabelIds?: string[];
+  returnTo?: string;
   existingIds?: string[];
   existingTitles?: string[];
   canDelete?: boolean;
 }) {
   const router = useRouter();
+  const [persistedId, setPersistedId] = useState(fixedId);
   const [draft, setDraft] = useState(initialDraft);
   const [savedDraft, setSavedDraft] = useState(initialDraft);
+  const [labels, setLabels] = useState(initialLabels);
+  const [draftLabelIds, setDraftLabelIds] = useState(initialLabelIds);
+  const [savedLabelIds, setSavedLabelIds] = useState(initialLabelIds);
+  const [newLabelName, setNewLabelName] = useState("");
+  const [labelError, setLabelError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const pendingFocusIndex = useRef<number | null>(null);
 
-  const displayId = fixedId ?? toLibraryId(draft.title);
-  const isNew = fixedId === undefined;
+  const displayId = persistedId ?? toLibraryId(draft.title);
+  const isNew = persistedId === undefined;
+  const isNewRoute = fixedId === undefined;
   const titleFilled = draft.title.trim() !== "";
   const isDuplicateId = isNew && titleFilled && existingIds.includes(displayId);
   const isDuplicateTitle =
@@ -74,13 +89,17 @@ export default function CheckpointDetailClient({
     titleFilled &&
     existingTitles.some((t) => t.trim().toLowerCase() === draft.title.trim().toLowerCase());
 
-  const isDirty = !draftsEqual(draft, savedDraft);
+  const contentDirty = !draftsEqual(draft, savedDraft);
+  const normalizedDraftLabelIds = [...new Set(draftLabelIds)].sort();
+  const normalizedSavedLabelIds = [...new Set(savedLabelIds)].sort();
+  const labelsDirty = JSON.stringify(normalizedDraftLabelIds) !== JSON.stringify(normalizedSavedLabelIds);
+  const isDirty = contentDirty || labelsDirty;
 
   const canSave =
     titleFilled &&
     !isDuplicateId &&
     !isDuplicateTitle &&
-    draft.orientationAnchors.length > 0 &&
+    (!contentDirty && !isNew || draft.orientationAnchors.length > 0) &&
     saveState !== "saving" &&
     isDirty;
 
@@ -98,68 +117,110 @@ export default function CheckpointDetailClient({
     if (!canSave) return;
     setSaveState("saving");
     setSaveError(null);
-
-    const url = isNew
-      ? "/api/admin/checkpoints"
-      : `/api/admin/checkpoints/${fixedId}`;
-    const method = isNew ? "POST" : "PUT";
-    const payload = isNew
-      ? { id: displayId, ...draftPayload() }
-      : draftPayload();
-
+    setLabelError(null);
+    let targetId = persistedId;
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const json = (await res.json()) as {
-        ok: boolean;
-        error?: string;
-        checkpoint?: {
-          id: string;
-          title: string;
-          description?: string;
-          orientationHint?: string;
-          orientationAnchors?: PracticeCheckpointAnchor[];
+      if (contentDirty || isNew) {
+        const url = isNew ? "/api/admin/checkpoints" : `/api/admin/checkpoints/${persistedId}`;
+        const method = isNew ? "POST" : "PUT";
+        const payload = isNew ? { id: displayId, ...draftPayload() } : draftPayload();
+        const response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const json = await response.json() as {
+          ok: boolean;
+          error?: string;
+          checkpoint?: {
+            id: string;
+            title: string;
+            description?: string;
+            orientationHint?: string;
+            orientationAnchors?: PracticeCheckpointAnchor[];
+          };
         };
-      };
-      if (!res.ok || !json.ok || !json.checkpoint) {
-        setSaveState("error");
-        setSaveError(json.error ?? "Speichern fehlgeschlagen.");
-        return;
+        if (!response.ok || !json.ok || !json.checkpoint) {
+          setSaveState("error");
+          setSaveError(json.error ?? "Checkpoint konnte nicht gespeichert werden.");
+          return;
+        }
+        targetId = json.checkpoint.id;
+        setPersistedId(targetId);
+        const persistedDraft: CheckpointDraft = {
+          title: json.checkpoint.title,
+          description: json.checkpoint.description ?? "",
+          orientationHint: json.checkpoint.orientationHint ?? "",
+          orientationAnchors: [...(json.checkpoint.orientationAnchors ?? [])],
+        };
+        setDraft(persistedDraft);
+        setSavedDraft(persistedDraft);
       }
-      const persistedDraft: CheckpointDraft = {
-        title: json.checkpoint.title,
-        description: json.checkpoint.description ?? "",
-        orientationHint: json.checkpoint.orientationHint ?? "",
-        orientationAnchors: [...(json.checkpoint.orientationAnchors ?? [])],
-      };
+
+      if (labelsDirty && targetId) {
+        const response = await fetch(`/api/admin/checkpoint-labels/assignments/${targetId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ labelIds: normalizedDraftLabelIds }),
+        });
+        const result = await response.json() as { ok?: boolean; error?: string; labelIds?: string[] };
+        if (!response.ok || !result.ok) {
+          setSaveState("error");
+          setSaveError(contentDirty
+            ? `Checkpoint gespeichert, Labels aber nicht: ${result.error ?? "Speichern fehlgeschlagen."} Bitte Labels erneut speichern.`
+            : result.error ?? "Labels konnten nicht gespeichert werden.");
+          return;
+        }
+        const savedIds = result.labelIds ?? normalizedDraftLabelIds;
+        setDraftLabelIds(savedIds);
+        setSavedLabelIds(savedIds);
+      }
+
       setSaveState("success");
-      setDraft(persistedDraft);
-      setSavedDraft(persistedDraft);
-      if (isNew && json.checkpoint) {
-        router.push(`/admin/practice-processes/checkpoints/${json.checkpoint.id}`);
+      if (isNewRoute && targetId) {
+        router.push(`/admin/practice-processes/checkpoints/${targetId}?returnTo=${encodeURIComponent(returnTo)}`);
       }
     } catch {
       setSaveState("error");
-      setSaveError("Netzwerkfehler. Bitte erneut versuchen.");
+      setSaveError(contentDirty ? "Speichern fehlgeschlagen. Prüfe, ob der Checkpoint oder die Labels bereits gespeichert wurden, und versuche es erneut." : "Labels konnten wegen eines Netzwerkfehlers nicht gespeichert werden.");
+    }
+  }
+
+  async function createLabelInEditor(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLabelError(null);
+    try {
+      const response = await fetch("/api/admin/checkpoint-labels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newLabelName }),
+      });
+      const result = await response.json() as { ok?: boolean; error?: string; label?: LabelOption };
+      if (!response.ok || !result.ok || !result.label) {
+        setLabelError(result.error ?? "Label konnte nicht erstellt werden.");
+        return;
+      }
+      setLabels((current) => [...current, result.label!].sort((a, b) => a.name.localeCompare(b.name, "de")));
+      setDraftLabelIds((current) => [...current, result.label!.id]);
+      setNewLabelName("");
+    } catch {
+      setLabelError("Label konnte wegen eines Netzwerkfehlers nicht erstellt werden.");
     }
   }
 
   async function handleDelete() {
-    if (!fixedId || !window.confirm(`Checkpoint „${draft.title}“ wirklich dauerhaft löschen?`)) return;
+    if (!persistedId || !window.confirm(`Checkpoint „${draft.title}“ wirklich dauerhaft löschen?`)) return;
     setSaveState("saving");
     setSaveError(null);
     try {
-      const res = await fetch(`/api/admin/checkpoints/${fixedId}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/checkpoints/${persistedId}`, { method: "DELETE" });
       const json = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) {
         setSaveState("error");
         setSaveError(json.error ?? "Löschen fehlgeschlagen.");
         return;
       }
-      router.push("/admin/practice-processes/checkpoints");
+      router.push(returnTo);
       router.refresh();
     } catch {
       setSaveState("error");
@@ -179,12 +240,12 @@ export default function CheckpointDetailClient({
   return (
     <main style={{ display: "grid", gap: "1.5rem", maxWidth: "var(--main-max-width)" }}>
       <section style={{ display: "grid", gap: "0.5rem" }}>
-        <Link href="/admin/practice-processes/checkpoints" className="text-small text-muted">
+        <Link href={returnTo} className="text-small text-muted">
           ← Checkpoint-Bibliothek
         </Link>
-        {fixedId && (
+        {persistedId && (
           <Link
-            href={`/admin/practice-processes/checkpoints/new?copyFrom=${fixedId}`}
+            href={`/admin/practice-processes/checkpoints/new?copyFrom=${persistedId}&returnTo=${encodeURIComponent(returnTo)}`}
             className="text-small text-muted"
             style={{ justifySelf: "end" }}
           >
@@ -246,6 +307,29 @@ export default function CheckpointDetailClient({
             style={{ ...textareaStyle, marginTop: "0.25rem" }}
           />
         </div>
+
+        <fieldset style={{ display: "grid", gap: "0.5rem", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "0.75rem" }}>
+          <legend>Labels</legend>
+          {labels.length ? labels.map((label) => (
+            <label key={label.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <input
+                type="checkbox"
+                checked={draftLabelIds.includes(label.id)}
+                disabled={saveState === "saving"}
+                onChange={(event) => setDraftLabelIds((current) => event.target.checked
+                  ? [...new Set([...current, label.id])]
+                  : current.filter((id) => id !== label.id))}
+              />
+              {label.name}
+            </label>
+          )) : <span className="text-small text-muted">Noch keine Labels angelegt.</span>}
+          <form onSubmit={createLabelInEditor} style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+            <label htmlFor="editor-new-label" className="text-small">Neues Label</label>
+            <input id="editor-new-label" value={newLabelName} maxLength={80} onChange={(event) => setNewLabelName(event.target.value)} />
+            <button type="submit" disabled={saveState === "saving" || !newLabelName.trim()}>Erstellen und auswählen</button>
+          </form>
+          {labelError && <p role="alert" className="text-small text-error" style={{ margin: 0 }}>{labelError}</p>}
+        </fieldset>
       </section>
 
       {/* Orientierungsfragen (Feld: orientationAnchors) */}
@@ -366,7 +450,7 @@ export default function CheckpointDetailClient({
         >
           {saveState === "saving" ? "Wird gespeichert …" : "Speichern"}
         </button>
-        {fixedId && canDelete && (
+        {persistedId && canDelete && (
           <button type="button" data-delete-checkpoint onClick={() => void handleDelete()} disabled={saveState === "saving"}>
             Löschen
           </button>
@@ -376,14 +460,14 @@ export default function CheckpointDetailClient({
             Ungespeicherte Änderungen.
           </p>
         )}
-        {saveState === "success" && !isDirty && (
-          <p className="text-small" style={{ margin: 0, color: "var(--success, green)" }}>
-            Erfolgreich gespeichert.
-          </p>
-        )}
         {saveState === "error" && (
           <p className="text-small text-error" style={{ margin: 0 }}>
             {saveError}
+          </p>
+        )}
+        {saveState === "success" && !isDirty && (
+          <p role="status" className="text-small" style={{ margin: 0, color: "var(--success, green)" }}>
+            Erfolgreich gespeichert.
           </p>
         )}
       </section>
