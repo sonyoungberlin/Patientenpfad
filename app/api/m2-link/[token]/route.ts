@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sanitizePrefillForMode } from "@/lib/logic/m2Questions";
 import {
@@ -83,24 +82,15 @@ export async function POST(
       source: "patient",
       activeCheckpoints: activeCheckpointsSnapshot,
       answers: sanitizedPrefill as unknown as PrefillRunAnswers,
-      // Schritt 2: Außenverhalten identisch.
-      allowConfirmed: true,
-    });
-
-    // Cache / Kompatibilitätsschicht synchron halten. `ctx_prefill` enthält
-    // die Antworten dieses neuen Runs (Patient-Reader lesen ausschließlich
-    // den Patientenkatalog); `preparation_mode = "patient"`, `m2_status =
-    // "completed"` und die Token-Invalidierung verhalten sich identisch
-    // zur bisherigen Implementierung.
-    await prisma.caseSession.update({
-      where: { id: session.id },
-      data: {
-        ctx_prefill: sanitizedPrefill as unknown as Prisma.InputJsonValue,
+      resetM3RatingsOnChange: true,
+      caseSessionUpdate: {
         preparation_mode: "patient",
         m2_token: null,
         m2_token_expires_at: null,
         m2_status: "completed",
       },
+      // Schritt 2: Außenverhalten identisch.
+      allowConfirmed: true,
     });
 
     return NextResponse.json({ ok: true });

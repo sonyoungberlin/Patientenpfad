@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
@@ -8,6 +9,8 @@ import { canAccessCaseSession } from "@/lib/cases/practiceScope";
 import {
   getFrozenRuns,
   getOpenRun,
+  isPreparedClinicalStatus,
+  isPrefillChangedClinicalStatus,
   isPrefillRunSource,
   type PrefillRunSource,
 } from "@/lib/server/prefillRuns";
@@ -102,13 +105,18 @@ export default async function M3Page({
     typeof session.preparation_mode === "string" ? session.preparation_mode : "none";
   const clinicalStatus =
     typeof session.clinical_status === "string" ? session.clinical_status : "none";
+  const prefillReviewPending =
+    isPrefillChangedClinicalStatus(clinicalStatus) &&
+    !session.doctor_confirmed &&
+    clinicalStatus !== "confirmed";
 
   // Ergänzungslauf wurde gestartet, wenn clinical_status "prepared" ist und
-  // bereits mindestens ein PrefillRun existiert (frozen oder offen).
+  // bereits mindestens ein PrefillRun existiert (frozen oder offen). Der
+  // Phase-5-Marker kann diese Bedeutung mit `prepared:` erhalten.
   // Ein offener Run deutet auf einen laufenden Ergänzungs-M2 hin;
   // ein frozen Run bedeutet der Ergänzungslauf wurde bereits abgeschlossen.
   let ergaenzungGestartet = false;
-  if (clinicalStatus === "prepared") {
+  if (isPreparedClinicalStatus(clinicalStatus)) {
     if (frozenRuns.length > 0) {
       ergaenzungGestartet = true;
     } else {
@@ -123,8 +131,22 @@ export default async function M3Page({
 
   return (
     <main className="m3-page">
+      <nav
+        data-m3-navigation
+        aria-label="Fallnavigation"
+        style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}
+      >
+        {session.doctor_confirmed || clinicalStatus === "confirmed" ? null : (
+          <Link href={`/cases/${id}/m2`} data-m3-m2-link>
+            M2 bearbeiten
+          </Link>
+        )}
+        <Link href="/cases" data-m3-case-list-link>
+          Zur Fallliste
+        </Link>
+      </nav>
       <h1>Ärztliche Checkliste</h1>
-      <M3ChecklistClient caseId={id} initialCheckpoints={checkpoints} frozenRuns={frozenRuns} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} doctorConfirmed={session.doctor_confirmed === true} clinicalStatus={clinicalStatus} ergaenzungGestartet={ergaenzungGestartet} />
+      <M3ChecklistClient key={clinicalStatus} caseId={id} initialCheckpoints={checkpoints} frozenRuns={frozenRuns} m2Status={m2Status} preparationMode={preparationMode} messageSignature={messageSignature} doctorConfirmed={session.doctor_confirmed === true} clinicalStatus={clinicalStatus} prefillReviewPending={prefillReviewPending} ergaenzungGestartet={ergaenzungGestartet} />
     </main>
   );
 }

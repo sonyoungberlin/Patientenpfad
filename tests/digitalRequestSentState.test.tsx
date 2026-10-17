@@ -350,14 +350,17 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
     expect(markup).not.toContain("Sofort-Abfrage");
   });
 
-  it("zeigt Public-Check-ins als Smartphone/QR und Actions erst nach Zuordnung", () => {
+  it("erlaubt vor Zuordnung nur das Verwerfen und danach auch Folgeaktionen", () => {
     const unassigned = renderToStaticMarkup(QuestionnaireCard({
       ...BASE_PROPS, source: "public_check_in", displayStatus: "completed",
       patientReference: null, publicHandoffStatus: "waiting",
     }));
     expect(unassigned).toContain("Smartphone/QR");
     expect(unassigned).toContain("data-q-assign");
-    expect(unassigned).not.toContain("data-public-check-in-actions");
+    expect(unassigned).toContain("data-public-check-in-actions");
+    expect(unassigned).toContain("Vorgang verwerfen");
+    expect(unassigned).not.toContain("Vorgang beenden");
+    expect(unassigned).not.toContain("Folgefragebogen starten");
 
     const assigned = renderToStaticMarkup(QuestionnaireCard({
       ...BASE_PROPS, source: "public_check_in", displayStatus: "completed",
@@ -365,6 +368,8 @@ describe("QuestionnaireCard — isFromDigitalRequest", () => {
     }));
     expect(assigned).toContain("data-public-check-in-actions");
     expect(assigned).not.toContain("data-q-assign");
+    expect(assigned).toContain("Vorgang beenden");
+    expect(assigned).toContain("Folgefragebogen starten");
   });
 
   it("zeigt Patientenzuordnung für unzugeordnete completed DigitalRequest-Follow-ups ohne Export", () => {

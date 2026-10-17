@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint, isMultiSelectCheckpoint, isAssessmentCheckpoint } from "@/lib/types";
+import { CheckpointCategory, CheckpointMode, type ActiveCheckpoint, isMultiSelectCheckpoint, isAssessmentCheckpoint, isStandardCheckpoint } from "@/lib/types";
 import { requireCasesAccess } from "@/lib/authz";
 import { canAccessCaseSession } from "@/lib/cases/practiceScope";
+import {
+  isPrefillChangedClinicalStatus,
+  parsePrefillChangedClinicalStatus,
+  withReviewedPrefillCheckpoints,
+} from "@/lib/server/prefillRuns";
 
 type CheckpointStatus = "OK" | "TO_DO" | "ZURÜCKSTELLEN";
 
@@ -84,6 +90,10 @@ export async function PATCH(
       body?.status === "ZURÜCKSTELLEN"
         ? (body.status as CheckpointStatus)
         : undefined;
+    const expectedClinicalStatus =
+      typeof body.expected_clinical_status === "string"
+        ? body.expected_clinical_status
+        : undefined;
 
     if (!hasEnabled && !status) {
       return NextResponse.json(
@@ -92,101 +102,157 @@ export async function PATCH(
       );
     }
 
-    const session = await prisma.caseSession.findUnique({ where: { id } });
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const session = await tx.caseSession.findUnique({ where: { id } });
 
-    if (!session || !canAccessCaseSession(account, session)) {
-      return NextResponse.json(
-        { ok: false, error: "Not found" },
-        { status: 404 },
-      );
-    }
+          if (!session || !canAccessCaseSession(account, session)) {
+            return NextResponse.json(
+              { ok: false, error: "Not found" },
+              { status: 404 },
+            );
+          }
 
-    if (session.doctor_confirmed) {
-      return NextResponse.json(
-        { ok: false, error: "Fall ist ärztlich bestätigt und eingefroren." },
-        { status: 409 },
-      );
-    }
+          if (session.doctor_confirmed || session.clinical_status === "confirmed") {
+            return NextResponse.json(
+              { ok: false, error: "Fall ist ärztlich bestätigt und eingefroren." },
+              { status: 409 },
+            );
+          }
 
-    if (!isActiveCheckpointArray(session.active_checkpoints)) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid checkpoint state" },
-        { status: 500 },
-      );
-    }
+          const currentClinicalStatus =
+            typeof session.clinical_status === "string" ? session.clinical_status : "none";
+          if (
+            !hasEnabled &&
+            (expectedClinicalStatus !== undefined ||
+              isPrefillChangedClinicalStatus(session.clinical_status)) &&
+            (expectedClinicalStatus ?? "none") !== currentClinicalStatus
+          ) {
+            return NextResponse.json(
+              {
+                ok: false,
+                error: "Prefill wurde geändert; M3 muss neu geladen werden.",
+                clinical_status: currentClinicalStatus,
+                prefill_reset: isPrefillChangedClinicalStatus(currentClinicalStatus),
+              },
+              { status: 409 },
+            );
+          }
 
-    const checkpoints = session.active_checkpoints;
-    const targetCheckpointIndex = checkpoints.findIndex(
-      (cp) => cp.id === checkpointId,
-    );
+          if (!isActiveCheckpointArray(session.active_checkpoints)) {
+            return NextResponse.json(
+              { ok: false, error: "Invalid checkpoint state" },
+              { status: 500 },
+            );
+          }
 
-    if (targetCheckpointIndex === -1) {
-      return NextResponse.json(
-        { ok: false, error: "Checkpoint not found" },
-        { status: 404 },
-      );
-    }
+          const checkpoints = session.active_checkpoints;
+          const reviewableCheckpointIds = checkpoints
+            .filter((checkpoint) => {
+              if (!isStandardCheckpoint(checkpoint)) return false;
+              if (isMultiSelectCheckpoint(checkpoint)) return false;
+              return !isAssessmentCheckpoint(checkpoint) || checkpoint.enabled === true;
+            })
+            .map((checkpoint) => checkpoint.id);
+          const targetCheckpointIndex = checkpoints.findIndex(
+            (cp) => cp.id === checkpointId,
+          );
 
-    const target = checkpoints[targetCheckpointIndex];
-    const updatedCheckpoints = [...checkpoints];
+          if (targetCheckpointIndex === -1) {
+            return NextResponse.json(
+              { ok: false, error: "Checkpoint not found" },
+              { status: 404 },
+            );
+          }
 
-    // Determine the exact update type now that we have the target checkpoint.
-    const isMultiSelectUpdate = hasEnabled && !("status" in body) && isMultiSelectCheckpoint(target);
-    const isAssessmentUpdate = hasEnabled && !("status" in body) && isAssessmentCheckpoint(target);
+          const target = checkpoints[targetCheckpointIndex];
+          const updatedCheckpoints = [...checkpoints];
 
-    if (isMultiSelectUpdate) {
-      // MULTI_SELECT checkpoint update: validate and apply enabled + selections
-      if (!isMultiSelectCheckpoint(target)) {
-        return NextResponse.json(
-          { ok: false, error: "Checkpoint is not a multi-select type" },
-          { status: 400 },
-        );
+          const isMultiSelectUpdate = hasEnabled && !("status" in body) && isMultiSelectCheckpoint(target);
+          const isAssessmentUpdate = hasEnabled && !("status" in body) && isAssessmentCheckpoint(target);
+
+          if (isMultiSelectUpdate) {
+            if (!isMultiSelectCheckpoint(target)) {
+              return NextResponse.json(
+                { ok: false, error: "Checkpoint is not a multi-select type" },
+                { status: 400 },
+              );
+            }
+            const enabled = typeof body.enabled === "boolean" ? body.enabled : false;
+            const selections = Array.isArray(body.selections)
+              ? (body.selections as unknown[]).filter((s): s is string => typeof s === "string")
+              : [];
+            updatedCheckpoints[targetCheckpointIndex] = {
+              ...target,
+              enabled,
+              selections: enabled ? selections : [],
+            } as ActiveCheckpoint;
+          } else if (isAssessmentUpdate) {
+            const enabled = typeof body.enabled === "boolean" ? body.enabled : false;
+            updatedCheckpoints[targetCheckpointIndex] = {
+              ...target,
+              enabled,
+            } as ActiveCheckpoint;
+          } else {
+            if (hasEnabled && !status) {
+              return NextResponse.json(
+                { ok: false, error: "Checkpoint is not a multi-select type" },
+                { status: 400 },
+              );
+            }
+            if (!isValidStatus(target, status!)) {
+              return NextResponse.json(
+                { ok: false, error: "Invalid status for checkpoint category" },
+                { status: 400 },
+              );
+            }
+            updatedCheckpoints[targetCheckpointIndex] = {
+              ...target,
+              status,
+            } as ActiveCheckpoint;
+          }
+
+          let nextClinicalStatus: string | undefined;
+          let reviewComplete = false;
+          const reviewMarker = !hasEnabled
+            ? parsePrefillChangedClinicalStatus(session.clinical_status)
+            : null;
+          if (reviewMarker && reviewableCheckpointIds.includes(checkpointId)) {
+            const reviewedIds = new Set(reviewMarker.reviewedCheckpointIds);
+            reviewedIds.add(checkpointId);
+            reviewComplete =
+              reviewableCheckpointIds.length > 0 &&
+              reviewableCheckpointIds.every((activeId) => reviewedIds.has(activeId));
+            nextClinicalStatus = reviewComplete
+              ? reviewMarker.wasPrepared
+                ? "prepared"
+                : "none"
+              : withReviewedPrefillCheckpoints(reviewMarker, reviewedIds);
+          }
+
+          await tx.caseSession.update({
+            where: { id },
+            data: {
+              active_checkpoints: updatedCheckpoints,
+              ...(nextClinicalStatus !== undefined
+                ? { clinical_status: nextClinicalStatus }
+                : {}),
+            },
+          });
+
+          return NextResponse.json({
+            ok: true,
+            clinical_status: nextClinicalStatus ?? currentClinicalStatus,
+            review_complete: reviewComplete,
+          });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      } catch (err) {
+        const code = (err as { code?: unknown } | null)?.code;
+        if (code === "P2034" && attempt < 2) continue;
+        throw err;
       }
-      const enabled = typeof body.enabled === "boolean" ? body.enabled : false;
-      const selections = Array.isArray(body.selections)
-        ? (body.selections as unknown[]).filter((s): s is string => typeof s === "string")
-        : [];
-      updatedCheckpoints[targetCheckpointIndex] = {
-        ...target,
-        enabled,
-        selections: enabled ? selections : [],
-      } as ActiveCheckpoint;
-    } else if (isAssessmentUpdate) {
-      // ASSESSMENT checkpoint update: only toggle enabled
-      const enabled = typeof body.enabled === "boolean" ? body.enabled : false;
-      updatedCheckpoints[targetCheckpointIndex] = {
-        ...target,
-        enabled,
-      } as ActiveCheckpoint;
-    } else {
-      // Fallback: `enabled` was sent but checkpoint is neither MULTI_SELECT nor ASSESSMENT
-      if (hasEnabled && !status) {
-        return NextResponse.json(
-          { ok: false, error: "Checkpoint is not a multi-select type" },
-          { status: 400 },
-        );
-      }
-      // Standard checkpoint update
-      if (!isValidStatus(target, status!)) {
-        return NextResponse.json(
-          { ok: false, error: "Invalid status for checkpoint category" },
-          { status: 400 },
-        );
-      }
-      updatedCheckpoints[targetCheckpointIndex] = {
-        ...target,
-        status,
-      } as ActiveCheckpoint;
     }
-
-    await prisma.caseSession.update({
-      where: { id },
-      data: {
-        active_checkpoints: updatedCheckpoints,
-      },
-    });
-
-    return NextResponse.json({ ok: true });
   } catch (err) {
     if (err instanceof Error) {
       console.error("[cases/[id]/checkpoint/update]", {

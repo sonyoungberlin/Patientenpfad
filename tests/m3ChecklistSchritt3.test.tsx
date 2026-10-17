@@ -37,6 +37,11 @@ jest.mock("@/lib/server/prefillRuns", () => {
   const SOURCES = ["mfa", "conversation", "patient"] as const;
   return {
     getFrozenRuns: jest.fn().mockResolvedValue([]),
+    isPrefillChangedClinicalStatus: (value: unknown) =>
+      typeof value === "string" && value.startsWith("prefill_changed:"),
+    isPreparedClinicalStatus: (value: unknown) =>
+      value === "prepared" ||
+      (typeof value === "string" && value.startsWith("prefill_changed:prepared:")),
     isPrefillRunSource: (v: unknown) =>
       typeof v === "string" && (SOURCES as readonly string[]).includes(v),
   };

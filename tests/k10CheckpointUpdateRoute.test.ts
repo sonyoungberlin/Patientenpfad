@@ -11,12 +11,15 @@ import {
 } from "@/lib/types";
 
 jest.mock("@/lib/prisma", () => ({
-  prisma: {
-    caseSession: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-  },
+  prisma: (() => {
+    const caseSession = { findUnique: jest.fn(), update: jest.fn() };
+    return {
+      caseSession,
+      $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
+        callback({ caseSession }),
+      ),
+    };
+  })(),
 }));
 
 jest.mock("@/lib/auth", () => ({
@@ -34,6 +37,7 @@ type PrismaMock = {
     findUnique: jest.Mock;
     update: jest.Mock;
   };
+  $transaction: jest.Mock;
 };
 
 const prismaMock = prisma as unknown as PrismaMock;

@@ -4,9 +4,11 @@ import {
   appendFrozenRun,
   createOpenRun,
   freezeRun,
+  getCurrentRunAnswers,
   getFrozenRuns,
   getOpenRun,
   isPrefillRunSource,
+  saveCurrentRun,
 } from "@/lib/server/prefillRuns";
 
 type Run = {
@@ -25,6 +27,8 @@ type CaseRow = {
   id: string;
   doctor_confirmed: boolean;
   clinical_status: string;
+  active_checkpoints?: unknown;
+  [key: string]: unknown;
 };
 
 /**
@@ -101,6 +105,16 @@ function makePrismaStub(initialCases: CaseRow[]) {
     findUnique: jest.fn(async (args: { where: { id: string } }) => {
       return cases.get(args.where.id) ?? null;
     }),
+    update: jest.fn(async (args: {
+      where: { id: string };
+      data: Record<string, unknown>;
+    }) => {
+      const current = cases.get(args.where.id);
+      if (!current) return null;
+      const updated = { ...current, ...args.data };
+      cases.set(args.where.id, updated);
+      return updated;
+    }),
   };
 
   const $transaction = jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
@@ -111,6 +125,7 @@ function makePrismaStub(initialCases: CaseRow[]) {
     client: { prefillRun, caseSession, $transaction } as never,
     runs,
     cases,
+    caseSession,
   };
 }
 
@@ -292,8 +307,8 @@ describe("freezeRun", () => {
   });
 });
 
-describe("appendFrozenRun (Regel 1: Patientenrücklauf bei offenem MFA-Run)", () => {
-  it("legt einen zusätzlichen, sofort eingefrorenen Patient-Run an, ohne den offenen MFA-Run anzutasten", async () => {
+describe("appendFrozenRun (Patientenrücklauf bei offenem MFA-Run)", () => {
+  it("aktualisiert den Patient-Stand, ohne den offenen MFA-Run anzutasten", async () => {
     const stub = makePrismaStub([baseCase]);
     const mfaOpen = await createOpenRun(
       { caseId: "case-1", source: "mfa", activeCheckpoints: [{ id: "K01" }] },
@@ -338,20 +353,306 @@ describe("appendFrozenRun (Regel 1: Patientenrücklauf bei offenem MFA-Run)", ()
     ).rejects.toMatchObject({ code: "case_confirmed" });
   });
 
-  it("erlaubt appendFrozenRun bei bestätigtem Fall mit allowConfirmed=true (Transition Schritt 2)", async () => {
+  it("verweigert appendFrozenRun bei bestätigtem Fall auch mit allowConfirmed=true", async () => {
     const stub = makePrismaStub([{ ...baseCase, clinical_status: "confirmed" }]);
-    const run = await appendFrozenRun(
+    await expect(
+      appendFrozenRun(
+        {
+          caseId: "case-1",
+          source: "patient",
+          activeCheckpoints: [],
+          answers: { K01: { "M2-01": "ja" } },
+          allowConfirmed: true,
+        },
+        stub.client,
+      ),
+    ).rejects.toMatchObject({ code: "case_confirmed" });
+  });
+
+  it("aktualisiert bei erneutem Patientenrücklauf denselben aktuellen Patient-Run", async () => {
+    const stub = makePrismaStub([baseCase]);
+    const first = await appendFrozenRun(
       {
         caseId: "case-1",
         source: "patient",
-        activeCheckpoints: [],
+        activeCheckpoints: [{ id: "K01" }],
         answers: { K01: { "M2-01": "ja" } },
-        allowConfirmed: true,
       },
       stub.client,
     );
-    expect(run.sequence).toBe(1);
-    expect(run.frozen_at).toBeInstanceOf(Date);
+    const second = await appendFrozenRun(
+      {
+        caseId: "case-1",
+        source: "patient",
+        activeCheckpoints: [{ id: "K01" }],
+        answers: { K01: { "M2-01": "nein" } },
+      },
+      stub.client,
+    );
+
+    expect(second.id).toBe(first.id);
+    expect(second.answers).toEqual({ K01: { "M2-01": "nein" } });
+    expect(stub.runs).toHaveLength(1);
+  });
+});
+
+describe("saveCurrentRun", () => {
+  it("aktualisiert denselben Quellen-Run und erhält ältere Delta-Antworten", async () => {
+    const stub = makePrismaStub([baseCase]);
+    stub.runs.push(
+      {
+        id: "legacy-mfa-1",
+        case_id: "case-1",
+        sequence: 1,
+        source: "mfa",
+        active_checkpoints: [{ id: "K01" }],
+        answers: { K01: { "MFA-K01-01": "ja" } },
+        created_at: new Date("2026-01-01T00:00:00.000Z"),
+        frozen_at: new Date("2026-01-01T00:01:00.000Z"),
+        created_by_account_id: "acc-1",
+      },
+      {
+        id: "legacy-mfa-2",
+        case_id: "case-1",
+        sequence: 2,
+        source: "mfa",
+        active_checkpoints: [{ id: "K02" }],
+        answers: {
+          K01: { "MFA-K01-01": "offen" },
+          K02: { "MFA-K02-01": "nein" },
+        },
+        created_at: new Date("2026-01-02T00:00:00.000Z"),
+        frozen_at: new Date("2026-01-02T00:01:00.000Z"),
+        created_by_account_id: "acc-1",
+      },
+      {
+        id: "conversation-current",
+        case_id: "case-1",
+        sequence: 3,
+        source: "conversation",
+        active_checkpoints: [{ id: "K01" }],
+        answers: { K01: { "M2-01": "ja" } },
+        created_at: new Date("2026-01-03T00:00:00.000Z"),
+        frozen_at: new Date("2026-01-03T00:01:00.000Z"),
+        created_by_account_id: "acc-2",
+      },
+    );
+
+    const result = await saveCurrentRun(
+      {
+        caseId: "case-1",
+        source: "mfa",
+        activeCheckpoints: [{ id: "K01" }, { id: "K02" }],
+        answers: {
+          K01: { "MFA-K01-01": "nein" },
+          K02: { "MFA-K02-01": "offen" },
+        },
+        createdByAccountId: "acc-3",
+      },
+      stub.client,
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.run.id).toBe("legacy-mfa-2");
+    expect(result.run.answers).toEqual({
+      K01: { "MFA-K01-01": "nein" },
+      K02: { "MFA-K02-01": "nein" },
+    });
+    expect(stub.runs).toHaveLength(3);
+    expect(stub.runs.find((run) => run.id === "legacy-mfa-1")?.answers).toEqual({
+      K01: { "MFA-K01-01": "ja" },
+    });
+    expect(stub.runs.find((run) => run.id === "conversation-current")?.answers).toEqual({
+      K01: { "M2-01": "ja" },
+    });
+  });
+
+  it("meldet unveränderte effektive Antworten ohne neuen Run", async () => {
+    const stub = makePrismaStub([baseCase]);
+    const first = await saveCurrentRun(
+      {
+        caseId: "case-1",
+        source: "mfa",
+        activeCheckpoints: [{ id: "K01" }],
+        answers: { K01: { "MFA-K01-01": "ja" } },
+      },
+      stub.client,
+    );
+    const second = await saveCurrentRun(
+      {
+        caseId: "case-1",
+        source: "mfa",
+        activeCheckpoints: [{ id: "K01" }],
+        answers: { K01: { "MFA-K01-01": "offen" } },
+      },
+      stub.client,
+    );
+
+    expect(first.changed).toBe(true);
+    expect(second.changed).toBe(false);
+    expect(second.run.id).toBe(first.run.id);
+    expect(stub.runs).toHaveLength(1);
+  });
+
+  it("synchronisiert CaseSession-Kompatibilitätsdaten in derselben Transaktion", async () => {
+    const stub = makePrismaStub([baseCase]);
+    await saveCurrentRun(
+      {
+        caseId: "case-1",
+        source: "conversation",
+        activeCheckpoints: [{ id: "K01" }],
+        answers: { K01: { "M2-01": "ja" } },
+        caseSessionUpdate: { preparation_mode: "conversation" },
+      },
+      stub.client,
+    );
+
+    expect(stub.caseSession.update).toHaveBeenCalledWith({
+      where: { id: "case-1" },
+      data: {
+        preparation_mode: "conversation",
+        ctx_prefill: { K01: { "M2-01": "ja" } },
+      },
+    });
+  });
+
+  it.each(["mfa", "conversation", "patient"] as const)(
+    "setzt bei geändertem Prefill aus Quelle %s nur M3-Statuswerte atomar zurück",
+    async (source) => {
+      const originalCheckpoints = [
+        {
+          id: "K01",
+          category: "M",
+          status: "OK",
+          enabled: true,
+          m1_notes: { keep: true },
+        },
+        {
+          id: "K02",
+          category: "O",
+          status: "OK",
+          enabled: false,
+          selections: ["M1-Auswahl bleibt"],
+        },
+        {
+          id: "K10",
+          category: "O",
+          mode: "MULTI_SELECT",
+          enabled: true,
+          selections: ["M1-Auswahl"],
+        },
+      ];
+      const stub = makePrismaStub([
+        { ...baseCase, active_checkpoints: originalCheckpoints },
+      ]);
+
+      const result = await saveCurrentRun(
+        {
+          caseId: "case-1",
+          source,
+          activeCheckpoints: originalCheckpoints,
+          answers: { K01: { [`${source}-answer`]: "ja" } },
+          resetM3RatingsOnChange: true,
+        },
+        stub.client,
+      );
+
+      expect(result.changed).toBe(true);
+      const storedCase = stub.cases.get("case-1")!;
+      expect(storedCase.active_checkpoints).toEqual([
+        { ...originalCheckpoints[0], status: "TO_DO" },
+        { ...originalCheckpoints[1], status: "TO_DO" },
+        originalCheckpoints[2],
+      ]);
+      expect(storedCase.clinical_status).toMatch(/^prefill_changed:/);
+    },
+  );
+
+  it("setzt Bewertungen bei unverändertem Prefill nicht zurück und erhält prepared", async () => {
+    const checkpoint = {
+      id: "K01",
+      category: "M",
+      status: "OK",
+      enabled: true,
+    };
+    const stub = makePrismaStub([
+      { ...baseCase, active_checkpoints: [checkpoint] },
+    ]);
+    const input = {
+      caseId: "case-1",
+      source: "mfa" as const,
+      activeCheckpoints: [checkpoint],
+      answers: { K01: { "MFA-K01-01": "ja" } },
+      resetM3RatingsOnChange: true,
+    };
+
+    await saveCurrentRun(input, stub.client);
+    stub.cases.set("case-1", {
+      ...stub.cases.get("case-1")!,
+      active_checkpoints: [{ ...checkpoint, status: "OK" }],
+      clinical_status: "prepared",
+    });
+    const unchanged = await saveCurrentRun(input, stub.client);
+
+    expect(unchanged.changed).toBe(false);
+    expect(stub.cases.get("case-1")?.active_checkpoints).toEqual([
+      { ...checkpoint, status: "OK" },
+    ]);
+    expect(stub.cases.get("case-1")?.clinical_status).toBe("prepared");
+  });
+
+  it("behält die vorbereitete Bedeutung im eindeutigen Prefill-Änderungsmarker", async () => {
+    const stub = makePrismaStub([
+      {
+        ...baseCase,
+        clinical_status: "prepared",
+        active_checkpoints: [{ id: "K01", category: "M", status: "OK" }],
+      },
+    ]);
+
+    await saveCurrentRun(
+      {
+        caseId: "case-1",
+        source: "conversation",
+        activeCheckpoints: [{ id: "K01" }],
+        answers: { K01: { "M2-01": "nein" } },
+        resetM3RatingsOnChange: true,
+      },
+      stub.client,
+    );
+
+    expect(stub.cases.get("case-1")?.clinical_status).toMatch(
+      /^prefill_changed:prepared:/,
+    );
+  });
+
+  it("wiederholt den atomaren Prefill-Reset nach einem Serialisierungskonflikt", async () => {
+    const originalCheckpoints = [
+      { id: "K01", category: "M", status: "OK" },
+    ];
+    const stub = makePrismaStub([
+      { ...baseCase, active_checkpoints: originalCheckpoints },
+    ]);
+    const transaction = (stub.client as unknown as { $transaction: jest.Mock }).$transaction;
+    transaction.mockRejectedValueOnce(
+      Object.assign(new Error("serialization conflict"), { code: "P2034" }),
+    );
+
+    await saveCurrentRun(
+      {
+        caseId: "case-1",
+        source: "mfa",
+        activeCheckpoints: originalCheckpoints,
+        answers: { K01: { "MFA-K01-01": "nein" } },
+        resetM3RatingsOnChange: true,
+      },
+      stub.client,
+    );
+
+    expect(transaction).toHaveBeenCalledTimes(2);
+    expect(stub.cases.get("case-1")?.active_checkpoints).toEqual([
+      { id: "K01", category: "M", status: "TO_DO" },
+    ]);
   });
 });
 
@@ -388,5 +689,57 @@ describe("getFrozenRuns / getOpenRun", () => {
   it("liefert null, wenn kein offener Run existiert", async () => {
     const stub = makePrismaStub([baseCase]);
     expect(await getOpenRun("case-1", stub.client)).toBeNull();
+  });
+});
+
+describe("getCurrentRunAnswers", () => {
+  it("lädt den effektiven Quellenstand aus historischen Delta-Runs ohne Quellenvermischung", async () => {
+    const stub = makePrismaStub([baseCase]);
+    stub.runs.push(
+      {
+        id: "mfa-first",
+        case_id: "case-1",
+        sequence: 1,
+        source: "mfa",
+        active_checkpoints: [{ id: "K01" }],
+        answers: { K01: { "MFA-K01-01": "ja" } },
+        created_at: new Date(),
+        frozen_at: new Date(),
+        created_by_account_id: null,
+      },
+      {
+        id: "conversation-other",
+        case_id: "case-1",
+        sequence: 2,
+        source: "conversation",
+        active_checkpoints: [{ id: "K01" }],
+        answers: { K01: { "M2-01": "nein" } },
+        created_at: new Date(),
+        frozen_at: new Date(),
+        created_by_account_id: null,
+      },
+      {
+        id: "mfa-delta",
+        case_id: "case-1",
+        sequence: 3,
+        source: "mfa",
+        active_checkpoints: [{ id: "K02" }],
+        answers: { K02: { "MFA-K02-01": "unklar" } },
+        created_at: new Date(),
+        frozen_at: new Date(),
+        created_by_account_id: null,
+      },
+    );
+
+    await expect(getCurrentRunAnswers("case-1", "mfa", stub.client)).resolves.toEqual({
+      K01: { "MFA-K01-01": "ja" },
+      K02: { "MFA-K02-01": "unklar" },
+    });
+    await expect(
+      getCurrentRunAnswers("case-1", "conversation", stub.client),
+    ).resolves.toEqual({ K01: { "M2-01": "nein" } });
+    await expect(
+      getCurrentRunAnswers("case-1", "patient", stub.client),
+    ).resolves.toBeNull();
   });
 });

@@ -2,24 +2,31 @@ import { NextRequest } from "next/server";
 import { PATCH as clinicalStatusHandler } from "@/app/api/cases/[id]/clinical-status/route";
 import { SESSION_COOKIE } from "@/lib/auth";
 
-jest.mock("@/lib/prisma", () => ({
-  prisma: {
-    session: {
-      findUnique: jest.fn(),
-      delete: jest.fn(),
+jest.mock("@/lib/prisma", () => {
+  const caseSession = {
+    findUnique: jest.fn(),
+    update: jest.fn(),
+  };
+  return {
+    prisma: {
+      session: {
+        findUnique: jest.fn(),
+        delete: jest.fn(),
+      },
+      caseSession,
+      $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
+        callback({ caseSession }),
+      ),
     },
-    caseSession: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-  },
-}));
+  };
+});
 
 import { prisma } from "@/lib/prisma";
 
 type PrismaMock = {
   session: { findUnique: jest.Mock; delete: jest.Mock };
   caseSession: { findUnique: jest.Mock; update: jest.Mock };
+  $transaction: jest.Mock;
 };
 
 const pm = prisma as unknown as PrismaMock;
@@ -117,6 +124,33 @@ describe("PATCH /api/cases/[id]/clinical-status", () => {
     expect(pm.caseSession.update).toHaveBeenCalledWith({
       where: { id: "case-1" },
       data: { clinical_status: "prepared" },
+    });
+  });
+
+  it("überschreibt einen Prefill-Änderungsmarker nicht mit prepared", async () => {
+    mockSession(true);
+    pm.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      clinical_status: "prefill_changed:prepared:old-token",
+    });
+    pm.caseSession.update.mockResolvedValue({});
+    const req = requestWithCookie(
+      "http://localhost/api/cases/case-1/clinical-status",
+      { status: "prepared" },
+    );
+
+    const res = await clinicalStatusHandler(req, {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      ok: true,
+      clinical_status: "prefill_changed:prepared:old-token",
+    });
+    expect(pm.caseSession.update).toHaveBeenCalledWith({
+      where: { id: "case-1" },
+      data: { clinical_status: "prefill_changed:prepared:old-token" },
     });
   });
 

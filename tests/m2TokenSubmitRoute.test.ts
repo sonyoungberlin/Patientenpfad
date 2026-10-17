@@ -68,13 +68,19 @@ describe("POST /api/m2-link/[token]", () => {
 
     expect(response.status).toBe(200);
     expect(json.ok).toBe(true);
-    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
-    expect(updateData.ctx_prefill).toEqual(prefill);
-    expect(updateData.m2_token).toBeNull();
-    expect(updateData.m2_token_expires_at).toBeNull();
-    expect(updateData.m2_status).toBe("completed");
-    // Patientenlink-Rücklauf gehört eindeutig zum Patienten-Weg.
-    expect(updateData.preparation_mode).toBe("patient");
+    expect(appendFrozenRunMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        answers: prefill,
+        resetM3RatingsOnChange: true,
+        caseSessionUpdate: {
+          preparation_mode: "patient",
+          m2_token: null,
+          m2_token_expires_at: null,
+          m2_status: "completed",
+        },
+      }),
+    );
+    expect(prismaMock.caseSession.update).not.toHaveBeenCalled();
   });
 
   it("verwirft MFA-IDs im Patientenlink-Rücklauf (kein Datenmix)", async () => {
@@ -93,10 +99,13 @@ describe("POST /api/m2-link/[token]", () => {
     });
 
     expect(response.status).toBe(200);
-    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
     // Nur die Patienten-ID überlebt die Sanitisierung.
-    expect(updateData.ctx_prefill).toEqual({ K01: { "M2-01": "ja" } });
-    expect(updateData.preparation_mode).toBe("patient");
+    expect(appendFrozenRunMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        answers: { K01: { "M2-01": "ja" } },
+        caseSessionUpdate: expect.objectContaining({ preparation_mode: "patient" }),
+      }),
+    );
   });
 
   it("nach erfolgreichem Submit ist der Token nicht mehr auffindbar (404)", async () => {

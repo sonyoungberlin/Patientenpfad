@@ -40,6 +40,11 @@ jest.mock("@/lib/server/prefillRuns", () => {
   return {
     getFrozenRuns: jest.fn().mockResolvedValue([]),
     getOpenRun: jest.fn().mockResolvedValue(null),
+    isPrefillChangedClinicalStatus: (value: unknown) =>
+      typeof value === "string" && value.startsWith("prefill_changed:"),
+    isPreparedClinicalStatus: (value: unknown) =>
+      value === "prepared" ||
+      (typeof value === "string" && value.startsWith("prefill_changed:prepared:")),
     isPrefillRunSource: (v: unknown) =>
       typeof v === "string" && (SOURCES as readonly string[]).includes(v),
   };
@@ -146,6 +151,49 @@ describe("M3 Checkliste", () => {
     expect((markup.match(/data-checkpoint-item=/g) ?? []).length).toBe(2);
     expect(markup).toContain("Medizinischer Checkpoint");
     expect(markup).toContain("Organisatorischer Checkpoint");
+  });
+
+  it("zeigt beim erneuten Öffnen den gespeicherten M3-Status aus active_checkpoints", async () => {
+    setupCase({ active_checkpoints: [{ ...mCheckpoint, status: "OK" }] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain('class="answer-btn active" data-status-button="K03:OK"');
+    expect(markup).not.toContain('class="answer-btn active" data-status-button="K03:TO_DO"');
+  });
+
+  it("zeigt nach persistentem Prefill-Reset den neutralen M3-Ausgangszustand", async () => {
+    setupCase({
+      active_checkpoints: [{ ...mCheckpoint, status: "TO_DO" }],
+      clinical_status: "prefill_changed:token-review",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-reset" }) }),
+    );
+
+    expect(markup).toContain('class="answer-btn active" data-status-button="K03:TO_DO"');
+    expect(markup).not.toContain('class="answer-btn active" data-status-button="K03:OK"');
+    expect(markup).toContain("data-prefill-reset-notice");
+    expect(markup).toContain(
+      "M2 wurde aktualisiert – die ärztlichen Bewertungen wurden zurückgesetzt. Bitte erneut beurteilen.",
+    );
+  });
+
+  it("zeigt den Prefill-Hinweis nicht bei ärztlich bestätigten Fällen", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      clinical_status: "prefill_changed:token-review",
+      doctor_confirmed: true,
+    });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-confirmed" }) }),
+    );
+
+    expect(markup).not.toContain("data-prefill-reset-notice");
   });
 
   it("rendert für M drei Buttons und für O zwei (kein ZURÜCKSTELLEN bei O)", async () => {
@@ -696,6 +744,19 @@ describe("M3 Checkliste", () => {
 
     expect(markup).not.toContain("data-start-additional-prefill-run");
     expect(markup).not.toContain("Weitere Vorbereitung starten");
+    expect(markup).not.toContain('data-m3-m2-link');
+    expect(markup).toContain('data-m3-case-list-link="true" href="/cases"');
+  });
+
+  it("bietet für unbestätigte Fälle Rückwege nach M2 und zur Fallliste an", async () => {
+    setupCase({ active_checkpoints: [mCheckpoint] });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain('data-m3-m2-link="true" href="/cases/case-123/m2"');
+    expect(markup).toContain('data-m3-case-list-link="true" href="/cases"');
   });
 
   it("blendet 'Weitere Vorbereitung starten' aus, wenn clinical_status === 'confirmed'", async () => {
@@ -745,6 +806,22 @@ describe("M3 Checkliste", () => {
 
     const markup = renderToStaticMarkup(
       await M3Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain("data-start-additional-prefill-run");
+    expect(markup).toContain("disabled");
+    expect(markup).toContain("data-ergaenzung-gestartet-notice");
+  });
+
+  it("erhält die vorbereitete Ergänzungssperre im Prefill-Änderungsmarker", async () => {
+    setupCase({
+      active_checkpoints: [mCheckpoint],
+      clinical_status: "prefill_changed:prepared:token-1",
+    });
+    getOpenRunMock.mockResolvedValue({ id: "run-open-1", sequence: 1 });
+
+    const markup = renderToStaticMarkup(
+      await M3Page({ params: Promise.resolve({ id: "case-marker-prepared" }) }),
     );
 
     expect(markup).toContain("data-start-additional-prefill-run");

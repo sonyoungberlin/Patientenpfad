@@ -319,10 +319,10 @@ describe("M2 Seite", () => {
   });
 
   // ------------------------------------------------------------------
-  // Per-Source-Filter: Checkpoints werden pro Quelle gefiltert
+  // Bereits beantwortete Checkpoints bleiben zur Korrektur sichtbar.
   // ------------------------------------------------------------------
 
-  it("blendet im MFA-Modus Checkpoints aus, die bereits in einem eingefrorenen MFA-Run beantwortet wurden", async () => {
+  it("zeigt im MFA-Modus Checkpoints aus einem eingefrorenen MFA-Run zur Korrektur erneut an", async () => {
     // Session hat K01 (bereits MFA-beantwortet) und K04 (neu).
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
@@ -351,8 +351,48 @@ describe("M2 Seite", () => {
 
     // K04 (noch nicht MFA-beantwortet) soll erscheinen.
     expect(markup).toContain('data-m2-checkpoint="K04"');
-    // K01 (bereits im eingefrorenen MFA-Run) darf nicht erscheinen.
-    expect(markup).not.toContain('data-m2-checkpoint="K01"');
+    // K01 bleibt trotz früherer Antwort sichtbar.
+    expect(markup).toContain('data-m2-checkpoint="K01"');
+    expect(markup).toContain('data-m2-answer="K01:MFA-K01-01:ja"');
+  });
+
+  it("lädt im Gesprächsmodus nur conversation-Antworten, nicht patient-Link-Antworten", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [k01Checkpoint],
+      ctx_prefill: null,
+      preparation_mode: "conversation",
+      doctor_confirmed: false,
+    });
+    prismaMock.prefillRun.findMany.mockResolvedValue([
+      {
+        id: "run-patient",
+        sequence: 1,
+        source: "patient",
+        frozen_at: new Date(),
+        active_checkpoints: [k01Checkpoint],
+        answers: { K01: { "M2-01": "ja" } },
+      },
+      {
+        id: "run-conversation",
+        sequence: 2,
+        source: "conversation",
+        frozen_at: new Date(),
+        active_checkpoints: [k01Checkpoint],
+        answers: { K01: { "M2-01": "nein" } },
+      },
+    ]);
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-sources" }) }),
+    );
+
+    expect(markup).toMatch(
+      /class="answer-btn active" data-m2-answer="K01:M2-01:nein"/,
+    );
+    expect(markup).not.toMatch(
+      /class="answer-btn active" data-m2-answer="K01:M2-01:ja"/,
+    );
   });
 
   // ------------------------------------------------------------------
