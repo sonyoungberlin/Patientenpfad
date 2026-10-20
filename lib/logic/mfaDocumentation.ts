@@ -192,22 +192,29 @@ export function getMfaDocumentationOptions(
   };
 }
 
-function sentence(text: string): string {
-  const trimmed = text.trim().replace(/[.!?]+$/, "");
-  return trimmed ? `${trimmed}.` : "";
+function phrase(text: string): string {
+  return text.trim().replace(/[.!?]+$/, "");
 }
 
 export function buildMfaDocumentationText(
   options: MfaDocumentationOptions,
-  activityId: string,
-  nextStepId: string,
+  activityIds: readonly string[],
+  nextStepIds: readonly string[],
   additionalText = "",
 ): string {
-  const activity = options.activities.find((option) => option.id === activityId);
-  const nextStep = options.nextSteps.find((option) => option.id === nextStepId);
-  if (!activity || !nextStep) return "";
+  const activities = activityIds.flatMap((id) => {
+    const option = options.activities.find((candidate) => candidate.id === id);
+    return option ? [option] : [];
+  });
+  const nextSteps = nextStepIds.flatMap((id) => {
+    const option = options.nextSteps.find((candidate) => candidate.id === id);
+    return option ? [option] : [];
+  });
+  if (activities.length === 0 || nextSteps.length === 0) return "";
 
-  const output = `MFA: ${sentence(activity.text)} ${sentence(nextStep.text)}`;
+  const activityText = activities.map((option) => phrase(option.text)).join("; ");
+  const nextStepText = nextSteps.map((option) => phrase(option.label)).join("; ");
+  const output = `MFA: ${activityText}. Weiteres Vorgehen: ${nextStepText}.`;
   const additional = additionalText.trim().slice(0, 160);
-  return additional ? `${output} Ergänzung: ${sentence(additional)}` : output;
+  return additional ? `${output} Ergänzung: ${phrase(additional)}.` : output;
 }

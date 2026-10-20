@@ -75,12 +75,11 @@ async function render(initialPreparationMode = "mfa") {
   });
 }
 
-async function changeSelect(selector: string, value: string) {
-  const select = container.querySelector<HTMLSelectElement>(selector);
-  if (!select) throw new Error(`Missing select ${selector}`);
+async function toggleCheckbox(selector: string) {
+  const checkbox = container.querySelector<HTMLInputElement>(selector);
+  if (!checkbox) throw new Error(`Missing checkbox ${selector}`);
   await act(async () => {
-    select.value = value;
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    checkbox.click();
   });
 }
 
@@ -95,23 +94,28 @@ describe("M2 MFA-Kurzdokumentation – Momentaufnahme", () => {
 
     const section = container.querySelector("[data-mfa-documentation]");
     expect(section).not.toBeNull();
-    const activities = container.querySelector<HTMLSelectElement>(
-      "[data-mfa-documentation-activity]",
-    )!;
-    expect(Array.from(activities.options).map((option) => option.value)).toContain(
-      "contact-details-checked",
-    );
-    expect(Array.from(activities.options).map((option) => option.value)).not.toContain(
-      "medication-information-compared",
-    );
-    expect(container.querySelectorAll("[data-mfa-documentation] select")).toHaveLength(2);
+    expect(container.querySelector('[data-mfa-documentation-activity-option="contact-details-checked"]'))
+      .not.toBeNull();
+    expect(container.querySelector('[data-mfa-documentation-activity-option="medication-information-compared"]'))
+      .toBeNull();
 
     const answer = container.querySelector<HTMLButtonElement>(
       '[data-m2-answer="K01:MFA-K01-01:ja"]',
     )!;
     await act(async () => answer.click());
-    await changeSelect("[data-mfa-documentation-activity]", "communication-record-reviewed");
-    await changeSelect("[data-mfa-documentation-next-step]", "identify-contact-person");
+    await toggleCheckbox('[data-mfa-documentation-activity-option="communication-record-reviewed"]');
+    await toggleCheckbox('[data-mfa-documentation-activity-option="contact-attempt-made"]');
+    await toggleCheckbox('[data-mfa-documentation-activity-option="contact-details-checked"]');
+    await toggleCheckbox('[data-mfa-documentation-activity-option="contact-details-checked"]');
+    expect(container.querySelector<HTMLInputElement>(
+      '[data-mfa-documentation-activity-option="contact-details-checked"]',
+    )?.checked).toBe(false);
+    await toggleCheckbox('[data-mfa-documentation-activity-option="contact-details-checked"]');
+    await toggleCheckbox('[data-mfa-documentation-activity-option="digital-offers-discussed"]');
+    await toggleCheckbox('[data-mfa-documentation-next-step-option="identify-contact-person"]');
+    await toggleCheckbox('[data-mfa-documentation-next-step-option="contact-patient-again"]');
+    await toggleCheckbox('[data-mfa-documentation-next-step-option="update-contact-details"]');
+    await toggleCheckbox('[data-mfa-documentation-next-step-option="offer-digital-support"]');
     const additionalText = container.querySelector<HTMLTextAreaElement>(
       "[data-mfa-documentation-additional]",
     )!;
@@ -124,7 +128,7 @@ describe("M2 MFA-Kurzdokumentation – Momentaufnahme", () => {
     });
 
     expect(container.querySelector("[data-mfa-documentation-preview]")?.textContent).toBe(
-      "MFA: Krankenblatt gesichtet. Kontaktperson wird ermittelt. Ergänzung: Telefonische Rückfrage vereinbart.",
+      "MFA: Krankenblatt gesichtet; Kontaktversuch unternommen; Kontaktdaten geprüft; Digitale Praxisangebote besprochen. Weiteres Vorgehen: Kontaktperson ermitteln; Patient erneut kontaktieren; Kontaktdaten aktualisieren; Unterstützung bei digitalen Angeboten anbieten. Ergänzung: Telefonische Rückfrage vereinbart.",
     );
 
     await act(async () => {
@@ -133,12 +137,12 @@ describe("M2 MFA-Kurzdokumentation – Momentaufnahme", () => {
     });
 
     expect(writeText).toHaveBeenCalledWith(
-      "MFA: Krankenblatt gesichtet. Kontaktperson wird ermittelt. Ergänzung: Telefonische Rückfrage vereinbart.",
+      "MFA: Krankenblatt gesichtet; Kontaktversuch unternommen; Kontaktdaten geprüft; Digitale Praxisangebote besprochen. Weiteres Vorgehen: Kontaktperson ermitteln; Patient erneut kontaktieren; Kontaktdaten aktualisieren; Unterstützung bei digitalen Angeboten anbieten. Ergänzung: Telefonische Rückfrage vereinbart.",
     );
-    expect(container.querySelector<HTMLSelectElement>("[data-mfa-documentation-activity]")?.value)
-      .toBe("");
-    expect(container.querySelector<HTMLSelectElement>("[data-mfa-documentation-next-step]")?.value)
-      .toBe("");
+    expect(container.querySelectorAll<HTMLInputElement>("[data-mfa-documentation-activity-option]:checked"))
+      .toHaveLength(0);
+    expect(container.querySelectorAll<HTMLInputElement>("[data-mfa-documentation-next-step-option]:checked"))
+      .toHaveLength(0);
     expect(container.querySelector<HTMLTextAreaElement>("[data-mfa-documentation-additional]")?.value)
       .toBe("");
     expect(answer.className).toContain("active");
@@ -162,26 +166,38 @@ describe("M2 MFA-Kurzdokumentation – Momentaufnahme", () => {
       value: { writeText },
     });
     await render();
-    await changeSelect("[data-mfa-documentation-activity]", "communication-record-reviewed");
-    await changeSelect("[data-mfa-documentation-next-step]", "identify-contact-person");
+    await toggleCheckbox('[data-mfa-documentation-activity-option="communication-record-reviewed"]');
+    await toggleCheckbox('[data-mfa-documentation-activity-option="contact-attempt-made"]');
+    await toggleCheckbox('[data-mfa-documentation-next-step-option="identify-contact-person"]');
+    await toggleCheckbox('[data-mfa-documentation-next-step-option="contact-patient-again"]');
 
     await act(async () => {
       container.querySelector<HTMLButtonElement>("[data-mfa-documentation-copy]")!.click();
       await Promise.resolve();
     });
 
-    expect(container.querySelector<HTMLSelectElement>("[data-mfa-documentation-activity]")?.value)
-      .toBe("communication-record-reviewed");
+    expect(container.querySelector<HTMLInputElement>(
+      '[data-mfa-documentation-activity-option="communication-record-reviewed"]',
+    )?.checked).toBe(true);
+    expect(container.querySelector<HTMLInputElement>(
+      '[data-mfa-documentation-activity-option="contact-attempt-made"]',
+    )?.checked).toBe(true);
+    expect(container.querySelector<HTMLInputElement>(
+      '[data-mfa-documentation-next-step-option="identify-contact-person"]',
+    )?.checked).toBe(true);
+    expect(container.querySelector<HTMLInputElement>(
+      '[data-mfa-documentation-next-step-option="contact-patient-again"]',
+    )?.checked).toBe(true);
     expect(container.querySelector("[data-mfa-documentation-preview]")?.textContent).toBe(
-      "MFA: Krankenblatt gesichtet. Kontaktperson wird ermittelt.",
+      "MFA: Krankenblatt gesichtet; Kontaktversuch unternommen. Weiteres Vorgehen: Kontaktperson ermitteln; Patient erneut kontaktieren.",
     );
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("nicht kopiert");
   });
 
   it("blendet die Dokumentation im Patientengespräch aus und stellt sie nach erneutem Mount nicht wieder her", async () => {
     await render();
-    await changeSelect("[data-mfa-documentation-activity]", "communication-record-reviewed");
-    await changeSelect("[data-mfa-documentation-next-step]", "identify-contact-person");
+    await toggleCheckbox('[data-mfa-documentation-activity-option="communication-record-reviewed"]');
+    await toggleCheckbox('[data-mfa-documentation-next-step-option="identify-contact-person"]');
     await act(async () => {
       window.dispatchEvent(new CustomEvent("m2-set-mode", { detail: "patient" }));
     });
@@ -192,9 +208,9 @@ describe("M2 MFA-Kurzdokumentation – Momentaufnahme", () => {
       root = createRoot(container);
     });
     await render();
-    expect(container.querySelector<HTMLSelectElement>("[data-mfa-documentation-activity]")?.value)
-      .toBe("");
-    expect(container.querySelector<HTMLSelectElement>("[data-mfa-documentation-next-step]")?.value)
-      .toBe("");
+    expect(container.querySelectorAll<HTMLInputElement>("[data-mfa-documentation-activity-option]:checked"))
+      .toHaveLength(0);
+    expect(container.querySelectorAll<HTMLInputElement>("[data-mfa-documentation-next-step-option]:checked"))
+      .toHaveLength(0);
   });
 });

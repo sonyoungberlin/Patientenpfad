@@ -155,8 +155,8 @@ export function M2PrefillClient({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dirtySources, setDirtySources] = useState({ mfa: false, conversation: false });
-  const [documentationActivityId, setDocumentationActivityId] = useState("");
-  const [documentationNextStepId, setDocumentationNextStepId] = useState("");
+  const [documentationActivityIds, setDocumentationActivityIds] = useState<string[]>([]);
+  const [documentationNextStepIds, setDocumentationNextStepIds] = useState<string[]>([]);
   const [documentationAdditionalText, setDocumentationAdditionalText] = useState("");
   const [documentationCopied, setDocumentationCopied] = useState(false);
   const [documentationCopyError, setDocumentationCopyError] = useState<string | null>(null);
@@ -179,8 +179,8 @@ export function M2PrefillClient({
   const documentationOptions = getMfaDocumentationOptions(m1SnapshotInitial, checkpoints);
   const documentationText = buildMfaDocumentationText(
     documentationOptions,
-    documentationActivityId,
-    documentationNextStepId,
+    documentationActivityIds,
+    documentationNextStepIds,
     documentationAdditionalText,
   );
 
@@ -192,8 +192,8 @@ export function M2PrefillClient({
         throw new Error("Clipboard API unavailable");
       }
       await navigator.clipboard.writeText(documentationText);
-      setDocumentationActivityId("");
-      setDocumentationNextStepId("");
+      setDocumentationActivityIds([]);
+      setDocumentationNextStepIds([]);
       setDocumentationAdditionalText("");
       setDocumentationCopied(true);
     } catch {
@@ -675,40 +675,60 @@ export function M2PrefillClient({
           style={{ display: "grid", gap: "0.6rem", marginTop: "1.5rem" }}
         >
           <h3 style={{ margin: 0 }}>Kurzdokumentation fürs Krankenblatt</h3>
-          <label style={{ display: "grid", gap: "0.25rem" }}>
-            Was wurde gemacht?
-            <select
-              data-mfa-documentation-activity
-              value={documentationActivityId}
-              onChange={(event) => {
-                setDocumentationActivityId(event.target.value);
-                setDocumentationCopied(false);
-                setDocumentationCopyError(null);
-              }}
-            >
-              <option value="">Tätigkeit auswählen</option>
+          <fieldset
+            data-mfa-documentation-activities
+            style={{ border: 0, margin: 0, padding: 0, display: "grid", gap: "0.25rem" }}
+          >
+            <legend>Was wurde gemacht?</legend>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))", gap: "0.25rem 0.75rem" }}>
               {documentationOptions.activities.map((option) => (
-                <option key={option.id} value={option.id}>{option.label}</option>
+                <label key={option.id} style={{ display: "flex", gap: "0.4rem", alignItems: "flex-start" }}>
+                  <input
+                    type="checkbox"
+                    data-mfa-documentation-activity-option={option.id}
+                    checked={documentationActivityIds.includes(option.id)}
+                    onChange={() => {
+                      setDocumentationActivityIds((current) =>
+                        current.includes(option.id)
+                          ? current.filter((id) => id !== option.id)
+                          : [...current, option.id],
+                      );
+                      setDocumentationCopied(false);
+                      setDocumentationCopyError(null);
+                    }}
+                  />
+                  <span>{option.label}</span>
+                </label>
               ))}
-            </select>
-          </label>
-          <label style={{ display: "grid", gap: "0.25rem" }}>
-            Was ist als nächster organisatorischer Schritt vorgesehen?
-            <select
-              data-mfa-documentation-next-step
-              value={documentationNextStepId}
-              onChange={(event) => {
-                setDocumentationNextStepId(event.target.value);
-                setDocumentationCopied(false);
-                setDocumentationCopyError(null);
-              }}
-            >
-              <option value="">Nächsten Schritt auswählen</option>
+            </div>
+          </fieldset>
+          <fieldset
+            data-mfa-documentation-next-steps
+            style={{ border: 0, margin: 0, padding: 0, display: "grid", gap: "0.25rem" }}
+          >
+            <legend>Was ist als nächster organisatorischer Schritt vorgesehen?</legend>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))", gap: "0.25rem 0.75rem" }}>
               {documentationOptions.nextSteps.map((option) => (
-                <option key={option.id} value={option.id}>{option.label}</option>
+                <label key={option.id} style={{ display: "flex", gap: "0.4rem", alignItems: "flex-start" }}>
+                  <input
+                    type="checkbox"
+                    data-mfa-documentation-next-step-option={option.id}
+                    checked={documentationNextStepIds.includes(option.id)}
+                    onChange={() => {
+                      setDocumentationNextStepIds((current) =>
+                        current.includes(option.id)
+                          ? current.filter((id) => id !== option.id)
+                          : [...current, option.id],
+                      );
+                      setDocumentationCopied(false);
+                      setDocumentationCopyError(null);
+                    }}
+                  />
+                  <span>{option.label}</span>
+                </label>
               ))}
-            </select>
-          </label>
+            </div>
+          </fieldset>
           <label style={{ display: "grid", gap: "0.25rem" }}>
             Ergänzung (optional)
             <textarea

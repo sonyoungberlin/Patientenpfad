@@ -92,8 +92,30 @@ describe("MFA-Kurzdokumentation – Textbildung", () => {
     const activity = options.activities.find((option) => option.label === "Krankenblatt gesichtet")!;
     const nextStep = options.nextSteps.find((option) => option.label === "Kontaktperson ermitteln")!;
 
-    expect(buildMfaDocumentationText(options, activity.id, nextStep.id)).toBe(
-      "MFA: Krankenblatt gesichtet. Kontaktperson wird ermittelt.",
+    expect(buildMfaDocumentationText(options, [activity.id], [nextStep.id])).toBe(
+      "MFA: Krankenblatt gesichtet. Weiteres Vorgehen: Kontaktperson ermitteln.",
+    );
+  });
+
+  it("gibt alle Tätigkeiten und Folgeschritte getrennt und vollständig aus", () => {
+    const options = getMfaDocumentationOptions({ blocks: m1Blocks }, [{ id: "K01" }]);
+
+    expect(buildMfaDocumentationText(
+      options,
+      [
+        "communication-record-reviewed",
+        "contact-attempt-made",
+        "contact-details-checked",
+        "digital-offers-discussed",
+      ],
+      [
+        "identify-contact-person",
+        "contact-patient-again",
+        "update-contact-details",
+        "offer-digital-support",
+      ],
+    )).toBe(
+      "MFA: Krankenblatt gesichtet; Kontaktversuch unternommen; Kontaktdaten geprüft; Digitale Praxisangebote besprochen. Weiteres Vorgehen: Kontaktperson ermitteln; Patient erneut kontaktieren; Kontaktdaten aktualisieren; Unterstützung bei digitalen Angeboten anbieten.",
     );
   });
 
@@ -101,10 +123,10 @@ describe("MFA-Kurzdokumentation – Textbildung", () => {
     const options = getMfaDocumentationOptions({ blocks: m1Blocks }, [{ id: "K01" }]);
     const activity = options.activities[0];
     const nextStep = options.nextSteps[0];
-    const text = buildMfaDocumentationText(options, activity.id, nextStep.id, "x".repeat(200));
+    const text = buildMfaDocumentationText(options, [activity.id], [nextStep.id], "x".repeat(200));
 
     expect(text).toContain("x".repeat(160));
     expect(text).not.toContain("x".repeat(161));
-    expect(buildMfaDocumentationText(options, "invalid", nextStep.id)).toBe("");
+    expect(buildMfaDocumentationText(options, ["invalid"], [nextStep.id])).toBe("");
   });
 });
