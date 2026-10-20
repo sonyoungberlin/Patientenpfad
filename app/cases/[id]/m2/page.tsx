@@ -30,7 +30,7 @@ export default async function M2Page({
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
-    select: { active_checkpoints: true, ctx_prefill: true, patient_reference: true, owner_account_id: true, owner_practice_id: true, doctor_confirmed: true, clinical_status: true, preparation_mode: true },
+    select: { active_checkpoints: true, ctx_prefill: true, patient_reference: true, owner_account_id: true, owner_practice_id: true, doctor_confirmed: true, clinical_status: true, preparation_mode: true, m1_snapshot_initial: true },
   });
 
   if (!session || !canAccessCaseSession(account, session)) {
@@ -138,6 +138,7 @@ export default async function M2Page({
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}
+        m1SnapshotInitial={session.m1_snapshot_initial}
         initialPrefillBySource={initialPrefillBySource}
         initialPreparationMode={
           typeof session.preparation_mode === "string"

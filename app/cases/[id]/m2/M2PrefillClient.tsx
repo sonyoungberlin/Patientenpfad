@@ -13,6 +13,10 @@ import {
 } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
+  buildMfaDocumentationText,
+  getMfaDocumentationOptions,
+} from "@/lib/logic/mfaDocumentation";
+import {
   M2_QUESTIONS,
   M2_QUESTIONS_MFA,
   sanitizePrefillForMode,
@@ -123,11 +127,13 @@ const ASSESSMENT_GROUP_TITLE = "Durchgeführte Assessments";
 export function M2PrefillClient({
   caseId,
   checkpoints,
+  m1SnapshotInitial,
   initialPrefillBySource,
   initialPreparationMode = "none",
 }: {
   caseId: string;
   checkpoints: ActiveCheckpoint[];
+  m1SnapshotInitial?: unknown;
   initialPrefillBySource: {
     mfa: M2PrefillData;
     conversation: M2PrefillData;
@@ -149,6 +155,11 @@ export function M2PrefillClient({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dirtySources, setDirtySources] = useState({ mfa: false, conversation: false });
+  const [documentationActivityId, setDocumentationActivityId] = useState("");
+  const [documentationNextStepId, setDocumentationNextStepId] = useState("");
+  const [documentationAdditionalText, setDocumentationAdditionalText] = useState("");
+  const [documentationCopied, setDocumentationCopied] = useState(false);
+  const [documentationCopyError, setDocumentationCopyError] = useState<string | null>(null);
   const dirtySourcesRef = useRef(dirtySources);
   // Lokaler Modus, der nur die Fragenquelle bestimmt:
   // - "mfa"     → MFA-Standardweg (M2_QUESTIONS_MFA)
@@ -165,6 +176,31 @@ export function M2PrefillClient({
   );
   const sourceForMode = mode === "patient" ? "conversation" : "mfa";
   const values = valuesBySource[sourceForMode];
+  const documentationOptions = getMfaDocumentationOptions(m1SnapshotInitial, checkpoints);
+  const documentationText = buildMfaDocumentationText(
+    documentationOptions,
+    documentationActivityId,
+    documentationNextStepId,
+    documentationAdditionalText,
+  );
+
+  async function copyDocumentation() {
+    if (!documentationText) return;
+    setDocumentationCopyError(null);
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        throw new Error("Clipboard API unavailable");
+      }
+      await navigator.clipboard.writeText(documentationText);
+      setDocumentationActivityId("");
+      setDocumentationNextStepId("");
+      setDocumentationAdditionalText("");
+      setDocumentationCopied(true);
+    } catch {
+      setDocumentationCopied(false);
+      setDocumentationCopyError("Kurzdokumentation konnte nicht kopiert werden.");
+    }
+  }
 
   useEffect(() => {
     function handleSetMode(e: Event) {
@@ -632,6 +668,84 @@ export function M2PrefillClient({
       >
         Speichern und weiter zur ärztlichen Checkliste
       </button>
+      {mode === "mfa" && documentationOptions.activities.length > 0 ? (
+        <section
+          data-mfa-documentation
+          aria-label="MFA-Kurzdokumentation"
+          style={{ display: "grid", gap: "0.6rem", marginTop: "1.5rem" }}
+        >
+          <h3 style={{ margin: 0 }}>Kurzdokumentation fürs Krankenblatt</h3>
+          <label style={{ display: "grid", gap: "0.25rem" }}>
+            Was wurde gemacht?
+            <select
+              data-mfa-documentation-activity
+              value={documentationActivityId}
+              onChange={(event) => {
+                setDocumentationActivityId(event.target.value);
+                setDocumentationCopied(false);
+                setDocumentationCopyError(null);
+              }}
+            >
+              <option value="">Tätigkeit auswählen</option>
+              {documentationOptions.activities.map((option) => (
+                <option key={option.id} value={option.id}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: "0.25rem" }}>
+            Was ist als nächster organisatorischer Schritt vorgesehen?
+            <select
+              data-mfa-documentation-next-step
+              value={documentationNextStepId}
+              onChange={(event) => {
+                setDocumentationNextStepId(event.target.value);
+                setDocumentationCopied(false);
+                setDocumentationCopyError(null);
+              }}
+            >
+              <option value="">Nächsten Schritt auswählen</option>
+              {documentationOptions.nextSteps.map((option) => (
+                <option key={option.id} value={option.id}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: "0.25rem" }}>
+            Ergänzung (optional)
+            <textarea
+              data-mfa-documentation-additional
+              value={documentationAdditionalText}
+              maxLength={160}
+              rows={2}
+              onChange={(event) => {
+                setDocumentationAdditionalText(event.target.value);
+                setDocumentationCopied(false);
+                setDocumentationCopyError(null);
+              }}
+            />
+          </label>
+          <p
+            data-mfa-documentation-preview
+            aria-live="polite"
+            style={{ margin: 0, whiteSpace: "pre-wrap" }}
+          >
+            {documentationText || "Tätigkeit und nächsten organisatorischen Schritt auswählen."}
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              data-mfa-documentation-copy
+              disabled={!documentationText}
+              onClick={() => void copyDocumentation()}
+            >
+              {documentationCopied ? "Kopiert ✓" : "Kurzdokumentation kopieren"}
+            </button>
+            {documentationCopyError ? (
+              <span className="text-error" role="alert">{documentationCopyError}</span>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
