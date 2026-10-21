@@ -72,70 +72,19 @@ Für eine browserbasierte Verwaltung gibt es eine interne Admin-Seite.
 
 ## Prisma-Migrationen (Production / Preview)
 
-Migrationen werden grundsätzlich **gegen die Deployment-Datenbank** ausgeführt –
-nicht von einer Entwickler-Maschine aus. Lokales `prisma migrate dev` gegen
-Neon ist nicht vorgesehen und scheitert i. d. R. an Netzwerk-/Firewall-Regeln
-(`P1001`).
+Vercel's `vercel-build` script currently runs `next build` only; Production and
+Preview deployments do **not** automatically run Prisma migrations. Although
+the repository includes manual Prisma migration scripts, never run them against
+Production without inspecting the target's actual migration history and schema
+and obtaining explicit approval for the exact changes.
 
-### Automatisch (Vercel)
+Prisma uses `DATABASE_URL` for application/runtime connections and
+`DIRECT_DATABASE_URL` for direct migration connections. A Codespace may not be
+able to reach Neon even when Vercel can. The project has previously resolved
+Codespace `P1001` through a temporary Vercel Sandbox; see the
+[deployment and database runbook](docs/deployment-and-database.md) for the
+verified history and safe release sequence.
 
-Bei jedem Vercel-Build läuft via `vercel-build`-Script:
-
-```sh
-prisma migrate deploy && next build
-```
-
-`prisma migrate deploy` nutzt dabei **`DIRECT_DATABASE_URL`** direkt aus der
-Vercel-Environment (siehe `prisma/schema.prisma` → `directUrl`). Das gilt für
-Production **und** Preview – ausstehende Migrationen werden also bei jedem
-Deploy angewendet.
-
-#### Neon / Vercel-Postgres-Mapping (Pflicht)
-
-Neon bzw. Vercel-Postgres stellt automatisch `POSTGRES_PRISMA_URL` (pooled)
-und `POSTGRES_URL_NON_POOLING` (direct) bereit. Das Projekt erwartet aber die
-stabilen Namen aus `prisma/schema.prisma`. In den Vercel Environment Variables
-muss daher für jede Umgebung (Production, Preview, Development) gesetzt sein:
-
-- `DATABASE_URL` = Wert von `POSTGRES_PRISMA_URL` (pooled, für Runtime-Queries)
-- `DIRECT_DATABASE_URL` = Wert von `POSTGRES_URL_NON_POOLING` (direct, für
-  `prisma migrate deploy`)
-- Beide URLs sollen den Query-Parameter `connect_timeout=15` enthalten, damit
-  Neon-Compute-Instanzen nach einem Scale-to-zero genug Zeit zum Aufwachen
-  haben (verhindert `P1001`-Fehler).
-
-`vercel-build` nutzt diese Environment-Variablen direkt; `DIRECT_DATABASE_URL`
-darf **nicht** auf `DATABASE_URL` überschrieben werden – sonst läuft
-`prisma migrate deploy` über den Pooler und schlägt fehl. Die vollständige
-Doku liegt in [`.env.example`](./.env.example).
-
-### Manuell (z. B. wenn eine Migration ohne Deploy nachgezogen werden muss)
-
-Bevorzugt über die Vercel-CLI mit den verlinkten Projekt-ENV
-(keine lokale `.env` nötig, keine Secrets im Repo):
-
-```sh
-# Einmalig Projekt verlinken
-vercel link
-
-# Production-ENV in die aktuelle Shell ziehen (nur für diesen Aufruf!)
-vercel env pull .env.vercel.production --environment=production
-
-# Migration ausführen – nutzt DIRECT_DATABASE_URL aus der gezogenen Datei
-env $(grep -v '^#' .env.vercel.production | xargs) npm run db:migrate:deploy
-
-# Datei danach löschen, damit keine Secrets liegen bleiben
-rm .env.vercel.production
-```
-
-Verfügbare npm-Scripts:
-
-```sh
-npm run db:migrate:deploy   # = prisma migrate deploy
-npm run db:generate         # = prisma generate
-```
-
-Diese Scripts versuchen **keine** Verbindung zu testen und verändern keine
-lokalen Variablen – sie führen ausschließlich den jeweiligen Prisma-Befehl
-mit den ENV-Variablen aus, die der Aufrufer mitgibt.
-
+Never use the Production database as a development database without explicitly
+checking its target and risks. Do not expose database credentials in output,
+chat, or Git.

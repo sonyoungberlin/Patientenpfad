@@ -1,148 +1,38 @@
-# Datenbank-Setup (lokal / Vercel / Neon)
+# Datenbank-Setup für Entwicklung
 
-## Übersicht
+## Verbindungen
 
-Prisma arbeitet dauerhaft mit zwei stabilen Umgebungsvariablen:
+`prisma/schema.prisma` verwendet zwei Umgebungsvariablen:
 
-| Variable             | Bedeutung                                                       |
-|----------------------|-----------------------------------------------------------------|
-| `DATABASE_URL`       | Verbindungs-URL für Laufzeit-Queries (darf Pooler sein)         |
-| `DIRECT_DATABASE_URL`| Direkte Verbindung ohne Pooler (Pflicht für Prisma Migrate)     |
+| Variable | Verwendung |
+| --- | --- |
+| `DATABASE_URL` | Anwendungszugriffe; kann eine gepoolte Neon-URL sein |
+| `DIRECT_DATABASE_URL` | Direkte Datenbankverbindung für Prisma-Migrationen |
 
----
+Lokale Zugangsdaten gehören ausschließlich in eine ignorierte lokale
+`.env`-Datei. Sie dürfen nicht in Git, Chat, Logs oder Konsolenausgaben
+gelangen. Beim Wechsel des Codespaces können lokale Env-Dateien fehlen; das
+sagt nichts darüber aus, ob Vercel Production-Variablen gesetzt sind.
 
-## Woher kommen die Werte?
+## Lokale Migrationen
 
-### Lokal (`.env.local`)
+`prisma migrate dev` und andere Schemaänderungen dürfen nur gegen eine
+ausdrücklich als Entwicklungsdatenbank identifizierte Datenbank ausgeführt
+werden. Production ist keine Entwicklungsdatenbank. Prüfe vor jedem
+Migrationsbefehl das tatsächlich konfigurierte Ziel, ohne den Verbindungsstring
+auszugeben.
 
-Lege eine Datei `.env.local` im Projekt-Root an (sie ist in `.gitignore`
-aufgelistet und wird **nicht** in Git eingecheckt):
+Die `package.json` enthält `migrate:deploy`- und `db:migrate:deploy`-Scripts.
+Sie werden nicht automatisch ausgeführt. `vercel-build` ist in diesem Projekt
+`next build` und führt keine Migrationen aus.
 
-```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?connect_timeout=15"
-DIRECT_DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?connect_timeout=15"
-```
+## Production ist ein gesonderter Ablauf
 
-Bei Neon:
-- **DATABASE_URL** → die Pooler-URL (z. B. `...pooler.neon.tech:5432/...`)
-- **DIRECT_DATABASE_URL** → die direkte URL (z. B. `...neon.tech:5432/...`, ohne `pooler`-Subdomain)
+Produktionsmigrationen erfordern zuerst eine lesende Prüfung der tatsächlichen
+Migrationstabelle und des Schemas, den Vergleich mit den Migrationen im
+Release, die Prüfung der SQL-Auswirkungen und ausdrückliche Freigabe der
+konkreten Änderungen. Verwende keine blinden Aufrufe von `prisma db push`,
+`prisma migrate deploy` oder `prisma migrate reset`.
 
-### Vercel
-
-Vercel (mit Neon-Integration) stellt automatisch POSTGRES_*-Variablen bereit.
-Diese müssen **manuell** auf die stabilen Namen gemappt werden:
-
-1. Vercel-Dashboard → Projekt → **Settings → Environment Variables**
-2. Neue Variable anlegen:
-   - `DATABASE_URL` → Wert: `$POSTGRES_PRISMA_URL` (oder direkter String der Pooler-URL)
-   - `DIRECT_DATABASE_URL` → Wert: `$POSTGRES_URL_NON_POOLING` (oder direkter String der Direct-URL)
-3. Beide URLs sollten `?connect_timeout=15` enthalten.
-
-> **Kein automatisches Branching** für Pre-Pilot aktivieren – alle Umgebungen
-> (Production, Preview, Development) sollen dieselbe stabile Neon-Datenbank
-> verwenden, bis Branching explizit freigegeben wird.
-
----
-
-## `schema.prisma`
-
-Die `datasource`-Konfiguration ist bereits korrekt gesetzt und muss
-**nicht geändert werden**:
-
-```prisma
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
-}
-```
-
----
-
-## Migrationen ausführen
-
-```bash
-# Lokal: direkte URL wird von Prisma über directUrl automatisch verwendet
-npx prisma migrate deploy
-
-# oder via npm-Script
-npm run migrate:deploy
-```
-
-> **Wichtig:** `prisma migrate deploy` (und `migrate dev`) nutzen intern
-> `DIRECT_DATABASE_URL`. Migrationen **niemals** gegen eine Pooler-URL
-> ausführen – der Pooler unterstützt kein Session-Modus-SQL, das Migrate
-> benötigt.
-
----
-
-## Migrationen über Vercel-Deploy ausführen
-
-Wenn der lokale Rechner Neon nicht erreicht (z. B. P1001 trotz korrekter
-`DATABASE_URL`), Vercel die Datenbank aber sehr wohl erreicht, lassen sich
-Migrationen über die Deployment-Umgebung ausrollen.
-
-Dazu ist in `package.json` ein eigenes Script `vercel-build` definiert:
-
-```json
-"vercel-build": "DIRECT_DATABASE_URL=\"$DATABASE_URL\" prisma migrate deploy && next build"
-```
-
-Verhalten:
-
-- Vercel bevorzugt automatisch `vercel-build` gegenüber `build`, sobald es
-  existiert. Lokales `npm run build` bleibt unverändert (`next build` ohne
-  Migrate) – Entwickler ohne DB-Zugriff können weiterhin lokal bauen.
-- Bei jedem Vercel-Deploy (Production **und** Preview) läuft `prisma migrate
-  deploy` **vor** `next build`. Schlägt die Migration fehl, bricht der Build
-  ab – es gibt kein Deployment mit halb migrierter DB.
-- Es wird ausschließlich `prisma migrate deploy` ausgeführt. **Keine**
-  destruktiven Befehle (`migrate dev`, `migrate reset`, `db push` o. ä.).
-  `migrate deploy` wendet ausstehende Migrationen idempotent an und ändert
-  keine Daten außerhalb der in `prisma/migrations/` versionierten Schritte.
-- Der Vercel-Build-Runner kann den Neon-Direct-Host
-  (`ep-…neon.tech:5432` ohne `pooler`-Subdomain) nicht erreichen (P1001),
-  wohl aber die Pooler-URL. Da Prisma bei gesetztem `directUrl` zwingend
-  diesen Host für `migrate deploy` nutzt, überschreibt das Script
-  `DIRECT_DATABASE_URL` lokal für genau diesen Befehl mit dem Wert von
-  `DATABASE_URL` (Pooler). Die `schema.prisma` bleibt unverändert, lokale
-  `npm run migrate:deploy`-Aufrufe nutzen weiterhin die echte Direct-URL aus
-  `.env.local`.
-
-Rollout neuer Migrationen:
-
-1. Migration lokal generieren bzw. manuell schreiben und in
-   `prisma/migrations/` committen.
-2. Branch nach Vercel pushen → Preview-Deploy führt `prisma migrate deploy`
-   gegen die konfigurierte DB aus.
-3. Nach Merge in den Production-Branch wendet der Production-Build dieselbe
-   Migration gegen die Production-DB an.
-
-> **Wichtig:** Production- und Preview-Environment in Vercel müssen auf die
-> gewünschte Ziel-Datenbank zeigen. Solange Pre-Pilot kein Branching nutzt
-> (siehe oben), laufen Preview-Deploys gegen dieselbe Neon-DB wie Production
-> – ein Preview-Deploy migriert also bereits die Produktions-DB.
-
----
-
-## Fehlercode P1001 – Was tun?
-
-`P1001: Can't reach database server` tritt bei Neon typischerweise auf, wenn:
-
-1. **Scale-to-zero / Suspended Compute** – Neon schläft ein, wenn keine Anfragen
-   kommen. Der erste Verbindungsversuch weckt die Instanz auf, kann aber
-   mehrere Sekunden dauern.
-   - **Lösung:** `connect_timeout=15` in beiden URLs sicherstellen (gibt der
-     Instanz genug Zeit zum Aufwachen).
-   - Im Neon-Dashboard kann Scale-to-zero pro Branch deaktiviert werden
-     (kostenpflichtig).
-
-2. **Falsche URL / Credentials** – Tipp- oder Konfigurationsfehler.
-   - Prüfen: Sind `DATABASE_URL` und `DIRECT_DATABASE_URL` in der jeweiligen
-     Umgebung gesetzt? (`echo $DATABASE_URL`)
-
-3. **IP-Allowlist / Firewall** – Neon erlaubt standardmäßig alle IPs. Bei
-   restriktiven Projekten: IP des Deployment-Servers freigeben.
-
-4. **Branch suspended / deleted** – Im Neon-Dashboard prüfen, ob der Branch
-   noch aktiv ist.
+Wenn der Codespace wegen `P1001` Neon nicht erreicht, siehe den dokumentierten
+[Vercel-Sandbox-Weg und die sichere Production-Reihenfolge](deployment-and-database.md).
