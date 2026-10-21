@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { KioskMode } from "@prisma/client";
+import { getCurrentKioskMode, getKioskSessionAccountFromCookies } from "@/lib/auth";
+import { KioskAccountLogout } from "@/components/questionnaireKiosk/KioskAccountLogout";
 import type { QuestionDefinition } from "@/lib/questionnaire/blockCatalog";
 import {
   normalizeQuestionnaireLanguage,
@@ -65,6 +68,9 @@ export default async function QuestionnairePage({
 }) {
   const { token } = await params;
   const { selfCheckInQr } = (await searchParams) ?? {};
+  const kioskAccount = await getKioskSessionAccountFromCookies();
+  const showKioskLogout = kioskAccount !== null &&
+    getCurrentKioskMode(kioskAccount) === KioskMode.QUESTIONNAIRES;
 
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { token },
@@ -96,6 +102,7 @@ export default async function QuestionnairePage({
   if (!session || !session.token_expires_at || session.deleted_at != null) {
     return (
       <main>
+        {showKioskLogout ? <KioskAccountLogout /> : null}
         <p data-q-expired>{EXPIRED_MESSAGE_DE}</p>
       </main>
     );
@@ -115,6 +122,7 @@ export default async function QuestionnairePage({
   if (session.token_expires_at < new Date()) {
     return (
       <main>
+        {showKioskLogout ? <KioskAccountLogout /> : null}
         <p data-q-expired>{expiredMessage(language)}</p>
         {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
       </main>
@@ -124,6 +132,7 @@ export default async function QuestionnairePage({
   if (session.status !== "pending") {
     return (
       <main>
+        {showKioskLogout ? <KioskAccountLogout /> : null}
         <p data-q-completed>{completedMessage(language)}</p>
         {publicPractice && <PublicPracticeFooter practice={publicPractice} />}
       </main>
@@ -172,6 +181,7 @@ export default async function QuestionnairePage({
 
   return (
     <main>
+      {showKioskLogout ? <KioskAccountLogout /> : null}
       <h1>{pageTitle}</h1>
       <QuestionnaireFormClient
         token={token}

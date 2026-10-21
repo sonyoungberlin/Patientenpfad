@@ -30,6 +30,7 @@ const ROLE_LABEL: Record<PracticeRole, string> = {
   ADMIN: "Admin",
   USER: "Mitarbeiter",
   INBOX_ONLY: "Mini-Zugang / Posteingang",
+  KIOSK: "Kiosk-Zugang",
 };
 
 const FLAG_LABEL: Record<string, string> = {
@@ -124,6 +125,7 @@ export default async function AdminPracticeDetailPage({
         select: {
           id: true,
           role: true,
+          kiosk_mode: true,
           created_at: true,
           account: {
             select: {
@@ -893,7 +895,12 @@ export default async function AdminPracticeDetailPage({
               return (
                 <tr key={m.id}>
                   <td>{m.account.email}</td>
-                  <td>{ROLE_LABEL[m.role]}</td>
+                  <td>
+                    {ROLE_LABEL[m.role]}
+                    {m.role === PracticeRole.KIOSK && m.kiosk_mode
+                      ? ` · ${m.kiosk_mode === "INTERNAL_DOCUMENTATION" ? "Interne Dokumentation" : "Patientenfragebogen"}`
+                      : ""}
+                  </td>
                   <td>{new Date(m.created_at).toLocaleDateString("de-DE")}</td>
                   <td data-default-practice={m.account.email}>
                     {isDefault ? (
@@ -1001,9 +1008,19 @@ export default async function AdminPracticeDetailPage({
               <option value={PracticeRole.INBOX_ONLY}>
                 {ROLE_LABEL[PracticeRole.INBOX_ONLY]}
               </option>
+              <option value={PracticeRole.KIOSK}>
+                {ROLE_LABEL[PracticeRole.KIOSK]}
+              </option>
               <option value={PracticeRole.OWNER}>
                 {ROLE_LABEL[PracticeRole.OWNER]}
               </option>
+            </select>
+          </label>
+          <label>
+            Kiosk-Startbereich (nur für Kiosk-Zugang)
+            <select name="kiosk_mode" defaultValue="INTERNAL_DOCUMENTATION">
+              <option value="INTERNAL_DOCUMENTATION">Interne Dokumentation</option>
+              <option value="QUESTIONNAIRES">Patientenfragebogen</option>
             </select>
           </label>
           <div>

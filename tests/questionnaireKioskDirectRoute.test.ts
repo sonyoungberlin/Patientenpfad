@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { POST } from "@/app/api/questionnaire-kiosk/direct/route";
 
 jest.mock("@/lib/questionnaireKiosk/auth", () => ({
-  requireUnlockedQuestionnaireKioskDevice: jest.fn(),
+  requireQuestionnaireKioskAccess: jest.fn(),
+  hasQuestionnaireKioskCapability: jest.fn(() => true),
 }));
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -12,9 +13,9 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 import { prisma } from "@/lib/prisma";
-import { requireUnlockedQuestionnaireKioskDevice } from "@/lib/questionnaireKiosk/auth";
+import { requireQuestionnaireKioskAccess } from "@/lib/questionnaireKiosk/auth";
 
-const guard = requireUnlockedQuestionnaireKioskDevice as jest.Mock;
+const guard = requireQuestionnaireKioskAccess as jest.Mock;
 const db = prisma as unknown as {
   practice: { findUnique: jest.Mock };
   patientQuestionnaireSession: { create: jest.Mock };
@@ -30,7 +31,7 @@ function request(body: unknown) {
 
 describe("POST /api/questionnaire-kiosk/direct", () => {
   beforeEach(() => {
-    guard.mockReset().mockResolvedValue({ device: { deviceId: "device-1", practiceId: "practice-1", deviceName: "Empfang" }, error: null });
+    guard.mockReset().mockResolvedValue({ access: { kind: "device", deviceId: "device-1", practiceId: "practice-1", deviceName: "Empfang" }, error: null });
     db.practice.findUnique.mockReset().mockResolvedValue({
       questionnaire_confirmation_text_1: null,
       questionnaire_confirmation_text_2: null,
@@ -55,6 +56,22 @@ describe("POST /api/questionnaire-kiosk/direct", () => {
       inquiry_session_id: null,
       patient_reference: "PAT-1",
     }));
+  });
+
+  it("erzeugt über den Kiosk-Account eine practice-owned Session ohne Geräte-ID", async () => {
+    guard.mockResolvedValue({
+      access: { kind: "account", accountId: "account-1", practiceId: "practice-1", kioskMode: "QUESTIONNAIRES" },
+      error: null,
+    });
+    const response = await POST(request({ patient_reference: "PAT-1", selected_block_ids: ["KONTAKT"], language: "de", selected_confirmation_ids: [] }));
+    expect(response.status).toBe(200);
+    const data = db.patientQuestionnaireSession.create.mock.calls[0][0].data;
+    expect(data).toEqual(expect.objectContaining({
+      owner_account_id: "account-1",
+      owner_practice_id: "practice-1",
+      source: "kiosk_direct",
+    }));
+    expect(data).not.toHaveProperty("created_by_kiosk_device_id");
   });
 
   it("erzeugt keinen normalen Kiosk-Fragebogen ohne Patientenreferenz", async () => {

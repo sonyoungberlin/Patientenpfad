@@ -1,0 +1,6 @@
+ALTER TYPE "PracticeRole" ADD VALUE IF NOT EXISTS 'KIOSK';
+
+CREATE TYPE "KioskMode" AS ENUM ('QUESTIONNAIRES', 'INTERNAL_DOCUMENTATION');
+
+ALTER TABLE "PracticeMembership"
+ADD COLUMN "kiosk_mode" "KioskMode";

@@ -4,7 +4,8 @@ export type AppShellPracticeRole =
   | "OWNER"
   | "ADMIN"
   | "USER"
-  | "INBOX_ONLY";
+  | "INBOX_ONLY"
+  | "KIOSK";
 
 export type AppShellAccount = {
   id: string;

@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
-import { PracticeRole } from "@prisma/client";
+import { KioskMode, PracticeRole } from "@prisma/client";
 import { prisma } from "./prisma";
 import { isPracticeActive } from "./practice/lifecycle";
 
 export const SESSION_COOKIE = "pp_session";
+export const KIOSK_ACCOUNT_COOKIE = "pp_kiosk_account";
 export const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 /**
@@ -35,6 +36,7 @@ export type SessionPractice = {
 export type SessionMembership = {
   practice_id: string;
   role: PracticeRole;
+  kiosk_mode: KioskMode | null;
 };
 
 export type SessionAccount = {
@@ -77,6 +79,7 @@ export type SessionAccount = {
 type LoadedMembership = {
   practice_id: string;
   role: PracticeRole;
+  kiosk_mode: KioskMode | null;
   created_at: Date;
   practice: {
     id: string;
@@ -133,6 +136,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
             select: {
               practice_id: true,
               role: true,
+              kiosk_mode: true,
               created_at: true,
               practice: {
                 select: {
@@ -194,6 +198,7 @@ async function resolveAccount(token: string | undefined): Promise<SessionAccount
   const memberships: SessionMembership[] = loadedMemberships.map((m) => ({
     practice_id: m.practice_id,
     role: m.role,
+    kiosk_mode: m.kiosk_mode ?? null,
   }));
 
   // P2: Top-Level-Flags spiegeln current_practice, falls vorhanden. So sehen
@@ -252,7 +257,8 @@ export async function getSessionAccount(
   req: NextRequest,
 ): Promise<SessionAccount | null> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  return resolveAccount(token);
+  const account = await resolveAccount(token);
+  return isCurrentMembershipKiosk(account) ? null : account;
 }
 
 /**
@@ -262,5 +268,46 @@ export async function getSessionAccount(
 export async function getSessionAccountFromCookies(): Promise<SessionAccount | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
-  return resolveAccount(token);
+  const account = await resolveAccount(token);
+  return isCurrentMembershipKiosk(account) ? null : account;
+}
+
+function isCurrentMembershipKiosk(account: SessionAccount | null): boolean {
+  const practiceId = account?.current_practice?.id;
+  if (!account || account.is_admin || !practiceId) return false;
+  return account.memberships.some(
+    (membership) =>
+      membership.practice_id === practiceId &&
+      membership.role === PracticeRole.KIOSK,
+  );
+}
+
+export function getCurrentKioskMode(
+  account: Pick<SessionAccount, "current_practice" | "memberships">,
+): KioskMode | null {
+  const practiceId = account.current_practice?.id;
+  if (!practiceId) return null;
+  const membership = account.memberships.find(
+    (entry) =>
+      entry.practice_id === practiceId &&
+      entry.role === PracticeRole.KIOSK,
+  );
+  return membership?.kiosk_mode ?? null;
+}
+
+export async function getKioskSessionAccount(
+  req: NextRequest,
+): Promise<SessionAccount | null> {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  const account = await resolveAccount(token);
+  if (!account?.is_approved || !isCurrentMembershipKiosk(account)) return null;
+  return account;
+}
+
+export async function getKioskSessionAccountFromCookies(): Promise<SessionAccount | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const account = await resolveAccount(token);
+  if (!account?.is_approved || !isCurrentMembershipKiosk(account)) return null;
+  return account;
 }

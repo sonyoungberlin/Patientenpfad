@@ -1,39 +1,21 @@
-"use client";
+import { redirect } from "next/navigation";
+import { KioskAccountLogout } from "@/components/questionnaireKiosk/KioskAccountLogout";
+import {
+  getQuestionnaireKioskAccessFromCookies,
+  hasQuestionnaireKioskCapability,
+} from "@/lib/questionnaireKiosk/auth";
+import InternalDocumentationStartClient from "./InternalDocumentationStartClient";
 
-import { useEffect, useState } from "react";
-import InternalDocumentationLauncherForm from "@/components/InternalDocumentationLauncherForm";
-import type { PracticeDocumentationBlockSummary } from "@/lib/practice/documentationBlocks";
-import type { PracticeDocumentationTemplate } from "@/lib/practice/documentationTemplates";
-
-export default function InternalDocumentationStartPage() {
-  const [practiceTemplates, setPracticeTemplates] = useState<PracticeDocumentationTemplate[]>([]);
-  const [availableBlocks, setAvailableBlocks] = useState<PracticeDocumentationBlockSummary[]>([]);
-  useEffect(() => {
-    if (typeof fetch !== "function") return;
-    let cancelled = false;
-    fetch("/api/questionnaire-kiosk/internal/templates")
-      .then((response) => response.json())
-      .then((result: {
-        ok?: boolean;
-        templates?: PracticeDocumentationTemplate[];
-        blocks?: PracticeDocumentationBlockSummary[];
-      }) => {
-        if (!cancelled && result.ok && Array.isArray(result.templates)) {
-          setPracticeTemplates(result.templates);
-          setAvailableBlocks(result.blocks ?? []);
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
+export default async function InternalDocumentationStartPage() {
+  const access = await getQuestionnaireKioskAccessFromCookies(true);
+  if (!access || !hasQuestionnaireKioskCapability(access, "internal_documentation")) {
+    redirect("/questionnaire-kiosk/lock");
+  }
   return (
     <main>
+      {access.kind === "account" ? <KioskAccountLogout /> : null}
       <h1>Interne Dokumentation</h1>
-      <InternalDocumentationLauncherForm
-        endpoint="/api/questionnaire-kiosk/internal"
-        practiceTemplates={practiceTemplates}
-        availableBlocks={availableBlocks}
-      />
+      <InternalDocumentationStartClient />
     </main>
   );
 }

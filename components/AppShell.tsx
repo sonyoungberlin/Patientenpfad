@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import type {
@@ -10,7 +9,6 @@ import type {
 } from "@/lib/appShellAccount";
 import {
   getActiveNavigationItem,
-  getAppShellContext,
   getCurrentNavigationRole,
   getNavigationSectionForPath,
   getVisibleNavigationSections,
@@ -75,13 +73,14 @@ export default function AppShell({
 
   async function handleLogoutDefault() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    router.push("/");
+    router.push("/login");
     router.refresh();
   }
 
   if (!account || !account.is_approved) {
     return null;
   }
+  if (getCurrentNavigationRole(account) === "KIOSK") return null;
 
   const handleLogoutClick = onLogout ?? handleLogoutDefault;
 
@@ -96,79 +95,53 @@ export default function AppShell({
   const activeItemId = currentSection
     ? getActiveNavigationItem(currentSection, pathname)
     : null;
-  const appShellContext = getAppShellContext(pathname);
 
   return (
     <nav className="app-nav">
-      <div className="app-shell-topline" data-testid="app-shell-topline">
-        <Link href={homeHref}>Hauptmenü</Link>
-        <div className="app-shell-account-group" data-testid="app-shell-account-group">
-          <span className="account-email">{account.email}</span>
-          <button
-            type="button"
-            onClick={handleLogoutClick}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              font: "inherit",
-              color: "var(--muted-foreground)",
-              fontSize: "0.875rem",
-              cursor: "pointer",
-              textDecoration: "underline",
-            }}
-          >
-            Abmelden
-          </button>
-        </div>
-      </div>
-      {currentSection?.items.length ? (
-        <div className="app-shell-sections" data-testid="app-shell-section-nav">
-          {appShellContext && (
+      <Link href={homeHref}>Hauptmenü</Link>
+      {currentSection?.items.map((item) => (
+        <Link
+          key={item.id}
+          href={item.href}
+          aria-current={item.id === activeItemId ? "page" : undefined}
+          style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+        >
+          {item.label}
+          {item.id === "digital-requests-inbox" && hasUnread && (
             <span
-              data-testid="app-shell-context"
-              className="app-shell-context"
-              role="img"
-              aria-label={`Aktueller Kontext: ${appShellContext.label}`}
-              title={`Aktueller Kontext: ${appShellContext.label}`}
-            >
-              <Image
-                src={appShellContext.iconSrc}
-                alt=""
-                width={32}
-                height={32}
-                sizes="32px"
-              />
-            </span>
+              data-testid="digital-requests-unread-dot"
+              aria-label="Neue Anfragen vorhanden"
+              style={{
+                display: "inline-block",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#ef4444",
+                flexShrink: 0,
+              }}
+            />
           )}
-          <div className="app-shell-section-links">
-            {currentSection.items.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                aria-current={item.id === activeItemId ? "page" : undefined}
-                style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
-              >
-                {item.label}
-                {item.id === "digital-requests-inbox" && hasUnread && (
-                  <span
-                    data-testid="digital-requests-unread-dot"
-                    aria-label="Neue Anfragen vorhanden"
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "#ef4444",
-                      flexShrink: 0,
-                    }}
-                  />
-                )}
-              </Link>
-            ))}
-          </div>
-        </div>
-      ) : null}
+        </Link>
+      ))}
+      <span className="account-email" style={{ marginLeft: "auto" }}>
+        {account.email}
+      </span>
+      <button
+        type="button"
+        onClick={handleLogoutClick}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          font: "inherit",
+          color: "var(--muted-foreground)",
+          fontSize: "0.875rem",
+          cursor: "pointer",
+          textDecoration: "underline",
+        }}
+      >
+        Abmelden
+      </button>
     </nav>
   );
 }

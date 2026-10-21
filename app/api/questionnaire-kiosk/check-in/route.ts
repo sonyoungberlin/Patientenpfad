@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { KIOSK_CHECK_IN_BLOCK_IDS } from "@/lib/questionnaire/kioskCheckIn";
-import { requireUnlockedQuestionnaireKioskDevice } from "@/lib/questionnaireKiosk/auth";
+import {
+  hasQuestionnaireKioskCapability,
+  requireQuestionnaireKioskAccess,
+} from "@/lib/questionnaireKiosk/auth";
 
 const FORBIDDEN_FIELDS = [
   "patient_reference",
@@ -17,8 +20,11 @@ const FORBIDDEN_FIELDS = [
 ];
 
 export async function POST(req: NextRequest) {
-  const { device, error } = await requireUnlockedQuestionnaireKioskDevice(req);
+  const { access, error } = await requireQuestionnaireKioskAccess(req, true);
   if (error) return error;
+  if (!hasQuestionnaireKioskCapability(access, "questionnaires")) {
+    return NextResponse.json({ ok: false, error: "Patientenfragebögen sind für diesen Kiosk-Zugang nicht freigeschaltet." }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
   if (!body) {
@@ -39,8 +45,10 @@ export async function POST(req: NextRequest) {
     patientReference: null,
     allowUnassignedKioskCheckIn: true,
     patientLanguage: "de",
-    ownerPracticeId: device.practiceId,
-    createdByKioskDeviceId: device.deviceId,
+    ownerPracticeId: access.practiceId,
+    ...(access.kind === "device"
+      ? { createdByKioskDeviceId: access.deviceId }
+      : { ownerAccountId: access.accountId }),
     source: "kiosk_direct",
     origin,
   });

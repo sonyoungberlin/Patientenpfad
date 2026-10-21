@@ -42,7 +42,7 @@ describe("Praxisfall-Ketten-Navigation", () => {
 
   it("ordnet USER dem Arbeitsprozesse-Runner zu", () => {
     const sections = getVisibleNavigationSections(account("USER"));
-    const workflow = sections.find((section) => section.id === "workflow-path");
+    const workflow = sections.find((section) => String(section.id) === "workflow-path");
 
     expect(workflow?.items).toEqual(expect.arrayContaining([
       expect.objectContaining({

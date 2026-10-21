@@ -306,7 +306,7 @@ Der erzeugte öffentliche Link kann auf der Praxiswebsite eingebunden werden. So
 
 ### Team verwalten
 
-Unter **Praxis → Team** sieht der Inhaber alle Mitglieder der Praxis: E-Mail-Adresse, Rolle und Beitrittsdatum. Neue Mitglieder können per E-Mail-Adresse eingeladen werden. Dabei wird die Rolle festgelegt: Mitarbeiter oder erweiterter Mitarbeiter.
+Unter **Praxis → Team** sieht der Inhaber alle Mitglieder der Praxis: E-Mail-Adresse, Rolle und Beitrittsdatum. Beim Hinzufügen eines bestehenden Accounts kann der Inhaber unter anderem Mitarbeiter, Mini-Zugang oder Kiosk-Zugang festlegen. Für einen Kiosk-Zugang wird zusätzlich der Startbereich ausgewählt.
 
 **Hinweis:** Rollenwechsel und das Entfernen von Mitgliedern sind aktuell nicht über die App möglich. Bitte wenden Sie sich in diesen Fällen an den Support.
 
@@ -314,7 +314,7 @@ Unter **Praxis → Team** sieht der Inhaber alle Mitglieder der Praxis: E-Mail-A
 
 ## Rollen und Berechtigungen
 
-Patientenpfad kennt drei Nutzerrollen. Sie bestimmen, auf welche Bereiche jemand Zugriff hat.
+Die Praxisrollen bestimmen, auf welche Bereiche jemand Zugriff hat. Der Plattform-Admin ist davon getrennt.
 
 ---
 
@@ -323,6 +323,12 @@ Patientenpfad kennt drei Nutzerrollen. Sie bestimmen, auf welche Bereiche jemand
 Der Inhaber hat vollständigen Zugriff auf alle Bereiche der App — einschließlich aller Praxiseinstellungen, der Teamverwaltung und der Konfiguration von Website-Formularen und Anfrage-Einstellungen.
 
 Es gibt genau einen Inhaber pro Praxis.
+
+---
+
+### Praxis-Admin
+
+Praxis-Admins unterstützen bei der Verwaltung der Praxis und ihrer freigegebenen Einstellungen. Die Praxisrolle ist unabhängig vom Plattform-Admin-Konto.
 
 ---
 
@@ -346,6 +352,12 @@ Diese Rolle eignet sich für MFA und alle weiteren klinischen Mitarbeitenden.
 Personen mit Mini-Zugang sehen ausschließlich den Fragebögen-Posteingang. Alle anderen Bereiche sind für sie nicht sichtbar.
 
 Diese Rolle eignet sich für Verwaltungsmitarbeitende, die Eingang und Ablage von Fragebögen übernehmen, aber nicht in die klinischen Abläufe eingebunden sind.
+
+### Kiosk-Zugang
+
+Kiosk-Benutzer melden sich mit einem normalen Account über die Login-Seite an. Sie sehen ausschließlich den für ihre Praxis-Mitgliedschaft festgelegten vorhandenen Kiosk-Ablauf: Patientenfragebogen oder interne Dokumentation. Dashboard, Posteingang, Einstellungen und andere App-Bereiche sind gesperrt.
+
+Der Kiosk-Zugang ist nicht an einen PC oder Browser gebunden und benötigt weder Geräte-PIN noch Geräte-Cookie. Der separate, bereits bestehende Geräte-Kiosk bleibt für registrierte Geräte mit Geräte-Cookie und PIN weiterhin verfügbar.
 
 ---
 

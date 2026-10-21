@@ -60,6 +60,14 @@ type KioskSessionCreator = {
   source: "kiosk_direct";
 };
 
+type KioskAccountSessionCreator = {
+  ownerAccountId: string;
+  ownerPracticeId: string;
+  createdByKioskDeviceId?: never;
+  inquirySessionId?: never;
+  source: "kiosk_direct";
+};
+
 type PublicCheckInCreator = {
   ownerAccountId?: never;
   ownerPracticeId: string;
@@ -117,6 +125,7 @@ export type CreateSessionInput = {
 } & (
   | AccountSessionCreator
   | KioskSessionCreator
+  | KioskAccountSessionCreator
   | PublicCheckInCreator
   | DigitalRequestFollowUpCreator
 );
@@ -175,7 +184,7 @@ export async function createQuestionnaireSession(
     context === "patient" &&
     sessionKind === "patient_communication" &&
     Boolean(ownerPracticeId) &&
-    Boolean(createdByKioskDeviceId) &&
+    Boolean(createdByKioskDeviceId || ownerAccountId) &&
     hasExactKioskCheckInBlocks(selectedBlockIds);
   const isUnassignedPublicCheckIn = patientReference === null &&
     allowUnassignedPublicCheckIn &&

@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { PracticeRole } from "@prisma/client";
+import { KioskMode, PracticeRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { SESSION_COOKIE, SESSION_DURATION_MS } from "@/lib/auth";
+import { KIOSK_ACCOUNT_COOKIE, SESSION_COOKIE, SESSION_DURATION_MS } from "@/lib/auth";
 import { verifyPassword } from "@/lib/password";
 
 type LoginMembership = {
   practice_id: string;
   role: PracticeRole;
+  kiosk_mode: KioskMode | null;
   created_at: Date;
 };
 
-function getLoginRedirectPath(account: {
+type LoginDestination = {
+  redirectTo: "/dashboard" | "/questionnaires" | "/questionnaire-kiosk/direct" | "/questionnaire-kiosk/internal";
+  kioskMode: KioskMode | null;
+};
+
+function getLoginDestination(account: {
+  is_admin?: boolean;
   default_practice_id?: string | null;
   memberships?: LoginMembership[];
-}): "/dashboard" | "/questionnaires" {
+}): LoginDestination | null {
+  if (account.is_admin) return { redirectTo: "/dashboard", kioskMode: null };
   const memberships = Array.isArray(account.memberships)
     ? account.memberships
     : [];
-  if (memberships.length === 0) return "/dashboard";
+  if (memberships.length === 0) {
+    return { redirectTo: "/dashboard", kioskMode: null };
+  }
 
   let currentMembership =
     account.default_practice_id != null
@@ -34,9 +44,22 @@ function getLoginRedirectPath(account: {
       null;
   }
 
-  return currentMembership?.role === PracticeRole.INBOX_ONLY
-    ? "/questionnaires"
-    : "/dashboard";
+  if (currentMembership?.role === PracticeRole.KIOSK) {
+    if (currentMembership.kiosk_mode === KioskMode.QUESTIONNAIRES) {
+      return { redirectTo: "/questionnaire-kiosk/direct", kioskMode: KioskMode.QUESTIONNAIRES };
+    }
+    if (currentMembership.kiosk_mode === KioskMode.INTERNAL_DOCUMENTATION) {
+      return { redirectTo: "/questionnaire-kiosk/internal", kioskMode: KioskMode.INTERNAL_DOCUMENTATION };
+    }
+    return null;
+  }
+
+  return {
+    redirectTo: currentMembership?.role === PracticeRole.INBOX_ONLY
+      ? "/questionnaires"
+      : "/dashboard",
+    kioskMode: null,
+  };
 }
 
 /**
@@ -76,6 +99,7 @@ export async function POST(req: NextRequest) {
       select: {
         id: true,
         email: true,
+        is_admin: true,
         is_approved: true,
         password_hash: true,
         default_practice_id: true,
@@ -83,6 +107,7 @@ export async function POST(req: NextRequest) {
           select: {
             practice_id: true,
             role: true,
+            kiosk_mode: true,
             created_at: true,
           },
         },
@@ -108,6 +133,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const destination = getLoginDestination(account);
+    if (!destination) {
+      return NextResponse.json(
+        { ok: false, error: "Für diesen Kiosk-Zugang ist kein Startbereich festgelegt." },
+        { status: 403 },
+      );
+    }
+
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
@@ -122,7 +155,7 @@ export async function POST(req: NextRequest) {
         email: account.email,
         is_approved: account.is_approved,
       },
-      redirectTo: getLoginRedirectPath(account),
+      redirectTo: destination.redirectTo,
     });
 
     response.cookies.set(SESSION_COOKIE, token, {
@@ -130,6 +163,15 @@ export async function POST(req: NextRequest) {
       sameSite: "lax",
       path: "/",
       maxAge: Math.floor(SESSION_DURATION_MS / 1000),
+      secure: process.env.NODE_ENV === "production",
+    });
+    response.cookies.set(KIOSK_ACCOUNT_COOKIE, destination.kioskMode ?? "", {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: destination.kioskMode
+        ? Math.floor(SESSION_DURATION_MS / 1000)
+        : 0,
       secure: process.env.NODE_ENV === "production",
     });
 

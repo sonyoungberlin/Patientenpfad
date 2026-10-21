@@ -123,6 +123,27 @@ describe("POST questionnaire kiosk handoff", () => {
     expect(JSON.stringify(responseBody)).not.toContain("secret");
   });
 
+  it("erstellt einen Folgefragebogen für Account-Kiosk-Check-ins ohne Geräte-ID", async () => {
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      ...parent,
+      owner_account_id: "kiosk-account",
+      created_by_kiosk_device_id: null,
+    });
+    const response = await POST(request({
+      action: "start_questionnaire",
+      selected_block_ids: ["KONTAKT"],
+    }), context);
+
+    expect(response.status).toBe(200);
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      ownerAccountId: "kiosk-account",
+      ownerPracticeId: "practice-1",
+      source: "kiosk_direct",
+      databaseClient: expect.any(Object),
+    }));
+    expect(createSession.mock.calls[0][0]).not.toHaveProperty("createdByKioskDeviceId");
+  });
+
   it("übernimmt mehrere ausgewählte Blöcke unverändert", async () => {
     const response = await POST(request({
       action: "start_questionnaire",

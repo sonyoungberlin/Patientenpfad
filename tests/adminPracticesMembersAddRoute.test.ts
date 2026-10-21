@@ -223,6 +223,31 @@ describe("POST /api/admin/practices/[id]/members — Happy Path", () => {
     },
   );
 
+  it("Plattform-Admin weist KIOSK mit festem Startbereich zu", async () => {
+    pm.practiceMembership.create.mockResolvedValue({
+      id: "m-kiosk",
+      account_id: "acc-2",
+      role: "KIOSK",
+      kiosk_mode: "QUESTIONNAIRES",
+    });
+    const res = await POST(
+      jsonReq("p-1", {
+        email: "neu@example.com",
+        role: "KIOSK",
+        kiosk_mode: "QUESTIONNAIRES",
+      }),
+      ctx("p-1"),
+    );
+
+    expect(res.status).toBe(201);
+    expect(pm.practiceMembership.create.mock.calls[0][0].data).toEqual({
+      account_id: "acc-2",
+      practice_id: "p-1",
+      role: "KIOSK",
+      kiosk_mode: "QUESTIONNAIRES",
+    });
+  });
+
   it("ignoriert practice_id aus Body (URL-Segment ist Quelle)", async () => {
     pm.practiceMembership.create.mockResolvedValue({
       id: "m-1",

@@ -3,7 +3,7 @@ import { POST as createInternal } from "@/app/api/questionnaire-kiosk/internal/r
 import { POST as submitInternal } from "@/app/api/questionnaire-kiosk/internal/[id]/route";
 
 jest.mock("@/lib/questionnaireKiosk/auth", () => ({
-  requireUnlockedQuestionnaireKioskDevice: jest.fn(),
+  requireQuestionnaireKioskAccess: jest.fn(),
   hasQuestionnaireKioskCapability: jest.fn(),
 }));
 jest.mock("@/lib/questionnaire/createSession", () => ({
@@ -25,14 +25,14 @@ import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { prisma } from "@/lib/prisma";
 import {
   hasQuestionnaireKioskCapability,
-  requireUnlockedQuestionnaireKioskDevice,
+  requireQuestionnaireKioskAccess,
 } from "@/lib/questionnaireKiosk/auth";
 import {
   buildInternalDocumentationFrozenBlocks,
   buildInternalWorkflowBlocks,
 } from "@/lib/questionnaire/internalWorkflowRegistry";
 
-const guard = requireUnlockedQuestionnaireKioskDevice as jest.Mock;
+const guard = requireQuestionnaireKioskAccess as jest.Mock;
 const hasCapability = hasQuestionnaireKioskCapability as jest.Mock;
 const createSession = createQuestionnaireSession as jest.Mock;
 const db = prisma as unknown as {
@@ -62,7 +62,7 @@ function request(path: string, body: unknown) {
 
 describe("interne Kiosk-Dokumentation", () => {
   beforeEach(() => {
-    guard.mockReset().mockResolvedValue({ device, error: null });
+    guard.mockReset().mockResolvedValue({ access: { kind: "device", ...device }, error: null });
     hasCapability.mockReset().mockReturnValue(true);
     createSession.mockReset().mockResolvedValue({
       sessionId: "session-1",
@@ -124,6 +124,35 @@ describe("interne Kiosk-Dokumentation", () => {
     const input = createSession.mock.calls[0][0];
     expect(input).not.toHaveProperty("patientCopyReturnEmail");
     expect(input).not.toHaveProperty("practiceConfirmations");
+  });
+
+  it("erstellt interne Dokumentation im Account- statt Geräte-Scope", async () => {
+    guard.mockResolvedValue({
+      access: {
+        kind: "account",
+        accountId: "account-1",
+        practiceId: "practice-1",
+        kioskMode: "INTERNAL_DOCUMENTATION",
+      },
+      error: null,
+    });
+    const response = await createInternal(request("/api/questionnaire-kiosk/internal", {
+      selectedBlockIds: ["practice_block_care_plan"],
+      blockLayout: [{ blockId: "practice_block_care_plan", section: 3, order: 0 }],
+      patientReference: "81426",
+      documentTitleOption: "bescheinigung",
+      outputFormat: "formell",
+    }));
+
+    expect(response.status).toBe(200);
+    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
+      ownerAccountId: "account-1",
+      ownerPracticeId: "practice-1",
+      source: "kiosk_direct",
+      sessionKind: "internal_documentation",
+    }));
+    expect(createSession.mock.calls[0][0]).not.toHaveProperty("createdByKioskDeviceId");
+    guard.mockResolvedValue({ access: { kind: "device", ...device }, error: null });
   });
 
   it.each([
@@ -309,6 +338,51 @@ describe("interne Kiosk-Dokumentation", () => {
         status: "completed",
         submitted_at: expect.any(Date),
       }),
+    });
+  });
+
+  it("schließt Account-Kiosk-Dokumentation im Account- und Praxis-Scope ab", async () => {
+    guard.mockResolvedValue({
+      access: {
+        kind: "account",
+        accountId: "account-1",
+        practiceId: "practice-1",
+        kioskMode: "INTERNAL_DOCUMENTATION",
+      },
+      error: null,
+    });
+    db.patientQuestionnaireSession.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "kiosk_direct",
+      owner_account_id: "account-1",
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      deduplicated_questions: [{ id: "note", type: "textarea" }],
+      frozen_blocks: [{
+        id: "CARE",
+        title: "Versorgungsplan",
+        questions: [{ id: "note", type: "textarea", label: "Notiz" }],
+        conditionalRules: [],
+      }],
+    });
+
+    const response = await submitInternal(
+      request("/api/questionnaire-kiosk/internal/session-1", { answers: { note: "Inhalt" } }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(db.patientQuestionnaireSession.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: "session-1",
+        owner_practice_id: "practice-1",
+        owner_account_id: "account-1",
+        created_by_kiosk_device_id: null,
+        source: "kiosk_direct",
+      }),
+      data: expect.objectContaining({ status: "completed" }),
     });
   });
 

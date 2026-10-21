@@ -9,12 +9,13 @@
  * Vergabe durch Praxis-Inhaber (OWNER/ADMIN):
  *   - USER (Mitarbeiter)  → erlaubt
  *   - INBOX_ONLY (Mini)   → erlaubt
+ *   - KIOSK               → erlaubt, aber mit verpflichtendem Startbereich
  *   - OWNER               → explizit verworfen
  *   - ADMIN               → explizit verworfen (nur noch per Plattform-Admin)
  *   - email: trim + lowercase, pragmatische RFC-Form-Prüfung, Pflichtfeld.
  */
 
-import { PracticeRole } from "@prisma/client";
+import { KioskMode, PracticeRole } from "@prisma/client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 200;
@@ -26,12 +27,17 @@ export type AddMemberFieldErrors = Partial<{
 
 export type ValidatedAddMemberInput = {
   email: string;
-  role: typeof PracticeRole.USER | typeof PracticeRole.INBOX_ONLY;
+  role:
+    | typeof PracticeRole.USER
+    | typeof PracticeRole.INBOX_ONLY
+    | typeof PracticeRole.KIOSK;
+  kiosk_mode: KioskMode | null;
 };
 
 export type RawAddMemberInput = {
   email?: unknown;
   role?: unknown;
+  kiosk_mode?: unknown;
 };
 
 export type ValidateAddMemberResult =
@@ -58,6 +64,7 @@ export function validateAddMemberInput(
 
   // --- role ---
   let role: ValidatedAddMemberInput["role"] | null = null;
+  let kioskMode: KioskMode | null = null;
   const rawRole = typeof raw.role === "string" ? raw.role.trim() : "";
   if (!rawRole) {
     fieldErrors.role = "Rolle ist erforderlich.";
@@ -69,6 +76,15 @@ export function validateAddMemberInput(
     role = PracticeRole.USER;
   } else if (rawRole === PracticeRole.INBOX_ONLY) {
     role = PracticeRole.INBOX_ONLY;
+  } else if (rawRole === PracticeRole.KIOSK) {
+    role = PracticeRole.KIOSK;
+    if (raw.kiosk_mode === KioskMode.QUESTIONNAIRES) {
+      kioskMode = KioskMode.QUESTIONNAIRES;
+    } else if (raw.kiosk_mode === KioskMode.INTERNAL_DOCUMENTATION) {
+      kioskMode = KioskMode.INTERNAL_DOCUMENTATION;
+    } else {
+      fieldErrors.role = "Für die KIOSK-Rolle ist ein Startbereich erforderlich.";
+    }
   } else {
     fieldErrors.role = "Ungültige Rolle.";
   }
@@ -76,7 +92,10 @@ export function validateAddMemberInput(
   if (Object.keys(fieldErrors).length > 0 || !role) {
     return { ok: false, fieldErrors };
   }
-  return { ok: true, value: { email, role } };
+  return {
+    ok: true,
+    value: { email, role, kiosk_mode: kioskMode },
+  };
 }
 
 /**

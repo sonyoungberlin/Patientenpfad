@@ -182,6 +182,14 @@ export async function PATCH(
               kiosk_handoff_status: "waiting",
             },
             {
+              source: "kiosk_direct",
+              session_kind: "patient_communication",
+              owner_account_id: { not: null },
+              created_by_kiosk_device_id: null,
+              selected_block_ids: { equals: ["KONTAKT", "CHECK_IN"] },
+              kiosk_handoff_status: "waiting",
+            },
+            {
               source: "public_check_in",
               session_kind: "patient_communication",
               created_by_kiosk_device_id: null,

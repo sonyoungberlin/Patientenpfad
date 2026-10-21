@@ -11,11 +11,13 @@ export function hasExactKioskCheckInBlocks(value: unknown): boolean {
 export function isKioskCheckInSession(session: {
   source: string;
   session_kind: string;
+  owner_account_id?: string | null;
   created_by_kiosk_device_id: string | null;
   selected_block_ids: unknown;
 }): boolean {
   return session.source === "kiosk_direct" &&
     session.session_kind === "patient_communication" &&
-    session.created_by_kiosk_device_id !== null &&
+    (session.created_by_kiosk_device_id !== null ||
+      session.owner_account_id != null) &&
     hasExactKioskCheckInBlocks(session.selected_block_ids);
 }

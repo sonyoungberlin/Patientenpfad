@@ -2,16 +2,17 @@ import { NextRequest } from "next/server";
 import { GET } from "@/app/api/questionnaire-kiosk/check-in/[id]/handoff/route";
 
 jest.mock("@/lib/questionnaireKiosk/auth", () => ({
-  requireQuestionnaireKioskDevice: jest.fn(),
+  requireQuestionnaireKioskAccess: jest.fn(),
+  hasQuestionnaireKioskCapability: jest.fn(() => true),
 }));
 jest.mock("@/lib/prisma", () => ({
   prisma: { patientQuestionnaireSession: { findFirst: jest.fn() } },
 }));
 
 import { prisma } from "@/lib/prisma";
-import { requireQuestionnaireKioskDevice } from "@/lib/questionnaireKiosk/auth";
+import { requireQuestionnaireKioskAccess } from "@/lib/questionnaireKiosk/auth";
 
-const auth = requireQuestionnaireKioskDevice as jest.Mock;
+const auth = requireQuestionnaireKioskAccess as jest.Mock;
 const findFirst = prisma.patientQuestionnaireSession.findFirst as jest.Mock;
 const request = new NextRequest("http://localhost/api/questionnaire-kiosk/check-in/check-in-1/handoff");
 const context = { params: Promise.resolve({ id: "check-in-1" }) };
@@ -22,12 +23,13 @@ const usableFollowUp = {
   deleted_at: null,
   owner_practice_id: "practice-1",
   created_by_kiosk_device_id: "device-1",
+  owner_account_id: null,
 };
 
 describe("GET kiosk check-in handoff", () => {
   beforeEach(() => {
     auth.mockReset().mockResolvedValue({
-      device: { deviceId: "device-1", practiceId: "practice-1", deviceName: "Kiosk" },
+      access: { kind: "device", deviceId: "device-1", practiceId: "practice-1", deviceName: "Kiosk" },
       error: null,
     });
     findFirst.mockReset();
@@ -48,7 +50,7 @@ describe("GET kiosk check-in handoff", () => {
 
   it("verweigert Polling ohne registriertes Kioskgerät", async () => {
     auth.mockResolvedValue({
-      device: null,
+      access: null,
       error: new Response(JSON.stringify({ ok: false }), { status: 401 }),
     });
     const response = await GET(request, context);
@@ -63,6 +65,23 @@ describe("GET kiosk check-in handoff", () => {
     });
     const response = await GET(request, context);
     expect(await response.json()).toEqual({ ok: true, status: "waiting" });
+  });
+
+  it("pollt den Account-Kiosk im Account- und Praxis-Scope", async () => {
+    auth.mockResolvedValue({
+      access: { kind: "account", accountId: "account-1", practiceId: "practice-1", kioskMode: "QUESTIONNAIRES" },
+      error: null,
+    });
+    findFirst.mockResolvedValue({ kiosk_handoff_status: "waiting", kiosk_follow_up_session: null });
+    const response = await GET(request, context);
+    expect(response.status).toBe(200);
+    expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        owner_account_id: "account-1",
+        owner_practice_id: "practice-1",
+        created_by_kiosk_device_id: null,
+      }),
+    }));
   });
 
   it("liefert bei Reload den Zustand closed unverändert", async () => {

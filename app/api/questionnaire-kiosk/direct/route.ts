@@ -8,14 +8,20 @@ import {
 } from "@/lib/questionnaire/confirmation";
 import { createQuestionnaireSession } from "@/lib/questionnaire/createSession";
 import { isBlockEnReady, normalizeQuestionnaireLanguage } from "@/lib/questionnaire/i18n";
-import { requireUnlockedQuestionnaireKioskDevice } from "@/lib/questionnaireKiosk/auth";
+import {
+  hasQuestionnaireKioskCapability,
+  requireQuestionnaireKioskAccess,
+} from "@/lib/questionnaireKiosk/auth";
 import { appendSelfCheckInQrFlag } from "@/lib/selfCheckInQr";
 
 const FORBIDDEN_FIELDS = ["practice_id", "owner_account_id", "created_by_kiosk_device_id", "inquiry_session_id", "mode", "message", "link"];
 
 export async function POST(req: NextRequest) {
-  const { device, error } = await requireUnlockedQuestionnaireKioskDevice(req);
+  const { access, error } = await requireQuestionnaireKioskAccess(req, true);
   if (error) return error;
+  if (!hasQuestionnaireKioskCapability(access, "questionnaires")) {
+    return NextResponse.json({ ok: false, error: "Patientenfragebögen sind für diesen Kiosk-Zugang nicht freigeschaltet." }, { status: 403 });
+  }
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ ok: false, error: "Ungültiges JSON." }, { status: 400 });
   if (FORBIDDEN_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(body, field))) {
@@ -36,7 +42,7 @@ export async function POST(req: NextRequest) {
   const selectedConfirmationIds = parseSelectedPracticeConfirmationIds(body.selected_confirmation_ids);
   if (!selectedConfirmationIds) return NextResponse.json({ ok: false, error: "Ungültige Bestätigungs-Auswahl." }, { status: 400 });
   const practice = await prisma.practice.findUnique({
-    where: { id: device.practiceId },
+    where: { id: access.practiceId },
     select: {
       questionnaire_confirmation_text_1: true,
       questionnaire_confirmation_text_2: true,
@@ -57,8 +63,10 @@ export async function POST(req: NextRequest) {
     selectedBlockIds,
     patientReference,
     patientLanguage,
-    ownerPracticeId: device.practiceId,
-    createdByKioskDeviceId: device.deviceId,
+    ownerPracticeId: access.practiceId,
+    ...(access.kind === "device"
+      ? { createdByKioskDeviceId: access.deviceId }
+      : { ownerAccountId: access.accountId }),
     source: "kiosk_direct",
     practiceConfirmations: confirmations,
     patientCopyReturnEmail: confirmations.some((slot) => slot.send_patient_copy) ? practice.legal_profile?.official_email ?? null : null,

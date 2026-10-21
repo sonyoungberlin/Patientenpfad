@@ -45,7 +45,7 @@ export async function POST(
     parent.kiosk_handoff_status !== "waiting" ||
     !parent.patient_reference ||
     !parent.owner_practice_id ||
-    !parent.created_by_kiosk_device_id
+    (!parent.created_by_kiosk_device_id && !parent.owner_account_id)
   ) {
     return NextResponse.json({ ok: false, error: "Check-in nicht verfügbar." }, { status: 404 });
   }
@@ -82,12 +82,15 @@ export async function POST(
 
   try {
     await prisma.$transaction(async (transaction) => {
+      const childCreator = parent.created_by_kiosk_device_id
+        ? { createdByKioskDeviceId: parent.created_by_kiosk_device_id }
+        : { ownerAccountId: parent.owner_account_id! };
       const child = await createQuestionnaireSession({
         selectedBlockIds,
         patientReference: parent.patient_reference,
         patientLanguage: parent.patient_language,
         ownerPracticeId: parent.owner_practice_id!,
-        createdByKioskDeviceId: parent.created_by_kiosk_device_id!,
+        ...childCreator,
         source: "kiosk_direct",
         origin: req.nextUrl.origin,
         databaseClient: transaction,

@@ -48,6 +48,7 @@ Die m:n-Beziehung zwischen Account und Practice mit Rolle.
 - `account_id` → `Account.id`, `onDelete: Cascade` (wenn der Login gelöscht wird, verschwindet die Mitgliedschaft; die Praxisdaten bleiben)
 - `practice_id` → `Practice.id`, `onDelete: Cascade`
 - `role` — Enum `PracticeRole`, siehe §3
+- `kiosk_mode` — optionaler Startbereich für die Rolle `KIOSK`; sonst `NULL`
 - `created_at`, `updated_at`
 - `@@unique([account_id, practice_id])` — pro Paar genau eine Rolle
 - `@@index([practice_id, role])`
@@ -83,15 +84,20 @@ Indexe `(owner_account_id, createdAt)` werden auf `(owner_practice_id, createdAt
 
 ---
 
-## 3. Rollenmodell (minimal)
+## 3. Praxisrollen
 
 ```
-enum PracticeRole { OWNER, ADMIN, USER }
+enum PracticeRole { OWNER, ADMIN, USER, INBOX_ONLY, KIOSK }
+enum KioskMode { QUESTIONNAIRES, INTERNAL_DOCUMENTATION }
 ```
 
 - **OWNER** — Praxis-Eigner:in. Mindestens **eine** OWNER-Rolle pro Practice ist Pflicht (Service-Layer-Constraint, ggf. später DB-CHECK). Darf alles, inkl. Practice umbenennen, OWNER-Rolle übertragen, Practice löschen.
 - **ADMIN** — Praxis-Admin. Verwaltet Memberships (außer OWNER-Entzug für sich selbst, wenn dadurch der letzte OWNER wegfiele) und Praxis-Einstellungen (später inkl. SMTP). Verwaltet Website-Formulare und Feature-spezifische Konfiguration.
 - **USER** — Arzt:in, MFA. Darf alle fachlichen Flows lesen/schreiben (Cases, Patientenfragebögen, Inquiry-Sessions) im Rahmen der Practice-Feature-Flags. Keine Membership- oder Praxis-Einstellungs-Rechte.
+- **INBOX_ONLY** — Mini-Zugang; auf den Fragebogen-Posteingang beschränkt.
+- **KIOSK** — normaler Account-Login mit ausschließlich einem pro Membership konfigurierten bestehenden Kiosk-Ablauf. `kiosk_mode` bestimmt Patientenfragebogen oder interne Dokumentation. Die Rolle verwendet keine Geräte-Registrierung, PIN oder Geräte-Cookie.
+
+Der bestehende Geräte-Kiosk mit Geräte-Cookie und PIN bleibt davon unabhängig bestehen. Beide Zugangswege verwenden dieselben Kiosk-Oberflächen und -Abläufe; die Geräteauthentifizierung wird nicht durch `KIOSK` ersetzt.
 
 **Kapselung:** Berechtigungen werden über Rollen-Sets abgefragt (`requirePracticeRole(req, ['OWNER','ADMIN'])`), niemals per String-Vergleich verstreut. So sind spätere Rollen ohne Refactor ergänzbar.
 

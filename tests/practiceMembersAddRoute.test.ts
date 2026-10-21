@@ -247,6 +247,41 @@ describe("POST /api/practice/members — Happy Path", () => {
     });
   });
 
+  it("OWNER weist KIOSK mit festem Startbereich zu", async () => {
+    getSessionAccountMock.mockResolvedValue(makeAccount("OWNER"));
+    pm.practiceMembership.create.mockResolvedValue({
+      id: "m-kiosk",
+      account_id: "acc-2",
+      role: "KIOSK",
+      kiosk_mode: "INTERNAL_DOCUMENTATION",
+    });
+    const res = await POST(
+      jsonReq({
+        email: "neu@example.com",
+        role: "KIOSK",
+        kiosk_mode: "INTERNAL_DOCUMENTATION",
+      }),
+    );
+
+    expect(res.status).toBe(201);
+    expect(await res.json()).toEqual({
+      ok: true,
+      membership: {
+        id: "m-kiosk",
+        account_id: "acc-2",
+        email: "neu@example.com",
+        role: "KIOSK",
+        kiosk_mode: "INTERNAL_DOCUMENTATION",
+      },
+    });
+    expect(pm.practiceMembership.create.mock.calls[0][0].data).toEqual({
+      account_id: "acc-2",
+      practice_id: "p-1",
+      role: "KIOSK",
+      kiosk_mode: "INTERNAL_DOCUMENTATION",
+    });
+  });
+
   it("ADMIN fügt USER hinzu (JSON, 201)", async () => {
     getSessionAccountMock.mockResolvedValue(makeAccount("ADMIN"));
     const res = await POST(

@@ -42,13 +42,22 @@ type KioskContext = {
   deviceId: string;
 };
 
+type KioskAccountContext = {
+  kind: "kiosk_account";
+  practiceId: string;
+  accountId: string;
+};
+
 type PracticeContext = {
   kind: "practice";
   practiceId: string;
   accountId: string;
 };
 
-export type InternalDocumentationContext = KioskContext | PracticeContext;
+export type InternalDocumentationContext =
+  | KioskContext
+  | KioskAccountContext
+  | PracticeContext;
 
 function validateHealthCheckAnswers(answers: Record<string, string>) {
   const followUp = answers.HEALTH_CHECK_FOLLOW_UP_REQUIRED ?? "";
@@ -179,7 +188,9 @@ export async function createInternalDocumentationSession(input: {
       : {
           ownerAccountId: input.context.accountId,
           ownerPracticeId: input.context.practiceId,
-          source: "practice_direct" as const,
+          source: input.context.kind === "kiosk_account"
+            ? "kiosk_direct" as const
+            : "practice_direct" as const,
         };
 
   let result;
@@ -227,6 +238,7 @@ export async function submitInternalDocumentationSession(input: {
       source: true,
       internal_workflow_id: true,
       owner_practice_id: true,
+      owner_account_id: true,
       created_by_kiosk_device_id: true,
       deleted_at: true,
       frozen_blocks: true,
@@ -240,7 +252,12 @@ export async function submitInternalDocumentationSession(input: {
     ? session?.source === "kiosk_direct" &&
       session.owner_practice_id === input.context.practiceId &&
       session.created_by_kiosk_device_id === input.context.deviceId
-    : session?.source === "practice_direct" &&
+    : input.context.kind === "kiosk_account"
+      ? session?.source === "kiosk_direct" &&
+        session.owner_practice_id === input.context.practiceId &&
+        session.owner_account_id === input.context.accountId &&
+        session.created_by_kiosk_device_id === null
+      : session?.source === "practice_direct" &&
       session.owner_practice_id === input.context.practiceId &&
       session.created_by_kiosk_device_id === null;
 
@@ -271,7 +288,7 @@ export async function submitInternalDocumentationSession(input: {
 
   const workflow = isNewBlockBased
     ? null
-    : input.context.kind === "kiosk"
+    : input.context.kind === "kiosk" || input.context.kind === "kiosk_account"
       ? resolveInternalWorkflow(session.internal_workflow_id)
       : getInternalWorkflow(session.internal_workflow_id);
   if (!isNewBlockBased && !workflow) {
@@ -362,9 +379,14 @@ export async function submitInternalDocumentationSession(input: {
       status: "pending",
       deleted_at: null,
       session_kind: "internal_documentation",
-      source: input.context.kind === "kiosk" ? "kiosk_direct" : "practice_direct",
+      source: input.context.kind === "kiosk" || input.context.kind === "kiosk_account"
+        ? "kiosk_direct"
+        : "practice_direct",
       owner_practice_id: input.context.practiceId,
       created_by_kiosk_device_id: deviceFilter,
+      ...(input.context.kind === "kiosk_account"
+        ? { owner_account_id: input.context.accountId }
+        : {}),
       internal_workflow_id: session.internal_workflow_id,
     },
     data: {
@@ -380,7 +402,7 @@ export async function submitInternalDocumentationSession(input: {
     );
   }
 
-  if (input.context.kind !== "kiosk") return null;
+  if (input.context.kind === "practice") return null;
 
   const detail = buildQuestionnaireInboxDetail({
     patient_reference: session.patient_reference,

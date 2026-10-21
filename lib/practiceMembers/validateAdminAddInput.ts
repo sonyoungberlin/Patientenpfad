@@ -11,10 +11,10 @@
  *
  * Scope:
  *   - email: trim + lowercase, pragmatische RFC-Form-Prüfung, Pflichtfeld.
- *   - role: muss exakt "OWNER", "ADMIN" oder "USER" sein.
+ *   - role: bestehende Praxisrollen; KIOSK benötigt einen Startbereich.
  */
 
-import { PracticeRole } from "@prisma/client";
+import { KioskMode, PracticeRole } from "@prisma/client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 200;
@@ -27,11 +27,13 @@ export type AdminAddMemberFieldErrors = Partial<{
 export type ValidatedAdminAddMemberInput = {
   email: string;
   role: PracticeRole;
+  kiosk_mode: KioskMode | null;
 };
 
 export type RawAdminAddMemberInput = {
   email?: unknown;
   role?: unknown;
+  kiosk_mode?: unknown;
 };
 
 export type ValidateAdminAddMemberResult =
@@ -58,6 +60,7 @@ export function validateAdminAddMemberInput(
 
   // --- role ---
   let role: PracticeRole | null = null;
+  let kioskMode: KioskMode | null = null;
   const rawRole = typeof raw.role === "string" ? raw.role.trim() : "";
   if (!rawRole) {
     fieldErrors.role = "Rolle ist erforderlich.";
@@ -69,6 +72,15 @@ export function validateAdminAddMemberInput(
     role = PracticeRole.INBOX_ONLY;
   } else if (rawRole === PracticeRole.USER) {
     role = PracticeRole.USER;
+  } else if (rawRole === PracticeRole.KIOSK) {
+    role = PracticeRole.KIOSK;
+    if (raw.kiosk_mode === KioskMode.QUESTIONNAIRES) {
+      kioskMode = KioskMode.QUESTIONNAIRES;
+    } else if (raw.kiosk_mode === KioskMode.INTERNAL_DOCUMENTATION) {
+      kioskMode = KioskMode.INTERNAL_DOCUMENTATION;
+    } else {
+      fieldErrors.role = "Für die KIOSK-Rolle ist ein Startbereich erforderlich.";
+    }
   } else {
     fieldErrors.role = "Ungültige Rolle.";
   }
@@ -76,7 +88,10 @@ export function validateAdminAddMemberInput(
   if (Object.keys(fieldErrors).length > 0 || !role) {
     return { ok: false, fieldErrors };
   }
-  return { ok: true, value: { email, role } };
+  return {
+    ok: true,
+    value: { email, role, kiosk_mode: kioskMode },
+  };
 }
 
 /**

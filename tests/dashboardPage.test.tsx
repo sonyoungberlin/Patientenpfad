@@ -55,7 +55,6 @@ function makeAccount(
   role: string,
   patientCommunicationEnabled: boolean,
   officeCasesEnabled = false,
-  workflowEnabled = false,
 ) {
   return {
     id: "acc-1",
@@ -66,7 +65,7 @@ function makeAccount(
     patient_communication_enabled: patientCommunicationEnabled,
     website_forms_enabled: false,
     office_cases_enabled: officeCasesEnabled,
-    arbeitsprozesse_enabled: workflowEnabled,
+    arbeitsprozesse_enabled: false,
     current_practice: {
       id: "p-1",
       slug: "p-1",
@@ -76,7 +75,7 @@ function makeAccount(
       patient_communication_enabled: patientCommunicationEnabled,
       website_forms_enabled: false,
       office_cases_enabled: officeCasesEnabled,
-      arbeitsprozesse_enabled: workflowEnabled,
+      arbeitsprozesse_enabled: false,
     },
     memberships: [{ practice_id: "p-1", role }],
   };
@@ -93,7 +92,7 @@ describe("Dashboard INBOX_ONLY", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).toContain("Fragebögen");
-    expect(html).toContain("Digitale Anfragen");
+    expect(html).not.toContain("Digitale Anfragen");
     expect(html).not.toContain("Patientenkommunikation");
     expect(html).not.toContain("Patientenfälle");
     expect(redirectMock).not.toHaveBeenCalled();
@@ -122,11 +121,11 @@ describe("Dashboard — Kachel 'Digitale Anfragen'", () => {
     expect(html).not.toContain("data-testid=\"digital-requests-tile\"");
   });
 
-  it("INBOX_ONLY sieht den Digital-Eingang", async () => {
+  it("INBOX_ONLY sieht keinen zusätzlichen Digital-Eingang", async () => {
     getCookies.mockResolvedValue(inboxOnlyAccount());
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).toContain('data-testid="inbox-tile"');
-    expect(html).toContain('href="/digital-requests">Digitale Anfragen</a>');
+    expect(html).not.toContain('href="/digital-requests">Digitale Anfragen</a>');
   });
 });
 
@@ -166,40 +165,5 @@ describe("Dashboard — Kachel 'Officepfad'", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
     expect(html).not.toContain('data-testid="office-path-tile"');
-  });
-});
-
-describe("Dashboard — Kachel 'Arbeitsprozesse'", () => {
-  beforeEach(() => {
-    redirectMock.mockClear();
-    getCookies.mockReset();
-  });
-
-  it("zeigt die Arbeitsprozesse-Kachel mit freigeschaltetem Feature", async () => {
-    getCookies.mockResolvedValue(makeAccount("OWNER", true, false, true));
-    const html = renderToStaticMarkup(await DashboardPage());
-
-    expect(html).toContain('data-testid="workflow-path-tile"');
-    expect(html).toContain('<a href="/workflow-cases">Arbeitsprozesse</a>');
-    expect(html).toContain('<a href="/workflow-cases/new">Neue Sitzung</a>');
-  });
-
-  it("blendet die Arbeitsprozesse-Kachel ohne Feature aus", async () => {
-    getCookies.mockResolvedValue(makeAccount("OWNER", true, false, false));
-    const html = renderToStaticMarkup(await DashboardPage());
-
-    expect(html).not.toContain('data-testid="workflow-path-tile"');
-    expect(html).not.toContain('href="/workflow-cases">');
-  });
-
-  it("gibt INBOX_ONLY trotz Feature keinen Arbeitsprozesszugriff", async () => {
-    const account = inboxOnlyAccount();
-    account.arbeitsprozesse_enabled = true;
-    account.current_practice.arbeitsprozesse_enabled = true;
-    getCookies.mockResolvedValue(account);
-    const html = renderToStaticMarkup(await DashboardPage());
-
-    expect(html).not.toContain('data-testid="workflow-path-tile"');
-    expect(html).not.toContain('href="/workflow-cases">');
   });
 });

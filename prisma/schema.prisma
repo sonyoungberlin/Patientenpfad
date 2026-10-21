@@ -25,6 +25,12 @@ enum PracticeRole {
   ADMIN
   USER
   INBOX_ONLY
+  KIOSK
+}
+
+enum KioskMode {
+  QUESTIONNAIRES
+  INTERNAL_DOCUMENTATION
 }
 
 enum QuestionnaireAutoExportMode {
@@ -997,6 +1003,7 @@ model PracticeMembership {
   practice    Practice @relation(fields: [practice_id], references: [id], onDelete: Cascade)
 
   role PracticeRole
+  kiosk_mode KioskMode?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

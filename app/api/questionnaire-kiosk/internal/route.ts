@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUnlockedQuestionnaireKioskDevice, hasQuestionnaireKioskCapability } from "@/lib/questionnaireKiosk/auth";
+import {
+  hasQuestionnaireKioskCapability,
+  requireQuestionnaireKioskAccess,
+} from "@/lib/questionnaireKiosk/auth";
 import {
   createInternalDocumentationSession,
   InternalDocumentationError,
 } from "@/lib/questionnaire/internalDocumentationService";
 
 export async function POST(req: NextRequest) {
-  const { device, error } = await requireUnlockedQuestionnaireKioskDevice(req);
+  const { access, error } = await requireQuestionnaireKioskAccess(req, true);
   if (error) return error;
-  if (!hasQuestionnaireKioskCapability(device, "internal_documentation")) return NextResponse.json({ ok: false, error: "Interne Dokumentation ist auf diesem Gerät nicht freigeschaltet." }, { status: 403 });
+  if (!hasQuestionnaireKioskCapability(access, "internal_documentation")) return NextResponse.json({ ok: false, error: "Interne Dokumentation ist für diesen Kiosk-Zugang nicht freigeschaltet." }, { status: 403 });
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
   if (body && (Object.prototype.hasOwnProperty.call(body, "workflow_id") || Object.prototype.hasOwnProperty.call(body, "patient_reference"))) {
     return NextResponse.json({ ok: false, error: "Legacy-Create-Felder werden nicht mehr unterstützt." }, { status: 400 });
@@ -27,11 +30,17 @@ export async function POST(req: NextRequest) {
       customDocumentTitle: body?.customDocumentTitle,
       outputFormat: body?.outputFormat,
       origin,
-      context: {
-        kind: "kiosk" as const,
-        practiceId: device.practiceId,
-        deviceId: device.deviceId,
-      },
+      context: access.kind === "device"
+        ? {
+            kind: "kiosk" as const,
+            practiceId: access.practiceId,
+            deviceId: access.deviceId,
+          }
+        : {
+            kind: "kiosk_account" as const,
+            practiceId: access.practiceId,
+            accountId: access.accountId,
+          },
     };
     const result = await createInternalDocumentationSession(createInput);
     return NextResponse.json({

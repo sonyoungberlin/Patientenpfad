@@ -62,6 +62,28 @@ describe("validateAddMemberInput", () => {
     if (r.ok) expect(r.value.role).toBe("USER");
   });
 
+  it.each([
+    ["QUESTIONNAIRES", "QUESTIONNAIRES"],
+    ["INTERNAL_DOCUMENTATION", "INTERNAL_DOCUMENTATION"],
+  ])("akzeptiert KIOSK mit dem Startbereich %s", (mode, expectedMode) => {
+    const r = validateAddMemberInput({
+      email: "kiosk@example.com",
+      role: "KIOSK",
+      kiosk_mode: mode,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.role).toBe("KIOSK");
+      expect(r.value.kiosk_mode).toBe(expectedMode);
+    }
+  });
+
+  it("verwirft KIOSK ohne gültigen Startbereich", () => {
+    const r = validateAddMemberInput({ email: "kiosk@example.com", role: "KIOSK" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.role).toContain("Startbereich");
+  });
+
   it("verwirft ADMIN explizit mit dedizierter Meldung", () => {
     const r = validateAddMemberInput({ email: "x@y.de", role: "ADMIN" });
     expect(r.ok).toBe(false);

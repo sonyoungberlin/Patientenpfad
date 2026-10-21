@@ -247,6 +247,7 @@ describe("POST /api/auth/login", () => {
       select: {
         id: true,
         email: true,
+        is_admin: true,
         is_approved: true,
         password_hash: true,
         default_practice_id: true,
@@ -254,6 +255,7 @@ describe("POST /api/auth/login", () => {
           select: {
             practice_id: true,
             role: true,
+            kiosk_mode: true,
             created_at: true,
           },
         },
@@ -279,6 +281,7 @@ describe("POST /api/auth/login", () => {
         },
       ],
     });
+
     pm.session.create.mockResolvedValue({});
 
     const req = new NextRequest("http://localhost/api/auth/login", {
@@ -292,6 +295,68 @@ describe("POST /api/auth/login", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
     expect(json.redirectTo).toBe("/questionnaires");
+  });
+
+  it.each([
+    ["QUESTIONNAIRES", "/questionnaire-kiosk/direct"],
+    ["INTERNAL_DOCUMENTATION", "/questionnaire-kiosk/internal"],
+  ])("startet KIOSK-Benutzer im konfigurierten Bereich %s", async (mode, redirectTo) => {
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-kiosk",
+      email: "kiosk@example.com",
+      is_admin: false,
+      is_approved: true,
+      password_hash: TEST_PASSWORD_HASH,
+      default_practice_id: "p-1",
+      memberships: [{
+        practice_id: "p-1",
+        role: "KIOSK",
+        kiosk_mode: mode,
+        created_at: new Date("2025-01-01T00:00:00.000Z"),
+      }],
+    });
+    pm.session.create.mockResolvedValue({});
+
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "kiosk@example.com", password: TEST_PASSWORD }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.redirectTo).toBe(redirectTo);
+    expect(res.headers.get("set-cookie")).toContain(`pp_kiosk_account=${mode}`);
+    expect(res.headers.get("set-cookie")).toContain("pp_session=");
+  });
+
+  it("lässt Plattform-Admins beim bestehenden Dashboard-Start", async () => {
+    pm.account.findUnique.mockResolvedValue({
+      id: "acc-admin",
+      email: "admin@example.com",
+      is_admin: true,
+      is_approved: true,
+      password_hash: TEST_PASSWORD_HASH,
+      default_practice_id: "p-1",
+      memberships: [{
+        practice_id: "p-1",
+        role: "KIOSK",
+        kiosk_mode: "QUESTIONNAIRES",
+        created_at: new Date("2025-01-01T00:00:00.000Z"),
+      }],
+    });
+    pm.session.create.mockResolvedValue({});
+
+    const req = new NextRequest("http://localhost/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "admin@example.com", password: TEST_PASSWORD }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await loginHandler(req);
+
+    expect((await res.json()).redirectTo).toBe("/dashboard");
+    expect(res.headers.get("set-cookie")).not.toContain("pp_kiosk_account=QUESTIONNAIRES");
   });
 
   it("setzt httpOnly-Cookie im Response", async () => {
@@ -444,6 +509,8 @@ describe("POST /api/auth/logout", () => {
     });
     const setCookie = res.headers.get("set-cookie");
     expect(setCookie).toContain("Max-Age=0");
+    expect(setCookie).toContain("pp_kiosk_account=");
+    expect(setCookie).not.toContain("pp_questionnaire_kiosk_device=");
   });
 
   it("funktioniert auch ohne Cookie (kein Fehler)", async () => {

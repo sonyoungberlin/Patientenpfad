@@ -67,6 +67,10 @@ async function readRawInput(
         typeof fd.get("role") === "string"
           ? (fd.get("role") as string)
           : undefined,
+      kiosk_mode:
+        typeof fd.get("kiosk_mode") === "string"
+          ? (fd.get("kiosk_mode") as string)
+          : undefined,
     };
   }
   try {
@@ -166,8 +170,9 @@ export async function POST(
         account_id: target.id,
         practice_id: practiceId,
         role: result.value.role,
+        ...(result.value.kiosk_mode ? { kiosk_mode: result.value.kiosk_mode } : {}),
       },
-      select: { id: true, account_id: true, role: true },
+      select: { id: true, account_id: true, role: true, kiosk_mode: true },
     });
 
     if (formMode) {
@@ -181,6 +186,7 @@ export async function POST(
           account_id: created.account_id,
           email: target.email,
           role: created.role,
+          kiosk_mode: created.kiosk_mode,
         },
       },
       { status: 201 },

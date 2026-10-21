@@ -17,7 +17,7 @@ function account(role: PracticeRole | null, hasPractice = true) {
       arbeitsprozesse_enabled: false,
     } : null,
     memberships: role
-      ? [{ practice_id: "practice-1", role }]
+      ? [{ practice_id: "practice-1", role, kiosk_mode: null }]
       : [],
   };
 }

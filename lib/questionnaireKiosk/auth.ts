@@ -1,7 +1,15 @@
 import { createHash, randomBytes } from "crypto";
+import { KioskMode } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  getCurrentKioskMode,
+  getKioskSessionAccount,
+  getKioskSessionAccountFromCookies,
+  getSessionAccount,
+  getSessionAccountFromCookies,
+} from "@/lib/auth";
 
 export const KIOSK_DEVICE_COOKIE = "pp_questionnaire_kiosk_device";
 export const KIOSK_UNLOCK_COOKIE = "pp_questionnaire_kiosk_unlock";
@@ -16,10 +24,26 @@ export type QuestionnaireKioskIdentity = {
 
 export type QuestionnaireKioskCapability = "questionnaires" | "internal_documentation";
 
+export type QuestionnaireKioskAccess =
+  | (QuestionnaireKioskIdentity & { kind: "device" })
+  | {
+      kind: "account";
+      accountId: string;
+      practiceId: string;
+      kioskMode: KioskMode;
+    };
+
 export function hasQuestionnaireKioskCapability(
-  identity: QuestionnaireKioskIdentity,
+  identity: QuestionnaireKioskIdentity | QuestionnaireKioskAccess,
   capability: QuestionnaireKioskCapability,
 ): boolean {
+  if ("kind" in identity && identity.kind === "account") {
+    return (
+      (capability === "questionnaires" && identity.kioskMode === KioskMode.QUESTIONNAIRES) ||
+      (capability === "internal_documentation" &&
+        identity.kioskMode === KioskMode.INTERNAL_DOCUMENTATION)
+    );
+  }
   return identity.capabilities?.includes(capability) ?? false;
 }
 
@@ -127,6 +151,61 @@ export async function getQuestionnaireKioskDeviceFromCookies(requireUnlock = fal
     cookieStore.get(KIOSK_DEVICE_COOKIE)?.value,
     requireUnlock ? cookieStore.get(KIOSK_UNLOCK_COOKIE)?.value ?? "" : undefined,
   );
+}
+
+async function resolveAccountAccess(
+  account: Awaited<ReturnType<typeof getKioskSessionAccount>>,
+): Promise<QuestionnaireKioskAccess | null> {
+  if (!account?.current_practice) return null;
+  const kioskMode = getCurrentKioskMode(account);
+  if (!kioskMode) return null;
+  return {
+    kind: "account",
+    accountId: account.id,
+    practiceId: account.current_practice.id,
+    kioskMode,
+  };
+}
+
+export async function requireQuestionnaireKioskAccess(
+  req: NextRequest,
+  requireUnlock = false,
+) {
+  const account = await getKioskSessionAccount(req);
+  if (account) {
+    const access = await resolveAccountAccess(account);
+    return access
+      ? { access, error: null }
+      : { access: null, error: unauthorized("Kiosk-Startbereich ist nicht konfiguriert.") };
+  }
+  if (await getSessionAccount(req)) {
+    return { access: null, error: unauthorized("Ein angemeldetes Benutzerkonto hat Vorrang vor dem Geräte-Kiosk.") };
+  }
+
+  const device = await resolveDevice(
+    req.cookies.get(KIOSK_DEVICE_COOKIE)?.value,
+    requireUnlock ? req.cookies.get(KIOSK_UNLOCK_COOKIE)?.value ?? "" : undefined,
+  );
+  if (device) return { access: { kind: "device" as const, ...device }, error: null };
+  return {
+    access: null,
+    error: unauthorized(requireUnlock ? "Kiosk ist gesperrt." : undefined),
+  };
+}
+
+export async function getQuestionnaireKioskAccessFromCookies(
+  requireUnlock = false,
+): Promise<QuestionnaireKioskAccess | null> {
+  const account = await getKioskSessionAccountFromCookies();
+  if (account) return resolveAccountAccess(account);
+  if (await getSessionAccountFromCookies()) return null;
+
+  const cookieStore = await cookies();
+  const device = await resolveDevice(
+    cookieStore.get(KIOSK_DEVICE_COOKIE)?.value,
+    requireUnlock ? cookieStore.get(KIOSK_UNLOCK_COOKIE)?.value ?? "" : undefined,
+  );
+  return device ? { kind: "device", ...device } : null;
 }
 
 export async function invalidateKioskUnlock(deviceId: string) {

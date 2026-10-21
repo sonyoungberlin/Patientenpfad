@@ -46,13 +46,30 @@ function ownerAccount() {
   };
 }
 
+function kioskAccount() {
+  return {
+    ...ownerAccount(),
+    id: "acc-kiosk",
+    email: "kiosk@example.com",
+    memberships: [{ practice_id: "p-1", role: "KIOSK" as const }],
+  };
+}
+
 describe("AppShell INBOX_ONLY", () => {
   beforeEach(() => {
     pushMock.mockClear();
     refreshMock.mockClear();
   });
 
-  it("zeigt in Kommunikation nur die erlaubten Posteingänge", () => {
+  describe("AppShell KIOSK", () => {
+    it("zeigt keine normale Navigation oder App-Aktionen", () => {
+      mockedPathname = "/dashboard";
+      const html = renderToStaticMarkup(<AppShell account={kioskAccount()} />);
+      expect(html).toBe("");
+    });
+  });
+
+  it("zeigt in Kommunikation nur Fragebogen-Posteingang", () => {
     mockedPathname = "/inquiries";
     const html = renderToStaticMarkup(
       <AppShell account={inboxOnlyAccount()} />,
@@ -60,7 +77,6 @@ describe("AppShell INBOX_ONLY", () => {
 
     expect(html).toContain('href="/questionnaires">Hauptmenü</a>');
     expect(html).toContain("Fragebogen-Posteingang");
-    expect(html).toContain("Digitale Anfragen");
     expect(html).not.toContain("Neue Nachricht");
     expect(html).not.toContain("Vorlagen");
   });
@@ -80,13 +96,12 @@ describe("AppShell INBOX_ONLY", () => {
     expect(htmlWebsiteForms).not.toContain("Formularverwaltung");
   });
 
-  it("zeigt Digitale Anfragen mit Unread-Indikator", () => {
+  it("zeigt keine zusätzlichen Posteingänge", () => {
     mockedPathname = "/questionnaires";
     const html = renderToStaticMarkup(
       <AppShell account={inboxOnlyAccount()} digitalRequestsHasUnread={true} />,
     );
-    expect(html).toContain("Digitale Anfragen");
-    expect(html).toContain("Neue Anfragen vorhanden");
+    expect(html).not.toContain("Digitale Anfragen");
   });
 });
 

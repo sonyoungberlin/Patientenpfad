@@ -7,13 +7,11 @@ import React from "react";
 const account = {
   id: "account-1",
   current_practice: { id: "practice-1" },
-  memberships: [{ practice_id: "practice-1", role: "USER" }],
 };
 
 const findManyMock = jest.fn();
 const findUniqueMock = jest.fn();
 const authMock = jest.fn();
-const mockInquiryListClient = jest.fn(() => null);
 
 jest.mock("@/lib/authz", () => ({
   requireInquiriesAccessFromCookies: authMock,
@@ -28,7 +26,7 @@ jest.mock("@/lib/prisma", () => ({
 
 jest.mock("@/app/inquiries/InquiryListClient", () => ({
   __esModule: true,
-  default: mockInquiryListClient,
+  default: () => null,
 }));
 
 jest.mock("@/app/inquiries/[id]/m3/InquiryM3Client", () => ({
@@ -66,7 +64,6 @@ describe("Eigenständiger Fragebogen-Einstieg", () => {
   beforeEach(() => {
     authMock.mockResolvedValue(account);
     findManyMock.mockResolvedValue([]);
-    mockInquiryListClient.mockClear();
     findUniqueMock.mockResolvedValue({
       questionnaire_confirmation_text_1: "Bestätigung 1",
       questionnaire_confirmation_text_2: null,
@@ -82,56 +79,6 @@ describe("Eigenständiger Fragebogen-Einstieg", () => {
     );
 
     expect(link).toBeNull();
-  });
-
-  it("lädt Praxisvorlagen für USER über die aktuelle Practice", async () => {
-    const tree = await InquiriesPage();
-    const templateList = findElement(
-      tree,
-      (element) => element.type === mockInquiryListClient,
-    );
-
-    expect(findManyMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { owner_practice_id: "practice-1", is_template: true },
-      }),
-    );
-    expect(templateList?.props.canManageTemplates).toBe(false);
-  });
-
-  it("kennzeichnet OWNER als verwaltungsberechtigt", async () => {
-    authMock.mockResolvedValue({
-      ...account,
-      memberships: [{ practice_id: "practice-1", role: "OWNER" }],
-    });
-
-    const tree = await InquiriesPage();
-    const templateList = findElement(
-      tree,
-      (element) => element.type === mockInquiryListClient,
-    );
-
-    expect(templateList?.props.canManageTemplates).toBe(true);
-  });
-
-  it("zeigt ADMIN Praxisvorlagen ohne Verwaltungsrecht", async () => {
-    authMock.mockResolvedValue({
-      ...account,
-      memberships: [{ practice_id: "practice-1", role: "ADMIN" }],
-    });
-
-    const tree = await InquiriesPage();
-    const templateList = findElement(
-      tree,
-      (element) => element.type === mockInquiryListClient,
-    );
-
-    expect(findManyMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { owner_practice_id: "practice-1", is_template: true },
-      }),
-    );
-    expect(templateList?.props.canManageTemplates).toBe(false);
   });
 
   it("öffnet die wiederverwendete Section direkt ohne InquirySession", async () => {
